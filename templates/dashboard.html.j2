@@ -15305,14 +15305,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       ><span class="l-en">📅 {{ _ebn.count }} setup{{ 's' if _ebn.count != 1 else '' }} suppressed today (earnings ≤3d): {{ _ebn.tickers | join(', ') }}</span><span class="l-zh">📅 今日{{ _ebn.count }}个形态因财报（≤3天）被屏蔽：{{ _ebn.tickers | join(', ') }}</span></div>
       {% endif %}
       {% endif %}
-      {# CSP-W5 board staleness badge — shown when the underlying ohlcv store is
-         >= 2 trading sessions behind the expected NYSE session.  Fail-soft: absent
-         key or delayed=False = nothing shown.  Bilingual via l-en/l-zh spans;
-         no translated text in attributes (check_title_i18n). #}
+      {# Board staleness badge — shown when the board's own vintage is >= 2 trading
+         sessions behind the expected NYSE session.  The staleness block is computed
+         from the MAJORITY vintage of the ranked panel and the board's own as_of,
+         whichever is older, and it FAILS CLOSED: an undatable board is a delayed one,
+         so `unknown` gets its own plain-word branch rather than silently hiding the
+         badge (the old max()-over-member-reach basis let 423 of 3,028 members clear
+         this badge on 2026-08-06 while the cross-section sat at 07-31).
+         Glance-tier copy: state + what to do, no internal state names.  The English
+         "prices as of <ISO>" phrasing is a load-bearing contract with
+         scripts/freshness_sentinel.py::_DELAY_RE — keep it if this line is reworded.
+         Bilingual via l-en/l-zh spans; no translated text in attributes
+         (check_title_i18n). #}
       {% if _su and _su.get('staleness') and _su.staleness.get('delayed') %}
       {% set _stale = _su.staleness %}
+      {% set _stale_behind = _stale.get('sessions_behind') if _stale.get('sessions_behind') is not none else _stale.get('age_days') %}
       <div class="nb-stale-note">
-        <span class="l-en">⚠ BOARD DELAYED — priced {{ _stale.get('price_through', '?') }} ({{ _stale.get('age_days', '?') }}d behind). Data is stale; entries shown may not reflect latest prices.</span><span class="l-zh">⚠ 数据延迟 — 价格截至 {{ _stale.get('price_through', '?') }}（落后 {{ _stale.get('age_days', '?') }} 天）。当前数据过期，入场信号可能不反映最新价格。</span>
+        {% if _stale.get('unknown') or not _stale.get('price_through') %}<span class="l-en">We can’t confirm how current these prices are, so treat this board as out of date — check a live quote before you act.</span><span class="l-zh">目前无法确认这些价格是否最新，请把本榜单当作过期数据——操作前先看一下实时报价。</span>{% else %}<span class="l-en">Still ranked on prices as of {{ _stale.get('price_through') }}{% if _stale_behind is not none %} — {{ _stale_behind }} session{{ '' if _stale_behind == 1 else 's' }} behind{% endif %}. We’re updating it; check a live quote before you act.</span><span class="l-zh">仍按截至 {{ _stale.get('price_through') }} 的价格排序{% if _stale_behind is not none %}，落后 {{ _stale_behind }} 个交易日{% endif %}。数据正在更新，操作前请先看一下实时报价。</span>{% endif %}
       </div>
       {% endif %}
       {# B4 Conviction Delta — data prep for the "What changed today" dashboard.

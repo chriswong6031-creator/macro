@@ -1,18 +1,18 @@
 """Grade the Wave 1A spine against the committed golden corpus.
 
 The corpus is the benchmark and its ``expected_v2_outcome`` distribution is the
-grading key: ``exact_receipt`` 155, ``typed_absence`` 49,
-``duplicate_collapsed`` 16, ``quarantined`` 14.  Contract freeze §Q3 states the
+grading key: ``exact_receipt`` 155, ``typed_absence`` 51,
+``duplicate_collapsed`` 14, ``quarantined`` 14.  Contract freeze §Q3 states the
 failure mode in as many words — "if a Wave 1 implementation resolves materially
 more than 155 to exact_receipt, it is manufacturing citations".
 
 Two runs are graded, and the second is the one that makes the first mean
 something:
 
-* **declared run** — the producer supplies the two inputs the corpus DECLARES
-  rather than commits (a non-text locator address, and the one filing-join
-  duplicate assertion).  This must reproduce the manifest distribution exactly.
-* **evidence-only run** — those declarations are stripped.  Every remaining
+* **declared run** — the producer supplies the one input the corpus DECLARES
+  rather than commits: a non-text locator address.  This must reproduce the
+  manifest distribution exactly.
+* **evidence-only run** — that declaration is stripped.  Every remaining
   verdict rests on bytes, timestamps, or the supersession chain.  ``exact_receipt``
   must FALL to the 140 byte-replayable cases and the difference must land in
   ``typed_absence``.  A resolver that echoed the answer key would score the same
@@ -68,16 +68,6 @@ FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "company_intelligence"
 # ``slide_region`` are "declared, not committed" (manifest limitation 2), so the
 # producer's declared locator stands in for bytes this estate does not hold.
 DECLARED_LOCATOR_KINDS = frozenset({"table_cell", "slide_region"})
-
-# CONTRACT GAP, reported rather than hidden.  These two edgar_identity_join
-# cases expect ``duplicate_collapsed``, but their fixture rows are byte-identical
-# in structure to the twelve sibling cases that expect ``typed_absence``: same
-# single release revision, same ``joinable_keys_today: ["ticker"]``, same
-# ``missing_for_join``.  No observable in the corpus separates them, so the
-# duplicate is a producer ASSERTION here and
-# ``test_the_two_declared_duplicate_cases_are_indistinguishable_from_their_siblings``
-# proves the gap instead of papering over it.
-DECLARED_DUPLICATE_CASES = frozenset({"CIE-GC-0227", "CIE-GC-0234"})
 
 
 def _load(name: str) -> dict:
@@ -242,11 +232,10 @@ def _observation(
         transcript=transcript,
         committed_receipt=case["receipt"],
         declared_locator=declared_locator,
-        declared_duplicate_of=(
-            f"filing:{case['document_revisions'][0]['accession_synthetic']}"
-            if case["case_id"] in DECLARED_DUPLICATE_CASES
-            else None
-        ),
+        # No case in this corpus asserts a duplicate: every ``duplicate_collapsed``
+        # is earned by the supersession chain, so ``declared_duplicate_of`` stays
+        # unset and ``declared_duplicate_filing`` is a zero column below.
+        declared_duplicate_of=None,
         absence_reason=absence_reason,
     )
 
@@ -320,7 +309,7 @@ def test_resolved_distribution_matches_the_manifest_grading_key(
         "quarantined": expected["quarantined"],
     }, resolved
     assert resolved["exact_receipt"] == 155
-    assert resolved["typed_absence"] == 49
+    assert resolved["typed_absence"] == 51
 
 
 def test_per_case_outcome_matches_the_expected_outcome(
@@ -339,7 +328,7 @@ def test_stripping_the_declared_inputs_degrades_toward_absence_never_toward_rece
 ) -> None:
     """The anti-echo control.
 
-    With the producer's two declarations removed, only bytes, timestamps, and
+    With the producer's declared locators removed, only bytes, timestamps, and
     the supersession chain remain.  ``exact_receipt`` must fall to exactly the
     140 byte-replayable cases and the 15 declared addresses must land in
     ``typed_absence`` — never anywhere else.
@@ -367,10 +356,12 @@ def test_evidence_bases_account_for_every_verdict(
     assert bases["timestamp_firewall"] == 14
     assert bases["supersession_chain"] == 14
     assert bases["declared_locator"] == 15
-    assert bases["declared_duplicate_filing"] == 2
-    assert bases["no_derivable_receipt"] == 49
+    # Zero on purpose: every collapsed duplicate here is earned by the supersession
+    # chain above.  A non-zero column would mean a verdict rests on an assertion.
+    assert bases["declared_duplicate_filing"] == 0
+    assert bases["no_derivable_receipt"] == 51
     declared = bases["declared_locator"] + bases["declared_duplicate_filing"]
-    assert declared == 17
+    assert declared == 15
     assert sum(bases.values()) == 234
 
 
@@ -510,12 +501,12 @@ def test_duplicate_releases_do_not_create_duplicate_events(
         for case, resolution in zip(cases, resolutions)
         if resolution.outcome == "duplicate_collapsed"
     ]
-    assert len(duplicates) == 16
+    assert len(duplicates) == 14
     for case, resolution in duplicates:
         assert resolution.mints_event is False
         assert resolution.event_id, "a collapsed duplicate still resolves to its original's event"
     chain_backed = [c for c, r in duplicates if len(c["document_revisions"]) == 2]
-    assert len(chain_backed) == 14
+    assert len(chain_backed) == 14, "every collapsed duplicate is chain-backed, none declared"
     for case in chain_backed:
         kinds = [row["document_kind"] for row in case["document_revisions"]]
         assert kinds == ["release", "release_duplicate"]
@@ -694,48 +685,54 @@ def test_v1_event_id_minting_is_unchanged_by_the_v2_layer(cases: list[dict]) -> 
 
 
 # --------------------------------------------------------------------------
-# The contract gap, proved rather than hidden
+# The class counts are honest — every outcome is earned by an observable
 # --------------------------------------------------------------------------
 
-def test_the_two_declared_duplicate_cases_are_indistinguishable_from_their_siblings(
+def test_the_outcome_classes_are_homogeneous_and_every_duplicate_is_evidenced(
     cases: list[dict],
 ) -> None:
-    """CIE-GC-0227 and CIE-GC-0234 expect a duplicate with no evidence of one.
+    """CIE-GC-0227 / CIE-GC-0234 were positionally mislabelled, and were corrected.
 
-    All fourteen ``edgar_identity_join`` pairs carry the same joinable key set,
-    the same missing-field set, one release revision, and a wire accession that
-    matches the case revision.  Nothing observable separates the two cases that
-    expect ``duplicate_collapsed`` from the twelve that expect ``typed_absence``,
-    so this resolver takes the duplicate as a producer assertion.  Wave 1B must
-    make the join evidence explicit — an ``(cik, accession)`` pair seen twice —
-    or those two cases can only ever be graded by their answer key.
+    HISTORY, so it is not lost: the corpus builder carried a rule reading
+    ``edgar_identity_join and index % 7 == 6 -> duplicate_collapsed``, which
+    labelled two of the fourteen pairs a collapsed duplicate.  Their fixture rows
+    were structurally identical to the other twelve — same
+    ``joinable_keys_today: ["ticker"]``, same ``missing_for_join``, one ``release``
+    revision, no receipt — so nothing observable separated them and this suite had
+    to feed the resolver a producer ASSERTION (``declared_duplicate_of``) to
+    reproduce the grading key.  An outcome only the answer key can grade is not a
+    benchmark.  Both were relabelled ``typed_absence`` on 2026-08-07, matching the
+    EDGAR fixture's own ``open_contract_question``.
+
+    ``duplicate_collapsed`` stays in the vocabulary because ``duplicate_release``
+    earns it honestly with fourteen two-revision cases.  This test holds both
+    halves: the join class is homogeneous, and no duplicate anywhere in the corpus
+    rests on nothing.
     """
     payload = _load("golden_corpus_edgar_identity.v1.json")
     pairs = {row["case_ref"]: row for row in payload["pairs"]}
-    by_case = {case["case_id"]: case for case in cases}
 
-    declared = [pairs[case_id] for case_id in sorted(DECLARED_DUPLICATE_CASES)]
-    siblings = [
-        row
-        for case_id, row in pairs.items()
-        if case_id not in DECLARED_DUPLICATE_CASES
-    ]
-    assert len(declared) == 2 and len(siblings) == 12
-
-    def shape(row: dict) -> tuple:
-        case = by_case[row["case_ref"]]
-        return (
-            tuple(sorted(row["joinable_keys_today"])),
-            tuple(sorted(row["missing_for_join"]["collector_edgar_earnings_8k"])),
-            tuple(sorted(row["missing_for_join"]["engine_edgar_earnings_wire"])),
-            len(case["document_revisions"]),
-            tuple(r["document_kind"] for r in case["document_revisions"]),
-            case["receipt"] is None,
-            row["engine_edgar_earnings_wire_row"]["accession"]
-            == case["document_revisions"][0]["accession_synthetic"],
+    joins = [case for case in cases if case["difficulty_class"] == "edgar_identity_join"]
+    assert len(joins) == 14
+    assert set(pairs) == {case["case_id"] for case in joins}
+    for case in joins:
+        row = pairs[case["case_id"]]
+        assert case["expected_v2_outcome"] == "typed_absence", (
+            f"{case['case_id']}: the two readers share only `ticker`, so no row in this "
+            "class carries observable duplication — a duplicate here is answer-key-only"
         )
+        assert row["expected_v2_outcome"] == case["expected_v2_outcome"], case["case_id"]
+        assert row["joinable_keys_today"] == ["ticker"], case["case_id"]
+        assert len(case["document_revisions"]) == 1, case["case_id"]
+        assert case["receipt"] is None, case["case_id"]
+    assert "every edgar_identity_join case is a typed absence" in payload["open_contract_question"]
 
-    shapes = {shape(row) for row in declared} | {shape(row) for row in siblings}
-    assert len(shapes) == 1, (
-        "if these ever differ, replace the declared duplicate with the real evidence"
-    )
+    duplicates = [case for case in cases if case["expected_v2_outcome"] == "duplicate_collapsed"]
+    assert len(duplicates) == 14
+    for case in duplicates:
+        assert case["difficulty_class"] == "duplicate_release", (
+            f"{case['case_id']} claims a duplicate from outside the class that evidences one"
+        )
+        revisions = case["document_revisions"]
+        assert [row["document_kind"] for row in revisions] == ["release", "release_duplicate"], case["case_id"]
+        assert revisions[1]["supersedes_source_sha256"] == revisions[0]["source_sha256"], case["case_id"]

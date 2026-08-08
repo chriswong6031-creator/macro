@@ -1,0 +1,24 @@
+{
+  "schema": "us_basket_turn.v1",
+  "producer": "engine/us_basket_turn.py",
+  "ship_date": "2026-08-07",
+  "advance_gate": "COLLECT_LANE=nightly (engine.ledger_lane.nightly_advance_enabled)",
+  "stamp_source": "data plane — the newest member bar the organ read (data_session), never the wall clock",
+  "idempotency": "keep-first per (date, basket_id)",
+  "quarantine": {
+    "file": null,
+    "n_rows": 0,
+    "reason": "none at ship"
+  },
+  "known_gaps": [],
+  "era_notes": [
+    {
+      "from": "2026-08-07",
+      "note": "Ledger starts at ship date. Every state shown for an earlier session is a DESCRIPTIVE REPLAY over the committed member tape (engine/us_basket_turn.py --replay), never ledger evidence, and may not be counted as prospective n."
+    },
+    {
+      "from": "2026-08-07",
+      "note": "Member coverage is carried per row (members_read/members_total). silver_miners reads 8/10 at ship — MAG and GATO have no store file (W1-C owns that fill). A row scored on a fraction of its basket is not evidence about the basket; read the coverage counts before grading any row."
+    }
+  ]
+}

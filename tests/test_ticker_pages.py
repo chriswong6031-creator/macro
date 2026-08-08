@@ -2262,17 +2262,25 @@ class TestR2000UniverseExpansion:
 
 
 def test_dossier_never_links_a_basket_that_has_no_page() -> None:
-    """A basket link must be gated on baskets_map, not on membership.
+    """A dossier must never emit ../basket/<id>.html for a basket with no page.
 
-    baskets_map is loaded from site/basketdata/baskets.json — the basket builder's own
-    output — so it is exactly the set of baskets that produced a site/basket/<id>.html.
-    Membership is wider: engine/baskets.py drops a basket resolving fewer than 3 members
-    and that basket stays in membership.json with no page ever written.
+    Membership is curated by hand and is WIDER than the built set: engine/baskets.py
+    drops a basket resolving fewer than 3 members in the returns cache, and that basket
+    stays in membership.json with no page ever written. Ungated, the dossier links
+    ../basket/<slug>.html into a 404, and check_site_asset_refs treats a dangling link
+    as a live 404 and FAILS the render — so one unbuilt basket freezes the entire site.
+    silver_miners (#4607) did exactly that for ~28h through stocks/HL.html and
+    stocks/SSRM.html.
 
-    Ungated, the dossier links ../basket/<slug>.html into a 404, and
-    check_site_asset_refs treats a dangling link as a live 404 and FAILS the render — so
-    one unbuilt basket freezes the entire site. silver_miners (#4607) did exactly that
-    for ~18h through stocks/HL.html and stocks/SSRM.html.
+    The gate is `linkable_baskets` — the shipped basket/*.html tree unioned with the
+    committed baseline (lib.pages.rendered_basket_pages), i.e. the same artifact
+    check_site_asset_refs reads. It withholds the ANCHOR, not the ROW: the name and the
+    charter sentence are the substance and stay readable while the page is pending.
+    This test originally asserted the row VANISHED, gating on baskets_map — that was
+    #4683's design, which landed on top of #4725's link gate 19 minutes later without
+    rebasing onto it, leaving both gates in the tree and #4725's suite red. Rewritten to
+    the surviving contract; the teeth are unchanged, because an unlinked row emits no
+    href (templates/ticker.html.j2 renders <b> instead of <a>).
 
     Both source loops are covered: baskets_membership AND member_context.
     """
@@ -2286,30 +2294,64 @@ def test_dossier_never_links_a_basket_that_has_no_page() -> None:
         {"basket_id": "silver_miners", "basket": "Silver Miners", "band_en": "core"},
     ]
 
-    themes = _build_themes(blob, member_ctx, built)
-    ids = {r["id"] for r in (themes or {}).get("baskets", [])} if isinstance(themes, dict) \
-        else {r["id"] for r in (themes or [])}
+    themes = _build_themes(blob, member_ctx, built, frozenset({"gold_miners"}))
+    by_id = {r["id"]: r for r in themes["baskets"]}
 
-    assert "gold_miners" in ids, "a built basket must still be linked"
-    assert "silver_miners" not in ids, (
+    assert by_id["gold_miners"]["linked"] is True, "a built basket must still be linked"
+    assert by_id["silver_miners"]["linked"] is False, (
         "an unbuilt basket was linked — ../basket/silver_miners.html is a 404 and "
         "check_site_asset_refs will fail the render on it, freezing the whole site"
     )
+    # The row survives so the sleeve still reads while its page is pending.
+    assert by_id["silver_miners"]["name_en"] == "Silver Miners"
 
 
-def test_membership_gate_is_applied_before_the_five_row_slice() -> None:
-    """Filtering after the slice would silently cost a member its real baskets.
+def test_a_basket_row_is_never_dropped_merely_for_being_unbuilt() -> None:
+    """The other half of the same contract, pinned separately so it cannot regress.
 
-    Six memberships where only the last five are built must yield five links, not four:
-    slice-then-filter would spend a slot on the unbuilt one.
+    #4683 gated ROW-BUILDING on baskets_map, which deleted the row outright. That is
+    more destructive than the 404 requires, and it fails open in the wrong direction:
+    baskets_map is loaded from one JSON file with no committed fallback, so an absent or
+    unreadable site/basketdata/baskets.json empties the whole "Themes & baskets" section
+    on every dossier instead of merely unlinking it. The empty baskets_map passed here
+    is exactly that scenario.
     """
-    built = {f"b{i}": {"id": f"b{i}", "name": f"B{i}"} for i in range(1, 6)}
+    blob = {"baskets_membership": [
+        {"slug": "gold_miners", "name": "Gold Miners", "theme": "Gold producer sleeve."},
+    ]}
+    member_ctx = [{"basket_id": "silver_miners", "basket": "Silver Miners",
+                   "basket_zh": "白银矿业", "band_en": "core"}]
+
+    themes = _build_themes(blob, member_ctx, {}, frozenset({"gold_miners"}))
+    by_id = {r["id"]: r for r in themes["baskets"]}
+
+    assert set(by_id) == {"gold_miners", "silver_miners"}, (
+        "an empty baskets_map emptied the section — the link gate, not a row gate, "
+        "is what decides reachability"
+    )
+    assert by_id["gold_miners"]["linked"] is True
+    assert by_id["silver_miners"]["linked"] is False
+    assert by_id["gold_miners"]["theme"] == "Gold producer sleeve."
+    # member_context carries its own ZH label, so a basket absent from baskets_map is
+    # not silently downgraded to the English name on the Chinese page.
+    assert by_id["silver_miners"]["name_zh"] == "白银矿业"
+
+
+def test_linked_rows_fill_the_five_row_cap_first() -> None:
+    """A row the reader cannot open must not displace one they can.
+
+    Six memberships where only the last five ship a page must yield five LINKED rows,
+    not four: leaving the unbuilt one in file order would spend a capped slot on it.
+    Within each group curation order is preserved (the sort is stable).
+    """
+    linkable = frozenset(f"b{i}" for i in range(1, 6))
     blob = {"baskets_membership": [{"slug": "unbuilt", "name": "Unbuilt"}]
             + [{"slug": f"b{i}", "name": f"B{i}"} for i in range(1, 6)]}
 
-    themes = _build_themes(blob, [], built)
-    rows = (themes or {}).get("baskets", []) if isinstance(themes, dict) else (themes or [])
-    ids = [r["id"] for r in rows]
+    themes = _build_themes(blob, [], {}, linkable)
+    ids = [r["id"] for r in themes["baskets"]]
 
-    assert "unbuilt" not in ids
-    assert len(ids) == 5, f"expected five linkable baskets, got {len(ids)}: {ids}"
+    assert ids == [f"b{i}" for i in range(1, 6)], (
+        f"expected the five linkable baskets in curation order, got {ids}"
+    )
+    assert all(r["linked"] for r in themes["baskets"])

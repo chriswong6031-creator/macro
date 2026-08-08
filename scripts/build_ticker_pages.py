@@ -2861,7 +2861,7 @@ def _build_peers(
 
 
 def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
-                  linkable_baskets: frozenset[str] | None = None) -> list | None:
+                  linkable_baskets: frozenset[str] | None = None) -> dict | None:
     """`linkable_baskets`: basket ids that ship a basket/<id>.html page.
 
     A row whose id is absent still RENDERS — the name, the charter sentence and
@@ -2875,26 +2875,44 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
         return None
     rows = []
 
-    # From blob.baskets_membership (direct basket membership).
+    def _is_linked(bid: str) -> bool:
+        """The ONE link rule — used for the row cap below and the final stamp, so
+        the two can never disagree about which baskets are reachable."""
+        return (linkable_baskets is None) or (bid in linkable_baskets)
+
+    # BOTH row sources below are UNGATED on baskets_map: a basket that membership
+    # names but the builder never built still gets a ROW. Only its ANCHOR is
+    # withheld, by _is_linked.
     #
-    # Gated on baskets_map, which is loaded from site/basketdata/baskets.json — the
-    # basket builder's OWN output, so it is exactly the set of baskets that produced
-    # a site/basket/<id>.html page (47 ids, 47 pages, zero ids without one). Membership
-    # is the wider set: engine/baskets.py drops a basket resolving fewer than 3 members,
-    # and that basket stays in membership.json while its page is never written.
+    # This reconciles two fixes for the same incident that landed 19 minutes apart
+    # and were never merged with each other. silver_miners (#4607, curated
+    # 2026-08-05, 2 of 10 members resolving) was linked from stocks/HL.html and
+    # stocks/SSRM.html while its own page was skipped for want of price history, so
+    # check_site_asset_refs — which treats a dangling href as a live 404 — failed
+    # EVERY render from 03:24Z on 2026-08-06 and wedged the whole publish lane for
+    # ~28h: no page body was rebuilt, so merged UI work never reached the VPS.
     #
-    # Ungated, every member's dossier then linked ../basket/<slug>.html into a 404 —
-    # and check_site_asset_refs treats a dangling link as a live 404 and FAILS the
-    # render, so the whole site stops re-baking. That is not hypothetical: silver_miners
-    # (#4607, created 2026-08-05, 2 of 10 members resolving) took the render lane down
-    # for ~18h via stocks/HL.html and stocks/SSRM.html. #4607 even predicted the page
-    # would be "absent from the site for one build cycle" — what it missed is that the
-    # link would still be emitted, turning an expected absence into a hard stop.
+    #   #4725 gated the LINK on linkable_baskets (the shipped basket/*.html tree
+    #         UNION the committed baseline) and KEPT the row.
+    #   #4683 gated the ROW on baskets_map (site/basketdata/baskets.json) and
+    #         DROPPED it, landing on top of #4725 without rebasing onto it.
     #
-    # Filter BEFORE the [:5] slice, so a member still gets up to five LINKABLE baskets
-    # rather than five candidates minus whatever was unbuilt.
-    bm = [b for b in ((blob or {}).get("baskets_membership") or [])
-          if _clean_str(b.get("slug") or "") in baskets_map]
+    # Both gates then coexisted, the row gate won, and #4725's tests went red. The
+    # LINK gate is the one that survives, because it reads the artifact the guard
+    # actually checks — the pages on disk — whereas baskets_map is a proxy loaded
+    # from a single JSON file with no committed fallback, so an absent or
+    # unreadable basketdata/baskets.json silently deletes the whole "Themes &
+    # baskets" section from every dossier instead of merely unlinking it.
+    # Measured 2026-08-07: 48 membership slugs, 48 ids in baskets.json, 48 pages on
+    # disk — the two gates select the SAME set today, so this drops no link and
+    # changes no rendered row until the next basket is curated.
+    #
+    # Linked rows fill the cap FIRST (stable sort, so curation order is otherwise
+    # preserved): an unbuilt sleeve is worth reading, but it should not displace one
+    # the reader can actually open. No ticker carries more than 5 memberships today,
+    # so the cap does not currently truncate anything either way.
+    bm = sorted(((blob or {}).get("baskets_membership") or []),
+                key=lambda b: not _is_linked(_clean_str(b.get("slug") or "")))
     for b in bm[:5]:
         slug = _clean_str(b.get("slug") or "")
         name = _clean_str(b.get("name") or slug)
@@ -2920,13 +2938,13 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
                     r["band_en"] = _clean_str(mc.get("band_en") or "")
                     r["band_zh"] = _clean_str(mc.get("band_zh") or "")
             continue
-        # Same gate as the membership loop above: member_context can name a basket the
-        # builder skipped, and this row becomes the same ../basket/<id>.html 404.
-        if bid not in baskets_map:
-            continue
         basket_info = baskets_map.get(bid) or {}
         bname = _clean_str(mc.get("basket") or basket_info.get("name") or bid)
-        bname_zh = _clean_str(basket_info.get("name_zh") or bname)
+        # basket_zh is carried by member_context itself (1,016/1,016 rows have it),
+        # so a basket absent from baskets_map still gets a Chinese name rather than
+        # falling back to the English one. That fallback only became reachable when
+        # the baskets_map row gate came off above.
+        bname_zh = _clean_str(mc.get("basket_zh") or basket_info.get("name_zh") or bname)
         rows.append({
             "id": bid,
             "name_en": bname,
@@ -2973,10 +2991,10 @@ def _build_themes(blob: dict | None, member_ctx_list: list, baskets_map: dict,
             "n_themes": sp.get("n_themes"),
         }
 
-    # Link only what ships. Done once here, after both row sources have merged,
+    # Link only what ships. Stamped once here, after both row sources have merged,
     # so neither can slip a row past the gate.
     for r in rows:
-        r["linked"] = (linkable_baskets is None) or (r["id"] in linkable_baskets)
+        r["linked"] = _is_linked(r["id"])
 
     if not rows and not basket_alloc and not sector_pulse:
         return None
