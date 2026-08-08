@@ -19,16 +19,24 @@ Three changes, each pinned separately
      `pulse`/`pulse_zh`, and the index carries `active_count_by_age`.  Additive
      only: no plan is removed or re-ordered (population fence G0.4).
 
-THE POPULATION FENCE, STATED EXACTLY
-------------------------------------
-"Ordering only" means the ADMITTED population — the rows that clear the band /
-act_level / score / dir / entry_signal gates — is byte-identical to the pre-W1
-rule.  It does NOT mean the top-12 membership cannot move: when the admitted
-pool overflows `N_CANDIDATES`, re-ordering necessarily re-slices `[:n]`, and on
-the committed 2026-07-31 artifact exactly that happens (20 admitted, 12 taken;
-JBLU/LKFN out, FHI/NUE in).  That IS the change the operator signed off.  The
-fence is on the FILTERS, and `TestAdmittedPopulationIsUnchanged` pins it against
-the pre-W1 implementation copied here verbatim.
+THE POPULATION FENCE, AND WHAT SUPERSEDED IT (ANTICIPATION A1, 2026-08-08)
+--------------------------------------------------------------------------
+W1's "ordering only" claim was that the ADMITTED population — the rows clearing
+the band / act_level / score / dir / entry_signal gates — is byte-identical to
+the pre-W1 rule.  `_old_select` below is that rule, copied verbatim, and it used
+to be asserted against the LIVE `select_candidates`.
+
+ANTICIPATION §6.2 A1 deliberately moved the population: admission is now a STATUS
+CLASS (patience = bounce_wait/wait_pullback/hold, confirmation = buy_now/partial)
+and the act-level gate is gone.  The W1 fence is therefore re-pointed rather than
+deleted — `_old_select` is now asserted against `engine.prophet_bridge.legacy_admitted`,
+the frozen copy of the same rule that keeps feeding the zero-authority shadow
+ledger, so W1's guarantee is still pinned against the thing that still makes it.
+`TestA1MovedThePopulationDeliberately` pins the move itself, so a silent
+regression back to the act-level gate fails here too.
+
+Everything else in this file — the priority-score ordering, the legacy fallback,
+the re-origination block, index hygiene — is untouched by A1 and still live.
 """
 from __future__ import annotations
 
@@ -48,7 +56,9 @@ if str(_REPO) not in sys.path:
 
 import scripts.build_prophet as bp  # noqa: E402
 from engine.prophet_bridge import (  # noqa: E402
+    LEGACY_N_CANDIDATES,
     N_CANDIDATES,
+    legacy_admitted,
     originate_plans,
     plan_key,
     select_candidates,
@@ -196,20 +206,25 @@ def committed() -> dict:
 # ===========================================================================
 
 class TestAdmittedPopulationIsUnchanged:
+    """W1's fence, re-pointed at the FROZEN copy of the rule it was written against.
+
+    `legacy_admitted` is the pre-W1 gate verbatim and is what the ANTICIPATION §6.5
+    shadow ledger runs every night, so pinning it here keeps W1's guarantee alive on
+    the only code path that still claims it.
+    """
 
     def test_committed_artifact_admits_the_identical_rows(self, committed):
-        """The whole scored-change claim: same input, same admitted population."""
+        """Same input, same admitted population — for the LEGACY gate."""
         old = _old_select(committed, n=_UNCAPPED)
-        new = select_candidates(committed, n=_UNCAPPED)
+        new = legacy_admitted(committed)
         assert {id(r) for r in old} == {id(r) for r in new}, (
-            "the admitted population moved — this is a FILTER change, not an ordering one"
-        )
+            "the frozen legacy gate drifted from the pre-W1 rule it copies")
         assert sorted(_tickers(old)) == sorted(_tickers(new))
 
     def test_the_committed_fixture_actually_filters_something(self, committed):
         """Keeps the test above honest: if every buy row were admitted, an identical
         population would prove nothing about the gates."""
-        admitted = select_candidates(committed, n=_UNCAPPED)
+        admitted = legacy_admitted(committed)
         assert 0 < len(admitted) < len(committed["buy"]), (
             "the committed artifact admits everything (or nothing) — the population "
             "equality assertion above has gone vacuous")
@@ -217,7 +232,7 @@ class TestAdmittedPopulationIsUnchanged:
     @pytest.mark.parametrize("gate_go", [True, False])
     def test_every_gate_leg_admits_identically(self, gate_go):
         """Each exclusion path — band, act_level, score, dir, null entry_signal — is
-        exercised, and old and new agree row-for-row on all of them."""
+        exercised, and the pre-W1 rule and the frozen copy agree row-for-row."""
         buys = [
             _buy("BANDLOW", priority=99.0, score=95, act_level=3, band="low"),
             _buy("ACT1LOWSCORE", priority=98.0, score=40, act_level=1),
@@ -228,10 +243,10 @@ class TestAdmittedPopulationIsUnchanged:
             _buy("LEGACY", priority=None, score=88, act_level=3),
         ]
         s = _standouts(buys, gate_go=gate_go)
-        assert sorted(_tickers(select_candidates(s, n=_UNCAPPED))) == \
+        assert sorted(_tickers(legacy_admitted(s))) == \
                sorted(_tickers(_old_select(s, n=_UNCAPPED)))
         # And the fixture really does exclude — otherwise the equality is trivial.
-        admitted = set(_tickers(select_candidates(s, n=_UNCAPPED)))
+        admitted = set(_tickers(legacy_admitted(s)))
         assert {"BANDLOW", "ACT1LOWSCORE", "BEAR", "NOENTRY"}.isdisjoint(admitted)
         assert "CLEAN" in admitted and "LEGACY" in admitted
         assert ("ACT1HIGHSCORE" in admitted) is (gate_go is False)
@@ -242,17 +257,53 @@ class TestAdmittedPopulationIsUnchanged:
         buys = [_buy(f"T{i:02d}", priority=float(i), score=100 - i, act_level=3)
                 for i in range(N_CANDIDATES - 2)]
         s = _standouts(buys)
-        old, new = _old_select(s), select_candidates(s)
+        old, new = _old_select(s, n=_UNCAPPED), select_candidates(s)
         assert set(_tickers(old)) == set(_tickers(new))
         assert _tickers(old) != _tickers(new), (
             "the fixture no longer re-orders anything — it cannot show that a set "
             "equality survives a genuine ordering change")
 
-    def test_n_candidates_is_still_twelve(self):
-        """The brief fences the cap: ordering repair must not widen intake."""
-        assert N_CANDIDATES == 12
+    def test_the_two_caps_are_sixteen_live_and_twelve_frozen(self):
+        """A1 widened the LIVE cap; the legacy arm's cap is frozen at the old value
+        so the shadow ledger keeps grading the book the old gate would have built."""
+        assert N_CANDIDATES == 16
+        assert LEGACY_N_CANDIDATES == 12
         buys = [_buy(f"T{i:02d}", priority=float(90 - i), score=90 - i) for i in range(30)]
         assert len(select_candidates(_standouts(buys))) == N_CANDIDATES
+
+
+# ===========================================================================
+# 1a-bis. A1 moved the population ON PURPOSE — pinned so it cannot drift back
+# ===========================================================================
+
+class TestA1MovedThePopulationDeliberately:
+    """The counterpart to the fence above: the live gate is NOT the legacy gate.
+
+    Without this, a regression that reinstated `act_level >= 2` would leave every
+    remaining assertion in this file green.
+    """
+
+    def test_the_live_gate_admits_patience_the_legacy_gate_cannot_reach(self):
+        buys = [_buy("PATIENCE", priority=90.0, score=5, act_level=0)]
+        buys[0]["entry_signal"]["status"] = "bounce_wait"
+        buys[0]["dir"] = "caution"
+        s = _standouts(buys, gate_go=True)
+        assert _tickers(select_candidates(s, n=_UNCAPPED)) == ["PATIENCE"]
+        assert legacy_admitted(s) == []
+
+    def test_the_live_gate_refuses_buy_soon_the_legacy_gate_admitted(self):
+        buys = [_buy("SOON", priority=90.0, score=90, act_level=2)]
+        buys[0]["entry_signal"]["status"] = "buy_soon"
+        s = _standouts(buys, gate_go=True)
+        assert select_candidates(s, n=_UNCAPPED) == []
+        assert _tickers(legacy_admitted(s)) == ["SOON"]
+
+    def test_the_committed_artifact_shows_the_move(self, committed):
+        live = {t for t in _tickers(select_candidates(committed, n=_UNCAPPED))}
+        legacy = {t for t in _tickers(legacy_admitted(committed))}
+        assert live != legacy, (
+            "the live and legacy gates agree on the committed board — either A1 "
+            "regressed or the board no longer carries a patience cohort")
 
 
 # ===========================================================================
@@ -292,11 +343,16 @@ class TestPriorityScoreOrdersIntake:
 
     def test_the_order_is_invariant_under_input_shuffle(self):
         """Determinism: the artifact's incoming buy[] order must never decide a tie."""
+        letters = "ABCDEFGHIJ"
         buys = ([_buy(f"H{i}", priority=float(95 - i), score=i) for i in range(9)]
                 + [_buy(f"TIE_{c}", priority=70.0, score=50, act_level=2)
-                   for c in reversed("ABCDEFGH")])
+                   for c in reversed(letters)])
+        # Derived from the cap, never hardcoded: this test is about the TIE-BREAK,
+        # and a literal slice silently stops slicing the tie group when the cap moves.
+        expected_ties = [f"TIE_{c}" for c in letters][:N_CANDIDATES - 9]
+        assert 0 < len(expected_ties) < len(letters), "the cap must slice the tie group"
         baseline = _tickers(select_candidates(_standouts(buys)))
-        assert baseline[-3:] == ["TIE_A", "TIE_B", "TIE_C"], "the cap must slice the tie group"
+        assert baseline[9:] == expected_ties, "the cap must slice the tie group"
         for seed in SEEDS:
             rows = [dict(b) for b in buys]
             random.Random(seed).shuffle(rows)
@@ -415,10 +471,16 @@ class TestReoriginationBlock:
     def test_an_open_plan_blocks_a_fresh_signal_on_the_same_name(self, tmp_path):
         """The defect, reproduced: a NEW signal_date on a live name used to originate
         a second plan and burn one of the 12 slots."""
+        # `as_of` matches the run date: the board a nightly reads is the board that
+        # nightly built.  Leaving it at the 2026-07-02 default made the run 9 sessions
+        # ahead of its own artifact, which the A1 publication-lag guard correctly
+        # refuses to price (these synthetic tickers have no price history to re-derive
+        # from) — a fixture artefact, not the behaviour under test here.
         path = _write_standouts(
             tmp_path,
             [_buy("CLF", priority=90.0, anchor="2026-07-15"),
              _buy("NEWNAME", priority=80.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
         )
         stats: dict = {}
         plans = originate_plans(
@@ -436,6 +498,7 @@ class TestReoriginationBlock:
             tmp_path,
             [_buy("CLF", priority=90.0, anchor="2026-07-15"),
              _buy("NEWNAME", priority=80.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
         )
         plans = originate_plans(path, "2026-07-15", set(), None)
         assert sorted(p["asset"] for p in plans) == ["CLF", "NEWNAME"]

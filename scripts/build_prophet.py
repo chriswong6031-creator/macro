@@ -1376,6 +1376,19 @@ def main() -> None:
     # ONE call site, run once per nightly. The lane gate lives inside the writer
     # (nightly is the sole ledger advancer), so an intraday or render lane reaches
     # this line and writes nothing.
+    #
+    # The store is CO-LOCATED with the forward ledger — `LEDGER_DIR/legacy_shadow`,
+    # which in production is `data/prophet/legacy_shadow` — rather than resolving its
+    # own data dir. tests/conftest.py arms COLLECT_LANE=nightly for EVERY test, so a
+    # writer that resolves independently writes the repo's REAL data/ tree from any
+    # test that reaches this line; that is the failure the arena hook above was fixed
+    # for, the one MM_DATA_GUARD exists to catch, and it happened twice while this
+    # lane was being built. Handing the directory outright (rather than inferring a
+    # repo root from LEDGER_DIR's shape) is the fail-CLOSED form: every bp.main()
+    # harness must already redirect LEDGER_DIR or advance_ledger would do the same
+    # damage, so this store follows it with no per-harness change and no shape it can
+    # fail to recognise.
+    _shadow_store = LEDGER_DIR / "legacy_shadow"
     shadow_rows: list[dict] = []
     shadow_written = 0
     try:
@@ -1387,7 +1400,8 @@ def main() -> None:
             existing_ids=set(existing_plans.keys()),
             active_keys=active_keys,
         )
-        shadow_written = append_legacy_shadow(shadow_rows, asof)
+        shadow_written = append_legacy_shadow(shadow_rows, asof,
+                                              store_dir=_shadow_store)
         log.info(
             "build_prophet: legacy shadow — %d legacy-admitted row(s), %d would have "
             "been planned (cap %d); part now holds %d row(s)",

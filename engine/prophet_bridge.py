@@ -662,14 +662,28 @@ def legacy_admitted(standouts: dict) -> list[dict]:
 # Legacy shadow ledger (ANTICIPATION §6.5) — the OLD gate keeps accruing
 # ---------------------------------------------------------------------------
 # STORAGE: month-grouped DAY parts, `data/prophet/legacy_shadow/YYYY-MM/YYYY-MM-DD
-# .parquet` — the W7 storage law, same shape as engine/us_prophet_grades.py.  A
-# nightly writes a NEW file and rewrites nothing, so git stores one blob per night
-# instead of re-storing a whole month every night.
+# .parquet` — the W7 storage law, the same layout the W7 forward-grade store uses.
+# A nightly writes a NEW file and rewrites nothing, so git stores one blob per night
+# instead of re-storing a whole month every night.  (That store is named by ROLE, not
+# by module: a literal reference here would register this file as one of its
+# consumers in the zero-authority import fence, which it is not — nothing in this
+# module reads a grade.)
 #
 # AUTHORITY: none.  Nothing in the live pick chain reads this store.  It is written
 # so that the operator's "check later" is answerable from data instead of memory.
 
-def _legacy_shadow_dir(root: Any = None) -> Path:
+def _legacy_shadow_dir(root: Any = None, store_dir: Any = None) -> Path:
+    """The store directory.
+
+    ``store_dir`` wins when supplied and is the form the BUILDER uses: it hands the
+    directory outright (``LEDGER_DIR / "legacy_shadow"``) so the store is always
+    co-located with the forward ledger and any caller that redirects one redirects
+    the other.  Deriving it from a repo root instead would fail OPEN — a harness that
+    points ``LEDGER_DIR`` somewhere unexpected would silently write the real tree,
+    which is how two parquet parts reached ``data/`` during this build.
+    """
+    if store_dir is not None:
+        return Path(store_dir)
     if root is None:
         try:
             from lib import config  # noqa: PLC0415
@@ -681,10 +695,10 @@ def _legacy_shadow_dir(root: Any = None) -> Path:
     return base / LEGACY_SHADOW_DIR
 
 
-def _legacy_shadow_part_path(asof: str, root: Any = None) -> Path:
+def _legacy_shadow_part_path(asof: str, root: Any = None, store_dir: Any = None) -> Path:
     """``legacy_shadow/YYYY-MM/YYYY-MM-DD.parquet`` — keyed by the RUN's asof."""
     day = str(asof)[:10]
-    return _legacy_shadow_dir(root) / day[:7] / f"{day}.parquet"
+    return _legacy_shadow_dir(root, store_dir) / day[:7] / f"{day}.parquet"
 
 
 def legacy_shadow_rows(
@@ -762,7 +776,8 @@ def legacy_shadow_rows(
     return rows
 
 
-def append_legacy_shadow(rows: list[dict], asof: str, root: Any = None) -> int:
+def append_legacy_shadow(rows: list[dict], asof: str, root: Any = None,
+                         store_dir: Any = None) -> int:
     """Append shadow rows to the run day's part.  Returns that part's row count, or 0.
 
     NIGHTLY IS THE SOLE ADVANCER — the lane gate is the FIRST statement, so an intraday
@@ -780,7 +795,7 @@ def append_legacy_shadow(rows: list[dict], asof: str, root: Any = None) -> int:
         return 0
     try:
         new = pd.DataFrame(rows)
-        path = _legacy_shadow_part_path(asof, root)
+        path = _legacy_shadow_part_path(asof, root, store_dir)
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists():
             prior = pd.read_parquet(path)
@@ -800,10 +815,10 @@ def append_legacy_shadow(rows: list[dict], asof: str, root: Any = None) -> int:
         return 0
 
 
-def load_legacy_shadow(root: Any = None, *, days: Iterable[str] | None = None
-                       ) -> pd.DataFrame:
+def load_legacy_shadow(root: Any = None, *, days: Iterable[str] | None = None,
+                       store_dir: Any = None) -> pd.DataFrame:
     """Read the shadow store as ONE frame (studies / tests).  Empty frame when absent."""
-    store = _legacy_shadow_dir(root)
+    store = _legacy_shadow_dir(root, store_dir)
     if not store.exists():
         return pd.DataFrame()
     wanted = {str(d)[:10] for d in days} if days is not None else None
@@ -2535,9 +2550,12 @@ def originate_plans(
                 stale_skipped.append(f"{ticker}:no_current_close")
                 continue
             current_close, current_date = current
-            residual = _sessions_between(ph, current_date, asof)
-            if residual is None:
-                residual = _business_days_between(current_date, asof)
+            # The residual is measured on the CALENDAR, never on `ph`.  `current_date`
+            # is by construction the last bar of `ph` at or before asof, so counting
+            # sessions after it INSIDE `ph` always returns 0 — a price store frozen
+            # weeks ago would grade itself perfectly fresh and the guard would swap one
+            # stale price for another.  (Caught by the store-stale test, not by review.)
+            residual = _business_days_between(current_date, asof)
             if residual is not None and residual > STALE_BASIS_MAX_SESSIONS:
                 print(
                     "::warning title=prophet-stale-entry-basis::"
@@ -2601,17 +2619,16 @@ def originate_plans(
                 ),
             }
 
-        # Geometry.  On a re-derived entry the invalidation and both targets are
-        # recomputed from the CURRENT bar (`geometry_asof`), and the board's stored
-        # `hold.invalidation` is only honoured while it still sits below the entry —
-        # a stale stop ABOVE a re-derived entry would invert the whole geometry.
+        # Geometry.  On a re-derived entry, invalidation and BOTH targets are recomputed
+        # from the CURRENT bar (`geometry_asof`) and the board's stored
+        # `hold.invalidation` is DROPPED outright — it is a level computed on the stale
+        # tape, and keeping it merely because it happens to sit below the new entry is
+        # how a 100 -> 200 re-derivation ends up with a 90 stop and a 110-wide R unit.
+        # Re-deriving the entry without the geometry would be worse than not
+        # re-deriving at all.
         hold_invalidation = hold.get("invalidation")
         if entry_basis["rederived"]:
-            try:
-                if hold_invalidation is None or float(hold_invalidation) >= entry:
-                    hold_invalidation = None
-            except (TypeError, ValueError):
-                hold_invalidation = None
+            hold_invalidation = None
         geo = compute_geometry(
             entry=entry,
             direction=direction,

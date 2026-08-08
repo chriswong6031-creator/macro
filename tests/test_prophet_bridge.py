@@ -8,8 +8,11 @@ Coverage:
   5.  Geometry: ATR fallback when no price history available.
   6.  ID stability: same ticker/direction/signal_date always produces same ID.
   7.  Duplicate suppression: plan already in existing_ids is not re-originated.
-  8.  Candidate selection gate_go=True: requires act_level >= 2.
-  9.  Candidate selection gate_go=False: OR logic (act_level>=2 OR score>=60).
+  8.  Candidate selection: act_level no longer gates admission (ANTICIPATION A1).
+  9.  Candidate selection: gate_go no longer changes admission (A1) — the
+      caution-mode score escape went with the act-level gate.  Full A1 coverage
+      (admission matrix, lag guard, shadow ledger, caps) is in
+      tests/test_prophet_anticipation_a1.py.
   10. Candidate selection: band="low" always excluded.
   11. Candidate selection: entry_signal null → excluded.
   12. Candidate selection: dir!="up" → excluded (BEAR universe not yet).
@@ -135,11 +138,16 @@ def _make_buy(
     chase_above: float | None = 105.0,
     atr_pct: float = 2.0,
     anchor: str | None = "2026-07-02",
+    status: str = "partial",
+    sector: str | None = None,
+    signal_asof: str | None = None,
 ) -> dict:
     return {
         "ticker": ticker,
         "dir": dir_,
         "state": "TURN SIGNALED",
+        **({"sector": sector} if sector is not None else {}),
+        **({"signal_asof": signal_asof} if signal_asof is not None else {}),
         "conviction": {
             "score": score,
             "band": band,
@@ -149,7 +157,7 @@ def _make_buy(
         },
         "entry_signal": {
             "act_level": act_level,
-            "status": "partial",
+            "status": status,
             "spot": spot,
             "stop": spot * 0.95,
             "chase_above": chase_above,
@@ -306,30 +314,38 @@ def test_duplicate_suppression(tmp_path):
 # 8–13. Candidate selection
 # ---------------------------------------------------------------------------
 
-def test_selection_gate_go_true_requires_act_level_2():
-    """gate_go=True: only act_level >= 2 passes."""
+def test_act_level_no_longer_gates_admission():
+    """ANTICIPATION A1: act_level is not an admission input at all any more.
+
+    Both rows carry an admitted status; the act_level 1 row used to be refused by
+    both gate modes and is now admitted on its status alone.
+    """
     buys = [
-        _make_buy("HIGH_ACT", score=80, act_level=3),
-        _make_buy("LOW_ACT",  score=90, act_level=1),
+        _make_buy("HIGH_ACT", score=80, act_level=3, status="buy_now"),
+        _make_buy("LOW_ACT",  score=10, act_level=1, status="hold"),
     ]
-    result = select_candidates({"gate_go": True, "buy": buys, "as_of": "2026-07-02"})
-    tickers = [b["ticker"] for b in result]
-    assert "HIGH_ACT" in tickers
-    assert "LOW_ACT" not in tickers
+    for gate_go in (True, False):
+        result = select_candidates(
+            {"gate_go": gate_go, "buy": buys, "as_of": "2026-07-02"})
+        tickers = [b["ticker"] for b in result]
+        assert tickers == ["HIGH_ACT", "LOW_ACT"] or set(tickers) == {
+            "HIGH_ACT", "LOW_ACT"}, f"gate_go={gate_go}: {tickers}"
 
 
-def test_selection_gate_go_false_or_logic():
-    """gate_go=False: act_level>=2 OR score>=60 passes."""
+def test_gate_go_no_longer_changes_admission():
+    """The caution-mode `score >= 60` escape is gone with the act-level gate.
+
+    A `buy_soon` row with score 90 used to be admitted in BOTH modes (act_level 2);
+    it is now refused in both, because `buy_soon` is outside the status class.
+    """
     buys = [
-        _make_buy("HIGH_SCORE", score=65, act_level=1),  # passes via score
-        _make_buy("HIGH_ACT",   score=40, act_level=3),  # passes via act_level
-        _make_buy("NEITHER",    score=50, act_level=1),  # excluded
+        _make_buy("SOON", score=90, act_level=2, status="buy_soon"),
+        _make_buy("WAIT", score=10, act_level=0, status="bounce_wait", dir_="caution"),
     ]
-    result = select_candidates({"gate_go": False, "buy": buys, "as_of": "2026-07-02"})
-    tickers = [b["ticker"] for b in result]
-    assert "HIGH_SCORE" in tickers
-    assert "HIGH_ACT" in tickers
-    assert "NEITHER" not in tickers
+    for gate_go in (True, False):
+        result = select_candidates(
+            {"gate_go": gate_go, "buy": buys, "as_of": "2026-07-02"})
+        assert [b["ticker"] for b in result] == ["WAIT"], f"gate_go={gate_go}"
 
 
 def test_selection_low_band_excluded():

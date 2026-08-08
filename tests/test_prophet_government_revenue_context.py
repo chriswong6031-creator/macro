@@ -19,6 +19,9 @@ def _buy(ticker: str, score: int, spot: float) -> dict:
         },
         "entry_signal": {
             "act_level": 3,
+            # `status` is load-bearing since ANTICIPATION A1 (2026-08-08): admission
+            # reads the entry status class, not act_level.
+            "status": "buy_now",
             "spot": spot,
             "chase_above": spot + 1,
             "atr_pct": 2.0,
