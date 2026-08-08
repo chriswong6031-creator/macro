@@ -54,6 +54,42 @@ VAL_LABELS = {
     "richest":  ("Richest in 3y", "近3年最贵",   "val-richest"),
 }
 
+# ---- where the read is anchored: coverage, not position ---------------------
+# `extension_signals` is a CROSS-SECTIONAL read — the board ranks names against one
+# another on ext_z — so every name has to be read off the SAME session. The original
+# code took one global `.iloc[-1]` and dropped NaN, which made the newest CALENDAR row
+# the anchor no matter how few members had actually printed on it.
+#
+# Measured defect (US board, run of 2026-08-06): the equity close panel's newest row
+# held 6 of 3,034 members — a partial price advance caught mid-refresh; the artifact's
+# staleness block read `panel.through=2026-08-07, majority_through=2026-08-06,
+# members_at_through=6, mixed_vintage=true`. The extension map collapsed to those 6
+# names, and all 69 buy-lane rows came back `ext_z=None`.
+#
+# So the anchor row is chosen by COVERAGE: the most recent row carrying a close for at
+# least ANCHOR_COVERAGE_FLOOR of the panel's live members. House law — a nullable input
+# to a cross-sectional gate needs a coverage floor.
+#
+# 0.60 is deliberately loose. A real session prints for very nearly every live member,
+# so the floor only has to sit above the broken shapes (0.2% here; 50% when a 5-session
+# equity calendar and 24/7 crypto share one panel) and comfortably below the honest
+# jitter of halts, suspensions and same-day listings. It is a floor on the PANEL and
+# never a per-name gate: a name with no close on the anchor row still returns null on
+# its own, because filling one in would be fabrication.
+ANCHOR_COVERAGE_FLOOR = 0.60
+# ...and the search back is bounded. If no row in the last ANCHOR_MAX_LOOKBACK rows
+# clears the floor then the panel itself is broken, and reaching further back would
+# publish a weeks-old cross-section as if it were today's. In that case we read the
+# newest row — the pre-existing behaviour — and say so in the build log.
+ANCHOR_MAX_LOOKBACK = 10
+# Liveness is a SLOWER property than the anchor, and deliberately so. Membership is
+# judged over a quarter, not over the anchor window: if it were judged over the same
+# 10 rows, a panel that went dark for 10 sessions would quietly redefine its live
+# membership down to the handful of survivors and read 100% covered — the broken panel
+# would look healthy. A quarter with no print is dead or suspended; ten sessions with
+# no print is an outage, and an outage has to be able to fail the floor.
+LIVE_LOOKBACK = 63
+
 
 def grade(ext_z: float | None, near_52wh: float | None) -> str:
     """Descriptive extension grade from own-history extension. Risk-placement, not a
@@ -77,11 +113,55 @@ def _latest(s: pd.Series) -> float | None:
     return float(v) if pd.notna(v) else None
 
 
+def _row_label(index: pd.Index, pos: int) -> str | None:
+    """Human/JSON label for the anchored row — the session the read is FROM."""
+    if index is None or pos < 0 or pos >= len(index):
+        return None
+    v = index[pos]
+    if isinstance(index, pd.DatetimeIndex) or isinstance(v, pd.Timestamp):
+        return str(pd.Timestamp(v).date())
+    return str(v)
+
+
+def _anchor_row(px: pd.DataFrame) -> tuple[int, float, int]:
+    """Position of the row the cross-sectional read anchors to, plus the NEWEST row's
+    coverage and the live-member count (both only for disclosure).
+
+    The most recent row inside the last ANCHOR_MAX_LOOKBACK rows whose coverage clears
+    ANCHOR_COVERAGE_FLOOR; the newest row itself when none does (see the note above —
+    a broken panel is not fixed by reading a month-old session).
+
+    "Live members" = columns with at least one close in the last LIVE_LOOKBACK rows, so
+    names delisted or suspended months ago never sit in the denominator and drag the
+    floor out of reach on a perfectly healthy session.
+    """
+    n = len(px.index)
+    if n == 0:
+        return -1, 0.0, 0
+    live = px.iloc[-min(LIVE_LOOKBACK, n):].notna().any(axis=0)
+    n_live = int(live.sum())
+    if n_live == 0:
+        return n - 1, 0.0, 0
+    win = px.iloc[-min(ANCHOR_MAX_LOOKBACK, n):]
+    cov = (win.loc[:, live].notna().sum(axis=1) / n_live).to_numpy(dtype=float)
+    newest = float(cov[-1])
+    hits = np.flatnonzero(cov >= ANCHOR_COVERAGE_FLOOR)
+    if hits.size == 0:
+        return n - 1, newest, n_live
+    return n - len(win) + int(hits[-1]), newest, n_live
+
+
 def extension_signals(closes: pd.DataFrame) -> dict[str, dict]:
-    """Latest per-ticker {ext, ext_z, near_52wh, id_score, grade, parabolic} from a daily
-    close matrix (date × ticker). Mirrors scripts/top_picks_freshness_phase0.price_signals
-    so the live chip equals the back-tested quantity. Names with too little history are
-    omitted (the page degrades to no chip)."""
+    """Per-ticker {ext, ext_z, near_52wh, id_score, grade, parabolic, ext_asof} from a
+    daily close matrix (date × ticker). Mirrors scripts/top_picks_freshness_phase0.
+    price_signals so the live chip equals the back-tested quantity. Names with too little
+    history are omitted (the page degrades to no chip).
+
+    The read is anchored to the most recent row that clears ANCHOR_COVERAGE_FLOOR, NOT
+    to `.iloc[-1]` — see the note beside that constant for the 6-of-3,034 partial price
+    advance this exists to survive. `ext_asof` reports the anchored session so a board
+    can say which close the reading is from; a name that has no close ON that row is
+    still omitted, one name at a time. Nothing here is ever filled forward."""
     if closes is None or closes.empty:
         return {}
     px = closes.sort_index()
@@ -100,11 +180,29 @@ def extension_signals(closes: pd.DataFrame) -> dict[str, dict]:
     neg = (sgn < 0).rolling(win, min_periods=120).mean().shift(21)
     id_score = -(np.sign(pret) * (neg - pos))
 
-    ext_l, ez_l, near_l, id_l = ext.iloc[-1], ext_z.iloc[-1], near.iloc[-1], id_score.iloc[-1]
+    pos, newest_cov, n_live = _anchor_row(px)
+    asof = _row_label(px.index, pos)
+    if pos != len(px.index) - 1:
+        print(f"::warning title=extension-anchor-shifted::extension read anchored to "
+              f"{asof}, not the newest panel row: that row carries {newest_cov:.1%} of "
+              f"{n_live} live members, under the {ANCHOR_COVERAGE_FLOOR:.0%} floor — a "
+              f"partial price advance would otherwise blank ext_z for the whole panel",
+              flush=True)
+    elif n_live and newest_cov < ANCHOR_COVERAGE_FLOOR:
+        print(f"::warning title=extension-anchor-uncovered::no row in the last "
+              f"{ANCHOR_MAX_LOOKBACK} carries {ANCHOR_COVERAGE_FLOOR:.0%} of {n_live} "
+              f"live members (newest {newest_cov:.1%}); reading {asof} anyway rather "
+              f"than publishing a weeks-old cross-section — the panel needs the fix",
+              flush=True)
+
+    ext_l, ez_l, near_l, id_l = (ext.iloc[pos], ext_z.iloc[pos],
+                                 near.iloc[pos], id_score.iloc[pos])
     out: dict[str, dict] = {}
     for t in px.columns:
         ez = ez_l.get(t)
         nr = near_l.get(t)
+        # per-name null: a name with no close on the anchored session stays unknown
+        # rather than borrowing an older one — the floor heals the PANEL, not the name.
         if ez is None or pd.isna(ez):
             continue
         g = grade(float(ez), float(nr) if pd.notna(nr) else None)
@@ -115,6 +213,7 @@ def extension_signals(closes: pd.DataFrame) -> dict[str, dict]:
             "id_score": round(float(id_l[t]), 3) if pd.notna(id_l.get(t)) else None,
             "grade": g,
             "parabolic": g == "parabolic",
+            "ext_asof": asof,          # which session this reading is from
         }
     return out
 
