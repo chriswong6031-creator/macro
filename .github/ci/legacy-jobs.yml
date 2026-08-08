@@ -3651,6 +3651,7 @@ jobs:
           tests/test_biocatalyst_trial_screen.py
           tests/test_biocatalyst_clinicaltrials_discovery.py
           tests/test_biocatalyst_discovery.py
+          tests/test_biocatalyst_coverage_epoch.py
           tests/test_biocatalyst_fixed_cohort.py
           tests/test_biocatalyst_fixed_cohort_transport.py
           tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
