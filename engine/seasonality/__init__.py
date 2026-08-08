@@ -88,6 +88,11 @@ from .multiplicity import (
     benjamini_yekutieli,
     max_t_adjusted_p_values,
 )
+from .program_watch import (
+    WATCH_SCHEMA,
+    evaluate_program_watch,
+    read_ledger_counts,
+)
 from .prophet_bridge import (
     OVERLAY_SET_SCHEMA,
     build_overlays_for_plans,
@@ -178,6 +183,7 @@ __all__ = [
     "UncertaintySemanticsError",
     "UniverseDisclosure",
     "UniverseRead",
+    "WATCH_SCHEMA",
     "assert_consumer_permitted",
     "assert_research_tier_intact",
     "benjamini_yekutieli",
@@ -191,6 +197,7 @@ __all__ = [
     "corporate_actions_asof",
     "coverage_report",
     "earliest_snapshot",
+    "evaluate_program_watch",
     "forecast",
     "interaction_eligibility",
     "latest_snapshot",
@@ -200,6 +207,7 @@ __all__ = [
     "price_adjustment_vintage",
     "program_multiplicity",
     "read_event_projection",
+    "read_ledger_counts",
     "read_regime_context",
     "require_lawful_features",
     "resolve_issuer_unavailable",

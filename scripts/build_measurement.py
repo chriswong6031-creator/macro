@@ -32,6 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.cycle_pattern.truths import active_truths  # noqa: E402
+from engine.seasonality.program_watch import read_ledger_counts  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_measurement")
@@ -395,6 +396,57 @@ ACCRUAL_LEDGERS: list[dict[str, Any]] = [
         "date_col": "date",
     },
 ]
+
+
+def build_seasonality_forward_record() -> dict:
+    """The forward-record counts for the hero line: windows written down, windows scored.
+
+    PUBLIC-PAGE SCOPE. Only two integers, one plain-word close date, and an
+    availability flag cross into the template. The same ledger read backs a
+    private program watch that carries operator prompts, doc paths, and module
+    names — none of that may appear on a ``site/`` page, so it is deliberately
+    not threaded through here.
+
+    Three things this refuses to publish, each one a zero that would read as a
+    measurement:
+
+    * **Unreadable ledger** → ``available: False``. "We could not check" is not
+      a measurement.
+    * **PARTIALLY readable ledger** → also ``available: False``. This is the
+      failure the availability flag alone did not catch: ``read_ledger_counts``
+      returns ``available: True`` for any file it can open, so a truncated or
+      corrupted ledger published a confident undercount — one surviving row of
+      28 renders "1 seasonal window on the record" with nothing saying 27 were
+      lost, and a wholly unparseable file renders "0 · 0". A count drawn from a
+      file that did not fully parse is not a count.
+    * **A bare number with no interpretation.** ``0 scored so far`` cannot be
+      told apart from "nothing works" by the person it is addressed to
+      (``docs/DESIGN_DOCTRINE.md`` Law 3: a Tier-1 number arrives with the
+      sentence that says what it means). The interpreting fact — when the
+      earliest open window closes — is a public-safe date, so it crosses too.
+    """
+    counts = read_ledger_counts(ROOT)
+    if not counts.get("available"):
+        log.warning(
+            "seasonality forward ledger unavailable (%s) — hero line renders unavailable",
+            counts.get("reason"),
+        )
+        return {"available": False, "registered": 0, "graded": 0, "next_close": None}
+    malformed = int(counts.get("malformed", 0))
+    if malformed:
+        log.warning(
+            "seasonality forward ledger has %d unparseable line(s) — hero line renders "
+            "unavailable rather than publishing an undercount",
+            malformed,
+        )
+        return {"available": False, "registered": 0, "graded": 0, "next_close": None}
+    next_close = counts.get("earliest_pending_occurrence_end")
+    return {
+        "available": True,
+        "registered": int(counts.get("registered", 0)),
+        "graded": int(counts.get("graded", 0)),
+        "next_close": next_close if isinstance(next_close, str) else None,
+    }
 
 
 def build_truth_ledger() -> dict:
@@ -1638,6 +1690,8 @@ def run() -> None:
         trial_budgets=trial_budgets,
         rule_experiments=rule_experiments,
         qledger_reliability=qledger_reliability,
+        # Forward record (hero) — two integers and a flag, nothing else.
+        seasonality_record=build_seasonality_forward_record(),
     )
     write_page(OUT_HTML, html, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_HTML.relative_to(ROOT), len(html))

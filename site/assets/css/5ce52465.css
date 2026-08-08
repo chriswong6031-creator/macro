@@ -600,12 +600,39 @@
   .act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn, var(--warn)); }
   .act-hold { --act-accent: var(--muted); --act-accent-ink: var(--muted); }
   html[data-theme="light"] .act-run { --act-accent-ink: color-mix(in srgb, #8b5cf6 72%, var(--text)); }
+  /* ── Monoline marks (doctrine §5.8 — emoji are not UI icons) ──────────────
+     Lane heads, row marks, the legend and the hover-card mark all draw from
+     templates/_icons.html.j2 (24×24, stroke=currentColor), so each mark
+     inherits its context's ink: the lane icons ride
+     --act-accent-ink, which is what carries forward the per-lane colour
+     identity the coloured dots used to supply — and the glyph now says what
+     the lane DOES, which a coloured dot never did.
+     The bottoming-watch strip (_us_bottoming_watch.html.j2, the board's own
+     watch surface) reuses .acth-icon / .ai-bdg for its two marks instead of
+     shipping a third icon rule, so it is sized from here.
+     NO bare `.ic-svg {}` rule here on purpose: sector_central.html.j2 scopes
+     its own copy under #si-confluence, and a global rule shipped from a panel
+     would fight its host. Explicit selectors only, one size per context.
+     .row-pop-mark is deliberately NOT scoped to #action-board — theme.js
+     clones the hover card onto document.body, so an id-scoped rule would
+     style the hidden source and miss the card the reader actually sees. */
+  .ai-bdg .ic-svg, .acth-icon .ic-svg, .row-pop-mark .ic-svg,
+  .ab-shock-ic .ic-svg, #action-board .help .tip .ic-svg {
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .ai-bdg .ic-svg { width: 13px; height: 13px; display: block; }
+  .acth-icon .ic-svg { width: 14px; height: 14px; display: block; }
+  .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
+  /* inline runs — a mark inside a sentence keeps the text baseline, never block */
+  .ab-shock-ic { color: var(--ink-warn, var(--warn)); }
+  .ab-shock-ic .ic-svg { width: 14px; height: 14px; display: inline-block; vertical-align: -.17em; }
+  #action-board .help .tip .ic-svg { width: 12px; height: 12px; display: inline-block; vertical-align: -.14em; }
   /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
   .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
   .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
                   border-radius: 14px 14px 0 0; background: var(--act-accent); }
   .acth-title-row { display: flex; align-items: center; gap: 5px; }
-  .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
+  .acth-icon { display: flex; line-height: 1; flex: none; color: var(--act-accent-ink, var(--act-accent)); }
   .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
                color: var(--act-accent-ink, var(--act-accent)); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -624,7 +651,10 @@
   .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
   .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
   .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
-  .ai-bdg { font-size: 11.5px; flex: none; opacity: .85; cursor: default; }
+  /* Row kind mark. --muted, not text-at-85%: it is a type label (fund vs basket),
+     never a signal, so it must stay subordinate to the name in BOTH themes —
+     near-black at .85 on white is a heavier mark than the same rule on dark. */
+  .ai-bdg { display: flex; flex: none; color: var(--muted); cursor: default; }
   .act-row-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text);
                   line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* theme composite score — anv2-score idiom (big number, right of the name) */

@@ -484,8 +484,20 @@ def test_change_tape_replays_private_history_and_strips_classifier_integrity_fie
             "field_class", "review_state", "semantic_resolution", "op",
             "before_state", "after_state", "protocol_change_asserted",
             "materiality_assessed", "correction_assessed", "source_versions",
-            "observed_at", "exact_operation_index",
+            "observed_at", "exact_operation_index", "exact_values",
+            "correction_lineage",
         }
+        for row in history["rows"]
+    )
+    # The exact-value extension is declared, never inferred, and stays inside
+    # the row: no classifier hash, snapshot reference or provenance leaks with
+    # it.  ``source_pointer`` is the locator, not a private store path.
+    assert tape["value_disclosure"]["state"] == "exact_values_present"
+    assert tape["value_disclosure"]["correction_assessed"] is False
+    assert all(
+        set(row["exact_values"]) == {"source_pointer", "before", "after"}
+        and row["exact_values"]["source_pointer"].startswith("/protocolSection/")
+        and row["correction_lineage"]["correction_assessed"] is False
         for row in history["rows"]
     )
     assert all(
