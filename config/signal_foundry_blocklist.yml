@@ -1366,4 +1366,37 @@ entries:
       Its s
     source: 'PR #4781 (severance + `ec_source_state`/`ec_coverage` disclosure); `research/PROPHET_STAGE_QUALITY_PREREG.md` §6 auto-demote clause; `research/reports/PROPHET_STAGE_QUALITY_RESULTS.md` §Adjudication; '
 
+  - id: BL-G113
+    match:
+      any_of:
+        - 'period.{0,30}basis.{0,30}four'
+    reason: >
+      HELD — NOT an inconsistency to refactor away. The same
+      `detector_id`, carrying the same numeric constants, therefore
+      MEANS "quarterly YoY" on `site/fundamental_forensics.html` and
+      "annual YoY" on `sit
+    source: 'PR #4961; pinned by `tests/test_forensic_detector_crosspin.py` §7 `test_period_and_point_in_time_models_are_pinned_as_unresolved_divergences` (2026-08-07)'
+
+  - id: BL-G114
+    match:
+      any_of:
+        - 'what.{0,30}negative.{0,30}prior'
+    reason: >
+      HELD — closing the gap in either direction is an ESCALATION,
+      which is promotion-gauntlet territory, not a bug fix. Aligning A
+      with its siblings makes the Filing Forensics workbench fire on
+      pairs it ha
+    source: 'PR #4961; pinned row-by-row with rationale in `tests/test_forensic_detector_crosspin.py` §6b `PINNED_THREE_WAY_DISAGREEMENTS` family "negative prior denominator" (2026-08-07)'
+
+  - id: BL-G115
+    match:
+      any_of:
+        - 'accruals.{0,30}trending.{0,30}registered'
+    reason: >
+      HELD — this asymmetry is a DELIBERATE surface boundary, not an
+      unfinished port. A company flagged for accruals on the Filing
+      Forensics workbench shows nothing for it on its stock page, and
+      adding the
+    source: 'PR #4961; pinned by `tests/test_forensic_detector_crosspin.py` §7 `test_accruals_has_no_moat_sensor_and_that_gap_is_still_open` and by `NON_MOAT_DETECTOR_IDS` in test 1 (2026-08-07)'
+
 # --- END GENERATED FROM DO_NOT_REBUILD.md ---

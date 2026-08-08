@@ -392,10 +392,20 @@ jobs:
       # config/fundamental_forensics.yml (registry Decimal strings, SEC lineage
       # kernel). Nothing cross-pinned them, so a threshold edited in one store left
       # the same named detector answering differently on two live surfaces. This
-      # suite reads each store's own numbers — it hardcodes none of them — and pins
-      # the six disagreements that already ship. It belongs in THIS job because the
-      # step above already owns the detector contracts and already imports both
-      # engine.fundamental_forensics and engine.moat_falsifiers.
+      # suite reads each store's own numbers — it hardcodes none of them.
+      #
+      # Since 2026-08-07 it also pins EVALUABILITY, not just thresholds: section 6
+      # drives all three implementations off the registry's own companyfacts
+      # fixture across a table of missing-input scenarios and asserts the set of
+      # three-way disagreements is exactly the documented, deliberate ones. That
+      # section exists because the threshold pins were fully green while
+      # engine/moat_falsifiers.py fired capital_intensity_rising on absent
+      # op_income for 62 of 336 live fires (18%).
+      #
+      # It belongs in THIS job because the step above already owns the detector
+      # contracts and already imports engine.fundamental_forensics (including
+      # run_fixture_slice, which section 6 uses) and engine.moat_falsifiers, so
+      # this job's install string is already proven sufficient for both.
       - name: forensic detector cross-pin (three implementations, one detector id)
         run: python -m pytest tests/test_forensic_detector_crosspin.py -q
 

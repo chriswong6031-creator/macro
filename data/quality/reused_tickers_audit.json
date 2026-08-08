@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-07",
+ "asof": "2026-08-08",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -22,7 +22,7 @@
  "n": 3018,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 142,
+ "n_flags": 140,
  "universes": [
   {
    "name": "stocks",
@@ -51,7 +51,7 @@
    "n": 2779,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 140,
+   "n_flags": 138,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -617,11 +617,6 @@
      "detail": "same instrument as its dead-registry rows (corr 0.5382) \u2014 the registry, not the store, carries foreign/live tape"
     },
     {
-     "name": "SKYT",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-07-31) but no current NASDAQ/NYSE listing"
-    },
-    {
      "name": "SLP",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
@@ -680,11 +675,6 @@
      "name": "THRY",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
-    },
-    {
-     "name": "TOI",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-07-31) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "TREE",
@@ -765,7 +755,7 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 127,
-  "delisted_printing": 7
+  "delisted_printing": 5
  },
  "stores": [
   {
@@ -2553,16 +2543,6 @@
      "ticker": "RHHBY",
      "store_tip": "2026-08-07",
      "acked": true
-    },
-    {
-     "ticker": "SKYT",
-     "store_tip": "2026-07-31",
-     "acked": false
-    },
-    {
-     "ticker": "TOI",
-     "store_tip": "2026-07-31",
-     "acked": false
     }
    ]
   }
@@ -2582,8 +2562,6 @@
   "stocks/EA",
   "baskets/ohlcv/ANGPY",
   "baskets/ohlcv/EA",
-  "baskets/ohlcv/IMPUY",
-  "baskets/ohlcv/SKYT",
-  "baskets/ohlcv/TOI"
+  "baskets/ohlcv/IMPUY"
  ]
 }
