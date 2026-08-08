@@ -21,6 +21,7 @@ Covers the four ways the skip could be wrong:
 """
 from __future__ import annotations
 
+import html
 import json
 import subprocess
 import sys
@@ -33,7 +34,11 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.check_validated_claims import (  # noqa: E402
     _ATTEST,
+    _NEWS_ATTEST,
+    _THIRD_PARTY_PAGES,
+    TOKEN,
     _load_allowlist,
+    _news_page,
     _page,
     _third_party_specs,
     scan_text,
@@ -198,17 +203,104 @@ def test_real_tree_is_green_without_a_per_quote_allowlist_entry():
     assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
 
 
-def test_the_real_note_is_covered_by_the_skip(allow):
-    """The page that actually reddened main scans clean — and its exemption is the skip."""
-    p = next(ROOT.glob("site/research/us-daily-what-the-rebound-in-oil-prices-*.html"), None)
-    if p is None:
-        pytest.skip("the oil/inflation note has rotated out of the vault")
-    text = p.read_text(encoding="utf-8")
-    rel = p.relative_to(ROOT).as_posix()
-    assert _third_party_specs(rel, text), "the live note no longer matches a mapped render"
-    found, stats = scan_text(rel, text, allow)
+# ── the skip must be LOAD-BEARING, not merely harmless ─────────────────────────────────
+#
+# A skip that masks nothing is worse than one that fails: the gate reports safety it is not
+# providing. Until 2026-08-07 that was pinned by naming the note that reddened main on
+# 2026-07-26 (site/research/us-daily-what-the-rebound-in-oil-prices-…-3da181.html) and
+# asserting its quote was masked. The page is still rendered and still mapped, but the quote
+# is gone and NOTHING about the gate changed: the hourly ingest's excerpt snapshot
+# (data/research_vault/excerpts.json) dropped from 912 entries to 2 at 2026-08-07T05:39Z, so
+# the re-render that followed emitted no <div class="rr-x-body"> on ~905 report pages — the
+# sink that quote lived in. The assertion did exactly its job: it refused to report "covered"
+# for a page that had gone green because its text rotated away.
+#
+# The property is now pinned on both sides so neither half can go quiet:
+#   * on IN-REPO fixture bytes, which cannot rotate — always runs;
+#   * on the live tree, following _THIRD_PARTY_PAGES (the gate's own map) instead of a
+#     filename, so a newly mapped render target is swept the day it is added.
+# Both use the same control: strip the attestation — the only thing that earns the skip —
+# and the very same bytes must fire. That is strictly stronger than counting the mask,
+# because it proves WHAT greened the page rather than that something was excised.
+
+def _live_candidates() -> list[Path]:
+    """Every live file the third-party map can cover: the vault's report pages, their crawl
+    hub, the vault app page, and the China news tape."""
+    return [p for p in (*sorted(ROOT.glob("site/research/*.html")),
+                        ROOT / "site/research_vault.html",
+                        ROOT / "site/china_news.html") if p.is_file()]
+
+
+def _live_syndicated_renders() -> list[tuple[str, str]]:
+    """(rel, bytes) for the live renders that carry the token at all. Prefiltered on TOKEN —
+    the gate's own definition — so 900+ pages are read but only the few that say the word
+    are scanned."""
+    out = []
+    for p in _live_candidates():
+        text = p.read_text(encoding="utf-8")
+        if TOKEN.search(html.unescape(text)):
+            out.append((p.relative_to(ROOT).as_posix(), text))
+    return out
+
+
+def _unattested(rel: str, text: str) -> str:
+    """`text` with its render's attestation literal removed, so it earns no exemption."""
+    attest = next(a for path_re, a, _ in _THIRD_PARTY_PAGES if path_re.match(rel))
+    return text.replace(attest, "Mastermind publishes research")
+
+
+def test_the_skip_is_what_greens_a_quoted_page(allow):
+    """Anti-vacuity on bytes that cannot rotate out: the quote is masked (counted), and
+    without the attestation the identical page fires."""
+    page = _page(body=QUOTED)
+    found, stats = scan_text(REPORT, page, allow)
     assert not found
     assert stats["third_party"] >= 1, "the quote was not masked — something else greened it"
+
+    bare = _unattested(REPORT, page)
+    assert not _third_party_specs(REPORT, bare), "the exemption survived losing its literal"
+    fired, st = scan_text(REPORT, bare, allow)
+    assert fired, "the skip is not what greens the page — the unattested copy scans clean too"
+    assert st["third_party"] == 0
+
+
+def test_the_live_syndicated_renders_are_covered_by_the_skip(allow):
+    """The same property against what actually ships. Every live render the map covers is
+    green; wherever the mask carried a claim, removing the exemption fires it.
+
+    Content-conditioned by nature — the vault mirrors third-party prose that rotates nightly,
+    so on a day when no live note uses the word affirmatively in a mapped sink there is
+    nothing to observe. That state skips rather than reddening main on innocent copy (which
+    is the recurrence BC-2 exists to prevent); the fixture test above still pins the
+    mechanism unconditionally.
+    """
+    masked: list[tuple[str, int]] = []
+    load_bearing: list[tuple[str, int]] = []
+    for rel, text in _live_syndicated_renders():
+        found, stats = scan_text(rel, text, allow)
+        assert not found, f"{rel}: syndicated render reports an unearned claim: {found}"
+        if not stats["third_party"]:
+            continue                    # token is in OUR chrome here, not in a mapped sink
+        masked.append((rel, stats["third_party"]))
+        bare = _unattested(rel, text)
+        assert not _third_party_specs(rel, bare), f"{rel}: the exemption survived its literal"
+        fired, st = scan_text(rel, bare, allow)
+        assert st["third_party"] == 0, f"{rel}: masked with no exemption"
+        if fired:                       # a hedged/negated quote is masked but never fired
+            load_bearing.append((rel, stats["third_party"]))
+    if not load_bearing:
+        pytest.skip("no live syndicated render currently masks an affirmative 'validated' "
+                    f"(masked-but-hedged: {masked}) — third-party prose rotates nightly")
+
+
+def test_every_mapped_render_target_exists_in_the_live_tree():
+    """The live sweep walks a candidate list, not the whole site. If a render target is
+    mapped that the list cannot reach, the sweep silently stops covering it — fail here."""
+    cands = [p.relative_to(ROOT).as_posix() for p in _live_candidates()]
+    for path_re, _attest, _regions in _THIRD_PARTY_PAGES:
+        assert any(path_re.match(c) for c in cands), (
+            f"no live file matches mapped render {path_re.pattern!r} — "
+            "_live_candidates() no longer reaches it")
 
 
 def test_attestation_literals_still_exist_in_the_templates():
@@ -220,3 +312,145 @@ def test_attestation_literals_still_exist_in_the_templates():
     assert "Every desk report in the vault" in hub_j2
     vault_j2 = (ROOT / "templates/research_vault.html.j2").read_text(encoding="utf-8")
     assert '<script id="rv-catalog"' in vault_j2
+    news_j2 = (ROOT / "templates/china_news.html.j2").read_text(encoding="utf-8")
+    assert _NEWS_ATTEST in news_j2, f"china_news.html.j2 no longer emits {_NEWS_ATTEST!r}"
+
+
+# ── the China news tape — same sink exemption, a feed that rotates every night ──────────
+#
+# 2026-08-07: a Sina wire headline ("Strong momentum in innovative drugs continues to be
+# validated." / 创新药高景气持续验证) reddened main on site/china_news.html through TWO sinks
+# at once — the .tp-title element text and the item's data-search attribute. It is an
+# external publisher's sentence about a drug sector, not a Macro Dashboard claim, and it has
+# no artifact to cite because it is not ours to back.
+#
+# An allowlist entry could not have held it: the tape is regenerated nightly from ingested
+# headlines (engine/china_news.py -> templates/china_news.html.j2, rendered at
+# scripts/build_china.py:1555), so the next headline carrying the word reds main again. Same
+# reasoning, same remedy, same safety invariant as the research vault above: mask the SINKS
+# the wire fields reach, never the page.
+#
+# EVERY fixture here is _news_page() — in-repo bytes that cannot rotate. Pinning against the
+# live tape would repeat the exact 2026-08-07 vacuity documented above: the assertion goes
+# green the night the headline changes, and reports coverage it is no longer providing. The
+# live tape IS still swept, by _live_syndicated_renders() (site/china_news.html is now in
+# _live_candidates), which follows _THIRD_PARTY_PAGES rather than a headline.
+
+CN = "site/china_news.html"
+# The live EN headline, verbatim. Its zh half (创新药高景气持续验证) carries NO BC-2 token —
+# 持续验证 is not one of TOKEN's four forms — so both live findings came from the English, and
+# a zh fixture built on it would pass for having nothing to match. WIRE_ZH is therefore a zh
+# wire sentence that DOES carry one (已经验证, matched through 经验证).
+WIRE = ("Power of earnings: CXO giant jumps 20% in a single week! Strong momentum in "
+        "innovative drugs continues to be validated.")
+WIRE_ZH = "创新药的高景气度已经验证。"
+WIRE_SEARCH = WIRE.lower() + " " + WIRE_ZH        # the attribute is built |lower
+
+
+def test_the_live_wire_zh_half_carries_no_token():
+    """Pins the premise of the note above — if 持续验证 ever becomes a TOKEN form, the zh
+    fixtures here must switch back to the live string."""
+    assert not TOKEN.search("业绩的力量，CXO巨头单周暴涨20%！创新药高景气持续验证")
+    assert TOKEN.search(WIRE) and TOKEN.search(WIRE_ZH)
+
+
+@pytest.mark.parametrize("sink,page", [
+    ("headline (.tp-title)", _news_page(title=WIRE)),
+    ("headline, zh (.tp-title)", _news_page(title_zh=WIRE_ZH)),
+    ("search index (data-search attribute)", _news_page(search=WIRE_SEARCH)),
+    ("summary (.tp-sum)", _news_page(summary=WIRE)),
+    ("summary, zh (.tp-sum)", _news_page(summary_zh=WIRE_ZH)),
+    ("headline + search index at once, as it actually shipped",
+     _news_page(title=WIRE, search=WIRE.lower())),
+])
+def test_wire_headline_sinks_pass(sink, page, allow):
+    """A wire headline using 'validated' in its ordinary sense must not red the build."""
+    assert not _fire(CN, page, allow), f"third-party news {sink} wrongly flagged as a claim"
+
+
+# NOT a page exemption: everything on the tape that is OURS is still gated — including the
+# copy that shares the very same <a class="tp-item"> wrapper. That wrapper is deliberately
+# NOT the masked region: our theme chip, importance label and channel chips live inside it.
+
+@pytest.mark.parametrize("where,page", [
+    ("theme chip (.cn-tag), inside the item", _news_page(title=WIRE, theme=OURS)),
+    ("importance label (.cn-imp), inside the item", _news_page(title=WIRE, imp=OURS)),
+    ("channel chip (.cn-cchip), inside the item", _news_page(title=WIRE, chip=OURS)),
+    ("hero lead (.cn-lead), above the feed", _news_page(title=WIRE, hero=OURS)),
+    ("hero lead, zh", _news_page(title=WIRE, hero_zh=OURS_ZH)),
+    ("disclaimer (.cn-disc), below the feed", _news_page(title=WIRE, disc=OURS)),
+    ("disclaimer, zh", _news_page(title=WIRE, disc=OURS_ZH)),
+])
+def test_our_copy_on_the_news_tape_still_fails(where, page, allow):
+    """The load-bearing half: same file, same item, our claim is still gated."""
+    assert _fire(CN, page, allow), f"platform claim in {where} escaped the gate"
+
+
+@pytest.mark.parametrize("sink,page", [
+    ("headline (.tp-title)", _news_page(title=WIRE, title_zh=WIRE_ZH)),
+    ("search index (data-search attribute)", _news_page(search=WIRE_SEARCH)),
+    ("summary (.tp-sum)", _news_page(summary=WIRE, summary_zh=WIRE_ZH)),
+])
+def test_the_news_skip_is_what_greens_the_tape(sink, page, allow):
+    """Anti-vacuity, per sink, on bytes that cannot rotate: BOTH tokens in the sink are
+    masked (counted), and the identical page without the feed attestation fires. That is
+    strictly stronger than counting the mask — it proves WHAT greened the page."""
+    found, stats = scan_text(CN, page, allow)
+    assert not found
+    assert stats["third_party"] >= 2, (
+        f"{sink}: expected the EN and zh tokens masked, got {stats['third_party']} — "
+        "something other than the skip greened this page")
+
+    bare = page.replace(_NEWS_ATTEST, '<div class="tp-feed">')
+    assert not _third_party_specs(CN, bare), "the exemption survived losing its literal"
+    fired, st = scan_text(CN, bare, allow)
+    assert fired, f"{sink}: the skip is not what greens it — the unattested copy scans clean"
+    assert st["third_party"] == 0
+
+
+def test_the_news_template_is_never_exempt(allow):
+    """Same safety invariant as the research vault: every platform string on this page is
+    authored in templates/china_news.html.j2, which the gate scans with NO skip."""
+    assert _fire("templates/china_news.html.j2", _news_page(title=WIRE, hero=OURS), allow)
+    assert not _third_party_specs("templates/china_news.html.j2", _news_page())
+
+
+def test_the_news_shape_earns_nothing_on_another_page(allow):
+    """The exemption is bound to site/china_news.html. The identical markup elsewhere — a
+    sibling news surface, a hand-dropped page — is scanned in full."""
+    for rel in ("site/news.html", "site/china.html", "site/china_news_backup.html"):
+        assert _fire(rel, _news_page(title=WIRE), allow), f"{rel} picked up the tape exemption"
+        assert not _third_party_specs(rel, _news_page(title=WIRE))
+
+
+def test_news_sink_literals_still_exist_in_the_template():
+    """The three regions key off markup the template emits. If a class is renamed the gate
+    silently stops exempting that sink and the next wire headline reds main — catch it
+    here, where the fix is one line, instead of on somebody else's PR."""
+    j2 = (ROOT / "templates/china_news.html.j2").read_text(encoding="utf-8")
+    assert '<h2 class="tp-title">' in j2
+    assert '<p class="tp-sum">' in j2
+    assert any(ln.lstrip().startswith('data-search="') for ln in j2.splitlines()), (
+        "china_news.html.j2 no longer emits data-search as the first token on its own line — "
+        "the whole-line region in _THIRD_PARTY_PAGES no longer matches it")
+
+
+def test_the_masked_search_attribute_carries_no_platform_copy_of_its_own():
+    """The one place the tape's sink exemption is coarser than an element span.
+
+    data-search is masked WHOLE-LINE (an attribute value cannot be span-delimited safely —
+    china_news renders with autoescape=False, so a quote inside a headline would truncate a
+    span mid-value). Its value is nearly all wire text, but the template also folds in the
+    channel/theme display labels (templates/china_news.html.j2:319, `chsearch`). Those are
+    OURS, they live in engine dicts that scan_python_copy does not reach (they are not
+    display-copy FIELDS), and only the first four of five are re-emitted unmasked in the
+    .cn-cchip chips — so the fifth would have no other gated sink. Pin them directly."""
+    from engine.china_news import CHANNEL_LABEL, THEME_LABEL  # noqa: PLC0415
+
+    for name, lex in (("CHANNEL_LABEL", CHANNEL_LABEL), ("THEME_LABEL", THEME_LABEL)):
+        for slug, pair in lex.items():
+            for word in pair:
+                assert not TOKEN.search(word), (
+                    f"engine.china_news.{name}[{slug!r}] = {word!r} carries the BC-2 token, "
+                    "and it rides into the masked data-search attribute — either reword it "
+                    "or narrow the data-search region before shipping this label")

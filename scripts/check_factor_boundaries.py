@@ -138,6 +138,19 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     # action vocabulary and emits the same values as a descriptive authority
     # mirror. It cannot originate, rank, gate, size, or execute behavior.
     "engine/biocatalyst/sector_packet.py",
+    # W7-A/W7-B operating packet producer + reader (#4822), same RUL-NW9 category
+    # and the same two uses as sector_packet.py above, which #4822 split them out
+    # beside without extending this list — so main has been red on check-b ever
+    # since. Both are ENFORCEMENT-ONLY:
+    #   producer:436  — rejects a packet whose allowed_actions is not a duplicate-free
+    #                   non-empty subset of _ALLOWED_ACTIONS containing "observe"
+    #   producer:677  — re-emits the same values into the descriptive authority mirror
+    #   reader:376    — rejects a packet whose allowed_actions escapes _ALLOWED_ACTIONS
+    # Nothing branches on WHICH action is present, so the field never becomes a
+    # behavior wire; it is read only to REFUSE, which is the same warrant
+    # engine/sector_intelligence/contracts.py carries.
+    "engine/biocatalyst/packet_producer.py",
+    "engine/biocatalyst/packet_reader.py",
     # R-ORTH rail state builder: emits allowed_actions/forbidden_actions as a
     # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
     # state builder). It never reads the field to switch behavior.

@@ -77,6 +77,29 @@ from engine.options_structure import validate_trade_plan
 # Fixtures
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def _arena_writes_to_tmp(tmp_path, monkeypatch):
+    """Send the Prophet Arena's ledgers to tmp for every test in this file.
+
+    Several tests here call `bp.main()`, which calls
+    `engine.prophet_arena.run_arena(..., repo_root=_REPO)` and writes
+    `data/prophet_arena/*.jsonl` + `scoreboard.json` into the REAL tree. MM_DATA_GUARD
+    then forces the job to exit 1 on a step that reports "942 passed" — a failure with no
+    test name attached, which is why it survived as an unexplained ci-pack-3 red.
+
+    Redirects `repo_root` rather than stubbing `run_arena`, so the hook still runs
+    end-to-end; the arena's own behaviour is covered by tests/test_prophet_arena.py.
+    Autouse so a newly added `bp.main()` call cannot silently reintroduce the write.
+    """
+    import engine.prophet_arena as arena
+
+    real = arena.run_arena
+    monkeypatch.setattr(
+        arena, "run_arena",
+        lambda *a, **kw: real(*a, **{**kw, "repo_root": tmp_path}))
+
+
+
 def _make_price_history(entry: float = 100.0, n_days: int = 30,
                          low_factor: float = 0.90) -> pd.DataFrame:
     """Create a synthetic DatetimeIndex OHLCV DataFrame."""
