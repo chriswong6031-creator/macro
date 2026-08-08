@@ -3379,6 +3379,34 @@ modules:
       subaward amounts are self-reported context, never federal obligations, outlays,
       additive prime value, issuer attribution, backlog, revenue, cash, or investment authority.
 
+  - module: collectors.sbir_awards
+    reads:
+      - data/government_revenue/sbir_award_observations.parquet
+      - data/government_revenue/sbir_collection_receipts.jsonl
+      - data/government_revenue/sbir_projection_state.json
+      - data/government_revenue/sbir_ingest_status.json
+    writes:
+      - data/government_revenue/sbir_award_observations.parquet
+      - data/government_revenue/sbir_collection_receipts.jsonl
+      - data/government_revenue/sbir_projection_state.json
+      - data/government_revenue/sbir_ingest_status.json
+      - data/government_revenue/sbir_collector_heartbeat.parquet
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      GOVREV W10-R3. Keyless official SBIR.gov award observations
+      (api.www.sbir.gov/public/api/awards), append-only by exact
+      agency_tracking_number identity. The public tier publishes a 10-requests-per-10-minutes
+      limit whose refusal is a plain-text 403, so the lane paces at 63s/request and hard-caps
+      itself at 8 requests/run — it is a slow off-render collect-lane step, never a render
+      dependency. The source publishes no pagination metadata or total, so exhaustion is
+      claimed only on a short page and a filled page cap is recorded as a complete bounded
+      sample. Point-of-contact/principal-investigator names, phones, emails, street address,
+      and ZIP are never persisted. Phase I to Phase II movement is progression evidence only
+      and never production conversion; issuer links require an exact UEI against the reviewed
+      recipient graph. Display/context tier, authority all-false, emits no candidates.
+
   - module: collectors.sam_gov
     reads:
       - data/sam_gov/naics_themes.json
