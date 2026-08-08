@@ -2,32 +2,31 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-07",
-  "generated_utc": "2026-08-07T23:05:25Z",
+  "generated_utc": "2026-08-08T04:36:47Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 9,
-    "n_eff": 2.7,
+    "n": 8,
+    "n_eff": 2.61,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 2.7 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 8 candidates \u2248 2.61 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "AYI",
-        "CENX",
         "FSS",
         "LITE",
         "STLD",
         "TOL",
         "VSEC"
       ],
-      "size": 7,
+      "size": 6,
       "basis": "membership-jaccard",
       "label": "Industrials"
     }
   ],
-  "earnings_coverage_frac": 0.444,
+  "earnings_coverage_frac": 0.5,
   "by_ticker": {
     "M": {
       "verdict": "partial",
@@ -75,18 +74,9 @@
     },
     "LITE": {
       "verdict": "duplicate",
-      "max_similarity": 0.8983,
+      "max_similarity": 0.7261,
       "basis": "membership+high-tier-factor",
       "nearest": [
-        {
-          "ticker": "CENX",
-          "combined": 0.8983,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8983,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
         {
           "ticker": "AYI",
           "combined": 0.7261,
@@ -104,6 +94,15 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "VSEC",
+          "combined": 0.2814,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.2814,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
@@ -114,8 +113,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as CENX \u2014 shared factor profile (similarity 90%).",
-      "why_zh": "\u4e0e CENX \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 90%\uff09\u3002"
+      "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 73%).",
+      "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 73%\uff09\u3002"
     },
     "STLD": {
       "verdict": "duplicate",
@@ -159,64 +158,11 @@
       "why_en": "Same bet as FSS \u2014 shared factor profile (similarity 97%).",
       "why_zh": "\u4e0e FSS \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 97%\uff09\u3002"
     },
-    "CENX": {
-      "verdict": "duplicate",
-      "max_similarity": 0.8983,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "LITE",
-          "combined": 0.8983,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8983,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "AYI",
-          "combined": 0.8022,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8022,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "FSS",
-          "combined": 0.6871,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.6871,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as LITE \u2014 shared factor profile (similarity 90%).",
-      "why_zh": "\u4e0e LITE \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 90%\uff09\u3002"
-    },
     "UAMY": {
-      "verdict": "partial",
-      "max_similarity": 0.5,
+      "verdict": "new",
+      "max_similarity": 0.3333,
       "basis": "membership-only:no-beta",
       "nearest": [
-        {
-          "ticker": "CENX",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:insufficient-factors",
-          "shared_groups": [
-            "sector:Materials"
-          ],
-          "same_earnings_week": false
-        },
         {
           "ticker": "STLD",
           "combined": 0.3333,
@@ -236,6 +182,15 @@
           "factor_basis": "beta-read-thin:r2=0.20<0.2",
           "shared_groups": [],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "LITE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
@@ -246,8 +201,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Partial overlap with CENX \u2014 Materials (similarity 50%).",
-      "why_zh": "\u4e0e CENX \u90e8\u5206\u91cd\u53e0 \u2014 Materials\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer STLD at 33% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 STLD\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
     },
     "AYI": {
       "verdict": "duplicate",
@@ -277,10 +232,10 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "CENX",
-          "combined": 0.8022,
+          "ticker": "STLD",
+          "combined": 0.7368,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.8022,
+          "factor_cosine": 0.7368,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
@@ -445,13 +400,6 @@
       "factor_basis": "beta-read-thin:r2=0.20<0.2",
       "shared_groups": []
     },
-    "M__CENX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.20<0.2",
-      "shared_groups": []
-    },
     "M__UAMY": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -496,13 +444,6 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "LITE__CENX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8983,
-      "combined": 0.8983,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
     "LITE__UAMY": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -538,15 +479,6 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "STLD__CENX": {
-      "membership_jaccard": 0.5,
-      "factor_cosine": 0.5113,
-      "combined": 0.5113,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Materials"
-      ]
-    },
     "STLD__UAMY": {
       "membership_jaccard": 0.3333,
       "factor_cosine": null,
@@ -581,43 +513,6 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.8146,
       "combined": 0.8146,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CENX__UAMY": {
-      "membership_jaccard": 0.5,
-      "factor_cosine": null,
-      "combined": 0.5,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": [
-        "sector:Materials"
-      ]
-    },
-    "CENX__AYI": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8022,
-      "combined": 0.8022,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CENX__FSS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.6871,
-      "combined": 0.6871,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CENX__VSEC": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.4924,
-      "combined": 0.4924,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CENX__TOL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.1428,
-      "combined": 0.1428,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
