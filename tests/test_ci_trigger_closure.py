@@ -207,6 +207,61 @@ def test_dropping_a_subject_from_the_filter_is_a_gap_the_test_half_hides() -> No
     assert GUARD.matched(subject, [*without, "engine/**"]) is True
 
 
+# ── 3b. scope: any directory, and only real suites (#4693) ───────────────────
+
+def test_a_run_step_naming_a_suite_outside_tests_resolves() -> None:
+    """`_TEST_PATH` required a literal `tests/` prefix, so a wired research/ suite
+    was invisible to this gate even after someone remembered to wire it. Research
+    packets are fenced to files-only, which is precisely why their guard suites
+    live beside the instrument."""
+    index = GUARD.suite_index()
+    step = (
+        "python -m pytest research/prophet_us_audit/test_label_grading_battery.py "
+        "research/signal_engine/test_buy_filters.py -q"
+    )
+    assert GUARD._named_suites(step, index) == {
+        "research/prophet_us_audit/test_label_grading_battery.py",
+        "research/signal_engine/test_buy_filters.py",
+    }
+
+
+def test_a_test_shaped_cli_instrument_is_not_gated_as_a_suite() -> None:
+    """It collects zero tests, so demanding trigger closure for what it reads
+    would be a permanent false finding — and a guard that cries wolf gets ignored,
+    which is the failure mode this file's docstring says it exists to end."""
+    index = GUARD.suite_index()
+    step = "python research/signal_engine/test_buyfilter.py --report"
+    assert GUARD._named_suites(step, index) == set()
+
+
+def test_a_stale_suite_path_resolves_to_nothing() -> None:
+    """A path not in the tree cannot be edited, so it cannot be a subject."""
+    index = GUARD.suite_index()
+    assert GUARD._named_suites("pytest tests/test_no_such_suite_here.py", index) == set()
+
+
+def test_a_non_suite_python_file_under_tests_is_not_a_suite() -> None:
+    """The old regex accepted ANY `.py` under `tests/`, so a `run:` step naming
+    `tests/conftest.py` put the conftest's whole read-closure behind this gate."""
+    index = GUARD.suite_index()
+    assert (ROOT / "tests" / "conftest.py").is_file()
+    assert GUARD._named_suites("pytest tests/conftest.py", index) == set()
+
+
+def test_a_dot_slash_prefix_is_the_same_file() -> None:
+    index = GUARD.suite_index()
+    assert GUARD._named_suites("pytest ./tests/test_ci_pack.py", index) == {
+        "tests/test_ci_pack.py"
+    }
+
+
+def test_the_widening_is_not_inert() -> None:
+    """If discovery ever silently reverts to tests/-only, every scope test above
+    still passes on its fixtures while the gate goes quiet on the real tree."""
+    outside = [s for s in GUARD.discover_suites() if not s.startswith("tests/")]
+    assert outside, "no suite discovered outside tests/ — discovery has re-narrowed"
+
+
 # ── 4. the guard is armed, wired, and currently clean ────────────────────────
 
 def test_main_has_no_trigger_gap() -> None:

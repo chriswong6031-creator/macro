@@ -865,13 +865,17 @@ def test_released_authority_policy_has_independent_golden_closure():
     }
 
 
+# ``__new__`` is NOT in this list: assigning it to a class is a one-way door and
+# the case runs in its own process instead -- see
+# test_parser_closure_rejects_mutated_inherited_new_in_an_isolated_runtime below.
+# Every attribute that remains here was measured to restore cleanly: patch it,
+# undo, and an HTMLParser subclass still constructs.
 @pytest.mark.parametrize(
     ("owner", "method"),
     [
         (document_terms.HTMLParser, "feed"),
         (document_terms.HTMLParser, "close"),
         (document_terms.HTMLParser, "goahead"),
-        (document_terms.HTMLParser, "__new__"),
         (document_terms.HTMLParser, "__getattribute__"),
         (document_terms.HTMLParser, "__setattr__"),
         (document_terms.HTMLParser.__mro__[1], "reset"),
@@ -902,6 +906,106 @@ def test_parser_closure_rejects_mutated_inherited_dispatch_and_callbacks(
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
+
+
+# The probe below is the ``__new__`` row of the parametrization above, moved into
+# a child process.  It asserts exactly the same two entry points fail closed
+# against exactly the same wrapper mutation -- only the runtime it burns is
+# different.
+_MUTATED_NEW_PROBE = """
+import json
+import sys
+from html.parser import HTMLParser
+from pathlib import Path
+
+manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+raw = Path(sys.argv[2]).read_bytes()
+reader = lambda _manifest: raw
+
+from engine.capital_structure.document_terms import (
+    compile_document_term_records,
+    validate_document_term_source_authority,
+)
+
+original_rows = compile_document_term_records(
+    [manifest], source_reader=reader, generated_at="2026-08-03T00:00:00Z",
+)["observations"]
+
+original = HTMLParser.__new__
+
+def altered_dispatch(*args, **kwargs):
+    return original(*args, **kwargs)
+
+HTMLParser.__new__ = altered_dispatch
+
+
+def rejects(call):
+    try:
+        call()
+    except ValueError as exc:
+        return "closure mismatch" in str(exc) or "runtime dispatch mismatch" in str(exc)
+    return False
+
+
+if not rejects(lambda: compile_document_term_records(
+    [manifest], source_reader=reader, generated_at="2026-08-03T00:00:00Z",
+)):
+    raise SystemExit("MUTATED_NEW_ACCEPTED_BY_COMPILE")
+if not rejects(lambda: validate_document_term_source_authority(
+    original_rows, source_manifests=[manifest], source_reader=reader,
+)):
+    raise SystemExit("MUTATED_NEW_ACCEPTED_BY_AUTHORITY")
+print("MUTATED_NEW_REJECTED")
+"""
+
+
+def test_parser_closure_rejects_mutated_inherited_new_in_an_isolated_runtime(tmp_path):
+    """The mutated-``__new__`` case, isolated because the mutation is permanent.
+
+    Assigning ``__new__`` on a class rewrites its ``tp_new`` slot to the generic
+    ``slot_tp_new`` dispatcher, and CPython does NOT put ``object_new`` back when
+    the attribute is removed again -- ``del``, re-assigning ``object.__new__``,
+    and a gc pass all leave the slot rewritten.  So this mutation cannot be
+    undone by any restore discipline: not ``monkeypatch.setattr`` (which does
+    ``delattr`` correctly, because the name is inherited rather than owned), not
+    ``mock.patch.object``, not a hand-rolled finally block.
+
+    What it costs is not cosmetic.  From that point on, EVERY ``HTMLParser``
+    subclass in the process whose constructor takes an argument dies with
+    ``TypeError: object.__new__() takes exactly one argument`` -- the excess-arg
+    branch of ``object_new`` fires because ``tp_new`` is no longer
+    ``object_new``.  ``document_terms._CellText`` takes no constructor argument
+    and so survives, which is why this file stayed green while poisoning others:
+    ``tests/test_fundamental_forensics_disclosure_diff.py`` (12 failures) and
+    ``tests/test_fundamental_forensics_disclosure_projection.py`` (3) went red in
+    the 2026-08-06/07 full-suite sweep in any serial run that collected this file
+    first, and were green in isolation and under ``-n auto`` (which splits the
+    two files onto workers this one never touched).  Other subclasses with
+    arguments
+    (``engine.marketing.edgar_earnings_wire``, ``collectors.tsa_throughput``,
+    ``scripts.official_release_parsers``, ``scripts.check_hub_a11y``) are on the
+    same fault line.
+
+    A child process gives the guard its assertion back and lets the poison die
+    with the interpreter that swallowed it.
+    """
+    raw = FIXTURE.read_bytes()
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(_manifest(raw)), encoding="utf-8")
+    raw_path = tmp_path / "submission.txt"
+    raw_path.write_bytes(raw)
+
+    result = subprocess.run(
+        [sys.executable, "-c", _MUTATED_NEW_PROBE, str(manifest_path), str(raw_path)],
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "MUTATED_NEW_REJECTED"
+    assert "ACCEPTED" not in result.stderr
 
 
 def test_parser_closure_rejects_mutated_inherited_class_data(monkeypatch):

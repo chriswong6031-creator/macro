@@ -76,6 +76,17 @@ prevents each one is named so a future edit cannot quietly remove it:
    superseding row cannot be graded.  Supersession may lower coverage; it may
    never delete a number.  Below the registered verdict coverage floor no
    verdict fires at all.
+10. **Absence of data reads as absence of event.**  The disclosure labels
+   (earnings windows and subsequent filings) would, in the natural
+   implementation, return an empty list for an issuer no calendar covers — so
+   every issuer with the WORST data would score as the cleanest window.
+   :class:`DisclosureCalendar` therefore declares the tickers it covers, and
+   ``none_in_window`` (looked, found nothing) is a different state from
+   ``unavailable`` (could not look) that no code path merges.  The labels are
+   computed AFTER :func:`evaluate_verdict` returns, so they cannot be a verdict
+   input: §7.2's registered N is derived for the paired market-relative mean,
+   and a decision rule that grew a term would leave that N wrong in the
+   document.
 
 THREE COVERAGES, NEVER ONE
 --------------------------
@@ -503,7 +514,7 @@ GRV_FA1 = PreregisteredFamily(
     family_id="grv-fa1",
     title="exact-issuer receipt-bound positive funded-action acceleration",
     document=PREREG_DOCUMENT,
-    version="2.0.0",
+    version="3.0.0",
     horizons=(
         Horizon(name="h5", sessions=5, role="disclosure"),
         Horizon(name="h21", sessions=21, role="supporting"),
@@ -1592,6 +1603,334 @@ def grade_placebo_row(
     )
 
 
+# ---------------------------------------------------------------------------
+# disclosure labels — earnings windows and subsequent filings
+# ---------------------------------------------------------------------------
+#
+# The handoff asks for "earnings-window and subsequent-filings outcome labels
+# where available".  Those three words carry the whole design.
+#
+# WHAT THE LABEL IS FOR.  A graded horizon may span an earnings print or a
+# subsequent periodic filing, and if it does, the return it produced is not
+# cleanly attributable to the award action the family issued on.  The label
+# records that fact so a reader can partition the cohort after the fact.  It is
+# a CONTAMINATION marker, not an outcome and not a signal.
+#
+# WHY IT IS STRUCTURALLY OUTSIDE THE VERDICT.  §7.2 of the registration derives
+# N = 545 from a power calculation over the paired market-relative mean.  Adding
+# a term to the decision rule would invalidate that N while leaving the
+# registered number in the document — the "registered N is the N the threshold
+# needs" trap, inverted.  So the labels are computed AFTER ``evaluate_verdict``
+# has already returned and are attached to the report beside the verdict, never
+# inside its inputs.  ``build_cohort_report`` enforces the ordering and
+# ``test_disclosure_labels_cannot_reach_the_verdict`` pins it by comparing the
+# verdict block of a report built with a calendar against one built without.
+#
+# WHY "unavailable" AND "none_in_window" ARE DIFFERENT STATES.  This is the
+# whole reason the class exists rather than a bare integer.  "We looked and no
+# earnings fell in this window" is evidence.  "We have no earnings calendar for
+# this issuer" is the absence of evidence.  Collapsing them — the natural
+# implementation, a ``defaultdict(list)`` returning ``[]`` for an unknown ticker
+# — silently converts every uncovered issuer into a clean, contamination-free
+# row and flatters the cohort exactly where coverage is worst.  A calendar
+# therefore declares the tickers it COVERS, and a ticker outside that set is
+# ``unavailable`` with a named reason, never ``none_in_window``.
+
+#: Kinds of disclosure a window may span.  ``filing`` is the "subsequent
+#: filings" half of the handoff line: a periodic or current report published
+#: after issuance and inside the frozen window.
+DISCLOSURE_KINDS = ("earnings", "filing")
+
+#: A label is either computed (and then says what it found) or it is not
+#: computed (and then says why).  There is no fourth state and no default.
+DISCLOSURE_LABEL_STATES = ("observed", "none_in_window", "unavailable")
+
+#: Every reason a disclosure label may be absent.  Mirrors ``UNGRADED_REASONS``
+#: in spirit: a row is never silently dropped from the label census, so the
+#: three counts always sum to the cohort.
+DISCLOSURE_UNAVAILABLE_REASONS = (
+    "no_disclosure_calendar",
+    "issuer_not_in_calendar",
+    "row_ungraded",
+    "source_outage",
+)
+
+
+@dataclass(frozen=True)
+class DisclosureEvent:
+    """One earnings print or filing, with its OWN availability clock.
+
+    ``known_at`` is when this pipeline could first know the disclosure happened,
+    and it is a separate clock from ``event_date``.  Filing indexes are
+    published on a lag, so a label computed from an event whose ``known_at`` is
+    in the future would be reading tomorrow's index to describe today's window —
+    the same leak ``grade_row`` prevents on the price side.
+    """
+
+    kind: str
+    ticker: str
+    event_date: date
+    known_at: str
+    reference: str
+
+    def __post_init__(self) -> None:
+        if self.kind not in DISCLOSURE_KINDS:
+            raise GraderError(f"disclosure kind must be one of {DISCLOSURE_KINDS}")
+        if _text(self.ticker) is None:
+            raise GraderError("disclosure event needs a ticker")
+        if _text(self.reference) is None:
+            raise GraderError("disclosure event needs a source reference")
+        if isinstance(self.event_date, datetime) or not isinstance(self.event_date, date):
+            raise GraderError("disclosure event_date must be a date, not a datetime")
+        if _instant(self.known_at) is None:
+            raise GraderError("disclosure event known_at must be an instant")
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "ticker": self.ticker,
+            "event_date": self.event_date.isoformat(),
+            "known_at": self.known_at,
+            "reference": self.reference,
+        }
+
+
+@dataclass(frozen=True)
+class DisclosureCalendar:
+    """Earnings and filing dates, plus the tickers it CLAIMS to cover.
+
+    ``covered_tickers`` is the load-bearing field.  Without it an empty event
+    list is ambiguous between "no disclosures" and "no data", and the ambiguity
+    resolves in the flattering direction by default.
+    """
+
+    calendar_id: str
+    events: tuple[DisclosureEvent, ...]
+    covered_tickers: frozenset[str]
+    outage_tickers: frozenset[str] = frozenset()
+
+    def __post_init__(self) -> None:
+        if _text(self.calendar_id) is None:
+            raise GraderError("disclosure calendar needs a calendar_id")
+        for event in self.events:
+            if not isinstance(event, DisclosureEvent):
+                raise GraderError("disclosure calendar takes DisclosureEvent objects")
+            if event.ticker not in self.covered_tickers:
+                raise GraderError(
+                    f"disclosure calendar carries an event for {event.ticker!r} but does not "
+                    "declare it covered; a calendar cannot know an event for an issuer it "
+                    "does not cover"
+                )
+        overlap = self.covered_tickers & self.outage_tickers
+        if overlap:
+            raise GraderError(
+                f"tickers {sorted(overlap)!r} are both covered and in outage; a ticker is one "
+                "or the other, and the difference is exactly what the label reports"
+            )
+
+    @classmethod
+    def build(
+        cls,
+        events: Iterable[DisclosureEvent],
+        *,
+        calendar_id: str,
+        covered_tickers: Iterable[str],
+        outage_tickers: Iterable[str] = (),
+    ) -> "DisclosureCalendar":
+        return cls(
+            calendar_id=str(calendar_id),
+            events=tuple(events),
+            covered_tickers=frozenset(str(value) for value in covered_tickers),
+            outage_tickers=frozenset(str(value) for value in outage_tickers),
+        )
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "calendar_id": self.calendar_id,
+            "event_count": len(self.events),
+            "covered_ticker_count": len(self.covered_tickers),
+            "outage_ticker_count": len(self.outage_tickers),
+        }
+
+
+@dataclass(frozen=True)
+class DisclosureLabel:
+    row_id: str
+    candidate_id: str
+    ticker: str
+    horizon: str
+    state: str
+    unavailable_reason: str | None
+    earnings_in_window: int | None
+    filings_in_window: int | None
+    events: tuple[dict[str, Any], ...]
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "row_id": self.row_id,
+            "candidate_id": self.candidate_id,
+            "ticker": self.ticker,
+            "horizon": self.horizon,
+            "state": self.state,
+            "unavailable_reason": self.unavailable_reason,
+            "earnings_in_window": self.earnings_in_window,
+            "filings_in_window": self.filings_in_window,
+            "events": [dict(event) for event in self.events],
+        }
+
+
+def _disclosure_window(grade: RowGrade) -> tuple[date, date] | None:
+    """The ONLY place the label's window is computed.
+
+    Deliberately a module-level seam, exactly like ``_horizon_exit_index``: the
+    no-leakage suite monkeypatches it to run one session past the graded exit
+    and asserts a label CHANGES, which is what proves the window assertion is
+    not vacuous.  The window is the graded window and nothing else — a label is
+    a statement about the return that was actually measured.
+    """
+    if grade.entry_session is None or grade.exit_session is None:
+        return None
+    return grade.entry_session, grade.exit_session
+
+
+def label_disclosures(
+    grade: RowGrade,
+    *,
+    disclosure: DisclosureCalendar | None,
+    as_of: datetime,
+) -> DisclosureLabel:
+    """Label ONE graded row with the disclosures its own window spanned.
+
+    Two clamps, both mutation-proved in the suite:
+
+    1. **Window clamp** — only events inside ``[entry_session, exit_session]``
+       count.  A disclosure after the exit did not touch the measured return.
+    2. **Availability clamp** — only events whose ``known_at`` is at or before
+       ``as_of`` count.  An index that has not published yet cannot describe a
+       window that has already been graded.
+
+    A row the grader could not grade has no window, so it has no label: it is
+    ``unavailable`` with reason ``row_ungraded`` rather than being dropped.
+    """
+    base = dict(
+        row_id=grade.row_id,
+        candidate_id=grade.candidate_id,
+        ticker=grade.ticker,
+        horizon=grade.horizon,
+    )
+
+    def _unavailable(reason: str) -> DisclosureLabel:
+        if reason not in DISCLOSURE_UNAVAILABLE_REASONS:
+            raise GraderError(f"unnamed disclosure-unavailable reason: {reason!r}")
+        return DisclosureLabel(
+            state="unavailable",
+            unavailable_reason=reason,
+            earnings_in_window=None,
+            filings_in_window=None,
+            events=(),
+            **base,
+        )
+
+    if disclosure is None:
+        return _unavailable("no_disclosure_calendar")
+    if grade.state != "graded":
+        return _unavailable("row_ungraded")
+    window = _disclosure_window(grade)
+    if window is None:  # pragma: no cover - a graded row always carries both sessions
+        return _unavailable("row_ungraded")
+    if grade.ticker in disclosure.outage_tickers:
+        return _unavailable("source_outage")
+    if grade.ticker not in disclosure.covered_tickers:
+        return _unavailable("issuer_not_in_calendar")
+
+    start, end = window
+    horizon_as_of = as_of.astimezone(timezone.utc)
+    matched: list[dict[str, Any]] = []
+    for event in disclosure.events:
+        if event.ticker != grade.ticker:
+            continue
+        if event.event_date < start or event.event_date > end:
+            continue
+        available = _instant(event.known_at)
+        if available is None or available > horizon_as_of:
+            continue
+        matched.append(event.to_payload())
+
+    matched.sort(key=lambda item: (item["event_date"], item["kind"], item["reference"]))
+    earnings = sum(1 for item in matched if item["kind"] == "earnings")
+    filings = sum(1 for item in matched if item["kind"] == "filing")
+    return DisclosureLabel(
+        state="observed" if matched else "none_in_window",
+        unavailable_reason=None,
+        earnings_in_window=earnings,
+        filings_in_window=filings,
+        events=tuple(matched),
+        **base,
+    )
+
+
+def disclosure_label_block(
+    labels: Sequence[DisclosureLabel],
+    *,
+    family: PreregisteredFamily,
+    horizon_name: str,
+    issued_n: int,
+    disclosure: DisclosureCalendar | None,
+) -> dict[str, Any]:
+    """The report block for one horizon's labels.
+
+    The denominator of both rates is the number of rows whose label could be
+    COMPUTED, and the coverage beside them carries the fixed issuance cohort as
+    its universe — so a family with poor filing coverage reads as poor coverage,
+    never as a clean cohort.
+    """
+    counts = {state: 0 for state in DISCLOSURE_LABEL_STATES}
+    reasons: dict[str, int] = {}
+    for label in labels:
+        counts[label.state] = counts.get(label.state, 0) + 1
+        if label.state == "unavailable":
+            key = str(label.unavailable_reason)
+            reasons[key] = reasons.get(key, 0) + 1
+
+    computable = counts["observed"] + counts["none_in_window"]
+    coverage = Coverage(
+        kind="outcome",
+        scope=(
+            f"rows whose disclosure label was computable for {family.family_id} at "
+            f"{horizon_name}; universe is the fixed issuance cohort, uncovered issuers "
+            "are unavailable and never counted as clean"
+        ),
+        observed=computable,
+        universe=issued_n,
+        status="complete" if computable == issued_n else "partial",
+    )
+    return {
+        "calendar": disclosure.to_payload() if disclosure is not None else None,
+        "counts": counts,
+        "unavailable_reasons": reasons,
+        "earnings_window_rate": Rate(
+            name=f"{family.family_id}.{horizon_name}.earnings_window_rate",
+            numerator=sum(1 for label in labels if (label.earnings_in_window or 0) > 0),
+            denominator=computable,
+            coverage=coverage,
+        ).to_payload(),
+        "filing_window_rate": Rate(
+            name=f"{family.family_id}.{horizon_name}.filing_window_rate",
+            numerator=sum(1 for label in labels if (label.filings_in_window or 0) > 0),
+            denominator=computable,
+            coverage=coverage,
+        ).to_payload(),
+        "labels": [label.to_payload() for label in labels],
+        "note": (
+            "Descriptive contamination markers, computed AFTER the verdict and never an input "
+            "to it: the registered power calculation is over the paired market-relative mean, "
+            "and adding a term to the decision rule would invalidate the registered N. "
+            "'none_in_window' means the calendar covered this issuer and found nothing; "
+            "'unavailable' means it could not look. They are never merged."
+        ),
+    }
+
+
 def regrade_diff(
     previous: Sequence[Mapping[str, Any]],
     current: Sequence[Mapping[str, Any]],
@@ -2092,6 +2431,7 @@ def build_cohort_report(
     event_coverage: Coverage,
     generated_at: str,
     latched_verdict: Mapping[str, Any] | None = None,
+    disclosure: "DisclosureCalendar | None" = None,
 ) -> dict[str, Any]:
     """Grade a cohort and emit the display-tier report.
 
@@ -2125,11 +2465,22 @@ def build_cohort_report(
         reasons[reason] = reasons.get(reason, 0) + 1
 
     per_horizon: dict[str, Any] = {}
+    # Held aside deliberately.  These are NOT merged into ``per_horizon`` until
+    # after ``evaluate_verdict`` has returned, so the verdict provably cannot
+    # have read a disclosure label — see the disclosure section's header.
+    disclosure_blocks: dict[str, Any] = {}
     for horizon in family.horizons:
         grades = [
             grade_row(row, horizon.name, panel=panel, calendar=calendar, as_of=as_of)
             for row in rows
         ]
+        disclosure_blocks[horizon.name] = disclosure_label_block(
+            [label_disclosures(grade, disclosure=disclosure, as_of=as_of) for grade in grades],
+            family=family,
+            horizon_name=horizon.name,
+            issued_n=len(rows),
+            disclosure=disclosure,
+        )
         graded = [grade for grade in grades if grade.state == "graded"]
         ungraded = [grade for grade in grades if grade.state == "ungraded"]
         ungraded_reasons: dict[str, int] = {}
@@ -2445,6 +2796,11 @@ def build_cohort_report(
     verdict = evaluate_verdict(
         per_horizon, family=family, as_of=as_of, latched_verdict=latched_verdict
     )
+    # ONLY NOW.  Attaching before the call above would put the labels inside the
+    # verdict's argument, and "it happens not to read that key" is a property of
+    # today's implementation, not a guarantee.  Ordering is the guarantee.
+    for horizon_name, block in disclosure_blocks.items():
+        per_horizon[horizon_name]["disclosure_labels"] = block
     report = {
         "contract": REPORT_CONTRACT,
         "schema_version": SCHEMA_VERSION,
@@ -2493,6 +2849,10 @@ def build_cohort_report(
             "earned; retained grades are listed in verdict_basis.retained_from_superseded. The "
             "residual risk is disclosed: a genuine source correction still has its old grade read.",
             "issued_n counts rows, not independent draws; window_independence prints the overlap.",
+            "Disclosure labels are descriptive contamination markers computed after the verdict, "
+            "never an input to it. 'none_in_window' (the calendar covered this issuer and found "
+            "nothing) and 'unavailable' (it could not look) are separate states and are never "
+            "merged; an uncovered issuer is never counted as a clean window.",
             "known_at is when this pipeline could first know the action, not when the market first could; "
             "the source publishes on a lag and carries no public-first-disclosure clock.",
             "Grades are reproducible only against the recorded price vintage; upstream re-adjustment moves them.",

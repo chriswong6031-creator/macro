@@ -137,6 +137,327 @@ def test_client_id_ignores_spoofable_forwarding_headers():
         _restore(old)
 
 
+# ---- the edge collapse (live defect, measured 2026-08-07) --------------------
+# admin.mastermind-x.com is edge-proxied, so Caddy's {remote_host} — and therefore the
+# X-Admin-Client-IP the tests above treat as identity — is an EdgeOne origin-pull
+# address for every real visitor, NOT the visitor. Keying the login lockout on it put
+# all edge-borne traffic in ONE bucket and inverted auth.py's stated property ("one
+# attacker can only lock out *themselves*") into an anonymous operator-lockout DoS.
+#
+# EDGE_PEER / EDGE_RANGE below are a real observed origin-pull address and the /24 it
+# sits in. They are FIXTURE VALUES for exercising the attestation logic — they are not
+# the shipped allowlist, which is empty by default on purpose
+# (config/edgeone_origin_ranges.json; see admin/edge_trust.py's header for why guessing
+# a range is worse than shipping none).
+EDGE_PEER = "43.175.104.236"
+EDGE_RANGE = "43.175.104.0/24"
+NOT_EDGE_RANGE = "8.8.8.0/24"        # public, loads for real, and never an edge address.
+#   NOT a TEST-NET (192.0.2.0/24 etc): Python reports those is_private, so
+#   _safe_network drops them and the "allowlist misses this peer" tests below would
+#   silently degrade into re-testing the empty-allowlist path.
+
+
+def _cid_for(headers, peer=("127.0.0.1", 1)):
+    h = Handler.__new__(Handler)
+    h.headers, h.client_address = headers, peer
+    return h._client_id()
+
+
+def test_two_visitors_behind_one_edge_node_get_separate_buckets():
+    """REGRESSION (the collapse itself): two DIFFERENT people arriving through the same
+    EdgeOne node must not share a lockout bucket. Against the pre-fix code both of these
+    resolve to the edge address and this assertion fails."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        a = _cid_for({"X-Admin-Client-IP": EDGE_PEER, "EO-Connecting-IP": "104.36.50.44"})
+        b = _cid_for({"X-Admin-Client-IP": EDGE_PEER, "EO-Connecting-IP": "198.51.100.7"})
+        assert a == "104.36.50.44"
+        assert b == "198.51.100.7"
+        assert a != b, "both visitors collapsed into one bucket — the DoS is back"
+    finally:
+        _restore(old)
+
+
+def test_edge_borne_lockout_does_not_reach_the_operator():
+    """The DoS, end to end: an attacker burning its five attempts through the edge must
+    not lock out the operator arriving through the SAME edge node."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_PASSWORD="hunter2",
+                   ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE, ADMIN_EDGE_SECRET=None)
+    _reset_throttle()
+    try:
+        attacker = _cid_for({"X-Admin-Client-IP": EDGE_PEER, "EO-Connecting-IP": "203.0.113.9"})
+        operator = _cid_for({"X-Admin-Client-IP": EDGE_PEER, "EO-Connecting-IP": "104.36.50.44"})
+        for _ in range(8):
+            auth.password_ok("nope", client_id=attacker)
+        assert auth.password_ok("hunter2", client_id=attacker)[0] is False   # attacker locked
+        assert auth.password_ok("hunter2", client_id=operator)[0] is True    # operator unaffected
+    finally:
+        _reset_throttle()
+        _restore(old)
+
+
+def test_direct_to_origin_caller_cannot_forge_its_bucket():
+    """SECURITY (critical): ufw permits 80,443/tcp from Anywhere, so anyone can reach the
+    origin directly and send any forwarding header. When the verified peer is NOT an
+    attested edge address, EVERY such header must be ignored and the bucket must stay
+    pinned to the peer — otherwise a brute-forcer rotates the header per request and the
+    throttle is gone."""
+    direct = "198.51.100.77"
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        for forged in ({"EO-Connecting-IP": "203.0.113.1"},
+                       {"EO-Client-IP": "203.0.113.2"},
+                       {"True-Client-IP": "203.0.113.3"},
+                       {"X-Real-IP": "203.0.113.4"},
+                       {"CF-Connecting-IP": "203.0.113.5"},
+                       {"X-Forwarded-For": "203.0.113.6"}):
+            got = _cid_for({"X-Admin-Client-IP": direct, **forged})
+            assert got == direct, f"{forged} escaped the bucket -> {got}"
+        # …and rotating the header cannot mint a second bucket either
+        keys = {_cid_for({"X-Admin-Client-IP": direct, "EO-Connecting-IP": f"203.0.113.{n}"})
+                for n in range(1, 6)}
+        assert keys == {direct}
+    finally:
+        _restore(old)
+
+
+def test_forged_eo_client_ip_is_ignored_even_behind_the_edge():
+    """MEASURED 2026-08-07: the edge OVERWRITES EO-Connecting-IP but passes EO-Client-IP
+    (and True-Client-IP / X-Real-IP / CF-Connecting-IP) through untouched — a clean edge
+    request carries no EO-Client-IP at all. Honouring any of those would hand a
+    brute-forcer a bucket-rotation knob on the edge path too."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        got = _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                        "EO-Connecting-IP": "104.36.50.44",   # edge-written, trustworthy
+                        "EO-Client-IP": "203.0.113.99",       # caller-supplied
+                        "True-Client-IP": "203.0.113.66",
+                        "X-Real-IP": "203.0.113.55",
+                        "CF-Connecting-IP": "203.0.113.44"})
+        assert got == "104.36.50.44"
+    finally:
+        _restore(old)
+
+
+def test_unattested_peer_and_junk_header_fall_back_to_peer():
+    """Fail-safe in both directions: an edge node outside the configured ranges, and an
+    attested peer whose EO-Connecting-IP is missing or malformed, both degrade to the
+    pre-fix peer keying rather than to an attacker-chosen bucket name."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        # peer is a real edge address but the allowlist does not cover it → old behaviour
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "EO-Connecting-IP": "104.36.50.44"}) == EDGE_PEER
+    finally:
+        _restore(old)
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER}) == EDGE_PEER          # absent
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "EO-Connecting-IP": "not-an-ip"}) == EDGE_PEER         # malformed
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "EO-Connecting-IP": ""}) == EDGE_PEER                  # empty
+    finally:
+        _restore(old)
+
+
+def test_shared_secret_attests_the_edge_without_any_cidr():
+    """The CIDR-free path: there is no credential-free published EdgeOne origin-pull
+    range list, so the preferred attestation is a secret the edge injects on origin-pull.
+    It must work with NO ranges configured, and a wrong/absent secret must not attest."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="s3kr1t-edge")
+    try:
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "X-MM-Edge-Auth": "s3kr1t-edge",
+                         "EO-Connecting-IP": "104.36.50.44"}) == "104.36.50.44"
+        # wrong secret / no secret → peer keying, no matter what else is sent
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "X-MM-Edge-Auth": "wrong",
+                         "EO-Connecting-IP": "104.36.50.44"}) == EDGE_PEER
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "EO-Connecting-IP": "104.36.50.44"}) == EDGE_PEER
+    finally:
+        _restore(old)
+
+
+def test_local_mode_still_ignores_every_forwarding_header():
+    """Unchanged contract: outside deployed mode nothing forwarded is honoured, because
+    there is no Caddy in front to have verified any of it."""
+    old = _set_env(ADMIN_DEPLOYED=None, ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="s3kr1t-edge")
+    try:
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "X-MM-Edge-Auth": "s3kr1t-edge",
+                         "EO-Connecting-IP": "104.36.50.44"},
+                        peer=("10.0.0.5", 1)) == "10.0.0.5"
+    finally:
+        _restore(old)
+
+
+def test_blanket_range_from_a_poisoned_source_cannot_open_the_door():
+    """MEASURED 2026-08-07: https://api.edgeone.ai/ips — the only credential-free EdgeOne
+    origin-pull range list — is deprecated and now answers HTTP 200 with a deprecation
+    notice followed by the literal payload `0.0.0.0/0` / `::/0`. A refresh job that
+    trusted the status code would hand us a trust-everything allowlist, and every
+    direct-to-origin caller would become "the edge". The loader must refuse those
+    entries no matter how they arrive."""
+    direct = "198.51.100.77"
+    poison = ("# [DEPRECATION NOTICE] This interface stopped serving on 2026-07-31,"
+              "0.0.0.0/0,::/0")
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=poison, ADMIN_EDGE_SECRET=None)
+    try:
+        assert _cid_for({"X-Admin-Client-IP": direct,
+                         "EO-Connecting-IP": "203.0.113.1"}) == direct
+        assert _cid_for({"X-Admin-Client-IP": EDGE_PEER,
+                         "EO-Connecting-IP": "203.0.113.1"}) == EDGE_PEER
+    finally:
+        _restore(old)
+    # …and the same refusal for private/loopback blocks and anything over-broad
+    for bad in ("10.0.0.0/8", "127.0.0.0/8", "192.168.0.0/16", "43.0.0.0/8", "::/0"):
+        old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=bad, ADMIN_EDGE_SECRET=None)
+        try:
+            from admin import edge_trust
+            assert edge_trust.edge_origin_networks() == (), f"{bad} was accepted"
+        finally:
+            _restore(old)
+
+
+def test_a_real_narrow_range_still_loads():
+    """The floor must not be so aggressive that a genuine origin-pull list is unusable:
+    the observed peers sit in /24s, and a plausible authoritative list is made of blocks
+    that size. The v6 entry is a /48, not the /32 RIR allocation — a /32 is 2^96
+    addresses and is refused by design (see the predicate test above)."""
+    import ipaddress
+
+    from admin import edge_trust
+
+    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS="43.175.104.0/24, 101.33.21.0/24, 2402:4e00:1::/48")
+    try:
+        assert len(edge_trust.edge_origin_networks()) == 3
+    finally:
+        _restore(old)
+    # A mixed list keeps the good entries and drops only the over-broad one, so an
+    # operator who summarises their /24s up to a /16 loses the summary, not the list.
+    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS="43.175.104.0/24, 43.175.0.0/16")
+    try:
+        assert edge_trust.edge_origin_networks() == (ipaddress.ip_network("43.175.104.0/24"),)
+    finally:
+        _restore(old)
+
+
+def _msg(raw: str):
+    """A REAL http.client HTTPMessage, so duplicate headers and header casing behave the
+    way they do on the wire. A dict cannot express either, so dict-only tests cannot see
+    the first-vs-last-occurrence bug below."""
+    from email.parser import Parser
+
+    from http.client import HTTPMessage
+    return Parser(_class=HTTPMessage).parsestr(raw)
+
+
+def test_appended_edge_header_cannot_hand_the_bucket_to_the_attacker():
+    """SECURITY: `HTTPMessage.get()` returns the FIRST occurrence, and a comma-list's
+    element 0 is likewise the earliest hop — both the attacker's copy if the edge ever
+    APPENDS rather than replaces. Measured today it replaces, but Tencent documents that
+    nowhere and documents the sibling X-Forwarded-For as append-only, so reading the
+    first value would be one upstream behaviour change away from unlimited bucket
+    rotation. The edge's value is the LAST one under both behaviours."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=EDGE_RANGE,
+                   ADMIN_EDGE_SECRET=None)
+    try:
+        # duplicate header lines: attacker's first, edge's appended after
+        dup = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "EO-Connecting-IP: 203.0.113.77\r\n"
+                   "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(dup) == "104.36.50.44"
+        # comma-list form of the same attack
+        lst = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "EO-Connecting-IP: 203.0.113.77, 104.36.50.44\r\n\r\n")
+        assert _cid_for(lst) == "104.36.50.44"
+        # header CASE is not a way in either (HTTPMessage is case-insensitive)
+        cased = _msg(f"x-admin-client-ip: {EDGE_PEER}\r\n"
+                     "eo-connecting-ip: 104.36.50.44\r\n\r\n")
+        assert _cid_for(cased) == "104.36.50.44"
+    finally:
+        _restore(old)
+
+
+def test_junk_copy_cannot_switch_off_the_secret_attestation():
+    """An attacker who prepends a junk X-MM-Edge-Auth must not be able to DISABLE
+    attestation and force everyone back into the shared bucket — every copy is checked,
+    which is safe because a match still requires the secret."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="s3kr1t-edge")
+    try:
+        m = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                 "X-MM-Edge-Auth: junk-prepended-by-attacker\r\n"
+                 "X-MM-Edge-Auth: s3kr1t-edge\r\n"
+                 "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(m) == "104.36.50.44"
+        # …and a set of copies that are ALL wrong still does not attest
+        bad = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                   "X-MM-Edge-Auth: nope\r\n"
+                   "X-MM-Edge-Auth: also-nope\r\n"
+                   "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(bad) == EDGE_PEER
+    finally:
+        _restore(old)
+
+
+def test_non_ascii_secret_disables_attestation_instead_of_failing_silently():
+    """http.server decodes headers as latin-1, so a non-ASCII ADMIN_EDGE_SECRET can never
+    match what arrives on the wire. That must be a refusal (and a warning), not a
+    permanently, silently inert attestation that looks configured."""
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_EDGE_ORIGIN_CIDRS=NOT_EDGE_RANGE,
+                   ADMIN_EDGE_SECRET="sécret-with-non-ascii")
+    try:
+        m = _msg(f"X-Admin-Client-IP: {EDGE_PEER}\r\n"
+                 "X-MM-Edge-Auth: sécret-with-non-ascii\r\n"
+                 "EO-Connecting-IP: 104.36.50.44\r\n\r\n")
+        assert _cid_for(m) == EDGE_PEER
+    finally:
+        _restore(old)
+
+
+def test_safe_network_refuses_the_rentable_neighbour_shape():
+    """The floor must be TIGHTER than the aggregates this edge is observed in. The
+    origin-pull peers sit in /24s, but the /16s they roll up to also carry rentable
+    Tencent Cloud instances — so a /16 is exactly the shape that would let an attacker
+    rent a VM next door, satisfy the peer check, and forge identity at will. Asserted
+    directly on the predicate so it cannot go vacuous when the shipped list is empty."""
+    import ipaddress
+
+    from admin import edge_trust
+
+    for bad in ("0.0.0.0/0", "::/0", "43.175.0.0/16", "43.174.0.0/16", "101.33.0.0/16",
+                "43.0.0.0/8", "10.0.0.0/8", "127.0.0.0/8", "192.168.0.0/16",
+                "2402:4e00::/32", "224.0.0.0/4"):
+        assert not edge_trust._safe_network(ipaddress.ip_network(bad)), f"{bad} accepted"
+    for ok in ("43.175.104.0/24", "101.33.21.0/24", "8.8.8.8/32", "43.175.96.0/20",
+               "2402:4e00:1::/48"):
+        assert edge_trust._safe_network(ipaddress.ip_network(ok)), f"{ok} refused"
+
+
+def test_shipped_edge_ranges_are_never_a_blanket_trust():
+    """Whatever the shipped file holds must survive the floor above. Vacuous while the
+    list is empty (that is the shipped state) — the predicate test above is the one that
+    pins the rule; this one guards the DATA if a future operator populates it."""
+    from admin import edge_trust
+
+    old = _set_env(ADMIN_EDGE_ORIGIN_CIDRS=None)
+    try:
+        for net in edge_trust.edge_origin_networks():
+            assert edge_trust._safe_network(net), f"{net} should not have loaded"
+    finally:
+        _restore(old)
+
+
 def test_csrf_double_submit():
     assert auth.csrf_ok("abc", "abc") is True
     assert auth.csrf_ok("abc", "xyz") is False

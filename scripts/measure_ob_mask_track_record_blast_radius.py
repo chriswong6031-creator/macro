@@ -56,7 +56,6 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-warnings.filterwarnings("ignore")
 
 #: The three breadth close caches ``engine.equity_factors._closes("broad")`` concatenates.
 #: `breadth` (large-cap) carries a FIXED start; midcap/smallcap are the rolling windows.
@@ -308,4 +307,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Script-only: silencing the process-global warnings filter at import time
+    # mutes it for every importer, which `tests/test_no_module_level_logging_disable`
+    # ratchets against. Scoped to the CLI entrypoint (the walk_forward.py idiom the
+    # guard names), the noise suppression is kept for humans running the measurement
+    # while importers get their own filter state back.
+    warnings.filterwarnings("ignore")
     main()

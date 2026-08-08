@@ -3,7 +3,6 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
-import shutil
 
 import pytest
 
@@ -12,19 +11,31 @@ from engine.government_revenue.candidates import (
     candidate_queue_content_id,
 )
 from scripts import build_government_revenue_candidates as projection
+from tests.government_revenue_candidate_fixture import (
+    canonical_frozen_at,
+    canonical_fixture_root,
+    shifted,
+    utc_date,
+)
 from tests.test_government_revenue_candidates import _award_event, _graph, _payload
 
 
-ROOT = Path(__file__).resolve().parents[1]
-FROZEN_AT = "2026-08-03T15:00:00+00:00"
+# Derived from the canonical inputs `_fixture_root` copies, never hand-typed --
+# see `tests/government_revenue_candidate_fixture` for why a wall-clock literal
+# here is a scheduled failure rather than a constant.
+FROZEN_AT = canonical_frozen_at()
+#: A later run over the same sources: reassembly, clock advance, append window.
+NEXT_RUN_AT = shifted(FROZEN_AT, hours=1)
+#: An observation known between the two runs above -- appendable, not a backfill.
+BETWEEN_RUNS_KNOWN_AT = shifted(FROZEN_AT, minutes=30)
+#: One second behind the first run: the writer's clock must refuse to regress.
+BEFORE_FROZEN_AT = shifted(FROZEN_AT, seconds=-1)
+#: A source known after the run that reads it -- the monotonicity guard's target.
+FUTURE_KNOWN_AT = shifted(FROZEN_AT, hours=9)
 
 
 def _fixture_root(tmp_path: Path) -> Path:
-    data_dir = tmp_path / "data" / "government_revenue"
-    data_dir.mkdir(parents=True)
-    for name in ("latest.json", "workspace.json", "recipient_entity_graph.json"):
-        shutil.copy2(ROOT / "data" / "government_revenue" / name, data_dir / name)
-    return tmp_path
+    return canonical_fixture_root(tmp_path)
 
 
 def _artifact_bytes(root: Path) -> dict[str, bytes | None]:
@@ -54,10 +65,19 @@ def _candidate_projection_with_one_candidate(
         event["change"]["known_at"] = known_at
         event["evidence"]["receipts"][0]["known_at"] = known_at
         event["evidence"]["receipts"][0]["retrieved_at"] = known_at
+    payload = _payload(event)
+    if known_at is not None:
+        # `build_candidate_observations` drops any receipt known after the
+        # payload's `as_of` end-of-day.  The clocks a caller pins here are
+        # offsets from the run clock, which tracks the live canonical vintage,
+        # so the hand-authored analysis window has to be widened to cover them
+        # -- otherwise the candidate silently vanishes and the append gate under
+        # test is never exercised at all.
+        payload["as_of"] = max(payload["as_of"], utc_date(known_at))
 
     def candidate_for(generated_at: str) -> dict:
         return build_candidate_observations(
-            _payload(event), _graph(), generated_at=generated_at
+            payload, _graph(), generated_at=generated_at
         )[0]
 
     def observations(*_args, **kwargs):
@@ -133,7 +153,7 @@ def test_verifier_allows_generated_at_only_workspace_reassembly(tmp_path: Path) 
     workspace_path = root / "data/government_revenue/workspace.json"
     latest = json.loads(latest_path.read_text(encoding="utf-8"))
     workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
-    reassembled_at = "2026-08-03T16:00:00+00:00"
+    reassembled_at = NEXT_RUN_AT
     latest["generated_at"] = reassembled_at
     workspace["generated_at"] = reassembled_at
     latest["procurement_workspace"] = deepcopy(workspace)
@@ -189,7 +209,7 @@ def test_repeated_observation_keeps_immutable_row_when_envelope_clock_advances(
     ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
     first_ledger = ledger_path.read_bytes()
 
-    later = "2026-08-03T16:00:00+00:00"
+    later = NEXT_RUN_AT
     result = projection.project_candidate_artifacts(root, generated_at=later)
 
     queue = json.loads((root / "data/government_revenue/candidate_queue.json").read_text())
@@ -218,10 +238,7 @@ def test_unseen_historical_observation_cannot_backfill_after_prior_materializati
         projection.CandidateProjectionError,
         match="not forward of the prior frozen generated_at clock",
     ):
-        projection.project_candidate_artifacts(
-            root,
-            generated_at="2026-08-03T16:00:00+00:00",
-        )
+        projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
 
     assert _artifact_bytes(root) == before
 
@@ -234,20 +251,17 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     _candidate_projection_with_one_candidate(
         monkeypatch,
         root,
-        known_at="2026-08-03T15:30:00+00:00",
+        known_at=BETWEEN_RUNS_KNOWN_AT,
     )
 
-    result = projection.project_candidate_artifacts(
-        root,
-        generated_at="2026-08-03T16:00:00+00:00",
-    )
+    result = projection.project_candidate_artifacts(root, generated_at=NEXT_RUN_AT)
 
     assert result["append_count"] == 1
     ledger = projection.load_candidate_ledger(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
     assert ledger.line_count == 1
-    assert ledger.observations[0]["known_at"] == "2026-08-03T15:30:00+00:00"
+    assert ledger.observations[0]["known_at"] == BETWEEN_RUNS_KNOWN_AT
 
 
 def test_candidate_projection_writer_clock_cannot_regress(tmp_path: Path) -> None:
@@ -259,10 +273,7 @@ def test_candidate_projection_writer_clock_cannot_regress(tmp_path: Path) -> Non
         projection.CandidateProjectionError,
         match="generated_at cannot move backward",
     ):
-        projection.project_candidate_artifacts(
-            root,
-            generated_at="2026-08-03T14:59:59+00:00",
-        )
+        projection.project_candidate_artifacts(root, generated_at=BEFORE_FROZEN_AT)
 
     assert _artifact_bytes(root) == before
 
@@ -352,7 +363,7 @@ def test_frozen_clock_is_persisted_and_rejects_future_known_source(tmp_path: Pat
     workspace_path = root / "data/government_revenue/workspace.json"
     latest = json.loads(latest_path.read_text())
     workspace = json.loads(workspace_path.read_text())
-    future = "2026-08-04T00:00:00+00:00"
+    future = FUTURE_KNOWN_AT
     latest["known_at"] = future
     latest["procurement_workspace"]["known_at"] = future
     workspace["known_at"] = future

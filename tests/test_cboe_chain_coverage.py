@@ -164,7 +164,56 @@ def _stub_chain(spot: float = 100.0) -> pd.DataFrame:
     })
 
 
-def test_gex_cooldown_sweep_recovers_flapped_symbols(monkeypatch):
+@pytest.fixture
+def trading_day(monkeypatch):
+    """Pin the adapters' session gate to a real trading day.
+
+    `collectors.cboe._session_gated` reads `date.today()` and drops the WHOLE snapshot
+    when it is not an NYSE session — correct production behaviour (#3721 class: a
+    weekend run would otherwise recompute every field off a stale carried-forward chain
+    and land it as a genuine-looking observation).
+
+    The adapter tests below exercise the retry/cooldown LADDER, not the calendar, so
+    without this they test the gate instead, and only on some days. On Sat 2026-08-08
+    six of them failed in CI — which runs UTC and had rolled over — while a US-local
+    checkout was still on Friday and saw 22 passed. Worse, the two that assert a
+    FAILURE outcome passed for the WRONG REASON: the gate returns `{}`, which is
+    exactly what an exhausted ladder returns, so they were vacuous every weekend.
+    All eight take this fixture for that reason, not just the six that went red.
+
+    Pins `today` rather than stubbing `is_session`, so the gate's own logic stays under
+    test. Subclasses `date` because the module also uses it as a CONSTRUCTOR (the
+    outage-window registry at module scope).
+    """
+    class _TradingDay(dt.date):
+        @classmethod
+        def today(cls):
+            return dt.date(2026, 8, 7)      # Friday — an NYSE session
+
+    monkeypatch.setattr(cboe, "date", _TradingDay)
+
+
+def test_the_session_gate_is_what_this_fixture_neutralises(monkeypatch):
+    """Anti-vacuity for `trading_day`: prove the gate really does empty a snapshot on a
+    non-session day, so the fixture above is load-bearing rather than decorative."""
+    class _Weekend(dt.date):
+        @classmethod
+        def today(cls):
+            return dt.date(2026, 8, 8)      # Saturday
+
+    monkeypatch.setattr(cboe, "date", _Weekend)
+    assert cboe._session_gated({"gex": "anything"}, "GexAdapter") == {}
+
+    class _Session(dt.date):
+        @classmethod
+        def today(cls):
+            return dt.date(2026, 8, 7)
+
+    monkeypatch.setattr(cboe, "date", _Session)
+    assert cboe._session_gated({"gex": "anything"}, "GexAdapter") == {"gex": "anything"}
+
+
+def test_gex_cooldown_sweep_recovers_flapped_symbols(monkeypatch, trading_day):
     """First sweep loses _SPX + SPY to a flapping 429 window; the single-attempt
     post-cooldown sweep recovers them (retries=1, one sleep of the cooldown)."""
     import engine.gex_engine as gex_engine
@@ -188,7 +237,7 @@ def test_gex_cooldown_sweep_recovers_flapped_symbols(monkeypatch):
     assert ("_SPX", 1) in calls and ("SPY", 1) in calls  # second sweep is single-attempt
 
 
-def test_gex_no_failures_no_sleep(monkeypatch):
+def test_gex_no_failures_no_sleep(monkeypatch, trading_day):
     import engine.gex_engine as gex_engine
     monkeypatch.setattr(gex_engine, "compute_gex",
                         lambda chain, spot, cfg: {"spot": spot})
@@ -200,7 +249,7 @@ def test_gex_no_failures_no_sleep(monkeypatch):
     assert "gex" in out and sleeps == []
 
 
-def test_putcall_spx_leg_gets_one_spaced_retry(monkeypatch):
+def test_putcall_spx_leg_gets_one_spaced_retry(monkeypatch, trading_day):
     sleeps: list[float] = []
     monkeypatch.setattr(cboe.time, "sleep", sleeps.append)
     attempts: list[int | None] = []
@@ -221,7 +270,7 @@ def test_putcall_spx_leg_gets_one_spaced_retry(monkeypatch):
     assert attempts == [None, 1]
 
 
-def test_putcall_still_fails_source_when_retry_fails(monkeypatch):
+def test_putcall_still_fails_source_when_retry_fails(monkeypatch, trading_day):
     """Second _SPX failure must still raise — the source reports FAILED (the
     coverage tripwire is what makes the resulting hole loud)."""
     monkeypatch.setattr(cboe.time, "sleep", lambda s: None)
@@ -239,7 +288,7 @@ def test_putcall_still_fails_source_when_retry_fails(monkeypatch):
 # for ≥3 min (23:42:32Z→23:45:33Z+, run 30590845976) and outlasted it, costing putcall +
 # gex/gex_SPX/gex_SPY/gex_QQQ/gex_IWM the session. These pin the 60s→300s escalation.
 
-def test_gex_second_cooldown_recovers_a_long_429_window(monkeypatch):
+def test_gex_second_cooldown_recovers_a_long_429_window(monkeypatch, trading_day):
     """The 07-30 shape: the window outlasts the 60s pass and lifts only during the
     300s one. The symbol must be recovered, and ONLY the still-failing symbol may be
     re-swept on the second pass (a healthy symbol is never re-fetched)."""
@@ -266,7 +315,7 @@ def test_gex_second_cooldown_recovers_a_long_429_window(monkeypatch):
     assert post_cooldown == [("_SPX", 1), ("_SPX", 1)]
 
 
-def test_gex_ladder_stops_as_soon_as_the_set_empties(monkeypatch):
+def test_gex_ladder_stops_as_soon_as_the_set_empties(monkeypatch, trading_day):
     """A window that lifts on the FIRST pass must not spend the 300s sleep — the
     07-27 shape keeps its old cost, only the long window pays the ladder."""
     import engine.gex_engine as gex_engine
@@ -286,7 +335,7 @@ def test_gex_ladder_stops_as_soon_as_the_set_empties(monkeypatch):
     assert sleeps == [CHAIN_429_COOLDOWN_S]        # never reached the 300s rung
 
 
-def test_putcall_spx_leg_walks_to_the_second_cooldown(monkeypatch):
+def test_putcall_spx_leg_walks_to_the_second_cooldown(monkeypatch, trading_day):
     """putcall is all-or-nothing on _SPX — the leg that killed 07-27 AND 07-30. It
     must walk the whole ladder before giving the session up."""
     sleeps: list[float] = []
@@ -308,7 +357,7 @@ def test_putcall_spx_leg_walks_to_the_second_cooldown(monkeypatch):
     assert attempts == [None, 1, 1]                # first sweep + both ladder rungs
 
 
-def test_putcall_exhausts_the_ladder_then_fails_the_source(monkeypatch):
+def test_putcall_exhausts_the_ladder_then_fails_the_source(monkeypatch, trading_day):
     """A window outlasting BOTH rungs must still raise — an honest hole beats a
     fabricated row, and the coverage tripwire is what makes it loud."""
     sleeps: list[float] = []
@@ -377,7 +426,18 @@ def test_registry_is_load_bearing_not_vacuous(monkeypatch, tmp_path, capsys,
 def test_tripwire_warning_names_the_cross_fill_remedy(monkeypatch, tmp_path, capsys,
                                                       frozen_calendar):
     """The remedy hint must point at the honest polygon cross-fill for gex_<name>
-    holes — and stay a LINE-START annotation (a logger prefix would drop it)."""
+    holes — and stay a LINE-START annotation (a logger prefix would drop it).
+
+    It must NOT hand the operator a blind stamp offset. data/polygon_gex spans two
+    stamping eras: rows written before #4807 (2026-08-07) carry the UTC run date
+    (= session+1), rows written after carry the session they describe, and the
+    chain-family underlyings (SPY/QQQ/IWM/NVDA/...) were never re-stamped by that
+    PR's migration, so a single file holds BOTH. Measured 2026-08-07 on all nine:
+    stamps <= 07-31 match the prior session's yahoo close to 0.000%, the 08-07 stamp
+    matches its OWN session to 0.000%, and the 08-06 stamp matches no session (a
+    pre-market tape). Any fixed offset in this text is therefore wrong for half the
+    store and would fabricate an off-by-one row — the exact failure the last clause
+    warns against. The session must be pinned on the DATA."""
     frames = _full_family()
     frames["gex_SPY"] = _frame(WINDOW[:-1])
     _fake_store(monkeypatch, tmp_path, frames)
@@ -386,7 +446,14 @@ def test_tripwire_warning_names_the_cross_fill_remedy(monkeypatch, tmp_path, cap
             if ln.startswith("::warning ")]
     assert len(warn) == 1
     assert "backfill_cboe_gex_20260730_from_polygon.py" in warn[0]
-    assert "polygon_gex" in warn[0] and "session+1" in warn[0]
+    assert "polygon_gex" in warn[0]
+    # the load-bearing instruction: no blind offset, pin the session on the data
+    assert "ASSUME NO FIXED STAMP OFFSET" in warn[0]
+    assert "yahoo close of the TARGET session" in warn[0]
+    assert "closer than either neighbouring session" in warn[0]
+    # session+1 may appear ONLY as the named pre-#4807 era, never as the live mapping
+    assert "#4807" in warn[0]
+    assert "usually sits in the row stamped session+1" not in warn[0]
 
 
 # ------------------------------------------------------- the 07-30 polygon cross-fill
@@ -432,9 +499,12 @@ def test_backfill_is_idempotent(monkeypatch, tmp_path, capsys):
 
 
 def test_backfill_refuses_the_wrong_session(monkeypatch, tmp_path):
-    """The session-identity gate is the whole safety story: the polygon stamp is
-    session+1, so a row whose spot does not match the target session's close must be
-    REFUSED rather than written under the wrong date."""
+    """The session-identity gate is the whole safety story: for this 2026-07-30 heal the
+    polygon stamp is session+1 — the pre-#4807 UTC run-date era this one-shot was written
+    against — so a row whose spot does not match the target session's close must be
+    REFUSED rather than written under the wrong date. The GATE is what makes the copy
+    honest, not the offset: the offset is era-dependent (see the tripwire-remedy test
+    above) and must never be assumed by anything that is not pinned to a fixed date."""
     import scripts.backfill_cboe_gex_20260730_from_polygon as bf
     from lib import config as _config
     _config.load()

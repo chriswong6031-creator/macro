@@ -196,9 +196,13 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
 
     assert "submenu-icon" not in research
     assert destinations == EXPECTED_PUBLIC_RESEARCH_DESTINATIONS
-    # 16 since Mastermind Portfolio joined Core Research (operator 2026-08-04)
-    assert public_grid.count('class="icon-drawing nm-ic') == 16
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 16
+    # 16 since Mastermind Portfolio joined Core Research (operator 2026-08-04);
+    # 17 since Mastermind Bot joined it beside Portfolio (2026-08-07). The Bot's
+    # href is absolute (bot.mastermind-x.com), so it is deliberately absent from
+    # EXPECTED_PUBLIC_RESEARCH_DESTINATIONS above — that set pins `{{ NP }}` page
+    # destinations, and this count is what covers the cross-product card.
+    assert public_grid.count('class="icon-drawing nm-ic') == 17
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 17
     assert 'data-nav-file="earnings_wire"' in public_grid
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in research
@@ -209,9 +213,13 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     research = _research_menu(partial)
     public_grid = research.split('<aside class="mega-rail', 1)[0]
 
-    # 16 since Mastermind Portfolio joined Core Research (operator 2026-08-04)
-    assert public_grid.count('class="icon-drawing nm-ic') == 16
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 16
+    # 16 since Mastermind Portfolio joined Core Research (operator 2026-08-04);
+    # 17 since Mastermind Bot joined it beside Portfolio (2026-08-07). The Bot's
+    # href is absolute (bot.mastermind-x.com), so it is deliberately absent from
+    # EXPECTED_PUBLIC_RESEARCH_DESTINATIONS above — that set pins `{{ NP }}` page
+    # destinations, and this count is what covers the cross-product card.
+    assert public_grid.count('class="icon-drawing nm-ic') == 17
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 17
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in partial
 

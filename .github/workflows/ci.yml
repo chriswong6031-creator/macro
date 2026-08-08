@@ -192,29 +192,34 @@ on:
       # cannot start the workflow is only half wired.
       - "tests/test_signal_quality_no_leak.py"
       # Absolute session-calendar anchor invariance (job session-anchor-era): the
-      # confluence buckets' era abs-session-2026-08-06 (#4732). Its subjects —
-      # engine/session_anchor.py, engine/confluence_tiers.py, engine/signal_gate.py —
-      # all ride the "engine/**" trigger above, so this entry is the OTHER half: a PR
-      # editing ONLY the suite (a new fixture shape, a widened k) must still start the
-      # pack that executes it. The suite was UNRUN (audit_unrun_tests.py tier P5 —
-      # named by no run step in any workflow or the legacy manifest) while scoring
-      # triggerable=True off those same subjects, so neither census flagged it: an era
-      # stamp shipped resting on a start-invariance guarantee that CI had never once
-      # executed. The suite file matched no path entry either — the #4559 "test half
-      # unreachable" shape this line closes.
-      #
-      # The §7 marker-engine anchor suite (era sq-abs-session-2026-08-06) is the same
-      # hole and belongs here too, but it arrives with #4738, which is still in review.
-      # A path entry naming a file the tree does not have fails
-      # test_every_workflow_test_path_exists in the ci-pack suite — which matches on
-      # raw workflow TEXT, so the filename cannot be written in this comment either.
-      # It is added when the file is, together with the run step in session-anchor-era.
+      # confluence buckets' era abs-session-2026-08-06 (#4732) and the §7 marker
+      # engine's era sq-abs-session-2026-08-06 (#4738). Their subjects —
+      # engine/session_anchor.py, engine/confluence_tiers.py, engine/signal_quality.py,
+      # engine/signal_gate.py — all ride the "engine/**" trigger above, so these two
+      # entries are the OTHER half: a PR editing ONLY a suite (a new fixture shape, a
+      # widened k) must still start the pack that executes it. Both suites were UNRUN
+      # (audit_unrun_tests.py tier P5 — named by no run step in any workflow or the
+      # legacy manifest) while scoring triggerable=True off those same subjects, so
+      # neither census flagged them: an era stamp shipped resting on a start-invariance
+      # guarantee that CI had never once executed. The suite files matched no path entry
+      # either — the #4559 "test half unreachable" shape these lines close.
       - "tests/test_session_anchor_invariance.py"
+      - "tests/test_sq_anchor_invariance.py"
       # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
       # the module it measures, so an edit to either can trigger the job that proves the
       # flip-isolation construction still isolates exactly one leg.
       - "research/prophet_us_audit/reclaim_veto_packet.py"
       - "tests/test_us_reclaim_veto_packet.py"
+      # Versioned FROZEN research price panel (research-price-panel job). Both halves per
+      # #3488: the suite AND every module it measures. The writer/reader own the write-once
+      # and never-fall-back properties; price_ladder.py is the adjusted-first resolver they
+      # reuse from #4698 (vendored byte-identical — a drifted copy is a silent basis change);
+      # relay_position_standin.py is the worked migration whose pinned version the suite's
+      # contract documents. An edit to any of them must be able to start the job.
+      - "research/research_panels/price_panel.py"
+      - "research/prophet_us_audit/price_ladder.py"
+      - "research/prophet_us_audit/relay_position_standin.py"
+      - "tests/test_research_price_panel.py"
       # NOT the packet's .md/.json artifacts. #4733 added them here to clear a
       # check_ci_trigger_closure.py finding against tests/test_merge_on_green.py,
       # but that suite never opens them — they are members of INCIDENT_4607_FILES,
@@ -383,6 +388,11 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # W7 seasonality research-browser API surface. engine/** already covers
+      # engine/seasonality/screener.py, but tests/test_seasonality_api.py imports
+      # app/seasonality.py, and a PR touching ONLY that handler would otherwise
+      # never start the stock-seasonality pack that executes the suite.
+      - "app/seasonality.py"
       # Signal-Lab promotion-stat display gate: the BTC Vector card's DSR/Sharpe/n
       # must equal what calibrate_vector actually computed. engine/** covers the
       # module, but a test-only re-pin (or a nightly refresh of the artifacts the
@@ -538,12 +548,19 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
-      # The collect-job checkpoint guard rides in the capital-structure pack: it
-      # pins the 2026-08-06 split that keeps every capital-structure step BELOW the
-      # market checkpoint. Its SUBJECT — daily.yml — already reaches CI via
-      # ".github/workflows/**"; this line covers the other direction, so an edit
-      # that only widens the veto allowlist still runs the suite that checks it.
+      # The two nightly-wiring guards ride in the capital-structure pack. They pin
+      # the 2026-08-06 split from both sides: the chain left the collect job for its
+      # own `needs: collect` job that nothing needs in turn, and the source ledger
+      # crosses that job boundary as a receipt-verified artifact because the market
+      # checkpoint deliberately never commits it. Their SUBJECTS — daily.yml,
+      # config/dag.yml — already reach CI via ".github/workflows/**" and the
+      # config/dag.yml entry; these lines cover the test-only direction, so an edit
+      # that only re-pins a guard still runs the job that carries it.
+      # NOTE the second name does NOT match the "tests/test_capital_structure_*.py"
+      # glob further down — it is test_DAILY_capital_structure_job.py — so it has to
+      # be listed by name or it goes dark on a test-only edit.
       - "tests/test_daily_collect_commit_path.py"
+      - "tests/test_daily_capital_structure_job.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
       - "templates/capital_structure.js"
@@ -640,6 +657,18 @@ on:
       - "tests/test_government_revenue_wave8_api.py"
       - "tests/test_government_revenue_workspace.py"
       - "tests/test_usaspending_idv_graph.py"
+      # Recipient->issuer attribution (job: unrun-government-revenue, wired
+      # 2026-08-06). engine/** already covers entity_resolution.py and
+      # scripts/*.py the proposal tool, but both halves are listed on purpose:
+      # a test-only edit, or a re-pinned EX-21 fixture, must re-run the suite
+      # that measures it. The fixtures are two VERBATIM SEC exhibits pinned by
+      # sha256 — swapping one for a synthetic is exactly the edit that has to
+      # retrigger. (test_government_revenue_recipient_graph.py and
+      # test_government_revenue_entity_resolution.py are already named in the
+      # darkness-backfill list directly above.)
+      - "scripts/propose_government_revenue_recipient_graph.py"
+      - "tests/test_propose_government_revenue_recipient_graph.py"
+      - "tests/fixtures/govrev_issuer_evidence/**"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
@@ -715,6 +744,24 @@ on:
       # their globs; the test file needs an explicit path so a test-only re-pin still
       # re-runs the rot-sweep step that carries it.
       - "tests/test_stock_personality_w4_surfaces.py"
+      # Earnings & Company Event suite, Wave 1B: the canonical EDGAR filing key
+      # (cik, accession) and the Exhibit 99.1 release binding. Both readers and
+      # both new modules are named, plus the fixtures — tests/** is deliberately
+      # NOT a catch-all here, and BOTH EDGAR reader suites were measured
+      # strictly dark (named by zero `run:` steps, matched by no glob) before
+      # this block and the earnings-release-identity job were added together.
+      - "engine/earnings_release/**"
+      - "collectors/edgar_earnings_8k.py"
+      - "engine/marketing/edgar_earnings_wire.py"
+      - "tests/fixtures/earnings_release/**"
+      - "tests/test_edgar_filing_identity_join.py"
+      - "tests/test_earnings_release_binding.py"
+      - "tests/test_edgar_earnings_8k.py"
+      - "tests/test_marketing_edgar_earnings_wire.py"
+      # The release binding normalizes through the disclosure-diff source-text
+      # engine, so a change there must also start the Wave 1B pack; the glob
+      # below already covers it.
+      #
       # Filing Forensics v1: immutable SEC lineage kernel + display-only workbench.
       # Keep every contract, fixture, page, collector, and context test wired even
       # when a PR changes only its config/schema/test side.
@@ -748,6 +795,16 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
+      # Cross-pin for the four detector ids that exist in THREE implementations:
+      # scripts/build_fundamental_forensics.py (inline fraction literals),
+      # engine/moat_falsifiers.py (pp module constants, ships to production ticker
+      # pages), and config/fundamental_forensics.yml (registry data). All three
+      # subjects already ride triggers above ("engine/**",
+      # "scripts/build_fundamental_forensics.py", "config/fundamental_forensics.yml"),
+      # but the suite name does NOT match the broad
+      # "tests/test_fundamental_forensics_*.py" glob, so a test-only edit to the
+      # cross-pin itself needs this explicit entry to re-run it.
+      - "tests/test_forensic_detector_crosspin.py"
       # Wave 3B-B4A/B4B/B4D-A/B4F: the broad fundamental-forensics glob also
       # matches these suites, but the explicit names document the sealed-history
       # reader, bounded serving, pinned-source materializer, one-shot seed, and
@@ -787,6 +844,10 @@ on:
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
       - "config/biocatalyst_launch_slo_manifest.yml"
+      # Closed-beta source manifest: tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
+      # reads it by a __file__-rooted path join, so an edit to the manifest alone must be
+      # able to start the pack that runs its guard (ops.ci_trigger_closure, #4693).
+      - "config/biocatalyst_closed_beta_source_manifest.yml"
       # BC-D0a: finite design-reference corpus and non-authorizing product
       # acceptance contract. These paths must reach the same contracts pack even
       # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
@@ -799,6 +860,9 @@ on:
       - "mockups/refs/biocatalyst/**"
       - "scripts/verify_biocatalyst_d0a_references.py"
       - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
+      # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
+      # adjudication by path literal, so an edit to it alone must start the contracts pack.
+      - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -908,6 +972,15 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # Same contract for the MERGE orchestrator, and the same #3488 shape: the
+      # workflow-yaml job above runs tests/test_merge_on_green.py, but neither the
+      # sweeper nor its tests could start it — a PR editing the thing that decides
+      # every merge in this repo published no pack check at all, so the sweeper
+      # reported it "unproven" and would never merge it (measured on #4968, which
+      # had ZERO runs on its branch). A guard whose own change cannot trigger it is
+      # a guard that reviews as covered and runs never.
+      - "scripts/merge_on_green.py"
+      - "tests/test_merge_on_green.py"
       # SKIP-ONLY suite guard (job: workflow-yaml). scripts/*.py already reaches
       # the checker; these two are the other halves. requirements.txt matters
       # because a `-r requirements.txt` install line is how several jobs declare
@@ -919,6 +992,11 @@ on:
       # the checker; this is its other half, per the same two-halves law the guard
       # enforces on everything else.
       - "tests/test_ci_trigger_closure.py"
+      # UNRUN-CENSUS discovery (job: workflow-yaml). scripts/*.py reaches
+      # audit_unrun_tests.py itself; this is the test half. The census owns suite
+      # discovery for all THREE darkness guards, so a regression here re-blinds
+      # every one of them at once — which is what tests/ scoping did until #4693.
+      - "tests/test_audit_unrun_tests.py"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
@@ -1205,6 +1283,13 @@ on:
       # The engine-source scan's own suite (#3765 → #3790 latency). engine/** already
       # triggers the lane for copy changes; name the suite so a test-only edit does too.
       - "tests/test_validated_claims_engine.py"
+      # zh diction gate (ui.zh_filing_term): 申报 must never reach user-facing
+      # Chinese copy — it reads as a TAX/CUSTOMS declaration, not a 披露. Name the
+      # guard, its allowlist and its suite so an edit to ANY one of the three
+      # re-proves the gate, not just an edit to the copy it polices.
+      - "scripts/check_zh_filing_term.py"
+      - "config/zh_filing_term_allowlist.json"
+      - "tests/test_zh_filing_term.py"
       # The `surfaces`-enforcement + zh-token suite (2026-07-29 dislocation-panel audit):
       # a phrase justified for one page must not license another, and 经验证/经过验证 are
       # gated. Named so a test-only edit still triggers the lane that runs it.
@@ -1259,6 +1344,10 @@ on:
       - "scripts/check_blocklist_drift.py"
       - "tests/test_metabolism_v4_w3_mission.py"
       - "research/DO_NOT_REBUILD.md"
+      # Registry key/row-shape guard (wired 2026-08-06 — it had never run in CI;
+      # DO_NOT_REBUILD.md and the compiler above already trigger this job, so this
+      # entry only covers edits to the guard itself).
+      - "tests/test_dnr_registry_keys.py"
       # FL-C live-flow ops (FC-R6/R7/R8 + Task 3): two-tier cadence, pinned publish,
       # daily summary writer, baselines extension.  Pure-code changes; no network.
       - "scripts/live_flow_poller.py"
@@ -1288,6 +1377,14 @@ on:
       - "tests/test_codex_provider.py"
       - "tests/test_key_pool.py"
       - "tests/test_key_pool_economy.py"
+      # The local rung of that same waterfall + the usage ledger it writes to.
+      # Untriggered until 2026-08-07: a PR touching only lib/ai_costs.py or the
+      # ollama provider scheduled no ci.yml at all, so the mis-attribution that
+      # billed free local calls to the Claude subscription lane had no gate.
+      - "engine/ollama_provider.py"
+      - "tests/test_ollama_provider.py"
+      - "lib/ai_costs.py"
+      - "tests/test_ai_costs.py"
       - "scripts/metabolism_build.py"
       - "scripts/metabolism_dispatch.py"
       # V7 PR Audit gate (R-V7-1..6): audit engine, CLI, merge gate, workflow, test.
@@ -1344,6 +1441,20 @@ on:
       - "scripts/build_flow_desk.py"
       - "templates/flow_desk.html.j2"
       - "tests/test_flow_cohorts.py"
+      # Capital-flow velocity desk (site/flowdata/desk.json) + its staleness alarm.
+      # Wired 2026-08-05: test_flow_velocity.py was matched by no pattern here and
+      # named by no job, so both halves of the #3488 shape were open — the suite
+      # never ran AND no edit to its subject could start ci.yml. Listed together
+      # so the desk that froze for 12 days (A-share legs pinned at 2026-07-24
+      # behind a dark upstream Tushare plane) can never lose its guard again.
+      # lib/desk_guard.py is the shared staleness/thinning logic; china_tushare is
+      # the collector whose utcnow()-stamped heartbeat masked the outage.
+      - "engine/flow_velocity.py"
+      - "scripts/build_flow_velocity.py"
+      - "lib/desk_guard.py"
+      - "collectors/china_tushare.py"
+      - "tests/test_flow_velocity.py"
+      - "tests/test_flow_desk_staleness.py"
       # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
       # collector, grader engine, build script, detector config, and test file.
       - "collectors/flow_signals.py"
@@ -2035,6 +2146,7 @@ on:
       - "tests/test_regwall_json_gate.py"
       - "tests/test_paywall.py"
       - "tests/test_api_paywall.py"
+      - "tests/test_paywall_pro_gate.py"
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
       # etfs.html joined the tier-gate job in SEO Supercharge W2. Its subjects
@@ -2139,6 +2251,9 @@ on:
       # the derived one would be checked.
       - "data/press/published.jsonl"
       # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
+      # Measured when the census was scoped to tests/; it now covers the whole tree
+      # (#4693, 2026-08-06), so re-run scripts/audit_unrun_tests.py for live counts
+      # rather than reading the historical figures below as current.
       # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
       # the 51 workflows, and there is no broad `pytest tests/` anywhere — every
       # invocation carries an explicit file list, so an unnamed suite is genuinely
@@ -2196,6 +2311,7 @@ on:
       - "tests/test_us_board_ledger_continuity.py"
       - "tests/test_us_board_outcomes.py"
       - "tests/test_us_board_outcomes_strip.py"
+      - "tests/test_us_board_zero_accrual_alarm.py"
       - "scripts/audit_claim_accountability.py"
       - "scripts/grade_us_board.py"
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces
@@ -2267,6 +2383,14 @@ on:
       # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
       - "tests/test_audit_options_accrual.py"
       - "tests/test_audit_r2.py"
+      # The 2026-08-03 store-freshness program's four suites (added 2026-08-06).
+      # Their SUBJECTS were already triggerable — collectors/** and scripts/*.py
+      # below both match — so only the test-file half of the census was missing:
+      # editing a suite to weaken it started no run that could see it do so.
+      - "tests/test_audit_stocks_freshness.py"
+      - "tests/test_collector_freshness_disclosure.py"
+      - "tests/test_stock_library_freshness.py"
+      - "tests/test_stock_price_retention.py"
       - "tests/test_audit_thetadata_accrual.py"
       - "tests/test_build_polygon_universe.py"
       - "tests/test_builder_failstreaks.py"
@@ -2480,6 +2604,26 @@ on:
       # router must reach it. hub.py was the last one matching no other job here
       # (brain_runs.py and tape_decode.py are already listed above).
       - "app/hub.py"
+      # W1 freshness sentinel (the dead-man switch) and BOTH its subjects. The
+      # units and the script are what a change would edit; without them a PR
+      # retuning a freshness budget or a systemd cap would run the guard on
+      # nothing (#3509 lesson — a guard the guarded change cannot trigger is
+      # not a guard). app/deploy/update.sh + config/site_access.yml already
+      # appear elsewhere in this list and carry the arming/boundary halves.
+      - "tests/test_freshness_sentinel.py"
+      - "scripts/freshness_sentinel.py"
+      - "app/deploy/macro-sentinel.service"
+      - "app/deploy/macro-sentinel.timer"
+      # The china half of that dead-man switch: the board-lag disclosure the
+      # sentinel's china surface anchors on, and the A-share session calendar the
+      # engine computes `delayed` from. Both halves listed for the same reason as
+      # above — a PR retuning the CN holiday table or rewording the banner must be
+      # able to START this workflow, or the contract test tying the template's
+      # English wording to the sentinel's regex guards nothing. china.html.j2 and
+      # the two builders already match via templates/** and scripts/**.
+      - "tests/test_china_delayed_board_disclosure.py"
+      - "tests/test_cn_calendar.py"
+      - "lib/cn_calendar.py"
       - "tests/test_ei_f1d_shadow.py"
       - "tests/test_exit_tax_scenarios.py"
       - "tests/test_expanding_mean_benchmark.py"
@@ -2653,6 +2797,13 @@ on:
       - "tests/test_stage_analysis.py"
       - "tests/test_heal_stage_forward_ledger.py"
       - "tests/test_weinstein_stage.py"
+      # coiled/mtf_upturn absolute session anchor (era coiled-mtf-abs-session-
+      # 2026-08-06, job coiled-mtf-anchor-era): the engines are reached by the
+      # broad "engine/**" trigger; these entries are the OTHER half — a PR
+      # editing ONLY a suite must still start the pack that executes it
+      # (test_coiled.py was previously named by no run step AND no path).
+      - "tests/test_coiled.py"
+      - "tests/test_coiled_mtf_anchor_invariance.py"
       - "scripts/heal_contagion_links_ledger.py"
       - "scripts/heal_stage_forward_ledger.py"
       # The nightly stage builder invokes the heal above; it is the only lane
@@ -2671,6 +2822,7 @@ on:
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
       - "tests/test_china_board_rank.py"
+      - "tests/test_china_continuation_watch.py"
       - "tests/test_china_prophet_shadow.py"
       - "tests/test_cn_board_unified_grid.py"
       - "tests/test_cn_prophet_candidates_schema.py"
@@ -2682,6 +2834,7 @@ on:
       - "tests/test_prophet_card_shared.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
+      - "tests/test_us_board_fail_closed_freshness.py"
       - "tests/test_us_board_lanes.py"
       - "tests/test_us_board_priority_ui.py"
       - "tests/test_us_board_rank.py"
@@ -2702,6 +2855,13 @@ on:
       - "tests/test_us_context_vector.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
+      # Archetype coverage pipeline (2026-08): the candidates-stamp heal script and
+      # the suite pinning fac-less classification + store freshness + fill-null-only
+      # heal semantics. The store subjects (engine/stock_fundamentals.py,
+      # data/archetypes/) ride the engine/** and data/us_prophet_rank/** entries.
+      - "scripts/heal_candidates_archetype.py"
+      - "tests/test_heal_candidates_archetype.py"
+      - "data/archetypes/**"
       # The nightly-wiring half of the same pack job (2026-08-06): the four modules moved
       # off the engine job's critical path into daily.yml's us_prophet_ledgers lane. Its
       # subjects (.github/workflows/daily.yml, config/dag.yml) already reach CI via
@@ -2823,6 +2983,12 @@ on:
       - "tests/fixtures/company_intelligence/**"
       - "tests/test_company_intelligence_golden_corpus.py"
       - "tests/test_company_intelligence_golden_corpus_replay.py"
+      # Wave 1A event/document/span spine. The engine modules are already covered
+      # by engine/company_intelligence/** above; these two lines exist so a
+      # test-only edit still re-runs the suites that grade the spine against the
+      # corpus, which tests/** does not do — it is not a catch-all in this repo.
+      - "tests/test_company_intelligence_spine.py"
+      - "tests/test_company_intelligence_spine_corpus.py"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
@@ -3160,6 +3326,25 @@ on:
       # needs an entry.
       # billing-offers
       - "tests/test_billing_offers.py"
+      # ── RED-on-arrival sweep, batch D: the P4/P5 re-drain (2026-08-06) ──────
+      # A fresh census re-ran all 959 currently-unrun suites one process each. 951
+      # pass; 8 are genuinely red on main, and these three are the cheap unclaimed
+      # ones. Every subject rides a catch-all above — engine/** for levels_engine
+      # and cycle_pattern, research/DO_NOT_REBUILD.md + scripts/*.py for the kill
+      # registry and its compiler — so only the test halves need entries, and
+      # tests/** is deliberately NOT broad.
+      #
+      # The registry pair is why the test half matters most here: the DNR guard's
+      # subject is a MARKDOWN FILE that agents append to, and an append is precisely
+      # the edit that must run it. That half was already listed (the compiled-registry
+      # cluster above); this adds the guard's own half so a fix to the GUARD is
+      # covered too — the "both halves on purpose" rule this list keeps re-learning.
+      # capability-broker
+      - "tests/test_dnr_registry_keys.py"
+      # unrun-market-plumbing
+      - "tests/test_levels_engine.py"
+      # unrun-neuralweb-cortex
+      - "tests/test_cycle_pattern_lake.py"
       # ── Stripe object bootstrap (tier rename, Phase 2) ──────────────────────
       # scripts/stripe_bootstrap.py reaches this workflow by NO other path, and
       # its renamed-product adoption is the step that decides whether a live
@@ -3167,6 +3352,21 @@ on:
       - "scripts/stripe_bootstrap.py"
       - "tests/test_stripe_bootstrap_offers.py"
       - "tests/test_stripe_bootstrap_products.py"
+      # ── Breadth OHLC basis coherence (2026-08-06 split-basis incident) ──────
+      # BOTH halves plus BOTH repair paths listed on purpose. The guard's whole
+      # subject is that _high/_low can drift onto a different yfinance
+      # adjustment basis than _closes while every existing scanner looks only at
+      # the closes matrix — so an edit to either writer is exactly the edit that
+      # must start this lane. collectors/breadth.py owns _merge_refreshed's
+      # extras graft (the `t in w.columns` filter that can heal closes and leave
+      # the extras poisoned); heal_breadth_split_seams.py rewrites the extras
+      # only for closes-flagged tickers. Neither reaches this workflow by any
+      # other pattern, and a trigger gap here is the same shape as the hole the
+      # guard exists to close (check_ci_trigger_closure).
+      - "scripts/check_ohlc_basis_coherence.py"
+      - "tests/test_check_ohlc_basis_coherence.py"
+      - "collectors/breadth.py"
+      - "scripts/heal_breadth_split_seams.py"
       # ── Government Revenue Wave 9G prospective grader (2026-08-06) ──────────
       # Job: unrun-government-revenue-grader (.github/ci/legacy-jobs.yml, tail).
       # Deliberately a separate block from the Government Revenue cluster near
@@ -3180,6 +3380,32 @@ on:
       # must re-run the guard that binds it.
       - "tests/test_government_revenue_candidate_grader.py"
       - "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md"
+      # ── Trigger-gap heal (2026-08-07) ───────────────────────────────────────
+      # Four suites already RUN by a pack read a document or config by path, with
+      # no on.pull_request.paths entry reaching it — so an edit to exactly the
+      # thing each guard binds ships without the guard running, and
+      # check_ci_trigger_closure.py reds test_main_has_no_trigger_gap for EVERY
+      # open PR until it is listed. Same load-bearing-prereg reasoning as the
+      # block directly above; these are the fixes the guard itself prints.
+      #   research/PROPHET_DOORS_PREREG.md            <- tests/test_prophet_doors.py:1400
+      #   research/PROPHET_ARENA_REGISTRATION.md      <- tests/test_prophet_arena.py:1042
+      #   research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md
+      #                                               <- tests/test_event_atlas.py:360
+      #   config/biocatalyst_outcome_family_policy.yml
+      #                        <- tests/test_biocatalyst_m0a_outcome_family_policy.py:19
+      - "research/PROPHET_DOORS_PREREG.md"
+      - "research/PROPHET_ARENA_REGISTRATION.md"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "config/biocatalyst_outcome_family_policy.yml"
+      # ── Price-basis census (2026-08-07) ─────────────────────────────────────
+      # Job: price-basis-census (.github/ci/legacy-jobs.yml). Same two-halves law
+      # as the blocks above: every module the census SCANS rides a catch-all
+      # already (engine/** and scripts/*.py are exactly the two trees it walks),
+      # so this entry is the OTHER half — the suite carries a frozen registry as
+      # its own source, and editing that registry is the single most likely way
+      # to make it wrong. A registry edit that cannot START ci.yml is the darkness
+      # this whole job exists to end.
+      - "tests/test_price_basis_graders.py"
   workflow_dispatch:
 
 permissions:

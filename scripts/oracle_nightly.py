@@ -44,6 +44,12 @@ Steps (in order):
                      oracle_turn_desk.json + sidecar oracle_tape_onset.json.
                      Trial ledger: data/oracle/tape_onset_ledger.jsonl.
                      Registration: research/ORACLE_TAPE_ONSET_TIER_REGISTRATION.md.
+  20. Memory analogues (O3) — DESCRIPTIVE: kNN analogue history for every
+                     currently-active episode (leakage law inside
+                     engine/oracle/memory.py::find_analogues).  Writes
+                     data/oracle/memory_active_analogues.json, the fail-open
+                     input to oracle_state.json active_episodes[].analogues.
+                     ANALOGUES ONLY — Step 4a still owns memory_base_rates.json.
 
 Usage
 -----
@@ -1610,6 +1616,61 @@ def _step_tape_onset(
         return -1
 
 
+def _step_memory_analogues(data_dir: Path, dry_run: bool) -> bool:
+    """Step 20: Active-episode analogues (O3) — DESCRIPTIVE, additive at END.
+
+    Constitution §V additive-only law: appended at END of the oracle nightly
+    step order.  The payload change is additive and tolerant-reader — the
+    reader already exists and is fail-open (engine/oracle/live.py
+    _load_active_analogues → active_episodes[].analogues, null when absent).
+
+    WHY THIS STEP EXISTS: engine/oracle/memory.py::find_analogues and its
+    producer scripts/build_oracle_memory.py were both built, but the producer
+    was scheduled NOWHERE (no config/dag.yml node, no nightly step), so
+    data/oracle/memory_active_analogues.json was never written and
+    oracle_state.json active_episodes[].analogues was permanently null.
+
+    Reads : data/oracle/episodes_s.parquet, episodes_m.parquet, panel_s.parquet
+    Writes: data/oracle/memory_active_analogues.json (keyed by episode_id)
+
+    ANALOGUES ONLY — memory_base_rates.json belongs to Step 4a, which
+    hand-rolls it from the gauntlet p3_results; run_analogues() never touches it.
+
+    Loud-error pattern: ::error:: annotation + returns False; later steps still
+    attempt.  Missing episode parquets → annotation + False, no file written,
+    no raise (mirrors Step 19's missing-panel degrade).
+    """
+    log.info("=== Step 20: Memory active-episode analogues (O3) ===")
+    t0 = time.time()
+    try:
+        from scripts.build_oracle_memory import run_analogues
+
+        summary = run_analogues(data_dir, dry_run=dry_run)
+        if summary.get("skipped"):
+            _annotation(
+                f"oracle_nightly: memory_analogues — {summary['skipped']}, skipping"
+            )
+            log.info("[timing] memory_analogues skipped in %.1fs", time.time() - t0)
+            return False
+
+        log.info(
+            "memory_analogues: %d active episodes, %d analogue blocks, %.1f KB → %s",
+            summary.get("n_active", 0),
+            summary.get("n_blocks", 0),
+            summary.get("bytes", 0) / 1024,
+            summary.get("path", "?"),
+        )
+        log.info(
+            "[timing] memory_analogues %d active episodes in %.1fs",
+            summary.get("n_active", 0),
+            time.time() - t0,
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: memory_analogues FAILED: {e}")
+        return False
+
+
 def _write_turn_desk_ledger(
     armed: list[dict],
     panel_asof: str,
@@ -1957,6 +2018,14 @@ def main() -> int:
         failures.append("tape_onset")
     else:
         n_tape_onset_ledger = _tape_onset_result
+
+    # --- Step 20: Memory active-episode analogues (O3) — additive at END ---
+    # Fills data/oracle/memory_active_analogues.json, the fail-open input to
+    # oracle_state.json active_episodes[].analogues (previously never produced:
+    # the only producer was scheduled nowhere).  ANALOGUES ONLY — Step 4a still
+    # owns memory_base_rates.json.  Loud-error pattern; pipeline continues.
+    if not _step_memory_analogues(data_dir, args.dry_run):
+        failures.append("memory_analogues")
 
     elapsed = time.time() - t_total
     log.info(

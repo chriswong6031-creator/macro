@@ -1967,6 +1967,99 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
     assert MOG.main_clean_check_names("acme/widgets", "read") == {"ci-pack-0"}
 
 
+def test_main_clean_check_names_walks_past_commits_that_publish_only_ambient_checks(
+        monkeypatch):
+    """The regression that made the whole refresh path inert (2026-08-08).
+
+    `test_..._walks_past_commits_that_published_no_checks` above covers a tip carrying
+    NOTHING. The real tip carries SOMETHING ELSE. Measured on main `483242ab4b0` with
+    main fully green four packs deep only five commits back, the tip's completed
+    non-spurious checks were exactly `sweep` and `Supabase Preview` — every wire tick
+    and research_vault catalog carries its own per-push workflows. Stopping at the
+    first commit with ANY non-spurious check therefore answered `{sweep}`, which can
+    never be a superset of a pack red, so `bad_names <= main_clean` was false for
+    every armed PR forever: `0 main commit(s) classified`, 21 left merge-blocked.
+
+    Pins that an ambient-only commit does not end the walk.
+    """
+    checks = {
+        "a" * 40: {  # the nightly tip: real checks, but no packs
+            "total_count": 2,
+            "check_runs": [
+                _run("sweep", conclusion="success"),
+                _run("Supabase Preview", conclusion="failure"),
+            ],
+        },
+        "b" * 40: {  # the commit that actually ran ci.yml
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-0", conclusion="success"),
+                _run("ci-pack-1", conclusion="success"),
+            ],
+        },
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            return 200, _commits("a" * 40, "b" * 40)[:asked]
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    clean = MOG.main_clean_check_names("acme/widgets", "read")
+    # the packs are reachable — this is the assertion the old code failed
+    assert {"ci-pack-0", "ci-pack-1"} <= clean
+    # the ambient commit is still folded in newest-first: sweep passed, Supabase did not
+    assert "sweep" in clean and "Supabase Preview" not in clean
+
+
+def test_a_fresher_pack_failure_beats_an_older_pass_for_the_same_name(monkeypatch):
+    """Newest-wins per NAME is what makes walking past the tip safe.
+
+    The no-union rule exists so "a check that passed four commits ago" cannot excuse
+    "a red the very next commit introduced". Walking further could reintroduce exactly
+    that if an older CLEAN conclusion were allowed to overwrite a newer bad one — so
+    pin the ordering directly, with the failure NEWER than the pass.
+    """
+    checks = {
+        "a" * 40: {"total_count": 1, "check_runs": [_run("sweep", conclusion="success")]},
+        "b" * 40: {  # newer of the two ci runs: ci-pack-2 is RED here
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-2", conclusion="failure"),
+                _run("ci-pack-3", conclusion="success"),
+            ],
+        },
+        "c" * 40: {  # older: ci-pack-2 was green, and must NOT rescue it
+            "total_count": 1,
+            "check_runs": [_run("ci-pack-2", conclusion="success")],
+        },
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            return 200, _commits("a" * 40, "b" * 40, "c" * 40)[:asked]
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    clean = MOG.main_clean_check_names("acme/widgets", "read")
+    assert "ci-pack-2" not in clean, "an older pass rescued a newer failure"
+    assert {"ci-pack-3", "sweep"} <= clean
+
+
 def test_main_clean_check_names_answers_from_one_commit_never_a_union(monkeypatch):
     """A union would let a pass four commits ago excuse a red introduced since."""
     checks = {
@@ -2155,3 +2248,45 @@ def test_the_refresh_cap_does_not_change_behaviour_when_no_budget_is_passed(
             == "rebased"
         )
     assert len([c for c in calls if c[1].endswith("/update-branch")]) == 29
+
+
+# ── the breaker's upstream: a proof that never concludes reads as `pending` ────
+#
+# merge_on_green short-circuits on integration-baseline BEFORE it looks at any pull
+# request, and a never-concluding newest run reads as `pending`, which blocks ordinary
+# merges. So the sweeper's throughput depends on a workflow it does not own.
+#
+# 2026-08-07: integration-baseline.yml carried `cancel-in-progress: true`, which cancels
+# the RUNNING proof and not merely superseded pending ones. Source pushes land every 1-2
+# minutes during a merge drain and the hosted queue sat 100-180 deep, so every run was
+# killed before it acquired a runner: measured over ~3h the last 60 runs were 59
+# cancelled + 1 running, ZERO success, newest success 5h stale. The sweeper reported
+# "11 baseline-blocked" against a main that was green. The armed backlog could not drain
+# because the proof that main is drainable was being cancelled by the drain's own pushes.
+#
+# `false` still coalesces — GitHub allows one pending run per group, so a newer push
+# still supersedes an older PENDING proof — but the run holding a runner gets to finish.
+
+import yaml as _yaml  # noqa: E402
+
+_BASELINE_WF = ROOT / ".github" / "workflows" / "integration-baseline.yml"
+
+
+def test_the_baseline_proof_is_allowed_to_finish():
+    """cancel-in-progress must stay false or the breaker can never open under load.
+
+    Not a style preference. With `true`, a repo that pushes source faster than it can
+    acquire a runner never produces a concluded proof at all, and `pending` blocks every
+    ordinary merge — the sweeper stalls on a green main.
+    """
+    doc = _yaml.safe_load(_BASELINE_WF.read_text())
+    conc = doc.get("concurrency") or {}
+    assert conc.get("group") == "integration-baseline-main", \
+        "the baseline must stay in one coalescing group"
+    assert conc.get("cancel-in-progress") is False, (
+        "integration-baseline.yml has cancel-in-progress back on. That cancels the RUNNING "
+        "proof, not just superseded pending ones — measured 2026-08-07, it produced 59 "
+        "cancelled runs and zero successes in 3h while merge-on-green reported "
+        "'11 baseline-blocked' against a green main. If a newer proof must win, supersede "
+        "the PENDING one (which the group already does); do not kill the one on a runner."
+    )

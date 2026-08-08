@@ -40,6 +40,19 @@
   var LS_PREFIX = 'mdx_stocktable2_';
   var FRESH_DAYS = 2;  // days_since_signal <= 2 → show NEW dot
 
+  // The fresh window is BOUNDED ON BOTH SIDES. `days_since_signal` is the board session
+  // minus the signal session, and the engine deliberately publishes a negative value
+  // rather than clamping it — a signal stamped AFTER the board's own session is a data
+  // fault that must stay visible in the artifact. What must NOT happen is that fault
+  // reading as freshness: `<= FRESH_DAYS` alone is open below, so on the committed
+  // 2026-08-06 board six rows (HD, ASML, ELV, TSM, TJX, AEP) at days_since_signal −5
+  // passed the fresh-only filter — HD's real last marker was 2026-04-27, over three
+  // months earlier. A negative age is an unknown age, and an unknown age is not fresh.
+  function _isFresh(row) {
+    var age = row && row.days_since_signal;
+    return age != null && age >= 0 && age <= FRESH_DAYS;
+  }
+
   // Static SVG fragments for the toolbar + chooser. Module scope on purpose:
   // init() consumes them during the synchronous skeleton build, so any
   // function-scoped `var` declared later in init() would be hoisted-undefined
@@ -579,7 +592,7 @@
         if (filters.sector !== 'all' && (r.sector || '') !== filters.sector) return false;
         if (filters.capBucket !== 'all' && (r.cap_bucket || 'unknown') !== filters.capBucket) return false;
         if (filters.lane !== 'all' && (r.lane || '') !== filters.lane) return false;
-        if (filters.freshOnly && !(r.days_since_signal != null && r.days_since_signal <= FRESH_DAYS)) return false;
+        if (filters.freshOnly && !_isFresh(r)) return false;
         if (filters.theme) {
           var th = filters.theme.toLowerCase();
           var themeVal = ((r.narrative && r.narrative.theme) || '').toLowerCase();

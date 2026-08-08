@@ -76,7 +76,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | personality-timing | 12 |
 | pick-lab | 3 |
 | policy-shock | 5 |
-| prophet | 1 |
+| prophet | 3 |
 | qualitative-intelligence | 23 |
 | rates-inflation-command | 8 |
 | research-factory | 3 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 365 |
+| display | 367 |
 | infrastructure | 141 |
 | scored | 4 |
 | shadow | 85 |
@@ -116,7 +116,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 563 |
+| git | 565 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -148,9 +148,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| data-neuralweb-biopharma-seasonality-state | `data/neuralweb/biopharma_seasonality_state.json` | json | daily-engine | shadow | 2 | 0 |
 | site-stock-seasonality-entity | `site/seasonalitydata/entities/<SYM>.json` | json | daily-engine | display | 1 | 1 |
 | site-stock-seasonality-index | `site/seasonalitydata/index.json` | json | daily-engine | display | 1 | 1 |
-| data-neuralweb-biopharma-seasonality-state | `data/neuralweb/biopharma_seasonality_state.json` | json | daily-engine | shadow | 1 | 0 |
 | data-stock-seasonality-selection-cache | `data/seasonality/selection/<SYM>.json` | json | daily-engine | infrastructure | 1 | 0 |
 | site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | daily-engine | display | 0 | 1 |
 | data-seasonality-nw-forward-ledger | `data/seasonality/nw_forward_ledger.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
@@ -823,7 +823,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 4 | 0 |
-| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 2 | 0 |
+| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 3 | 0 |
 | grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
 | covariance-spine-history | `data/neuralweb/covariance_spine_history.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
@@ -935,7 +935,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| us-basket-turn | `site/basketdata/us_basket_turn.json` | json | daily-engine | display | 1 | 0 |
 | us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
+| us-basket-turn-ledger | `data/us_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### qualitative-intelligence
 
@@ -1023,7 +1025,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 16 | 0 |
+| baskets-membership | `data/baskets/membership.json` | json | weekly | infrastructure | 17 | 0 |
 | site-baskets-json | `site/basketdata/baskets.json` | json | daily-engine | display | 9 | 1 |
 | site-sector-pulse | `site/basketdata/sector_pulse.json` | json | daily-engine | display | 3 | 2 |
 
@@ -1209,7 +1211,7 @@ flowchart LR
     C_engine_financial_news_py["engine/financial_news.py"]
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
-    OVF_baskets_membership["...+12 more"]
+    OVF_baskets_membership["...+13 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]

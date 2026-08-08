@@ -10,6 +10,12 @@ has poor reliability in the present regime."*
 NULL where it is novel.** One instrument built (§6). Measured receipts: `reports/regime-reliability-phase0.md`.
 
 **Adjudicated:** 2026-08-05. **Registry rows:** `research/DO_NOT_REBUILD.md` §1, §2.
+**Where it is published:** the Quant Lab methods shelf — `specs.METHODS['regime_reliability']`,
+rendered on `quant_lab.html`, with measurements read from `data/quant_lab/methods/regime_reliability.json`
+(written by `scripts/regime_reliability_phase0.py`). Program home:
+`research/QUANT_LAB_MASTERPLAN_FINTEL_RECREATION.md` §6.1. Quant Lab is the house's registry of
+externally-published quant models rebuilt and measured on our own panel, and its §0 gate 5
+requires a null to be printed rather than hidden — so this verdict is user-visible, not filed.
 
 ---
 

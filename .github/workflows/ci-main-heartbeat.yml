@@ -255,6 +255,8 @@ jobs:
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
+      - name: Pro-only host gate (bot.mastermind-x.com -> /api/paywall/check_pro)
+        run: python -m pytest tests/test_paywall_pro_gate.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
         run: python -m pytest tests/test_site_access_boundary.py -q
       - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
@@ -335,6 +337,8 @@ jobs:
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
+          tests/test_library_chg_1d.py
+          tests/test_stock_technicals.py
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
           tests/test_sa_w5_v2_grader_hook.py

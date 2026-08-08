@@ -779,12 +779,18 @@ def reconcile_round(values: Mapping[str, float], nd: int = DISPLAY_ND) -> dict[s
 def policy_metrics(rows: Sequence[Mapping[str, Any]]) -> dict:
     """Headline block for one policy, computed through ``track_scoring.summarize``.
 
-    One deliberate departure from ``summarize``: ``capture`` is recomputed with rows whose
-    MFE <= 0 DROPPED rather than divided. ``summarize``'s filter is ``abs(mfe) > 1e-9``,
-    which admits a negative MFE — a position that never traded above its entry inside the
-    window — and realised/MFE there is a ratio of two negatives that prints as a healthy
-    positive. The dropped rows are counted (``n_capture_undefined``) and the report prints
-    the count beside the column, so the null is disclosed rather than averaged away.
+    ``capture`` is recomputed here with rows whose MFE <= 0 DROPPED rather than divided:
+    a negative MFE means the position never traded above its entry inside the window, and
+    realised/MFE there is a ratio of two negatives that prints as a healthy positive. The
+    dropped rows are counted (``n_capture_undefined``) and the report prints the count
+    beside the column, so the null is disclosed rather than averaged away.
+
+    This USED to be a deliberate departure from ``summarize``, whose own filter was
+    ``abs(mfe) > 1e-9`` and therefore admitted the negatives. #4684 ported the floor
+    upstream (``track_scoring.MFE_FLOOR``), so the recompute is now a MIRROR, not a
+    departure — the study and the shipped track record have to report the same quantity
+    under one column name. Keep the two floors equal; the agreement is pinned by
+    tests/test_exit_policy_study.py::TestCaptureGuard.
     """
     out = dict(ts.summarize(rows, metric="pnl", horizon=LEDGER_HORIZON))
     ex = [float(r["excess"]) for r in rows

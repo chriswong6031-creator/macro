@@ -49,6 +49,7 @@ from engine.marketing import sentinel as SEN
 from engine.marketing.hot_tape import FactPacket
 
 from scripts import hot_tape_radar as RADAR
+from tests.workflow_staging import staged_paths
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -2196,10 +2197,9 @@ class TestCIWiring:
         }, cone
         # Every path the commit step stages must be inside the cone, or the
         # radar would write outside its own checkout.
-        staged = set(re.findall(
-            r"^\s*git add (\S+)",
+        staged = staged_paths(
             (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"), re.M))
+                encoding="utf-8"))
         assert all(any(p == c or p.startswith(c + "/") for c in cone) for p in staged), staged
 
     def test_the_wide_price_order_is_the_radar_alone(self):
@@ -2219,7 +2219,7 @@ class TestCIWiring:
         """Ledger law: outbox + the two hot-tape ledgers, nothing else."""
         text = (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
             encoding="utf-8")
-        staged = set(re.findall(r"^\s*git add (\S+)", text, re.M))
+        staged = staged_paths(text)
         assert staged == {"data/marketing/outbox",
                           "data/marketing/hot_tape_ring.jsonl",
                           "data/marketing/hot_tape_fired.jsonl"}, staged

@@ -209,6 +209,70 @@ any publication that carries a `property_tree`, and writes them to that
 publication's `content_dir` + property tree instead. Historic ledger rows are
 never migrated — each row carries the URL it was actually published at.
 
+## Admin per-client identity behind the edge — ONE console step still owed
+
+**Status: the origin half is deployed; the EdgeOne half is an operator action.** Until
+that action is taken the admin login lockout keeps behaving exactly as it did before
+the fix — safe, but still one shared bucket for edge-borne traffic.
+
+**The problem.** `admin.mastermind-x.com` is edge-proxied, so the TCP peer Caddy sees
+(`header_up X-Admin-Client-IP {remote_host}`) is an EdgeOne origin-pull address, not the
+visitor. `admin/auth.py` keys its login lockout on that value, so every visitor arriving
+through the edge shared ONE bucket: five wrong passwords from anywhere on the internet
+locked the operator out of their own console, and kept it locked. `admin/edge_trust.py`
+fixes it by resolving the real visitor behind an *attested* edge peer — but attesting the
+peer needs something the caller cannot forge, because ufw permits `80,443/tcp` from
+Anywhere and anyone can hit the origin directly with whatever headers they like.
+
+**Why a CIDR allowlist is not the answer here.** The credential-free published range list
+(`https://api.edgeone.ai/ips`) was deprecated 2026-07-31 and now answers HTTP 200 with a
+deprecation notice followed by the literal payload `0.0.0.0/0` and `::/0` — ingesting it
+blindly would trust the entire internet. Its successor (`DescribeOriginACL`) needs Tencent
+Cloud SecretId/SecretKey, which this infrastructure does not hold. So the shipped default
+allowlist is empty, the loader hard-refuses blanket ranges, and the **shared secret below
+is the intended mechanism**. Details and evidence: `config/edgeone_origin_ranges.json`.
+
+**The step.** Give the edge a secret to prove itself with:
+
+1. Read the secret (do NOT commit it anywhere). `setup-admin.sh` provisions it — on
+   both a fresh box and an existing one — so this should already print a 48-char hex
+   value; if it prints nothing, re-run `admin/deploy/setup-admin.sh`:
+   ```
+   ssh root@146.190.142.17 'grep ADMIN_EDGE_SECRET /etc/macro-admin.env'
+   ```
+   To rotate, replace the value there, `systemctl restart admin`, then update the
+   console rule in step 2 — in that order, since the old secret keeps working until
+   the restart.
+2. EdgeOne console → the `mastermind-x.com` site → **Rules Engine** → new rule:
+   * **IF** HOST equals `admin.mastermind-x.com`
+   * **THEN** *Modify origin-pull request header* → **Set** header `X-MM-Edge-Auth`
+     to that value.
+3. Confirm it took effect. **Log in to the console first** — the probe is an
+   authenticated route, because it is the only one that reports the resolved identity:
+   ```
+   curl -s https://admin.mastermind-x.com/api/site_gate \
+        -H "Cookie: admin_session=<your session cookie>" | python3 -m json.tool | grep your_ip
+   ```
+   `your_ip` must be **your own public IP**. A `43.x` address means the rule did not
+   take effect and the console is still on the shared bucket.
+
+   Do **not** try to confirm this from `journalctl -u admin` or from `/api/session`:
+   the handler sets `log_message` to a no-op so there is no per-request log line, and
+   `/api/session` never resolves a client identity. Both would look "fine" for a rule
+   that silently failed.
+
+**Second thing this fixes.** `_real_client_ip()` feeds `site_gate.save_rules()`, which
+auto-allows the operator's IP so a gate edit cannot lock them out. Unresolved, that entry
+auto-allows an *edge* address — i.e. every visitor sharing that node. The same attestation
+makes it mean "the operator" again.
+
+**If you ever add a header here,** read `admin/edge_trust.py` first. Measured 2026-08-07
+by probing the live host through the edge with every real-client header forged:
+`EO-Connecting-IP` is the only one the edge overwrites. `EO-Client-IP`, `True-Client-IP`,
+`X-Real-IP` and `CF-Connecting-IP` all arrived carrying the forged values, and a clean
+edge request carries no `EO-Client-IP` at all. Trusting any of those would replace an
+operator-lockout DoS with unlimited brute-force bucket rotation.
+
 ## Files
 
 | File | Role |
@@ -218,6 +282,7 @@ never migrated — each row carries the URL it was actually published at.
 | `update.sh` | `git pull` + Caddy reload (installed as `/usr/local/bin/macro-update`, cron'd); publishes `site.served` and the two `press_*.served` trees |
 | `codex-runtime-setup.sh` | pins the official Codex CLI and prepares its root-only VPS state directory |
 | `live-setup.sh` | installs the fast, full-snapshot, and intraday-bar systemd lanes |
+| `macro-sentinel.service` + `.timer` | external freshness sentinel (masterplan W1 dead-man switch) — self-armed by `update.sh` on the live-plane box; every 30 min it checks live bake stamps + R2 publish time, alerts the operator on breach, publishes `/live/staleness.json` |
 | `live-rollback.sh` | disables the live lanes, restores legacy cron, and preserves artifacts in a backup |
 
 ## Notes / gotchas
