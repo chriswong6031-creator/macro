@@ -21,7 +21,7 @@
             "n": 297
           },
           "mixed": {
-            "mean_fwd_ret": 0.02360259814991133,
+            "mean_fwd_ret": 0.023602644183514345,
             "n": 299
           }
         },
@@ -34,7 +34,7 @@
             "n": 292
           },
           "mid": {
-            "mean_fwd_ret": 0.019012680574724713,
+            "mean_fwd_ret": 0.019012727550995367,
             "n": 293
           },
           "short": {
@@ -49,5 +49,5 @@
   "interpretation": "Realized forward-return gaps of the FROZEN structural descriptors per horizon: decline_geometry flush\u2212grind (family E, DISPLAY-CANDIDATE) and underwater_state long\u2212short (family F, ADVERSE-CONTEXT). Descriptive only; empty/thin until horizons elapse.",
   "authority": "DISPLAY-ONLY \u2014 no ranking/gating/allocation surface is touched; a positive gap does NOT promote either descriptor. CHIP promotion is blocked until the true eq_band cache lands (RUL-28).",
   "survivorship": "OPTIMISTIC bound \u2014 free prices serve currently-listed names only.",
-  "generated_utc": "2026-08-08T08:01:49+00:00"
+  "generated_utc": "2026-08-08T16:22:17+00:00"
 }
