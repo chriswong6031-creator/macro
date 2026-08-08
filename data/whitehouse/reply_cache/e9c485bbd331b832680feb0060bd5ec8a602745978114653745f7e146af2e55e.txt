@@ -1,0 +1,68 @@
+{
+  "activate": true,
+  "importance": 68,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "$2B+ defense & EXIM push into US mining — domestic battery, magnet, alloy supply chains reshaped",
+  "banner_title_zh": "超20亿美元国防与进出口银行资金注入美国矿业 — 本土电池、磁材、合金供应链重塑",
+  "summary": "The White House detailed over $2 billion in multi-agency investments targeting critical mineral mining, processing, and workforce development. The DoD-led push funds domestic bauxite, rare-earth-free magnets, silicon anodes, and scandium, directly subsidizing defense-aligned supply chains while EXIM and DFC extend support to foreign mines feeding US industry. Sectors with exposure to Chinese supply dominance face a potential reshaping of competitive dynamics.",
+  "summary_zh": "白宫详细公布了超20亿美元的多机构投资，针对关键矿产开采、加工及劳动力发展。以国防部为首的资金推动本土铝土矿、无稀土磁材、硅负极和钪材料的开发，直接补贴与国防挂钩的供应链；同时，进出口银行与美国国际开发金融公司亦将支持延伸至为美国工业供矿的海外矿山。依赖中国供应的行业板块面临竞争格局重塑。",
+  "analysis": "This fact sheet catalogs a series of targeted investments — not broad tariffs — that represent a significant escalation in on-shoring and friend-shoring the defense and energy industrial base. The Department of War (a typo for 'Defense' in the original or a rebranded designation) is the dominant spender, committing $2.035B directly to specific companies: Sila Nanotechnologies ($1.4B for silicon anodes and Li-ion cells), Niron Magnetics ($150M for rare-earth-free permanent magnets), Standard Bauxite ($85M for refractory bauxite), and Sunrise Energy Metals ($400M for a domestic scandium value chain). These are not procurement contracts but investments aimed at building domestic production capacity, which directly targets vulnerabilities in sectors dominated by China.",
+  "summary_zh": "分析指出，这些并非广泛的关税措施，而是一系列针对性投资，代表国防与能源工业的本土化与友岸外包显著升级。资金直接投向特定企业以建立本土产能，目标直指中国主导的供应链薄弱环节，构成结构性支撑。",
+  "analysis_zh": "The Ex-Im Bank adds smaller tickets for boron (5E Advanced Materials) and graphite (Westwater Resources), while the DFC uniquely leverages $4.8M for a rare earth mine in Madagascar — an explicit 'friend-shoring' move to secure supply outside Chinese influence. The workforce element ($180M into mining schools) addresses a structural bottleneck: the lack of skilled labor to operate a rapidly expanding industry. The market impact is mixed: it is a clear tailwind for the named recipients and adjacent domestic miners/processors, accelerating de-risking from China. However, it introduces uncertainty for existing global rare earth and graphite suppliers by signaling an ultimate decline in US import dependency, creating a headwind for international pure-plays not aligned with US policy.",
+  "sectors": [
+    {
+      "name": "Domestic Critical Minerals & Mining",
+      "impact": "tailwind",
+      "rationale": "Direct government capital injections and offtake commitments accelerate revenue growth for U.S.-focused miners and processors."
+    },
+    {
+      "name": "Advanced Battery Materials",
+      "impact": "tailwind",
+      "rationale": "$1.4B investment in Sila Nanotechnologies boosts domestic silicon anode and Li-ion battery cell production, challenging Asian dominance."
+    },
+    {
+      "name": "Defense & Aerospace Supply Chain",
+      "impact": "tailwind",
+      "rationale": "On-shoring of scandium, bauxite, and magnets secures critical inputs for fighter jets and munitions, reducing geopolitical supply risk."
+    },
+    {
+      "name": "Global Rare Earth & Graphite Producers (ex-US aligned)",
+      "impact": "headwind",
+      "rationale": "U.S. policy explicitly aims to reduce dependency on foreign sources, threatening long-term demand for non-aligned international suppliers."
+    },
+    {
+      "name": "Mining Equipment & Services",
+      "impact": "tailwind",
+      "rationale": "A new generation of domestic mines and processing facilities, plus workforce expansion, will drive demand for heavy equipment and engineering services."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MP",
+      "direction": "benefit",
+      "rationale": "MP Materials Corp is the largest U.S. rare earth producer; the policy push and friend-shoring narrative validate its strategic domestic position."
+    },
+    {
+      "symbol": "SGML",
+      "direction": "benefit",
+      "rationale": "Sigma Lithium Corp operates a large lithium project; the U.S. battery supply chain emphasis supports demand for non-Chinese lithium sources."
+    },
+    {
+      "symbol": "WWR",
+      "direction": "benefit",
+      "rationale": "Westwater Resources is a direct recipient of $25M for the Coosa Graphite Deposit, a tangible catalyst for its Alabama battery graphite project."
+    },
+    {
+      "symbol": "LAC",
+      "direction": "benefit",
+      "rationale": "Lithium Americas Corp benefits from the overarching U.S. policy goal of developing a vertically integrated domestic battery supply chain."
+    },
+    {
+      "symbol": "UEC",
+      "direction": "benefit",
+      "rationale": "Uranium Energy Corp represents the pivot to domestic energy metals; the broader national-security frame for mining aids permitting and sentiment for U.S. uranium extraction."
+    }
+  ],
+  "confidence": "medium"
+}

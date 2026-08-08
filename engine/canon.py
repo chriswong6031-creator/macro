@@ -28,6 +28,18 @@ Wilder RMA, recursive ``adjust=False`` EMA, and a session-GROUPED 3D/2D resample
 does not mis-split a bucket across a market gap the way calendar ``resample("3B")`` does.
 The Terminal's ``signal_layer/confluence.py`` is ported to these and gated against the
 exported golden vectors (``scripts/export_signal_contracts.py``).
+
+ONE CONCEPT, TWO ANCHORS — READ THIS BEFORE "UNIFYING" THE 3D GRID.  The in-repo cascade
+(``engine.confluence_tiers._tf_bars``) does NOT call :func:`resample_sessions`.  It is the
+same session-GROUPED concept cut on an ABSOLUTE session calendar rather than on ordinals
+counted from the caller's first bar — era ``abs-session-2026-08-06``, PR #4732, ruling
+``research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md``.  The split is
+deliberate on both sides: the cascade needs a verdict that does not move with the caller's
+slice, and canon must NOT be re-phased because its phase is part of the cross-repo contract
+(``CONFLUENCE_PARAMS`` + the committed golden vectors the Terminal is gated against).
+The two are the SAME FUNCTION on a contiguous window that opens on a bucket boundary and
+diverge only by that phase — pinned bar-for-bar by ``tests/test_canon.py`` §5b, which also
+records why a delegate in either direction is a regression.  Neither is the calendar bin.
 """
 from __future__ import annotations
 
@@ -358,7 +370,20 @@ def resample_sessions(daily: pd.Series, n: int) -> tuple[pd.Series, pd.Series]:
 
     Why not ``resample("3B")``: the calendar business-day bin re-anchors on the calendar, so
     a market holiday or a listing gap shifts which sessions share a bucket — the audit
-    measured ~80% of NVDA signal dates relocating vs this session-grouped path."""
+    measured ~80% of NVDA signal dates relocating vs this session-grouped path.
+
+    PHASE, AND ITS ONE KNOWN CONSUMER SPLIT.  Buckets are counted from THIS SERIES' first
+    bar, so the grid is a function of the caller's window: dropping k leading sessions
+    (k % n != 0) re-phases every bucket.  That is acceptable HERE — canon is the cross-repo
+    oracle, evaluated on the one frozen window ``scripts/export_signal_contracts.py`` exports
+    with its ``inputs_hash`` — but it is NOT acceptable for a live verdict, so the in-repo
+    cascade cuts the same concept on an absolute session calendar instead
+    (``engine.confluence_tiers._tf_bars``, era ``abs-session-2026-08-06``; measured on
+    data/stocks, a 1-to-5 session leading drop moves a cascade field on 12.83% of cases
+    through this ordinal path and 0.00% through the anchored one).  The two agree bar-for-bar
+    on a contiguous window that opens on a bucket boundary; ``tests/test_canon.py`` §5b pins
+    both the agreement and the divergence.  Re-phasing this function is a CONTRACT change:
+    regenerate ``tests/golden/canon_vectors.json`` and re-export the signal contracts."""
     s = pd.to_numeric(_as_series(daily), errors="coerce").dropna()
     if s.empty:
         return s, s
