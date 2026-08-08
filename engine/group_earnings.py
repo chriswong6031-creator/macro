@@ -133,6 +133,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -646,10 +647,10 @@ def sympathy(members: list[str], events: dict[str, list[dict]], adj: pd.DataFram
     for d in sorted(per_day):
         reporting = {r["ticker"] for r in per_day[d]}
         cohort_cols = [t for t in cols if t not in reporting]
-        if len(cohort_cols) < MIN_COHORT:
-            continue
         moves = pd.to_numeric(block.loc[d, cohort_cols], errors="coerce").dropna()
         moves = moves[np.isfinite(moves)]
+        # ONE cohort gate, applied to the members that actually have a move — a pre-filter
+        # on the column list is strictly looser and would be untestable behind this one
         if len(moves) < MIN_COHORT:
             continue
         abs_moves = moves.abs()
@@ -873,7 +874,6 @@ def append_sympathy_ledger(rows: list[dict]) -> int:
 
 def write_earnings_pulse(out_dir) -> dict | None:
     """Compute the sweep and write <out_dir>/earnings_pulse.json. None on shortfall."""
-    from pathlib import Path
     pulse = compute_group_earnings()
     if not pulse:
         return None

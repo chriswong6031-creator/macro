@@ -6143,3 +6143,58 @@ jobs:
           tests/test_earnings_release_binding.py
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
+
+  group-earnings-pulse:
+    # Group Reads W-GR2: engine/group_earnings.py -> site/basketdata/earnings_pulse.json,
+    # the per-basket earnings layer (season clock, beat rollup, guidance band, revision
+    # breadth, post-report drift, earnings sympathy) plus its append-only sympathy ledger.
+    #
+    # Both suites run against a SYNTHETIC data tree in tmp_path, so they are deterministic,
+    # offline, and independent of how full the Nasdaq surprise drip happens to be on the
+    # day. What they pin, in order of what would hurt most if it broke:
+    #
+    #   * the frozen group_earnings_pulse.v1 key set. The validator lives in the test, not
+    #     the engine, and is itself mutation-checked: nine deliberate mutants (unknown key
+    #     at three nesting depths, four dropped `n` fields, a dropped authority, a malformed
+    #     `next` entry) must each make it go red, so a validator that quietly stopped
+    #     validating fails here rather than shipping a silent contract break to the GR1
+    #     surface builder.
+    #   * every floor refusing with a null instead of a survivor-only number. The `thin`
+    #     basket carries three members with perfectly good data — a real surprise, a real
+    #     analyst reading, a real post-report price path — and must publish nothing but
+    #     nulls, because three is below MIN_REPORTED / MIN_COVERED / MIN_DRIFT_N. A
+    #     3-of-3 beat share is exactly the number the floors exist to suppress.
+    #   * the resolution-conditioned-denominator law: n_beat + n_miss + n_inline +
+    #     n_no_data == n_members in every basket, refused or not.
+    #   * engine.guidance_gap's >=2-distinct-filers law surviving the generalization from
+    #     curated themes to arbitrary basket rosters (one filer -> band null), and the
+    #     floor being IMPORTED rather than re-declared so the two can never drift.
+    #   * the sympathy ratio, on a fixture where the answer is arithmetic. That fixture is
+    #     deliberately MAJORITY report days: the median is robust, so a contaminated
+    #     baseline built from a window with only a few report days still reads correct and
+    #     the bug hides. At 24 report days against 16 quiet ones a baseline that forgets to
+    #     exclude them collapses the ratio from 3.0 to 1.0 — verified by mutation.
+    #   * the ledger's immutability: re-advancing identical inputs is a byte-for-byte no-op,
+    #     a restated value for an existing key is refused rather than applied, and the
+    #     nightly lane gate (engine.ledger_lane) is imported, not a local COLLECT_LANE read.
+    #
+    # `requests` is in the install line because engine/group_earnings.py's Item-2.02 check
+    # prefers collectors.edgar_earnings_8k.has_item_202 and falls back to a local copy when
+    # that module (which imports requests at module scope) is unavailable. With requests
+    # installed the equivalence test compares the two definitions for real; without it the
+    # test would skip and the fallback could drift unnoticed.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: group earnings pulse contract, floors and sympathy (W-GR2)
+        run: >-
+          python -m pytest
+          tests/test_group_earnings_contract.py
+          tests/test_group_earnings_sympathy.py -q -rs
