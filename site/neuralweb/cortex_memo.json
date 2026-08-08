@@ -1,31 +1,30 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-08T08:35:33+00:00",
-  "summary": "Context-only committee read: the dashboard is mixed, with a low-confidence transitioning Q2 reflation label, contracting but orderly liquidity, restrictive rising real yields, and a caution risk radar led by bubble/global concerns. The caution label is not presently an empirical drawdown edge: its measured 21-day pullback frequency is 16.0% versus a 17.8% baseline, the context gate is unmet, breadth remains healthy, credit is tight, and funding is calm. Cross-asset confirmation is divergent, so the regime label should be treated as fragile context rather than a unified macro conclusion. No signal, trade, ranking, sizing change, or escalation is originated.",
+  "as_of": "2026-08-08T16:54:34+00:00",
+  "summary": "Context-only committee read: the world state is MIXED with a low-confidence Q2/Reflation label (confidence 0.20), contracting but orderly liquidity, healthy breadth and credit, and no recession signal. The loud caution radar is driven chiefly by bubble-extension and JPY-carry context, but its own measured 21-day pullback rate is 16.0% versus a 17.8% unconditional base rate; it remains an early watch, not an edge. Cross-asset evidence is internally tense: both FX-dollar and rates-credit contradict the equity Q2 label, while market breadth remains healthy and the context gate is unmet. Factor intelligence is not mature: only 10 panel dates, no scorecard survivors, a non-tradeable composite, Pair G dormant, and zero graded factor-attention events. No signal, trade, ranking, sizing, or escalation is originated by this memo.",
   "what_fired": [
-    "Risk radar: caution, dominant bubble/blow-off unwind score 71.2; rising phase, but unconfirmed and below-baseline 21-day pullback frequency.",
-    "Global breadth scare: watch, with confirmed/accruing JPY-carry leg; broader US breadth remains healthy.",
-    "Liquidity plumbing: orderly drain, net liquidity down $211.4B over 20 days, RRP buffer exhausted, TGA build active, without confirming credit stress.",
-    "Factor weather: mixed style regime with value leading; factor panel has only 11 dates and has not met its history floor.",
-    "Cross-asset contradiction detector: FX-dollar and rates-credit disagree with the Q2 equity regime.",
-    "Theme and leadership context: rotation is under way; old memory/storage leadership is broken while semiconductor-relative weakness remains visible."
+    "Shadow attention: Q2 regime versus dual FX/rates-credit contradiction; close after five consecutive sessions without those contradictions and without a diverge verdict.",
+    "Shadow attention: risk-radar calibration gap; preserve early-watch framing unless matured caution observations reach at least 25 and the 21-day pullback rate exceeds base, or caution clears for five sessions.",
+    "Shadow attention: open China-equities overweight thesis mb-2026-07-09-1 is past its check date and conflicts with China Q3/contracting liquidity, HK weak-side outflow, and divergent cross-asset confirmation.",
+    "Shadow attention: factor panel has insufficient history; close only after at least 60 distinct dates and Pair G becomes operational.",
+    "Registered hypothesis for later metabolism: dual FX and rates-credit contradiction may reduce 21-day persistence of Q2, requiring at least 30 independent observations and a persistence reduction of at least 10 percentage points."
   ],
-  "contradictions_review": "Six display-only contradictions were reviewed. The principal macro tension is low-confidence Q2 reflation versus a caution risk radar and divergent bonds/FX confirmation. The radar deserves attention but not escalation because its own measured 21-day pullback rate is below baseline and the tape gate is unmet. Options skew contradicts nine buy-lane names, but the cited bullish skew-decay prior is unsupported and therefore cannot support a directional conclusion. Pair G factor contradictions are dormant because the factor panel has fewer than 60 dates. Open master-brain theses were checked: the China-overweight thesis conflicts with China Q3/contracting liquidity, HK weak-side outflow, mature China/HK risk-off context, and stale China market-state coverage; the long-Treasury overweight thesis conflicts with restrictive rising real yields and a bear steepener. Semiconductor-underweight and growth-underweight theses broadly agree with current relative-performance context rather than conflict with it.",
+  "contradictions_review": "Six current contradiction edges were reviewed. The central macro tension is Q2 equity reflation versus a caution radar dominated by bubble-extension, plus explicit FX-dollar and rates-credit opposition to Q2. A separate cross-asset confirmation verdict reads diverge. The briefing also carries 32 ticker-level demand-versus-supply divergences. Options show rising put skew on nine buy-lane names, which is de-escalation context only; the historical bullish skew-deceleration prior is unsupported. No factor contradictions were available because the Pair G ledger is dormant. Against the master-brain ledger, the clearest operator conflict is the overdue China-overweight thesis; several other open theses are also past check dates and should be administratively scored rather than treated as live, unexamined conviction.",
   "decaying_families": [
-    "Radar at 21 days: shrunken IC -0.007289 on signed excess despite high sample reliability; not armed.",
-    "Thematic desk at 63 days: negative signed excess in Q1 and Q2; not armed.",
-    "Stock desk and AI desk at 63 days: negative signed excess; not armed.",
-    "Policy and White House families: negative signed excess with thin samples; not armed.",
-    "Factor composite: non-tradeable, history floor unmet, with investment/low-vol/low-beta/composite negative-IC legs.",
-    "Cortex attention track record: only one effective event in the kernel and zero factor-attention gradings; authority remains shadow."
+    "Risk radar caution: 11 graded caution observations, zero hits, and a measured 21-day pullback rate below base; not validated as an edge.",
+    "US board in Q2: five-day signed excess is negative and pooled allocation remains held after losing out of sample.",
+    "Radar at 21 days: shrunken signed IC is negative; it remains unarmed.",
+    "AI, stock, and thematic desk 63-day families show negative signed excess in Q2 and remain unarmed.",
+    "Policy and White House families are negative or too thin and remain unarmed.",
+    "Factor composite: no surviving factors, negative-IC legs include investment, low-vol, low-beta, and composite; panel history is insufficient."
   ],
   "deserves_operator": [
-    "Review whether the risk-radar caution banner is communicating more urgency than its below-baseline measured drawdown frequency and unmet context gate justify; grade on a 21-day >=5% SPY pullback plus tape-break criterion.",
-    "Review open China-overweight thesis mb-2026-07-09-1 against current China Q3/contracting, HK weak-side outflow, mature risk-off context, and stale China-state coverage.",
-    "Close, refresh, or explicitly retain the overdue long-Treasury thesis mb-2026-07-01-1; current restrictive rising real yields and bear steepening contradict its stated rationale.",
-    "Monitor whether FX-dollar and rates-credit disagreement with Q2 persists for 10 of 15 sessions; until then treat Q2 as a low-confidence transitioning label.",
-    "Repair data-health gaps affecting international/China and capital-structure coverage before interpreting absence of confirmation as economic evidence.",
-    "Do not infer factor contradiction absence: Pair G is dormant because only 11 panel dates exist, below the 60-date activation floor."
+    "Reconcile the low-confidence Q2 label with simultaneous FX-dollar and rates-credit contradictions; do not infer direction until the disagreement resolves.",
+    "Keep the caution banner explicitly labeled early-watch: its 16.0% measured 21-day pullback rate is below the 17.8% base rate and the forward log is immature.",
+    "Review and score master-brain thesis mb-2026-07-09-1: China equities overweight, check date 2026-08-06. Current China Q3/contracting liquidity and HK weak-side outflow conflict with it.",
+    "Administratively review other overdue open theses, especially the July long-Treasury, semiconductor, China, and Bitcoin rows whose check dates have passed; stale status is not evidence.",
+    "Treat factor weather as descriptive only until the panel reaches 60 dates and Pair G/attention grading has a usable record.",
+    "Monitor data-health limitations: 148 stale series, failed international and China sources, and immature options-flow history reduce confidence in apparent agreement or silence."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
@@ -53,6 +52,7 @@
     "read_kernel": 1,
     "read_master_brain_theses": 1,
     "flag_attention": 1,
+    "stake_hypothesis": 1,
     "write_memo": 1
   },
   "is_context_only": true,
@@ -62,6 +62,46 @@
     "degradation_reason": null,
     "model_used": "claude-opus-4-8",
     "provider_attempts": [
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdqdaJCq33b1N6DrWyPi4'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdqdbaKDvQaxa12rAjyqd'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdqdgC3fP6ooLrMziynqK'}"
+      },
+      {
+        "provider": "oauth",
+        "model": "claude-opus-4-8",
+        "attempted": true,
+        "ok": false,
+        "error_type": "rate_limit",
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdqdumsW1w5Wkbqatek4J'}"
+      },
+      {
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
+        "attempted": true,
+        "ok": true,
+        "error_type": null,
+        "error_message": null
+      },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
@@ -95,10 +135,10 @@
         "error_message": null
       }
     ],
-    "tool_call_batches": 3,
-    "individual_tool_calls": 9,
+    "tool_call_batches": 4,
+    "individual_tool_calls": 10,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-08T08:01:44Z"
+    "context_as_of": "2026-08-08T16:22:12Z"
   }
 }
