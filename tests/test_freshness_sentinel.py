@@ -11,6 +11,12 @@ The load-bearing tests are the two failure modes of the 2026 outages:
     must anchor on the delayed-board marker the template renders only when the
     engine itself reports the lag, and must NOT be fooled by fresh peripheral
     as-of strings.
+  * the 2026-08-08 Prophet replay — the same re-stamp trap one layer down.
+    data/us_prophet_rank/candidates/2026-08.parquet froze at stamp_date
+    2026-08-05 while us_stocks.html re-baked fresh every day, so BOTH checks
+    above stayed green through it. The prophet_us surface anchors on the store's
+    own ``asof`` measured against the NYSE session calendar, so the weekend the
+    freeze was found on cannot excuse it and cannot fake it either.
 """
 from __future__ import annotations
 
@@ -23,6 +29,9 @@ from pathlib import Path
 from scripts import freshness_sentinel as fs
 
 NOW = datetime(2026, 8, 8, 5, 0, 0, tzinfo=timezone.utc)
+#: NOW is a SATURDAY, so the last COMPLETED NYSE session is Friday 2026-08-07.
+#: Every prophet expectation below is derived from that, not from the wall clock.
+PROPHET_CURRENT_ASOF = "2026-08-07"
 
 #: Body shaped like the REAL outage page: fresh per-panel annotations, an old
 #: board marker in both template renderings (dashboard.html.j2:15199-15200).
@@ -53,12 +62,38 @@ def _r2(bake_age_hours: float) -> fs.FetchResult:
     return fs.FetchResult(status=200, last_modified=NOW - timedelta(hours=bake_age_hours))
 
 
+def _prophet(asof: str | None = PROPHET_CURRENT_ASOF, *,
+             mtime_age_hours: float = 2.0,
+             body: str | None = None) -> fs.FetchResult:
+    """One served read of prophet/index.json, shaped like the real artifact.
+
+    ``mtime_age_hours`` stays FRESH by default on purpose: the whole point of
+    this surface is that the file keeps landing on schedule while its contents
+    freeze, so every staleness verdict below has to come from ``asof`` alone.
+    """
+    if body is None:
+        doc = {"schema": "prophet.index/v1", "cadence": "nightly-EOD",
+               "authority_tier": "display", "plan_count": 120}
+        if asof is not None:
+            doc["asof"] = asof
+        body = json.dumps(doc)
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours), body=body
+    )
+
+
+def _served(result: fs.FetchResult):
+    """A served_reader stand-in that answers every path with ``result``."""
+    return lambda served_dir, path: result
+
+
 def _fresh_results() -> dict[str, fs.FetchResult]:
     return {
         "us_stocks": _page(14.0),
         "china": _page(7.0),
         "hub": _page(14.0),
         "r2_massive_stock_day": _r2(10.0),
+        "prophet_us": _prophet(),
     }
 
 
@@ -80,12 +115,15 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         "china": _page(30.0),
         "hub": _page(30.0),
         "r2_massive_stock_day": _r2(30.0),
+        # prophet_us is judged on content, not on a stamp — it stays ok here,
+        # which is the point: the four bake surfaces answer independently.
+        "prophet_us": _prophet(),
     }
     report = fs.evaluate(results, NOW)
     assert report["ok"] is False
     assert report["stale_surfaces"] == ["china", "hub", "r2_massive_stock_day", "us_stocks"]
-    for c in report["surfaces"].values():
-        assert "bake stamp 30.0h old" in c["detail"]
+    for sid in report["stale_surfaces"]:
+        assert "bake stamp 30.0h old" in report["surfaces"][sid]["detail"]
 
 
 def test_jul31_outage_replay_breaches_on_the_board_marker():
@@ -165,6 +203,9 @@ def _stale_report(now: datetime = NOW) -> dict:
             "r2_massive_stock_day": fs.FetchResult(
                 status=200, last_modified=now - timedelta(hours=30)
             ),
+            # held fresh: these cases exercise the alert window, and the four
+            # bake surfaces above are the breach set they assert on.
+            "prophet_us": _prophet(),
         },
         now,
     )
@@ -308,6 +349,7 @@ def test_simulated_dead_nightly_delivers_a_real_alert(tmp_path, monkeypatch, cap
             public_dir=tmp_path / "public",
             state_dir=tmp_path / "state",
             fetcher=dead_nightly_fetcher,
+            served_reader=_served(_prophet()),
         )
 
         assert rc == 1
@@ -348,6 +390,7 @@ def test_fresh_run_writes_ok_state_and_exits_zero(tmp_path, monkeypatch):
         public_dir=tmp_path / "public",
         state_dir=tmp_path / "state",
         fetcher=fresh_fetcher,
+        served_reader=_served(_prophet()),
     )
     assert rc == 0
     served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
@@ -375,11 +418,14 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
             public_dir=tmp_path / "public",
             state_dir=tmp_path / "state",
             fetcher=dark_fetcher,
+            served_reader=_served(fs.FetchResult(error="served read failed: no such file")),
         )
     assert rc == 1
     served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
     assert served["ok"] is False
-    assert served["blind_surfaces"] == ["china", "hub", "r2_massive_stock_day", "us_stocks"]
+    assert served["blind_surfaces"] == [
+        "china", "hub", "prophet_us", "r2_massive_stock_day", "us_stocks"
+    ]
     assert served["stale_surfaces"] == []  # blind, not provably stale — honest split
 
 
@@ -416,6 +462,7 @@ def test_alert_delivery_survives_an_unwritable_state_path(tmp_path, monkeypatch)
             public_dir=blocked_public,
             state_dir=blocked_state,
             fetcher=dead_nightly_fetcher,
+            served_reader=_served(_prophet()),
         )
         assert rc == 1
         assert len(_Hook.received) == 1
@@ -491,6 +538,173 @@ def test_naive_clock_override_is_utc_not_local(tmp_path, monkeypatch):
     assert seen[0] == datetime(2026, 8, 8, 3, 0, tzinfo=timezone.utc)
 
 
+# --------------------------------------------------------------------------- #
+# prophet_us — the store's own asof, judged against the NYSE session calendar
+# --------------------------------------------------------------------------- #
+def _prophet_surface() -> dict:
+    return next(s for s in fs.SURFACES if s["id"] == "prophet_us")
+
+
+def test_prophet_surface_is_armed_on_its_own_asof():
+    s = _prophet_surface()
+    assert s["kind"] == "served_file"
+    assert s["path"] == "/prophet/index.json"
+    assert s["asof_field"] == "asof"
+    # Judged on CONTENT: a mtime budget here would be the re-stamp trap again,
+    # since the served file's mtime comes from an rsync of a git checkout.
+    assert s["bake_budget_hours"] is None
+    assert s["delay_budget_days"] is None
+
+
+def test_frozen_prophet_store_replay_breaches_on_its_own_asof():
+    """The 2026-08-08 audit replay. candidates/2026-08.parquet stopped at
+    stamp_date 2026-08-05 while every other surface read fresh: the page kept
+    re-baking, the R2 manifest kept publishing, and the delayed-board marker
+    never rendered because PRICES were not the thing that froze. Only the
+    store's own asof can see this, and it is 2 completed sessions (08-06,
+    08-07) behind at NOW."""
+    results = _fresh_results()
+    results["prophet_us"] = _prophet("2026-08-05")
+    report = fs.evaluate(results, NOW)
+    assert report["stale_surfaces"] == ["prophet_us"]
+    c = report["surfaces"]["prophet_us"]
+    assert c["asof"] == "2026-08-05"
+    assert c["asof_sessions_behind"] == 2
+    assert "store as of 2026-08-05 is 2 completed NYSE session(s) behind" in c["detail"]
+    # the one-layer-down re-stamp disclosure: the file IS landing, the data is not
+    assert "the file is being re-published, the store is not" in c["detail"]
+
+
+def test_prophet_three_sessions_behind_breaches():
+    """The gate the masterplan pins: an index 3 sessions behind the calendar
+    must breach, so the freeze can never sit unannounced for a week again."""
+    results = _fresh_results()
+    results["prophet_us"] = _prophet("2026-08-04")
+    report = fs.evaluate(results, NOW)
+    assert report["ok"] is False
+    assert report["surfaces"]["prophet_us"]["asof_sessions_behind"] == 3
+
+
+def test_current_prophet_store_does_not_page():
+    """The other half of the gate: a current index must NOT breach. NOW is a
+    Saturday — an asof of Friday's session is exactly current, and a
+    calendar-blind "days since asof" rule would already be calling it stale."""
+    report = fs.evaluate(_fresh_results(), NOW)
+    assert report["ok"] is True
+    c = report["surfaces"]["prophet_us"]
+    assert c["status"] == "ok"
+    assert c["asof"] == PROPHET_CURRENT_ASOF
+    assert c["asof_sessions_behind"] == 0
+
+
+def test_prophet_one_missed_nightly_is_inside_budget():
+    """B5 falsifier law: budgets absorb routine hiccups. One missed nightly (and
+    the next-day retry that fixes it) is one session of lag and must not page;
+    the SECOND missed session is the breach above."""
+    results = _fresh_results()
+    results["prophet_us"] = _prophet("2026-08-06")
+    report = fs.evaluate(results, NOW)
+    assert report["ok"] is True
+    assert report["surfaces"]["prophet_us"]["asof_sessions_behind"] == 1
+
+
+def test_prophet_weekend_and_holiday_never_manufacture_a_breach():
+    """The whole reason the anchor is the exchange calendar. On Monday morning
+    the newest session that CAN exist is still Friday's — a wall-clock budget of
+    2 days would page every Monday on a perfectly healthy store."""
+    monday = datetime(2026, 8, 10, 12, 0, tzinfo=timezone.utc)
+    results = _fresh_results()
+    results["prophet_us"] = _prophet("2026-08-07", mtime_age_hours=50.0)
+    report = fs.evaluate(results, monday)
+    assert report["surfaces"]["prophet_us"]["asof_sessions_behind"] == 0
+    assert report["surfaces"]["prophet_us"]["status"] == "ok"
+
+
+def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypatch):
+    """/prophet/index.json is BEHIND the registration wall: an anonymous GET
+    answers HTTP 401 + x-regwall: deny (probed 2026-08-08), and app/regwall.py
+    grants only /prophet/showcase.json — a deliberately delayed artifact. A
+    sentinel that fetched this over HTTP would read indeterminate on every pass
+    forever and page "sentinel is blind" every REALERT_HOURS: a false-alarm
+    machine bolted to the alarm that has to stay trusted."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+    urls: list[str] = []
+    reads: list[tuple[str, str]] = []
+
+    def spy_fetch(url, *, want_body):
+        urls.append(url)
+        return fs.FetchResult(status=200, last_modified=NOW - timedelta(hours=4),
+                              body=HEALTHY_BODY if want_body else None)
+
+    def spy_served(served_dir, path):
+        reads.append((str(served_dir), path))
+        return _prophet()
+
+    rc = fs.run(
+        now=NOW,
+        base="https://example.invalid",
+        r2_base="https://example.invalid",
+        public_dir=tmp_path / "public",
+        state_dir=tmp_path / "state",
+        served_dir=Path(fs.DEFAULT_SERVED_DIR),
+        fetcher=spy_fetch,
+        served_reader=spy_served,
+    )
+    assert rc == 0
+    assert not [u for u in urls if "/prophet/" in u], (
+        f"prophet must not be fetched over HTTP — the wall 401s it: {urls}"
+    )
+    assert reads == [("/opt/macro/site.served", "/prophet/index.json")]
+
+
+def test_read_served_round_trips_and_maps_a_missing_file_to_indeterminate(tmp_path):
+    (tmp_path / "prophet").mkdir()
+    (tmp_path / "prophet" / "index.json").write_text('{"asof": "2026-08-07"}')
+    got = fs.read_served(tmp_path, "/prophet/index.json")
+    assert got.status == 200 and got.last_modified is not None
+    assert json.loads(got.body)["asof"] == "2026-08-07"
+
+    missing = fs.read_served(tmp_path, "/prophet/nope.json")
+    assert missing.error and missing.status is None
+    # A sentinel pointed at the wrong root reports blindness, never an outage.
+    assert fs.check_surface(_prophet_surface(), missing, NOW)["status"] == "indeterminate"
+
+
+def test_prophet_non_json_body_is_indeterminate_not_stale():
+    """A login page, an error shell or a half-written file mid-rsync is a
+    transport failure wearing a 200. It escalates through the blindness counter
+    — it must not be read as an outage verdict in either direction."""
+    results = _fresh_results()
+    results["prophet_us"] = _prophet(body="<html>Sign in to continue</html>")
+    report = fs.evaluate(results, NOW)
+    assert report["stale_surfaces"] == []
+    assert report["indeterminate_surfaces"] == ["prophet_us"]
+    assert "not JSON" in report["surfaces"]["prophet_us"]["detail"]
+
+
+def test_prophet_payload_without_an_asof_is_a_breach_not_a_silent_pass():
+    """Well-formed JSON that cannot say when it is from is a definitive
+    regression in the artifact. "I can't tell" must never render as "fresh"."""
+    results = _fresh_results()
+    results["prophet_us"] = _prophet(asof=None)
+    report = fs.evaluate(results, NOW)
+    assert report["stale_surfaces"] == ["prophet_us"]
+    assert "cannot vouch for its own date" in report["surfaces"]["prophet_us"]["detail"]
+
+
+def test_prophet_budget_is_tighter_than_the_board_budgets():
+    """Stated so a later widening is a deliberate edit, not a drift: Prophet is
+    the surface a reader acts on, and a calendar anchor lets its budget be tight
+    without flapping on the closures that force the others wide."""
+    assert fs.PROPHET_MAX_SESSIONS_BEHIND == 1
+    assert _prophet_surface()["asof_max_sessions_behind"] == 1
+    board_budgets = [s["delay_budget_days"] for s in fs.SURFACES
+                     if s["delay_budget_days"] is not None]
+    assert board_budgets and min(board_budgets) > fs.PROPHET_MAX_SESSIONS_BEHIND
+
+
 def test_sentinel_is_stdlib_only():
     """The observer of last resort must not import the engine tree, lib.config,
     or any third-party package at module load — a broken venv or repo half-pull
@@ -509,9 +723,13 @@ def test_sentinel_is_stdlib_only():
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
         if node.col_offset > 0:
-            continue  # function-scoped (lazy) — app.mailer + hashlib live here
+            continue  # function-scoped (lazy) — app.mailer, lib.nyse_calendar, hashlib
         if isinstance(node, ast.ImportFrom) and node.level == 0:
             assert node.module != "app", "app.mailer import must stay lazy"
+            # lib.nyse_calendar is stdlib-only itself, but a module-level import
+            # would still let a half-pulled repo take the watchdog down instead
+            # of degrading the one surface that needs it to indeterminate.
+            assert node.module != "lib", "lib.nyse_calendar import must stay lazy"
             names = [node.module]
         else:
             names = [a.name for a in node.names]

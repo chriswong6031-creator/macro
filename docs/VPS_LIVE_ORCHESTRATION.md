@@ -140,7 +140,23 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   see it because per-panel annotations stay fresh throughout), HEADs the R2
   `massive_stock_day/_manifest.json` publish time, and compares all of it
   against per-surface budgets (26h bakes; 4 calendar days on the board's
-  self-reported lag). china.html emits no board stamp yet — its only `as of`
+  self-reported lag). A fourth surface, `prophet_us`, catches the same
+  re-stamp trap one layer down: the 2026-08-08 audit found
+  `data/us_prophet_rank/candidates/2026-08.parquet` frozen at stamp_date
+  2026-08-05 while us_stocks.html re-baked fresh daily, so every check above
+  stayed green through it (the delayed-board marker reports the PRICE lag, not
+  whether the ranker ran). It reads the `asof` field of the SERVED
+  `prophet/index.json` — off disk from the Caddy static root
+  (`/opt/macro/site.served`, override `--served-dir`/`SENTINEL_SERVED_DIR`),
+  because that path sits behind the registration wall and an anonymous GET
+  answers `HTTP 401` + `x-regwall: deny` — and budgets it at **1 completed NYSE
+  session** of lag via `lib/nyse_calendar`, so the second missed session pages.
+  The anchor is the exchange calendar, not the wall clock: a weekend or market
+  holiday adds zero, which is what lets this budget be far tighter than the page
+  budgets without flapping. A missing/unreadable file or a non-JSON body is
+  INDETERMINATE (blind), never a breach; well-formed JSON with no `asof` IS a
+  breach — a store that cannot vouch for its own date must not read as fresh.
+  china.html emits no board stamp yet — its only `as of`
   is an FX widget — so china runs bake-only until the template grows one.
   On breach it alerts the operator —
   Telegram (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`), Discord
