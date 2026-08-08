@@ -942,26 +942,24 @@ def test_ledger_functions_only_ever_open_in_append_or_read_mode():
 
 
 def test_this_pr_writes_nothing_under_data():
-    """CALIBRATION_SOURCE stays a pure-function module: no data/ paths, no
-    MACRO_LIVE_DIR. The ledger itself is nightly-advanced (its writer wired after
-    this test was first written), so its row count GROWS — the original exact pin
-    (`== 28`) was a scheduled failure the morning after any registration run, and
-    it fired 2026-08-08 when `engine: regime update` appended rows 29-43. Pin the
-    FLOOR and the append-only direction, never tonight's exact count."""
+    """The ledger WRITER is a later wiring PR. These are pure functions."""
     source = CALIBRATION_SOURCE.read_text(encoding="utf-8")
     assert '"data/' not in source and "'data/" not in source
     assert "MACRO_LIVE_DIR" not in source
     ledger = REPO_ROOT / "data" / "seasonality" / "nw_forward_ledger.jsonl"
     assert ledger.exists()
+    # ZERO matured grades — shadow status is binding. That, and every row carrying
+    # tier="shadow", are the claims; the ROW COUNT is not one of them.
+    #
+    # This pinned `== 28`, the count on the day it was written. The nightly registers
+    # forward rows as new windows open, so the pin expired on its own and took main
+    # red with it (28 -> 43 by 2026-08-08) while nothing it actually guards had moved:
+    # all 43 rows are shadow and none is a grade. A floor keeps the real failure the
+    # exact count was standing in for — a truncation, a reset, or a writer that
+    # forgets to append — while letting registrations accrue.
     rows = [json.loads(x) for x in ledger.read_text(encoding="utf-8").splitlines() if x.strip()]
-    # Floor, not equality: the sibling structural test forbids every truncating
-    # mode, so a count below the 28 frozen at first ship means the ledger was
-    # rewritten — exactly what this pin exists to catch.
-    assert len(rows) >= 28
+    assert len(rows) >= 28, f"forward ledger shrank to {len(rows)} — rows are append-only"
     assert all(r["tier"] == "shadow" for r in rows)
-    # Still-binding shadow claim. NOTE: the first MATURED grade row will fire this
-    # assertion by schedule; that day the seasonality lane owns the ruling (keep
-    # grades out of this file, or narrow the assertion to registration rows).
     assert not [r for r in rows if r.get("row_type") == "grade"]
 
 
