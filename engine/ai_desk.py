@@ -233,13 +233,30 @@ def _close_series_uncached(ticker: str, root) -> pd.Series | None:
     return None
 
 
-def _level_asof(ticker: str, root, asof) -> float | None:
+# ── STALENESS BOUND for the asof-or-BEFORE price reads (D21) ──────────────────────────────
+# `_level_asof` / `desk_scorer.close_at` answer "the last close ON OR BEFORE this date" with no
+# lower bound, so a series that STOPPED UPDATING (delisted, ticker recycled, collector dropped
+# the name) keeps returning its final close forever — and every grader downstream reads that as
+# a live price, silently pricing a matured claim against an arbitrarily old bar. 7 calendar days
+# clears every US market closure (the longest exchange gap is a 3-day holiday weekend, ~4 days)
+# while catching a genuinely stalled series. Beyond the bound the read is None, which every
+# caller already treats as NOT COVERED — excluded from grading, visible in coverage, never
+# silently substituted.
+MAX_ASOF_STALE_DAYS = 7
+
+
+def _level_asof(ticker: str, root, asof, max_stale_days: int | None = MAX_ASOF_STALE_DAYS) -> float | None:
     s = _close_series(ticker, root)
     if s is None or s.empty:
         return None
     try:
+        ts = pd.Timestamp(asof).normalize()
         s = s[s.index <= pd.Timestamp(asof)]
-        return round(float(s.iloc[-1]), 4) if len(s) else None
+        if not len(s):
+            return None
+        if max_stale_days is not None and (ts - s.index[-1].normalize()).days > max_stale_days:
+            return None                      # series stalled before `asof` — not covered
+        return round(float(s.iloc[-1]), 4)
     except Exception:  # noqa: BLE001
         return None
 
