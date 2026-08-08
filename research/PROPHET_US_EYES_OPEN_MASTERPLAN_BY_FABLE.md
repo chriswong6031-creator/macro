@@ -327,6 +327,21 @@ R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, pa
 legacy shadow rows accruing, zones if R3 landed); check `data/us_prophet_rank/grades/`
 advanced (W7 store dark since merge) — if still empty, spawn its heal.
 R7 session-chain handoff: update §6.7/§6.9 execution records + memory with every PR/outcome.
+R8 **TURN WATCH desk (operator reframe 2026-08-08: "if we get the signal early, I do the
+holistic review myself — but if we don't surface them, names reach my desk up 10-15% and I
+chase").** The operator IS the second-stage filter, so this surface optimizes RECALL + CONTEXT
+DENSITY, not precision: a nightly deck of every name whose EARLIEST-evidence trigger fired —
+union of (a) the dot signature on 1D (stoch cross up from washed + histogram rising), (b) 2D
+fresh cross while the 3D has NOT yet crossed (pre-confluence, btc printed), (c) basket/cohort
+turn membership (us_basket_turn TURNING members), (d) leader-pullback RESET_TURN — each row
+carrying the operator's own checklist PRE-COMPUTED: HTF washout state (monthly/2W pinned +
+duration), S1/S2, off-high %, base depth/age, 20d RS vs SPY, theme/basket heat + turn state,
+200d distance, and what the slow tier currently says (so "3D not crossed, ~2 bars to cross"
+is visible instead of hidden). Sorted by a display-only context score, capped, honest about
+noise ("windows, not certainties"). Data plane ships FIRST (engine + artifact + receipt with
+the day's actual deck); the page ships next session under the design lane (doctrine +
+frontend-design skill — never rushed). Acceptance: a mini-replay showing surfacing dates for
+RKLB / ASTS / miners / NVDA / ADAM vs their eventual admission dates and % off low at each.
 confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
 grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
 12 vetoed, 12 ripening, featured=0 (no ext input) — complete-fix lane gated on #4976 merge,
