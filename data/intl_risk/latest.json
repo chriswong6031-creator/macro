@@ -1,6 +1,6 @@
 {
-  "built": "2026-08-08T16:00:57.536116+00:00",
-  "timing_sec": 1.55,
+  "built": "2026-08-08T16:26:09.058993+00:00",
+  "timing_sec": 1.66,
   "em_stress": {
     "state": "strained",
     "thermometer": 38.9,
@@ -108,7 +108,7 @@
     },
     "gaps": [],
     "as_of": "2026-08-08",
-    "built": "2026-08-08T16:00:56.056984+00:00",
+    "built": "2026-08-08T16:26:07.462460+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,7 +725,7 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-08-08T16:00:56.144018+00:00"
+    "built": "2026-08-08T16:26:07.540699+00:00"
   },
   "spillover": {
     "total_connectedness": 82.8,
@@ -1008,8 +1008,8 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T16:00:56.265924+00:00",
-    "timing_sec": 0.12,
+    "built": "2026-08-08T16:26:07.659294+00:00",
+    "timing_sec": 0.11,
     "params": {
       "window": 150,
       "var_lag": 2,
@@ -1040,7 +1040,7 @@
     "tightening": false,
     "gaps": [],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T16:00:57.073945+00:00"
+    "built": "2026-08-08T16:26:08.567651+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -1108,7 +1108,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-08-08T16:00:57.106147+00:00"
+    "built": "2026-08-08T16:26:08.599907+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1341,7 +1341,7 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T16:00:57.490861+00:00",
+    "built": "2026-08-08T16:26:09.016632+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
@@ -1412,7 +1412,7 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-08-08T16:00:57.528098+00:00"
+    "built": "2026-08-08T16:26:09.051358+00:00"
   },
   "swap_lines_bn": 0.1,
   "top_transmitters_display": [
