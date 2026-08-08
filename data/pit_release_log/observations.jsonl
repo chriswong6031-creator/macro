@@ -12012,3 +12012,6 @@
 {"series": "AWHAETP", "group": "fred", "fetch_ts": "2026-08-08T13:13:42.777006+00:00", "last_obs_date": "2026-07-01"}
 {"series": "TRMMEANCPIM158SFRBCLE", "group": "fred", "fetch_ts": "2026-08-08T13:13:42.777802+00:00", "last_obs_date": "2026-06-01"}
 {"series": "JTSQUR", "group": "fred", "fetch_ts": "2026-08-08T13:13:42.778554+00:00", "last_obs_date": "2026-06-01"}
+{"series": "fundamentals", "group": "fundamentals", "fetch_ts": "2026-08-08T14:27:42.052547+00:00", "last_obs_date": "2026-08-08"}
+{"series": "stock_fundamentals", "group": "stock_fundamentals", "fetch_ts": "2026-08-08T14:30:50.151195+00:00", "last_obs_date": "2026-08-08"}
+{"series": "cot", "group": "cot", "fetch_ts": "2026-08-08T14:31:07.048535+00:00", "last_obs_date": "2026-08-04"}
