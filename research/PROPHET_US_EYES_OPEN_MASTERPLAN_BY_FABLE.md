@@ -338,6 +338,19 @@ size, window-not-certainty copy).
 R4 now (no gate) → LEADER-PULLBACK organ + replay (`engine/us_leader_pullback.py` new +
 receipt): RS-leader universe, controlled retrace, daily stoch reset, resumption print;
 2-year replay with precision/loser/entry-vs-low stats + NVDA/AVGO/ADAM receipts.
+  **R4 VERDICT (PR #5007, 933 fires/504 sessions): RESET_TURN standalone = NULL**
+  (+2.9pp pooled is a repeat-firer artifact; −0.6pp per-name-first vs the leader base) —
+  retained as a confluence input, not promoted. **THE ZONE REPRODUCES: median entry-vs-low
+  7.26% → 2.29% (−4.97pp of pure entry location, half-stable ±0.75pp)** — the §6.9
+  lateness target achieved by MECHANICS. All three case receipts MISS under v0 constants
+  (not tuned to capture them): NVDA — RS percentile measured AT the low is depressed by
+  the pullback itself (0.52 vs 0.75 gate; pre-pullback RS is the v1 candidate) + 200dMA
+  undercut at the low; AVGO — recovery-exit closes the episode the same bar the cross
+  lands (ordering, pinned as deliberate non-repair); ADAM — the two turn legs never
+  coincide on one bar (needs a within-N-bars window). Population scale: 50% of
+  never-turned episodes were lost to leg-TIMING mechanics, not failed turns — three v1
+  candidates pre-registered in the receipt §3.2. Close-basis + survivorship caveats
+  binding; read the LEADER-state control row.
 R5 on #4977 merge → small builder: why-not receipts LIVE on the Prophet surface (nightly,
 per-name blocking reason — ends the manual RKLB-class digs).
 R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, patience picks,
