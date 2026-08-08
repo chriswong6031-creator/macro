@@ -75,6 +75,13 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   color:var(--muted)}
 .mh-loop-return .rr{color:var(--blue-ink);margin-right:5px;font-size:.8rem;line-height:1}
 
+/* Forward record — one honest count, same register as the loop stats above.
+   Mono is on the FIGURES only; the words stay in the body face. */
+.mh-fwd{margin:0 0 22px;font-size:.72rem;line-height:1.5;color:var(--muted)}
+.mh-fwd-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
+  color:var(--text);letter-spacing:-.01em;margin-right:4px}
+.mh-fwd-sep{margin:0 7px;opacity:.45}
+
 /* Where it stands — the one stance line. Calm left rule, not an alarm box. */
 .mh-stand{font-size:.9rem;line-height:1.65;color:var(--muted);max-width:78ch;
   margin:0;padding-left:15px;border-left:2px solid var(--blue)}
