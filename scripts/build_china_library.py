@@ -23,6 +23,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import confluence_latch  # noqa: E402  — PIT T2-event latch (no un-firing a fired event)
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import china_name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
@@ -2044,6 +2045,16 @@ def main(alpha: dict | None = None) -> dict | None:
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     _tick("cycles analyze fan-out")
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
+    # T2 EVENT LATCH (engine/confluence_latch): a fired confluence event may never be un-fired.
+    # The incomplete trailing 3D bucket's known-date advances every session, de-annotating the
+    # daily bar the 2D cross sits on, so the T2 conjunction un-fires on a bar that ALREADY
+    # PRINTED and the name leaves every lane at once (300363.SZ: 2026-08-05 rank 1 -> 08-06
+    # absent -> +20.02% on 08-07; 86 such events / 78 names in 12 sessions on the post-#4732
+    # engine, because the absolute-session anchor fixed bin PHASE, not bucket COMPLETION).
+    # WRITES are gated to the asia collection lane for the same reason append_board is: the
+    # render lanes discard data/ writes, and a mid-session board must never win the date.
+    _latch_lane = os.environ.get("CN_LANE", "asia")
+    _t2_latch = confluence_latch.EventLatch("CN", record=(_latch_lane == "asia")).load()
     # COILED wave-3 CN ranking bonus: per-name inputs collected in the loop; cohort_fractions
     # computed AFTER the loop (cross-sectional). CN gate: clean15 +7.33pp, stop5 −6.21pp, n=10,784.
     # HK failed its gate — touch NOTHING in HK.
@@ -2070,7 +2081,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
-        sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        sig_verdict[ticker] = signal_gate.gate(ticker, close, event_latch=_t2_latch)
         # signal_gate.asof is the label of its 3-business-day indicator bucket,
         # which can legitimately be one or two calendar sessions behind the
         # latest input. Preserve that analytical label, but add the actual daily
@@ -2924,6 +2935,14 @@ def main(alpha: dict | None = None) -> dict | None:
             _wsetup_by[_t] = _w_setup_fn(_c_w)
         except Exception:  # noqa: BLE001 — additive; never fatal
             _wsetup_by[_t] = None
+    # Persist this session's T2 verdicts keep-first, so tomorrow's run restores them instead of
+    # recomputing them off a trailing bucket whose known-date has since advanced.
+    try:
+        _latch_rows = _t2_latch.flush()
+        log.info("confluence latch (CN): %d rows after merge (lane=%s)",
+                 _latch_rows, _latch_lane)
+    except Exception as _latch_exc:  # noqa: BLE001 — never fail the board on the latch
+        log.warning("confluence latch flush failed (%s) — board unaffected", _latch_exc)
     _tick("per-name detail loop + signal gates")
     log.info("W1-B w_setup: %d names scanned in %.0fs (%d non-None)",
              len(_wsetup_by), time.time() - _t0_wsetup,
