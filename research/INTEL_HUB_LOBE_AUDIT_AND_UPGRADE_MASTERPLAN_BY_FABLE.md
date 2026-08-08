@@ -25,7 +25,10 @@ Not done unless:
    BEFORE merge. The word "validated" in user-facing copy remains CI-guarded.
 3. **No fused composites in scored paths** (DNR:KILL-FUSED-COMPOSITE). The Asymmetry read
    ships as printed legs + two-sided windows only. No single blended asymmetry number
-   enters any ranked path.
+   enters any ranked path. Additionally, per SM2-R3 (`engine/short_pressure.py:9-16`,
+   CI-enforced): no function may combine a 13F-derived metric with a short-derived
+   metric into one number — squeeze axes are PRINTED context and may never condition the
+   analog windows or any derived figure (the hub's convergence channels include 13f_add).
 4. **LLM boundary** (DNR:KILL-LLM-ORIGINATION, DNR:KILL-LLM-CONFIDENCE): LLMs de-escalate
    calibrated keys or disambiguate taxonomy; they never originate a signal, score, lean,
    or confidence that enters a scored path. Wave 3's policy refactor is the enforcement of
@@ -67,14 +70,20 @@ pre-registered gate.
 
 **The five headline findings.**
 
-1. **The Hub is measurement-honest but cohort-blind.** Its track record grades the whole
-   ~14k-name ranking for cross-sectional IC (`intel_hub.py:880-886`) — good science — but
-   no artifact grades *the 30 Command picks as a cohort*, so the operator's only question
-   ("do the picks win?") is unanswerable today. Meanwhile the scorecard honestly shows the
-   emerging cohort NEGATIVE vs SPY at every matured horizon (−0.53/−1.61/−3.86pp at
-   5/10/21d) and warns "departed names OUTPERFORM on-desk names". The felt "low quality"
-   is real, measured, and currently unactionable because the feedback loop (lessons) is a
-   4-row hardcoded seed from 2026-07-04 that nothing refills (`desk_grader.py:700-734`).
+1. **The Hub is measurement-honest but cohort-blind — and its ruler is bent.** The track
+   record grades the whole ~14k-name ranking for cross-sectional IC
+   (`intel_hub.py:880-886`) — good science — but no artifact grades *the 30 Command picks
+   as a cohort*, so the operator's only question ("do the picks win?") is unanswerable
+   today; the snapshot rows don't even store rank or cohort (`hub_track_record.py:88-96`).
+   The scorecard shows the emerging cohort NEGATIVE vs SPY at every matured horizon
+   (−0.53/−1.61/−3.86pp at 5/10/21d) and warns "departed names OUTPERFORM on-desk names" —
+   but read those numbers with the ruler's own defects in view: price coverage is 6.2%
+   of eligible grades (desk_grader coverage: 7,516 ok / 121,320 eligible at 20d), the
+   fallback price source is split-corrupted, EVERY stage bucket is negative (a
+   universe-wide shift that smells like basis artifact, not stock selection), and the
+   ledger silently skipped accrual on 2026-08-04/07/08. Fix the ruler (W0/W1), then
+   interpret. The feedback loop (lessons) is meanwhile a 4-row hardcoded seed from
+   2026-07-04 that nothing refills (`desk_grader.py:700-734`).
 2. **The strongest machinery in the repo is not wired into the Hub.** Validated extension
    grades (`engine/extension.py` ext_z), entry zones/don't-chase lines/stops
    (`engine/entry_signal.py`), six PIT short-squeeze axes (`engine/short_pressure.py`),
@@ -97,8 +106,12 @@ pre-registered gate.
    sibling desk_grader explicitly abandoned; alt-data hangs 22 datasets off one paid
    vendor key (incl. a dead twitter dataset); policy is one weekly DeepSeek synthesis
    whose 22 open theses have never been graded (scored_total: 0) — and it ORIGINATES
-   leans that enter the five-desk vote, the closest thing to an A7 boundary breach in the
-   scored path.
+   leans that are a LIVE A7 breach in the scored path today (verified chain:
+   `policy_intent_desk.py:310→178` lean/conviction → `intel_hub.py:117-121,226` policy
+   direction → `:409-418` net_confirm/conf_bonus, a boost up to +25% on the ranking
+   tie-break, AND `:345→464-465` lag_up → gap_mult → opportunity_score). Standing law
+   (DNR:KILL-LLM-ORIGINATION) already forbids this — removal is a W0 compliance heal,
+   not a new decision.
 5. **Prophet↔Hub runs one way and the operator's mental model is the missing half.** Flow
    today is Prophet→Hub only (gate verdicts as a desk + hero veto; reverse reads:
    grep-proven zero). The lawful completion (DNR:KILL-PROPHET-POP-MERGE) is
@@ -264,9 +277,12 @@ touch authority).
 
 ### 3.4 Special Situations
 
-- **Sources**: SEC EDGAR daily-index + EFTS full-text (free) only, in practice —
-  newswire and UK/Canada cross-border lanes are CODED BUT SHIPPED OFF
-  (`collectors/special_news.py`, `special_intl.py`); yfinance backfill for arb targets.
+- **Sources**: SEC EDGAR daily-index + EFTS full-text (free) as the backbone; the
+  newswire lane and the Canada intl lane are already ON (`config.yml:6798,6807`) —
+  only `intl_uk` ships off, for a documented reason (no direct RNS feed wired;
+  Google-News alone yields ~0 recall). yfinance backfill for arb targets.
+  [Red-team correction: the census initially read these lanes as coded-but-off from
+  the collector defaults; config.yml is the truth.]
 - **Processing**: deterministic form→category+stage taxonomy (13D/G, TO, 13E3, mergers,
   Form 25/15/10, S-4…); ambiguous 8-K/6-K go to an LLM *disambiguation* lane
   (promote-into-taxonomy only, Management Changes excluded — A7-clean); $100M cap floor
@@ -274,11 +290,12 @@ touch authority).
 - **Hub gets**: catalyst {category, stage, days_since, live} — context + one freshness
   leg; Dated Catalysts panel.
 - **Weaknesses**: artifact went silently ~2 days stale (a no-op cycle with no alarm);
-  `activist_filers` empty while risk_arb holds 22 rows; the two richest lanes are off.
+  `activist_filers` empty while risk_arb holds 22 rows; UK lane blocked on feed recall.
 - **Upgrades**:
   - W0: freshness sentinel (as_of age > 1 nightly = ops ping + LIMITED chip on the desk
     tile).
-  - D: enable the newswire + intl lanes behind their existing quality floors.
+  - D: wire a direct RNS feed if UK coverage is wanted (the gate that keeps `intl_uk`
+    off is feed recall, not code); investigate why `activist_filers` is empty.
   - D: 13D/G *amendment velocity* (accumulation pace), Form 25/15 delisting watch,
     S-1/424B4 IPO + lockup-expiry calendar — the young-name feeder the SPCX class needs;
     all parse the EDGAR pipe that already runs.
@@ -309,9 +326,13 @@ touch authority).
     velocity per theme — radar-style, no intent prediction; (c) LLM role limited to
     de-escalation/taxonomy. Theses (if kept) become display-tier "conditions to watch"
     with their falsifiers living below the fold (Calibration-Lab style), not votes.
-  - Operator decision (§10): whether the DeepSeek thesis vote is removed from n_confirm
-    immediately (my recommendation: yes — it is ungraded and origination-shaped) or after
-    the grading in W1 returns.
+  - W0 (moved up on red-team ruling): remove the policy direction from `nz`/`lag_up` —
+    the minimal heal that takes the LLM-originated lean out of every scored path while
+    keeping policy as a printed flag/chip. This is enforcement of a standing law
+    (DNR:KILL-LLM-ORIGINATION), so it ships without new ratification; the operator may
+    veto in §10.1. Premise correction from review: policy never reaches `base` in the
+    common path (`intelligence.py:174-177,215` — `brain.priority` short-circuits), so
+    the breach surface is exactly n_confirm/conf_bonus + lag_up/gap_mult, nothing else.
 
 ### 3.6 Sector Heat
 
@@ -356,30 +377,68 @@ touch authority).
 
 ## §4 Measurement + feedback repairs (Wave 0/1 — the ruler)
 
-1. **Price integrity**: port desk_grader's yahoo-only close reader into
-   `hub_track_record` (kill the split-corrupted breadth-cache fallback path). Every
-   historical IC/alpha stat gets a one-time era-stamped recompute; publish the delta
-   honestly (era-break law, cf. #4942 precedent).
-2. **One governor truth**: governor reads the same files the page publishes (site/ copies
-   or commit data/hub in the engine-render lane). 2-day-stale demotion inputs are silent
-   wrong-cause risk.
-3. **Per-cohort grading**: extend `hub_track_record.compute()` with by_cohort
-   breakdowns — command_top5, command_30, emerging_panel, discovery_shown,
-   catalysts_shown — each graded from its OWN display date (no backfill pretense),
-   n printed, alpha vs SPY + hit rate + max-adverse-move. This is display-tier honesty,
-   not a ranker change. "Did Command win" becomes a page fact.
-4. **Calendar/trading-day harmonization**: keep both graders but label horizons on-page
-   in trading days; note the difference in the glossary. (Cheap now, confusing forever if
-   left.)
-5. **Lessons pipeline**: nightly mechanical promotion of desk_grader `auto_findings`
-   into `notes.jsonl` (dedup on (desk, finding-key), only findings that persist ≥N
-   nights, max M/night, no LLM). Lessons panel shows the date and links the receipt.
-   The 07-04 freeze ends as a side effect.
-6. **Entry-date surfacing**: derive first_seen per (ticker, cohort) from the existing
+1. **Snapshot schema first (X1)**: add `rank`, `cohort` (command_top5/command_30/
+   emerging_panel/discovery_shown/catalyst_shown), and the `_hero_ok` rejection reason
+   to every `hub_track_record` snapshot row (`:88-96`). Three fields, ~zero cost; their
+   absence is exactly why "did Command win" and "how often does young_history exclude a
+   #1 name" are unanswerable. Without this, any cohort work rebuilds the same blind spot.
+2. **Price integrity — versioned, not swapped (M1)**: port desk_grader's yahoo-only
+   close reader into `hub_track_record`, but as an ERA-STAMPED versioned grader with
+   BOTH series printed side-by-side — yahoo-only coverage is ~603 of 7,670 ledger
+   tickers (7/30 of today's command names have no yahoo parquet, including the sole
+   Emerging name), so a silent swap trades split-corruption for a 10× sample shrink.
+   Companion fixes: (a) bound the asof-or-before close lookups (`desk_scorer.py:96`,
+   `ai_desk.py:236`) with a max-staleness window — today a stalled series silently grades
+   against an arbitrarily old close on BOTH legs; (b) an off-render backfill collector
+   that closes the yahoo-parquet gap for every ledger ticker.
+3. **One governor truth — fail-loud (M8)**: the genuinely stale governor input is
+   `data/radar/radar_ic.json` (the hub track-record half is re-persisted in-run before
+   compute). Point the radar read at the artifact the page ships — and note there is NO
+   `site/hub/` dir (the site copy is `site/intel_hub/`): a naive repoint = missing file =
+   silent trust 1.0 forever, because the governor degrades-never-raises. The fix must
+   fail LOUD on a missing/stale input (line-start `::warning`), not default to identity.
+4. **Per-cohort grading, statistically honest (B3)**: (a) retro-reconstruct cohorts for
+   the existing 38 ledger dates by ranking each date's stored `opp` (the full universe
+   is snapshotted daily — 2.8-4.8k rows/day), giving command/top-30 an instant graded
+   history; (b) grade small cohorts (top-5/top-30) as MEAN EXCESS RETURN vs SPY with
+   date-block bootstrap CIs — never IC (the ≥10-names/date floor at `:186` makes
+   cohort-IC undefined, and overlapping daily windows mean effective n = dates, not
+   rows); (c) emerging_panel/young-lane cohorts start honestly at n=0 (the `_hero_ok`
+   verdict was never stored — begins accruing the night item 1 ships); (d) partition
+   already-matured rows so the 5-cohort fan-out doesn't 5× the ~20s render-path compute
+   (the ledger grows ~2.9k rows/day — unbounded-scan creep shape).
+5. **Calendar/trading-day harmonization**: keep both graders but label horizons on-page
+   in trading days; reuse #4942's era-stamp convention rather than inventing one.
+6. **Lessons pipeline — significance-gated (M2)**: nightly mechanical promotion of
+   desk_grader `auto_findings` into `notes.jsonl`, gated on a date-block bootstrap CI
+   excluding zero PLUS cross-horizon agreement (the raw generator fires on n≥10 &
+   Δ≥0.5pp with no test, across 6 horizons × 4 finding types — it currently asserts
+   both "departed names OUTPERFORM" (10/20d) and "DROPS ARE CORRECT" (30d)
+   simultaneously). Dedup on (desk, finding-key), persistence ≥N nights, max M/night,
+   no LLM. Lessons panel shows date + receipt link. The 07-04 freeze ends as a side
+   effect.
+7. **Entry-date surfacing**: derive first_seen per (ticker, cohort) from the existing
    snapshots; render "added N d ago · +X% since add" on Command + Emerging cards. (The
    operator asked for exactly this; the data has existed all along.)
-7. **Policy ledger grading** (per §3.5): score the 22 open theses against their own
+8. **Policy ledger grading** (per §3.5): score the 22 open theses against their own
    check_by dates.
+9. **Accrual + coverage monitor (X3)**: expected-dates vs present-dates and a
+   coverage_pct floor per horizon, emitted as line-start `::warning` (house annotation
+   law) AND as a printed chip on the scorecard. The ledger already skipped 2026-08-04/
+   07/08 with zero alarms while the page read fresh; the scorecard grades 6.2% of its
+   eligible universe and shows it nowhere. Staleness/degrade gates (W3) apply to DISPLAY
+   and desk-vote exclusion only — NEVER to ledger accrual: an empty-bundle gate would
+   write 0 rows and punch a permanent point-in-time hole (M7).
+10. **Ranker units audit (X2 — highest-leverage correctness fix found by review)**:
+   `signal_core` = `strength` = `max()` over three NON-COMPARABLE scales
+   (`radar edge/100`, `|alt−50|/50`, `|standout conviction|`,
+   `intelligence.py:189-199`) and multiplies `opportunity_score` directly
+   (`intel_hub.py:459,465`) — one loud desk sets the primary ranking key on unnormalized
+   units. Fix: per-desk historical-percentile normalization computed as a SHADOW score
+   printed alongside the live one, with a pre-registered switch criterion (rank
+   correlation + per-cohort excess-return side-by-side on the W1 ledgers). Ranker
+   switches are authority changes: prereg, era-stamp, both series printed through the
+   transition.
 
 ---
 
@@ -417,7 +476,7 @@ Timeline (nightly snapshots; price data is prior-close vintage):
 | Convergence counted three correlated channels as three votes — right call here, but uncalibrated in general | Novelty/correlation-aware convergence display (W3, D; scoring via G) |
 | Stage label churns on facet dropout; opportunity fell 28% while the thesis strengthened | Facet-dropout memory (last-known-good with age disclosure) + score hysteresis — pre-registered, aligns with EYES-OPEN Wave-2's hysteresis item |
 | Catalyst-class base rate (50%/−0.1%) was invisible next to the pick | Base-rate line on catalyst cards (W3, D) |
-| "Command #1" carried no date, no since-add return | W1.6 |
+| "Command #1" carried no date, no since-add return | §4.7 |
 
 **What worked and must not be broken**: multi-desk confluence beat any single desk; the
 12-name discovery injection cap and anti-chase haircuts did NOT block a legitimate
@@ -442,25 +501,34 @@ bans (a runner is filtered by tactic, never by exclusion).
   the cohort forward stats the module already carries (parabolic cohort: ~9% fwd with
   50% vol, −94% worst drawdown, −1.37 skew vs intrend 18.9%/25%/−49%/+0.41) — the
   honest "extended ≠ short, but size/entry changes" evidence.
-- **Squeeze-fuel leg**: short_pressure axes printed separately (days-to-cover, borrow
-  fee, SI change, short-volume) — fusion stays barred by that module's own compliance
-  ruling.
+- **Squeeze-context leg (printed ONLY — SM2-R3 blocker from review)**: short_pressure
+  axes shown separately (days-to-cover, borrow fee, SI change, short-volume). They may
+  NEVER condition the analog windows or enter any derived number: SM2-R3 forbids any
+  function combining a 13F metric with a short-derived metric into a single number, the
+  convergence channels include `13f_add`, and `short_pressure.AUTHORITY` is
+  may_rank/size/gate: False, CI-enforced (`tests/test_short_pressure.py:247-268`).
 - **Sector-regime leg**: RRG state + bottom_confidence (§3.6).
 - **Crowd leg**: news crowding + "isolated vs theme_wide" flag (already computed).
 - **Freshness leg**: catalyst days_since + convergence novelty (§3.1).
 
 ### 6.2 Two-sided window (the user-facing line)
 
-Analog windows, not forecasts: condition on (catalyst class × stretch grade ×
-sector-regime) and print the historical distribution of 20d forward moves for that cell
-from the existing ledgers — "names like this: median +X%, upside quartile +Y%, downside
-quartile −Z% (n=…)". Cells below the n-floor print "too few analogs — window not drawn"
-(nulls printed). Voice: windows, re-drawn nightly; never certainty, never falsifier
-vocabulary front-facing.
+Analog windows, not forecasts: condition on (catalyst class × stretch grade) ONLY and
+print the historical distribution of 20d forward moves for that cell from the existing
+ledgers — "names like this: median +X%, upside quartile +Y%, downside quartile −Z%
+(n=…)". Sector regime and squeeze axes are printed BESIDE the window, never inside its
+conditioning (KILL-ROTATION-CYCLE-CONFLUENCE bars rotation×position entry-confluence;
+SM2-R3 bars squeeze in any derived number). Cells below the n-floor print "too few
+analogs — window not drawn" (nulls printed). Voice: windows, re-drawn nightly; never
+certainty, never falsifier vocabulary front-facing.
 
 ### 6.3 Entry tactic label (replaces "is it too late?" with "how, if at all")
 
-From `entry_signal.py` zones + stretch grade + trajectory:
+Derived from PRICE/ATR ONLY — `entry_signal.py` zones + `extension.py` stretch grade +
+trajectory. Sector regime and Weinstein stage are printed beside the label and never
+condition it (review ruling M3: conditioning tactic on regime is the
+KILL-ROTATION-CYCLE-CONFLUENCE construction; KILL-STAGE-WIN-GATE keeps stage
+display-only on entry timing):
 
 | State | Label (glance tier) |
 |---|---|
@@ -477,13 +545,20 @@ family stay dead per their DNR rows; this is display.)
 ### 6.4 Young-name lane (the SPCX class)
 
 A name with `young_history` (gate can't grade) qualifies for the Emerging panel only
-via an ALTERNATIVE positive-confirmation checklist — e.g. ≥3-channel alt convergence
-(fresh) + a live catalyst or earnings-acceleration tag + not rolling_over + volume
-confirmation — rendered with a "young name — technical gate not yet gradable" chip.
-Cohort-tracked separately from day one (W1.3), so within a quarter we KNOW whether
-young-lane picks earn their place. This honors the `_hero_ok` design intent (positive
-confirmation, never absence-of-evidence) while unblinding the flagship panel to the
-highest-asymmetry class.
+via an ALTERNATIVE positive-confirmation checklist — fresh multi-PLANE confirmation
+(not raw channel count: `13f_add`/`cnbc_pick`/`congress_cluster` all key off the same
+disclosed-flow tape and count as ONE plane; require ≥2 independent planes, e.g.
+disclosed-flow + live catalyst/earnings-acceleration + volume confirmation) + a minimum
+bar-count floor so the rolling_over veto is EVALUABLE — review found young names get a
+free pass on that veto today (`_hero_ok:803` only vetoes on `rolling_over == True`, and
+a name with no closes returns trajectory None, so the veto never evaluates). Where
+trajectory is unknown, print "trajectory unknown" rather than implying it was checked.
+Rendered with a "young name — technical gate not yet gradable" chip; cohort-tracked
+separately from day one (§4.4c), so within a quarter we KNOW whether young-lane picks
+earn their place. This honors the `_hero_ok` design intent (positive confirmation,
+never absence-of-evidence) while unblinding the flagship panel to the
+highest-asymmetry class. Sequencing: lands AFTER #4964 (confluence PIT latch) — that
+lane owns the `eligible` verdict this checklist extends.
 
 ### 6.5 Promotion path (if we ever want asymmetry to RANK)
 
@@ -515,10 +590,10 @@ Operator complaints, mapped:
    (rolling_over/lean-down) vs "Crowded — late" (crowded_top with intact trend); plain
    one-line stance each. Retitle "Dated catalysts" → "Known dates" with its base-rate
    line ("timing context — not a reason to buy" stays).
-4. **Dates everywhere**: "added Nd ago · +X% since" chips (W1.6) on Command/Emerging.
+4. **Dates everywhere**: "added Nd ago · +X% since" chips (§4.7) on Command/Emerging.
 5. **Scorecard**: keep the honest negative readings (voice law) but add the one-line
    plain read ("The desk's bullish cohort has lagged SPY over the last month — read being
-   updated; changes logged below") and link lessons (now refilling, W1.5). "Losing to
+   updated; changes logged below") and link lessons (now refilling, §4.6). "Losing to
    SPY" without context is demoralizing; with the lesson trail it's a system that learns
    in the open.
 6. **Glance-tier jargon**: gloss or demote "off-desk", "leads by +N", T1-T4 badges
@@ -554,6 +629,10 @@ rail tile.
   off-universe) — visually separate, disclosure-labeled, cohort-tracked. That is the
   ratified ⚡-chip + residual-sub-board form, and it is exactly where an SPCX surfaces
   next time — visible on the money page without contaminating the graded board.
+  Review guard (M4 — the HOLD-IGNITION-SURFACES failure mode was precisely a ranked
+  sub-board shipped ahead of its display gate with a forced top-N in a dead tape): the
+  sub-board pre-registers its EMPTY state ("nothing qualifies today" is a valid,
+  rendered answer), carries NO forced N, and its cohort grading ships in the SAME PR.
 - **Scored influence later, single-factor, gauntleted**: if the W1 per-cohort ledgers
   show hub context adds selection edge, promote ONE pre-registered input into Prophet's
   quality leg — after, and only after, it wins on the ledger. (Consolidating the two
@@ -570,8 +649,8 @@ perception organ whose Command list can catch what a technical gate cannot yet g
 
 | Wave | Content | Route |
 |---|---|---|
-| W0 | governor freshness unification; hub_track_record yahoo-only prices (+era-stamped recompute); special-sits freshness sentinel; dead-twitter delist | builder (opus) |
-| W1 | per-cohort track record + on-page "Command vs SPY"; entry-date chips; lessons auto-promotion; policy-ledger grading; horizon labeling | builder (opus) |
+| W0 | policy vote removal from nz/lag_up (A7 heal); snapshot-row schema fields (rank/cohort/hero-reason); governor radar_ic fresh-read + fail-loud; era-stamped dual-series price grader + bounded-staleness lookups; accrual/coverage monitor; special-sits freshness sentinel; dead-twitter delist | builder (opus) |
+| W1 | per-cohort track record (retro-reconstructed 38 dates; mean-excess + date-block bootstrap for small cohorts) + on-page "Command vs SPY"; entry-date chips; significance-gated lessons promotion; policy-ledger grading; horizon labeling (#4942 era convention); ranker-units SHADOW score (X2) + prereg switch spec; yahoo-parquet backfill collector (off-render) | builder (opus) |
 | W2 | dossier chips: ext_z grade, entry zones, squeeze axes, Weinstein stage, sector-regime, earnings tags; young-name lane (with separate cohort tracking); sector_heat rename | builder (opus); young-name lane spec pinned by main loop first |
 | W3 | staleness gates (LIMITED-null pattern) on all core inputs; special-sits lanes ON + amendment-velocity/delisting/IPO-lockup feeds; convergence novelty display; news source-health + vertical feeds; policy conditions-refactor; price dual-source tripwire | builder (opus), collectors off render path |
 | W4 | Asymmetry read v0 (printed legs + analog windows + tactic labels) | main-loop design spec → builder (opus) |
@@ -586,8 +665,10 @@ the night they ship. W3 collectors land in daily.yml off the render-critical pat
 
 ## §10 Open operator decisions
 
-1. **Policy vote removal timing** (§3.5): pull the ungraded DeepSeek thesis vote from
-   n_confirm now (recommended), or after W1 grades the 22 open theses?
+1. **Policy vote removal** (§3.5): W0 ships the removal as a standing-law heal
+   (DNR:KILL-LLM-ORIGINATION — the vote is a live breach). This row is the operator's
+   VETO point, not an approval request; a veto would need a registry amendment
+   ratifying the exception.
 2. **Paid-data appetite**: this plan is free-first by design. If budget exists, the
    highest-value paid adds are (a) a second cross-check price/reference feed, (b) an
    options-flow feed for the squeeze/positioning plane, (c) an earnings-estimates feed
@@ -618,12 +699,16 @@ the night they ship. W3 collectors land in daily.yml off the render-critical pat
 | D10 | validated extension/entry/squeeze/stage/sector planes unwired | §3/§6 | W2 |
 | D11 | no staleness gates on core inputs | `intelligence.py:273-279` etc. | W3 |
 | D12 | single-vendor alt-data concentration | `engine/altdata.py` | W3 |
-| D13 | policy LLM origination votes in scored path | `policy_intent_desk.py` | W3 |
+| D13 | policy LLM origination votes in scored path (LIVE A7 breach) | `policy_intent_desk.py:310,178` → `intel_hub.py:226,409-418,464-465` | **W0** |
 | D14 | sector surfaces unlinked + name collision | §3.6 | W2/W3 |
 | D15 | convergence ignores channel correlation/novelty | `altdata.py:1124` | W3(D)/G |
 | D16 | score churn on facet dropout (SPCX 77→56) | `intel_hub.py` facets | W2/prereg |
 | D17 | earnings acceleration not a Hub plane | `stagedata/earnings_table.json` | W2 |
 | D18 | Discovery 135/149 candidates invisible; displayed cohort ungraded | `intel_hub.py:887-888` | W1/W5 |
+| D19 | `strength` = max over non-comparable desk scales, multiplies opportunity directly | `intelligence.py:189-199` + `intel_hub.py:459,465` | W1 shadow → prereg |
+| D20 | ledger accrual silently skipped (2026-08-04/07/08 absent) with page reading fresh | `data/hub/track_record.json` | W0 (monitor) |
+| D21 | asof-or-before close lookups unbounded (stalled series grades on stale close, both legs) | `desk_scorer.py:96`, `ai_desk.py:236` | W0 |
+| D22 | snapshot rows lack rank/cohort/hero-rejection fields | `hub_track_record.py:88-96` | W0 |
 
 ## Appendix B — DNR keys honored by this plan
 
@@ -633,4 +718,19 @@ DNR:KILL-PROPHET-POP-MERGE · DNR:KILL-STAGE-WIN-GATE · DNR:KILL-PHASE3-START-W
 DNR:KILL-FRESH-BUY-EDGE · DNR:HOLD-IGNITION-SURFACES · DNR:KILL-ROTATION-CYCLE-CONFLUENCE ·
 DNR:KILL-RS-DISPERSION-GATES · DNR:KILL-ROTATION-SCHEDULE · radar-leg kills
 (RRX-R10 §6) · PSS entry-timing family kills/holds · DNR:LAW-REVERSION-RULER ·
-DNR:KILL-OFFHORIZON-VERDICTS.
+DNR:KILL-OFFHORIZON-VERDICTS · SM2-R3 positioning-fusion ruling
+(`engine/short_pressure.py:9-16`, module-level law, CI-enforced).
+
+## Appendix C — red-team disposition (Opus review, 2026-08-08)
+
+B1 squeeze-in-window → accepted, §6.1/6.2 amended (printed-only). B2 policy A7 breach →
+accepted, moved to W0 (§3.5, §10.1). B3 cohort grading stats → accepted, §4.4 rewritten
+(retro-reconstruction, mean-excess + date-block bootstrap, n=0 honesty). M1 yahoo
+coverage shrink → accepted, §4.2 (era-stamped dual series + bounded lookups + backfill).
+M2 findings noise → accepted, §4.6 significance gates. M3 tactic×regime → accepted,
+§6.2/6.3 (price/ATR only). M4 sub-board empty-state → accepted, §8. M5 lanes-off premise
+→ corrected, §3.4. M6 young-lane soft spots → accepted, §6.4 (planes not channels,
+bar-count floor, traj-unknown). M7 accrual gating → accepted, §4.9 (display-only gates).
+M8 governor repoint trap → accepted, §4.3 (fail-loud, radar_ic only). N1 render math →
+folded into §4.4d. N2 collisions → §6.4/§4.5. X1/X2/X3 misses → adopted as §4.1, §4.10,
+§4.9 (defects D19-D22).
