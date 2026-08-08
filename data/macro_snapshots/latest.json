@@ -2,7 +2,7 @@
   "schema": "macro_snapshot.v1.2",
   "asof": "2026-08-08",
   "oldest_component_asof": "2026-08-07",
-  "macro_context_id": "7ea03e4baf605d2c",
+  "macro_context_id": "fc74f7e48eeb03e7",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -19,7 +19,7 @@
       "us_gamma_regime": "long",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "collapsing (de-risk)",
+      "us_vrp_state": "thin (vol underpriced \u2014 fragile)",
       "cross_asset_verdict": "diverge"
     },
     "market": {
@@ -81,7 +81,7 @@
     },
     "canada": {
       "canada_quad": "Q2",
-      "canada_overlay_state": "Risk-on",
+      "canada_overlay_state": "Neutral",
       "canada_cycle_tag": "late"
     },
     "dispersion": {
@@ -101,7 +101,7 @@
     "data/regime/latest.json": "2026-08-07",
     "data/market_state/latest.json": "2026-08-07",
     "data/transmission/latest.json": "2026-08-07",
-    "data/forex/latest.json": "2026-08-07",
+    "data/forex/latest.json": "2026-08-08",
     "data/bonds/bond_health.json": "2026-08-07",
     "data/commodity/latest.json": "2026-08-07",
     "data/china_regime/latest.json": "2026-08-07",

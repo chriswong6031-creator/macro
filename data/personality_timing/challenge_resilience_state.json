@@ -37,8 +37,8 @@
     "status": "locked_minimums"
   },
   "family": "pss_cr1_challenge_resilience_prospective",
-  "gate_open": true,
-  "generated_utc": "2026-08-08T06:30:17.168994+00:00",
+  "gate_open": false,
+  "generated_utc": "2026-08-08T15:11:21.092728+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,
@@ -59,13 +59,7 @@
   "note": "Prospective test of selective leadership during the first real peer pullback after an RH1 hazard. Operator research only.",
   "program_id": "PSS-CR1",
   "registration_ok": true,
-  "scan_census": {
-    "derived_events": 0,
-    "eligible_future_rh1_sources": 10,
-    "reasons": {
-      "awaiting_challenge_window": 10
-    }
-  },
+  "scan_census": {},
   "schema": "personality_challenge_resilience.state/v1",
   "status": "prospective_accrual_only"
 }

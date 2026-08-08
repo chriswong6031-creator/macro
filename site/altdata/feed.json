@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-08T12:56:52.278175+00:00",
+  "generated_utc": "2026-08-08T16:18:14.194319+00:00",
   "as_of": "2026-08-08",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4126,48 +4126,34 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 2705,
+      "rows": 2710,
       "last_seen": "2026-08-02",
       "recent": [
         {
-          "BioGuideID": "T000467",
-          "CandidateName": "THOMPSON, GLENN MR.",
-          "CompanyCMTENM": "UNITED AIRLINES, INC. POLITICAL ACTION COMMITTEE (UAPAC)",
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "GOOGLE LLC NETPAC",
           "TransactionDate": "2026-06-26",
-          "TransactionAmount": "2000",
-          "Ticker": "UAL",
-          "CommitteeName": "FRIENDS OF GLENN THOMPSON",
+          "TransactionAmount": "2500",
+          "Ticker": "GOOGL",
+          "CommitteeName": "MAINSTREAM PAC",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00101766",
+          "CompanyCMTEID": "C00428623",
           "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-08T04:53:03.338941+00:00"
+          "_first_seen": "2026-08-08T12:51:02.929092+00:00"
         },
         {
-          "BioGuideID": "L000582",
-          "CandidateName": "LIEU, TED",
-          "CompanyCMTENM": "PARSONS CORPORATION POLITICAL ACTION COMMITTEE",
+          "BioGuideID": "B001277",
+          "CandidateName": "BLUMENTHAL, RICHARD",
+          "CompanyCMTENM": "IHEARTMEDIA, INC. PAC",
           "TransactionDate": "2026-06-29",
-          "TransactionAmount": "1000",
-          "Ticker": "PSN",
-          "CommitteeName": "TED LIEU FOR CONGRESS",
+          "TransactionAmount": "5000",
+          "Ticker": "IHRT",
+          "CommitteeName": "BLUMENTHAL FOR CONNECTICUT",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00103549",
-          "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
-        },
-        {
-          "BioGuideID": "F000454",
-          "CandidateName": "FOSTER, G. WILLIAM (BILL)",
-          "CompanyCMTENM": "MARSH & MCLENNAN COMPANIES, INC. POLITICAL ACTION COMMITTEE (MARSH PAC)",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "1000",
-          "Ticker": "MRSH",
-          "CommitteeName": "BILL FOSTER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00457234",
+          "CompanyCMTEID": "C00279216",
           "Uploaded": "2026-08-02 23:34:15.631812",
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
@@ -4396,16 +4382,16 @@
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
         {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "DTE ENERGY COMPANY POLITICAL ACTION COMMITTEE",
+          "BioGuideID": "B000490",
+          "CandidateName": "BISHOP, SANFORD",
+          "CompanyCMTENM": "BOOZ ALLEN HAMILTON INC. PAC (BOOZ ALLEN PAC)",
           "TransactionDate": "2026-06-29",
-          "TransactionAmount": "2500",
-          "Ticker": "DTE",
-          "CommitteeName": "A PLEASANT PENINSULA PAC",
+          "TransactionAmount": "1500",
+          "Ticker": "BAH",
+          "CommitteeName": "SANFORD BISHOP FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00081547",
+          "CompanyCMTEID": "C00709816",
           "Uploaded": "2026-08-02 23:34:15.631812",
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
@@ -4414,9 +4400,9 @@
           "CandidateName": null,
           "CompanyCMTENM": "DTE ENERGY COMPANY POLITICAL ACTION COMMITTEE",
           "TransactionDate": "2026-06-29",
-          "TransactionAmount": "5000",
+          "TransactionAmount": "2500",
           "Ticker": "DTE",
-          "CommitteeName": "UPLIFT PAC",
+          "CommitteeName": "A PLEASANT PENINSULA PAC",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00081547",
@@ -4478,6 +4464,20 @@
           "CompanyCMTEID": "C00326595",
           "Uploaded": "2026-08-02 23:34:15.631812",
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+        },
+        {
+          "BioGuideID": "D000617",
+          "CandidateName": "DELBENE, SUZAN K",
+          "CompanyCMTENM": "DEERE & COMPANY PAC (AKA JOHN DEERE PAC)",
+          "TransactionDate": "2026-06-29",
+          "TransactionAmount": "2500",
+          "Ticker": "DE",
+          "CommitteeName": "DELBENE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00204099",
+          "Uploaded": "2026-08-02 23:34:15.631812",
+          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         }
       ]
     },
@@ -4485,18 +4485,9 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 1566,
+      "rows": 1567,
       "last_seen": "2026-08-08",
       "recent": [
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Bonnie+Watson+Coleman+Calls+for+Action+After+Death+and+Medical+Neglect+Allegations+at+Delaney+Hall",
-          "time": "2026-08-08 00:22:12",
-          "headline": "Press Release: Bonnie Watson Coleman Calls for Action After Death and Medical Neglect Allegations at Delaney Hall",
-          "category": "legislation_automated",
-          "summary": "<p>Watson Coleman urges federal action over alleged medical neglect and a death at Delaney Hall detention center.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Watson\u2026",
-          "image": "https://www.quiverquant.com/images/W000822_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Krishnamoorthi%2C+Raskin+and+Garcia+Urge+House+Vote+on+Ghislaine+Maxwell+Clemency+Resolution",
           "time": "2026-08-08 00:22:12",
@@ -4513,6 +4504,15 @@
           "category": "legislation_automated",
           "summary": "<p>Ciscomani says he secured nearly $7 million for Eloy road upgrades aimed at easing congestion and improving safety.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">F\u2026",
           "image": "https://www.quiverquant.com/images/C001133_congress.png",
+          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Bonnie+Watson+Coleman+Calls+for+Action+After+Death+and+Medical+Neglect+Allegations+at+Delaney+Hall",
+          "time": "2026-08-08 00:22:12",
+          "headline": "Press Release: Bonnie Watson Coleman Calls for Action After Death and Medical Neglect Allegations at Delaney Hall",
+          "category": "legislation_automated",
+          "summary": "<p>Watson Coleman urges federal action over alleged medical neglect and a death at Delaney Hall detention center.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Watson\u2026",
+          "image": "https://www.quiverquant.com/images/W000822_congress.png",
           "_first_seen": "2026-08-08T04:53:04.014005+00:00"
         },
         {
@@ -4633,12 +4633,12 @@
           "_first_seen": "2026-08-08T04:53:04.014005+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Charter+Communications+Falls+as+Broadband+Losses%2C+Debt+Work%2C+and+Merger+Timing+Stay+in+Focus",
+          "url": "https://www.quiverquant.com/news/Coeur+Mining+Rallies+as+Investors+Weigh+Earnings+Timing+and+Precious-Metals+Tailwinds",
           "time": "2026-08-07 21:26:13",
-          "headline": "Charter Communications Falls as Broadband Losses, Debt Work, and Merger Timing Stay in Focus",
+          "headline": "Coeur Mining Rallies as Investors Weigh Earnings Timing and Precious-Metals Tailwinds",
           "category": "prices_automated",
-          "summary": "<p>Charter Communications (CHTR) is down 3.1% today. Here is some analysis on what might have caused this price movement. ([ir.charter.com](https://ir.charter.com/news-releases/news-release-details/charter-announces-s\u2026",
-          "image": "https://www.quiverquant.com/images/chtr_rect_new.png",
+          "summary": "<p>Coeur Mining (CDE) is up 11.1% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a combination of earnings-related mom\u2026",
+          "image": "https://www.quiverquant.com/images/cde_rect_new.png",
           "_first_seen": "2026-08-08T04:53:04.014005+00:00"
         },
         {
@@ -4687,12 +4687,12 @@
           "_first_seen": "2026-08-08T04:53:04.014005+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Coeur+Mining+Rallies+as+Investors+Weigh+Earnings+Timing+and+Precious-Metals+Tailwinds",
+          "url": "https://www.quiverquant.com/news/Charter+Communications+Falls+as+Broadband+Losses%2C+Debt+Work%2C+and+Merger+Timing+Stay+in+Focus",
           "time": "2026-08-07 21:26:13",
-          "headline": "Coeur Mining Rallies as Investors Weigh Earnings Timing and Precious-Metals Tailwinds",
+          "headline": "Charter Communications Falls as Broadband Losses, Debt Work, and Merger Timing Stay in Focus",
           "category": "prices_automated",
-          "summary": "<p>Coeur Mining (CDE) is up 11.1% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a combination of earnings-related mom\u2026",
-          "image": "https://www.quiverquant.com/images/cde_rect_new.png",
+          "summary": "<p>Charter Communications (CHTR) is down 3.1% today. Here is some analysis on what might have caused this price movement. ([ir.charter.com](https://ir.charter.com/news-releases/news-release-details/charter-announces-s\u2026",
+          "image": "https://www.quiverquant.com/images/chtr_rect_new.png",
           "_first_seen": "2026-08-08T04:53:04.014005+00:00"
         },
         {
@@ -4903,9 +4903,35 @@
       "emoji": "\ud83d\udcd1",
       "label_en": "Bill summaries",
       "label_zh": "\u6cd5\u6848\u6458\u8981",
-      "rows": 1103,
-      "last_seen": "2026-08-07",
+      "rows": 1105,
+      "last_seen": "2026-08-08",
       "recent": [
+        {
+          "currentChamber": "House",
+          "title": "Condemning Lebanese Hezbollah's repeated violations of ceasefire agreements and calling for the Lebanese Government to ensure Lebanese Hezbollah immediately ceases all attacks and disarms, in accordance with the cease\u2026",
+          "congress": "119",
+          "number": "1379",
+          "originChamber": "House",
+          "billType": "HRES",
+          "summary": "<p>This resolution condemns Hezbollah\u2019s repeated violations of ceasefire agreements and calls on the Lebanese government to ensure Hezbollah immediately ceases all attacks against Israel and disarms in the South Litan\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hres/1379?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-23",
+          "_first_seen": "2026-08-08T12:51:06.990614+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "A resolution requesting information on Israel's human rights practices pursuant to section 502B(c) of the Foreign Assistance Act of 1961.",
+          "congress": "119",
+          "number": "797",
+          "originChamber": "Senate",
+          "billType": "SRES",
+          "summary": "<p>This resolution requests that the Department of State provide Congress with specified information on Israel\u2019s human rights practices in Lebanon since February 28, 2026.</p>",
+          "url": "https://api.congress.gov/v3/bill/119/sres/797?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-24",
+          "_first_seen": "2026-08-08T12:51:06.990614+00:00"
+        },
         {
           "currentChamber": "Senate",
           "title": "A bill to designate the facility of the United States Postal Service located at 16 Rev Dr Martin Luther King Drive in Willingboro, New Jersey, as the \"James A. Cotten Post Office\".",
@@ -5011,19 +5037,6 @@
           "_first_seen": "2026-08-06T08:23:48.211671+00:00"
         },
         {
-          "currentChamber": "House",
-          "title": "Summer Meals REACH Act of 2026",
-          "congress": "119",
-          "number": "9587",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Summer Meals Reaching Every Area's Child Hunger Act of 2026&nbsp;or the Summer Meals REACH Act of 2026 </strong></p><p>This bill expands the Summer Food Service Program by permanently making all children el\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9587?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-07-02",
-          "_first_seen": "2026-08-01T15:25:08.277566+00:00"
-        },
-        {
           "currentChamber": "Unknown",
           "title": "Emergency Conservation Program Improvement Act of 2025",
           "congress": "119",
@@ -5064,6 +5077,19 @@
         },
         {
           "currentChamber": "House",
+          "title": "Summer Meals REACH Act of 2026",
+          "congress": "119",
+          "number": "9587",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Summer Meals Reaching Every Area's Child Hunger Act of 2026&nbsp;or the Summer Meals REACH Act of 2026 </strong></p><p>This bill expands the Summer Food Service Program by permanently making all children el\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9587?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-07-02",
+          "_first_seen": "2026-08-01T15:25:08.277566+00:00"
+        },
+        {
+          "currentChamber": "House",
           "title": "Stop CHEATERS Act",
           "congress": "119",
           "number": "9736",
@@ -5087,6 +5113,19 @@
           "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-07-16",
           "_first_seen": "2026-07-31T00:20:09.879322+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Export Control Enforcement and Enhancement Act",
+          "congress": "119",
+          "number": "4840",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Export Control Enforcement and Enhancement Act</strong></p><p>This bill allows for expedited consideration of modifications to the Entity List. (The Entity List is managed by the Department of Commerce's Bu\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4840?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-18",
+          "_first_seen": "2026-07-30T00:17:46.283451+00:00"
         },
         {
           "currentChamber": "House",
@@ -5115,94 +5154,16 @@
           "_first_seen": "2026-07-30T00:17:46.283451+00:00"
         },
         {
-          "currentChamber": "Senate",
-          "title": "Export Control Enforcement and Enhancement Act",
-          "congress": "119",
-          "number": "4840",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Export Control Enforcement and Enhancement Act</strong></p><p>This bill allows for expedited consideration of modifications to the Entity List. (The Entity List is managed by the Department of Commerce's Bu\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4840?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-18",
-          "_first_seen": "2026-07-30T00:17:46.283451+00:00"
-        },
-        {
           "currentChamber": "House",
-          "title": "Health Disparity Zones Act of 2026",
+          "title": "VA Mental Health Outreach and Engagement Act",
           "congress": "119",
-          "number": "9488",
+          "number": "3863",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Health Disparity Zones Act of </strong><strong>2026</strong></p><p>This bill provides for the designation of Health Disparity Zones in certain geographic areas with documented and measurable health disparit\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9488?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-06-25",
-          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Mamas First Act",
-          "congress": "119",
-          "number": "9712",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Mamas First Act</strong></p><p>This bill requires state Medicaid programs to cover services furnished by&nbsp;doulas, midwives, and lactation support providers, including prenatal, delivery, and postpartum \u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9712?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-07-15",
-          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Improving Access to Transfusion Care for Hospice Patients Act of 2026",
-          "congress": "119",
-          "number": "9703",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Improving Access to Transfusion Care for Hospice Patients Act of </strong><strong>2026</strong></p><p>This bill requires the Center for Medicare and Medicaid Innovation (CMMI) to test a model under which bl\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9703?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-07-15",
-          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Protecting Americans\u2019 Health Care Act of 2026",
-          "congress": "119",
-          "number": "9623",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Protecting Americans' Health Care Act of 2026</strong></p><p>This bill repeals the Medicaid provisions that were enacted under what is commonly known as the One Big Beautiful Bill Act.</p><p>Among other pro\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9623?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-07-09",
-          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "Accelerating Access to Critical Therapies for ALS Reauthorization Act of 2026",
-          "congress": "119",
-          "number": "4472",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Accelerating Access to Critical Therapies for ALS Reauthorization Act of 2026</strong></p><p>This bill reauthorizes through FY2031 and revises programs that support research and development of drugs and oth\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4472?format=json",
-          "lastAction": "Reported to Senate",
-          "lastActionDate": "2026-07-16",
-          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "Foster Youth Housing Opportunity Act",
-          "congress": "119",
-          "number": "4854",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Foster Youth Housing Opportunity Act</strong></p><p>This bill expands states' permissible uses of federal funds under the John H. Chafee Foster Care Program for Successful Transition to Adulthood (Chafee pr\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4854?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-23",
+          "summary": "<p><strong>VA Mental Health Outreach and Engagement Act</strong></p><p>This bill requires the Department of Veterans Affairs (VA) to offer an annual mental health consultation to veterans who are receiving compensatio\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/3863?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-05-04",
           "_first_seen": "2026-07-29T00:12:18.797158+00:00"
         },
         {
@@ -5219,16 +5180,55 @@
           "_first_seen": "2026-07-29T00:12:18.797158+00:00"
         },
         {
-          "currentChamber": "House",
-          "title": "VA Mental Health Outreach and Engagement Act",
+          "currentChamber": "Senate",
+          "title": "Foster Youth Housing Opportunity Act",
           "congress": "119",
-          "number": "3863",
+          "number": "4854",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Foster Youth Housing Opportunity Act</strong></p><p>This bill expands states' permissible uses of federal funds under the John H. Chafee Foster Care Program for Successful Transition to Adulthood (Chafee pr\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4854?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-23",
+          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Health Disparity Zones Act of 2026",
+          "congress": "119",
+          "number": "9488",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>VA Mental Health Outreach and Engagement Act</strong></p><p>This bill requires the Department of Veterans Affairs (VA) to offer an annual mental health consultation to veterans who are receiving compensatio\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/3863?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-04",
+          "summary": "<p><strong>Health Disparity Zones Act of </strong><strong>2026</strong></p><p>This bill provides for the designation of Health Disparity Zones in certain geographic areas with documented and measurable health disparit\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9488?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-25",
+          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Protecting Americans\u2019 Health Care Act of 2026",
+          "congress": "119",
+          "number": "9623",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Protecting Americans' Health Care Act of 2026</strong></p><p>This bill repeals the Medicaid provisions that were enacted under what is commonly known as the One Big Beautiful Bill Act.</p><p>Among other pro\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9623?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-07-09",
+          "_first_seen": "2026-07-29T00:12:18.797158+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Improving Access to Transfusion Care for Hospice Patients Act of 2026",
+          "congress": "119",
+          "number": "9703",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Improving Access to Transfusion Care for Hospice Patients Act of </strong><strong>2026</strong></p><p>This bill requires the Center for Medicare and Medicaid Innovation (CMMI) to test a model under which bl\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9703?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-07-15",
           "_first_seen": "2026-07-29T00:12:18.797158+00:00"
         }
       ]
@@ -5496,182 +5496,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 205407,
+      "rows": 205668,
       "last_seen": "2026-08-08",
       "recent": [
         {
-          "ticker": "D",
-          "owner_name": "COMERICA BANK",
+          "ticker": "DAL",
+          "owner_name": "Aberdeen Group plc",
           "owner_title": "Institution",
-          "shares": "156337",
+          "shares": "148780",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "FRANKLIN RESOURCES INC",
+          "owner_name": "&PARTNERS",
           "owner_title": "Institution",
-          "shares": "1500535",
+          "shares": "280032",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "HSBC HOLDINGS PLC",
+          "owner_name": "SUSQUEHANNA INTERNATIONAL GROUP, LLP",
           "owner_title": "Institution",
-          "shares": "1351347",
+          "shares": "317913",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
+          "owner_name": "BANK OF NOVA SCOTIA",
           "owner_title": "Institution",
-          "shares": "1295157",
+          "shares": "314227",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
+          "owner_name": "COMMONWEALTH EQUITY SERVICES, LLC",
           "owner_title": "Institution",
-          "shares": "1258043",
+          "shares": "309478",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "National Pension Service",
+          "owner_name": "M&G Plc",
           "owner_title": "Institution",
-          "shares": "1239549",
+          "shares": "289819",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "LPL Financial LLC",
+          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
           "owner_title": "Institution",
-          "shares": "1163976",
+          "shares": "282696",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
+          "owner_name": "Korea Investment CORP",
           "owner_title": "Institution",
-          "shares": "1137313",
+          "shares": "282189",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
           "owner_title": "Institution",
-          "shares": "1119920",
+          "shares": "281362",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
+          "owner_name": "STATE OF WISCONSIN INVESTMENT BOARD",
           "owner_title": "Institution",
-          "shares": "1107159",
+          "shares": "278964",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Mariner, LLC",
+          "owner_name": "CIBC Private Wealth Group LLC",
           "owner_title": "Institution",
-          "shares": "1076357",
+          "shares": "326112",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "ProShare Advisors LLC",
+          "owner_name": "OpenArc Corporate Advisory, LLC",
           "owner_title": "Institution",
-          "shares": "1073105",
+          "shares": "276377",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "PNC FINANCIAL SERVICES GROUP, INC.",
+          "owner_name": "Chevy Chase Trust Holdings, LLC",
           "owner_title": "Institution",
-          "shares": "1055842",
+          "shares": "271229",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "CITIGROUP INC",
+          "owner_name": "Eurizon Capital SGR S.p.A.",
           "owner_title": "Institution",
-          "shares": "1020869",
+          "shares": "270033",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "RAYMOND JAMES & ASSOCIATES",
+          "owner_name": "Cardano Risk Management B.V.",
           "owner_title": "Institution",
-          "shares": "989504",
+          "shares": "260359",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "BANK OF MONTREAL /CAN/",
+          "owner_name": "Daiwa Securities Group Inc.",
           "owner_title": "Institution",
-          "shares": "961165",
+          "shares": "249252",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "RHUMBLINE ADVISERS",
+          "owner_name": "ASSETMARK, INC",
           "owner_title": "Institution",
-          "shares": "931065",
+          "shares": "248532",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Capital Wealth Planning, LLC",
+          "owner_name": "FERGUSON WELLMAN CAPITAL MANAGEMENT, INC",
           "owner_title": "Institution",
-          "shares": "1447173",
+          "shares": "247072",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
+          "owner_name": "Sumitomo Mitsui DS Asset Management Company, Ltd",
           "owner_title": "Institution",
-          "shares": "1520877",
-          "_collected": "2026-08-08"
-        },
-        {
-          "ticker": "AZN",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
-          "owner_title": "Institution",
-          "shares": "3844540",
+          "shares": "321697",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "STIFEL FINANCIAL CORP",
+          "owner_name": "BARTLETT & CO. WEALTH MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "1540435",
+          "shares": "326887",
+          "_collected": "2026-08-08"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "MACKENZIE FINANCIAL CORP",
+          "owner_title": "Institution",
+          "shares": "5852258",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "UBS Group AG",
+          "owner_name": "Cetera Investment Advisers",
           "owner_title": "Institution",
-          "shares": "3148040",
+          "shares": "345260",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "STATE FARM MUTUAL AUTOMOBILE INSURANCE CO",
+          "owner_name": "NEOS Investment Management LLC",
           "owner_title": "Institution",
-          "shares": "2715656",
+          "shares": "369940",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "BARCLAYS PLC",
+          "owner_name": "Focus Partners Wealth",
           "owner_title": "Institution",
-          "shares": "2695350",
+          "shares": "366355",
           "_collected": "2026-08-08"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Nuveen Asset Management, LLC",
+          "owner_name": "Quantinno Capital Management LP",
           "owner_title": "Institution",
-          "shares": "2423275",
+          "shares": "364725",
           "_collected": "2026-08-08"
         }
       ]
@@ -6423,56 +6423,56 @@
     "hf": [
       {
         "ticker": "AMZN",
-        "downloads_30d": 41778150.0,
-        "wow_pct": 17.6,
+        "downloads_30d": 41896572.0,
+        "wow_pct": 17.9,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 280061226.0,
-        "wow_pct": 4.0,
+        "downloads_30d": 279207635.0,
+        "wow_pct": 3.6,
         "hot": true
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 5609904.0,
-        "wow_pct": 2.1,
+        "downloads_30d": 5547607.0,
+        "wow_pct": 0.9,
         "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 15197141.0,
-        "wow_pct": 1.5,
+        "downloads_30d": 14937653.0,
+        "wow_pct": -0.2,
         "hot": false
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 208044583.0,
-        "wow_pct": -0.5,
-        "hot": false
-      },
-      {
-        "ticker": "META",
-        "downloads_30d": 95956143.0,
-        "wow_pct": -1.6,
-        "hot": false
-      },
-      {
-        "ticker": "NVDA",
-        "downloads_30d": 40669146.0,
-        "wow_pct": -1.7,
+        "downloads_30d": 206046778.0,
+        "wow_pct": -1.5,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "downloads_30d": 32277929.0,
-        "wow_pct": -1.8,
+        "downloads_30d": 31876516.0,
+        "wow_pct": -3.0,
+        "hot": false
+      },
+      {
+        "ticker": "META",
+        "downloads_30d": 94374057.0,
+        "wow_pct": -3.2,
+        "hot": false
+      },
+      {
+        "ticker": "NVDA",
+        "downloads_30d": 40005119.0,
+        "wow_pct": -3.3,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 2659555.0,
-        "wow_pct": -16.7,
+        "downloads_30d": 2564069.0,
+        "wow_pct": -19.7,
         "hot": false
       }
     ],
@@ -7069,6 +7069,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "GFF",
+        "category": "Divestitures",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "LNDR",
         "category": "Divestitures",
         "confidence": "high",
@@ -7134,6 +7142,14 @@
       },
       {
         "ticker": "BJD",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "YUM",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -8622,6 +8638,14 @@
       },
       {
         "ticker": "FDXF",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "FLEX",
         "category": "Spin-Offs",
         "confidence": "high",
         "activist": false,
@@ -10686,11 +10710,11 @@
       },
       {
         "ticker": "DFH",
-        "category": "Activist Campaigns",
+        "category": "Acquisitions",
         "confidence": "high",
-        "activist": true,
+        "activist": false,
         "filer": null,
-        "detail": "Activist Campaigns"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "KBR",
@@ -11614,6 +11638,14 @@
       },
       {
         "ticker": "MYE",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "PAGP",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -13318,11 +13350,11 @@
       },
       {
         "ticker": "DV",
-        "category": "Acquisitions",
+        "category": "Going-Private",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Going-Private"
       },
       {
         "ticker": "EMAMILTD",
@@ -17646,11 +17678,11 @@
       },
       {
         "ticker": "AIFC",
-        "category": "Delistings",
+        "category": "Divestitures",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Divestitures"
       },
       {
         "ticker": "GFL",
@@ -17667,6 +17699,14 @@
         "activist": false,
         "filer": null,
         "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "YUMC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "CTHH",
@@ -17691,6 +17731,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "AYA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "LLOBF",
@@ -17847,7 +17895,7 @@
       {
         "ticker": "SWKS",
         "category": "Acquisitions",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -19237,14 +19285,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "LOCLW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "BNT",
         "category": "Going-Private",
         "confidence": "high",
@@ -19459,6 +19499,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "QNBC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "NXB",
@@ -19731,14 +19779,6 @@
         "activist": false,
         "filer": null,
         "detail": "Issuer Tenders"
-      },
-      {
-        "ticker": "AERTW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "CHGA",
@@ -20275,6 +20315,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "PONOR",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "RKLB",
@@ -21309,6 +21357,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "DJTWW",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
+      },
+      {
         "ticker": "EUDAW",
         "category": "Delistings",
         "confidence": "high",
@@ -21869,14 +21925,6 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "WHLRL",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
         "ticker": "MBGL",
         "category": "Spin-Offs",
         "confidence": "high",
@@ -22045,6 +22093,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "PAAPU",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "ORLA",
         "category": "Acquisitions",
         "confidence": "high",
@@ -22070,6 +22126,14 @@
       },
       {
         "ticker": "BXBL",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "ISPC",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -23061,14 +23125,6 @@
         "detail": "Divestitures"
       },
       {
-        "ticker": "LCII",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "NUMD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -23607,7 +23663,7 @@
       {
         "ticker": "UBER",
         "category": "Acquisitions",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -24237,6 +24293,14 @@
         "detail": "Issuer Tenders"
       },
       {
+        "ticker": "MSI",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "FBRX",
         "category": "Tender Offers",
         "confidence": "high",
@@ -24253,12 +24317,28 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "AIXI",
+        "category": "Delistings",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "BRFH",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "BZH",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "ORBS",
@@ -24636,6 +24716,17 @@
         "hot": true
       },
       {
+        "ticker": "MS",
+        "net_up_30d": 19,
+        "breadth": 1.0,
+        "est_chg_30d": 5.99,
+        "n_analysts": 19,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 19,
+        "hot": true
+      },
+      {
         "ticker": "VEEV",
         "net_up_30d": 18,
         "breadth": 0.75,
@@ -24691,17 +24782,6 @@
         "hot": true
       },
       {
-        "ticker": "LITE",
-        "net_up_30d": 17,
-        "breadth": 0.9,
-        "est_chg_30d": 1.23,
-        "n_analysts": 19,
-        "bull_ratio": 0.95,
-        "rising": true,
-        "revision_delta": 17,
-        "hot": true
-      },
-      {
         "ticker": "RTX",
         "net_up_30d": 17,
         "breadth": 0.9,
@@ -24713,14 +24793,14 @@
         "hot": true
       },
       {
-        "ticker": "MAS",
-        "net_up_30d": 16,
-        "breadth": 1.0,
-        "est_chg_30d": -0.7,
-        "n_analysts": 16,
-        "bull_ratio": 1.0,
+        "ticker": "MCO",
+        "net_up_30d": 17,
+        "breadth": 0.9,
+        "est_chg_30d": 1.65,
+        "n_analysts": 19,
+        "bull_ratio": 0.95,
         "rising": true,
-        "revision_delta": 16,
+        "revision_delta": 17,
         "hot": true
       }
     ],
@@ -25382,56 +25462,56 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 18020,
-        "wow_pct": 1.0,
+        "stars": 18031,
+        "wow_pct": 1.06,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 15129,
-        "wow_pct": 0.54,
+        "stars": 15133,
+        "wow_pct": 0.57,
         "hot": true
       },
       {
         "ticker": "AMD",
-        "stars": 6755,
-        "wow_pct": 0.31,
+        "stars": 6756,
+        "wow_pct": 0.33,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7684,
-        "wow_pct": 0.26,
-        "hot": true
-      },
-      {
-        "ticker": "ESTC",
-        "stars": 77808,
-        "wow_pct": 0.23,
+        "stars": 7686,
+        "wow_pct": 0.29,
         "hot": true
       },
       {
         "ticker": "DDOG",
-        "stars": 3698,
-        "wow_pct": 0.22,
+        "stars": 3699,
+        "wow_pct": 0.24,
+        "hot": true
+      },
+      {
+        "ticker": "ESTC",
+        "stars": 77811,
+        "wow_pct": 0.23,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 188496,
-        "wow_pct": 0.21,
+        "stars": 188510,
+        "wow_pct": 0.22,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 196915,
+        "stars": 196928,
         "wow_pct": 0.14,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 247114,
-        "wow_pct": 0.11,
+        "stars": 247124,
+        "wow_pct": 0.12,
         "hot": false
       },
       {
@@ -25442,8 +25522,8 @@
       },
       {
         "ticker": "PLTR",
-        "stars": 21980,
-        "wow_pct": 0.08,
+        "stars": 21979,
+        "wow_pct": 0.07,
         "hot": false
       },
       {
@@ -25466,8 +25546,8 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28478,
-        "wow_pct": 0.03,
+        "stars": 28480,
+        "wow_pct": 0.04,
         "hot": false
       },
       {
@@ -27521,16 +27601,6 @@
         "summary": "This resolution provides for the consideration of the bill (H.R. 8800) to authorize appropriations for fiscal year 2027 for military activities of the Department of Defense, for military construction, and for defense activities of the Department of Energy, to prescribe military personnel strengths f"
       },
       {
-        "title": "Establishing the congressional budget for the United States Government for fiscal year 2027 and setting forth the appropriate budgetary leve",
-        "sector": "Healthcare",
-        "chamber": "House",
-        "bill": "HCONRES113",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-07-18",
-        "url": "https://api.congress.gov/v3/bill/119/hconres/113?format=json",
-        "summary": "This concurrent resolution establishes the congressional budget for the federal government for FY2027, sets forth budgetary levels for FY2028-FY2036, and provides reconciliation instructions for legislation that increases the deficit.&nbsp;  The resolution recommends levels and amounts for FY2027-FY"
-      },
-      {
         "title": "Making continuing appropriations for fiscal year 2027, and for other purposes.",
         "sector": "Financials",
         "chamber": "House",
@@ -27539,6 +27609,16 @@
         "last_action_date": "2026-07-18",
         "url": "https://api.congress.gov/v3/bill/119/hr/9770?format=json",
         "summary": "Continuing Appropriations Act, 2027   This bill provides continuing FY2027 appropriations for federal agencies and extends various expiring programs and authorities.  Specifically, the bill provides continuing FY2027 appropriations to federal agencies through the earlier of December 4, 2026, or the "
+      },
+      {
+        "title": "Establishing the congressional budget for the United States Government for fiscal year 2027 and setting forth the appropriate budgetary leve",
+        "sector": "Healthcare",
+        "chamber": "House",
+        "bill": "HCONRES113",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-07-18",
+        "url": "https://api.congress.gov/v3/bill/119/hconres/113?format=json",
+        "summary": "This concurrent resolution establishes the congressional budget for the federal government for FY2027, sets forth budgetary levels for FY2028-FY2036, and provides reconciliation instructions for legislation that increases the deficit.&nbsp;  The resolution recommends levels and amounts for FY2027-FY"
       },
       {
         "title": "Accelerating Access to Critical Therapies for ALS Reauthorization Act of 2026",
@@ -27551,16 +27631,6 @@
         "summary": "Accelerating Access to Critical Therapies for ALS Reauthorization Act of 2026   This bill reauthorizes through FY2031 and revises programs that support research and development of drugs and other therapies to address&nbsp;amyotrophic lateral sclerosis (also known as ALS or Lou Gehrig's disease) and "
       },
       {
-        "title": "EARLY Act Reauthorization of 2025",
-        "sector": "Healthcare",
-        "chamber": "Senate",
-        "bill": "S2339",
-        "last_action": "Reported to Senate",
-        "last_action_date": "2026-07-16",
-        "url": "https://api.congress.gov/v3/bill/119/s/2339?format=json",
-        "summary": "EARLY Act Reauthorization of 2025   This bill reauthorizes through FY2031 programs relating to young women\u2019s awareness of breast health and breast cancer, which are administered by the Centers for Disease Control and Prevention. These programs include campaigns to educate young women and health care"
-      },
-      {
         "title": "Lindsey O. Graham Sanctioning Russia Act of 2026",
         "sector": "Defense",
         "chamber": "Senate",
@@ -27571,24 +27641,14 @@
         "summary": "Lindsey O. Graham Sanctioning Russia Act of 2026   This bill imposes a variety of sanctions, tariffs, and prohibitions related to Russia.  For example, under the bill, the President must&nbsp;   impose visa- and property-blocking sanctions on specified persons&nbsp;(individuals and entities) such as"
       },
       {
-        "title": "Improving Access to Transfusion Care for Hospice Patients Act of 2026",
+        "title": "EARLY Act Reauthorization of 2025",
         "sector": "Healthcare",
-        "chamber": "House",
-        "bill": "HR9703",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-07-15",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9703?format=json",
-        "summary": "Improving Access to Transfusion Care for Hospice Patients Act of   2026   This bill requires the Center for Medicare and Medicaid Innovation (CMMI) to test a model under which blood transfusions furnished to an individual receiving hospice care are paid separately from the hospice all-inclusive per "
-      },
-      {
-        "title": "Mamas First Act",
-        "sector": "Healthcare",
-        "chamber": "House",
-        "bill": "HR9712",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-07-15",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9712?format=json",
-        "summary": "Mamas First Act   This bill requires state Medicaid programs to cover services furnished by&nbsp;doulas, midwives, and lactation support providers, including prenatal, delivery, and postpartum services, in a variety of settings."
+        "chamber": "Senate",
+        "bill": "S2339",
+        "last_action": "Reported to Senate",
+        "last_action_date": "2026-07-16",
+        "url": "https://api.congress.gov/v3/bill/119/s/2339?format=json",
+        "summary": "EARLY Act Reauthorization of 2025   This bill reauthorizes through FY2031 programs relating to young women\u2019s awareness of breast health and breast cancer, which are administered by the Centers for Disease Control and Prevention. These programs include campaigns to educate young women and health care"
       },
       {
         "title": "Voter ID Act",
@@ -27601,6 +27661,26 @@
         "summary": "Voter ID Act   This bill establishes certain photo identification requirements for voting in federal elections.  Specifically, the bill prohibits a state or local election official from providing a ballot for a federal election to an individual who does not present valid physical photo identificatio"
       },
       {
+        "title": "Mamas First Act",
+        "sector": "Healthcare",
+        "chamber": "House",
+        "bill": "HR9712",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-07-15",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9712?format=json",
+        "summary": "Mamas First Act   This bill requires state Medicaid programs to cover services furnished by&nbsp;doulas, midwives, and lactation support providers, including prenatal, delivery, and postpartum services, in a variety of settings."
+      },
+      {
+        "title": "Improving Access to Transfusion Care for Hospice Patients Act of 2026",
+        "sector": "Healthcare",
+        "chamber": "House",
+        "bill": "HR9703",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-07-15",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9703?format=json",
+        "summary": "Improving Access to Transfusion Care for Hospice Patients Act of   2026   This bill requires the Center for Medicare and Medicaid Innovation (CMMI) to test a model under which blood transfusions furnished to an individual receiving hospice care are paid separately from the hospice all-inclusive per "
+      },
+      {
         "title": "Cure Hepatitis C Act of 2026",
         "sector": "Semiconductors",
         "chamber": "House",
@@ -27611,24 +27691,14 @@
         "summary": "Cure Hepatitis C Act of 2026   This bill establishes programs and requirements to provide free medications to treat hepatitis C in certain high-risk or vulnerable populations. It also establishes grants and other resources to support testing and treatment for hepatitis C. The bill provides funding f"
       },
       {
-        "title": "Providing for consideration of the bill (H.R. 139) to make daylight savings time permanent, and for other purposes; providing for considerat",
-        "sector": "Defense",
-        "chamber": "House",
-        "bill": "HRES1423",
-        "last_action": "Reported to House",
+        "title": "Removing Barriers to Work for Disabled Americans Act",
+        "sector": "Financials",
+        "chamber": "Senate",
+        "bill": "S4947",
+        "last_action": "Introduced in Senate",
         "last_action_date": "2026-07-13",
-        "url": "https://api.congress.gov/v3/bill/119/hres/1423?format=json",
-        "summary": "This resolution provides for the consideration of the bill (H.R. 139) to make daylight savings time permanent, and for other purposes; providing for consideration of the bill (H.R. 8595) making appropriations for national security, Department of State, and related programs for the fiscal year ending"
-      },
-      {
-        "title": "EARLY Act Reauthorization of 2025",
-        "sector": "Healthcare",
-        "chamber": "House",
-        "bill": "HR4541",
-        "last_action": "Reported to House",
-        "last_action_date": "2026-07-13",
-        "url": "https://api.congress.gov/v3/bill/119/hr/4541?format=json",
-        "summary": "This bill reauthorizes and revises programs of the Centers for Disease Control and Prevention (CDC) that support services and education addressing breast and cervical cancer.  The bill reauthorizes through FY2030 and makes changes to the&nbsp;CDC\u2019s National Breast and Cervical Cancer Early Detection"
+        "url": "https://api.congress.gov/v3/bill/119/s/4947?format=json",
+        "summary": "Removing Barriers to Work for Disabled Americans Act   This bill reauthorizes through 2031 the Social Security Administration\u2019s (SSA\u2019s) authority to carry out demonstration projects within the Social Security Disability Insurance (SSDI) program. The bill also imposes requirements related to benefici"
       },
       {
         "title": "To prohibit the National Science Foundation from obligating or expending Federal funds to descope or decommission the Ocean Observatories In",
@@ -27641,14 +27711,24 @@
         "summary": "This bill prohibits the National Science Foundation (NSF) from using federal funds to decommission or descope Ocean Observatories Initiative (OOI) instruments until a thorough review of OOI is completed.  OOI measures and observes ocean conditions using a series of in-water instruments that gather p"
       },
       {
-        "title": "Removing Barriers to Work for Disabled Americans Act",
-        "sector": "Financials",
-        "chamber": "Senate",
-        "bill": "S4947",
-        "last_action": "Introduced in Senate",
+        "title": "EARLY Act Reauthorization of 2025",
+        "sector": "Healthcare",
+        "chamber": "House",
+        "bill": "HR4541",
+        "last_action": "Reported to House",
         "last_action_date": "2026-07-13",
-        "url": "https://api.congress.gov/v3/bill/119/s/4947?format=json",
-        "summary": "Removing Barriers to Work for Disabled Americans Act   This bill reauthorizes through 2031 the Social Security Administration\u2019s (SSA\u2019s) authority to carry out demonstration projects within the Social Security Disability Insurance (SSDI) program. The bill also imposes requirements related to benefici"
+        "url": "https://api.congress.gov/v3/bill/119/hr/4541?format=json",
+        "summary": "This bill reauthorizes and revises programs of the Centers for Disease Control and Prevention (CDC) that support services and education addressing breast and cervical cancer.  The bill reauthorizes through FY2030 and makes changes to the&nbsp;CDC\u2019s National Breast and Cervical Cancer Early Detection"
+      },
+      {
+        "title": "Providing for consideration of the bill (H.R. 139) to make daylight savings time permanent, and for other purposes; providing for considerat",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HRES1423",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-07-13",
+        "url": "https://api.congress.gov/v3/bill/119/hres/1423?format=json",
+        "summary": "This resolution provides for the consideration of the bill (H.R. 139) to make daylight savings time permanent, and for other purposes; providing for consideration of the bill (H.R. 8595) making appropriations for national security, Department of State, and related programs for the fiscal year ending"
       },
       {
         "title": "Protecting Americans\u2019 Health Care Act of 2026",
@@ -29072,7 +29152,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: Ascentis Wealth Management, LLC +$1,847,058,202 \u00b7 analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 darkpool_accum: DPI 0.333 \u00b7 github_momentum: +1.0% stars \u00b7 patent_cluster: 132 grants, 18 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: Ascentis Wealth Management, LLC +$1,847,058,202 \u00b7 analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 darkpool_accum: DPI 0.333 \u00b7 github_momentum: +1.06% stars \u00b7 patent_cluster: 132 grants, 18 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -29085,7 +29165,7 @@
           "hf_model_momentum",
           "lobbying"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 app_demand: 4.71\u2605 \u00d7 26,081,553 reviews \u00b7 github_momentum: +0.14% stars \u00b7 hf_model_momentum: +4.0% model downloads \u00b7 lobbying: $4,810,000 lobbied"
+        "why": "analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 app_demand: 4.71\u2605 \u00d7 26,081,553 reviews \u00b7 github_momentum: +0.14% stars \u00b7 hf_model_momentum: +3.6% model downloads \u00b7 lobbying: $4,810,000 lobbied"
       },
       {
         "ticker": "MSFT",
@@ -29098,7 +29178,7 @@
           "lobbying",
           "patent_cluster"
         ],
-        "why": "app_demand: 4.77\u2605 \u00d7 19,906,743 reviews \u00b7 cnbc_pick: Jason Snipe \u00b7 github_momentum: +0.21% stars \u00b7 lobbying: $3,650,000 lobbied \u00b7 patent_cluster: 250 grants, 37 IPC classes"
+        "why": "app_demand: 4.77\u2605 \u00d7 19,906,743 reviews \u00b7 cnbc_pick: Jason Snipe \u00b7 github_momentum: +0.22% stars \u00b7 lobbying: $3,650,000 lobbied \u00b7 patent_cluster: 250 grants, 37 IPC classes"
       },
       {
         "ticker": "BA",
@@ -29168,17 +29248,6 @@
           "trump"
         ],
         "why": "clinical_phase3_start: 12 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 trump: PFIZER INC"
-      },
-      {
-        "ticker": "LITE",
-        "score": 3,
-        "weighted_score": 1.4,
-        "channel_list": [
-          "analyst_upgrade_cluster",
-          "insider_mspr",
-          "trump"
-        ],
-        "why": "analyst_upgrade_cluster: net upgrades +17 revision delta \u00b7 insider_mspr: MSPR 100.0 \u00b7 trump: LUMENTUM HOLDINGS INC"
       },
       {
         "ticker": "PLTR",
@@ -29255,7 +29324,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "github_momentum: +0.26% stars \u00b7 gov_contract: $15,509,202 awarded \u00b7 patent_cluster: 418 grants, 48 IPC classes"
+        "why": "github_momentum: +0.29% stars \u00b7 gov_contract: $15,509,202 awarded \u00b7 patent_cluster: 418 grants, 48 IPC classes"
       },
       {
         "ticker": "AAPL",
@@ -29330,6 +29399,16 @@
           "trump"
         ],
         "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01) \u00b7 trump: PROCTER & GAMBLE CO"
+      },
+      {
+        "ticker": "LITE",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "insider_mspr",
+          "trump"
+        ],
+        "why": "insider_mspr: MSPR 100.0 \u00b7 trump: LUMENTUM HOLDINGS INC"
       },
       {
         "ticker": "IR",
