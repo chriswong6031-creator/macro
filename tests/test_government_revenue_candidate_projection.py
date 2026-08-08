@@ -127,7 +127,10 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
     assert (root / "data/government_revenue/candidate_ledger.jsonl").read_bytes() == b""
     assert status["status"] == "ok"
     assert status["candidate_count"] == 0
-    assert status["source_health"]["status"] == "degraded"
+    # "ok" since 2026-08-08: the fixture root copies the canonical current
+    # store, and the SAM opportunity evidence commits brought the award-event
+    # rail to a healthy read. Current-truth pin — moves with the store.
+    assert status["source_health"]["status"] == "ok"
 
 
 def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:

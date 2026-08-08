@@ -213,7 +213,13 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["total"] == 0
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
+    # "not_observed", not "unavailable", since 2026-08-08: the SAM opportunity
+    # evidence commits (18:01Z/20:27Z) brought the award-event rail to status
+    # "ok", and candidates.py:948 reads a healthy rail with zero eligible
+    # candidates as not_observed (rail fine, nothing to see) rather than
+    # unavailable (rail down). Current-truth pin — re-pin deliberately when the
+    # rail state moves, in the PR that moves it.
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
     assert queue["coverage"]["reviewed_issuer_company_count"] == 1
     assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
     assert next(
