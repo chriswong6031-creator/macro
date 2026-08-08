@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-08T02:24:48Z",
+  "produced_at": "2026-08-08T08:32:53Z",
   "as_of": "2026-08-08",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 2,
-    "passed": 2,
+    "items": 17,
+    "passed": 17,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,25 +19,145 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-theme-003",
+      "id": "post-flagship-011",
       "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$WWR",
-      "headline": "Commodities Metals ripping, +7.2% avg today"
+      "slot": "D1-S11",
+      "type": "event",
+      "cashtag": "",
+      "headline": ""
     },
     {
-      "id": "post-founder-025",
-      "account": "founder",
-      "slot": "D1-S25",
+      "id": "post-flagship-012",
+      "account": "flagship",
+      "slot": "D1-S12",
+      "type": "chart",
+      "cashtag": "$CLF",
+      "headline": ""
+    },
+    {
+      "id": "post-flagship-017",
+      "account": "flagship",
+      "slot": "D1-S17",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$GE",
+      "headline": "$GE is back near its high"
+    },
+    {
+      "id": "post-conf-flagship-001",
+      "account": "flagship",
+      "slot": "CONF-01",
+      "type": "signal",
+      "cashtag": "$WFC",
+      "headline": "$WFC just lined up a pattern we track."
+    },
+    {
+      "id": "post-insider-001",
+      "account": "flagship",
+      "slot": "D1-S10",
+      "type": "insider",
+      "cashtag": "$APTV",
+      "headline": ""
+    },
+    {
+      "id": "post-founder-017",
+      "account": "founder",
+      "slot": "D1-S17",
+      "type": "chart",
+      "cashtag": "$ROIV",
+      "headline": ""
+    },
+    {
+      "id": "post-mover-001",
+      "account": "founder",
+      "slot": "D1-S6",
+      "type": "mover",
+      "cashtag": "$TEAM",
+      "headline": "$TEAM +35.3% on Friday"
+    },
+    {
+      "id": "post-insider-002",
+      "account": "founder",
+      "slot": "D1-S7",
+      "type": "insider",
+      "cashtag": "$BRVE",
+      "headline": ""
+    },
+    {
+      "id": "post-meagan-005",
+      "account": "meagan",
+      "slot": "D1-S5",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "The slowdown memo needs another draft"
+    },
+    {
+      "id": "post-sophia-001",
+      "account": "sophia",
+      "slot": "D1-S1",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
+      "id": "post-sophia-016",
+      "account": "sophia",
+      "slot": "D1-S16",
+      "type": "chart",
+      "cashtag": "$JBLU",
+      "headline": "$JBLU found buyers here before"
+    },
+    {
+      "id": "post-kelly-009",
+      "account": "kelly",
+      "slot": "D1-S9",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "The slowdown case has a claims problem"
+    },
+    {
+      "id": "post-kelly-021",
+      "account": "kelly",
+      "slot": "D1-S21",
+      "type": "chart",
+      "cashtag": "$NUE",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-001",
+      "account": "cici",
+      "slot": "D1-S1",
+      "type": "macro",
+      "cashtag": "",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-006",
+      "account": "cici",
+      "slot": "D1-S6",
+      "type": "chart",
+      "cashtag": "$UAL",
+      "headline": ""
+    },
+    {
+      "id": "post-cici-013",
+      "account": "cici",
+      "slot": "D1-S13",
+      "type": "chart",
+      "cashtag": "$ROST",
+      "headline": ""
+    },
+    {
+      "id": "post-housepick-005",
+      "account": "mastermind_news",
+      "slot": "D1-S1",
+      "type": "watchlist",
+      "cashtag": "$SDGR",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 1,
+      "pairs_checked": 118,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -57,7 +177,7 @@
     "cherry_pick": {
       "status": "run",
       "loss_tickers_in_window": [
-        "FBRT",
+        "GME",
         "GPI",
         "QCOM"
       ],

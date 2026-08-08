@@ -3,49 +3,54 @@
   "is_context_only": true,
   "display_only": true,
   "authority_tier": "display",
-  "generated_asof": "2026-08-06",
-  "generated_utc": "2026-08-06T21:53:15.472135+00:00",
+  "generated_asof": "2026-08-08",
+  "generated_utc": "2026-08-08T07:07:11.468970+00:00",
   "spec": "research/PROPHET_STAGE_FUSION_PREREG.md",
   "accrual_disclaimer": "accruing \u2014 first 126-day cohort matures ~2026-12; n is tiny until then; NOT yet decisive. The 2022-26 backtest on the T-cascade confluence proxy found no CI-clean win-rate edge (a quality right-shift only) \u2014 this forward-shadow is the definitive on-Prophet check, tagging Prophet's ACTUAL entries from go-live. Display / shadow tier only: it NEVER gates, ranks, or alters any Prophet decision.",
-  "n_entries": 108,
-  "n_tagged": 80,
-  "n_stageable": 80,
+  "n_entries": 120,
+  "n_tagged": 91,
+  "n_stageable": 91,
   "n_matured": {
-    "21": 31,
+    "21": 35,
     "63": 2,
     "126": 0,
     "clean15_126": 0,
-    "clean8_21": 31
+    "clean8_21": 35
+  },
+  "ec_source": {
+    "state": "unavailable",
+    "path": "data/stage_analysis/backfill/earnings_calls.parquet",
+    "reason": "no earnings-call source on this host \u2014 the EquityDesk backfill parquet is local-only and absent on CI/deploy, so every earnings lookup answers null"
   },
   "split": {
     "stage2": {
-      "n": 24,
+      "n": 32,
       "clean15_126": {
         "n_matured": 0,
         "n_win": 0,
         "win_rate": null
       },
       "clean8_21": {
-        "n_matured": 4,
-        "n_win": 1,
-        "win_rate": 0.25
+        "n_matured": 6,
+        "n_win": 2,
+        "win_rate": 0.3333333333333333
       }
     },
     "rest": {
-      "n": 56,
+      "n": 59,
       "clean15_126": {
         "n_matured": 0,
         "n_win": 0,
         "win_rate": null
       },
       "clean8_21": {
-        "n_matured": 27,
-        "n_win": 12,
-        "win_rate": 0.4444444444444444
+        "n_matured": 29,
+        "n_win": 14,
+        "win_rate": 0.4827586206896552
       }
     },
     "fresh_stage2": {
-      "n": 9,
+      "n": 11,
       "clean15_126": {
         "n_matured": 0,
         "n_win": 0,
@@ -81,7 +86,14 @@
       "stage2_ec": 0,
       "rest": 0
     },
-    "note": "median fwd_ret_126 split for the Stage-2 \u2229 EC-positive cohort vs the rest, over matured-126 entries. MEASUREMENT ONLY \u2014 the hold-leash reads diff/n to self-demote; this layer never gates, ranks, or alters a pick. diff/medians are null until both sides mature (~2026-12)."
+    "ec_coverage": {
+      "state": "unavailable",
+      "n_rows_with_ec": 0,
+      "n_rows": 120,
+      "n_matured_126_with_ec": 0,
+      "note": "NO tagged entry carries an earnings-call reading \u2014 the earnings-call source is absent on the host that tagged this ledger, so the Stage-2 \u2229 earnings cohort is empty by source absence, not by outcome. Every number in this block is an empty-sample null, NOT a measured result, and the hold-leash's demote floor cannot be reached while this stays zero."
+    },
+    "note": "median fwd_ret_126 split for the Stage-2 \u2229 EC-positive cohort vs the rest, over matured-126 entries. MEASUREMENT ONLY \u2014 the hold-leash reads diff/n to self-demote; this layer never gates, ranks, or alters a pick. diff/medians are null until both sides mature (~2026-12). Read ec_coverage first: with no earnings-call tags the split is an empty sample, not a result."
   },
   "note": "The Stage-2-vs-rest / fresh-Stage-2 / positive-EC outcome split on ACTUAL Prophet entries. win = CLEAN_LIFTOFF (same ruler as the backtest). win_rate is null until an entry matures \u2014 nulls printed, not hidden. This layer is context/measurement only: it NEVER gates, ranks, or alters any Prophet decision (the fusion win-rate-gate is killed per DO_NOT_REBUILD)."
 }

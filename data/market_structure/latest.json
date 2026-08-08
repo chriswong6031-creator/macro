@@ -1,16 +1,16 @@
 {
   "schema": "market_structure_context.v1",
   "asof": "2026-08-07",
-  "built_at": "2026-08-07T22:39:59.025949+00:00",
+  "built_at": "2026-08-08T06:36:39.856418+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
     "regime": "long",
-    "net_gex_bn": 92.58246,
+    "net_gex_bn": 97.00368,
     "net_gex_pctile": 96.3,
-    "gamma_flip": 7556.289894,
-    "spot": 7748.9199,
-    "dist_to_flip_pct": 2.49,
+    "gamma_flip": 7553.638259,
+    "spot": 7757.6401,
+    "dist_to_flip_pct": 2.63,
     "days_in_regime": 6,
     "days_in_regime_observed": 3,
     "series_start": "2026-06-15",
@@ -199,10 +199,10 @@
       },
       {
         "date": "2026-08-07",
-        "net_gex_bn": 92.58246,
+        "net_gex_bn": 97.00368,
         "regime": "long",
-        "flip": 7556.289894,
-        "spot": 7748.9199
+        "flip": 7553.638259,
+        "spot": 7757.6401
       }
     ],
     "coverage": {
@@ -230,20 +230,20 @@
   },
   "systematic": {
     "vc": {
-      "alloc_bn": 218.733375,
-      "alloc_frac": 0.729111,
-      "flow_1d_bn": 1.75587,
-      "flow_5d_bn": -6.679173,
+      "alloc_bn": 218.52691,
+      "alloc_frac": 0.728423,
+      "flow_1d_bn": 1.549405,
+      "flow_5d_bn": -6.885638,
       "state": "cutting",
       "aum_bn": 300.0,
       "target_vol_pct": 10.0,
       "series_start": "1927-12-30"
     },
     "cta": {
-      "score": 1.047255,
-      "z": 0.045979,
-      "flow_1d": 0.01771,
-      "flow_5d": 0.31504,
+      "score": 1.05149,
+      "z": 0.052534,
+      "flow_1d": 0.021945,
+      "flow_5d": 0.319275,
       "state": "adding"
     },
     "agreement": "split",
@@ -4242,65 +4242,61 @@
       },
       {
         "date": "2026-08-07",
-        "vc_alloc_bn": 218.733375,
-        "vc_flow_bn": 1.75587,
-        "cta_score": 1.047255,
-        "cta_flow": 0.01771,
-        "spx_close": 7755.189941
+        "vc_alloc_bn": 218.52691,
+        "vc_flow_bn": 1.549405,
+        "cta_score": 1.05149,
+        "cta_flow": 0.021945,
+        "spx_close": 7757.640137
       }
     ]
   },
   "vol": {
-    "rv21": 0.137153,
-    "rv63": 0.136561,
+    "rv21": 0.137283,
+    "rv63": 0.136608,
     "rv_cross_state": "stress",
     "vix_curve": [
       {
         "tenor": "M1",
-        "settle": 17.0952,
-        "dte": 13
+        "settle": 16.9913,
+        "dte": 12
       },
       {
         "tenor": "M2",
-        "settle": 18.5409,
-        "dte": 41
+        "settle": 18.6639,
+        "dte": 40
       },
       {
         "tenor": "M3",
-        "settle": 19.7871,
-        "dte": 76
+        "settle": 19.9989,
+        "dte": 75
       },
       {
         "tenor": "M4",
-        "settle": 20.3008,
-        "dte": 104
+        "settle": 20.4527,
+        "dte": 103
       },
       {
         "tenor": "M5",
-        "settle": 20.4991,
-        "dte": 132
+        "settle": 20.6103,
+        "dte": 131
       },
       {
         "tenor": "M6",
-        "settle": 21.4558,
-        "dte": 167
+        "settle": 21.6044,
+        "dte": 166
       }
     ],
-    "vix_curve_slope": 4.3606,
+    "vix_curve_slope": 4.6131,
     "series_start_curve": "2026-04-16"
   },
   "dispersion": {
-    "cor1m": 6.62,
+    "cor1m": 7.38,
     "cor1m_regime": "dispersion",
-    "cor1m_1y_delta": -7.7,
-    "cor1m_pctile_2y": 4.8,
-    "cor3m": 9.41,
-    "dspx": 38.7,
+    "cor1m_1y_delta": -6.27,
+    "cor1m_pctile_2y": 6.5,
+    "cor3m": 10.48,
+    "dspx": 36.74,
     "history": [
-      {
-        "date": "2024-08-08",
-        "cor1m": 27.94
-      },
       {
         "date": "2024-08-09",
         "cor1m": 22.72
@@ -6296,20 +6292,24 @@
       {
         "date": "2026-08-06",
         "cor1m": 6.62
+      },
+      {
+        "date": "2026-08-07",
+        "cor1m": 7.38
       }
     ]
   },
   "week_map": {
-    "week_start": "2026-08-03",
-    "week_end": "2026-08-07",
-    "locked_close": 7489.72,
-    "locked_at": "2026-07-31T00:00:00",
-    "band_1sigma_lo": 7352.36,
-    "band_1sigma_hi": 7627.08,
-    "band_2sigma_lo": 7215.0,
-    "band_2sigma_hi": 7764.44,
-    "gamma_flip": 7556.289894,
-    "implied_weekly_pct": 1.83,
+    "week_start": "2026-08-10",
+    "week_end": "2026-08-14",
+    "locked_close": 7757.64,
+    "locked_at": "2026-08-07T00:00:00",
+    "band_1sigma_lo": 7624.11,
+    "band_1sigma_hi": 7891.17,
+    "band_2sigma_lo": 7490.58,
+    "band_2sigma_hi": 8024.7,
+    "gamma_flip": 7553.638259,
+    "implied_weekly_pct": 1.72,
     "source": "spx_iv30_scaled_5d"
   },
   "state_changes": {
