@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "FWRD-2026-06-30-laggards",
+  "ticker": "FWRD",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "FWRD",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "FWRD",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Industrials",
+    "excess_spy": -0.004541876999137218,
+    "excess_sector": 0.016358340822251627,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The record identifies a premature-stop-noise process fault while leaving the outcome cause mixed. Benchmark underperformance may reflect sector, company, or macro forces, but the independent process remedy concerns stop timing and path calibration.",
+    "root_cause": "The record identifies a premature-stop-noise process fault while leaving the outcome cause mixed. Benchmark underperformance may reflect sector, company, or macro forces, but the independent process remedy concerns stop timing and path calibration.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The laggards book generated the candidate, while entry-timing and path-risk engines failed to separate ordinary noise from thesis impairment.",
+    "engines_credit": "No outcome engine can receive firm credit from the mixed label; stop calibration and path-risk organs are the explicit laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "sector",
+        "factor": "",
+        "mechanism": "Industrials or transportation weakness may have created an adverse background.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Industry-neutral weakness would point away from sector rotation and toward company-specific causes.",
+        "evidence_refs": [
+          "sector=Industrials",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The realized adverse path was classified as noise that prematurely activated the stop.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A thesis-aware volatility treatment might have preserved the position through transient movement.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Immediate exposure after entry may have left insufficient room for a laggard thesis to develop.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "Waiting for confirmation or calibrating the stop to the laggard setup could have changed the path outcome.",
+        "evidence_refs": [
+          "lane=laggards",
+          "board_tenure_days supplied"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "The move was a genuine failed cycle rather than noise.",
+      "A company-specific event impaired the thesis.",
+      "The laggard setup lacked confirmation and never possessed durable alpha."
+    ],
+    "missing_evidence": [
+      "Transportation-industry relative path",
+      "Entry-time cycle and rotation indicators",
+      "Stop distance and rationale",
+      "Dated company news",
+      "Post-stop recovery and thesis status"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_confirmation_latency",
+        "feature": "Confirmation state before exposure in laggard setups",
+        "measurement": "Compare pre-entry relative-strength, volume, and cycle-turn evidence with subsequent stop-noise classifications.",
+        "expected_direction": "Stronger pre-entry confirmation would be associated with fewer premature noise stops.",
+        "falsifier": "Confirmation measures show no relationship to premature-stop-noise outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

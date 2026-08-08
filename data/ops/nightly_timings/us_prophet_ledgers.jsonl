@@ -1,1 +1,2 @@
 {"date":"2026-08-08","workflow":"daily","job":"us_prophet_ledgers","run_id":"31210097197","run_attempt":"1","runner":"mac-builder-5","cap_minutes":60.0,"end":"2026-08-08T02:29:30Z","start":"2026-08-08T02:26:46Z","elapsed_minutes":2.7,"pct_of_cap":4.6,"bands":[]}
+{"date":"2026-08-08","workflow":"daily","job":"us_prophet_ledgers","run_id":"31226002132","run_attempt":"1","runner":"mac-builder-5","cap_minutes":60.0,"end":"2026-08-08T08:53:04Z","start":"2026-08-08T08:50:14Z","elapsed_minutes":2.8,"pct_of_cap":4.7,"bands":[]}

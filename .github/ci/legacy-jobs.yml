@@ -1187,7 +1187,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: install seasonality test deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2: test_seasonality_program_watch.py's public-containment class
+        # imports scripts.build_measurement, which does `from jinja2 import
+        # Environment` at module scope. run_ci_pack builds a FRESH isolated venv
+        # per distinct install string (no --system-site-packages), so a package
+        # another job installed is not visible here and the two containment tests
+        # — the leak gate itself — error with ModuleNotFoundError.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: seasonality contracts, panel, curve, window family, null, and artifact
         run: >
           python -m pytest
@@ -1200,7 +1206,8 @@ jobs:
           tests/test_seasonality_model.py
           tests/test_seasonality_calibration.py
           tests/test_seasonality_screener.py
-          tests/test_seasonality_api.py -q
+          tests/test_seasonality_api.py
+          tests/test_seasonality_program_watch.py -q
       # W5 state v2. The suite that has to run here is the one about a
       # migration that has NOT happened yet: v1's ``forecast.p`` is a historical
       # positive-year share, and the failure this pins is a later session
@@ -3618,6 +3625,7 @@ jobs:
           tests/test_biocatalyst_history.py
           tests/test_biocatalyst_endpoint_alignment.py
           tests/test_biocatalyst_change_classification.py
+          tests/test_biocatalyst_change_tape_values.py
           tests/test_clinicaltrials_history.py -q
 
   biocatalyst-contracts:
@@ -3644,6 +3652,7 @@ jobs:
           tests/test_biocatalyst_trial_screen.py
           tests/test_biocatalyst_clinicaltrials_discovery.py
           tests/test_biocatalyst_discovery.py
+          tests/test_biocatalyst_coverage_epoch.py
           tests/test_biocatalyst_fixed_cohort.py
           tests/test_biocatalyst_fixed_cohort_transport.py
           tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
@@ -4967,8 +4976,16 @@ jobs:
       # dispatch-ref fence, unmanaged-toggle refusal) and the landing payload contract.
       # requests is load-bearing on this job's install line for the same reason called
       # out above — the suite imports admin.server.
+      # test_admin_program_watch.py joins this step (not a new job) because it pins the
+      # same two surfaces: admin.server's GET route (/api/program_watch, and its 401 when
+      # auth is on) and the landing payload key app.js reads (s.program_watch). It also
+      # runs the reader against the COMMITTED data/seasonality/program_watch.json — for
+      # its DIALECT only (schema accepted, every state known, fired block first, every row
+      # carrying a prompt to copy), never for which tripwire is currently fired: that
+      # artifact is rebuilt and committed nightly, so a content assertion would turn this
+      # step red the day the operator does the work the panel exists to prompt.
       - name: admin server HTTP surface + landing summary payload contract
-        run: python -m pytest tests/test_admin_server.py -q
+        run: python -m pytest tests/test_admin_server.py tests/test_admin_program_watch.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 
