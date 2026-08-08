@@ -317,22 +317,52 @@ touch authority).
   (LLM-originated lean with a conviction knob voting into confirmation), un-graded to
   boot. DNR:KILL-POLICY-TIMING-PREDICTOR ("intent unfalsifiable — conditions-framing
   only") points the way.
-- **Upgrades**:
-  - W1: grade the existing 22 theses (they carry falsifiers + check_by dates; the ledger
-    machinery exists) — before anything else, learn whether this desk has ever been right.
-  - W3 refactor: policy desk becomes conditions-framed + mechanical: (a) White-House
-    item stream (already de-escalated) mapped to sectors/baskets as dated events; (b)
-    Federal Register + congress.gov activity series (free APIs) as policy *activity*
-    velocity per theme — radar-style, no intent prediction; (c) LLM role limited to
-    de-escalation/taxonomy. Theses (if kept) become display-tier "conditions to watch"
-    with their falsifiers living below the fold (Calibration-Lab style), not votes.
-  - W0 (moved up on red-team ruling): remove the policy direction from `nz`/`lag_up` —
-    the minimal heal that takes the LLM-originated lean out of every scored path while
-    keeping policy as a printed flag/chip. This is enforcement of a standing law
-    (DNR:KILL-LLM-ORIGINATION), so it ships without new ratification; the operator may
-    veto in §10.1. Premise correction from review: policy never reaches `base` in the
-    common path (`intelligence.py:174-177,215` — `brain.priority` short-circuits), so
-    the breach surface is exactly n_confirm/conf_bonus + lag_up/gap_mult, nothing else.
+- **Operator counterpoint (2026-08-08, recorded)**: policy is essential precisely
+  because it is a live read on White-House/administration action; it resists direct
+  quantification, so LLM judgment must stay in the loop. Proposed alternatives raised:
+  swap DeepSeek for Fable (OAuth rotation) and/or an OpenAI fallback.
+- **Adjudication of the model-swap idea**: a better model improves prose and a fallback
+  chain improves uptime — but neither cures the two actual defects: (1) origination —
+  whichever model writes the lean, an LLM-authored direction voting in the ranked path
+  is the same A7 breach; (2) accountability — 0 of 22 theses graded means we cannot say
+  the desk has EVER helped, at any model tier. Note also the current desk is NOT live:
+  it regenerates weekly over a hand-curated substrate (6.5d old at audit), while the
+  hourly White-House lane that IS live never reaches the Hub. The operator's stated goal
+  (live WH awareness inside scoring) is something the current architecture does not
+  deliver at any model quality.
+- **POLICY DESK v2 — live, lawful, graded (the robust form; W3 build)**. Design law:
+  *make the model irrelevant to the score* — then a model outage or hallucination can
+  degrade prose, never rankings.
+  1. **Substrate (mechanical, live)**: hourly WH RSS (whitehouse-sentinel, exists);
+     Federal Register API (EOs/rules/notices — structured, dated, agency-coded, free);
+     congress.gov API (bill actions/votes, free); the hand-curated
+     `data/policy/intel.json` stays as editorial context.
+  2. **LLM roles (lawful under A7, both already-ratified house patterns)**:
+     de-escalation gate per item (whitehouse_brain pattern — default NOT-activate), and
+     classification into a FIXED engine-owned taxonomy {actor_level × action_finality ×
+     theme→sector via the existing `_THEME_TO_SECTOR` maps}. The LLM never invents a
+     category, a number, or a direction. Model tier is then a pure quality/uptime
+     choice: Opus primary + fallback chain is the existing house pattern; Fable on the
+     weekly *narrative brief* (display-only) is a legitimate 1-call/week luxury if
+     wanted; an OpenAI fallback is fine for availability (ops precondition: key +
+     pinned model + contract-test fixtures, since taxonomy stability matters more than
+     eloquence).
+  3. **Signal construction (engine-originated)**: per-event key → direction/weight from
+     a calibrated table; conviction = mechanical function of finality (signed EO >
+     final rule > proposed rule > speech > chatter); freshness decay (~45d half-life,
+     mirroring catalysts). No intent/timing prediction — conditions framing only
+     (DNR:KILL-POLICY-TIMING-PREDICTOR).
+  4. **Grading from day one**: every event is dated → mapped-basket forward returns at
+     pre-registered horizons → per-key hit/IC table published (Calibration-Lab form).
+  5. **Restoration path**: the policy VOTE re-enters `n_confirm` per-key as keys clear
+     the gauntlet floor — so the vote comes back stronger, not never. Until then policy
+     renders as chips + "conditions to watch" narrative (where the weekly LLM brief
+     survives, display-tier, falsifiers below the fold).
+- W1 (unchanged): grade the existing 22 theses against their own check_by dates —
+  whatever §10.1 decides, we should know whether the old desk was right.
+- Premise correction from review: policy never reaches `base` in the common path
+  (`intelligence.py:174-177,215` — `brain.priority` short-circuits); the breach surface
+  is exactly n_confirm/conf_bonus + lag_up/gap_mult, nothing else.
 
 ### 3.6 Sector Heat
 
@@ -665,10 +695,20 @@ the night they ship. W3 collectors land in daily.yml off the render-critical pat
 
 ## §10 Open operator decisions
 
-1. **Policy vote removal** (§3.5): W0 ships the removal as a standing-law heal
-   (DNR:KILL-LLM-ORIGINATION — the vote is a live breach). This row is the operator's
-   VETO point, not an approval request; a veto would need a registry amendment
-   ratifying the exception.
+1. **Policy vote — AWAITING OPERATOR RULING (operator engaged 2026-08-08, §3.5).**
+   Option A (recommended): W0 removes the free-form LLM vote as a standing-law heal;
+   W3 builds Policy Desk v2 (live mechanical substrate + LLM de-escalation/taxonomy);
+   the vote returns per-key through the gauntlet — live WH awareness ends up IN scoring,
+   lawfully, and stronger than today's weekly desk.
+   Option B: keep the current vote until W1 grades the 22 open theses, then re-decide.
+   Cost: a live A7 breach persists meanwhile, and n=22 weekly theses won't reach
+   significance quickly.
+   Option C (raised by operator): keep the architecture, swap DeepSeek → Fable/Opus
+   (+OpenAI fallback). Adjudicated §3.5: improves prose + uptime only; cures neither
+   origination nor the 0/22 grading hole; not recommended ALONE — the model upgrade
+   folds into v2's LLM roles regardless.
+   A veto of Option A that keeps the ungraded vote long-term needs a registry
+   amendment ratifying the exception to DNR:KILL-LLM-ORIGINATION.
 2. **Paid-data appetite**: this plan is free-first by design. If budget exists, the
    highest-value paid adds are (a) a second cross-check price/reference feed, (b) an
    options-flow feed for the squeeze/positioning plane, (c) an earnings-estimates feed
