@@ -72,6 +72,12 @@ from engine.marketing.cold_read import reset_run_budget as _cold_read_reset  # n
 from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
 from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 from engine.marketing import market_clock as _clock  # noqa: E402
+# Top-level for the same reason as the gates above: the subscription-lock branch
+# decides whether the run keeps calling a backend that has locked us out, and a
+# lazily-imported predicate that failed to import would read as "no lock" —
+# i.e. the pre-fix behaviour, silently.
+from engine.marketing.social_publisher import lock_expires_at as _lock_expires_at  # noqa: E402
+from engine.marketing.social_publisher import subscription_locked as _subscription_locked  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -1778,6 +1784,9 @@ def main(argv: list[str] | None = None) -> int:
     # next one. DRY-RUN NEVER MUTATES — the desk only reports what it would do.
     desk_approved = desk_quarantined = desk_held = desk_capped = 0
     desk_expired = desk_disabled = 0
+    #: Did the desk run the planned reaper this sweep? The publisher owns the
+    #: fallback below when it did not — see that block for why.
+    _desk_ran_expiry = False
     try:
         from engine.marketing import approval_desk as _desk  # noqa: PLC0415
         _desk_tally = _desk.run(
@@ -1790,6 +1799,7 @@ def main(argv: list[str] | None = None) -> int:
         desk_capped = int(_desk_tally.get("capped") or 0)
         desk_expired = int(_desk_tally.get("expired") or 0)
         desk_disabled = 1 if _desk_tally.get("status") == "disabled" else 0
+        _desk_ran_expiry = bool(live) and _desk_tally.get("status") == "ran"
         log.info(
             "approval desk | status=%s considered=%d approved=%d quarantined=%d "
             "held=%d capped=%d expired=%d by_check=%s",
@@ -1817,6 +1827,53 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as _desk_exc:  # noqa: BLE001
         log.warning("approval desk unavailable (%s) — planned items stay queued "
                     "for the operator, legacy flow unaffected", _desk_exc)
+
+    # ── THE AGE WINDOW MUST NOT DEPEND ON THE DESK BEING ARMED ───────────────
+    # WHAT THE 2026-08-08 AUDIT ACTUALLY FOUND. `outbox.expire_stale_planned`
+    # covers `queued` AND `approved` alike, and the publish sweep DOES reach it
+    # — but only through `approval_desk.run` above, which returns early on
+    # `approval_desk.enabled: false`. So the standing 36h window on a planned
+    # item is enforced at dispatch time exactly as long as the desk is armed,
+    # and switching the desk off silently switches the age gate off with it.
+    # The publisher, which is the lane that actually puts words on X, selects on
+    # "approved AND due": `_select_approved_due` asks how LATE an item is, never
+    # how OLD, so a two-day-old approved post is a perfectly good candidate.
+    #
+    # That is not hypothetical here. The Buffer plan locked on 2026-08-06 and
+    # the requeue branch below walked every refused item straight back to
+    # `approved` on every sweep — an approved backlog is exactly what this
+    # window exists to stop from firing days later as news.
+    #
+    # ONE POLICY, TWO CALLERS: this is the SAME function, the same transitions
+    # and the same note as the desk's call and the nightly emit's. It runs only
+    # when the desk did NOT, so a run can never apply two different windows.
+    # POST-NOW IS EXEMPT for the reason #3960 gives for the wire reaper: the run
+    # summoned to send an item must not quarantine it on the way in. DRY-RUN
+    # NEVER MUTATES — quarantine is terminal and a projection must not destroy
+    # the queue it is projecting.
+    expired_planned = 0
+    if live and not _desk_ran_expiry:
+        try:
+            _planned_expiry = _outbox.expire_stale_planned(
+                root, now=now, exempt_ids=post_now, actor="publisher_expiry")
+            expired_planned = int(_planned_expiry.get("expired") or 0)
+        except Exception as _plan_exc:  # noqa: BLE001 — housekeeping never breaks a run
+            log.warning("planned expiry unavailable (%s) — queue unswept this pass",
+                        _plan_exc)
+        if expired_planned:
+            # Bare line-start print (house law): a logger prefix makes GitHub
+            # drop the annotation. A retirement is a LOSS, so it is a warning.
+            print(f"::warning title=marketing-planned-expired::{expired_planned} "
+                  f"planned post(s) quarantined as expired — they sat queued or "
+                  f"approved more than {_outbox._STALE_QUEUED_HOURS}h past their "
+                  f"ladder slot, so their copy describes a session that has closed "
+                  f"since. The approval desk is off, so the publisher applied the "
+                  f"standing window itself.", flush=True)
+            # Re-fold for the same reason the desk block does: the candidate set
+            # below must never see an item this pass retired.
+            state = _outbox.fold_state(root)
+            items_by_id = state["items"]
+            statuses = state["status"]
 
     # ── OPTIONAL auto-approve: queued → approved for items that pass ALL gates ─
     # Gated OFF by default; enabled by publish.auto_approve OR --auto-approve.
@@ -1983,6 +2040,19 @@ def main(argv: list[str] | None = None) -> int:
     #: Counted separately because "3 failed" and "3 will retry next sweep" are
     #: opposite facts and the summary line was reporting them as the same one.
     rate_limited = 0
+    #: Requeues that ran out of rope: MAX_RATE_LIMITED_REQUEUES sweeps of the
+    #: same 429 on the same item. Left at `failed` for a human, not requeued
+    #: again and not quarantined.
+    rate_limited_exhausted = 0
+    #: Posts this run did not even attempt because Buffer is refusing the ACCOUNT
+    #: (plan/seat lock), not the post. Includes the one item whose receipt
+    #: discovered the lock — it is a post the lock cost us like any other.
+    skipped_subscription_locked = 0
+    #: The lock itself, once per run: {"retry_after_s", "until", "seen_at",
+    #: "error"}. Set by the FIRST subscription_locked receipt and never
+    #: overwritten — every later candidate is skipped without a network call, so
+    #: there is nothing later to learn.
+    _sub_lock: dict | None = None
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -2236,6 +2306,21 @@ def main(argv: list[str] | None = None) -> int:
         iid = it["id"]
         account = it.get("account", "")
         text = it.get("text", "") or ""
+
+        # -- the backend has locked the ACCOUNT: stop the run, keep the posts --
+        # FIRST, ahead of even the halt gate, because there is nothing to decide:
+        # Buffer is refusing this token for the plan, so every remaining
+        # candidate would take the identical 429 and each attempt costs a
+        # network round trip plus two ledger rows about a post nobody could have
+        # sent. One receipt is enough evidence for the whole sweep.
+        #
+        # NOT a per-item verdict and NOT a per-item ledger row: the items stay
+        # exactly as they are (approved, due, unspent) and the RUN reports the
+        # count once. Writing 49 identical "subscription_locked" notes would bury
+        # each post's real history under the outage's.
+        if _sub_lock is not None:
+            skipped_subscription_locked += 1
+            continue
 
         # -- halt gate: BEFORE validation, the cap, and the channel lookup ----
         # A halted desk must cost nothing and touch nothing, so this is the
@@ -3148,6 +3233,59 @@ def main(argv: list[str] | None = None) -> int:
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
+        elif _subscription_locked(receipt):
+            # BUFFER IS REFUSING THE ACCOUNT, NOT THE POST.
+            #
+            # A 429 whose Retry-After runs past 24h cannot be the shared-token
+            # quota (that allowance refills daily) — it is a plan/seat lock. The
+            # live one measured 1,376,827s on 2026-08-06, counting down to
+            # ~2026-08-21. See social_publisher._SUBSCRIPTION_LOCK_RETRY_AFTER_S.
+            #
+            # THE ITEM IS NOT THE CASUALTY. It is not quarantined (nothing is
+            # wrong with it) and it is not counted as a rate-limit requeue
+            # (those are bounded at MAX_RATE_LIMITED_REQUEUES, and a fortnight
+            # of sweeps would burn that budget on an outage the post had no part
+            # in). It walks back to `approved` exactly where it started.
+            #
+            # posting -> failed -> approved is the ONLY legal walk from in-flight
+            # back to postable, and each leg gates the next — same shape as the
+            # rate-limit branch below, for the same reason: calling
+            # transition(iid, "approved") on an item this loop moved to `posting`
+            # is ILLEGAL and strands it there forever.
+            _sl_err = receipt.error or "buffer subscription lock"
+            _sl_ra = getattr(receipt, "retry_after_s", None)
+            _sub_lock = {
+                "retry_after_s": _sl_ra,
+                "until": _lock_expires_at(_sl_ra, now),
+                "seen_at": receipt.at or now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "error": _sl_err,
+            }
+            skipped_subscription_locked += 1
+            _sl_receipt = {"backend": receipt.backend, "error": receipt.error,
+                           "at": receipt.at}
+            _sl_failed = _outbox.transition(
+                iid, "failed", actor="publisher", root=root,
+                note=f"subscription_locked: {_sl_err}",
+                receipt=_sl_receipt)
+            _sl_restored = _sl_failed and _outbox.transition(
+                iid, "approved", actor="publisher", root=root,
+                note=("subscription_locked: left approved, untouched — the "
+                      "backend plan is locked, the post is fine"),
+                receipt=_sl_receipt)
+            if not _sl_restored:
+                # Same stranding as the rate-limit branch, same remedy. Bare
+                # line-start print (house law) — a logger prefix makes GitHub
+                # drop it, and this is an outcome only a human can clear.
+                print(f"::warning title=publisher-requeue-stuck::item {iid} "
+                      f"({account}) hit the Buffer subscription lock and could "
+                      f"NOT be returned to approved "
+                      f"({'posting->failed' if not _sl_failed else 'failed->approved'} "
+                      f"refused). It is stranded mid-post and will not retry on "
+                      f"its own — re-arm it from the admin Outbox. Error: "
+                      f"{_sl_err}", flush=True)
+            log.error("item %s SUBSCRIPTION-LOCKED: %s — halting this run's "
+                      "dispatch (%s remaining candidate(s) will be skipped)",
+                      iid, _sl_err, max(len(approved_due) - 1, 0))
         elif getattr(receipt, "retryable", False):
             # A RATE LIMIT IS NOT A VERDICT ON THE POST.
             #
@@ -3202,12 +3340,40 @@ def main(argv: list[str] | None = None) -> int:
             # leaves `failed` immediately — but an item that later genuinely
             # fails reaches the human-look bar sooner. A post that has burned
             # three dispatch attempts deserves that look.
+            #
+            # BOUNDED (2026-08-08). "Retry next sweep" with no counter is a loop,
+            # and a loop is what the Buffer outage turned it into: from
+            # 2026-08-06 the same items walked posting -> failed -> approved
+            # every 30 minutes, writing two ledger rows a pass about copy that
+            # was already days stale, and nothing anywhere said so. Past
+            # MAX_RATE_LIMITED_REQUEUES the item stops moving and waits at
+            # `failed` for a human — the note names the count so the reason is
+            # legible in the admin's own view. `failed` and not `quarantined`
+            # because quarantine is TERMINAL and nothing about the post was
+            # wrong; failed -> approved is the legal operator edge back.
+            #
+            # Counted from the PRE-LOOP fold, so it measures prior sweeps: one
+            # publish attempt per item per run means this run cannot inflate it.
+            _rl_prior = int((state.get("rate_limited") or {}).get(iid, 0))
             _rl_err = receipt.error or "buffer 429"
             _rl_receipt = {"backend": receipt.backend, "error": receipt.error,
                            "at": receipt.at}
+            if _rl_prior >= _outbox.MAX_RATE_LIMITED_REQUEUES:
+                _rl_note = (f"rate_limited_exhausted after "
+                            f"{_outbox.MAX_RATE_LIMITED_REQUEUES} sweeps: {_rl_err}")
+                if _outbox.transition(iid, "failed", actor="publisher", root=root,
+                                      note=_rl_note, receipt=_rl_receipt):
+                    rate_limited_exhausted += 1
+                    log.warning("item %s RATE-LIMITED %d times — left at failed "
+                                "for a human, not requeued again", iid, _rl_prior)
+                else:
+                    log.error("item %s exhausted its rate-limit requeues and "
+                              "could not be marked failed — stranded in posting",
+                              iid)
+                continue
             _rl_failed = _outbox.transition(
                 iid, "failed", actor="publisher", root=root,
-                note=f"rate_limited (transient), not a verdict on the post: {_rl_err}",
+                note=f"{_outbox.RATE_LIMITED_NOTE_PREFIX}, not a verdict on the post: {_rl_err}",
                 receipt=_rl_receipt)
             _rl_requeued = _rl_failed and _outbox.transition(
                 iid, "approved", actor="publisher", root=root,
@@ -3256,6 +3422,35 @@ def main(argv: list[str] | None = None) -> int:
     # already-approved ones; reporting only the second read parked_dark=0 on the
     # very scenario this gate was built for.
     parked_dark = len(_parked_auto) + len(_parked_post)
+
+    # ── THE PLAN IS LOCKED ───────────────────────────────────────────────────
+    # ONE annotation per run, not one per item: the lock is a single fact about
+    # the account and 49 copies of it would be 49 posts' worth of noise about a
+    # thing no post caused. ::error rather than ::warning — this is the whole
+    # publisher idle, which is the outcome the silent-night alarm exists for, and
+    # unlike a quota blip it does NOT clear on its own: somebody has to renew.
+    # Bare line-start print (house law): a logger prefix makes GitHub drop it.
+    if _sub_lock is not None:
+        _sl_hours = _sub_lock.get("retry_after_s")
+        _sl_hours = ("unknown" if _sl_hours is None
+                     else f"{float(_sl_hours) / 3600.0:.0f}")
+        print(f"::error title=marketing-buffer-subscription-locked::Buffer "
+              f"plan/quota lock; Retry-After {_sl_hours} h "
+              f"(~{_sub_lock.get('until') or 'unknown'}) — publisher idle until "
+              f"renewal. {skipped_subscription_locked} approved post(s) held this "
+              f"run, unspent and unquarantined. Detail: {_sub_lock.get('error')}",
+              flush=True)
+
+    if rate_limited_exhausted:
+        # Not folded into the lock message: these items stopped for their OWN
+        # history (N sweeps of 429), and they are the only ones a human must
+        # touch by hand to revive.
+        print(f"::warning title=publisher-requeue-exhausted::"
+              f"{rate_limited_exhausted} post(s) hit "
+              f"{_outbox.MAX_RATE_LIMITED_REQUEUES} rate-limited sweeps and are "
+              f"parked at failed rather than requeued again. Nothing is wrong "
+              f"with the copy; re-arm from the admin Outbox once the backend is "
+              f"posting again.", flush=True)
 
     if skipped_halt:
         # Bare print at line start — a logger prefixes the annotation and GitHub
@@ -3314,6 +3509,13 @@ def main(argv: list[str] | None = None) -> int:
         # minutes" is precisely the confusion that let three posts be discarded
         # on 2026-07-30 without anyone noticing they were recoverable.
         "waiting out a Buffer rate limit": rate_limited,
+        # Also a WAIT, and phrased as one — the posts are untouched and will go
+        # when the plan does. Separate from the line above because "retry in a
+        # few minutes" and "retry in two weeks" are different facts, and reading
+        # the second as the first is what kept 49 items cycling.
+        "waiting for the Buffer plan to be renewed": skipped_subscription_locked,
+        "stopped retrying after repeated rate limits": rate_limited_exhausted,
+        "retired as stale before dispatch": expired_planned,
         "held for a chart": deferred_no_media,
         "no fresh quote to verify the price claim": tape_skipped,
         "price claim contradicted the tape": tape_quarantined,
@@ -3380,7 +3582,9 @@ def main(argv: list[str] | None = None) -> int:
                   _considered, _waiting, _top)
 
     log.info(
-        "%s complete | posted=%d failed=%d rate_limited=%d quarantined=%d would_post=%d "
+        "%s complete | posted=%d failed=%d rate_limited=%d "
+        "rate_limited_exhausted=%d subscription_locked=%d locked_until=%s "
+        "expired_planned=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
@@ -3394,7 +3598,10 @@ def main(argv: list[str] | None = None) -> int:
         "expired_wire=%d desk_approved=%d desk_quarantined=%d desk_held=%d "
         "desk_capped=%d desk_expired=%d desk_disabled=%d "
         "stuck_posting=%d auto_approved=%d",
-        mode, posted, failed, rate_limited, quarantined, would_post,
+        mode, posted, failed, rate_limited,
+        rate_limited_exhausted, skipped_subscription_locked,
+        (_sub_lock or {}).get("until") or "-",
+        expired_planned, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
@@ -3438,6 +3645,15 @@ def main(argv: list[str] | None = None) -> int:
                   "reached. Raise cold_read.max_reads_per_run, or look at why "
                   "the local endpoint is slow.", flush=True)
 
+    # Hoisted out of the activity dict below ON PURPOSE, and it has to stay
+    # hoisted. tests/test_admin_marketing_floor.py scrapes that dict out of THIS
+    # FILE'S SOURCE by slicing from its lane key to the next close-brace-paren,
+    # so a dict value written as `(x or EMPTY-DICT).get(...)` ends the slice at
+    # its own braces and the guard silently stops checking every counter below
+    # it. Same reason this comment spells the markers out rather than quoting
+    # them: a literal copy here would move the slice's start to the comment.
+    _lock_until = _sub_lock["until"] if _sub_lock else None
+    _lock_seen_at = _sub_lock["seen_at"] if _sub_lock else None
     try:
         _outbox._append_activity(root, {
             "at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -3447,6 +3663,17 @@ def main(argv: list[str] | None = None) -> int:
             "posted": posted,
             "failed": failed,
             "rate_limited": rate_limited,
+            "rate_limited_exhausted": rate_limited_exhausted,
+            # The lock, in the row the admin Floor already reads. Two counters
+            # and two stamps: the count answers "how many posts did it cost",
+            # and `buffer_locked_until` answers the only question that follows
+            # ("when can we post again"). Both are None on a healthy run, and
+            # _activity_ledger skips non-numeric values, so the strings ride
+            # along for the panel without becoming loss-ledger rows.
+            "skipped_subscription_locked": skipped_subscription_locked,
+            "buffer_locked_until": _lock_until,
+            "last_lock_seen_at": _lock_seen_at,
+            "expired_planned": expired_planned,
             "quarantined": quarantined,
             "would_post": would_post,
             "tape_quarantined": tape_quarantined,
