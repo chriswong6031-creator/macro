@@ -802,7 +802,7 @@ jobs:
       # builder assertions intentionally require pandas + plotly. Pair the suite
       # with this fat lane so those assertions execute instead of skip everywhere.
       - name: ETF tier-preview builder assertions (full page stack)
-        run: python -m pytest tests/test_etfs_gate.py -q
+        run: python -m pytest tests/test_theme_clinical.py tests/test_etfs_gate.py -q
       # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
       # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
       # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
@@ -3637,7 +3637,6 @@ jobs:
           python -m pytest
           tests/test_sector_intelligence_contracts.py
           tests/test_launch_slo_evidence_verifier.py
-          tests/test_theme_clinical.py
           tests/test_biocatalyst_d0a_design_contract.py
           tests/test_biocatalyst_acceptance_v2.py
           tests/test_biocatalyst_browser_verifier.py
