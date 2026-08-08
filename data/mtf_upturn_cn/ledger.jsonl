@@ -305,3 +305,4 @@
 {"session": "2026-08-07", "symbol": "688235.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": false, "w_macd": "none", "w2_macd": true}, "sources": ["board_late_or_unfillable"], "hysteresis_sessions_held": 0}
 {"session": "2026-08-07", "symbol": "688333.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_late_or_unfillable"], "hysteresis_sessions_held": 0}
 {"session": "2026-08-07", "symbol": "688523.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_late_or_unfillable"], "hysteresis_sessions_held": 0}
+{"session": "2026-08-07", "symbol": "688050.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": false, "w_macd": "cross", "w2_macd": false}, "sources": ["ripening"], "hysteresis_sessions_held": 0}
