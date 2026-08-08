@@ -2,38 +2,35 @@
 
 # Active Build Map
 
-Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window): 500  |  base: `131e47476b111c17251430253c8875cd7228411f`
+Generated: 2026-08-08T06:01:28.166310+00:00  |  Open PRs: 27  |  Merged (window): 500  |  base: `b61c9edf7cc9f7f4fc3f1689674cb9bdbcebcedf`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4960 | fix(us_context_vector): purge the paid Filing Forensics body from the tracked candidates store and close the committing seam | `claude/forensics-containment-rebuild` | 2026-08-07 | ⚠ protected:1 |
+| #4964 | fix(confluence): PIT latch so a fired T2 event can never be un-fired | `claude/missing-300363-china-prophet-8702fa` | 2026-08-08 | — |
+| #4961 | forensics: detectors must not fire on absent declared evidence | `claude/detector-evaluability-authority` | 2026-08-08 | — |
+| #4960 | fix(us_context_vector): purge the paid Filing Forensics body from the tracked candidates store and close the committing seam | `claude/forensics-containment-rebuild` | 2026-08-08 | ⚠ protected:1 |
 | #4958 | biocatalyst: execute the operator ruling of 2026-08-07 — Record History rights enable + 29 sponsor admissions under attestation | `claude/bio-execute-operator-ruling` | 2026-08-07 | — |
-| #4957 | biocatalyst: B1S2b privileged fixed-cohort deployment lane (installable, inert) | `claude/bio-b1s2b-collection-path` | 2026-08-07 | — |
-| #4956 | fix(app): read the header the edge overwrites, not the four it forwards | `claude/bold-gauss-5b28c7` | 2026-08-07 | — |
-| #4954 | ops(csp-w6): register the three basket-turn forward ledgers in the heartbeat manifest | `claude/wizardly-borg-bc5b70` | 2026-08-07 | ⚠ protected:1 |
-| #4953 | fix(lint): prune check_zh_filing_term on the RELATIVE path, not the absolute one | `claude/heal-pathprune-8fb51e` | 2026-08-07 | ⚠ protected:1 |
-| #4951 | govrev: query the alias list, repair BWXT, flag zero-row queries, page at 100 | `claude/govrev-coverage-8fb51e` | 2026-08-07 | — |
-| #4950 | guard(govrev): amount classes are never conflated — and now it can go red | `claude/govrev-nonadd-8fb51e` | 2026-08-07 | ⚠ protected:2 |
-| #4949 | fix(canon): pin the n-session grid against canon instead of re-breaking it | `claude/canon-tfbars-8fb51e` | 2026-08-07 | — |
+| #4957 | biocatalyst: B1S2b privileged fixed-cohort deployment lane (installable, inert) | `claude/bio-b1s2b-collection-path` | 2026-08-08 | — |
+| #4956 | fix(app): read the header the edge overwrites, not the four it forwards | `claude/bold-gauss-5b28c7` | 2026-08-08 | — |
+| #4954 | ops(csp-w6): register the three basket-turn forward ledgers in the heartbeat manifest | `claude/wizardly-borg-bc5b70` | 2026-08-08 | ⚠ protected:1 |
+| #4951 | govrev: query the alias list, repair BWXT, flag zero-row queries, page at 100 | `claude/govrev-coverage-8fb51e` | 2026-08-08 | — |
+| #4950 | guard(govrev): amount classes are never conflated — and now it can go red | `claude/govrev-nonadd-8fb51e` | 2026-08-08 | ⚠ protected:2 |
 | #4948 | feat(admin): seasonality program watch on the console — the prompt is one click away | `claude/seasonality-admin-watch-panel` | 2026-08-07 | ⚠ CONFLICTING / ⚠ protected:4 |
 | #4947 | biocatalyst: exact Change Tape before/after values + declared correction lineage | `claude/bio-change-tape-exact-values` | 2026-08-07 | — |
 | #4946 | biocatalyst: B1S4 recorded-denominator coverage epochs (dark) | `claude/bio-b1s4-coverage-epochs` | 2026-08-07 | — |
 | #4945 | biocatalyst: point-in-time theme rollup adapter + honest coverage disclosure for theme_clinical | `claude/bio-theme-clinical-pit-feed` | 2026-08-07 | — |
 | #4944 | biocatalyst: BC-O1b forward ledger + M0a clock activation (opens nothing, and says why) | `claude/bio-o1b-forward-clock` | 2026-08-07 | — |
 | #4942 | feat(track-record): execute the ruled US era break — re-measure, stamp, disclose, guard | `claude/w1f-track-era-break` | 2026-08-07 | ⚠ CONFLICTING |
-| #4940 | biocatalyst: reviewed sponsor -> ticker CANDIDATE map (W3-C) — candidates only, resolves nothing | `claude/bio-sponsor-ticker-reviewed-map` | 2026-08-07 | — |
-| #4938 | fix(spine): delete the declared duplicate rather than test it, and unit-pin the earned collapse | `claude/intelligent-archimedes-fce531` | 2026-08-07 | — |
-| #4936 | fix(marketing): heal main — the chart-coverage guard grepped a literal that moved | `claude/heal-marketing-chart-source-grep` | 2026-08-07 | — |
-| #4935 | fix(us-basket-turn): per-basket data-plane stamp — the frozen basket that was about to manufacture a CONFIRMED (W1-E) | `claude/w1e-post-review-heal` | 2026-08-07 | ⚠ protected:1 |
-| #4934 | fix(ci): heal two main reds — build_track era filter + spent ob_mask tripwire | `claude/heal-unrun-picks-boards` | 2026-08-07 | — |
+| #4940 | biocatalyst: reviewed sponsor -> ticker CANDIDATE map (W3-C) — candidates only, resolves nothing | `claude/bio-sponsor-ticker-reviewed-map` | 2026-08-08 | — |
+| #4938 | fix(spine): delete the declared duplicate rather than test it, and unit-pin the earned collapse | `claude/intelligent-archimedes-fce531` | 2026-08-08 | — |
+| #4935 | fix(us-basket-turn): per-basket data-plane stamp — the frozen basket that was about to manufacture a CONFIRMED (W1-E) | `claude/w1e-post-review-heal` | 2026-08-08 | ⚠ protected:1 |
 | #4929 | feat(seasonality): program watch — tell the operator when to check in, and with what prompt | `claude/seasonality-program-watch` | 2026-08-07 | ⚠ CONFLICTING / ⚠ protected:4 |
 | #4865 | fix(context-store): purge the paid forensics body from a PUBLIC artifact, and make the guard able to fail | `claude/forensics-payload-containment-full` | 2026-08-07 | ⚠ CONFLICTING / ⚠ protected:1 |
 | #4843 | fix(ci): a path literal is not always a read — mark fixture NAMES as data, revert #4733's false trigger entries | `claude/sweet-rosalind-f8b01b` | 2026-08-07 | ⚠ CONFLICTING / ⚠ protected:2 |
 | #4765 | i18n(zh) + copy: native Chinese across the site; stop explaining the method on the boards | `claude/zh-natural-translation` | 2026-08-07 | ⚠ CONFLICTING / files-truncated |
-| #4744 | fix(exit-policy): frozen replay slice — the committed report was reproducible only until the next collection | `claude/priceless-mccarthy-e26d98` | 2026-08-07 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4735 | design(us-board): emoji → monoline icons across lanes, rows, shelf, legend (doctrine §5.8 sweep) | `claude/act-now-icon-sweep` | 2026-08-07 | — |
+| #4735 | design(us-board): emoji → monoline icons across lanes, rows, shelf, legend (doctrine §5.8 sweep) | `claude/act-now-icon-sweep` | 2026-08-08 | — |
 | #4734 | board ledger: recover the 15 board dates only git could see, then stop asking git | `claude/us-board-snapshot-backfill-20260806` | 2026-08-06 | ⚠ CONFLICTING / ⚠ protected:2 |
 | #4729 | feat(us-board): restore bottoming watch as a BOTTOM WATCH shelf under the act board (W-A re-render) | `claude/us-bottom-watch-strip` | 2026-08-07 | ⚠ CONFLICTING |
 | #4622 | universe: key Marsh on MRSH and Fiserv on FISV (retired-symbol migration) | `claude/pensive-shaw-9e0f07` | 2026-08-06 | ⚠ CONFLICTING / ⚠ protected:1 |
@@ -48,7 +45,6 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4948 | #4929 | 14 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml`, `data/seasonality/program_watch.json`, `docs/SIGNAL_BUS.md`, `engine/seasonality/__init__.py`, `engine/seasonality/program_watch.py` +6 more |
 | #4960 | #4865 | 5 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `data/us_prophet_rank/candidates/2026-07.parquet`, `engine/us_context_vector.py`, `tests/test_us_context_vector_payload_containment.py` |
 | #4958 | #4940 | 5 | `.github/ci/legacy-jobs.yml`, `config/biocatalyst_sponsor_ticker_map.yml`, `contracts/biocatalyst/biocatalyst_sponsor_ticker_map.v1.schema.json`, `engine/biocatalyst/sponsor_identity.py`, `tests/test_biocatalyst_sponsor_ticker_map.py` |
-| #4942 | #4934 | 3 | `research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md`, `tests/test_ob_mask_start_invariance.py`, `tests/test_us_board_w3_evidence.py` |
 | #4960 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4960 | #4734 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4950 | #4865 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
@@ -58,6 +54,19 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4929 | #4734 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/daily.yml` |
 | #4865 | #4734 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4765 | #4512 | 2 | `site/nav_market.js`, `site/si_workspace.js` |
+| #4961 | #4960 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4948 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4947 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4946 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4940 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4929 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4865 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4961 | #4734 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4960 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4960 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4960 | #4948 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -68,7 +77,6 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4960 | #4940 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4960 | #4929 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4960 | #4843 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4960 | #4744 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4958 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4958 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4958 | #4948 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -98,7 +106,6 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4950 | #4940 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4950 | #4929 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4950 | #4843 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4950 | #4744 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4948 | #4947 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4948 | #4946 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4948 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -135,16 +142,17 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4935 | #4929 | 1 ⚠ | `config/synapse.yml` |
 | #4929 | #4865 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4865 | #4843 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4865 | #4744 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4843 | #4744 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4843 | #4734 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4744 | #4734 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4735 | #4729 | 1 | `templates/_us_act_now_board.html.j2` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4968 | fix(merge-on-green): the base-inherited-red refresh never fired — nightly commits end the walk | 2026-08-08 |
+| #4967 | fix(options-hub): a wedged run can no longer serve yesterday silently; add SPCX | 2026-08-08 |
+| #4966 | docs: open-PR backlog continuation handoff (2026-08-08) | 2026-08-08 |
+| #4965 | fix(main-heal): green all four ci packs — one PR, because a pack is one check | 2026-08-08 |
 | #4959 | ruling(biocatalyst): operator authorizes Record History ingest + sponsor row admission | 2026-08-07 |
 | #4955 | fix(research-vault): restore 911 wiped excerpts and floor the anti-clobber guard | 2026-08-07 |
 | #4952 | fix(bc2): re-point the third-party anti-vacuity pin off a rotated note | 2026-08-07 |
@@ -641,10 +649,6 @@ Generated: 2026-08-07T21:34:32.768254+00:00  |  Open PRs: 30  |  Merged (window)
 | #4408 | design(theme): estate text-grade state inks + dark near-miss fixes (SI V2 W3 estate half) | 2026-08-03 |
 | #4406 | Government Revenue Wave9A: exact candidate radar foundation | 2026-08-03 |
 | #4405 | docs(tier-preview): access-state note refresh after W1a shell promotion | 2026-08-03 |
-| #4404 | docs(psi): Portfolio Superintelligence masterplan — Codex execution handoff | 2026-08-03 |
-| #4403 | feat(biocatalyst): add bounded endpoint alignment candidates | 2026-08-03 |
-| #4402 | test(sector-intelligence): prove synthetic shipping interoperability | 2026-08-03 |
-| #4401 | BioCatalyst: add facts-only sector packet compiler | 2026-08-03 |
 
 ---
 
