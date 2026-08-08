@@ -76,7 +76,41 @@ prevents each one is named so a future edit cannot quietly remove it:
    superseding row cannot be graded.  Supersession may lower coverage; it may
    never delete a number.  Below the registered verdict coverage floor no
    verdict fires at all.
-10. **Absence of data reads as absence of event.**  The disclosure labels
+10bis. **A null endpoint is not a loss, and a degenerate interval is not an
+   interval.**  ``NaN <= 0`` is ``False``, so every non-finite close sailed
+   through the panel accessor: a NaN entry bar produced ``nan > 0 == False`` and
+   graded as a **MISS** — trap 2 inverted, a null scored as a loss — while the
+   report carried a bare ``NaN`` literal no strict JSON parser accepts.
+   :meth:`PricePanel.close` now refuses non-finite values and
+   :func:`_canonical_json` refuses to emit them.  Symmetrically,
+   :func:`_bootstrap_mean_ci` returned a ZERO-WIDTH interval at ``n == 1``, and a
+   zero-width interval passes every threshold test a point estimate passes —
+   which is the exact comparison trap 8 exists to prevent, reintroduced as its
+   own remedy.  ``n < 2`` now has no interval.
+
+11. **A frozen id is not a frozen ruler.**  A row froze ``calendar_id``, and a
+   vendor revision of that calendar keeps the same id, so a session inserted or
+   removed inside an already-frozen window re-cut it bit-for-bit differently and
+   :func:`regrade_diff` attributed the move to the price vintage — under an
+   IDENTICAL vintage id.  ``entry_rule`` now freezes the session-list PREFIX
+   digest, a revision grades ``ungraded(calendar_revised)``, and the diff carries
+   a calendar axis and a deletion axis (a grade that simply vanished from a run
+   produced no drift row at all).
+
+12. **A guard in the constructor is not a guard on the record.**  The
+   correction allowlist was enforced only in :func:`build_correction_row`.  A
+   hand-built superseding row carrying the identical ``known_at`` rewrite passed
+   every log-side gate and flipped a verdict.  The allowlist is now enforced
+   where the record is: :func:`parse_issuance_log`,
+   :func:`append_issuance_rows`, and :func:`cohort_rows`.
+
+13. **An unmapped issuer is an abstention, not an exception.**  ``admit`` had no
+   ticker check, so an issuer the recipient graph could not map was ADMITTED and
+   then raised inside the row builder — batch-fatal on the first one, no
+   abstention row, no printed null.  The reviewed graph in this repository
+   carries unmapped issuers today.  ``mapping_missing`` is now emitted.
+
+14. **Absence of data reads as absence of event.**  The disclosure labels
    (earnings windows and subsequent filings) would, in the natural
    implementation, return an empty list for an issuer no calendar covers — so
    every issuer with the WORST data would score as the cleanest window.
@@ -116,6 +150,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
+from functools import lru_cache
 from hashlib import sha256
 import json
 import math
@@ -143,6 +178,10 @@ UNGRADED_REASONS = (
     "source_outage",
     "retracted",
     "calendar_gap",
+    # The session list a row was issued against was revised afterwards.  A row
+    # freezes ``calendar_id``, and a vendor revision keeps the same id, so the
+    # id alone cannot detect it — see ``entry_rule.calendar_sessions_sha256``.
+    "calendar_revised",
 )
 
 #: Every reason the family may decline to ISSUE a candidate at all.  These are
@@ -158,6 +197,11 @@ ABSTENTION_REASONS = (
     "authority_not_display",
     "missing_known_at",
     "missing_source_event",
+    # An issuer the recipient graph could not map to a market identity.  This
+    # is an ABSTENTION, not an exception: the reviewed graph in this repository
+    # currently carries unmapped issuers, and a batch that raises on the first
+    # one issues nothing at all and prints no null.
+    "mapping_missing",
 )
 
 COVERAGE_KINDS = ("identity", "event", "outcome")
@@ -196,6 +240,12 @@ CORRECTABLE_ROW_FIELDS = frozenset(
     }
 )
 
+#: The supersession machinery itself.  These fields differ between a row and the
+#: row it supersedes BY DEFINITION, so they are not part of the comparison.
+_SUPERSESSION_FIELDS = frozenset(
+    {"row_kind", "row_id", "supersedes_row_id", "correction_reason", "appended_at"}
+)
+
 
 class GraderError(ValueError):
     """The grader refuses to produce a number it cannot stand behind."""
@@ -207,7 +257,25 @@ class GraderError(ValueError):
 
 
 def _canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    """Canonical JSON — and ``allow_nan=False`` is load-bearing, not tidiness.
+
+    Python's ``json`` emits bare ``NaN``/``Infinity`` literals, which RFC 8259
+    forbids: a strict parser REJECTS the whole line.  This function addresses
+    every issuance row and every report, so a single non-finite float would make
+    the append-only ledger unreadable to any conforming reader while reading
+    perfectly here — the record would look intact and be unparseable elsewhere.
+    A non-finite number is refused at the serializer rather than emitted, and
+    :meth:`PricePanel.close` refuses it upstream so grading never produces one.
+    """
+    try:
+        return json.dumps(
+            value, sort_keys=True, separators=(",", ":"), default=str, allow_nan=False
+        )
+    except ValueError as exc:  # NaN / Infinity: not JSON, and not a number we grade
+        raise GraderError(
+            "canonical bytes would carry a non-finite float (NaN/Infinity), which RFC 8259 "
+            "forbids: a strict parser rejects the whole record"
+        ) from exc
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -310,11 +378,50 @@ class SessionCalendar:
             return None
 
     def first_index_after(self, day: date) -> int | None:
-        """First session strictly LATER than ``day`` — never the same session."""
+        """First session strictly LATER than ``day`` — never the same session.
+
+        Only meaningful when :meth:`covers` is true for ``day``; see there.
+        """
         for index, session in enumerate(self.sessions):
             if session > day:
                 return index
         return None
+
+    def covers(self, day: date) -> bool:
+        """True iff this calendar can answer "the first session after ``day``".
+
+        A calendar whose FIRST session is later than ``day`` cannot: index 0 is
+        the earliest session it CARRIES, not the first session that followed
+        ``day``.  :meth:`first_index_after` returns 0 either way, and that number
+        is a lie by construction — every session between ``day`` and
+        ``sessions[0]`` is missing from the list, so the "entry" is silently
+        re-cut to a bar that may be months after issuance.
+
+        This is not hypothetical.  The grading calendar is built from whatever
+        the price lane currently carries; a trimmed panel plus a backfilled
+        candidate with an old ``known_at`` produces exactly this shape, and the
+        re-cut entry is a POST-issuance bar that grades cleanly.
+        """
+        return self.sessions[0] <= day
+
+    def prefix_digest(self, count: int) -> str:
+        """``sha256`` over the first ``count`` sessions, in order.
+
+        This is the device that makes ``calendar_id`` mean something.  A row
+        freezes the id; a vendor revision (a make-up session added, a holiday
+        reclassified, a date re-stated) keeps the SAME id, so the id alone
+        cannot see it, and the revision re-cuts a frozen window bit-for-bit
+        differently under a byte-identical price vintage.
+
+        A PREFIX rather than the whole list, because the calendar legitimately
+        grows every night: hashing the whole list would mismatch on every
+        session the exchange adds, which is not a revision and would make the
+        check useless within a day.  The prefix is exactly the sessions that
+        existed when the row was issued, and those may not move.
+        """
+        if count < 0 or count > len(self.sessions):
+            raise GraderError("session calendar prefix digest is out of range")
+        return _sessions_digest(self.sessions[:count])
 
     def session(self, index: int) -> date | None:
         if index < 0 or index >= len(self.sessions):
@@ -328,6 +435,13 @@ class SessionCalendar:
             "first_session": self.sessions[0].isoformat(),
             "last_session": self.sessions[-1].isoformat(),
         }
+
+
+@lru_cache(maxsize=64)
+def _sessions_digest(sessions: tuple[date, ...]) -> str:
+    """Content address of an ordered session list.  Cached: the same prefix is
+    re-hashed once per row per horizon otherwise."""
+    return sha256(canonical_bytes([session.isoformat() for session in sessions])).hexdigest()
 
 
 def _horizon_exit_index(entry_index: int, horizon_sessions: int) -> int:
@@ -383,15 +497,31 @@ class PricePanel:
     series: Mapping[str, Mapping[date, float]]
 
     def close(self, symbol: str, day: date) -> float | None:
+        """The bar, or ``None`` — and a NaN is a ``None``, not a number.
+
+        ``NaN <= 0`` is ``False``, so a bare ``value <= 0`` guard passed every
+        NaN and every infinity straight through to the arithmetic.  That is the
+        ``endpoint-null-is-not-one-half`` failure class in its worst form: a NaN
+        entry bar produced ``exit/nan - 1 = nan``, ``nan > 0`` is ``False``, and
+        the row graded as a **miss** — a null endpoint scored as a loss.  A NaN
+        mid-window vanished silently through ``min()``.  An infinity graded as a
+        hit.  And the resulting report carried a bare ``NaN`` literal, which is
+        not JSON.
+
+        A missing bar is missing however the upstream frame spells it, so a
+        non-finite close is absent-equivalent here and the row grades
+        ``ungraded``/``price_missing`` with no number attached.
+        """
         rows = self.series.get(symbol)
         if not isinstance(rows, Mapping):
             return None
         value = rows.get(day)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             return None
-        if value <= 0:
+        numeric = float(value)
+        if not math.isfinite(numeric) or numeric <= 0:
             return None
-        return float(value)
+        return numeric
 
 
 # ---------------------------------------------------------------------------
@@ -514,7 +644,7 @@ GRV_FA1 = PreregisteredFamily(
     family_id="grv-fa1",
     title="exact-issuer receipt-bound positive funded-action acceleration",
     document=PREREG_DOCUMENT,
-    version="3.0.0",
+    version="4.0.0",
     horizons=(
         Horizon(name="h5", sessions=5, role="disclosure"),
         Horizon(name="h21", sessions=21, role="supporting"),
@@ -552,7 +682,7 @@ GRV_FA1 = PreregisteredFamily(
     planning_power=0.80,
     planning_n_required=545,
     accrual_expiry_date="2029-08-06",
-    kill_condition_id="GRV-FA1-KILL-V2",
+    kill_condition_id="GRV-FA1-KILL-V3",
 )
 
 _FAMILY_REGISTRY = {GRV_FA1.family_id: GRV_FA1}
@@ -637,6 +767,17 @@ def admit(candidate: Mapping[str, Any], *, family: PreregisteredFamily) -> Admis
         return AdmissionDecision(False, "authority_not_display")
     if _instant(candidate.get("known_at")) is None:
         return AdmissionDecision(False, "missing_known_at")
+    if _text(candidate.get("ticker")) is None:
+        # An issuer with no market identity cannot be graded against a price
+        # panel, and there is no honest number to print for it.  It is an
+        # ABSTENTION with a named reason, counted in the log like every other
+        # refusal — NOT an exception.  Without this, ``build_issuance_row``
+        # admitted the candidate and then raised inside its own validation, so
+        # the first unmapped issuer in a batch killed the whole batch and the
+        # family issued nothing at all.  The reviewed recipient graph in this
+        # repository carries unmapped issuers TODAY, so this is the live shape,
+        # not a defensive hypothetical.
+        return AdmissionDecision(False, "mapping_missing")
     source_event = candidate.get("source_event")
     if not isinstance(source_event, Mapping):
         return AdmissionDecision(False, "missing_source_event")
@@ -723,8 +864,16 @@ def validate_issuance_row(row: Mapping[str, Any], *, label: str = "issuance row"
     _require(row.get("schema_version") == SCHEMA_VERSION, f"{label} has an invalid schema version")
     kind = row.get("row_kind")
     _require(kind in ROW_KINDS, f"{label} has an invalid row_kind")
-    for name in ("family_id", "prereg_document", "prereg_version", "candidate_id", "ticker"):
+    for name in ("family_id", "prereg_document", "prereg_version", "candidate_id"):
         _require(_text(row.get(name)) is not None, f"{label} {name} is required")
+    if kind == "abstention" and row.get("abstention_reason") == "mapping_missing":
+        # The one row shape that has no ticker BY CONSTRUCTION: the abstention
+        # exists precisely because the issuer has no market identity.  It must
+        # be an explicit ``null`` and never an empty string, which would read as
+        # a ticker in every downstream census.
+        _require(row.get("ticker") is None, f"{label} mapping_missing abstention must carry a null ticker")
+    else:
+        _require(_text(row.get("ticker")) is not None, f"{label} ticker is required")
     digest = row.get("prereg_document_sha256")
     _require(
         isinstance(digest, str) and len(digest) == 64 and all(c in "0123456789abcdef" for c in digest),
@@ -766,8 +915,29 @@ def validate_issuance_row(row: Mapping[str, Any], *, label: str = "issuance row"
     entry_rule = row.get("entry_rule")
     _require(isinstance(entry_rule, Mapping), f"{label} entry_rule is required")
     _require(
-        set(entry_rule) == {"rule", "calendar_id", "price_basis", "market_benchmark", "sector_benchmark"},
+        set(entry_rule)
+        == {
+            "rule",
+            "calendar_id",
+            "calendar_session_count",
+            "calendar_sessions_sha256",
+            "price_basis",
+            "market_benchmark",
+            "sector_benchmark",
+        },
         f"{label} entry_rule has an invalid field set",
+    )
+    session_count = entry_rule.get("calendar_session_count")
+    _require(
+        isinstance(session_count, int) and not isinstance(session_count, bool) and session_count > 0,
+        f"{label} entry_rule calendar_session_count must be a positive integer",
+    )
+    sessions_digest = entry_rule.get("calendar_sessions_sha256")
+    _require(
+        isinstance(sessions_digest, str)
+        and len(sessions_digest) == 64
+        and all(c in "0123456789abcdef" for c in sessions_digest),
+        f"{label} entry_rule calendar_sessions_sha256 is invalid",
     )
     basis = entry_rule.get("price_basis")
     _require(isinstance(basis, Mapping), f"{label} entry_rule price_basis is required")
@@ -813,10 +983,53 @@ def validate_issuance_row(row: Mapping[str, Any], *, label: str = "issuance row"
             )
 
 
+#: Every field a superseding row must reproduce BYTE-FOR-BYTE from the row it
+#: supersedes.  Derived from the allowlist rather than restated, so a field added
+#: to ``_ROW_FIELDS`` later is immutable by default instead of silently
+#: correctable — a blocklist admits every field a later schema adds.
+_IMMUTABLE_ACROSS_SUPERSESSION = frozenset(_ROW_FIELDS) - CORRECTABLE_ROW_FIELDS - _SUPERSESSION_FIELDS
+
+
+def assert_supersession_preserves_the_measurement(
+    prior: Mapping[str, Any],
+    row: Mapping[str, Any],
+    *,
+    label: str = "superseding row",
+) -> None:
+    """The allowlist, enforced ON THE LOG rather than only in the constructor.
+
+    :func:`build_correction_row` refused a ``known_at`` rewrite; nothing else
+    did.  A HAND-BUILT superseding row carrying the identical rewrite — the same
+    dict, a recomputed ``row_id``, no constructor involved — passed
+    :func:`validate_issuance_row`, :func:`parse_issuance_log`,
+    :func:`append_issuance_rows` and :func:`cohort_rows`, re-cut the entry
+    session onto a post-outcome bar, and flipped a cohort's verdict.  A guard
+    that lives only in the convenience constructor guards only the callers who
+    use the convenience constructor, and the log is the record of authority.
+
+    ``known_at``, ``ticker``, ``horizons``, ``entry_rule``, ``source_event``,
+    ``effective_at``, ``issuer_company_id`` and ``prereg_document_sha256`` are
+    exactly the fields a post-outcome edit reaches for, and each is compared as
+    CANONICAL BYTES so a re-ordered nested object cannot pass as unchanged.
+    """
+    changed = sorted(
+        field
+        for field in _IMMUTABLE_ACROSS_SUPERSESSION
+        if canonical_bytes(prior.get(field)) != canonical_bytes(row.get(field))
+    )
+    if changed:
+        raise GraderError(
+            f"{label} rewrites {changed!r}, which defines the measurement; §8 admits a "
+            f"supersession only for {sorted(CORRECTABLE_ROW_FIELDS)!r}. A correction that "
+            "genuinely needs a different ticker, event, or known_at is a different candidate"
+        )
+
+
 def build_issuance_row(
     candidate: Mapping[str, Any],
     *,
     family: PreregisteredFamily,
+    calendar: SessionCalendar,
     prereg_document_sha256: str,
     price_basis: PriceBasis,
     appended_at: str,
@@ -827,8 +1040,17 @@ def build_issuance_row(
     An abstained candidate produces an ``abstention`` row: the family's refusals
     are part of the record, not a silent filter, so the abstention rate is
     computable from the log alone.
+
+    ``calendar`` is required because ``entry_rule`` freezes the SESSION LIST, not
+    only its id — see :meth:`SessionCalendar.prefix_digest`.  Freezing an id a
+    vendor revision preserves froze nothing.
     """
     verdict = decision if decision is not None else admit(candidate, family=family)
+    if calendar.calendar_id != family.calendar_id:
+        raise GraderError(
+            "issuance calendar does not match the calendar registered for this family; "
+            "the row would freeze one calendar's id against another's sessions"
+        )
     source_event = candidate.get("source_event")
     source_event = source_event if isinstance(source_event, Mapping) else {}
     known_at = _instant(candidate.get("known_at"))
@@ -866,7 +1088,10 @@ def build_issuance_row(
         "horizons": [horizon.to_payload() for horizon in family.horizons] if verdict.admitted else [],
         "candidate_id": _text(candidate.get("candidate_id")) or "",
         "observation_id": _text(candidate.get("observation_id")),
-        "ticker": _text(candidate.get("ticker")) or "",
+        # No ``or ""``: an empty string is a ticker-shaped value that every
+        # downstream census reads as a symbol.  An unmapped issuer carries an
+        # explicit null and abstains as ``mapping_missing``.
+        "ticker": _text(candidate.get("ticker")),
         "issuer_company_id": _text(candidate.get("issuer_company_id")),
         "candidate_payload_sha256": sha256(canonical_bytes(candidate)).hexdigest(),
         "known_at": known_at.isoformat() if known_at else _text(candidate.get("known_at")),
@@ -892,6 +1117,11 @@ def build_issuance_row(
         "entry_rule": {
             "rule": family.entry_session_rule,
             "calendar_id": family.calendar_id,
+            # The sessions that existed at issuance, and their content address.
+            # A later revision of the SAME calendar_id moves a frozen window;
+            # `grade_row` refuses to grade against a revised prefix.
+            "calendar_session_count": len(calendar.sessions),
+            "calendar_sessions_sha256": calendar.prefix_digest(len(calendar.sessions)),
             "price_basis": price_basis.to_payload(),
             "market_benchmark": family.market_benchmark,
             "sector_benchmark": family.sector_benchmark,
@@ -1001,7 +1231,7 @@ def parse_issuance_log(raw: bytes, *, label: str = "candidate issuance log") -> 
     if any(not line for line in lines):
         raise GraderError(f"{label} contains an empty JSONL row")
     rows: list[dict[str, Any]] = []
-    row_ids: set[str] = set()
+    by_row_id: dict[str, dict[str, Any]] = {}
     for index, line in enumerate(lines, start=1):
         try:
             value = json.loads(line.decode("utf-8"))
@@ -1013,9 +1243,14 @@ def parse_issuance_log(raw: bytes, *, label: str = "candidate issuance log") -> 
         if line != canonical_bytes(value):
             raise GraderError(f"{label} row {index} is not canonical JSON")
         row_id = str(value["row_id"])
-        if row_id in row_ids:
+        if row_id in by_row_id:
             raise GraderError(f"{label} has a duplicate row_id")
-        row_ids.add(row_id)
+        superseded = by_row_id.get(str(value.get("supersedes_row_id")))
+        if superseded is not None:
+            assert_supersession_preserves_the_measurement(
+                superseded, value, label=f"{label} row {index}"
+            )
+        by_row_id[row_id] = value
         rows.append(value)
     return IssuanceLog(raw=raw, rows=tuple(rows))
 
@@ -1052,18 +1287,24 @@ def append_issuance_rows(path: Path, rows: Sequence[Mapping[str, Any]]) -> dict[
     """
     target = Path(path)
     prior = load_issuance_log(target)
-    prior_ids = {row["row_id"] for row in prior.rows}
+    known: dict[str, Mapping[str, Any]] = {str(row["row_id"]): row for row in prior.rows}
     payload = bytearray()
-    batch_ids: set[str] = set()
     for index, row in enumerate(rows, start=1):
         validate_issuance_row(row, label=f"appended row {index}")
         row_id = str(row["row_id"])
-        if row_id in prior_ids or row_id in batch_ids:
+        if row_id in known:
             raise GraderError(f"appended row {index} duplicates an existing row_id")
-        batch_ids.add(row_id)
         supersedes = row.get("supersedes_row_id")
-        if supersedes is not None and supersedes not in prior_ids and supersedes not in batch_ids:
-            raise GraderError(f"appended row {index} supersedes a row that is not in the log")
+        if supersedes is not None:
+            target_row = known.get(str(supersedes))
+            if target_row is None:
+                raise GraderError(f"appended row {index} supersedes a row that is not in the log")
+            # Checked BEFORE the write: a rewrite caught only by the re-parse
+            # afterwards would already be on disk in an append-only file.
+            assert_supersession_preserves_the_measurement(
+                target_row, row, label=f"appended row {index}"
+            )
+        known[row_id] = row
         payload += canonical_bytes(dict(row)) + b"\n"
     target.parent.mkdir(parents=True, exist_ok=True)
     with open(target, "ab") as handle:
@@ -1113,6 +1354,12 @@ def cohort_rows(log: IssuanceLog, *, family_id: str) -> tuple[dict[str, Any], ..
             raise GraderError("a correction supersedes a row from a different candidate")
         if candidate_id not in effective:
             raise GraderError("a correction supersedes a candidate that was never issued")
+        # THE DENOMINATOR'S OWN GATE.  This is the last point at which a
+        # superseding row becomes the effective row of a cohort member, so the
+        # allowlist is re-checked here even though the parser already enforced
+        # it: a log assembled in memory (a caller that builds `IssuanceLog`
+        # rows directly) never passes through the byte parser.
+        assert_supersession_preserves_the_measurement(target, row, label="effective correction row")
         effective[candidate_id] = row
     return tuple(effective[candidate_id] for candidate_id in order)
 
@@ -1199,6 +1446,19 @@ class Coverage:
             "fraction": self.fraction,
             "status": self.status,
         }
+
+
+def _coverage_status(observed: int, universe: int) -> str:
+    """``empty`` / ``complete`` / ``partial`` — and ``empty`` is the point.
+
+    ``"complete" if observed == universe else "partial"`` reports COMPLETE on an
+    empty cohort, because ``0 == 0``.  Today's actual state is a zero-candidate
+    lobe, so every horizon block in every report announced full outcome coverage
+    beside a null rate — the one state this instrument most needs to say plainly.
+    """
+    if universe == 0:
+        return "empty"
+    return "complete" if observed == universe else "partial"
 
 
 @dataclass(frozen=True)
@@ -1290,23 +1550,45 @@ def monthly_and_pooled(
     *,
     coverage: Coverage,
     name: str,
+    month_universes: Mapping[str, int] | None = None,
 ) -> dict[str, Any]:
     """Return the monthly rates, their median, AND the pooled rate — or nothing.
 
     The median of a set of binary rates can flip sign against the pooled rate
     (small months carry the same weight as large ones).  There is no code path
     here that returns one without the other.
+
+    ``month_universes`` is the issuance cohort's size PER MONTH.  Without it
+    every bucket repeated the cohort-wide coverage payload, so a month with one
+    graded row printed the whole cohort's coverage beside its rate — §5's own
+    "a rate over part of a cohort is not the cohort's rate" violated inside the
+    block that exists to break the cohort into parts.  The per-month universe is
+    derivable from issuance-time information alone (``known_at`` against the
+    calendar), so it costs no outcome knowledge.
     """
     buckets: dict[str, list[bool]] = {}
     for month, hit in per_row:
         buckets.setdefault(month, []).append(hit)
+
+    def _bucket_coverage(month: str, graded: int) -> Coverage:
+        if month_universes is None:
+            return coverage
+        universe = int(month_universes.get(month, graded))
+        return Coverage(
+            kind="outcome",
+            scope=f"{coverage.scope}; entry month {month}",
+            observed=graded,
+            universe=max(universe, graded),
+            status="complete" if graded == universe else "partial",
+        )
+
     monthly = [
         {
             "month": month,
             "hits": sum(1 for hit in values if hit),
             "graded": len(values),
             "hit_rate": (sum(1 for hit in values if hit) / len(values)) if values else None,
-            "coverage": coverage.to_payload(),
+            "coverage": _bucket_coverage(month, len(values)).to_payload(),
         }
         for month, values in sorted(buckets.items())
     ]
@@ -1354,6 +1636,13 @@ class RowGrade:
     read_window_sessions: int
     read_window_sha256: str | None
     price_basis: dict[str, Any]
+    # The calendar axis.  Without these two fields a value that moved because
+    # the SESSION LIST was revised is indistinguishable in `regrade_diff` from
+    # one that moved because the price vintage was re-adjusted — the diff's only
+    # explanatory fields were prior/current price_basis, so a calendar revision
+    # read as an unexplained move under an IDENTICAL vintage id.
+    calendar_id: str | None = None
+    window_sessions_sha256: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -1374,6 +1663,8 @@ class RowGrade:
             "read_window_sessions": self.read_window_sessions,
             "read_window_sha256": self.read_window_sha256,
             "price_basis": self.price_basis,
+            "calendar_id": self.calendar_id,
+            "window_sessions_sha256": self.window_sessions_sha256,
         }
 
 
@@ -1429,6 +1720,30 @@ def _read_window(
     return closes, consumed
 
 
+def _calendar_revision_refusal(
+    entry_rule: Mapping[str, Any],
+    calendar: SessionCalendar,
+) -> str | None:
+    """``"calendar_revised"`` iff the frozen session prefix no longer reproduces.
+
+    A DATA condition, not a programmer error, so it returns a refusal reason
+    rather than raising: exchanges do reclassify holidays and vendors do restate
+    session lists, and a nightly batch that dies on the first revised row grades
+    nothing at all.  A foreign ``calendar_id`` still RAISES — that is the caller
+    handing over the wrong calendar entirely, which no row can survive.
+    """
+    frozen_count = entry_rule.get("calendar_session_count")
+    frozen_digest = entry_rule.get("calendar_sessions_sha256")
+    if not isinstance(frozen_count, int) or not isinstance(frozen_digest, str):
+        return "calendar_revised"
+    if frozen_count > len(calendar.sessions):
+        # The calendar SHRANK: sessions that existed at issuance are gone.
+        return "calendar_revised"
+    if calendar.prefix_digest(frozen_count) != frozen_digest:
+        return "calendar_revised"
+    return None
+
+
 def grade_row(
     row: Mapping[str, Any],
     horizon_name: str,
@@ -1465,8 +1780,20 @@ def grade_row(
         )
     graded_basis = panel.basis.to_payload()
 
+    calendar_refusal = _calendar_revision_refusal(entry_rule, calendar)
+    if calendar_refusal is not None:
+        return _ungraded(row, horizon_name, calendar_refusal, graded_basis)
+
     known_at = _instant(row["known_at"])
     if known_at is None:  # pragma: no cover - validation already refuses this
+        return _ungraded(row, horizon_name, "entry_session_unavailable", graded_basis)
+    if not calendar.covers(known_at.date()):
+        # The calendar begins AFTER this row became knowable, so it cannot name
+        # the first session that followed: `first_index_after` would hand back
+        # index 0, which is merely the earliest bar the panel happens to carry.
+        # Grading that as the entry silently fills the row on a POST-issuance
+        # session — the exact leak this module exists to prevent, arriving
+        # through the calendar rather than through the prices.
         return _ungraded(row, horizon_name, "entry_session_unavailable", graded_basis)
     entry_index = calendar.first_index_after(known_at.date())
     if entry_index is None:
@@ -1478,7 +1805,16 @@ def grade_row(
 
     exit_index = _horizon_exit_index(entry_index, int(horizon["sessions"]))
     exit_session = calendar.session(exit_index)
-    if exit_session is None or exit_session > as_of_day:
+    if exit_session is None or exit_session >= as_of_day:
+        # STRICTLY before ``as_of``'s UTC date, and the strictness is the fix.
+        # `as_of` is an instant; the comparison was a DATE comparison, so a
+        # nightly run at 00:05 UTC on the exit session consumed that session's
+        # close about twenty hours before the US market closed it. The bar
+        # existed in the panel only because the panel is written by a lane on a
+        # different clock. A one-session lag is the conservative reading of an
+        # instant against a calendar that carries no close times: the module
+        # deliberately holds no timezone or session-hours table (§3's
+        # anti-`resample` doctrine), so it may not infer one here.
         return _ungraded(row, horizon_name, "horizon_not_matured", graded_basis)
 
     window = calendar.sessions[entry_index : exit_index + 1]
@@ -1522,6 +1858,8 @@ def grade_row(
         read_window_sessions=len(window),
         read_window_sha256=sha256(canonical_bytes(consumed)).hexdigest(),
         price_basis=graded_basis,
+        calendar_id=calendar.calendar_id,
+        window_sessions_sha256=_sessions_digest(tuple(window)),
     )
 
 
@@ -1532,6 +1870,7 @@ def grade_placebo_row(
     panel: PricePanel,
     calendar: SessionCalendar,
     family: PreregisteredFamily,
+    as_of: datetime,
 ) -> RowGrade:
     """The naive baseline: the same name, same horizon, shifted BACKWARD.
 
@@ -1539,11 +1878,22 @@ def grade_placebo_row(
     lies entirely BEFORE issuance and cannot borrow the future.  It answers the
     only question a bare hit rate cannot: does this name drift up anyway?
 
-    It carries the SAME two refusals as :func:`grade_row` — foreign calendar and
-    mismatched price basis.  A baseline computed on a different calendar or a
-    different price adjustment than the cohort it is subtracted from is not a
-    baseline, and the placebo delta is a verdict input, so a refusal on one side
-    and silence on the other is a hole in the kill condition itself.
+    It carries EVERY refusal :func:`grade_row` carries — foreign calendar,
+    mismatched price basis, a revised session list, a calendar that does not
+    reach back to ``known_at``, and ``as_of``.  A baseline computed on a
+    different calendar, a different adjustment, or a different CLOCK than the
+    cohort it is subtracted from is not a baseline, and the placebo delta is a
+    verdict input, so a refusal on one side and silence on the other is a hole
+    in the kill condition itself.
+
+    ``as_of`` is REQUIRED, and its absence was the hole.  "The window lies before
+    issuance" bounds the placebo against the ROW's clock, not against the
+    REPORT's: replay a report at a historical ``as_of`` and every placebo window
+    for a row issued later sits in that report's future.  The real side refused
+    those rows and the placebo side graded them, so the display placebo block
+    and ``unpaired_delta_market_relative_mean`` were computed from bars after
+    ``as_of``.  Only the PAIRED delta was protected, and only incidentally — by
+    the intersection with a real side that had already refused.
     """
     validate_issuance_row(row, label="placebo row")
     entry_rule = row.get("entry_rule") or {}
@@ -1557,12 +1907,17 @@ def grade_placebo_row(
         )
     if row["row_kind"] == "retraction":
         return _ungraded(row, horizon_name, "retracted", basis)
+    calendar_refusal = _calendar_revision_refusal(entry_rule, calendar)
+    if calendar_refusal is not None:
+        return _ungraded(row, horizon_name, calendar_refusal, panel.basis.to_payload())
     frozen = {entry["name"]: entry for entry in row["horizons"]}
     horizon = frozen.get(horizon_name)
     if horizon is None:
         raise GraderError(f"row {row['row_id']} did not freeze horizon {horizon_name!r} at issuance")
     known_at = _instant(row["known_at"])
-    entry_index = calendar.first_index_after(known_at.date()) if known_at else None
+    if known_at is None or not calendar.covers(known_at.date()):
+        return _ungraded(row, horizon_name, "entry_session_unavailable", panel.basis.to_payload())
+    entry_index = calendar.first_index_after(known_at.date())
     if entry_index is None:
         return _ungraded(row, horizon_name, "entry_session_unavailable", panel.basis.to_payload())
     placebo_entry = entry_index + family.placebo_offset_sessions
@@ -1570,6 +1925,9 @@ def grade_placebo_row(
     if placebo_entry < 0 or placebo_exit >= entry_index:
         return _ungraded(row, horizon_name, "horizon_not_matured", panel.basis.to_payload())
     window = calendar.sessions[placebo_entry : placebo_exit + 1]
+    if window[-1] >= as_of.astimezone(timezone.utc).date():
+        # The same strict clamp `grade_row` applies, for the same reason.
+        return _ungraded(row, horizon_name, "horizon_not_matured", panel.basis.to_payload())
     name_read = _read_window(panel, str(row["ticker"]), window)
     if name_read is None:
         return _ungraded(row, horizon_name, "price_missing", panel.basis.to_payload())
@@ -1600,6 +1958,8 @@ def grade_placebo_row(
         read_window_sessions=len(window),
         read_window_sha256=sha256(canonical_bytes(consumed)).hexdigest(),
         price_basis=panel.basis.to_payload(),
+        calendar_id=calendar.calendar_id,
+        window_sessions_sha256=_sessions_digest(tuple(window)),
     )
 
 
@@ -1663,8 +2023,19 @@ class DisclosureEvent:
     ``known_at`` is when this pipeline could first know the disclosure happened,
     and it is a separate clock from ``event_date``.  Filing indexes are
     published on a lag, so a label computed from an event whose ``known_at`` is
-    in the future would be reading tomorrow's index to describe today's window —
-    the same leak ``grade_row`` prevents on the price side.
+    in the FUTURE relative to the report would be reading tomorrow's index.
+
+    Stated exactly, because the looser phrasing oversold it: the clamp is
+    ``known_at <= as_of``, the REPORT's clock — not the graded window's exit.  A
+    disclosure whose date fell inside a window closed months ago, but which this
+    pipeline only learned about last night, DOES label that window.  That is
+    deliberate and registered (§11): the label is a descriptive contamination
+    marker computed after the verdict, so knowing more later can only describe
+    the past better, and it can reach no decision.  It is therefore NOT the same
+    clamp ``grade_row`` applies on the price side — that one is bounded by the
+    row's own window, because a price outside the window changes the measured
+    number.  Conflating the two invites a future edit to "fix" a clamp that is
+    doing what §11 registered.
     """
 
     kind: str
@@ -1902,7 +2273,7 @@ def disclosure_label_block(
         ),
         observed=computable,
         universe=issued_n,
-        status="complete" if computable == issued_n else "partial",
+        status=_coverage_status(computable, issued_n),
     )
     return {
         "calendar": disclosure.to_payload() if disclosure is not None else None,
@@ -1935,33 +2306,65 @@ def regrade_diff(
     previous: Sequence[Mapping[str, Any]],
     current: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Rows whose graded value moved between two price vintages.
+    """Rows whose graded value moved, or DISAPPEARED, between two runs.
 
     Historical closes are re-adjusted in place upstream, so a stored grade can
     stop reproducing without anybody editing the grader.  This surfaces those
     rows instead of letting a silent overwrite rewrite a track record.
+
+    Two axes the first version lacked, each a way a published grade changed with
+    nothing to attribute it to:
+
+    * **Deletion.** A grade present in ``previous`` and absent from ``current``
+      produced NO drift row at all — the loop walked ``current`` only, so a
+      cohort that shrank overnight reported clean. Deletion is the one move a
+      drift detector most needs to see, because it is what an unpublished loss
+      looks like. It is reported as ``drift_kind: "grade_vanished"``.
+    * **The calendar.** The only explanatory fields were prior/current
+      ``price_basis``, so a value that moved because the SESSION LIST was revised
+      under an identical vintage id read as an unexplained price move. The
+      calendar identity and the window's session digest are now carried on both
+      sides, and ``calendar_moved`` says plainly which axis it was.
     """
     index = {(row.get("row_id"), row.get("horizon")): row for row in previous}
+    seen: set[tuple[Any, Any]] = set()
     drifted: list[dict[str, Any]] = []
+
+    def _entry(prior: Mapping[str, Any] | None, row: Mapping[str, Any] | None, kind: str) -> dict[str, Any]:
+        prior = prior or {}
+        row = row or {}
+        return {
+            "drift_kind": kind,
+            "row_id": (row or prior).get("row_id"),
+            "horizon": (row or prior).get("horizon"),
+            "prior_price_basis": prior.get("price_basis"),
+            "current_price_basis": row.get("price_basis"),
+            "prior_market_relative_return": prior.get("market_relative_return"),
+            "current_market_relative_return": row.get("market_relative_return"),
+            "prior_read_window_sha256": prior.get("read_window_sha256"),
+            "current_read_window_sha256": row.get("read_window_sha256"),
+            "prior_calendar_id": prior.get("calendar_id"),
+            "current_calendar_id": row.get("calendar_id"),
+            "prior_window_sessions_sha256": prior.get("window_sessions_sha256"),
+            "current_window_sessions_sha256": row.get("window_sessions_sha256"),
+            "calendar_moved": (
+                prior.get("calendar_id") != row.get("calendar_id")
+                or prior.get("window_sessions_sha256") != row.get("window_sessions_sha256")
+            ),
+        }
+
     for row in current:
         key = (row.get("row_id"), row.get("horizon"))
+        seen.add(key)
         prior = index.get(key)
         if prior is None:
             continue
         if prior.get("read_window_sha256") == row.get("read_window_sha256"):
             continue
-        drifted.append(
-            {
-                "row_id": row.get("row_id"),
-                "horizon": row.get("horizon"),
-                "prior_price_basis": prior.get("price_basis"),
-                "current_price_basis": row.get("price_basis"),
-                "prior_market_relative_return": prior.get("market_relative_return"),
-                "current_market_relative_return": row.get("market_relative_return"),
-                "prior_read_window_sha256": prior.get("read_window_sha256"),
-                "current_read_window_sha256": row.get("read_window_sha256"),
-            }
-        )
+        drifted.append(_entry(prior, row, "value_moved"))
+    for key, prior in index.items():
+        if key not in seen:
+            drifted.append(_entry(prior, None, "grade_vanished"))
     return drifted
 
 
@@ -1992,15 +2395,20 @@ def _bootstrap_mean_ci(
 
     Nonparametric on purpose: single-name horizon returns are fat-tailed and
     skewed, so a normal-theory interval understates the tail exactly where a
-    verdict would be decided.  ``n == 1`` returns a degenerate interval equal to
-    the point value rather than ``None``; that is honest (one observation has no
-    sampling spread to report) and it keeps the reachability fixtures from
-    silently skipping the interval requirement.
+    verdict would be decided.
+
+    **``n < 2`` returns ``(None, None)``, and the previous behaviour was the
+    defect.**  It returned a DEGENERATE interval equal to the point value, on the
+    reasoning that "one observation has no sampling spread to report".  That is
+    true and it is exactly why the value must not be emitted as an interval: §7
+    tests INTERVALS against registered thresholds precisely so a point comparison
+    cannot decide a verdict, and a zero-width interval passes every such test the
+    point would pass.  One observation then cleared a threshold derived for
+    N = 545.  A single observation has no interval; the honest report of it is
+    ``None``, which routes the verdict to ``verdict_inputs_unavailable``.
     """
-    if not values:
+    if len(values) < 2:
         return None, None
-    if len(values) == 1:
-        return float(values[0]), float(values[0])
     resamples = int(family.bootstrap_resamples)
     rng = random.Random(_bootstrap_seed(family, label))
     n = len(values)
@@ -2120,6 +2528,12 @@ def maturity_gate(
         if known_at is None:
             continue
         known_at_months.add(_month_key(known_at.date()))
+        if not calendar.covers(known_at.date()):
+            # The calendar starts after this row was knowable, so it cannot name
+            # this row's entry session; counting `sessions[0]` here would credit
+            # the independence gate with a window that does not exist. An
+            # uncounted row makes the gate HARDER, which is the safe direction.
+            continue
         entry_index = calendar.first_index_after(known_at.date())
         if entry_index is not None:
             entry_sessions.add(calendar.sessions[entry_index])
@@ -2172,6 +2586,15 @@ VERDICT_STATES = ("accruing", "expired_unmeasurable", "kill", "tested_null", "su
 VERDICT_BLOCKED_REASONS = (
     "verdict_basis_coverage_below_registered_floor",
     "verdict_inputs_unavailable",
+    # The paired placebo delta is HALF of both the KILL and the SUPPORTED
+    # condition, and it had no floor of its own: the real side could clear every
+    # registered gate at 545 events while the placebo intersection stood at ONE
+    # row, and that one row decided the verdict.
+    "paired_placebo_coverage_below_registered_floor",
+    # The registered N is a count of INDEPENDENT DRAWS (§7.2's power
+    # calculation). `window_independence` computed the honest non-overlapping
+    # estimate in the same report and nothing consulted it.
+    "independent_draws_below_registered_n",
 )
 
 
@@ -2208,6 +2631,18 @@ def evaluate_verdict(
     place of it), and the verdict refuses to fire at all when the verdict-basis
     coverage is below the registered floor.
 
+    And two more, added when an audit showed the registered N was not actually
+    protecting either half of the decision rule (§7.6):
+
+    * **The paired placebo delta carries the same coverage floor.** The basis
+      coverage check reads the real side only; the paired intersection is a
+      different and strictly smaller set, and it had no floor at all.
+    * **The verdict is gated on INDEPENDENT DRAWS.** §7.2's N is a power
+      calculation; ``window_independence`` already computed the honest
+      non-overlapping estimate and nothing consulted it, so an interval narrowed
+      by window overlap could clear a threshold the same evidence fails at its
+      honest N.
+
     It decides nothing.  The state is display context for an operator ruling and
     confers no authority in any branch, including ``supported``.
     """
@@ -2219,6 +2654,10 @@ def evaluate_verdict(
     mean_block = basis["market_relative_return_summary"]
     delta_block = basis["paired_placebo_delta_summary"]
     hit_block = basis["conditional_hit_rate"]
+    # The independence of the VERDICT BASIS, not of the cohort's grades: the
+    # basis is the set whose values the interval below is computed over, and the
+    # supersession ratchet can put a row in the basis that is ungraded tonight.
+    independence = basis["window_independence"]
     inputs = {
         "pooled_market_relative_mean": mean_block["mean"],
         "pooled_market_relative_mean_ci_lower": mean_block["ci_lower"],
@@ -2226,18 +2665,29 @@ def evaluate_verdict(
         "placebo_delta_market_relative_mean": delta_block["mean"],
         "placebo_delta_market_relative_mean_ci_lower": delta_block["ci_lower"],
         "placebo_delta_market_relative_mean_ci_upper": delta_block["ci_upper"],
+        "placebo_delta_n": delta_block["n"],
+        "placebo_delta_coverage_fraction": delta_block["coverage"]["fraction"],
         "conditional_hit_rate": hit_block["value"],
         "conditional_hit_rate_ci_lower": hit_block["ci_lower"],
         "hit_rate_lower_bound": block["hit_rate_bounds"]["lower_bound_hit_rate"]["value"],
         "hit_rate_upper_bound": block["hit_rate_bounds"]["upper_bound_hit_rate"]["value"],
         "verdict_basis_coverage_fraction": basis["coverage"]["fraction"],
-        "coverage": block["coverage"],
+        "non_overlapping_window_estimate": independence["non_overlapping_window_estimate"],
+        # THE COVERAGE THE NUMBERS ABOVE WERE COMPUTED OVER.  This cited the
+        # cohort's outcome coverage while every statistic beside it came from
+        # the verdict BASIS (graded rows plus grades retained by the supersession
+        # ratchet) — two different denominators, one of them printed. A reader
+        # checking the verdict against its own coverage was reading the wrong
+        # number. The cohort figure is still printed, under its own name.
+        "coverage": basis["coverage"],
+        "cohort_outcome_coverage": block["coverage"],
     }
     thresholds = {
         "minimum_interesting_effect": family.minimum_interesting_effect,
         "hit_rate_floor": family.hit_rate_floor,
         "confidence_level": family.confidence_level,
         "min_verdict_outcome_coverage": family.min_verdict_outcome_coverage,
+        "planning_n_required": family.planning_n_required,
     }
     expiry = date.fromisoformat(family.accrual_expiry_date)
 
@@ -2265,6 +2715,30 @@ def evaluate_verdict(
         # statistic deletes whichever rows failed to resolve.  No verdict fires —
         # not a softer one, none.
         return finish("accruing", "verdict_basis_coverage_below_registered_floor")
+
+    # The SAME floor on the PAIRED PLACEBO DELTA, which the coverage check above
+    # never touched: it reads the verdict basis, and the paired intersection is a
+    # different, strictly smaller set.  A cohort could satisfy every registered
+    # gate on the real side — 545 distinct source events, coverage 1.0 — while
+    # exactly ONE candidate was gradeable on both its event window and its
+    # placebo window.  `paired_coverage` was computed, printed, and consulted by
+    # nothing, and `d_hi < δ*` / `d_lo > δ*` — half of the KILL condition and
+    # half of the SUPPORTED condition — rested on that single observation.
+    # Flipping that one row's placebo window flipped the verdict of 545.
+    paired_coverage = inputs["placebo_delta_coverage_fraction"]
+    if paired_coverage is None or paired_coverage < family.min_verdict_outcome_coverage:
+        return finish("accruing", "paired_placebo_coverage_below_registered_floor")
+
+    # §7.2 derives N = 545 from a power calculation, and a power calculation
+    # counts INDEPENDENT DRAWS.  `issued_n` counts rows: 552 rows from 12 issuers
+    # on consecutive entry sessions are 552 rows and roughly 12 draws, and the
+    # bootstrap interval over 552 overlapping windows is narrower than the
+    # evidence by ~√(552/12) ≈ 6.8x — narrow enough to clear a threshold the same
+    # evidence fails at its honest N.  `window_independence` computed exactly
+    # that honest number in this same report and nothing read it.
+    independent = inputs["non_overlapping_window_estimate"]
+    if not isinstance(independent, int) or independent < family.planning_n_required:
+        return finish("accruing", "independent_draws_below_registered_n")
 
     mean_low = inputs["pooled_market_relative_mean_ci_lower"]
     mean_high = inputs["pooled_market_relative_mean_ci_upper"]
@@ -2464,6 +2938,20 @@ def build_cohort_report(
         reason = str(row.get("abstention_reason"))
         reasons[reason] = reasons.get(reason, 0) + 1
 
+    # The issuance cohort broken down by ENTRY MONTH, derived from issuance-time
+    # information only (`known_at` against the calendar) so the per-month rates
+    # below can cite a per-month coverage instead of repeating the cohort's.
+    month_universes: dict[str, int] = {}
+    for row in rows:
+        row_known_at = _instant(row.get("known_at"))
+        if row_known_at is None or not calendar.covers(row_known_at.date()):
+            continue
+        row_entry_index = calendar.first_index_after(row_known_at.date())
+        if row_entry_index is None:
+            continue
+        key = _month_key(calendar.sessions[row_entry_index])
+        month_universes[key] = month_universes.get(key, 0) + 1
+
     per_horizon: dict[str, Any] = {}
     # Held aside deliberately.  These are NOT merged into ``per_horizon`` until
     # after ``evaluate_verdict`` has returned, so the verdict provably cannot
@@ -2496,7 +2984,12 @@ def build_cohort_report(
             ),
             observed=len(graded),
             universe=len(rows),
-            status="complete" if len(graded) == len(rows) else "partial",
+            # An EMPTY cohort is not a COMPLETE one. ``0 == 0`` read as
+            # "complete", so a report over zero candidates — today's actual state
+            # — announced full outcome coverage beside a null rate. The
+            # admission block already spelled this correctly; the horizon blocks
+            # did not.
+            status=_coverage_status(len(graded), len(rows)),
         )
         hits = sum(1 for grade in graded if grade.hit)
         hit_rate = Rate(
@@ -2523,9 +3016,12 @@ def build_cohort_report(
             [(str(grade.entry_month), bool(grade.hit)) for grade in graded],
             coverage=outcome_coverage,
             name=f"{family.family_id}.{horizon.name}.pooled_hit_rate",
+            month_universes=month_universes,
         )
         placebo = [
-            grade_placebo_row(row, horizon.name, panel=panel, calendar=calendar, family=family)
+            grade_placebo_row(
+                row, horizon.name, panel=panel, calendar=calendar, family=family, as_of=as_of
+            )
             for row in rows
         ]
         placebo_graded = [grade for grade in placebo if grade.state == "graded"]
@@ -2537,7 +3033,7 @@ def build_cohort_report(
             ),
             observed=len(placebo_graded),
             universe=len(rows),
-            status="complete" if len(placebo_graded) == len(rows) else "partial",
+            status=_coverage_status(len(placebo_graded), len(rows)),
         )
         market_relative = [float(grade.market_relative_return) for grade in graded]
         placebo_relative = [float(grade.market_relative_return) for grade in placebo_graded]
@@ -2569,7 +3065,12 @@ def build_cohort_report(
                     continue
                 basis_real[candidate_id] = ancestor_grade
                 ancestor_placebo = grade_placebo_row(
-                    ancestor, horizon.name, panel=panel, calendar=calendar, family=family
+                    ancestor,
+                    horizon.name,
+                    panel=panel,
+                    calendar=calendar,
+                    family=family,
+                    as_of=as_of,
                 )
                 if ancestor_placebo.state == "graded":
                     basis_placebo[candidate_id] = ancestor_placebo
@@ -2594,7 +3095,7 @@ def build_cohort_report(
             ),
             observed=len(basis_real),
             universe=len(rows),
-            status="complete" if len(basis_real) == len(rows) else "partial",
+            status=_coverage_status(len(basis_real), len(rows)),
         )
         basis_values = [float(basis_real[key].market_relative_return) for key in sorted(basis_real)]
         basis_hits = sum(1 for key in sorted(basis_real) if basis_real[key].hit)
@@ -2619,7 +3120,7 @@ def build_cohort_report(
             ),
             observed=len(paired_ids),
             universe=len(rows),
-            status="complete" if len(paired_ids) == len(rows) else "partial",
+            status=_coverage_status(len(paired_ids), len(rows)),
         )
 
         # --- B1: the kill-bearing mean carries its own coverage penalty ----
@@ -2713,6 +3214,16 @@ def build_cohort_report(
             "verdict_basis": {
                 "n": len(basis_real),
                 "coverage": verdict_basis_coverage.to_payload(),
+                # The honest draw count for the set the verdict actually reads.
+                # The cohort-level block above describes tonight's grades; this
+                # one describes the basis, which the supersession ratchet can
+                # extend with a row that is ungraded tonight.
+                "window_independence": _window_independence(
+                    [basis_real[key] for key in sorted(basis_real)],
+                    calendar=calendar,
+                    horizon_sessions=horizon.sessions,
+                    coverage=verdict_basis_coverage,
+                ),
                 "market_relative_return_summary": _summary(
                     basis_values,
                     coverage=verdict_basis_coverage,
@@ -2848,7 +3359,16 @@ def build_cohort_report(
             "A superseding row may lower coverage but may not delete a grade its predecessor "
             "earned; retained grades are listed in verdict_basis.retained_from_superseded. The "
             "residual risk is disclosed: a genuine source correction still has its old grade read.",
-            "issued_n counts rows, not independent draws; window_independence prints the overlap.",
+            "issued_n counts rows, not independent draws; window_independence prints the overlap, "
+            "and no verdict fires until the non-overlapping estimate reaches the registered N.",
+            "The paired placebo delta is half of both decision regions and carries the same "
+            "registered coverage floor as the verdict basis; below it no verdict fires.",
+            "A single observation has no interval: a statistic with n < 2 emits a null interval, "
+            "never a zero-width one, so it cannot clear a threshold a point estimate would clear.",
+            "A non-finite close (NaN/inf) is a missing bar, not a number: it grades ungraded, "
+            "never as a miss, and the canonical bytes of this report are strict-parse JSON.",
+            "Grades are reproducible only against the recorded session list as well as the price "
+            "vintage; entry_rule freezes the session prefix and regrade_diff names the axis.",
             "Disclosure labels are descriptive contamination markers computed after the verdict, "
             "never an input to it. 'none_in_window' (the calendar covered this issuer and found "
             "nothing) and 'unavailable' (it could not look) are separate states and are never "
