@@ -473,10 +473,11 @@ class _FakeReq:
         self.headers = {}
 
     # _mm_client_ip reads request.headers.get(...); with no CDN headers it returns 'unknown'
-    # unless we inject one. We inject a real-client-IP header so the IP ledger has a value.
+    # unless we inject one. We inject the edge-written real-client header (EO-Connecting-IP —
+    # the only one the resolver reads; see app/edge_client.py) so the IP ledger has a value.
     def _install_ip(self):
         if self._ip:
-            self.headers = {"eo-client-ip": self._ip}
+            self.headers = {"eo-connecting-ip": self._ip}
         return self
 
 

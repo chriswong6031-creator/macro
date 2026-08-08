@@ -84,9 +84,25 @@ save, and warns (but still saves) if that IP is also in `blocked_ips`.  It is
 
 The CDN must emit a country header.  The gate reads, in order:
 
-1. `SITE_GATE_COUNTRY_HEADER` env (default `EO-Client-IPCountry` for EdgeOne)
-2. `EO-Client-Country`
-3. `CF-IPCountry` (Cloudflare fallback)
+1. `-Client-IPCountry` — the name the edge actually sets on www (note the missing
+   `EO` prefix; it is not a typo here, see below)
+2. `SITE_GATE_COUNTRY_HEADER` env (default `EO-Client-IPCountry` for EdgeOne)
+3. `EO-Client-Country`
+4. `CF-IPCountry` (Cloudflare fallback)
+
+**Rung 1 is first because only rung 1 is trustworthy.**  Measured on www 2026-08-07
+(probe through the live edge, headers captured off the loopback hop to `:8000`): the
+edge sets `-Client-IPCountry` and REPLACES a forged copy of that name with the true
+country, while `EO-Client-IPCountry`, `EO-Client-Country` and `CF-IPCountry` are set
+by nothing and arrive carrying whatever the caller sent — even through the edge.  With
+the configured name checked first, as it was until this change, any visitor could
+defeat country blocking with one request header while the genuine signal sat unread.
+Rungs 2–4 are kept as fallbacks for a differently-configured zone; they are only as
+good as the caller, so do not promote one above rung 1.
+
+The missing `EO` prefix looks like a console-rule quirk.  If it is corrected upstream,
+rung 1 simply goes absent and rung 2 (now genuinely edge-set) answers — the order is
+right before and after such a fix, which is why it is hardcoded rather than configured.
 
 ### EdgeOne console setup
 
@@ -102,7 +118,20 @@ To enable country detection with EdgeOne:
 The exact header name varies by EdgeOne product version.  Use `/api/gate/status`
 → `country_detection.source` to confirm which source the gate is actually reading.
 If `source` is `"unavailable"`, the CDN is not forwarding a country header and
-GeoIP is absent.
+GeoIP is absent — **or the gate is simply disabled**, which short-circuits `decide()`
+before any country is resolved, so `source` stays `"unavailable"` on a healthy zone.
+Read that field as evidence only while `enabled` is true.
+
+To see what the edge really sends without guessing, capture the origin-side headers
+directly (this is how the table above was produced):
+
+```
+ssh root@146.190.142.17 'timeout 60 tcpdump -i lo -A -s0 -w /tmp/p.pcap "tcp port 8000"'
+curl -s "https://www.mastermind-x.com/api/gate/check?probe=X" -H 'EO-Client-IPCountry: XX'
+```
+
+then read the request head out of `/tmp/p.pcap`.  A header the edge sets survives the
+forgery; one it does not set arrives exactly as you typed it.
 
 ## Country detection: GeoIP (fallback)
 

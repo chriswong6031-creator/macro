@@ -12,7 +12,9 @@ The resolution order is the safety order, and it is deliberate:
 1. **Availability firewall.**  A record stamped after the clock that read it is
    quarantined and never published, even when it carries a perfect receipt.
 2. **Supersession collapse.**  A duplicate re-delivery resolves to the event the
-   original already minted; it never mints a second one.
+   original already minted; it never mints a second one.  A collapse must be
+   EARNED from the revision chain — there is deliberately no way for a producer
+   to assert one.  See "why no declared duplicate" below.
 3. **Byte replay.**  A committed receipt is re-sliced against the body we hold.
    Drift raises rather than downgrades — a receipt that cannot be replayed is
    worthless, and silently demoting it to an absence would hide a corrupted
@@ -24,6 +26,41 @@ The resolution order is the safety order, and it is deliberate:
 Because absence is the fall-through and a receipt can only be minted from bytes
 that replay, this resolver cannot manufacture a citation: the failure direction
 is always MORE absences, never more receipts.
+
+WHY THERE IS NO DECLARED DUPLICATE
+----------------------------------
+``declared_locator`` is a producer ASSERTION this resolver honours, and that is
+safe because of which way it fails: strip it and an ``exact_receipt`` degrades to
+a ``typed_absence``.  It can only ever cost the estate evidence it never proved.
+
+A *declared duplicate* fails the other way, and so it does not exist here.  The
+collapse at step 2 sets ``mints_event=False``, and step 2 runs BEFORE the byte
+replay at step 3 — deliberately, because a genuine re-delivery must not mint a
+second event even when it carries a perfect receipt.  An assertion entering at
+that step would therefore outrank proof: it would suppress an event from the
+mint set, discard a replayable receipt, and leave nothing downstream able to
+tell that it rested on nothing.  That is the one failure direction the paragraph
+above claims this resolver does not have.
+
+The field ``declared_duplicate_of`` and the basis ``declared_duplicate_filing``
+existed until 2026-08-07 and were removed rather than tested.  Nothing in the
+estate ever produced one: the sole use in the repo's history was
+``tests/test_company_intelligence_spine_corpus.py`` feeding the resolver an
+assertion to reproduce two golden-corpus cases (CIE-GC-0227, CIE-GC-0234) that
+had been labelled ``duplicate_collapsed`` by a positional ``index % 7 == 6`` rule
+with no observable duplication behind them.  Both were relabelled
+``typed_absence`` in #4926, and the declared column has read 0 by design ever
+since.
+
+Duplicate detection is settled and it lives upstream, on evidence:
+``engine.earnings_release.filing_key`` is "the one place that decides what 'the
+same filing' means" on the frozen ``(cik, accession)`` key (contract freeze Q2),
+and ``engine.earnings_release.binding.collapse_release_events`` earns every
+collapse it reports from ``duplicate_filing_key``, ``identical_body_sha256``, or
+``supersedes_without_amending``.  It resolves the corpus's fourteen
+``duplicate_release`` cases without an assertion, exactly as the chain below
+does.  If a future wave bridges those verdicts into this resolver, the basis it
+carries is the earned reason it arrived with — never a "declared" one.
 """
 from __future__ import annotations
 
@@ -66,10 +103,12 @@ EVIDENCE_BASES: tuple[str, ...] = (
     "timestamp_firewall",
     "supersession_chain",
     "declared_locator",
-    "declared_duplicate_filing",
     "no_derivable_receipt",
 )
-DECLARED_BASES: frozenset[str] = frozenset({"declared_locator", "declared_duplicate_filing"})
+# ``declared_locator`` is the only assertion this resolver honours, because it is
+# the only one whose removal costs evidence rather than suppressing an event.
+# See "why there is no declared duplicate" in the module docstring.
+DECLARED_BASES: frozenset[str] = frozenset({"declared_locator"})
 
 
 class ResolutionError(ContractError):
@@ -119,7 +158,6 @@ class EventObservation:
     transcript: TranscriptSource | None = None
     committed_receipt: Mapping[str, Any] | None = None
     declared_locator: DeclaredLocator | None = None
-    declared_duplicate_of: str | None = None
     absence_reason: str | None = None
     extra_timestamps: Mapping[str, object] = field(default_factory=dict)
 
@@ -128,8 +166,11 @@ class EventObservation:
 
         Running the corpus twice — once with these inputs, once without — is
         what separates "the resolver derived it" from "the benchmark told it".
+
+        ``declared_locator`` is the whole list: a duplicate cannot be asserted at
+        all, so there is nothing else to strip.
         """
-        return replace(self, declared_locator=None, declared_duplicate_of=None)
+        return replace(self, declared_locator=None)
 
     def availability_stamps(self) -> dict[str, object]:
         stamps: dict[str, object] = {}
@@ -264,13 +305,16 @@ def resolve(observation: EventObservation, *, clock: object) -> Resolution:
     event = _build_event(observation, clock=clock)
     latest = observation.revisions.latest()
 
+    # The chain is the only thing that can collapse an event.  A producer cannot
+    # assert a duplicate here — see the module docstring for why that asymmetry
+    # with ``declared_locator`` is deliberate.
     duplicates = observation.revisions.duplicates()
-    if duplicates or observation.declared_duplicate_of is not None:
-        collapsed = duplicates[-1] if duplicates else latest
+    if duplicates:
+        collapsed = duplicates[-1]
         return Resolution(
             observation_ref=observation.observation_ref,
             outcome="duplicate_collapsed",
-            evidence_basis="supersession_chain" if duplicates else "declared_duplicate_filing",
+            evidence_basis="supersession_chain",
             event_id=event_id,
             event=event,
             document_id=collapsed.document_id,
