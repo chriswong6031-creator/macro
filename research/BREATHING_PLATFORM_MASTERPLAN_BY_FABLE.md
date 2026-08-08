@@ -334,6 +334,60 @@ masterplan does not move any anchor by itself.
 - **D6 — era coordination:** confirm §5 (no anchor moves; intraday ledger only
   via prereg).
 
+## §7½ Massive Stocks Advanced addendum (2026-08-08, post-ratification)
+
+Operator upgraded the market-data plan (Massive, née polygon.io — "Stocks
+Advanced": real-time, unlimited calls, trades/quotes, second+minute aggs, 20y+
+flat files, websockets, snapshot, reference, corporate actions, financials;
+business licensing included) and enabled real-time. Entitlement **verified
+live 2026-08-08 ~06:50Z**: `v3/trades` and `v3/quotes` flipped 403→200 (both
+were documented entitlement-blocked in `DNR:KILL-LIQUIDITY-SHOCK-REVERSAL-CLASSIFIER`'s
+still-open clause), second aggs / snapshot / financials / splits all 200, and
+the trades tape is current through the prior session's 20:00 ET after-hours
+close. S3 flat-file probes: `us_stocks_sip/day_aggs_v1` EXISTS back to
+**2006-03-15** and `minute_aggs_v1` to at least **2010-06-15** —
+`collectors/massive_stock_day.py:143` `EARLIEST_ENTITLED = 2021-07-06` is now
+provably stale. Full touchpoint census (19 stale "15-min delayed" label sites,
+8 old-plan rate guards, key-injection map): run 2026-08-08, summarized here;
+sites enumerated in the census tables carried in the PR #4975 discussion.
+
+**M-waves (slot alongside W-L1+; each is a normal ship-loop PR):**
+
+- **M1 — real-time honesty flip (first; user-facing).** Add
+  `scripts/verify_massive_realtime.py` (snapshot lastTrade/min-bar age vs wall
+  clock, must run during premarket/RTH); on measured proof, flip
+  `config.yml:618-627` `delayed_min: 15→0` + `feed_label`, the derived
+  evaluator ceiling (`quote_max_age_min` 25→slack-only), and every label site
+  the census lists (most read config; the hardcoded template token generators
+  in `dashboard.html.j2` / `sector_central.html.j2` / worker header / docs flip
+  in the same PR — honesty is atomic). Gate: probe output in the PR body,
+  captured during market hours.
+- **M2 — old-plan guard re-tunes (measured, not blind).** `polygon.workers`
+  5→measured, `build_polygon_universe` 0.22s pacing, `polygon.intraday.sleep`,
+  `max_underlyings: 375`, `massive_stock_day` `max_days: 40`. Unlimited calls
+  ≠ unlimited politeness: raise stepwise with observed error rates in the PR
+  body.
+- **M3 — history extension.** `EARLIEST_ENTITLED` → 2006-03-15 (evidence
+  above); staged day-aggs backfill (~5k sessions × ~140–200KB gz ≈ ~1GB —
+  trivial); minute-aggs optional (~13MB/day ≈ ~50GB to R2, fetch-on-demand
+  acceptable). NOTE the era law: any breadth/threshold recompute over the
+  widened window is a measurement-era change — pre-register before touching
+  published thresholds ([[measurement-lens-reassessment-protocol]] class).
+- **M4 — tape adoption (research-grade).** `engine/flow_signing.py` tick-rule
+  → NBBO quote-rule via `quotes_v1`; retire the `collectors/databento_tbbo.py`
+  calibration workaround; reopen the LSR tape-grade lead (signed order
+  imbalance, price-impact-per-signed-dollar, true spread) ONLY via a fresh
+  prereg per the DNR row's own reopener clause.
+- **M5 — new collectors (display-tier first).** Corporate actions
+  (splits/divs → capital-structure event spine + adjustment-basis truth — also
+  the durable fix direction for the W-L0 price-basis class), fuller reference
+  data (sector/share-class enrichment), financials & ratios as an
+  EDGAR-supplement. Vendor technical indicators: skip (house computes its own).
+- **Websocket ruling:** with real-time REST verified, the Durable-Object
+  websocket build is OPTIONAL, not the critical path — M1's flip needs no new
+  infrastructure. The undeployed REST worker proxy remains a cache/edge
+  decision, deferred until W-L2 measures browser-side needs.
+
 ## §7 Falsifiers / kill criteria
 
 - Provisional close-pass disagreeing with the nightly on >5% of board
