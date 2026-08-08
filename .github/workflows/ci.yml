@@ -676,6 +676,7 @@ on:
       - "tests/test_government_revenue_contracts.py"
       - "tests/test_government_revenue_entity_resolution.py"
       - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_bridge.py"
       - "tests/test_government_revenue_idv_dossiers.py"
       - "tests/test_government_revenue_neuralweb.py"
       - "tests/test_government_revenue_opportunities.py"
