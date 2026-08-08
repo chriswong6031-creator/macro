@@ -76,3 +76,82 @@ Collision notes: #4729 (BOTTOM WATCH shelf) + #4735 (icon sweep) own `templates/
 ## §5 SESSION-CHAIN PROTOCOL
 
 One wave per session; this doc is the durable state. Each session: read §0 gates → check ACTIVE_BUILD_MAP + open PRs for the act-board surface → build → update the wave table with PR numbers and measured outcomes → handoff. Do not grind an orchestrator past ~250k context; checkpoint here instead.
+
+## §6 ANTICIPATION PROGRAM (operator command 2026-08-07; ruling recorded 2026-08-08)
+
+### §6.0 OPERATOR RULING (supersedes default promotion sequencing for this program)
+
+New detection/selection SHIPS LIVE DIRECTLY; the OLD selection continues accruing a **legacy
+shadow ledger** so the two can be compared later. Operator rationale, recorded: the product is
+not yet live to other users; the operator reviews live picks daily and feeds corrections —
+iteration speed IS the review mechanism. The gauntlet still governs any later *claim* of
+superiority (era-stamped track record, side-by-side, printed nulls) — it no longer sequences
+the shipping. Falsifier language stays off user surfaces; "validated" wording stays banned.
+
+### §6.1 Evidence base (all committed in `research/prophet_us_audit/`)
+
+- `ENTRY_LATENESS_FORENSIC_2026-08-07.md` — median pre-signal run-up +6.34% (p75 +11.72%);
+  entry placed +2.72% above signal close; publication lag median 5d (max 57d); provisional
+  repaint erased fired events on 4/5 dissected names; frozen-vintage service receipts; ASTS
+  seen pre-run at rank 7, classified `extended`, never a plan.
+- `CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md` — same engine, same veto, divergent SELECTION:
+  US hard-gates `act_level >= 2` (patience statuses map to 0) and keeps the chase-first entry
+  map; CN featured patience-first on measured evidence (2026-08-04) and the US re-measurement
+  was never run. CN-only: weekly ripening shelf, theme_timing 15pts, reversal_member 10pts.
+- `GATE_COUNTERFACTUAL_2026-08-07.md` — 713 names × 180 sessions, equality gate PASS.
+  Veto variants admit the exhibit cohort ~2 weeks earlier (GDX 11-25 @ 6.6% run-up vs live
+  12-17 @ 8.4%; NEM 12-04/11-28 vs 12-17; MRNA 04-16 @ 12.1% vs 06-16 @ 21.4%; RKLB first
+  admission @ 25.1% run-up vs 52.3%). Pooled cost: precision 14.3→13.3–13.4%, loser
+  32.6→33.7–33.9%; per-name-first precision IMPROVES 7.4→8.8–10.0%. Gate pressure: 60.4% of
+  tier-reachable name-days vetoed.
+
+### §6.2 WAVE A — the selection inversion (ships now; two parallel builder PRs, disjoint files)
+
+**A1 `patience-admission` (`engine/prophet_bridge.py`, `scripts/build_prophet.py`):**
+admission becomes status-class — `entry_signal ∈ {bounce_wait, wait_pullback, hold, buy_now,
+partial}`, `band != low`, dir up; the `act_level >= 2` hard gate is REMOVED. Every plan stamps
+`admission_class: patience|confirmation` and `selection_era: anticipation-v1-2026-08-08`.
+Publication-lag guard: an entry basis older than 3 sessions vs the run's asof re-derives from
+the current close or skips with a printed reason (kills the 57d-lag class). Legacy shadow
+ledger: the OLD gate's would-be selections written nightly (nightly-lane-gated, idempotent,
+schema in §6.5). Cap 12→16 with sector cap 4. `index.json intake.basis` text updated.
+
+**A2 `patience-rank` (`engine/us_board_rank.py`):** entry-value map re-ordered patience-first
+(CN ordering as v1 constants — bounce_wait 1.0 … buy_soon 0.35; the §6.6 US re-measurement
+revises them); FEATURED_STATUSES widened to the CN set; `ext_z_unknown` blackout fixed (the
+featured lane must never silently read 0/N — printed null + fallback); stale provenance
+string at `us_board_rank.py:896` corrected; `selection_era` stamped in the ranking definition.
+
+### §6.3 WAVE B (next sessions, in order)
+
+B1 ripening shelf US port (HK template `hk_board_rank.py:1063-1233`) — the pre-cross bench.
+B2 wire `us_basket_turn` (W1-D, currently dark) + `subsector_confluence.funnel()` double_buy
+as intake chips and a US theme-timing rank channel (display first, then paid points).
+B3 deep-base veto conditioning (waive legs only in the replay's `deep_base_state`) — the
+tier-path earliness for the RKLB class; changes the shared gate, so it ships with its own
+regression fence and the CN/HK blast radius checked. B4 young-name shelf (30–158 bars,
+LIMITED-labeled; 7-stock cohort today incl. SPCX at 38 bars). B5 US PIT latch (fired
+eligibility can never be un-fired) — coordinate with unmerged sibling `a8d6fe034ad` on
+`claude/missing-300363-china-prophet-8702fa` before building. B6 signal-date family (§4.6).
+
+### §6.4 Standing constraints honored
+
+`DNR:KILL-PROPHET-POP-MERGE` (cohort linkage presentation-tier only); `DNR:KILL-FRESH-TICKS-WINDOW`
+(no general fresh_ticks widening — the FRESH4 replay variant was measurement-only and is weak
+anyway); nightly is the sole ledger advancer; GitHub annotations start-of-line; bilingual
+surfaces; era-stamp law on any published-number shift (#4942 pattern).
+
+### §6.5 Comparison contract (so "check later" is real)
+
+Legacy shadow ledger: one row per night per legacy-admitted candidate
+`{date, ticker, entry_signal, act_level, score, rank, would_have_planned}` under
+`data/prophet/legacy_shadow/` (day parts, per W7 storage law). Grading reuses
+`engine.grading.forward_metrics` — never a forked ruler. After 10 accrued sessions the
+miss-audit artifact publishes new-live vs legacy side-by-side (cohort → horizon → class, no
+pooled top-line), era-stamped.
+
+### §6.6 The US re-measurement (evidence loop for the map constants)
+
+Nightly job over the W7 stamped store: entry-status → forward outcome table (the CN §2.3
+methodology on US episodes), published in the scorecard. The v1 CN-ordered constants in A2
+are provisional by construction; this table is what revises them — visibly, in days.
