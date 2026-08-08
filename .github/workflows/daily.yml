@@ -1681,18 +1681,20 @@ jobs:
       - run: pip install -r requirements.txt
       - name: timings band — restores-preamble (W2)
         run: python3 scripts/nightly_timings.py mark --band restores-preamble || echo "::warning::timings band mark failed (non-fatal)"
-      - name: restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)
-        # This is intentionally BEFORE every broad Filing Forensics state build.
-        # The SEC source cache is private/ignored, so a clean nightly checkout has
-        # no accession evidence until this step restores the last read-back-verified
-        # R2 snapshot. A restore, strict-acquisition, projection, or source-sync
-        # failure must skip the later broad build/publish rather than silently
-        # replace entitled disclosure coverage with an empty/shallow state.
+      - name: restore Filing Forensics disclosure projections (hard gate)
+        # Acquire/project/sync moved to .github/workflows/filing-forensics-sec.yml
+        # (02:30 UTC) on 2026-08-08 after the inline step grew 7.4m -> 23.8m across the
+        # 08-05..08-08 engine executions with the growing immutable SEC source store
+        # (measurements in the lane file). This step now restores ONLY the 12 private
+        # disclosure projections the workbench attaches: one bounded R2 pointer GET, one
+        # bounded bundle GET, verified local writes — constant cost as the store grows.
         #
-        # The first call is restore -> acquire and refuses partial target coverage.
-        # The second is projection -> sync, with computed_at sampled only after
-        # source retrieval so its explicit clock cannot precede a receipt. The
-        # commands never render the public shell or publish private browser state.
+        # Gate contract UNCHANGED: any restore or validation failure fails this job
+        # before the broad build, so entitled disclosure coverage is never silently
+        # replaced by an empty/shallow state. A red SEC lane leaves the pointer at the
+        # last COMPLETE bundle, so the render is stale-but-complete (warn beyond 3 days,
+        # refuse beyond 21) instead of losing the night to one SEC outage. Never renders
+        # the public shell or publishes private browser state.
         env:
           R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
           R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
@@ -1700,32 +1702,9 @@ jobs:
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: |
           set -euo pipefail
-          targets=(
-            --target SMCI=0001375365
-            --target NVDA=0001045810
-            --target AAPL=0000320193
-            --target MSFT=0000789019
-            --target GOOGL=0001652044
-            --target AMZN=0001018724
-            --target META=0001326801
-            --target TSLA=0001318605
-            --target AVGO=0001730168
-            --target PLTR=0001321655
-            --target AMD=0000002488
-            --target ORCL=0001341439
-          )
-          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
-          as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
-          recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
-
-          python -m scripts.run_fundamental_forensics_wave2 \
-            "${targets[@]}" --restore --acquire --require-complete-acquisition \
-            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
-
-          computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
-          python -m scripts.run_fundamental_forensics_wave2 \
-            "${targets[@]}" --build-projections --sync \
-            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
+          now="$(python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))')"
+          python -m scripts.fundamental_forensics_disclosure_bundle \
+            --restore --targets-file config/fundamental_forensics/wave2_targets.v1.json --now "$now"
       - name: restore attention store from R2 (wiki chip reads it at render)
         # build_site.build_attention_data reads data/attention/*.parquet — git-ignored
         # since 2026-07-06, R2-hosted, kept current by the collect job's publish-back.
