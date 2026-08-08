@@ -205,25 +205,47 @@ class TestEntryLeg:
         decision someone made, not a drift nobody saw."""
         assert set(ubr.ENTRY_NEUTRAL_STATUSES) == ubr._FEATURED_ENTRY_STATUSES
 
-    def test_the_flat_leg_caps_the_attainable_score(self):
-        """The disclosed consequence of `ENTRY_NEUTRAL_VALUE < 1.0`: no row can score
-        100 any more.  Pinned because it is the kind of fact that otherwise gets
-        rediscovered as a bug report six months later."""
+    def test_the_flat_level_keeps_the_attainable_range_and_deflates_nothing(self):
+        """The LEVEL is a downstream-safety choice, pinned separately from the ruling.
+
+        Neutrality is the five being EQUAL; it holds at any value.  1.0 is chosen so
+        that (a) the attainable range stays 0-100 rather than stepping every score
+        down for no informational reason, and (b) no consumer holding an ABSOLUTE
+        score floor — a featured requirement, a caution-mode conviction floor, a
+        downstream chip cutoff — sees the confirmation class silently deflated under
+        it.  At the 0.75 this briefly carried, `buy_now` lost 6.25 points and
+        `partial` 3.75 against the pre-era map; both are pinned below as zero-or-lift.
+        """
         ceiling = sum(
             ubr.SCORE_WEIGHTS[leg] * (ubr.ENTRY_NEUTRAL_VALUE if leg == "entry" else 1.0)
             for leg in ubr.SCORE_WEIGHTS)
-        assert ceiling == pytest.approx(93.75)
+        assert ceiling == pytest.approx(100.0)
+
+        # No ADMISSIBLE status may score below what the pre-era trend-tape map paid it
+        # — the leg-level constant must not move a row across a threshold it cannot
+        # see.  These are the pre-era values, quoted so the comparison is a fact in
+        # this file rather than an appeal to git history.
+        pre_era = {"buy_now": 1.0, "partial": 0.9, "buy_soon": 0.8, "hold": 0.65,
+                   "wait_pullback": 0.55, "bounce_wait": 0.35}
+        for status in ubr.ENTRY_NEUTRAL_STATUSES:
+            assert ubr._ENTRY_VALUE[status] >= pre_era[status], status
+        # `buy_now` specifically holds station: byte-identical, so a row that was on a
+        # floor before is still exactly on it.
+        assert ubr._ENTRY_VALUE["buy_now"] == pre_era["buy_now"]
+        # The one deliberate deflation is OUTSIDE the admissible set and outside this
+        # ruling — stated here so "nothing deflates" is not read wider than it is.
+        assert ubr._ENTRY_VALUE["buy_soon"] < pre_era["buy_soon"]
 
     def test_the_values_are_the_v1_constants(self):
         """The VALUES, pinned separately from the flatness — the revision rule may
         move the numbers (all five together) without touching the ruling above, and
         the two failures should be readable apart."""
         assert ubr._ENTRY_VALUE == {
-            "bounce_wait": 0.75,
-            "wait_pullback": 0.75,
-            "hold": 0.75,
-            "buy_now": 0.75,
-            "partial": 0.75,
+            "bounce_wait": 1.0,
+            "wait_pullback": 1.0,
+            "hold": 1.0,
+            "buy_now": 1.0,
+            "partial": 1.0,
             "later": 0.55,
             "await": 0.45,
             "await_confluence": 0.45,
@@ -235,7 +257,7 @@ class TestEntryLeg:
             "exit": 0.0,
             "avoid": 0.0,
         }
-        assert ubr.ENTRY_NEUTRAL_VALUE == 0.75
+        assert ubr.ENTRY_NEUTRAL_VALUE == 1.0
 
     def test_the_vocabulary_is_shared_with_china_but_the_map_is_not_a_copy(self):
         """One status set, two different maps — and from 2026-08-08 they are not even
@@ -255,8 +277,8 @@ class TestEntryLeg:
         assert sum(1 for v in ubr._ENTRY_VALUE.values() if v == top) == 5
 
     @pytest.mark.parametrize("status,expected", [
-        ("bounce_wait", 0.75), ("wait_pullback", 0.75), ("hold", 0.75),
-        ("buy_now", 0.75), ("partial", 0.75), ("await_confluence", 0.45),
+        ("bounce_wait", 1.0), ("wait_pullback", 1.0), ("hold", 1.0),
+        ("buy_now", 1.0), ("partial", 1.0), ("await_confluence", 0.45),
         ("watch", 0.4), ("buy_soon", 0.35),
         ("extended", 0.0), ("topping", 0.0), ("blocked", 0.0), ("avoid", 0.0),
     ])
@@ -269,8 +291,8 @@ class TestEntryLeg:
         assert ubr.entry_value(None) == 0.0
 
     def test_status_is_case_insensitive(self):
-        assert ubr.entry_value({"status": "BOUNCE_WAIT"}) == pytest.approx(0.75)
-        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(0.75)
+        assert ubr.entry_value({"status": "BOUNCE_WAIT"}) == pytest.approx(1.0)
+        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(1.0)
 
 
 class TestEdgeLeg:
@@ -1006,19 +1028,19 @@ class TestScoreRows:
 
     @pytest.mark.parametrize("status", list(ubr.ENTRY_NEUTRAL_STATUSES))
     def test_a_best_case_row_scores_the_flat_ceiling(self, status):
-        """A best-case row tops out at 93.75, not 100 — the flat entry leg pays 0.75
-        rather than 1.0 (ANTICIPATION v1, 2026-08-08).  100 also needs a real
-        cross-section: `edge` is a percentile and a pool of ONE has no percentile at
-        all, hence the second row.
+        """A best-case row still scores 100: the flat entry leg pays 1.0, so the
+        published range is unchanged by ANTICIPATION v1 (2026-08-08).  100 needs a
+        real cross-section — `edge` is a percentile and a pool of ONE has no
+        percentile at all — hence the second row.
 
         Parametrized over all five admissible statuses because that IS the ruling:
         every one of them must produce the SAME score from the same inputs.  A
-        re-introduced ordering fails here on four of the five.
+        re-introduced ordering fails here on four of the five.  Before this era only
+        `buy_now` could reach 100; now any admissible status can, and none can beat
+        another.
 
-        Asserted on `points` as well as `score`: `score` is published to one decimal,
-        so the exact 93.75 ceiling renders as 93.8 — half a tenth ABOVE the true
-        ceiling.  Pinning the unrounded points is what makes this test about the
-        arithmetic rather than about the rounding.
+        Asserted on `points` as well as `score` so the test is about the arithmetic
+        rather than about the one-decimal rounding `score` carries.
         """
         scored = ubr.score_rows(
             [_row("A", status=status, tier="T2", ticks=1, alpha=1.0,
@@ -1027,17 +1049,17 @@ class TestScoreRows:
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
         assert scored[0]["ticker"] == "A"
-        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(93.75)
-        assert scored[0]["prophet"]["points"]["entry"] == pytest.approx(18.75)
-        assert scored[0]["prophet"]["score"] == pytest.approx(93.8)
+        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(100.0)
+        assert scored[0]["prophet"]["points"]["entry"] == pytest.approx(25.0)
+        assert scored[0]["prophet"]["score"] == pytest.approx(100.0)
 
     def test_a_lone_best_case_row_tops_out_at_the_scoreable_range(self):
         scored = ubr.score_rows(
             [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
-        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(68.75)
-        assert scored[0]["prophet"]["score"] == pytest.approx(68.8)
+        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(75.0)
+        assert scored[0]["prophet"]["score"] == pytest.approx(75.0)
 
     def test_points_reconstruct_the_score(self):
         scored = ubr.score_rows([_row("A", ext_z=1.0, coiled={"coiled": True})],
@@ -1110,7 +1132,10 @@ class TestRankingBlock:
         assert "flat value" in entry["basis"]
         assert "ADVERSE" in entry["basis"]
         assert "H=21/H=63" in entry["basis"]
-        assert "93.75" in entry["basis"]
+        # ... and the LEVEL's consequence: the range is unchanged and the
+        # confirmation class is not deflated.  A reader comparing two eras' scores
+        # needs that said, not inferred.
+        assert "0-100" in entry["basis"]
         for status in ubr.ENTRY_NEUTRAL_STATUSES:
             assert status in entry["basis"], status
 

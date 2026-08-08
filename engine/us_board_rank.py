@@ -29,11 +29,12 @@ Three US-specific departures from the CN module are deliberate and evidenced:
    weekend, every market holiday — the last row was crypto-only, every equity's
    ``ext_z`` came back NaN, and no board row carried the leg's input.  Splitting that
    panel by calendar restores it (68/71 of the same buy lane score non-zero, and the
-   attainable range returns to 0–100 from the 0–90 the dead leg imposed).  *That 0–100
-   was the trend-tape era's ceiling; from ANTICIPATION v1 the flat entry leg caps the
-   attainable score at 93.75 — see :data:`ENTRY_NEUTRAL_VALUE`.  Flat is not dead: the
-   leg still scores non-zero on every admissible row and still separates admissible
-   from non-admissible, it simply declines to order within.*
+   attainable range returns to 0–100 from the 0–90 the dead leg imposed).  *The 0–100
+   range survives ANTICIPATION v1 unchanged: the flat entry leg pays
+   :data:`ENTRY_NEUTRAL_VALUE` = 1.0, which is deliberate — see the WHY block on that
+   constant.  Flat is not dead: the leg still scores non-zero on every admissible row
+   and still separates admissible from non-admissible, it simply declines to order
+   within.*
 
    Do not re-freeze a number here.  Every ``ranking`` block carries
    :func:`component_coverage`, computed from the rows actually scored, so the LIVE
@@ -182,13 +183,31 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 # ``tests/test_us_board_rank.py::TestEntryLeg`` pins the flatness, so a re-introduced
 # ordering has to go through this rule rather than through an edit.
 #
-# WHY 0.75 AND NOT 1.0.  The top of the leg is left unclaimed deliberately: no US
-# entry status has yet earned "best possible entry state", and a leg whose maximum is
-# occupied by a status that has not been measured there would be the same overclaim in
-# quieter clothing.  Consequence, disclosed rather than hidden: the attainable board
-# score now tops out at 93.75 rather than 100 (30 signal + 18.75 entry + 25 edge + 10
-# runway + 10 quality).  This is flat across every admissible row, so it shifts no
-# ORDER — see ``ranking_block``'s entry ``basis``, which prints it.
+# WHY THE FLAT VALUE IS 1.0 (operator ruling 2026-08-08).  Flat is flat at any value —
+# neutrality is a property of the five being EQUAL, not of what they equal — so the
+# level is chosen for what it does to everything downstream of the score, not for what
+# it claims.  It was briefly 0.75 on the reasoning that the top of the leg should be
+# left unclaimed; that reasoning is about the leg in isolation and loses to two effects
+# outside it:
+#
+#   (a) CROSS-ERA SCORE COMPARABILITY.  0.75 subtracts a flat 6.25 points from every
+#       ``buy_now`` row and 3.75 from every ``partial`` row versus the pre-era map.
+#       Era-stamped or not, a track record whose scores all step down overnight reads
+#       as a change in the names when nothing about them moved — the drop carries no
+#       information, only noise.  At 1.0 the attainable range stays 0–100.
+#   (b) HIDDEN FIXED THRESHOLDS.  Any consumer holding an ABSOLUTE score floor — a
+#       featured requirement, a caution-mode conviction floor, a downstream chip
+#       cutoff — would have seen the confirmation class silently deflated under it.
+#       A leg-level constant must not move rows across thresholds it cannot see.
+#
+# Measured effect at 1.0, against the pre-era trend-tape map (25-point leg):
+#   buy_now 1.0 -> 1.0 = ZERO delta (byte-identical score) · partial 0.9 -> 1.0 = +2.5
+#   · hold 0.65 -> 1.0 = +8.75 · wait_pullback 0.55 -> 1.0 = +11.25 · bounce_wait
+#   0.35 -> 1.0 = +16.25.
+# So no admissible row's score FALLS: the confirmation class holds station and only the
+# previously-underranked patience rows lift to meet it.  (The one real deflation is
+# ``buy_soon`` 0.8 -> 0.35 = −11.25, which is OUTSIDE this ruling — it is not in the
+# admissible set, and both the CN and US tables put it at the bottom.)
 #
 # The non-admissible values are unchanged from the trend-tape era and are NOT part of
 # this ruling: ``later`` 0.55, ``await``/``await_confluence`` 0.45, ``watch`` 0.4,
@@ -197,8 +216,9 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
 
 # The one value every admissible status carries.  Named so the flatness is a fact the
-# map is BUILT from rather than a coincidence a reader has to notice.
-ENTRY_NEUTRAL_VALUE = 0.75
+# map is BUILT from rather than a coincidence a reader has to notice.  The LEVEL is a
+# downstream-safety choice (see the WHY block above); the EQUALITY is the ruling.
+ENTRY_NEUTRAL_VALUE = 1.0
 
 # The five statuses the entry leg refuses to order.  Identical to
 # :data:`_FEATURED_ENTRY_STATUSES` today and pinned as such by a test — but kept as its
@@ -1104,9 +1124,11 @@ def ranking_block(
                       "with the China board, values are this board's own. "
                       f"{SELECTION_ERA}: the §6.6 US re-measurement read ADVERSE to "
                       "the CN ordering at H=5 and H=10 and has no marks at all at "
-                      "H=21/H=63, so no ordering is claimed in either direction; a "
-                      "flat leg caps the attainable score at 93.75 and shifts no "
-                      "order"},
+                      "H=21/H=63, so no ordering is claimed in either direction. The "
+                      "flat level is 1.0, which keeps the attainable range at 0-100 "
+                      "and leaves confirmation-class scores unchanged against the "
+                      "pre-era map; only the previously-underranked patience rows "
+                      "lift"},
             {"component": "edge", "points": SCORE_WEIGHTS["edge"],
              "reads": edge_reads,
              "basis": "clip01((pctile − 0.25) / 0.75) — bottom quartile earns 0"},
