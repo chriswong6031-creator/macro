@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-08T06:22:43.951921+00:00",
+  "generated_utc": "2026-08-08T09:55:58.969089+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1095,10 +1095,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.85,
+      "alt_score": 6,
+      "alt_weighted": 2.2,
       "alt_channels": [
         "affiliation",
+        "analyst_upgrade_cluster",
         "app_demand",
         "github_momentum",
         "hf_model_momentum",
@@ -1276,6 +1277,31 @@
         "owner": "VANGUARD GROUP INC",
         "title": "Institution",
         "shares": 106608094
+      }
+    },
+    {
+      "ticker": "GOOG",
+      "actors": [
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.85,
+      "alt_channels": [
+        "affiliation",
+        "analyst_upgrade_cluster"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 421013782
       }
     },
     {
@@ -1521,30 +1547,6 @@
         "affiliation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "GOOG",
-      "actors": [
-        {
-          "actor": "Dan Crenshaw",
-          "kind": "politician",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 421013782
-      }
     },
     {
       "ticker": "OXY",

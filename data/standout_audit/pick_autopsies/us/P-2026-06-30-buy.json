@@ -1,0 +1,112 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "P-2026-06-30-buy",
+  "ticker": "P",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "P",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "P",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Information Technology",
+    "excess_spy": -0.001314099434188476,
+    "excess_sector": 0.05571691938501533,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The supplied labels separate a company-specific outcome cause from a premature-stop-noise process fault. Slight benchmark underperformance does not change the remedy class: the stated defect concerns timing and path handling, while the claimed alpha itself remains uncorroborated.",
+    "root_cause": "The supplied labels separate a company-specific outcome cause from a premature-stop-noise process fault. Slight benchmark underperformance does not change the remedy class: the stated defect concerns timing and path handling, while the claimed alpha itself remains uncorroborated.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The company-alpha book may have found a valid thesis, but stop calibration and path-risk organs failed to accommodate the realized noise.",
+    "engines_credit": "Company-alpha organs receive only provisional credit; entry-timing and path-risk books are the stated laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific thesis reportedly drove the expected opportunity.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Absent company-specific alpha, a sector or market explanation would be required.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Post-entry noise reportedly triggered premature termination.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A volatility-aware path treatment might have prevented noise from being treated as thesis failure.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The entry and stop configuration may have exposed the position to avoidable early-path sensitivity.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A later confirmation entry or differently calibrated stop might have altered the terminal state.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "board_tenure_days supplied"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "The stop correctly identified a failed company thesis.",
+      "Technology-sector weakness, rather than idiosyncratic noise, caused the stop.",
+      "Any later recovery was driven by information unavailable at entry."
+    ],
+    "missing_evidence": [
+      "Entry-to-stop price and volume path",
+      "Original stop rationale",
+      "Expected volatility and liquidity",
+      "Contemporaneous thesis evidence",
+      "Post-stop news and fundamental revisions"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "early_path_noise_ratio",
+        "feature": "Early adverse movement relative to contemporaneous expected volatility",
+        "measurement": "Compare pre-thesis-horizon drawdown with an entry-time volatility estimate and dated thesis changes.",
+        "expected_direction": "Stops inside ordinary volatility without thesis deterioration would support a timing-specific remedy.",
+        "falsifier": "Stopped paths consistently exceed expected noise or coincide with thesis deterioration.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

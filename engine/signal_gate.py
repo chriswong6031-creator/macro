@@ -253,14 +253,18 @@ def verdict(result: dict | None) -> dict:
     return v
 
 
-def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
+def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=None) -> dict:
     """analyze() the close series, then return the verdict PLUS the raw analyze() result
     (the §7 site/signals/<T>.json payload) under "result". Never raises on thin/bad data.
 
     ``reclaim_veto`` passes through to :func:`engine.signal_quality._buy_filter`. DEFAULT
     True keeps every existing caller (US, CN, and the ~12 modules importing this) on the
     validated policy byte-for-byte; HK passes False per the 2026-08-03 operator ruling —
-    see that function's docstring for the mechanism."""
+    see that function's docstring for the mechanism.
+
+    ``event_latch`` (engine.confluence_latch.EventLatch) makes the T2 event history immutable
+    so the incomplete trailing bucket cannot un-fire an event on a bar that already printed.
+    DEFAULT None = unchanged for every caller that does not opt in."""
     try:
         res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto)
     except Exception:
@@ -289,8 +293,13 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # gate() and get the right calendar with no caller edit; unmapped suffixes resolve to US
     # openly (engine/session_anchor.market_for_ticker).
     market = session_anchor.market_for_ticker(ticker)
+    # Pass the latch kwargs ONLY when a latch was supplied: every other caller — and the
+    # several suites that monkeypatch cascade with a narrow stub — then see the exact call
+    # signature they saw before, so opting in stays a strictly additive change.
+    _latch_kw = ({"event_latch": event_latch, "latch_key": ticker}
+                 if event_latch is not None else {})
     casc = confluence_tiers.cascade(daily_close, take_active=take_active,
-                                    take_date=take_date, market=market)
+                                    take_date=take_date, market=market, **_latch_kw)
     topped = not casc.get("not_topped", True)
     tier_c = casc.get("tier")
     ticks = casc.get("ticks")

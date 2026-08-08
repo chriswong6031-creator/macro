@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-06",
+  "as_of": "2026-08-08",
   "authority": {
     "allowed_actions": [
       "display",
@@ -283,24 +283,24 @@
         }
       },
       "intel_hub": {
-        "falsifier_coverage": 0.004859,
+        "falsifier_coverage": 0.00661,
         "fill_convention_split": {
           "asof_legacy_count": 0,
-          "next_bar_count": 1583,
+          "next_bar_count": 1584,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
-        "hit_gradeable_share": 0.954325,
+        "hit_gradeable_share": 0.954674,
         "maturity_mix": {
           "graded_5d_count": 1364,
-          "graded_5d_share": 0.662779,
-          "matured_21d_count": 219,
+          "graded_5d_share": 0.644004,
+          "matured_21d_count": 220,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 2058,
-        "n_hit_gradeable": 1964,
-        "n_with_falsifier": 10,
+        "n_claims": 2118,
+        "n_hit_gradeable": 2022,
+        "n_with_falsifier": 14,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
           "n_channels": 0,
@@ -516,11 +516,11 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.011872,
+      "falsifier_coverage": 0.011952,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 41104,
-      "n_grades": 46917,
-      "n_with_falsifier": 488
+      "n_claims": 41164,
+      "n_grades": 46918,
+      "n_with_falsifier": 492
     }
   },
   "conflicts": [],
@@ -564,7 +564,7 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:CENX"
+      "src": "entity:US:FSS"
     },
     {
       "dst": "thesis:industrials",
@@ -573,7 +573,7 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:FSS"
+      "src": "entity:US:KWR"
     },
     {
       "dst": "thesis:industrials",
@@ -1026,7 +1026,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-08-08T02:02:55.122409+00:00",
+  "generated_utc": "2026-08-08T08:02:13.465633+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -1331,7 +1331,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -1344,7 +1344,7 @@
     },
     "entity:US:AYI": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AYI",
@@ -1355,22 +1355,9 @@
       ],
       "ticker": "AYI"
     },
-    "entity:US:CENX": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
-      "funnel_state": "not_eligible",
-      "market": "US",
-      "registry_id": "entity:US:CENX",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:industrials"
-      ],
-      "ticker": "CENX"
-    },
     "entity:US:FSS": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:FSS",
@@ -1381,9 +1368,22 @@
       ],
       "ticker": "FSS"
     },
+    "entity:US:KWR": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-08-08",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:KWR",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "KWR"
+    },
     "entity:US:LITE": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:LITE",
@@ -1396,7 +1396,7 @@
     },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -1409,7 +1409,7 @@
     },
     "entity:US:STLD": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:STLD",
@@ -1422,7 +1422,7 @@
     },
     "entity:US:TOL": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:TOL",
@@ -1435,7 +1435,7 @@
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -1448,7 +1448,7 @@
     },
     "entity:US:VSEC": {
       "authority": "display_only",
-      "funnel_as_of": "2026-08-07",
+      "funnel_as_of": "2026-08-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VSEC",
@@ -3346,8 +3346,8 @@
       "label": "Industrials",
       "members": [
         "AYI",
-        "CENX",
         "FSS",
+        "KWR",
         "LITE",
         "STLD",
         "TOL",
@@ -3377,7 +3377,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 65,
+      "n": 66,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {
