@@ -150,6 +150,29 @@ def _redirect_breadth_divergence_stamp(tmp_path_factory):
     mp.undo()
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _redirect_provider_health_ledger(tmp_path_factory):
+    """engine.llm_auth.make_call records one provider_health row per rung
+    ATTEMPT (W2, 2026-08-08), which means every test anywhere in the suite that
+    drives a mocked waterfall appends the repo's real
+    data/ai_costs/provider_health.jsonl as a call-time side effect. Six suites
+    do (test_marketing_copy_v2, test_llm_auth, the copy critic/auditor lanes,
+    the publish-time wire lane), and the repo's own data guard fails the run for
+    it — correctly: a test must never write a production ledger.
+
+    Redirected here rather than by teaching the writer to recognise pytest: the
+    module under test should not carry test-detection, and an env redirect is
+    structurally stronger anyway (it holds for a subprocess a test spawns, which
+    an in-process monkeypatch would not). tests/test_provider_health.py sets its
+    own PROVIDER_HEALTH_PATH per test and is unaffected.
+    """
+    target = tmp_path_factory.mktemp("provider_health") / "provider_health.jsonl"
+    mp = pytest.MonkeyPatch()
+    mp.setenv("PROVIDER_HEALTH_PATH", str(target))
+    yield
+    mp.undo()
+
+
 @pytest.fixture(autouse=True)
 def _neutralize_implicit_account_overrides(monkeypatch):
     """engine.marketing.accounts.load_overrides() reads the repo's REAL

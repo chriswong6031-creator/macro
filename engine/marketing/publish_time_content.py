@@ -31,9 +31,22 @@ local daily bars (the hot-tape single-name tape card) — and a card that will n
 HOST means no item at all, per the chartless-DEFER law: better no post than a
 naked ticker post.
 
-Public API (a single orchestrator the publisher calls):
+OPTIONAL WIRE PHRASE PASS (default OFF, 2026-08-08). On top of the deterministic
+render sits one optional LLM pass that may re-word the SAME facts more tightly in
+the wire register (`phrase_or_template`, modelled on the hot-tape wire desk). It
+is armed by two keys (`publish.publish_time_movers.llm.enabled` AND
+`MARKETING_LLM_ENABLED`), bounded by a caller-owned 20-second deadline on a
+daemon thread, and subset-only: it may not add a number, a cashtag, a link or a
+session claim the deterministic copy did not already carry. Disabled, erroring,
+timing out, or breaking one wire law all return the template string unchanged, so
+a live mover is never blocked or delayed by a model.
+
+Public API (a single orchestrator the publisher calls, plus the optional pass):
     generate_slot_items(root, *, cfg, now, state, approved_due, posted_counts,
                         cap, live, account_filter=None) -> dict
+    phrase_or_template(template_text, *, facts, kind, now, cfg) -> dict
+    wire_violations(phrase, template_text, *, facts, now, max_chars) -> list[str]
+    phrase_stats() / reset_phrase_stats()
 
 Fail-soft law: the whole body is wrapped in try/except → a broken generation
 NEVER raises into the legacy publisher flow; it logs a warning and returns a
@@ -49,7 +62,10 @@ describes what already moved on the tape.
 from __future__ import annotations
 
 import logging
+import os
 import re
+import threading
+import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -1054,6 +1070,593 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
     return text, headline, violations, (not violations)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# OPTIONAL LLM PHRASE PASS — WIRE REGISTER (the template is the floor)
+#
+# WHAT THIS IS. Everything above renders DETERMINISTIC v3 template copy, and that
+# copy is what ships. This section adds ONE optional pass on top: hand the
+# already-rendered template to the shared provider waterfall and ask a model to
+# phrase the SAME facts more tightly in the wire register. It is the hot-tape
+# wire desk's shape one lane over (`engine/marketing/hot_tape_llm`
+# .phrase_or_fallback): the same two-key arming, the same
+# `llm_auth.build_providers` waterfall, the same "a rejected phrase is not an
+# outcome — the deterministic template posts" law, and the same never-raise
+# contract. The template text is passed IN, so this pass never re-renders and
+# never reaches back into the copywriter.
+#
+# A LIVE MOVER IS NEVER BLOCKED OR DELAYED BY A MODEL. Four separate belts:
+#   * DEFAULT OFF. `enabled` is False in-code AND the env flag has to agree, so
+#     an unconfigured checkout constructs no provider and reads no credential.
+#     Every existing config, fixture and test therefore keeps byte-identical copy.
+#   * HARD WALL CLOCK. The whole provider path runs on a DAEMON thread behind
+#     `_run_with_deadline`; at `budget_s` (20s) the caller stops waiting and the
+#     template flows on. Per-provider timeouts are belt, not law: a waterfall
+#     that walks four rungs can out-sit any single timeout, and only a deadline
+#     the CALLER owns actually bounds the sweep. Daemon, so a hung rung cannot
+#     hold the publisher's process open at exit either.
+#   * SUBSET-ONLY PHRASING. The model may re-word; it may not add. Numbers,
+#     cashtags, links and session claims in the phrase must already be in the
+#     template or the facts, so a phrase that clears these checks cannot fail a
+#     downstream gate (cashtag breadth, session conflict, the post-time tape
+#     gate) that the template itself passed.
+#   * NEVER RAISES. Every failure — no credential, provider exception, empty
+#     reply, one broken wire law — returns the caller's template UNCHANGED.
+#
+# EPISTEMICS (CLAUDE.md §Epistemics; same law as the hot-tape desk). The engine
+# computes, the model phrases, the LLM never originates a number. This is
+# display-tier ops: no ranking, no gating, no forward-ledger write.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Two-key arming, the same pair the hot-tape wire desk and the nightly
+#: copywriter lane use: the config block says the desk is on AND the environment
+#: says this process may spend a credential.
+_LLM_ENV_FLAG = "MARKETING_LLM_ENABLED"
+_LLM_TRUTHY = ("1", "true", "yes")
+
+#: In-code defaults for `publish.publish_time_movers.llm`. Conservative in the
+#: same way `_DEFAULTS` is: absent block ⇒ disabled ⇒ the deterministic template,
+#: unchanged.
+_LLM_DEFAULTS: dict[str, Any] = {
+    "enabled": False,
+    # THE budget. Everything else is a per-rung guess; this is the number the
+    # publisher's slot run actually feels.
+    "budget_s": 20.0,
+    # Passed EXPLICITLY to build_providers. Codex is a SUBPROCESS, not an HTTP
+    # client, and llm_auth falls back to `client_timeout_s` for it when this key
+    # is absent — so an HTTP timeout tuned for a socket would silently become the
+    # codex process budget. Naming both keeps the two budgets independent.
+    "codex_timeout_s": 10.0,
+    "client_timeout_s": 4.0,
+    # SDK retries defeat the failover walk (the retry re-hits the SAME dead
+    # credential before the waterfall sees it). The CHAIN is the retry.
+    "client_max_retries": 0,
+    "max_tokens": 220,
+    #: copywriter.validate_copy caps headline+body at 275, and this phrase
+    #: REPLACES both, so 275 is the binding cap. The prompt asks for 260 so the
+    #: model leaves the headroom rather than landing on the wall.
+    "max_chars": 275,
+    #: Runaway guard, not a budget: a slot run emits at most `max_per_run` items.
+    "max_calls_per_run": 8,
+    # CHATGPT-FIRST, then the Claude pool, then metered rungs (the order the
+    # operator set on copywriter.llm 2026-07-29).
+    "provider_order": ["codex", "oauth", "anthropic", "deepseek"],
+    # TERRA, deliberately. House model-tier law: sol writes long-form copy, terra
+    # critiques and WIRES, luna never touches user-facing words. This is a wire
+    # lane, so terra is the correct tier — do not "upgrade" it to sol.
+    "codex_source_model": "gpt-5.6-terra",
+    # One short wire sentence inside a 20-second budget cannot afford a reasoning
+    # pass.
+    "codex_reasoning_effort": "low",
+    "usage_lane": "publish-time-wire",
+    "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+    "deepseek_key_env": "DEEPSEEK_API_KEY",
+    "deepseek_model": "deepseek-chat",
+}
+
+#: Model id for the oauth / anthropic rungs when config.yml names none.
+_LLM_DEFAULT_MODEL = "claude-sonnet-4-6"
+
+#: Codepoint ranges that count as emoji. Deliberately broad, and the same set the
+#: sibling screen in `engine/marketing/blind_identity` uses: an emoji we fail to
+#: spot is an emoji on the timeline, and over-rejecting a decorative glyph costs
+#: nothing at all here because the template is always waiting.
+#: ESCAPES, not literal glyphs: variation selectors (U+FE00..U+FE0F) are
+#: invisible in source, so a literal class here would read as a typo and be
+#: "cleaned up" by the next editor.
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F300-\U0001FAFF"   # symbols, pictographs, supplements
+    "\u2600-\u27BF"           # misc symbols + dingbats
+    "\u2B00-\u2BFF"           # arrows and misc symbols
+    "\U0001F000-\U0001F2FF"   # mahjong/domino/cards/enclosed
+    "\uFE00-\uFE0F"           # variation selectors (the emoji tell)
+    "\U0001F1E6-\U0001F1FF"   # regional indicators (flags)
+    "]"
+)
+
+#: Dash and quote tells. The ASCII hyphen and the straight quote are the only
+#: forms the house voice ships; every curly/long variant here is an LLM tell.
+_SMART_GLYPHS: tuple[str, ...] = ("—", "–", "―", "‒", "“", "”", "‘", "’", "„", "‟")
+
+#: Engagement CTAs. PHRASES, never bare words: "follow" is ordinary market
+#: English ("follow-through"), and a bare-word list would reject clean copy while
+#: still missing the fifth bait line nobody has written yet.
+_CTA_RES: tuple[re.Pattern[str], ...] = tuple(re.compile(p, re.IGNORECASE) for p in (
+    r"\bfollow (?:for|us|me|along for)\b",
+    r"\bhit (?:that )?follow\b",
+    r"\blike (?:and|&) (?:retweet|share|repost)\b",
+    r"\b(?:retweet|repost|rt) if\b",
+    r"\b(?:smash|drop) (?:that |a )?(?:like|follow)\b",
+    r"\blink in bio\b",
+    r"\b(?:comment|sound off|let me know) below\b",
+    r"\btag a (?:friend|trader)\b",
+    r"\bshare this (?:post|one|with)\b",
+    r"\bsubscribe\b",
+))
+
+_LLM_URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
+
+#: Per-process counters. `phrase_stats()` is what tells an operator whether an
+#: ARMED desk is actually serving or quietly falling back on every item.
+_LLM_STAT_KEYS = ("calls", "llm", "fallback_validation", "fallback_provider",
+                  "fallback_timeout", "off")
+_LLM_STATS: dict[str, int] = {k: 0 for k in _LLM_STAT_KEYS}
+_LLM_CALLS_THIS_RUN = 0
+
+
+def phrase_stats() -> dict:
+    """Counters for this process: how often the model served vs fell back.
+
+    Keys: ``calls`` (phrase attempts), ``llm``, ``fallback_validation``,
+    ``fallback_provider``, ``fallback_timeout``, ``off``, plus a derived
+    ``fallback_rate``. A copy, so mutating it is a no-op.
+    """
+    out = dict(_LLM_STATS)
+    calls = out.get("calls", 0)
+    out["fallback_rate"] = (round((calls - out.get("llm", 0)) / calls, 4)
+                            if calls else 0.0)
+    return out
+
+
+def reset_phrase_stats() -> None:
+    """Zero the counters AND the per-run call cap. For tests and dry runs."""
+    global _LLM_CALLS_THIS_RUN
+    for k in _LLM_STAT_KEYS:
+        _LLM_STATS[k] = 0
+    _LLM_CALLS_THIS_RUN = 0
+
+
+def _llm_cfg(cfg: dict | None) -> dict[str, Any]:
+    """Resolve `publish.publish_time_movers.llm` over `_LLM_DEFAULTS` (fail-soft).
+
+    Tolerates the full marketing config (has ``publish``), the ``publish`` block
+    (has ``publish_time_movers``), the lane block (has ``llm``), or the ``llm``
+    block itself — the same tolerance ``hot_tape_llm._llm_cfg`` gives its caller.
+    An unreadable value never fails the pass: it falls back to the default, and a
+    default-valued pass is a disabled pass.
+    """
+    out = dict(_LLM_DEFAULTS)
+    block: Any = {}
+    try:
+        src = cfg or {}
+        if isinstance(src.get("publish"), dict):
+            src = src.get("publish") or {}
+        if isinstance(src.get("publish_time_movers"), dict):
+            src = src.get("publish_time_movers") or {}
+        block = src.get("llm") if isinstance(src.get("llm"), dict) else src
+        if not isinstance(block, dict):
+            block = {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content: bad publish_time_movers.llm config "
+                    "(%s) — phrase pass stays off", exc)
+        return out
+
+    for k, dv in _LLM_DEFAULTS.items():
+        if k not in block or block[k] is None:
+            continue
+        v = block[k]
+        try:
+            if isinstance(dv, bool):
+                out[k] = v if isinstance(v, bool) else (
+                    str(v).strip().lower() in _LLM_TRUTHY)
+            elif isinstance(dv, list):
+                out[k] = [str(x) for x in v] if isinstance(v, (list, tuple)) else dv
+            else:
+                out[k] = type(dv)(v)
+        except (TypeError, ValueError):
+            log.warning("publish_time_content: publish_time_movers.llm.%s is not a "
+                        "%s (%r) — using %r", k, type(dv).__name__, v, dv)
+    return out
+
+
+def _resolve_wire_model(llm_cfg: dict) -> str:
+    """Model id for the oauth / anthropic rungs.
+
+    `llm.model`, else config.yml's `llm_models.publish_time_wire` /
+    `hot_tape_wire` / `marketing_copy`, else the literal default. Reading the
+    estate's model registry rather than pinning an id here is what keeps a model
+    rename one edit instead of a grep.
+    """
+    named = str(llm_cfg.get("model") or "").strip()
+    if named:
+        return named
+    try:
+        from lib import config as _config  # noqa: PLC0415
+        models = (_config.load() or {}).get("llm_models") or {}
+        for key in ("publish_time_wire", "hot_tape_wire", "marketing_copy"):
+            if models.get(key):
+                return str(models[key])
+    except Exception:  # noqa: BLE001 — a config read must never cost a post
+        pass
+    return _LLM_DEFAULT_MODEL
+
+
+def _cashtags(text: str) -> set[str]:
+    """Distinct cashtags in *text*, upper-cased (the module's own `$AAPL` shape)."""
+    return {c.upper() for c in _CASHTAG_RE.findall(str(text or "").upper())}
+
+
+def wire_violations(phrase: str, template_text: str, *,
+                    facts: dict | None = None,
+                    now: datetime | None = None,
+                    max_chars: int = 275) -> list[str]:
+    """Wire-register laws the model's phrasing must satisfy. [] = clean.
+
+    The laws, and why each one is here:
+
+    * **length / emptiness** — a wire phrase, not a paragraph. `max_chars`
+      mirrors ``copywriter.validate_copy``'s headline+body cap, because this
+      phrase replaces both.
+    * **no hashtag, no exclamation mark, no emoji** — the register is a wire
+      desk, not a promo account, and every one of the three is the fingerprint X
+      reads as engagement bait.
+    * **no em dash, en dash, horizontal bar or smart quote** — the house dash
+      tells (``copywriter.banned_language`` screens the same glyphs on the
+      generation side).
+    * **no first-person stance** — reuses this module's own ``_has_first_person``
+      so the LLM path and the bait-tail rule cannot drift apart.
+    * **no engagement CTA** — "follow for more" / "like and retweet" / "link in
+      bio" and their siblings.
+    * **no invented number** — delegated to
+      ``hot_tape_llm.numeric_violations`` against a packet built from the
+      TEMPLATE plus the engine-computed facts, so every number in the phrase must
+      already have been computed by the engine. This is the whole epistemics law
+      in one call, and reusing the hot-tape implementation is what keeps the two
+      wire desks agreeing about what "the packet licenses that number" means.
+    * **no invented cashtag or link, and no orphaning** — the phrase's cashtags
+      must be a subset of the template's, it must keep at least one when the
+      template had any (a ticker post that names no ticker is orphaned from its
+      ticker), and it may not introduce a URL. Subset-ness is also what makes the
+      downstream cashtag-breadth gate unreachable by this path.
+    * **no new session claim** — resolved through ``market_clock.session_claims``,
+      the estate's one calendar authority, and required to be a subset of the
+      template's claims. Without it a model could write "on Friday" over Monday
+      rows, which is defect 2 of the 2026-08-03 postmortem re-entering through a
+      new door.
+
+    Fail-closed by construction: anything this function cannot evaluate raises
+    into its caller's ``except``, which returns the template.
+    """
+    text = str(phrase or "").strip()
+    out: list[str] = []
+    if not text:
+        return ["empty_phrase"]
+    if len(text) > int(max_chars):
+        out.append(f"too long: {len(text)} chars (max {int(max_chars)})")
+    if "#" in text:
+        out.append("hashtag_banned")
+    if "!" in text:
+        out.append("exclamation_banned")
+    if _EMOJI_RE.search(text):
+        out.append("emoji_banned")
+    for glyph in _SMART_GLYPHS:
+        if glyph in text:
+            out.append("dash_or_smart_quote_banned")
+            break
+    if _has_first_person(text):
+        out.append("first_person_banned")
+    for pat in _CTA_RES:
+        hit = pat.search(text)
+        if hit:
+            out.append(f"engagement_cta: {hit.group(0).lower()}")
+            break
+
+    from engine.marketing import hot_tape_llm  # noqa: PLC0415
+    # The template is IN the packet, so every number the deterministic copy
+    # already says is admissible; `facts` adds the engine's computed numbers the
+    # template chose not to print.
+    packet = {"template": str(template_text or ""), "facts": facts or {}}
+    out.extend(hot_tape_llm.numeric_violations(text, packet))
+
+    tmpl_tags = _cashtags(template_text)
+    new_tags = _cashtags(text) - tmpl_tags
+    if new_tags:
+        out.append(f"cashtag_not_in_template: {sorted(new_tags)[:3]}")
+    if tmpl_tags and not _cashtags(text):
+        out.append("cashtag_dropped: phrase names no ticker")
+    if set(_LLM_URL_RE.findall(text)) - set(_LLM_URL_RE.findall(str(template_text or ""))):
+        out.append("link_not_in_template")
+
+    if now is not None:
+        p_claims, p_unresolved = market_clock.session_claims(text, now=now)
+        if p_unresolved:
+            out.append(f"unresolvable_session_claim: {p_unresolved[0]}")
+        t_claims, _t_unresolved = market_clock.session_claims(
+            str(template_text or ""), now=now)
+        extra = p_claims - t_claims
+        if extra:
+            named = ", ".join(d.isoformat() for d in sorted(extra))
+            out.append(f"session_claim_not_in_template: {named}")
+    return out
+
+
+def _wire_system_prompt(max_chars: int) -> str:
+    """The phrasing law, stated to the model.
+
+    Deliberately dash-free and quote-plain: a model that has just read an em dash
+    writes one, and the dash law would then reject the very phrase the prompt
+    asked for (the ``hot_tape_llm._dashless`` lesson, applied to the prompt
+    rather than to the repair turn).
+    """
+    return (
+        "You are the wire desk of a market-data publisher. You are given ONE post "
+        "our engine already wrote from numbers it already computed. Rewrite it "
+        "tighter in the same wire register.\n\n"
+        "The engine computes. You phrase. You never originate a fact.\n\n"
+        "LAWS\n"
+        "1. Use ONLY numbers from the ALLOWED NUMBERS list, written exactly as "
+        "shown. Never compute, extend, re-round or add one.\n"
+        "2. Use ONLY the cashtags already in the post, and keep at least one.\n"
+        "3. Keep the same session. Do not add a day, a date or a weekday the "
+        "post does not already name.\n"
+        "4. Declarative and unhedged. State the tape flat.\n"
+        "5. No advice and no calls. Nothing that tells the reader to do anything.\n"
+        "6. No first person. No I, me, my, we, us or our.\n"
+        "7. No hashtags. No exclamation marks. No emoji. No engagement asks such "
+        "as follow for more, like and retweet, or link in bio.\n"
+        "8. The ASCII hyphen is the only dash allowed. Straight quotes only.\n"
+        f"9. {max(80, int(max_chars) - 15)} characters maximum. Shorter is better.\n"
+        "10. Output the post text only. No JSON, no quotes around it, no "
+        "preamble, no sign-off.\n"
+    )
+
+
+def _wire_user_message(template_text: str, facts: dict | None, kind: str) -> str:
+    """The user turn: the post to tighten, plus the numbers it is allowed to say."""
+    from engine.marketing import hot_tape_llm  # noqa: PLC0415
+    packet = {"template": str(template_text or ""), "facts": facts or {}}
+    allowed = hot_tape_llm.numbers_whitelist(packet)
+    return (
+        f"KIND: {kind}\n\n"
+        f"POST TO TIGHTEN:\n{template_text}\n\n"
+        "ALLOWED NUMBERS (every number in your rewrite must be one of these, "
+        "written exactly as shown):\n"
+        + "\n".join(f"  {n}" for n in allowed)
+    )
+
+
+def _tidy_phrase(text: str) -> str:
+    """Strip the wrappers a model adds despite law 10 — fences and quote pairs."""
+    out = str(text or "").strip()
+    if out.startswith("```"):
+        out = re.sub(r"^```[a-zA-Z]*\s*", "", out)
+        out = re.sub(r"\s*```$", "", out).strip()
+    if len(out) >= 2 and out[0] == out[-1] and out[0] in "\"'":
+        out = out[1:-1].strip()
+    return out
+
+
+def _run_with_deadline(fn, budget_s: float) -> tuple[Any, bool]:
+    """``(value, timed_out)`` — run *fn* on a DAEMON thread, give up at the budget.
+
+    The publisher's slot run owns the clock, not the provider waterfall. A walk
+    over four rungs can out-sit any per-rung timeout (and the codex rung is a
+    subprocess, not a socket), so the only bound that actually holds is one the
+    CALLER enforces. DAEMON because a thread still waiting on a dead rung must
+    not hold the sweep's process open at exit; the abandoned thread's result is
+    simply never read.
+
+    An exception on the worker thread is invisible to a `try` around the START of
+    that thread, so it is captured and re-raised HERE — otherwise the public
+    entry point's ``except`` would never see a dead waterfall and a failed call
+    would read as a successful empty one. BaseException is caught (so ``done`` is
+    always set and the caller can never hang on a worker that died) but only an
+    ``Exception`` is re-raised: a SystemExit/KeyboardInterrupt that somehow
+    reached this thread is logged and degraded to a fallback rather than smuggled
+    past the entry point's never-raise contract.
+    """
+    box: dict[str, Any] = {}
+    done = threading.Event()
+
+    def _worker() -> None:
+        try:
+            box["value"] = fn()
+        except BaseException as exc:  # noqa: BLE001 — surfaced below, never lost
+            box["error"] = exc
+        finally:
+            done.set()
+
+    threading.Thread(target=_worker, name="pt-wire-phrase", daemon=True).start()
+    if not done.wait(max(0.1, float(budget_s))):
+        return None, True
+    err = box.get("error")
+    if isinstance(err, Exception):
+        raise err
+    if err is not None:
+        log.warning("publish_time_content: wire phrase worker died on %s",
+                    type(err).__name__)
+        return None, False
+    return box.get("value"), False
+
+
+def phrase_or_template(template_text: str, *,
+                       facts: dict | None = None,
+                       kind: str = "mover",
+                       now: datetime | None = None,
+                       cfg: dict | None = None) -> dict:
+    """Phrase one publish-time item in wire voice, or hand back the template.
+
+    NEVER RAISES, and never returns text the caller did not already have unless
+    that text cleared every law in :func:`wire_violations`.
+
+    Parameters
+    ----------
+    template_text:
+        The DETERMINISTIC v3 render of this item (headline + blank line + body).
+        This is the floor: it is what ships whenever the model path does not
+        clear every gate, which is why nothing below can cost a post.
+    facts:
+        The candidate's engine-computed facts (``movers_source.mover_facts`` /
+        ``theme_facts``). Read-only, and only ever used to widen the set of
+        numbers the phrase is ALLOWED to say.
+    kind:
+        ``"mover"`` or ``"theme_list"``. Prompt context only.
+    now:
+        The run clock. When given, the phrase may not introduce a session claim
+        the template did not already make.
+    cfg:
+        Full marketing config, the ``publish`` block, the lane block, or the
+        ``llm`` block itself. Absent ⇒ the in-code defaults ⇒ disabled.
+
+    Returns
+    -------
+    dict with keys:
+        ``text``        always postable: the model's phrasing, or *template_text*.
+        ``mode``        ``"llm"`` | ``"fallback_validation"`` |
+                        ``"fallback_provider"`` | ``"fallback_timeout"`` | ``"off"``.
+        ``provider``    the provider that served, else None.
+        ``violations``  the wire laws that forced a fallback (else []).
+        ``latency_ms``  wall time of the whole attempt.
+    """
+    global _LLM_CALLS_THIS_RUN
+    started = time.monotonic()
+    template = str(template_text or "")
+    _LLM_STATS["calls"] += 1
+
+    def _done(mode: str, text: str, *, provider: str | None = None,
+              violations: list[str] | None = None) -> dict:
+        _LLM_STATS[mode] = _LLM_STATS.get(mode, 0) + 1
+        return {
+            "text": text,
+            "mode": mode,
+            "provider": provider,
+            "violations": list(violations or []),
+            "latency_ms": int((time.monotonic() - started) * 1000),
+        }
+
+    try:
+        llm = _llm_cfg(cfg)
+        env_on = os.environ.get(_LLM_ENV_FLAG, "").strip().lower() in _LLM_TRUTHY
+        if not template or not bool(llm.get("enabled", False)) or not env_on:
+            # Disarmed: no provider is constructed, no credential is read, no
+            # call is made, and the template comes back byte-identical.
+            return _done("off", template)
+
+        if _LLM_CALLS_THIS_RUN >= int(llm["max_calls_per_run"]):
+            log.warning("publish_time_content: wire phrase call cap reached (%d) — "
+                        "deterministic template ships", int(llm["max_calls_per_run"]))
+            return _done("fallback_provider", template)
+
+        max_chars = int(llm["max_chars"])
+        system_prompt = _wire_system_prompt(max_chars)
+        user_msg = _wire_user_message(template, facts, str(kind or "mover"))
+        max_tokens = int(llm["max_tokens"])
+
+        def _attempt() -> tuple[str | None, str | None] | None:
+            """Build the waterfall and make ONE call. Returns (text, provider)."""
+            from engine import llm_auth  # noqa: PLC0415
+            provider_cfg = {
+                "provider_order": list(llm["provider_order"]),
+                "codex_source_model": str(llm["codex_source_model"]),
+                "codex_reasoning_effort": str(llm["codex_reasoning_effort"]),
+                "oauth_token_env": str(llm["oauth_token_env"]),
+                "deepseek_key_env": str(llm["deepseek_key_env"]),
+                "oauth_pool_lane": str(llm["usage_lane"]),
+                "usage_lane": str(llm["usage_lane"]),
+                # BOTH, explicitly. See `_LLM_DEFAULTS.codex_timeout_s`.
+                "codex_timeout_s": float(llm["codex_timeout_s"]),
+                "client_timeout_s": float(llm["client_timeout_s"]),
+                "client_max_retries": int(llm["client_max_retries"]),
+            }
+            providers = llm_auth.build_providers(
+                provider_cfg,
+                opus_model=_resolve_wire_model(llm),
+                deepseek_model=str(llm["deepseek_model"]))
+            if not providers:
+                # ARMED BUT MUTE — the config says the wire desk is on and the
+                # env flag agrees, yet no credential is visible, so every item is
+                # silently posting the template. The nightly copywriter lane ran
+                # in exactly this state for months (2026-07-26 incident).
+                # A BARE print at line start: GitHub only parses `::` at column
+                # 0, and every logger here prefixes the line, so an annotation
+                # routed through log.warning is dropped silently
+                # (tests/test_gh_annotation_line_start.py). flush because stdout
+                # is block-buffered when piped in Actions.
+                print("::warning title=publish-time-wire-mute::Publish-time wire "
+                      "phrase pass is ARMED (publish_time_movers.llm.enabled + "
+                      "MARKETING_LLM_ENABLED) but no provider credential is "
+                      "visible, so every mover and theme post is falling back to "
+                      "the deterministic template. Pass CLAUDE_CODE_OAUTH_TOKEN* "
+                      "/ ANTHROPIC_API_KEY / DEEPSEEK_API_KEY to this step.",
+                      flush=True)
+                log.warning("publish_time_content: wire phrase pass armed but no "
+                            "provider credential — deterministic templates only")
+                return None
+
+            def _do_call(client, model):
+                resp = client.messages.create(
+                    model=model, max_tokens=max_tokens, system=system_prompt,
+                    messages=[{"role": "user", "content": user_msg}])
+                if getattr(resp, "stop_reason", None) == "refusal":
+                    return None, "stop_refusal", resp
+                out = "".join(b.text for b in resp.content
+                              if getattr(b, "type", "") == "text")
+                return (out.strip() or None), None, resp
+
+            raw, reason, provider = llm_auth.make_call(
+                providers, _do_call, context="publish_time_wire")
+            if not raw:
+                log.info("publish_time_content: no wire phrasing (%s) — "
+                         "deterministic template ships", reason or "empty")
+                return None
+            return str(raw), (str(provider) if provider else None)
+
+        _LLM_CALLS_THIS_RUN += 1
+        result, timed_out = _run_with_deadline(_attempt, float(llm["budget_s"]))
+    except Exception as exc:  # noqa: BLE001 — a live mover must still post
+        log.warning("publish_time_content: wire phrase pass failed (%s: %s) — "
+                    "deterministic template ships", type(exc).__name__, exc)
+        return _done("fallback_provider", template)
+
+    if timed_out:
+        log.warning("publish_time_content: wire phrase pass exceeded its budget — "
+                    "deterministic template ships")
+        return _done("fallback_timeout", template)
+    if not result:
+        return _done("fallback_provider", template)
+
+    try:
+        raw, provider = result
+        phrase = _tidy_phrase(raw)
+        violations = wire_violations(
+            phrase, template, facts=facts, now=now, max_chars=max_chars)
+    except Exception as exc:  # noqa: BLE001 — an unevaluable phrase is a rejected one
+        log.warning("publish_time_content: wire phrase check failed (%s: %s) — "
+                    "deterministic template ships", type(exc).__name__, exc)
+        return _done("fallback_validation", template, violations=["check_error"])
+
+    if violations:
+        # No repair turn here, unlike the hot-tape desk. That desk repairs
+        # because its fallback is a bare template with no other option; this lane
+        # already holds fully-validated v3 copy in hand, so a second call would
+        # spend another slice of a 20-second live budget to maybe match what is
+        # already sitting there.
+        log.warning("publish_time_content: wire phrase rejected (%s) — "
+                    "deterministic template ships", "; ".join(violations[:4]))
+        return _done("fallback_validation", template, violations=violations)
+    return _done("llm", phrase, provider=provider)
+
+
 def _cand_session(cand: dict) -> str | None:
     """ISO date of the session the candidate's ROWS describe, or None.
 
@@ -1592,6 +2195,11 @@ def generate_slot_items(
         #: are previewed, never enqueued — the number belongs in the report so a
         #: reader of a dry-run summary knows the cards are pending, not hosted.
         cards_deferred_dry_run = 0
+        #: Per-mode tally of the optional wire phrase pass (see
+        #: `phrase_or_template`). Reported so an ARMED desk that is silently
+        #: falling back on every item is visible as a number rather than as an
+        #: absence — "armed but mute" is the failure this lane inherits.
+        llm_phrase_modes: dict[str, int] = {}
         accepted_texts: list[frozenset[str]] = []
         assigned_accounts: set[str] = set()
         acct_cursor = 0
@@ -1785,6 +2393,23 @@ def generate_slot_items(
                                 "detail": f"{lead_cashtag}: {violations[:3]}"})
                 continue
 
+            # ── OPTIONAL wire-register phrase pass (DEFAULT OFF) ────────────
+            # Placed HERE, between the template's own validation and the gates
+            # below, so whichever text wins faces every remaining gate. It can
+            # only ever return the string it was handed or a phrase that cleared
+            # `wire_violations` — and those laws are subset laws (no new number,
+            # cashtag, link or session claim), so an accepted phrase cannot fail
+            # a gate the template just passed. Disarmed, it is a dict build and a
+            # return: no provider, no credential, no call, no latency.
+            _phrased = phrase_or_template(
+                text, facts=(cand.get("_mover_facts")
+                             if cand["type"] == "mover"
+                             else cand.get("_theme_facts")),
+                kind=str(cand["type"]), now=now, cfg=cfg)
+            llm_phrase_modes[_phrased["mode"]] = (
+                llm_phrase_modes.get(_phrased["mode"], 0) + 1)
+            text = _phrased["text"]
+
             # ── Cashtag breadth — EVERY KIND, theme_list included ────────────
             #
             # DEFECT 1: the exemption is gone. This gate used to read "(movers
@@ -1947,6 +2572,8 @@ def generate_slot_items(
             # Always present (0 on a live run) so a report consumer can read it
             # unconditionally rather than .get()-ing around its absence.
             "cards_deferred_dry_run": cards_deferred_dry_run,
+            # {} when the phrase pass never ran, {"off": N} when it is disarmed.
+            "llm_phrase_modes": dict(llm_phrase_modes),
         }
 
     except Exception as exc:  # noqa: BLE001

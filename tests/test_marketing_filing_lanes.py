@@ -1411,7 +1411,7 @@ def test_the_writer_drops_a_post_whose_lag_it_invented(monkeypatch):
                         lambda *a, **k: [{"name": "oauth", "client": _Client(),
                                           "model": "m", "env_var": "X", "cred": "x"}])
 
-    def _make_call(providers, fn, context=""):
+    def _make_call(providers, fn, context="", **_kw):
         calls["n"] += 1
         return ('{"text": "A filing, not a call.\\n\\nRep. Jane Q. Public bought '
                 'NVDA. Disclosed 6 days after the trade."}'), None, "oauth"
