@@ -155,3 +155,41 @@ pooled top-line), era-stamped.
 Nightly job over the W7 stamped store: entry-status → forward outcome table (the CN §2.3
 methodology on US episodes), published in the scorecard. The v1 CN-ordered constants in A2
 are provisional by construction; this table is what revises them — visibly, in days.
+
+**FIRST RUN (2026-08-08, PR #4988; source deviation disclosed: the W7 grade store has NEVER
+advanced — grades/ empty since merge, `priority_score_scorecard` nightly-null; measured off
+`data/us_board_ledger/retro_grades.parquet` instead, the closer CN-§2.3 parity match):**
+the CN ordering did NOT reproduce. 2,816 statused episodes, 23 dates 06-15→07-30, loser :=
+excess_spy ≤ 0: bounce_wait H=5 loser 54.9% (n=153) / H=10 65.4% (n=52) vs buy_now H=5
+39.0% (n=95); watch lane independently repeats bounce_wait 55.3% (n=76). AND the binding
+null: bounce_wait carries ZERO marks at H≥21 in every lane — the patience thesis's own
+chartered horizon (basing→H=63) has no US data. Caveats logged: fading-tape window ending
+07-30 (pre-ignition), short-ruler-only, flat-counts-as-loss.
+
+**RULING (Fable, 2026-08-08): the A2 entry map goes STATUS-NEUTRAL** — one flat value
+(0.75) across the five admissible statuses; refused-class values unchanged. Neither
+chase-first nor patience-first is defensible as a ranking claim today, in either direction.
+Admission breadth (A1), entry zones (Wave B), and the washout/cohort discriminators carry
+the earliness; the map claims nothing the data does not. **Pre-registered revision rule:**
+an ordering may be re-introduced only at its chartered horizon, n ≥ 50 per cell, sign-stable
+across two half-splits, measured on era-stamped `anticipation-v1` episodes. Amendment
+dispatched to #4976 before merge; a NEUTRALITY pin test replaces the ordering pin.
+
+### §6.7 Wave A execution record (2026-08-08, single session)
+
+| Lane | PR | State at record | Outcome |
+|---|---|---|---|
+| Evidence + §6 | #4972 | armed | 3 receipts + this section; first proof run green pre-heal, re-proving post-#4984 |
+| A1 patience admission | #4977 | armed | act-gate removed; dir is a TONE — `{up, caution}` (literal "up" admits zero bounce_wait; **`down`/BOTTOM WATCH refused for plans by ruling** — routes to ripening/watch, 1 row affected); legacy shadow ledger; 3-session lag guard; cap 12→16 sector-cap 4; live proof 16 plans / 7 patience (BHP RIO UUUU ALB AEIS WBD FN) |
+| A2 patience rank | #4976 | armed, amendment in flight | ladder shipped CN-ordered then **NEUTRALIZED same-day by §6.6 first run**; featured widened; ext_z blackout fixed (0→8 featured on the 08-06 board); found the NEXT lock: stage-bucket sort + `stage_not_live` featured veto bury the 10 top-scoring bounce_wait rows at ranks 29-38 (pinned as deliberate non-repair; = Wave A3, gated on this PR's merge) |
+| ext_z data plane | #4979 | armed | coverage-floor anchor (6/3034-member sparse row blanked ext_z board-wide); LIVE_LOOKBACK=63 vs anchor lookback 10, mutation-verified; HK featured relights with ext_unknown disclosed (HK has NO ext input — Wave B decision) |
+| Fleet heal | #4984 | armed | seasonality ledger count pin == 28 vs nightly-accrued 43 — scheduled failure red-blocking every post-append merge-ref fleet-wide; floor-pin heal; next scheduled failure (grade-row assertion) flagged in-code for the seasonality lane |
+| Signal dates | #4987 | armed | `signal_date`/`confirmed_date`/`recorded_at` split, additive, mutation-fenced; **outage audit: forward ledger CLEAN (0/27), no run-date stamping** — but marker `date` is the bucket OPEN label (panel "Buy Aug 7" for NVDA was honest; the chart x-anchor misleads), 7/7 pre-outage ledger rows carry the OPEN label as signal_date, QCOM/MS rows carry non-bucket dates (board-as_of leak) → board-coherence follow-up gated on #4976 |
+| §6.6 instrument | #4988 | armed | table above; also surfaced: W7 grade store never advanced (own lane needed) |
+
+Cross-repo: Terminal Golden Oracle = charting-app `signal_layer/golden_gate.py` (possible 4th
+confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
+grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
+12 vetoed, 12 ripening, featured=0 (no ext input) — complete-fix lane gated on #4976 merge,
+acceptance gates: never 2 buys while ripening+vetoed hold 24 with undisclosed reasons; featured
+never silently 0; universe coverage audited.
