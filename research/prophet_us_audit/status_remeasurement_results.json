@@ -1,0 +1,1193 @@
+{
+  "block": {
+    "authority": "none — read-only aggregation of an existing graded ledger; no rank, gate, size, board, plan or user-facing consumer. The entry-value map constants are revised BY HAND by an operator reading this table",
+    "available": true,
+    "by_cohort": {
+      "buy": {
+        "10d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.3696,
+              "mean_excess": 0.01414,
+              "median_excess": 0.01666,
+              "n": 92,
+              "n_excess": 92,
+              "thin": false,
+              "win_rate": 0.6304
+            },
+            "blocked": {
+              "loser_rate": 0.6,
+              "mean_excess": -0.05148,
+              "median_excess": -0.06594,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4
+            },
+            "bounce_wait": {
+              "loser_rate": 0.6538,
+              "mean_excess": -0.0099,
+              "median_excess": -0.02737,
+              "n": 52,
+              "n_excess": 52,
+              "thin": false,
+              "win_rate": 0.3462
+            },
+            "buy_now": {
+              "loser_rate": 0.6111,
+              "mean_excess": -0.0263,
+              "median_excess": -0.0326,
+              "n": 18,
+              "n_excess": 18,
+              "thin": true,
+              "thin_reason": "18 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.3889
+            },
+            "buy_soon": {
+              "loser_rate": 0.3333,
+              "mean_excess": 0.03535,
+              "median_excess": 0.02528,
+              "n": 33,
+              "n_excess": 33,
+              "thin": false,
+              "win_rate": 0.6667
+            },
+            "extended": {
+              "loser_rate": 0.5,
+              "mean_excess": 0.00273,
+              "median_excess": 0.00249,
+              "n": 18,
+              "n_excess": 18,
+              "thin": true,
+              "thin_reason": "18 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5
+            },
+            "hold": {
+              "loser_rate": 0.3731,
+              "mean_excess": 0.00518,
+              "median_excess": 0.01469,
+              "n": 67,
+              "n_excess": 67,
+              "thin": false,
+              "win_rate": 0.6269
+            },
+            "partial": {
+              "loser_rate": 0.4211,
+              "mean_excess": 0.02639,
+              "median_excess": 0.00816,
+              "n": 38,
+              "n_excess": 38,
+              "thin": false,
+              "win_rate": 0.5789
+            },
+            "topping": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.01815,
+              "median_excess": 0.01815,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "wait_pullback": {
+              "loser_rate": 0.4242,
+              "mean_excess": 0.01074,
+              "median_excess": 0.00721,
+              "n": 33,
+              "n_excess": 33,
+              "thin": false,
+              "win_rate": 0.5758
+            },
+            "watch": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.03785,
+              "median_excess": -0.03785,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            }
+          },
+          "horizon_d": 10,
+          "n_dates": 13,
+          "n_episodes": 535,
+          "n_excess": 535,
+          "n_status_missing": 177,
+          "n_with_status": 358,
+          "status_missing_note": "177 episode(s) carry no entry_status and are EXCLUDED from the status table rather than bucketed — an unknown status is not a status",
+          "thin_statuses": [
+            "blocked",
+            "buy_now",
+            "extended",
+            "topping",
+            "watch"
+          ]
+        },
+        "21d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.4474,
+              "mean_excess": 0.0184,
+              "median_excess": 0.01417,
+              "n": 38,
+              "n_excess": 38,
+              "thin": false,
+              "win_rate": 0.5526
+            },
+            "buy_now": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.11447,
+              "median_excess": 0.13643,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "buy_soon": {
+              "loser_rate": 0.4667,
+              "mean_excess": 0.03128,
+              "median_excess": 0.00498,
+              "n": 15,
+              "n_excess": 15,
+              "thin": true,
+              "thin_reason": "15 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5333
+            },
+            "extended": {
+              "loser_rate": 0.3333,
+              "mean_excess": -0.01934,
+              "median_excess": 0.00843,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.6667
+            },
+            "hold": {
+              "loser_rate": 0.6111,
+              "mean_excess": 0.00437,
+              "median_excess": -0.01437,
+              "n": 36,
+              "n_excess": 36,
+              "thin": false,
+              "win_rate": 0.3889
+            },
+            "partial": {
+              "loser_rate": 0.6,
+              "mean_excess": -0.00877,
+              "median_excess": -0.00646,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4
+            },
+            "wait_pullback": {
+              "loser_rate": 0.5294,
+              "mean_excess": -0.00989,
+              "median_excess": -0.0049,
+              "n": 17,
+              "n_excess": 17,
+              "thin": true,
+              "thin_reason": "17 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4706
+            }
+          },
+          "horizon_d": 21,
+          "n_dates": 4,
+          "n_episodes": 117,
+          "n_excess": 117,
+          "n_with_status": 117,
+          "thin_statuses": [
+            "buy_now",
+            "buy_soon",
+            "extended",
+            "partial",
+            "wait_pullback"
+          ]
+        },
+        "5d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.4646,
+              "mean_excess": 0.00245,
+              "median_excess": 0.00304,
+              "n": 99,
+              "n_excess": 99,
+              "thin": false,
+              "win_rate": 0.5354
+            },
+            "blocked": {
+              "loser_rate": 0.5714,
+              "mean_excess": 0.01504,
+              "median_excess": -0.01769,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4286
+            },
+            "bounce_wait": {
+              "loser_rate": 0.549,
+              "mean_excess": -0.00328,
+              "median_excess": -0.00956,
+              "n": 153,
+              "n_excess": 153,
+              "thin": false,
+              "win_rate": 0.451
+            },
+            "buy_now": {
+              "loser_rate": 0.3895,
+              "mean_excess": 0.0068,
+              "median_excess": 0.01054,
+              "n": 95,
+              "n_excess": 95,
+              "thin": false,
+              "win_rate": 0.6105
+            },
+            "buy_soon": {
+              "loser_rate": 0.4779,
+              "mean_excess": 0.00658,
+              "median_excess": 0.00117,
+              "n": 113,
+              "n_excess": 113,
+              "thin": false,
+              "win_rate": 0.5221
+            },
+            "extended": {
+              "loser_rate": 0.5625,
+              "mean_excess": 0.0027,
+              "median_excess": -0.00861,
+              "n": 64,
+              "n_excess": 64,
+              "thin": false,
+              "win_rate": 0.4375
+            },
+            "hold": {
+              "loser_rate": 0.5098,
+              "mean_excess": 0.00088,
+              "median_excess": -0.00097,
+              "n": 255,
+              "n_excess": 255,
+              "thin": false,
+              "win_rate": 0.4902
+            },
+            "partial": {
+              "loser_rate": 0.5203,
+              "mean_excess": -0.00933,
+              "median_excess": -0.00286,
+              "n": 148,
+              "n_excess": 148,
+              "thin": false,
+              "win_rate": 0.4797
+            },
+            "topping": {
+              "loser_rate": 0.6,
+              "mean_excess": -0.01747,
+              "median_excess": -0.01068,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4
+            },
+            "wait_pullback": {
+              "loser_rate": 0.5278,
+              "mean_excess": -0.00269,
+              "median_excess": -0.00233,
+              "n": 72,
+              "n_excess": 72,
+              "thin": false,
+              "win_rate": 0.4722
+            },
+            "watch": {
+              "loser_rate": 0.3636,
+              "mean_excess": 0.00525,
+              "median_excess": 0.00753,
+              "n": 11,
+              "n_excess": 11,
+              "thin": true,
+              "thin_reason": "11 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.6364
+            }
+          },
+          "horizon_d": 5,
+          "n_dates": 23,
+          "n_episodes": 1287,
+          "n_excess": 1287,
+          "n_status_missing": 265,
+          "n_with_status": 1022,
+          "status_missing_note": "265 episode(s) carry no entry_status and are EXCLUDED from the status table rather than bucketed — an unknown status is not a status",
+          "thin_statuses": [
+            "blocked",
+            "topping",
+            "watch"
+          ]
+        }
+      },
+      "laggards": {
+        "10d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.7778,
+              "mean_excess": -0.06477,
+              "median_excess": -0.05458,
+              "n": 9,
+              "n_excess": 9,
+              "thin": true,
+              "thin_reason": "9 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.2222
+            },
+            "blocked": {
+              "loser_rate": 0.0667,
+              "mean_excess": 0.06463,
+              "median_excess": 0.04087,
+              "n": 15,
+              "n_excess": 15,
+              "thin": true,
+              "thin_reason": "15 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.9333
+            },
+            "bounce_wait": {
+              "loser_rate": 0.4444,
+              "mean_excess": 0.03248,
+              "median_excess": 0.03843,
+              "n": 9,
+              "n_excess": 9,
+              "thin": true,
+              "thin_reason": "9 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5556
+            },
+            "buy_now": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.14855,
+              "median_excess": -0.14855,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "buy_soon": {
+              "loser_rate": 0.8333,
+              "mean_excess": -0.05529,
+              "median_excess": -0.04314,
+              "n": 12,
+              "n_excess": 12,
+              "thin": true,
+              "thin_reason": "12 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.1667
+            },
+            "extended": {
+              "loser_rate": 0.5161,
+              "mean_excess": 0.00256,
+              "median_excess": -0.00204,
+              "n": 62,
+              "n_excess": 62,
+              "thin": false,
+              "win_rate": 0.4839
+            },
+            "hold": {
+              "loser_rate": 0.75,
+              "mean_excess": -0.08155,
+              "median_excess": -0.09013,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.25
+            },
+            "topping": {
+              "loser_rate": 0.75,
+              "mean_excess": -0.01121,
+              "median_excess": -0.02064,
+              "n": 12,
+              "n_excess": 12,
+              "thin": true,
+              "thin_reason": "12 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.25
+            },
+            "wait_pullback": {
+              "loser_rate": 0.3333,
+              "mean_excess": 0.02926,
+              "median_excess": 0.02139,
+              "n": 6,
+              "n_excess": 6,
+              "thin": true,
+              "thin_reason": "6 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.6667
+            },
+            "watch": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.09637,
+              "median_excess": -0.09637,
+              "n": 2,
+              "n_excess": 2,
+              "thin": true,
+              "thin_reason": "2 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            }
+          },
+          "horizon_d": 10,
+          "n_dates": 13,
+          "n_episodes": 147,
+          "n_excess": 147,
+          "n_status_missing": 15,
+          "n_with_status": 132,
+          "status_missing_note": "15 episode(s) carry no entry_status and are EXCLUDED from the status table rather than bucketed — an unknown status is not a status",
+          "thin_statuses": [
+            "await_confluence",
+            "blocked",
+            "bounce_wait",
+            "buy_now",
+            "buy_soon",
+            "hold",
+            "topping",
+            "wait_pullback",
+            "watch"
+          ]
+        },
+        "21d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.15115,
+              "median_excess": -0.1061,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "blocked": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.06239,
+              "median_excess": 0.0522,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "buy_now": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.0148,
+              "median_excess": 0.0148,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "buy_soon": {
+              "loser_rate": 0.6667,
+              "mean_excess": 0.03364,
+              "median_excess": -0.00454,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.3333
+            },
+            "extended": {
+              "loser_rate": 0.5,
+              "mean_excess": -0.03761,
+              "median_excess": -0.00062,
+              "n": 22,
+              "n_excess": 22,
+              "thin": false,
+              "win_rate": 0.5
+            },
+            "hold": {
+              "loser_rate": 0.6667,
+              "mean_excess": -0.04346,
+              "median_excess": -0.07472,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.3333
+            },
+            "topping": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.05711,
+              "median_excess": -0.05906,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "wait_pullback": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.22128,
+              "median_excess": 0.25185,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            }
+          },
+          "horizon_d": 21,
+          "n_dates": 4,
+          "n_episodes": 48,
+          "n_excess": 48,
+          "n_with_status": 48,
+          "thin_statuses": [
+            "await_confluence",
+            "blocked",
+            "buy_now",
+            "buy_soon",
+            "hold",
+            "topping",
+            "wait_pullback"
+          ]
+        },
+        "5d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.75,
+              "mean_excess": -0.03783,
+              "median_excess": -0.04248,
+              "n": 12,
+              "n_excess": 12,
+              "thin": true,
+              "thin_reason": "12 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.25
+            },
+            "blocked": {
+              "loser_rate": 0.3125,
+              "mean_excess": 0.01143,
+              "median_excess": 0.01213,
+              "n": 16,
+              "n_excess": 16,
+              "thin": true,
+              "thin_reason": "16 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.6875
+            },
+            "bounce_wait": {
+              "loser_rate": 0.625,
+              "mean_excess": -0.00225,
+              "median_excess": -0.03028,
+              "n": 16,
+              "n_excess": 16,
+              "thin": true,
+              "thin_reason": "16 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.375
+            },
+            "buy_now": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.16315,
+              "median_excess": -0.16315,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "buy_soon": {
+              "loser_rate": 0.6818,
+              "mean_excess": -0.04619,
+              "median_excess": -0.04462,
+              "n": 22,
+              "n_excess": 22,
+              "thin": false,
+              "win_rate": 0.3182
+            },
+            "exit": {
+              "loser_rate": 0.6667,
+              "mean_excess": 0.00483,
+              "median_excess": -0.02589,
+              "n": 6,
+              "n_excess": 6,
+              "thin": true,
+              "thin_reason": "6 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.3333
+            },
+            "extended": {
+              "loser_rate": 0.5094,
+              "mean_excess": 0.00172,
+              "median_excess": -0.00161,
+              "n": 106,
+              "n_excess": 106,
+              "thin": false,
+              "win_rate": 0.4906
+            },
+            "hold": {
+              "loser_rate": 0.5714,
+              "mean_excess": 0.02815,
+              "median_excess": -0.01374,
+              "n": 14,
+              "n_excess": 14,
+              "thin": true,
+              "thin_reason": "14 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4286
+            },
+            "topping": {
+              "loser_rate": 0.6111,
+              "mean_excess": -0.00528,
+              "median_excess": -0.01237,
+              "n": 18,
+              "n_excess": 18,
+              "thin": true,
+              "thin_reason": "18 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.3889
+            },
+            "wait_pullback": {
+              "loser_rate": 0.25,
+              "mean_excess": 0.03083,
+              "median_excess": 0.02633,
+              "n": 12,
+              "n_excess": 12,
+              "thin": true,
+              "thin_reason": "12 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.75
+            },
+            "watch": {
+              "loser_rate": 0.5,
+              "mean_excess": -0.01236,
+              "median_excess": -0.02823,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5
+            }
+          },
+          "horizon_d": 5,
+          "n_dates": 23,
+          "n_episodes": 251,
+          "n_excess": 251,
+          "n_status_missing": 24,
+          "n_with_status": 227,
+          "status_missing_note": "24 episode(s) carry no entry_status and are EXCLUDED from the status table rather than bucketed — an unknown status is not a status",
+          "thin_statuses": [
+            "await_confluence",
+            "blocked",
+            "bounce_wait",
+            "buy_now",
+            "exit",
+            "hold",
+            "topping",
+            "wait_pullback",
+            "watch"
+          ]
+        }
+      },
+      "leaders": {
+        "5d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.02684,
+              "median_excess": -0.02706,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "bounce_wait": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.03478,
+              "median_excess": -0.01986,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "buy_soon": {
+              "loser_rate": 1.0,
+              "mean_excess": -0.04866,
+              "median_excess": -0.00803,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.0
+            },
+            "extended": {
+              "loser_rate": 0.8667,
+              "mean_excess": -0.04228,
+              "median_excess": -0.04494,
+              "n": 15,
+              "n_excess": 15,
+              "thin": true,
+              "thin_reason": "15 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.1333
+            },
+            "hold": {
+              "loser_rate": 0.8571,
+              "mean_excess": -0.01619,
+              "median_excess": -0.01643,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.1429
+            },
+            "topping": {
+              "loser_rate": 0.8571,
+              "mean_excess": -0.04196,
+              "median_excess": -0.04101,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.1429
+            }
+          },
+          "horizon_d": 5,
+          "n_dates": 3,
+          "n_episodes": 45,
+          "n_excess": 45,
+          "n_with_status": 45,
+          "thin_statuses": [
+            "await_confluence",
+            "bounce_wait",
+            "buy_soon",
+            "extended",
+            "hold",
+            "topping"
+          ]
+        }
+      },
+      "watch": {
+        "10d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.2553,
+              "mean_excess": 0.0374,
+              "median_excess": 0.03403,
+              "n": 47,
+              "n_excess": 47,
+              "thin": false,
+              "win_rate": 0.7447
+            },
+            "blocked": {
+              "loser_rate": 0.3333,
+              "mean_excess": 0.01622,
+              "median_excess": 0.02902,
+              "n": 30,
+              "n_excess": 30,
+              "thin": false,
+              "win_rate": 0.6667
+            },
+            "bounce_wait": {
+              "loser_rate": 0.5588,
+              "mean_excess": -0.00691,
+              "median_excess": -0.00612,
+              "n": 34,
+              "n_excess": 34,
+              "thin": false,
+              "win_rate": 0.4412
+            },
+            "buy_now": {
+              "loser_rate": 0.75,
+              "mean_excess": -0.02436,
+              "median_excess": -0.05536,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.25
+            },
+            "buy_soon": {
+              "loser_rate": 0.383,
+              "mean_excess": 0.01014,
+              "median_excess": 0.02162,
+              "n": 47,
+              "n_excess": 47,
+              "thin": false,
+              "win_rate": 0.617
+            },
+            "exit": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.02651,
+              "median_excess": 0.02651,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "extended": {
+              "loser_rate": 0.2683,
+              "mean_excess": 0.03569,
+              "median_excess": 0.03073,
+              "n": 41,
+              "n_excess": 41,
+              "thin": false,
+              "win_rate": 0.7317
+            },
+            "hold": {
+              "loser_rate": 0.4091,
+              "mean_excess": 0.00829,
+              "median_excess": 0.01663,
+              "n": 22,
+              "n_excess": 22,
+              "thin": false,
+              "win_rate": 0.5909
+            },
+            "partial": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.03129,
+              "median_excess": 0.02101,
+              "n": 4,
+              "n_excess": 4,
+              "thin": true,
+              "thin_reason": "4 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "topping": {
+              "loser_rate": 0.3333,
+              "mean_excess": -0.04697,
+              "median_excess": 0.02765,
+              "n": 3,
+              "n_excess": 3,
+              "thin": true,
+              "thin_reason": "3 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.6667
+            },
+            "wait_pullback": {
+              "loser_rate": 0.3,
+              "mean_excess": 0.01792,
+              "median_excess": 0.03273,
+              "n": 10,
+              "n_excess": 10,
+              "thin": true,
+              "thin_reason": "10 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.7
+            },
+            "watch": {
+              "loser_rate": 0.2941,
+              "mean_excess": 0.02089,
+              "median_excess": 0.04091,
+              "n": 17,
+              "n_excess": 17,
+              "thin": true,
+              "thin_reason": "17 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.7059
+            }
+          },
+          "horizon_d": 10,
+          "n_dates": 11,
+          "n_episodes": 260,
+          "n_excess": 260,
+          "n_with_status": 260,
+          "thin_statuses": [
+            "buy_now",
+            "exit",
+            "partial",
+            "topping",
+            "wait_pullback",
+            "watch"
+          ]
+        },
+        "21d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.2667,
+              "mean_excess": 0.11309,
+              "median_excess": 0.01409,
+              "n": 15,
+              "n_excess": 15,
+              "thin": true,
+              "thin_reason": "15 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.7333
+            },
+            "blocked": {
+              "loser_rate": 0.5,
+              "mean_excess": 0.01324,
+              "median_excess": 0.00478,
+              "n": 18,
+              "n_excess": 18,
+              "thin": true,
+              "thin_reason": "18 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5
+            },
+            "buy_now": {
+              "loser_rate": 0.0,
+              "mean_excess": 0.22236,
+              "median_excess": 0.22236,
+              "n": 1,
+              "n_excess": 1,
+              "thin": true,
+              "thin_reason": "1 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 1.0
+            },
+            "buy_soon": {
+              "loser_rate": 0.4231,
+              "mean_excess": -0.01033,
+              "median_excess": 0.0106,
+              "n": 26,
+              "n_excess": 26,
+              "thin": false,
+              "win_rate": 0.5769
+            },
+            "extended": {
+              "loser_rate": 0.5,
+              "mean_excess": 0.025,
+              "median_excess": -0.00148,
+              "n": 12,
+              "n_excess": 12,
+              "thin": true,
+              "thin_reason": "12 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5
+            },
+            "hold": {
+              "loser_rate": 0.8182,
+              "mean_excess": -0.03971,
+              "median_excess": -0.03259,
+              "n": 11,
+              "n_excess": 11,
+              "thin": true,
+              "thin_reason": "11 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.1818
+            },
+            "wait_pullback": {
+              "loser_rate": 0.6,
+              "mean_excess": -0.03009,
+              "median_excess": -0.01634,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4
+            },
+            "watch": {
+              "loser_rate": 0.125,
+              "mean_excess": 0.09177,
+              "median_excess": 0.11466,
+              "n": 8,
+              "n_excess": 8,
+              "thin": true,
+              "thin_reason": "8 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.875
+            }
+          },
+          "horizon_d": 21,
+          "n_dates": 4,
+          "n_episodes": 96,
+          "n_excess": 96,
+          "n_with_status": 96,
+          "thin_statuses": [
+            "await_confluence",
+            "blocked",
+            "buy_now",
+            "extended",
+            "hold",
+            "wait_pullback",
+            "watch"
+          ]
+        },
+        "5d": {
+          "by_entry_status": {
+            "await_confluence": {
+              "loser_rate": 0.56,
+              "mean_excess": -0.01026,
+              "median_excess": -0.0092,
+              "n": 75,
+              "n_excess": 75,
+              "thin": false,
+              "win_rate": 0.44
+            },
+            "blocked": {
+              "loser_rate": 0.5244,
+              "mean_excess": 0.00544,
+              "median_excess": -0.00254,
+              "n": 82,
+              "n_excess": 82,
+              "thin": false,
+              "win_rate": 0.4756
+            },
+            "bounce_wait": {
+              "loser_rate": 0.5526,
+              "mean_excess": -0.01158,
+              "median_excess": -0.00924,
+              "n": 76,
+              "n_excess": 76,
+              "thin": false,
+              "win_rate": 0.4474
+            },
+            "buy_now": {
+              "loser_rate": 0.6,
+              "mean_excess": -0.00517,
+              "median_excess": -0.00537,
+              "n": 5,
+              "n_excess": 5,
+              "thin": true,
+              "thin_reason": "5 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4
+            },
+            "buy_soon": {
+              "loser_rate": 0.5065,
+              "mean_excess": -0.00759,
+              "median_excess": -0.00061,
+              "n": 77,
+              "n_excess": 77,
+              "thin": false,
+              "win_rate": 0.4935
+            },
+            "exit": {
+              "loser_rate": 0.5,
+              "mean_excess": 0.00152,
+              "median_excess": 0.00261,
+              "n": 6,
+              "n_excess": 6,
+              "thin": true,
+              "thin_reason": "6 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.5
+            },
+            "extended": {
+              "loser_rate": 0.4857,
+              "mean_excess": 9e-05,
+              "median_excess": 0.00199,
+              "n": 70,
+              "n_excess": 70,
+              "thin": false,
+              "win_rate": 0.5143
+            },
+            "hold": {
+              "loser_rate": 0.6087,
+              "mean_excess": -0.00959,
+              "median_excess": -0.00929,
+              "n": 46,
+              "n_excess": 46,
+              "thin": false,
+              "win_rate": 0.3913
+            },
+            "partial": {
+              "loser_rate": 0.5714,
+              "mean_excess": 0.01205,
+              "median_excess": -0.00125,
+              "n": 7,
+              "n_excess": 7,
+              "thin": true,
+              "thin_reason": "7 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.4286
+            },
+            "topping": {
+              "loser_rate": 0.7273,
+              "mean_excess": -0.03916,
+              "median_excess": -0.03991,
+              "n": 11,
+              "n_excess": 11,
+              "thin": true,
+              "thin_reason": "11 graded mark(s) — below the 20-mark disclosure floor; DIRECTIONAL ONLY, not a measurement",
+              "win_rate": 0.2727
+            },
+            "wait_pullback": {
+              "loser_rate": 0.5769,
+              "mean_excess": -0.02285,
+              "median_excess": -0.00979,
+              "n": 26,
+              "n_excess": 26,
+              "thin": false,
+              "win_rate": 0.4231
+            },
+            "watch": {
+              "loser_rate": 0.4667,
+              "mean_excess": 0.0183,
+              "median_excess": 0.00664,
+              "n": 30,
+              "n_excess": 30,
+              "thin": false,
+              "win_rate": 0.5333
+            }
+          },
+          "horizon_d": 5,
+          "n_dates": 21,
+          "n_episodes": 527,
+          "n_excess": 527,
+          "n_status_missing": 16,
+          "n_with_status": 511,
+          "status_missing_note": "16 episode(s) carry no entry_status and are EXCLUDED from the status table rather than bucketed — an unknown status is not a status",
+          "thin_statuses": [
+            "buy_now",
+            "exit",
+            "partial",
+            "topping"
+          ]
+        }
+      }
+    },
+    "cn_reference": {
+      "cn_loser_rate_by_status": {
+        "bounce_wait": 0.069,
+        "buy_now": 0.3,
+        "buy_soon": 0.4667,
+        "extended": 0.2979,
+        "hold": 0.1935,
+        "partial": 0.4138,
+        "wait_pullback": 0.0769
+      },
+      "note": "the CN §2.3 ordering the shipped v1 constants encode, restated so the US numbers below are read against what they are replacing. CN episodes, CSI300-relative, H=10, n=257 — NOT a US measurement",
+      "source": "research/cn_prophet_audit/v1_loser_audit_results.json (2026-08-04)"
+    },
+    "cohort_split": {
+      "column": "lane",
+      "n_by_cohort": {
+        "buy": 1939,
+        "laggards": 446,
+        "leaders": 45,
+        "watch": 883
+      },
+      "n_unlaned": 0,
+      "note": "board lanes are DIFFERENT POPULATIONS and are never pooled: every statistic below is computed inside one lane. A row with no lane is reported under 'unlaned', never folded into 'buy'"
+    },
+    "coverage": {
+      "as_of": {
+        "first": "2026-06-15",
+        "last": "2026-07-30"
+      },
+      "n_by_status": {
+        "await_confluence": 398,
+        "blocked": 178,
+        "bounce_wait": 345,
+        "buy_now": 129,
+        "buy_soon": 355,
+        "exit": 13,
+        "extended": 413,
+        "hold": 465,
+        "partial": 202,
+        "topping": 61,
+        "wait_pullback": 184,
+        "watch": 73
+      },
+      "n_dates": 23,
+      "n_episodes": 3313,
+      "n_excess": 3313,
+      "n_with_status": 2816,
+      "note": "an episode with no entry status is EXCLUDED from the table rather than bucketed; the count above is what that exclusion costs",
+      "status_coverage_pct": 85.0
+    },
+    "definitions": {
+      "cohort": "lane — the board lane the episode was admitted into. Lanes are different selections and are never pooled",
+      "entry_status": "entry_status — entry_signal.status as snapshotted on the board-admission day, NOT re-derived tonight",
+      "excess_unit": "fraction of price — 0.01 = +1.00%, in the ledger's own unit",
+      "loser_and_win": "loser = excess_spy <= 0 (a FLAT mark counts as a loss); win = excess_spy > 0. The two are exact complements by construction — both are printed because the CN §2.3 table prints both, not because they are two independent observations",
+      "thin": "a cell with fewer than 20 graded marks is labelled thin and read as directional only; it is still printed"
+    },
+    "graded_by": "scripts.grade_us_board — engine.grading.forward_metrics (next-bar fill, positional session horizons), excess vs SPY. Nothing is regraded here: the marks are read exactly as that grader wrote them",
+    "horizons_present": [
+      5,
+      10,
+      21
+    ],
+    "no_pooled_figure": "there is deliberately no top-level loser rate, win rate or median excess. A figure pooled across lanes would describe the lane mix, not the statuses. The only top-level numbers here are counts and dates",
+    "purpose": "ANTICIPATION §6.6 — the evidence loop for the patience-first entry ladder. The shipped v1 constants are the CN measured ordering; this is the US measurement that revises them",
+    "schema": "us.entry_status_remeasure/v1",
+    "source": "data/us_board_ledger/retro_grades.parquet",
+    "thin_min_n": 20,
+    "tier": "ops_telemetry",
+    "w7_priority_store": "the §6.6 charter named data/us_prophet_rank as the source. MEASURED 2026-08-08: its grades/ subtree has never been written (zero forward marks) and its candidates/ store carries no entry-status column — only the already-mapped, non-injective prophet_entry leg, on the buy lane only. Reading a mapped value to re-derive the map is circular, so this block reads the board ledger, which is also the closer CN parity match (CN §2.3 measured board admissions). When a sibling lane stamps entry_signal.status into the W7 candidates store it becomes a second, wider read — not a replacement"
+  },
+  "degraded": []
+}
