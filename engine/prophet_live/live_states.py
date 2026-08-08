@@ -40,12 +40,23 @@ that is the strongest honest moment the lane has.
 DEBOUNCE (G0.5, CSP-R2 — a 1-tick state flip is a killed class), on BOTH paths.
 A cross needs ``debounce_passes`` CONSECUTIVE passes inside the interval. One pass
 is ``crossing_unconfirmed``: an INTERNAL marker, carried in ``internal`` and in the
-event spool for measurement, never the public ``state``. Falling through
-``trigger * (1 - fade_buffer_pct/100)`` fades the name and resets the counter, so a
-re-cross pays the full two passes again. A pass that stopped holding but was
-SUPPRESSED by the buffer carries ``fade_unconfirmed``, the fourth marker: every other
-debounced transition already had one, and a suppressed pass nobody records is a
-suppression nobody can measure — which is the whole charter of the marker set.
+event spool for measurement, never the public ``state``.
+
+LEAVING the interval is debounced the same way and on BOTH EDGES (W-L0 gate 2). A
+breach that clears the hysteresis buffer — under ``lo * (1 - fade_buffer_pct/100)``
+or over ``hi * (1 + fade_buffer_pct/100)`` — is decisive and fades the name on the
+pass it happens. A MARGINAL one pays ``debounce_passes`` consecutive failing passes
+first, and until then the published ``forming`` holds with its cross counter intact.
+The buffer used to be honoured only BELOW the trigger, so a name a tenth of a percent
+over ``fade_hi_px`` published ``faded`` on ONE pass while a name the same distance
+under the trigger held — the killed 1-tick flip, on the edge where "don't chase" is
+the loudest thing the strip says. A holding pass clears the failing counter, and
+fading resets the cross counter, so a re-cross pays the full two passes again.
+A pass that stopped holding but was SUPPRESSED by the buffer carries
+``fade_unconfirmed``, the fourth marker: every other debounced transition already had
+one, and a suppressed pass nobody records is a suppression nobody can measure — which
+is the whole charter of the marker set. Gate 2 widens it to both edges, so a marginal
+OVERRUN is now as countable as a marginal drop.
 
 The BOARD path is debounced the same way, symmetrically. It was not, and a board
 name whose price straddled its fade level by four cents (90.02 / 89.98 on a 90.00
@@ -600,6 +611,9 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
             # alone promoted a runaway to forming on its second pass.
             passes = prev_passes + 1
             out["passes"] = passes
+            # A holding pass clears the failing counter: the fade debounce counts
+            # CONSECUTIVE failures, exactly as the board path's does.
+            out["fails"] = 0
             out["entered"] = "cross"
             if passes >= need:
                 out["state"] = "forming"
@@ -607,35 +621,42 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
                 # One pass inside the interval is NOT a public state (G0.5).
                 out["state"] = "near"
                 out["internal"] = CROSSING_UNCONFIRMED
-        elif (lo is not None and prev_state == "forming"
-                and float(lo) * (1.0 - buf) <= px < float(lo)):
-            # Inside the hysteresis band just below the trigger: still forming,
-            # counter preserved, so a price sitting on the threshold cannot flap.
-            # `lo is not None` because an interval with no lower edge reaches this
-            # chain too (a not-holding pass there is an overrun, above fade_hi_px);
-            # without the guard that name died in the except and shipped `dark`.
-            out["state"] = "forming"
-            out["passes"] = prev_passes
-            out["entered"] = prev.get("entered") or "cross"
-            # THE SUPPRESSED PASS, MADE COUNTABLE. It stopped holding and the buffer
-            # held the public state anyway — the same shape as the other three markers,
-            # and the only debounced transition that had none. Internal: never a public
-            # state, never in PUBLIC_STATES. The side rides the SPOOL row under its own
-            # key, never the display field `via`: on a row still reading `forming`, a
-            # `via` is a breach reason for a breach that has not happened, and P1 reads
-            # that field to choose between "Fell back" and "Ran past".
-            out["internal"] = FADE_UNCONFIRMED
-            out["internal_via"] = _breach_side(px, lo, hi)
         elif prev_state in ("forming", "faded"):
-            out["state"] = "faded"
-            out["passes"] = 0
+            # IT HELD TODAY AND NOW IT DOES NOT — debounced on BOTH EDGES (W-L0 gate
+            # 2), the same shape the board path uses for at_risk. The buffer used to
+            # be honoured only BELOW the trigger: `_clears_outward` buffers both edges,
+            # but the branch that consulted it was the board's, so a cross name a tenth
+            # of a percent over `fade_hi_px` skipped straight to a public `faded` on ONE
+            # pass while a name the same distance under the trigger held. That is the
+            # 1-tick public flip CSP-R2 kills, on the axis P1 reads as "don't chase".
+            out["fails"] = prev_fails + 1
             out["entered"] = prev.get("entered") or "cross"
-            # WHY it stopped holding. "faded" alone said "fallen through the buffer",
-            # which is false for a name that ran up THROUGH the top of its buyable
-            # range — the opposite trade, and it was polluting the kind axis the
-            # ledger measures. P1 display must treat the two differently: a drop is
-            # "it came back to you", an overrun is "don't chase".
-            out["via"] = _breach_side(px, lo, hi)
+            if prev_state == "faded" or _clears_outward() or out["fails"] >= need:
+                out["state"] = "faded"
+                out["passes"] = 0
+                # WHY it stopped holding. "faded" alone said "fallen through the buffer",
+                # which is false for a name that ran up THROUGH the top of its buyable
+                # range — the opposite trade, and it was polluting the kind axis the
+                # ledger measures. P1 display must treat the two differently: a drop is
+                # "it came back to you", an overrun is "don't chase".
+                out["via"] = _breach_side(px, lo, hi)
+            else:
+                # Inside the hysteresis buffer on EITHER edge: the published state
+                # holds and the cross counter is preserved, so a price sitting on a
+                # boundary cannot flap it. `via` is deliberately absent — nothing has
+                # faded yet, and a kind axis on a non-event is a fabricated reason.
+                out["state"] = "forming"
+                out["passes"] = prev_passes
+                # THE SUPPRESSED PASS, MADE COUNTABLE — and gate 2 widens it from the
+                # drop edge to BOTH. It stopped holding and the buffer held the public
+                # state anyway: the same shape as the other three markers, and the only
+                # debounced transition that had none. Internal: never a public state,
+                # never in PUBLIC_STATES. The side rides the SPOOL row under its own
+                # key, never the display field `via` — on a row still reading `forming`
+                # a `via` is a breach reason for a breach that has not happened, and P1
+                # reads that field to choose between "Fell back" and "Ran past".
+                out["internal"] = FADE_UNCONFIRMED
+                out["internal_via"] = _breach_side(px, lo, hi)
         else:
             out["state"] = "near"
             out["passes"] = 0
