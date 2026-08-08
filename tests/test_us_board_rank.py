@@ -145,54 +145,79 @@ class TestSignalLeg:
 
 
 class TestEntryLeg:
-    def test_map_deliberately_diverged_from_china_at_cn_prophet_v3(self):
-        """The US and CN entry ladders are no longer the same map — ON PURPOSE.
+    def test_the_ladder_is_patience_first_and_stays_that_way(self):
+        """THE ORDER IS THE RULING — this test exists to fail on a re-inversion.
 
-        This test used to assert ``ubr._ENTRY_VALUE == cn._ENTRY_VALUE`` on the
-        premise that the entry-status vocabulary is market-independent.  The CN
-        V1 loser audit refuted the premise for the VALUES (not the vocabulary):
-        in the A-share mean-reversion tape the gauge's patience statuses were the
-        era's best cohort (bounce_wait 6.9% loser rate, wait_pullback 7.7%) and
-        its action statuses the worst (buy_soon 46.7%, partial 41.4%, buy_now
-        30.0%) — see the CN masterplan §2.3/§2.11.  cn_prophet_v3 re-ordered CN's
-        ladder to that measured order (operator-ratified 2026-08-04).
+        Era history, because this constant has now been all three things:
+          * pre-2026-08-04 the US and CN maps were IDENTICAL, on the premise that
+            the entry-status vocabulary is market-independent;
+          * 2026-08-04 the CN V1 loser audit refuted that premise for the VALUES
+            (not the vocabulary) — in the A-share tape the patience statuses were
+            the era's best cohort (bounce_wait 6.9% loser rate, wait_pullback
+            7.7%) and the action statuses its worst (buy_soon 46.7%, partial
+            41.4%, buy_now 30.0%; CN masterplan §2.3/§2.11).  cn_prophet_v3
+            adopted that order; the US map kept the trend-tape order, and the
+            predecessor of this test pinned that fork as deliberate.
+          * 2026-08-08 (ANTICIPATION §6.2) the US map adopts the CN ORDERING.
+            The parity anatomy measured the cost of the fork: CN's live board is
+            24/24 patience statuses, the US admitted set was 27/27 action
+            statuses, and the US board already carries the bounce_wait cohort —
+            it ranked it last.  Operator ruling 2026-08-08: ship the ordering,
+            revise the constants from the §6.6 US re-measurement.
 
-        That evidence is CN-tape evidence and does NOT transfer to the US trend
-        tape, whose own audit found the mirror-image failure surface.  So the US
-        map stays where it is, and this test's job flips: it now pins the US map
-        as its own frozen constant and pins that the fork is real, so neither
-        side can be "re-synced" into the other by accident.
+        So the ordering is no longer a fork and the old fork test would now be
+        asserting the reverse of the ruling.  What must never silently move is
+        the ORDER, and that is what the chain below pins: any re-inversion, and
+        any pairwise swap inside the chain, fails here.
         """
-        from engine import china_board_rank as cn
+        values = [ubr._ENTRY_VALUE[status] for status in ubr.ENTRY_LADDER_ORDER]
+        assert ubr.ENTRY_LADDER_ORDER == (
+            "bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "buy_soon")
+        assert values == sorted(values, reverse=True), ubr.ENTRY_LADDER_ORDER
+        assert len(set(values)) == len(values), "the ladder must be STRICTLY ordered"
+        # The two ends, named, so a reader of a failure sees the ruling itself.
+        assert max(ubr._ENTRY_VALUE, key=ubr._ENTRY_VALUE.get) == "bounce_wait"
+        assert ubr._ENTRY_VALUE["bounce_wait"] > ubr._ENTRY_VALUE["buy_now"]
 
+    def test_the_values_are_the_v1_provisional_constants(self):
+        """The VALUES, pinned separately from the order — the §6.6 US
+        re-measurement is expected to revise these numbers WITHOUT touching the
+        order above, and the two failures should be readable apart."""
         assert ubr._ENTRY_VALUE == {
-            "buy_now": 1.0,
-            "partial": 0.9,
-            "buy_soon": 0.8,
-            "hold": 0.65,
-            "wait_pullback": 0.55,
+            "bounce_wait": 1.0,
+            "wait_pullback": 0.95,
+            "hold": 0.8,
+            "buy_now": 0.7,
+            "partial": 0.6,
             "later": 0.55,
             "await": 0.45,
             "await_confluence": 0.45,
             "watch": 0.4,
-            "bounce_wait": 0.35,
+            "buy_soon": 0.35,
             "extended": 0.0,
             "topping": 0.0,
             "blocked": 0.0,
             "exit": 0.0,
             "avoid": 0.0,
         }
-        # The VOCABULARY is still shared — one status set, two orderings.
+
+    def test_the_vocabulary_is_shared_with_china_but_the_map_is_not_a_copy(self):
+        """One status set, and two maps that agree on the ORDER without being the
+        same object.  The US keeps its own `later` and `extended` values (the CN
+        map has 0.5 / 0.3), so a future "just import CN's map" shortcut still has
+        to be a decision rather than an accident."""
+        from engine import china_board_rank as cn
+
         assert set(ubr._ENTRY_VALUE) == set(cn._ENTRY_VALUE)
-        # The ORDERING is the fork: US leads on the confirmed window, CN on the
-        # early one. If these ever coincide again it is a regression, not a merge.
-        assert max(ubr._ENTRY_VALUE, key=ubr._ENTRY_VALUE.get) == "buy_now"
-        assert max(cn._ENTRY_VALUE, key=cn._ENTRY_VALUE.get) == "bounce_wait"
         assert ubr._ENTRY_VALUE != cn._ENTRY_VALUE
+        assert ubr._ENTRY_VALUE["extended"] == 0.0 and cn._ENTRY_VALUE["extended"] == 0.3
+        # The ordering agreement is the point of this era — both lead on patience.
+        assert max(cn._ENTRY_VALUE, key=cn._ENTRY_VALUE.get) == "bounce_wait"
 
     @pytest.mark.parametrize("status,expected", [
-        ("buy_now", 1.0), ("partial", 0.9), ("buy_soon", 0.8), ("hold", 0.65),
-        ("await_confluence", 0.45), ("watch", 0.4), ("bounce_wait", 0.35),
+        ("bounce_wait", 1.0), ("wait_pullback", 0.95), ("hold", 0.8),
+        ("buy_now", 0.7), ("partial", 0.6), ("await_confluence", 0.45),
+        ("watch", 0.4), ("buy_soon", 0.35),
         ("extended", 0.0), ("topping", 0.0), ("blocked", 0.0), ("avoid", 0.0),
     ])
     def test_values(self, status, expected):
@@ -204,7 +229,8 @@ class TestEntryLeg:
         assert ubr.entry_value(None) == 0.0
 
     def test_status_is_case_insensitive(self):
-        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(1.0)
+        assert ubr.entry_value({"status": "BOUNCE_WAIT"}) == pytest.approx(1.0)
+        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(0.7)
 
 
 class TestEdgeLeg:
@@ -689,8 +715,10 @@ class TestFeatured:
     def test_extension_and_antichase_block(self):
         assert "extended" in ubr.featured_shortfalls(_row("A", ext_z=2.5))
         assert ubr.featured_shortfalls(_row("A", ext_z=2.0)) == []   # not > 2
-        # B3: an UNKNOWN reading is not "at the line" — the veto fires on absence.
-        assert "ext_z_unknown" in ubr.featured_shortfalls(_row("A"))
+        # ANTICIPATION v1: an UNKNOWN reading is disclosed, not vetoed — the veto
+        # fires on evidence past the line and never on absence.  Both branches are
+        # asserted together so neither can be relaxed without the other showing up.
+        assert ubr.featured_shortfalls(_row("A")) == []
         assert "antichase_blocked" in ubr.featured_shortfalls(
             _row("A", antichase_shadow_blocked=True))
 
@@ -731,6 +759,161 @@ class TestFeatured:
         rows = [_row("A"), _row("B", status="avoid", alpha=-2.0)]
         scored = ubr.score_rows(rows, board_asof="2026-07-31")
         assert {r["ticker"] for r in scored} == {"A", "B"}
+
+
+# ---------------------------------------------------------------------------
+# 5b. ANTICIPATION v1 — the widened featured set, and what still binds
+# ---------------------------------------------------------------------------
+
+class TestFeaturedEntryStatuses:
+    """The featured entry set is CN's from 2026-08-08 — and it is currently INERT.
+
+    Both halves are pinned here on purpose.  Widening the set without relaxing the
+    stage gate changes no featured flag on any board, which is the "emitted kind with
+    no decider" shape: a constant that reviews as a behaviour change and produces
+    nothing.  Rather than leave that silent, the inertness is a test — so the day the
+    stage gate is relaxed, THIS is what goes red and the reader is pointed straight at
+    the follow-up instead of discovering the coupling from a board diff.
+    """
+
+    def test_the_set_is_chinas(self):
+        from engine import china_board_rank as cn
+
+        assert ubr._FEATURED_ENTRY_STATUSES == frozenset(
+            ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial"))
+        assert ubr._FEATURED_ENTRY_STATUSES == cn._FEATURED_ENTRY_STATUSES
+
+    @pytest.mark.parametrize("status", ["bounce_wait", "wait_pullback", "hold"])
+    def test_a_patience_status_clears_the_entry_veto(self, status):
+        reasons = ubr.featured_shortfalls(_row("A", status=status, ext_z=0.0))
+        assert f"entry_status_{status}" not in reasons
+
+    @pytest.mark.parametrize("status,stage", [
+        ("bounce_wait", ubr.STAGE_SETTING_UP),
+        ("wait_pullback", ubr.STAGE_SETTING_UP),
+        ("hold", ubr.STAGE_RAN),
+    ])
+    def test_but_the_stage_gate_still_stops_it(self, status, stage):
+        """DELIBERATE NON-REPAIR — this test FAILS WHEN THE FOLLOW-UP LANDS.
+
+        `stage_for` routes the patience statuses off `live`, and `featured_shortfalls`
+        vetoes anything not `live`.  CN has no stage gate on featuring at all, which is
+        the structural difference the parity anatomy named.  Relaxing it moves rows
+        onto a shelf whose own label reads "Setting up" / "Ran — don't chase", so it is
+        a SURFACE decision, not a rank-module one, and it is not taken here.
+        """
+        row = _row("A", status=status, ext_z=0.0)
+        assert ubr.stage_for(row) == stage
+        assert "stage_not_live" in ubr.featured_shortfalls(row)
+        scored = ubr.score_rows([row], board_asof="2026-07-31")
+        assert scored[0]["featured"] is False
+
+    @pytest.mark.parametrize("status", ["buy_soon", "extended", "topping", "watch",
+                                        "await_confluence", "avoid"])
+    def test_the_widening_did_not_open_the_door_to_everything(self, status):
+        """Falsifier: `buy_soon` is LIVE and still not featurable (CN's era-worst
+        cohort), and nothing outside the set slipped in with the three that did."""
+        reasons = ubr.featured_shortfalls(_row("A", status=status, ext_z=0.0))
+        assert f"entry_status_{status}" in reasons
+
+    def test_buy_now_and_partial_are_still_featurable(self):
+        for status in ("buy_now", "partial"):
+            row = _row("A", status=status, ext_z=0.0)
+            assert ubr.featured_shortfalls(row) == []
+            assert ubr.score_rows([row], board_asof="2026-07-31")[0]["featured"] is True
+
+
+# ---------------------------------------------------------------------------
+# 5c. ANTICIPATION v1 — an unknown extension is disclosed, not vetoed
+# ---------------------------------------------------------------------------
+
+class TestExtensionUnknownIsDisclosed:
+    """The 2026-08-06 shape, pinned: one upstream gap must not dark the lane.
+
+    Measured cause of that board (`site/factordata/us_standouts.json` @3cbef39a6ea):
+    the equity close panel's newest row carried 6 of 3,034 members, and
+    `engine.extension.extension_signals` reads one global `.iloc[-1]`, so all 69 buy
+    rows came back `ext_z` None and the B3 veto published `featured: 0`.
+    """
+
+    def test_unknown_is_eligible_and_flagged(self):
+        row = _row("A")                     # no ext_z at all
+        assert ubr.featured_shortfalls(row) == []
+        scored = ubr.score_rows([row], board_asof="2026-07-31")
+        assert scored[0]["featured"] is True
+        assert scored[0]["ext_unknown"] is True
+
+    def test_nan_counts_as_unknown_not_as_a_reading(self):
+        """The 07-31 defect delivered a float that is not a number."""
+        row = _row("A", ext_z=float("nan"))
+        assert ubr.ext_unknown(row) is True
+        assert ubr.featured_shortfalls(row) == []
+        assert ubr.score_rows([row], board_asof="2026-07-31")[0]["ext_unknown"] is True
+
+    def test_a_known_extended_reading_still_blocks_exactly_as_before(self):
+        """The other half of the branch — the veto still fires on EVIDENCE."""
+        row = _row("A", ext_z=2.5)
+        assert ubr.ext_unknown(row) is False
+        assert "extended" in ubr.featured_shortfalls(row)
+        scored = ubr.score_rows([row], board_asof="2026-07-31")
+        assert scored[0]["featured"] is False
+        assert "extended" in scored[0]["featured_blocked_by"]
+        assert scored[0]["ext_unknown"] is False
+
+    def test_the_boundary_is_unchanged(self):
+        assert ubr.featured_shortfalls(_row("A", ext_z=2.0)) == []
+        assert "extended" in ubr.featured_shortfalls(_row("A", ext_z=2.001))
+
+    def test_the_score_leg_still_fails_closed_on_an_unknown_reading(self):
+        """Fail-closed moved for the LANE, never for the POINTS: an unmeasured row
+        still earns 0 runway.  If this ever pays out, an outage starts INFLATING
+        scores, which is strictly worse than the lane going dark."""
+        scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
+        assert scored[0]["prophet"]["components"]["runway"] == 0.0
+
+    def test_the_2026_08_06_shape_no_longer_darks_the_lane(self):
+        """69 rows, every ext_z unknown — the board that shipped `featured: 0`."""
+        rows = [_row(f"T{i:02d}", sector=f"S{i % 9}", alpha=1.0 + i)
+                for i in range(69)]
+        scored = ubr.score_rows(rows, board_asof="2026-07-31")
+        featured = [r for r in scored if r["featured"]]
+        assert len(featured) == ubr.FEATURED_CAP
+        assert all(r["ext_unknown"] is True for r in featured)
+        block = ubr.ranking_block(scored)
+        assert block["ext_unknown_coverage"] == {
+            "unknown": 69, "n": 69, "featured_with_unknown": ubr.FEATURED_CAP}
+        # The B3 key survives and is still recomputed — it just reads 0 now, which is
+        # accurate and is exactly why `ext_unknown_coverage` had to exist.
+        assert block["featured_blocked_unknown_extension"] == 0
+
+    def test_the_coverage_receipt_moves_with_the_data(self):
+        """Mutation: give them readings and the disclosure must move (a frozen number
+        would pass the test above and lie on every later board)."""
+        alive = ubr.score_rows(
+            [_row(f"T{i}", ext_z=0.0) for i in range(3)], board_asof="2026-07-31")
+        assert ubr.ranking_block(alive)["ext_unknown_coverage"] == {
+            "unknown": 0, "n": 3, "featured_with_unknown": 0}
+
+    def test_a_dark_board_raises_a_line_start_warning(self, capsys):
+        ubr.score_rows([_row(f"T{i}") for i in range(4)], board_asof="2026-07-31")
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "featured-ext-z-unknown" in ln]
+        assert lines, "a fully dark extension input raised no alarm"
+        # House law: the annotation must START the line, or GitHub drops it silently.
+        assert lines[0].startswith("::warning title=featured-ext-z-unknown::"), lines[0]
+        assert "4/4" in lines[0]
+
+    def test_a_healthy_board_stays_quiet(self, capsys):
+        """Falsifier: the alarm must be a majority test, not an any-unknown test —
+        otherwise it fires on every board and stops meaning anything."""
+        rows = [_row(f"T{i}", ext_z=0.0) for i in range(4)]
+        rows[0].pop("ext_z")
+        ubr.score_rows(rows, board_asof="2026-07-31")
+        assert "featured-ext-z-unknown" not in capsys.readouterr().out
+
+    def test_the_alarm_fires_strictly_above_the_line(self):
+        """Exactly half unknown is not a majority — the boundary is open."""
+        assert ubr.EXT_UNKNOWN_ALARM_FRACTION == 0.5
 
     def test_fewer_than_the_cap_is_honest_emptiness(self):
         scored = ubr.score_rows([_row("A", status="extended")],
@@ -784,11 +967,17 @@ class TestScoreRows:
     def test_a_perfect_row_scores_100(self):
         """100 needs a real cross-section: `edge` is a percentile, and m3 gives a pool
         of ONE no percentile at all (top and bottom coincide), so the same row alone
-        tops out at 75."""
+        tops out at 75.
+
+        The perfect row's entry status is ``bounce_wait`` from ANTICIPATION v1
+        (2026-08-08): the entry leg pays 1.0 for the top of the ladder, and the top of
+        the ladder is now the patience end.  A ``buy_now`` row can no longer reach 100
+        — that is the ruling, not a regression.
+        """
         scored = ubr.score_rows(
-            [_row("A", status="buy_now", tier="T2", ticks=1, alpha=1.0,
+            [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True}),
-             _row("Z", status="buy_now", tier="T2", ticks=1, alpha=0.0,
+             _row("Z", status="bounce_wait", tier="T2", ticks=1, alpha=0.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
         assert scored[0]["ticker"] == "A"
@@ -796,7 +985,7 @@ class TestScoreRows:
 
     def test_a_lone_perfect_row_tops_out_at_the_scoreable_range(self):
         scored = ubr.score_rows(
-            [_row("A", status="buy_now", tier="T2", ticks=1, alpha=1.0,
+            [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
         assert scored[0]["prophet"]["score"] == pytest.approx(75.0)
@@ -840,9 +1029,39 @@ class TestScoreRows:
 
 
 class TestRankingBlock:
+    def test_the_block_stamps_the_selection_era(self):
+        """ANTICIPATION §6.2 item 4 — a forward-ledger row must be readable against
+        the SELECTION rule that produced it, not against today's constants.  The
+        stamp covers the entry ladder and the featured entry set, so it moves when
+        either does; the module constant and the published field are pinned together
+        so the stamp cannot drift from the block."""
+        block = ubr.ranking_block(
+            ubr.score_rows([_row("A", ext_z=0.0)], board_asof="2026-07-31"))
+        assert ubr.SELECTION_ERA == "anticipation-v1-2026-08-08"
+        assert block["selection_era"] == ubr.SELECTION_ERA
+        # It ships on an empty board too — an era is a property of the RULE.
+        assert ubr.ranking_block([])["selection_era"] == ubr.SELECTION_ERA
+
+    def test_the_entry_leg_provenance_is_not_the_stale_china_claim(self):
+        """The basis string read "frozen status map, shared with the China board"
+        from before the 2026-08-04 fork until 2026-08-08 — false for four days and
+        false in a new way after this era.  What it must now do: name the ladder it
+        actually applies, keep the vocabulary/values distinction, and say out loud
+        that the US re-measurement has not been run."""
+        entry = [p for p in ubr.ranking_block([])["formula_points"]
+                 if p["component"] == "entry"][0]
+        assert entry["basis"] != "frozen status map, shared with the China board"
+        assert "map, shared with the China board" not in entry["basis"]
+        # The surviving mention must be scoped to the VOCABULARY — the values are not
+        # shared, and that distinction is the whole point of the rewrite.
+        assert "vocabulary shared with the China board" in entry["basis"]
+        assert "bounce_wait 1.0" in entry["basis"]
+        assert ubr.SELECTION_ERA in entry["basis"]
+        assert "has not been run" in entry["basis"]
+
     def test_block_discloses_the_formula_and_the_scoreless_inputs(self):
-        # ext_z=0.0: a row must carry a KNOWN extension reading to be featurable (B3),
-        # and this test asserts featured_count == 1.
+        # ext_z=0.0: a KNOWN un-extended reading, so the `extended` veto is provably
+        # not what lets this row through; featured_count == 1 either way now.
         scored = ubr.score_rows([_row("A", ext_z=0.0)], board_asof="2026-07-31")
         block = ubr.ranking_block(scored)
         assert block["definition"] == "us_prophet_v1"

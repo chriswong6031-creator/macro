@@ -689,48 +689,52 @@ def test_every_priority_card_carries_a_stage_attribute(prio_html):
 # G4 — the featured glow, and ONLY on featured rows
 # --------------------------------------------------------------------------- #
 
-def test_the_hk_board_can_no_longer_feature_anything():
-    """A KNOWN DEFECT, pinned so it cannot go quiet. THIS TEST IS MEANT TO FAIL once HK
-    can feature again — that failure is the signal to delete it and re-pin G4 on the
-    real cohort.
+def test_hk_still_has_no_extension_wiring_and_now_says_so_on_every_row():
+    """THE SAME KNOWN DEFECT, pinned through its second disclosure mechanism.
 
-    #4684 (B3, 2026-08-06) made an ABSENT extension reading a featured veto in
-    `us_board_rank._featured_shortfalls`: "a row with NO ext_z reading is not 'at the
-    line', it is unmeasured".  That is right, and on the US board it is fail-closed on a
-    WIRED input that happened to be null — it forces the wiring to be repaired.
+    The defect has never changed: `ext_z` is set nowhere in
+    `scripts/build_hk_library.py`, nowhere in `engine/hk_board_rank.py`, and on no row
+    of the frozen 2026-07-31 artifact.  HK has no extension reading at all.  What has
+    changed twice is what the shared US machinery DOES about it:
 
-    HK has no wiring to repair.  `ext_z` is set nowhere in `scripts/build_hk_library.py`,
-    nowhere in `engine/hk_board_rank.py`, and on no row of the frozen 2026-07-31 artifact
-    — so for HK the veto is not fail-closed, it is UNSATISFIABLE, and the featured aura
-    is dark board-wide.  Measured on the production fixture: 3 of 3 buy rows carry
-    `ext_z_unknown`, `featured_count` is 0 and `featured_blocked_unknown_extension` is 3.
-    #4684 measured 59 rows / 10 featured — that is the US board; HK was never checked,
-    and this job was red at the time so nothing said so.
+      * #4684 (B3, 2026-08-06) made an absent reading a featured VETO.  On the US
+        board that is fail-closed on a wired input that happened to be null.  On HK
+        it was UNSATISFIABLE — no wiring exists to repair — so the featured aura went
+        dark board-wide, and the predecessor of this test pinned that darkness with
+        `featured_count == 0` / `featured_blocked_unknown_extension == 3`.
+      * ANTICIPATION v1 (2026-08-08, `us_board_rank`) replaced the absence-veto with a
+        per-row disclosure after the same veto published a US featured lane of 0 out
+        of 69 on a one-night data gap.  HK inherits that wholesale, so the aura is
+        lit again — on rows whose chase-risk check still has no input.
 
-    Not repaired here: the two candidate repairs are wiring an HK extension reading, or
-    giving HK a policy switch the way `reclaim_veto=False` already scopes off the other
-    leg HK cannot satisfy (`signal_quality._confirm_legs` calls that leg "an
-    UNSATISFIABLE condition" in as many words).  Both are board-owner calls, not CI
-    heals.  What this test guarantees meanwhile is that the darkness is DISCLOSED rather
-    than silent — the escape hatch #4684 itself specified: "0 featured with a large count
-    here means the leg has no input on this board, which is a data fact the artifact must
-    print".
+    That inheritance is a CROSS-MARKET consequence of a US-program change and it is
+    pinned here rather than left to a board diff.  The HK repair is unchanged and is
+    still a board-owner call, not a CI heal: wire an HK extension reading, or scope
+    the leg off the way `reclaim_veto=False` already scopes off the other leg HK
+    cannot satisfy (`signal_quality._confirm_legs` calls that one "an UNSATISFIABLE
+    condition" in as many words).  What this test guarantees meanwhile is that the
+    gap is DISCLOSED rather than silent: every row says `ext_unknown`, the block
+    counts them, and it counts how many were featured anyway.
     """
     su = production_fixture()
     buy = su["buy"]
     assert buy, "no buy lane — the assertions below would be vacuous"
-    assert all(not r.get("featured") for r in buy), (
-        "HK featured something — if `ext_z` was wired or the veto scoped, delete this "
-        "test and re-pin the G4 gates on the real featured cohort")
-    assert all("ext_z_unknown" in (r.get("featured_blocked_by") or ()) for r in buy), (
-        "the HK rows are unfeatured for some OTHER reason now — this pin has stopped "
-        "describing the defect it was written for")
-    # the darkness must be PRINTED, not merely true
+    assert all(r.get("ext_unknown") is True for r in buy), (
+        "an HK row carries an extension reading — if `ext_z` was finally wired, "
+        "delete this test and re-pin the G4 gates on the real featured cohort")
+    # The gap must be PRINTED, not merely true, and the print must name how many
+    # rows were featured WITHOUT the evidence — that is the number this era owes.
     rb = su["ranking"]
-    assert rb.get("featured_count") == 0
-    assert rb.get("featured_blocked_unknown_extension") == len(buy), (
-        "the disclosure counter no longer reports the whole buy lane — a dark featured "
-        "leg that does not say so is the failure mode #4684 built this counter for")
+    cov = rb.get("ext_unknown_coverage") or {}
+    assert cov.get("unknown") == cov.get("n") == len(buy), cov
+    assert cov.get("featured_with_unknown") == rb.get("featured_count"), (
+        "the disclosure no longer accounts for every featured row's missing "
+        "extension evidence")
+    # The absence no longer routes through `featured_blocked_by` — pinned so a
+    # re-introduced absence-veto shows up here instead of silently re-darkening HK.
+    assert rb.get("featured_blocked_unknown_extension") == 0
+    assert not any("ext_z_unknown" in (r.get("featured_blocked_by") or ())
+                   for r in buy)
 
 
 def test_featured_glow_lands_only_on_featured_rows(prio_html):
