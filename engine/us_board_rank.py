@@ -46,11 +46,20 @@ smart money, insider prints, SUE, and options/GEX are **context chips only**.
 
 Fail-closed rule, inherited from CN: unknown evidence never earns best-case points.
 A row with no extension reading scores 0 on ``runway`` (it is not assumed "not
-extended"); a row with an unknown entry status buckets to ``setting_up``, never to
-``live``; and, from 2026-08-06, a row with no extension reading is not eligible for
-``featured`` either — the veto used to pass anything it could not measure, which is
-how a board whose ``ext_z`` wiring was dark featured ten rows with the extension check
-never once firing.
+extended"), and a row with an unknown entry status buckets to ``setting_up``, never to
+``live``.
+
+FAIL-CLOSED IS ABOUT POINTS, NOT ABOUT THE LANE (ANTICIPATION v1, 2026-08-08).  From
+2026-08-06 an unknown ``ext_z`` also VETOED ``featured``, and on 2026-08-06 that turned
+one upstream data gap into a dark board: the equity close panel's newest row carried 6
+of 3,034 members, ``extension_signals`` takes a single global ``.iloc[-1]``, so all 69
+buy rows came back ``ext_z`` None and the featured lane published 0 of 69.  A veto that
+converts an input outage into "we have nothing for you" is a bigger error than the one
+it was written to prevent.  An unknown reading is now DISCLOSED rather than vetoing:
+the row is featured-eligible and carries ``ext_unknown: true``, the artifact prints the
+unknown count, and a majority-unknown board raises a ``::warning``.  A KNOWN reading
+past the parabolic line still blocks, exactly as before — the veto still fires on
+evidence, it just no longer fires on absence.
 """
 from __future__ import annotations
 
@@ -84,11 +93,18 @@ RAN_TICKS_MAX = 15
 # window uses (``ticks <= FEATURED_MAX_TICKS`` qualifies at exactly 2).
 #
 # OPEN AT THE BOUNDARY IS NOT OPEN ON ABSENCE (B3, 2026-08-06).  A row with NO ext_z
-# reading is not "at the line", it is unmeasured, and it is now blocked from featured
-# (``ext_z_unknown``) exactly as an unknown ``ticks`` or an unknown tier already was.
-# The veto fired 0 times in 59 rows on the 07-31 board while all 10 featured names
-# carried ext_z None — a veto whose input is dark cannot be said to have passed.
+# reading is not "at the line", it is unmeasured.  B3 answered that by BLOCKING it from
+# featured (``ext_z_unknown``); ANTICIPATION v1 (2026-08-08) answers it by DISCLOSING it
+# (``ext_unknown``) — see the module docstring for why the block was the worse of the
+# two errors.  The scoring leg is unchanged either way: an unmeasured row still earns 0
+# runway, because that is a points question and points are where fail-closed belongs.
 EXT_Z_FULL = 2.0
+
+# A board whose extension reading is unknown on more than this share of its scored rows
+# is not a board with a few gaps, it is a board whose extension input is out — the
+# 2026-08-06 shape (69/69).  Above this line the pass raises a ``::warning`` so the
+# outage is visible in the Actions summary instead of only inside the artifact.
+EXT_UNKNOWN_ALARM_FRACTION = 0.5
 
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
 FEATURED_MAX_TICKS = 2
@@ -110,29 +126,64 @@ SCORE_WEIGHTS = {
     "quality": 10.0,
 }
 
+# The selection era this module's SELECTION constants belong to — the entry-value
+# ladder and the featured entry set below.  Stamped into every ``ranking`` block so a
+# forward ledger row can be read against the rule that produced it instead of against
+# whatever the constants say the day someone opens the artifact.  Bump it whenever the
+# ladder or the featured set moves: two eras are two different products.
+SELECTION_ERA = "anticipation-v1-2026-08-08"
+
 # Frozen definition inputs, not fitted coefficients.  The tier cascade and
-# entry-status VOCABULARIES are shared with engine.china_board_rank, but the
-# entry VALUES diverged 2026-08-04: CN v3 re-ordered its map to the measured
-# CN prime-window order (patience statuses first) while the US map below keeps
-# the trend-tape order.  tests/test_us_board_rank.py pins the divergence.
+# entry-status VOCABULARIES are shared with engine.china_board_rank; the VALUES are
+# this board's own and have now been through two eras.
+#
+# ANTICIPATION v1 (2026-08-08) — PATIENCE-FIRST.  From 2026-08-04 to 2026-08-08 this
+# map ran the trend-tape order (``buy_now 1.0 … bounce_wait 0.35``), the mirror image
+# of CN v3.  The parity anatomy
+# (``research/prophet_us_audit/CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md``) measured
+# what that costs: CN's live board is 24/24 patience statuses while the US admitted
+# set was 27/27 action statuses, and the US board ALREADY CARRIES the bounce_wait
+# cohort — it just ranked it last.  The ordering below adopts CN v3's
+# (``engine/china_board_rank.py:96-112``).
+#
+# THESE ARE v1-PROVISIONAL CONSTANTS, NOT A US MEASUREMENT.  The ordering rests on a
+# CN cohort (407 matured episodes, CN masterplan §2.3: bounce_wait 6.9% loser rate vs
+# buy_now 30.0%) and that evidence is CN-tape evidence.  The US re-measurement over
+# the W7 full-population stamped store is the §6.6 work item and it has NOT been run;
+# until it lands nothing here may be described as US-measured.  Operator ruling
+# 2026-08-08: ship the ordering live now, revise the numbers from the nightly
+# re-measurement when it exists.
+#
+# Two values are DELIBERATELY not CN's, so the maps stay distinct (see the fork test):
+#   * ``later`` stays 0.55 (CN 0.5) — no evidence names it on either tape;
+#   * ``extended`` stays 0.0 (CN 0.3) — CN keeps an already-ran name rankable, the US
+#     ``ran`` shelf demotes it, and re-valuing that is its own ruling.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
 _ENTRY_VALUE = {
-    "buy_now": 1.0,
-    "partial": 0.9,
-    "buy_soon": 0.8,
-    "hold": 0.65,
-    "wait_pullback": 0.55,
-    "later": 0.55,
+    "bounce_wait": 1.0,       # CN §2.3: 6.9% loser rate — the era's best cohort
+    "wait_pullback": 0.95,    # CN §2.3: 7.7% loser rate
+    "hold": 0.8,              # no CN cohort printed — ordinal: patience, below the two leaders
+    "buy_now": 0.7,           # CN §2.3: 30.0% loser rate — the confirmed-late window
+    "partial": 0.6,           # CN §2.3: 41.4% loser rate
+    "later": 0.55,            # US-only value; no cohort on either tape
     "await": 0.45,
     "await_confluence": 0.45,
     "watch": 0.4,
-    "bounce_wait": 0.35,
-    "extended": 0.0,
+    "buy_soon": 0.35,         # CN §2.3: 46.7% loser rate — the era's worst
+    "extended": 0.0,          # US-only value; the ``ran`` shelf owns this state
     "topping": 0.0,
     "blocked": 0.0,
     "exit": 0.0,
     "avoid": 0.0,
 }
+
+# The strictly-decreasing spine of the ladder above, in the order the ANTICIPATION
+# ruling fixed.  Named here rather than left implicit so a test can pin the ORDER
+# (which is the ruling) separately from the VALUES (which the §6.6 US re-measurement
+# is expected to revise).  Re-inverting the ladder breaks this chain.
+ENTRY_LADDER_ORDER = (
+    "bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "buy_soon",
+)
 
 # Stage buckets — timing is the WHEN-gate and owns grouping, never order.
 STAGE_LIVE = "live"
@@ -168,7 +219,26 @@ STAGE_LABELS = {
     STAGE_BLOCKED: {"en": "Blocked", "zh": "受阻"},
 }
 
-_FEATURED_ENTRY_STATUSES = frozenset(("buy_now", "partial"))
+# ANTICIPATION v1 (2026-08-08) — the featured shelf admits the PATIENCE statuses.
+# CN's set verbatim (``engine/china_board_rank.py:116-118``); the same v1-provisional
+# caveat as the ladder above applies.
+#
+# STAGED, NOT YET LIVE — READ THIS BEFORE CONCLUDING THE WIDENING DID ANYTHING.
+# ``featured_shortfalls`` vetoes any row whose stage is not ``live``, and
+# ``stage_for`` routes bounce_wait/wait_pullback to ``setting_up`` and hold to
+# ``ran``.  So the three statuses added here clear the ENTRY-STATUS veto and are then
+# stopped by ``stage_not_live`` — today this widening changes no featured flag on any
+# board.  That is deliberate: relaxing the stage gate moves rows onto a rendered
+# shelf whose own label says "Setting up" / "Ran — don't chase", which is a surface
+# contradiction a rank module does not get to resolve alone.  CN has no stage gate on
+# featuring at all (``china_board_rank._featured_shortfalls``) — that is the
+# structural difference, and closing it is the follow-up.
+# ``tests/test_us_board_rank.py::TestFeaturedEntryStatuses`` pins BOTH halves: the
+# widened set, and the fact that it is currently inert.  That test goes red when the
+# stage gate is relaxed, which is exactly when someone should be reading this comment.
+_FEATURED_ENTRY_STATUSES = frozenset(
+    ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial")
+)
 _FEATURED_TIERS = frozenset(("T1", "T2", "T3"))
 
 ZERO_SCORE_AUTHORITY = (
@@ -255,6 +325,17 @@ def _notice(title: str, message: str) -> None:
     block-buffered when piped in CI, hence the flush.
     """
     print(f"::notice title={title}::{message}", flush=True)
+
+
+def _warning(title: str, message: str) -> None:
+    """Emit a GitHub Actions warning.
+
+    Same house law as :func:`_notice`: a BARE ``print`` starting the line, never a
+    logger (a prefixing formatter turns ``::warning`` into ``WARNING ::warning`` and
+    GitHub drops it silently), and ``flush=True`` because stdout is block-buffered
+    when piped in CI.
+    """
+    print(f"::warning title={title}::{message}", flush=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -602,6 +683,17 @@ def signal_age(
 # --------------------------------------------------------------------------- #
 # featured
 # --------------------------------------------------------------------------- #
+def ext_unknown(row: Mapping[str, Any]) -> bool:
+    """True when this row carries no usable extension reading.
+
+    One predicate, three consumers — the featured disclosure flag, the artifact count
+    and the outage alarm — so "unknown" cannot mean three slightly different things.
+    NaN counts as unknown: the 2026-07-31 defect delivered a float that is not a
+    number, and a float that is not a number is not evidence.
+    """
+    return _finite_float(row.get("ext_z")) is None
+
+
 def featured_shortfalls(
     row: Mapping[str, Any],
     *,
@@ -656,18 +748,20 @@ def featured_shortfalls(
     if row.get("antichase_shadow_blocked") is True:
         reasons.append("antichase_blocked")
 
-    # B3 2026-08-06 — an UNKNOWN extension is not "not extended".  The veto used to
-    # fire only on a numeric ext_z above the line, so a row with no reading passed it
-    # unopposed: on the 07-31 board `extended` fired 0 times in 59 rows and all 10
-    # featured names carried ext_z None.  A veto that cannot see its own evidence is
-    # not a veto.  Fail-closed here matches the score leg's own rule (a row with no
-    # extension reading earns 0 runway — it is not assumed un-extended) and the
-    # `ticks_unknown` precedent directly above.  Display-tier only: the row keeps its
-    # place on the buy lane and its score; it just cannot be FEATURED.
+    # ANTICIPATION v1 2026-08-08 — an unknown extension is DISCLOSED, not vetoed.
+    # B3 (2026-08-06) made an unknown reading a featured veto on the reasoning that a
+    # veto whose input is dark cannot be said to have passed.  That reasoning is right
+    # about the EVIDENCE and wrong about the REMEDY: on 2026-08-06 the equity close
+    # panel's newest row held 6 of 3,034 members, `extension_signals` reads one global
+    # `.iloc[-1]`, every one of the 69 buy rows came back None, and the veto published
+    # a featured lane of 0 — an upstream data gap rendered as "nothing to show you".
+    # The board now says what it knows and flags what it does not: the row is eligible
+    # and `score_rows` stamps `ext_unknown` on it, `ranking_block` prints the count,
+    # and a majority-unknown board raises a ::warning.  A KNOWN reading past the line
+    # still blocks — the veto fires on evidence, never on absence.  The SCORE leg is
+    # untouched: an unmeasured row still earns 0 runway.
     ext_z = _finite_float(row.get("ext_z"))
-    if ext_z is None:
-        reasons.append("ext_z_unknown")
-    elif ext_z > EXT_Z_FULL:
+    if ext_z is not None and ext_z > EXT_Z_FULL:
         reasons.append("extended")
 
     alpha = _finite_float((alpha_of or selection_value)(row))
@@ -780,6 +874,12 @@ def score_rows(
         )
         row["_featured_shortfalls"] = shortfalls
         row["featured"] = False
+        # Per-row extension disclosure (ANTICIPATION v1).  Stamped on EVERY row as a
+        # bool, never only when true: a missing key would read as "old build" and a
+        # false is a fact the same way a zero in `stage_counts` is.
+        row["ext_unknown"] = ext_unknown(row)
+
+    _warn_on_dark_extension(pool, definition=definition)
 
     pool.sort(
         key=lambda row: (
@@ -809,6 +909,58 @@ def score_rows(
             row["featured"] = True
             row.pop("featured_blocked_by", None)
     return pool
+
+
+def ext_unknown_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+    """``{"unknown": k, "n": total, "featured_with_unknown": m}`` over scored rows.
+
+    The disclosure that replaces the information ``featured_blocked_unknown_extension``
+    used to carry.  That key still ships and is still recomputed, but from 2026-08-08
+    an unknown reading no longer blocks, so it reads 0 on every board — accurate, and
+    for exactly that reason no longer able to tell a reader whether the extension input
+    is alive.  This is the number that can: ``unknown`` counts the rows with no reading
+    and ``featured_with_unknown`` counts how many of them the shelf published anyway.
+
+    ``ext_unknown`` is read off the stamped row when present so this agrees with the
+    flag the artifact shipped, and falls back to the predicate for rows scored by an
+    older pass.
+    """
+    out = {"unknown": 0, "n": 0, "featured_with_unknown": 0}
+    for row in rows:
+        out["n"] += 1
+        flag = row.get("ext_unknown")
+        unknown = bool(flag) if isinstance(flag, bool) else ext_unknown(row)
+        if unknown:
+            out["unknown"] += 1
+            if row.get("featured"):
+                out["featured_with_unknown"] += 1
+    return out
+
+
+def _warn_on_dark_extension(
+    rows: Sequence[Mapping[str, Any]], *, definition: str = BOARD_DEFINITION
+) -> None:
+    """Raise a ``::warning`` when the extension input is out on most of the board.
+
+    Since 2026-08-08 an unknown ``ext_z`` no longer darkens the featured lane, so the
+    lane going empty is no longer the alarm it used to be — this is.  Fired from the
+    scoring pass so it lands in the builder's own Actions step, and phrased with the
+    numbers rather than a hedge.
+    """
+    total = len(rows)
+    if not total:
+        return
+    unknown = sum(1 for row in rows if ext_unknown(row))
+    if unknown <= EXT_UNKNOWN_ALARM_FRACTION * total:
+        return
+    _warning(
+        "featured-ext-z-unknown",
+        f"{definition}: extension reading unknown on {unknown}/{total} scored rows "
+        f"({unknown / total:.0%}) — the featured lane is publishing rows whose "
+        "chase-risk check has no input (ext_unknown: true). Check the extension "
+        "panel's newest row: a partial price advance leaves a sparse last session and "
+        "extension_signals reads one global .iloc[-1].",
+    )
 
 
 def component_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
@@ -884,6 +1036,10 @@ def ranking_block(
     counts = stage_counts(scored)
     return {
         "definition": definition,
+        # Which SELECTION rule produced this board — the entry ladder and the featured
+        # entry set.  Printed so a forward-ledger row is readable against the rule it
+        # was made under rather than against today's constants.
+        "selection_era": SELECTION_ERA,
         "score_kind": SCORE_KIND,
         "weights": dict(SCORE_WEIGHTS),
         "formula_points": [
@@ -893,7 +1049,14 @@ def ranking_block(
                       "cross 2 ticks old ×0.85"},
             {"component": "entry", "points": SCORE_WEIGHTS["entry"],
              "reads": "entry_signal.status",
-             "basis": "frozen status map, shared with the China board"},
+             # Was "frozen status map, shared with the China board" — untrue since the
+             # 2026-08-04 fork, and this era diverges further.  The VOCABULARY is
+             # shared; the VALUES are this board's own and are provisional.
+             "basis": "patience-first status ladder (bounce_wait 1.0 · wait_pullback "
+                      "0.95 · hold 0.8 · buy_now 0.7 · partial 0.6 · buy_soon 0.35); "
+                      "status vocabulary shared with the China board, values are this "
+                      f"board's own. {SELECTION_ERA}: ordering adopted from the CN "
+                      "cohort, the US re-measurement has not been run"},
             {"component": "edge", "points": SCORE_WEIGHTS["edge"],
              "reads": edge_reads,
              "basis": "clip01((pctile − 0.25) / 0.75) — bottom quartile earns 0"},
@@ -917,26 +1080,42 @@ def ranking_block(
         "featured_cap": max(0, int(featured_cap)),
         "sector_cap": max(0, int(sector_cap)),
         "featured_count": sum(1 for row in scored if row.get("featured")),
-        # B3 disclosure — how many rows the featured flag refused for lack of an
-        # extension reading, recomputed from the rows actually scored.  This is the
-        # number that says whether the veto is doing its job or whether the builder's
-        # ext_z wiring is dark: 0 featured with a large count here means the leg has no
-        # input on this board, which is a data fact the artifact must print rather than
-        # a reason to let unknown evidence through.
+        # B3 disclosure, kept and still recomputed — how many rows the featured flag
+        # refused for lack of an extension reading.  Since ANTICIPATION v1 (2026-08-08)
+        # an unknown reading does not refuse anything, so on a current board this reads
+        # 0.  That is ACCURATE and it is also no longer informative, which is why
+        # `ext_unknown_coverage` sits directly below it: the count of rows with no
+        # reading, and how many of them were featured anyway, is the fact a reader
+        # needs.  The key stays so an artifact from either era can be read the same way
+        # and so a re-introduced veto shows up here instead of silently.
         "featured_blocked_unknown_extension": sum(
             1 for row in scored
             if "ext_z_unknown" in (row.get("featured_blocked_by") or ())
         ),
+        # The live extension-coverage receipt (ANTICIPATION v1), recomputed every
+        # build.  `unknown == n` is the 2026-08-06 shape: the extension input is out
+        # and every featured row's chase-risk check is running blind.
+        "ext_unknown_coverage": ext_unknown_coverage(scored),
         "featured_requirements": [
             "stage is live",
-            "entry status is buy_now or partial",
+            # Both lines are true and they bind together: the ladder admits the
+            # patience statuses, the stage gate above still only passes `live`, and
+            # `stage_for` routes bounce_wait/wait_pullback to `setting_up` and hold to
+            # `ran`.  Printed as the pair rather than as one tidy sentence because a
+            # reader comparing this board to CN's needs to see which of the two gates
+            # is the binding one.
+            "entry status is one of "
+            + ", ".join(sorted(_FEATURED_ENTRY_STATUSES))
+            + " (the patience statuses are admitted by the ladder but not yet by the "
+              "stage gate above, so today only buy_now and partial can reach the "
+              "shelf)",
             "confluence tier T1, T2 or T3",
             f"cross no older than {FEATURED_MAX_TICKS} ticks (a same-day cross, "
             "ticks 0, qualifies)",
             "verdict not provisional",
-            "no anti-chase flag, and a KNOWN extension reading at or below the "
-            f"parabolic line (ext_z <= {EXT_Z_FULL}; an unknown reading does not "
-            "qualify)",
+            "no anti-chase flag, and no extension reading ABOVE the parabolic line "
+            f"(ext_z <= {EXT_Z_FULL}); an unknown reading qualifies and is disclosed "
+            "on the row as ext_unknown rather than blocking the lane",
             "residual alpha at or above zero",
             "outside the earnings blackout window",
             f"at most {int(sector_cap)} per sector, {int(featured_cap)} on the board",
