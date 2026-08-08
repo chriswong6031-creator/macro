@@ -222,3 +222,29 @@ def test_partial_artifact_is_rejected():
     assert signal_lab._btc_vector_figures({"allocation": {"optimal": {}}}, trial) is None
     assert signal_lab._btc_vector_figures(None, trial) is None
     assert signal_lab._btc_vector_figures({}, None) is None
+
+
+# ---------------------------------------------------------------------------
+# 5. Pure assembler — building the page must not rewrite the module registry
+# ---------------------------------------------------------------------------
+def test_build_scorecard_leaves_module_registry_pristine():
+    """Two build_scorecard() calls; signal_lab.REGISTRY must not move at all.
+
+    The live-stats / provenance / source-ref passes stamp rows in place, and
+    they used to run against the module-level REGISTRY itself — so anything
+    reading ``signal_lab.REGISTRY`` after the first build (alert_triage's
+    hit/DSR lookup, this file's own frozen-fallback tests) silently got that
+    build's resolved stats instead of the authored registry.  build_scorecard()
+    must confine the stamping to a per-call copy.
+    """
+    import copy
+
+    before = copy.deepcopy(signal_lab.REGISTRY)
+    signal_lab.build_scorecard()
+    assert signal_lab.REGISTRY == before, (
+        "first build_scorecard() call mutated module-level REGISTRY"
+    )
+    signal_lab.build_scorecard()
+    assert signal_lab.REGISTRY == before, (
+        "second build_scorecard() call mutated module-level REGISTRY"
+    )

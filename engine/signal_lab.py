@@ -28,6 +28,7 @@ Tiers
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import re
@@ -1846,7 +1847,10 @@ def _build_foundry_block(repo_root: Path | None = None) -> dict:
 
 
 def build_scorecard() -> dict:
-    """Assemble the full Signal Lab payload for the template. Pure assembler."""
+    """Assemble the full Signal Lab payload for the template. Pure assembler:
+    the live-stats / provenance / source-ref passes stamp a per-call deep copy
+    of ``REGISTRY``, never the module list itself, so a second caller in the
+    same process sees the registry exactly as authored."""
     warnings: list[str] = []  # A9: collect build warnings
 
     ft = _load_factor_table()
@@ -1866,20 +1870,25 @@ def build_scorecard() -> dict:
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
 
+    # The three annotation passes below stamp rows in place — run them on a
+    # per-call copy so module-level REGISTRY stays as authored for any other
+    # consumer in this process.
+    registry = copy.deepcopy(REGISTRY)
+
     # Re-render the BTC Vector card off the calibrator's own artifacts BEFORE the
     # provenance pass, so the passport stamps the same n_trials the prose quotes.
-    _resolve_vector_live_stats(REGISTRY, warnings)
+    _resolve_vector_live_stats(registry, warnings)
 
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
     # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
-    _resolve_dsr_provenance(REGISTRY)
+    _resolve_dsr_provenance(registry)
 
     # A10: audit source references for each registry row
-    _audit_source_refs(REGISTRY)
+    _audit_source_refs(registry)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}
-    for r in REGISTRY:
+    for r in registry:
         by_tier.setdefault(r["tier"], []).append(r)
 
     tiers_out = []
@@ -1893,7 +1902,7 @@ def build_scorecard() -> dict:
 
     summary = {k: len(by_tier.get(k, [])) for k in
                ("scored", "confirmer", "display", "killed", "pending")}
-    summary["total"] = len(REGISTRY)
+    summary["total"] = len(registry)
     summary["factor_survivors"] = fdr_survivors_factor
     summary["factor_total"] = len(factor_rows)
 
