@@ -520,3 +520,52 @@ def test_module_declares_no_scoring_authority():
     src = Path(GP.__file__).read_text(encoding="utf-8")
     for banned in ("basket_score", "theme_scoring", "confluence_tiers", "alert_triage"):
         assert f"import {banned}" not in src and f"from engine.{banned}" not in src
+
+
+# ---------------------------------------------------------------------------
+# (9) wiring — an organ nothing calls is an organ that ships dark
+# ---------------------------------------------------------------------------
+
+def _build_baskets_src() -> str:
+    from pathlib import Path
+    p = Path(GP.__file__).resolve().parent.parent / "scripts" / "build_baskets.py"
+    return p.read_text(encoding="utf-8")
+
+
+def test_the_nightly_builder_calls_group_pulse():
+    src = _build_baskets_src()
+    assert "from engine.group_pulse import run" in src, \
+        "group_pulse is not wired into scripts/build_baskets.py — it would ship dark"
+
+
+def test_the_hook_sits_after_the_basket_level_producers():
+    """Membership + the member tape must be fresh before this reads them, which is
+    exactly why the hook sits after the flow lens rather than at the top of main()."""
+    src = _build_baskets_src()
+    assert src.index("from engine.group_flow import compute_group_flows") < \
+        src.index("from engine.group_pulse import run")
+
+
+def test_the_hook_can_never_break_the_nightly():
+    """Additive law: the whole call sits in its own try/except and annotates with a
+    BARE print at column 0 (a logger would prefix the record and GitHub would drop
+    the annotation silently)."""
+    src = _build_baskets_src()
+    block = src[src.index("from engine.group_pulse import run"):]
+    block = block[:block.index("\n    # ", 10)] if "\n    # " in block[10:] else block
+    assert "except Exception as _gp_exc" in block
+    ann = [ln for ln in block.splitlines() if "group-pulse" in ln and "::warning" in ln]
+    assert ann, "the failure path must annotate"
+    assert ann[0].lstrip().startswith(('print(f"::warning', 'print("::warning')), ann[0]
+
+
+def test_the_ledger_gate_uses_the_shared_house_definition():
+    """The lane gate must be engine.ledger_lane's single definition, never a local
+    re-implementation that can drift from the other nightly ledgers."""
+    from pathlib import Path
+    src = Path(GP.__file__).read_text(encoding="utf-8")
+    assert "from engine.ledger_lane import nightly_advance_enabled" in src
+    # The module must not sniff the environment itself — a second reader of the
+    # sentinel is a second definition, and the two drift the day one lane changes.
+    assert not re.search(r"os\.environ|os\.getenv|getenv\(", src), \
+        "the gate must be read through ledger_lane, not by sniffing the env here"
