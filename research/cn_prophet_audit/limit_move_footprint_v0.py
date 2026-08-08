@@ -556,6 +556,12 @@ def parity_gate() -> dict:
         "events_mine_strict": mine_n,
         "events_module": theirs_n,
         "intersection": agree,
+        # Reported as BOTH directions rather than one flattering number: recall is the share
+        # of the module's events this detector reproduces, precision the share of this
+        # detector's events the module also emits.  They are not the same when the two
+        # exclusion rules differ, and here they do (zero-volume bars, IPO-window resolution).
+        "module_event_recall_pct": round(100.0 * agree / max(1, theirs_n), 3),
+        "precision_vs_module_pct": round(100.0 * agree / max(1, mine_n), 3),
         "agreement_pct": round(100.0 * agree / max(1, theirs_n), 3),
         "sample_mismatches": mismatches,
         "note": ("Residual disagreement is expected and explained: this instrument "

@@ -2,7 +2,7 @@
 
 **Charter:** `research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.8(f), ANTICIPATION program.
 **Instrument:** `research/cn_prophet_audit/limit_move_footprint_v0.py` ·
-**Frozen numbers:** `LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.json` · **Runtime:** 41.1s ·
+**Frozen numbers:** `LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.json` · **Runtime:** ~40s ·
 **Window:** 2011-01-01 → 2026-08-07 · **Basis:** `data/china_stocks_raw` (nominal OHLCV).
 
 **Tier: display / audit. MEASUREMENT ONLY.** Nothing here ranks, sizes, gates, admits or
@@ -16,12 +16,15 @@ a base rate, and averaging them would invent a number that describes no market.
 
 1. **The event catalog exists and is trustworthy.** 31,897 limit-up closes, 13,308 limit-down
    closes and 30,417 near-limit closes over 4.98M ticker-days / 1,836 names / 15.6 years.
-   The vectorised detector is pinned at **100% agreement** against the repo's own
-   `engine.china_microstructure._detect_limit_events` (656/656 events, 25-ticker sample), and
-   **97.2% of names (1,465/1,507) match the committed house tape exactly**.
+   The vectorised detector reproduces **100% of the events** the repo's own
+   `engine.china_microstructure._detect_limit_events` emits (656/656, 25-ticker sample) at
+   **99.85% precision** — the one extra event is `002428.SZ` on 2011-01-04, and it is the
+   module's artifact, not this instrument's: the module resolves its IPO window *after* its own
+   date filter, so it mistakes that ticker's first in-window bar for an IPO bar and drops it.
+   Independently, **97.2% of names (1,465/1,507) match the committed house tape exactly**.
 2. **THE BINDING CAVEAT — the universe is curated, not the market.** `data/china_stocks_raw`
-   holds 1,842 names against an A-share market of roughly 5,400. Two independent measurements
-   of the hole: only **1 of 100** current ST names is present, and of the 1,770 names that hit
+   holds 1,842 names against a listed A-share market of roughly 5,400. Two store-measured
+   probes of the hole: only **1 of 100** current ST names is present, and of the 1,770 names that hit
    the limit-up pool in `data/china_zt_pool`'s 47-session window only **514 (29%)** exist here
    — **24.7%** of that store's rows find a match. The 打板 game lives disproportionately in
    exactly the small-cap and ST names this universe omits. **Every number below describes a
@@ -76,7 +79,7 @@ a base rate, and averaging them would invent a number that describes no market.
 | Fact | Measured |
 |---|---|
 | Price basis | `data/china_stocks_raw` — nominal/unadjusted. The adjusted twin `data/china_stocks` would fabricate limit misses (adjustment breaks `round(prev_close×(1+w),2)` equality). |
-| Names in store | 1,842 · kept 1,836 · A-share market ≈ 5,400 |
+| Names in store | 1,842 · kept 1,836. (For scale: the listed A-share market is roughly 5,400 names — an external reference figure, not one our stores measure. The two store-measured gap probes are the next two rows.) |
 | ST names present | **1 of 100** current ST names |
 | zt_pool overlap | 514 of 1,770 names (29%) · 24.7% of rows |
 | Ticker-days | 4,981,168 · usable after exclusions 4,843,576 |
@@ -430,9 +433,11 @@ single limitation of this entire study.
    uniform "all seven work" is the false-discovery signature, the third because ChiNext's split
    straddles a rule change.
 3. **The IPO window is resolved from each ticker's full history**, where the module resolves it
-   after its own date filter (so the module drops the first 5 bars of 2011 for every pre-2011
-   ChiNext/STAR listing). **Zero-volume suspension bars are additionally excluded.** Both noted
-   in the tape cross-check; neither affects the 100% parity gate, which calls the module directly.
+   after its own date filter (so the module drops the first bar of 2011 for every pre-2014
+   listing, and the first 5 for every pre-2011 ChiNext/STAR listing, as if they were IPO bars).
+   **Zero-volume suspension bars are additionally excluded.** This is the entire content of the
+   parity gate's single mismatch (`002428.SZ` 2011-01-04) and it runs in this instrument's
+   favour; both differences are named in the tape cross-check.
 4. **The 连板 tail bucket is 8+, not 5+**, so the mid-ladder cells are readable rather than pooled.
 5. **Not done, flagged instead:** the `limit_events.parquet` history hole (Summary #12) is a CN
    data-plane repair, out of scope here.
@@ -447,6 +452,6 @@ TZ=UTC python3 research/cn_prophet_audit/limit_move_footprint_v0.py
 ```
 
 Deterministic (ticker-sorted, no sampling except the disclosed every-k-th-row Spearman
-subsample). Runtime 41.1s. Writes `research/cn_prophet_audit/LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.json`,
+subsample). Runtime ~40s (39-41s observed across runs). Writes `research/cn_prophet_audit/LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.json`,
 which carries every cell in this document plus the full holdout decile tables, the by-year
 tolerant-definition ladders, and the per-ticker tape reconciliation.

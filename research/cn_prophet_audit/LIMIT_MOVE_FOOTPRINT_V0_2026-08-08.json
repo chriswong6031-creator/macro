@@ -2,8 +2,8 @@
   "instrument": "research/cn_prophet_audit/limit_move_footprint_v0.py",
   "charter": "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f)",
   "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
-  "generated_utc": "2026-08-08T11:25:43Z",
-  "runtime_sec": 41.1,
+  "generated_utc": "2026-08-08T11:30:04Z",
+  "runtime_sec": 39.0,
   "definitions": {
     "limit_up_close": "PRIMARY (strict): close >= round(prev_close*(1+w), 2). The market-true rule and the committed house tape's rule.",
     "limit_up_close_tolerant": "close >= round(prev_close*(1+w),2) * (1 - 0.002) — the build charter's at-or-within-0.2% wording, measured in full and reported in parallel, NOT used as the headline.",
@@ -63,6 +63,8 @@
     "events_mine_strict": 657,
     "events_module": 656,
     "intersection": 656,
+    "module_event_recall_pct": 100.0,
+    "precision_vs_module_pct": 99.848,
     "agreement_pct": 100.0,
     "sample_mismatches": [
       {
