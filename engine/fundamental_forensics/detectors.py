@@ -231,8 +231,13 @@ def _margin_compute(spec: DetectorSpec, periods: tuple[str, str]):
     def compute(values):
         prior, current = periods
         prior_revenue, current_revenue = values[(prior, "revenue")], values[(current, "revenue")]
-        if prior_revenue == 0 or current_revenue == 0:
-            return None, {}, ("nonzero_revenue_required",), ()
+        # POSITIVE, not merely non-zero. Gross margin is gross_profit/revenue;
+        # a negative denominator flips the ratio's sign, so comparing a
+        # sign-flipped current margin against a prior margin answers a question
+        # nobody asked while still emitting a TRIGGERED/CLEAR verdict. Absence
+        # of a usable denominator is an evaluability failure, not a reading.
+        if prior_revenue <= 0 or current_revenue <= 0:
+            return None, {}, ("positive_revenue_required",), ()
         revenue_growth = _growth(current_revenue, prior_revenue)
         gross_margin_prior = values[(prior, "gross_profit")] / prior_revenue * Decimal("100")
         gross_margin_current = values[(current, "gross_profit")] / current_revenue * Decimal("100")

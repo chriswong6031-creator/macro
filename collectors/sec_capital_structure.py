@@ -131,16 +131,26 @@ DISCOVERY_SCOPE_RECONCILIATION = "issuer_reconciliation"
 # could only grow, because nothing ever left the queue.  That is the creep shape —
 # an unbounded backlog whose only symptom is log volume.
 #
-# Three recorded failure-state attempts park an accession.  Parking is a QUEUE
+# Three recorded unclosed attempts park an accession.  Parking is a QUEUE
 # decision, never an evidence decision: no manifest, attempt row, or discovery row
-# is deleted or rewritten, so a parked filing is still fully auditable and a later
-# ``--rebuild`` or a raised bound picks it straight back up.  The parked count is
+# is deleted or rewritten, so a parked filing is still fully auditable and raising
+# ``CS_MAX_RETRIEVAL_ATTEMPTS`` picks it straight back up.  The parked count is
 # printed every run, so a bounded backlog stays visible instead of going quiet.
 MAX_RETRIEVAL_ATTEMPTS = 3
-# ``stored`` and ``stored_parser_deferred`` both RETAINED the bytes, so they close
-# the queue item through ``have_complete`` rather than counting against it.  Only
-# these two states leave nothing behind to show for the attempt.
+MAX_RETRIEVAL_ATTEMPTS_ENV = "CS_MAX_RETRIEVAL_ATTEMPTS"
+# ``storage_deferred``/``transient_error`` retained NOTHING: the retrieval itself
+# failed and the attempt row is the only thing left to show for it.
 _RETRIEVAL_FAILURE_STATES = frozenset({"storage_deferred", "transient_error"})
+# What the bound must count is an attempt that left the queue item OPEN, and that
+# is a strictly larger set.  ``stored`` closes the item through ``have_complete``.
+# ``stored_parser_deferred`` does NOT: it retained the bytes, but
+# ``_eligible_complete_accessions`` admits only ``eligible``/``clean`` manifests,
+# so a parser-deferred filing is never in ``have_complete`` and re-enters the
+# queue every night.  Counting only the two retrieval failures therefore left the
+# WORST class of filing — an SEC error page, a corrupt bundle, suspect bytes — as
+# the one backlog the bound could never close.  That is the same creep shape,
+# reopened for exactly the filings least likely to heal on their own.
+_UNCLOSED_ATTEMPT_STATES = _RETRIEVAL_FAILURE_STATES | {"stored_parser_deferred"}
 
 _DISCOVERY_COLUMNS = [
     "accession", "cik", "ticker", "company_name", "form", "filing_date",
@@ -827,26 +837,59 @@ def _fair_lane_rows(
     return selected
 
 
-def parked_accessions(
-    attempts: pd.DataFrame, *, max_attempts: int = MAX_RETRIEVAL_ATTEMPTS
-) -> set[str]:
-    """Accessions with ``max_attempts`` failure-state attempts and nothing retained.
+def _max_retrieval_attempts() -> int:
+    """Resolve the parking bound, honouring the operator override at the point of use.
 
-    A success is terminal for the queue — the bytes land in ``have_complete`` and the
-    accession never comes back — so every recorded failure for a still-queued
-    accession is by construction a *consecutive* failure.  A plain count is therefore
-    the consecutive count, with no ordering to get wrong.
+    Read per call rather than frozen at import, so ``CS_MAX_RETRIEVAL_ATTEMPTS``
+    exported for one manual run — or set in the workflow after a systematic defect
+    is fixed — takes effect without an edit and a deploy.  This is the ONLY lever
+    that unparks a filing; there is no ``--rebuild`` flag on this collector.
+
+    An unparsable or non-positive value falls back to the default instead of
+    raising: a typo in a workflow variable must not abort the night, and it must
+    not silently uncap the backlog the bound exists to close either.
+    """
+    raw = (os.environ.get(MAX_RETRIEVAL_ATTEMPTS_ENV) or "").strip()
+    if not raw:
+        return MAX_RETRIEVAL_ATTEMPTS
+    try:
+        value = int(raw)
+    except ValueError:
+        value = 0
+    if value <= 0:
+        log.warning(
+            "sec_capital_structure: %s=%r is not a positive integer — using the "
+            "default bound %d", MAX_RETRIEVAL_ATTEMPTS_ENV, raw, MAX_RETRIEVAL_ATTEMPTS,
+        )
+        return MAX_RETRIEVAL_ATTEMPTS
+    return value
+
+
+def parked_accessions(
+    attempts: pd.DataFrame, *, max_attempts: int | None = None
+) -> set[str]:
+    """Accessions with ``max_attempts`` attempts that never closed the queue item.
+
+    A ``stored`` attempt is terminal for the queue — the bytes land in
+    ``have_complete`` and the accession never comes back — so every OTHER recorded
+    attempt for a still-queued accession is by construction a *consecutive* unclosed
+    attempt.  A plain count is therefore the consecutive count, with no ordering to
+    get wrong.  ``stored_parser_deferred`` counts: it retained the bytes but cannot
+    be ``eligible``/``clean``, so it never reaches ``have_complete`` and the filing
+    comes back tomorrow night unless the bound holds it.
 
     This bounds the BACKLOG, not the evidence: parking hides a filing from the
-    retrieval queue and deletes nothing.  Raising ``max_attempts`` (or a rebuild)
+    retrieval queue and deletes nothing.  Raising ``CS_MAX_RETRIEVAL_ATTEMPTS``
     brings it straight back.
     """
+    if max_attempts is None:
+        max_attempts = _max_retrieval_attempts()
     if attempts.empty or "accession" not in attempts.columns or max_attempts <= 0:
         return set()
-    failed = attempts.loc[attempts["state"].isin(_RETRIEVAL_FAILURE_STATES)]
-    if failed.empty:
+    unclosed = attempts.loc[attempts["state"].isin(_UNCLOSED_ATTEMPT_STATES)]
+    if unclosed.empty:
         return set()
-    counts = failed["accession"].astype(str).value_counts()
+    counts = unclosed["accession"].astype(str).value_counts()
     return set(counts.loc[counts >= int(max_attempts)].index)
 
 
@@ -1368,7 +1411,12 @@ class SecCapitalStructureAdapter(Adapter):
         ):
             raise ValueError("source-store receipt does not bind the exact manifest bytes")
         ticker = discovery.get("ticker")
-        company_name = _manifest_scalar(discovery.get("company_name"))
+        # Named in the disclosure like every other sanitized field.  A NaN company
+        # name silently DROPS the issuer alias below, and an undisclosed drop is
+        # the shape that made the 08-06 storm undiagnosable in the first place.
+        company_name = _manifest_scalar(
+            discovery.get("company_name"), field="issuer.aliases", sanitized=sanitized,
+        )
 
         def _scalar(value: Any, field: str) -> Any:
             return _manifest_scalar(value, field=field, sanitized=sanitized)
@@ -1574,18 +1622,20 @@ class SecCapitalStructureAdapter(Adapter):
         # page) remain retryable and cannot permanently close the queue item.
         have_complete = _eligible_complete_accessions(manifests)
 
-        parked = parked_accessions(attempts)
+        attempt_bound = _max_retrieval_attempts()
+        parked = parked_accessions(attempts, max_attempts=attempt_bound)
         if parked:
             print(
                 f"::warning title=capital-structure-retrieval-parked::"
-                f"{len(parked)} filing(s) parked after {MAX_RETRIEVAL_ATTEMPTS} failed "
-                f"retrieval attempts each — bounded backlog, evidence retained, "
-                f"not retried tonight",
+                f"{len(parked)} filing(s) parked after {attempt_bound} retrieval "
+                f"attempts each that never closed the queue item — bounded backlog, "
+                f"evidence retained, not retried tonight; raise "
+                f"{MAX_RETRIEVAL_ATTEMPTS_ENV} to pick them back up",
                 flush=True,
             )
             log.warning(
-                "sec_capital_structure: %d accession(s) parked at >=%d failed attempts: %s",
-                len(parked), MAX_RETRIEVAL_ATTEMPTS,
+                "sec_capital_structure: %d accession(s) parked at >=%d unclosed attempts: %s",
+                len(parked), attempt_bound,
                 ", ".join(sorted(parked)[:10]) + (" …" if len(parked) > 10 else ""),
             )
 
@@ -1755,8 +1805,10 @@ class SecCapitalStructureAdapter(Adapter):
         successful = sum(1 for attempt in new_attempts if attempt["state"] == "stored")
         retained_after_run = _eligible_complete_accessions(manifests)
         # Recomputed from the POST-run attempts ledger, so tonight's failures count
-        # toward the bound immediately rather than one night late.
-        parked_after_run = parked_accessions(attempts)
+        # toward the bound immediately rather than one night late.  The bound is the
+        # one resolved before the queue was built, so a run reports against a single
+        # bound even if the environment changes underneath it.
+        parked_after_run = parked_accessions(attempts, max_attempts=attempt_bound)
         pending_after_run = _retrieval_queue_candidates(
             discovery, have_complete=retained_after_run, parked=parked_after_run,
         )
