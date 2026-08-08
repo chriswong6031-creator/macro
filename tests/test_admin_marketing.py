@@ -3439,7 +3439,11 @@ class TestIntelligenceApproveDeliveryDeployed:
         """
         self._no_git(monkeypatch)
         _FakeContents().install(monkeypatch)
-        r1 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        # One pinned clock for BOTH approvals: created_at is second-resolution
+        # wall time, and the final assert needs r2's re-built row byte-identical
+        # to r1's `mine` — two unpinned calls can straddle a second boundary.
+        r1 = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                            now=_FIXED_NOW_OB)
         mine = self._local_line(deployed_vps)
         someone_else = mine.replace(r1["item_id"], "post-a-different-item-0001")
         assert someone_else != mine
@@ -3447,7 +3451,8 @@ class TestIntelligenceApproveDeliveryDeployed:
         (pathlib.Path(deployed_vps) / "data" / "marketing" / "outbox"
          / "items.jsonl").unlink()
         gh = _FakeContents(content=someone_else + "\n").install(monkeypatch)
-        r2 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        r2 = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                            now=_FIXED_NOW_OB)
 
         assert r2["delivered"] is True
         assert len(gh.puts) == 1, "a different item's row was read as this one"
