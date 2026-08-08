@@ -290,7 +290,43 @@ design is a SPECIES-CONDITIONAL entry ladder (per-species values, per-cohort mea
 a full-board v2-vs-v3 counterfactual replay over the whole episode history measuring BOTH
 loser rate AND top-slot winner capture — chartered for the chain, before any ladder change.
 
-Cross-repo: Terminal Golden Oracle = charting-app `signal_layer/golden_gate.py` (possible 4th
+### §6.9 THE RESIDUAL-LATENESS ATTACK + AUTONOMOUS RUN ORDER (operator 2026-08-08, overnight full-auto grant)
+
+**The operator's check is correct:** even the A1 patience picks (BHP RIO UUUU ALB) were up
+hard over the prior 2 sessions at admission. Decomposed, US lateness = (1) the state machine
+labels `bounce_wait` only AFTER the first impulse; (2) nothing admits on the EARLIEST
+mechanical evidence (the dot signature); (3) the 3D confluence confirms 10-20% late; (4) EOD
+cadence floor = signal at close T, actionable T+1; (5) entry = asof close, no zones. CN's
+"robustness" is (1)+(5) solved plus species machinery — not clairvoyance: 300363 was admitted
+ON its +13.6% ignition bar, then rode the CONTINUATION. **The systematic answer is not
+predicting before evidence exists — it is entering on the EARLIEST evidence tier at starter
+size with structure zones, and letting confirmation ADD.** Three compressions ship it:
+EARLY-TURN starter tier (dot signature engine-side, context-conditioned), structure-anchored
+entry zones on every plan (a late signal stops implying a late PRICE — the plan waits at the
+band), leader-pullback lane (catches the reset BEFORE the run in the NVDA/AVGO class).
+
+**AUTONOMOUS RUN ORDER (standing, execute without asking; each step gated only by its file):**
+R1 merge cascade lands Wave A (branches refreshed 11:35Z; watcher live).
+R2 on #4976 merge → spawn A3+COHORT builder (`engine/us_board_rank.py`): stage-gate relax
+(featured stage veto after status check; sort respects score within admissible stages) +
+US `reversal_member` channel port (binary membership, 10/100-class weight, scarcity-honest,
+sourced from `us_basket_turn` + subsector reversal cohorts; era-stamped, ship-live per §6.0).
+R3 on #4977 merge → spawn ENTRY-MECHANICS builder (`engine/prophet_bridge.py` +
+`engine/us_early_turn.py` new): structure-anchored zones on every plan (buy_zone_low/high +
+chase_above; NVDA acceptance: 3D signal + daily stoch both >80 ⇒ wait_reset zone, never
+market-chase; ADAM acceptance: Continuation/Ready zone = the reset band) + EARLY-TURN
+starter-class admission (daily/2D stoch-cross-from-washed + histogram curling via
+bars_to_cross machinery, conditioned on washout-mature OR leader-pullback context, starter
+size, window-not-certainty copy).
+R4 now (no gate) → LEADER-PULLBACK organ + replay (`engine/us_leader_pullback.py` new +
+receipt): RS-leader universe, controlled retrace, daily stoch reset, resumption print;
+2-year replay with precision/loser/entry-vs-low stats + NVDA/AVGO/ADAM receipts.
+R5 on #4977 merge → small builder: why-not receipts LIVE on the Prophet surface (nightly,
+per-name blocking reason — ends the manual RKLB-class digs).
+R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, patience picks,
+legacy shadow rows accruing, zones if R3 landed); check `data/us_prophet_rank/grades/`
+advanced (W7 store dark since merge) — if still empty, spawn its heal.
+R7 session-chain handoff: update §6.7/§6.9 execution records + memory with every PR/outcome.
 confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
 grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
 12 vetoed, 12 ripening, featured=0 (no ext input) — complete-fix lane gated on #4976 merge,
