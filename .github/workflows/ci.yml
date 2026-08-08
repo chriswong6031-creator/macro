@@ -90,6 +90,11 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # __all__ guard: a listed name the module never binds is a dormant
+      # AttributeError under `from m import *`. Same trigger posture as the
+      # annotation guard above — an edit to the scan runs the scan; it fires
+      # for source changes whenever ci.yml is already triggered.
+      - "tests/test_all_exports_resolve.py"
       # sys.modules leak guard. Its RUNTIME half lives in tests/conftest.py (already
       # listed at the top of this block, which triggers the full suite), so this line
       # covers the STATIC half: an edit to the scan itself must run the scan. Same

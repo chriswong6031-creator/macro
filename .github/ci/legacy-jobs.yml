@@ -148,6 +148,28 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  all-exports-resolve:
+    if: ${{ false }}
+    # A stale __all__ entry — a name the module never binds — is a dormant
+    # AttributeError: `from m import *` raises on the first missing name, and
+    # the traceback lands on the importing PR, not on the module that broke
+    # its promise. Found live in collectors/sec_document_spine.py, which
+    # listed "document_with_retrieval" without ever importing it from the
+    # engine sibling. AST-static like the annotation guard above: importing
+    # every engine/scripts module in CI would execute import-time side effects
+    # for a source-visible property (measured 52.7s dynamic vs 2.3s static,
+    # identical findings). Package __init__ files listing real submodules are
+    # exempt by construction — `from pkg import *` imports those.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: every __all__ name must resolve (bind it or drop the entry)
+        run: python -m pytest tests/test_all_exports_resolve.py -q
+
   no-module-leak:
     if: ${{ false }}
     # A test that evicts a module from sys.modules and does not put it back
