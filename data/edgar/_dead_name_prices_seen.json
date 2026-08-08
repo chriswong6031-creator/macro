@@ -489,6 +489,330 @@
 "n": 0,
 "source": null
 },
+"GDOT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1869,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"GENZ": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 847,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"GHL": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"GLK": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"GMS": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"GPRE": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1640,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"GRUB": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"GWB": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HAIN": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 3146,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"HAYN": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HBI": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HES": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HNGR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HNZ": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HPR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HSII": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HSKA": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HSP": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"HVT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1517,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"IDTI": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"IGT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"ILG": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 518,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"INGN": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 2393,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"IRBT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"IRWD": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 981,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"ISBC": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"ISIL": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"IVR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1323,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"JNPR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"JRVR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1323,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"JYNT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 722,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"KAMN": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"KELYA": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1576,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"KLG": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"KLXI": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 970,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"KRFT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"KSU": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LDL": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LESL": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 922,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"LMNX": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LNCE": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 807,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"LOCO": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1208,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"LOGM": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LPNT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 2002,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"LPS": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LPSN": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1198,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"LTHM": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"LYLT": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"MATV": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1640,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"MCS": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1453,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
+"MCW": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"MDR": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"MDSO": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 0,
+"refused_pre_tenure": 0,
+"source": null
+},
+"MERC": {
+"at": "2026-08-08T14:40:45.657546+00:00",
+"n": 1517,
+"refused_pre_tenure": 0,
+"source": "yfinance"
+},
 "MXIM": {
 "at": "2026-07-18T14:56:49.293828+00:00",
 "n": 0,

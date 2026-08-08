@@ -1,22 +1,22 @@
 {
   "as_of": "2026-08-07",
-  "built_at": "2026-08-08T07:33:05Z",
+  "built_at": "2026-08-08T15:57:54Z",
   "latest_pulse": {
     "date": "2026-08-07",
     "class": "quiet",
-    "market_vol_ratio": 0.785,
-    "up_share": 0.686,
+    "market_vol_ratio": 0.884,
+    "up_share": 0.682,
     "basis": "updown",
     "n_megacap_rvol2": 0,
     "megacap_rvol": {
-      "TSLA": 1.16,
+      "XOM": 1.33,
+      "TSLA": 1.18,
+      "LLY": 1.12,
+      "TMUS": 1.05,
       "MA": 1.01,
       "PG": 0.98,
-      "AMD": 0.94,
-      "HD": 0.93,
-      "ABBV": 0.86,
-      "WMT": 0.85,
-      "UNH": 0.84
+      "CVX": 0.98,
+      "AMD": 0.98
     },
     "calendar": {
       "is_quarter_end": false,
