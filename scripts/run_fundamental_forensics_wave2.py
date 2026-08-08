@@ -31,6 +31,25 @@ By default, an SEC outage for one explicit target is represented as
 so healthy names can accrue.  A scheduled lane that must not publish a broad
 state with partial disclosure coverage should add ``--require-complete-acquisition``;
 that option stops before projection or source sync when any target is partial.
+
+``--targets-file PATH`` reads the pinned explicit target list
+(``fundamental_forensics.wave2_targets/v1``) so a lane cannot drift from the
+universe its consumer expects; ``--target`` entries are merged after the file.
+
+Two opt-in incremental modes exist for a scheduled lane with a warm local
+store; both default OFF so an operator recovery run keeps proving every byte:
+
+* ``--verify-local-restore`` verifies a hash-equal local file instead of
+  re-downloading it (same manifest-bound hash check, local byte source); and
+* ``--incremental-sync`` (requires ``--sync``) skips uploading objects already
+  bound by the latest immutable manifest.  The new manifest still enumerates
+  every file.
+
+Since 2026-08-08 the nightly owner of this flow is
+``.github/workflows/filing-forensics-sec.yml`` (02:30 UTC), NOT daily.yml: the
+inline engine step grew 7.4m -> 23.8m in four days as the immutable source
+store grew.  daily.yml's engine job now restores only the published
+disclosure-projection bundle (``scripts.fundamental_forensics_disclosure_bundle``).
 """
 from __future__ import annotations
 
@@ -38,6 +57,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+import time
 from typing import Any, Iterable
 
 from collectors.edgar_forensics import _user_agent
@@ -46,6 +66,7 @@ from collectors.fundamental_forensics_acquisition import (
     AcquisitionTarget,
     acquire_bounded_filings,
     normalize_targets,
+    parse_target,
 )
 from engine.fundamental_forensics.source_sync import (
     SourceSyncError,
@@ -61,9 +82,48 @@ from scripts.build_fundamental_forensics_disclosures import build_cached_disclos
 
 log = logging.getLogger("run_fundamental_forensics_wave2")
 
+TARGETS_FILE_SCHEMA = "fundamental_forensics.wave2_targets/v1"
+
 
 class OperatorFlowError(RuntimeError):
     """The explicit collect-lane operation cannot safely continue."""
+
+
+def load_targets_file(path: Path) -> list[str]:
+    """Return the pinned ``TICKER=CIK`` target list from one file, in file order.
+
+    The file is the single source of truth shared by the SEC lane and the
+    engine's bundle restore, so its shape is strict: an unexpected key, a
+    non-string field, or an unparsable target is an error rather than a
+    silently smaller universe.  Normalization is delegated to the acquisition
+    collector's own parser; dedupe and the cap stay with ``normalize_targets``.
+    """
+    try:
+        content = Path(path).read_bytes()
+        value = json.loads(content.decode("utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise OperatorFlowError(f"invalid Wave-2 targets file: {path}") from exc
+    if not isinstance(value, dict) or set(value) != {"schema", "targets"}:
+        raise OperatorFlowError(f"Wave-2 targets file shape is invalid: {path}")
+    if value.get("schema") != TARGETS_FILE_SCHEMA:
+        raise OperatorFlowError(f"unsupported Wave-2 targets file schema: {path}")
+    entries = value.get("targets")
+    if not isinstance(entries, list) or not entries:
+        raise OperatorFlowError(f"Wave-2 targets file lists no targets: {path}")
+    output: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {"ticker", "cik"}:
+            raise OperatorFlowError(f"Wave-2 targets file entry shape is invalid: {path}")
+        ticker = entry["ticker"]
+        cik = entry["cik"]
+        if type(ticker) is not str or type(cik) is not str:
+            raise OperatorFlowError("Wave-2 target ticker and cik must be strings")
+        try:
+            target = parse_target(f"{ticker}={cik}")
+        except AcquisitionError as exc:
+            raise OperatorFlowError(str(exc)) from exc
+        output.append(f"{target.ticker}={target.cik}")
+    return output
 
 
 def _normalized_clock(value: str, *, field: str) -> str:
@@ -88,6 +148,8 @@ def run_operator_flow(
     build_projections: bool = False,
     sync: bool = False,
     require_complete_acquisition: bool = False,
+    verify_local_restore: bool = False,
+    incremental_sync: bool = False,
     raw_root: Path | None = None,
     archive_root: Path | None = None,
     projection_root: Path | None = None,
@@ -104,6 +166,8 @@ def run_operator_flow(
     """Execute selected Wave-2 actions in safe fixed order, never rendering UI/state."""
     if not any((restore, acquire, build_projections, sync)):
         raise OperatorFlowError("select at least one action: --restore, --acquire, --build-projections, or --sync")
+    if incremental_sync and not sync:
+        raise OperatorFlowError("--incremental-sync requires --sync in the same invocation")
     resolved_root = Path(root).resolve()
     normalized = normalize_targets(targets, max_tickers=max_tickers)
     normalized_as_of = _normalized_clock(as_of, field="as_of")
@@ -124,6 +188,8 @@ def run_operator_flow(
             "build_projections": bool(build_projections),
             "sync": bool(sync),
             "require_complete_acquisition": bool(require_complete_acquisition),
+            "verify_local_restore": bool(verify_local_restore),
+            "incremental_sync": bool(incremental_sync),
         },
         "clocks": {
             "as_of": normalized_as_of,
@@ -132,20 +198,28 @@ def run_operator_flow(
         },
         "results": {},
     }
+    # Per-phase wall time, so a future creep is attributable from the run log
+    # alone. The 2026-08-08 off-render move had to be diagnosed by differencing
+    # GitHub log timestamps because this receipt carried no phase timings.
+    timings: dict[str, float] = {}
     # This sequence is intentionally fixed even if a caller lists CLI flags in
     # another order: restore a durable cache before acquiring, then project
     # only verified cache bytes, and commit the next immutable remote snapshot last.
     if restore:
         if active_store is None:  # defensive; build_private_source_store raises first
             raise OperatorFlowError("restore requires a private source store")
+        started = time.monotonic()
         restored = restore_source_roots(
             raw_root=resolved_raw,
             archive_root=resolved_archive,
             store=active_store,
             snapshot_id=snapshot_id,
+            verify_local=bool(verify_local_restore),
         )
         result["results"]["restore"] = restored.to_dict()
+        timings["restore"] = round(time.monotonic() - started, 1)
     if acquire:
+        started = time.monotonic()
         acquired = acquire_bounded_filings(
             targets=normalized,
             raw_root=resolved_raw,
@@ -161,11 +235,13 @@ def run_operator_flow(
             min_interval_seconds=min_interval_seconds,
         )
         result["results"]["acquire"] = acquired
+        timings["acquire"] = round(time.monotonic() - started, 1)
         if require_complete_acquisition and acquired.get("status") != "complete":
             raise OperatorFlowError(
                 "bounded acquisition returned partial coverage; refusing projection/sync because complete coverage was required"
             )
     if build_projections:
+        started = time.monotonic()
         projections = build_cached_disclosures(
             resolved_root,
             [item.ticker for item in normalized],
@@ -177,22 +253,28 @@ def run_operator_flow(
             cik_overrides={item.ticker: int(item.cik) for item in normalized},
         )
         result["results"]["build_projections"] = projections
+        timings["build_projections"] = round(time.monotonic() - started, 1)
     if sync:
         if active_store is None:  # defensive; build_private_source_store raises first
             raise OperatorFlowError("sync requires a private source store")
+        started = time.monotonic()
         snapshot = sync_source_roots(
             raw_root=resolved_raw,
             archive_root=resolved_archive,
             store=active_store,
             snapshot_at=normalized_recorded_at,
+            skip_objects_in_latest_manifest=bool(incremental_sync),
         )
         result["results"]["sync"] = snapshot.to_dict()
+        timings["sync"] = round(time.monotonic() - started, 1)
+    result["timings"] = timings
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", action="append", required=True, metavar="TICKER=CIK", help="Explicit issuer target; repeat for each ticker")
+    parser.add_argument("--targets-file", type=Path, default=None, help="Pinned explicit target list (fundamental_forensics.wave2_targets/v1)")
+    parser.add_argument("--target", action="append", metavar="TICKER=CIK", help="Explicit issuer target; repeat for each ticker (merged after --targets-file)")
     parser.add_argument("--as-of", required=True, help="SEC acceptance-time cutoff with timezone")
     parser.add_argument("--recorded-at", required=True, help="Explicit UTC recording clock with timezone")
     parser.add_argument("--computed-at", required=True, help="Explicit projection compute clock with timezone")
@@ -204,6 +286,16 @@ def main(argv: list[str] | None = None) -> int:
         "--require-complete-acquisition",
         action="store_true",
         help="Fail before projection/sync when any explicit target has partial SEC acquisition coverage",
+    )
+    parser.add_argument(
+        "--verify-local-restore",
+        action="store_true",
+        help="Verify hash-equal local files instead of re-downloading them (warm-store lanes only)",
+    )
+    parser.add_argument(
+        "--incremental-sync",
+        action="store_true",
+        help="Skip uploading objects already bound by the latest immutable manifest; requires --sync",
     )
     parser.add_argument("--raw-root", type=Path, default=None, help="Local immutable Submissions cache root")
     parser.add_argument("--archive-root", type=Path, default=None, help="Local immutable filing archive root")
@@ -219,9 +311,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=config.ROOT)
     args = parser.parse_args(argv)
     try:
+        targets: list[str] = list(load_targets_file(args.targets_file)) if args.targets_file else []
+        targets.extend(args.target or [])
+        if not targets:
+            raise OperatorFlowError("at least one target is required: --targets-file and/or --target")
         outcome = run_operator_flow(
             root=args.root,
-            targets=args.target,
+            targets=targets,
             as_of=args.as_of,
             recorded_at=args.recorded_at,
             computed_at=args.computed_at,
@@ -230,6 +326,8 @@ def main(argv: list[str] | None = None) -> int:
             build_projections=args.build_projections,
             sync=args.sync,
             require_complete_acquisition=args.require_complete_acquisition,
+            verify_local_restore=args.verify_local_restore,
+            incremental_sync=args.incremental_sync,
             raw_root=args.raw_root,
             archive_root=args.archive_root,
             projection_root=args.projection_root,
