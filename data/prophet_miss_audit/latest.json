@@ -31,7 +31,7 @@
   "top21_eligible_today_n": 2,
   "conversion_rate": 0.0348,
   "conversion_n": "4/115",
-  "basket_misses_n": 1,
+  "basket_misses_n": 3,
   "basket_scored_n": 49
  },
  "top63_excluder_hist": {
@@ -125,7 +125,7 @@
    "GSHD",
    "EFOR"
   ],
-  "plan_universe_n": 108
+  "plan_universe_n": 120
  },
  "themes": {
   "basis": "subsector_rotation.emerging_score",
@@ -163,18 +163,16 @@
     "emerging_score": 4.143,
     "n_members": 21,
     "present_counts": {
-     "buy": 1,
+     "buy": 0,
      "ran": 0,
      "leaders": 0
     },
     "present": {
-     "buy": [
-      "BKSY"
-     ],
+     "buy": [],
      "ran": [],
      "leaders": []
     },
-    "represented_n": 1,
+    "represented_n": 0,
     "days_since_top5_entry": null
    },
    {
@@ -202,7 +200,7 @@
     "n_members": 24,
     "present_counts": {
      "buy": 2,
-     "ran": 1,
+     "ran": 0,
      "leaders": 0
     },
     "present": {
@@ -210,12 +208,10 @@
       "AMZN",
       "NVDA"
      ],
-     "ran": [
-      "MSFT"
-     ],
+     "ran": [],
      "leaders": []
     },
-    "represented_n": 3,
+    "represented_n": 2,
     "days_since_top5_entry": null
    },
    {
@@ -225,7 +221,7 @@
     "n_members": 16,
     "present_counts": {
      "buy": 2,
-     "ran": 2,
+     "ran": 0,
      "leaders": 0
     },
     "present": {
@@ -233,13 +229,10 @@
       "AMZN",
       "NVDA"
      ],
-     "ran": [
-      "MSFT",
-      "NET"
-     ],
+     "ran": [],
      "leaders": []
     },
-    "represented_n": 4,
+    "represented_n": 2,
     "days_since_top5_entry": null
    }
   ]
@@ -260,10 +253,32 @@
   ],
   "n_baskets": 49,
   "n_scored": 49,
-  "n_misses": 1,
+  "n_misses": 3,
   "n_top_decile": 16,
-  "n_unrepresented": 11,
+  "n_unrepresented": 12,
   "misses": [
+   {
+    "basket_id": "ai_agents",
+    "name": "AI Agents & Applications",
+    "category": "Artificial Intelligence",
+    "as_of": "2026-08-07",
+    "n_members": 8,
+    "n_members_live": 8,
+    "n_members_read": 8,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.998,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": 0.132957,
+    "ew_10d": 0.214443
+   },
    {
     "basket_id": "pgm_miners",
     "name": "PGM Miners",
@@ -285,6 +300,28 @@
     "miss": true,
     "ew_5d": 0.188919,
     "ew_10d": 0.257171
+   },
+   {
+    "basket_id": "space_economy",
+    "name": "Space Economy",
+    "category": "Industrials & Defense",
+    "as_of": "2026-08-07",
+    "n_members": 15,
+    "n_members_live": 15,
+    "n_members_read": 15,
+    "n_members_on_board": 0,
+    "members_on_board": [],
+    "present_counts": {
+     "buy": 0,
+     "watch": 0,
+     "leaders": 0,
+     "ran": 0
+    },
+    "pctile": 0.9544,
+    "pctile_n": 252,
+    "miss": true,
+    "ew_5d": 0.2852,
+    "ew_10d": 0.299423
    }
   ],
   "baskets": [
@@ -296,19 +333,17 @@
     "n_members": 8,
     "n_members_live": 8,
     "n_members_read": 8,
-    "n_members_on_board": 1,
-    "members_on_board": [
-     "PLTR"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.998,
     "pctile_n": 252,
-    "miss": false,
+    "miss": true,
     "ew_5d": 0.132957,
     "ew_10d": 0.214443
    },
@@ -344,9 +379,8 @@
     "n_members": 14,
     "n_members_live": 14,
     "n_members_read": 14,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
-     "DOCU",
      "MDB",
      "SNOW"
     ],
@@ -354,7 +388,7 @@
      "buy": 1,
      "watch": 0,
      "leaders": 1,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9901,
     "pctile_n": 252,
@@ -394,20 +428,17 @@
     "n_members": 17,
     "n_members_live": 17,
     "n_members_read": 17,
-    "n_members_on_board": 6,
+    "n_members_on_board": 3,
     "members_on_board": [
      "CRWD",
-     "MSFT",
-     "NET",
      "PANW",
-     "PLTR",
      "SNOW"
     ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 3,
-     "ran": 3
+     "ran": 0
     },
     "pctile": 0.9821,
     "pctile_n": 252,
@@ -423,11 +454,9 @@
     "n_members": 21,
     "n_members_live": 21,
     "n_members_read": 21,
-    "n_members_on_board": 6,
+    "n_members_on_board": 4,
     "members_on_board": [
-     "BURL",
      "HD",
-     "ORLY",
      "ROST",
      "TJX",
      "WMT"
@@ -436,7 +465,7 @@
      "buy": 2,
      "watch": 2,
      "leaders": 0,
-     "ran": 2
+     "ran": 0
     },
     "pctile": 0.9821,
     "pctile_n": 252,
@@ -474,12 +503,11 @@
     "n_members": 47,
     "n_members_live": 47,
     "n_members_read": 47,
-    "n_members_on_board": 8,
+    "n_members_on_board": 7,
     "members_on_board": [
      "AMZN",
      "DRI",
      "HD",
-     "ORLY",
      "RL",
      "ROST",
      "SBUX",
@@ -489,7 +517,7 @@
      "buy": 3,
      "watch": 4,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9742,
     "pctile_n": 252,
@@ -505,17 +533,16 @@
     "n_members": 7,
     "n_members_live": 7,
     "n_members_read": 7,
-    "n_members_on_board": 3,
+    "n_members_on_board": 2,
     "members_on_board": [
      "AMZN",
-     "MSFT",
      "NVDA"
     ],
     "present_counts": {
      "buy": 2,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9623,
     "pctile_n": 252,
@@ -545,8 +572,8 @@
     "pctile": 0.9583,
     "pctile_n": 252,
     "miss": false,
-    "ew_5d": 0.03505,
-    "ew_10d": 0.060658
+    "ew_5d": 0.035311,
+    "ew_10d": 0.060926
    },
    {
     "basket_id": "us_sector_health",
@@ -584,19 +611,17 @@
     "n_members": 15,
     "n_members_live": 15,
     "n_members_read": 15,
-    "n_members_on_board": 1,
-    "members_on_board": [
-     "BKSY"
-    ],
+    "n_members_on_board": 0,
+    "members_on_board": [],
     "present_counts": {
-     "buy": 1,
+     "buy": 0,
      "watch": 0,
      "leaders": 0,
      "ran": 0
     },
     "pctile": 0.9544,
     "pctile_n": 252,
-    "miss": false,
+    "miss": true,
     "ew_5d": 0.2852,
     "ew_10d": 0.299423
    },
@@ -608,10 +633,9 @@
     "n_members": 12,
     "n_members_live": 10,
     "n_members_read": 12,
-    "n_members_on_board": 5,
+    "n_members_on_board": 4,
     "members_on_board": [
      "CRWD",
-     "NET",
      "OKTA",
      "PANW",
      "QLYS"
@@ -620,7 +644,7 @@
      "buy": 1,
      "watch": 0,
      "leaders": 3,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9504,
     "pctile_n": 252,
@@ -636,16 +660,15 @@
     "n_members": 11,
     "n_members_live": 11,
     "n_members_read": 11,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "MSFT",
      "NVDA"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9306,
     "pctile_n": 252,
@@ -689,24 +712,22 @@
     "n_members": 74,
     "n_members_live": 74,
     "n_members_read": 74,
-    "n_members_on_board": 10,
+    "n_members_on_board": 8,
     "members_on_board": [
      "ANET",
      "APH",
      "AVGO",
      "CRWD",
      "MPWR",
-     "MSFT",
      "NVDA",
      "PANW",
-     "PLTR",
      "SNDK"
     ],
     "present_counts": {
      "buy": 4,
      "watch": 2,
      "leaders": 2,
-     "ran": 2
+     "ran": 0
     },
     "pctile": 0.9147,
     "pctile_n": 252,
@@ -1289,13 +1310,15 @@
     "n_members": 20,
     "n_members_live": 20,
     "n_members_read": 20,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "WBS"
+    ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 0
+     "ran": 1
     },
     "pctile": 0.4544,
     "pctile_n": 252,
@@ -1521,7 +1544,7 @@
   "graded_by": "engine.grading.grade_next_bar_return (next-bar fill, survivorship-aware) via engine.name_score_grader's own forward-store ladder",
   "scored_field": "score — name_score.potential_score, the number the US board displays as conviction.score (scripts/build_stock_library.py overwrites c['score'] with the potential score for backward compatibility)",
   "available": true,
-  "n_calls": 81530,
+  "n_calls": 82753,
   "n_frozen_echoes_excluded": 217,
   "n_stamp_dates": 38,
   "stamp_dates": {
@@ -1530,7 +1553,7 @@
   },
   "forward_store": {
    "group": "stocks",
-   "n_names_stamped": 3000,
+   "n_names_stamped": 3004,
    "n_names_resolved": 359,
    "coverage_pct": 12.0,
    "note": "the forward join resolves only names with a per-name close store; a stamped name with no store is absent from every horizon, not scored zero"
@@ -1626,20 +1649,20 @@
  },
  "scan_tier": {
   "available": true,
-  "asof": "2026-08-06",
+  "asof": "2026-08-07",
   "null_reason": null,
   "floor_rule": "still trading (last bar = store's last bar) AND >= 159 bars AND close >= $3 AND median(close x volume) over the last 20 bars >= $5M",
-  "store_n": 20757,
-  "scan_n": 1509,
+  "store_n": 20763,
+  "scan_n": 1510,
   "runners_n": 150,
-  "runners_eligible_today_n": 18,
-  "runners_never_eligible_n": 31,
+  "runners_eligible_today_n": 16,
+  "runners_never_eligible_n": 33,
   "excluder_family_hist": {
    "not_topped_veto": 124,
-   "ELIGIBLE": 18,
-   "freshness_expired": 5,
+   "ELIGIBLE": 16,
+   "freshness_expired": 6,
    "no_cross": 2,
-   "rsi_cap_on_fresh_cross": 1
+   "rsi_cap_on_fresh_cross": 2
   }
  },
  "priority_score_scorecard": {
