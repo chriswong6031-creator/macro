@@ -6143,3 +6143,57 @@ jobs:
           tests/test_earnings_release_binding.py
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
+
+  group-read-surface:
+    # GR1 of the Group Reads program: the USER-FACING basket read surfaces —
+    # templates/basket_detail.html.j2's READ band (stance line, four glance tiles, the
+    # arc rail, "what we're watching", the episode and earnings sections) and the
+    # group-pulse column on the Sector Intelligence board.
+    #
+    # The suite EXECUTES the shipped JS under node rather than mirroring it in Python: a
+    # Python re-implementation of the stance matrix would keep passing while the copy
+    # that ships drifted away from it (the mirrored-guard-is-vacuous trap). `setup-node`
+    # is therefore load-bearing, not decoration — the suite skips itself without node on
+    # PATH, and a silent skip reads exactly like a pass.
+    #
+    # What goes red here:
+    #   stance matrix   any (participation x sign x state_change x arc) combination that
+    #                   emits an untranslated slug, an internal state name, "igniting",
+    #                   "validated", refutation vocabulary, a missing or English-echoed
+    #                   ZH string, a read over the Tier-1 word budget, a directional
+    #                   act/buy stance (participation carries no directional authority,
+    #                   DNR:KILL-PSS-SR3-PARTICIPATION), or a "moving together" claim
+    #                   below the movers floor.
+    #   earnings traps  the two group_earnings_pulse.v1 shapes that read plausibly and
+    #                   are wrong: `season.next` is a preview CAPPED at 6, so the count
+    #                   must come from n_upcoming_14d; and n_beat + n_miss can sit far
+    #                   below n_members, so n_no_data is shown rather than divided away
+    #                   into a survivor beat rate.
+    #   null states     all three artifacts land only after the first post-merge nightly.
+    #                   Every panel must render plain-word bilingual copy when its file
+    #                   or key is absent, and every fetch must be fail-silent.
+    #   surface law     the Oracle P8 null is disclosed verbatim in both languages; no
+    #                   score/rank/heat number anywhere (R-TIL-3 / G0-2); the board's
+    #                   alternative ordering is a disclosed rule over the artifact's own
+    #                   named legs, printed on the surface it orders, with the existing
+    #                   default sort untouched; and the desk's re-order resets the
+    #                   show-more row cap it would otherwise leave pointing at the old
+    #                   card positions.
+    #
+    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
+    # one plain-copy JS asset and shells node.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: basket read band + board group-pulse column (GR1)
+        run: python -m pytest tests/test_group_read_surface.py -q -rs

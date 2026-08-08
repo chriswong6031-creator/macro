@@ -144,6 +144,94 @@
   .cyc-rk b { color:var(--text); font-variant-numeric:tabular-nums; }
   .cyc-rk.pos { color:var(--up); border-color:color-mix(in srgb, var(--up) 38%, var(--line)); }
   .cyc-rk.neg { color:var(--down); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); }
+  /* ── GR1 · Group read band (group_pulse.v1 + group_earnings_pulse.v1) ──────────
+     A context-only read plane: how much of the group is moving, whether it moves
+     one way, where it sits on its arc, and what earnings are doing to it.
+     --gr is deliberately a NON-directional hue. Nothing in this band is a buy or
+     sell read (DNR:KILL-PSS-SR3-PARTICIPATION), so it must never borrow --up /
+     --down for its own chrome. Actual member moves inside the band still route
+     through --up / --down so zh 红涨绿跌 flips them. */
+  :root { --gr:#8f8ae0; }
+  html[data-theme="light"] { --gr:#5a51bd; }
+  .gpr-band { position:relative; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; margin-top:10px; overflow:hidden; }
+  .gpr-band::before { content:""; position:absolute; inset:0 0 auto; height:2px;
+    background:linear-gradient(90deg,var(--gr),color-mix(in srgb,var(--gr) 15%,transparent)); }
+  html[data-theme="light"] .gpr-band { box-shadow:0 1px 2px rgba(28,36,48,.05),0 10px 26px -14px rgba(28,36,48,.18); }
+  .gpr-hd { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; padding:13px 16px 0; }
+  .gpr-eyebrow { font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--gr); }
+  .gpr-asof { margin-left:auto; font-size:11px; color:var(--muted); }
+  .gpr-asof b { font-variant-numeric:tabular-nums; font-weight:620; color:var(--text); }
+  .gpr-stance { display:flex; flex-wrap:wrap; align-items:flex-start; gap:9px; padding:10px 16px 0; }
+  .gpr-tok { font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+    padding:3px 9px; border-radius:7px; white-space:nowrap; border:1px solid; flex:0 0 auto; margin-top:4px; }
+  .gpr-tok.act { color:var(--gr); border-color:color-mix(in srgb,var(--gr) 55%,var(--line));
+    background:color-mix(in srgb,var(--gr) 12%,transparent); }
+  .gpr-tok.mut { color:var(--muted); border-color:var(--line); background:var(--panel2); }
+  .gpr-read { font-size:17px; font-weight:620; line-height:1.42; max-width:52ch; letter-spacing:-.004em; }
+  .gpr-backdrop { padding:7px 16px 0; font-size:12px; color:var(--muted); max-width:72ch; }
+  .gpr-tiles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; padding:13px 16px 0; }
+  .gpr-tile { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px 10px; min-width:0; }
+  html[data-theme="light"] .gpr-tile { background:#f3f6fb; }
+  .gpr-tile .k { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .gpr-tile .v { font-size:14.5px; font-weight:660; line-height:1.35; margin:5px 0 3px; }
+  .gpr-tile .v b { font-variant-numeric:tabular-nums; font-weight:780; }
+  .gpr-tile .d { font-size:11px; color:var(--muted); line-height:1.45; }
+  .gpr-tile .d b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:640; }
+  .gpr-i { font-size:9.5px; line-height:1; color:var(--muted); border:1px solid var(--line); border-radius:50%;
+    width:13px; height:13px; display:inline-flex; align-items:center; justify-content:center; cursor:help; flex:0 0 auto; }
+  .gpr-i:hover { color:var(--gr); border-color:var(--gr); }
+  .gpr-mchips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .gpr-mchip { font-size:10px; border:1px solid var(--line); border-radius:5px; padding:0 5px;
+    color:var(--muted); white-space:nowrap; cursor:help; }
+  .gpr-mchip b { color:var(--text); font-weight:680; }
+  .gpr-mchip .n { font-variant-numeric:tabular-nums; }
+  /* the arc rail — where the group sits on the washout→advance→distribute arc.
+     A position marker on a described arc, never a forecast: no arrow, no "next". */
+  .gpr-arc { margin:13px 16px 0; padding:11px 13px 10px; border:1px solid var(--line);
+    border-radius:9px; background:color-mix(in srgb,var(--gr) 4%,var(--panel2)); }
+  .gpr-arc-k { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .gpr-rail { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:10px; position:relative; }
+  .gpr-rail::before { content:""; position:absolute; left:10%; right:10%; top:4px; height:1px; background:var(--line); }
+  .gpr-stop { position:relative; text-align:center; min-width:0; }
+  .gpr-dot { width:9px; height:9px; border-radius:50%; margin:0 auto; background:var(--panel);
+    border:1px solid var(--line); position:relative; z-index:1; }
+  .gpr-stop.on .gpr-dot { background:var(--gr); border-color:var(--gr);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--gr) 20%,transparent); }
+  .gpr-stop .lbl { display:block; margin-top:8px; font-size:9.5px; line-height:1.3; color:var(--muted); }
+  .gpr-stop.on .lbl { color:var(--text); font-weight:700; }
+  .gpr-arc-note { margin-top:10px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  /* what we're watching — windows, not certainties */
+  .gpr-watch { margin-top:13px; padding:12px 16px 14px; border-top:1px solid var(--line);
+    background:color-mix(in srgb,var(--gr) 3%,transparent); }
+  .gpr-watch-k { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .gpr-wcols { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-top:9px; }
+  .gpr-wcol h5 { margin:0 0 5px; font-size:11.5px; font-weight:700; }
+  .gpr-wcol h5 .ar { color:var(--muted); font-weight:600; margin-right:4px; }
+  .gpr-wcol ul { margin:0; padding-left:16px; }
+  .gpr-wcol li { font-size:12px; line-height:1.55; color:var(--muted); }
+  .gpr-foot { margin-top:11px; font-size:11px; color:var(--muted); }
+  .gpr-null { padding:13px 16px 15px; font-size:12.5px; color:var(--muted); max-width:74ch; line-height:1.55; }
+  /* honest split bar — 1px gaps + a track border so neutral segments survive light mode */
+  .gpr-bar { display:flex; height:9px; border-radius:5px; overflow:hidden; background:var(--panel2);
+    border:1px solid var(--line); margin:9px 0 7px; gap:1px; }
+  .gpr-bar i { display:block; height:100%; }
+  .gpr-key { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:11px; color:var(--muted); }
+  .gpr-key b { font-variant-numeric:tabular-nums; font-weight:660; }
+  .gpr-key .sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+  .gpr-ep th, .gpr-ep td { white-space:nowrap; }
+  .gpr-ep .win { font-variant-numeric:tabular-nums; }
+  @media (max-width:720px){
+    .gpr-hd,.gpr-stance,.gpr-backdrop,.gpr-tiles { padding-left:11px; padding-right:11px; }
+    .gpr-watch,.gpr-null { padding-left:11px; padding-right:11px; }
+    .gpr-arc { margin-left:11px; margin-right:11px; }
+    .gpr-tiles { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .gpr-read { font-size:15px; }
+    .gpr-wcols { grid-template-columns:1fr; }
+    .gpr-stop .lbl { font-size:8.5px; }
+    .gpr-asof { margin-left:0; flex-basis:100%; }
+  }
   @media (max-width:720px){
     html, body { overflow-x:hidden; }
     body { padding:12px; font-size:13px; }
@@ -483,6 +571,425 @@ function timingStripHtml(th){
   </div>
   <div class="muted sm" style="margin-top:5px">${L('Fast tape is display-only; 5/20/60d trend, breadth and the slow-cycle gate still govern the recommendation.','快速行情仅供展示；5/20/60日趋势、广度与慢周期门槛仍决定建议。')}</div>`;
 }
+/* ── GR1:READ:BEGIN — Group read (group_pulse.v1 / group_earnings_pulse.v1) ─────
+   Assembles the three nightly artifacts into ONE plain-word read: a stance line, four
+   glance tiles, the arc rail, and the conditions we are watching. Every panel renders a
+   quiet null state when its file or key is absent — these artifacts land only after the
+   first post-merge nightly, and a missing file must never break the page.
+
+   CONTEXT TIER, ZERO AUTHORITY. Participation is description, never a buy/sell read
+   (DNR:KILL-PSS-SR3-PARTICIPATION); the arc carries the Oracle P8 null in its hover
+   (G0-3); nothing here is ranked, sized, gated, or fused into a score (R-TIL-3). */
+var GRP=null, GRE=null, GRH=null;      // pulse · earnings pulse · closed-episode history
+
+/* ── GR1:MATRIX:BEGIN — pure data → plain words. No DOM, no page globals, so the
+   node-shelled matrix test (tests/test_group_read_stance_matrix.py) can enumerate every
+   (participation × sign × state_change × arc) combination and prove none of them leaks a
+   raw slug or an internal state name. Keep this region dependency-free. ── */
+// Three members is the floor the episode ledger itself uses for an ACTIVE basket-day.
+// Below it a share is arithmetic, not a group: two names out of four is 50% and still
+// nothing to read, so the movers floor is folded into the band rather than bolted on.
+var GR_MIN_MOVERS=3;
+function grPBand(p){
+  var pa=(p||{}).participation||{}, a=pa.activity_share, n=pa.activity_n;
+  if(a==null) return 'unknown';
+  if(n!=null&&n<GR_MIN_MOVERS) return 'thin';
+  if(a>=0.5) return 'broad';
+  if(a>=0.25) return 'some';
+  return 'thin';
+}
+// The arc ladder collapsed to the families the copy actually distinguishes.
+function grArcFamily(s){
+  if(s==='washout_in_progress'||s==='washout_complete_awaiting_reclaim') return 'washout';
+  if(s==='turning') return 'turning';
+  if(s==='advancing') return 'advancing';
+  if(s==='distributing') return 'distributing';
+  if(s==='quiet') return 'quiet';
+  return 'unknown';
+}
+// STANCE MATRIX. Ordered rules, first match wins — the same disclosed-ladder idiom the
+// arc state itself uses. Returns plain words only: never a state name, never a bare
+// statistic, never forward/refutation vocabulary. `stance` answers "so what do I do",
+// including when the honest answer is "nothing".
+function grStance(p){
+  var pb=grPBand(p), dir=((p||{}).direction||{}), ep=((p||{}).episode||{});
+  var sign=dir.sign, chg=ep.state_change, arc=grArcFamily(((p||{}).arc||{}).state);
+  var up=(sign==='up'), dn=(sign==='down'), aligned=(up||dn);
+  var TOK={
+    watch:{en:'Watch — don\'t chase', zh:'观察，不要追', cls:'act'},
+    aside:{en:'Stand aside',            zh:'先观望',                 cls:'mut'},
+    none: {en:'Nothing to do',          zh:'暂无操作',           cls:'mut'},
+    thin: {en:'Not enough data',        zh:'数据不足',           cls:'mut'}
+  };
+  function out(tok,en,zh){return {tok:TOK[tok], en:en, zh:zh, pband:pb, arc:arc};}
+  // 1 — coverage refusal. Printed as a plain-word reason, never a silent blank.
+  if(pb==='unknown'||arc==='unknown')
+    return out('thin','Too few members are covered to read this group today.',
+                      '本组今日可用成分股太少，暂无读数。');
+  // 2 — nothing at all is moving
+  if(((p||{}).participation||{}).activity_n===0)
+    return out('none','Quiet. No unusual group activity right now.',
+                      '安静。这组个股目前没有异常动作。');
+  // 3 — a couple of names moving is a stock story, not a group story
+  if(pb==='thin')
+    return out('none','Only a few names are moving — this is not a group move.',
+                      '只有少数个股在动 — 还谈不上整体行情。');
+  // 4 — the group is picking up members
+  if(chg==='strengthening'){
+    if(pb==='broad'&&up)  return out('watch','This group is moving up together, and more of it each session.',
+                                             '这组个股正同向上涨，参与面还在扩大。');
+    if(pb==='broad'&&dn)  return out('watch','This group is moving down together, and more of it each session.',
+                                             '这组个股正同向下跌，参与面还在扩大。');
+    if(pb==='broad')      return out('aside','More of this group is moving, but still not together.',
+                                             '在动的个股更多了，但方向依然不一致。');
+    if(aligned)           return out('watch','More names are joining, and they move '+(up?'up':'down')+' together.',
+                                             '加入的个股在增多，且同向'+(up?'上涨':'下跌')+'。');
+    return out('aside','More names are moving, but not in one direction.',
+                       '在动的个股更多了，但没有统一方向。');
+  }
+  // 5 — the group is shedding members
+  if(chg==='cooling'){
+    if(pb==='broad'&&aligned) return out('watch','Still moving '+(up?'up':'down')+' together, but fewer names each session.',
+                                                 '仍在同向'+(up?'上涨':'下跌')+'，但参与个股逐日减少。');
+    if(pb==='broad')          return out('aside','Fewer names are moving, and still not together.',
+                                                 '在动的个股在减少，方向依然不一致。');
+    if(aligned)               return out('watch','Fewer names are moving, though they still move '+(up?'up':'down')+' together.',
+                                                 '在动的个股在减少，但仍是同向'+(up?'上涨':'下跌')+'。');
+    return out('aside','Fewer names are moving, and not in one direction.',
+                       '在动的个股在减少，且没有统一方向。');
+  }
+  // 6 — steady, or moving without a running episode
+  if(pb==='broad'&&aligned) return out('watch','Most of this group is moving, and moving '+(up?'up':'down')+' together.',
+                                               '这组多数个股在动，且同向'+(up?'上涨':'下跌')+'。');
+  if(pb==='broad')          return out('aside','Most of this group is moving, but not together.',
+                                               '这组多数个股在动，但并不同步。');
+  if(aligned)               return out('watch','Part of this group is moving, and moving '+(up?'up':'down')+' together.',
+                                               '这组部分个股在动，且同向'+(up?'上涨':'下跌')+'。');
+  return out('aside','Part of this group is moving, but not in one direction.',
+                     '这组部分个股在动，但方向不一致。');
+}
+// Arc → the backdrop sentence under the stance. Context, never the stance itself.
+function grArcWords(state){
+  var M={
+    washout_in_progress:              ['Backdrop: members are still washing out.','背景：成分股仍在出清。','Washing out'],
+    washout_complete_awaiting_reclaim:['Backdrop: washed out, but not reclaiming yet.','背景：已出清，但尚未收复。','Washed out'],
+    turning:                          ['Backdrop: washed out, and starting to reclaim.','背景：出清后开始收复。','Turning'],
+    advancing:                        ['Backdrop: most members sit in an established uptrend.','背景：多数成分股处于既有上升趋势。','Advancing'],
+    distributing:                     ['Backdrop: trends are breaking down across members.','背景：成分股的趋势正在瓦解。','Distributing'],
+    quiet:                            ['Backdrop: no clear group arc right now.','背景：目前没有明确的整体阶段。','No clear arc'],
+    insufficient_coverage:            ['Backdrop: too few members covered to place the group.','背景：覆盖成分股过少，无法定位阶段。','Not enough covered']
+  };
+  return M[state]||M.insufficient_coverage;
+}
+var GR_ARC_ZH={'Washing out':'出清中','Washed out':'已出清','Turning':'转向中',
+  'Advancing':'上行','Distributing':'派发','No clear arc':'暂无阶段','Not enough covered':'覆盖不足'};
+// Agreement is a NET LEAN over the members that are moving (|up-down| / moving), not a
+// head count — so it is spoken as a band and the raw figure is demoted to small print.
+function grAgreeWord(a){
+  if(a==null) return ['—','—'];
+  if(a>=0.7)  return ['almost all the same way','几乎完全同向'];
+  if(a>=0.4)  return ['mostly the same way','多数同向'];
+  if(a>=0.15) return ['split','存在分歧'];
+  return ['no shared direction','没有统一方向'];
+}
+// WHAT WE'RE WATCHING — deterministic conditions read off today's values. Windows, not
+// certainties; never LLM-written; never phrased as a test that a thesis could fail.
+function grWatchList(p){
+  var pa=(p||{}).participation||{}, dir=(p||{}).direction||{}, arc=(p||{}).arc||{}, ep=(p||{}).episode||{};
+  var a=pa.activity_share, ag=dir.agreement_pct, fam=grArcFamily(arc.state), s=[], w=[];
+  if(a==null||a<0.5) s.push(['more than half the group moving on the same session','同一交易日有过半成分股在动']);
+  else s.push(['the group holding above half its members for another session','下一交易日仍有过半成分股在动']);
+  if(dir.sign==='up'||dir.sign==='down') s.push(['a second session with members moving the same way','连续两个交易日方向保持一致']);
+  else s.push(['the moving names settling into one direction','在动的个股收敛到同一方向']);
+  if(fam==='washout'||fam==='turning') s.push(['more members reclaiming their 20-day line','更多成分股收复20日线']);
+  else if(fam==='advancing') s.push(['members holding their 50-day line while the group runs','上行期间成分股守住50日线']);
+  else s.push(['the group staying active into another session','该组在下一交易日继续活跃']);
+  if(a!=null&&a>=0.25) w.push(['activity narrowing to one or two names','活跃收窄到一两只个股']);
+  else w.push(['the moving names going quiet again','在动的个股重新转静']);
+  if(ag==null||ag>=0.33) w.push(['agreement fading below a third of the movers','一致度跌到在动个股的三分之一以下']);
+  if(fam==='distributing'||fam==='advancing') w.push(['more members losing their 50-day line','更多成分股跌破50日线']);
+  else if(ep.active_now) w.push(['three quiet sessions in a row','连续三个交易日转静']);
+  return {up:s.slice(0,3), down:w.slice(0,3)};
+}
+/* ── GR1:MATRIX:END ── */
+
+// Oracle P8 — the null this arc read must disclose, verbatim, on Tier 2.
+var GR_P8_EN='Group washout→turn constructions showed no standalone edge in our graded tests; this arc is context, not a signal.';
+var GR_P8_ZH='在我们的历史检验中，“整体出清→转向”单独使用并未显现优势；此阶段只是背景，不是信号。';
+var GR_SESSION={amc:['after close','盘后'], bmo:['before open','盘前'], unknown:['time not set','时间未定']};
+// A share over a known covered count is printed as the count it came from — "8 of 13",
+// never a bare percentage at glance tier.
+function grCount(share,n){ return (share==null||n==null)?null:Math.round(share*n); }
+function grTip(en,zh){ return ` data-tip-en="${esc(en)}" data-tip-zh="${esc(zh)}"`; }
+function grInfo(en,zh){ return `<span class="gpr-i"${grTip(en,zh)}>i</span>`; }
+
+function grArcRail(p){
+  var arc=(p||{}).arc||{}, words=grArcWords(arc.state);
+  var order=['washout_in_progress','washout_complete_awaiting_reclaim','turning','advancing','distributing'];
+  var lit=order.indexOf(arc.state);
+  var stops=order.map(function(k,i){
+    var lab=grArcWords(k)[2];
+    return `<div class="gpr-stop${i===lit?' on':''}"><div class="gpr-dot"></div><span class="lbl">${L(esc(lab),esc(GR_ARC_ZH[lab]||lab))}</span></div>`;
+  }).join('');
+  var age=arc.capitulation_median_age_d;
+  var note=age!=null
+    ? L(`The typical member's low was about <b>${age}</b> days ago. Context, not a signal.`,`成分股的低点中位数约在 <b>${age}</b> 天前。仅为背景，不是信号。`)
+    : L('Context, not a signal.','仅为背景，不是信号。');
+  var off=(lit<0)?` <span class="muted">${L('— this group is not on the arc right now.','— 这组目前不处于上述任何一段。')}</span>`:'';
+  return `<div class="gpr-arc">
+    <div class="gpr-arc-k">${L('Where the group sits','这组处于哪一段')}${off}</div>
+    <div class="gpr-rail">${stops}</div>
+    <div class="gpr-arc-note">${grInfo(GR_P8_EN,GR_P8_ZH)}<span>${note}</span></div>
+  </div>`;
+}
+
+function grTiles(p,e){
+  var pa=p.participation||{}, dir=p.direction||{}, arc=p.arc||{}, nc=p.n_covered;
+  var t=[];
+  // 1 — PARTICIPATION
+  var an=pa.activity_n, ab=pa.activity_basis||{};
+  var t50=grCount(pa.trend_share_50d,nc), t200=grCount(pa.trend_share_200d,nc);
+  var basisEn=`Unusual activity means a member's move against SPY was large versus its own last 63 sessions, or its volume ran at least 1.5× its own 63-day median. Volume confirmed on ${ab.ret_and_volume||0}; ${ab.ret_only||0} on price alone.`;
+  var basisZh=`异动指该股对冲SPY后的涨跌明显大于其自身近63个交易日的常态，或成交量至少达到自身63日中位数的1.5倍。其中 ${ab.ret_and_volume||0} 只有成交量配合，${ab.ret_only||0} 只仅凭价格。`;
+  t.push(`<div class="gpr-tile"><div class="k">${L('Participation','参与度')}${grInfo(basisEn,basisZh)}</div>
+    <div class="v">${an==null||nc==null?L('Not covered','暂无覆盖'):L(`<b>${an}</b> of <b>${nc}</b> moving unusually today`,`<b>${nc}</b> 只中 <b>${an}</b> 只今日异动`)}</div>
+    <div class="d">${t50==null?L('Trend coverage pending.','趋势读数待补。'):L(`Above their 50-day line: <b>${t50}</b> of <b>${nc}</b> · 200-day: <b>${t200}</b> of <b>${nc}</b>`,`站上50日线：<b>${nc}</b> 只中 <b>${t50}</b> 只 · 200日线：<b>${t200}</b> 只`)}</div>
+    ${an?`<div class="d" style="margin-top:4px">${ab.ret_and_volume?L(`Volume backed <b>${ab.ret_and_volume}</b> of them${ab.ret_only?`; <b>${ab.ret_only}</b> on price alone`:''}.`,`其中 <b>${ab.ret_and_volume}</b> 只有成交量配合${ab.ret_only?`；<b>${ab.ret_only}</b> 只仅凭价格`:''}。`):L(`Price move only — no volume confirmation.`,`仅价格异动，无成交量配合。`)}</div>`:''}</div>`);
+  // 2 — DIRECTION. Refuses below the movers floor: a "direction" over one or two names is
+  // arithmetic, not a group read, and 100% agreement among one member is meaningless.
+  var aw=grAgreeWord(dir.agreement_pct);
+  var signW=dir.sign==='up'?['Up','上行']:dir.sign==='down'?['Down','下行']:['Mixed','方向混杂'];
+  var mv=dir.median_move_spy_adj, fewMovers=(an!=null&&an<GR_MIN_MOVERS);
+  var agEn=`Agreement is the net lean among the members with unusual activity today: ups minus downs, over that same count — not a head count of who agrees. It needs at least ${GR_MIN_MOVERS} members moving before it means anything, and below about a third of them the group has no single direction.`;
+  var agZh=`一致度指今日异动个股中的净偏向：上涨数减下跌数，除以同一基数，而非“几只同向”的计数。至少需要 ${GR_MIN_MOVERS} 只在动才有意义；低于其中约三分之一时，该组没有统一方向。`;
+  var chips=[];
+  function mchip(m,en,zh,tipEn,tipZh,withRet){
+    if(!m||!m.ticker) return;
+    var r=withRet&&m.ret!=null?` <span class="n ${cls(m.ret)}">${fmtPct(m.ret)}</span>`:'';
+    chips.push(`<span class="gpr-mchip"${grTip(tipEn,tipZh)}>${L(en,zh)} <b>${esc(m.ticker)}</b>${r}</span>`);
+  }
+  mchip(dir.leader,'Most active','最活跃','The member with the largest unusual move against SPY today.','今日对冲SPY后异动幅度最大的成分股。',false);
+  mchip(dir.strongest,'Strongest','最强','Best member move today, after taking SPY out.','剔除SPY后今日表现最好的成分股。',true);
+  mchip(dir.weakest,'Weakest','最弱','Worst member move today, after taking SPY out.','剔除SPY后今日表现最差的成分股。',true);
+  var dirV=fewMovers?L('Too few moving to read','在动个股太少')
+    :L(`${esc(signW[0])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[0])}</span>`,`${esc(signW[1])} <span style="font-weight:520;color:var(--muted)">— ${esc(aw[1])}</span>`);
+  var dirD=fewMovers
+    ? L(`A group direction needs at least <b>${GR_MIN_MOVERS}</b> members moving; <b>${an}</b> today.`,`判断整体方向至少需要 <b>${GR_MIN_MOVERS}</b> 只在动，今日仅 <b>${an}</b> 只。`)
+    : (dir.agreement_pct==null?L('Agreement pending.','一致度待补。')
+      :L(`<b>${Math.round(dir.agreement_pct*100)}%</b> net agreement among the <b>${an==null?'—':an}</b> moving${mv==null?'':` · median <span class="${cls(mv)}">${fmtPct(mv)}</span> vs SPY`}`,`在动的 <b>${an==null?'—':an}</b> 只中净一致度 <b>${Math.round(dir.agreement_pct*100)}%</b>${mv==null?'':` · 中位涨跌 <span class="${cls(mv)}">${fmtPct(mv)}</span>（对冲SPY）`}`));
+  t.push(`<div class="gpr-tile"><div class="k">${L('Direction','方向')}${grInfo(agEn,agZh)}</div>
+    <div class="v">${dirV}</div><div class="d">${dirD}</div>
+    ${chips.length?`<div class="gpr-mchips">${chips.join('')}</div>`:''}</div>`);
+  // 3 — ARC. The drawdown percentile is precision, so it lives in the hover beside the
+  // Oracle P8 null; the tile keeps the counts a reader can act on the meaning of.
+  var aWords=grArcWords(arc.state), wo=arc.washed_out_n, rec=grCount(arc.reclaimed_20d_share,arc.washed_out_n);
+  var dd=arc.drawdown_pctile_own_history;
+  var arcTipEn=GR_P8_EN+(dd==null?'':` Right now the group is further below its own high than it has been ${Math.round(dd*100)}% of the time in its own history.`);
+  var arcTipZh=GR_P8_ZH+(dd==null?'':` 目前该组距自身高点的回撤幅度，深于其自身历史上 ${Math.round(dd*100)}% 的时间。`);
+  t.push(`<div class="gpr-tile"><div class="k">${L('Arc','阶段')}${grInfo(arcTipEn,arcTipZh)}</div>
+    <div class="v">${L(esc(aWords[2]),esc(GR_ARC_ZH[aWords[2]]||aWords[2]))}</div>
+    <div class="d">${wo==null?L('Not enough members covered.','覆盖成分股不足。'):L(`<b>${wo}</b> of <b>${p.n_covered}</b> washed out${rec==null?'':` · <b>${rec}</b> back above their 20-day line`}`,`<b>${p.n_covered}</b> 只中 <b>${wo}</b> 只已出清${rec==null?'':` · <b>${rec}</b> 只已收复20日线`}`)}</div></div>`);
+  // 4 — EARNINGS
+  t.push(`<div class="gpr-tile">${grEarnTileBody(e)}</div>`);
+  return `<div class="gpr-tiles">${t.join('')}</div>`;
+}
+
+function grGuidanceWords(g){
+  var M={'RAISING':['More members raising than cutting','上调指引的成分股多于下调'],
+    'BROAD-RAISE':['Raising across the board','普遍上调指引'],
+    'NEUTRAL':['Raises and cuts balance out','上调与下调基本持平'],
+    'CUTTING':['More members cutting than raising','下调指引的成分股多于上调']};
+  return M[(g||{}).band]||null;
+}
+
+function grEarnTileBody(e){
+  var kEn='Earnings', kZh='财报';
+  if(!e) return `<div class="k">${L(kEn,kZh)}</div><div class="v" style="color:var(--muted);font-size:13px">${L('Not in tonight&rsquo;s file','今晚文件中暂无')}</div>
+    <div class="d">${L('The earnings read is built each night; it appears here once the first run lands.','财报读数每晚生成，首次运行后会在此显示。')}</div>`;
+  var s=e.season||{}, r=e.results||{}, sy=e.sympathy||{};
+  var head, det;
+  if((s.n_reported||0)===0){
+    head=L('Between reports','报期之外');
+    det=s.n_upcoming_14d?L(`<b>${s.n_upcoming_14d}</b> due in the next two weeks`,`未来2周有 <b>${s.n_upcoming_14d}</b> 只待报`)
+                        :L('Nothing reported, nothing due in two weeks.','无已报，未来2周也无待报。');
+  } else {
+    head=L(`<b>${s.n_reported}</b> of <b>${s.n_members}</b> reported`,`<b>${s.n_members}</b> 只中 <b>${s.n_reported}</b> 只已报`);
+    var parts=[];
+    if(r.n_beat!=null) parts.push(L(`<b>${r.n_beat}</b> beat`,`<b>${r.n_beat}</b> 只超预期`));
+    if(r.n_miss!=null) parts.push(L(`<b>${r.n_miss}</b> missed`,`<b>${r.n_miss}</b> 只不及预期`));
+    if(r.n_inline) parts.push(L(`<b>${r.n_inline}</b> in line`,`<b>${r.n_inline}</b> 只符合`));
+    if(s.n_upcoming_14d) parts.push(L(`<b>${s.n_upcoming_14d}</b> due in two weeks`,`未来2周 <b>${s.n_upcoming_14d}</b> 只待报`));
+    det=parts.join(L(' · ',' · '));
+  }
+  var symEn,symZh;
+  if(sy.ratio!=null){
+    symEn=`Members move about ${sy.ratio}× as much on each other's report days as they do on an ordinary day. Measured over ${sy.n_events} report days from ${sy.n_reporters} members, last ${sy.window_q} quarters.`;
+    symZh=`在彼此的财报日，本组成分股的波动约为平常的 ${sy.ratio} 倍。基于 ${sy.n_reporters} 只个股的 ${sy.n_events} 个财报日，近 ${sy.window_q} 个季度。`;
+  } else {
+    symEn=`Not enough report days in this group yet to say whether members move together on each other's numbers (${sy.n_events||0} so far).`;
+    symZh=`本组的财报日样本还不够，无法判断成分股是否会因彼此的业绩同步波动（目前 ${sy.n_events||0} 个）。`;
+  }
+  var symLine=sy.ratio!=null
+    ? L(`Members move about <b>${sy.ratio}×</b> as much on each other&rsquo;s report days.`,`在彼此的财报日，成分股波动约为平常的 <b>${sy.ratio}×</b>。`)
+    : L('Too few report days to read co-movement yet.','财报日样本不足，暂无法读取同步性。');
+  return `<div class="k">${L(kEn,kZh)}${grInfo(symEn,symZh)}</div><div class="v">${head}</div>
+    <div class="d">${det}${det?'<br>':''}${symLine}</div>`;
+}
+
+// Coverage warnings arrive as machine slugs. They are disclosed, never printed raw.
+function grCoverageWords(list){
+  var en=[], zh=[];
+  (list||[]).forEach(function(s){
+    var m=/^members_without_activity_read:(\d+)$/.exec(String(s));
+    if(m){ en.push(m[1]+' member'+(m[1]==='1'?'':'s')+' had no usable activity read today');
+           zh.push(m[1]+' 只成分股今日没有可用的活跃度读数'); return; }
+    if(s==='below_coverage_floor'){ en.push('too few members covered to place this group on its arc');
+      zh.push('覆盖成分股过少，无法在阶段轴上定位这组'); return; }
+    en.push('part of the roster is not fully covered'); zh.push('部分成分股覆盖不完整');
+  });
+  return en.length?[en.join('; '), zh.join('；')]:null;
+}
+function grBand(bid){
+  var p=GRP&&GRP[bid], e=GRE&&GRE[bid];
+  var h=`<h2><span class="idx">◎</span>${L('Group read','整体读数')} <span class="chip">${L('context · not a buy signal','背景 · 非买入信号')}</span></h2>`;
+  if(!p){
+    return h+`<div class="gpr-band"><div class="gpr-hd"><span class="gpr-eyebrow">${L('Group read','整体读数')}</span></div>
+      <div class="gpr-null">${L('This read is assembled each night from how the members actually traded — how many moved, whether they moved the same way, and where the group sits in its own cycle. It appears here after the first nightly run.','这份读数每晚根据成分股的实际交易生成：多少只在动、是否同向、以及这组处于自身周期的哪一段。首次夜间运行后将在此显示。')}</div></div>`;
+  }
+  var st=grStance(p), bd=grArcWords((p.arc||{}).state), w=grWatchList(p);
+  var cw=grCoverageWords(p.coverage_warnings);
+  var li=function(x){return `<li>${L(esc(x[0]),esc(x[1]))}</li>`;};
+  return h+`<div class="gpr-band">
+    <div class="gpr-hd">
+      <span class="gpr-eyebrow">${L('Group read','整体读数')}</span>
+      <span class="gpr-asof">${L('as of','截至')} <b>${esc(p.as_of||'—')}</b> · ${L(`<b>${p.n_covered}</b> of <b>${p.n_members}</b> members covered`,`<b>${p.n_members}</b> 只成分股中覆盖 <b>${p.n_covered}</b> 只`)}${cw?` ${grInfo(cw[0],cw[1])}`:''}</span>
+    </div>
+    <div class="gpr-stance">
+      <span class="gpr-tok ${st.tok.cls}">${L(esc(st.tok.en),esc(st.tok.zh))}</span>
+      <div class="gpr-read">${L(esc(st.en),esc(st.zh))}</div>
+    </div>
+    <div class="gpr-backdrop">${L(esc(bd[0]),esc(bd[1]))}</div>
+    ${grTiles(p,e)}
+    ${grArcRail(p)}
+    <div class="gpr-watch">
+      <div class="gpr-watch-k">${L('What we&rsquo;re watching','我们在盯什么')}</div>
+      <div class="gpr-wcols">
+        <div class="gpr-wcol"><h5><span class="ar">↑</span>${L('Signs it is broadening','扩散的迹象')}</h5><ul>${w.up.map(li).join('')}</ul></div>
+        <div class="gpr-wcol"><h5><span class="ar">↓</span>${L('Signs it is fading','消退的迹象')}</h5><ul>${w.down.map(li).join('')}</ul></div>
+      </div>
+      <div class="gpr-foot">${L('Windows, not certainties — re-drawn nightly. Nothing here ranks, sizes or gates a position.','这是观察窗口，不是确定结论 — 每晚重绘。此处内容不参与排序、仓位或准入。')}</div>
+    </div>
+  </div>`;
+}
+
+function grEpisodesSection(bid){
+  var rows=(GRH&&GRH[bid])||null, p=GRP&&GRP[bid];
+  var h=`<h2><span class="idx">↺</span>${L('Has this happened before','以前发生过吗')} <span class="chip">${L('closed group episodes','已结束的整体行情')}</span></h2>`;
+  if(!rows||!rows.length){
+    var since=p&&p.as_of?esc(p.as_of):null;
+    return h+`<div class="panel"><div class="muted sm">${rows?
+      L('No completed group episodes recorded yet'+(since?' — the log started '+since:'')+'.','尚未记录到已结束的整体行情'+(since?'（记录自 '+since+' 开始）':'')+'。'):
+      L('The episode log is built each night; it appears here after the first run.','行情记录每晚生成，首次运行后将在此显示。')}</div></div>`;
+  }
+  var body=rows.map(function(r){
+    var ever=r.members_ever_active, kept=(r.members_persisted!=null?r.members_persisted:grCount(r.persistence_share,ever));
+    return `<tr>
+      <td class="win">${esc(r.start_date||'—')} → ${esc(r.end_date||'—')}</td>
+      <td class="num">${L(`<b>${r.sessions_active}</b> of ${r.sessions_span}`,`${r.sessions_span} 中 <b>${r.sessions_active}</b>`)}</td>
+      <td class="num">${ever==null?'—':ever}</td>
+      <td>${(kept==null||!ever)?'<span class="muted">—</span>':L(`<b>${kept}</b> of ${ever} stayed active throughout`,`${ever} 只中 <b>${kept}</b> 只全程保持活跃`)}</td>
+    </tr>`;}).join('');
+  return h+`<div class="panel"><div class="ts"><table class="gpr-ep">
+    <thead><tr><th>${L('Window','时段')}</th><th class="num">${L('Active sessions','活跃交易日')}</th>
+      <th class="num">${L('Members involved','参与成分股')}</th><th style="text-align:left">${L('Stayed the course','全程参与')}</th></tr></thead>
+    <tbody>${body}</tbody></table></div>
+    <div class="disc">${L('A group episode starts when at least half the members — and at least three of them — move unusually on the same session, and closes after three quiet sessions in a row. Newest first, last ten only. Past episodes describe what happened; they do not say what happens next.','当至少一半成分股（且不少于三只）在同一交易日出现异动时，计为一段整体行情；连续三个交易日转静则结束。最新在前，仅列最近十段。历史行情只描述已经发生的事，不预告接下来。')}</div></div>`;
+}
+
+function grEarningsSection(bid){
+  var e=GRE&&GRE[bid];
+  var h=`<h2><span class="idx">◧</span>${L('Earnings across this group','本组的财报局面')} <span class="chip">${L('context · not a buy signal','背景 · 非买入信号')}</span></h2>`;
+  if(!e) return h+`<div class="panel"><div class="muted sm">${L('The earnings read is assembled each night from members&rsquo; reported figures, guidance and analyst revisions. It appears here after the first run.','财报读数每晚根据成分股的实际业绩、指引与分析师上下调生成，首次运行后将在此显示。')}</div></div>`;
+  var s=e.season||{}, r=e.results||{}, g=e.guidance||{}, rv=e.revisions||{}, dr=e.drift||{}, sy=e.sympathy||{};
+  // Season clock. n_upcoming_14d is the COUNT; `next` is a preview capped by the builder,
+  // so the count never comes from next.length.
+  var nx=(s.next||[]), extra=(s.n_upcoming_14d||0)-nx.length;
+  var upcoming=nx.length?`<div class="ts"><table><thead><tr><th>${L('Reporting next','即将公布')}</th><th>${L('Date','日期')}</th><th>${L('When','时段')}</th></tr></thead><tbody>`
+      +nx.map(function(x){var w=GR_SESSION[x.session]||GR_SESSION.unknown;
+        return `<tr><td>${stkGR(x.ticker)}</td><td class="num">${esc(x.date||'—')}</td><td>${L(esc(w[0]),esc(w[1]))}</td></tr>`;}).join('')
+      +`</tbody></table></div>`
+      +(extra>0?`<div class="muted sm" style="margin-top:6px">${L(`Showing the next ${nx.length}; <b>${s.n_upcoming_14d}</b> members report within two weeks.`,`仅列最近 ${nx.length} 只；未来2周共有 <b>${s.n_upcoming_14d}</b> 只成分股公布。`)}</div>`:'')
+    :`<div class="muted sm">${L('No member reports due in the next two weeks.','未来2周无成分股公布财报。')}</div>`;
+  // Results — n_no_data is SHOWN, never divided away.
+  var nb=r.n_beat||0, nm=r.n_miss||0, ni=r.n_inline||0, nd=r.n_no_data||0, tot=nb+nm+ni+nd||1;
+  var seg=function(n,c){return n?`<i style="width:${(n/tot*100).toFixed(1)}%;background:${c}"></i>`:'';};
+  // Directional inks are var() references, not resolved values: zh 红涨绿跌 swaps --up and
+  // --down on the root, so the bar re-colours on a language toggle with no re-render.
+  var bar=`<div class="gpr-bar">${seg(nb,'var(--up)')}${seg(ni,'var(--muted)')}${seg(nm,'var(--down)')}${seg(nd,'var(--line)')}</div>`;
+  var key=`<div class="gpr-key">
+    <span><span class="sw" style="background:var(--up)"></span>${L('Beat','超预期')} <b>${nb}</b></span>
+    <span><span class="sw" style="background:var(--muted)"></span>${L('In line','符合')} <b>${ni}</b></span>
+    <span><span class="sw" style="background:var(--down)"></span>${L('Missed','不及预期')} <b>${nm}</b></span>
+    <span><span class="sw" style="background:var(--line)"></span>${L('No figure yet','暂无数据')} <b>${nd}</b></span></div>`;
+  var refused=/floor/.test(String(r.beat_basis||''))&&/not met/.test(String(r.beat_basis||''));
+  var resNote=refused
+    ? L('Too few members have reported to read a beat rate for the group yet — the individual figures still stand.','已报成分股太少，暂无法读取本组的超预期比例 — 单只个股的数字仍然成立。')
+    : L(`<b>${nd}</b> of <b>${nb+nm+ni+nd}</b> members have no comparable figure yet — they are counted, never divided away.`,`<b>${nb+nm+ni+nd}</b> 只成分股中有 <b>${nd}</b> 只尚无可比数据 — 它们计入分母，不会被抹去。`);
+  // Guidance / revisions / drift
+  var gw=grGuidanceWords(g);
+  var guid=gw?L(`${esc(gw[0])} — <b>${g.n_filers}</b> members gave one.`,`${esc(gw[1])} — 共 <b>${g.n_filers}</b> 只给出指引。`)
+    :L(`Guidance reads are thin this season — only <b>${g.n_filers||0}</b> member${(g.n_filers||0)===1?'':'s'} gave one, so we do not call a direction.`,`本季指引样本很薄 — 只有 <b>${g.n_filers||0}</b> 只给出指引，因此不做方向判断。`);
+  var rvN=grCount(rv.net_up_share,rv.n_covered);
+  var revs=rvN==null?L(`Not enough analyst coverage to read revisions — <b>${rv.n_covered||0}</b> members covered.`,`分析师覆盖不足，无法读取上下调 — 仅覆盖 <b>${rv.n_covered||0}</b> 只。`)
+    :L(`Analysts are nudging estimates up on <b>${rvN}</b> of the <b>${rv.n_covered}</b> members they cover.`,`在覆盖的 <b>${rv.n_covered}</b> 只中，分析师对 <b>${rvN}</b> 只上调了预估。`);
+  var drN=grCount(dr.pos_share_5d,dr.n);
+  var drift=drN==null?L(`Too few reporters to read what happens after the print — <b>${dr.n||0}</b> so far.`,`已报样本太少，无法读取公布后的走势 — 目前 <b>${dr.n||0}</b> 只。`)
+    :L(`Five sessions after reporting, <b>${drN}</b> of <b>${dr.n}</b> were still ahead of SPY.`,`公布后第五个交易日，<b>${dr.n}</b> 只中有 <b>${drN}</b> 只仍跑赢SPY。`);
+  // Sympathy — the "do earnings move this group together" stat, always with its counts.
+  var d2=sy.directional||{};
+  var symp=sy.ratio==null
+    ? L(`Not enough report days in this group yet to say whether members move together on each other&rsquo;s numbers — <b>${sy.n_events||0}</b> so far, from <b>${sy.n_reporters||0}</b> members.`,`本组财报日样本不足，暂无法判断成分股是否因彼此的业绩同步波动 — 目前仅 <b>${sy.n_events||0}</b> 个，来自 <b>${sy.n_reporters||0}</b> 只。`)
+    : L(`On each other&rsquo;s report days, the rest of the group moves about <b>${sy.ratio}×</b> as much as on an ordinary day — measured over <b>${sy.n_events}</b> report days from <b>${sy.n_reporters}</b> members.`,`在彼此的财报日，其余成分股的波动约为平常的 <b>${sy.ratio}×</b> — 基于 <b>${sy.n_reporters}</b> 只个股的 <b>${sy.n_events}</b> 个财报日。`);
+  var dirLine=(d2.beat_day_median==null&&d2.miss_day_median==null)?''
+    :`<div class="muted sm" style="margin-top:5px">${L(`On a member&rsquo;s beat day the rest moved <span class="${cls(d2.beat_day_median)}">${fmtPct(d2.beat_day_median)}</span> (<b>${d2.n_beat_days}</b> days); on a miss day <span class="${cls(d2.miss_day_median)}">${fmtPct(d2.miss_day_median)}</span> (<b>${d2.n_miss_days}</b> days), against SPY.`,`某只超预期当日，其余成分股中位涨跌 <span class="${cls(d2.beat_day_median)}">${fmtPct(d2.beat_day_median)}</span>（<b>${d2.n_beat_days}</b> 天）；不及预期当日为 <span class="${cls(d2.miss_day_median)}">${fmtPct(d2.miss_day_median)}</span>（<b>${d2.n_miss_days}</b> 天），均已剔除SPY。`)}</div>`;
+  return h+`<div class="panel">
+    <div class="kpis" style="margin-bottom:11px">
+      <div><div class="k">${L('Reported','已报')}</div><div class="v">${s.n_reported==null?'—':s.n_reported}<span class="muted" style="font-size:12px;font-weight:400"> / ${s.n_members==null?'—':s.n_members}</span></div></div>
+      <div><div class="k">${L('Due in 2 weeks','未来2周')}</div><div class="v">${s.n_upcoming_14d==null?'—':s.n_upcoming_14d}</div></div>
+      <div><div class="k">${L('Beat / missed','超预期 / 不及')}</div><div class="v"><span class="pos">${nb}</span>/<span class="neg">${nm}</span></div></div>
+      <div><div class="k">${L('No figure yet','暂无数据')}</div><div class="v">${nd}</div></div>
+    </div>
+    ${bar}${key}
+    <div class="muted sm" style="margin-top:7px">${resNote}</div>
+    <div style="margin-top:13px">${upcoming}</div>
+    <div style="margin-top:13px;display:grid;gap:6px;font-size:12.5px">
+      <div>${guid}</div><div>${revs}</div><div>${drift}</div>
+    </div>
+    <div style="margin-top:11px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px">${symp}${dirLine}</div>
+    <div class="disc">${L('Every count is printed with the members it came from, and members with no comparable figure are counted rather than dropped. Descriptive only — nothing here ranks a name or sizes a position.','每个计数都附带其来源的成分股数；无可比数据的成分股计入分母，而不是被剔除。仅为描述 — 不对任何个股排序或决定仓位。')}</div>
+  </div>`;
+}
+// Member chips for the holdings table: which name led the activity, and which sat at each
+// end of the day's move. Cohort context on the row it belongs to — never a rank.
+function grMemberChips(bid,sym){
+  var p=GRP&&GRP[bid]; if(!p||!sym) return '';
+  var d=p.direction||{}, out=[];
+  function add(m,en,zh,tEn,tZh){
+    if(m&&m.ticker===sym) out.push(`<span class="gpr-mchip"${grTip(tEn,tZh)}>${L(en,zh)}</span>`);
+  }
+  add(d.leader,'Most active','最活跃','Largest unusual move in the group today, after taking SPY out.','剔除SPY后，今日组内异动幅度最大。');
+  add(d.strongest,'Strongest today','今日最强','Best member move today, after taking SPY out.','剔除SPY后今日表现最好的成分股。');
+  add(d.weakest,'Weakest today','今日最弱','Worst member move today, after taking SPY out.','剔除SPY后今日表现最差的成分股。');
+  return out.length?`<div class="gpr-mchips" style="margin-top:3px">${out.join('')}</div>`:'';
+}
+// Same per-stock link base render() uses; markets with no per-stock page get a plain ticker.
+function stkGR(sym){
+  var base=(typeof DETAIL!=='undefined'&&DETAIL)?(DETAIL.stock_base||''):'';
+  return base?`<a class="tk" href="${base}${encodeURIComponent(sym||'')}">${esc(sym||'')}</a>`
+             :`<span class="tk">${esc(sym||'')}</span>`;
+}
+/* ── GR1:READ:END ── */
+
 function render(){
   const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
   const SB=d.stock_base||'';   // per-stock link base ('' for markets with no per-stock page → plain ticker)
@@ -519,6 +1026,9 @@ function render(){
       ${flipCap}
     </div>
   </div>`;
+
+  // ---- GR1 group read: what the members are actually doing, in plain words ----
+  h+=grBand(b.id);
 
   // ---- cross-market narrative cross-reference (same theme in other markets) ----
   h+=xmktHtml();
@@ -616,6 +1126,10 @@ function render(){
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div>${spark(d.history,{color:lc[2]})}</div><span class="muted sm">${L('daily theme score; accrues from the archive','每日主题评分；自归档累积')}</span></div>
     <div class="timeline" style="margin-top:10px">${tl.length?tl.map(e=>`<div class="ev"><span class="dt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join(''):`<div class="muted sm">${L('No recorded score/recommendation changes yet.','尚无评分/建议变化记录。')}</div>`}</div>
   </div>`;
+
+  // ---- GR1: has this group moved together before, and what are earnings doing to it ----
+  h+=grEpisodesSection(b.id);
+  h+=grEarningsSection(b.id);
 
   // ---- holdings scoreboard ----
   const mem=(d.members||[]).slice();
@@ -725,7 +1239,7 @@ function render(){
     // Hidden live-chg span: live.js writes the changePct here; aria-hidden to avoid screen reader noise.
     const liveSym=m.symbol?`<span class="nb-chg" data-sym="${esc(m.symbol)}" data-mkt="us" aria-hidden="true" style="display:none"></span>`:'';
     return `<tr>
-      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)}${liveSym} <span class="hold-company">${esc(m.name||'')}</span>${personalityChip(c)}${memberCtxChip(m)}</td>
+      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)}${liveSym} <span class="hold-company">${esc(m.name||'')}</span>${personalityChip(c)}${memberCtxChip(m)}${grMemberChips(b.id,m.symbol)}</td>
       <td class="num hold-potential">${convCell(c)}</td>
       <td class="hold-verdict">${c&&c.verdict?`<span class="v-full">${L(esc(c.verdict),esc(c.verdict_zh||c.verdict))}</span><span class="v-short">${shortVerdict(c)}</span>`:'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="hold-entry">${entryCell(c)}</td>
@@ -764,6 +1278,15 @@ function boot(){
   // appears (display-only; absent file or no cross-ref simply leaves it out).
   fetch('../crossmarketdata/links.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
     .then(cm=>{ if(cm){ XM=cm; render(); if(window._ftrTryInject) window._ftrTryInject(); } }).catch(()=>{});
+  // GR1 — the three nightly group-read artifacts. Each lands independently and re-renders;
+  // a 404 (before the first nightly, or a non-US basket that has no US pulse row) is a
+  // normal outcome and simply leaves the panels in their plain-word null state.
+  ['../basketdata/pulse.json','../basketdata/earnings_pulse.json','../basketdata/episodes.json']
+    .forEach(function(url,i){
+      fetch(url,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+        .then(function(j){ if(i===0)GRP=j; else if(i===1)GRE=j; else GRH=j;
+          render(); if(window._ftrTryInject) window._ftrTryInject(); }).catch(function(){});
+    });
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 
