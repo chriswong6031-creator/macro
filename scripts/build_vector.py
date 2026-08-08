@@ -2827,8 +2827,12 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
     if len(g) < 30 or len(i) < 30:
         return empty
     N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    # A null sample is a data GAP, not a zero — these four points ARE the trajectory,
+    # so one missing endpoint makes the whole read a guess (HK inflation runs null-tailed).
+    g_now, i_now, g_was, i_was = g[-1], i[-1], g[-1 - N], i[-1 - N]
+    if any(v is None for v in (g_now, i_now, g_was, i_was)):
+        return empty
+    dg, di = g_now - g_was, i_now - i_was
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()

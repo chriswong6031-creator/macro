@@ -16,6 +16,7 @@ Run: python -m pytest tests/test_signal_lab_vector_display.py -q
 """
 from __future__ import annotations
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -30,8 +31,17 @@ CAL_PATH = Path("data/vector/calibration.json")
 TRIAL_PATH = Path("data/vector/trial_log.json")
 
 
+#: `_resolve_vector_live_stats` overwrites the registry row IN PLACE (``row.update``) —
+#: the production mechanism, not a defect, but it makes ``signal_lab.REGISTRY`` a shared
+#: session-scoped object: one ``build_scorecard()`` anywhere in the run (this file's own
+#: first test does it) leaves the row carrying LIVE prose, and ``dict(row)`` of a polluted
+#: row inherits that pollution — so the frozen-fallback tests compare live against live and
+#: pass or fail on collection scope. Snapshot at IMPORT time, before any test can run.
+_PRISTINE_REGISTRY = copy.deepcopy(signal_lab.REGISTRY)
+
+
 def _row() -> dict:
-    r = next((r for r in signal_lab.REGISTRY
+    r = next((r for r in _PRISTINE_REGISTRY
               if r["name"] == signal_lab._BTC_VECTOR_ROW_NAME), None)
     assert r is not None, "BTC Vector row missing from the Signal Lab registry"
     return r

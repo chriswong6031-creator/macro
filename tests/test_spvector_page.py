@@ -12,6 +12,8 @@ Run as a script (no pytest needed): python -m tests.test_spvector_page
 """
 from __future__ import annotations
 
+import json
+import tempfile
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -145,8 +147,50 @@ def test_hub_split_cards():
     check("hub graceful without China/HK (US still present)", "United States" in html2)
 
 
+_RD_EMPTY = {"rdir": None, "rphase": None, "rtoward_en": None, "rtoward_zh": None, "rflip": None}
+
+
+def _regime_dynamics_over(timeline: dict) -> dict:
+    """Run _regime_dynamics("HK", ...) against a synthetic timeline in a throwaway site dir."""
+    from scripts import build_vector as bv
+    with tempfile.TemporaryDirectory() as td:
+        (Path(td) / "hk_regime_timeline.json").write_text(json.dumps(timeline))
+        original = bv.config.site_dir
+        bv.config.site_dir = lambda: Path(td)
+        try:
+            return bv._regime_dynamics("HK", {"quad": "Q2"})
+        finally:
+            bv.config.site_dir = original
+
+
+def test_regime_dynamics_is_empty_on_a_null_sample():
+    """A committed regime timeline can carry a null tail (the HK inflation series does).
+    The sampled points ARE the trajectory, so a null in any of them is a data gap and the
+    honest answer is the empty payload — never a TypeError, never a guessed direction.
+    Asserts (not check()) because a silent check() failure would not gate under pytest;
+    the healthy mirror is load-bearing — a guard that over-fires would blank every
+    market's dynamics quietly instead of crashing loudly."""
+    g = [round(0.05 * k, 3) for k in range(40)]      # rising growth -> a real direction
+    i = [0.2] * 40
+    tr = ["STABLE"] * 40
+
+    healthy = _regime_dynamics_over({"g": g, "i": i, "trans": tr})
+    assert healthy["rdir"] == "improving", f"healthy timeline lost its dynamics: {healthy}"
+    assert healthy["rphase"] == "stable", f"healthy timeline lost its phase: {healthy}"
+
+    null_end = _regime_dynamics_over({"g": g, "i": i[:-1] + [None], "trans": tr})
+    assert null_end == _RD_EMPTY, f"null inflation endpoint: {null_end}"
+
+    # the lookback point is sampled too: a gap ~20 sessions back is the same gap
+    lagged = list(g)
+    lagged[-21] = None
+    null_lag = _regime_dynamics_over({"g": lagged, "i": i, "trans": tr})
+    assert null_lag == _RD_EMPTY, f"null lookback sample: {null_lag}"
+
+
 def main() -> int:
-    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards):
+    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards,
+               test_regime_dynamics_is_empty_on_a_null_sample):
         print(f"\n{fn.__name__}")
         fn()
     print(f"\n{'=' * 40}\n{PASS} passed, {FAIL} failed")

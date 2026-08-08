@@ -213,7 +213,10 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["total"] == 0
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
+    # Availability tracks the award-events FEED, never our review effort: "available" =
+    # exact candidates exist, "not_observed" = feed ok with none eligible, "unavailable" =
+    # no receipt-bound event generation at all (the state before #5017 revived the bundle).
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
     assert queue["coverage"]["reviewed_issuer_company_count"] == 1
     assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
     assert next(

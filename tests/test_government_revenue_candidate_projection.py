@@ -127,7 +127,10 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
     assert (root / "data/government_revenue/candidate_ledger.jsonl").read_bytes() == b""
     assert status["status"] == "ok"
     assert status["candidate_count"] == 0
-    assert status["source_health"]["status"] == "degraded"
+    # The fixture root copies the LIVE canonical workspace, so this pin tracks that
+    # workspace's freshness: "ok" only while the award-events feed is ok and the recipient
+    # graph is ready (candidates.py) — "degraded" the moment either input stops.
+    assert status["source_health"]["status"] == "ok"
 
 
 def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:
