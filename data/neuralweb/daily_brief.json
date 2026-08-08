@@ -1,14 +1,14 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-08T02:03:26.095971+00:00",
+  "produced_at": "2026-08-08T02:20:53.192146+00:00",
   "as_of": "2026-08-06T22:35:28.535477+00:00",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
     "individual_tool_calls": 0,
-    "context_stale": true,
+    "context_stale": false,
     "summary": "cortex degraded — model_unavailable"
   },
   "what_changed": [
@@ -520,12 +520,6 @@
       "action_type": "ops_fix"
     },
     {
-      "priority": 1,
-      "area": "cortex",
-      "summary": "cortex context was stale at run time — check world_state freshness",
-      "action_type": "inspect"
-    },
-    {
       "priority": 2,
       "area": "causal-edges",
       "summary": "lobe causal-edges is warn — age 197.88h vs SLA 192h",
@@ -795,24 +789,24 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-08-06",
+    "as_of": "2026-08-08",
     "counts": {
       "overdue": 11,
-      "due": 6,
+      "due": 7,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 287,
+      "accruing": 285,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "11 overdue, 6 due, 1 missing, 1 stale, 2 blocked, 287 accruing. Top due: qledger:placebo."
+    "morning_line": "11 overdue, 7 due, 1 missing, 1 stale, 2 blocked, 285 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,
