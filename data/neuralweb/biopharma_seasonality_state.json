@@ -1,16 +1,17 @@
 {
-  "as_of": "2026-08-05",
+  "as_of": "2026-08-07",
   "gaps": [],
-  "generated_at": "2026-08-06T22:02:39Z",
-  "inputs_hash": "sha256:bce0180bd940abc3f64a748403a9ffe9867b4dfd0ae2584aff8f5ea9f70569c5",
-  "produced_at": "2026-08-06T22:02:39Z",
+  "generated_at": "2026-08-08T07:31:23Z",
+  "inputs_hash": "sha256:d117703aa9999e72122601879ccb2a275199b52e52e9e882dae7e2d4f776ca5e",
+  "produced_at": "2026-08-08T07:31:23Z",
   "produced_by": "scripts/build_seasonality_shadow_state.py",
   "schema": "neuralweb.biopharma_seasonality_state.file.v1",
   "schema_version": 1,
+  "state_schema": "neuralweb.biopharma_seasonality_state.v2",
   "states": {
     "A": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -22,16 +23,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 126,
-        "end_doy": 344,
-        "occurrence_end_date": "2026-12-10",
-        "pattern_id": "cal:A:299-344",
-        "phase": "out_of_window",
-        "start_doy": 299,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 125,
+            "n_years": 25
+          },
+          "pattern_id": "cal:A:299-344",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 124,
+            "end_doy": 344,
+            "occurrence_end_date": "2026-12-10",
+            "start_doy": 299,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:A",
@@ -47,15 +66,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.598739,
           0.870473
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.18825,
-        "horizon_td": 127,
+        "horizon_td": 125,
+        "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.57175,
         "quantiles": {
@@ -63,24 +84,26 @@
           "q50": 0.08634,
           "q95": 0.205606
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:535d28d0d062725f3d7ecd3ad6827cebd33ad665ff63f544def06fecdfc23357",
+        "data_snapshot": "sha256:0f5a42f7ff448d77b6880c2d00ffbaa2b212514dce049f17bb6187761d03ff49",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:a09acc324b29243676c53913aca60a493223c2de02f8011bfd6193b9ee52323d"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -93,7 +116,7 @@
     },
     "ABT": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -105,16 +128,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 147,
-        "end_doy": 365,
-        "occurrence_end_date": "2026-12-31",
-        "pattern_id": "cal:ABT:345-365",
-        "phase": "out_of_window",
-        "start_doy": 345,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 146,
+            "n_years": 25
+          },
+          "pattern_id": "cal:ABT:345-365",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 145,
+            "end_doy": 365,
+            "occurrence_end_date": "2026-12-31",
+            "start_doy": 345,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:ABT",
@@ -130,15 +171,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.642303,
           0.899096
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.228174,
-        "horizon_td": 148,
+        "horizon_td": 146,
+        "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.571826,
         "quantiles": {
@@ -146,24 +189,26 @@
           "q50": 0.01819,
           "q95": 0.046648
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:edc7f496b3b8a7022faf4be62b016dfeb9dce538ae00c4791f379fbebd3adc65",
+        "data_snapshot": "sha256:a9c86ba719f136a67f747cb9db12dd64fe03dfafbba97e7f087cc2c25c6023fa",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:066ba6b80381314b0e7b761b65770b416baa750c6111935a9a96babcb9d9cad9"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -177,7 +222,7 @@
     },
     "AMGN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -189,16 +234,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 358,
-        "end_doy": 211,
-        "occurrence_end_date": "2027-07-30",
-        "pattern_id": "cal:AMGN:181-211",
-        "phase": "out_of_window",
-        "start_doy": 181,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 357,
+            "n_years": 25
+          },
+          "pattern_id": "cal:AMGN:181-211",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 356,
+            "end_doy": 211,
+            "occurrence_end_date": "2027-07-30",
+            "start_doy": 181,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:AMGN",
@@ -214,15 +277,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.687505,
           0.92608
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.313313,
-        "horizon_td": 359,
+        "horizon_td": 357,
+        "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.526687,
         "quantiles": {
@@ -230,24 +295,26 @@
           "q50": 0.0572,
           "q95": 0.256872
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:583a023fceab899e1169a6e94ed49242526ff8857eb30c3b8234d44efd6949c1",
+        "data_snapshot": "sha256:f26d8d439822a13d70342ccb464b0943092386045d5628e41daa8ded3a2b1c00",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:febfeb9904f38de2fa3f2315e87e06de14900a61ea04c0c51384b4ca7738f924"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -260,7 +327,7 @@
     },
     "AZN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -272,16 +339,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 266,
-        "end_doy": 119,
-        "occurrence_end_date": "2027-04-29",
-        "pattern_id": "cal:AZN:29-119",
-        "phase": "out_of_window",
-        "start_doy": 29,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 265,
+            "n_years": 25
+          },
+          "pattern_id": "cal:AZN:29-119",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 264,
+            "end_doy": 119,
+            "occurrence_end_date": "2027-04-29",
+            "start_doy": 29,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:AZN",
@@ -297,15 +382,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.556556,
           0.84047
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.122182,
-        "horizon_td": 267,
+        "horizon_td": 265,
+        "n_years": 25,
         "p": 0.72,
         "p_baseline": 0.597818,
         "quantiles": {
@@ -313,24 +400,342 @@
           "q50": 0.07031,
           "q95": 0.192598
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:ebed7946e1e92b546e97d4637c891ef6b2a58558039a94417fad77f1909b7011",
+        "data_snapshot": "sha256:3bb6c35c1b82ef99361b97f4cfe6fa80bc5bdfa9e647c8d347349170944f2774",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d2658a3db1c29c65c0ceafd538b234e4b5e647cef85a5e512875f3b35e5e2434"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "BDX": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 5,
+            "n_years": 25
+          },
+          "pattern_id": "cal:BDX:219-224",
+          "phase": "in_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 4,
+            "end_doy": 224,
+            "occurrence_end_date": "2026-08-12",
+            "start_doy": 219,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'in_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:BDX",
+        "ticker": "BDX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.18091,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.335778,
+        "horizon_td": 5,
+        "n_years": 25,
+        "p": 0.88,
+        "p_baseline": 0.544222,
+        "quantiles": {
+          "q05": -0.005344,
+          "q50": 0.01266,
+          "q95": 0.037748
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:4ebf473606d35d22b937f6322652e45d23a11025654cbefb7aaa6550b020ba3b",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:e746a66676fce26c63eda779186a1d9401287443086f2f1ef3e8e2e4957d1915"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "BIIB": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 49,
+            "n_years": 25
+          },
+          "pattern_id": "cal:BIIB:263-268",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 48,
+            "end_doy": 268,
+            "occurrence_end_date": "2026-09-25",
+            "start_doy": 263,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:BIIB",
+        "ticker": "BIIB",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.823588,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.15953,
+          0.443444
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.236556,
+        "horizon_td": 49,
+        "n_years": 25,
+        "p": 0.28,
+        "p_baseline": 0.516556,
+        "quantiles": {
+          "q05": -0.083246,
+          "q50": -0.02298,
+          "q95": 0.022578
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:c44243cbf2ab5c58eb636404f4b2d5fb44316e4f9e286ba474b41bfa4399a54f",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:3cec85ea847b5391928f0689176a9ca7c1fec7d763b5512ea92a1903df533895"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "BMY": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 126,
+            "n_years": 25
+          },
+          "pattern_id": "cal:BMY:300-345",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 125,
+            "end_doy": 345,
+            "occurrence_end_date": "2026-12-11",
+            "start_doy": 300,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:BMY",
+        "ticker": "BMY",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.432784,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.556556,
+          0.84047
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.16175,
+        "horizon_td": 126,
+        "n_years": 25,
+        "p": 0.72,
+        "p_baseline": 0.55825,
+        "quantiles": {
+          "q05": -0.035018,
+          "q50": 0.03782,
+          "q95": 0.152062
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:db89f9f117e70163bd05be79096acb2188b31c7bdd1f9dcec4b703d829478bf5",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:c213ce279a0ad57fa4bddac5b3192521ee751436b8586ce967f498e47e39ae06"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -343,7 +748,7 @@
     },
     "BSX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -355,16 +760,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 165,
-        "end_doy": 18,
-        "occurrence_end_date": "2027-01-18",
-        "pattern_id": "cal:BSX:3-18",
-        "phase": "out_of_window",
-        "start_doy": 3,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 164,
+            "n_years": 25
+          },
+          "pattern_id": "cal:BSX:3-18",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 163,
+            "end_doy": 18,
+            "occurrence_end_date": "2027-01-18",
+            "start_doy": 3,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:BSX",
@@ -380,15 +803,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.51558,
           0.809259
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.124571,
-        "horizon_td": 166,
+        "horizon_td": 164,
+        "n_years": 25,
         "p": 0.68,
         "p_baseline": 0.555429,
         "quantiles": {
@@ -396,24 +821,238 @@
           "q50": 0.04667,
           "q95": 0.133372
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:9905b6328d4a1947791b127e090d18b0278d89a373223492241d1053b03d53eb",
+        "data_snapshot": "sha256:30d772e31e3ade0a625091f52f6f56d3fd7228b8a7cb5e6a0e5e471d6c07bbf9",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:3ec167739aa37ae9bd3180b97fe2b5590672c4e894064e1e000be2d3f0a14398"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "COO": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 209,
+            "n_years": 25
+          },
+          "pattern_id": "cal:COO:3-63",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 208,
+            "end_doy": 63,
+            "occurrence_end_date": "2027-03-04",
+            "start_doy": 3,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:COO",
+        "ticker": "COO",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.132434,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.784792,
+          0.973166
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.323148,
+        "horizon_td": 209,
+        "n_years": 25,
+        "p": 0.92,
+        "p_baseline": 0.596852,
+        "quantiles": {
+          "q05": -0.00842,
+          "q50": 0.056,
+          "q95": 0.161626
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:4debb9517c7aa9ef16ffd10f86136bccbdc121973e42c25bcb5d449c3cbdde55",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:279961a0cb814efea25f9a80c7008d224e048b5281ec4ad0622eb59f8683ff4d"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "COR": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 77,
+            "n_years": 25
+          },
+          "pattern_id": "cal:COR:286-296",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 76,
+            "end_doy": 296,
+            "occurrence_end_date": "2026-10-23",
+            "start_doy": 286,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:COR",
+        "ticker": "COR",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.826587,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.556556,
+          0.84047
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.152,
+        "horizon_td": 77,
+        "n_years": 25,
+        "p": 0.72,
+        "p_baseline": 0.568,
+        "quantiles": {
+          "q05": -0.016652,
+          "q50": 0.02087,
+          "q95": 0.045288
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:5b8148fd4cd181c772bdec2231033e8f004a27321f96ef96627017b9e86a5c35",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:0069c4f1a28de4ddab550c3f2e051343d31504981664bf6149a7d79400e7f6e4"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -427,7 +1066,7 @@
     },
     "CVS": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -439,16 +1078,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 117,
-        "end_doy": 335,
-        "occurrence_end_date": "2026-12-01",
-        "pattern_id": "cal:CVS:325-335",
-        "phase": "out_of_window",
-        "start_doy": 325,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 116,
+            "n_years": 25
+          },
+          "pattern_id": "cal:CVS:325-335",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 115,
+            "end_doy": 335,
+            "occurrence_end_date": "2026-12-01",
+            "start_doy": 325,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:CVS",
@@ -464,15 +1121,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.734759,
           0.951012
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.326986,
-        "horizon_td": 118,
+        "horizon_td": 116,
+        "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.553014,
         "quantiles": {
@@ -480,24 +1139,26 @@
           "q50": 0.02079,
           "q95": 0.06255
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:a5c8a15272fe4efbe94a8820e43413fea7028455f820ebd4ff325b364d517983",
+        "data_snapshot": "sha256:e41c5f4de9faf493c8c95495d2fe7b2892a2fa409aa27a814c5f67bc1893214b",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7753c88c05d7b9d6178820e1b8912b334e2a7b8476c7fbeb86d118912cf815da"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -511,7 +1172,7 @@
     },
     "DGX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -523,16 +1184,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 297,
-        "end_doy": 150,
-        "occurrence_end_date": "2027-05-30",
-        "pattern_id": "cal:DGX:60-150",
-        "phase": "out_of_window",
-        "start_doy": 60,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 296,
+            "n_years": 25
+          },
+          "pattern_id": "cal:DGX:60-150",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 295,
+            "end_doy": 150,
+            "occurrence_end_date": "2027-05-30",
+            "start_doy": 60,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:DGX",
@@ -548,15 +1227,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.734759,
           0.951012
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.231564,
-        "horizon_td": 298,
+        "horizon_td": 296,
+        "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.648436,
         "quantiles": {
@@ -564,24 +1245,26 @@
           "q50": 0.09666,
           "q95": 0.182346
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:bb44794411aa956c2c1ae5eb1cde06292b2033ac4772418c89b29c6ee062960e",
+        "data_snapshot": "sha256:094bbe289ed23eb5cc7be03d25adc20ca3bb458d47436b7baf3fc25f84677341",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bba42b897d08a442b5ece0e5d13cc01e66f8807ed9ad77dc14b0b68ae06b7063"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -593,7 +1276,7 @@
     },
     "DHR": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -605,16 +1288,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 140,
-        "end_doy": 358,
-        "occurrence_end_date": "2026-12-24",
-        "pattern_id": "cal:DHR:298-358",
-        "phase": "out_of_window",
-        "start_doy": 298,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 139,
+            "n_years": 25
+          },
+          "pattern_id": "cal:DHR:298-358",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 138,
+            "end_doy": 358,
+            "occurrence_end_date": "2026-12-24",
+            "start_doy": 298,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:DHR",
@@ -630,15 +1331,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.734759,
           0.951012
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.245115,
-        "horizon_td": 141,
+        "horizon_td": 139,
+        "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.634885,
         "quantiles": {
@@ -646,24 +1349,26 @@
           "q50": 0.04688,
           "q95": 0.13344
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:9518da6e81f24b62cb00fa393ec70a94c00924b51908017697c4c7fb15b52491",
+        "data_snapshot": "sha256:7d3304f7ee8d7b3c06f08777101126682d5435dcae7d4d279a004c0fbf57fa9f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:65c80fde4b4ef43a690443f4bbd0cec953bb624dd5f6f8baaa3db52d4433e09a"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -676,7 +1381,7 @@
     },
     "DXCM": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -688,16 +1393,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 10,
-        "end_doy": 228,
-        "occurrence_end_date": "2026-08-16",
-        "pattern_id": "cal:DXCM:223-228",
-        "phase": "pre_window",
-        "start_doy": 223,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 9,
+            "n_years": 20
+          },
+          "pattern_id": "cal:DXCM:223-228",
+          "phase": "pre_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 8,
+            "end_doy": 228,
+            "occurrence_end_date": "2026-08-16",
+            "start_doy": 223,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'pre_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:DXCM",
@@ -713,15 +1436,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.567781,
           0.872631
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.227083,
-        "horizon_td": 11,
+        "horizon_td": 9,
+        "n_years": 20,
         "p": 0.75,
         "p_baseline": 0.522917,
         "quantiles": {
@@ -729,24 +1454,26 @@
           "q50": 0.032815,
           "q95": 0.068519
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:c6bbb5874998b679a164eeeaf0ccf453f408eb4afa8e96bc0db1a981b9da6014",
+        "data_snapshot": "sha256:50d35039c36f6fa9f7b2c2d88d7b93ff3ff270f89a4c9b1ac3b1377f070260c3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:7436d9211c7dbff33d3fabc5be27a5a3193fd8021cf5de549f2b8c08aa112f48"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -758,9 +1485,9 @@
         ]
       }
     },
-    "EW": {
+    "ELV": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -772,16 +1499,139 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 236,
-        "end_doy": 89,
-        "occurrence_end_date": "2027-03-30",
-        "pattern_id": "cal:EW:74-89",
-        "phase": "out_of_window",
-        "start_doy": 74,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 116,
+            "n_years": 24
+          },
+          "pattern_id": "cal:ELV:325-335",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 115,
+            "end_doy": 335,
+            "occurrence_end_date": "2026-12-01",
+            "start_doy": 325,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:ELV",
+        "ticker": "ELV",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 24,
+        "n_independent": 24,
+        "n_issuers": 1,
+        "p_max_t": 0.735632,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.676213,
+          0.922902
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.279929,
+        "horizon_td": 116,
+        "n_years": 24,
+        "p": 0.833333,
+        "p_baseline": 0.553404,
+        "quantiles": {
+          "q05": -0.024508,
+          "q50": 0.030325,
+          "q95": 0.111476
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:594bfef16a4aa6246a537e6d537769e84b9c26393f313668ecf7f72de7377ebd",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:fe46209fe86de69aacdda108fdc7f493c68c9850049244766ffffae3a00200ec"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "EW": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 235,
+            "n_years": 25
+          },
+          "pattern_id": "cal:EW:74-89",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 234,
+            "end_doy": 89,
+            "occurrence_end_date": "2027-03-30",
+            "start_doy": 74,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:EW",
@@ -797,15 +1647,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.598739,
           0.870473
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.173714,
-        "horizon_td": 237,
+        "horizon_td": 235,
+        "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.586286,
         "quantiles": {
@@ -813,24 +1665,26 @@
           "q50": 0.02311,
           "q95": 0.062822
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:0f92c418552675d020f06d617f5750d79083c8eeede3a6263fba5b06162eb838",
+        "data_snapshot": "sha256:b6c0836b0fa436579d71949fe81dbce6e3e5d8f23be2fd057859fd7650483d28",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4889d2d5ec0339d8cae43982cc2a7c658cd51b5f9fa38d2a036664c0a8ae6817"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -844,7 +1698,7 @@
     },
     "IBB": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -856,16 +1710,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 111,
-        "end_doy": 329,
-        "occurrence_end_date": "2026-11-25",
-        "pattern_id": "cal:IBB:324-329",
-        "phase": "out_of_window",
-        "start_doy": 324,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 110,
+            "n_years": 24
+          },
+          "pattern_id": "cal:IBB:324-329",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 109,
+            "end_doy": 329,
+            "occurrence_end_date": "2026-11-25",
+            "start_doy": 324,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:IBB",
@@ -881,40 +1753,44 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.676213,
           0.922902
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.292014,
-        "horizon_td": 112,
+        "horizon_td": 110,
+        "n_years": 24,
         "p": 0.833333,
         "p_baseline": 0.541319,
         "quantiles": {
           "q05": -0.008635,
           "q50": 0.01425,
-          "q95": 0.047555
+          "q95": 0.047553
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:e44edb842159fdda34c08d355f4eaceb788785265c9c5ac5cdf9f61a4477a3b0",
+        "data_snapshot": "sha256:8eda46c180a322203ca8b84cd9fccb8ae9c7164d4502ecd1d1b7d82262f7a4e3",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e911a07010f91b3af7db6ac5477ca03a4f6687c3f0482b297d2c19f01e59e860"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -928,7 +1804,7 @@
     },
     "IDXX": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -940,16 +1816,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 262,
-        "end_doy": 115,
-        "occurrence_end_date": "2027-04-25",
-        "pattern_id": "cal:IDXX:105-115",
-        "phase": "out_of_window",
-        "start_doy": 105,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 261,
+            "n_years": 25
+          },
+          "pattern_id": "cal:IDXX:105-115",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 260,
+            "end_doy": 115,
+            "occurrence_end_date": "2027-04-25",
+            "start_doy": 105,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:IDXX",
@@ -965,15 +1859,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.687505,
           0.92608
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.275718,
-        "horizon_td": 263,
+        "horizon_td": 261,
+        "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.564282,
         "quantiles": {
@@ -981,24 +1877,26 @@
           "q50": 0.02594,
           "q95": 0.124692
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:e57d4ca0ea4a0e47e4992ed8279c540c98a26b9c5eded95993a9d0d04355f131",
+        "data_snapshot": "sha256:540bc879aaaf8924671146ea830de6e5271f63dbba57b651b0dc852cf10029ee",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:fc42267a5a39a14e6924d629ab972a6c5504ff29b602fa0c0ecba70b1772e0af"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1011,7 +1909,7 @@
     },
     "ILMN": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1023,16 +1921,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 49,
-        "end_doy": 267,
-        "occurrence_end_date": "2026-09-24",
-        "pattern_id": "cal:ILMN:262-267",
-        "phase": "out_of_window",
-        "start_doy": 262,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 48,
+            "n_years": 25
+          },
+          "pattern_id": "cal:ILMN:262-267",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 47,
+            "end_doy": 267,
+            "occurrence_end_date": "2026-09-24",
+            "start_doy": 262,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:ILMN",
@@ -1048,15 +1964,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.07392,
           0.312495
         ],
+        "ci90_kind": "parameter_ci",
         "edge": -0.361,
-        "horizon_td": 50,
+        "horizon_td": 48,
+        "n_years": 25,
         "p": 0.16,
         "p_baseline": 0.521,
         "quantiles": {
@@ -1064,24 +1982,26 @@
           "q50": -0.02503,
           "q95": 0.032504
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:0d6aac9095ad920d0a3696a0f3b8a37c117ebc5409815541cf8aa52e854dcd31",
+        "data_snapshot": "sha256:aa2b8beab9799626b5a51c5e91085b132d1befaabe24edad6168732ef556b045",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:aa6f4b962e23e331e20320bfc1d7080c547659457a25b32ddbce67ff940ddf22"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1095,7 +2015,7 @@
     },
     "ISRG": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1107,16 +2027,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 300,
-        "end_doy": 153,
-        "occurrence_end_date": "2027-06-02",
-        "pattern_id": "cal:ISRG:143-153",
-        "phase": "out_of_window",
-        "start_doy": 143,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 299,
+            "n_years": 25
+          },
+          "pattern_id": "cal:ISRG:143-153",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 298,
+            "end_doy": 153,
+            "occurrence_end_date": "2027-06-02",
+            "start_doy": 143,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:ISRG",
@@ -1132,15 +2070,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.687505,
           0.92608
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.28169,
-        "horizon_td": 301,
+        "horizon_td": 299,
+        "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.55831,
         "quantiles": {
@@ -1148,24 +2088,238 @@
           "q50": 0.02496,
           "q95": 0.094382
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:53c1ed7d6af85613d29ab307069f3f24edc9586033b645b40dd51bddff6ac504",
+        "data_snapshot": "sha256:8bb79af209e705fbb55d235c4675a638efa533fe232997aeaaaddfde98bb9e90",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ec2b4b82bf1b438d23db10da5703bbc13c201ea0cd2ecbaea16e6f91e5e35782"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "JNJ": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 170,
+            "n_years": 25
+          },
+          "pattern_id": "cal:JNJ:19-24",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 169,
+            "end_doy": 24,
+            "occurrence_end_date": "2027-01-24",
+            "start_doy": 19,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:JNJ",
+        "ticker": "JNJ",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.508246,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.026834,
+          0.215208
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.456111,
+        "horizon_td": 170,
+        "n_years": 25,
+        "p": 0.08,
+        "p_baseline": 0.536111,
+        "quantiles": {
+          "q05": -0.045568,
+          "q50": -0.02139,
+          "q95": 0.00349
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:ce4ebdc0e734b9c25261b78d2d3fb1de7517aa657d9f0f102d69b0a1e27eac9f",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:2fcc7f74e2f8061d58e1ad9cc3a76dc65978741ea7164282b85cf21bf2dac8fa"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "LGND": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 52,
+            "n_years": 25
+          },
+          "pattern_id": "cal:LGND:256-271",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 51,
+            "end_doy": 271,
+            "occurrence_end_date": "2026-09-28",
+            "start_doy": 256,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:LGND",
+        "ticker": "LGND",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.294353,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.100904,
+          0.357697
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.331429,
+        "horizon_td": 52,
+        "n_years": 25,
+        "p": 0.2,
+        "p_baseline": 0.531429,
+        "quantiles": {
+          "q05": -0.134514,
+          "q50": -0.06097,
+          "q95": 0.055466
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:83ecd1c4c3b26584474a2bd1552316827c597e780f63a37ba3fa7e7547f682b8",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:6fb8ee2e4e1d79957d7b731a09a4e7393f14ca30019722de4da4e29cbb6bc47b"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1179,7 +2333,7 @@
     },
     "LH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1191,16 +2345,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 239,
-        "end_doy": 92,
-        "occurrence_end_date": "2027-04-02",
-        "pattern_id": "cal:LH:82-92",
-        "phase": "out_of_window",
-        "start_doy": 82,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 238,
+            "n_years": 25
+          },
+          "pattern_id": "cal:LH:82-92",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 237,
+            "end_doy": 92,
+            "occurrence_end_date": "2027-04-02",
+            "start_doy": 82,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:LH",
@@ -1216,15 +2388,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.642303,
           0.899096
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.24,
-        "horizon_td": 240,
+        "horizon_td": 238,
+        "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.56,
         "quantiles": {
@@ -1232,24 +2406,26 @@
           "q50": 0.02503,
           "q95": 0.06604
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:b0956a10eb84a1a48821a688771c42881b6e56752dc9e44042e96f03dc90a3b3",
+        "data_snapshot": "sha256:828d27bd3a85ee2a41cc14c0bb8c7e4bdb1f7a2c1b715ad95e769087966fb11f",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:46afab5a145b835df5c621b4cf96d95fff47c4297086bb09b460b4d25bdbc598"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1263,7 +2439,7 @@
     },
     "LLY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1275,16 +2451,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 132,
-        "end_doy": 350,
-        "occurrence_end_date": "2026-12-16",
-        "pattern_id": "cal:LLY:305-350",
-        "phase": "out_of_window",
-        "start_doy": 305,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 131,
+            "n_years": 25
+          },
+          "pattern_id": "cal:LLY:305-350",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 130,
+            "end_doy": 350,
+            "occurrence_end_date": "2026-12-16",
+            "start_doy": 305,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:LLY",
@@ -1300,15 +2494,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.687505,
           0.92608
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.262125,
-        "horizon_td": 133,
+        "horizon_td": 131,
+        "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.577875,
         "quantiles": {
@@ -1316,24 +2512,26 @@
           "q50": 0.05048,
           "q95": 0.189204
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:6598d325c08dda8f70d0b272ddaf79972150eac31d07e275464dbb052f02fe96",
+        "data_snapshot": "sha256:28736f0b48f686f9af16a669fe854ab466e771fa16881536fe820819f7c15d81",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4bf44491d990fd965001d72d4e459f1d09066fde3052b90fa65fc275f4301d6a"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1344,9 +2542,9 @@
         ]
       }
     },
-    "MDT": {
+    "MCK": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1358,16 +2556,138 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 159,
-        "end_doy": 12,
-        "occurrence_end_date": "2027-01-12",
-        "pattern_id": "cal:MDT:7-12",
-        "phase": "out_of_window",
-        "start_doy": 7,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 301,
+            "n_years": 25
+          },
+          "pattern_id": "cal:MCK:65-155",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 300,
+            "end_doy": 155,
+            "occurrence_end_date": "2027-06-04",
+            "start_doy": 65,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:MCK",
+        "ticker": "MCK",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.018491,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.248727,
+        "horizon_td": 301,
+        "n_years": 25,
+        "p": 0.88,
+        "p_baseline": 0.631273,
+        "quantiles": {
+          "q05": -0.043918,
+          "q50": 0.09966,
+          "q95": 0.175904
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:43641862e33e6bb37f6dc061cd3ae642112917d64258d62ac9511abf44c2b59e",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:7a07f8ef65da9ce7ce1aeb802f64dd814d87fda7a504dea4d6e71046c6e3fd9a"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "MDT": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 158,
+            "n_years": 25
+          },
+          "pattern_id": "cal:MDT:7-12",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 157,
+            "end_doy": 12,
+            "occurrence_end_date": "2027-01-12",
+            "start_doy": 7,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:MDT",
@@ -1383,40 +2703,150 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.598739,
           0.870473
         ],
-        "edge": 0.235,
-        "horizon_td": 160,
+        "ci90_kind": "parameter_ci",
+        "edge": 0.234889,
+        "horizon_td": 158,
+        "n_years": 25,
         "p": 0.76,
-        "p_baseline": 0.525,
+        "p_baseline": 0.525111,
         "quantiles": {
           "q05": -0.012446,
           "q50": 0.01542,
           "q95": 0.034956
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:98b78a2530a111c1621ec6c89665bfebff4713d50bec512147bfc31b2c16a81f",
+        "data_snapshot": "sha256:18001505d1bee52c2c260758dfdda7463195c30ac5cc5bb357158b1b23c1d9b0",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:4f982cd86375feb2a006d4c818c8924c643ad84f615a59d7f32cbf9ab33c68f8"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "MRK": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 170,
+            "n_years": 25
+          },
+          "pattern_id": "cal:MRK:19-24",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 169,
+            "end_doy": 24,
+            "occurrence_end_date": "2027-01-24",
+            "start_doy": 19,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:MRK",
+        "ticker": "MRK",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.451774,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.129527,
+          0.401261
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": -0.283,
+        "horizon_td": 170,
+        "n_years": 25,
+        "p": 0.24,
+        "p_baseline": 0.523,
+        "quantiles": {
+          "q05": -0.069778,
+          "q50": -0.01231,
+          "q95": 0.010924
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:a59d28954fce90d01394b086d47aee2ce6108ddc85b1c9b229c7990333ba95ac",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:bab1c7b255bbeab0080a2a799215da00222f17fba92ea437a58e30ecf1483b9b"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1430,7 +2860,7 @@
     },
     "NEO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1442,16 +2872,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 88,
-        "end_doy": 306,
-        "occurrence_end_date": "2026-11-02",
-        "pattern_id": "cal:NEO:286-306",
-        "phase": "out_of_window",
-        "start_doy": 286,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 87,
+            "n_years": 21
+          },
+          "pattern_id": "cal:NEO:286-306",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 86,
+            "end_doy": 306,
+            "occurrence_end_date": "2026-11-02",
+            "start_doy": 286,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:NEO",
@@ -1467,15 +2915,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.535248,
           0.844402
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.213527,
-        "horizon_td": 89,
+        "horizon_td": 87,
+        "n_years": 21,
         "p": 0.714286,
         "p_baseline": 0.500759,
         "quantiles": {
@@ -1483,24 +2933,26 @@
           "q50": 0.09899,
           "q95": 0.24949
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:08d9521f111c65cb5dacebe0a1b7e075b3bd407d6c8670853248f648ad34b0fa",
+        "data_snapshot": "sha256:af1e1caab7efc03ec2209e69b4287e836ffb734222824d60399b0cbc78271988",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:169f441f2176dd9adf79bd36a24340ccfd5b18ed404e4a732d6a7c05f340cd10"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1514,7 +2966,7 @@
     },
     "NVO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1526,16 +2978,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 199,
-        "end_doy": 52,
-        "occurrence_end_date": "2027-02-21",
-        "pattern_id": "cal:NVO:42-52",
-        "phase": "out_of_window",
-        "start_doy": 42,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 198,
+            "n_years": 25
+          },
+          "pattern_id": "cal:NVO:42-52",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 197,
+            "end_doy": 52,
+            "occurrence_end_date": "2027-02-21",
+            "start_doy": 42,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:NVO",
@@ -1551,40 +3021,44 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.734759,
           0.951012
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.307268,
-        "horizon_td": 200,
+        "horizon_td": 198,
+        "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.572732,
         "quantiles": {
           "q05": -0.004614,
-          "q50": 0.02092,
+          "q50": 0.02093,
           "q95": 0.07015
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:7a6771d6b61530f7e7a9d76e47f68f79590ceb3ed48dd178c3280f593bd67adc",
+        "data_snapshot": "sha256:e3658670af3b6f1486ab164afe765bfa8a0bc7bbe560809eec3174bdb894a418",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:c334f36f2b1b22e8632300c5e9948ae5cbe82fd2d38825cab552f4faf9947e44"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1598,7 +3072,7 @@
     },
     "PFE": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1610,16 +3084,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 116,
-        "end_doy": 334,
-        "occurrence_end_date": "2026-11-30",
-        "pattern_id": "cal:PFE:324-334",
-        "phase": "out_of_window",
-        "start_doy": 324,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 115,
+            "n_years": 25
+          },
+          "pattern_id": "cal:PFE:324-334",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 114,
+            "end_doy": 334,
+            "occurrence_end_date": "2026-11-30",
+            "start_doy": 324,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:PFE",
@@ -1635,15 +3127,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.598739,
           0.870473
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.246648,
-        "horizon_td": 117,
+        "horizon_td": 115,
+        "n_years": 25,
         "p": 0.76,
         "p_baseline": 0.513352,
         "quantiles": {
@@ -1651,24 +3145,26 @@
           "q50": 0.02306,
           "q95": 0.059358
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:a66cc4fbd4f7b02ed9615869c5bff8ea62a68abd8f9956c53525e6cd3f4c4f2f",
+        "data_snapshot": "sha256:c14a5339262bab9bdf08b85186b519b65ddf2b55cbf4705d28f17a2c329de216",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f91753df2d5fb432b93758e9b9ce8e6c71f0c17ff0bf0adf129438a4d1f4ffdd"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1682,7 +3178,7 @@
     },
     "PODD": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1694,16 +3190,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 335,
-        "end_doy": 188,
-        "occurrence_end_date": "2027-07-07",
-        "pattern_id": "cal:PODD:143-188",
-        "phase": "out_of_window",
-        "start_doy": 143,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 334,
+            "n_years": 18
+          },
+          "pattern_id": "cal:PODD:143-188",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 333,
+            "end_doy": 188,
+            "occurrence_end_date": "2027-07-07",
+            "start_doy": 143,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:PODD",
@@ -1719,15 +3233,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.648177,
           0.931364
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.245659,
-        "horizon_td": 336,
+        "horizon_td": 334,
+        "n_years": 18,
         "p": 0.833333,
         "p_baseline": 0.587674,
         "quantiles": {
@@ -1735,24 +3251,131 @@
           "q50": 0.101405,
           "q95": 0.16326
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:b9daf659b68bd52bcd18d464320e741b2092f6c992477d0ce00fbd18f90738ba",
+        "data_snapshot": "sha256:19a3098299714cec3f7ca553757cc5367d47b768ef3133f44902e1c22559d380",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:e9c329249775f576b7091117b37f436fd1645ef9bb23fb02f752826947401fd5"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "REGN": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 34,
+            "n_years": 25
+          },
+          "pattern_id": "cal:REGN:163-253",
+          "phase": "in_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 33,
+            "end_doy": 253,
+            "occurrence_end_date": "2026-09-10",
+            "start_doy": 163,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'in_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:REGN",
+        "ticker": "REGN",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.190905,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.642303,
+          0.899096
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.247127,
+        "horizon_td": 34,
+        "n_years": 25,
+        "p": 0.8,
+        "p_baseline": 0.552873,
+        "quantiles": {
+          "q05": -0.074354,
+          "q50": 0.13212,
+          "q95": 0.292634
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:2599e89fac253fe1044577d37d197d45db5fa2f6d6d21295d8db6d5d7a797086",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:66f5ad8c556dedb0c5be0b4944498e64e6b423d6af7334c3fb20574e145d5693"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1765,7 +3388,7 @@
     },
     "RHHBY": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1777,16 +3400,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 258,
-        "end_doy": 111,
-        "occurrence_end_date": "2027-04-21",
-        "pattern_id": "cal:RHHBY:51-111",
-        "phase": "out_of_window",
-        "start_doy": 51,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 257,
+            "n_years": 22
+          },
+          "pattern_id": "cal:RHHBY:51-111",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 256,
+            "end_doy": 111,
+            "occurrence_end_date": "2027-04-21",
+            "start_doy": 51,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:RHHBY",
@@ -1802,15 +3443,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.5529,
           0.85186
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.156632,
-        "horizon_td": 259,
+        "horizon_td": 257,
+        "n_years": 22,
         "p": 0.727273,
         "p_baseline": 0.570641,
         "quantiles": {
@@ -1818,24 +3461,26 @@
           "q50": 0.043165,
           "q95": 0.11345
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:8e7db7dfc0eafb2082660f6e9e5f88d84ed905458768b322c8e68a3ea8daa384",
+        "data_snapshot": "sha256:a3293c3d7b7afa3c81fabfb2383ad8be7112c2aebb3b000ba3cfc732154bbc1d",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:d7b3bb8bccbdeef08a57c34c3ccbbe67f2556278a27771280da46d110cb25078"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1848,7 +3493,7 @@
     },
     "RMD": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1860,16 +3505,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 50,
-        "end_doy": 268,
-        "occurrence_end_date": "2026-09-25",
-        "pattern_id": "cal:RMD:258-268",
-        "phase": "out_of_window",
-        "start_doy": 258,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 49,
+            "n_years": 25
+          },
+          "pattern_id": "cal:RMD:258-268",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 48,
+            "end_doy": 268,
+            "occurrence_end_date": "2026-09-25",
+            "start_doy": 258,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:RMD",
@@ -1885,15 +3548,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.100904,
           0.357697
         ],
+        "ci90_kind": "parameter_ci",
         "edge": -0.354141,
-        "horizon_td": 51,
+        "horizon_td": 49,
+        "n_years": 25,
         "p": 0.2,
         "p_baseline": 0.554141,
         "quantiles": {
@@ -1901,24 +3566,132 @@
           "q50": -0.02515,
           "q95": 0.01701
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:980158a0a2b83d8acffdbe4c98d2ce23344db5f9265072f64b03e1fe27eac34f",
+        "data_snapshot": "sha256:b9ca889e1006fa5fd2fb910f91b0083ee7d66f8ecf3b7b5c35b2ba807a2022e7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:ac2ef8d27c16b9b0f8c1f674d5b705fcd7af9f710c2a359649ec9979b47b3795"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "STE": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 237,
+            "n_years": 25
+          },
+          "pattern_id": "cal:STE:76-91",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 236,
+            "end_doy": 91,
+            "occurrence_end_date": "2027-04-01",
+            "start_doy": 76,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:STE",
+        "ticker": "STE",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.45977,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.197714,
+        "horizon_td": 237,
+        "n_years": 25,
+        "p": 0.76,
+        "p_baseline": 0.562286,
+        "quantiles": {
+          "q05": -0.02044,
+          "q50": 0.03712,
+          "q95": 0.084888
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:f6cd9cdbf509b6c14aa8f045a9fa73e6cb030b0300dd8506b0d011f036289945",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:8866ebddbd0626b153741bc0372484fc819f9e755e7c6ece8a8eb266b1214c9c"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -1932,7 +3705,7 @@
     },
     "SYK": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -1944,16 +3717,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 194,
-        "end_doy": 47,
-        "occurrence_end_date": "2027-02-16",
-        "pattern_id": "cal:SYK:2-47",
-        "phase": "out_of_window",
-        "start_doy": 2,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 193,
+            "n_years": 25
+          },
+          "pattern_id": "cal:SYK:2-47",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 192,
+            "end_doy": 47,
+            "occurrence_end_date": "2027-02-16",
+            "start_doy": 2,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:SYK",
@@ -1969,15 +3760,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.734759,
           0.951012
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.278,
-        "horizon_td": 195,
+        "horizon_td": 193,
+        "n_years": 25,
         "p": 0.88,
         "p_baseline": 0.602,
         "quantiles": {
@@ -1985,24 +3778,237 @@
           "q50": 0.05135,
           "q95": 0.158498
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:03abf7d94494881be4d4bda0d6cd2b63a49664b0a24682496489fd205dec8679",
+        "data_snapshot": "sha256:8ecf52469000b9a2946a51d1ec4bb71856776528122356d6e03acad7efebd23a",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:2b545b28eba57efe9913d519f150b1b9c096443df30b4c39e60d8a30585b92c8"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "TECH": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 356,
+            "n_years": 25
+          },
+          "pattern_id": "cal:TECH:165-210",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 355,
+            "end_doy": 210,
+            "occurrence_end_date": "2027-07-29",
+            "start_doy": 165,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:TECH",
+        "ticker": "TECH",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.529735,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.51558,
+          0.809259
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.094625,
+        "horizon_td": 356,
+        "n_years": 25,
+        "p": 0.68,
+        "p_baseline": 0.585375,
+        "quantiles": {
+          "q05": -0.035148,
+          "q50": 0.04184,
+          "q95": 0.131176
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:ede6ad204d6a9ae4f9ede9fb42fb2412e4920bcbfc7ad38d1fa976516d7f0952",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:c7e72ea296cdf1e18fa9ae2256df33115cec51a913b45065edca18be5ddf7091"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "THC": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 294,
+            "n_years": 25
+          },
+          "pattern_id": "cal:THC:143-148",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 293,
+            "end_doy": 148,
+            "occurrence_end_date": "2027-05-28",
+            "start_doy": 143,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:THC",
+        "ticker": "THC",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.177911,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.642303,
+          0.899096
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.287444,
+        "horizon_td": 294,
+        "n_years": 25,
+        "p": 0.8,
+        "p_baseline": 0.512556,
+        "quantiles": {
+          "q05": -0.015788,
+          "q50": 0.01892,
+          "q95": 0.062016
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:8ad8cfb8780792fc3b141585f5f79631b056603710651a4eec290610091d1082",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:3efe9d814702eea366e210900e123c17bd0b0fb118bac789eb5801a2257bcedd"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -2016,7 +4022,7 @@
     },
     "TMO": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2028,16 +4034,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 353,
-        "end_doy": 206,
-        "occurrence_end_date": "2027-07-25",
-        "pattern_id": "cal:TMO:191-206",
-        "phase": "out_of_window",
-        "start_doy": 191,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 352,
+            "n_years": 25
+          },
+          "pattern_id": "cal:TMO:191-206",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 351,
+            "end_doy": 206,
+            "occurrence_end_date": "2027-07-25",
+            "start_doy": 191,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:TMO",
@@ -2053,15 +4077,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.642303,
           0.899096
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.237371,
-        "horizon_td": 354,
+        "horizon_td": 352,
+        "n_years": 25,
         "p": 0.8,
         "p_baseline": 0.562629,
         "quantiles": {
@@ -2069,24 +4095,26 @@
           "q50": 0.03582,
           "q95": 0.104232
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:ac089cf45bd9b9aca6e58fe2940186a65385254101c0cc58c5beb27bbf597d98",
+        "data_snapshot": "sha256:0550036dc9c00b3b00fede2080009fcb7b93128250a44533a80287c92bb4bfcd",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:f5ad02409f33fb6a8c7dc0661b22bfbfbee970140debca0f96cb9a2016ef92e8"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -2097,9 +4125,9 @@
         ]
       }
     },
-    "XBI": {
+    "UNH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2111,16 +4139,140 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 351,
-        "end_doy": 204,
-        "occurrence_end_date": "2027-07-23",
-        "pattern_id": "cal:XBI:144-204",
-        "phase": "out_of_window",
-        "start_doy": 144,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 116,
+            "n_years": 25
+          },
+          "pattern_id": "cal:UNH:325-335",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 115,
+            "end_doy": 335,
+            "occurrence_end_date": "2026-12-01",
+            "start_doy": 325,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
+      },
+      "entity": {
+        "id": "ticker:UNH",
+        "ticker": "UNH",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.670165,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.839118,
+          0.991026
+        ],
+        "ci90_kind": "parameter_ci",
+        "edge": 0.389408,
+        "horizon_td": 116,
+        "n_years": 25,
+        "p": 0.96,
+        "p_baseline": 0.570592,
+        "quantiles": {
+          "q05": 0.004938,
+          "q50": 0.0213,
+          "q95": 0.086278
+        },
+        "quantiles_kind": "outcome_quantiles",
+        "target": "default_window_return_gt_0"
+      },
+      "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
+      "provenance": {
+        "data_snapshot": "sha256:25423e88f2607e0f6479659af94a015581a0090ab6d58a38ad78deef50517df5",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:a150edb8632aa17517fd2c8e3c793d1fd6dd9be65a8880bd14c553b877523077"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "XBI": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-07",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 350,
+            "n_years": 19
+          },
+          "pattern_id": "cal:XBI:144-204",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 349,
+            "end_doy": 204,
+            "occurrence_end_date": "2027-07-23",
+            "start_doy": 144,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:XBI",
@@ -2136,15 +4288,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.726517,
           0.964535
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.308887,
-        "horizon_td": 352,
+        "horizon_td": 350,
+        "n_years": 19,
         "p": 0.894737,
         "p_baseline": 0.58585,
         "quantiles": {
@@ -2152,24 +4306,26 @@
           "q50": 0.08048,
           "q95": 0.17328
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:bd70dee657dac7488a028c12a371ca6aa60806ba3318e0ca92baca2d73f19194",
+        "data_snapshot": "sha256:ebe4f6dad9d1d2eaa544af56c65320830a1be7ed20faf5ab6192240c75a38539",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:bc41cdf97aa7f0995dcab1734bb05946d3c44a5266f219065dd193c7d422fea7"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -2182,7 +4338,7 @@
     },
     "XLV": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2194,16 +4350,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 126,
-        "end_doy": 344,
-        "occurrence_end_date": "2026-12-10",
-        "pattern_id": "cal:XLV:324-344",
-        "phase": "out_of_window",
-        "start_doy": 324,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 125,
+            "n_years": 25
+          },
+          "pattern_id": "cal:XLV:324-344",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 124,
+            "end_doy": 344,
+            "occurrence_end_date": "2026-12-10",
+            "start_doy": 324,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:XLV",
@@ -2219,15 +4393,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.687505,
           0.92608
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.260174,
-        "horizon_td": 127,
+        "horizon_td": 125,
+        "n_years": 25,
         "p": 0.84,
         "p_baseline": 0.579826,
         "quantiles": {
@@ -2235,24 +4411,26 @@
           "q50": 0.01721,
           "q95": 0.038694
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:e0efc6c2575277aec5b5114ac2225fde12e2804dbc29fbbed77d41eb7ca432fd",
+        "data_snapshot": "sha256:f6dda4a09ae915633cd5cbc11c2fdd566449c507d175b5a437cd47c6859b0b33",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:1862218e9362fb518a5ffcd9e45b3a06e0adb5268b2eddec4969eb312a1c52ad"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -2265,7 +4443,7 @@
     },
     "ZBH": {
       "artifact_id": "data-neuralweb-biopharma-seasonality-state",
-      "asof": "2026-08-05",
+      "asof": "2026-08-07",
       "authority": {
         "may_boost_confidence": false,
         "may_deescalate": false,
@@ -2277,16 +4455,34 @@
         "may_rewrite_geometry": false,
         "may_size": false
       },
-      "available_at": "2026-08-06T22:02:39Z",
-      "clock": {
-        "days_to_window_end": 236,
-        "end_doy": 89,
-        "occurrence_end_date": "2027-03-30",
-        "pattern_id": "cal:ZBH:84-89",
-        "phase": "out_of_window",
-        "start_doy": 84,
-        "type": "calendar",
-        "window_source": "symbol_best"
+      "available_at": "2026-08-08T07:31:23Z",
+      "calibrated_estimate": null,
+      "clocks": [
+        {
+          "evidence": {
+            "horizon_td": 235,
+            "n_years": 24
+          },
+          "pattern_id": "cal:ZBH:84-89",
+          "phase": "out_of_window",
+          "type": "calendar",
+          "window": {
+            "days_to_window_end": 234,
+            "end_doy": 89,
+            "occurrence_end_date": "2027-03-30",
+            "start_doy": 84,
+            "window_source": "symbol_best"
+          }
+        }
+      ],
+      "contradiction": {
+        "between": [
+          "calendar_clock",
+          "event_clock"
+        ],
+        "detail": "no authorized event-timing probability exists: the 'biocatalyst_seasonality_event_projection.v1' producer (owner: biocatalyst) has not landed, so a 'out_of_window' calendar read cannot be checked against an event hazard. This is an unmeasured question, NOT a measured absence of contradiction.",
+        "present": false,
+        "reason_code": "event_timing_probability_absent"
       },
       "entity": {
         "id": "ticker:ZBH",
@@ -2302,15 +4498,17 @@
         "q_by": null,
         "spa_p": null
       },
-      "expires_at": "2026-08-08T22:02:39Z",
-      "forecast": {
-        "baseline_basis": "same_length_all_starts_mean",
+      "expires_at": "2026-08-10T07:31:23Z",
+      "historical_up_share": {
+        "basis": "same_length_all_starts_mean",
         "ci90": [
           0.725081,
           0.948924
         ],
+        "ci90_kind": "parameter_ci",
         "edge": 0.349769,
-        "horizon_td": 237,
+        "horizon_td": 235,
+        "n_years": 24,
         "p": 0.875,
         "p_baseline": 0.525231,
         "quantiles": {
@@ -2318,24 +4516,26 @@
           "q50": 0.01603,
           "q95": 0.03371
         },
+        "quantiles_kind": "outcome_quantiles",
         "target": "default_window_return_gt_0"
       },
-      "hooks": {
-        "calendar_tailwind_vs_event_hazard": {
-          "status": "event_clock_not_built"
-        },
-        "momentum_overlap": {
-          "note": "covariance-spine crosswalk lands with Lane 4",
-          "status": "not_yet_measured"
-        }
-      },
       "is_context_only": true,
+      "overlap": {
+        "detail": "the 'seasonality' lobe does not appear in the spine's firing index at all (it is shadow and has never fired), so its redundancy against 1 measured lobe(s) is unmeasured",
+        "measured": false,
+        "measured_against": [
+          "track_record"
+        ],
+        "measured_by": "data/neuralweb/covariance_spine.json",
+        "reason_code": "lobe_absent_from_spine",
+        "redundancy": null
+      },
       "provenance": {
-        "data_snapshot": "sha256:9f938f25ec091c8554def7a104991b89c432907ce489f24c9e117f731501d2cd",
+        "data_snapshot": "sha256:79140a80550acee8d97260ced9f56f3ba83be329efc8ec79958266a80009b8c7",
         "model_version": "seasonality-calendar-v1",
         "pattern_spec_hash": "sha256:97d300f9207c69c77886ccfd1c31de7a09d92ea8be26c12a6f89cc3408240472"
       },
-      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "schema": "neuralweb.biopharma_seasonality_state.v2",
       "tier": "shadow",
       "uncertainty": {
         "abstain": false,
@@ -2350,8 +4550,8 @@
   },
   "tier": "shadow",
   "universe": {
-    "n_covered": 28,
-    "n_emitted": 28,
+    "n_covered": 43,
+    "n_emitted": 43,
     "n_gaps": 0,
     "sector_filter": "Health Care",
     "source": "site/seasonalitydata/index.json"
