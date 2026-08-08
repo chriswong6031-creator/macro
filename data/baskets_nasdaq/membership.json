@@ -102,12 +102,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",
@@ -148,12 +148,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -504,12 +504,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -544,12 +544,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",

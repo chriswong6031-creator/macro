@@ -1,23 +1,28 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-04",
-  "generated_at": "2026-08-06T21:49:32.283890+00:00",
+  "as_of": "2026-08-05",
+  "generated_at": "2026-08-07T23:04:16.344157+00:00",
   "is_context_only": true,
-  "n_snapshots": 146,
-  "n_days": 4,
+  "n_snapshots": 177,
+  "n_days": 5,
   "horizons": {
     "5": {
-      "n_matured": 23,
+      "n_matured": 45,
       "by_stage": {
         "running": {
-          "n": 19,
-          "mean_fwd_rel": 0.0012,
-          "hit_rate": 0.684
+          "n": 39,
+          "mean_fwd_rel": -0.0013,
+          "hit_rate": 0.641
         },
         "coiling": {
-          "n": 4,
-          "mean_fwd_rel": -0.0098,
-          "hit_rate": 0.5
+          "n": 5,
+          "mean_fwd_rel": -0.0059,
+          "hit_rate": 0.6
+        },
+        "coiling_primed": {
+          "n": 1,
+          "mean_fwd_rel": 0.0071,
+          "hit_rate": 1.0
         }
       },
       "running_ic": null,
@@ -30,7 +35,7 @@
       "by_stage": {
         "running": {
           "n": 19,
-          "mean_fwd_rel": -0.0254,
+          "mean_fwd_rel": -0.0256,
           "hit_rate": 0.368
         },
         "coiling": {
@@ -49,7 +54,7 @@
       "by_stage": {
         "running": {
           "n": 19,
-          "mean_fwd_rel": -0.0234,
+          "mean_fwd_rel": -0.0235,
           "hit_rate": 0.474
         },
         "coiling": {
@@ -113,7 +118,7 @@
       "id": "baskets:housing",
       "name": "Housing Chain",
       "stage": "running",
-      "fwd_rel": -0.0972,
+      "fwd_rel": -0.0974,
       "horizon_d": 21
     },
     {

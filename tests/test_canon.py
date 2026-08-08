@@ -231,3 +231,179 @@ def test_confluence_signals_columns_match_terminal():
     for col in ("macd", "sig", "k", "d", "rsi14", "CB", "CS", "revBuy", "revSell",
                 "w_bull", "above200", "mo_bull", "w2_bull"):
         assert col in sig.columns, col
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 5b · THE n-SESSION GRID IS IMPLEMENTED TWICE — pin the tie AND the difference
+# ═════════════════════════════════════════════════════════════════════════════
+# canon's law (module docstring): "Every consumer either imports the function here or is
+# validated byte-for-byte against its committed golden vector.  A concept computed two ways
+# is a bug the moment the two disagree."
+#
+# ``confluence_tiers._tf_bars`` — the n-session grid the SHIPPED cascade, the not-topped veto,
+# Door R, hold.py, setup_tier.py and grade_us_board's `_ob_mask` all ride — does NEITHER.  It
+# neither imports ``resample_sessions`` nor was pinned against it.  Closing that hole is what
+# this section is for, and it is the guard canon's own docstring demanded and never got.
+#
+# It does NOT assert the two are interchangeable.  They are not, and the difference is
+# deliberate and RULED:
+#
+#   canon.resample_sessions      bucket = np.arange(len(s)) // n        <- ordinal from the
+#                                                                          SERIES' first bar
+#   confluence_tiers._tf_bars    bucket = session_positions(d) // n     <- absolute session
+#                                                                          calendar
+#
+# canon's phase follows the caller's slice; ``_tf_bars``' phase is fixed to a reference
+# calendar.  That is the whole of PR #4732 (era ``abs-session-2026-08-06``, ruling
+# ``research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md``): one dropped leading
+# bar used to flip the tier on 13/232 names and the not-topped veto on 27/232, and the two
+# production loaders disagreed about live buyability on the SAME night.  canon deliberately
+# stays phase-relative because it is the CROSS-REPO oracle: ``CONFLUENCE_PARAMS["resample"]``
+# is exported to the Terminal by ``scripts/export_signal_contracts.py`` and gated against
+# committed golden vectors, so re-phasing it is a contract break, not a refactor.
+#
+# MEASURED on data/stocks (237 names, trailing 900 sessions each, 2026-08-07):
+#   * as production calls them the two grids agree on only 1/237 names at n=3 (0.4%) and
+#     2/237 at n=2 — the ones whose window happens to open on a bucket boundary;
+#   * trimmed so each window OPENS on an absolute bucket boundary they are IDENTICAL on
+#     236/237 at both n=2 and n=3.  The single residual is a name whose tape skips a
+#     reference session, where canon packs across the hole and the absolute grid leaves the
+#     bucket short — so the equivalence needs a CONTIGUOUS window as well as an aligned one;
+#   * dropping k ∈ {1,2,4,5,7} leading sessions flips a cascade field on:
+#         _tf_bars as shipped (absolute anchor)     0/1185   0.00%
+#         a canon.resample_sessions delegate      152/1185  12.83%   (tier 43, veto 132)
+#         the PRE-#4732 calendar {n}B bin         153/1185  12.91%   (tier 63, veto 131)
+#     i.e. delegating to canon would forfeit essentially ALL of what #4732 bought — it is a
+#     REGRESSION dressed as a simplification, which is why test 3 below exists.
+#
+# So: the same function on an aligned, contiguous window (1), never the calendar bin (2),
+# and NOT substitutable in production (3) — a delegate would re-import the #4732 defect.
+
+
+def _nyse(n_sessions: int, end="2026-08-04") -> pd.DatetimeIndex:
+    """The last ``n_sessions`` REAL NYSE sessions ending ``end`` — real phases, real holidays.
+
+    Contiguous in the reference calendar by construction, which is exactly the precondition
+    the equivalence below needs (a tape that skips a reference session is the documented
+    residual)."""
+    from datetime import date
+
+    from lib import nyse_calendar
+    sessions = pd.DatetimeIndex(pd.to_datetime(
+        nyse_calendar.sessions_between(date(2015, 1, 1), date.fromisoformat(end))))
+    return sessions[len(sessions) - n_sessions:]
+
+
+def _walk(idx: pd.DatetimeIndex, seed: int = 7) -> pd.Series:
+    rng = np.random.default_rng(seed)
+    i = np.arange(len(idx))
+    return pd.Series(
+        100 * np.exp(0.3 * i / len(idx) + 0.1 * np.sin(2 * np.pi * i / 45)
+                     + np.cumsum(rng.normal(0.0, 0.006, len(idx)))), index=idx)
+
+
+def _aligned(c: pd.Series, n: int, market: str = "US") -> pd.Series:
+    """Trim leading rows so the window OPENS on an absolute n-session bucket boundary."""
+    from engine.session_anchor import session_positions
+    return c.iloc[int((-int(session_positions(c.index, market)[0])) % n):]
+
+
+@pytest.mark.parametrize("n", [2, 3])
+def test_tf_bars_equals_canon_on_an_aligned_contiguous_window(n):
+    """THE TIE.  On a contiguous window that opens on a bucket boundary, the shipped grid and
+    canon's are the SAME FUNCTION — bar for bar, value and known-date.
+
+    This is the byte-for-byte validation canon's module docstring requires of a consumer that
+    does not import it.  It fails the moment either side changes what "an n-session bucket"
+    means: a calendar-bin regression in ``_tf_bars`` (the pre-#4732 disease) and a redefinition
+    of ``canon.resample_sessions`` both land here."""
+    from engine.confluence_tiers import _tf_bars
+
+    c = _aligned(_walk(_nyse(600)), n)
+    tf_v, tf_k = _tf_bars(c, n)
+    cn_v, cn_k = canon.resample_sessions(c, n)
+
+    assert len(tf_v) == len(cn_v), f"bucket COUNT differs: {len(tf_v)} vs {len(cn_v)}"
+    assert list(tf_k.to_numpy()) == list(cn_k.to_numpy()), "bucket CLOSE DATES differ"
+    assert list(tf_v.index) == list(cn_v.index), "bucket LABELS differ"
+    assert np.allclose(tf_v.to_numpy(), cn_v.to_numpy(), rtol=0, atol=0), "bucket CLOSES differ"
+
+
+@pytest.mark.parametrize("n", [2, 3])
+def test_tf_bars_is_not_a_calendar_business_day_bin(n):
+    """THE REGRESSION GUARD.  ``_tf_bars`` must never go back to ``resample("{n}B")``.
+
+    Calendar bins re-anchor on holidays and listing gaps, so which sessions share a bucket
+    becomes a function of the calendar instead of the sessions present — the defect canon's
+    ``resample_sessions`` was built against (~80% of NVDA signal dates relocated, audit #7)
+    and the one PR #4732 removed from this module.  Real NYSE sessions carry real holidays,
+    so the two bucket counts must disagree."""
+    from engine.confluence_tiers import _tf_bars
+
+    c = _walk(_nyse(600))
+    assert len(_tf_bars(c, n)[0]) != len(c.resample(f"{n}B").last().dropna()), (
+        f"_tf_bars produced the same bucket count as calendar resample('{n}B') over a window "
+        f"containing NYSE holidays — the session grid has regressed to a calendar bin"
+    )
+
+
+@pytest.mark.parametrize("n", [2, 3])
+def test_tf_bars_is_start_invariant_and_a_canon_delegate_would_not_be(n):
+    """THE DIFFERENCE, both halves asserted separately so a reader can tell which guarantee is
+    which (the house pattern from tests/test_session_anchor_invariance.py).
+
+    ``_tf_bars`` bucket closes are a function of (reference calendar, date) alone, so dropping
+    leading sessions cannot move them.  ``canon.resample_sessions`` counts ordinals from the
+    series' own first bar, so a drop that is not a multiple of ``n`` re-phases every bucket.
+
+    This is why ``_tf_bars`` MUST NOT be simplified into a ``canon.resample_sessions``
+    delegate: measured on data/stocks (237 names, trailing 900 sessions), the shipped anchor
+    flips a cascade field on 0/1185 (name, drop) pairs and the delegate on 152/1185 (12.83%)
+    — 43 tier, 132 not_topped, 41 eligible.  It re-imports #4732's defect.
+
+    If canon is ever re-anchored to an absolute calendar too, the SECOND half fails — that is
+    a wanted notification, not a nuisance: it means the cross-repo oracle's phase moved and
+    ``CONFLUENCE_PARAMS["resample"]`` plus the committed golden vectors must move with it."""
+    from engine.confluence_tiers import _tf_bars
+
+    c = _aligned(_walk(_nyse(600)), n)
+    tail = lambda k: list(pd.Series(k).to_numpy()[-50:])   # noqa: E731
+    drops = [k for k in (1, 2, 3, 4, 5) if k % n]          # non-multiples re-phase canon
+
+    base_tf = tail(_tf_bars(c, n)[1])
+    for k in drops:
+        assert tail(_tf_bars(c.iloc[k:], n)[1]) == base_tf, (
+            f"dropping {k} leading sessions moved _tf_bars' bucket closes — the absolute "
+            f"session anchor (era abs-session-2026-08-06) has been lost"
+        )
+
+    base_cn = tail(canon.resample_sessions(c, n)[1])
+    moved = [k for k in drops if tail(canon.resample_sessions(c.iloc[k:], n)[1]) != base_cn]
+    assert moved == drops, (
+        f"canon.resample_sessions was expected to re-phase on every non-multiple-of-{n} drop "
+        f"{drops} but only moved on {moved}. If canon was deliberately re-anchored, "
+        f"CONFLUENCE_PARAMS['resample'] and tests/golden/canon_vectors.json must change too — "
+        f"scripts/export_signal_contracts.py ships that string to the Terminal as the oracle."
+    )
+    assert canon.CONFLUENCE_PARAMS["resample"] == "session_grouped_3", (
+        "the exported cross-repo resample contract changed — regenerate the golden vectors "
+        "(scripts/gen_canon_golden.py) and re-export the signal contracts deliberately"
+    )
+
+
+@pytest.mark.parametrize("n", [2, 3])
+def test_tf_bars_and_canon_share_a_return_contract(n):
+    """Shape parity is what makes the swap LOOK safe — pin it, so the file records that the
+    two are drop-in compatible in SHAPE and not in SEMANTICS.  Both return
+    ``(values, known_dates)`` as equal-length Series indexed by each bucket's closing session.
+    ``_tf_bars`` additionally takes ``market``; canon has no such parameter, so a delegate
+    would silently bucket CN/HK/CA names on whatever grid the caller's slice implied."""
+    from engine.confluence_tiers import _tf_bars
+
+    c = _aligned(_walk(_nyse(400)), n)
+    for v, k in (_tf_bars(c, n), canon.resample_sessions(c, n)):
+        assert isinstance(v, pd.Series) and isinstance(k, pd.Series)
+        assert len(v) == len(k)
+        assert isinstance(v.index, pd.DatetimeIndex)
+        assert list(v.index) == list(k.index)
+        assert list(k.to_numpy()) == list(pd.DatetimeIndex(v.index).to_numpy())
