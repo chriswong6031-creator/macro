@@ -410,7 +410,15 @@ def build_member_panel(closes: pd.DataFrame,
     else:
         vol_ratio = pd.DataFrame(np.nan, index=idx, columns=closes.columns)
 
-    covered = activity_z.notna()
+    # COVERAGE requires a FULL trailing window, not merely a non-null z.
+    # `_causal_z` is imported for its math, and its house min_periods is window//3 —
+    # which would call a 22-session IPO "covered" and score it against a 22-sample
+    # distribution while the docstring promises 63. A member is covered only once it
+    # has the window the definition claims; until then it is live and UNKNOWN, and
+    # the hole is printed (coverage_warnings) rather than divided away.
+    full_window = (spy_adj.notna().rolling(ACTIVITY_LOOKBACK_D).sum()
+                   >= ACTIVITY_LOOKBACK_D)
+    covered = activity_z.notna() & full_window
     vol_leg = vol_ratio.notna()
     active = covered & ((activity_z >= ACTIVITY_Z_MIN) | (vol_ratio >= ACTIVITY_VOL_MULT))
 

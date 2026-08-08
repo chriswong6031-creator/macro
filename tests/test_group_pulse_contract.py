@@ -278,6 +278,26 @@ def test_short_history_member_is_live_but_not_covered():
     assert "members_without_activity_read:1" in obj["coverage_warnings"]
 
 
+def test_coverage_requires_the_FULL_63_session_window():
+    """The pin on the one place this plane deviates from an imported convention.
+
+    `group_flow._causal_z` supplies the math with min_periods = window // 3, so a
+    40-session member HAS a non-null z — computed against 40 samples while the
+    contract promises 63. Coverage requires the window the definition claims; a
+    thinner member is live and UNKNOWN, never scored against a stub distribution.
+    """
+    tk = [f"M{i:02d}" for i in range(8)]
+    panel, _ = _panel(tk, _idx(), short={"M07": 40})
+    as_of = panel["index"].max()
+    assert pd.notna(panel["activity_z"].at[as_of, "M07"])   # the z exists...
+    assert bool(panel["covered"].at[as_of, "M07"]) is False  # ...coverage does not
+    assert bool(panel["active"].at[as_of, "M07"]) is False
+    assert GP.ACTIVITY_LOOKBACK_D == 63
+
+    obj = _assemble("thinwindow", _basket(tk), panel)
+    assert obj["n_members"] == 8 and obj["n_covered"] == 7
+
+
 # ---------------------------------------------------------------------------
 # (4) the arc ladder, rung by rung (first match wins)
 # ---------------------------------------------------------------------------
