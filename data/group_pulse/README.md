@@ -45,6 +45,20 @@ The episode history IS re-derivable from the committed member tape
 (`data/baskets/ohlcv/`) — the seed committed with GR0 is that derivation, and every
 row before the ship date is DESCRIPTIVE REPLAY, never forward evidence.
 
+## The web-readable projection
+
+A page cannot read parquet, so the same run publishes
+`site/basketdata/episodes.json`: `{basket_id: [<= 10 CLOSED episodes, newest first]}`,
+each carrying `start_date`, `end_date`, `sessions_active`, `sessions_span`,
+`members_ever_active`, `persistence_share`. That is the "has this happened before"
+read; `site/basketdata/pulse.json`'s `episode` block carries only the CURRENT state.
+
+The projection reads THIS ledger read-only and is written in any lane. The
+PROVISIONAL open row is excluded — an episode still running is not history. A basket
+with no closed episode keeps its key with an empty list, so the two artifacts join
+1:1 by `basket_id`. The cap keeps the artifact a page payload; this parquet remains
+the full record.
+
 ## The law on this page
 
 **An episode is participation, not direction and not a call.** It says the group's

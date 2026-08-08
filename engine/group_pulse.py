@@ -45,6 +45,15 @@ OUTPUTS
     site/basketdata/pulse.json          {basket_id: group_pulse.v1}, one object per
                                         US basket.  Written in ANY lane (it is a
                                         display snapshot).
+    site/basketdata/episodes.json       {basket_id: [<= EPISODES_JSON_MAX closed
+                                        episodes, newest first]} — the web-readable
+                                        projection of the ledger's CLOSED rows, for
+                                        the "has this happened before" read.  The
+                                        ledger is parquet under data/, which a page
+                                        cannot read; the ledger read here is READ-ONLY
+                                        and the artifact is written in ANY lane.  A
+                                        basket with no closed episode gets an EMPTY
+                                        LIST, never a missing key.
     data/group_pulse/episodes.parquet   append-only participation-episode ledger,
                                         advanced ONLY by the nightly lane
                                         (engine.ledger_lane.nightly_advance_enabled;
@@ -228,6 +237,18 @@ MEMBER_STORE_REL: tuple[str, ...] = ("baskets", "ohlcv")
 
 _LEDGER_REL: tuple[str, ...] = ("group_pulse", "episodes.parquet")
 _SITE_REL: tuple[str, ...] = ("basketdata", "pulse.json")
+_SITE_EPISODES_REL: tuple[str, ...] = ("basketdata", "episodes.json")
+
+#: episodes.json — the web-readable projection of the ledger's CLOSED rows. The
+#: ledger is parquet under data/, which a page cannot read, and pulse.json's
+#: `episode` block carries only the CURRENT state; this is the "has this happened
+#: before" read. Capped per basket so the artifact stays a page payload, not an
+#: archive — the parquet remains the full record.
+EPISODES_JSON_MAX: int = 10
+EPISODE_JSON_KEYS: tuple[str, ...] = (
+    "start_date", "end_date", "sessions_active", "sessions_span",
+    "members_ever_active", "persistence_share",
+)
 
 #: Frozen ledger column order (also the parquet column order).
 EPISODE_COLUMNS: tuple[str, ...] = (
@@ -1244,19 +1265,129 @@ def write_site_artifact(payload: dict, site_root: Path | None = None) -> Path:
     return out
 
 
+def closed_episode_history(ledger: pd.DataFrame, basket_ids: Sequence[str],
+                           limit: int = EPISODES_JSON_MAX) -> dict[str, list[dict]]:
+    """Per-basket CLOSED-episode history for the web artifact — the "has this happened
+    before" read.
+
+    Source of truth is the LEDGER, read-only: those rows are the FROZEN record, and a
+    surface that re-derived them instead could quietly disagree with the immutable
+    store the moment an input was revised.  The PROVISIONAL (open) row is excluded by
+    construction — an episode still running is not history, and `pulse.json`'s
+    `episode` block already carries the current state.
+
+    `basket_ids` fixes the key set (normally `pulse.json`'s baskets), so the two
+    artifacts join 1:1: a basket with no closed episode gets an EMPTY LIST, never a
+    missing key.  A ledger row for a basket outside that set is not emitted — the
+    surface renders only baskets it has a pulse for.
+
+    Newest first, at most `limit` per basket.  Episodes of one basket never overlap,
+    so ordering by `start_date` descending is total; `end_date` is the tie-break.
+    """
+    out: dict[str, list[dict]] = {str(b): [] for b in basket_ids}
+    if ledger is None or len(ledger) == 0:
+        return out
+    closed = ledger[ledger["closed"].astype("boolean").fillna(False)]
+    if closed.empty:
+        return out
+    closed = closed.sort_values(["start_date", "end_date"], ascending=False,
+                                kind="stable")
+    for bid, grp in closed.groupby("basket_id", sort=False):
+        key = str(bid)
+        if key not in out:
+            continue
+        rows: list[dict] = []
+        for r in grp.head(int(limit)).itertuples(index=False):
+            ps = getattr(r, "persistence_share", None)
+            rows.append({
+                "start_date": str(r.start_date),
+                "end_date": (None if pd.isna(r.end_date) else str(r.end_date)),
+                "sessions_active": int(r.sessions_active),
+                "sessions_span": int(r.sessions_span),
+                "members_ever_active": int(r.members_ever_active),
+                "persistence_share": (None if ps is None or pd.isna(ps) else float(ps)),
+            })
+        out[key] = rows
+    return out
+
+
+def write_episodes_artifact(history: dict[str, list[dict]],
+                            site_root: Path | None = None) -> Path:
+    """Write site/basketdata/episodes.json.  Returns the written path."""
+    if site_root is None:
+        from lib import config
+        site_root = config.ROOT / config.load()["storage"]["site_dir"]
+    out = Path(site_root).joinpath(*_SITE_EPISODES_REL)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    body = json.dumps(history, separators=(",", ":"), sort_keys=False, default=str)
+    out.write_text(body + "\n", encoding="utf-8")
+    log.info("group_pulse: wrote %s (%d baskets, %d closed episode(s), %dKB)",
+             out, len(history), sum(len(v) for v in history.values()),
+             len(body.encode()) // 1024)
+    return out
+
+
+def validate_episode_history(history: Any) -> list[str]:
+    """Violations of the episodes.json shape.  Empty list == valid.
+
+    Unknown keys are violations here for the same reason they are in
+    `group_pulse.v1`: a contract that tolerates extras is not a contract, and this
+    one is consumed by a surface that will index it blind.
+    """
+    if not isinstance(history, dict):
+        return ["episodes.json: not an object"]
+    errs: list[str] = []
+    for bid, rows in history.items():
+        if not isinstance(rows, list):
+            errs.append(f"{bid}: value must be a list")
+            continue
+        if len(rows) > EPISODES_JSON_MAX:
+            errs.append(f"{bid}: {len(rows)} rows exceeds the {EPISODES_JSON_MAX} cap")
+        prev: str | None = None
+        for i, row in enumerate(rows):
+            if not isinstance(row, dict):
+                errs.append(f"{bid}[{i}]: not an object")
+                continue
+            if set(row) != set(EPISODE_JSON_KEYS):
+                errs.append(f"{bid}[{i}]: keys must be {sorted(EPISODE_JSON_KEYS)}, "
+                            f"got {sorted(row)}")
+                continue
+            for k in ("sessions_active", "sessions_span", "members_ever_active"):
+                if not isinstance(row[k], int) or isinstance(row[k], bool):
+                    errs.append(f"{bid}[{i}]: '{k}' must be an int")
+            if row["persistence_share"] is not None and not isinstance(
+                    row["persistence_share"], (int, float)):
+                errs.append(f"{bid}[{i}]: 'persistence_share' must be a number or null")
+            if not isinstance(row["start_date"], str):
+                errs.append(f"{bid}[{i}]: 'start_date' must be a string")
+                continue
+            if prev is not None and row["start_date"] > prev:
+                errs.append(f"{bid}[{i}]: rows must be newest-first")
+            prev = row["start_date"]
+    return errs
+
+
 def run(data_root: Path | None = None, site_root: Path | None = None,
         require_nightly_lane: bool = True) -> dict:
-    """Nightly entry point: compute -> write pulse.json -> advance the ledger.
+    """Nightly entry point: compute -> pulse.json -> advance the ledger -> episodes.json.
 
-    The ARTIFACT is written in any lane (a display snapshot); only the LEDGER append
-    is nightly-gated.  Returns a small summary dict for the caller's log line.
+    BOTH artifacts are written in any lane (display snapshots); only the LEDGER append
+    is nightly-gated.  episodes.json is emitted AFTER the advance so a nightly run
+    publishes the history it just wrote, while an off-lane run publishes the committed
+    ledger unchanged — the read is read-only either way.  Returns a small summary dict
+    for the caller's log line.
     """
     res = compute(data_root)
     path = write_site_artifact(res["payload"], site_root)
     if data_root is None:
         from lib import config
         data_root = config.data_dir()
-    ledger = advance_episode_ledger(res["episodes"], Path(data_root),
+    data_root = Path(data_root)
+    ledger = advance_episode_ledger(res["episodes"], data_root,
                                     require_nightly_lane=require_nightly_lane)
+    history = closed_episode_history(read_ledger(data_root), list(res["payload"]))
+    episodes_path = write_episodes_artifact(history, site_root)
     return {"as_of": res["as_of"], "n_baskets": res["n_baskets"],
-            "elapsed_s": res["elapsed_s"], "artifact": str(path), "ledger": ledger}
+            "elapsed_s": res["elapsed_s"], "artifact": str(path), "ledger": ledger,
+            "episodes_artifact": str(episodes_path),
+            "n_closed_episodes": sum(len(v) for v in history.values())}

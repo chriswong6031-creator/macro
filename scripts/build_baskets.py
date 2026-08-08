@@ -242,12 +242,13 @@ def main() -> int:
         _gp_led = _gp_res.get("ledger") or {}
         log.info(
             "group_pulse: %d basket(s) as_of=%s in %.1fs -> %s; episode ledger %s"
-            " (%s rows, %s closed)",
+            " (%s rows, %s closed); history -> %s (%s closed episode(s) published)",
             _gp_res.get("n_baskets", 0), _gp_res.get("as_of"),
             float(_gp_res.get("elapsed_s") or 0.0), _gp_res.get("artifact"),
             "advanced" if _gp_led.get("written") else
             f"skipped ({_gp_led.get('reason', 'unknown')})",
             _gp_led.get("rows", 0), _gp_led.get("closed", 0),
+            _gp_res.get("episodes_artifact"), _gp_res.get("n_closed_episodes", 0),
         )
     except Exception as _gp_exc:  # noqa: BLE001 — additive, never fatal
         # Bare print at column 0, NOT a logger call: this package's logging format

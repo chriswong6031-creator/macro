@@ -6164,9 +6164,14 @@ jobs:
     #              joining, 3-inactive closure, persistence math, the nightly lane
     #              gate, and the provisional-bucket law — a closed row is re-emitted
     #              VERBATIM from the store and its recomputed twin discarded, so a
-    #              later data revision cannot rewrite a closed episode.
+    #              later data revision cannot rewrite a closed episode. It also pins
+    #              site/basketdata/episodes.json, the web-readable projection of the
+    #              ledger's CLOSED rows (a page cannot read parquet): the published
+    #              rows must MATCH the frozen ledger rows and must exclude the
+    #              provisional open one.
     #   tripwire   program law R-TIL-3: no fused score / rank / heat number anywhere
-    #              in site/basketdata/pulse.json, at any depth. It is a SUBSTRING
+    #              in site/basketdata/pulse.json or episodes.json, at any depth, plus
+    #              the 1:1 key join the surface indexes blind. It is a SUBSTRING
     #              scan and it carries its own seeded-mutant round trip — a scan that
     #              comes back clean is indistinguishable from a scan that no longer
     #              fires, so the green only means something because the synthetic

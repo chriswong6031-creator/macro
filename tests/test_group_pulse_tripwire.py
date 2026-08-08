@@ -16,6 +16,8 @@ Covers:
        synthetic insertion goes red.
   (5)  No banned vocabulary in any artifact string value — the CI-guarded word
        "validated", or ignition language, would reach a user surface through GR1.
+  (6)  site/basketdata/episodes.json gets the same treatment, and must join 1:1
+       with pulse.json — the surface indexes both by basket_id, blind.
 """
 from __future__ import annotations
 
@@ -34,7 +36,9 @@ FUSED_KEY = re.compile(r"score|rank|heat", re.IGNORECASE)
 #: Vocabulary that must never reach a user-facing surface through this artifact.
 BANNED_TEXT = re.compile(r"\bvalidated\b|ignit(e|ed|ing|ion)", re.IGNORECASE)
 
-ARTIFACT = Path(__file__).resolve().parent.parent / "site" / "basketdata" / "pulse.json"
+_SITE = Path(__file__).resolve().parent.parent / "site" / "basketdata"
+ARTIFACT = _SITE / "pulse.json"
+EPISODES_ARTIFACT = _SITE / "episodes.json"
 
 
 def _offending_keys(obj, path: str = "") -> list[str]:
@@ -65,6 +69,13 @@ def committed() -> dict:
     if not ARTIFACT.exists():
         pytest.skip(f"{ARTIFACT} not built in this checkout")
     return json.loads(ARTIFACT.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def committed_episodes() -> dict:
+    if not EPISODES_ARTIFACT.exists():
+        pytest.skip(f"{EPISODES_ARTIFACT} not built in this checkout")
+    return json.loads(EPISODES_ARTIFACT.read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
@@ -109,6 +120,25 @@ def test_every_basket_object_declares_context_only(committed):
         assert obj["authority"] == "context_only", bid
         assert obj["schema"] == GP.SCHEMA, bid
         assert obj["arc"]["null_disclosure"] == GP.ARC_NULL_DISCLOSURE, bid
+
+
+def test_committed_episodes_artifact_has_no_fused_number(committed_episodes):
+    assert _offending_keys(committed_episodes) == []
+
+
+def test_the_episode_history_key_set_has_no_fused_number():
+    assert [k for k in GP.EPISODE_JSON_KEYS if FUSED_KEY.search(k)] == []
+
+
+def test_committed_episodes_artifact_still_validates(committed_episodes):
+    assert GP.validate_episode_history(committed_episodes) == []
+
+
+def test_the_two_artifacts_join_one_to_one(committed, committed_episodes):
+    """episodes.json is indexed by the SAME basket ids as pulse.json — the surface
+    joins them blind, so a key present in one and absent from the other is a bug the
+    page would render as a hole."""
+    assert set(committed_episodes) == set(committed)
 
 
 # ---------------------------------------------------------------------------

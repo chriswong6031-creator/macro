@@ -380,3 +380,164 @@ def test_merge_over_an_empty_ledger_writes_every_episode():
     out = GP.merge_episodes(GP._empty_ledger(), computed, "T1")
     assert len(out) == 2
     assert list(out["advanced_at"]) == ["T1", "T1"]
+
+
+# ---------------------------------------------------------------------------
+# (12) site/basketdata/episodes.json — the web-readable CLOSED-episode history
+# ---------------------------------------------------------------------------
+
+def _seeded_ledger(tmp_path, computed: dict[str, list[dict]]):
+    GP.advance_episode_ledger(computed, tmp_path, require_nightly_lane=False,
+                              advanced_at="T1")
+    return GP.read_ledger(tmp_path)
+
+
+def test_episodes_json_matches_the_ledgers_closed_rows(tmp_path):
+    """THE contract: every row the artifact publishes is a row the LEDGER froze —
+    same episodes, same field values, same order — and nothing else.
+
+    The ledger is the source of truth on purpose. A surface that re-derived this
+    history instead could quietly disagree with the immutable store the moment an
+    input was revised, and the disagreement would only ever show up to a user.
+    """
+    computed = {
+        # three closed episodes + one still open
+        "b1": _run([ON, ON] + [OFF] * 4 + [ON] + [OFF] * 4 + [ON, ON, ON] + [OFF] * 4
+                   + [ON, ON], basket_id="b1"),
+        "b2": _run([ON, ON, ON] + [OFF] * 5, basket_id="b2"),
+    }
+    ledger = _seeded_ledger(tmp_path, computed)
+    history = GP.closed_episode_history(ledger, ["b1", "b2"])
+    assert GP.validate_episode_history(history) == []
+
+    for bid in ("b1", "b2"):
+        stored = ledger[(ledger["basket_id"] == bid) & ledger["closed"]]
+        expected = [
+            {"start_date": str(r.start_date), "end_date": str(r.end_date),
+             "sessions_active": int(r.sessions_active),
+             "sessions_span": int(r.sessions_span),
+             "members_ever_active": int(r.members_ever_active),
+             "persistence_share": (None if pd.isna(r.persistence_share)
+                                   else float(r.persistence_share))}
+            for r in stored.sort_values("start_date", ascending=False).itertuples(index=False)
+        ]
+        assert history[bid] == expected, bid
+
+
+def test_episodes_json_ignores_the_provisional_open_row(tmp_path):
+    """An episode still running is not history — pulse.json's `episode` block already
+    carries the current state, and publishing an open row here would double-count it
+    AND publish a number that changes every night."""
+    computed = {"b1": _run([ON, ON] + [OFF] * 4 + [ON, ON, ON], basket_id="b1")}
+    ledger = _seeded_ledger(tmp_path, computed)
+    assert int((~ledger["closed"]).sum()) == 1, "fixture must contain an OPEN row"
+    open_start = str(ledger.loc[~ledger["closed"], "start_date"].iloc[0])
+
+    history = GP.closed_episode_history(ledger, ["b1"])
+    assert len(history["b1"]) == 1
+    assert open_start not in [r["start_date"] for r in history["b1"]]
+    assert int(ledger["closed"].sum()) == len(history["b1"])
+
+
+def test_a_basket_with_no_closed_episode_keeps_its_key_with_an_empty_list(tmp_path):
+    """A missing key would make the surface branch on presence; an empty list lets it
+    render "no prior episodes" without a special case."""
+    ledger = _seeded_ledger(tmp_path, {"b1": _run([ON, ON, ON])})   # open only
+    history = GP.closed_episode_history(ledger, ["b1", "b2", "b3"])
+    assert set(history) == {"b1", "b2", "b3"}
+    assert history == {"b1": [], "b2": [], "b3": []}
+
+
+def test_episodes_json_is_newest_first_and_capped(tmp_path):
+    pattern: list[tuple[float, int]] = []
+    for _ in range(14):                       # 14 closed episodes, oldest first
+        pattern += [ON, ON] + [OFF] * 4
+    ledger = _seeded_ledger(tmp_path, {"b1": _run(pattern, basket_id="b1")})
+    assert int(ledger["closed"].sum()) == 14
+
+    rows = GP.closed_episode_history(ledger, ["b1"])["b1"]
+    assert len(rows) == GP.EPISODES_JSON_MAX == 10
+    starts = [r["start_date"] for r in rows]
+    assert starts == sorted(starts, reverse=True), "newest first"
+    newest_stored = str(ledger[ledger["closed"]]["start_date"].max())
+    assert starts[0] == newest_stored, "the cap must drop the OLDEST, not the newest"
+
+
+def test_episodes_json_rows_carry_exactly_the_six_contract_keys(tmp_path):
+    ledger = _seeded_ledger(tmp_path, {"b1": _run([ON, ON] + [OFF] * 4)})
+    row = GP.closed_episode_history(ledger, ["b1"])["b1"][0]
+    assert set(row) == set(GP.EPISODE_JSON_KEYS)
+    # the ledger's bookkeeping columns stay in the ledger
+    for leaked in ("episode_id", "basket_id", "closed", "advanced_at", "members_persisted"):
+        assert leaked not in row
+
+
+def test_a_ledger_basket_outside_the_key_set_is_not_published(tmp_path):
+    """The key set is pulse.json's baskets. A basket that left membership still has
+    frozen ledger rows — it must not reappear on a surface that has no pulse for it."""
+    ledger = _seeded_ledger(tmp_path, {"b1": _run([ON, ON] + [OFF] * 4, basket_id="b1"),
+                                       "retired": _run([ON, ON] + [OFF] * 4,
+                                                       basket_id="retired")})
+    history = GP.closed_episode_history(ledger, ["b1"])
+    assert set(history) == {"b1"} and len(history["b1"]) == 1
+
+
+def test_a_missing_or_empty_ledger_yields_empty_lists(tmp_path):
+    assert GP.closed_episode_history(GP.read_ledger(tmp_path), ["b1", "b2"]) == \
+        {"b1": [], "b2": []}
+    assert GP.closed_episode_history(GP._empty_ledger(), []) == {}
+
+
+def test_a_null_persistence_share_publishes_as_null(tmp_path):
+    """No member sets -> members_ever_active 0 -> persistence is UNKNOWN. It must
+    publish as null, not as 0.0, which would read as "nobody persisted"."""
+    ledger = _seeded_ledger(tmp_path, {"b1": _run([ON, ON] + [OFF] * 4)})
+    row = GP.closed_episode_history(ledger, ["b1"])["b1"][0]
+    assert row["members_ever_active"] == 0
+    assert row["persistence_share"] is None
+
+
+def test_the_artifact_round_trips_as_json(tmp_path):
+    import json
+    ledger = _seeded_ledger(tmp_path, {"b1": _run([ON, ON] + [OFF] * 4 + [ON, ON, ON])})
+    history = GP.closed_episode_history(ledger, ["b1", "b2"])
+    p = GP.write_episodes_artifact(history, tmp_path)
+    assert p == tmp_path / "basketdata" / "episodes.json"
+    assert json.loads(p.read_text(encoding="utf-8")) == history
+
+
+@pytest.mark.parametrize("mutant,needle", [
+    ({"b1": [{"start_date": "2026-01-01", "end_date": "2026-01-02",
+              "sessions_active": 2, "sessions_span": 2, "members_ever_active": 3,
+              "persistence_share": 1.0, "rank": 1}]}, "keys must be"),
+    ({"b1": [{"start_date": "2026-01-01"}]}, "keys must be"),
+    ({"b1": "not a list"}, "must be a list"),
+])
+def test_the_history_validator_goes_red_on_mutants(mutant, needle):
+    errs = GP.validate_episode_history(mutant)
+    assert any(needle in e for e in errs), errs
+
+
+def test_the_history_validator_catches_a_wrong_sort_order():
+    rows = [{"start_date": "2026-01-01", "end_date": "2026-01-02", "sessions_active": 1,
+             "sessions_span": 1, "members_ever_active": 3, "persistence_share": 1.0},
+            {"start_date": "2026-05-01", "end_date": "2026-05-02", "sessions_active": 1,
+             "sessions_span": 1, "members_ever_active": 3, "persistence_share": 1.0}]
+    errs = GP.validate_episode_history({"b1": rows})
+    assert any("newest-first" in e for e in errs), errs
+
+
+def test_run_writes_BOTH_artifacts_and_degrades_without_data(tmp_path, capsys):
+    """The emission is wired into run(), and an empty data plane still produces both
+    files rather than raising into the nightly."""
+    import json
+    data_root, site_root = tmp_path / "data", tmp_path / "site"
+    data_root.mkdir()
+    res = GP.run(data_root=data_root, site_root=site_root, require_nightly_lane=False)
+    pulse = site_root / "basketdata" / "pulse.json"
+    episodes = site_root / "basketdata" / "episodes.json"
+    assert pulse.exists() and episodes.exists()
+    assert json.loads(pulse.read_text()) == {}
+    assert json.loads(episodes.read_text()) == {}
+    assert res["n_closed_episodes"] == 0
+    assert res["episodes_artifact"] == str(episodes)
