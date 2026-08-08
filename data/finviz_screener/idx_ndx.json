@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-08-07 20:49 UTC",
+"as_of":"2026-08-08 05:07 UTC",
 "n":102,
 "total_reported":102,
 "unmapped_industries":[],
@@ -374,28 +374,12 @@
 "market_cap_b":107.79
 },
 {
-"ticker":"ABNB",
-"company":"Airbnb Inc",
-"industry":"Travel Services",
-"sector":"Consumer Cyclical",
-"country":"USA",
-"market_cap_b":107.32
-},
-{
 "ticker":"ADBE",
 "company":"Adobe Inc",
 "industry":"Software - Application",
 "sector":"Technology",
 "country":"USA",
 "market_cap_b":105.42
-},
-{
-"ticker":"CEG",
-"company":"Constellation Energy Corp",
-"industry":"Utilities - Independent Power Producers",
-"sector":"Utilities",
-"country":"USA",
-"market_cap_b":96.92
 },
 {
 "ticker":"DASH",
@@ -422,6 +406,14 @@
 "market_cap_b":93.12
 },
 {
+"ticker":"CEG",
+"company":"Constellation Energy Corp",
+"industry":"Utilities - Independent Power Producers",
+"sector":"Utilities",
+"country":"USA",
+"market_cap_b":92.51
+},
+{
 "ticker":"MELI",
 "company":"MercadoLibre Inc",
 "industry":"Internet Retail",
@@ -436,6 +428,14 @@
 "sector":"Consumer Cyclical",
 "country":"USA",
 "market_cap_b":92.29
+},
+{
+"ticker":"ABNB",
+"company":"Airbnb Inc",
+"industry":"Travel Services",
+"sector":"Consumer Cyclical",
+"country":"USA",
+"market_cap_b":90.55
 },
 {
 "ticker":"CMCSA",
