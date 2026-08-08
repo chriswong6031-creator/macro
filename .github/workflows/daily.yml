@@ -2487,7 +2487,6 @@ jobs:
             # vintage and the cycle-consistency PR gate fails on same-tape pos/phase skew
             # (render.yml already pairs them; cl_misc is sequential so ordering holds).
             brun markets       "global market cycles shell (build_markets)"    scripts.build_markets
-            brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
             brun sync_gauge    "sync gauge appender (append_sync_gauge)"      scripts.append_sync_gauge
             brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
             brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
@@ -2519,6 +2518,25 @@ jobs:
             # gitignored except SPY, so no other lane can supply them. Sub-minute —
             # it only reads artifacts (28 symbols, one baseline sweep each).
             brun seasonality_shadow "Lane 6 NW shadow state + forward ledger (build_seasonality_shadow_state)" scripts.build_seasonality_shadow_state
+            # Measurement hub — moved AFTER seasonality_shadow (2026-08-07). It now
+            # renders the seasonal forward-record line from
+            # data/seasonality/nw_forward_ledger.jsonl, and seasonality_shadow is that
+            # ledger's SOLE nightly advancer. Built earlier in this sequential cluster,
+            # the public page carried the PREVIOUS night's counts: on the night the first
+            # window is scored, measurement.html would still say "0 scored so far" for
+            # another 24h while the same night's program_watch.json said otherwise — two
+            # readings of one ledger disagreeing on the same commit. Nothing later in
+            # cl_misc consumed measurement's outputs, so this is a pure ordering move; the
+            # side effect is that measurement now reads the night's own sync gauge and
+            # cycle-pattern artifacts instead of yesterday's, which is the same direction
+            # of fix.
+            brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
+            # Program watch — LAST in the seasonality run because it reads what the
+            # two builders above just wrote (the forward ledger counts in
+            # particular); earlier, it would report the PREVIOUS night's ledger.
+            # Pure stdlib, sub-second: one JSON write plus a ::notice per fired
+            # tripwire. Fail-open — it never takes the nightly down.
+            brun program_watch "seasonality program watch (build_program_watch)" scripts.build_program_watch
           }
           # launch every cluster concurrently, then barrier before the hub (build_vector, below)
           cl_markets & cl_gex & cl_baskets & cl_special & cl_misc & cl_stage &
@@ -2531,7 +2549,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow stage_analysis stage_analysis_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_dislocation options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality seasonality_shadow program_watch stage_analysis stage_analysis_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

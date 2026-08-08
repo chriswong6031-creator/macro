@@ -9205,7 +9205,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_program_watch.py
+      - scripts/build_measurement.py
     external_consumers: []
     notes: >
       Append-only forward outcome ledger for the Lane 6 shadow lobe: one register
@@ -9218,6 +9220,61 @@ artifacts:
       NIGHTLY IS THE SOLE ADVANCER — intraday lanes discard data/ writes.
       RUL-P10 path b. Expected-NULL at birth: the first grades land a horizon
       after the first registrations.
+      TWO READERS as of 2026-08-07, neither on a scored path:
+      scripts/build_program_watch.py (private operator tripwire) and
+      scripts/build_measurement.py, which renders DERIVED COUNTS ONLY — registered
+      windows, scored windows, and the earliest open close date — into the
+      site/measurement.html hero. Both read through
+      engine.seasonality.program_watch.read_ledger_counts, so both agree on what
+      "scored" means: only rows with grade_status == "graded". An
+      ungradable_missing_prices close-out is a closed window with no outcome and
+      is NOT evidence — the same exclusion engine.seasonality.state.live_n_by_symbol
+      applies to the forward sample. The public reader additionally refuses to
+      publish a count at all when any line fails to parse, because a partial parse
+      yields an undercount indistinguishable from a true low count.
+
+  data-seasonality-program-watch:
+    path: data/seasonality/program_watch.json
+    format: json
+    producer: scripts/build_program_watch.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: seasonality.program_watch.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Operator-facing program watch for the biopharma seasonality lane: four
+      tripwires evaluated against real repo state (the BioCatalyst
+      event-projection contract's existence, the first graded row on
+      data/seasonality/nw_forward_ledger.jsonl, the sx-mode/sx-catalyst marker
+      divergence between templates/stock_seasonality.html.j2 and
+      site/stock_seasonality.html, and three quiet deferrals), each carrying the
+      exact prompt to paste back and the handoff doc that prompt references.
+      Infrastructure tier and PRIVATE-CHANNEL: it carries no score, rank, gate,
+      or size, nothing reads it on any scored path, and its prompts, doc paths,
+      module names, and blocker keys must never render into a site/ page —
+      site/measurement.html serves only ONE derived fact from the same ledger
+      read (windows registered, windows graded) in plain words. Zero consumers is
+      the intended terminal state, not a gap. Every tripwire distinguishes
+      "checked, not yet" (waiting) from "could not check" (unavailable): a
+      missing or unreadable input never reports as waiting, because the two are
+      indistinguishable to a reader and the second one would be waited on
+      forever. The engine (engine/seasonality/program_watch.py) is pure stdlib
+      and reads NO wall clock — asof is always an explicit argument — so two runs
+      over identical inputs produce byte-identical JSON; the builder writes it
+      tmp + os.replace. RUL-P10 path b (git-committed, single writer = the
+      producer, staged by the nightly blanket git add data/). Runs LAST in the
+      seasonality run of daily.yml cl_misc, after build_stock_seasonality and
+      build_seasonality_shadow_state, so it reads the night's own ledger rather
+      than the previous night's.
 
   data-stock-seasonality-selection-cache:
     path: data/seasonality/selection/<SYM>.json
