@@ -1,6 +1,6 @@
 {
-  "built": "2026-08-08T07:40:48.771844+00:00",
-  "timing_sec": 1.69,
+  "built": "2026-08-08T16:00:57.536116+00:00",
+  "timing_sec": 1.55,
   "em_stress": {
     "state": "strained",
     "thermometer": 38.9,
@@ -37,12 +37,12 @@
       },
       "em_fx_basket": {
         "value": 0.0,
-        "rvol_20d": 3.59,
+        "rvol_20d": 3.5,
         "dd_pctile": 6.3,
-        "rvol_pctile": 4.1,
-        "pctile": 5.2,
+        "rvol_pctile": 3.8,
+        "pctile": 5.0,
         "vel_5d_z": null,
-        "vel_20d_z": 1.151,
+        "vel_20d_z": 1.153,
         "z": null,
         "asof": "2026-08-08",
         "stale": false,
@@ -108,7 +108,7 @@
     },
     "gaps": [],
     "as_of": "2026-08-08",
-    "built": "2026-08-08T07:40:47.157029+00:00",
+    "built": "2026-08-08T16:00:56.056984+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,7 +725,7 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-08-08T07:40:47.240070+00:00"
+    "built": "2026-08-08T16:00:56.144018+00:00"
   },
   "spillover": {
     "total_connectedness": 82.8,
@@ -1008,7 +1008,7 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T07:40:47.369076+00:00",
+    "built": "2026-08-08T16:00:56.265924+00:00",
     "timing_sec": 0.12,
     "params": {
       "window": 150,
@@ -1034,13 +1034,13 @@
     }
   },
   "corr_tightening": {
-    "eem_emfx_corr_60d": -0.069,
+    "eem_emfx_corr_60d": -0.077,
     "pairwise_avg_corr": 0.533,
     "pairwise_vel_20d_z": -0.42,
     "tightening": false,
     "gaps": [],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T07:40:48.275691+00:00"
+    "built": "2026-08-08T16:00:57.073945+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -1097,7 +1097,7 @@
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": -0.196,
+          "dxy_5d_chg": -0.2,
           "dgs2_5d_chg": 2.0,
           "safety_bid": false,
           "hot": false,
@@ -1108,7 +1108,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-08-08T07:40:48.308369+00:00"
+    "built": "2026-08-08T16:00:57.106147+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1341,15 +1341,15 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-08-07",
-    "built": "2026-08-08T07:40:48.723496+00:00",
+    "built": "2026-08-08T16:00:57.490861+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
   "smile": {
     "beta": 0.0182,
     "r2": 0.064,
-    "residual_20d": -0.01942,
-    "residual_20d_z": -1.533,
+    "residual_20d": -0.01946,
+    "residual_20d_z": -1.536,
     "regime": "mixed",
     "regime_60d": "mixed",
     "safety_bid_today": false,
@@ -1368,7 +1368,7 @@
     "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
     "gaps": [],
     "display_only": true,
-    "built": "2026-08-08T07:09:56.647375+00:00"
+    "built": "2026-08-08T15:32:12.111215+00:00"
   },
   "inversion_board": {
     "n_inverted": 0,
@@ -1412,7 +1412,7 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-08-08T07:40:48.763408+00:00"
+    "built": "2026-08-08T16:00:57.528098+00:00"
   },
   "swap_lines_bn": 0.1,
   "top_transmitters_display": [

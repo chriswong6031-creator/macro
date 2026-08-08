@@ -1,7 +1,7 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 3.9,
+    "pos": 3.8,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": true,
