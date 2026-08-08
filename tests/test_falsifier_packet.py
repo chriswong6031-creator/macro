@@ -739,3 +739,105 @@ class TestAssemblePacketShape:
         packet = assemble_packet("BANKRUPT", sources)
         a6_statuses = [e["status"] for e in packet["a6_events"]]
         assert "broken" in a6_statuses
+
+
+# ---------------------------------------------------------------------------
+# 9. Producer/consumer shape contract (2026-08-07)
+# ---------------------------------------------------------------------------
+
+class TestMoatProducerConsumerShape:
+    """`_moat_sensors_to_axis` must read the shape the PRODUCER actually emits.
+
+    Every other moat test in this file hand-builds ``sensor_fired_map`` — a key
+    ``compute_moat_falsifiers`` has never emitted. The real return shape is
+    ``{"sensors": {<detector_id>: {"fired": ...}}}``
+    (``engine/moat_falsifiers.py``), so the mapper resolved every sensor to None
+    and reported ``unverifiable`` for all four. The whole moat axis of the A1
+    packet was dead, and green, because the fixtures agreed with the consumer
+    instead of with the producer.
+
+    It is dead only by accident today: ``scripts/research/build_falsifier_packets.py``
+    passes ``moat_falsifiers_result=None``. The day anyone wires the real result
+    in, the old mapper would have silently reported every moat sensor as
+    unverifiable. This test drives the REAL producer end to end so the two
+    cannot drift apart again.
+    """
+
+    @staticmethod
+    def _statements(**current):
+        import pandas as pd
+
+        base_prior = {
+            "ticker": "PCS", "fy": 2024, "period_end": "2024-12-31",
+            "revenue": 1000.0, "gross_profit": 500.0, "receivables": 100.0,
+            "inventory": 100.0, "capex": 100.0, "op_income": 200.0,
+        }
+        base_current = {
+            "ticker": "PCS", "fy": 2025, "period_end": "2025-12-31",
+            # Revenue +10% with gross margin 50% -> 45%: margin compression
+            # FIRES. Every other leg grows +5%, comfortably inside its band, so
+            # they are CLEAR. Exactly one sensor firing is what makes the
+            # assertion discriminating — an all-True or all-False expectation
+            # would pass even if the mapper ignored the payload entirely.
+            "revenue": 1100.0, "gross_profit": 495.0, "receivables": 105.0,
+            "inventory": 105.0, "capex": 105.0, "op_income": 210.0,
+        }
+        base_current.update(current)
+        return pd.DataFrame([base_prior, base_current])
+
+    def test_real_producer_output_is_understood_by_the_mapper(self) -> None:
+        from engine.moat_falsifiers import compute_moat_falsifiers
+
+        produced = compute_moat_falsifiers(
+            "PCS", self._statements(), asof_date=_fresh_date()
+        )
+        # Guard the guard: if the producer stops firing here, the status
+        # assertions below would be satisfied by an all-unverifiable answer.
+        assert produced["sensors"]["margin_compression_despite_revenue_growth"]["fired"] is True
+        assert produced["sensors"]["receivables_stretch"]["fired"] is False
+
+        statuses = {
+            s["name"]: s["status"]
+            for s in _moat_sensors_to_axis(moat_result=produced, asof_date=_fresh_date())
+        }
+        assert statuses == {
+            "Gross-margin compression (moat)": "challenged",
+            "Receivables stretch (moat)": "no_break_observed",
+            "Inventory build (moat)": "no_break_observed",
+            "Capital intensity rising (moat)": "no_break_observed",
+        }, (
+            f"the packet mapper did not understand compute_moat_falsifiers' real "
+            f"output shape; got {statuses}. An all-'unverifiable' result here is "
+            f"the exact regression this test exists for: the mapper reading only "
+            f"the legacy 'sensor_fired_map'/top-level keys, which the producer "
+            f"does not emit."
+        )
+
+    def test_not_evaluable_sensor_reaches_the_packet_as_unverifiable(self) -> None:
+        """A refused sensor must not be laundered into 'no_break_observed'.
+
+        `fired=None` means the sensor declined to answer. Reporting that as
+        "no break observed" would assert a clean bill of health drawn from
+        evidence that was never there — the same substitution the
+        capital_intensity_rising de-escalation fixed upstream.
+        """
+        from engine.moat_falsifiers import compute_moat_falsifiers
+
+        produced = compute_moat_falsifiers(
+            "PCS", self._statements(op_income=float("nan")), asof_date=_fresh_date()
+        )
+        assert produced["sensors"]["capital_intensity_rising"]["fired"] is None
+
+        statuses = {
+            s["name"]: s["status"]
+            for s in _moat_sensors_to_axis(moat_result=produced, asof_date=_fresh_date())
+        }
+        assert statuses["Capital intensity rising (moat)"] == "unverifiable", (
+            f"a not-evaluable moat sensor surfaced as "
+            f"{statuses['Capital intensity rising (moat)']!r} instead of "
+            f"'unverifiable'."
+        )
+        assert statuses["Gross-margin compression (moat)"] == "challenged", (
+            "one sensor being not-evaluable must not collapse the whole axis; "
+            "the sensors that DID evaluate still report their own verdicts."
+        )
