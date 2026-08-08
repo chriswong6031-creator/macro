@@ -911,6 +911,10 @@ on:
       - "scripts/nightly_timings_report.py"
       - "scripts/ci/nightly_timings_finish.sh"
       - "tests/test_nightly_timings.py"
+      # W-L0 daily ET regime gate, run in the same dag-conformance job. The gate's
+      # subject is .github/workflows/daily.yml (already covered above); this entry is
+      # the other half — a PR editing only the gate's test must reach its own guard.
+      - "tests/test_daily_et_gate.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).

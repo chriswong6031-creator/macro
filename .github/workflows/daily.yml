@@ -92,8 +92,11 @@ jobs:
           fired = os.environ.get("FIRED_CRON", "")
           event = os.environ.get("EVENT_NAME", "")
           verdict = "true" if (event != "schedule" or fired == intended) else "false"
+          # Hours, not the raw timedelta: str(timedelta(hours=-4)) renders
+          # "-1 day, 20:00:00", which is the wrong thing to read at 3am.
+          off_h = offset.total_seconds() / 3600
           print(f"::notice title=daily ET gate::event={event or '-'} fired={fired or '-'} "
-                f"intended={intended} ny_utc_offset={offset} -> run={verdict}", flush=True)
+                f"intended={intended} ny_utc_offset={off_h:+.0f}h -> run={verdict}", flush=True)
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"run={verdict}\n")
           PY
