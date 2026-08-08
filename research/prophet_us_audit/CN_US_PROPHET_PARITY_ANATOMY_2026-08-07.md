@@ -77,7 +77,9 @@ directly comparable.
 `china_standouts.json track_ledger.extra_records[0]` (def `cn_prophet_v2`): entered **rank 1
 on 2026-08-05 at 17.52, T2, stage `early`**; peak 20.44 = **+16.7% in 2 sessions** (full 20%
 ChiNext limit day 08-07). Signal-time state: `washout_2w=True`, `reversal_member=True`
-(sector rank 27/150), `rev_z 2.17`, `off_high −39.9%`, `potential 85 (primed)`,
+(sector rank 27/150), `rev_z 0.6718` (CORRECTED 2026-08-08: the 2.17 first cited here was
+`legacy_setup`, not rev_z — see CASE_300363_FULL_CHAIN_2026-08-08.md), `off_high −39.9%`,
+`potential 85 (primed)`,
 `alpha_entry=pullback`, conviction 85. That is the CN anatomy in one row: deep base + washout
 fired + sector-reversal cohort + theme channel, THEN a T2 — bought in the base, not after
 confirmation. US's washout organ (#4924, the CN port) is merged and DARK; `reversal_member`
