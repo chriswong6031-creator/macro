@@ -776,6 +776,16 @@ on:
       - "scripts/build_fundamental_forensics_disclosures.py"
       - "scripts/run_fundamental_forensics_wave2.py"
       - "scripts/run_fundamental_forensics_attested_history.py"
+      # Disclosure-projection bundle (2026-08-08): the SEC acquire/project/sync lane
+      # moved off daily.yml's engine job, and the engine now restores this bundle as its
+      # hard gate. engine/** and config/fundamental_forensics/** already cover the module
+      # and the pinned target list; the CLI, the new lane workflow, and its pin suite need
+      # their own entries so an edit to any of them re-runs these contracts.
+      - "scripts/fundamental_forensics_disclosure_bundle.py"
+      - "engine/fundamental_forensics/disclosure_bundle.py"
+      - "config/fundamental_forensics/wave2_targets.v1.json"
+      - ".github/workflows/filing-forensics-sec.yml"
+      - "tests/test_filing_forensics_sec_lane.py"
       # B4F is a controlled, one-shot AAPL bootstrap. Its runner and workflow
       # are both production-control surfaces: a test-only edit is covered by
       # the broad suite glob below, while an edit to the runner/workflow itself
