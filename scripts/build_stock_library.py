@@ -89,6 +89,48 @@ def search_name_zh(ticker: str) -> tuple[str | None, str | None]:
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
 
+
+# --- per-section timing ledger (masterplan W3: library budget telemetry) ----
+# Same pattern as scripts/build_site.py: _tmark("label") records the wall time
+# since the previous mark under that label. build_site's ledger showed this
+# module is 70-88% of the build_site step but could not attribute WHERE — and a
+# local cProfile is blind because the per-name work fans out over a process
+# pool. These marks run IN the parent process alongside the pool, so they see
+# the real phase split. Written nightly to data/nightly_timings/ (rides the
+# engine job's `git add data/`) + logged as a table so the run log carries it.
+_T_START = time.perf_counter()
+_T_LAST = _T_START
+_T_SECTIONS: list[tuple[str, float]] = []
+
+
+def _tmark(label: str) -> None:
+    global _T_LAST
+    now = time.perf_counter()
+    _T_SECTIONS.append((label, now - _T_LAST))
+    _T_LAST = now
+
+
+def _write_timing_ledger() -> None:
+    try:
+        from datetime import datetime as _dtm, timezone as _tz
+        rows = sorted(_T_SECTIONS, key=lambda kv: -kv[1])
+        total = time.perf_counter() - _T_START
+        for lab, secs in rows:
+            log.info("timing: %-34s %7.1fs", lab, secs)
+        log.info("timing: %-34s %7.1fs", "TOTAL", total)
+        led = config.data_dir() / "nightly_timings"
+        led.mkdir(parents=True, exist_ok=True)
+        rec = {
+            "utc": _dtm.now(_tz.utc).isoformat(timespec="seconds"),
+            "total_s": round(total, 1),
+            "sections": {lab: round(secs, 1) for lab, secs in _T_SECTIONS},
+        }
+        with open(led / "stock_library.jsonl", "a") as fh:
+            fh.write(json.dumps(rec, separators=(",", ":")) + "\n")
+    except Exception as e:  # noqa: BLE001 — telemetry must never break the build
+        log.warning("timing ledger write failed (%s); skipped", e)
+
+
 ETF_LABELS = {**SECTOR_NAMES,
               "SPY": "S&P 500 ETF", "QQQ": "Nasdaq-100 ETF", "IWM": "Russell 2000 ETF",
               "SMH": "Semiconductors ETF", "RSP": "Equal-Weight S&P ETF",
@@ -2312,6 +2354,7 @@ def main() -> int:
     a_days = int(acfg.get("ticker_timeline_days", 120))
     a_max = int(acfg.get("ticker_max_events", 50))
     ladder_rows: list[dict] = []
+    _tmark("setup_context")
     # Phase-2 (research/STOCK_FUNDAMENTALS_PLAN.md): drip a capped batch of
     # per-stock profiles (SEC identity + Wikipedia descriptions) into
     # data/profile/ each build — resumable + capped so it never hammers SEC/
@@ -2325,6 +2368,7 @@ def main() -> int:
             fetch_profiles(max_new=cap)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("equity_profile drip skipped (%s)", e)
+    _tmark("equity_profile")
     # Fundamental panels (factor fingerprint, trailing valuation, financials,
     # positioning) assembled once from already-collected data and merged per name.
     # Best-effort: a failure here must never 404 the technical library.
@@ -2333,6 +2377,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("fundamental panels unavailable (%s) — library ships technicals only", e)
         fpanels = {}
+    _tmark("stock_fundamentals")
     # institutional flow per stock: which thematic/active funds are accumulating
     # or trimming each name (written by build_site.build_etf_page just before this
     # runs, so the per-stock page can show it). Additive — absent => no panel.
@@ -2444,6 +2489,7 @@ def main() -> int:
         ivspread_map, ivspread_prior, _ivs_asof = {}, {}, None
     if ivspread_map:
         log.info("IV-spread confirmer: %d optionable names", len(ivspread_map))
+    _tmark("sidecar_context")
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
     # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
@@ -2555,6 +2601,7 @@ def main() -> int:
     _sp_n_skipped = 0
     # Container for personality objects (ticker -> personality dict) for post-loop passes
     _sp_by_ticker: "dict[str, dict]" = {}
+    _tmark("personality_preloads")
     # -------------------------------------------------------------------
     spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
     # Sector Pulse — per-ticker theme-heat context for the stockdata JSON and standout cards.
@@ -2596,6 +2643,7 @@ def main() -> int:
         log.info("sector_pulse: %d tickers mapped to themes", len(_sector_pulse_map))
     except Exception as _spe:  # noqa: BLE001 — additive; pulse failure must not break the build
         log.warning("sector_pulse precompute skipped (%s)", _spe)
+    _tmark("sector_pulse")
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -2660,6 +2708,7 @@ def main() -> int:
             gate_go = (json.loads(_gate.read_text()) or {}).get("US") == "GO"
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("stock_conviction_gate.json unreadable (%s)", e)
+    _tmark("context_chips")
     # analyst estimate-REVISION momentum — the fast/early EDGE leg. Drip a capped batch each
     # build (resumable, never fatal), then read the latest readings into a cross-sectional z.
     try:
@@ -2704,6 +2753,7 @@ def main() -> int:
                 revision_z = ((s - mu) / sd).clip(-3, 3).round(3).to_dict()
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("revisions latest.parquet unreadable (%s)", e)
+    _tmark("revisions")
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
     # ---- Decorrelated cross-sectional COMPOSITE (engine/composite_score) ----------
@@ -2736,6 +2786,7 @@ def main() -> int:
                          len(composite_pt), _comp["n_legs"].mean())
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("composite score failed (%s)", e)
+    _tmark("composite_score")
     # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
     # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
     # companies' SEC filings is the forward-demand pool for each beneficiary cohort
@@ -2752,6 +2803,7 @@ def main() -> int:
                          sg["fy_latest"], sg["n_spenders"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("demand-chain signals skipped (%s)", e)
+    _tmark("demand_chain")
     # RPO / contracted forward bookings (engine/demand_chain.rpo_read) — the per-name
     # L2 read for the software complex the capex chains don't reach. Used as a
     # fallback when a name is not on any customer-capex chain.
@@ -2775,6 +2827,7 @@ def main() -> int:
             log.info("demand-chain: RPO bookings for %d names", len(rpo_by_ticker))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("rpo.parquet unreadable (%s)", e)
+    _tmark("edgar_rpo")
     # Headcount / hiring (engine/demand_chain.hiring_read) — the per-name COINCIDENT
     # hiring-confidence read (10-K employee growth), the honest free stand-in for live
     # job postings. Last display fallback when a name is not on a chain and has no RPO.
@@ -2797,6 +2850,7 @@ def main() -> int:
             log.info("demand-chain: headcount for %d names", len(headcount_by_ticker))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("headcount.parquet unreadable (%s)", e)
+    _tmark("edgar_headcount")
     # scored-ledger track record (engine/demand_ledger, prior build) for the panel's
     # accountability line; absent on first run — degrade silently.
     demand_track = None
@@ -2828,6 +2882,7 @@ def main() -> int:
     print(f"::notice title=stock_library::universe={len(uni)} "
           f"elapsed={time.time() - _main_t0:.0f}s",
           flush=True)
+    _tmark("universe_load")
     # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
     # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
@@ -2868,6 +2923,7 @@ def main() -> int:
                  sum(1 for v in ext_map.values() if v.get("grade") == "stretched"), len(lottery_map))
     except Exception as e:  # noqa: BLE001 — additive; absence just means no extension brake
         log.warning("extension/lottery read failed (%s) — standouts run without the brakes", e)
+    _tmark("extension_panels")
     # Heaviest stretch of the whole site build: ~1500 independent _one() calls.
     # Fan them across processes (CI runner = 4 vCPU); the cheap post-processing
     # below (shared-map merges, setup scoring, JSON writes) stays serial and in
@@ -2909,6 +2965,7 @@ def main() -> int:
         log.warning("name-direction inputs unavailable (%s)", e)
     _winit(liq, drag, bench, a_days, a_max, vctx, extra_set,
            ant_macro, ant_gate, ant_breadth, name_dir_inputs, vreg)  # also primes the serial path
+    _tmark("worker_priming")
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -2929,6 +2986,7 @@ def main() -> int:
         t0 = time.time()
         recs = [_one_task(item) for item in uni]
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
+    _tmark("per_name_fanout")
 
     # ---- feed-freshness scan (R1/R2, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md)
     # A full rec whose own asof lags the library's max tip by >_MAX_BAR_LAG_DAYS is a name
@@ -3740,6 +3798,7 @@ def main() -> int:
         except Exception as _w3e:  # noqa: BLE001 — W3 evidence is additive, never fatal
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
+    _tmark("merge_loop")
     # ---- stock_personality.v1 benchmark gate ----------------------------------------
     # Skip-count summary at WARNING whenever any ticker skipped: a partial or
     # full-universe personality failure must be visible in nightly logs (INFO level),
@@ -3883,6 +3942,7 @@ def main() -> int:
     # Append one row per new buy/rebuy fire TODAY that has a personality object.
     # Single-writer: only the nightly engine job advances this ledger.
     _stamp_personality_forward_ledger(_sp_by_ticker, alpha_asof, config)
+    _tmark("personality_agg")
     # ---------------------------------------------------------------------------
     # ---- W0.2 Stage C: US signal_gate NEAR-MISS capture (masterplan §5.2 move 2) ----
     # signal_gate.gate() annotates verdicts that failed EXACTLY ONE Appendix-A
@@ -4078,6 +4138,7 @@ def main() -> int:
                      _donor_ctx.get("legs"))
     except Exception as _de:  # noqa: BLE001
         log.debug("donor_state skipped (%s)", _de)
+    _tmark("stockdata_writes")
     # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
     # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
     # "Standout individual stocks" board (read by build_site one build later, since
@@ -4960,6 +5021,7 @@ def main() -> int:
         wide["lane_counts"]["featured"] = wide["ranking"]["featured_count"]
         wide["lane_counts"]["ran_lane"] = len(wide["ran"])
         log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+        _tmark("board_rank")
 
         # P2.1a Step H: anti-chase shadow ledger writer.
         # Appends per-ticker rows to data/signal_archive/antichase_shadow_ledger.parquet.
@@ -5227,6 +5289,7 @@ def main() -> int:
                     log.debug("P2.5 F1D shadow ledger: no new rows for %s (all already logged)", _f1d_asof_str)
         except Exception as _f1d_e:  # noqa: BLE001 — shadow ledger is never fatal
             log.debug("P2.5 F1D shadow ledger write skipped: %s", _f1d_e)
+        _tmark("shadow_ledgers")
 
         # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
         # The setups object is still in memory (written initially at L1948). Update it
@@ -5878,6 +5941,8 @@ def main() -> int:
     if bccal.exists():
         (outdir / "bc_calibration.json").write_text(bccal.read_text())
     log.info("stock library: %d analyzed, %d skipped (thin history)", built, failed)
+    _tmark("write_outputs")
+    _write_timing_ledger()
     return 0
 
 
