@@ -38,13 +38,25 @@
           "minItems": 2,
           "items": {"type": "string"},
           "description": "EXHAUSTIVE ordered account of the buy-filter legs, in evaluation order, with element 0 ALWAYS byte-identical to `reason`. Emitted ONLY when it says something `reason` does not — i.e. when the verdict is over-determined (more than one leg refuses the buy, or a later leg could not be decided yet). Its ABSENCE therefore means [`reason`] exactly, never 'unknown', so a reader that only wants the headline keeps reading `reason` alone. Buy/rebuy ONLY. Added 2026-08-04 after research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md found 002155.SZ stamped 'veto: bearish divergence' while ALSO failing reclaim-and-hold, and 77% of divergence-vetoed fires blocked by another leg anyway — a single reason misdirects diagnosis. Display-only, never a gate input."
+        },
+        "signal_date": {
+          "anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}],
+          "description": "KNOWABILITY date — the last daily session inside this marker's own 3D bucket, i.e. the close that produced the signal (engine.signal_quality.marker_last_session). `date` is the bucket's OPEN label (R-SQ2) and precedes this by up to two sessions, so the two are NOT interchangeable: `date` is the chart's x-anchor, `signal_date` is what a panel means by 'Buy · Aug 7' and the ONLY correct anchor for an AGE. Null when the anchor is not derivable (a disclosed null, never a guess). Added 2026-08-08 with `confirmed_date`/`recorded_at` — three surfaces were each reading a different one of these as 'the signal date' with no field naming which; see research/prophet_us_audit/OUTAGE_WINDOW_STAMP_AUDIT_2026-08-08.md. Display + age only; NOT a forward-return anchor (that is `confirmed_date`)."
+        },
+        "confirmed_date": {
+          "anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}],
+          "description": "First daily close at which this marker's buy-filter LABEL was knowable — CONFIRM_BARS (2) buckets past its own (engine.signal_quality.confirmation_date), ~8 daily sessions after `date`. THE ONLY LEGAL ANCHOR for a forward return off a marker; grading from `date` overstates returns (+5.7pp/10d measured). NULL means the confirmation window is still open — the honest reading of a marker carrying 'pending confirmation' — and it fills in on a later night once the window prints (marker_integrity backfills null → value; a non-null value is never re-dated). Buy/rebuy ONLY: sell/cut run no buy filter, so they have no confirmation to date."
+        },
+        "recorded_at": {
+          "anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}],
+          "description": "PROVENANCE — the UTC wall-clock date of the run that FIRST published this marker (engine.marker_integrity). NOT a market date and never a signal anchor: it is stamped once and sticky, so `recorded_at` minus `signal_date` is the publication LAG. Null on markers rendered before the field existed — disclosed rather than back-stamped with a later run, because back-stamping would erase exactly the evidence this field carries (daily.yml was dead 2026-08-03..08-06 and artifacts published days after the sessions they describe)."
         }
       },
       "allOf": [
         {
-          "$comment": "`quality`, `reason` and `reasons` are buy-filter verdict fields — they may appear ONLY on buy/rebuy markers. Forbid all three on sell/cut. (validate_signals.py re-asserts this with a clearer message.)",
+          "$comment": "`quality`, `reason`, `reasons` and `confirmed_date` are buy-filter verdict fields — they may appear ONLY on buy/rebuy markers. Forbid all four on sell/cut. (`signal_date` and `recorded_at` are NOT verdict fields — every marker type has a bucket close and a first-publication run — so they are allowed everywhere.) (validate_signals.py re-asserts this with a clearer message.)",
           "if": {"required": ["type"], "properties": {"type": {"enum": ["sell", "cut"]}}},
-          "then": {"allOf": [{"not": {"required": ["quality"]}}, {"not": {"required": ["reason"]}}, {"not": {"required": ["reasons"]}}]}
+          "then": {"allOf": [{"not": {"required": ["quality"]}}, {"not": {"required": ["reason"]}}, {"not": {"required": ["reasons"]}}, {"not": {"required": ["confirmed_date"]}}]}
         },
         {
           "$comment": "Every buy/rebuy carries the buy-filter verdict — `quality` is REQUIRED on them (the chart reads it to render solid/hollow/provisional). A bare buy with no quality is a drift the chart can't render.",

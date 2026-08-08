@@ -26,6 +26,7 @@ if __name__ == "__main__":
     logging.disable(logging.CRITICAL)
 
 import argparse  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
 
 import pandas as pd  # noqa: E402
 from engine.signal_quality import analyze  # noqa: E402
@@ -41,6 +42,15 @@ def main() -> None:
                          "nightly adjusted daily store. Research hook — OFF by default; mind the "
                          "raw-vs-adjusted caveat in engine/bar_derive.py.")
     args = ap.parse_args()
+
+    # The wall-clock date of THIS run, stamped onto markers it publishes for the first
+    # time (`recorded_at`). Read ONCE so a run that straddles UTC midnight stamps one
+    # cohort, and in UTC because that is the clock the nightly workflow runs on. It is
+    # provenance, never a signal anchor: `recorded_at` minus `signal_date` is the
+    # publication LAG, which is the only way an outage that delayed publication can be
+    # measured after the fact (research/prophet_us_audit/
+    # OUTAGE_WINDOW_STAMP_AUDIT_2026-08-08.md).
+    run_stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     src = ROOT / "data" / "stocks"
     out_sig = ROOT / "site" / "signals"
@@ -85,7 +95,7 @@ def main() -> None:
             prev = json.loads(sig_path.read_text()) if sig_path.exists() else None
         except Exception:  # noqa: BLE001 — unreadable prior file → treat as new
             prev = None
-        res = marker_integrity.merge_payload(prev, res)
+        res = marker_integrity.merge_payload(prev, res, run_stamp=run_stamp)
         sig_path.write_text(json.dumps(res, separators=(",", ":")))
         asof = res["asof"]
         # `markers` is the validated trade stream only (risk_flag breaches live in their own

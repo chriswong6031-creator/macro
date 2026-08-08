@@ -595,8 +595,35 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     # advance-warning. Kept OUT of the validated trade stream; suppressed on a confirmed-buy bar
     # (then it is no longer "early"). Advance-warning ONLY — not every one is followed by a buy.
     markers, risk_flags, early_markers = [], [], []
+    # THE THREE DATES A MARKER HAS, named on the marker itself (§7 signal-date family).
+    # They disagree by up to ~8 daily sessions and three separate surfaces were each
+    # reading a different one as "the signal date" with no field saying which:
+    #   `date`          the bucket's OPEN label (R-SQ2) — the chart's x-anchor. FROZEN here;
+    #                   it is what `marker_integrity` may never re-date.
+    #   `signal_date`   the SAME bucket's last session — the close that produced the signal,
+    #                   i.e. when it became KNOWABLE. This is the date a "Buy · Aug 7" panel
+    #                   means, and it is what an AGE must be measured from
+    #                   (:func:`marker_last_session`).
+    #   `confirmed_date` the first close at which the `_buy_filter` LABEL was knowable
+    #                   (:data:`CONFIRM_BARS` buckets further on) — null while the
+    #                   confirmation window is still open, which is the honest reading of a
+    #                   marker carrying 'pending confirmation'. Buy/rebuy only: sell/cut run
+    #                   no buy filter, so they have no confirmation to date.
+    # Derived from ONE `_bucket_last_session` call so the emitted fields and the standalone
+    # :func:`marker_last_session` / :func:`confirmation_date` resolvers cannot drift apart
+    # (pinned in tests/test_signal_date_family.py).
+    sessions = _bucket_last_session(daily_close, market=market)
+
+    def _session_str(label) -> str | None:
+        """The bucket label's last session as YYYY-MM-DD — a disclosed null, never a guess."""
+        got = sessions.get(label) if sessions is not None else None
+        if got is None or pd.isna(got):
+            return None
+        return str(pd.Timestamp(got).date())
+
     for i in range(n):
         ds = str(idx[i].date())
+        signal_date = _session_str(idx[i])
         is_buy = bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i])
         if is_buy:
             ok, reason, reasons = _buy_filter_full(
@@ -610,11 +637,15 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
             # because reasons[0] is always `reason`: a reader falls back to [reason] exactly.
             if len(reasons) > 1:
                 m["reasons"] = reasons
+            # Appended AFTER the existing keys so the marker's published prefix is unchanged.
+            m["signal_date"] = signal_date
+            m["confirmed_date"] = (_session_str(idx[i + CONFIRM_BARS])
+                                   if i + CONFIRM_BARS < n else None)
             markers.append(m)
         elif bool(sig["CS"].iloc[i]):
-            markers.append({"date": ds, "type": "sell"})
+            markers.append({"date": ds, "type": "sell", "signal_date": signal_date})
         elif bool(sig["revSell"].iloc[i]):
-            markers.append({"date": ds, "type": "cut"})
+            markers.append({"date": ds, "type": "cut", "signal_date": signal_date})
         if bool(fresh_breach.iloc[i]):
             risk_flags.append(ds)
         if bool(sig["early"].iloc[i]) and not is_buy:

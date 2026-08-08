@@ -8,7 +8,10 @@ with the charting web-app so the two workstreams can never drift.
 This is a SAFETY GATE, not signal logic: it asserts every emitted file matches the schema AND
 three cross-field rules the schema can't express as cleanly:
   1. markers within a file are strictly date-sorted ascending;
-  2. `quality` appears ONLY on buy/rebuy markers (never sell/cut);
+  2. the buy-filter verdict fields — `quality`, `reason`, `reasons` and `confirmed_date`
+     (the date that verdict became knowable) — appear ONLY on buy/rebuy markers, never on
+     sell/cut, which run no buy filter. `signal_date` and `recorded_at` are exempt: every
+     marker type has a bucket close and a first-publication run;
   3. `reasons[0]` — the exhaustive buy-filter account — IS the marker's `reason`, so the
      account can never open on a different leg than the first-match label it explains.
 It writes data/quality/signals_audit.json {asof, files_checked, n_markers, errors:[...]} and
@@ -83,7 +86,11 @@ def check_markers(markers: list, where: str) -> list[str]:
             if "quality" in m:
                 out.append(f"{where}: markers[{i}]: `quality` present on type '{mtype}' "
                            f"(allowed only on buy/rebuy)")
-            for field in ("reason", "reasons"):
+            # `confirmed_date` joins them: it dates when the BUY FILTER's label became
+            # knowable, and sell/cut run no buy filter. `signal_date` / `recorded_at` are
+            # deliberately NOT here — every marker type has a bucket close and a
+            # first-publication run, so both are legal on all four types.
+            for field in ("reason", "reasons", "confirmed_date"):
                 if field in m:
                     out.append(f"{where}: markers[{i}]: `{field}` present on type '{mtype}' "
                                f"(allowed only on buy/rebuy)")
