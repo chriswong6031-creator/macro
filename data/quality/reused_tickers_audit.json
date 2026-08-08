@@ -37,7 +37,7 @@
     {
      "name": "EA",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-06) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "ECHO",
@@ -264,7 +264,7 @@
     {
      "name": "EA",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-06) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "EBS",
@@ -783,7 +783,7 @@
    "delisted_printing": [
     {
      "ticker": "EA",
-     "store_tip": "2026-08-06",
+     "store_tip": "2026-08-07",
      "acked": false
     }
    ]
@@ -2531,7 +2531,7 @@
     },
     {
      "ticker": "EA",
-     "store_tip": "2026-08-06",
+     "store_tip": "2026-08-07",
      "acked": false
     },
     {

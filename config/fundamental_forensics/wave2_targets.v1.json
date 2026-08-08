@@ -1,0 +1,17 @@
+{
+  "schema": "fundamental_forensics.wave2_targets/v1",
+  "targets": [
+    {"ticker": "SMCI", "cik": "0001375365"},
+    {"ticker": "NVDA", "cik": "0001045810"},
+    {"ticker": "AAPL", "cik": "0000320193"},
+    {"ticker": "MSFT", "cik": "0000789019"},
+    {"ticker": "GOOGL", "cik": "0001652044"},
+    {"ticker": "AMZN", "cik": "0001018724"},
+    {"ticker": "META", "cik": "0001326801"},
+    {"ticker": "TSLA", "cik": "0001318605"},
+    {"ticker": "AVGO", "cik": "0001730168"},
+    {"ticker": "PLTR", "cik": "0001321655"},
+    {"ticker": "AMD", "cik": "0000002488"},
+    {"ticker": "ORCL", "cik": "0001341439"}
+  ]
+}
