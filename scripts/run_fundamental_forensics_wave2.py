@@ -159,6 +159,7 @@ def run_operator_flow(
     incremental_sync: bool = False,
     raw_root: Path | None = None,
     archive_root: Path | None = None,
+    observation_root: Path | None = None,
     projection_root: Path | None = None,
     local_store: str | Path | None = None,
     snapshot_id: str | None = None,
@@ -184,6 +185,12 @@ def run_operator_flow(
     normalized_computed_at = _normalized_clock(computed_at, field="computed_at")
     resolved_raw = (raw_root or resolved_root / "data" / "fundamental_forensics" / "raw").resolve()
     resolved_archive = (archive_root or resolved_root / "data" / "fundamental_forensics" / "archive").resolve()
+    # Deliberately a sibling of raw/archive, never a child: the per-run
+    # observation log is cron history, and restore/sync carry exactly the two
+    # restorable source trees.
+    resolved_observations = (
+        observation_root or resolved_root / "data" / "fundamental_forensics" / "observations"
+    ).resolve()
     resolved_projection = (projection_root or resolved_root).resolve()
     active_store = store
     if restore or sync:
@@ -234,6 +241,7 @@ def run_operator_flow(
             targets=normalized,
             raw_root=resolved_raw,
             archive_root=resolved_archive,
+            observation_root=resolved_observations,
             user_agent=_user_agent(resolved_root),
             as_of=normalized_as_of,
             recorded_at=normalized_recorded_at,
@@ -315,6 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--raw-root", type=Path, default=None, help="Local immutable Submissions cache root")
     parser.add_argument("--archive-root", type=Path, default=None, help="Local immutable filing archive root")
+    parser.add_argument("--observation-root", type=Path, default=None, help="Per-run SEC observation log root; deliberately OUTSIDE the restorable raw/archive trees")
     parser.add_argument("--projection-root", type=Path, default=None, help="Private disclosure projection output root")
     parser.add_argument("--local-store", type=Path, default=None, help="Use LocalStore instead of private Research R2 (dry-run/test)")
     parser.add_argument("--snapshot-id", default=None, help="Restore a specific immutable source snapshot instead of latest")
@@ -347,6 +356,7 @@ def main(argv: list[str] | None = None) -> int:
             incremental_sync=args.incremental_sync,
             raw_root=args.raw_root,
             archive_root=args.archive_root,
+            observation_root=args.observation_root,
             projection_root=args.projection_root,
             local_store=args.local_store,
             snapshot_id=args.snapshot_id,

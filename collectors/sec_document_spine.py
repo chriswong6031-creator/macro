@@ -28,6 +28,7 @@ from engine.fundamental_forensics.sec_document_spine import (
     HARD_MAX_ARCHIVE_DOCUMENT_BYTES,
     HARD_MAX_FILING_MANIFEST_BYTES,
     HARD_MAX_HTTP_METADATA_BYTES,
+    manifest_content_key,
     manifest_from_json_bytes,
     manifest_json_bytes,
     parse_json_int64,
@@ -59,6 +60,8 @@ _MANIFEST_STORAGE_KEY_RE = re.compile(
     r"^manifests/[0-9]{10}/[0-9]{10}-[0-9]{2}-[0-9]{6}/"
     r"ffsec_manifest_[a-f0-9]{64}\.json$"
 )
+_MANIFEST_CIK_RE = re.compile(r"^[0-9]{10}$")
+_MANIFEST_ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 
 
 def _byte_limit(value: int | None, *, field: str) -> int:
@@ -746,6 +749,79 @@ def persist_filing_manifest(cache_root: Path, manifest: Mapping[str, Any]) -> st
     return key
 
 
+def stored_manifest_content_index(
+    cache_root: Path, *, cik: str, accession: str
+) -> dict[str, dict[str, Any]]:
+    """Index already-stored manifests for one ``(cik, accession)`` by content key.
+
+    The scan is bounded by filing reality, not by store age: one accession owns
+    one directory holding the declared and materialized versions of that
+    filing.  Historical run-clock duplicates (which the ruling forbids
+    deleting) collapse onto one entry per content key, and the entry kept is
+    the earliest retention — ``recorded_at`` means *first* retention of that
+    exact content, so reuse must carry the oldest clock forward, never a later
+    one.  Ordering is deterministic so two runs over an unchanged store reuse
+    the same object.
+    """
+    cik_text = str(cik)
+    accession_text = str(accession)
+    if not _MANIFEST_CIK_RE.fullmatch(cik_text):
+        raise ArchiveStoreError("invalid filing manifest CIK namespace")
+    if not _MANIFEST_ACCESSION_RE.fullmatch(accession_text):
+        raise ArchiveStoreError("invalid filing manifest accession namespace")
+    directory = Path(cache_root) / "manifests" / cik_text / accession_text
+    if not directory.is_dir():
+        return {}
+    index: dict[str, dict[str, Any]] = {}
+    for path in sorted(directory.iterdir()):
+        key = f"manifests/{cik_text}/{accession_text}/{path.name}"
+        if not _MANIFEST_STORAGE_KEY_RE.fullmatch(key) or not path.is_file():
+            continue
+        manifest = read_filing_manifest(cache_root, key)
+        content_key = manifest_content_key(manifest)
+        previous = index.get(content_key)
+        if previous is None or _retention_order(manifest) < _retention_order(previous):
+            index[content_key] = manifest
+    return index
+
+
+def _retention_order(manifest: Mapping[str, Any]) -> tuple[str, str]:
+    return (
+        str((manifest.get("clocks") or {}).get("recorded_at") or ""),
+        str(manifest.get("manifest_id") or ""),
+    )
+
+
+def retain_filing_manifest(
+    cache_root: Path, manifest: Mapping[str, Any]
+) -> tuple[str, dict[str, Any], bool]:
+    """Retain one filing manifest idempotently by content.
+
+    Returns ``(storage_key, retained_manifest, minted)``.  On a content-key hit
+    the STORED manifest is returned verbatim — its ``manifest_id``, its
+    ``clocks.recorded_at``, its retrieval receipt — and nothing is written, so
+    an unchanged accession stops minting a fresh object every night.  On a miss
+    the freshly derived manifest is persisted with tonight's clocks exactly as
+    before, and a new content version therefore still gets a new id.
+
+    Nothing already stored is deleted or rewritten, and neither ``_manifest_id``
+    nor ``manifest_storage_key`` changes: ids stabilise because their inputs
+    stop moving.  ``persist_filing_manifest`` keeps its unconditional
+    behaviour for callers that must write a specific version.
+
+    See ``DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY`` (adjudication 2026-08-08, R1/R4/R5).
+    """
+    validate_manifest(manifest)
+    cik = str(manifest["issuer"]["cik"])
+    accession = str(manifest["filing"]["accession"])
+    index = stored_manifest_content_index(cache_root, cik=cik, accession=accession)
+    stored = index.get(manifest_content_key(manifest))
+    if stored is not None:
+        return manifest_storage_key(stored), stored, False
+    key = persist_filing_manifest(cache_root, manifest)
+    return key, json.loads(canonical_json(dict(manifest))), True
+
+
 def read_filing_manifest(cache_root: Path, storage_key: str) -> dict[str, Any]:
     if not isinstance(storage_key, str) or not _MANIFEST_STORAGE_KEY_RE.fullmatch(storage_key):
         raise ArchiveStoreError("invalid filing manifest storage key")
@@ -1080,4 +1156,6 @@ __all__ = [
     "read_filing_manifest",
     "read_missing_document_receipt",
     "receipt_storage_key",
+    "retain_filing_manifest",
+    "stored_manifest_content_index",
 ]
