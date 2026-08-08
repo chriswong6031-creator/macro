@@ -483,7 +483,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">13</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -500,9 +500,117 @@
                   
                   
                   
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;sec_capital_structure_companyfacts&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sec_capital_structure_companyfacts&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📉</span><span class="ms-sig-title"><span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLP RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLP RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just dropped to the bottom of its recent range — money is rotating out. Usually a reason to avoid or trim, not to bottom-fish; wait for it to base and trigger again.</span><span class="l-zh">某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或减仓的理由，而非抄底；等它筑底并再次触发。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut SNOW by -26% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 减仓 SNOW 仓位 -26%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut RBLX by -23% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 减仓 RBLX 仓位 -23%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager added CRWV by +21% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 加仓 CRWV 仓位 +21%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKW: manager cut NET by -21% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 减仓 NET 仓位 -21%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKW: manager added NVDA by +24% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 NVDA 仓位 +24%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKW: manager added CRWV by +26% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 CRWV 仓位 +26%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKW: manager added MELI by +33% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 MELI 仓位 +33%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#accumulation">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLC: META weight +0.49pp beyond price (≈+$110M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle NEARING A HIGH·TAKE PROFITS</span><span class="l-zh">XLC：META 权重较价格多变动 +0.49pp（≈+$110M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 接近高点·止盈</span></div>
+                    <div class="ms-sig-what"><span class="l-en">Each sector SPDR’s top-10 weights are split into the part explained by the stock’s own price move and a residual — weight that grew MORE than price alone. A big residual means real buying flowed into the name beyond market drift. Important honesty note: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), not a discretionary manager’s conviction. It’s a where-is-flow-being-forced signal, and a cue to check the stock’s own technical setup — not an instant buy.</span><span class="l-zh">每只板块 SPDR 的前十大权重被拆分为“由个股自身价格变动解释的部分”与“残差”——即权重增长超过价格涨幅的部分。残差较大意味着除市场漂移外，确有真实买盘流入该股。重要的诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（指数基金的被动强制买入），而非主动经理的信念。这是“资金被强制导向何处”的信号，也提示去核查该股自身的技术形态——并非立即买入。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — passive index-flow, not discretionary conviction.</span><span class="l-zh">背景 — 被动指数资金流，而非主动信念。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#accumulation">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLB: LIN weight +0.35pp beyond price (≈+$30M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle DOWNTREND·AVOID</span><span class="l-zh">XLB：LIN 权重较价格多变动 +0.35pp（≈+$30M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 下跌趋势·回避</span></div>
+                    <div class="ms-sig-what"><span class="l-en">Each sector SPDR’s top-10 weights are split into the part explained by the stock’s own price move and a residual — weight that grew MORE than price alone. A big residual means real buying flowed into the name beyond market drift. Important honesty note: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), not a discretionary manager’s conviction. It’s a where-is-flow-being-forced signal, and a cue to check the stock’s own technical setup — not an instant buy.</span><span class="l-zh">每只板块 SPDR 的前十大权重被拆分为“由个股自身价格变动解释的部分”与“残差”——即权重增长超过价格涨幅的部分。残差较大意味着除市场漂移外，确有真实买盘流入该股。重要的诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（指数基金的被动强制买入），而非主动经理的信念。这是“资金被强制导向何处”的信号，也提示去核查该股自身的技术形态——并非立即买入。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — passive index-flow, not discretionary conviction.</span><span class="l-zh">背景 — 被动指数资金流，而非主动信念。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#accumulation">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLC: GOOGL weight +0.31pp beyond price (≈+$70M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle UNCONFIRMED TURN·HIGH-RISK · NIMBLE ONLY</span><span class="l-zh">XLC：GOOGL 权重较价格多变动 +0.31pp（≈+$70M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 未确认转向·高风险 · 仅限灵活操作</span></div>
+                    <div class="ms-sig-what"><span class="l-en">Each sector SPDR’s top-10 weights are split into the part explained by the stock’s own price move and a residual — weight that grew MORE than price alone. A big residual means real buying flowed into the name beyond market drift. Important honesty note: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), not a discretionary manager’s conviction. It’s a where-is-flow-being-forced signal, and a cue to check the stock’s own technical setup — not an instant buy.</span><span class="l-zh">每只板块 SPDR 的前十大权重被拆分为“由个股自身价格变动解释的部分”与“残差”——即权重增长超过价格涨幅的部分。残差较大意味着除市场漂移外，确有真实买盘流入该股。重要的诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（指数基金的被动强制买入），而非主动经理的信念。这是“资金被强制导向何处”的信号，也提示去核查该股自身的技术形态——并非立即买入。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — passive index-flow, not discretionary conviction.</span><span class="l-zh">背景 — 被动指数资金流，而非主动信念。</span></div>
+                  </a>
+                  
+                  
+                  
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: CPI (consumer prices) in 4 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：消费者物价指数（CPI）（4 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) today — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（今天）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -514,9 +622,9 @@
             
             
             
-            <span class="v2chip c-info" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-              <span class="l-en" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">3-Year Note auction 08-11</span>
-              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">3年期国债拍卖 08-11</span>
+            <span class="v2chip c-warn" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <span class="l-en" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">Jobs report (nonfarm payrolls) 08-07</span>
+              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">非农就业报告 08-07</span>
             </span>
             
           </div>
@@ -1859,8 +1967,8 @@
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en">CPI (consumer prices): expect noise; ignore the first move.</span>
-              <span class="l-zh">消费者物价指数（CPI）：波动会放大，忽略初动。</span>
+              <span class="l-en">Jobs report (nonfarm payrolls): expect noise; ignore the first move.</span>
+              <span class="l-zh">非农就业报告：波动会放大，忽略初动。</span>
             </div>
           </div>
         </div>
@@ -1903,14 +2011,27 @@
       </div>
       <div class="mx5-events-sub">
         
-        <span class="l-en">2 high-impact prints ahead</span>
-        <span class="l-zh">2 项高影响数据待发</span>
+        <span class="l-en">3 high-impact prints ahead</span>
+        <span class="l-zh">3 项高影响数据待发</span>
         
       </div>
       
       <div class="mx5-timeline">
         <div class="mx5-timeline-rail"></div>
         <div class="mx5-tl-items">
+          
+          
+          
+          
+          <div class="mx5-tl-item">
+            <div class="mx5-tl-nodezone"><div class="mx5-tl-dot mx5-dot-high"></div></div>
+            <div class="mx5-tl-date">Aug 7</div>
+            <div class="mx5-tl-name"><span class="l-en">Jobs report (non…</span><span class="l-zh">非农就业报告</span></div>
+            <div class="mx5-tl-badge high">
+              <span class="l-en">HIGH</span>
+              <span class="l-zh">高</span>
+            </div>
+          </div>
           
           
           
@@ -1961,19 +2082,6 @@
             <div class="mx5-tl-badge high">
               <span class="l-en">HIGH</span>
               <span class="l-zh">高</span>
-            </div>
-          </div>
-          
-          
-          
-          
-          <div class="mx5-tl-item">
-            <div class="mx5-tl-nodezone"><div class="mx5-tl-dot mx5-dot-med"></div></div>
-            <div class="mx5-tl-date">Aug 13</div>
-            <div class="mx5-tl-name"><span class="l-en">Initial jobless …</span><span class="l-zh">初请失业金</span></div>
-            <div class="mx5-tl-badge med">
-              <span class="l-en">MED</span>
-              <span class="l-zh">中</span>
             </div>
           </div>
           
@@ -4383,13 +4491,13 @@
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">XLF</span>
-        
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">XHB</span>
+        <span class="mx5-ai-ticker-pill">SPY</span>
         
         <span class="mx5-ai-ticker-pill">UUP</span>
+        
+        <span class="mx5-ai-ticker-pill">XLF</span>
         
       </div>
       
@@ -4397,14 +4505,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          4 high-impact signals across channels
+          5 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          4 条高影响信号
+          5 条高影响信号
         </span>
         
       </div>
@@ -4465,8 +4573,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: CPI (consumer prices) in 4 days — high two-sided volatility expected. Not a sell signal; size for the…</span>
-              <span class="l-zh">事件风险窗口：消费者物价指数（CPI）（4 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) today — high two-sided volatility expected. Not a sell signal; size fo…</span>
+              <span class="l-zh">事件风险窗口：非农就业报告（今天）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4497,8 +4605,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 13 in feed</span>
+          <span class="l-zh">显示 1 / 13 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -4525,11 +4633,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
             <span class="l-en">Week ahead</span><span class="l-zh">本周日历</span>
           </div>
-          <div class="wnx-state"><span class="l-en">CPI (consumer prices)</span><span class="l-zh">消费者物价指数（CPI）</span></div>
+          <div class="wnx-state"><span class="l-en">Jobs report (nonfarm p</span><span class="l-zh">非农就业报告</span></div>
           <div class="wnx-line">
             
-            <span class="l-en">Aug 12 · big print — expect swings</span>
-            <span class="l-zh">8月12日 · 重磅数据，或有波动</span>
+            <span class="l-en">Aug 7 · big print — expect swings</span>
+            <span class="l-zh">8月7日 · 重磅数据，或有波动</span>
             
           </div>
           <span class="wnx-go"><span class="l-en">See the week</span><span class="l-zh">查看日历</span> &rarr;</span>
@@ -4847,6 +4955,27 @@
           
           
           
+          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-08-07" data-cal-type="NFP">
+            <div class="mx5-dlg-cal-date">Aug 7</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">Jobs report (nonfarm payrolls)</span>
+              <span class="l-zh">非农就业报告</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge high">
+                <span class="l-en">HIGH</span>
+                <span class="l-zh">高</span>
+              </span>
+            </div>
+            
+            
+            
+            
+          </div>
+          
+          
+          
           <div class="mx5-dlg-cal-card" data-cal-date="2026-08-11" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Aug 11</div>
             <div class="mx5-dlg-cal-title">
@@ -4981,27 +5110,6 @@
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">13:00 ET</span>
-              <span class="mx5-dlg-cal-badge med">
-                <span class="l-en">MED</span>
-                <span class="l-zh">中</span>
-              </span>
-            </div>
-            
-            
-            
-            
-          </div>
-          
-          
-          
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-08-20" data-cal-type="CLAIMS">
-            <div class="mx5-dlg-cal-date">Aug 20</div>
-            <div class="mx5-dlg-cal-title">
-              <span class="l-en">Initial jobless claims</span>
-              <span class="l-zh">初请失业金</span>
-            </div>
-            <div class="mx5-dlg-cal-meta">
-              <span class="mx5-dlg-cal-time">08:30 ET</span>
               <span class="mx5-dlg-cal-badge med">
                 <span class="l-en">MED</span>
                 <span class="l-zh">中</span>
@@ -7832,13 +7940,186 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: CPI (consumer prices) in 4 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：消费者物价指数（CPI）（4 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) today — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（今天）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
         </div>
         
         
+        
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sec_capital_structure_companyfacts&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sec_capital_structure_companyfacts&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📉</span>
+                  <span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLP RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLP RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut SNOW by -26% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 减仓 SNOW 仓位 -26%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut RBLX by -23% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 减仓 RBLX 仓位 -23%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager added CRWV by +21% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKK：经理 加仓 CRWV 仓位 +21%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKW: manager cut NET by -21% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 减仓 NET 仓位 -21%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKW: manager added NVDA by +24% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 NVDA 仓位 +24%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKW: manager added CRWV by +26% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 CRWV 仓位 +26%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKW: manager added MELI by +33% of position (2026-07-28..2026-08-07, flow-normalized)</span><span class="l-zh">ARKW：经理 加仓 MELI 仓位 +33%（2026-07-28..2026-08-07，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLC: META weight +0.49pp beyond price (≈+$110M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle NEARING A HIGH·TAKE PROFITS</span><span class="l-zh">XLC：META 权重较价格多变动 +0.49pp（≈+$110M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 接近高点·止盈</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLB: LIN weight +0.35pp beyond price (≈+$30M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle DOWNTREND·AVOID</span><span class="l-zh">XLB：LIN 权重较价格多变动 +0.35pp（≈+$30M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 下跌趋势·回避</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A sector ETF is over-weighting a stock beyond its price move</span><span class="l-zh">某板块 ETF 对个股的权重提升超过其价格涨幅</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLC: GOOGL weight +0.31pp beyond price (≈+$70M est. rebalance flow) (accumulating), 2026-07-30..2026-08-06 — cycle UNCONFIRMED TURN·HIGH-RISK · NIMBLE ONLY</span><span class="l-zh">XLC：GOOGL 权重较价格多变动 +0.31pp（≈+$70M 估算再平衡资金流）（增持），2026-07-30..2026-08-06 — 周期 未确认转向·高风险 · 仅限灵活操作</span></div>
+            </div>
+          </div>
+          
+        </div>
         
         
         
@@ -7905,6 +8186,24 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
+          <a class="nbx-item" href="https://seekingalpha.com/news/4629622-claritev-signals-1_0b-1_02b-2026-revenue-outlook-as-bookings-target-stays-at-100m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Claritev signals $1.0B-$1.02B 2026 revenue outlook as bookings target stays at $100M</span><span class="l-zh">Claritev预计2026年营收展望为10亿至10.2亿美元，预订目标维持1亿美元</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 7</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/06/rheinmetall-stock-earnings-guidance-frigate.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
@@ -7923,10 +8222,10 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/alphabet-stock-buybacks-history-investor-232734329.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/stocks-waver-mixed-earnings-chipmaker-151254604.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">Alphabet’s stock buybacks: History &amp; investor impact explained</span><span class="l-zh">Alphabet股票回购：历史与投资者影响解析</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Stocks Waver on Mixed Earnings and Chipmaker Strength</span><span class="l-zh">美股因混合财报和芯片股走强而震荡</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7941,10 +8240,10 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
-          <a class="nbx-item" href="https://www.marketwatch.com/story/two-reasons-why-nvidias-stock-saw-its-biggest-weekly-surge-in-more-than-a-year-644875c8?mod=mw_rss_topstories" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4629610-data-center-operator-switch-confidrntially-files-for-ipo-report?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
-              <span class="nbx-title"><span class="l-en">Two reasons why Nvidia’s stock saw its biggest weekly surge in more than a year</span><span class="l-zh">英伟达股价创一年多来最大周涨幅的两个原因</span></span>
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">Data center operator Switch confidentially files for IPO - report</span><span class="l-zh">数据中心运营商Switch据报秘密提交IPO申请</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7959,15 +8258,15 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
-          <a class="nbx-item" href="https://www.bls.gov/news.release/archives/empsit_08072026.htm" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://finance.yahoo.com/energy/articles/solaredge-beat-q2-earnings-estimates-143414029.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Labor</span><span class="l-zh">就业</span></span>
-              <span class="nbx-title"><span class="l-en">Both payroll employment (-23,000) and unemployment rate (4.1%) change little in July</span><span class="l-zh">7月就业人数（-23,000）和失业率（4.1%）变化不大</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">SolarEdge Beat Q2 Earnings Estimates. SEDG Stock Plummeted Anyway.</span><span class="l-zh">SolarEdge第二季度盈利超预期，SEDG股价仍暴跌</span></span>
             </div>
             <div class="nbx-meta">
-              <span class="nbx-src">official</span>
+              <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 7</span>
+              <span class="nbx-date">Aug 6</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7977,10 +8276,10 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4629623-oil-futures-end-down-week-on-high-note-as-strait-of-hormuz-deal-turns-more-uncertain?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4629621-american-healthcare-reit-outlines-2026-nffo-per-share-of-2_15-2_19-while-raising-same-store?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Oil futures end down week on high note as Strait of Hormuz deal turns more uncertain</span><span class="l-zh">原油期货本周收高，霍尔木兹海峡协议不确定性加剧</span></span>
+              <span class="nbx-title"><span class="l-en">American Healthcare REIT outlines 2026 NFFO per share of $2.15-$2.19 while raising same-store NOI growth to 11%-13%</span><span class="l-zh">American Healthcare REIT公布2026年每股NFFO为2.15至2.19美元，同时将同店NOI增长上调至11%-13%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7995,33 +8294,15 @@ But bond and credit markets are not as calm. The extra yield investors demand fo
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4629638-aixc-targets-august-2026-roboshare-rentals-in-los-angeles-as-liquidity-remains-constrained?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4629620-advansix-outlines-10-percent-15-percent-2026-tax-rate-and-targets-10m-fixed-cost-savings?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">AIXC targets August 2026 RoboShare rentals in Los Angeles as liquidity remains constrained</span><span class="l-zh">AIXC目标2026年8月在洛杉矶推出RoboShare租赁，流动性仍受限</span></span>
+              <span class="nbx-title"><span class="l-en">AdvanSix outlines 10%–15% 2026 tax rate and targets $10M fixed cost savings exiting 2026 amid higher sulfur costs</span><span class="l-zh">AdvanSix在硫成本上升背景下，将2026年税率定为10%–15%，目标在2026年底实现1000万美元固定成本节省</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 8</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4629637-vaxart-outlines-phase-iib-covidminus-19-top-line-data-in-first-half-of-2027-backed-by-barda?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Vaxart outlines Phase IIb COVID-19 top line data in first half of 2027 backed by BARDA funding</span><span class="l-zh">Vaxart概述2027年上半年IIb期COVID-19主要数据，获BARDA资助</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 8</span>
+              <span class="nbx-date">Aug 7</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
