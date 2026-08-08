@@ -942,16 +942,26 @@ def test_ledger_functions_only_ever_open_in_append_or_read_mode():
 
 
 def test_this_pr_writes_nothing_under_data():
-    """The ledger WRITER is a later wiring PR. These are pure functions."""
+    """CALIBRATION_SOURCE stays a pure-function module: no data/ paths, no
+    MACRO_LIVE_DIR. The ledger itself is nightly-advanced (its writer wired after
+    this test was first written), so its row count GROWS — the original exact pin
+    (`== 28`) was a scheduled failure the morning after any registration run, and
+    it fired 2026-08-08 when `engine: regime update` appended rows 29-43. Pin the
+    FLOOR and the append-only direction, never tonight's exact count."""
     source = CALIBRATION_SOURCE.read_text(encoding="utf-8")
     assert '"data/' not in source and "'data/" not in source
     assert "MACRO_LIVE_DIR" not in source
     ledger = REPO_ROOT / "data" / "seasonality" / "nw_forward_ledger.jsonl"
     assert ledger.exists()
-    # 28 registrations, ZERO matured grades — shadow status is binding.
     rows = [json.loads(x) for x in ledger.read_text(encoding="utf-8").splitlines() if x.strip()]
-    assert len(rows) == 28
+    # Floor, not equality: the sibling structural test forbids every truncating
+    # mode, so a count below the 28 frozen at first ship means the ledger was
+    # rewritten — exactly what this pin exists to catch.
+    assert len(rows) >= 28
     assert all(r["tier"] == "shadow" for r in rows)
+    # Still-binding shadow claim. NOTE: the first MATURED grade row will fire this
+    # assertion by schedule; that day the seasonality lane owns the ruling (keep
+    # grades out of this file, or narrow the assertion to registration rows).
     assert not [r for r in rows if r.get("row_type") == "grade"]
 
 
