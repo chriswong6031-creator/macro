@@ -16,6 +16,7 @@ Run: python -m pytest tests/test_signal_lab_vector_display.py -q
 """
 from __future__ import annotations
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -30,11 +31,22 @@ CAL_PATH = Path("data/vector/calibration.json")
 TRIAL_PATH = Path("data/vector/trial_log.json")
 
 
+# Snapshot the row at COLLECTION time, before any test runs.
+# _resolve_vector_live_stats mutates registry rows IN PLACE by design (that is
+# the production build path), so any earlier test in the same pytest process
+# that runs the resolver against real artifacts rewrites signal_lab.REGISTRY —
+# and this file's frozen-fallback assertions then compare live text against the
+# frozen quote. Pack composition decides which tests precede us, which is why
+# this failed only in rebalanced CI packs and never locally.
+_PRISTINE_BTC_ROW = copy.deepcopy(next(
+    (r for r in signal_lab.REGISTRY
+     if r["name"] == signal_lab._BTC_VECTOR_ROW_NAME), None))
+
+
 def _row() -> dict:
-    r = next((r for r in signal_lab.REGISTRY
-              if r["name"] == signal_lab._BTC_VECTOR_ROW_NAME), None)
-    assert r is not None, "BTC Vector row missing from the Signal Lab registry"
-    return r
+    assert _PRISTINE_BTC_ROW is not None, \
+        "BTC Vector row missing from the Signal Lab registry"
+    return copy.deepcopy(_PRISTINE_BTC_ROW)
 
 
 def _live_figures():
