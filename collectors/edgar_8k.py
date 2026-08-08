@@ -333,7 +333,7 @@ _ENRICH_WINDOW_DAYS = 45   # only fetch primary doc for recent filings on increm
 # extraction_ok, whose False is a real coverage fact the graded ledger reads
 # (engine/eightk_magnitude.py: n_extraction_ok / extraction_ok_pct / the amount gate).
 # Bump this when the extraction rules change enough that old rows deserve another pass.
-_ENRICH_REV = 2
+_ENRICH_REV = 3
 
 # GR3b — exhibit fetch bounds.  Material-agreement 8-Ks carry the contract itself as an
 # EX-10 (or EX-2 for a separation/merger), and the parties + dollars live there rather
@@ -461,6 +461,8 @@ _CP_TAIL_FURNITURE = frozenset({
     "supplement", "supplemental", "note", "notes", "certificate", "certificates",
     "letter", "plan", "schedule", "annex", "exhibit", "waiver", "consent",
     "guaranty", "guarantee", "deed", "lease", "loan", "facility", "commitment",
+    "solicitation", "facilities", "offering", "placement", "purchase", "sale",
+    "merger", "acquisition", "transaction", "financing", "repurchase", "redemption",
 })
 
 # Lower-case tokens allowed INSIDE a name without breaking its "looks like a proper
@@ -571,7 +573,10 @@ def _counterparty_is_valid(name: str, registrant: str | None = None) -> bool:
     lowered = [t.strip(_CP_TOKEN_STRIP).lower() for t in raw_tokens]
     if _WS_RE.sub(" ", _CP_PUNCT_RE.sub("", " ".join(lowered))).strip() in _CP_PHRASE_BLOCKLIST:
         return False
-    if lowered[-1] in _CP_TAIL_FURNITURE:
+    # Tail test covers the plural too ('Three-Year Term Loans', 'Consent Solicitations'),
+    # so the set holds singulars and only irregular plurals need their own entry.
+    tail = lowered[-1]
+    if tail in _CP_TAIL_FURNITURE or (tail.endswith("s") and tail[:-1] in _CP_TAIL_FURNITURE):
         return False
     has_suffix = any(t in _CP_LEGAL_SUFFIXES for t in lowered)
 
