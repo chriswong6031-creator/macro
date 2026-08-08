@@ -1,32 +1,32 @@
 {
-  "08b80102b582": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Energy",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Energy",
-    "score": 55.2
+  "62047a0c2e48": {
+    "name_en": "Cross-sector cluster \u00b7 Communication + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Real Estate",
+    "score": 53.1
   },
   "6d1b3c0c93b2": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 42.1
+    "score": 44.8
   },
-  "6eeb31b85e9f": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Real Estate",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Real Estate",
-    "score": 50.0
+  "9cf48c142dc5": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Materials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Materials",
+    "score": 60.6
   },
-  "8ec786d3ddcc": {
-    "name_en": "Emerging Utilities cluster",
-    "name_zh": "\u65b0\u5174 Utilities \u96c6\u7fa4",
-    "score": 40.9
+  "aeb0eb3df3e7": {
+    "name_en": "Emerging Consumer Discretionary cluster",
+    "name_zh": "\u65b0\u5174 Consumer Discretionary \u96c6\u7fa4",
+    "score": 47.9
   },
-  "b946d79d91a1": {
-    "name_en": "Emerging Health Care cluster",
-    "name_zh": "\u65b0\u5174 Health Care \u96c6\u7fa4",
-    "score": 42.4
+  "b55c430c900a": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Financials",
+    "score": 66.6
   },
-  "ef629cfaab20": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Financials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Financials",
-    "score": 53.6
+  "e340c833aa78": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
+    "score": 61.7
   }
 }

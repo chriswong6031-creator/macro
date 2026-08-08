@@ -1654,7 +1654,7 @@
       "n_err": 0,
       "elapsed_sec": 0.0,
       "last_date": "2026-08-07",
-      "checked_at": "2026-08-07T21:39:45.921407+00:00",
+      "checked_at": "2026-08-08T05:58:24.699826+00:00",
       "mode": "forward"
     },
     "china_filings": {
@@ -1804,8 +1804,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-08-06T22:22:19.766356+00:00",
-      "checked_at": "2026-08-06T22:22:22.110097+00:00"
+      "as_of": "2026-08-08T07:29:38.500679+00:00",
+      "checked_at": "2026-08-08T07:29:40.334345+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1864,12 +1864,12 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 611,
-      "n_graded_ok": 1908,
+      "n_new": 1035,
+      "n_graded_ok": 4616,
       "n_scored_this_run": 0,
-      "elapsed_sec": 10.0,
-      "last_date": "2026-08-06",
-      "checked_at": "2026-08-06T22:41:19.634490+00:00"
+      "elapsed_sec": 9.8,
+      "last_date": "2026-08-08",
+      "checked_at": "2026-08-08T07:38:51.359734+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",
@@ -1910,16 +1910,16 @@
       "n_err": 0,
       "elapsed_sec": 0.0,
       "last_date": "2026-08-07",
-      "checked_at": "2026-08-07T21:39:49.312408+00:00",
+      "checked_at": "2026-08-08T05:58:26.025676+00:00",
       "mode": "episodes"
     },
     "tape_flow_etf-history": {
       "status": "ok",
-      "n_ok": 44,
+      "n_ok": 100,
       "n_err": 0,
-      "elapsed_sec": 1220.5,
-      "last_date": "2025-05-05",
-      "checked_at": "2026-08-07T22:00:10.147822+00:00",
+      "elapsed_sec": 1224.1,
+      "last_date": "2025-09-22",
+      "checked_at": "2026-08-08T06:18:50.472804+00:00",
       "mode": "etf-history"
     },
     "google_trends": {
