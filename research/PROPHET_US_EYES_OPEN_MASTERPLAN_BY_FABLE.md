@@ -201,9 +201,17 @@ conditioning ships.
 
 **(b) Grey dot → EARLY TURN lane (operator: "redo grey dot into something else").** Promote
 `early_dots` from a 2.2px toggle-hidden glyph to a first-class starter-grade marker tier:
-visible, labeled as a window not a certainty (voice law), qualified by HTF-washout maturity
-(cuts noise), carrying a zone (buy band + chase-above) — the STARTER entry; the full BUY
-becomes the ADD. Two-stage entries replace single-shot confirmation chasing.
+visible, labeled as a window not a certainty (voice law), qualified by lane context —
+HTF-washout maturity OR leader-pullback structure (uptrend intact + shallow reset; the ADAM
+2026-07-27→08-05 receipt: dot at the 8.4-8.5 reset, 3D confluence +15% later with the zone
+printed 9.61-9.82 AT THE TOP) — carrying a structure-anchored zone (retest band / anchored
+VWAP, never price-at-signal-time), the STARTER entry; the full BUY becomes the ADD.
+MEASURE FIRST: historical replay of every early_dot — P(low within ±2 sessions), fwd excess,
+false-positive rate, CONDITIONAL on washout-mature / leader-pullback / naked — four
+anecdotes (9988, ADAM, NVDA-adjacent, 0700 Jul-2) do not carry the promotion; the
+conditional table does. Zone law for the entry-zone builder: ADAM is acceptance case #2 —
+a Continuation/Ready leader-pullback's zone is the RESET BAND (8.40-8.70), chase-above at
+the pullback high, never the post-pop range.
 
 **(c) Washout-state release (Alibaba 90→128 missed).** `bear_block`'s sole release (completed
 2W cross) gains a second release: monthly/2W washout-mature + turning + cohort confirmation
