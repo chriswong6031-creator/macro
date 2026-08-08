@@ -9430,7 +9430,7 @@
   },
   "fed_path": {
     "asof": "2026-08-07",
-    "built": "2026-08-07T22:11:55.257189+00:00",
+    "built": "2026-08-07T22:27:23.388099+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -18323,15 +18323,169 @@
     "heat_threshold_note": "PROVISIONAL \u2014 chosen to be REACHABLE under the new denominator semantics so the board is not\u6c38-empty \u2014 NOT evidence-based; shadow calibration pending. Candidates [0.30, 0.40, 0.50] are wired in foresight_shadow.SHADOW_GRID and accrue heat-verdict rows in shadow_log.jsonl (type='heat'); grading not yet wired \u2014 labeled 'accruing' in the promotion report.",
     "note": "W4a rebuild: HEAT = n_lit_sources / n_available_sources [\u00d7 earliness when measured \u2014 dropped, not filled, when absent].  5 distinct data feeds (physical \u00b7 demand \u00b7 guidance \u00b7 altdata \u00b7 edgar_scarcity \u2014 the old subsector_scarcity + discovery_echo were one EDGAR parquet, now counted once). Dark sources leave the denominator \u2014 no outage penalty.  Earliness from engine/foresight_earliness.py (attention-based, Q3); absent below 2 usable legs \u2192 factor DROPPED (not laundered as neutral 0.5).  Physical numeric bonus \u00d71.15 when genuinely TIGHT/SOLD_OUT.  Threshold 0.40 PROVISIONAL.  Meta-driver cards emit for \u22653 co-heating same-cluster themes.  Cross-theme heats reflect agreement among AVAILABLE surfaces only \u2014 themes with different data coverage are not on a fully comparable scale."
   },
-  "foresight_analyst": null,
+  "foresight_analyst": {
+    "regime_read": "The board shows one coherent early convergence in data center power where demand, guidance, and text bottlenecks align with still-moderate earnings revisions, while other themes are too single-legged or supply-neutral to form a non-obvious pattern.",
+    "regime_read_zh": "\u76d8\u9762\u663e\u793a\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e3b\u9898\u51fa\u73b0\u4e86\u9700\u6c42\u3001\u7ba1\u7406\u5c42\u6307\u5f15\u548c\u6587\u672c\u74f6\u9888\u4fe1\u53f7\u7684\u65e9\u671f\u4e00\u81f4\u6536\u655b\uff0c\u4e14\u76c8\u5229\u4fee\u6b63\u5c1a\u672a\u88ab\u5145\u5206\u5b9a\u4ef7\uff1b\u5176\u4ed6\u4e3b\u9898\u5219\u56e0\u4fe1\u53f7\u6765\u6e90\u5355\u4e00\u6216\u4f9b\u7ed9\u9762\u672a\u6536\u7d27\u800c\u7f3a\u4e4f\u975e\u663e\u6027\u6a21\u5f0f\u3002",
+    "theses": [
+      {
+        "theme": "data_center_power",
+        "mechanism": "Customer capex is accelerating sharply [demand], which is independently confirmed by multiple firms raising guidance above consensus [guidance]. Simultaneously, management language points to a tight supply environment [bottleneck], but the breadth of analyst upward revisions remains only moderate [earliness], meaning the tightness is visible in qualitative signals but not yet fully modeled in street estimates.",
+        "non_obvious": "A guidance-raising cluster coinciding with a text-detected bottleneck and accelerating demand, yet only partial revision follow-through, is the classic setup for supply-constrained volume growth that analysts are structurally slow to underwrite\u2014they wait for numeric shipments, but the qualitative signals are already clustered.",
+        "kill_criteria": [
+          "guidance_raisers count falls to zero or turns to guidance cuts",
+          "bottleneck_band loosens from TIGHT to NEUTRAL",
+          "revision_breadth rapidly rises above 0.9 then stalls, indicating full pricing",
+          "demand_band decelerates from ACCELERATING to NEUTRAL"
+        ],
+        "evidence": [
+          {
+            "text": "demand_band: ACCELERATING with customer capex accelerating",
+            "ungrounded": true
+          },
+          {
+            "text": "guidance_band: RAISING with 2 firms pre-signaling above consensus",
+            "ungrounded": true
+          },
+          {
+            "text": "bottleneck_band: TIGHT (text)",
+            "ungrounded": true
+          },
+          {
+            "text": "earliness: 0.529 indicating revisions still un-priced",
+            "ungrounded": true
+          }
+        ],
+        "evidence_display": [],
+        "dissent": "The bottleneck is currently text-only without physical confirmation; management language can be aspirational and may not translate into persistent margin expansion if competitors rapidly add capacity.",
+        "confidence": "medium",
+        "n_grounded": 0,
+        "n_total_evidence": 4,
+        "_forecast_clamped": null
+      }
+    ],
+    "confidence": "low",
+    "asof": "2026-08-06",
+    "n_theses": 1,
+    "disclaimer": "An AI reading of the desk's OWN deterministic convergence \u2014 checkable and forward-graded, never a price forecast."
+  },
   "thesis_monitor": {
     "asof": "2026-08-06",
-    "n_open": 8,
-    "n_broken": 1,
+    "n_open": 10,
+    "n_broken": 5,
     "n_weakening": 0,
-    "n_deterministic": 5,
+    "n_deterministic": 9,
     "n_llm": 5,
     "monitored": [
+      {
+        "theme": "space_satellite",
+        "source": "deterministic",
+        "status": "BROKEN",
+        "stage_at_open": "BROADENING (text)",
+        "opened": "2026-08-01",
+        "kill_criteria": [
+          {
+            "kind": "text_accel_negative",
+            "detail": "language accel < 0 for 2 consecutive builds"
+          },
+          {
+            "kind": "stage_regressed_to_watch",
+            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
+          }
+        ],
+        "criterion_statuses": [
+          "WEAKENING",
+          "BROKEN"
+        ],
+        "n_criteria": 2,
+        "llm_mechanism": null,
+        "llm_status": "INTACT",
+        "llm_heat_at_open": 0.608,
+        "llm_heat_now": 0.647,
+        "llm_opened_asof": "2026-08-06",
+        "llm_kill_criteria": [
+          "Government-award acceleration disappears from the altdata leg.",
+          "The edgar_scarcity cross-surface signal turns off.",
+          "Activist activity reverses or ceases without broader award participation.",
+          "The bottleneck leg stays NEUTRAL and no additional independent surface lights."
+        ]
+      },
+      {
+        "theme": "copper_steel_electrify",
+        "source": "deterministic",
+        "status": "BROKEN",
+        "stage_at_open": "BROADENING (text)",
+        "opened": "2026-07-25",
+        "kill_criteria": [
+          {
+            "kind": "text_accel_negative",
+            "detail": "language accel < 0 for 2 consecutive builds"
+          },
+          {
+            "kind": "stage_regressed_to_watch",
+            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
+          }
+        ],
+        "criterion_statuses": [
+          "INTACT",
+          "BROKEN"
+        ],
+        "n_criteria": 2
+      },
+      {
+        "theme": "defense_aerospace",
+        "source": "deterministic",
+        "status": "BROKEN",
+        "stage_at_open": "BROADENING (text)",
+        "opened": "2026-07-04",
+        "kill_criteria": [
+          {
+            "kind": "text_accel_negative",
+            "detail": "language accel < 0 for 2 consecutive builds"
+          },
+          {
+            "kind": "stage_regressed_to_watch",
+            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
+          }
+        ],
+        "criterion_statuses": [
+          "INTACT",
+          "BROKEN"
+        ],
+        "n_criteria": 2,
+        "llm_mechanism": null,
+        "llm_status": "INTACT",
+        "llm_heat_at_open": 0.392,
+        "llm_heat_now": 0.392,
+        "llm_opened_asof": "2026-08-06",
+        "llm_kill_criteria": [
+          "Government-award acceleration disappears from the altdata leg.",
+          "The edgar_scarcity cross-surface signal turns off.",
+          "Revision breadth rises broadly and then rolls over without physical conditions tightening.",
+          "The bottleneck leg remains NEUTRAL while award acceleration also weakens."
+        ]
+      },
+      {
+        "theme": "ai_semiconductors",
+        "source": "deterministic",
+        "status": "BROKEN",
+        "stage_at_open": "BROADENING (text)",
+        "opened": "2026-07-06",
+        "kill_criteria": [
+          {
+            "kind": "text_accel_negative",
+            "detail": "language accel < 0 for 2 consecutive builds"
+          },
+          {
+            "kind": "stage_regressed_to_watch",
+            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
+          }
+        ],
+        "criterion_statuses": [
+          "INTACT",
+          "BROKEN"
+        ],
+        "n_criteria": 2
+      },
       {
         "theme": "medical_devices",
         "source": "llm",
@@ -18481,38 +18635,6 @@
           "INTACT"
         ],
         "n_criteria": 2
-      },
-      {
-        "theme": "defense_aerospace",
-        "source": "llm",
-        "status": "INTACT",
-        "heat_at_open": 0.392,
-        "heat_now": 0.392,
-        "n_surfaces_now": 2,
-        "physical_now": false,
-        "opened_asof": "2026-08-06",
-        "kill_criteria": [
-          "Government-award acceleration disappears from the altdata leg.",
-          "The edgar_scarcity cross-surface signal turns off.",
-          "Revision breadth rises broadly and then rolls over without physical conditions tightening.",
-          "The bottleneck leg remains NEUTRAL while award acceleration also weakens."
-        ]
-      },
-      {
-        "theme": "space_satellite",
-        "source": "llm",
-        "status": "INTACT",
-        "heat_at_open": 0.608,
-        "heat_now": 0.647,
-        "n_surfaces_now": 2,
-        "physical_now": false,
-        "opened_asof": "2026-08-06",
-        "kill_criteria": [
-          "Government-award acceleration disappears from the altdata leg.",
-          "The edgar_scarcity cross-surface signal turns off.",
-          "Activist activity reverses or ceases without broader award participation.",
-          "The bottleneck leg stays NEUTRAL and no additional independent surface lights."
-        ]
       }
     ],
     "note": "deterministic+LLM dual-producer: deterministic theses auto-instantiate from PRECIPICE/BROADENING cascade flags and evaluate machine-checkable kill-criteria (consecutive-build tracking, asof-deduped); LLM theses fold onto deterministic rows as enrichment when the theme overlaps. THESIS-BROKEN fires with zero LLM involvement; close event appended on BROKEN, closed theses excluded from n_open."
@@ -19358,7 +19480,7 @@
     ],
     "gate_clamped": false,
     "forward_log": {
-      "n_graded": 10,
+      "n_graded": 12,
       "alert_precision": null,
       "n_alerts": 0,
       "n_true_pos": 0,
@@ -19366,7 +19488,11 @@
       "recall_dd5_h21": null,
       "by_state": {
         "caution": {
-          "n": 10,
+          "n": 11,
+          "hit_rate": 0.0
+        },
+        "watch": {
+          "n": 1,
           "hit_rate": 0.0
         }
       },
@@ -19382,7 +19508,7 @@
       "recent_mistakes": [],
       "asof_range": [
         "2026-06-23",
-        "2026-07-07"
+        "2026-07-09"
       ]
     },
     "recovery_log": {
@@ -19723,7 +19849,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 1.74,
+    "_timing_s": 2.35,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -19939,7 +20065,7 @@
         }
       }
     },
-    "_timing_s": 0.11
+    "_timing_s": 0.12
   },
   "mag7_washout": {
     "schema": "mag7_washout.v1",
@@ -21571,7 +21697,7 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.04
+    "_timing_s": 2.34
   },
   "vol_shock": {
     "score": 38.1,
@@ -24393,7 +24519,7 @@
   },
   "freshness": {
     "asof": "2026-08-07",
-    "built_at": "2026-08-07T22:12:25Z",
+    "built_at": "2026-08-07T22:28:22Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
