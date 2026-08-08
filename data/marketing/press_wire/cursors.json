@@ -1417,6 +1417,55 @@
     "alpaca:60966968": "2026-08-08T09:11:09.956076+00:00",
     "alpaca:60967019": "2026-08-08T09:11:09.956076+00:00",
     "alpaca:60967077": "2026-08-08T09:11:09.956076+00:00",
+    "alpaca:60967122": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967136": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967222": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967261": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967287": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967322": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967344": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967373": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967383": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967423": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967450": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967480": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967503": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967550": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967594": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967652": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967678": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967733": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967750": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967765": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967788": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967801": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967818": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967894": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967911": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967935": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967949": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60967980": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968009": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968032": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968042": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968052": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968076": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968091": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968122": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968127": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968131": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968134": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968139": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968168": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968176": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968179": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968195": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968252": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968274": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968285": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968295": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968297": "2026-08-08T09:31:25.320918+00:00",
+    "alpaca:60968309": "2026-08-08T09:31:25.320918+00:00",
     "b0299b9d4f6c8469dce47cf2e06c9f3405c801ab": "2026-08-08T00:05:39.769853+00:00",
     "b07512f7e57f1c444a025f6648255816b55c63a8": "2026-08-07T16:30:16.489553+00:00",
     "b094270e58061bae6c89a6c3646134c64d80e4a7": "2026-08-07T13:50:56.190279+00:00",
@@ -1624,8 +1673,20 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:tic:CVX": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:tic:GOOGL": {
       "first_ts": "2026-08-08T09:11:09.956076+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "claim:none:tic:META": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1648,10 +1709,88 @@
         "host:investing.com"
       ]
     },
+    "head:alpha teknova q2 eps 006 beats 008 estimate sales 12185m beat 10966m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:arcutis biotherapeutics q2 eps 011 beats 003 estimate sales 129861m beat 118852m": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:axon enterprise q2 adj eps 188 beats 185 estimate sales 904389m beat 876458m est": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:biodesix q2 eps 071 beats 091 estimate sales 26861m beat 26026m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:bitcoin rises toward 65000 as fresh security risks hit infrastructure": {
       "first_ts": "2026-08-08T09:11:09.956076+00:00",
       "sources": [
         "host:investing.com"
+      ]
+    },
+    "head:carlsmed q2 eps 039 beats 041 estimate sales 18940m beat 17948m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:central garden pet q3 adj eps 154 beats 153 estimate sales 882362m miss 895760m ": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:cirrus logic q1 adj eps 184 beats 181 estimate sales 459723m miss 460300m estima": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:cirrus logic sees q2 sales 510000m570000m vs 556680m est": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:clearfield sees fy2026 gaap eps 014021 vs 054 est lowers fy2026 sales guidance f": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:expedia group q2 adj eps 576 beats 523 estimate sales 4315b beat 4175b estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:heres how much 1000 invested in twilio 10 years ago would be worth today": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:legalzoomcom q2 adj eps 016 beats 015 estimate sales 205289m miss 205839m estima": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:mannkind q2 adj eps 001 misses 000 estimate sales 109374m beat 108915m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
       ]
     },
     "head:peoples bancorp director abernethy sells 40211 in common stock": {
@@ -1668,6 +1807,18 @@
     },
     "head:solaredge says us home solar market weak due to financing issues bloomberg": {
       "first_ts": "2026-08-08T09:11:09.956076+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:sunrun q2 eps 042 beats 024 estimate sales 869988m beat 751832m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:symbotic q3 eps 009 beats 008 estimate sales 720838m beat 715141m estimate": {
+      "first_ts": "2026-08-08T09:31:25.320918+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -2255,9 +2406,9 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-08T09:11:09.956076+00:00",
+      "last_poll": "2026-08-08T09:31:25.320918+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-05T19:37:56+00:00"
+      "since": "2026-08-05T20:02:54+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"2174be55400950399576c1e772fd6ba7-3\"",
@@ -2267,7 +2418,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1786180273.0018194
+      "last_poll_ts": 1786181487.5589542
     },
     "twitterapiio": {
       "cursors": {
@@ -2337,65 +2488,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-08T09:11:09Z",
+  "updated_at": "2026-08-08T09:31:25Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1786180270.8694925
+      "last_poll_ts": 1786181486.5124156
     },
     "bls_news": {
       "etag": "\"804b7fc96826dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 07 Aug 2026 12:32:19 GMT",
-      "last_poll_ts": 1786180270.71661
+      "last_poll_ts": 1786181486.1989214
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1786180271.3604765
+      "last_poll_ts": 1786181486.825242
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1786180272.471526
+      "last_poll_ts": 1786181487.4304345
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sat, 08 Aug 2026 09:07:38 GMT",
-      "last_poll_ts": 1786180272.71036
+      "last_modified": "Sat, 08 Aug 2026 09:30:06 GMT",
+      "last_poll_ts": 1786181487.502808
     },
     "fed_press": {
       "etag": "W/\"2fb36105024dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 20:30:17 GMT",
-      "last_poll_ts": 1786180270.6107457
+      "last_poll_ts": 1786181486.1471956
     },
     "forexlive_news": {
-      "etag": "W/\"9VXp9-c4KfkH2FfmdJBwlzYmYXA\"",
+      "etag": "W/\"bPG5WyJIHAqTa6l6U2_KjXko6kM\"",
       "fail_count": 0,
-      "last_poll_ts": 1786180272.0212288
+      "last_poll_ts": 1786181487.2786286
     },
     "investing_news": {
       "etag": "W/\"12ff-658857998a56a\"",
       "fail_count": 0,
       "last_modified": "Sat, 08 Aug 2026 09:09:14 GMT",
-      "last_poll_ts": 1786180272.2604141
+      "last_poll_ts": 1786181487.3654897
     },
     "marketwatch_top": {
-      "etag": "W/\"2021-jnRatHUZFPBdck5hNbTee0AnzrE\"",
+      "etag": "W/\"2021-Ks/ls35zUxO/y8ymYadW3Btj0Mk\"",
       "fail_count": 0,
-      "last_poll_ts": 1786180271.5423417
+      "last_poll_ts": 1786181486.919005
     },
     "whitehouse_actions": {
       "etag": "\"ea4ec243cbdc147f58cb84a45d57ad42\"",
       "fail_count": 0,
       "last_modified": "Fri, 07 Aug 2026 19:47:24 GMT",
-      "last_poll_ts": 1786180271.0600667
+      "last_poll_ts": 1786181486.7851818
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sat, 8 Aug 2026 08:39:26 GMT",
-      "last_poll_ts": 1786180271.6801527
+      "last_poll_ts": 1786181486.9592433
     }
   },
   "wire_day_counts": {
