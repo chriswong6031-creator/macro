@@ -1037,8 +1037,63 @@ def test_dag_declares_every_path_the_collector_actually_touches():
     declared_writes = {Path(path).name for path in step["writes"]}
     declared_reads = {Path(path).name for path in step["reads"]}
     assert written <= declared_writes
-    # Every accrued artifact the collector reads back before appending must be
-    # declared as a read, or the DAG would claim this step invents its history.
-    assert written - {SBIR_COLLECTOR_HEARTBEAT_FILENAME} <= declared_reads
+    # The read set is asserted EXACTLY, not as a superset. Every accrued artifact
+    # the collector reads back before appending must be declared, or the DAG would
+    # claim this step invents its history — but an artifact the collector only
+    # writes must NOT be declared either, because that claims a fail-closed
+    # re-read the code never performs. The ingest status is write-only.
+    assert declared_reads == {
+        SBIR_OBSERVATIONS_FILENAME,
+        SBIR_COLLECTION_RECEIPTS_FILENAME,
+        SBIR_PROJECTION_STATE_FILENAME,
+    }
     assert step["impure"] is True
     assert step["needs_secrets"] is False
+
+
+def test_the_synapse_registry_declares_the_sbir_family_accurately():
+    """Registration is only worth having if each declared field is true.
+
+    An unregistered artifact family is invisible to the Neural Web governance
+    layer, but a registered one carrying a copied-from-the-sibling field is
+    worse: it reads as governed while describing something else.
+    """
+    registry = yaml.safe_load((REPO / "config" / "synapse.yml").read_text())["artifacts"]
+    expected_asof = {
+        "sbir-award-observations": ("sbir_award_observations.parquet", "known_at"),
+        "sbir-collection-receipts": ("sbir_collection_receipts.jsonl", "observed_at"),
+        "sbir-projection-state": ("sbir_projection_state.json", "observed_at"),
+        "sbir-ingest-status": ("sbir_ingest_status.json", "observed_at"),
+        "sbir-collector-heartbeat": ("sbir_collector_heartbeat.parquet", None),
+    }
+    for suffix, (filename, asof_field) in expected_asof.items():
+        entry = registry[f"government-revenue-{suffix}"]
+        assert entry["path"] == f"data/government_revenue/{filename}"
+        assert entry["producer"] == "collectors/sbir_awards.py"
+        assert entry["owner_program"] == "government-revenue-foresight"
+        assert entry["cadence"] == "collect"
+        # Authority-bearing fields: this rail is context-only infrastructure.
+        assert entry["tier"] == "infrastructure"
+        assert entry["horizon_role"] == "context"
+        assert entry["weights"] == "none"
+        assert entry["scored_path_surfaces"] == []
+        # A 30-hour SLA is what the USAspending siblings promise; this source is
+        # publicly throttled at 10 requests per 10 minutes and intermittently in
+        # maintenance, so a daily freshness promise here would be false.
+        assert entry["freshness_sla_hours"] == 168
+        # asof_field must name a clock the artifact actually carries.
+        assert entry["asof_field"] == asof_field
+        if asof_field is not None:
+            assert asof_field in SBIR_OBSERVATION_COLUMNS or filename.endswith(".json") or (
+                filename.endswith(".jsonl")
+            )
+
+    observations = registry["government-revenue-sbir-award-observations"]
+    assert observations["schema"] == "government_revenue.sbir_award_observation.v1"
+    assert observations["asof_field"] in SBIR_OBSERVATION_COLUMNS
+    # The projection is not wired into scripts/build_government_revenue.py yet, so
+    # claiming it as a consumer would be a false declaration.
+    for suffix in ("sbir-award-observations", "sbir-collection-receipts", "sbir-projection-state"):
+        consumers = registry[f"government-revenue-{suffix}"]["consumers"]
+        assert "engine/government_revenue/sbir_progression.py" in consumers
+        assert "scripts/build_government_revenue.py" not in consumers

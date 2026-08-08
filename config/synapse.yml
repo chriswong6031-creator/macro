@@ -16521,6 +16521,145 @@ artifacts:
       complete bounded subaward collection. It carries no subaward economics, company
       mapping, score, rank, gate, candidate, or Prophet authority.
 
+  government-revenue-sbir-award-observations:
+    path: data/government_revenue/sbir_award_observations.parquet
+    format: parquet
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_award_observation.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Append-only bounded SBIR.gov Phase I/II award observations, identified by the exact
+      source-native agency_tracking_number (unique across all of TECH-Net per the official
+      Award data dictionary); a row without it is counted and refused, never given a
+      synthesized key. A re-run appends a semantic version and never rewrites or deletes
+      accrued history, retaining an A-B-A reversion. Source, effective, observed, and
+      known-at clocks are separate and knowledge is observation-bound: SBIR.gov publishes no
+      record-publication timestamp, so known_at is never backdated to the award date.
+      Point-of-contact and principal-investigator names, phones, and emails, plus street
+      address, city, and ZIP, are never persisted, and neither is the abstract. Award amounts
+      are program award values, never revenue, backlog, funded backlog, bookings,
+      obligations, or outlays. Issuer links require an exact UEI against the reviewed
+      recipient graph; a matching firm name is mapping-backlog context and never attribution.
+      The freshness SLA is deliberately weekly, not the 30 hours its USAspending siblings
+      declare: the public tier publishes a 10-requests-per-10-minutes limit and the endpoint
+      is intermittently in maintenance, so a daily freshness promise would be false.
+
+  government-revenue-sbir-collection-receipts:
+    path: data/government_revenue/sbir_collection_receipts.jsonl
+    format: jsonl
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_collection_receipt.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Append-only hash-only receipts binding every offset page of the official SBIR.gov
+      awards endpoint that informed a published observation. Raw requests, responses,
+      headers, credentials, and any contact-shaped field are refused rather than persisted.
+      A page that succeeded before a later failure remains immutable evidence even when the
+      run publishes no ledger, so a source outage cannot erase what was already retrieved. A
+      receipt ID bound to conflicting evidence, and a corrupt existing ledger, both fail
+      closed rather than being overwritten. Retrieval provenance only, never an authority,
+      score, rank, size, gate, or investment signal.
+
+  government-revenue-sbir-projection-state:
+    path: data/government_revenue/sbir_projection_state.json
+    format: json
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_projection_state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sbir_awards.py, engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Collector-owned activation state bound to the declared coverage manifest and to an
+      order-independent semantic generation over the whole observation ledger. A state whose
+      binding no longer describes the ledger on disk is refused rather than rebound, so a
+      torn generation can never be blessed by a later partial run, and the projection
+      refuses to read it. It records first_baseline, history_synthesized: false, and
+      emits_forward_events: false explicitly, so one knowledge generation is never presented
+      as a graded forward record. asof_field is observed_at because that is the clock this
+      artifact actually carries.
+
+  government-revenue-sbir-ingest-status:
+    path: data/government_revenue/sbir_ingest_status.json
+    format: json
+    producer: collectors/sbir_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 168
+    schema: government_revenue.sbir_ingest_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/sbir_progression.py]
+    external_consumers: []
+    notes: >
+      Operational receipt for the declared agency/year query cells, per-run request budget,
+      page caps, truncation, and refused-without-identity counts. The upstream endpoint
+      publishes no pagination metadata and no total, so source exhaustion is claimed only
+      on a short page and a fully retrieved page cap is recorded as a complete bounded
+      sample rather than corpus completion (full_sbir_corpus: false,
+      pagination_metadata_available: false). Written by the collector but never read back by
+      it, so it is a write-only artifact in the DAG contract. Descriptive infrastructure,
+      never alpha or authority.
+
+  government-revenue-sbir-collector-heartbeat:
+    path: data/government_revenue/sbir_collector_heartbeat.parquet
+    format: parquet
+    producer: collectors/sbir_awards.py
+    known_extra_writers:
+      - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 168
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/collect.py]
+    external_consumers: []
+    notes: >
+      Date-indexed health receipt emitted by direct CLI and standard Adapter runs only after
+      a complete bounded SBIR collection; a failed or partial run raises rather than
+      publishing one. It carries no award economics, phase progression, company mapping,
+      score, rank, gate, candidate, or Prophet authority.
+
   government-revenue-sam-opportunities:
     path: data/government_revenue/opportunities.parquet
     format: parquet

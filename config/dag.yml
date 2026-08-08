@@ -3380,11 +3380,14 @@ modules:
       additive prime value, issuer attribution, backlog, revenue, cash, or investment authority.
 
   - module: collectors.sbir_awards
+    # sbir_ingest_status.json is deliberately write-only here: the activation
+    # marker this collector reads back before appending is the projection state,
+    # and the status is a descriptive per-run receipt. Declaring it as a read
+    # would claim a fail-closed check the code does not perform.
     reads:
       - data/government_revenue/sbir_award_observations.parquet
       - data/government_revenue/sbir_collection_receipts.jsonl
       - data/government_revenue/sbir_projection_state.json
-      - data/government_revenue/sbir_ingest_status.json
     writes:
       - data/government_revenue/sbir_award_observations.parquet
       - data/government_revenue/sbir_collection_receipts.jsonl
