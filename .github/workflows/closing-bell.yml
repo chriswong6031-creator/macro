@@ -384,6 +384,27 @@ jobs:
           done
           exit 0
 
+      # ── (f2) THE OPTIONS WORKSPACE ──────────────────────────────────────────────────
+      # OEU M-CMD, mirroring daily.yml: options.html is a pure re-serialisation of
+      # stores other builders write, so it MUST run as a serial step after the band
+      # `wait` barrier — cl_gex writes build_flow_desk and build_options_screener.
+      #
+      # Its absence here is why the page showed a 2026-08-05 close on 2026-08-07.
+      # cl_gex above refreshes every options store this lane owns — flow_desk to the
+      # new session included — but nothing re-rendered the page that reads them, so
+      # site/options.html stayed the render taken hours BEFORE the close and kept
+      # showing the prior session while its own inputs had moved on.
+      #
+      # market_structure and flow_leaders are not rebuilt in this lane. That is fine
+      # and deliberate: the builder is absent-safe on both, and its staleness census
+      # names any input dated to a different close than the page's own — so a mixed
+      # render discloses itself rather than lying. Non-fatal, as in daily.yml: the
+      # builder catches its own render failures, so the last committed options.html
+      # stands and the deploy is never broken.
+      - name: OEU M-CMD — the Options workspace (build_options_command)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.build_options_command || echo "::warning::build_options_command non-fatal failure"
+
       # ── (g) HUB + FEEDS ─────────────────────────────────────────────────────────────
       # build_vector: hub step, runs AFTER the parallel band barrier (reads cl_markets
       #   latest.json outputs for commodity/forex/bonds + BTC).  Verbatim from daily.yml.
