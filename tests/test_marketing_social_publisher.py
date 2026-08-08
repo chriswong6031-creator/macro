@@ -1485,6 +1485,7 @@ class TestTheRateLimitRequeueIsBounded:
         state = fold_state(tmp_path)
         assert state["rate_limited"][item_id] == 3
         assert state["attempts"][item_id] == 4    # rate limits are a SUBSET
+        assert state["effective_attempts"][item_id] == 1   # the real one only
 
     def test_the_ninth_rate_limit_parks_the_item_at_failed(
             self, monkeypatch, tmp_path, capsys):
@@ -1531,6 +1532,191 @@ class TestTheRateLimitRequeueIsBounded:
                        fake_publisher=_RateLimitedPublisher(), kill_switch=True)
 
         assert current_statuses(tmp_path)[item_id] == "approved"
+
+
+class TestTheRetryCapSpendsOnlyRealFailures:
+    """APPROVE MUST NOT BE A DELETE BUTTON.
+
+    `attempts` counts every transition INTO `failed`, and the rate-limit requeue
+    walks THROUGH `failed` by design — so a post refused twice for quota looked
+    exactly like a post that failed twice on its own merits, and
+    `apply_decisions` quarantines an operator approve at MAX_POST_ATTEMPTS (2).
+    Two quota refusals were therefore enough to make the admin's Approve button
+    destroy the post it was clicked to save.
+
+    Live before the outage (the requeue branch called it a "KNOWN COST,
+    ACCEPTED"); the plan lock made it the default. Worse, the bounded requeue
+    parks an item at `rate_limited_exhausted` with NINE `failed` rows, so the
+    remedy its own annotation prescribes — "re-arm from the admin Outbox" — would
+    have quarantined it.
+    """
+
+    def _fail(self, tmp_path, item_id: str, note: str) -> None:
+        """One `-> failed` row, stamped in the PAST.
+
+        `record_decision` has no injectable clock, so its row lands at wall-clock
+        now; `apply_decisions` ignores an approve recorded at or before the last
+        ledger row ("a stale approve from before the failure"). Stamping the
+        failures with the module's fixed past clock is what keeps _approve()
+        deterministic instead of same-second flaky.
+        """
+        from engine.marketing.outbox import transition
+        assert transition(item_id, "failed", actor="publisher", root=tmp_path,
+                          note=note, now=_FIXED_NOW)
+
+    def _rearm(self, tmp_path, item_id: str) -> None:
+        from engine.marketing.outbox import transition
+        assert transition(item_id, "approved", actor="publisher", root=tmp_path,
+                          note="requeued for the next sweep", now=_FIXED_NOW)
+
+    def _requeues(self, tmp_path, item_id: str, n: int, *, prefix: str) -> None:
+        for _ in range(n):
+            self._fail(tmp_path, item_id, f"{prefix}: buffer said no")
+            self._rearm(tmp_path, item_id)
+
+    def _approve(self, tmp_path, item_id: str):
+        """Record + apply an operator approve, the way the admin panel does."""
+        from engine.marketing.outbox import apply_decisions, record_decision
+        assert record_decision(item_id, "approve", actor="admin", root=tmp_path)
+        return apply_decisions(tmp_path, actor="admin", ids=[item_id])
+
+    def test_ten_rate_limited_failures_approve_and_dispatch(
+            self, monkeypatch, tmp_path):
+        """THE RESUME PATH, end to end. The plan unlocks, the operator clicks
+        Approve on a post that rode ten 429s, and it goes out.
+
+        Both halves of the coordinator's concern in one test: the approve must
+        re-arm rather than quarantine, and the re-armed item must then dispatch.
+        Ends the requeue history AT `failed` — the shape a sweep leaves behind —
+        because `approved` never reaches the cap branch at all, and a test that
+        skipped this step would pass on the pre-fix code.
+        """
+        from engine.marketing.outbox import (
+            MAX_POST_ATTEMPTS, RATE_LIMITED_NOTE_PREFIX, current_statuses,
+            effective_attempts, fold_state)
+
+        _write_publish_cfg(tmp_path, approval_desk=False)
+        item_id = _seed_approved_item(tmp_path,
+                                      scheduled_at="2026-07-19T12:00:00Z")
+        self._requeues(tmp_path, item_id, 9, prefix=RATE_LIMITED_NOTE_PREFIX)
+        self._fail(tmp_path, item_id,
+                   f"{RATE_LIMITED_NOTE_PREFIX}: buffer said no")   # 10th
+
+        state = fold_state(tmp_path)
+        assert state["attempts"][item_id] == 10
+        assert effective_attempts(state, item_id) == 0, (
+            "ten quota refusals read as failures — the cap is spending the "
+            "backend's problem")
+        assert effective_attempts(state, item_id) < MAX_POST_ATTEMPTS
+
+        out = self._approve(tmp_path, item_id)
+        assert out["rearmed"] == [item_id], (
+            f"Approve did not re-arm a post with zero real failures: {out}")
+        assert not out["quarantined"], out
+
+        fake = _FakePublisher(ok=True)
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+        assert len(fake.calls) == 1, "the re-armed post never reached the network"
+        assert current_statuses(tmp_path)[item_id] == "posted"
+
+    def test_an_exhausted_item_survives_an_operator_approve(self, tmp_path):
+        """The park its own annotation promises is recoverable, actually is.
+
+        NINE `failed` rows (eight requeues plus the terminal exhaustion row) and
+        Approve must still re-arm — on the pre-fix code this quarantined.
+        """
+        from engine.marketing.outbox import (
+            MAX_RATE_LIMITED_REQUEUES, RATE_LIMITED_EXHAUSTED_NOTE_PREFIX,
+            RATE_LIMITED_NOTE_PREFIX, current_statuses, effective_attempts,
+            fold_state)
+
+        item_id = _seed_approved_item(tmp_path)
+        self._requeues(tmp_path, item_id, MAX_RATE_LIMITED_REQUEUES,
+                       prefix=RATE_LIMITED_NOTE_PREFIX)
+        self._fail(tmp_path, item_id,
+                   f"{RATE_LIMITED_EXHAUSTED_NOTE_PREFIX} after "
+                   f"{MAX_RATE_LIMITED_REQUEUES} sweeps: buffer 429")
+
+        state = fold_state(tmp_path)
+        assert state["attempts"][item_id] == MAX_RATE_LIMITED_REQUEUES + 1
+        assert effective_attempts(state, item_id) == 0
+
+        out = self._approve(tmp_path, item_id)
+        assert out["rearmed"] == [item_id], out
+        assert not out["quarantined"], out
+        assert current_statuses(tmp_path)[item_id] == "approved"
+
+    def test_a_subscription_lock_is_excused_the_same_way(self, tmp_path):
+        from engine.marketing.outbox import (
+            SUBSCRIPTION_LOCKED_NOTE_PREFIX, current_statuses,
+            effective_attempts, fold_state)
+
+        item_id = _seed_approved_item(tmp_path)
+        self._requeues(tmp_path, item_id, 4,
+                       prefix=SUBSCRIPTION_LOCKED_NOTE_PREFIX)
+        self._fail(tmp_path, item_id,
+                   f"{SUBSCRIPTION_LOCKED_NOTE_PREFIX}: plan locked")
+
+        state = fold_state(tmp_path)
+        assert state["subscription_locked"][item_id] == 5
+        assert effective_attempts(state, item_id) == 0
+
+        out = self._approve(tmp_path, item_id)
+        assert out["rearmed"] == [item_id], out
+        assert current_statuses(tmp_path)[item_id] == "approved"
+
+    def test_two_real_failures_still_trip_the_cap(self, tmp_path):
+        """NO BEHAVIOUR CHANGE FOR GENUINE FAILURES. This is the whole point of
+        the cap and it must be exactly as strict as it was yesterday."""
+        from engine.marketing.outbox import (
+            MAX_POST_ATTEMPTS, current_statuses, effective_attempts, fold_state)
+
+        item_id = _seed_approved_item(tmp_path)
+        # EXACTLY MAX_POST_ATTEMPTS real failures, ending AT `failed` — the
+        # boundary, so an off-by-one in either direction fails this test.
+        for n in range(MAX_POST_ATTEMPTS):
+            if n:
+                self._rearm(tmp_path, item_id)
+            self._fail(tmp_path, item_id,
+                       f"buffer_error: Invalid post: Whoops {n}")
+
+        state = fold_state(tmp_path)
+        assert state["effective_attempts"][item_id] == MAX_POST_ATTEMPTS
+        assert effective_attempts(state, item_id) == MAX_POST_ATTEMPTS
+        out = self._approve(tmp_path, item_id)
+        assert out["quarantined"] == [item_id], out
+        assert not out["rearmed"], out
+        assert current_statuses(tmp_path)[item_id] == "quarantined"
+
+    def test_real_failures_mixed_with_rate_limits_count_only_the_real_ones(
+            self, tmp_path):
+        """The mixed case is the one a subtraction gets wrong."""
+        from engine.marketing.outbox import (
+            RATE_LIMITED_NOTE_PREFIX, effective_attempts, fold_state)
+
+        item_id = _seed_approved_item(tmp_path)
+        self._requeues(tmp_path, item_id, 5, prefix=RATE_LIMITED_NOTE_PREFIX)
+        self._fail(tmp_path, item_id, "buffer_error: Invalid post: Whoops")
+        self._rearm(tmp_path, item_id)
+        self._requeues(tmp_path, item_id, 2, prefix=RATE_LIMITED_NOTE_PREFIX)
+
+        state = fold_state(tmp_path)
+        assert state["attempts"][item_id] == 8
+        assert state["rate_limited"][item_id] == 7
+        assert effective_attempts(state, item_id) == 1
+
+    def test_effective_attempts_derives_from_a_pre_field_snapshot(self):
+        """A caller holding a snapshot built before the field existed must not
+        silently fall back to the RAW count — that is the defect, not the fix."""
+        from engine.marketing.outbox import effective_attempts
+
+        legacy = {"attempts": {"x": 9}, "rate_limited": {"x": 8}}
+        assert effective_attempts(legacy, "x") == 1
+        # No buckets at all: nothing is known to be excused, so the raw count
+        # stands. Fail-closed — a missing bucket must not manufacture headroom.
+        assert effective_attempts({"attempts": {"x": 3}}, "x") == 3
+        assert effective_attempts({}, "x") == 0
 
 
 class TestAnApprovedItemCannotOutliveItsWindow:
