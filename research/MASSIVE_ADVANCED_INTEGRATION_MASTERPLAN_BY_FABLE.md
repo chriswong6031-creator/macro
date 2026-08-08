@@ -198,8 +198,13 @@ What this **does not** change (probed, §7½-consistent, and load-bearing for sc
   M2's politeness law binds regardless.
 - **Flat Files (S3)** on all paid tiers: daily gzip CSVs for trades / quotes (top-of-book
   NBBO) / minute / day aggs, nanosecond stamps, TRF prints included; prior-day file
-  ready ~11:00 ET — flat files are a T+1 substrate, never a live one. Trades/quotes
-  history to 2003-09-10.
+  ready ~11:00 ET — flat files are a T+1 substrate, never a live one. **Depth + size
+  verified by LIST 2026-08-08 (our creds):** `trades_v1` from 2005-06 (64MB/day gz
+  then → ~1.6GB/day gz 2024); `quotes_v1` from 2005-06 (160MB/day gz then →
+  **~4.8GB/day gz 2024** — market-wide daily files, so a blanket multi-year quote
+  backfill is TB-scale; TP-B's quote strategy is therefore episode-windowed files +
+  per-name REST `v3/quotes` (proven 20y deep) for targeted windows, never a bulk
+  crawl).
 - **Condition codes carry machine-readable `update_rules`** (`updates_volume`,
   `updates_high_low`, `updates_open_close`) via `/v3/reference/conditions` — all
   bar/VWAP math branches on those booleans, never on hardcoded condition IDs.
@@ -356,11 +361,31 @@ on a real-time-denial frame). Law:
    until the hub is off it — shipping a Terminal quote outage as an architecture is
    the named failure this law exists to prevent), with the hub's REST-snapshot
    fallback bridging the cutover.
-3. **The paging predicate is post-`auth_success` `1008`/`max_connections` on
-   reconnect** — NOT auth failure. The vendor delivers entitlement/slot denials AFTER
-   a successful auth (the hub's own code documents this: "RT entitlement denied
-   arrives AFTER auth_success"). TP-1's supervisor reads the hub's `/health` effective
-   cluster before first connect and on every eviction.
+3. **The paging predicate is post-`auth_success` `1008`/`max_connections`** — NOT auth
+   failure. The vendor delivers entitlement/slot denials AFTER a successful auth (the
+   hub's own code documents this: "RT entitlement denied arrives AFTER auth_success").
+   TP-1's supervisor reads the hub's `/health` effective cluster before first connect
+   and on every eviction.
+
+**§3.1b.4 — measured semantics (TP-0.5 gate-1 experiment, run 2026-08-08 ~13:05Z):**
+delayed and real-time ARE separate buckets (a held RT socket coexisted with a fresh
+delayed connection; delayed-alone connected clean twice) — the hub keeps its delayed
+socket and TP-1 does not fold the hub migration in. But overflow **EVICTS THE OLDEST
+connection** (a second RT connection authed and survived while the original holder
+was 1008-killed mid-hold) — the vendor does not refuse the newcomer. Consequences,
+binding on TP-1:
+   - **Singleton discipline is existential**: any stray second RT client (debug
+     session, re-run probe, second daemon instance, blue/green overlap) silently
+     kills production. Systemd single-instance + a startup check that refuses to
+     start when the breaker shows the daemon healthy elsewhere.
+   - **Slot-fight detection**: a 1008 arriving within N seconds of our own
+     (re)connect means something else is competing for the slot — page immediately,
+     do NOT enter an evict-each-other reconnect loop (this exact loop is the best
+     explanation of TP-0's Saturday delayed-1008: the probe evicted the hub, the
+     hub's auto-reconnect evicted the probe back).
+   - **Probes never touch the RT cluster while the daemon lives**: the weekly
+     entitlement tripwire verifies RT via REST (`v2/last/trade`/`last/nbbo`) only;
+     WS probes of the stocks RT cluster require the daemon's maintenance window.
 
 ### §3.2 Universe policy (storage is the binding constraint, not API calls)
 
@@ -592,10 +617,11 @@ are fully determined by this doc.
 > config with `socket.massive.com` default, `*.polygon.io` fallback documented)
 > subscribing `T.<pilot>`+`Q.<pilot>` where pilot = `gex_symbols()` ∪ Prophet US
 > actives ∪ sector/factor ETFs, HARD CAP 600 (drop lowest-ADV, log drops);
-> single-connection law §3.1b — paging predicate is post-`auth_success`
-> `1008`/`max_connections` on reconnect, read the Terminal hub `/health` cluster
-> before first connect, and if TP-0.5 proved ONE shared bucket, fold the hub cutover
-> into this wave; (2) in-flight NBBO ring + a NEW ADDITIVE `classify_print` entry
+> single-connection law §3.1b incl. the measured §3.1b.4 evict-oldest semantics —
+> systemd singleton + startup refusal when the breaker shows a healthy daemon
+> elsewhere, slot-fight paging (1008 within N s of own reconnect ⇒ page, never an
+> evict-loop), REST-only entitlement tripwires while the daemon lives, hub `/health`
+> read before first connect (buckets are SEPARATE — no hub cutover in this wave); (2) in-flight NBBO ring + a NEW ADDITIVE `classify_print` entry
 > point in `engine/flow_signing.py` returning `buy|sell|mid|unclassified` + quote-age
 > (`quote_rule_sign` already exists with a tick-tiebreak contract two options callers
 > depend on — do not change its signature or behavior; see §3.4 for the M4 sequencing
@@ -629,9 +655,11 @@ are fully determined by this doc.
 > DESIGN_DOCTRINE) before assembly.
 
 **TP-B (opus `builder`; parallel to TP-1, AFTER TP-0.5):**
-> Flat-file backfill per §3.3/§4.3: S3 `us_stocks_sip/trades_v1` (+`quotes_v1` ONLY if
-> the TP-0.5 manifest carries an entitled verdict for it — the TP-0 manifest has no
-> flat-file or quote-depth verdicts at all) for the Tier-A universe, 2 years minimum
+> Flat-file backfill per §3.3/§4.3: S3 `us_stocks_sip/trades_v1` (entitled to 2005-06,
+> LIST-verified 2026-08-08; ~1.6GB/day gz recent) for the Tier-A universe, 2 years minimum;
+> quotes are NOT a bulk crawl — `quotes_v1` daily files run ~4.8GB/day gz market-wide,
+> so NBBO history comes as episode-windowed daily files + per-name REST `v3/quotes`
+> (depth verified to 2005) for targeted windows only, each budgeted in the PR body —
 > (extend to 5y only after sizing the first pull), LIST-then-budget before any GET
 > (hard cap in the PR body), to the PRIVATE R2 plane partitioned per §3.3; derive
 > per-name baselines (DP-share/block-rate distributions, median/MAD,
@@ -848,4 +876,5 @@ entitled. Therefore:
 | Date | Event |
 |---|---|
 | 2026-08-08 | Plan authored on operator commission; TP-0 probe + manifest shipped in the same PR; census lanes (repo, Terminal, registry, vendor) + live probe grounded §1–§6. |
+| 2026-08-08 | TP-0.5 gate-1 + gate-3 measurements run same-day (scratchpad harness; durable probe upgrade ships as the TP-0.5 wave): WS buckets SEPARATE (delayed ≠ RT) but overflow EVICTS-OLDEST (§3.1b.4 — singleton discipline, slot-fight paging, REST-only tripwires while the daemon lives); REST `v3/quotes` depth verified to 2005; S3 LIST verified `trades_v1`+`quotes_v1` to 2005-06 with 2024 quote files ~4.8GB/day gz (TP-B quote strategy re-scoped to episode windows + per-name REST). TP-1 design freeze is UNBLOCKED on the bucket question; TP-0.5 still ships the durable probe + RTH data-frame re-proof. |
 | 2026-08-08 | Adversarial review (opus) returned HOLD: 4 blockers, 10 material, 8 minor — ALL accepted and folded pre-merge. Structural consequences: §0 gains the global licensing gate (B3) and wave TP-0.5 (B2/m1/m2); TP-1 now mints the PRIVATE R2 plane first (B1 — the existing publisher/beacon serve the public bucket only); the PSS-AF1 distinction restated on measured COVERAGE with signing accuracy explicitly unmeasured + a §4.4 accuracy-design prerequisite for any promotion (B4); stratified classification gates + TRF timestamp policy (M8); gap-heal quote replay + dedup key (M1); minute-of-session baselines (M2); in-wave split guard for TP-B (M3); part-file store layout (M4); 600-symbol cap + envelope-minting (M5/M6); §3.4 corrected to the additive `classify_print` contract with M4 sequencing (M7); tape-scoreboard D2/D6 tension named as amendment-proposal (M9); program-level usage falsifier at TP-3/TP-6 (M10); vocabulary bans extended (m3/m4); D4 lift marked ratification-pending (m8). Wave order is now TP-0.5 → TP-1. |
