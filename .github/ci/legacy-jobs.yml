@@ -5469,7 +5469,17 @@ jobs:
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
     if: ${{ false }}
-    timeout-minutes: 6
+    # 6 -> 15. This job is STRUCTURALLY at-cap, not slowed by any change. Measured on a
+    # fast Mac Studio, its FIRST step alone (27 test files, 941 passed) runs 3:40 — 61% of
+    # a 6-minute budget that must ALSO cover `pip install ... scikit-learn` and seven more
+    # pytest steps. On the 4-core-bound, fleet-shared ubuntu-latest pack runner it crosses
+    # the cap whenever the pool is busy, so "timed out after 6 minutes" has been recurring
+    # on main and on every PR that inherits it — an unattributable red that repeatedly
+    # reads as the running PR's regression (it was pinned on #4883's proof run, where the
+    # PR's own step was 6.7s of the budget and its data change made the store 37% smaller).
+    # 15 is this manifest's existing ceiling for heavy jobs (options-estate-guards,
+    # collector-registry), both of which carry FEWER run steps than the eight here.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
