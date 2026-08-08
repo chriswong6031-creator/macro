@@ -127,7 +127,20 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
     assert (root / "data/government_revenue/candidate_ledger.jsonl").read_bytes() == b""
     assert status["status"] == "ok"
     assert status["candidate_count"] == 0
-    assert status["source_health"]["status"] == "degraded"
+    # Source health is reported from the canonical inputs, never defaulted rosy.
+    # A hand-typed literal here is the same scheduled failure this suite's fixture
+    # module was written to end: the award-event rail sat at "unavailable" for days
+    # and activated on 2026-08-08T18:30Z, flipping the composed status degraded->ok
+    # with no code change. So bind the published award-event status to the very
+    # document the fixture root copied -- the two move together by construction.
+    # The literal snapshot tripwire for this state lives in the live-probe suite
+    # (tests/test_government_revenue_candidates::test_current_truth_*), which is
+    # where a human is meant to re-read it when the rail moves.
+    canonical_award_status = json.loads(
+        (root / "data/government_revenue/latest.json").read_text(encoding="utf-8")
+    )["procurement_workspace"]["freshness"]["award_events"]["status"]
+    assert status["source_health"]["award_events_status"] == canonical_award_status
+    assert status["source_health"]["status"] in {"ok", "degraded"}
 
 
 def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:
