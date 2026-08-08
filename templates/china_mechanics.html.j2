@@ -999,7 +999,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
       <div class="stat-tile">
         <div class="label">{{ t('Southbound', '南向资金') }}</div>
         <div class="value {{ 'up-color' if sb_val is not none and sb_val > 0.5 else ('down-color' if sb_val is not none and sb_val < -0.5 else '') }}">{{ ('%+.2f'|format(sb_val)) if sb_val is not none else '—' }}</div>
-        <div class="sub">{{ t('z-score HK→A', '港资南向z分数') }}</div>
+        <div class="sub">{{ t('HK→A, vs normal', '港资南向 · 对比常态') }}</div>
       </div>
       <div class="stat-tile">
         <div class="label">{{ t('Margin', '融资余额') }}</div>
@@ -1070,8 +1070,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   </div>
 
   <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
-    <span class="l-en">Participation tells you whether real money is in the room and who's driving. Turnover z-scores compare today's volume to its recent history; margin balance (融资余额) is borrowed money used to buy stocks; southbound flow is Hong Kong money buying A-shares; QVIX is the market's fear gauge.</span>
-    <span class="l-zh">参与度告诉你是否有真实资金入场、由谁主导。成交额Z分数将当日成交量与近期历史对比；融资余额是借钱买股的杠杆资金；南向资金是港资买入A股；QVIX是市场恐慌指标。</span>
+    <span class="l-en">Participation tells you whether real money is in the room and who's driving. Turnover compares today's volume to its recent normal; margin balance (融资余额) is borrowed money used to buy stocks; southbound flow is Hong Kong money buying A-shares; QVIX is the market's fear gauge.</span>
+    <span class="l-zh">参与度告诉你是否有真实资金入场、由谁主导。成交量一栏把当天的量和近期的常态作比较；融资余额是借钱买股的杠杆资金；南向资金是港资买入A股；QVIX是市场恐慌指标。</span>
   </div>
 
   <div class="heat-gauge-row">
@@ -1111,7 +1111,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   <div class="participation-grid">
     <!-- Turnover Z20 -->
     <div class="part-card">
-      <div class="label">{{ t('Turnover z20', '换手率20日') }}</div>
+      <div class="label">{{ t('Turnover vs 20d', '成交量 · 对比20日') }}</div>
       <div class="main-val {{ 'up-color' if tz20_val is not none and tz20_val > 0.5 else ('down-color' if tz20_val is not none and tz20_val < -0.5 else '') }}">{{ ('%.2f'|format(tz20_val)) if tz20_val is not none else '—' }}</div>
       <div class="secondary">{{ t('z60', 'z60') }} = {{ ('%.2f'|format(tz60_val)) if tz60_val is not none else '—' }}</div>
       <div class="sparkline-wrap"><canvas id="sp_turnover" height="48"></canvas></div>
@@ -1134,7 +1134,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
     <div class="part-card">
       <div class="label">{{ t('Southbound z', '南向资金z') }}</div>
       <div class="main-val {{ 'up-color' if sb_val is not none and sb_val > 0.5 else ('down-color' if sb_val is not none and sb_val < -0.5 else '') }}">{{ ('%+.2f'|format(sb_val)) if sb_val is not none else '—' }}</div>
-      <div class="secondary">{{ t('HK→A flow z-score', '港资南向z分数') }}</div>
+      <div class="secondary">{{ t('HK→A flow, vs normal', '港资南向 · 对比常态') }}</div>
       <div class="sparkline-wrap"><canvas id="sp_south" height="48"></canvas></div>
       <div class="sub-val" style="color:var(--muted);font-size:10.5px">{{ t('Northbound retired 2024-08-16 (SLF-050)', '北向通道2024-08-16关闭（SLF-050）') }}</div>
     </div>
@@ -1165,7 +1165,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
 <section class="section">
   <div class="section-hdr">
     <span class="section-dot" style="background:var(--up)"></span>
-    <h2>{{ t('Limit Mechanics — Daily Price Limits', '涨跌停板机制') }} {{ help('CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions.', 'CN-SYS-R3：涨/跌停板数据仅作市场结构背景，禁止用于买入方向（已裁定禁止）。') }}</h2>
+    <h2>{{ t('Limit Mechanics — Daily Price Limits', '涨跌停板机制') }} {{ help('CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions.', 'CN-SYS-R3：涨/跌停板数据仅作市场结构情况，禁止用于买入方向（已裁定禁止）。') }}</h2>
     {% if limits.get('latest_date') %}<span class="stale-chip" style="margin-left:auto">{{ limits.latest_date }}</span>{% endif %}
   </div>
 
@@ -1256,7 +1256,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   </div>
 
   <p class="authority-note" style="margin-top:14px;font-size:11px;color:var(--muted);padding:6px 10px;border-radius:7px;background:color-mix(in srgb,var(--muted) 8%,var(--panel));border:1px solid var(--line)">
-    {{ t('CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.', 'CN-SYS-R3：本面板仅作市场结构背景。以涨停作为买入触发器已被永久禁止。') }}
+    {{ t('CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.', 'CN-SYS-R3：本面板仅作市场结构情况。以涨停作为买入触发器已被永久禁止。') }}
   </p>
 </section>
 
@@ -1598,7 +1598,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
 </section>
 
 <div style="text-align:center;padding:40px 0 20px;font-size:10.5px;color:var(--muted)">
-  {{ t('Mastermind Inc. · Context only — not investment advice', 'Mastermind Inc. · 仅供情境参考——非投资建议') }} · {{ t('Built', '构建于') }} {{ built }} · {{ t('as of', '截至') }} {{ as_of }}
+  {{ t('Mastermind Inc. · Context only — not investment advice', 'Mastermind Inc. · 仅供参考——非投资建议') }} · {{ t('Built', '构建于') }} {{ built }} · {{ t('as of', '截至') }} {{ as_of }}
 </div>
 
 </div><!-- /page-wrap -->

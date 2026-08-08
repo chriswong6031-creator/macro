@@ -260,7 +260,7 @@ table.sm-t th.sorted { color:var(--text); }
 {# ======================================================================== #}
 <div class="fd-hero">
   <div>
-    <div class="eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List','机构 13F · 仅供背景参考 · 非买入清单') }}</div>
+    <div class="eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List','机构 13F · 仅供参考 · 非买入清单') }}</div>
     <h1>{% if FNAME %}{{ FNAME }}{% else %}{{ t('Fund dossier','基金档案') }}{% endif %}</h1>
     <div class="pillrow">
       {% if LB.get('style') %}<span class="stylepill">{{ LB.get('style') }}</span>{% endif %}
@@ -721,7 +721,7 @@ table.sm-t th.sorted { color:var(--text); }
   <b>{{ t('Caveats','注意事项') }}</b> —
   {{ t(
     '13F = quarterly, ~45-day lag, long-only US listed ≥$100M. No shorts, no cash, no non-US positions. This desk is context — ownership is never a directional signal here.',
-    '13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅为背景参考——持仓数据在此永远不是方向性信号。'
+    '13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅供参考——持仓数据在此永远不是方向性信号。'
   ) }}
   {{ t(
     'Grades and reliability are descriptive ranks within a curated survivor cohort — they measure what filings did after their filing dates, not a manager-selection edge. Conviction and core-lean reads are descriptive composites earning a forward record via the pre-registered ledger (L5); sector/theme classification applies the current map to history.',

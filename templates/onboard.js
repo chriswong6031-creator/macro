@@ -99,19 +99,19 @@
   //    landing's data-zh contract, which swaps innerHTML). ──────────────────────
   var LEX = {
     // pane (left) — step-adaptive headline + subline
-    paneAccountH:  ["Your desk is one step away.", "你的台席，仅一步之遥。"],
+    paneAccountH:  ["Your desk is one step away.", "你的工作台，只差一步。"],
     paneAccountS:  ["Create your account to unlock every dashboard, signal and the Terminal — free.", "创建账户，解锁全部看板、信号与 Terminal——免费。"],
     panePrefsH:    ["Make it read the way you think.", "让它按你的思路来解读。"],
     panePrefsS:    ["Pick your markets and theme. Everything here is optional — change it any time.", "选择你的市场与主题。此处全部可选，随时可改。"],
     planePlanH:    ["Free to explore. Built for deeper decisions.", "免费探索。为更深的决策而生。"],
-    planePlanS:    ["Start free forever, or add the analyst and the desks. Pro comes with a 7-day free trial.", "永久免费开始，或加上分析师与各台席。Pro 含 7 天免费试用。"],
+    planePlanS:    ["Start free forever, or add the analyst and the desks. Pro comes with a 7-day free trial.", "可以永久免费用，也可以加上分析师和各个看板。Pro 含 7 天免费试用。"],
     paneBillH:     ["7 days free. Cancel in one click.", "7 天免费。一键取消。"],
     paneBillS:     ["Your card starts the trial. We tell you exactly when the first charge lands — and cancelling before then costs nothing.", "绑卡即开启试用。我们会明确告知首次扣款时间——在此之前取消，分文不收。"],
     // the same pane for a plan with no trial: the promise is a clear price today,
     // not free days. Never says "trial" — see TRIAL_BY_PLAN.
     paneBillNoTrialH: ["Starts today. Cancel in one click.", "今日开通。一键取消。"],
     paneBillNoTrialS: ["We show you exactly what you're charged today before you confirm — and you can cancel from your account whenever you like.", "确认前我们会明确显示今日扣款金额——你也可随时在账户中取消。"],
-    paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
+    paneDoneH:     ["Welcome to the desk.", "欢迎使用你的工作台。"],
     paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
     // password recovery borrows the account stage; the copy is the only thing that changes
     paneRecoverH:  ["Locked out? That's a two-minute fix.", "进不去？两分钟就能解决。"],
@@ -160,7 +160,7 @@
     accountTitle: ["Create your account", "创建账户"],
     accountSub:   ["First name feeds your greetings and briefs everywhere later.", "名字之后会用于各处的问候与简报。"],
     signinTitle:  ["Welcome back", "欢迎回来"],
-    signinSub:    ["Sign in to your Mastermind desk.", "登录你的 Mastermind 台席。"],
+    signinSub:    ["Sign in to your Mastermind desk.", "登录你的 Mastermind 工作台。"],
     firstName:    ["First name", "名"],
     lastName:     ["Last name", "姓"],
     email:        ["Email", "邮箱"],
@@ -203,14 +203,18 @@
     resetMismatch:["Both passwords must match.", "两次输入的密码不一致。"],
     resetShort:   ["Use at least 8 characters.", "密码至少需要 8 个字符。"],
     resetDead:    ["This link has expired, was already used, or was opened in a different browser from the one that requested it. Send yourself a fresh one.", "此链接已过期、已被使用，或在非发起请求的浏览器中打开。请重新发送一封。"],
+<<<<<<< ours
     // The older link shape (tokens in the URL fragment). We cannot complete it — see
     // implicitRecoveryHash() — but the customer is HERE, so say what to do next
     // instead of leaving them on the marketing page hunting for a button.
     resetOldLink: ["This reset link is an older format we can't complete safely. Send yourself a fresh one — it takes a moment, and the new link works.", "此重置链接为旧格式，我们无法安全完成。请重新发送一封——很快，新链接可正常使用。"],
     resetDone:    ["Password updated. Taking you to your desk…", "密码已更新，正在进入你的台席…"],
+=======
+    resetDone:    ["Password updated. Taking you to your desk…", "密码已更新，正在进入你的工作台…"],
+>>>>>>> theirs
 
     // step 2 — preferences
-    prefsTitle:   ["Set up your desk", "配置你的台席"],
+    prefsTitle:   ["Set up your desk", "配置你的工作台"],
     prefsSub:     ["Tune the read to your markets and taste. All optional.", "按你的市场与偏好调校解读。全部可选。"],
     marketFocus:  ["Market focus", "市场重点"],
     mktUs:        ["United States", "美国"],
@@ -239,7 +243,7 @@
     planInsider:  ["Essential", "Essential"],
     planPro:      ["Pro", "Pro"],
     whoFree:      ["The daily read, six signals, the Terminal — forever.", "每日研判、六条信号、Terminal——永久免费。"],
-    whoInsider:   ["The working desk, with the analyst on call.", "随叫随到的分析师，配上完整的工作台席。"],
+    whoInsider:   ["The working desk, with the analyst on call.", "一整套工作台，外加一位随叫随到的分析师。"],
     whoPro:       ["For the ones who ask harder questions.", "为那些提出更难问题的人准备。"],
     perMoAnnual:  ["/mo billed annually", "/月 · 按年结算"],
     perMo:        ["/mo", "/月"],
@@ -259,11 +263,11 @@
     getFree2:     ["<b>3 signals per daily list</b> with a public track record", "<b>每个每日列表 3 条信号</b>，战绩公开可查"],
     getFree3:     ["The full Terminal — live charts, no install", "完整 Terminal——实时图表，无需安装"],
     missIns1:     ["300 Flash AI answers + 10 Pro AI dives a month", "每月 300 次 Flash AI + 10 次 Pro AI 深度分析"],
-    missIns2:     ["Intraday options flow, Insider & Congress desks", "日内期权流、内部人与国会台席"],
+    missIns2:     ["Intraday options flow, Insider & Congress desks", "日内期权资金流、内部人与国会看板"],
     missPro1:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
     plusIns1:     ["<b>300 Flash AI answers</b>, 10 Pro AI dives a month", "<b>每月 300 次 Flash AI</b>、10 次 Pro AI 深度分析"],
-    plusIns2:     ["<b>Intraday options flow</b> — sweeps and blocks as they print", "<b>日内期权流</b>——扫单与大宗成交实时打印"],
-    plusIns3:     ["Insider/Congress & 13F desks, transcripts, daily briefs", "内部人/国会与 13F 台席、电话会记录、每日简报"],
+    plusIns2:     ["<b>Intraday options flow</b> — sweeps and blocks as they print", "<b>日内期权流</b>——扫单与大宗成交实时推送"],
+    plusIns3:     ["Insider/Congress & 13F desks, transcripts, daily briefs", "内部人/国会与 13F 看板、电话会记录、每日简报"],
     plusPro1:     ["<b>150 Pro AI dives a month + unlimited Flash AI</b>", "<b>每月 150 次 Pro AI 深度分析 + 无限量 Flash AI</b>"],
     plusPro2:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
     plusPro3:     ["Mastermind Bot Portfolios", "Mastermind 机器人组合"],
@@ -326,7 +330,7 @@
     openTerminal: ["Open the Terminal →", "打开 Terminal →"],
 
     // ── upgrade mode (post-login monetization sheet) ──
-    upTitle:      ["Upgrade your desk", "升级你的台席"],
+    upTitle:      ["Upgrade your desk", "升级你的工作台"],
     upLoad:       ["Loading your plan…", "正在加载你的方案…"],
     upErr:        ["We couldn't load your plan. Please try again.", "无法加载你的方案，请重试。"],
     upRetry:      ["Try again", "重试"],
@@ -335,14 +339,14 @@
     upCurFree:    ["ON FREE", "当前免费版"],
     upNotNow:     ["Not now", "暂不升级"],
     // annual-discount subheads
-    upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Essential time is credited toward it.", "升级到 Pro 年付——以月均最低价获得完整台席。剩余的 Essential 时长将折算抵扣。"],
+    upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Essential time is credited toward it.", "升级到 Pro 年付——用最低的月均价拿到完整功能。剩下的 Essential 时长会折算抵扣。"],
     upProAnnualSub:["Move up to Pro Annual — everything in Pro, at the lowest per-month price.", "升级到 Pro 年付——Pro 全部功能，月均价格最低。"],
     // lane cards
     laneInsAnnual:["Essential Annual", "Essential 年付"],
     laneProMonthly:["Pro Monthly", "Pro 月付"],
     laneProAnnual:["Pro Annual", "Pro 年付"],
-    laneInsAnnualWho:["Your desk, billed yearly — same features, lower monthly price.", "你的台席，按年结算——功能不变，月均更低。"],
-    laneProMonthlyWho:["Every Pro desk and report, month to month.", "全部 Pro 台席与报告，按月付。"],
+    laneInsAnnualWho:["Your desk, billed yearly — same features, lower monthly price.", "同一个工作台，改成按年结算——功能不变，平摊到每月更便宜。"],
+    laneProMonthlyWho:["Every Pro desk and report, month to month.", "全部 Pro 看板与报告，按月付。"],
     laneProAnnualWho:["Everything in Pro at the best price we offer.", "以我们最优的价格获得 Pro 全部功能。"],
     laneBilledAnnual:["/mo billed annually", "/月 · 按年结算"],
     laneBilledMonthly:["/mo", "/月"],
@@ -356,7 +360,7 @@
     upConfirmGoBusy:["Upgrading…", "正在升级…"],
     // best-plan panel
     upBestH:      ["You're on the best plan.", "你已在最优方案。"],
-    upBestS:      ["Pro Annual is our top tier — every desk, report and dive is already yours.", "Pro 年付是我们的最高方案——全部台席、报告与深度分析均已包含。"],
+    upBestS:      ["Pro Annual is our top tier — every desk, report and dive is already yours.", "Pro 年付是我们的最高档——全部看板、报告和深度分析都已经包含在内。"],
     // success panel
     upDoneH:      ["You're upgraded.", "已升级完成。"],
     upDonePlan:   ["You're now on __N__.", "你现在使用 __N__。"],
@@ -382,7 +386,7 @@
       { l: ["Theme rotation lanes", "主题轮动通道"],       v: [1, 1, 1] },
       { l: ["Special situations", "特殊机会"],             v: [1, 1, 1] },
       { l: ["Bitcoin · Commodities · FX", "比特币 · 大宗 · 外汇"], v: [1, 1, 1] },
-      { l: ["Insider & Congress desks", "内部人 & 国会台席"], v: [0, 1, 1] },
+      { l: ["Insider & Congress desks", "内部人与国会看板"], v: [0, 1, 1] },
       { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] },
       { l: ["Earnings Intelligence", "财报情报"],          v: [0, 1, 1] },
       { l: ["Filing Forensics", "财报取证"],               v: [0, 0, 1] },
