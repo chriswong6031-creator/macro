@@ -127,10 +127,36 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
     tagged 'Crypto' (not 'ETF'), and read the honest way — btc-heavy with a real
     idiosyncratic-vol sleeve (crypto is its own bet, low R² on equity factors is correct).
     Would fail if crypto were dropped from the universe, mis-tagged, or if the
-    orthogonalization mangled a near-pure-crypto name into NaNs."""
+    orthogonalization mangled a near-pure-crypto name into NaNs.
+
+    RETIRED 2026-08-08 — the "btc sits among the TOP-2 |beta| non-market loadings" check.
+    It pinned a RANKING among loadings, which is market state rather than engine
+    correctness, and it reddened main on a routine nightly panel regeneration: ETHA's
+    dollar loading reached -1.368 and its small-cap loading 1.014, both above a perfectly
+    healthy btc beta of 0.984. Re-running compute_exposure(asof=...) across 15 months on
+    THIS UNCHANGED engine measures how loose the rank really is: btc's place wanders
+    #2->#3->#2->#1 for BTC-USD and #2->#3->#1->#2 for ETH-USD, ETHA sits outside the top-2
+    at 7 of 8 sampled dates, and no sampled date satisfies the claim for all five names at
+    once — all while the btc betas themselves hold a steady, healthy 0.71-1.15. (Replaying
+    an old as-of on today's revised store is not what CI saw back then, so read that as a
+    measurement of rank instability, not as a claim the check was always red.)
+    The engine says the same thing about itself: FACTOR_CONFIDENCE rates btc
+    tier/scope "low" on a MEASURED out-of-sample rank-persistence of 0.02, so a btc rank
+    is the last thing a correctness test should bind to. Widening top-2 to top-3 would
+    only re-arm the same bomb — on the very panel that broke, ETH-USD sat 0.06 from losing
+    the place (usd 1.175 vs btc 1.114) and COIN 0.23 (size 1.144 vs btc 0.916).
+    What replaces it are the engine's OWN structural contracts, which market movement
+    cannot falsify but an engine regression would: a substantial btc loading in absolute
+    terms, every loading finite and inside the configured clip, and a fit window honouring
+    min_obs. Those cover the stated "mangled into NaNs" failure far better than the
+    ranking ever did.
+    """
     out = fe.compute_exposure()
     if out is None:                                      # no store in this env — skip
         return
+    cfg = fe._cfg()                                      # assert against the engine's own
+    max_abs = float(cfg["max_abs_beta"])                 # contract, not hardcoded numbers
+    min_obs, window = int(cfg["min_obs"]), int(cfg["window_d"])
     b = out["betas"]
     factor_keys = [f["key"] for f in out["factors"]]
     # at least ONE cached crypto name must be modeled (BTC-USD is the deepest series and
@@ -146,18 +172,28 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
         # (b) client-required fields present + a real idio sleeve (crypto is its own bet)
         assert {"name", "sector", "is_etf", "raw", "r2", "idio_vol"} <= set(rec)
         assert rec["idio_vol"] is not None and rec["idio_vol"] > 0.0
-        # (c) btc beta present and substantial — a crypto name reads as the crypto bet.
-        #     Threshold 0.5 is loose: the real coins run ~0.9–1.1, COIN/ETFs ~0.9.
+        # (c) btc beta present and substantial IN ABSOLUTE TERMS — a crypto name reads as
+        #     the crypto bet. This is the claim the retired ranking check was proxying for,
+        #     and unlike a rank it holds whatever the other loadings do. Threshold 0.5 is
+        #     loose: the real coins run ~0.9–1.1, COIN/ETFs ~0.9.
         assert rec.get("btc") is not None, f"{t} has no btc beta"
         assert rec["btc"] > 0.5, f"{t} btc beta {rec['btc']} unexpectedly low for a crypto name"
-        # btc sits among the TOP-2 |beta| non-market loadings. Not strictly #1: the
-        # ETH-side names carry a large negative usd loading (crypto weakens on a strong
-        # dollar) that can edge out btc — an honest read, so the check allows a co-leader.
-        others = sorted((abs(rec[k]) for k in factor_keys
-                         if k not in ("mkt", "btc") and rec.get(k) is not None), reverse=True)
-        second = others[1] if len(others) > 1 else 0.0
-        assert abs(rec["btc"]) >= second, \
-            f"{t}: btc beta not among the top-2 non-market loadings ({rec})"
+        # (d) no mangled loadings anywhere in the vector. _betas_on_window emits None for
+        #     anything non-finite and clips the rest to ±max_abs_beta, so a NaN leaking
+        #     through or an unclipped blow-up IS the "orthogonalization mangled it" failure
+        #     this test exists to catch — the ranking check only ever saw it by accident.
+        for k in factor_keys:
+            v = rec.get(k)
+            if v is None:
+                continue                                 # a factor with too little overlap
+            assert isinstance(v, (int, float)) and np.isfinite(v), f"{t} {k} loading is {v!r}"
+            assert abs(v) <= max_abs, f"{t} {k} loading {v} escaped the ±{max_abs} clip"
+        # (e) fit shape. R² is bounded from ABOVE only: 1 - var_e/var_y goes negative on a
+        #     genuinely bad fit, so a floor would be another market-state claim. The window
+        #     must honour the engine's min_obs / window_d gate.
+        assert rec["r2"] is not None and rec["r2"] <= 1.0, f"{t} r2={rec['r2']}"
+        assert min_obs <= rec["n"] <= window, \
+            f"{t} n={rec['n']} outside the engine's [{min_obs}, {window}] window"
 
     # BTC-USD specifically: it IS the btc factor series → its btc beta must be ≈1
     # (self-consistency, the same check SPY→mkt gets in the sibling test)

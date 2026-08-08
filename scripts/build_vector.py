@@ -2827,6 +2827,18 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
     if len(g) < 30 or len(i) < 30:
         return empty
     N = min(20, len(g) - 1)                       # ~1 month of trading days
+    # These series carry HONEST NULLS, not just numbers: both writers map a NaN score to
+    # None (scripts/build_hk.hk_regime_timeline, scripts/build_site.regime_timeline), so a
+    # session whose growth or inflation read is unavailable arrives here as None — HK's
+    # inflation series has carried a trailing null run since the 2026-08-08 weekly
+    # deep-dive (901282ec209), and this arithmetic then crashed the whole landing hub.
+    # A trajectory needs BOTH endpoints on BOTH axes; with any of them missing there is no
+    # velocity to report, so fall to the same honest-null block the short-history branch
+    # above returns rather than inventing a direction off a zeroed or stale anchor. The
+    # market card itself still renders in full — only the dynamics read goes quiet.
+    span = (g[-1], g[-1 - N], i[-1], i[-1 - N])
+    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in span):
+        return empty
     g_now, i_now = g[-1], i[-1]
     dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)

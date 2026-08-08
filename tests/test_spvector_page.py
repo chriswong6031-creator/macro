@@ -145,8 +145,84 @@ def test_hub_split_cards():
     check("hub graceful without China/HK (US still present)", "United States" in html2)
 
 
+def test_regime_dynamics_survives_null_scores_in_the_timeline():
+    """A *_regime_timeline.json carries honest NULLS, not only numbers: both writers map a
+    NaN score to None (scripts/build_hk.hk_regime_timeline, scripts/build_site.regime_timeline).
+    HK's inflation series picked up a trailing null run in the 2026-08-08 weekly deep-dive
+    (901282ec209) and _regime_dynamics crashed the entire landing hub on it:
+        TypeError: unsupported operand type(s) for -: 'NoneType' and 'float'
+    With no readable endpoint there is no velocity to report, so the dynamics block must go
+    quiet exactly the way a too-short history already makes it go quiet — not guess a
+    direction off a zeroed or stale anchor. The market card itself still renders in full.
+
+    Real asserts, not check(): check() only tallies, so it cannot fail a pytest run.
+
+    The fixture shape comes from the real writer, never hand-written JSON. Fault-path proof
+    is two-sided — the nulled arm still reproduces the exact operand pair that raised, and
+    the SAME frame with a readable tail returns a live direction, so the quiet read below is
+    caused by the nulls and not by an earlier bail-out (missing file, len < 30).
+    """
+    import json
+    import tempfile
+
+    import numpy as np
+    import pandas as pd
+
+    from lib import config
+    from scripts import build_vector as bv
+    from scripts.build_hk import hk_regime_timeline
+
+    def _timeline(null_tail: int) -> dict:
+        n = 60                                        # clears the len < 30 short-history bail
+        infl = np.linspace(0.4, -0.4, n)              # inflation cooling while growth firms
+        if null_tail:
+            infl[-null_tail:] = np.nan                # the honest-null run r3() maps to None
+        hist = pd.DataFrame(
+            {"quad": ["Q1"] * n,
+             "growth_score": np.linspace(-0.3, 0.3, n),
+             "inflation_score": infl,
+             "regime_confidence": np.full(n, 0.25)},
+            index=pd.date_range("2026-05-01", periods=n, freq="B"))
+        return hk_regime_timeline(hist)
+
+    nulled, filled = _timeline(9), _timeline(0)       # 9 = HK's observed trailing null run
+    N = min(20, len(nulled["g"]) - 1)                 # the lag the engine actually reaches for
+    assert nulled["i"][-1] is None and isinstance(nulled["i"][-1 - N], float), \
+        f"fixture lost the null tail: now={nulled['i'][-1]!r} lag={nulled['i'][-1 - N]!r}"
+    try:                                              # the fault itself, on this fixture
+        _ = nulled["i"][-1] - nulled["i"][-1 - N]
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("fixture no longer reproduces the None-minus-float fault")
+
+    d = {"quad": "Q1", "flip_condition": {"margin": 0.4}}
+    real_site_dir = config.site_dir
+    with tempfile.TemporaryDirectory() as td:
+        def _tmp_site_dir(_p=Path(td)):
+            return _p
+        config.site_dir = _tmp_site_dir               # build_vector reads lib.config lazily
+        try:
+            path = Path(td) / "hk_regime_timeline.json"
+            path.write_text(json.dumps(nulled))
+            quiet = bv._regime_dynamics("HK", d)
+            path.write_text(json.dumps(filled))
+            live = bv._regime_dynamics("HK", d)
+        finally:
+            config.site_dir = real_site_dir
+
+    # Control arm — the SAME frame with a readable tail runs the whole trajectory and calls
+    # it "improving" (growth up, inflation down). So the fixture reaches the arithmetic: the
+    # null tail is the ONLY difference between the two reads.
+    assert live["rdir"] == "improving", f"control arm never reached the trajectory: {live}"
+    # Treatment arm — no crash, and the dynamics block reads null rather than guessed.
+    assert quiet == {"rdir": None, "rphase": None, "rtoward_en": None,
+                     "rtoward_zh": None, "rflip": None}, quiet
+
+
 def main() -> int:
-    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards):
+    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards,
+               test_regime_dynamics_survives_null_scores_in_the_timeline):
         print(f"\n{fn.__name__}")
         fn()
     print(f"\n{'=' * 40}\n{PASS} passed, {FAIL} failed")
