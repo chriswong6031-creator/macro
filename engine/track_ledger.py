@@ -22,6 +22,11 @@ Row compact keys:
     l latest/exit · p pct vs entry · x excess vs bench pct (null ok) · dy days ·
     st up|stopped|flat|early|beat|lag|onboard · m matured bool · rk rank · tr tier ·
     fl flags subset of [locked, susp, delisted]. Nulls allowed except t, d, st.
+Optional per-market row keys (consumers must tolerate their absence):
+    xr exit reason · eb entry basis actually used (CN: t1_open|t1_hl2|t1_close) ·
+    er re-derived entry that DISAGREES with the published one, disclosed not substituted ·
+    erw plain-word reason for that disagreement. eb/er/erw are the 2026-08-08 CN
+    entry-price-integrity fields (see scripts/build_china_library._cn_ledger_rows).
 """
 from __future__ import annotations
 

@@ -480,9 +480,14 @@ class _LedgerFixture:
 
 
 @pytest.fixture()
-def ledger_cst(monkeypatch):
+def ledger_cst(monkeypatch, tmp_path):
+    from lib import config
     from engine import china_standout_track as cst
 
+    # data_dir isolation is load-bearing: _cn_ledger_rows now reads and flushes the PIT
+    # entry latch (data/china_standout_track/entry_latch.parquet), so an unpatched fixture
+    # would latch these synthetic tickers into the repo's real data dir.
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(cst, "_price_frame", _LedgerFixture.price_frame)
     monkeypatch.setattr(cst, "_bench_close", _LedgerFixture.bench)
     return cst
@@ -578,9 +583,12 @@ class TestW12AdmissionRow:
         return None
 
     @pytest.fixture()
-    def rows(self, monkeypatch):
+    def rows(self, monkeypatch, tmp_path):
+        from lib import config
         from engine import china_standout_track as cst
 
+        # see ledger_cst: _cn_ledger_rows flushes the PIT entry latch under data_dir()
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         monkeypatch.setattr(cst, "_price_frame", self._price)
         out, *_ = bcl._cn_ledger_rows(self._board(), _LedgerFixture.bench(), {}, cst)
         return {(r["t"], r["d"]): r for r in out}

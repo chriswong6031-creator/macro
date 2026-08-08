@@ -1200,11 +1200,22 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
       * DATE-BLOCKED CI (in the caller's summarize()), replacing Wilson-on-raw-n.
 
     A-share specifics that must NOT be shared with the US desk and are preserved here:
-    the T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill, and the locked-limit exclusion —
-    a bar that printed high==low==close is unfillable at any price, so those episodes
-    are flagged and kept OUT of the summary. No oscillator target exit: the 3D StochRSI
-    thresholds the US desk exits on were fit on US volatility and have not been refit
-    for A-share limit-board dynamics, so CN runs fixed-horizon until they are.
+    the T+1 OPEN (or (H+L)/2 proxy) fill via china_standout_track, and the locked-limit
+    exclusion — a bar that printed high==low==close is unfillable at any price, so those
+    episodes are flagged and kept OUT of the summary. No oscillator target exit: the 3D
+    StochRSI thresholds the US desk exits on were fit on US volatility and have not been
+    refit for A-share limit-board dynamics, so CN runs fixed-horizon until they are.
+
+    ENTRY-PRICE INTEGRITY (2026-08-08, 300363.SZ case study). The entry used to be
+    re-derived from the price store on every nightly, which made a PUBLISHED number
+    mutable: the 08-05 row shipped e=16.30 / p=+4.5% off an 08-06 bar that printed
+    open 16.2999 against low 16.98 — an impossible bar nothing checked — and silently
+    restated to e=17.52 / p=+16.7% once that bar healed. `_cst.resolve_entry` now sits
+    on this path and enforces three rules: a corrupt T+1 bar never supplies an entry
+    (fall back to the documented HL2 basis, else DEFER and retry next nightly); an
+    entry already published is LATCHED point-in-time and a disagreeing re-derivation is
+    disclosed in `er` / `erw` instead of overwriting `e`; and `eb` records the basis the
+    row actually used rather than a constant provenance string.
     """
     from engine import track_scoring as _ts
 
@@ -1231,6 +1242,12 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
     scored: list[dict] = []
     n_locked = n_inflight = n_awaiting_t1 = n_no_price = 0
 
+    # PIT entry latch (engine/china_standout_track §2, 2026-08-08). Read ONCE — the loop runs
+    # over every episode in the store and lib.store reads are uncached. `pending` collects the
+    # entries derived for the first time on this run; they are flushed after the loop.
+    entry_latch = _cst.read_entry_latch()
+    pending_latch: list[dict] = []
+
     for ep in _ts.build_episodes(board_days):
         tk, d0s = ep["ticker"], ep["entry_date"]
         try:
@@ -1250,7 +1267,15 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             # can still synthesise an (H+L)/2 price the scorer will then refuse.
             n_no_price += 1
             continue
-        fill, locked_flag, _pinned = _cst._t1_fill(pdf, d0)  # noqa: SLF001
+        # PIT-LATCHED entry. resolve_entry applies the T+1 bar-sanity gate (a bar whose open
+        # sits outside [low, high] never supplies an entry) and then the latch: an entry this
+        # ledger has already published is the entry it keeps, whatever the price store says
+        # tonight. A disagreeing re-derivation is disclosed additively, never substituted —
+        # 300363.SZ published e=16.30/+4.5% off an impossible bar and silently restated to
+        # e=17.52/+16.7% when that bar healed. Every downstream number below (`p`, `x`, the
+        # summary) derives from THIS entry.
+        ent = _cst.resolve_entry(tk, d0, pdf, latch=entry_latch, pending=pending_latch)
+        fill, locked_flag = ent["entry"], ent["locked"]
 
         fl: list[str] = []
         if locked_flag:
@@ -1312,7 +1337,22 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             "tr": meta_by_admission.get((d0s, tk), {}).get("tier"),
             "fl": fl,
             "xr": sc.get("exit_reason") if matured else None,
+            # 2026-08-08 entry-price integrity (additive; every consumer tolerates unknown keys):
+            #   eb  the basis this row's entry ACTUALLY used (t1_open / t1_hl2 / t1_close) —
+            #       replaces the old constant "t1_hl2" provenance claim, which was false for
+            #       every row that filled at the raw open.
+            #   er  a later re-derivation that DISAGREES with the published entry, disclosed
+            #       rather than substituted (null in the normal case).
+            #   erw plain-word account of that disagreement.
+            "eb": ent["basis_used"],
+            "er": round(ent["e_revised"], 2) if ent.get("e_revised") is not None else None,
+            "erw": ent.get("e_revision_reason"),
         })
+
+    # Flush entries derived for the first time on this run. Keep-FIRST: a re-run cannot move a
+    # latched value, and a DEFERRED derivation was never appended, so the next nightly retries it.
+    if pending_latch:
+        _cst.append_entry_latches(pending_latch)
     return rows_out, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price
 
 
@@ -1355,8 +1395,9 @@ def emit_cn_track_ledger(
     selected their names by different rules and their union measures neither.
 
     A-share specifics preserved (these are real market differences, not style):
-      • T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill — CN can trade the open; the US
-        desk fills at the next close.
+      • T+1 OPEN (or (H+L)/2 proxy) fill via china_standout_track.resolve_entry — CN can
+        trade the open; the US desk fills at the next close. The entry is PIT-LATCHED and
+        the T+1 bar is sanity-checked (open ∈ [low, high]); see _cn_ledger_rows.
       • locked-limit T+1 rows: fl=['locked'], flagged in the table and EXCLUDED from
         the summary. A bar that printed high==low==close is unfillable at any price.
       • EXCESS vs CSI300 is the headline, not absolute P&L: in A-shares beta dominates,
