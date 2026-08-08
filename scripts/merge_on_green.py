@@ -131,9 +131,46 @@ ones it deferred. And it re-reads the budget as it goes, stopping cleanly rather
 than dying half-way through on a 403. A deferred sweep merges strictly FEWER pull
 requests than a full one, never more.
 
+A COMMIT WALK CANNOT FIND MAIN'S PROOF ON A HIGH-VELOCITY BRANCH (measured
+2026-08-08). The base-inherited-red path below is the mechanism that drains the
+armed backlog after a main-red episode, and for its first two weeks it was
+STRUCTURALLY INERT. It asked "which checks are green on main?" by walking main
+newest->oldest over a fixed budget of the last 20 commits, looking for one that
+published `ci-pack-*`. Two facts of this repository make that walk unable to
+succeed:
+
+  * `ci.yml` has NO `push` trigger — its `on:` is `pull_request` +
+    `workflow_dispatch` only. main is therefore proven ONLY when somebody runs
+    `gh workflow run ci.yml --ref main` by hand, a couple of times a day at best.
+  * main takes ~24 commits per 2 HOURS from the nightly and wire lanes
+    (press-wire, earnings-wire, research_vault, whitehouse, `data:` timings).
+    They are `[skip ci]` or path-filtered, so they publish ambient checks
+    (`sweep`, `wire`, `immune`, `monitor`, ...) and never a pack.
+
+So the 20-commit window spanned ~100 MINUTES while the newest real proof of main
+sat 117 COMMITS / 12 HOURS back. Run live against this repository, the walk
+returned 18 ambient names and zero `ci-pack-*`, while 31 armed pull requests were
+blocked on `ci-pack-2`, 29 on `ci-pack-3`, and main's newest completed ci.yml run
+(4b61c11a16f8, 11:20:04Z) had all four packs `success`. "every failing check is
+clean on main" was therefore false for every one of them, forever: 48 armed pull
+requests, ~40 of them also carrying `merge-blocked`, needing a human audit every
+day.
+
+This is VELOCITY-DEPENDENT, which is why it "used to work". PR #4968 repaired a
+different halt condition in the same walk but kept the fixed 20-commit budget, so
+it worked on the day it landed (a dispatch happened to be recent) and decayed back
+as the wire lanes got busier. Any commit-count budget has the same fate.
+
+`main_proof` therefore stops walking commits and asks for the thing actually
+wanted — the newest concluded run of each proof workflow on main, and its per-job
+conclusions — in 4 requests instead of up to 20, against the same `READ_TOKEN`
+budget that starved this sweeper on 2026-08-07. And because the answer is only as
+good as its freshness, `ensure_main_baseline` lets the sweep ORDER the proof it
+needs rather than waiting for a human to dispatch one.
+
 REFRESHES ARE CAPPED TOO, and for a second reason. `update-branch` is the
 sweeper's answer to three different situations — a stale-but-clean proof, a merge
-GitHub refused, and (since the base-inherited-red path in `main_clean_check_names`)
+GitHub refused, and (since the base-inherited-red path in `main_proof`)
 a red the PR inherited from a main that has since been healed. That third one is
 the dangerous one at scale, because it makes a large fraction of the backlog
 eligible AT ONCE: the measured shape was 84 of 93 armed pull requests red on the
@@ -161,6 +198,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -201,8 +239,8 @@ REQUEST_TIMEOUT_SECONDS = 30
 # MAX_PULLS_PER_SWEEP is the load-bearing one. The observed peak sweep rate is 28
 # non-skipped runs in an hour, so a sweep must cost at most 1000/28 = ~35 calls to
 # be sustainable at that rate. Fixed overhead is ~12 (1 listing + ~3 baseline + 1
-# main timeline + ~6 for `main_clean_check_names`, which walks main newest->oldest
-# until it finds a commit that actually published checks — measured at 5 back),
+# main timeline + 4 for `main_proof` — two workflows x (newest run + its jobs) —
+# + up to 3 for `ensure_main_baseline`'s two in-flight polls and its dispatch),
 # which leaves ~23. 25 is the chosen cap: marginally above that steady-state
 # figure, because the sweep rate only peaks at 28 and RATE_LIMIT_RESERVE stops the
 # pass cleanly if a run does overshoot. Uncapped, the same 28 sweeps cost ~3,400
@@ -579,6 +617,28 @@ def _parse_iso(value: Any) -> float | None:
         return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
     except ValueError:
         return None
+
+
+def _parse_dt(value: Any) -> dt.datetime | None:
+    """The same stamp as a TZ-AWARE datetime. None when unusable.
+
+    Separate from `_parse_iso` rather than layered on it, because the two want
+    opposite things from a naive input. `_parse_iso` produces an epoch float, and
+    `datetime.timestamp()` on a naive value silently interprets it in the RUNNER's
+    local zone; this one is compared against other datetimes, where a naive value
+    is not merely skewed but a `TypeError`. GitHub always sends UTC (`...Z`), so a
+    missing offset is normalised to UTC here — the alternative, refusing it, would
+    turn a hypothetical API formatting change into a silent gate that never opens.
+    """
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
 
 
 def load_pr_gates(workflows_dir: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
@@ -1142,120 +1202,373 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     return "red", f"{conclusion or 'missing conclusion'} at {detail}"
 
 
-#: How far back along main to look for a commit that actually published checks.
-#: Measured 2026-08-07 on the last 14 main commits: NINE carried no check runs at
-#: all — `[skip ci]` press-wire ticks, earnings-wire publishes, research_vault
-#: catalogs, whitehouse alert updates — and the tip had none either. The newest
-#: commit with concluded packs sat 5 back. 20 clears that with room; a main whose
-#: last 20 commits are all skip-ci is a main nothing has proved, and the walk
-#: correctly returns an empty set there.
-MAIN_PROOF_WALK = 20
+#: The workflows whose runs on main constitute "main is proven". `ci.yml` publishes
+#: the `ci-pack-*` checks the armed backlog is overwhelmingly red on (31 pull requests
+#: on `ci-pack-2` and 29 on `ci-pack-3` when this was measured); `fences.yml` publishes
+#: `fence-pack` and the three always-on fence contexts, and a `fence-pack` red must be
+#: refreshable for exactly the same reason a pack red is. The FIRST entry is the anchor:
+#: it supplies the reported head sha, and it is the workflow `ensure_main_baseline`
+#: dispatches, because it is the one with no `push` trigger to dispatch itself.
+MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
+MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
+#: How many completed runs to look back through, per workflow, for one that CONCLUDED.
+#: `status=completed` includes `cancelled`, and `fences.yml` runs on every push to main
+#: under `concurrency: fences-<ref>` with `cancel-in-progress: true` — so on a branch
+#: taking ~24 commits per 2 hours a large minority of its runs are superseded rather
+#: than judged (measured 2026-08-08: 2 of the newest 8). A cancelled run publishes no
+#: verdict, and reading `per_page=1` would let one zero out the whole proof roughly a
+#: quarter of the time, re-creating the intermittently-inert mechanism this function
+#: exists to end. The same shape already burned this file once: `integration_baseline_state`
+#: latched the breaker red for 8.5h on a cancelled newest run. 10 is one request either
+#: way — the walk costs nothing extra.
+MAIN_PROOF_RUN_WALK = 10
+#: Above this age, main's proof is too old to answer today's reds and the sweep orders a
+#: fresh one (see `ensure_main_baseline`). Three hours is chosen against the two clocks
+#: that matter: a ci.yml run here takes 30-34 minutes, so the sweep is never dispatching
+#: on top of a proof that is merely mid-flight, and the measured gap this repair exists
+#: to close was 12 HOURS, so anything in this range is a decisive improvement while
+#: leaving the hosted pool ~8 baselines a day at worst.
+MAIN_PROOF_MAX_AGE_HOURS = 3
 
-# The check-name prefix that marks a commit as having actually run ci.yml, as opposed to
-# one of the ambient per-push workflows (`sweep`, `Supabase Preview`, `monitor`, ...) that
-# every nightly wire tick and research_vault catalog carries. `main_clean_check_names`
-# stops walking once it holds a conclusion for one of these — see the note there.
-PACK_CHECK_PREFIX = "ci-pack"
+
+@dataclass(frozen=True)
+class MainProof:
+    """What main is currently proven to pass, and WHEN it was proven.
+
+    ``clean_names`` — job names that CONCLUDED CLEAN on main, unioned across
+      `MAIN_PROOF_WORKFLOWS`. Only ever WIDENS what a red pull request may do.
+    ``proved_at``   — tz-aware UTC. The OLDEST of the per-workflow newest
+      completions, because a proof is only as fresh as its stalest component.
+      ``None`` means undatable, which the timestamp gate reads as "no".
+    ``head_sha``    — the main commit the anchor workflow's run was computed on.
+    ``source``      — a short human string for the sweep log; on failure it says WHY
+      there is no proof, which is the line a future session greps for.
+
+    Frozen because it is built once and read by every pull request in the sweep; a
+    mutable shared answer is how one pull request's evaluation would silently
+    change another's.
+    """
+
+    clean_names: frozenset[str]
+    proved_at: dt.datetime | None
+    head_sha: str
+    source: str
+
+    def age_hours(self, now: dt.datetime | None = None) -> float | None:
+        """How old the proof is, in hours. None when it could not be dated."""
+        if self.proved_at is None:
+            return None
+        when = now or dt.datetime.now(dt.timezone.utc)
+        return (when - self.proved_at).total_seconds() / 3600.0
+
+    def describe(self) -> str:
+        """One phrase for the sweep summary — never raises, always says something."""
+        age = self.age_hours()
+        if age is None:
+            return f"main proof: none ({self.source})"
+        return (
+            f"main proof: {len(self.clean_names)} clean name(s) at "
+            f"{self.head_sha[:12] or 'unknown-sha'}, {age:.1f}h old ({self.source})"
+        )
 
 
-def main_clean_check_names(repo: str, token: str) -> set[str]:
-    """Non-spurious check names that concluded CLEAN on the newest PROVED main commit.
+def _newest_concluded_main_run(repo: str, workflow: str, token: str) -> dict[str, Any] | None:
+    """The newest run of ``workflow`` on main that actually concluded. None on failure.
+
+    Skips `cancelled` runs rather than answering from them — see MAIN_PROOF_RUN_WALK.
+    """
+    query = urllib.parse.urlencode(
+        {"branch": "main", "status": "completed", "per_page": str(MAIN_PROOF_RUN_WALK)}
+    )
+    status, payload = _request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/actions/workflows/"
+        f"{urllib.parse.quote(workflow, safe='')}/runs?{query}",
+        token,
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        return None
+    for run in payload.get("workflow_runs") or []:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("conclusion") or "").lower() == "cancelled":
+            continue
+        return run
+    return None
+
+
+def _run_clean_jobs(
+    repo: str, run_id: Any, token: str
+) -> tuple[frozenset[str], dt.datetime | None] | None:
+    """``(clean job names, newest completion)`` for one workflow run. None on failure.
+
+    PER JOB, not per run. A run whose overall conclusion is `failure` still proves
+    every pack that passed inside it, and that distinction is most of the value here:
+    a main whose `ci-pack-2` is green and `ci-pack-3` is red must refresh the pull
+    requests red on 2 and keep blocking the ones red on 3.
+
+    ``newest`` is None when ANY clean job carries an unusable `completed_at`. The
+    timestamp is the loop guard (see `proof_postdates_failures`), so an undatable
+    component makes the whole proof undatable rather than optimistically dated.
+
+    Under-reading is safe here and over-reading is not, which is why the single
+    `per_page=100` page needs no truncation guard: a job past the first page is a job
+    missing from `clean_names`, and a missing clean name can only WITHHOLD a refresh.
+    """
+    if run_id is None:
+        return None
+    status, payload = _request(
+        "GET", f"{GITHUB_API}/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100", token
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        return None
+    jobs = payload.get("jobs")
+    if not isinstance(jobs, list):
+        return None
+    clean: set[str] = set()
+    newest: dt.datetime | None = None
+    undatable = False
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        name = str(job.get("name") or "")
+        if not name or is_spurious_check(name):
+            continue
+        if str(job.get("status") or "").lower() != "completed":
+            continue
+        if str(job.get("conclusion") or "").lower() not in CLEAN_CONCLUSIONS:
+            continue
+        clean.add(name)
+        when = _parse_dt(job.get("completed_at"))
+        if when is None:
+            undatable = True
+        elif newest is None or when > newest:
+            newest = when
+    if not clean:
+        return None
+    return frozenset(clean), (None if undatable else newest)
+
+
+def main_proof(repo: str, token: str) -> MainProof:
+    """What main currently proves, resolved from its WORKFLOW RUNS. 4 requests.
 
     Read ONCE per sweep and shared by every pull request, because it answers a
-    question about main, not about any PR.
+    question about main, not about any pull request.
 
-    NOT the tip. main's tip is usually a commit that never ran CI: this repo pushes
-    `[skip ci]` wire ticks and research_vault catalogs to main every few minutes, and
-    ci.yml is path-filtered on top of that. Reading the tip alone returned a set with
-    no packs in it almost always, which would have left this whole mechanism inert —
-    it would have looked like it worked while never firing. So walk newest->oldest and
-    answer from the first commit that published ANY concluded non-spurious check, the
-    same shape `integration_baseline_state` already uses for the breaker.
+    This exists to tell two reds apart that look identical on a pull request:
 
-    This exists to tell two reds apart that look identical on a PR:
+      * the pull request broke something — its red is its own, and blocking is
+        correct;
+      * main was red when the pull request last ran, the pull request inherited that
+        failure, and main has since been healed — the red describes a base that no
+        longer exists.
 
-      * the PR broke something — its red is its own, and blocking is correct;
-      * main was red when the PR last ran, the PR inherited that failure, and main
-        has since been healed — the red describes a base that no longer exists.
+    The second shape is what regenerates the armed backlog, and answering it is what
+    drains one: every time main goes red, every armed pull request inherits it.
 
-    The second shape is what regenerates the armed backlog. Every time main goes
-    red, every armed PR inherits it (measured 2026-08-07: ci-pack-2 red on 62 of
-    100 armed PRs and ci-pack-3 on 62, both already healed on main by #4752 and
-    #4767) — and `sweep_pull` used to return at `blocked` BEFORE reaching the
-    staleness path, so nothing ever re-tested them. They sat until a human ran
-    `update-branch` by hand, one at a time. The sweeper's own header records an
-    earlier round of exactly this: "#4583 changed those constants, main went red,
-    and 18 open pull requests inherited a ci-pack-1 failure until #4645 repaired
-    it."
+    WHY NOT A COMMIT WALK. This used to ask the question by walking main's last 20
+    commits for one that published `ci-pack-*`. That cannot succeed here and the
+    reason is arithmetic, not a bug in the loop: `ci.yml` has no `push` trigger, so
+    main is proven only by a manual `gh workflow run ci.yml --ref main` a couple of
+    times a day, while the nightly and wire lanes push ~24 `[skip ci]` / path-filtered
+    commits per 2 HOURS. Measured 2026-08-08, the 20-commit window spanned ~100
+    minutes and the newest real proof of main sat 117 COMMITS / 12 HOURS back; the
+    walk returned 18 ambient names (`sweep`, `wire`, `immune`, `monitor`, ...) and
+    ZERO packs, while 31 armed pull requests were blocked on `ci-pack-2` and 29 on
+    `ci-pack-3` — all four packs `success` on main's newest ci.yml run. Raising the
+    commit budget only buys time: PR #4968 fixed a different halt condition in the
+    same walk, worked the day it landed, and decayed back as the wire lanes got
+    busier. A workflow-run lookup has no window to outgrow.
 
-    Stops at the first PROVED commit and answers from that one alone — it does not
-    union across commits. A union would let a check that passed four commits ago
-    excuse a red the very next commit introduced.
+    It is also CHEAPER, which matters because the budget it is charged against is the
+    one that starved this sweeper on 2026-08-07: 4 requests (two workflows x newest
+    run + its jobs) against up to 20 for the walk, on a `READ_TOKEN` whose quota is
+    1,000/hour PER REPOSITORY and shared by every concurrent sweep.
 
-    FAILS CLOSED at every exit: an unreadable main, a walk that finds no proved
-    commit, or any exception all return an EMPTY set, and an empty set can never be
-    a superset of a non-empty failing set, so the caller falls through to the
-    unchanged `merge-blocked` path. Not knowing what main proves is never permission
-    to refresh anything.
+    FAILS CLOSED at every exit. A non-200, a missing run, an unparseable payload, a
+    workflow with no clean job, or any exception all return an EMPTY `clean_names`,
+    and an empty set can never be a superset of a non-empty failing set, so the
+    caller falls through to the unchanged `merge-blocked` path. Not knowing what main
+    proves is never permission to refresh anything. The fail-closed rule applies to
+    the WHOLE union, not per workflow: half a proof would let a `fence-pack` red be
+    excused by a ci.yml run that says nothing about fences.
+
+    No exception escapes — the pre-existing "a diagnostic must never fail a sweep"
+    property is preserved, and the sweep degrades to its pre-2026-08-07 behaviour.
     """
     try:
-        status, payload = _request(
-            "GET",
-            f"{GITHUB_API}/repos/{repo}/commits?sha=main&per_page={MAIN_PROOF_WALK}",
-            token,
+        names: set[str] = set()
+        stamps: list[dt.datetime | None] = []
+        sources: list[str] = []
+        head_sha = ""
+        for index, workflow in enumerate(MAIN_PROOF_WORKFLOWS):
+            run = _newest_concluded_main_run(repo, workflow, token)
+            if run is None:
+                return MainProof(
+                    frozenset(), None, "", f"{workflow} has no concluded run on main"
+                )
+            run_sha = str(run.get("head_sha") or "")
+            resolved = _run_clean_jobs(repo, run.get("id"), token)
+            if resolved is None:
+                return MainProof(
+                    frozenset(),
+                    None,
+                    "",
+                    f"{workflow} run {run.get('id')} published no readable clean job",
+                )
+            workflow_names, workflow_at = resolved
+            names |= set(workflow_names)
+            stamps.append(workflow_at)
+            sources.append(f"{workflow}@{run_sha[:12] or '?'}")
+            if index == 0:
+                head_sha = run_sha
+        # The OLDEST of the per-workflow newest completions. A proof is exactly as
+        # fresh as its stalest component: fences.yml runs on every push to main and is
+        # therefore minutes old, while ci.yml's newest dispatch may be half a day
+        # back, and taking the newer of the two would date the ci evidence by the
+        # fences evidence — laundering a stale proof exactly the way `proof_instant`
+        # refuses to let one re-run launder a hundred stale checks.
+        proved_at = None if any(stamp is None for stamp in stamps) else min(
+            stamp for stamp in stamps if stamp is not None
         )
-        if status >= 400 or not isinstance(payload, list):
-            return set()
-        # NEWEST CONCLUSION PER NAME, not "every name on the first proved commit".
-        #
-        # Returning from the first commit carrying ANY non-spurious check left this
-        # inert. The docstring above anticipated skip-ci commits publishing NOTHING;
-        # it did not anticipate them publishing SOMETHING ELSE. Measured on main's
-        # tip 483242ab4b0 (2026-08-08): the only completed non-spurious checks are
-        # `sweep` and `Supabase Preview` — no `ci-pack-*` — because wire ticks and
-        # research_vault catalogs land every few minutes and carry their own
-        # workflows. So the walk halted on a nightly commit, answered `{sweep}`, and
-        # `bad_names <= main_clean` was false for every pack red FOREVER. Verified
-        # against a main that was fully green four packs deep, five commits back:
-        # `0 main commit(s) classified`, 21 armed PRs left merge-blocked.
-        #
-        # Resolving per NAME keeps the property the no-union rule protects. The risk
-        # named above is "a check that passed four commits ago excusing a red the
-        # very next commit introduced" — that is a STALE conclusion winning over a
-        # fresher one for the SAME name, which newest-wins makes impossible: seeing
-        # ci-pack-2 fail at HEAD~1 and pass at HEAD~4 records the failure and the
-        # name never enters the clean set.
-        seen: dict[str, str] = {}
-        for commit in payload:
-            sha = str((commit or {}).get("sha") or "")
-            if not sha:
-                continue
-            considered = [
-                run
-                for run in head_check_runs(repo, sha, token)
-                if not is_spurious_check(str(run.get("name") or ""))
-                and run.get("status") == "completed"
-            ]
-            if not considered:
-                continue  # a skip-ci / path-filtered commit proves nothing either way
-            for run in considered:
-                # setdefault: the walk is newest->oldest, so the FIRST conclusion
-                # recorded for a name is the freshest one and older ones cannot
-                # overwrite it.
-                seen.setdefault(str(run.get("name") or ""), str(run.get("conclusion") or ""))
-            # Stop at the first commit that actually ran the packs. Everything newer
-            # has already been folded in above, and anything older can only be stale
-            # for names we now hold. This bounds the walk to the distance back to the
-            # last real CI run rather than always spending MAIN_PROOF_WALK requests —
-            # the budget this function is charged against is the one that starved the
-            # sweeper on 2026-08-07.
-            if any(name.startswith(PACK_CHECK_PREFIX) for name in seen):
-                break
-        return {name for name, conclusion in seen.items()
-                if conclusion in CLEAN_CONCLUSIONS}
-    except Exception:  # noqa: BLE001 — a diagnostic must never fail a sweep
-        return set()
-    return set()
+        return MainProof(frozenset(names), proved_at, head_sha, " + ".join(sources))
+    except Exception as exc:  # noqa: BLE001 — a diagnostic must never fail a sweep
+        return MainProof(frozenset(), None, "", f"main proof lookup raised {exc!r}"[:200])
+
+
+def proof_postdates_failures(proof: MainProof, runs: list[dict[str, Any]]) -> bool:
+    """Was main proven AFTER this head's failing checks concluded?
+
+    THE CLAIM THE REFRESH MAKES IS TEMPORAL. "Your red checks are all green on main"
+    only means "main was healed since you ran" if the healing proof is NEWER than the
+    red. If main's green PREDATES the failure, the pull request ran against an
+    already-proven-green main and the red is its OWN — refreshing it would rebase a
+    genuine regression out of sight, which is the one outcome the narrowness of that
+    branch exists to prevent. The name comparison alone cannot see this.
+
+    IT IS ALSO THE LOOP GUARD, and that is not a bonus — it is required now that the
+    path can actually fire. The branch used to argue that no loop was possible because
+    `update-branch` answers 422 on an already-current head. That reasoning assumes a
+    STATIC main and is false here: main takes ~24 commits per 2 hours, so a head is
+    never "already current" for long, and a pull request that comes back red on the
+    same pack would be refreshed again on the very next sweep — 4 hosted packs x ~60
+    pull requests per round, indefinitely, on a pool that takes 30-34 minutes per run.
+    With this gate a refresh makes the pull request's checks NEWER than the proof, so
+    it cannot be refreshed again until main is genuinely re-proven: one refresh per
+    pull request per main proof, structurally.
+
+    FAILS CLOSED. An undatable proof, no failing runs to compare against, or a failing
+    run with a missing or unparseable `completed_at` all return False — and False
+    means "block as before", never "refresh".
+    """
+    if proof.proved_at is None:
+        return False
+    failing = [
+        run
+        for run in runs
+        if not is_spurious_check(str(run.get("name") or ""))
+        and run.get("status") == "completed"
+        and run.get("conclusion") not in CLEAN_CONCLUSIONS
+    ]
+    if not failing:
+        return False
+    newest: dt.datetime | None = None
+    for run in failing:
+        when = _parse_dt(run.get("completed_at"))
+        if when is None:
+            return False
+        if newest is None or when > newest:
+            newest = when
+    return newest is not None and proof.proved_at > newest
+
+
+def ensure_main_baseline(
+    repo: str, proof: MainProof, blocked_names: set[str], token: str
+) -> str:
+    """Order a fresh proof of main when the sweep could not answer its own backlog.
+
+    THE SWEEPER'S ANSWER IS ONLY AS GOOD AS MAIN'S PROOF, and until now that proof
+    depended entirely on a human remembering to run `gh workflow run ci.yml --ref
+    main`. `ci.yml` has no `push` trigger — see `main_proof` — so on a branch taking
+    ~24 commits per 2 hours the evidence the refresh path needs was measured 12 HOURS
+    stale while 48 pull requests sat armed. Repairing the lookup without repairing the
+    supply would have fixed the mechanism and left the daily audit in place.
+
+    So the sweep dispatches the baseline itself, but ONLY when all three hold:
+
+      1. the proof is undatable or older than MAIN_PROOF_MAX_AGE_HOURS;
+      2. at least one pull request this sweep evaluated was blocked on a non-spurious
+         check — i.e. the staleness actually COST something. An idle repository never
+         dispatches, however old its proof is; a proof nothing needed is not a problem;
+      3. no ci.yml run on main is already queued or in progress.
+
+    (3) IS THE ANTI-STAMPEDE GUARD and it is load-bearing: this sweep wakes every ~2
+    minutes, a run takes 30-34 minutes, and a lane that queued one baseline per wake-up
+    would put ~15 concurrent ci runs on a pool `ci` and `fences` already saturate —
+    trading a stale proof for the runner famine documented at the top of
+    .github/workflows/merge-on-green.yml. An UNREADABLE in-flight answer is treated as
+    "something is running", the direction that costs one sweep of latency rather than a
+    stampede.
+
+    NEVER FATAL. Every failure path logs and returns; a sweep that merged pull requests
+    correctly must not go red because it could not order a baseline. Returns a short
+    string for the sweep summary.
+    """
+    try:
+        age = proof.age_hours()
+        if age is not None and age <= MAIN_PROOF_MAX_AGE_HOURS:
+            return f"not needed (proof is {age:.1f}h old)"
+        if not blocked_names:
+            return "not needed (no pull request was blocked on a check)"
+        workflow = urllib.parse.quote(MAIN_BASELINE_WORKFLOW, safe="")
+        for state in ("in_progress", "queued"):
+            query = urllib.parse.urlencode(
+                {"branch": "main", "status": state, "per_page": "1"}
+            )
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+                token,
+            )
+            if status >= 400 or not isinstance(payload, dict):
+                return f"skipped (could not check for a {state} baseline: HTTP {status})"
+            if payload.get("workflow_runs"):
+                return f"skipped (a baseline is already {state})"
+        status, body = _request(
+            "POST",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/dispatches",
+            token,
+            {"ref": "main"},
+        )
+        if status in {201, 204}:
+            aged = "never proven" if age is None else f"{age:.1f}h old"
+            _annotate(
+                "notice",
+                "merge-on-green",
+                f"Dispatched {MAIN_BASELINE_WORKFLOW} on main: this sweep left pull "
+                f"requests blocked on {len(blocked_names)} distinct check(s) "
+                f"({', '.join(sorted(blocked_names)[:6])}) while main's own proof is "
+                f"{aged}, so it could not tell an inherited red from a real one. "
+                f"{MAIN_BASELINE_WORKFLOW} has no `push` trigger, so nothing else "
+                "re-proves main; the next sweep judges those reds against the result.",
+            )
+            return "dispatched"
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"Could not dispatch {MAIN_BASELINE_WORKFLOW} on main (HTTP {status}"
+            + (f": {_api_message(body)}" if _api_message(body) else "")
+            + "). Base-inherited reds stay blocked until main is proven; the sweep "
+            "itself is unaffected.",
+        )
+        return f"dispatch failed (HTTP {status})"
+    except Exception as exc:  # noqa: BLE001 — ordering a baseline must never fail a sweep
+        _annotate(
+            "warning",
+            "merge-on-green",
+            f"Baseline dispatch raised {exc!r}; the sweep is otherwise unaffected.",
+        )
+        return "dispatch error"
 
 
 def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
@@ -1508,8 +1821,9 @@ def sweep_pull(
     read_token: str,
     merge_token: str,
     freshness: "ProofFreshness",
-    main_clean: set[str] | None = None,
+    proof: "MainProof | None" = None,
     budget: "SweepBudget | None" = None,
+    blocked_names: set[str] | None = None,
 ) -> str:
     """Judge and, when clean, merge one labeled pull request. Returns the verdict.
 
@@ -1518,17 +1832,24 @@ def sweep_pull(
     exact failure this parameter exists to close; making it required turns that
     mistake into a TypeError at the call site instead of a silent no-op.
 
-    ``main_clean`` — the check names currently green on the newest PROVED main
-    commit, from :func:`main_clean_check_names`. It only ever WIDENS what a red PR
-    may do (see the base-inherited-red branch), never what a clean one may merge,
-    so unlike ``freshness`` a missing value is safe: it defaults to the empty set,
-    which reproduces the pre-2026-08-07 behaviour exactly.
+    ``proof`` — what main is currently proven to pass and when, from
+    :func:`main_proof`. It only ever WIDENS what a red PR may do (see the
+    base-inherited-red branch), never what a clean one may merge, so unlike
+    ``freshness`` a missing value is safe: it defaults to an empty proof, which
+    reproduces the pre-2026-08-07 behaviour exactly.
 
     ``budget`` is the same shape of optional: it only ever WITHHOLDS
     `update-branch` slots, so its absent form (no cap) reproduces the uncapped
     behaviour and it can never authorise a merge the check gates would refuse.
+
+    ``blocked_names`` is an OUT-parameter, not an input: the sweep passes a set for
+    this function to record what its blocked pull requests were blocked ON, which is
+    the evidence :func:`ensure_main_baseline` needs to decide whether a stale main
+    proof actually cost anything this pass. Nothing here reads it, so it cannot
+    influence any verdict.
     """
-    main_clean = main_clean or set()
+    if proof is None:
+        proof = MainProof(frozenset(), None, "", "no proof supplied")
     number = pull.get("number")
     head_sha = str((pull.get("head") or {}).get("sha") or "")
     if not head_sha:
@@ -1558,43 +1879,79 @@ def sweep_pull(
 
     if verdict == "blocked":
         # A red inherited from a base that has since been healed is not this pull
-        # request's red. Every failing check being GREEN on main's tip is the
-        # signature: the PR ran against an older main, main was repaired, and
-        # nothing has re-tested the PR since. Refresh it and let its fresh checks
+        # request's red. Every failing check being GREEN on a main proved SINCE they
+        # ran is the signature: the PR ran against an older main, main was repaired,
+        # and nothing has re-tested the PR since. Refresh it and let its fresh checks
         # decide on a later sweep — the same courtesy the clean-but-stale path
         # below has always had, which this branch simply reaches first.
         #
-        # Narrow on purpose. If even ONE failing check is not currently clean on
-        # main, this is not a base-inherited red and the old path runs unchanged,
-        # so a genuine regression can never be refreshed out of sight. `main_clean`
-        # is empty whenever main was unreadable, and an empty set is never a
-        # superset of a non-empty failing set — so the degraded case blocks too.
+        # Narrow on purpose, in TWO dimensions. If even ONE failing check is not
+        # currently clean on main, this is not a base-inherited red and the old path
+        # runs unchanged, so a genuine regression can never be refreshed out of
+        # sight. `proof.clean_names` is empty whenever main was unreadable, and an
+        # empty set is never a superset of a non-empty failing set — so the degraded
+        # case blocks too. And the proof must POSTDATE the failures: main being green
+        # BEFORE this head ran is evidence the red is the pull request's own.
         #
-        # Self-terminating: update-branch answers 422 when the head is already
-        # current, which is exactly the case where the red must be the PR's own,
-        # and the call falls through to `merge-blocked` below. So a PR cannot be
-        # refreshed twice for the same red, and no loop is possible.
+        # The timestamp rule is also what makes this branch terminate. It used to
+        # argue that update-branch's 422 on an already-current head made a loop
+        # impossible — but that assumes a STATIC main, and main takes ~24 commits per
+        # 2 hours here, so a head is never "already current" for long and a PR that
+        # came back red on the same pack would be refreshed again on the next sweep:
+        # 4 hosted packs x ~60 pull requests per round, indefinitely. A refresh makes
+        # the PR's checks newer than the proof, so it cannot be refreshed again until
+        # main is genuinely re-proven — one refresh per PR per main proof.
         bad_names = failing_check_names(runs)
-        if bad_names and main_clean and bad_names <= main_clean:
-            # THIS is the branch the refresh cap exists for. A main-red episode
-            # makes most of the armed backlog eligible at once (84 of 93 measured),
-            # and every refresh queues a fresh 36-91 minute `ci` run onto an
-            # 8-runner pool. Deferring is NOT `merge-blocked`: nothing is wrong with
-            # the pull request, so it stays armed and unlabeled for the next sweep.
-            if budget is not None and not budget.take_refresh():
-                return refresh_deferred(
-                    number,
-                    "its red checks are all green on main, so it needs a refresh",
+        if bad_names and proof.clean_names and bad_names <= proof.clean_names:
+            if not proof_postdates_failures(proof, runs):
+                # GREPPABLE ON PURPOSE. This line is how a future session tells "main's
+                # proof is too old to answer this" apart from "this red is genuinely
+                # yours" — the two are indistinguishable in the `merge-blocked` comment,
+                # and mistaking the first for the second is the audit that cost a human
+                # every morning for a fortnight.
+                proved = (
+                    proof.proved_at.isoformat() if proof.proved_at is not None else "never"
                 )
-            if update_branch(repo, pull, merge_token):
-                clear_blocked(repo, pull, merge_token)
+                latest = max(
+                    (
+                        run.get("completed_at") or "?"
+                        for run in runs
+                        if str(run.get("name") or "") in bad_names
+                    ),
+                    default="?",
+                )
                 print(
-                    f"PR #{number}: red checks ({', '.join(sorted(bad_names)[:6])}) "
-                    "are all green on main — the base moved under it. Refreshed; its "
-                    "fresh checks decide on a later sweep.",
+                    f"PR #{number}: main-proof-too-old — its red checks "
+                    f"({', '.join(sorted(bad_names)[:6])}) are all clean on main, but "
+                    f"main was proven at {proved} and those checks concluded at "
+                    f"{latest}. A proof that predates the failure does not excuse it, "
+                    "so this blocks as usual.",
                     flush=True,
                 )
-                return "rebased"
+            else:
+                # THIS is the branch the refresh cap exists for. A main-red episode
+                # makes most of the armed backlog eligible at once (84 of 93 measured),
+                # and every refresh queues a fresh 36-91 minute `ci` run onto an
+                # 8-runner pool. Deferring is NOT `merge-blocked`: nothing is wrong with
+                # the pull request, so it stays armed and unlabeled for the next sweep.
+                if budget is not None and not budget.take_refresh():
+                    return refresh_deferred(
+                        number,
+                        "its red checks are all green on main, so it needs a refresh",
+                    )
+                if update_branch(repo, pull, merge_token):
+                    clear_blocked(repo, pull, merge_token)
+                    print(
+                        f"PR #{number}: red checks ({', '.join(sorted(bad_names)[:6])}) "
+                        "are all green on a main proved since they ran — the base moved "
+                        "under it. Refreshed; its fresh checks decide on a later sweep.",
+                        flush=True,
+                    )
+                    return "rebased"
+
+        if blocked_names is not None:
+            # What this sweep could not answer, for `ensure_main_baseline`.
+            blocked_names |= bad_names
 
         added = mark_blocked(
             repo,
@@ -1780,24 +2137,29 @@ def main() -> int:
         )
         return 1
 
-    # One walk of main's recent history, shared by every pull request in the sweep.
-    # Never fatal: an empty set disables the base-inherited-red refresh and every PR
-    # falls through to the unchanged blocking path.
-    main_clean = main_clean_check_names(repo, read_token)
-    if not main_clean:
+    # One lookup of what main is proven to pass, shared by every pull request in the
+    # sweep. Never fatal: an empty proof disables the base-inherited-red refresh and
+    # every PR falls through to the unchanged blocking path.
+    proof = main_proof(repo, read_token)
+    if not proof.clean_names:
         _annotate(
             "notice",
             "merge-on-green",
-            f"none of main's last {MAIN_PROOF_WALK} commits published a clean "
-            "non-spurious check (or main was unreadable) — base-inherited reds will "
-            "be labeled merge-blocked as before, not refreshed.",
+            f"main has no usable proof ({proof.source}) — base-inherited reds will be "
+            "labeled merge-blocked as before, not refreshed.",
         )
+    else:
+        print(proof.describe() + ".", flush=True)
 
     ordered = sweep_order(pulls, trigger_head_sha=trigger_head_sha)
     considered = ordered[:MAX_PULLS_PER_SWEEP]
     deferred = ordered[MAX_PULLS_PER_SWEEP:]
 
     tally: dict[str, int] = {}
+    # Filled by `sweep_pull` with the check names it had to leave a pull request
+    # blocked on. `ensure_main_baseline` reads it to decide whether a stale main proof
+    # actually cost this sweep anything — an idle repository never orders a baseline.
+    blocked_names: set[str] = set()
     if deferred:
         # NO SILENT CAPS. A sweep that quietly evaluated a quarter of the backlog
         # would look identical in the log to one that evaluated all of it, and the
@@ -1848,7 +2210,8 @@ def main() -> int:
             repair_slot_used = True
         try:
             verdict = sweep_pull(
-                repo, pull, read_token, merge_token, freshness, main_clean, budget
+                repo, pull, read_token, merge_token, freshness, proof, budget,
+                blocked_names,
             )
         except RateLimited as exc:
             # The budget ran out between two polls. Stop the sweep rather than
@@ -1874,12 +2237,18 @@ def main() -> int:
             verdict = "error"
         tally[verdict] = tally.get(verdict, 0) + 1
 
+    # AFTER the pull-request pass, deliberately: the dispatch decision needs to see
+    # what this sweep was actually unable to answer, which only exists once the pass
+    # has run. Never fatal — it returns a string, it does not raise.
+    baseline = ensure_main_baseline(repo, proof, blocked_names, merge_token)
+
     print(
         "merge-on-green sweep complete: "
         + ", ".join(f"{count} {verdict}" for verdict, count in sorted(tally.items()))
         + f" ({freshness.commit_file_reads} main commit(s) classified, "
         + f"{budget.refreshes_used}/{MAX_REFRESHES_PER_SWEEP} refresh slot(s) used, "
-        + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left)",
+        + f"~{budget.last_seen if budget.last_seen is not None else '?'} API requests left"
+        + f"; {proof.describe()}; baseline: {baseline})",
         flush=True,
     )
     return 0
