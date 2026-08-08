@@ -145,8 +145,44 @@ def test_hub_split_cards():
     check("hub graceful without China/HK (US still present)", "United States" in html2)
 
 
+def test_regime_dynamics_survives_null_timeline_tail(tmp_path=None):
+    """A null hole in a committed regime timeline must degrade, never crash.
+
+    2026-08-08: a data commit left `i[-1]` null in one market's timeline and
+    `_regime_dynamics` crashed every hub build on `None - float`, redding
+    ci-pack-2 for every open PR. Drift is now measured over the aligned
+    non-null subsequence; under 30 valid pairs it returns the empty (honest)
+    read like any other no-history market.
+    """
+    import json as _json
+    import tempfile
+    from unittest import mock
+
+    from scripts import build_vector as bv
+
+    with tempfile.TemporaryDirectory() as td:
+        site = Path(td)
+        base = [0.1 * k for k in range(40)]
+        # (a) null TAIL + interior null holes, ≥30 aligned pairs -> computes
+        g = base + [None]
+        i = [*base[:20], None, *base[21:], None]
+        (site / "regime_timeline.json").write_text(
+            _json.dumps({"g": g, "i": i, "trans": ["STABLE"]}))
+        # (b) mostly-null series -> honest empty, not a crash
+        (site / "china_regime_timeline.json").write_text(
+            _json.dumps({"g": [None] * 35 + [1.0], "i": [None] * 35 + [1.0],
+                         "trans": ["STABLE"]}))
+        with mock.patch.object(bv.config, "site_dir", lambda: site):
+            out = bv._regime_dynamics("US", {"quad": "Q1"})
+            assert out["rdir"] is not None, f"null-tail timeline lost its read: {out!r}"
+            empty = bv._regime_dynamics("CN", {"quad": "Q1"})
+            assert empty["rdir"] is None and empty["rphase"] is None, \
+                f"mostly-null timeline fabricated a read: {empty!r}"
+
+
 def main() -> int:
-    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards):
+    for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards,
+               test_regime_dynamics_survives_null_timeline_tail):
         print(f"\n{fn.__name__}")
         fn()
     print(f"\n{'=' * 40}\n{PASS} passed, {FAIL} failed")

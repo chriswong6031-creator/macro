@@ -1588,6 +1588,14 @@ def _resolve_vector_live_stats(registry: list[dict], warnings: list[str] | None 
 
     fig = _btc_vector_figures(_read("calibration.json"), _read("trial_log.json"))
     if fig is None:
+        # STAMP the frozen quote, don't just leave the row alone: the module-level
+        # registry row is mutated in place by a successful resolve, so "leave it"
+        # renders the PREVIOUS resolve's live figures under a warning that claims
+        # the frozen quote — a stale-live card labeled frozen (and the exact
+        # order-dependence that redded ci-pack-3 on 2026-08-08: any earlier
+        # scorecard build in the process flipped this path's output).
+        row.update(_btc_vector_copy(_BTC_VECTOR_FROZEN))
+        row["dsr_n_trials"] = _BTC_VECTOR_FROZEN["n_trials_declared"]
         if warnings is not None:
             from datetime import date
             exp = _BTC_VECTOR_FROZEN.get("expiry")

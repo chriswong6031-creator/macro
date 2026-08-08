@@ -2824,11 +2824,16 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
-    if len(g) < 30 or len(i) < 30:
+    # The committed timelines carry null holes (an input lagging its market's
+    # close leaves the tail None), so drift is measured over the subsequence of
+    # sessions where BOTH coordinates exist — dropping a null day from one
+    # series but not the other would compare misaligned dates.
+    valid = [(a, b) for a, b in zip(g, i) if a is not None and b is not None]
+    if len(valid) < 30:
         return empty
-    N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    N = min(20, len(valid) - 1)                   # ~1 month of trading days
+    g_now, i_now = valid[-1]
+    dg, di = g_now - valid[-1 - N][0], i_now - valid[-1 - N][1]
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()
