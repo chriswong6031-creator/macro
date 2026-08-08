@@ -1151,6 +1151,12 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
 #: correctly returns an empty set there.
 MAIN_PROOF_WALK = 20
 
+# The check-name prefix that marks a commit as having actually run ci.yml, as opposed to
+# one of the ambient per-push workflows (`sweep`, `Supabase Preview`, `monitor`, ...) that
+# every nightly wire tick and research_vault catalog carries. `main_clean_check_names`
+# stops walking once it holds a conclusion for one of these — see the note there.
+PACK_CHECK_PREFIX = "ci-pack"
+
 
 def main_clean_check_names(repo: str, token: str) -> set[str]:
     """Non-spurious check names that concluded CLEAN on the newest PROVED main commit.
@@ -1200,6 +1206,26 @@ def main_clean_check_names(repo: str, token: str) -> set[str]:
         )
         if status >= 400 or not isinstance(payload, list):
             return set()
+        # NEWEST CONCLUSION PER NAME, not "every name on the first proved commit".
+        #
+        # Returning from the first commit carrying ANY non-spurious check left this
+        # inert. The docstring above anticipated skip-ci commits publishing NOTHING;
+        # it did not anticipate them publishing SOMETHING ELSE. Measured on main's
+        # tip 483242ab4b0 (2026-08-08): the only completed non-spurious checks are
+        # `sweep` and `Supabase Preview` — no `ci-pack-*` — because wire ticks and
+        # research_vault catalogs land every few minutes and carry their own
+        # workflows. So the walk halted on a nightly commit, answered `{sweep}`, and
+        # `bad_names <= main_clean` was false for every pack red FOREVER. Verified
+        # against a main that was fully green four packs deep, five commits back:
+        # `0 main commit(s) classified`, 21 armed PRs left merge-blocked.
+        #
+        # Resolving per NAME keeps the property the no-union rule protects. The risk
+        # named above is "a check that passed four commits ago excusing a red the
+        # very next commit introduced" — that is a STALE conclusion winning over a
+        # fresher one for the SAME name, which newest-wins makes impossible: seeing
+        # ci-pack-2 fail at HEAD~1 and pass at HEAD~4 records the failure and the
+        # name never enters the clean set.
+        seen: dict[str, str] = {}
         for commit in payload:
             sha = str((commit or {}).get("sha") or "")
             if not sha:
@@ -1212,11 +1238,21 @@ def main_clean_check_names(repo: str, token: str) -> set[str]:
             ]
             if not considered:
                 continue  # a skip-ci / path-filtered commit proves nothing either way
-            return {
-                str(run.get("name") or "")
-                for run in considered
-                if run.get("conclusion") in CLEAN_CONCLUSIONS
-            }
+            for run in considered:
+                # setdefault: the walk is newest->oldest, so the FIRST conclusion
+                # recorded for a name is the freshest one and older ones cannot
+                # overwrite it.
+                seen.setdefault(str(run.get("name") or ""), str(run.get("conclusion") or ""))
+            # Stop at the first commit that actually ran the packs. Everything newer
+            # has already been folded in above, and anything older can only be stale
+            # for names we now hold. This bounds the walk to the distance back to the
+            # last real CI run rather than always spending MAIN_PROOF_WALK requests —
+            # the budget this function is charged against is the one that starved the
+            # sweeper on 2026-08-07.
+            if any(name.startswith(PACK_CHECK_PREFIX) for name in seen):
+                break
+        return {name for name, conclusion in seen.items()
+                if conclusion in CLEAN_CONCLUSIONS}
     except Exception:  # noqa: BLE001 — a diagnostic must never fail a sweep
         return set()
     return set()

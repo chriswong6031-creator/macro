@@ -1956,6 +1956,99 @@ def test_main_clean_check_names_walks_past_commits_that_published_no_checks(monk
     assert MOG.main_clean_check_names("acme/widgets", "read") == {"ci-pack-0"}
 
 
+def test_main_clean_check_names_walks_past_commits_that_publish_only_ambient_checks(
+        monkeypatch):
+    """The regression that made the whole refresh path inert (2026-08-08).
+
+    `test_..._walks_past_commits_that_published_no_checks` above covers a tip carrying
+    NOTHING. The real tip carries SOMETHING ELSE. Measured on main `483242ab4b0` with
+    main fully green four packs deep only five commits back, the tip's completed
+    non-spurious checks were exactly `sweep` and `Supabase Preview` — every wire tick
+    and research_vault catalog carries its own per-push workflows. Stopping at the
+    first commit with ANY non-spurious check therefore answered `{sweep}`, which can
+    never be a superset of a pack red, so `bad_names <= main_clean` was false for
+    every armed PR forever: `0 main commit(s) classified`, 21 left merge-blocked.
+
+    Pins that an ambient-only commit does not end the walk.
+    """
+    checks = {
+        "a" * 40: {  # the nightly tip: real checks, but no packs
+            "total_count": 2,
+            "check_runs": [
+                _run("sweep", conclusion="success"),
+                _run("Supabase Preview", conclusion="failure"),
+            ],
+        },
+        "b" * 40: {  # the commit that actually ran ci.yml
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-0", conclusion="success"),
+                _run("ci-pack-1", conclusion="success"),
+            ],
+        },
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            return 200, _commits("a" * 40, "b" * 40)[:asked]
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    clean = MOG.main_clean_check_names("acme/widgets", "read")
+    # the packs are reachable — this is the assertion the old code failed
+    assert {"ci-pack-0", "ci-pack-1"} <= clean
+    # the ambient commit is still folded in newest-first: sweep passed, Supabase did not
+    assert "sweep" in clean and "Supabase Preview" not in clean
+
+
+def test_a_fresher_pack_failure_beats_an_older_pass_for_the_same_name(monkeypatch):
+    """Newest-wins per NAME is what makes walking past the tip safe.
+
+    The no-union rule exists so "a check that passed four commits ago" cannot excuse
+    "a red the very next commit introduced". Walking further could reintroduce exactly
+    that if an older CLEAN conclusion were allowed to overwrite a newer bad one — so
+    pin the ordering directly, with the failure NEWER than the pass.
+    """
+    checks = {
+        "a" * 40: {"total_count": 1, "check_runs": [_run("sweep", conclusion="success")]},
+        "b" * 40: {  # newer of the two ci runs: ci-pack-2 is RED here
+            "total_count": 2,
+            "check_runs": [
+                _run("ci-pack-2", conclusion="failure"),
+                _run("ci-pack-3", conclusion="success"),
+            ],
+        },
+        "c" * 40: {  # older: ci-pack-2 was green, and must NOT rescue it
+            "total_count": 1,
+            "check_runs": [_run("ci-pack-2", conclusion="success")],
+        },
+    }
+
+    def fake(method, url, token, payload=None):
+        if "/commits?" in url:
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            return 200, _commits("a" * 40, "b" * 40, "c" * 40)[:asked]
+        if "/check-runs" in url:
+            sha = url.split("/commits/")[1].split("/")[0]
+            page = int(url.rsplit("page=", 1)[1].split("&")[0])
+            if page > 1:
+                return 200, {"total_count": 0, "check_runs": []}
+            return 200, checks.get(sha, {"total_count": 0, "check_runs": []})
+        return 200, {}
+
+    monkeypatch.setattr(MOG, "_request", fake)
+    clean = MOG.main_clean_check_names("acme/widgets", "read")
+    assert "ci-pack-2" not in clean, "an older pass rescued a newer failure"
+    assert {"ci-pack-3", "sweep"} <= clean
+
+
 def test_main_clean_check_names_answers_from_one_commit_never_a_union(monkeypatch):
     """A union would let a pass four commits ago excuse a red introduced since."""
     checks = {

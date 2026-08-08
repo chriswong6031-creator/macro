@@ -975,6 +975,15 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # Same contract for the MERGE orchestrator, and the same #3488 shape: the
+      # workflow-yaml job above runs tests/test_merge_on_green.py, but neither the
+      # sweeper nor its tests could start it — a PR editing the thing that decides
+      # every merge in this repo published no pack check at all, so the sweeper
+      # reported it "unproven" and would never merge it (measured on #4968, which
+      # had ZERO runs on its branch). A guard whose own change cannot trigger it is
+      # a guard that reviews as covered and runs never.
+      - "scripts/merge_on_green.py"
+      - "tests/test_merge_on_green.py"
       # SKIP-ONLY suite guard (job: workflow-yaml). scripts/*.py already reaches
       # the checker; these two are the other halves. requirements.txt matters
       # because a `-r requirements.txt` install line is how several jobs declare
