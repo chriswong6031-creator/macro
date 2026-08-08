@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-06T23:09:07.619630+00:00",
+  "generated_utc": "2026-08-08T07:57:55.324046+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -898,12 +898,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.85,
+      "alt_score": 4,
+      "alt_weighted": 1.6,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "cnbc_pick",
         "lobbying",
         "patent_cluster"
       ],
@@ -940,10 +939,9 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.05,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
       "alt_channels": [
-        "13f_add",
         "affiliation",
         "retail_buzz"
       ],
@@ -1001,11 +999,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.9,
+      "alt_score": 6,
+      "alt_weighted": 2.15,
       "alt_channels": [
         "affiliation",
         "app_demand",
+        "cnbc_pick",
         "github_momentum",
         "lobbying",
         "patent_cluster"
@@ -1096,12 +1095,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.8,
+      "alt_score": 6,
+      "alt_weighted": 2.2,
       "alt_channels": [
         "affiliation",
+        "analyst_upgrade_cluster",
         "app_demand",
-        "cnbc_pick",
+        "github_momentum",
         "hf_model_momentum",
         "lobbying"
       ],
@@ -1292,12 +1292,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.05,
+      "alt_score": 2,
+      "alt_weighted": 0.85,
       "alt_channels": [
-        "13f_add",
         "affiliation",
-        "stocktwits_bull"
+        "analyst_upgrade_cluster"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1364,12 +1363,13 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 4,
+      "alt_weighted": 1.25,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "special_situation"
+        "special_situation",
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
@@ -1681,20 +1681,60 @@
   "n_candidates": 0,
   "filings": [
     {
-      "date": "2026-08-05",
+      "date": "2026-08-07",
       "form": "8-K",
-      "company": "New America Acquisition I Corp.",
+      "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "5.02,7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/ex99-1.htm"
+      "items": "1.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/ex_1001120.htm"
     },
     {
-      "date": "2026-08-05",
+      "date": "2026-08-07",
       "form": "8-K",
-      "company": "New America Acquisition I Corp.",
+      "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "5.02,7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/form8-k.htm"
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026595/djt20260806c_8k.htm"
+    },
+    {
+      "date": "2026-08-07",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "1.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/djt20260804_8k.htm"
+    },
+    {
+      "date": "2026-08-07",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026595/ex_1000265.htm"
+    },
+    {
+      "date": "2026-08-07",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "1.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026597/ex_1000119.htm"
+    },
+    {
+      "date": "2026-08-06",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026265/ex_1000166.htm"
+    },
+    {
+      "date": "2026-08-06",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926026265/djt20260806_8k.htm"
     },
     {
       "date": "2026-08-05",
@@ -1710,7 +1750,7 @@
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
       "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/djt20260805_8k.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/ex_999015.htm"
     },
     {
       "date": "2026-08-05",
@@ -1718,63 +1758,23 @@
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
       "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/ex_999015.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926025800/djt20260805_8k.htm"
     },
     {
-      "date": "2026-08-04",
+      "date": "2026-08-05",
       "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "2.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926090041/tm2621890d1_8k.htm"
-    },
-    {
-      "date": "2026-08-04",
-      "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "2.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926090041/tm2621890d1_ex99-1.htm"
-    },
-    {
-      "date": "2026-08-03",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "2.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526329509/abtc-ex99_1.htm"
-    },
-    {
-      "date": "2026-08-03",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "2.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526329509/abtc-20260803.htm"
-    },
-    {
-      "date": "2026-08-03",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "5.02,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526329645/abtc-20260730.htm"
-    },
-    {
-      "date": "2026-07-28",
-      "form": "424B4",
-      "company": "Ionic Digital Inc.",
+      "company": "New America Acquisition I Corp.",
       "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/2007691/000118518526003152/ionicdigi424b4072026.htm"
+      "items": "5.02,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/form8-k.htm"
     },
     {
-      "date": "2026-07-24",
-      "form": "S-1/A",
-      "company": "Cryptex Digital Market Cap ETF",
-      "ticker": "BAGZ",
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/2115027/000121390026081379/ea0299142-s1a2_cryptex.htm"
+      "date": "2026-08-05",
+      "form": "8-K",
+      "company": "New America Acquisition I Corp.",
+      "ticker": null,
+      "items": "5.02,7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2074878/000149315226036181/ex99-1.htm"
     }
   ]
 }

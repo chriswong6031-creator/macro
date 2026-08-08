@@ -27,6 +27,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from datetime import date as _date, datetime as _datetime, timezone as _timezone
 from pathlib import Path
@@ -73,6 +74,115 @@ R2_PREFIX = "options_hub/"
 # Roots with large option chains (e.g. RCL, NVDA) can take 30-60 s legitimately;
 # anything beyond ROOT_WALL_BUDGET_S indicates a hang and should be skipped.
 ROOT_WALL_BUDGET_S: float = float(os.environ.get("HUB_ROOT_BUDGET_S", "420"))
+
+# ── run-level stall watchdog ──────────────────────────────────────────────────
+# ROOT_WALL_BUDGET_S only envelopes the per-root loop, and it is read by the loop
+# itself. On 2026-08-07 the run wedged during *startup*, before the loop began:
+# the main thread went into a store directory read that never returned, burned
+# 1.7 s of CPU across 4.5 h, and never logged again. Nothing inside the process
+# could notice, because the one thread that would have done the checking was the
+# thread that was stuck — so every options surface silently served the previous
+# session until someone looked at the dashboard.
+#
+# The guard is a separate thread, since only a separate thread still runs while
+# the main one is blocked in a syscall. It watches a progress heartbeat rather
+# than total elapsed time so that a legitimately slow full-universe run is never
+# killed merely for being slow — only a run making no forward progress at all is.
+STALL_BUDGET_S: float = float(os.environ.get("HUB_STALL_BUDGET_S", "1800"))
+
+_progress_at: float = time.monotonic()
+_progress_note: str = "process start"
+
+
+def heartbeat(note: str) -> None:
+    """Record forward progress, resetting the stall watchdog's clock."""
+    global _progress_at, _progress_note
+    _progress_at = time.monotonic()
+    _progress_note = note
+
+
+def _arm_stall_watchdog(budget_s: float = STALL_BUDGET_S) -> None:
+    """Abort the process if it stops making progress for `budget_s` seconds.
+
+    Exits nonzero on purpose: a dead job trips the audit_r2 dead-man anchors,
+    whereas a wedged one looks alive forever and publishes nothing.
+    """
+    if budget_s <= 0:          # HUB_STALL_BUDGET_S=0 disables (debugging only)
+        return
+
+    def _watch() -> None:
+        while True:
+            time.sleep(30.0)
+            idle = time.monotonic() - _progress_at
+            if idle > budget_s:
+                log.error(
+                    "options_hub_builder: no progress for %.0fs (last milestone: "
+                    "%s) — aborting so the dead-man anchors surface the gap "
+                    "instead of the plane silently serving the previous session",
+                    idle, _progress_note,
+                )
+                logging.shutdown()
+                os._exit(3)
+
+    threading.Thread(target=_watch, name="hub-stall-watchdog", daemon=True).start()
+
+
+# ── store readability preflight ───────────────────────────────────────────────
+# Store *resolution* only stats the store's top level, which lives on the internal
+# disk. Since 2026-08-06 the eod/oi/greeks directories beneath it are symlinks
+# onto an external volume, and a process without TCC access to that volume does
+# not get EPERM when it first reads across the symlink — it blocks in the kernel,
+# indefinitely. That is how the 2026-08-07 run logged a *successful* store
+# resolution and then sat for 4.5 h on 1.7 s of CPU while every options surface
+# served the previous session.
+#
+# The probe runs in a thread because the failure mode is an uninterruptible read:
+# a timeout the main thread would have to check is a timeout that never gets
+# checked. An unreadable store becomes a named, nonzero exit within a minute.
+STORE_PREFLIGHT_S: float = float(os.environ.get("HUB_STORE_PREFLIGHT_S", "60"))
+
+
+def preflight_store(theta_store: Path | str,
+                    budget_s: float = STORE_PREFLIGHT_S) -> None:
+    """Exit nonzero unless every store subdirectory is actually readable."""
+    if budget_s <= 0:          # HUB_STORE_PREFLIGHT_S=0 disables (debugging only)
+        return
+    base = Path(theta_store)
+    outcome: dict[str, object] = {}
+
+    def _probe() -> None:
+        try:
+            for sub in ("eod", "oi", "greeks"):
+                d = base / sub
+                if d.exists():
+                    os.listdir(d)
+            outcome["ok"] = True
+        except Exception as e:  # noqa: BLE001
+            outcome["err"] = e
+
+    probe = threading.Thread(target=_probe, name="hub-store-preflight", daemon=True)
+    probe.start()
+    probe.join(budget_s)
+
+    if probe.is_alive():
+        log.error(
+            "options_hub_builder: store %s resolved but did not become readable "
+            "within %.0fs — the read is blocked, not slow. This is the shape of a "
+            "TCC/removable-volume denial when the store's subdirectories are "
+            "symlinks onto an external volume: launchd-context jobs hang where an "
+            "interactive session succeeds. Exiting nonzero rather than hanging, so "
+            "the dead-man anchors fire instead of the plane silently serving the "
+            "previous session.", base, budget_s,
+        )
+        logging.shutdown()
+        os._exit(4)
+
+    if "err" in outcome:
+        log.error(
+            "options_hub_builder: store %s resolved but is not readable — %s: %s",
+            base, type(outcome["err"]).__name__, outcome["err"],
+        )
+        sys.exit(4)
 
 # ── incremental aggregate publish interval ────────────────────────────────────
 # Publish cross-root aggregates (oi_movers / hot_contracts / context) after every
@@ -158,9 +268,46 @@ def _upload_r2(s3, bucket: str, local_path: Path, r2_key: str) -> bool:
         return False
 
 
+def _nulled_nonfinite(obj, counter: list[int]):
+    """Recursively replace non-finite floats (NaN, ±inf) with None.
+
+    JSON has no NaN literal, so `_write_json` keeps `allow_nan=False` and a stray
+    one is never emitted as the invalid token `NaN`. What changed is the blast
+    radius. A single bad cell used to raise mid-serialisation and take the entire
+    payload down with it: on 2026-08-07 one NaN killed the final cross-root
+    aggregate built over all 380 roots, so the desks kept serving the previous
+    incremental checkpoint (372 names) and — correctly — called themselves
+    "Partial" for two days.
+
+    Null is the honest substitute. Every reader already renders a missing number
+    as missing, so one unusable cell costs that cell instead of the whole board,
+    and the count is logged so the underlying NaN still gets chased.
+    """
+    if isinstance(obj, float):
+        if obj != obj or obj in (float("inf"), float("-inf")):
+            counter[0] += 1
+            return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _nulled_nonfinite(v, counter) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_nulled_nonfinite(v, counter) for v in obj]
+    if isinstance(obj, np.floating):
+        return _nulled_nonfinite(float(obj), counter)
+    return obj
+
+
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, allow_nan=False, default=str), encoding="utf-8")
+    counter = [0]
+    clean = _nulled_nonfinite(data, counter)
+    if counter[0]:
+        log.warning(
+            "options_hub_builder: %s — %d non-finite value(s) written as null; "
+            "the payload still published, but the NaN source is worth chasing",
+            path.name, counter[0],
+        )
+    path.write_text(json.dumps(clean, allow_nan=False, default=str), encoding="utf-8")
 
 
 def _publish_aggregates(
@@ -913,6 +1060,10 @@ def main() -> None:
                     help="Override thetadata store root")
     args = ap.parse_args()
 
+    # Armed before the first store touch: the 2026-08-07 wedge happened during
+    # startup, so a watchdog armed any later would have been armed too late.
+    _arm_stall_watchdog()
+
     # ── resolve paths ──────────────────────────────────────────────────────────
     from lib import config as lib_config
     data_root = lib_config.data_dir()
@@ -959,6 +1110,10 @@ def main() -> None:
                 "(set THETADATA_STORE or pass --theta-store)")
             sys.exit(1)
 
+    # Resolved is not the same as readable — see preflight_store.
+    preflight_store(theta_store)
+    heartbeat("store readable")
+
     # ── resolve roots ─────────────────────────────────────────────────────────
     if args.roots:
         roots = [r.upper() for r in args.roots]
@@ -976,6 +1131,20 @@ def main() -> None:
         roots = list(seen)
         if not roots:
             roots = DEFAULT_ROOTS
+    heartbeat(f"resolved {len(roots)} roots")
+
+    # Cross-root boards (oi_movers / hot_contracts / oi_change / context) describe
+    # the whole universe. A --roots run is a subset by definition — adding a newly
+    # listed root, retrying a failure — and publishing those boards from a subset
+    # would overwrite a 380-root board with a handful of names. Per-root payloads
+    # still publish, so a targeted rebuild stays a safe, minutes-long operation
+    # instead of forcing a full-universe run to add one ticker.
+    publish_aggregates = not args.roots
+    if not publish_aggregates:
+        log.info(
+            "options_hub_builder: --roots given (%d) — publishing per-root payloads "
+            "only; universe-wide boards left untouched", len(roots),
+        )
 
     # ── resolve date ──────────────────────────────────────────────────────────
     asof = args.date
@@ -986,6 +1155,7 @@ def main() -> None:
                       "provide --date")
             sys.exit(1)
     log.info("options_hub_builder: asof=%s roots=%s", asof, roots)
+    heartbeat(f"asof={asof}")
 
     # ── R2 setup ──────────────────────────────────────────────────────────────
     bucket = os.environ.get("R2_BUCKET", "")
@@ -1013,6 +1183,12 @@ def main() -> None:
 
     for _root_idx, root in enumerate(roots):
         log.info("options_hub_builder: processing %s …", root)
+        # Per-root progress. ROOT_WALL_BUDGET_S cannot cover a root that blocks
+        # inside a syscall, because the thread that would read the clock is the
+        # blocked one; the stall watchdog is what catches that case, and its
+        # budget sits well above the per-root budget so a merely slow root here
+        # is never mistaken for a wedged one.
+        heartbeat(f"root {root} ({_root_idx + 1}/{len(roots)})")
         _root_start = time.monotonic()
         try:
             vol_payload, gex_payload, vex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
@@ -1254,7 +1430,7 @@ def main() -> None:
         # Publish cross-root aggregates from roots processed so far every
         # INCREMENTAL_N roots.  A mid-run death then degrades to N-root-stale feeds
         # rather than freezing all aggregates for the entire day.
-        if len(roots_ok) >= _last_incremental + INCREMENTAL_N:
+        if publish_aggregates and len(roots_ok) >= _last_incremental + INCREMENTAL_N:
             _publish_aggregates(
                 roots_ok=list(roots_ok),   # snapshot
                 asof=asof,
@@ -1272,19 +1448,21 @@ def main() -> None:
 
     # ── final cross-root payloads (full universe) ─────────────────────────────
     # This overwrites any incremental checkpoint with the complete universe.
-    oi_movers_payload = _publish_aggregates(
-        roots_ok=roots_ok,
-        asof=asof,
-        theta_store=theta_store,
-        out_dir=out_dir,
-        s3=s3,
-        bucket=bucket,
-        fear_greed_path=fear_greed_path,
-        gex_latest_path=gex_latest_path,
-        live_flow_out_dir=live_flow_out_dir,
-        label="final",
-        oi_change_rows=list(_oi_change_rows),
-    )
+    oi_movers_payload = None
+    if publish_aggregates:
+        oi_movers_payload = _publish_aggregates(
+            roots_ok=roots_ok,
+            asof=asof,
+            theta_store=theta_store,
+            out_dir=out_dir,
+            s3=s3,
+            bucket=bucket,
+            fear_greed_path=fear_greed_path,
+            gex_latest_path=gex_latest_path,
+            live_flow_out_dir=live_flow_out_dir,
+            label="final",
+            oi_change_rows=list(_oi_change_rows),
+        )
 
     # ── summary / completion sentinel ────────────────────────────────────────
     _total_roots = len(roots)

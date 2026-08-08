@@ -54,6 +54,31 @@ from engine.prophet_bridge import (  # noqa: E402
     select_candidates,
 )
 
+@pytest.fixture(autouse=True)
+def _arena_writes_to_tmp(tmp_path, monkeypatch):
+    """Send the Prophet Arena's ledgers to tmp for every test in this file.
+
+    `build_prophet.main()` calls `engine.prophet_arena.run_arena(..., repo_root=_REPO)`,
+    which writes `data/prophet_arena/{C0..C6}.jsonl` + `scoreboard.json`. The `bp.main()`
+    harness below carefully redirects STANDOUTS_PATH / SITE_PROPHET / PLANS_DIR /
+    STATES_DIR / INDEX_PATH / LEDGER_* and neuters `write_showcase` — but the arena hook
+    landed after that list was written and was never added to it, so the suite rewrote
+    seven TRACKED files. MM_DATA_GUARD forced ci-pack-3 to exit 1 on a step reporting
+    "942 passed", which is why it read as a mystery rather than a test failure.
+
+    Redirects `repo_root` rather than stubbing `run_arena` out, so the hook still executes
+    end-to-end here; the arena's own behaviour is covered by tests/test_prophet_arena.py.
+    Autouse because `bp.main()` is reached from several tests, and the next one added
+    would silently reintroduce the write.
+    """
+    import engine.prophet_arena as arena
+
+    real = arena.run_arena
+    monkeypatch.setattr(
+        arena, "run_arena",
+        lambda *a, **kw: real(*a, **{**kw, "repo_root": tmp_path}))
+
+
 COMMITTED_STANDOUTS = _REPO / "site" / "factordata" / "us_standouts.json"
 SEEDS = (0, 1, 2, 3, 5, 7, 11, 13, 17, 23, 42, 1337)
 

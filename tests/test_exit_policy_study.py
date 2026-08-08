@@ -794,10 +794,45 @@ def manifest():
 
 
 class TestCalibration:
+    @pytest.mark.xfail(strict=True, reason=(
+        "THE ERA BREAK IS DUE — this is the same notification as the ob_mask tripwire, "
+        "measured a second way. See the docstring; drop this marker with #4942, not here."))
     def test_p0_reproduces_the_shipped_ledger_key_for_key(self, vintage):
         """G3's calibration check, on the pinned vintage. P0 is the incumbent rule run
         through track_scoring on the ledger's own cohort AND its own price vintage, so
-        here a non-zero delta really does mean the reconstruction drifted."""
+        here a non-zero delta really does mean the reconstruction drifted.
+
+        XFAILED 2026-08-07, AND THE CHANGE IS NAMED. The marker is not a way to make an
+        unexplained drift go quiet — the docstring above demands the change be found, and
+        it has been: PR #4732 (`abs-session-2026-08-06`) migrated `confluence_tiers._tf_bars`
+        to an absolute session anchor IN PLACE, `grade_us_board._ob_mask` imports `_tf_bars`
+        directly, and `_ob_mask` is the incumbent episode's TARGET EXIT leg. So the bar an
+        episode sells on moved, and with it every realised number P0 reconstructs:
+
+            win_pct -4.6 · expectancy_pct -0.89 · median_pct -0.85 · profit_factor -0.54
+            capture -0.36 · ci_lo_pct -7.5 · ci_hi_pct -3.5 · median_hold -1.0
+
+        (`capture` also carries #4684's `MFE_FLOOR` port, which made this study's floor and
+        `track_scoring.summarize`'s agree — see TestCaptureGuard. That is a second, smaller
+        contributor to one key, not the cause of the rest.)
+
+        WHY THE FIXTURE IS NOT RE-CUT. `cal["shipped"]` is the fixture's frozen copy of
+        `site/factordata/us_track_ledger.json`, and the LIVE artifact is still that same
+        pre-era object — `as_of` 2026-07-31, `win_pct` 63.6, and no `meta.anchor_era` — the
+        grading lane having been dark since 08-01. Re-cutting the fixture against today's
+        code would therefore pin NEW-anchor numbers against a PUBLISHED ledger that still
+        shows the old ones, i.e. it would settle the era question inside a test fixture. The
+        session-anchor ruling reserves that call: a graded-population change requires a new
+        era STAMP, never a silent recompute. `scripts/build_exit_policy_vintage_fixture.py`
+        agrees and refuses to write a fixture that does not reproduce both artifacts.
+
+        WHAT DISCHARGES THIS. `research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md`, executed by
+        #4942 (re-measure, stamp, disclose) — which re-publishes the ledger and re-cuts this
+        fixture together. `strict=True` is deliberate: on the day that lands, the deltas go
+        to zero, this XPASSes, and the red forces the marker out in the same PR that earns
+        it. Sibling tripwire and full mechanism:
+        tests/test_ob_mask_start_invariance.py.
+        """
         cal = vintage["calibration"]
         assert cal["shipped"], "the pinned fixture must carry the ledger it reproduces"
         bad = {k: v for k, v in cal["deltas"].items() if v not in (0, 0.0)}

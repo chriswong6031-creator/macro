@@ -7,8 +7,8 @@
  "may_size": false,
  "may_gate": false,
  "may_alert": false,
- "as_of": "2026-08-06",
- "generated_utc": "2026-08-06T20:46:26.593252+00:00",
+ "as_of": "2026-08-08",
+ "generated_utc": "2026-08-08T06:30:12.359881+00:00",
  "gate_open": true,
  "artifact_ok": true,
  "train_end": "2022-12-31",
@@ -16,33 +16,19 @@
  "target_coverage": 0.2,
  "watch_horizon_sessions": 15,
  "ledger": {
-  "incumbent_events": 237,
-  "selected": 33,
-  "not_selected": 204,
-  "appended_today": 56,
-  "advanced_today": 28,
+  "incumbent_events": 313,
+  "selected": 36,
+  "not_selected": 277,
+  "appended_today": 0,
+  "advanced_today": 0,
   "score_failures_today": 0,
   "statuses": {
-   "watching": 26,
-   "rejection_observed": 7
+   "expired": 1,
+   "rejection_observed": 8,
+   "watching": 27
   }
  },
  "per_ticker": {
-  "ESP": {
-   "schema": "personality_terminality_shadow.v1",
-   "model_id": "pss_f4h_orthogonal_dev2022_v1",
-   "authority": "shadow_only",
-   "display_only": true,
-   "status": "watching",
-   "event_date": "2026-07-17",
-   "prospective_from": "2026-07-24",
-   "score": 0.6977515942,
-   "threshold": 0.6642405954734382,
-   "remaining_sessions": 2,
-   "action_date": null,
-   "action_delay_sessions": null,
-   "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
-  },
   "HE": {
    "schema": "personality_terminality_shadow.v1",
    "model_id": "pss_f4h_orthogonal_dev2022_v1",
@@ -98,7 +84,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.7372410497,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 5,
+   "remaining_sessions": 3,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -143,7 +129,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.7180034389,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 5,
+   "remaining_sessions": 3,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -158,7 +144,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.7302128553,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 7,
+   "remaining_sessions": 5,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -173,7 +159,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.6892721259,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 7,
+   "remaining_sessions": 5,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -188,7 +174,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.6707095418,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 7,
+   "remaining_sessions": 5,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -203,7 +189,7 @@
    "prospective_from": "2026-07-24",
    "score": 0.7108513553,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 7,
+   "remaining_sessions": 5,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -218,7 +204,7 @@
    "prospective_from": "2026-07-27",
    "score": 0.7132219285,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 8,
+   "remaining_sessions": 6,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -248,7 +234,7 @@
    "prospective_from": "2026-07-27",
    "score": 0.7080215435,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 8,
+   "remaining_sessions": 6,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -263,7 +249,7 @@
    "prospective_from": "2026-07-27",
    "score": 0.7127833721,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 8,
+   "remaining_sessions": 6,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -278,7 +264,7 @@
    "prospective_from": "2026-07-30",
    "score": 0.7164550363,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 11,
+   "remaining_sessions": 9,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -293,7 +279,7 @@
    "prospective_from": "2026-07-30",
    "score": 0.7708077999,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 11,
+   "remaining_sessions": 9,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -308,7 +294,7 @@
    "prospective_from": "2026-07-30",
    "score": 0.7009810883,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 11,
+   "remaining_sessions": 9,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -338,7 +324,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.66426536,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -353,7 +339,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.7341143937,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -368,7 +354,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.6918298604,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -383,7 +369,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.7419156766,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -398,7 +384,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.7416250957,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -413,7 +399,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.698273765,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -428,7 +414,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.6891813303,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -443,7 +429,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.7358098852,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -458,7 +444,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.7087642029,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -473,7 +459,7 @@
    "prospective_from": "2026-07-31",
    "score": 0.6916526945,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 12,
+   "remaining_sessions": 10,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
@@ -483,14 +469,14 @@
    "model_id": "pss_f4h_orthogonal_dev2022_v1",
    "authority": "shadow_only",
    "display_only": true,
-   "status": "watching",
+   "status": "rejection_observed",
    "event_date": "2026-08-04",
    "prospective_from": "2026-08-05",
    "score": 0.7600457082,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 14,
-   "action_date": null,
-   "action_delay_sessions": null,
+   "remaining_sessions": 0,
+   "action_date": "2026-08-07",
+   "action_delay_sessions": 3,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
   },
   "WBD": {
@@ -503,7 +489,52 @@
    "prospective_from": "2026-08-05",
    "score": 0.7779865848,
    "threshold": 0.6642405954734382,
-   "remaining_sessions": 14,
+   "remaining_sessions": 12,
+   "action_date": null,
+   "action_delay_sessions": null,
+   "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
+  },
+  "ARR": {
+   "schema": "personality_terminality_shadow.v1",
+   "model_id": "pss_f4h_orthogonal_dev2022_v1",
+   "authority": "shadow_only",
+   "display_only": true,
+   "status": "watching",
+   "event_date": "2026-08-07",
+   "prospective_from": "2026-08-07",
+   "score": 0.6992565446,
+   "threshold": 0.6642405954734382,
+   "remaining_sessions": 15,
+   "action_date": null,
+   "action_delay_sessions": null,
+   "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
+  },
+  "CSR": {
+   "schema": "personality_terminality_shadow.v1",
+   "model_id": "pss_f4h_orthogonal_dev2022_v1",
+   "authority": "shadow_only",
+   "display_only": true,
+   "status": "watching",
+   "event_date": "2026-08-07",
+   "prospective_from": "2026-08-07",
+   "score": 0.6852574694,
+   "threshold": 0.6642405954734382,
+   "remaining_sessions": 15,
+   "action_date": null,
+   "action_delay_sessions": null,
+   "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."
+  },
+  "TCBI": {
+   "schema": "personality_terminality_shadow.v1",
+   "model_id": "pss_f4h_orthogonal_dev2022_v1",
+   "authority": "shadow_only",
+   "display_only": true,
+   "status": "watching",
+   "event_date": "2026-08-07",
+   "prospective_from": "2026-08-07",
+   "score": 0.6949323664,
+   "threshold": 0.6642405954734382,
+   "remaining_sessions": 15,
    "action_date": null,
    "action_delay_sessions": null,
    "copy": "Research prioritization only. Waits for an observable fresh-low rejection; never changes entry, rank, or size."

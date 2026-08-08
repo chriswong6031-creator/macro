@@ -113,3 +113,14 @@
 {"asof":"2026-08-06","data_session":"2026-08-06","session_source":"bench","market":"au","p_raw":0.2538,"pct":0.627,"level":"low","top_exporter":"kr"}
 {"asof":"2026-08-06","data_session":"2026-08-06","session_source":"bench","market":"gb","p_raw":0.2194,"pct":0.5794,"level":"low","top_exporter":"kr"}
 {"asof":"2026-08-06","data_session":"2026-08-06","session_source":"bench","market":"ez","p_raw":0.2046,"pct":0.5714,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"us","p_raw":0.1912,"pct":0.5496,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"cn","p_raw":0.1485,"pct":0.4583,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"hk","p_raw":0.1902,"pct":0.5794,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"ca","p_raw":0.1663,"pct":0.5278,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"kr","p_raw":0.183,"pct":0.5536,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"jp","p_raw":0.2737,"pct":0.6845,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"tw","p_raw":0.3609,"pct":0.7599,"level":"moderate","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"in","p_raw":0.1437,"pct":0.4802,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"au","p_raw":0.2304,"pct":0.6171,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"gb","p_raw":0.21,"pct":0.6052,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-07","data_session":"2026-08-07","session_source":"bench","market":"ez","p_raw":0.198,"pct":0.5833,"level":"low","top_exporter":"kr"}

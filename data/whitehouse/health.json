@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-07T20:58:39.631384+00:00",
+  "as_of": "2026-08-08T07:13:52.931549+00:00",
   "posts_seen": 16,
   "seen_total": 99,
-  "evaluated": 1,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-07-fact-sheet-president-donald-j-trump-announces-billions-in-new-deals-and-investme",
-      "importance": 68,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }

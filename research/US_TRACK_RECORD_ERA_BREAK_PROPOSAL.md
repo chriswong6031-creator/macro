@@ -6,7 +6,22 @@ document. What follows is the measured case for an era boundary and the pre-regi
 that should be fixed *before* any recompute.
 
 Sibling of `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
-(era `abs-session-2026-08-06`, PR #4732 — **open, not merged as of 2026-08-06**).
+(era `abs-session-2026-08-06`, PR #4732).
+
+> **TRIGGER FIRED 2026-08-07 — this proposal is now DUE and still UNEXECUTED.** #4732 merged
+> as `2a0c5e27184` (00:11:05), and #4747 — which carries this document and the tripwire —
+> merged as `4b98aeb7123` **28 seconds later** (00:11:33). Each was green against a base
+> that did not contain the other, so the tripwire never spent a day armed: it went red on
+> main on arrival and pinned the `unrun-picks-boards` CI job for the whole fleet. The
+> `xfail` marker was therefore dropped by the CI-heal PR rather than by the era-stamp PR
+> (§0.5 amended below). **No gate in §0 has been satisfied and nothing has been recomputed.**
+> `us_track_ledger.json` still carries no `meta.anchor_era`.
+>
+> What keeps this safe for the moment is that the shipped artifact is FROZEN at
+> `as_of 2026-07-31` on PRE-anchor numbers (`expectancy_pct 1.19`, `win_pct 63.6`). The
+> exposure is on the unfreeze: the first nightly that re-grades the US board lane will move
+> every published number in that file under the new grid with no era stamp — the silent
+> re-bake §3 forbids. §0.1 needs an operator/Fable ruling before that happens.
 
 ---
 
@@ -21,8 +36,12 @@ Sibling of `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
    numbers appear side by side with the reason for the change.
 4. The re-measurement is run **after** #4732 merges, on the real panel, and its output is
    committed alongside the recompute in one PR.
-5. `tests/test_ob_mask_start_invariance.py::test_start_invariance` has its `xfail` marker
-   dropped in the same PR that stamps the era — the tripwire is spent once it has fired.
+5. ~~`tests/test_ob_mask_start_invariance.py::test_start_invariance` has its `xfail` marker
+   dropped in the same PR that stamps the era~~ — **AMENDED 2026-08-07, gate spent early.**
+   The 28-second merge race (see Status) fired the tripwire before any era-stamp PR could
+   exist, so the marker was dropped by the CI heal instead; the test now stands as a live
+   regression guard on start-invariance. This gate is CLOSED and can no longer serve as the
+   reminder that the other five are open — that job now belongs to the Status block above.
 6. The direction of the move (§4) is disclosed in the PR body **before** anyone argues the
    new numbers are better.
 
@@ -185,11 +204,26 @@ lane is unfrozen; that is gate §0.4.
 
 ## §7 The tripwire
 
-`tests/test_ob_mask_start_invariance.py` carries `test_start_invariance` as
-`xfail(strict=True)`. It fails today for the right reason and flips to XPASS — i.e. **red** —
-the moment #4732 lands, which is the notification that the published record has moved and
-this proposal is due. Verified in both directions: red under `origin/main`, `[XPASS(strict)]`
-under main + #4732's anchor.
+**SPENT 2026-08-07 — see the Status block at the top of this file.**
+
+`tests/test_ob_mask_start_invariance.py` carried `test_start_invariance` as
+`xfail(strict=True)`. It failed for the right reason and flipped to XPASS — i.e. **red** —
+the moment #4732 landed, which was the notification that the published record had moved and
+this proposal was due. Verified in both directions before the merge: red under `origin/main`,
+`[XPASS(strict)]` under main + #4732's anchor. It then behaved exactly as designed, only far
+faster than intended — #4732 and #4747 merged 28 seconds apart, so the notification arrived
+as a fleet-wide CI red rather than as a considered signal to one session.
+
+**Lesson for the next tripwire of this shape.** An `xfail(strict=True)` armed against a
+SPECIFIC in-flight PR is a bet on merge ORDER, and this repo merges concurrently — a race it
+lost by 28 seconds. The tripwire correctly refused to let the change be silent, but its blast
+radius was every open PR in the repo, not the one lane that owed the follow-up. A tripwire
+that blocks the whole fleet also creates pressure to disarm it carelessly, which is the one
+outcome it exists to prevent. Prefer a form whose failure is scoped to the artifact or lane
+that owes the work — the obligation is now carried by this document's Status block instead.
+
+The marker is gone; the test remains as a live regression guard, so a revert of the absolute
+anchor on this path fails loudly rather than silently moving published P&L.
 
 Its sibling `test_causal_trailing_truncation_never_moves_past_flags` is green in both eras
 and stays green — it pins the half of the docstring that was always true, so a future change

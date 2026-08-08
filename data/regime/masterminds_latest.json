@@ -1,8 +1,8 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-06 22:45 UTC",
-  "asof": "2026-08-05",
+  "built": "2026-08-08 07:42 UTC",
+  "asof": "2026-08-07",
   "stale_after_min": 1440,
   "cards": [
     {
@@ -11,102 +11,102 @@
       "cagr": 7.92,
       "sharpe": 1.13,
       "maxdd": -17.3,
-      "asof": "2026-08-05",
-      "gross_now": 0.49,
+      "asof": "2026-08-07",
+      "gross_now": 0.44,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 12.2
-        },
-        {
-          "asset": "QQQ",
-          "label_en": "Nasdaq 100",
-          "label_zh": "\u7eb3\u6307100",
-          "weight": 12.2
+          "weight": 12.0
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 12.2
+          "weight": 12.0
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 12.2
+          "weight": 12.0
+        },
+        {
+          "asset": "QQQ",
+          "label_en": "Nasdaq 100",
+          "label_zh": "\u7eb3\u6307100",
+          "weight": 7.9
         }
       ]
     },
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.48,
+      "cagr": 11.47,
       "sharpe": 1.07,
       "maxdd": -24.1,
-      "asof": "2026-08-05",
-      "gross_now": 0.87,
+      "asof": "2026-08-07",
+      "gross_now": 0.81,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 24.1
+          "weight": 23.6
         },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 24.1
-        },
-        {
-          "asset": "QQQ",
-          "label_en": "Nasdaq 100",
-          "label_zh": "\u7eb3\u6307100",
-          "weight": 19.7
+          "weight": 23.6
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 19.0
+          "weight": 21.7
+        },
+        {
+          "asset": "QQQ",
+          "label_en": "Nasdaq 100",
+          "label_zh": "\u7eb3\u6307100",
+          "weight": 11.6
         }
       ]
     },
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.32,
+      "cagr": 17.3,
       "sharpe": 1.0,
       "maxdd": -34.9,
-      "asof": "2026-08-05",
-      "gross_now": 1.71,
+      "asof": "2026-08-07",
+      "gross_now": 1.58,
       "alloc": [
-        {
-          "asset": "SPY",
-          "label_en": "S&P 500",
-          "label_zh": "\u6807\u666e500",
-          "weight": 54.0
-        },
         {
           "asset": "HYG",
           "label_en": "High-yield credit",
           "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 54.0
+          "weight": 53.1
         },
         {
-          "asset": "QQQ",
-          "label_en": "Nasdaq 100",
-          "label_zh": "\u7eb3\u6307100",
-          "weight": 32.2
+          "asset": "SPY",
+          "label_en": "S&P 500",
+          "label_zh": "\u6807\u666e500",
+          "weight": 50.7
         },
         {
           "asset": "HG=F",
           "label_en": "Copper",
           "label_zh": "\u94dc",
-          "weight": 31.0
+          "weight": 35.4
+        },
+        {
+          "asset": "QQQ",
+          "label_en": "Nasdaq 100",
+          "label_zh": "\u7eb3\u6307100",
+          "weight": 19.0
         }
       ]
     }

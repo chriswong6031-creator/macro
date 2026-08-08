@@ -220,16 +220,13 @@ on:
       - "research/prophet_us_audit/price_ladder.py"
       - "research/prophet_us_audit/relay_position_standin.py"
       - "tests/test_research_price_panel.py"
-      # The two evidence files the SAME suite reads by path literal. #4652 taught
-      # tests/test_merge_on_green.py to read the reclaim-veto packet's write-up and its
-      # frozen results as a worked example, and scripts/check_ci_trigger_closure.py has
-      # failed RED on main ever since (4768a3c1574, 2026-08-05 19:58 PT) — the closure
-      # gate in the workflow-yaml job, which is the same pack as signal-contract, so
-      # every PR since inherits it. Adding the two paths is the fix the guard's own
-      # error message prescribes verbatim: the suite reads them, so an edit to either
-      # must be able to start the job that runs the suite.
-      - "research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md"
-      - "research/prophet_us_audit/reclaim_veto_packet_results_2026-08-05.json"
+      # NOT the packet's .md/.json artifacts. #4733 added them here to clear a
+      # check_ci_trigger_closure.py finding against tests/test_merge_on_green.py,
+      # but that suite never opens them — they are members of INCIDENT_4607_FILES,
+      # file NAMES handed to a fake GitHub API to reconstruct one commit. The entries
+      # encoded a dependency that does not exist and armed the full 4-pack run on
+      # every edit to two decision-packet files. The fixture now carries a
+      # `# ci-trigger-closure: data` marker instead.
       # research/-RESIDENT suites (2026-08-06). Same job, same lesson, one directory over.
       # The packets that introduced these were fenced to files-only, so each suite was
       # written NEXT TO its instrument under research/ instead of in tests/. Nothing in
@@ -975,6 +972,15 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # Same contract for the MERGE orchestrator, and the same #3488 shape: the
+      # workflow-yaml job above runs tests/test_merge_on_green.py, but neither the
+      # sweeper nor its tests could start it — a PR editing the thing that decides
+      # every merge in this repo published no pack check at all, so the sweeper
+      # reported it "unproven" and would never merge it (measured on #4968, which
+      # had ZERO runs on its branch). A guard whose own change cannot trigger it is
+      # a guard that reviews as covered and runs never.
+      - "scripts/merge_on_green.py"
+      - "tests/test_merge_on_green.py"
       # SKIP-ONLY suite guard (job: workflow-yaml). scripts/*.py already reaches
       # the checker; these two are the other halves. requirements.txt matters
       # because a `-r requirements.txt` install line is how several jobs declare
@@ -2834,6 +2840,7 @@ on:
       - "tests/test_us_board_rank.py"
       - "tests/test_us_board_w3_evidence.py"
       - "tests/test_us_context_vector.py"
+      - "tests/test_us_context_vector_payload_containment.py"
       - "scripts/build_china_pick_lab.py"
       - "scripts/build_pick_lab.py"
       - "scripts/build_stock_board_v2.py"
@@ -2847,6 +2854,7 @@ on:
       # prophet-us-context-and-grades (PROPHET US §W7)
       - "tests/test_us_prophet_grades.py"
       - "tests/test_us_context_vector.py"
+      - "tests/test_us_context_vector_payload_containment.py"
       - "tests/test_prophet_miss_audit.py"
       - "scripts/grade_us_prophet_candidates.py"
       # Archetype coverage pipeline (2026-08): the candidates-stamp heal script and

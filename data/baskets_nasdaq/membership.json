@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-07",
+ "as_of": "2026-08-08",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -56,12 +56,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MCHP",
@@ -148,12 +148,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -410,12 +410,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MCHP",
@@ -504,12 +504,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
