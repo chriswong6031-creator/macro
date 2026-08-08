@@ -716,7 +716,47 @@ the night they ship. W3 collectors land in daily.yml off the render-critical pat
 
 ---
 
-## Appendix A — verified defect register (short form)
+## §11 Execution log
+
+**W0 — SHIPPED to review 2026-08-08, PR #4985 (opus builder, commissioned + reviewed by
+the audit session).** Items 1-7 all landed: policy-vote heal via an explicit
+`_VOTING_DESKS` tuple (policy facet/flags/tile untouched; bonus integrity fix — the
+alignment flags now compare policy against a genuinely independent desk lean, where
+previously policy voted on the very lean it was then graded "aligned" with); snapshot
+provenance (`rank`/`cohorts`/`hero_reason`, additive, legacy rows still grade);
+governor dual-path fresh-read with line-start `::warning` on >2d/unreadable (semantics
+untouched — it gains a voice, never a new power); bounded asof price reads (7d default,
+`None` opt-out); accrual+coverage monitor; special-sits 36h sentinel (also fires on a
+present-but-undated file — kept); twitter delisted from the altdata registry (23→22).
+
+Deviations adjudicated: (a) **pinned residual** — for news-only names where
+`brain.priority==0`, policy PRESENCE (not direction) still widens `composite_conviction`
+via `len(present)`; pinned by a test written to go RED when fixed → **W1 addendum: drop
+policy from `present`/`n_facets`/`source_mix` or fold into the X2 units work**; (b)
+bounded reads shipped global-default-ON on measurement (hub ledger impact 18/6,629 rows
+= 0.27%, and the dropped rows were pure −SPY noise — systematically signed phantom
+returns from stalled series; ai_desk/qledger/subsector graded-n may dip marginally, by
+design); (c) `scripts/collect.py` still registers `quiver_twitter` in the collection
+lane's expected-failure accounting → W3 cleanup; (d) full-suite local run abandoned
+mid-rebase by design — gates 1-6 (1,948 targeted passes) + ci.yml packs are the proof.
+
+Live findings from W0's probes (dated 2026-08-08, single build — verify on fresh
+nightlies before acting):
+1. **The Emerging panel is EMPTY tonight**: 3,095 dossiers, 31 bullish-stage names
+   (7 emerging + 24 early), ALL 31 barred by `_hero_ok` — 30 of them by `flat_sell`,
+   including command ranks 1-3 (SPCX, ECHO, PSKY). The hero gate is not merely blind to
+   young names (§5); as of tonight it excludes every candidate it has. This escalates
+   W2's hero work and puts the `flat_sell` verdict semantics ("not currently a buy" vs
+   "actively exit") on the review table — coordinate with the #4964 confluence-latch
+   lane, which owns that verdict; do not fork it.
+2. **Accrual gaps: 7 in the trailing 30d, not 3** (07-09, 07-14, 07-22/23/24, 08-04,
+   08-07); graded coverage 12.25/11.60/10.77% at 5/10/21d; 63d has ZERO eligible rows
+   (ledger born 2026-06-21). The scorecard's negative-alpha readings rest on ~1/8th of
+   the intended sample — §1 finding 1's "interpret after the ruler is fixed" stands,
+   reinforced.
+3. D21 confirmed live, not theoretical: the stale-close rows entering the IC carried
+   identical forward "returns" across different tickers — pure −(SPY return) noise at
+   full weight.
 
 | # | Defect | Where | Wave |
 |---|---|---|---|
