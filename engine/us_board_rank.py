@@ -557,10 +557,20 @@ def signal_age(
     fresh-only filter), so this resolver prefers the session answer and DISCLOSES the
     basis whenever it has to fall back.
 
-    * ``sessions`` — the verdict's ``fresh_bars``: the count of daily bars strictly
-      after the §7 buy marker (``engine.signal_gate._bars_since``).  It is the closes-
-      index distance, the same quantity :func:`cross_read` reports as
-      ``sessions_since`` — verified equal on real rows (AEE 29, AMGN 40, APD 23).
+    * ``sessions`` — the verdict's session count since the §7 buy marker.  Preferred
+      source is ``fresh_bars_knowable`` (``engine.signal_gate._knowable_bars``), which
+      counts from the session the marker's 3D bucket CLOSED on; ``fresh_bars`` (counted
+      from the bucket's OPEN label, ``engine.signal_gate._bars_since``) is the fallback
+      for a verdict built before the knowable field existed or where the anchor was not
+      derivable.  The two differ by up to two sessions, always in the same direction:
+      the OPEN label predates its own bucket's close, so ``fresh_bars`` reports a signal
+      as older than it was ever knowable.  Measured on the committed 2026-08-06 board:
+      APH and FCX published ``days_since_signal 4`` against a knowable age of 2, which is
+      outside ``templates/stocktable.js``'s ``FRESH_DAYS = 2`` — the fresh-only filter was
+      dropping the freshest turns on the board.  ``fresh_bars`` itself is UNCHANGED: it
+      gates eligibility and FRESH_TICKS across five boards, and re-anchoring it is a
+      semantic change owing a blast-radius report (``research/
+      SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md`` §4).
     * ``calendar`` — the plain date difference, used only when no marker-anchored
       session count exists.
 
@@ -579,9 +589,10 @@ def signal_age(
     question this number answers.  Returns ``(None, None)`` when neither is available —
     an unknown age is a null to print, never a zero.
     """
-    bars = _finite_int((verdict or {}).get("fresh_bars"))
-    if bars is not None and bars >= 0:
-        return bars, BASIS_SESSIONS
+    for field in ("fresh_bars_knowable", "fresh_bars"):
+        bars = _finite_int((verdict or {}).get(field))
+        if bars is not None and bars >= 0:
+            return bars, BASIS_SESSIONS
     days = days_since_signal(sig_asof, board_asof)
     if days is None:
         return None, None

@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-08-07",
+  "as_of": "2026-08-08",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 117,
+    "opportunity_queue_depth": 135,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,30 +1690,30 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 117,
-      "scored": 223,
+      "open": 135,
+      "scored": 241,
       "newest": [
         {
-          "id": "radar-earnings-AAOI-2026-08-06",
-          "problem_or_desire": "$AAOI: earnings 2026-08-06 after hours",
+          "id": "radar-earnings-AAON-2026-08-07",
+          "problem_or_desire": "$AAON: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.194182,
+          "score": 0.233127,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ABNB-2026-08-06",
-          "problem_or_desire": "$ABNB: earnings 2026-08-06 after hours",
-          "expected_value": 0.5,
-          "score": 0.194182,
-          "half_life_class": "earnings_follow_up",
-          "status": "open"
-        },
-        {
-          "id": "radar-earnings-ABR-2026-08-06",
+          "id": "radar-earnings-ABR-2026-08-07",
           "problem_or_desire": "$ABR: earnings 2026-08-07",
           "expected_value": 0.5,
-          "score": 0.194182,
+          "score": 0.233127,
+          "half_life_class": "earnings_follow_up",
+          "status": "open"
+        },
+        {
+          "id": "radar-earnings-ACHR-2026-08-07",
+          "problem_or_desire": "$ACHR: earnings 2026-08-10 after hours",
+          "expected_value": 0.5,
+          "score": 0.233127,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 7,
+    "total_posts": 2,
     "signal_posts": 1,
-    "charts": 97,
+    "charts": 101,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-08-07"
+    "as_of": "2026-08-08"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-07T08:44:54Z",
-  "inputs_hash": "sha256:526df059b67ffcd4bb96de6d53bf019a01f125d102c447fc5f93c73421387aad",
+  "produced_at": "2026-08-08T02:25:10Z",
+  "inputs_hash": "sha256:e417bb153b68efc4bde18b6ece2da788b087711962433251b8111a2ebddbc767",
   "tier": "display"
 }
