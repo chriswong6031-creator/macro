@@ -1652,12 +1652,12 @@
       "checked_at": "2026-08-08T13:25:51.166545+00:00"
     },
     "tape_flow_forward": {
-      "status": "empty",
-      "n_ok": 0,
+      "status": "ok",
+      "n_ok": 375,
       "n_err": 0,
-      "elapsed_sec": 0.0,
+      "elapsed_sec": 341.1,
       "last_date": "2026-08-07",
-      "checked_at": "2026-08-08T05:58:24.699826+00:00",
+      "checked_at": "2026-08-08T14:09:35.961441+00:00",
       "mode": "forward"
     },
     "china_filings": {
@@ -1807,8 +1807,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-08-08T07:29:38.500679+00:00",
-      "checked_at": "2026-08-08T07:29:40.334345+00:00"
+      "as_of": "2026-08-08T15:52:19.346985+00:00",
+      "checked_at": "2026-08-08T15:52:20.613569+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1867,12 +1867,12 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 1035,
-      "n_graded_ok": 4616,
+      "n_new": 0,
+      "n_graded_ok": 0,
       "n_scored_this_run": 0,
-      "elapsed_sec": 9.8,
+      "elapsed_sec": 8.7,
       "last_date": "2026-08-08",
-      "checked_at": "2026-08-08T07:38:51.359734+00:00"
+      "checked_at": "2026-08-08T15:59:04.463065+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",
@@ -1912,17 +1912,17 @@
       "n_ok": 0,
       "n_err": 0,
       "elapsed_sec": 0.0,
-      "last_date": "2026-08-07",
-      "checked_at": "2026-08-08T05:58:26.025676+00:00",
+      "last_date": "2026-08-08",
+      "checked_at": "2026-08-08T14:09:37.201503+00:00",
       "mode": "episodes"
     },
     "tape_flow_etf-history": {
       "status": "ok",
-      "n_ok": 100,
+      "n_ok": 79,
       "n_err": 0,
-      "elapsed_sec": 1224.1,
-      "last_date": "2025-09-22",
-      "checked_at": "2026-08-08T06:18:50.472804+00:00",
+      "elapsed_sec": 1288.2,
+      "last_date": "2026-01-16",
+      "checked_at": "2026-08-08T14:31:05.805753+00:00",
       "mode": "etf-history"
     },
     "google_trends": {
