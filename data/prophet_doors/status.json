@@ -1,19 +1,58 @@
 {
-  "appended": 0,
-  "asof": "2026-07-31",
+  "appended": 38,
+  "asof": "2026-08-07",
   "candidates": {
-    "R": 1,
-    "T": 6
+    "R": 4,
+    "T": 10,
+    "W": 42
   },
   "deduped": {
-    "R": 1,
-    "T": 6
+    "R": 0,
+    "T": 1,
+    "W": 0
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "consulted": false
+      "asof": "2026-08-07",
+      "consulted": true,
+      "n_keys": 27,
+      "n_themes": 18,
+      "ok": true,
+      "reason": null,
+      "source": "site/basketdata/foresight_cascade.json"
+    },
+    "ignition": {
+      "coil_min_sessions": 293,
+      "consulted": true,
+      "null_reasons": {
+        "no_bar_on_flag_date": 4,
+        "ohlcv_absent": 37
+      },
+      "reason": null,
+      "source": "data/baskets/ohlcv/<ticker>.parquet",
+      "themes_read": {
+        "Agriculture & FoodTech": {
+          "theme_thrust_frac": 0.0,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        },
+        "Commodities Metals": {
+          "theme_thrust_frac": 0.56,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "thrusting"
+        },
+        "Virtual & Augmented Reality": {
+          "theme_thrust_frac": 0.2105,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        }
+      },
+      "thrust_min_members": 6,
+      "thrust_min_sessions": 27,
+      "tickers_ok": 56,
+      "tickers_read": 97
     },
     "keys": [
       "relay_count_3d",
@@ -22,60 +61,169 @@
       "turnover_pctile",
       "turnover_window",
       "foresight_stage",
-      "foresight_covered"
+      "foresight_covered",
+      "coil_compressed",
+      "coil_bars_compressed",
+      "coil_reason",
+      "theme_thrust_state",
+      "theme_thrust_frac",
+      "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": false
+      "consulted": true,
+      "high_lookback": 63,
+      "members_indexed": 127,
+      "n_covered": 60,
+      "reason": null,
+      "window_sessions": 21
     },
     "turnover": {
-      "consulted": false
+      "consulted": true,
+      "last_session": "2026-08-07",
+      "n_tickers": 1541,
+      "ok": true,
+      "reason": null,
+      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
+      "window_max": 60
     }
   },
+  "feature_source_w": {
+    "atlas": {
+      "consulted": true,
+      "direction": "bull",
+      "grid": "W",
+      "horizon": "13w",
+      "n_asked": 25,
+      "n_covered": 20,
+      "reason": "no W/bull event in the library for at least one flagged name — atlas features null there",
+      "source": "engine.event_atlas.receipt"
+    },
+    "enabled": true,
+    "keys": [
+      "era",
+      "regime_bucket",
+      "archetype",
+      "atlas_event_date",
+      "atlas_event_on_cross",
+      "atlas_class",
+      "atlas_name_post_13w",
+      "atlas_name_post_13w_exc",
+      "atlas_arch_post_13w",
+      "atlas_arch_post_13w_exc",
+      "atlas_n_name",
+      "atlas_n_archetype",
+      "atlas_n_global",
+      "atlas_covered"
+    ]
+  },
   "flag_tickers": {
-    "R": [],
-    "T": []
+    "R": [
+      "LZB",
+      "SAIC",
+      "NLY",
+      "USFD"
+    ],
+    "T": [
+      "ALB",
+      "MP",
+      "CMC",
+      "FCX",
+      "CENX",
+      "STLD",
+      "LNN",
+      "LITE",
+      "NVDA"
+    ],
+    "W": [
+      "PAAS",
+      "AEM",
+      "KGC",
+      "HII",
+      "HL",
+      "PPTA",
+      "GFI",
+      "AU",
+      "EQX",
+      "IAG",
+      "PLG",
+      "SBSW",
+      "CDE",
+      "PNR",
+      "NEM",
+      "UROY",
+      "NOC",
+      "CME",
+      "IMPUY",
+      "EXK",
+      "FOX",
+      "FOXA",
+      "MCD",
+      "HCA",
+      "LVS"
+    ]
   },
   "n_universe": 1495,
   "overflow": {
     "R": 0,
-    "T": 0
+    "T": 0,
+    "W": 17
   },
-  "run_utc": "2026-08-06 22:58:29",
-  "runtime_s": 165.2,
+  "run_utc": "2026-08-08 02:26:50",
+  "runtime_s": 86.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": -2,
-    "asof": "2026-08-02",
-    "n_members": 128,
+    "age_days": 0,
+    "asof": "2026-08-07",
+    "n_members": 127,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.271,
+        "emerging_score": 5.162,
         "rank": 1,
-        "theme": "Software"
+        "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 1.848,
+        "emerging_score": 4.143,
         "rank": 2,
-        "theme": "Healthy Food & Nutrition"
+        "theme": "Space Tech"
       },
       {
-        "emerging_score": 1.775,
+        "emerging_score": 3.522,
         "rank": 3,
-        "theme": "Quantum Computing"
+        "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.586,
+        "emerging_score": 1.36,
         "rank": 4,
-        "theme": "Smart Home"
+        "theme": "Virtual & Augmented Reality"
       },
       {
-        "emerging_score": 1.497,
+        "emerging_score": 1.045,
         "rank": 5,
-        "theme": "Big Data"
+        "theme": "Quantum Computing"
       }
     ]
+  },
+  "washout_source": {
+    "align_grids": [
+      "2B",
+      "3B"
+    ],
+    "aligned": 42,
+    "asof_max": "2026-08-07",
+    "asof_mismatch": 0,
+    "asof_run": "2026-08-07",
+    "evaluated": 712,
+    "fresh": 42,
+    "fresh_weeks_max": 2,
+    "ok": true,
+    "reason": null,
+    "runtime_s": 14.2,
+    "skipped": 5,
+    "source": "baskets/membership.json",
+    "state_turn": 101,
+    "universe_n": 717
   }
 }

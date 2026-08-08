@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-08-07",
+  "as_of": "2026-08-08",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 134,
+    "opportunity_queue_depth": 135,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,14 +1690,14 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 134,
-      "scored": 240,
+      "open": 135,
+      "scored": 241,
       "newest": [
         {
           "id": "radar-earnings-AAON-2026-08-07",
           "problem_or_desire": "$AAON: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.298294,
+          "score": 0.233127,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-earnings-ABR-2026-08-07",
           "problem_or_desire": "$ABR: earnings 2026-08-07",
           "expected_value": 0.5,
-          "score": 0.298294,
+          "score": 0.233127,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-earnings-ACHR-2026-08-07",
           "problem_or_desire": "$ACHR: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.298294,
+          "score": 0.233127,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 5,
-    "signal_posts": 0,
-    "charts": 107,
+    "total_posts": 2,
+    "signal_posts": 1,
+    "charts": 101,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-08-07"
+    "as_of": "2026-08-08"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-07T17:53:05Z",
-  "inputs_hash": "sha256:2d130ddb094fe174fd924320b39ad715ac1f3d0b8106363432dc92611c56e5ea",
+  "produced_at": "2026-08-08T02:25:10Z",
+  "inputs_hash": "sha256:e417bb153b68efc4bde18b6ece2da788b087711962433251b8111a2ebddbc767",
   "tier": "display"
 }

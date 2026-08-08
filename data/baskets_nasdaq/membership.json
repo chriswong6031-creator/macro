@@ -56,12 +56,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MCHP",
@@ -148,12 +148,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -410,12 +410,12 @@
      "name": "Monolithic Power System Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MCHP",
@@ -504,12 +504,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",

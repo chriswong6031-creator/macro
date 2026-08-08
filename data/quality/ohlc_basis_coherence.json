@@ -9,8 +9,8 @@
           "ticker": "HON",
           "verdict": "noise",
           "bad_bars": 2,
-          "bars": 55,
-          "bad_share": 0.0364,
+          "bars": 56,
+          "bad_share": 0.0357,
           "worst_excess": 0.024726,
           "worst_date": "2026-06-05",
           "inverted_bars": 0
@@ -19,8 +19,8 @@
           "ticker": "C",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.004875,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -29,8 +29,8 @@
           "ticker": "AMP",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.00265,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -39,8 +39,8 @@
           "ticker": "BX",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.001679,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -49,8 +49,8 @@
           "ticker": "AON",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.001522,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -59,8 +59,8 @@
           "ticker": "OKE",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.000593,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -76,8 +76,8 @@
           "ticker": "EWBC",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.005762,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -86,8 +86,8 @@
           "ticker": "RPM",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.004742,
           "worst_date": "2026-06-15",
           "inverted_bars": 0
@@ -96,8 +96,8 @@
           "ticker": "EQH",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.002115,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -106,9 +106,96 @@
           "ticker": "OHI",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.001963,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        }
+      ]
+    },
+    "russell_breadth": {
+      "status": "coherent",
+      "split_tickers": 0,
+      "noise_tickers": 8,
+      "findings": [
+        {
+          "ticker": "ARL",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.039333,
+          "worst_date": "2026-08-07",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "FIBK",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.011822,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "OVLY",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.00881,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "PEBO",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.007069,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "BANR",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.00475,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "WABC",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.001124,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "MPB",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.000938,
+          "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "SXT",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.000914,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
         }
@@ -123,8 +210,8 @@
           "ticker": "FIBK",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.011822,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -133,8 +220,8 @@
           "ticker": "APOG",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.005965,
           "worst_date": "2026-06-15",
           "inverted_bars": 0
@@ -143,8 +230,8 @@
           "ticker": "BANR",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.00475,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -153,8 +240,8 @@
           "ticker": "LAZ",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 40,
-          "bad_share": 0.025,
+          "bars": 41,
+          "bad_share": 0.0244,
           "worst_excess": 0.004051,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -163,8 +250,8 @@
           "ticker": "WABC",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.001124,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -173,8 +260,8 @@
           "ticker": "SXT",
           "verdict": "noise",
           "bad_bars": 1,
-          "bars": 55,
-          "bad_share": 0.0182,
+          "bars": 56,
+          "bad_share": 0.0179,
           "worst_excess": 0.000914,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -184,5 +271,5 @@
   },
   "splits": 0,
   "status": "coherent",
-  "noise_tickers": 16
+  "noise_tickers": 24
 }

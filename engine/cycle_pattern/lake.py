@@ -95,10 +95,32 @@ _OSC_COLS = [
 # Minimum completed monthly bars required to produce non-missing oscillators.
 _OSC_MIN_BARS = 40
 
-# Tickers whose daily tape lives in the yahoo store under the ticker.lower() name
-# (with ^/=// replaced by _).  China Shenwan sectors (801xxx) have no yahoo
-# entry and are always osc_missing.
+# Engines whose daily tape lives in the yahoo side-store.  China Shenwan sectors
+# (801xxx) have no yahoo entry and are always osc_missing.
 _YAHOO_ENGINE_LABELS = {"us_sector_cycles", "country_cycles"}
+
+
+def yahoo_key(native_id: str) -> str:
+    """Side-store key for one native_id, in the case the store ACTUALLY uses.
+
+    UPPERCASE. Every one of the yahoo store's symbol files is uppercase --
+    `git cat-file -e HEAD:data/yahoo/xlk.parquet` is absent while `XLK.parquet` is
+    tracked -- and `_load_backfill` already uppercases native_id.
+
+    This was `.lower()` until 2026-08-07, and the docstring above it asserted a
+    lowercase convention that has never existed. A lowered name resolves on a
+    case-INSENSITIVE checkout (macOS/APFS: every dev machine here and the self-hosted
+    mac lanes) and returns None on `ubuntu-latest`, where the ci-pack jobs run. The
+    failure is silent by construction -- a None read is indistinguishable from "this
+    entity has no tape" -- so the entire us_sector/country cross-section fell through
+    to osc_missing=True and `test_osc_nonnull_for_liquid_entities` failed on an empty
+    XLK frame. A red that cannot be reproduced on the machine it is verified on.
+
+    Public, and pinned by name in tests/test_cycle_pattern_lake.py against `os.listdir`
+    (which reports the STORED case even on a case-insensitive filesystem). Resolving the
+    key inline would leave that guard testing a copy of the rule instead of the rule.
+    """
+    return native_id.upper().replace("^", "_").replace("=", "_").replace("/", "_")
 
 
 def _native_to_entity(entities: pd.DataFrame, engine_label: str) -> dict[str, str]:
@@ -188,8 +210,7 @@ def _compute_monthly_oscs_for_entity(
         return out
 
     from lib import store  # noqa: PLC0415
-    ticker = native_id.lower().replace("^", "_").replace("=", "_").replace("/", "_")
-    df = store.read("yahoo", ticker)
+    df = store.read("yahoo", yahoo_key(native_id))
     if df is None or df.empty or "close" not in df.columns:
         log.debug("osc: no daily close for %s (%s)", native_id, engine_label)
         return out

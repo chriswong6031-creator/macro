@@ -1,0 +1,1 @@
+{"date":"2026-08-07","workflow":"daily","job":"capital_structure","run_id":"31210097197","run_attempt":"1","runner":"mac-builder-1","cap_minutes":90.0,"end":"2026-08-07T22:00:37Z","start":"2026-08-07T21:34:08Z","elapsed_minutes":26.5,"pct_of_cap":29.4,"bands":[{"band":"startup","seconds":219},{"band":"capital-structure","seconds":1370}]}
