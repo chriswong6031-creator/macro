@@ -315,9 +315,11 @@ def test_ratio_report_names_a_ratio_above_one_and_a_tip_off_one():
 
 
 def test_a_ratio_anomaly_annotates_but_still_writes_the_name(tree, monkeypatch, capsys):
-    """Soft by design: IBIT is a live counterexample to the <=1 and tip rules in
-    the collector's own store, and the anomaly lives in a column no grader reads.
-    Parking a name over it would trade real coverage for a vendor quirk."""
+    """Soft by design. Measured: stored IBIT breaks the <=1 and tip rules (1.002385)
+    in the collector's own store, and a full re-pull returns exactly 1.0 — the
+    anomaly was a stale-basis store artifact the refresh phase repairs, not a
+    property of the security. Parking on it would trade real coverage for
+    something already fixable, in a column no grader reads."""
     b = _bars(120)
     b["Adj Close"] = b["Close"] * 1.01          # TR above split-only, tip off 1.0
     resp = _yf_response({"AAA": b})
@@ -608,6 +610,227 @@ def test_dry_run_touches_no_network_and_writes_nothing(tree, monkeypatch, capsys
     assert not (tree / "data" / bf.STATE_FILE).exists()
     assert any(ln.startswith("::notice title=yahoo-backfill::")
                for ln in capsys.readouterr().out.splitlines())
+
+
+# ---------------------------------------------------------------------------
+# 8. the post-drain refresh phase
+# ---------------------------------------------------------------------------
+def _no_maintained(monkeypatch, keep: set[str] | None = None):
+    """Pretend the collector maintains nothing (or only `keep`), so the test's own
+    parquets are the refresh candidates."""
+    monkeypatch.setattr(bf, "maintained_stems", lambda: set(keep or ()))
+
+
+def test_refresh_only_starts_once_the_backfill_queue_under_fills_the_cap(tree, monkeypatch):
+    """During the ~16 drain nights the refresh must not compete for the budget."""
+    names = ["AAA", "BBB", "CCC"]
+    _write_ledger(tree, [("2026-08-01", t) for t in names])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+    _stub_download(monkeypatch, {"*": _yf_response({t: _bars(120) for t in names})})
+
+    # cap == queue length -> queue fills the cap -> no refresh
+    full = bf.run(cap=3, batch_size=3, sleep_s=0)
+    assert full["refresh_ran"] is False and full["refreshed"] == 0
+    assert full["written"] == 3
+
+    # queue now empty -> the refresh phase owns the run
+    drained = bf.run(cap=3, batch_size=3, sleep_s=0)
+    assert drained["planned"] == 0
+    assert drained["refresh_ran"] is True
+    assert drained["refreshed"] == 3
+    assert drained["refreshable"] == 3
+
+
+def test_refresh_takes_the_oldest_tip_first(tree, monkeypatch):
+    tips = {"OLD": "2020-01-01", "MID": "2024-01-01", "NEW": "2026-01-01"}
+    for t, tip in tips.items():
+        store.upsert("yahoo", t, _good_frame())
+    state = {"done": {t: {"last_obs": tip} for t, tip in tips.items()}}
+    _no_maintained(monkeypatch)
+    order, n = bf.refresh_candidates(state)
+    assert order == ["OLD", "MID", "NEW"] and n == 3
+
+
+def test_refresh_skips_collector_maintained_and_parked_names(tree, monkeypatch):
+    """A series the nightly collector owns must never be touched here, and a parked
+    name must not be retried forever."""
+    for t in ("MINE", "THEIRS", "PARKED"):
+        store.upsert("yahoo", t, _good_frame())
+    _no_maintained(monkeypatch, keep={"THEIRS"})
+    state = {"done": {}, "parked": {"PARKED": {"reason": "refresh_failed"}}}
+    order, n = bf.refresh_candidates(state)
+    assert order == ["MINE"] and n == 1
+
+
+def test_maintained_stems_compares_sanitized_store_names(monkeypatch):
+    """The collector maintains CL=F / ^GSPC; their files are CL_F / _GSPC. Comparing
+    a directory stem against the raw config ticker misses every one of them —
+    measured 2026-08-08, a naive compare called 38 collector-maintained FX and
+    commodity series 'non-maintained', which would have had this phase re-pulling
+    them nightly under a symbol yfinance 404s and parking all 38."""
+    assert bf.store_stem("CL=F") == "CL_F"
+    assert bf.store_stem("^GSPC") == "_GSPC"
+    assert bf.store_stem("BRK.B") == "BRK.B"
+
+    class _Fake:
+        def maintained_tickers(self):
+            return ["CL=F", "^GSPC", "AAPL"]
+    monkeypatch.setattr(bf, "YahooAdapter", _Fake)
+    assert bf.maintained_stems() == {"CL_F", "_GSPC", "AAPL"}
+
+
+def test_an_unresolvable_maintained_set_skips_the_refresh_rather_than_refreshing_all(
+        tree, monkeypatch):
+    """Fail CLOSED. An empty set would read as 'nothing is maintained', making every
+    parquet a candidate — the one direction that trespasses on the collector."""
+    store.upsert("yahoo", "AAA", _good_frame())
+
+    class _Boom:
+        def maintained_tickers(self):
+            raise RuntimeError("config unreadable")
+    monkeypatch.setattr(bf, "YahooAdapter", _Boom)
+    assert bf.maintained_stems() is None
+    assert bf.refresh_candidates({"done": {}}) == ([], 0)
+
+
+@pytest.mark.parametrize("n,expect_cap,expect_cadence", [
+    (0, 0, 0.0),
+    (60, 400, 0.1),        # tiny store -> the cap floor; cadence floors at 0.1d
+    (2400, 400, 6.0),      # exactly the floor's break-even
+    (4500, 750, 6.0),      # expected steady state
+    (6222, 1037, 6.0),     # whole addressable set
+    (12000, 1500, 8.0),    # past the ceiling -> cadence degrades, and is REPORTED
+])
+def test_refresh_cadence_math(n, expect_cap, expect_cadence):
+    cap = bf.refresh_cap_for(n)
+    assert cap == expect_cap
+    assert bf.cadence_days(n, cap) == pytest.approx(expect_cadence, abs=0.05)
+
+
+def test_cadence_target_stays_under_the_house_bar_lag_bound():
+    """The 7d number is not ours: engine/name_score_grader.py:96
+    _MAX_BAR_LAG_DAYS = 7 (mirrored by collectors/yahoo.py _STALE_CAL_DAYS). Past it
+    a name's last bar reads as a dead feed, so a refresh that lands slower than that
+    buys nothing. Pinned so a future cap tweak cannot quietly cross it."""
+    from engine import name_score_grader as NSG
+    assert bf.REFRESH_TARGET_CADENCE_D < NSG._MAX_BAR_LAG_DAYS
+    # and the clamp ceiling must be able to HOLD the target for the real universe
+    assert bf.cadence_days(6222, bf.refresh_cap_for(6222)) <= bf.REFRESH_TARGET_CADENCE_D
+
+
+def test_a_parked_refresh_leaves_the_existing_parquet_intact(tree, monkeypatch):
+    """stale-but-present beats absent. A refresh that cannot re-pull must not delete,
+    truncate or invalidate what is already on disk — the ~7d bound reports the
+    staleness honestly instead."""
+    store.upsert("yahoo", "AAA", _good_frame())
+    # disk-to-disk: the in-memory upsert return carries an index `freq` the parquet
+    # round-trip drops, which is an artifact of the comparison, not of the lane.
+    before = pd.read_parquet(tree / "data" / "yahoo" / "AAA.parquet")
+    _write_ledger(tree, [])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+    _stub_download(monkeypatch, {"*": None})
+
+    for _ in range(3):
+        rep = bf.run(cap=5, batch_size=5, sleep_s=0, max_attempts=3)
+
+    after = pd.read_parquet(tree / "data" / "yahoo" / "AAA.parquet")
+    pd.testing.assert_frame_equal(after, before)
+    state = json.loads((tree / "data" / bf.STATE_FILE).read_text())
+    parked = state["parked"]["AAA"]
+    assert parked["reason"] == "refresh_failed"
+    assert "KEPT UNTOUCHED" in parked["note"]
+    assert "not a coverage loss" in parked["note"].lower()
+    assert rep["refreshed"] == 0
+
+
+def test_a_refresh_updates_last_obs_but_never_moves_the_backfilled_date(tree, monkeypatch):
+    """`backfilled` is the provenance date scripts/run_us_scan_tier.py reads to keep a
+    backfilled name scan-eligible. A refresh must not restamp it as 'created today'."""
+    store.upsert("yahoo", "AAA", _good_frame())
+    state = bf.load_state()
+    state["done"] = {"AAA": {"backfilled": "2026-01-15", "rows": 120,
+                             "last_obs": "2024-06-14"}}
+    bf.save_state(state)
+    _write_ledger(tree, [])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+    _stub_download(monkeypatch, {"*": _yf_response({"AAA": _bars(400)})})
+
+    rep = bf.run(cap=5, batch_size=5, sleep_s=0)
+
+    assert rep["refreshed"] == 1
+    done = json.loads((tree / "data" / bf.STATE_FILE).read_text())["done"]["AAA"]
+    assert done["backfilled"] == "2026-01-15", "creation date must not move"
+    assert done["rows"] == 400 and done["last_obs"] > "2024-06-14"
+    assert "refreshed" in done
+
+
+def test_the_notice_carries_the_refresh_cadence(tree, monkeypatch, capsys):
+    for t in ("AAA", "BBB"):
+        store.upsert("yahoo", t, _good_frame())
+    _write_ledger(tree, [])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+    _stub_download(monkeypatch, {"*": _yf_response({t: _bars(120) for t in ("AAA", "BBB")})})
+
+    rep = bf.run(cap=5, batch_size=5, sleep_s=0)
+
+    line = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::notice title=yahoo-backfill::")][0]
+    assert line == (f"::notice title=yahoo-backfill::backfilled 0, parked 0, "
+                    f"remaining 0, refreshed {rep['refreshed']} of {rep['refreshable']}, "
+                    f"refresh cadence ~{rep['refresh_cadence_d']}d")
+
+
+def test_a_drain_night_notice_is_byte_identical_to_the_pre_refresh_format(
+        tree, monkeypatch, capsys):
+    """No refresh -> no tail. The drain-phase line must not change shape."""
+    _write_ledger(tree, [("2026-08-01", "AAA")])
+    _write_hub(tree, command=["AAA"])
+    _stub_download(monkeypatch, {"*": _yf_response({"AAA": _bars(120)})})
+
+    rep = bf.run(cap=1, batch_size=1, sleep_s=0)
+
+    line = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::notice title=yahoo-backfill::")][0]
+    assert line == (f"::notice title=yahoo-backfill::backfilled {rep['written']}, "
+                    f"parked {rep['parked']}, remaining {rep['remaining']}")
+    assert rep["refresh_ran"] is False
+
+
+def test_a_cadence_over_target_raises_a_line_start_warning(tree, monkeypatch, capsys):
+    store.upsert("yahoo", "AAA", _good_frame())
+    _write_ledger(tree, [])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+    _stub_download(monkeypatch, {"*": _yf_response({"AAA": _bars(120)})})
+    # 1 refreshable at 1/night is a 1-day cadence; force the over-target branch by
+    # claiming a much larger refreshable population than tonight's cap can cover.
+    monkeypatch.setattr(bf, "refresh_candidates", lambda s, **kw: (["AAA"], 20000))
+
+    bf.run(cap=5, batch_size=5, sleep_s=0, refresh_cap=1000)
+
+    warn = [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::warning title=yahoo-backfill-cadence")]
+    assert warn and "past the 6d target" in warn[0]
+
+
+def test_dry_run_reports_the_refresh_plan_without_touching_the_network(tree, monkeypatch):
+    store.upsert("yahoo", "AAA", _good_frame())
+    _write_ledger(tree, [])
+    _write_hub(tree)
+    _no_maintained(monkeypatch)
+
+    def explode(*_a, **_k):
+        raise AssertionError("--dry-run must not touch the network")
+    monkeypatch.setattr(bf, "download_batch", explode)
+
+    rep = bf.run(cap=5, batch_size=5, sleep_s=0, dry_run=True)
+
+    assert rep["refresh_sample"] == ["AAA"] and rep["refreshable"] == 1
+    assert rep["refreshed"] == 0
 
 
 def test_cli_exits_zero_so_the_lane_can_never_red_the_night(tree, monkeypatch):
