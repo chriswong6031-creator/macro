@@ -647,7 +647,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 7.2
+      "conviction": 7.0
     },
     "silver": {
       "label": "Silver",
@@ -657,7 +657,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -2.6
+      "conviction": -2.7
     },
     "copper": {
       "label": "Copper",
@@ -677,7 +677,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -12.9
+      "conviction": -13.1
     }
   },
   "ratios": {

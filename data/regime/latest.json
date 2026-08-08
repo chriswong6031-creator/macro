@@ -9357,7 +9357,7 @@
   },
   "fed_path": {
     "asof": "2026-08-07",
-    "built": "2026-08-08T14:55:10.512094+00:00",
+    "built": "2026-08-08T15:10:19.100883+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -15751,7 +15751,7 @@
         "guidance_net": null,
         "guidance_raisers": null,
         "guidance_cutters": null,
-        "altdata_summary": "2 patent cluster \u00b7 1 13f add",
+        "altdata_summary": "1 13f add \u00b7 2 patent cluster",
         "n_altdata_leading": 0,
         "altdata_members": [],
         "glut_band": "STABLE",
@@ -18347,18 +18347,17 @@
     "note": "W4a rebuild: HEAT = n_lit_sources / n_available_sources [\u00d7 earliness when measured \u2014 dropped, not filled, when absent].  5 distinct data feeds (physical \u00b7 demand \u00b7 guidance \u00b7 altdata \u00b7 edgar_scarcity \u2014 the old subsector_scarcity + discovery_echo were one EDGAR parquet, now counted once). Dark sources leave the denominator \u2014 no outage penalty.  Earliness from engine/foresight_earliness.py (attention-based, Q3); absent below 2 usable legs \u2192 factor DROPPED (not laundered as neutral 0.5).  Physical numeric bonus \u00d71.15 when genuinely TIGHT/SOLD_OUT.  Threshold 0.40 PROVISIONAL.  Meta-driver cards emit for \u22653 co-heating same-cluster themes.  Cross-theme heats reflect agreement among AVAILABLE surfaces only \u2014 themes with different data coverage are not on a fully comparable scale."
   },
   "foresight_analyst": {
-    "regime_read": "The clearest unusual alignment is in data-center power and cooling, where tightening physical conditions, accelerating customer demand, and raising guidance reinforce one another, though broad revisions reduce earliness. Space and satellites shows a weaker but earlier scarcity-and-award pattern without physical confirmation, so it remains provisional.",
-    "regime_read_zh": "\u76ee\u524d\u6700\u6e05\u6670\u7684\u5f02\u5e38\u5171\u632f\u51fa\u73b0\u5728\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u51b7\u5374\uff1a\u5b9e\u4f53\u4f9b\u7ed9\u8d8b\u7d27\u3001\u5ba2\u6237\u9700\u6c42\u52a0\u901f\u548c\u7ba1\u7406\u5c42\u4e0a\u8c03\u6307\u5f15\u76f8\u4e92\u5370\u8bc1\uff0c\u4f46\u5206\u6790\u5e08\u4fee\u6b63\u5df2\u8f83\u5e7f\uff0c\u524a\u5f31\u4e86\u65e9\u671f\u6027\u3002\u822a\u5929\u4e0e\u536b\u661f\u5448\u73b0\u8f83\u5f31\u4f46\u66f4\u65e9\u7684\u7a00\u7f3a\u6027\u4e0e\u653f\u5e9c\u5408\u540c\u52a0\u901f\u7ec4\u5408\uff0c\u5c1a\u65e0\u5b9e\u4f53\u786e\u8ba4\uff0c\u56e0\u6b64\u4ecd\u5c5e\u521d\u6b65\u4fe1\u53f7\u3002",
+    "regime_read": "The clearest convergence is in data-center power and cooling, where tightening physical conditions, accelerating customer demand, and rising guidance align while the theme remains at WATCH [physical] [demand] [guidance]. Defense and aerospace shows a weaker early signal from award acceleration and subsector scarcity, but neutral physical conditions prevent stronger conviction [altdata] [edgar_scarcity] [physical].",
+    "regime_read_zh": "\u5f53\u524d\u6700\u6e05\u6670\u7684\u6c47\u805a\u51fa\u73b0\u5728\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u51b7\u5374\uff1a\u5b9e\u4f53\u6761\u4ef6\u8d8b\u7d27\u3001\u5ba2\u6237\u9700\u6c42\u52a0\u901f\u4e0e\u7ba1\u7406\u5c42\u4e0a\u8c03\u6307\u5f15\u76f8\u4e92\u5370\u8bc1\uff0c\u800c\u4e3b\u9898\u4ecd\u5904\u4e8e\u89c2\u5bdf\u9636\u6bb5 [physical] [demand] [guidance]\u3002\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929\u5219\u5448\u73b0\u8f83\u5f31\u7684\u65e9\u671f\u4fe1\u53f7\uff0c\u653f\u5e9c\u8ba2\u5355\u52a0\u901f\u4e0e\u5b50\u884c\u4e1a\u7a00\u7f3a\u6027\u540c\u65f6\u51fa\u73b0\uff0c\u4f46\u5b9e\u4f53\u6761\u4ef6\u4ecd\u4e3a\u4e2d\u6027\uff0c\u56e0\u6b64\u4e0d\u8db3\u4ee5\u5f62\u6210\u66f4\u9ad8\u786e\u4fe1\u5ea6 [altdata] [edgar_scarcity] [physical]\u3002",
     "theses": [
       {
         "theme": "data_center_power",
-        "mechanism": "Accelerating customer investment is pressing against tightening power-and-cooling capacity, giving suppliers enough visibility to raise guidance; the demand, physical, and management surfaces therefore describe the same capacity constraint from independent angles [demand] [physical] [guidance].",
-        "non_obvious": "The notable pattern is not demand acceleration alone, but its simultaneous translation into a tightening physical band and guidance raises before the board classifies supply as fully tight [demand] [physical] [guidance].",
+        "mechanism": "Accelerating customer demand is pressing against tightening physical capacity, giving management teams enough visibility to raise guidance [demand] [physical] [guidance]. The alignment suggests that demand is reaching operating constraints rather than remaining a purely narrative-led expansion.",
+        "non_obvious": "The hard-to-see pattern is the sequence across three independent legs: customer spending accelerates, the physical bottleneck begins tightening, and guidance rises before the board classifies supply as fully tight [demand] [physical] [guidance].",
         "kill_criteria": [
-          "The physical bottleneck loosens to NEUTRAL [physical].",
-          "Customer demand ceases ACCELERATING [demand].",
-          "Guidance moves from RAISING to NEUTRAL or cuts [guidance].",
-          "Revision breadth broadens further and then rolls over while the other legs weaken."
+          "The demand leg falls from ACCELERATING to NEUTRAL or weaker.",
+          "The physical bottleneck loosens from TIGHTENING to NEUTRAL.",
+          "The guidance leg falls from RAISING to NEUTRAL or turns to cuts."
         ],
         "evidence": [
           {
@@ -18372,32 +18371,28 @@
           {
             "text": "guidance: guidance band is RAISING",
             "ungrounded": true
-          },
-          {
-            "text": "revisions: revision breadth is already broad",
-            "ungrounded": true
           }
         ],
         "evidence_display": [],
-        "dissent": "The board explicitly says supply is not yet tight, while revisions are already broad, so this may reflect recognition of a well-understood demand cycle rather than an underappreciated constraint [physical] [revisions].",
+        "dissent": "Revision breadth is already relatively broad, and the board rationale still says supply is not tight, so the convergence may reflect recognition already underway rather than an undiscovered constraint [physical] [guidance].",
         "confidence": "medium",
         "n_grounded": 0,
-        "n_total_evidence": 4,
+        "n_total_evidence": 3,
         "_forecast_clamped": null
       },
       {
-        "theme": "space_satellite",
-        "mechanism": "Government-award acceleration is appearing alongside filing-based subsector scarcity, consistent with procurement demand concentrating into a limited supplier set [altdata] [edgar_scarcity].",
-        "non_obvious": "The hard-to-see pattern is award acceleration and subsector scarcity aligning while the physical signal remains text-only; this may be an upstream allocation signal appearing before numeric bottleneck confirmation [altdata] [edgar_scarcity] [physical].",
+        "theme": "defense_aerospace",
+        "mechanism": "Government-award acceleration and a patent cluster coincide with subsector scarcity, suggesting procurement activity and differentiated capacity are concentrating in a limited supplier set [altdata] [edgar_scarcity].",
+        "non_obvious": "The unusual pattern is that award acceleration and scarcity are visible while revision breadth remains limited, which may indicate operational selection occurring before analyst revisions broaden [altdata] [edgar_scarcity].",
         "kill_criteria": [
-          "Government-award acceleration disappears or reverses [altdata].",
-          "The EDGAR scarcity surface turns off [edgar_scarcity].",
-          "The text bottleneck loosens to NEUTRAL before receiving numeric physical confirmation [physical].",
-          "Revision breadth rolls over while award acceleration and scarcity weaken."
+          "Government-award acceleration disappears from the altdata leg.",
+          "The patent cluster disappears without replacement by another leading surface.",
+          "The edgar_scarcity leg turns off.",
+          "Revision breadth broadens and then rolls over while physical conditions remain NEUTRAL."
         ],
         "evidence": [
           {
-            "text": "altdata: government-award acceleration",
+            "text": "altdata: government-award acceleration and a patent cluster",
             "ungrounded": true
           },
           {
@@ -18405,19 +18400,15 @@
             "ungrounded": true
           },
           {
-            "text": "physical: TIGHT signal is text-only and not confirmed",
-            "ungrounded": true
-          },
-          {
-            "text": "revisions: revisions are already broad",
+            "text": "physical: bottleneck band is NEUTRAL",
             "ungrounded": true
           }
         ],
         "evidence_display": [],
-        "dissent": "Revisions are already broad and the theme is in re-rating, while the physical bottleneck lacks confirmation; the apparent earliness may therefore overstate the remaining discovery runway [revisions] [physical].",
+        "dissent": "Physical conditions are NEUTRAL and there is no demand or guidance confirmation, so the observed concentration could be procurement timing rather than durable thematic tightening [physical] [demand] [guidance].",
         "confidence": "low",
         "n_grounded": 0,
-        "n_total_evidence": 4,
+        "n_total_evidence": 3,
         "_forecast_clamped": null
       }
     ],
@@ -18428,156 +18419,12 @@
   },
   "thesis_monitor": {
     "asof": "2026-08-08",
-    "n_open": 10,
-    "n_broken": 6,
+    "n_open": 8,
+    "n_broken": 1,
     "n_weakening": 0,
-    "n_deterministic": 9,
+    "n_deterministic": 5,
     "n_llm": 5,
     "monitored": [
-      {
-        "theme": "data_center_power",
-        "source": "deterministic",
-        "status": "BROKEN",
-        "stage_at_open": "BROADENING (text)",
-        "opened": "2026-07-26",
-        "kill_criteria": [
-          {
-            "kind": "text_accel_negative",
-            "detail": "language accel < 0 for 2 consecutive builds"
-          },
-          {
-            "kind": "stage_regressed_to_watch",
-            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
-          }
-        ],
-        "criterion_statuses": [
-          "WEAKENING",
-          "BROKEN"
-        ],
-        "n_criteria": 2,
-        "llm_mechanism": null,
-        "llm_status": "INTACT",
-        "llm_heat_at_open": 0.212,
-        "llm_heat_now": 0.365,
-        "llm_opened_asof": "2026-08-08",
-        "llm_kill_criteria": [
-          "Demand band falls from ACCELERATING to NEUTRAL or weaker.",
-          "Guidance band stops RAISING or turns to cuts.",
-          "Text bottleneck signal loosens from TIGHT before numeric physical confirmation appears.",
-          "Revision breadth rolls over rather than continuing to broaden."
-        ]
-      },
-      {
-        "theme": "space_satellite",
-        "source": "deterministic",
-        "status": "BROKEN",
-        "stage_at_open": "BROADENING (text)",
-        "opened": "2026-08-01",
-        "kill_criteria": [
-          {
-            "kind": "text_accel_negative",
-            "detail": "language accel < 0 for 2 consecutive builds"
-          },
-          {
-            "kind": "stage_regressed_to_watch",
-            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
-          }
-        ],
-        "criterion_statuses": [
-          "INTACT",
-          "BROKEN"
-        ],
-        "n_criteria": 2,
-        "llm_mechanism": null,
-        "llm_status": "INTACT",
-        "llm_heat_at_open": 0.647,
-        "llm_heat_now": 0.647,
-        "llm_opened_asof": "2026-08-08",
-        "llm_kill_criteria": [
-          "Government-award acceleration disappears from the altdata leg.",
-          "EDGAR subsector scarcity turns NEUTRAL.",
-          "Physical bottleneck remains NEUTRAL without a new demand or guidance surface lighting.",
-          "Revision breadth rolls over while no additional independent surface appears."
-        ]
-      },
-      {
-        "theme": "copper_steel_electrify",
-        "source": "deterministic",
-        "status": "BROKEN",
-        "stage_at_open": "BROADENING (text)",
-        "opened": "2026-07-25",
-        "kill_criteria": [
-          {
-            "kind": "text_accel_negative",
-            "detail": "language accel < 0 for 2 consecutive builds"
-          },
-          {
-            "kind": "stage_regressed_to_watch",
-            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
-          }
-        ],
-        "criterion_statuses": [
-          "INTACT",
-          "BROKEN"
-        ],
-        "n_criteria": 2
-      },
-      {
-        "theme": "defense_aerospace",
-        "source": "deterministic",
-        "status": "BROKEN",
-        "stage_at_open": "BROADENING (text)",
-        "opened": "2026-07-04",
-        "kill_criteria": [
-          {
-            "kind": "text_accel_negative",
-            "detail": "language accel < 0 for 2 consecutive builds"
-          },
-          {
-            "kind": "stage_regressed_to_watch",
-            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
-          }
-        ],
-        "criterion_statuses": [
-          "INTACT",
-          "BROKEN"
-        ],
-        "n_criteria": 2,
-        "llm_mechanism": null,
-        "llm_status": "INTACT",
-        "llm_heat_at_open": 0.392,
-        "llm_heat_now": 0.392,
-        "llm_opened_asof": "2026-08-08",
-        "llm_kill_criteria": [
-          "Government-award acceleration disappears from the altdata leg.",
-          "The patent cluster is not sustained or followed by additional activity.",
-          "EDGAR subsector scarcity turns NEUTRAL.",
-          "Revision breadth remains narrow while award acceleration also fades.",
-          "Physical bottleneck remains NEUTRAL and no additional independent surface lights."
-        ]
-      },
-      {
-        "theme": "ai_semiconductors",
-        "source": "deterministic",
-        "status": "BROKEN",
-        "stage_at_open": "BROADENING (text)",
-        "opened": "2026-07-06",
-        "kill_criteria": [
-          {
-            "kind": "text_accel_negative",
-            "detail": "language accel < 0 for 2 consecutive builds"
-          },
-          {
-            "kind": "stage_regressed_to_watch",
-            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
-          }
-        ],
-        "criterion_statuses": [
-          "WEAKENING",
-          "BROKEN"
-        ],
-        "n_criteria": 2
-      },
       {
         "theme": "medical_devices",
         "source": "llm",
@@ -18614,6 +18461,39 @@
           "INTACT"
         ],
         "n_criteria": 2
+      },
+      {
+        "theme": "data_center_power",
+        "source": "deterministic",
+        "status": "INTACT",
+        "stage_at_open": "BROADENING (text)",
+        "opened": "2026-07-26",
+        "kill_criteria": [
+          {
+            "kind": "text_accel_negative",
+            "detail": "language accel < 0 for 2 consecutive builds"
+          },
+          {
+            "kind": "stage_regressed_to_watch",
+            "detail": "cascade stage no longer in PRECIPICE/BROADENING family"
+          }
+        ],
+        "criterion_statuses": [
+          "INTACT",
+          "INTACT"
+        ],
+        "n_criteria": 2,
+        "llm_mechanism": null,
+        "llm_status": "INTACT",
+        "llm_heat_at_open": 0.212,
+        "llm_heat_now": 0.365,
+        "llm_opened_asof": "2026-08-08",
+        "llm_kill_criteria": [
+          "Demand band falls from ACCELERATING to NEUTRAL or weaker.",
+          "Guidance band stops RAISING or turns to cuts.",
+          "Text bottleneck signal loosens from TIGHT before numeric physical confirmation appears.",
+          "Revision breadth rolls over rather than continuing to broaden."
+        ]
       },
       {
         "theme": "grid_electrification",
@@ -18694,6 +18574,39 @@
           "INTACT"
         ],
         "n_criteria": 2
+      },
+      {
+        "theme": "defense_aerospace",
+        "source": "llm",
+        "status": "INTACT",
+        "heat_at_open": 0.392,
+        "heat_now": 0.392,
+        "n_surfaces_now": 2,
+        "physical_now": false,
+        "opened_asof": "2026-08-08",
+        "kill_criteria": [
+          "Government-award acceleration disappears from the altdata leg.",
+          "The patent cluster is not sustained or followed by additional activity.",
+          "EDGAR subsector scarcity turns NEUTRAL.",
+          "Revision breadth remains narrow while award acceleration also fades.",
+          "Physical bottleneck remains NEUTRAL and no additional independent surface lights."
+        ]
+      },
+      {
+        "theme": "space_satellite",
+        "source": "llm",
+        "status": "INTACT",
+        "heat_at_open": 0.647,
+        "heat_now": 0.647,
+        "n_surfaces_now": 2,
+        "physical_now": false,
+        "opened_asof": "2026-08-08",
+        "kill_criteria": [
+          "Government-award acceleration disappears from the altdata leg.",
+          "EDGAR subsector scarcity turns NEUTRAL.",
+          "Physical bottleneck remains NEUTRAL without a new demand or guidance surface lighting.",
+          "Revision breadth rolls over while no additional independent surface appears."
+        ]
       }
     ],
     "note": "deterministic+LLM dual-producer: deterministic theses auto-instantiate from PRECIPICE/BROADENING cascade flags and evaluate machine-checkable kill-criteria (consecutive-build tracking, asof-deduped); LLM theses fold onto deterministic rows as enrichment when the theme overlaps. THESIS-BROKEN fires with zero LLM involvement; close event appended on BROKEN, closed theses excluded from n_open."
@@ -19935,7 +19848,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.08,
+    "_timing_s": 2.37,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -20151,7 +20064,7 @@
         }
       }
     },
-    "_timing_s": 0.12
+    "_timing_s": 0.13
   },
   "mag7_washout": {
     "schema": "mag7_washout.v1",
@@ -21771,7 +21684,7 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.03
+    "_timing_s": 2.33
   },
   "vol_shock": {
     "score": 38.3,
@@ -24593,7 +24506,7 @@
   },
   "freshness": {
     "asof": "2026-08-07",
-    "built_at": "2026-08-08T14:56:17Z",
+    "built_at": "2026-08-08T15:11:25Z",
     "age_days": 1,
     "age_sessions": 0,
     "max_age_sessions": 1,
