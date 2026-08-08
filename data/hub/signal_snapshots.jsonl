@@ -170674,3 +170674,16 @@
 {"date":"2026-08-08","t":"ZVRA","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
 {"date":"2026-08-08","t":"ZVSA","opp":0.0,"edge":0.356,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
 {"date":"2026-08-08","t":"LULU","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"APG","opp":0.0,"edge":0.635,"stage":"consensus","lean":1,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"TDS","opp":0.0,"edge":0.477,"stage":"consensus","lean":1,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"AIXI","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"AYA","opp":0.0,"edge":0.956,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"BZH","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"DJTWW","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"FLEX","opp":0.0,"edge":0.652,"stage":"faltering","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"GFF","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"PAAPU","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"PAGP","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"PONOR","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"QNBC","opp":0.0,"edge":0.978,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-08","t":"YUMC","opp":0.0,"edge":0.964,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}

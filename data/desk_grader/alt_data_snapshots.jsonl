@@ -1999,3 +1999,4 @@
 {"date":"2026-08-08","ticker":"DGX","departed":true,"left_desk":"2026-08-08","last_rank":20,"last_score":34}
 {"date":"2026-08-08","ticker":"NOW","departed":true,"left_desk":"2026-08-08","last_rank":21,"last_score":34}
 {"date":"2026-08-08","ticker":"URI","departed":true,"left_desk":"2026-08-08","last_rank":28,"last_score":30}
+{"date":"2026-08-08","ticker":"LMT","rank":30,"score":29,"lean":1,"broken":false}

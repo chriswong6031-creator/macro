@@ -1,7 +1,7 @@
 {
   "schema": "market_structure_context.v1",
   "asof": "2026-08-07",
-  "built_at": "2026-08-08T06:36:39.856418+00:00",
+  "built_at": "2026-08-08T15:04:01.521785+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
