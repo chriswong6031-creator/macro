@@ -113,6 +113,20 @@ INDEX_ROOTS = ["SPX", "SPXW"]
 DEFAULT_START = "20120601"   # ~14y history; v3 PROFESSIONAL data starts 2012-06-01
 DEFAULT_CHUNK_YEARS = 1      # pull one calendar year at a time
 
+# ── ticker-reuse floors ───────────────────────────────────────────────────────
+# OPRA reissues a symbol once its previous holder delists, and ThetaData serves
+# both eras under the single root: SPCX lists expirations continuously from 2021,
+# but everything before 2026-06-12 belongs to a SPAC ETF that no longer exists.
+# Backfilling such a root from DEFAULT_START merges two unrelated companies'
+# chains into one file, which then reads as a real position history — the options
+# twin of the OHLC contamination already guarded on the terminal's ingest lane.
+# Floor each reused root at the date its current holder began trading.
+ROOT_HISTORY_FLOOR: dict[str, date] = {
+    # The SPAC and New Issue ETF until its 2026-04 delisting; reissued to Space
+    # Exploration Technologies on 2026-06-12.
+    "SPCX": date(2026, 6, 12),
+}
+
 STATE_VERSION = 1
 
 
@@ -537,7 +551,13 @@ def main() -> int:
     # Build work plan: root × year chunks
     plan: list[tuple[str, int, date, date]] = []
     for root in universe:
-        for chunk_start, chunk_end in _year_chunks(start, end):
+        root_start = max(start, ROOT_HISTORY_FLOOR.get(root, start))
+        if root_start != start:
+            log.info("%s: floored to %s (ticker reuse — earlier chains belong to "
+                     "the previous holder)", root, root_start)
+        if root_start > end:
+            continue
+        for chunk_start, chunk_end in _year_chunks(root_start, end):
             yr = chunk_start.year
             if _is_completed(state, root, yr):
                 continue
