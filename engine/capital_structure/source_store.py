@@ -270,12 +270,46 @@ def build_source_stores(
     return stores
 
 
+def _normalize_r2_endpoint(endpoint: str) -> str:
+    """Repair the endpoint shapes a re-provisioned secret realistically arrives in.
+
+    2026-08-08: the nightly document-terms step died at boto3 client
+    construction (``ValueError: Invalid endpoint``) the first night after the
+    ``R2_CAPITAL_STRUCTURE_*`` secrets were re-provisioned — botocore validates
+    the URL shape before any request is signed, so a stored value with stray
+    whitespace/quotes or a missing ``https://`` scheme kills the job outright.
+    Normalize exactly those pasteboard defects and nothing else: a wrong
+    hostname must still fail loudly at request time, never get rewritten here.
+    """
+    cleaned = endpoint.strip().strip("'\"").strip()
+    if cleaned and "://" not in cleaned:
+        cleaned = f"https://{cleaned}"
+    return cleaned
+
+
 def _make_r2_client(
     *, endpoint: str | None, access_key: str | None, secret_key: str | None
 ):
     """Construct the repository-standard R2 client, or ``None`` if incomplete."""
     if not (endpoint and access_key and secret_key):
         return None
+    normalized = _normalize_r2_endpoint(endpoint)
+    access_key = access_key.strip()
+    secret_key = secret_key.strip()
+    if not (normalized and access_key and secret_key):
+        return None
+    if normalized != endpoint:
+        # Line-start bare print, never a logger: the prefixing formats every
+        # builder logger uses would make GitHub drop the annotation silently.
+        print(
+            "::warning title=capital-structure-r2-endpoint-normalized::the stored"
+            " R2 endpoint needed normalization (stray whitespace/quotes or a"
+            " missing https:// scheme). The client was constructed from the"
+            " repaired value; re-set R2_CAPITAL_STRUCTURE_ENDPOINT (or"
+            " R2_ENDPOINT) to the exact https account root to clear this.",
+            flush=True,
+        )
+    endpoint = normalized
     import boto3
     from botocore.config import Config
 

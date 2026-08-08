@@ -447,21 +447,22 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: engine
     steps:
-      - id: fundamental_forensics_sec_restore_acquire
-        module: scripts.run_fundamental_forensics_wave2
+      - id: fundamental_forensics_disclosure_restore
+        module: scripts.fundamental_forensics_disclosure_bundle
+        args: [--restore, --targets-file, config/fundamental_forensics/wave2_targets.v1.json]
         note: >
-          Wave 2 Filing Forensics source spine (hard gate): restore the latest
-          private, checksum-verified SEC raw/archive snapshot, then acquire a
-          strictly bounded explicit issuer set. Partial SEC coverage fails this
-          nightly lane before the compact state may be rebuilt or published.
-          No public mirror and no render are involved.
-      - id: fundamental_forensics_disclosure_project_sync
-        module: scripts.run_fundamental_forensics_wave2
-        note: >
-          Wave 2 continuation after successful restore/acquisition: build
-          accession-aware local disclosure projections and read-back-sync the
-          raw/archive snapshot to the private Research R2 prefix. The explicit
-          compute clock is sampled after source receipt creation.
+          Filing Forensics render input (hard gate). The two
+          scripts.run_fundamental_forensics_wave2 invocations that used to sit here
+          (restore+acquire, then project+sync) moved to
+          .github/workflows/filing-forensics-sec.yml / acquire_project_sync on
+          2026-08-08: the inline step grew 7.4m -> 23.8m in four days as the immutable
+          SEC source store grew, while SEC bytes stayed flat. This step now restores
+          ONLY the 12 private disclosure projections the workbench attaches — one
+          bounded R2 pointer GET plus one bounded bundle GET — so its cost is constant
+          in the store's size. The gate is unchanged: a restore or validation failure
+          fails the job before the broad build, so entitled disclosure coverage is never
+          silently replaced by an empty/shallow state. A red SEC lane leaves the pointer
+          at the last COMPLETE bundle (stale-but-complete render; warn > 3d, refuse > 21d).
       - id: fetch_r2_attention
         module: scripts.fetch_r2
         args: [--dirs, attention]
@@ -729,7 +730,6 @@ lanes:
             # on the prior vintage and the cycle-consistency gate fails (#2728; render.yml
             # already paired them).
             - scripts.build_markets
-            - scripts.build_measurement
             - scripts.append_sync_gauge
             - engine.policy_intent_desk
             - scripts.build_policy_watch
@@ -757,6 +757,21 @@ lanes:
             # it reads are gitignored except SPY, so only that builder puts them in
             # the working tree.
             - scripts.build_seasonality_shadow_state
+            # Measurement hub. Moved BELOW build_seasonality_shadow_state
+            # (2026-08-07): the Calibration Lab hero now renders the seasonal
+            # forward-record counts read from data/seasonality/nw_forward_ledger.jsonl,
+            # and build_seasonality_shadow_state is that ledger's sole nightly
+            # advancer. Built at its old position it published the PREVIOUS night's
+            # counts, so the page and the same night's program_watch.json disagreed
+            # about one ledger on one commit. Nothing later in cl_misc reads
+            # measurement's outputs, so the move is ordering-only.
+            - scripts.build_measurement
+            # Program watch. DAILY-ONLY and LAST in the seasonality run: it reads
+            # the state the two builders above have just written (the forward
+            # ledger counts in particular), so running it earlier would report the
+            # PREVIOUS night's ledger. Pure stdlib, sub-second, writes one JSON and
+            # emits a ::notice per fired tripwire; it never blocks the nightly.
+            - scripts.build_program_watch
       # serial post-band
       - id: check_builder_failstreaks
         module: scripts.check_builder_failstreaks
@@ -2739,6 +2754,47 @@ lanes:
           projection but cannot append, retime, or backfill its ledger. No trade-signal
           scoring, ranking, sizing, gating, or escalation is permitted.
 
+  # ── filing-forensics-sec.yml / acquire_project_sync ──────────────────────
+  - workflow: .github/workflows/filing-forensics-sec.yml
+    job: acquire_project_sync
+    steps:
+      - id: fundamental_forensics_sec_restore_acquire
+        module: scripts.run_fundamental_forensics_wave2
+        args: [--restore, --verify-local-restore, --acquire, --require-complete-acquisition]
+        note: >
+          Wave 2 Filing Forensics source spine (hard gate), moved off daily.yml's engine
+          job 2026-08-08 (7.4m -> 23.8m creep on the render path). Restores the latest
+          private, checksum-verified SEC raw/archive snapshot into warm roots under
+          $HOME/.cache/mm-ffsec (outside the checkout, which clean:true wipes every run),
+          then acquires a strictly bounded explicit issuer set from
+          config/fundamental_forensics/wave2_targets.v1.json. Partial SEC coverage stops
+          the lane before projection or sync. No public mirror and no render are involved.
+      - id: fundamental_forensics_disclosure_project_sync
+        module: scripts.run_fundamental_forensics_wave2
+        args: [--build-projections, --sync, --incremental-sync]
+        note: >
+          Wave 2 continuation after successful restore/acquisition: build accession-aware
+          local disclosure projections and read-back-sync the raw/archive snapshot to the
+          private Research R2 prefix, skipping objects already bound by the latest
+          immutable manifest (the new manifest still enumerates every file). The explicit
+          compute clock is sampled after source receipt creation.
+      - id: fundamental_forensics_disclosure_bundle_publish
+        module: scripts.fundamental_forensics_disclosure_bundle
+        args: [--publish, --targets-file, config/fundamental_forensics/wave2_targets.v1.json]
+        note: >
+          Publishes the 12 private projections as ONE immutable content-addressed bundle
+          plus a monotone CAS latest pointer under
+          r2://private-research/fundamental_forensics/disclosures/v1/. This object is the
+          engine job's only Filing Forensics render input. A missing or invalid local
+          projection refuses the whole publication rather than shrinking coverage.
+      - id: fundamental_forensics_disclosure_bundle_selfcheck
+        module: scripts.fundamental_forensics_disclosure_bundle
+        args: [--restore, --root, $RUNNER_TEMP/ffdisc-selfcheck]
+        note: >
+          Restore self-check in the SAME run that published: restores the bundle into a
+          scratch root through the exact code path tonight's engine gate runs and
+          byte-compares every ticker against this lane's own projection output. A green
+          publish with an unreadable bundle would otherwise surface only as a red render.
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.

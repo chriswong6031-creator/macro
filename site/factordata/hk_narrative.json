@@ -1,9 +1,9 @@
 {
   "display_only": true,
   "organ": "hk_narrative",
-  "as_of": "2026-08-07",
-  "generated_utc": "2026-08-08T06:44:09+00:00",
-  "freshness": "ok",
+  "as_of": "2026-08-08",
+  "generated_utc": "2026-08-08T10:10:34+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
@@ -115,12 +115,12 @@
       "ticker": "0981.HK",
       "name_en": "SMIC",
       "name_zh": "\u4e2d\u82af\u56fd\u9645",
-      "attention_shock_z": 0.552,
+      "attention_shock_z": -0.991,
       "tone_pctile": null,
       "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-08-05",
+      "as_of_date": "2026-08-08",
       "no_data_reason": null,
       "state_en": "quiet",
       "state_zh": "\u5e73\u9759"
@@ -180,12 +180,12 @@
       "ticker": "0981.HK",
       "name_en": "SMIC",
       "name_zh": "\u4e2d\u82af\u56fd\u9645",
-      "attention_shock_z": 0.552,
+      "attention_shock_z": -0.991,
       "tone_pctile": null,
       "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-08-05",
+      "as_of_date": "2026-08-08",
       "no_data_reason": null,
       "state_en": "quiet",
       "state_zh": "\u5e73\u9759"
@@ -194,5 +194,5 @@
   "n_watched": 8,
   "n_live": 4,
   "warming_up": false,
-  "is_stale": false
+  "is_stale": true
 }

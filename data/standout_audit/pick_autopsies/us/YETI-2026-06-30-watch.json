@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "YETI-2026-06-30-watch",
+  "ticker": "YETI",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "YETI",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "YETI",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.007391783879251768,
+    "excess_sector": 0.011247438626368123,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CUSHIONED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The pick underperformed the benchmark but ended cushioned, with both mixed attribution and a clean process. The evidence supports neither a specific failure mechanism nor a process defect; consumer rotation, company resilience, and defensive path behavior remain competing explanations.",
+    "root_cause": "The pick underperformed the benchmark but ended cushioned, with both mixed attribution and a clean process. The evidence supports neither a specific failure mechanism nor a process defect; consumer rotation, company resilience, and defensive path behavior remain competing explanations.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The watch and path-risk books appear to have limited damage, but rotation and company-alpha attribution did not identify the dominant mechanism.",
+    "engines_credit": "Path-risk organs receive provisional credit for the cushioned state; macro, rotation, sector, and company-alpha books remain unresolved.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "A shift away from consumer-discretionary exposure may have pressured relative performance.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Outperformance versus discretionary peers would weaken the rotation explanation.",
+        "evidence_refs": [
+          "sector=Consumer Discretionary",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Company-specific resilience may have cushioned the adverse environment.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "A path matching peers would indicate sector beta rather than company resilience.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The observed path limited deterioration without producing benchmark-relative strength.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "Without cushioning, the adverse relative outcome might have been more severe, but the supplied data cannot establish this.",
+        "evidence_refs": [
+          "terminal_state=CUSHIONED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Benchmark leadership made an otherwise stable security appear weak.",
+      "Company-specific demand weakness caused the underperformance.",
+      "A later event created the cushioned path and was not visible at entry."
+    ],
+    "missing_evidence": [
+      "Consumer-discretionary and industry-peer returns",
+      "Absolute drawdown and recovery path",
+      "Entry-time demand and inventory evidence",
+      "Dated company news",
+      "Definition and components of the cushioned state"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "peer_relative_cushion",
+        "feature": "Downside resilience relative to matched discretionary peers",
+        "measurement": "Compare adverse-path depth and recovery with entry-time peer and factor controls.",
+        "expected_direction": "Greater peer-relative resilience would support company-specific cushioning.",
+        "falsifier": "The apparent cushion disappears after peer and factor adjustment.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

@@ -10,7 +10,7 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 403,
+  "n_calls": 405,
   "n_logged": 393,
   "n_matured": 27,
   "n_beat": 7,
@@ -1031,8 +1031,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Hongqiao",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-31",
    "e": null,
@@ -4001,8 +4001,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Hongqiao",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-21",
    "e": null,
@@ -4817,8 +4817,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Hongqiao",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -5480,8 +5480,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Hongqiao",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -5939,8 +5939,8 @@
   },
   {
    "t": "1378.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Hongqiao",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,

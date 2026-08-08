@@ -98,6 +98,40 @@ _CHANGE_TAPE_FIELD_CLASSES = frozenset(
     )
 )
 _CHANGE_TAPE_REVIEW_STATES = frozenset(("not_required", "needs_review"))
+# Additive, optional v1 extension: exact recorded values, their RFC 6901 source
+# locator, and declared correction lineage.  The serving process never imports
+# the engine, so these bounds are restated here and revalidated on every read;
+# a tape published before the extension carries none of it and stays servable.
+_CHANGE_TAPE_MAX_VALUE_JSON_BYTES = 4_096
+_CHANGE_TAPE_MAX_TAPE_VALUE_JSON_BYTES = 262_144
+_CHANGE_TAPE_MAX_SOURCE_POINTER_BYTES = 512
+_CHANGE_TAPE_MAX_DECLARED_VALUE_BYTE_LENGTH = 16_777_216
+_CHANGE_TAPE_VALUE_ENTRY_KEYS = {
+    "state",
+    "value_json",
+    "value_byte_length",
+    "value_truncated",
+    "unavailable_reason",
+}
+_CHANGE_TAPE_VALUE_UNAVAILABLE_REASONS = frozenset(
+    ("tape_value_budget_exhausted", "value_bytes_not_representable")
+)
+_CHANGE_TAPE_LINEAGE_KEYS = {
+    "relation",
+    "predecessor_basis",
+    "predecessor_source_version",
+    "predecessor_exact_operation_index",
+    "correction_assessed",
+}
+_CHANGE_TAPE_VALUE_DISCLOSURE_BASE = {
+    "encoding": "canonical_json_utf8",
+    "locator_grammar": "rfc6901_json_pointer_into_source_record",
+    "max_value_bytes": _CHANGE_TAPE_MAX_VALUE_JSON_BYTES,
+    "max_tape_value_bytes": _CHANGE_TAPE_MAX_TAPE_VALUE_JSON_BYTES,
+    "truncation_behavior": "declared_prefix_with_original_byte_length",
+    "unavailable_behavior": "explicit_row_marker_never_empty_and_never_guessed",
+    "correction_assessed": False,
+}
 _CHANGE_TAPE_AUTHORITY = {
     "classification": "deterministic_registry_change_read_model",
     "decision_authority": False,
@@ -2893,6 +2927,165 @@ def trial_registry_changes(
     return _response(payload)
 
 
+def _change_tape_value_entry(entry: Any, *, row_state: str) -> tuple[dict[str, Any], int]:
+    """Revalidate one disclosed value and return it with the bytes it charges.
+
+    The API restates the whole disclosure contract rather than trusting the
+    artifact: a value is either the exact recorded canonical JSON text, an
+    explicitly declared truncated prefix of it, or an explicitly unavailable
+    marker with a reason.  It is never an empty string and never a guess.
+    """
+
+    if not isinstance(entry, Mapping) or set(entry) != _CHANGE_TAPE_VALUE_ENTRY_KEYS:
+        raise _unavailable()
+    state = entry.get("state")
+    value_json = entry.get("value_json")
+    byte_length = entry.get("value_byte_length")
+    truncated = entry.get("value_truncated")
+    reason = entry.get("unavailable_reason")
+    if (
+        not isinstance(byte_length, int)
+        or isinstance(byte_length, bool)
+        or not 0 <= byte_length <= _CHANGE_TAPE_MAX_DECLARED_VALUE_BYTE_LENGTH
+        or not isinstance(truncated, bool)
+    ):
+        raise _unavailable()
+    if row_state == "missing":
+        if state != "missing":
+            raise _unavailable()
+    elif state not in {"present", "unavailable"}:
+        raise _unavailable()
+    charged = 0
+    if state == "missing":
+        if value_json is not None or byte_length != 0 or truncated or reason is not None:
+            raise _unavailable()
+    elif state == "unavailable":
+        if (
+            value_json is not None
+            or truncated
+            or reason not in _CHANGE_TAPE_VALUE_UNAVAILABLE_REASONS
+        ):
+            raise _unavailable()
+    else:
+        if not isinstance(value_json, str) or not value_json or reason is not None:
+            raise _unavailable()
+        charged = len(value_json.encode("utf-8"))
+        if charged > _CHANGE_TAPE_MAX_VALUE_JSON_BYTES:
+            raise _unavailable()
+        if truncated:
+            if byte_length <= _CHANGE_TAPE_MAX_VALUE_JSON_BYTES:
+                raise _unavailable()
+        elif byte_length != charged:
+            raise _unavailable()
+    return (
+        {
+            "state": state,
+            "value_json": value_json,
+            "value_byte_length": byte_length,
+            "value_truncated": truncated,
+            "unavailable_reason": reason,
+        },
+        charged,
+    )
+
+
+def _change_tape_expected_lineage(
+    *,
+    op: str,
+    before_version: int,
+    predecessor: tuple[int, int] | None,
+) -> dict[str, Any]:
+    """Recompute the declared lineage a row must carry for this chain position."""
+
+    if predecessor is not None:
+        basis = "prior_tape_row"
+        predecessor_version: int | None = predecessor[0]
+        predecessor_index: int | None = predecessor[1]
+    elif op in {"replace", "remove"}:
+        basis = "before_version_record"
+        predecessor_version = before_version
+        predecessor_index = None
+    else:
+        basis = "none"
+        predecessor_version = None
+        predecessor_index = None
+    if op == "remove":
+        relation = "clears_prior_recorded_value"
+    elif basis == "none":
+        relation = "no_prior_recorded_value"
+    else:
+        relation = "supersedes_prior_recorded_value"
+    return {
+        "relation": relation,
+        "predecessor_basis": basis,
+        "predecessor_source_version": predecessor_version,
+        "predecessor_exact_operation_index": predecessor_index,
+        "correction_assessed": False,
+    }
+
+
+def _change_tape_row_extension(
+    row: Mapping[str, Any],
+    *,
+    last_row_by_pointer: dict[str, tuple[int, int]],
+    before_version: int,
+    after_version: int,
+    operation_index: int,
+) -> tuple[dict[str, Any], dict[str, Any], int]:
+    """Revalidate one row's exact values and declared correction lineage."""
+
+    values = row.get("exact_values")
+    if not isinstance(values, Mapping) or set(values) != {
+        "source_pointer",
+        "before",
+        "after",
+    }:
+        raise _unavailable()
+    pointer = values.get("source_pointer")
+    if (
+        not isinstance(pointer, str)
+        or not pointer.startswith("/")
+        or len(pointer.encode("utf-8")) > _CHANGE_TAPE_MAX_SOURCE_POINTER_BYTES
+    ):
+        raise _unavailable()
+    before_entry, before_charged = _change_tape_value_entry(
+        values.get("before"), row_state=row["before_state"]
+    )
+    after_entry, after_charged = _change_tape_value_entry(
+        values.get("after"), row_state=row["after_state"]
+    )
+    lineage = row.get("correction_lineage")
+    if not isinstance(lineage, Mapping) or set(lineage) != _CHANGE_TAPE_LINEAGE_KEYS:
+        raise _unavailable()
+    expected = _change_tape_expected_lineage(
+        op=row["op"],
+        before_version=before_version,
+        predecessor=last_row_by_pointer.get(pointer),
+    )
+    if dict(lineage) != expected:
+        raise _unavailable()
+    last_row_by_pointer[pointer] = (after_version, operation_index)
+    return (
+        {"source_pointer": pointer, "before": before_entry, "after": after_entry},
+        expected,
+        before_charged + after_charged,
+    )
+
+
+def _change_tape_value_disclosure(model: Mapping[str, Any], *, discloses: bool) -> None:
+    """Bind a tape's declared value policy to what its rows actually carry."""
+
+    disclosure = model.get("value_disclosure")
+    if disclosure is None:
+        if discloses:
+            raise _unavailable()
+        return
+    expected = dict(_CHANGE_TAPE_VALUE_DISCLOSURE_BASE)
+    expected["state"] = "exact_values_present" if discloses else "exact_values_absent"
+    if not isinstance(disclosure, Mapping) or dict(disclosure) != expected:
+        raise _unavailable()
+
+
 def _change_tape_model_rows(
     model: Mapping[str, Any],
     *,
@@ -2948,12 +3141,21 @@ def _change_tape_model_rows(
         or not isinstance(prospective.get("unavailable_reason"), str)
     ):
         raise _unavailable()
+    disclosing_rows = sum(
+        1 for row in history_rows if isinstance(row, Mapping) and "exact_values" in row
+    )
+    if disclosing_rows and disclosing_rows != len(history_rows):
+        raise _unavailable()
+    discloses_values = bool(history_rows) and disclosing_rows == len(history_rows)
+    _change_tape_value_disclosure(model, discloses=discloses_values)
     if history_available is False:
         if history_rows or history_count != 0 or classification_count != 0 or not isinstance(history_reason, str):
             raise _unavailable()
         return "unavailable", history_reason, []
     if history_available is not True or history_reason is not None:
         raise _unavailable()
+    charged_bytes = 0
+    last_row_by_pointer: dict[str, tuple[int, int]] = {}
     rendered: list[dict[str, Any]] = []
     seen: set[str] = set()
     previous_pair: tuple[int, int] | None = None
@@ -2965,12 +3167,15 @@ def _change_tape_model_rows(
         "remove": ("present", "missing"),
         "replace": ("present", "present"),
     }
+    base_row_keys = {
+        "field_class", "review_state", "semantic_resolution", "op", "before_state",
+        "after_state", "protocol_change_asserted", "materiality_assessed",
+        "correction_assessed", "source_versions", "observed_at", "exact_operation_index",
+    }
+    extended_row_keys = base_row_keys | {"exact_values", "correction_lineage"}
+    expected_row_keys = extended_row_keys if discloses_values else base_row_keys
     for row in history_rows:
-        if not isinstance(row, Mapping) or set(row) != {
-            "field_class", "review_state", "semantic_resolution", "op", "before_state",
-            "after_state", "protocol_change_asserted", "materiality_assessed",
-            "correction_assessed", "source_versions", "observed_at", "exact_operation_index",
-        }:
+        if not isinstance(row, Mapping) or set(row) != expected_row_keys:
             raise _unavailable()
         field_class = row.get("field_class")
         review_state = row.get("review_state")
@@ -3037,6 +3242,19 @@ def _change_tape_model_rows(
             "materiality_assessed": False,
             "correction_assessed": False,
         }
+        if discloses_values:
+            exact_values, correction_lineage, charged = _change_tape_row_extension(
+                row,
+                last_row_by_pointer=last_row_by_pointer,
+                before_version=versions["before"],
+                after_version=versions["after"],
+                operation_index=exact_operation_index,
+            )
+            charged_bytes += charged
+            if charged_bytes > _CHANGE_TAPE_MAX_TAPE_VALUE_JSON_BYTES:
+                raise _unavailable()
+            public_row["exact_values"] = exact_values
+            public_row["correction_lineage"] = correction_lineage
         serialized = json.dumps(
             public_row,
             ensure_ascii=False,

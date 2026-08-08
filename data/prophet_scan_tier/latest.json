@@ -21,13 +21,13 @@
    "thin_history": 1528
   },
   "price_through": "2026-08-06",
-  "curated_n": 3127,
-  "curated_overlap_n": 2376,
-  "scan_n": 1517,
+  "curated_n": 3146,
+  "curated_overlap_n": 2384,
+  "scan_n": 1509,
   "store_manifest": {
    "n_tickers": 20758,
    "latest_date": "2026-08-06",
-   "updated_at": "2026-08-07T20:28:27.435542+00:00"
+   "updated_at": "2026-08-08T04:47:14.330965+00:00"
   }
  },
  "bases": {
@@ -37,17 +37,17 @@
  "summary": {
   "store_n": 20757,
   "floored_n": 3893,
-  "curated_overlap_n": 2376,
-  "scan_n": 1517,
-  "panel_n": 1517,
+  "curated_overlap_n": 2384,
+  "scan_n": 1509,
+  "panel_n": 1509,
   "runners_n": 150,
-  "runners_eligible_today_n": 17,
-  "runners_never_eligible_n": 32,
-  "runners_never_eligible_pct": 0.2133,
+  "runners_eligible_today_n": 18,
+  "runners_never_eligible_n": 31,
+  "runners_never_eligible_pct": 0.2067,
   "runners_eligible_days": {
    "n": 150,
-   "mean": 5.33,
-   "p25": 2.0,
+   "mean": 5.35,
+   "p25": 2.25,
    "median": 6.0,
    "p75": 9.0,
    "min": 0.0,
@@ -55,19 +55,19 @@
   }
  },
  "excluder_hist": {
-  "not_topped_veto(stoch_ob)": 40,
+  "not_topped_veto(stoch_ob)": 41,
   "not_topped_veto(macd_bear)": 27,
-  "not_topped_veto(stoch_ob+stoch_bear)": 24,
   "not_topped_veto(stoch_bear+macd_bear)": 22,
-  "ELIGIBLE": 17,
+  "not_topped_veto(stoch_ob+stoch_bear)": 22,
+  "ELIGIBLE": 18,
   "not_topped_veto(stoch_bear)": 12,
   "freshness_expired": 5,
   "no_cross": 2,
   "rsi_cap_on_fresh_cross": 1
  },
  "excluder_family_hist": {
-  "not_topped_veto": 125,
-  "ELIGIBLE": 17,
+  "not_topped_veto": 124,
+  "ELIGIBLE": 18,
   "freshness_expired": 5,
   "no_cross": 2,
   "rsi_cap_on_fresh_cross": 1
@@ -511,38 +511,6 @@
     "macd_bear"
    ],
    "excluder": "not_topped_veto(stoch_bear+macd_bear)",
-   "excluder_family": "not_topped_veto"
-  },
-  {
-   "ticker": "MQ",
-   "r63_pct": 303.6,
-   "sector": "?",
-   "off_index": true,
-   "coverage_reason": "not_in_curated_universe",
-   "eligible_today": false,
-   "tier_today": NaN,
-   "days_eligible": 9,
-   "first_eligible": "2026-06-25",
-   "fwd_ret_from_first_pct": 322.53,
-   "tiers_seen": [
-    "T1"
-   ],
-   "stoch_ob": true,
-   "stoch_bear": true,
-   "macd_bear": false,
-   "rsi_block": true,
-   "k3": 79.9,
-   "d3": 83.2,
-   "rsi3d": 77.4,
-   "t1_ticks": 10,
-   "t2_ticks": 14,
-   "t2raw_ticks": 14,
-   "recent3": true,
-   "veto_legs": [
-    "stoch_ob",
-    "stoch_bear"
-   ],
-   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
    "excluder_family": "not_topped_veto"
   },
   {
@@ -1361,36 +1329,6 @@
    "t1_ticks": null,
    "t2_ticks": null,
    "t2raw_ticks": null,
-   "recent3": true,
-   "veto_legs": [
-    "stoch_ob",
-    "stoch_bear"
-   ],
-   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
-   "excluder_family": "not_topped_veto"
-  },
-  {
-   "ticker": "ATRC",
-   "r63_pct": 41.0,
-   "sector": "?",
-   "off_index": true,
-   "coverage_reason": "not_in_curated_universe",
-   "eligible_today": false,
-   "tier_today": NaN,
-   "days_eligible": 0,
-   "first_eligible": null,
-   "fwd_ret_from_first_pct": null,
-   "tiers_seen": [],
-   "stoch_ob": true,
-   "stoch_bear": true,
-   "macd_bear": false,
-   "rsi_block": true,
-   "k3": 91.5,
-   "d3": 93.4,
-   "rsi3d": 69.0,
-   "t1_ticks": 24,
-   "t2_ticks": 47,
-   "t2raw_ticks": 47,
    "recent3": true,
    "veto_legs": [
     "stoch_ob",
@@ -4677,6 +4615,66 @@
    ],
    "excluder": "not_topped_veto(stoch_ob)",
    "excluder_family": "not_topped_veto"
+  },
+  {
+   "ticker": "DIVB",
+   "r63_pct": 15.1,
+   "sector": "?",
+   "off_index": true,
+   "coverage_reason": "not_in_curated_universe",
+   "eligible_today": false,
+   "tier_today": NaN,
+   "days_eligible": 9,
+   "first_eligible": "2026-07-06",
+   "fwd_ret_from_first_pct": 5.53,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": true,
+   "stoch_bear": false,
+   "macd_bear": false,
+   "rsi_block": true,
+   "k3": 87.8,
+   "d3": 74.6,
+   "rsi3d": 78.6,
+   "t1_ticks": 2,
+   "t2_ticks": 42,
+   "t2raw_ticks": 4,
+   "recent3": true,
+   "veto_legs": [
+    "stoch_ob"
+   ],
+   "excluder": "not_topped_veto(stoch_ob)",
+   "excluder_family": "not_topped_veto"
+  },
+  {
+   "ticker": "DDM",
+   "r63_pct": 15.1,
+   "sector": "?",
+   "off_index": true,
+   "coverage_reason": "not_in_curated_universe",
+   "eligible_today": true,
+   "tier_today": "T1",
+   "days_eligible": 3,
+   "first_eligible": "2026-08-04",
+   "fwd_ret_from_first_pct": -0.92,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": false,
+   "stoch_bear": false,
+   "macd_bear": false,
+   "rsi_block": true,
+   "k3": 65.3,
+   "d3": 43.7,
+   "rsi3d": 66.6,
+   "t1_ticks": 1,
+   "t2_ticks": 44,
+   "t2raw_ticks": 0,
+   "recent3": true,
+   "veto_legs": [],
+   "excluder": "ELIGIBLE",
+   "excluder_family": "ELIGIBLE"
   }
  ],
  "degraded": []
