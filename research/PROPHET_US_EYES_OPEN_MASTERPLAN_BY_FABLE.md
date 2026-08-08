@@ -244,6 +244,25 @@ escalate a signal. Coordinate with the active 'Earnings Intelligence' session (S
 group-reaction build) — cite, never duplicate; group/peer-reaction inputs come from their
 artifacts when they land.
 
+**FIRST RUN VERDICT (2026-08-08, PR #4993 — 12 years, 726 pre-report confluences /
+9,497 base-rate reports): the confluence-footprint construction does NOT reproduce.**
+Cohort A reaction +0.03% vs base-rate C +0.35%; adverse tail POPULATED at 49.3% (n=358;
+VRT −36.7%, AMD −16.2%, SBUX −15.9% incl. take-quality); half-split sign unstable; no
+lead-time gradient. The one stable read is RISK, not edge: pre-report entries carry a
+fatter loser tail at an indistinguishable mean (take 10.2% vs 3.0%) — and a calendar-gated
+risk/sizing channel is a forbidden construction (`DNR:KILL-CALENDAR-GATED-RISK`); report-
+proximity DISCLOSURE (existing earnings_soon chips) remains the compliant surface. Decisive
+nuance: **neither operator receipt lands in the cohort** — AMZN's marker was knowable
+2026-08-04, three sessions AFTER its 07-30 report (the chart's bucket-OPEN label drew it
+pre-report — the §6.7 signal-date defect manufacturing the visual pattern), MSFT led by 8
+sessions; the builder refused post-hoc window-widening (`DNR:KILL-OUTCOME-AUDITION`).
+DLB/SPCX absent from the signals universe. Coverage: EDGAR history ends 07-02; recent dates
+ride a stale forecast store — named in the receipt. THE KILL IS CONSTRUCTION-SCOPED: the
+tested construction (marker-confluence within [T-5,T-1]) is closed; the FLOW-footprint
+variant (pre-report volume/darkpool/GEX anomaly — the SPCX shape) is a different
+construction and remains open for a chained session, as does the Earnings Intelligence
+group-reaction angle.
+
 **(f) CN WINNER CHAIN + LIMIT-MOVE FOOTPRINT (operator 2026-08-08, third wave).** (1) 300363.SZ
 full-chain case study — detection organs → #1 rank decomposition → Mastermind Portfolio AI
 ingestion (5% half-tier add at 17.03, +20% limit day, sold next day) → exit; solidify the
