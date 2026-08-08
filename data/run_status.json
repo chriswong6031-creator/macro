@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-08T09:23:54.085903+00:00",
+  "last_run": "2026-08-08T13:25:51.165077+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -12,8 +12,8 @@
         "frozen tail: cot_heating_oil last=2013-11-05 age=4659d"
       ],
       "probed_at": null,
-      "elapsed_sec": 19.9,
-      "checked_at": "2026-08-08T05:28:44.636689+00:00"
+      "elapsed_sec": 21.0,
+      "checked_at": "2026-08-08T13:25:51.166308+00:00"
     },
     "fred": {
       "source": "fred",
@@ -122,43 +122,46 @@
         "frozen tail: JTSQUR last=2026-06-01 age=68d"
       ],
       "probed_at": null,
-      "elapsed_sec": 131.0,
-      "checked_at": "2026-08-08T05:28:44.636349+00:00"
+      "elapsed_sec": 132.3,
+      "checked_at": "2026-08-08T13:25:51.165207+00:00"
     },
     "yahoo": {
       "source": "yahoo",
       "status": "ok",
-      "rows": 3243553,
+      "rows": 259692,
       "last_date": "2026-08-08",
       "error": null,
       "notes": [
+        "frozen tail: ^VIX9D last=2026-07-17 age=22d",
+        "frozen tail: ^VIX3M last=2026-07-17 age=22d",
+        "frozen tail: ^MOVE last=2026-07-17 age=22d",
         "frozen tail: RGI last=2026-07-17 age=22d"
       ],
       "probed_at": null,
-      "elapsed_sec": 166.8,
-      "checked_at": "2026-08-08T05:28:44.636359+00:00"
+      "elapsed_sec": 65.2,
+      "checked_at": "2026-08-08T13:25:51.165232+00:00"
     },
     "treasury": {
       "source": "treasury",
       "status": "ok",
-      "rows": 23,
+      "rows": 21,
       "last_date": "2026-08-06",
       "error": null,
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 2.2,
-      "checked_at": "2026-08-08T05:28:44.636364+00:00"
+      "checked_at": "2026-08-08T13:25:51.165247+00:00"
     },
     "nyfed": {
       "source": "nyfed",
       "status": "ok",
-      "rows": 1279,
+      "rows": 1277,
       "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.0,
-      "checked_at": "2026-08-08T05:28:44.636369+00:00"
+      "elapsed_sec": 4.2,
+      "checked_at": "2026-08-08T13:25:51.165266+00:00"
     },
     "breadth": {
       "source": "breadth",
@@ -168,41 +171,41 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 45.3,
-      "checked_at": "2026-08-08T05:28:44.636379+00:00"
+      "elapsed_sec": 46.2,
+      "checked_at": "2026-08-08T13:25:51.165279+00:00"
     },
     "cboe_putcall": {
       "source": "cboe_putcall",
       "status": "ok",
-      "rows": 1,
-      "last_date": "2026-08-07",
+      "rows": 0,
+      "last_date": null,
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.7,
-      "checked_at": "2026-08-08T05:28:44.636407+00:00"
+      "elapsed_sec": 5.1,
+      "checked_at": "2026-08-08T13:25:51.165326+00:00"
     },
     "cboe_gex": {
       "source": "cboe_gex",
       "status": "ok",
-      "rows": 11,
-      "last_date": "2026-08-07",
+      "rows": 0,
+      "last_date": null,
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 10.1,
-      "checked_at": "2026-08-08T05:28:44.636411+00:00"
+      "elapsed_sec": 10.5,
+      "checked_at": "2026-08-08T13:25:51.165337+00:00"
     },
     "sentiment_naaim": {
       "source": "sentiment_naaim",
-      "status": "dead",
+      "status": "failed",
       "rows": 0,
       "last_date": null,
-      "error": "circuit open (5 consecutive failures)",
+      "error": "ValueError: NAAIM since-inception workbook link not found on page",
       "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636448+00:00"
+      "probed_at": "2026-08-08T11:43:00.999490+00:00",
+      "elapsed_sec": 0.5,
+      "checked_at": "2026-08-08T13:25:51.165448+00:00"
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
@@ -212,8 +215,8 @@
       "error": "AAII blocks non-browser clients (403) \u2014 known limitation, not used by the regime engine",
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.8,
-      "checked_at": "2026-08-08T05:28:44.636452+00:00"
+      "elapsed_sec": 3.7,
+      "checked_at": "2026-08-08T13:25:51.165466+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",
@@ -223,41 +226,41 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.9,
-      "checked_at": "2026-08-08T05:28:44.636460+00:00"
+      "elapsed_sec": 0.8,
+      "checked_at": "2026-08-08T13:25:51.165490+00:00"
     },
     "holdings": {
       "source": "holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.3,
-      "checked_at": "2026-08-08T05:28:44.636469+00:00"
+      "elapsed_sec": 1.1,
+      "checked_at": "2026-08-08T13:25:51.165512+00:00"
     },
     "fundamentals": {
       "source": "fundamentals",
       "status": "ok",
       "rows": 5796,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 8.3,
-      "checked_at": "2026-08-08T05:28:44.636493+00:00"
+      "elapsed_sec": 8.8,
+      "checked_at": "2026-08-08T13:25:51.165580+00:00"
     },
     "coinmetrics": {
       "source": "coinmetrics",
       "status": "ok",
-      "rows": 70,
+      "rows": 60,
       "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.6,
-      "checked_at": "2026-08-08T05:28:44.636619+00:00"
+      "checked_at": "2026-08-08T13:25:51.166091+00:00"
     },
     "okx": {
       "source": "okx",
@@ -267,19 +270,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.2,
-      "checked_at": "2026-08-08T05:28:44.636630+00:00"
+      "elapsed_sec": 3.5,
+      "checked_at": "2026-08-08T13:25:51.166135+00:00"
     },
     "deribit": {
       "source": "deribit",
       "status": "ok",
-      "rows": 5,
+      "rows": 6,
       "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.4,
-      "checked_at": "2026-08-08T05:28:44.636634+00:00"
+      "elapsed_sec": 1.5,
+      "checked_at": "2026-08-08T13:25:51.166147+00:00"
     },
     "feargreed": {
       "source": "feargreed",
@@ -289,19 +292,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.8,
-      "checked_at": "2026-08-08T05:28:44.636638+00:00"
+      "elapsed_sec": 0.9,
+      "checked_at": "2026-08-08T13:25:51.166159+00:00"
     },
     "coingecko": {
       "source": "coingecko",
-      "status": "dead",
+      "status": "failed",
       "rows": 0,
       "last_date": null,
-      "error": "circuit open (7 consecutive failures)",
+      "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.coingecko.com/api/v3/global",
       "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636641+00:00"
+      "probed_at": "2026-08-08T12:49:35.945894+00:00",
+      "elapsed_sec": 10.1,
+      "checked_at": "2026-08-08T13:25:51.166171+00:00"
     },
     "defillama": {
       "source": "defillama",
@@ -311,8 +314,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.4,
-      "checked_at": "2026-08-08T05:28:44.636649+00:00"
+      "elapsed_sec": 2.2,
+      "checked_at": "2026-08-08T13:25:51.166194+00:00"
     },
     "mempool": {
       "source": "mempool",
@@ -324,30 +327,30 @@
         "frozen tail: difficulty last=2026-07-25 age=14d"
       ],
       "probed_at": null,
-      "elapsed_sec": 0.9,
-      "checked_at": "2026-08-08T05:28:44.636653+00:00"
+      "elapsed_sec": 1.0,
+      "checked_at": "2026-08-08T13:25:51.166207+00:00"
     },
     "bgeo": {
       "source": "bgeo",
       "status": "ok",
-      "rows": 18,
+      "rows": 12,
       "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 16.0,
-      "checked_at": "2026-08-08T05:28:44.636623+00:00"
+      "elapsed_sec": 16.1,
+      "checked_at": "2026-08-08T13:25:51.166109+00:00"
     },
     "coinbase": {
       "source": "coinbase",
       "status": "ok",
-      "rows": 23,
+      "rows": 20,
       "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 2.7,
-      "checked_at": "2026-08-08T05:28:44.636626+00:00"
+      "checked_at": "2026-08-08T13:25:51.166123+00:00"
     },
     "china_macro": {
       "source": "china_macro",
@@ -414,52 +417,52 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 49.4,
-      "checked_at": "2026-08-08T05:28:44.636385+00:00"
+      "elapsed_sec": 52.0,
+      "checked_at": "2026-08-08T13:25:51.165291+00:00"
     },
     "etf_holdings": {
       "source": "etf_holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 74.4,
-      "checked_at": "2026-08-08T05:28:44.636473+00:00"
+      "elapsed_sec": 82.0,
+      "checked_at": "2026-08-08T13:25:51.165523+00:00"
     },
     "sector_holdings": {
       "source": "sector_holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 14.4,
-      "checked_at": "2026-08-08T05:28:44.636485+00:00"
+      "elapsed_sec": 14.1,
+      "checked_at": "2026-08-08T13:25:51.165557+00:00"
     },
     "stock_prices": {
       "source": "stock_prices",
       "status": "ok",
-      "rows": 1734918,
+      "rows": 5486,
       "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 67.7,
-      "checked_at": "2026-08-08T05:28:44.636489+00:00"
+      "elapsed_sec": 20.4,
+      "checked_at": "2026-08-08T13:25:51.165568+00:00"
     },
     "stock_fundamentals": {
       "source": "stock_fundamentals",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 187.7,
-      "checked_at": "2026-08-08T05:28:44.636498+00:00"
+      "elapsed_sec": 195.5,
+      "checked_at": "2026-08-08T13:25:51.165591+00:00"
     },
     "china_universe": {
       "source": "china_universe",
@@ -480,8 +483,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 33.0,
-      "checked_at": "2026-08-08T05:28:44.636396+00:00"
+      "elapsed_sec": 33.3,
+      "checked_at": "2026-08-08T13:25:51.165302+00:00"
     },
     "cboe_skew": {
       "source": "cboe_skew",
@@ -492,7 +495,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.6,
-      "checked_at": "2026-08-08T05:28:44.636416+00:00"
+      "checked_at": "2026-08-08T13:25:51.165355+00:00"
     },
     "fedboard_ebp": {
       "source": "fedboard_ebp",
@@ -505,7 +508,7 @@
       ],
       "probed_at": null,
       "elapsed_sec": 0.4,
-      "checked_at": "2026-08-08T05:28:44.636432+00:00"
+      "checked_at": "2026-08-08T13:25:51.165402+00:00"
     },
     "eia": {
       "source": "eia",
@@ -515,8 +518,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 124.0,
-      "checked_at": "2026-08-08T05:28:44.636702+00:00"
+      "elapsed_sec": 130.2,
+      "checked_at": "2026-08-08T13:25:51.166347+00:00"
     },
     "china_margin": {
       "source": "china_margin",
@@ -581,8 +584,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.3,
-      "checked_at": "2026-08-08T05:28:44.636428+00:00"
+      "elapsed_sec": 5.5,
+      "checked_at": "2026-08-08T13:25:51.165390+00:00"
     },
     "sovereign": {
       "source": "sovereign",
@@ -592,8 +595,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 13.2,
-      "checked_at": "2026-08-08T05:28:44.636436+00:00"
+      "elapsed_sec": 16.7,
+      "checked_at": "2026-08-08T13:25:51.165414+00:00"
     },
     "frbsf_sentiment": {
       "source": "frbsf_sentiment",
@@ -603,8 +606,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-08-08T05:28:44.636693+00:00"
+      "elapsed_sec": 1.4,
+      "checked_at": "2026-08-08T13:25:51.166323+00:00"
     },
     "french": {
       "source": "french",
@@ -614,19 +617,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.8,
-      "checked_at": "2026-08-08T05:28:44.636697+00:00"
+      "elapsed_sec": 1.7,
+      "checked_at": "2026-08-08T13:25:51.166336+00:00"
     },
     "edgar_13f": {
       "source": "edgar_13f",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 32.7,
-      "checked_at": "2026-08-08T05:28:44.636722+00:00"
+      "elapsed_sec": 34.7,
+      "checked_at": "2026-08-08T13:25:51.166402+00:00"
     },
     "ofr_fsi": {
       "source": "ofr_fsi",
@@ -637,51 +640,51 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.9,
-      "checked_at": "2026-08-08T05:28:44.636440+00:00"
+      "checked_at": "2026-08-08T13:25:51.165425+00:00"
     },
     "rate_futures": {
       "source": "rate_futures",
       "status": "ok",
-      "rows": 65,
+      "rows": 64,
       "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.6,
-      "checked_at": "2026-08-08T05:28:44.636444+00:00"
+      "elapsed_sec": 5.5,
+      "checked_at": "2026-08-08T13:25:51.165437+00:00"
     },
     "ofr": {
       "source": "ofr",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.9,
-      "checked_at": "2026-08-08T05:28:44.636502+00:00"
+      "elapsed_sec": 4.0,
+      "checked_at": "2026-08-08T13:25:51.165603+00:00"
     },
     "prediction_markets": {
       "source": "prediction_markets",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 6.1,
-      "checked_at": "2026-08-08T05:28:44.636766+00:00"
+      "elapsed_sec": 10.1,
+      "checked_at": "2026-08-08T13:25:51.166512+00:00"
     },
     "bis": {
       "source": "bis",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 25.4,
-      "checked_at": "2026-08-08T05:28:44.636781+00:00"
+      "elapsed_sec": 28.1,
+      "checked_at": "2026-08-08T13:25:51.166556+00:00"
     },
     "china_property": {
       "source": "china_property",
@@ -705,30 +708,30 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.5,
-      "checked_at": "2026-08-08T05:28:44.636718+00:00"
+      "elapsed_sec": 11.6,
+      "checked_at": "2026-08-08T13:25:51.166391+00:00"
     },
     "treasury_auctions": {
       "source": "treasury_auctions",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 3.8,
-      "checked_at": "2026-08-08T05:28:44.636785+00:00"
-    },
-    "canada_prices": {
-      "source": "canada_prices",
-      "status": "ok",
-      "rows": 6300,
       "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.7,
-      "checked_at": "2026-08-08T05:28:44.636585+00:00"
+      "elapsed_sec": 7.4,
+      "checked_at": "2026-08-08T13:25:51.166567+00:00"
+    },
+    "canada_prices": {
+      "source": "canada_prices",
+      "status": "ok",
+      "rows": 370,
+      "last_date": "2026-08-08",
+      "error": null,
+      "notes": [],
+      "probed_at": null,
+      "elapsed_sec": 1.5,
+      "checked_at": "2026-08-08T13:25:51.165849+00:00"
     },
     "canada_macro": {
       "source": "canada_macro",
@@ -740,8 +743,8 @@
         "frozen tail: house_prices last=2026-01-01 age=219d"
       ],
       "probed_at": null,
-      "elapsed_sec": 14.8,
-      "checked_at": "2026-08-08T05:28:44.636589+00:00"
+      "elapsed_sec": 10.5,
+      "checked_at": "2026-08-08T13:25:51.165861+00:00"
     },
     "canada_breadth": {
       "source": "canada_breadth",
@@ -751,8 +754,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 8.9,
-      "checked_at": "2026-08-08T05:28:44.636593+00:00"
+      "elapsed_sec": 8.6,
+      "checked_at": "2026-08-08T13:25:51.165873+00:00"
     },
     "canada_universe": {
       "source": "canada_universe",
@@ -762,19 +765,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 19.0,
-      "checked_at": "2026-08-08T05:28:44.636597+00:00"
+      "elapsed_sec": 20.7,
+      "checked_at": "2026-08-08T13:25:51.165883+00:00"
     },
     "intl_prices": {
       "source": "intl_prices",
       "status": "ok",
-      "rows": 11552,
+      "rows": 455,
       "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.4,
-      "checked_at": "2026-08-08T05:28:44.636601+00:00"
+      "elapsed_sec": 1.4,
+      "checked_at": "2026-08-08T13:25:51.165894+00:00"
     },
     "intl_macro": {
       "source": "intl_macro",
@@ -796,8 +799,8 @@
         "frozen tail: EZ_short_3m last=2026-01-01 age=219d"
       ],
       "probed_at": null,
-      "elapsed_sec": 36.2,
-      "checked_at": "2026-08-08T05:28:44.636607+00:00"
+      "elapsed_sec": 40.4,
+      "checked_at": "2026-08-08T13:25:51.165916+00:00"
     },
     "intl_universe": {
       "source": "intl_universe",
@@ -807,8 +810,8 @@
       "error": "RuntimeError: intl_universe: no closes downloaded",
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 118.9,
-      "checked_at": "2026-08-08T05:28:44.636611+00:00"
+      "elapsed_sec": 117.0,
+      "checked_at": "2026-08-08T13:25:51.165928+00:00"
     },
     "jodi": {
       "source": "jodi",
@@ -818,8 +821,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 20.0,
-      "checked_at": "2026-08-08T05:28:44.636706+00:00"
+      "elapsed_sec": 26.0,
+      "checked_at": "2026-08-08T13:25:51.166358+00:00"
     },
     "worldbank": {
       "source": "worldbank",
@@ -829,8 +832,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-08-08T05:28:44.636710+00:00"
+      "elapsed_sec": 3.7,
+      "checked_at": "2026-08-08T13:25:51.166369+00:00"
     },
     "hk_property": {
       "source": "hk_property",
@@ -923,13 +926,13 @@
     "wikipedia_btc": {
       "source": "wikipedia_btc",
       "status": "ok",
-      "rows": 4055,
-      "last_date": "2026-08-06",
+      "rows": 4056,
+      "last_date": "2026-08-07",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.7,
-      "checked_at": "2026-08-08T05:28:44.636658+00:00"
+      "elapsed_sec": 0.9,
+      "checked_at": "2026-08-08T13:25:51.166219+00:00"
     },
     "hk_southbound_holdings": {
       "source": "hk_southbound_holdings",
@@ -950,8 +953,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-08-08T05:28:44.636662+00:00"
+      "elapsed_sec": 1.1,
+      "checked_at": "2026-08-08T13:25:51.166230+00:00"
     },
     "usaspending": {
       "source": "usaspending",
@@ -961,8 +964,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 173.5,
-      "checked_at": "2026-08-08T05:28:44.636774+00:00"
+      "elapsed_sec": 161.4,
+      "checked_at": "2026-08-08T13:25:51.166534+00:00"
     },
     "quiver_congress": {
       "source": "quiver_congress",
@@ -973,7 +976,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.7,
-      "checked_at": "2026-08-08T05:28:44.636789+00:00"
+      "checked_at": "2026-08-08T13:25:51.166578+00:00"
     },
     "quiver_senate": {
       "source": "quiver_senate",
@@ -983,8 +986,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.5,
-      "checked_at": "2026-08-08T05:28:44.636793+00:00"
+      "elapsed_sec": 1.2,
+      "checked_at": "2026-08-08T13:25:51.166590+00:00"
     },
     "quiver_house": {
       "source": "quiver_house",
@@ -994,8 +997,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.5,
-      "checked_at": "2026-08-08T05:28:44.636797+00:00"
+      "elapsed_sec": 0.8,
+      "checked_at": "2026-08-08T13:25:51.166601+00:00"
     },
     "quiver_lobbying": {
       "source": "quiver_lobbying",
@@ -1005,8 +1008,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.4,
-      "checked_at": "2026-08-08T05:28:44.636800+00:00"
+      "elapsed_sec": 1.4,
+      "checked_at": "2026-08-08T13:25:51.166612+00:00"
     },
     "quiver_govcontracts": {
       "source": "quiver_govcontracts",
@@ -1016,8 +1019,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.7,
-      "checked_at": "2026-08-08T05:28:44.636805+00:00"
+      "elapsed_sec": 0.9,
+      "checked_at": "2026-08-08T13:25:51.166622+00:00"
     },
     "quiver_offexchange": {
       "source": "quiver_offexchange",
@@ -1027,8 +1030,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.2,
-      "checked_at": "2026-08-08T05:28:44.636809+00:00"
+      "elapsed_sec": 0.7,
+      "checked_at": "2026-08-08T13:25:51.166633+00:00"
     },
     "quiver_insiders": {
       "source": "quiver_insiders",
@@ -1038,8 +1041,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.8,
-      "checked_at": "2026-08-08T05:28:44.636813+00:00"
+      "elapsed_sec": 2.1,
+      "checked_at": "2026-08-08T13:25:51.166644+00:00"
     },
     "quiver_flights": {
       "source": "quiver_flights",
@@ -1050,7 +1053,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636816+00:00"
+      "checked_at": "2026-08-08T13:25:51.166656+00:00"
     },
     "quiver_patents": {
       "source": "quiver_patents",
@@ -1060,8 +1063,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 37.7,
-      "checked_at": "2026-08-08T05:28:44.636821+00:00"
+      "elapsed_sec": 38.7,
+      "checked_at": "2026-08-08T13:25:51.166667+00:00"
     },
     "quiver_wsb": {
       "source": "quiver_wsb",
@@ -1072,7 +1075,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.8,
-      "checked_at": "2026-08-08T05:28:44.636825+00:00"
+      "checked_at": "2026-08-08T13:25:51.166677+00:00"
     },
     "quiver_twitter": {
       "source": "quiver_twitter",
@@ -1083,7 +1086,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636829+00:00"
+      "checked_at": "2026-08-08T13:25:51.166688+00:00"
     },
     "quiver_sec13f": {
       "source": "quiver_sec13f",
@@ -1093,8 +1096,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 37.8,
-      "checked_at": "2026-08-08T05:28:44.636833+00:00"
+      "elapsed_sec": 5.6,
+      "checked_at": "2026-08-08T13:25:51.166699+00:00"
     },
     "quiver_sec13f_changes": {
       "source": "quiver_sec13f_changes",
@@ -1104,8 +1107,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.6,
-      "checked_at": "2026-08-08T05:28:44.636837+00:00"
+      "elapsed_sec": 1.4,
+      "checked_at": "2026-08-08T13:25:51.166710+00:00"
     },
     "quiver_cnbc": {
       "source": "quiver_cnbc",
@@ -1115,8 +1118,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.6,
-      "checked_at": "2026-08-08T05:28:44.636841+00:00"
+      "elapsed_sec": 0.5,
+      "checked_at": "2026-08-08T13:25:51.166721+00:00"
     },
     "quiver_spacs": {
       "source": "quiver_spacs",
@@ -1127,7 +1130,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636845+00:00"
+      "checked_at": "2026-08-08T13:25:51.166732+00:00"
     },
     "quiver_trump": {
       "source": "quiver_trump",
@@ -1138,7 +1141,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.5,
-      "checked_at": "2026-08-08T05:28:44.636848+00:00"
+      "checked_at": "2026-08-08T13:25:51.166742+00:00"
     },
     "quiver_corpdonors": {
       "source": "quiver_corpdonors",
@@ -1148,8 +1151,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 8.1,
-      "checked_at": "2026-08-08T05:28:44.636852+00:00"
+      "elapsed_sec": 7.8,
+      "checked_at": "2026-08-08T13:25:51.166754+00:00"
     },
     "quiver_news": {
       "source": "quiver_news",
@@ -1160,7 +1163,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.7,
-      "checked_at": "2026-08-08T05:28:44.636856+00:00"
+      "checked_at": "2026-08-08T13:25:51.166765+00:00"
     },
     "quiver_congressholdings": {
       "source": "quiver_congressholdings",
@@ -1171,7 +1174,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.6,
-      "checked_at": "2026-08-08T05:28:44.636860+00:00"
+      "checked_at": "2026-08-08T13:25:51.166776+00:00"
     },
     "quiver_bills": {
       "source": "quiver_bills",
@@ -1181,8 +1184,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.9,
-      "checked_at": "2026-08-08T05:28:44.636864+00:00"
+      "elapsed_sec": 2.7,
+      "checked_at": "2026-08-08T13:25:51.166787+00:00"
     },
     "quiver_appratings": {
       "source": "quiver_appratings",
@@ -1192,8 +1195,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.0,
-      "checked_at": "2026-08-08T05:28:44.636867+00:00"
+      "elapsed_sec": 0.8,
+      "checked_at": "2026-08-08T13:25:51.166798+00:00"
     },
     "edgar_trumpflow": {
       "source": "edgar_trumpflow",
@@ -1203,8 +1206,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 6.3,
-      "checked_at": "2026-08-08T05:28:44.636759+00:00"
+      "elapsed_sec": 14.4,
+      "checked_at": "2026-08-08T13:25:51.166490+00:00"
     },
     "quiver_watchlist": {
       "source": "quiver_watchlist",
@@ -1214,8 +1217,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 22.4,
-      "checked_at": "2026-08-08T05:28:44.636871+00:00"
+      "elapsed_sec": 22.6,
+      "checked_at": "2026-08-08T13:25:51.166809+00:00"
     },
     "edgar_8k": {
       "source": "edgar_8k",
@@ -1225,8 +1228,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 455.3,
-      "checked_at": "2026-08-08T05:28:44.636725+00:00"
+      "elapsed_sec": 455.0,
+      "checked_at": "2026-08-08T13:25:51.166413+00:00"
     },
     "openfda": {
       "source": "openfda",
@@ -1236,8 +1239,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 26.5,
-      "checked_at": "2026-08-08T05:28:44.636518+00:00"
+      "elapsed_sec": 26.0,
+      "checked_at": "2026-08-08T13:25:51.165647+00:00"
     },
     "huggingface": {
       "source": "huggingface",
@@ -1247,8 +1250,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 9.0,
-      "checked_at": "2026-08-08T05:28:44.636522+00:00"
+      "elapsed_sec": 9.3,
+      "checked_at": "2026-08-08T13:25:51.165666+00:00"
     },
     "grants_gov": {
       "source": "grants_gov",
@@ -1258,8 +1261,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.7,
-      "checked_at": "2026-08-08T05:28:44.636525+00:00"
+      "elapsed_sec": 1.9,
+      "checked_at": "2026-08-08T13:25:51.165677+00:00"
     },
     "clinicaltrials": {
       "source": "clinicaltrials",
@@ -1269,8 +1272,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 15.9,
-      "checked_at": "2026-08-08T05:28:44.636530+00:00"
+      "elapsed_sec": 16.5,
+      "checked_at": "2026-08-08T13:25:51.165688+00:00"
     },
     "finnhub_altdata": {
       "source": "finnhub_altdata",
@@ -1280,8 +1283,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 491.6,
-      "checked_at": "2026-08-08T05:28:44.636533+00:00"
+      "elapsed_sec": 491.3,
+      "checked_at": "2026-08-08T13:25:51.165699+00:00"
     },
     "polygon_news": {
       "source": "polygon_news",
@@ -1291,8 +1294,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 278.9,
-      "checked_at": "2026-08-08T05:28:44.636565+00:00"
+      "elapsed_sec": 294.4,
+      "checked_at": "2026-08-08T13:25:51.165787+00:00"
     },
     "github_repos": {
       "source": "github_repos",
@@ -1302,8 +1305,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 21.7,
-      "checked_at": "2026-08-08T05:28:44.636569+00:00"
+      "elapsed_sec": 22.2,
+      "checked_at": "2026-08-08T13:25:51.165798+00:00"
     },
     "sam_gov": {
       "source": "sam_gov",
@@ -1314,7 +1317,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.6,
-      "checked_at": "2026-08-08T05:28:44.636573+00:00"
+      "checked_at": "2026-08-08T13:25:51.165815+00:00"
     },
     "cboe_vvix": {
       "source": "cboe_vvix",
@@ -1325,7 +1328,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.5,
-      "checked_at": "2026-08-08T05:28:44.636420+00:00"
+      "checked_at": "2026-08-08T13:25:51.165367+00:00"
     },
     "finra_short_volume": {
       "source": "finra_short_volume",
@@ -1335,8 +1338,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.5,
-      "checked_at": "2026-08-08T05:28:44.636537+00:00"
+      "elapsed_sec": 1.7,
+      "checked_at": "2026-08-08T13:25:51.165710+00:00"
     },
     "china_pboc": {
       "source": "china_pboc",
@@ -1368,8 +1371,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-08-08T05:28:44.636762+00:00"
+      "elapsed_sec": 0.9,
+      "checked_at": "2026-08-08T13:25:51.166501+00:00"
     },
     "beneficial_ownership": {
       "source": "beneficial_ownership",
@@ -1379,8 +1382,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 196.0,
-      "checked_at": "2026-08-08T05:28:44.636733+00:00"
+      "elapsed_sec": 31.0,
+      "checked_at": "2026-08-08T13:25:51.166435+00:00"
     },
     "china_yield_spread": {
       "source": "china_yield_spread",
@@ -1434,8 +1437,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 599.5,
-      "checked_at": "2026-08-08T05:28:44.636456+00:00"
+      "elapsed_sec": 575.5,
+      "checked_at": "2026-08-08T13:25:51.165478+00:00"
     },
     "china_stocks": {
       "source": "china_stocks",
@@ -1587,11 +1590,11 @@
       "date": "2026-08-07",
       "session": "2026-08-07",
       "path": "/Users/chriswong/actions-runner-1/_work/macro/macro/data/polygon_gex/chains/2026-08-07.parquet",
-      "checked_at": "2026-08-08T05:28:44.636872+00:00"
+      "checked_at": "2026-08-08T13:25:51.166813+00:00"
     },
     "options_flow_creds": {
       "status": "creds_present",
-      "checked_at": "2026-08-08T05:28:44.636872+00:00"
+      "checked_at": "2026-08-08T13:25:51.166813+00:00"
     },
     "finra_ats_transparency": {
       "source": "finra_ats_transparency",
@@ -1601,8 +1604,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.9,
-      "checked_at": "2026-08-08T05:28:44.636545+00:00"
+      "elapsed_sec": 1.0,
+      "checked_at": "2026-08-08T13:25:51.165732+00:00"
     },
     "massive_stock_day": {
       "source": "massive_stock_day",
@@ -1612,8 +1615,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1510.7,
-      "checked_at": "2026-08-08T05:28:44.636581+00:00"
+      "elapsed_sec": 1340.4,
+      "checked_at": "2026-08-08T13:25:51.165838+00:00"
     },
     "intl_etf": {
       "source": "intl_etf",
@@ -1624,18 +1627,18 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 2.2,
-      "checked_at": "2026-08-08T05:28:44.636615+00:00"
+      "checked_at": "2026-08-08T13:25:51.165940+00:00"
     },
     "lbnl_queue": {
       "source": "lbnl_queue",
-      "status": "dead",
+      "status": "blocked",
       "rows": 0,
       "last_date": null,
-      "error": "circuit open (27 consecutive failures)",
+      "error": "lbnl_queue: no reachable Queued Up data file \u2014 https://emp.lbl.gov/sites/default/files/queued_up_data_through_2026.xlsx -> HTTP 404; https://emp.lbl.gov/sites/default/files/queued_up_data_through_2025.xlsx -> HTTP 404; https://emp.lbl.gov/sites/default/files/queued_up_data_through_2024.xlsx -> HTTP 404; https://emp.lbl.gov/sites/default/files/queued_up_data.xlsx -> HTTP 404. LBNL publishes annually and now serves files from date-scoped folders (/sites/default/files/<YYYY-MM>/), so the flat URL pattern is dead; the HTML index at https://emp.lbl.gov/queues is WAF-challenged to non-browser clients, so the current filename has to be read off that page by a human and set as LBNL_QUEUE_XLSX_URL (or dropped in as a refreshed seed). Serving the committed seed interconnection_queue.json meanwhile (asof_year in-file) \u2014 engine leg stays live.",
       "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636666+00:00"
+      "probed_at": "2026-08-08T12:49:55.366874+00:00",
+      "elapsed_sec": 3.0,
+      "checked_at": "2026-08-08T13:25:51.166242+00:00"
     },
     "federal_register": {
       "source": "federal_register",
@@ -1645,8 +1648,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 118.4,
-      "checked_at": "2026-08-08T05:28:44.636778+00:00"
+      "elapsed_sec": 118.6,
+      "checked_at": "2026-08-08T13:25:51.166545+00:00"
     },
     "tape_flow_forward": {
       "status": "empty",
@@ -1676,8 +1679,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.3,
-      "checked_at": "2026-08-08T05:28:44.636714+00:00"
+      "elapsed_sec": 1.4,
+      "checked_at": "2026-08-08T13:25:51.166380+00:00"
     },
     "edgar_dilution": {
       "source": "edgar_dilution",
@@ -1687,8 +1690,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.2,
-      "checked_at": "2026-08-08T05:28:44.636737+00:00"
+      "elapsed_sec": 4.0,
+      "checked_at": "2026-08-08T13:25:51.166446+00:00"
     },
     "gaming_ny": {
       "source": "gaming_ny",
@@ -1698,8 +1701,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.1,
-      "checked_at": "2026-08-08T05:28:44.636674+00:00"
+      "elapsed_sec": 1.3,
+      "checked_at": "2026-08-08T13:25:51.166263+00:00"
     },
     "gaming_nj": {
       "source": "gaming_nj",
@@ -1709,8 +1712,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.2,
-      "checked_at": "2026-08-08T05:28:44.636677+00:00"
+      "elapsed_sec": 0.3,
+      "checked_at": "2026-08-08T13:25:51.166274+00:00"
     },
     "gaming_pgcb": {
       "source": "gaming_pgcb",
@@ -1720,8 +1723,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-08-08T05:28:44.636681+00:00"
+      "elapsed_sec": 1.1,
+      "checked_at": "2026-08-08T13:25:51.166285+00:00"
     },
     "gaming_nv": {
       "source": "gaming_nv",
@@ -1732,7 +1735,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636685+00:00"
+      "checked_at": "2026-08-08T13:25:51.166296+00:00"
     },
     "kalshi_releases": {
       "source": "kalshi_releases",
@@ -1742,8 +1745,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.5,
-      "checked_at": "2026-08-08T05:28:44.636770+00:00"
+      "elapsed_sec": 1.6,
+      "checked_at": "2026-08-08T13:25:51.166523+00:00"
     },
     "tsa": {
       "source": "tsa",
@@ -1754,7 +1757,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.9,
-      "checked_at": "2026-08-08T05:28:44.636670+00:00"
+      "checked_at": "2026-08-08T13:25:51.166253+00:00"
     },
     "hk_cbbc": {
       "source": "hk_cbbc",
@@ -1811,12 +1814,12 @@
       "source": "broad_flows",
       "status": "ok",
       "rows": 3,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.4,
-      "checked_at": "2026-08-08T05:28:44.636465+00:00"
+      "elapsed_sec": 4.5,
+      "checked_at": "2026-08-08T13:25:51.165501+00:00"
     },
     "finnhub_transcripts": {
       "source": "finnhub_transcripts",
@@ -1827,7 +1830,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 3.9,
-      "checked_at": "2026-08-08T05:28:44.636552+00:00"
+      "checked_at": "2026-08-08T13:25:51.165754+00:00"
     },
     "stocktwits": {
       "source": "stocktwits",
@@ -1837,19 +1840,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 124.9,
-      "checked_at": "2026-08-08T05:28:44.636557+00:00"
+      "elapsed_sec": 130.6,
+      "checked_at": "2026-08-08T13:25:51.165765+00:00"
     },
     "imf_weo": {
       "source": "imf_weo",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 29.9,
-      "checked_at": "2026-08-08T05:28:44.636577+00:00"
+      "elapsed_sec": 30.5,
+      "checked_at": "2026-08-08T13:25:51.165827+00:00"
     },
     "symbol_directory": {
       "source": "symbol_directory",
@@ -1859,8 +1862,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.5,
-      "checked_at": "2026-08-08T05:28:44.636729+00:00"
+      "elapsed_sec": 0.0,
+      "checked_at": "2026-08-08T13:25:51.166424+00:00"
     },
     "flow_signals": {
       "status": "ok",
@@ -1879,30 +1882,30 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.5,
-      "checked_at": "2026-08-08T05:28:44.636424+00:00"
+      "elapsed_sec": 2.6,
+      "checked_at": "2026-08-08T13:25:51.165378+00:00"
     },
     "corp_bond_holdings": {
       "source": "corp_bond_holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 10.7,
-      "checked_at": "2026-08-08T05:28:44.636477+00:00"
+      "elapsed_sec": 15.1,
+      "checked_at": "2026-08-08T13:25:51.165535+00:00"
     },
     "finra_corp_bonds": {
       "source": "finra_corp_bonds",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-08-07",
+      "last_date": "2026-08-08",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.1,
-      "checked_at": "2026-08-08T05:28:44.636481+00:00"
+      "elapsed_sec": 5.0,
+      "checked_at": "2026-08-08T13:25:51.165546+00:00"
     },
     "tape_flow_episodes": {
       "status": "empty",
@@ -1931,7 +1934,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636561+00:00"
+      "checked_at": "2026-08-08T13:25:51.165776+00:00"
     },
     "russell_breadth": {
       "source": "russell_breadth",
@@ -1941,8 +1944,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 147.1,
-      "checked_at": "2026-08-08T05:28:44.636402+00:00"
+      "elapsed_sec": 154.0,
+      "checked_at": "2026-08-08T13:25:51.165314+00:00"
     },
     "geo_revenue": {
       "source": "geo_revenue",
@@ -1952,8 +1955,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 123.1,
-      "checked_at": "2026-08-08T05:28:44.636755+00:00"
+      "elapsed_sec": 124.6,
+      "checked_at": "2026-08-08T13:25:51.166479+00:00"
     },
     "china_board_breadth": {
       "source": "china_board_breadth",
@@ -2073,8 +2076,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 11.4,
-      "checked_at": "2026-08-08T05:28:44.636645+00:00"
+      "elapsed_sec": 11.2,
+      "checked_at": "2026-08-08T13:25:51.166182+00:00"
     },
     "usaspending_awards": {
       "source": "usaspending_awards",
@@ -2084,19 +2087,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 317.6,
-      "checked_at": "2026-08-08T05:28:44.636506+00:00"
+      "elapsed_sec": 345.1,
+      "checked_at": "2026-08-08T13:25:51.165614+00:00"
     },
     "sec_capital_structure": {
       "source": "sec_capital_structure",
-      "status": "failed",
-      "rows": 0,
-      "last_date": null,
-      "error": "ValueError: Invalid endpoint: https://bb4f2e872c10e536c025548b37bc9a7b.r2.cloudflarestorage.com\n",
+      "status": "ok",
+      "rows": 1,
+      "last_date": "2026-08-08",
+      "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 67.8,
-      "checked_at": "2026-08-08T05:28:44.636746+00:00"
+      "elapsed_sec": 721.4,
+      "checked_at": "2026-08-08T13:25:51.166456+00:00"
     },
     "usaspending_subawards": {
       "source": "usaspending_subawards",
@@ -2106,8 +2109,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 86.5,
-      "checked_at": "2026-08-08T05:28:44.636510+00:00"
+      "elapsed_sec": 84.3,
+      "checked_at": "2026-08-08T13:25:51.165625+00:00"
     },
     "usaspending_idv_graph": {
       "source": "usaspending_idv_graph",
@@ -2117,8 +2120,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 22.4,
-      "checked_at": "2026-08-08T05:28:44.636514+00:00"
+      "elapsed_sec": 24.5,
+      "checked_at": "2026-08-08T13:25:51.165636+00:00"
     },
     "ibkr_borrow": {
       "source": "ibkr_borrow",
@@ -2128,8 +2131,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.9,
-      "checked_at": "2026-08-08T05:28:44.636541+00:00"
+      "elapsed_sec": 1.7,
+      "checked_at": "2026-08-08T13:25:51.165721+00:00"
     },
     "finra_otc_nonats": {
       "source": "finra_otc_nonats",
@@ -2139,19 +2142,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 0.8,
-      "checked_at": "2026-08-08T05:28:44.636549+00:00"
+      "elapsed_sec": 1.0,
+      "checked_at": "2026-08-08T13:25:51.165743+00:00"
     },
     "sec_capital_structure_companyfacts": {
       "source": "sec_capital_structure_companyfacts",
-      "status": "failed",
+      "status": "dead",
       "rows": 0,
       "last_date": null,
-      "error": "CompanyFactsIntakeError: Company Facts production trust is unconfigured",
+      "error": "circuit open (4 consecutive failures)",
       "notes": [],
-      "probed_at": "2026-08-08T05:04:02.728147+00:00",
+      "probed_at": null,
       "elapsed_sec": 0.0,
-      "checked_at": "2026-08-08T05:28:44.636750+00:00"
+      "checked_at": "2026-08-08T13:25:51.166468+00:00"
     }
   },
   "circuit_breaker": {
@@ -2162,7 +2165,7 @@
     "cot": 0,
     "cboe_putcall": 0,
     "cboe_gex": 0,
-    "sentiment_naaim": 5,
+    "sentiment_naaim": 6,
     "sentiment_aaii": 0,
     "sector_flows": 0,
     "holdings": 0,
@@ -2172,7 +2175,7 @@
     "okx": 0,
     "deribit": 0,
     "feargreed": 0,
-    "coingecko": 7,
+    "coingecko": 8,
     "defillama": 0,
     "mempool": 0,
     "bgeo": 0,
@@ -2216,7 +2219,7 @@
     "canada_universe": 0,
     "intl_prices": 0,
     "intl_macro": 0,
-    "intl_universe": 1,
+    "intl_universe": 2,
     "jodi": 0,
     "worldbank": 0,
     "hk_property": 0,
@@ -2290,7 +2293,7 @@
     "finra_ats_transparency": 0,
     "massive_stock_day": 0,
     "intl_etf": 0,
-    "lbnl_queue": 27,
+    "lbnl_queue": 0,
     "federal_register": 0,
     "china_filings": 0,
     "cleveland_nowcast": 0,
@@ -2328,7 +2331,7 @@
     "china_trade_detail": 0,
     "crypto_universe": 0,
     "usaspending_awards": 0,
-    "sec_capital_structure": 2,
+    "sec_capital_structure": 0,
     "usaspending_subawards": 0,
     "usaspending_idv_graph": 0,
     "ibkr_borrow": 0,
@@ -2336,10 +2339,9 @@
     "sec_capital_structure_companyfacts": 4
   },
   "circuit_breaker_probe": {
-    "lbnl_queue": "2026-08-07T11:25:33.905288+00:00",
     "china_einteraction": "2026-08-08T09:11:29.470886+00:00",
-    "coingecko": "2026-08-07T11:25:15.203108+00:00",
-    "sentiment_naaim": "2026-08-07T10:17:29.783044+00:00",
+    "coingecko": "2026-08-08T12:49:35.945894+00:00",
+    "sentiment_naaim": "2026-08-08T11:43:00.999490+00:00",
     "sec_capital_structure_companyfacts": "2026-08-08T05:04:02.728147+00:00"
   },
   "stale_series": [
@@ -2389,7 +2391,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:47:31.820829+00:00"
+      "detected_at": "2026-08-08T12:45:50.310640+00:00"
     },
     {
       "group": "intl_macro",
@@ -2397,7 +2399,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399436+00:00"
+      "detected_at": "2026-08-08T12:47:01.437000+00:00"
     },
     {
       "group": "intl_macro",
@@ -2405,7 +2407,7 @@
       "last_obs": "2025-04-01",
       "cadence_days": 45,
       "age_days": 494,
-      "detected_at": "2026-08-08T04:48:38.399441+00:00"
+      "detected_at": "2026-08-08T12:47:01.437004+00:00"
     },
     {
       "group": "intl_macro",
@@ -2421,7 +2423,7 @@
       "last_obs": "2025-03-01",
       "cadence_days": 45,
       "age_days": 525,
-      "detected_at": "2026-08-08T04:48:38.399443+00:00"
+      "detected_at": "2026-08-08T12:47:01.437006+00:00"
     },
     {
       "group": "intl_macro",
@@ -2429,7 +2431,7 @@
       "last_obs": "2025-01-01",
       "cadence_days": 45,
       "age_days": 584,
-      "detected_at": "2026-08-08T04:48:38.399444+00:00"
+      "detected_at": "2026-08-08T12:47:01.437007+00:00"
     },
     {
       "group": "intl_macro",
@@ -2437,7 +2439,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399445+00:00"
+      "detected_at": "2026-08-08T12:47:01.437009+00:00"
     },
     {
       "group": "intl_macro",
@@ -2445,7 +2447,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399447+00:00"
+      "detected_at": "2026-08-08T12:47:01.437010+00:00"
     },
     {
       "group": "intl_macro",
@@ -2453,7 +2455,7 @@
       "last_obs": "2025-03-01",
       "cadence_days": 45,
       "age_days": 525,
-      "detected_at": "2026-08-08T04:48:38.399448+00:00"
+      "detected_at": "2026-08-08T12:47:01.437011+00:00"
     },
     {
       "group": "intl_macro",
@@ -2461,7 +2463,7 @@
       "last_obs": "2026-02-01",
       "cadence_days": 45,
       "age_days": 188,
-      "detected_at": "2026-08-08T04:48:38.399449+00:00"
+      "detected_at": "2026-08-08T12:47:01.437012+00:00"
     },
     {
       "group": "intl_macro",
@@ -2469,7 +2471,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399451+00:00"
+      "detected_at": "2026-08-08T12:47:01.437013+00:00"
     },
     {
       "group": "intl_macro",
@@ -2477,7 +2479,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399452+00:00"
+      "detected_at": "2026-08-08T12:47:01.437015+00:00"
     },
     {
       "group": "intl_macro",
@@ -2485,7 +2487,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 45,
       "age_days": 219,
-      "detected_at": "2026-08-08T04:48:38.399453+00:00"
+      "detected_at": "2026-08-08T12:47:01.437016+00:00"
     },
     {
       "group": "intl_macro",
@@ -2501,7 +2503,7 @@
       "last_obs": "2026-07-25",
       "cadence_days": 3,
       "age_days": 14,
-      "detected_at": "2026-08-08T04:51:18.980165+00:00"
+      "detected_at": "2026-08-08T12:49:50.373060+00:00"
     },
     {
       "group": "fred",
@@ -2509,7 +2511,7 @@
       "last_obs": "2026-05-01",
       "cadence_days": 5,
       "age_days": 99,
-      "detected_at": "2026-08-08T03:33:33.864354+00:00"
+      "detected_at": "2026-08-08T11:36:15.196324+00:00"
     },
     {
       "group": "fred",
@@ -2517,7 +2519,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864361+00:00"
+      "detected_at": "2026-08-08T11:36:15.196331+00:00"
     },
     {
       "group": "fred",
@@ -2525,7 +2527,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864363+00:00"
+      "detected_at": "2026-08-08T11:36:15.196334+00:00"
     },
     {
       "group": "fred",
@@ -2533,7 +2535,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864365+00:00"
+      "detected_at": "2026-08-08T11:36:15.196336+00:00"
     },
     {
       "group": "fred",
@@ -2541,7 +2543,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864367+00:00"
+      "detected_at": "2026-08-08T11:36:15.196337+00:00"
     },
     {
       "group": "fred",
@@ -2549,7 +2551,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864369+00:00"
+      "detected_at": "2026-08-08T11:36:15.196339+00:00"
     },
     {
       "group": "fred",
@@ -2565,7 +2567,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864370+00:00"
+      "detected_at": "2026-08-08T11:36:15.196340+00:00"
     },
     {
       "group": "fred",
@@ -2573,7 +2575,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864371+00:00"
+      "detected_at": "2026-08-08T11:36:15.196341+00:00"
     },
     {
       "group": "fred",
@@ -2581,7 +2583,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864373+00:00"
+      "detected_at": "2026-08-08T11:36:15.196343+00:00"
     },
     {
       "group": "fred",
@@ -2589,7 +2591,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864374+00:00"
+      "detected_at": "2026-08-08T11:36:15.196344+00:00"
     },
     {
       "group": "fred",
@@ -2597,7 +2599,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864375+00:00"
+      "detected_at": "2026-08-08T11:36:15.196345+00:00"
     },
     {
       "group": "fred",
@@ -2605,7 +2607,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864377+00:00"
+      "detected_at": "2026-08-08T11:36:15.196347+00:00"
     },
     {
       "group": "fred",
@@ -2613,7 +2615,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864378+00:00"
+      "detected_at": "2026-08-08T11:36:15.196348+00:00"
     },
     {
       "group": "fred",
@@ -2621,7 +2623,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864379+00:00"
+      "detected_at": "2026-08-08T11:36:15.196349+00:00"
     },
     {
       "group": "fred",
@@ -2629,7 +2631,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864380+00:00"
+      "detected_at": "2026-08-08T11:36:15.196351+00:00"
     },
     {
       "group": "fred",
@@ -2637,7 +2639,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864381+00:00"
+      "detected_at": "2026-08-08T11:36:15.196352+00:00"
     },
     {
       "group": "fred",
@@ -2645,7 +2647,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864383+00:00"
+      "detected_at": "2026-08-08T11:36:15.196353+00:00"
     },
     {
       "group": "fred",
@@ -2653,7 +2655,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864384+00:00"
+      "detected_at": "2026-08-08T11:36:15.196355+00:00"
     },
     {
       "group": "fred",
@@ -2661,7 +2663,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864385+00:00"
+      "detected_at": "2026-08-08T11:36:15.196356+00:00"
     },
     {
       "group": "fred",
@@ -2669,7 +2671,7 @@
       "last_obs": "2026-04-01",
       "cadence_days": 5,
       "age_days": 129,
-      "detected_at": "2026-08-08T03:33:33.864387+00:00"
+      "detected_at": "2026-08-08T11:36:15.196357+00:00"
     },
     {
       "group": "fred",
@@ -2677,7 +2679,7 @@
       "last_obs": "2026-04-01",
       "cadence_days": 5,
       "age_days": 129,
-      "detected_at": "2026-08-08T03:33:33.864388+00:00"
+      "detected_at": "2026-08-08T11:36:15.196359+00:00"
     },
     {
       "group": "fred",
@@ -2685,7 +2687,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864389+00:00"
+      "detected_at": "2026-08-08T11:36:15.196360+00:00"
     },
     {
       "group": "fred",
@@ -2693,7 +2695,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864390+00:00"
+      "detected_at": "2026-08-08T11:36:15.196362+00:00"
     },
     {
       "group": "fred",
@@ -2701,7 +2703,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864396+00:00"
+      "detected_at": "2026-08-08T11:36:15.196367+00:00"
     },
     {
       "group": "fred",
@@ -2709,7 +2711,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864397+00:00"
+      "detected_at": "2026-08-08T11:36:15.196368+00:00"
     },
     {
       "group": "fred",
@@ -2717,7 +2719,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864398+00:00"
+      "detected_at": "2026-08-08T11:36:15.196369+00:00"
     },
     {
       "group": "fred",
@@ -2725,7 +2727,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864400+00:00"
+      "detected_at": "2026-08-08T11:36:15.196371+00:00"
     },
     {
       "group": "fred",
@@ -2733,7 +2735,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864401+00:00"
+      "detected_at": "2026-08-08T11:36:15.196372+00:00"
     },
     {
       "group": "fred",
@@ -2741,7 +2743,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864402+00:00"
+      "detected_at": "2026-08-08T11:36:15.196373+00:00"
     },
     {
       "group": "fred",
@@ -2749,7 +2751,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864403+00:00"
+      "detected_at": "2026-08-08T11:36:15.196375+00:00"
     },
     {
       "group": "fred",
@@ -2757,7 +2759,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864405+00:00"
+      "detected_at": "2026-08-08T11:36:15.196376+00:00"
     },
     {
       "group": "fred",
@@ -2765,7 +2767,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864406+00:00"
+      "detected_at": "2026-08-08T11:36:15.196377+00:00"
     },
     {
       "group": "fred",
@@ -2773,7 +2775,7 @@
       "last_obs": "2026-05-01",
       "cadence_days": 5,
       "age_days": 99,
-      "detected_at": "2026-08-08T03:33:33.864407+00:00"
+      "detected_at": "2026-08-08T11:36:15.196379+00:00"
     },
     {
       "group": "fred",
@@ -2781,7 +2783,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864409+00:00"
+      "detected_at": "2026-08-08T11:36:15.196380+00:00"
     },
     {
       "group": "fred",
@@ -2789,7 +2791,7 @@
       "last_obs": "2026-05-01",
       "cadence_days": 5,
       "age_days": 99,
-      "detected_at": "2026-08-08T03:33:33.864410+00:00"
+      "detected_at": "2026-08-08T11:36:15.196381+00:00"
     },
     {
       "group": "fred",
@@ -2797,7 +2799,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864411+00:00"
+      "detected_at": "2026-08-08T11:36:15.196383+00:00"
     },
     {
       "group": "fred",
@@ -2805,7 +2807,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864412+00:00"
+      "detected_at": "2026-08-08T11:36:15.196384+00:00"
     },
     {
       "group": "fred",
@@ -2813,7 +2815,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864413+00:00"
+      "detected_at": "2026-08-08T11:36:15.196386+00:00"
     },
     {
       "group": "fred",
@@ -2821,7 +2823,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864415+00:00"
+      "detected_at": "2026-08-08T11:36:15.196387+00:00"
     },
     {
       "group": "fred",
@@ -2829,7 +2831,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864416+00:00"
+      "detected_at": "2026-08-08T11:36:15.196388+00:00"
     },
     {
       "group": "fred",
@@ -2837,7 +2839,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864418+00:00"
+      "detected_at": "2026-08-08T11:36:15.196389+00:00"
     },
     {
       "group": "fred",
@@ -2845,7 +2847,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 5,
       "age_days": 219,
-      "detected_at": "2026-08-08T03:33:33.864419+00:00"
+      "detected_at": "2026-08-08T11:36:15.196390+00:00"
     },
     {
       "group": "fred",
@@ -2853,7 +2855,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864420+00:00"
+      "detected_at": "2026-08-08T11:36:15.196392+00:00"
     },
     {
       "group": "fred",
@@ -2861,7 +2863,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864422+00:00"
+      "detected_at": "2026-08-08T11:36:15.196393+00:00"
     },
     {
       "group": "fred",
@@ -2869,7 +2871,7 @@
       "last_obs": "2026-01-01",
       "cadence_days": 5,
       "age_days": 219,
-      "detected_at": "2026-08-08T03:33:33.864423+00:00"
+      "detected_at": "2026-08-08T11:36:15.196394+00:00"
     },
     {
       "group": "fred",
@@ -2877,7 +2879,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864424+00:00"
+      "detected_at": "2026-08-08T11:36:15.196395+00:00"
     },
     {
       "group": "fred",
@@ -2885,7 +2887,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864425+00:00"
+      "detected_at": "2026-08-08T11:36:15.196397+00:00"
     },
     {
       "group": "fred",
@@ -2893,7 +2895,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864427+00:00"
+      "detected_at": "2026-08-08T11:36:15.196398+00:00"
     },
     {
       "group": "fred",
@@ -2901,7 +2903,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864428+00:00"
+      "detected_at": "2026-08-08T11:36:15.196399+00:00"
     },
     {
       "group": "fred",
@@ -2909,7 +2911,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864429+00:00"
+      "detected_at": "2026-08-08T11:36:15.196401+00:00"
     },
     {
       "group": "fred",
@@ -2917,7 +2919,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864430+00:00"
+      "detected_at": "2026-08-08T11:36:15.196402+00:00"
     },
     {
       "group": "fred",
@@ -2925,7 +2927,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864432+00:00"
+      "detected_at": "2026-08-08T11:36:15.196403+00:00"
     },
     {
       "group": "fred",
@@ -2933,7 +2935,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864433+00:00"
+      "detected_at": "2026-08-08T11:36:15.196404+00:00"
     },
     {
       "group": "fred",
@@ -2941,7 +2943,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864434+00:00"
+      "detected_at": "2026-08-08T11:36:15.196405+00:00"
     },
     {
       "group": "fred",
@@ -2949,7 +2951,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864435+00:00"
+      "detected_at": "2026-08-08T11:36:15.196407+00:00"
     },
     {
       "group": "fred",
@@ -2957,7 +2959,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864436+00:00"
+      "detected_at": "2026-08-08T11:36:15.196408+00:00"
     },
     {
       "group": "fred",
@@ -2965,7 +2967,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864438+00:00"
+      "detected_at": "2026-08-08T11:36:15.196409+00:00"
     },
     {
       "group": "fred",
@@ -2973,7 +2975,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864439+00:00"
+      "detected_at": "2026-08-08T11:36:15.196411+00:00"
     },
     {
       "group": "fred",
@@ -2981,7 +2983,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864440+00:00"
+      "detected_at": "2026-08-08T11:36:15.196412+00:00"
     },
     {
       "group": "fred",
@@ -2989,7 +2991,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864441+00:00"
+      "detected_at": "2026-08-08T11:36:15.196413+00:00"
     },
     {
       "group": "fred",
@@ -2997,7 +2999,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864442+00:00"
+      "detected_at": "2026-08-08T11:36:15.196414+00:00"
     },
     {
       "group": "fred",
@@ -3005,7 +3007,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864444+00:00"
+      "detected_at": "2026-08-08T11:36:15.196416+00:00"
     },
     {
       "group": "fred",
@@ -3013,7 +3015,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864445+00:00"
+      "detected_at": "2026-08-08T11:36:15.196417+00:00"
     },
     {
       "group": "fred",
@@ -3021,7 +3023,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864446+00:00"
+      "detected_at": "2026-08-08T11:36:15.196418+00:00"
     },
     {
       "group": "fred",
@@ -3029,7 +3031,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864447+00:00"
+      "detected_at": "2026-08-08T11:36:15.196419+00:00"
     },
     {
       "group": "fred",
@@ -3037,7 +3039,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864448+00:00"
+      "detected_at": "2026-08-08T11:36:15.196421+00:00"
     },
     {
       "group": "fred",
@@ -3045,7 +3047,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864449+00:00"
+      "detected_at": "2026-08-08T11:36:15.196422+00:00"
     },
     {
       "group": "fred",
@@ -3053,7 +3055,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864451+00:00"
+      "detected_at": "2026-08-08T11:36:15.196423+00:00"
     },
     {
       "group": "fred",
@@ -3061,7 +3063,7 @@
       "last_obs": "2026-05-01",
       "cadence_days": 5,
       "age_days": 99,
-      "detected_at": "2026-08-08T03:33:33.864452+00:00"
+      "detected_at": "2026-08-08T11:36:15.196425+00:00"
     },
     {
       "group": "fred",
@@ -3069,7 +3071,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864453+00:00"
+      "detected_at": "2026-08-08T11:36:15.196426+00:00"
     },
     {
       "group": "fred",
@@ -3077,7 +3079,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864454+00:00"
+      "detected_at": "2026-08-08T11:36:15.196427+00:00"
     },
     {
       "group": "fred",
@@ -3085,7 +3087,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864456+00:00"
+      "detected_at": "2026-08-08T11:36:15.196428+00:00"
     },
     {
       "group": "fred",
@@ -3093,7 +3095,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864457+00:00"
+      "detected_at": "2026-08-08T11:36:15.196429+00:00"
     },
     {
       "group": "fred",
@@ -3101,7 +3103,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864458+00:00"
+      "detected_at": "2026-08-08T11:36:15.196431+00:00"
     },
     {
       "group": "fred",
@@ -3109,7 +3111,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864460+00:00"
+      "detected_at": "2026-08-08T11:36:15.196433+00:00"
     },
     {
       "group": "fred",
@@ -3117,7 +3119,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864462+00:00"
+      "detected_at": "2026-08-08T11:36:15.196434+00:00"
     },
     {
       "group": "fred",
@@ -3125,7 +3127,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864464+00:00"
+      "detected_at": "2026-08-08T11:36:15.196435+00:00"
     },
     {
       "group": "fred",
@@ -3133,7 +3135,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864465+00:00"
+      "detected_at": "2026-08-08T11:36:15.196436+00:00"
     },
     {
       "group": "fred",
@@ -3141,7 +3143,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864466+00:00"
+      "detected_at": "2026-08-08T11:36:15.196437+00:00"
     },
     {
       "group": "fred",
@@ -3149,7 +3151,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864467+00:00"
+      "detected_at": "2026-08-08T11:36:15.196439+00:00"
     },
     {
       "group": "fred",
@@ -3157,7 +3159,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864468+00:00"
+      "detected_at": "2026-08-08T11:36:15.196440+00:00"
     },
     {
       "group": "fred",
@@ -3165,7 +3167,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864470+00:00"
+      "detected_at": "2026-08-08T11:36:15.196441+00:00"
     },
     {
       "group": "fred",
@@ -3173,7 +3175,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864471+00:00"
+      "detected_at": "2026-08-08T11:36:15.196442+00:00"
     },
     {
       "group": "fred",
@@ -3181,7 +3183,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864472+00:00"
+      "detected_at": "2026-08-08T11:36:15.196444+00:00"
     },
     {
       "group": "fred",
@@ -3189,7 +3191,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864473+00:00"
+      "detected_at": "2026-08-08T11:36:15.196445+00:00"
     },
     {
       "group": "fred",
@@ -3197,7 +3199,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864475+00:00"
+      "detected_at": "2026-08-08T11:36:15.196446+00:00"
     },
     {
       "group": "fred",
@@ -3205,7 +3207,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864476+00:00"
+      "detected_at": "2026-08-08T11:36:15.196447+00:00"
     },
     {
       "group": "fred",
@@ -3213,7 +3215,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864477+00:00"
+      "detected_at": "2026-08-08T11:36:15.196448+00:00"
     },
     {
       "group": "fred",
@@ -3221,7 +3223,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864478+00:00"
+      "detected_at": "2026-08-08T11:36:15.196449+00:00"
     },
     {
       "group": "fred",
@@ -3229,7 +3231,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864479+00:00"
+      "detected_at": "2026-08-08T11:36:15.196451+00:00"
     },
     {
       "group": "fred",
@@ -3237,7 +3239,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864480+00:00"
+      "detected_at": "2026-08-08T11:36:15.196452+00:00"
     },
     {
       "group": "fred",
@@ -3245,7 +3247,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864482+00:00"
+      "detected_at": "2026-08-08T11:36:15.196453+00:00"
     },
     {
       "group": "fred",
@@ -3253,7 +3255,7 @@
       "last_obs": "2026-07-01",
       "cadence_days": 5,
       "age_days": 38,
-      "detected_at": "2026-08-08T03:33:33.864483+00:00"
+      "detected_at": "2026-08-08T11:36:15.196454+00:00"
     },
     {
       "group": "yahoo",
@@ -3301,7 +3303,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864484+00:00"
+      "detected_at": "2026-08-08T11:36:15.196455+00:00"
     },
     {
       "group": "fred",
@@ -3309,7 +3311,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864486+00:00"
+      "detected_at": "2026-08-08T11:36:15.196456+00:00"
     },
     {
       "group": "cot",
@@ -3317,7 +3319,7 @@
       "last_obs": "2022-02-01",
       "cadence_days": 12,
       "age_days": 1649,
-      "detected_at": "2026-08-08T04:51:45.171267+00:00"
+      "detected_at": "2026-08-08T12:50:19.971399+00:00"
     },
     {
       "group": "cot",
@@ -3325,7 +3327,7 @@
       "last_obs": "2013-11-05",
       "cadence_days": 12,
       "age_days": 4659,
-      "detected_at": "2026-08-08T04:51:45.171273+00:00"
+      "detected_at": "2026-08-08T12:50:19.971403+00:00"
     },
     {
       "group": "fred",
@@ -3333,7 +3335,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864392+00:00"
+      "detected_at": "2026-08-08T11:36:15.196363+00:00"
     },
     {
       "group": "fred",
@@ -3341,7 +3343,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864393+00:00"
+      "detected_at": "2026-08-08T11:36:15.196364+00:00"
     },
     {
       "group": "fred",
@@ -3349,7 +3351,7 @@
       "last_obs": "2026-06-01",
       "cadence_days": 5,
       "age_days": 68,
-      "detected_at": "2026-08-08T03:33:33.864394+00:00"
+      "detected_at": "2026-08-08T11:36:15.196366+00:00"
     },
     {
       "group": "fred",
@@ -3461,7 +3463,7 @@
       "last_obs": "2026-07-17",
       "cadence_days": 5,
       "age_days": 22,
-      "detected_at": "2026-08-08T03:36:20.688707+00:00"
+      "detected_at": "2026-08-08T11:37:20.437067+00:00"
     },
     {
       "group": "yahoo",
@@ -3476,24 +3478,24 @@
       "series": "^VIX9D",
       "last_obs": "2026-07-17",
       "cadence_days": 5,
-      "age_days": 21,
-      "detected_at": "2026-08-07T10:10:59.272559+00:00"
+      "age_days": 22,
+      "detected_at": "2026-08-08T11:37:20.437054+00:00"
     },
     {
       "group": "yahoo",
       "series": "^VIX3M",
       "last_obs": "2026-07-17",
       "cadence_days": 5,
-      "age_days": 21,
-      "detected_at": "2026-08-07T10:10:59.272570+00:00"
+      "age_days": 22,
+      "detected_at": "2026-08-08T11:37:20.437063+00:00"
     },
     {
       "group": "yahoo",
       "series": "^MOVE",
       "last_obs": "2026-07-17",
       "cadence_days": 5,
-      "age_days": 21,
-      "detected_at": "2026-08-07T19:17:18.776664+00:00"
+      "age_days": 22,
+      "detected_at": "2026-08-08T11:37:20.437065+00:00"
     },
     {
       "group": "stocks",
@@ -3549,7 +3551,7 @@
       "last_obs": "2025-09-01",
       "cadence_days": 45,
       "age_days": 341,
-      "detected_at": "2026-08-08T03:41:25.843603+00:00"
+      "detected_at": "2026-08-08T11:42:37.430846+00:00"
     }
   ],
   "tushare": {
