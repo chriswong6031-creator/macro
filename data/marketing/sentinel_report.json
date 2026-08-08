@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-07T17:52:56Z",
-  "as_of": "2026-08-07",
+  "produced_at": "2026-08-08T02:24:48Z",
+  "as_of": "2026-08-08",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 5,
-    "passed": 5,
+    "items": 2,
+    "passed": 2,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,49 +19,25 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-011",
+      "id": "post-theme-003",
       "account": "flagship",
-      "slot": "D1-S11",
-      "type": "event",
-      "cashtag": "",
-      "headline": ""
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$WWR",
+      "headline": "Commodities Metals ripping, +7.2% avg today"
     },
     {
-      "id": "post-founder-001",
+      "id": "post-founder-025",
       "account": "founder",
-      "slot": "D1-S1",
-      "type": "event",
-      "cashtag": "",
+      "slot": "D1-S25",
+      "type": "watchlist",
+      "cashtag": "$CDW",
       "headline": ""
-    },
-    {
-      "id": "post-founder-013",
-      "account": "founder",
-      "slot": "D1-S13",
-      "type": "chart",
-      "cashtag": "$PI",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-024",
-      "account": "founder",
-      "slot": "D1-S24",
-      "type": "chart",
-      "cashtag": "$APH",
-      "headline": ""
-    },
-    {
-      "id": "post-mover-002",
-      "account": "sophia",
-      "slot": "D1-S6",
-      "type": "mover",
-      "cashtag": "$UTI",
-      "headline": "$UTI -34.2% on Thursday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 7,
+      "pairs_checked": 1,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -88,7 +64,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 2,
+      "age_days": 3,
       "max": 7
     },
     "kill_switch": {
@@ -119,7 +95,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-07",
+      "as_of": "2026-08-08",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -135,7 +111,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 14,
+          "age_days": 15,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -248,7 +224,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -266,7 +242,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 10,
+          "age_days": 11,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -284,7 +260,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 10,
+          "age_days": 11,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -302,7 +278,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 10,
+          "age_days": 11,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -320,7 +296,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 10,
+          "age_days": 11,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -338,7 +314,7 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 5,
+          "age_days": 6,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {

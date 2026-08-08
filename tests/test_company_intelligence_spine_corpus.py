@@ -47,6 +47,8 @@ from engine.company_intelligence.identity import (
     company_id_for_cik,
 )
 from engine.company_intelligence.resolution import (
+    DECLARED_BASES,
+    EVIDENCE_BASES,
     DeclaredLocator,
     EventObservation,
     Resolution,
@@ -232,10 +234,10 @@ def _observation(
         transcript=transcript,
         committed_receipt=case["receipt"],
         declared_locator=declared_locator,
-        # No case in this corpus asserts a duplicate: every ``duplicate_collapsed``
-        # is earned by the supersession chain, so ``declared_duplicate_of`` stays
-        # unset and ``declared_duplicate_filing`` is a zero column below.
-        declared_duplicate_of=None,
+        # No case in this corpus asserts a duplicate, and none can: every
+        # ``duplicate_collapsed`` is earned by the supersession chain.  The
+        # resolver takes no declared-duplicate input at all (removed 2026-08-07),
+        # so ``declared_locator`` above is the entire declared surface.
         absence_reason=absence_reason,
     )
 
@@ -356,11 +358,15 @@ def test_evidence_bases_account_for_every_verdict(
     assert bases["timestamp_firewall"] == 14
     assert bases["supersession_chain"] == 14
     assert bases["declared_locator"] == 15
-    # Zero on purpose: every collapsed duplicate here is earned by the supersession
-    # chain above.  A non-zero column would mean a verdict rests on an assertion.
-    assert bases["declared_duplicate_filing"] == 0
     assert bases["no_derivable_receipt"] == 51
-    declared = bases["declared_locator"] + bases["declared_duplicate_filing"]
+    # Every collapsed duplicate above is earned by the supersession chain, and no
+    # other basis can rest on an assertion: ``declared_locator`` is the only
+    # declared basis the resolver has.  ``declared_duplicate_filing`` was the
+    # other one and is gone (2026-08-07) — pinned here so a re-introduction that
+    # silently re-widens the declared surface fails this suite.
+    assert set(EVIDENCE_BASES) & DECLARED_BASES == {"declared_locator"}
+    assert "declared_duplicate_filing" not in EVIDENCE_BASES
+    declared = sum(bases[basis] for basis in DECLARED_BASES)
     assert declared == 15
     assert sum(bases.values()) == 234
 
@@ -703,6 +709,12 @@ def test_the_outcome_classes_are_homogeneous_and_every_duplicate_is_evidenced(
     reproduce the grading key.  An outcome only the answer key can grade is not a
     benchmark.  Both were relabelled ``typed_absence`` on 2026-08-07, matching the
     EDGAR fixture's own ``open_contract_question``.
+
+    That assertion field no longer exists.  Removing its last caller left it dead
+    — no producer in the estate ever set one — and duplicate detection is settled
+    upstream on the frozen ``(cik, accession)`` key, so it was deleted rather than
+    given a test that would have pinned it as intended behaviour.  The removal is
+    pinned in ``tests/test_company_intelligence_spine.py``.
 
     ``duplicate_collapsed`` stays in the vocabulary because ``duplicate_release``
     earns it honestly with fourteen two-revision cases.  This test holds both

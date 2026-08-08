@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_sponsor_ticker_map.v1.schema.json",
+  "title": "BioCatalyst Sponsor to Ticker Reviewed Candidate Map v1 (W3-C)",
+  "description": "A bounded, curated, PR-reviewed lookup from a ClinicalTrials.gov leadSponsor.name string to one ticker inside the declared healthcare basket universe. It is NOT a point-in-time identity service and it is NOT an inferred join: a row is a CANDIDATE until a named human admits it in review, and only an admitted row is resolvable by a consuming caller. Every link carries an effective interval so a later rename, ticker reuse, or corporate action cannot rewrite history. The map exists for post-selection context only (explaining a name AFTER Prophet selects it); it may never originate, rank, reorder, size, or gate a candidate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema",
+    "schema_version",
+    "map_version",
+    "effective_at",
+    "owner",
+    "state",
+    "authority",
+    "purpose",
+    "universe",
+    "review_policy",
+    "interval_semantics",
+    "prohibited_uses",
+    "rows",
+    "unmapped_universe_tickers"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_sponsor_ticker_map.v1"},
+    "schema": {"const": "biocatalyst_sponsor_ticker_map.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "map_version": {"type": "string", "pattern": "^w3c\\.[0-9]{1,4}$"},
+    "effective_at": {"type": "string", "format": "date-time"},
+    "owner": {"const": "biocatalyst"},
+    "state": {
+      "description": "candidate_map_no_admitted_rows means no row has ever passed human review, so the map resolves nothing at all. Only a named human reviewer may move this document to reviewed_map_contains_admitted_rows.",
+      "enum": ["candidate_map_no_admitted_rows", "reviewed_map_contains_admitted_rows"]
+    },
+    "authority": {"const": "facts_and_context_only"},
+    "authority_ceiling": {"const": "A1_EXPLAIN"},
+    "purpose": {"const": "post_selection_context_only"},
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_file", "baskets", "distinct_ticker_count", "derivation"],
+      "properties": {
+        "source_file": {"const": "data/baskets/membership.json"},
+        "baskets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"}
+        },
+        "distinct_ticker_count": {"type": "integer", "minimum": 1, "maximum": 512},
+        "derivation": {"const": "union_of_declared_basket_members_read_at_validation_time"}
+      }
+    },
+    "review_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "admission_authority",
+        "model_may_admit",
+        "default_review_state",
+        "resolvable_review_states",
+        "unresolved_row_behavior"
+      ],
+      "properties": {
+        "admission_authority": {"const": "named_human_pull_request_review_only"},
+        "model_may_admit": {"const": false},
+        "default_review_state": {"const": "candidate_unreviewed"},
+        "resolvable_review_states": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"const": "reviewed_admitted"}
+        },
+        "unresolved_row_behavior": {"const": "return_unavailable_with_reason_never_a_guess"}
+      }
+    },
+    "interval_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "valid_to_null_meaning", "model_suggested_backdating"],
+      "properties": {
+        "kind": {"const": "candidate_assertion_window_not_historical_claim"},
+        "valid_to_null_meaning": {"const": "open_ended_until_a_reviewer_closes_it"},
+        "model_suggested_backdating": {"const": "forbidden_valid_from_is_at_or_after_effective_at"}
+      }
+    },
+    "prohibited_uses": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"}
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 512,
+      "items": {"$ref": "#/$defs/row"}
+    },
+    "unmapped_universe_tickers": {
+      "description": "Every declared-universe ticker that no row claims. Recorded so absent coverage is visible instead of implied.",
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 512,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/ticker"}
+    }
+  },
+  "$defs": {
+    "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.\\-]{0,15}$"},
+    "prose": {"type": "string", "minLength": 1, "maxLength": 400},
+    "date": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sponsor_name",
+        "ticker",
+        "candidate_tickers",
+        "review_state",
+        "confidence_class",
+        "valid_from",
+        "valid_to",
+        "provenance",
+        "review",
+        "note"
+      ],
+      "properties": {
+        "sponsor_name": {
+          "description": "The lead sponsor string exactly as ClinicalTrials.gov renders protocolSection.sponsorCollaboratorsModule.leadSponsor.name. Lookup is an exact match on this string; no fuzzy or token-dropping match is performed anywhere.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "ticker": {
+          "description": "The single claimed ticker, or null when the row claims none (ambiguous or rejected rows).",
+          "oneOf": [{"$ref": "#/$defs/ticker"}, {"type": "null"}]
+        },
+        "candidate_tickers": {
+          "description": "Competing or blocked tickers recorded for the reviewer. Never resolved automatically.",
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/ticker"}
+        },
+        "review_state": {
+          "enum": [
+            "candidate_unreviewed",
+            "reviewed_admitted",
+            "reviewed_rejected",
+            "ambiguous_queued"
+          ]
+        },
+        "ambiguity_reason": {
+          "description": "Required for ambiguous_queued rows and forbidden otherwise. A triage label for a human, never a score.",
+          "enum": [
+            "multiple_matching_issuers",
+            "subsidiary_of_listed_issuer",
+            "joint_venture",
+            "renamed_entity",
+            "contract_research_organization_sponsor",
+            "issuer_outside_declared_universe",
+            "unlisted_or_private_entity",
+            "foreign_listing_or_adr_ambiguity"
+          ]
+        },
+        "confidence_class": {
+          "description": "A review-triage label only. It is deliberately a word class and never a probability, weight, or score, and nothing downstream may read it as one.",
+          "enum": ["strong_candidate", "weak_candidate", "unresolved"]
+        },
+        "valid_from": {"$ref": "#/$defs/date"},
+        "valid_to": {"oneOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference", "note"],
+          "properties": {
+            "kind": {
+              "enum": [
+                "model_suggested_candidate",
+                "basket_membership_file",
+                "human_reviewed_source"
+              ]
+            },
+            "reference": {"$ref": "#/$defs/prose"},
+            "note": {"$ref": "#/$defs/prose"}
+          }
+        },
+        "review": {
+          "description": "Populated only by a named human reviewer. Every field is null while the row is unreviewed or queued.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reviewed_by", "reviewed_at", "review_reference"],
+          "properties": {
+            "reviewed_by": {"oneOf": [{"$ref": "#/$defs/prose"}, {"type": "null"}]},
+            "reviewed_at": {
+              "oneOf": [
+                {"type": "string", "format": "date-time"},
+                {"type": "null"}
+              ]
+            },
+            "review_reference": {"oneOf": [{"$ref": "#/$defs/prose"}, {"type": "null"}]}
+          }
+        },
+        "note": {"$ref": "#/$defs/prose"}
+      }
+    }
+  }
+}

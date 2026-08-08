@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-08-06",
-  "data_session": "2026-08-05",
+  "as_of": "2026-08-07",
+  "data_session": "2026-08-07",
   "state": "warming",
   "k_count": 1,
   "chips": [
@@ -55,8 +55,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=67.7% (was 63.0% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=67.7%\uff0810\u65e5\u524d63.0%\uff09",
+      "detail_en": "pct_above_50=65.8% (was 65.4% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=65.8%\uff0810\u65e5\u524d65.4%\uff09",
       "source": "breadth"
     },
     {
@@ -66,8 +66,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=21.7 (was 18.3 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=21.7\uff0810\u65e5\u524d18.3\uff09",
+      "detail_en": "10d mean(nh-nl)=22.2 (was 18.3 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=22.2\uff0810\u65e5\u524d18.3\uff09",
       "source": "breadth"
     },
     {
@@ -77,8 +77,8 @@
       "lit": true,
       "fresh": true,
       "since": "2026-08-05",
-      "detail_en": "20d log-RS slope=0.0027 (positive); turned positive 1bd ago",
-      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0027\uff08\u6b63\u5411\uff09\uff1b1\u65e5\u524d\u8f6c\u6b63",
+      "detail_en": "20d log-RS slope=0.0027 (positive); turned positive 2bd ago",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0027\uff08\u6b63\u5411\uff09\uff1b2\u65e5\u524d\u8f6c\u6b63",
       "source": "yahoo/RSP,SPY"
     },
     {
@@ -88,8 +88,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "6/11 ETFs above rising 50dma (need 8)",
-      "detail_zh": "6/11\u4e2aETF\u9ad8\u4e8e\u4e0a\u5347\u4e2d50\u65e5\u7ebf\uff08\u97008\u4e2a\uff09",
+      "detail_en": "7/11 ETFs above rising 50dma (need 8)",
+      "detail_zh": "7/11\u4e2aETF\u9ad8\u4e8e\u4e0a\u5347\u4e2d50\u65e5\u7ebf\uff08\u97008\u4e2a\uff09",
       "source": "yahoo/sector_etfs"
     }
   ],
@@ -104,7 +104,7 @@
     "items": [
       {
         "id": "silver_miners",
-        "ignition_score": 0.9968,
+        "ignition_score": 0.9726,
         "state": "igniting",
         "components": {
           "breadth_thrust": 1.0,
@@ -112,8 +112,8 @@
             8,
             8
           ],
-          "rs_slope_change": 0.992,
-          "rs_slope_raw": 0.12053,
+          "rs_slope_change": 0.9314,
+          "rs_slope_raw": 0.0652,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -123,20 +123,89 @@
         "category": "Materials & Mining",
         "type": "basket",
         "rs_new_high": false,
-        "above_200d_rising": false
+        "above_200d_rising": true
+      },
+      {
+        "id": "space_economy",
+        "ignition_score": 0.9686,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.9333,
+          "breadth_n": [
+            14,
+            15
+          ],
+          "rs_slope_change": 0.9882,
+          "rs_slope_raw": 0.11075,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Space Economy",
+        "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
+        "category": "Industrials & Defense",
+        "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLP",
+        "ignition_score": 0.8863,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.8295,
+          "rs_slope_raw": 0.03955,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLP",
+        "name_zh": "XLP",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLB",
+        "ignition_score": 0.8313,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.747,
+          "rs_slope_raw": 0.02707,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLB",
+        "name_zh": "XLB",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
       },
       {
         "id": "uranium_miners",
-        "ignition_score": 0.8789,
+        "ignition_score": 0.8116,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.7,
+          "breadth_thrust": 0.8,
           "breadth_n": [
-            7,
+            8,
             10
           ],
-          "rs_slope_change": 0.9973,
-          "rs_slope_raw": 0.14775,
+          "rs_slope_change": 0.729,
+          "rs_slope_raw": 0.02474,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -150,7 +219,7 @@
       },
       {
         "id": "quantum_computing",
-        "ignition_score": 0.8719,
+        "ignition_score": 0.8096,
         "state": "igniting",
         "components": {
           "breadth_thrust": 0.7273,
@@ -158,8 +227,8 @@
             8,
             11
           ],
-          "rs_slope_change": 0.9525,
-          "rs_slope_raw": 0.07494,
+          "rs_slope_change": 0.7968,
+          "rs_slope_raw": 0.03416,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -172,119 +241,50 @@
         "above_200d_rising": true
       },
       {
-        "id": "ai_semiconductors",
-        "ignition_score": 0.8634,
+        "id": "ai_agents",
+        "ignition_score": 0.7495,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.75,
+          "breadth_thrust": 0.375,
           "breadth_n": [
-            9,
-            12
-          ],
-          "rs_slope_change": 0.9084,
-          "rs_slope_raw": 0.05736,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "AI Semiconductors",
-        "name_zh": "AI\u534a\u5bfc\u4f53",
-        "category": "Semiconductors",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "space_economy",
-        "ignition_score": 0.8154,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.8667,
-          "breadth_n": [
-            13,
-            15
-          ],
-          "rs_slope_change": 0.6718,
-          "rs_slope_raw": 0.01791,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Space Economy",
-        "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
-        "category": "Industrials & Defense",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
-        "id": "critical_minerals",
-        "ignition_score": 0.7986,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.8182,
-          "breadth_n": [
-            9,
-            11
-          ],
-          "rs_slope_change": 0.6782,
-          "rs_slope_raw": 0.01864,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Critical Minerals & Rare Earths",
-        "name_zh": "\u5173\u952e\u77ff\u4ea7\u4e0e\u7a00\u571f",
-        "category": "Materials & Mining",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": false
-      },
-      {
-        "id": "data_center_power",
-        "ignition_score": 0.7965,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.5,
-          "breadth_n": [
-            4,
+            3,
             8
           ],
-          "rs_slope_change": 0.9912,
-          "rs_slope_raw": 0.11802,
+          "rs_slope_change": 0.9989,
+          "rs_slope_raw": 0.16945,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "Data-Center Power & Cooling",
-        "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-        "category": "Energy & Power",
+        "name": "AI Agents & Applications",
+        "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
+        "category": "Artificial Intelligence",
         "type": "basket",
         "rs_new_high": false,
-        "above_200d_rising": true
+        "above_200d_rising": false
       },
       {
-        "id": "XLB",
-        "ignition_score": 0.7889,
+        "id": "crypto",
+        "ignition_score": 0.7143,
         "state": "igniting",
         "components": {
-          "breadth_thrust": null,
+          "breadth_thrust": 0.2857,
           "breadth_n": [
-            0,
-            0
+            2,
+            7
           ],
-          "rs_slope_change": 0.6834,
-          "rs_slope_raw": 0.01923,
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.25804,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "XLB",
-        "name_zh": "XLB",
-        "category": "Sector ETF",
-        "type": "etf",
+        "name": "Crypto & Digital Assets",
+        "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
+        "category": "Crypto & Digital Assets",
+        "type": "basket",
         "rs_new_high": false,
-        "above_200d_rising": true
+        "above_200d_rising": false
       }
     ],
     "event_excluded": [
@@ -292,7 +292,7 @@
         "id": "gold_miners",
         "name": "Gold Miners",
         "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
-        "ignition_score": 0.9331,
+        "ignition_score": 0.8665,
         "state": "igniting",
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       },
@@ -300,36 +300,36 @@
         "id": "defense",
         "name": "Defense & Aerospace",
         "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
-        "ignition_score": 0.6042,
-        "state": "running",
+        "ignition_score": 0.6796,
+        "state": "igniting",
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       },
       {
         "id": "XLE",
         "name": "XLE",
         "name_zh": "XLE",
-        "ignition_score": 0.5865,
+        "ignition_score": 0.6587,
         "state": "igniting",
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       }
     ],
-    "n_scored": 60,
-    "n_qualifying": 42,
+    "n_scored": 61,
+    "n_qualifying": 45,
     "null": false,
     "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-    "as_of": "2026-08-06"
+    "as_of": "2026-08-07"
   },
   "narrow_top": {
     "basket_id": "silver_miners",
     "name": "Silver Miners",
     "name_zh": "\u767d\u94f6\u77ff\u4e1a",
-    "score": 0.9968,
-    "streak_sessions": 1
+    "score": 0.9726,
+    "streak_sessions": 2
   },
   "radar_xref": {
     "state": "caution",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.72
+  "_timing_s": 2.35
 }

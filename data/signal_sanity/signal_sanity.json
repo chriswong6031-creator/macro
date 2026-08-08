@@ -1,42 +1,40 @@
 {
-  "ok": true,
-  "fail_reasons": [],
-  "warnings": [
-    "standouts: as_of 2026-07-31 is 6d old (> 5d)"
+  "ok": false,
+  "fail_reasons": [
+    "news: CONTENT FROZEN — as_of advanced 2026-08-07→2026-08-08 but signal values are byte-identical to the prior vintage (builder did not recompute)"
   ],
+  "warnings": [],
   "surfaces": {
     "standouts": {
       "key": "standouts",
       "label": "engine buy-board",
       "ok": true,
       "fails": [],
-      "warns": [
-        "standouts: as_of 2026-07-31 is 6d old (> 5d)"
-      ],
-      "as_of": "2026-07-31",
-      "n": 62,
-      "coverage": 62,
+      "warns": [],
+      "as_of": "2026-08-07",
+      "n": 78,
+      "coverage": 78,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "standouts",
-        "as_of": "2026-07-31",
-        "n_records": 62,
-        "coverage": 62,
-        "fingerprint": "1790d0ca829c9d55",
+        "as_of": "2026-08-07",
+        "n_records": 78,
+        "coverage": 78,
+        "fingerprint": "02fec7ce07f5b553",
         "scores": {
           "conviction.composite_z": {
-            "n_sub": 62,
-            "pop": 62,
-            "uniq": 62,
-            "mean": 0.05904838709677419,
-            "std": 0.3390560153273447
+            "n_sub": 78,
+            "pop": 78,
+            "uniq": 75,
+            "mean": -0.049371794871794876,
+            "std": 0.4606616509330554
           },
           "alpha": {
-            "n_sub": 62,
-            "pop": 62,
-            "uniq": 54,
-            "mean": -0.08612903225806451,
-            "std": 0.7979537435835886
+            "n_sub": 78,
+            "pop": 78,
+            "uniq": 67,
+            "mean": 0.1203846153846154,
+            "std": 0.861353202380123
           }
         }
       }
@@ -47,30 +45,30 @@
       "ok": true,
       "fails": [],
       "warns": [],
-      "as_of": "2026-08-06",
+      "as_of": "2026-08-08",
       "n": 25,
       "coverage": 25,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "briefing",
-        "as_of": "2026-08-06",
+        "as_of": "2026-08-08",
         "n_records": 25,
         "coverage": 25,
-        "fingerprint": "91f9c82760935817",
+        "fingerprint": "6c177677c2204f78",
         "scores": {
           "priority": {
             "n_sub": 25,
             "pop": 25,
-            "uniq": 17,
-            "mean": 0.30988,
-            "std": 0.06396519053360195
+            "uniq": 20,
+            "mean": 0.292,
+            "std": 0.0689457757951856
           },
           "strength": {
             "n_sub": 25,
             "pop": 25,
-            "uniq": 16,
-            "mean": 0.4072,
-            "std": 0.08669578997852202
+            "uniq": 13,
+            "mean": 0.37160000000000004,
+            "std": 0.07170383532280543
           }
         }
       }
@@ -81,23 +79,23 @@
       "ok": true,
       "fails": [],
       "warns": [],
-      "as_of": "2026-08-06",
-      "n": 242,
-      "coverage": 242,
+      "as_of": "2026-08-08",
+      "n": 250,
+      "coverage": 250,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "radar",
-        "as_of": "2026-08-06",
-        "n_records": 242,
-        "coverage": 242,
-        "fingerprint": "efce0daaca80723d",
+        "as_of": "2026-08-08",
+        "n_records": 250,
+        "coverage": 250,
+        "fingerprint": "6808d68cb3004e6d",
         "scores": {
           "edge_score": {
-            "n_sub": 233,
-            "pop": 233,
-            "uniq": 40,
-            "mean": 9.244635193133048,
-            "std": 11.566017968515864
+            "n_sub": 240,
+            "pop": 240,
+            "uniq": 34,
+            "mean": 7.733333333333333,
+            "std": 9.201207650206696
           }
         }
       }
@@ -108,30 +106,30 @@
       "ok": true,
       "fails": [],
       "warns": [],
-      "as_of": "2026-08-06",
+      "as_of": "2026-08-08",
       "n": 30,
       "coverage": 30,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "altdata",
-        "as_of": "2026-08-06",
+        "as_of": "2026-08-08",
         "n_records": 30,
         "coverage": 30,
-        "fingerprint": "df44b98606c83298",
+        "fingerprint": "0151a1e7d53d740f",
         "scores": {
           "signal_score": {
             "n_sub": 30,
             "pop": 30,
             "uniq": 17,
-            "mean": 40.0,
-            "std": 10.828973481667903
+            "mean": 40.7,
+            "std": 11.567627241573788
           },
           "weighted_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 16,
-            "mean": 1.2433333333333332,
-            "std": 0.4352649257125545
+            "uniq": 15,
+            "mean": 1.3116666666666668,
+            "std": 0.46272442002653036
           }
         }
       }
@@ -139,33 +137,35 @@
     "news": {
       "key": "news",
       "label": "news flow",
-      "ok": true,
-      "fails": [],
+      "ok": false,
+      "fails": [
+        "news: CONTENT FROZEN — as_of advanced 2026-08-07→2026-08-08 but signal values are byte-identical to the prior vintage (builder did not recompute)"
+      ],
       "warns": [],
-      "as_of": "2026-08-06",
-      "n": 650,
-      "coverage": 417,
+      "as_of": "2026-08-08",
+      "n": 700,
+      "coverage": 471,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "news",
-        "as_of": "2026-08-06",
-        "n_records": 650,
-        "coverage": 417,
-        "fingerprint": "434f44be80623259",
+        "as_of": "2026-08-08",
+        "n_records": 700,
+        "coverage": 471,
+        "fingerprint": "ecedb295a54e92e8",
         "scores": {
           "n_recent": {
-            "n_sub": 417,
-            "pop": 417,
+            "n_sub": 471,
+            "pop": 471,
             "uniq": 6,
-            "mean": 1.6235011990407673,
-            "std": 1.2787599736238413
+            "mean": 1.615711252653928,
+            "std": 1.2307487724262787
           },
           "sentiment_score": {
-            "n_sub": 417,
-            "pop": 417,
-            "uniq": 4,
-            "mean": 0.22733812949640286,
-            "std": 0.8318139799133187
+            "n_sub": 471,
+            "pop": 471,
+            "uniq": 6,
+            "mean": 0.2622717622080679,
+            "std": 0.7916100248564049
           }
         }
       }
@@ -176,37 +176,37 @@
       "ok": true,
       "fails": [],
       "warns": [],
-      "as_of": "2026-08-06",
+      "as_of": "2026-08-08",
       "n": 30,
       "coverage": 30,
       "row": {
-        "run_date": "2026-08-06",
+        "run_date": "2026-08-08",
         "surface": "intel_hub",
-        "as_of": "2026-08-06",
+        "as_of": "2026-08-08",
         "n_records": 30,
         "coverage": 30,
-        "fingerprint": "c2a9981c68df22b5",
+        "fingerprint": "08fdf8febbecbce0",
         "scores": {
           "composite_conviction": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 24,
-            "mean": 38.19666666666667,
-            "std": 9.856790665435794
+            "uniq": 25,
+            "mean": 35.940000000000005,
+            "std": 12.918890561241446
           },
           "opportunity_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 18,
-            "mean": 29.673333333333336,
-            "std": 10.949762047135495
+            "uniq": 17,
+            "mean": 25.906666666666663,
+            "std": 9.247627924079895
           },
           "edge_remaining": {
             "n_sub": 30,
             "pop": 30,
             "uniq": 19,
-            "mean": 0.7076999999999999,
-            "std": 0.14359831707463241
+            "mean": 0.6805333333333333,
+            "std": 0.1387642445140518
           }
         }
       }
@@ -221,5 +221,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-08-06T23:30:41.778317+00:00"
+  "evaluated_at": "2026-08-08T08:01:04.763564+00:00"
 }

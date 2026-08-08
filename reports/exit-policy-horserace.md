@@ -1,6 +1,6 @@
 # Exit-policy horse race — US buy-lane episodes
 
-**Study date:** 2026-08-07T04:33Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
+**Study date:** 2026-08-08T00:13Z · **Script:** `scripts/exit_policy_study.py` · **Charter:** `research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md` §0 G3/G4, §1
 
 **Tier: measurement / display. Nothing here promotes anything.** The public track record keeps the incumbent rule. Every verdict below is descriptive — what this sample shows, on this cohort, at this size. A policy that eventually replaces the incumbent has to be pre-registered first; see *Promotion path* at the end.
 
@@ -59,7 +59,7 @@ Each of these is a CHOICE. A reader should see them, not infer them from a table
 
 **One excursion window for every row (changed 2026-08-03).** `MFE`, `MAE` and `capture` are measured over the policy's **own held window** — the bars it actually held, `fwd[:exit_bar]` — for every policy INCLUDING P0. They previously came, for P0 only, from `track_scoring.score_from_fill`, which measures the full 10-bar forced-verdict window even when the incumbent's target leg exited on bar 3; the headline table then mixed two definitions in one column. Only those three columns moved: P0's P&L legs (`pnl`, `excess`, `held`, `exit`, `exit_reason`) still come straight from the grader, which is why the calibration below is unchanged and still lands on 0.0000. **The cost of the fix:** the P0 row's `capture`/`MFE`/`MAE` are no longer the shipped ledger's numbers — the ledger keeps the full-horizon window. The Calibration table, not the horse race, is the ledger-comparable surface.
 
-**Read `capture` as "how much of the best close it saw while holding did it keep"** — not as a share of the move the name eventually made. A rule that exits ON strength scores near 1.00 almost by construction, because its window ends at its own exit; that is a property of the measure, not an edge. `capture` is also **undefined where MFE ≤ 0** (the position never traded above entry inside the window): realised/MFE there is a ratio of two negatives that prints as a healthy positive, so those rows are dropped from the median and counted instead — P0 30, P0f 17, P1 13, P2 k=2 18, P2 k=3 13, P3 16, P4 13 of 173 rows.
+**Read `capture` as "how much of the best close it saw while holding did it keep"** — not as a share of the move the name eventually made. A rule that exits ON strength scores near 1.00 almost by construction, because its window ends at its own exit; that is a property of the measure, not an edge. `capture` is also **undefined where MFE ≤ 0** (the position never traded above entry inside the window): realised/MFE there is a ratio of two negatives that prints as a healthy positive, so those rows are dropped from the median and counted instead — P0 33, P0f 17, P1 13, P2 k=2 18, P2 k=3 13, P3 16, P4 13 of 173 rows.
 
 **Every stop here is close-only, and that is not free.** No walker looks at an intraday low: a stop fires when the SESSION'S CLOSE is through the level, and the fill is that close. A real stop order triggers intraday and fills near the level. Measured on this study's own rows — the 865 rows of the 5 stop-carrying policies (P0, P2 k=2, P2 k=3, P3, P4):
 
@@ -79,22 +79,22 @@ P0 is the incumbent rule executed through `engine.track_scoring` itself, on the 
 |---|---:|---:|---:|
 | `n_matured` | 173 | 173 | 0.0000 |
 | `n_board_days` | 8 | 8 | 0.0000 |
-| `win_pct` | 63.60 | 63.60 | 0.0000 |
-| `expectancy_pct` | 1.19 | 1.19 | 0.0000 |
-| `median_pct` | 1.74 | 1.74 | 0.0000 |
-| `avg_win_pct` | 4.54 | 4.54 | 0.0000 |
-| `avg_loss_pct` | -4.67 | -4.67 | 0.0000 |
-| `profit_factor` | 1.70 | 1.70 | 0.0000 |
-| `ci_lo_pct` | 55.60 | 55.60 | 0.0000 |
-| `ci_hi_pct` | 69.80 | 69.80 | 0.0000 |
-| `exp_lo_pct` | 0.21 | 0.21 | 0.0000 |
-| `exp_hi_pct` | 1.98 | 1.98 | 0.0000 |
-| `median_hold` | 9 | 9 | 0.0000 |
-| `capture` | 0.71 | 0.71 | 0.0000 |
+| `win_pct` | 63.60 | 59.00 | -4.6000 |
+| `expectancy_pct` | 1.19 | 0.30 | -0.8900 |
+| `median_pct` | 1.74 | 0.89 | -0.8500 |
+| `avg_win_pct` | 4.54 | 3.75 | -0.7900 |
+| `avg_loss_pct` | -4.67 | -4.64 | 0.0300 |
+| `profit_factor` | 1.70 | 1.16 | -0.5400 |
+| `ci_lo_pct` | 55.60 | 48.10 | -7.5000 |
+| `ci_hi_pct` | 69.80 | 66.30 | -3.5000 |
+| `exp_lo_pct` | 0.21 | -1.05 | -1.2600 |
+| `exp_hi_pct` | 1.98 | 1.23 | -0.7500 |
+| `median_hold` | 9 | 8 | -1.0000 |
+| `capture` | 0.71 | 0.35 | -0.3600 |
 | `mfe_median_pct` | 3.44 | 3.44 | 0.0000 |
 | `mae_median_pct` | -2.14 | -2.14 | 0.0000 |
 
-**Calibration delta: exact — 0.0000 on every key.** The horse-race cohort is a strict subset of this one (it additionally requires a high/low path for ATR14).
+**Calibration delta: NON-ZERO — see the table.** The horse-race cohort is a strict subset of this one (it additionally requires a high/low path for ATR14).
 
 ## The horse race
 
@@ -102,7 +102,7 @@ All 173 episodes, all policies, identical entries. Win = return > 0 (no dead ban
 
 | Policy | n | expectancy | vs SPY | win % | avg win | avg loss | PF | med hold | max hold | capture | med MAE | `data_end` |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 173 | **1.19%** | 1.72% | 63.6 | 4.54 | -4.67 | 1.70 | 9 | 10 | 1.00 | -1.59 | 0 |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 173 | **0.30%** | 0.71% | 59.0 | 3.75 | -4.64 | 1.16 | 8 | 10 | 0.66 | -1.72 | 0 |
 | P0f · pure fixed H=10 | 173 | **0.93%** | 1.88% | 60.7 | 5.07 | -5.46 | 1.43 | 10 | 10 | 0.58 | -2.14 | 0 |
 | P1 · pure fixed H=21 | 173 | **0.53%** | 0.83% | 53.2 | 6.19 | -5.89 | 1.19 | 18 | 21 | 0.18 | -3.17 | 139 |
 | P2 · ATR trail k=2 (cap 63) | 173 | **-0.59%** | 0.07% | 42.8 | 5.65 | -5.25 | 0.80 | 13 | 21 | -0.13 | -2.64 | 66 |
@@ -110,13 +110,13 @@ All 173 episodes, all policies, identical entries. Win = return > 0 (no dead ban
 | P3 · plan target/stop, +3R (cap 21) | 173 | **0.41%** | 0.80% | 52.0 | 6.26 | -5.94 | 1.14 | 15 | 21 | 0.18 | -3.17 | 112 |
 | P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 173 | **-0.36%** | 0.29% | 39.9 | 6.38 | -4.84 | 0.87 | 14 | 21 | -0.11 | -2.41 | 92 |
 
-`capture` is a median over the rows where it is defined; rows with MFE ≤ 0 have no favourable excursion to capture and are excluded rather than divided (P0 30, P0f 17, P1 13, P2 k=2 18, P2 k=3 13, P3 16, P4 13 excluded). `data_end` counts positions the data ran out on — marks, not exits.
+`capture` is a median over the rows where it is defined; rows with MFE ≤ 0 have no favourable excursion to capture and are excluded rather than divided (P0 33, P0f 17, P1 13, P2 k=2 18, P2 k=3 13, P3 16, P4 13 excluded). `data_end` counts positions the data ran out on — marks, not exits.
 
 Date-blocked 95% intervals (whole board days resampled, seeded — 8 blocks):
 
 | Policy | expectancy 95% CI | win-rate 95% CI | vs-SPY expectancy 95% CI |
 |---|---|---|---|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0.21 … 1.98 | 55.6 … 69.8 | 1.00 … 2.59 |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | -1.05 … 1.23 | 48.1 … 66.3 | -0.23 … 1.63 |
 | P0f · pure fixed H=10 | -0.75 … 2.09 | 47.8 … 70.7 | 0.43 … 3.44 |
 | P1 · pure fixed H=21 | -1.09 … 1.80 | 43.9 … 62.1 | -0.60 … 1.97 |
 | P2 · ATR trail k=2 (cap 63) | -1.81 … 0.36 | 34.2 … 50.9 | -0.93 … 0.85 |
@@ -128,7 +128,7 @@ Exit-reason mix (how each rule actually ended):
 
 | Policy | `horizon` | `trail_stop` | `plan_stop` | `plan_target` | `stop` | `target` | `data_end` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 77 | 0 | 0 | 0 | 1 | 95 | 0 |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 79 | 0 | 0 | 0 | 1 | 93 | 0 |
 | P0f · pure fixed H=10 | 173 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P1 · pure fixed H=21 | 34 | 0 | 0 | 0 | 0 | 0 | 139 |
 | P2 · ATR trail k=2 (cap 63) | 0 | 107 | 0 | 0 | 0 | 0 | 66 |
@@ -144,13 +144,13 @@ Paired per-episode deltas: same entry, same window, so the difference isolates t
 
 | Policy | `data_end` | Δ vs P0 (incumbent) | 95% CI | excludes 0? | Δ vs P0f (fixed H=10) | 95% CI | excludes 0? |
 |---|---:|---:|---|:--:|---:|---|:--:|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | — | — | — | +0.26 pp | -0.36 … 1.14 | no |
-| P0f · pure fixed H=10 | 0 (0%) | -0.26 pp | -1.14 … 0.36 | no | — | — | — |
-| P1 · pure fixed H=21 | 139 (80%) | -0.65 pp | -1.56 … 0.15 | no | -0.40 pp | -1.25 … 0.63 | no |
-| P2 · ATR trail k=2 (cap 63) | 66 (38%) | -1.78 pp | -2.60 … -1.11 | **yes** | -1.52 pp | -2.35 … -0.67 | **yes** |
-| P2 · ATR trail k=3 (cap 63) | 126 (73%) | -0.90 pp | -1.75 … -0.16 | **yes** | -0.65 pp | -1.49 … 0.29 | no |
-| P3 · plan target/stop, +3R (cap 21) | 112 (65%) | -0.78 pp | -1.79 … 0.11 | no | -0.53 pp | -1.52 … 0.48 | no |
-| P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 92 (53%) | -1.55 pp | -2.30 … -1.04 | **yes** | -1.30 pp | -2.18 … -0.25 | **yes** |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | — | — | — | -0.63 pp | -1.00 … -0.17 | **yes** |
+| P0f · pure fixed H=10 | 0 (0%) | +0.63 pp | 0.17 … 1.00 | **yes** | — | — | — |
+| P1 · pure fixed H=21 | 139 (80%) | +0.23 pp | -0.55 … 1.08 | no | -0.40 pp | -1.25 … 0.63 | no |
+| P2 · ATR trail k=2 (cap 63) | 66 (38%) | -0.89 pp | -1.60 … -0.15 | **yes** | -1.52 pp | -2.35 … -0.67 | **yes** |
+| P2 · ATR trail k=3 (cap 63) | 126 (73%) | -0.02 pp | -0.81 … 0.73 | no | -0.65 pp | -1.49 … 0.29 | no |
+| P3 · plan target/stop, +3R (cap 21) | 112 (65%) | +0.10 pp | -0.79 … 0.97 | no | -0.53 pp | -1.52 … 0.48 | no |
+| P4 · breakeven at +1 ATR then trail k=3 (cap 63) | 92 (53%) | -0.67 pp | -1.41 … 0.18 | no | -1.30 pp | -2.18 … -0.25 | **yes** |
 
 `data_end` repeats here on purpose: a delta is only as real as the exits behind it, and on the high-`data_end` rows most of the difference is a mark taken on the last session in the caches rather than an exit the rule produced.
 
@@ -162,12 +162,12 @@ Paired per-episode deltas: same entry, same window, so the difference isolates t
 
 | Policy | Δ vs P0 as printed | Δ vs P0 one session back | shift | `data_end` (printed → one back) |
 |---|---:|---:|---:|---:|
-| P0f · pure fixed H=10 | -0.26 pp | -0.26 pp | **+0.00 pp** | 0 → 0 |
-| P1 · pure fixed H=21 | -0.65 pp | -0.33 pp | **+0.33 pp** | 139 → 173 |
-| P2 · ATR trail k=2 (cap 63) | -1.78 pp | -1.62 pp | **+0.16 pp** | 66 → 78 |
-| P2 · ATR trail k=3 (cap 63) | -0.90 pp | -0.74 pp | **+0.17 pp** | 126 → 133 |
-| P3 · plan target/stop, +3R (cap 21) | -0.78 pp | -0.52 pp | **+0.26 pp** | 112 → 143 |
-| P4 · breakeven at +1 ATR then trail k=3 (cap 63) | -1.55 pp | -1.31 pp | **+0.24 pp** | 92 → 100 |
+| P0f · pure fixed H=10 | 0.63 pp | 0.63 pp | **+0.00 pp** | 0 → 0 |
+| P1 · pure fixed H=21 | 0.23 pp | 0.56 pp | **+0.33 pp** | 139 → 173 |
+| P2 · ATR trail k=2 (cap 63) | -0.89 pp | -0.73 pp | **+0.16 pp** | 66 → 78 |
+| P2 · ATR trail k=3 (cap 63) | -0.02 pp | 0.15 pp | **+0.17 pp** | 126 → 133 |
+| P3 · plan target/stop, +3R (cap 21) | 0.10 pp | 0.36 pp | **+0.26 pp** | 112 → 143 |
+| P4 · breakeven at +1 ATR then trail k=3 (cap 63) | -0.67 pp | -0.43 pp | **+0.24 pp** | 92 → 100 |
 
 Largest shift: **0.33 pp**, and every policy that moves at all moves the same way — which is what one session's tape moving every mark at once looks like. The ordering of the policies survives the change; the magnitudes do not. Read the deltas as accurate to roughly this shift, not to their second decimal.
 
@@ -177,7 +177,7 @@ The operator's question, decomposed. Anchor = **P0f, a hard exit at bar 10**, so
 
 | Policy | `data_end` | extended·winner | extended·loser | **winners-kept net** | cut·loser | cut·winner | **losers-cut net** | same bar | total Δ |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | +0.00 pp<br><sub>n=0</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.00 pp** | +0.77 pp<br><sub>n=27</sub> | -0.51 pp<br><sub>n=63</sub> | **+0.26 pp** | +0.00 pp<br><sub>n=83</sub> | **+0.26 pp** |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 0 (0%) | +0.00 pp<br><sub>n=0</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.00 pp** | +0.51 pp<br><sub>n=27</sub> | -1.14 pp<br><sub>n=61</sub> | **-0.63 pp** | +0.00 pp<br><sub>n=85</sub> | **-0.63 pp** |
 | P1 · pure fixed H=21 | 139 (80%) | -0.36 pp<br><sub>n=105</sub> | -0.04 pp<br><sub>n=68</sub> | **-0.40 pp** | +0.00 pp<br><sub>n=0</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.00 pp** | +0.00 pp<br><sub>n=0</sub> | **-0.40 pp** |
 | P2 · ATR trail k=2 (cap 63) | 66 (38%) | -0.98 pp<br><sub>n=97</sub> | -0.20 pp<br><sub>n=34</sub> | **-1.18 pp** | +0.12 pp<br><sub>n=31</sub> | -0.46 pp<br><sub>n=8</sub> | **-0.34 pp** | +0.00 pp<br><sub>n=3</sub> | **-1.52 pp** |
 | P2 · ATR trail k=3 (cap 63) | 126 (73%) | -0.46 pp<br><sub>n=105</sub> | -0.20 pp<br><sub>n=52</sub> | **-0.66 pp** | +0.01 pp<br><sub>n=13</sub> | +0.00 pp<br><sub>n=0</sub> | **+0.01 pp** | +0.00 pp<br><sub>n=3</sub> | **-0.65 pp** |
@@ -200,7 +200,7 @@ The **21-bar sub-cohort** (34 episodes, 1 board day) is the only slice where the
 
 | Policy | n | expectancy | win % | med hold | `data_end` |
 |---|---:|---:|---:|---:|---:|
-| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 34 | 2.08% | 73.5 | 10 | 0 |
+| P0 · incumbent as shipped (H=10 + StochRSI target + trough stop) | 34 | 1.82% | 70.6 | 10 | 0 |
 | P0f · pure fixed H=10 | 34 | 2.82% | 73.5 | 10 | 0 |
 | P1 · pure fixed H=21 | 34 | 1.62% | 50.0 | 21 | 0 |
 | P2 · ATR trail k=2 (cap 63) | 34 | 0.19% | 41.2 | 17 | 8 |
@@ -228,11 +228,11 @@ Five, in the order they damage the numbers:
 
 ## Read
 
-**No policy beats the incumbent in this sample.** Not one paired delta versus P0 has a date-blocked 95% interval sitting above zero. **P2 k=2**, **P2 k=3**, **P4** sit BELOW zero — in this cohort they gave up ground to the incumbent rather than gaining on it. **P0f**, **P1**, **P3** straddle zero, which at 173 episodes across 8 board days is the expected result whether or not a real difference exists. The study is not powered to find a small edge; a point estimate that happens to be positive is not evidence that one is there. And where an interval does exclude zero, remember what the blocks are: 8 board days whose windows overlap heavily, at most 2 of them sharing no tape — the separation is real in this sample and weaker than the interval's width implies.
+**P0f** show a paired delta versus the incumbent whose date-blocked 95% interval sits ABOVE zero in this sample. That is a description of 8 board days, not an edge claim — and any policy here has to clear its own pre-registration before it can change anything. **P2 k=2** sit below zero.
 
 **On the operator's question — *let winners run, cut losers short* — the two halves do not behave alike in this sample.** Take the cleanest pair: P1 is P0f held to bar 21 instead of bar 10, so its whole delta IS the "let it run" half. Extending the 105 episodes P0f had green cost **-0.36 pp** of expectancy (-0.59 pp each), while extending the 68 it had red contributed **-0.04 pp**. Running further did not, here, pay for itself.
 
-The cutting half already exists in the product: the incumbent's early legs exit 90 of the 173 episodes BEFORE bar 10 (89 on the 3D-StochRSI target read + 1 on the trough stop), and a further 6 fire ON bar 10 itself, which is why the exit-reason mix above counts more early exits than this decomposition buckets as "cut". Cutting the 27 that P0f had red is worth **+0.77 pp**; cutting the 63 that P0f had green costs **-0.51 pp**; net **+0.26 pp**. So in this cohort the benefit of the desk's early exit comes with a real cost leg attached, and the net is small enough that 8 board days cannot resolve it — the P0-vs-P0f interval straddles zero.
+The cutting half already exists in the product: the incumbent's early legs exit 88 of the 173 episodes BEFORE bar 10 (87 on the 3D-StochRSI target read + 1 on the trough stop), and a further 6 fire ON bar 10 itself, which is why the exit-reason mix above counts more early exits than this decomposition buckets as "cut". Cutting the 27 that P0f had red is worth **+0.51 pp**; cutting the 61 that P0f had green costs **-1.14 pp**; net **-0.63 pp**. So in this cohort the benefit of the desk's early exit comes with a real cost leg attached, and the net is small enough that 8 board days cannot resolve it — the P0-vs-P0f interval straddles zero.
 
 **Every "run it longer" number above is contaminated by the data edge.** 139 of P1's 173 rows never reached bar 21 — they are marks on 2026-07-31, not exits. The extended buckets therefore mostly measure "held 11–20 sessions and marked", not "held 21". Which way that pushes the estimate is unknown, so it cannot be corrected for; it makes the numbers mushier than their decimal places suggest, and moving the mark back a single session shifts the deltas by up to 0.33 pp.
 

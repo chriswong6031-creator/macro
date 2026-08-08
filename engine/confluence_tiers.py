@@ -321,7 +321,8 @@ def _ticks_since(known, when) -> int | None:
 
 
 def cascade(daily_close: pd.Series, *, take_active: bool = False,
-            take_date=None, market: str = "US") -> dict:
+            take_date=None, market: str = "US",
+            event_latch=None, latch_key: str | None = None) -> dict:
     """Grade a close series into the weighted tier cascade. The board is ONLY "about to cross"
     (T3/T4, projected) + "JUST crossed" (T1/T2, within FRESH_TICKS on the signal's own TF) —
     never a name that crossed several ticks ago and has been rising. T1 = `take_active` (the
@@ -331,7 +332,14 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
     ``market`` picks the reference session calendar the 2D/3D buckets are anchored to (US
     default; signal_gate infers it from the ticker suffix — session_anchor R3). Highest
     active tier wins. Returns {tier, weight, sub, eligible, bars_to_cross, asof, not_topped,
-    ticks, ..., veto_legs_null, anchor_era}. Never raises."""
+    ticks, ..., veto_legs_null, anchor_era}. Never raises.
+
+    ``event_latch`` (engine.confluence_latch.EventLatch) + ``latch_key`` (the ticker) make the
+    T2 event history IMMUTABLE: a bar's verdict is written once, when that bar was the as-of
+    bar, and restored from the store thereafter. Without it the incomplete trailing bucket's
+    known-date advances nightly and un-fires events on bars that already printed — see that
+    module's docstring for the measured case. DEFAULT None = byte-identical to before, so only
+    the caller that opts in (the CN board) changes behaviour."""
     try:
         c = daily_close.dropna()
         if not isinstance(c.index, pd.DatetimeIndex):
@@ -461,6 +469,26 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
                      htf=htf, hist_d2=hist_d2, hist_d3=hist_d3,
                      bars=n_bars, young_history=young, above200=above200_pub,
                      null_legs=nulls, veto_legs_null=veto_nulls)
+        # T2 = a JUST-crossed 2D-MACD x 3D-stoch buy: the 2D arrow is <= FRESH_TICKS 2D-ticks old
+        #
+        # PIT LATCH (engine/confluence_latch): a fired event may never be un-fired.  The 2D cross
+        # is stamped at its own CLOSED bucket's known-date, but recent3_d is ffilled from the 3D
+        # known-date — and the trailing 3D bucket is INCOMPLETE, so its known-date advances every
+        # session and de-annotates the bar the 2D event sits on.  The conjunction then un-fires
+        # on a bar that ALREADY PRINTED, the last event falls back many ticks past FRESH_TICKS,
+        # and the name leaves every lane at once (300363.SZ: 2026-08-05 rank 1 -> 08-06 absent
+        # -> +20.02% on 08-07).  The latch restores each already-observed bar to the verdict
+        # written when it WAS the as-of bar.  None (every caller but the CN board) = unchanged.
+        #
+        # COMPUTED AND LATCHED BEFORE THE not_topped RETURN, deliberately: whether the
+        # conjunction FIRED on a bar is a property of that bar's own legs, independent of
+        # today's not-topped veto.  Latching after the early return would leave every
+        # vetoed-day bar unrecorded — exactly the bars most likely to be erased tomorrow —
+        # and the latch would silently do nothing on the names that need it.
+        t2_buy = (mb2_d & recent3_d & confirm3 & rsi_ok).fillna(False)
+        if event_latch is not None:
+            t2_buy = event_latch.stabilize(latch_key or "", t2_buy)
+
         if not not_topped:
             return blank                                # topped/rolled-over: never a fresh buy
 
@@ -469,8 +497,6 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         # many days" -> it is a HOLD, not a fresh entry, and drops off the board.
         t1_fresh = bool(take_active and t1_ticks is not None and t1_ticks <= FRESH_TICKS)
 
-        # T2 = a JUST-crossed 2D-MACD x 3D-stoch buy: the 2D arrow is <= FRESH_TICKS 2D-ticks old
-        t2_buy = (mb2_d & recent3_d & confirm3 & rsi_ok).fillna(False)
         idx2 = np.where(t2_buy.to_numpy())[0]
         t2_ticks = _ticks_since(smk, di[int(idx2[-1])]) if len(idx2) else None
         t2_active = bool(t2_ticks is not None and t2_ticks <= FRESH_TICKS and long_bias)

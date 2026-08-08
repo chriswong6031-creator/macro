@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-08-06",
+ "as_of": "2026-08-07",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -10,12 +10,12 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 310,
+  "n_calls": 328,
   "n_logged": 310,
   "n_matured": 56,
   "n_beat": 11,
   "n_lag": 45,
-  "n_suspended": 75,
+  "n_suspended": 57,
   "hit_matured": 0.196,
   "wilson_lo_pct": 11.3,
   "wilson_hi_pct": 31.8,
@@ -176,8 +176,8 @@
   },
   {
    "t": "OR.TO",
-   "nm": "OR ROYALTIES INC",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-08-05",
    "e": null,
@@ -1120,9 +1120,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DSV.TO",
@@ -1139,9 +1137,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "NWC.TO",
@@ -1158,9 +1154,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CSH-UN.TO",
@@ -1177,9 +1171,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "SPB.TO",
@@ -1196,9 +1188,7 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "KEL.TO",
@@ -1215,9 +1205,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DOL.TO",
@@ -1234,9 +1222,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BEI-UN.TO",
@@ -1253,9 +1239,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "LUG.TO",
@@ -1272,9 +1256,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BAM.TO",
@@ -1291,9 +1273,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EIF.TO",
@@ -1310,9 +1290,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "QBR-B.TO",
@@ -1329,9 +1307,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -1348,9 +1324,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -1367,9 +1341,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ALS.TO",
@@ -1386,9 +1358,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "REI-UN.TO",
@@ -1405,9 +1375,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -1424,9 +1392,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "IGM.TO",
@@ -1443,9 +1409,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "MG.TO",
@@ -4101,8 +4065,8 @@
   },
   {
    "t": "SDE.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SPARTAN DELTA CORP",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -4339,8 +4303,8 @@
   },
   {
    "t": "ATRL.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ATKINSREALIS GROUP INC",
+   "sec": "Industrials",
    "grp": "setting_up",
    "d": "2026-07-09",
    "e": null,
@@ -4390,8 +4354,8 @@
   },
   {
    "t": "SDE.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SPARTAN DELTA CORP",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-09",
    "e": null,
@@ -4679,8 +4643,8 @@
   },
   {
    "t": "SDE.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SPARTAN DELTA CORP",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -4985,8 +4949,8 @@
   },
   {
    "t": "SDE.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SPARTAN DELTA CORP",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -5325,8 +5289,8 @@
   },
   {
    "t": "SDE.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SPARTAN DELTA CORP",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -5448,7 +5412,7 @@
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 75,
+   "n_suspended": 57,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }
