@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-07T10:17:08.716865+00:00",
-  "count": 934,
+  "generated_at": "2026-08-08T05:33:58.244699+00:00",
+  "count": 937,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -59,6 +59,47 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-a4azjz2hgsd-f09120",
+      "title": "AEJ Week Ahead China inflation and credit data, India inflation, and Singapore and Malaysia GDP",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T10:50:33Z",
+      "summary_points": [
+        "**China Inflation & Credit Outlook**: CPI at 0.9% yoy (above consensus), PPI at 4.0% yoy (above consensus), RMB loans down RMB100bn signaling credit slowdown and decelerating industrial activity.",
+        "**India Inflation & RBI Policy**: Core inflation at 4.3% yoy (energy/gold/silver driven), RBI held rates at 5.25% with dovish stance and delayed 2026 hike call (50bp pushback).",
+        "**ASEAN GDP Revisions**: Singapore Q2 GDP revised up to 5.9% YoY (industrial/construction strength), Malaysia Q2 GDP at 5.9% YoY (agricultural weakness), both with upward/downward full-year forecasts.",
+        "**Hong Kong GDP Forecast Revised Down**: Q2 2026 growth at +4.3% (below consensus), full-year cut to 4.4% (from 4.6%) due to inventory slowdown and consumption moderation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hymi33ivzjz-7af1ff",
+      "title": "JPM International Market Intelligence Morning Briefing Aug 7",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T10:31:57Z",
+      "summary_points": [
+        "**US-Japan EPS Divergence**: US companies beat EPS 88% (vs Japan 71%), but Japan’s EPS growth (64%) exceeds US (25%), signaling structural shift—US focus on beat frequency, Japan on growth magnitude.",
+        "**Big Tech Debt Vulnerability**: Amazon/Alphabet dominate $350B+ multi-currency borrowing (2025+), exposing FX risk and capital allocation strain amid Yen weakness.",
+        "**Hormuz Supply Shock**: 12.6 mbd supply loss (Mar-Jul) vs 5.2 mbd demand loss, with 644M bbl inventory draws, driving immediate energy tightness and price pressure.",
+        "**Geopolitical Inflation Floor**: Conflict (energy/supply shocks), rearmament (fiscal demand), and fragmentation (trade frictions) collectively create persistent inflation floor.",
+        "**Eurozone Demand Deterioration**: Household consumption forecast decline (Q2-Q4 2026) signals weakening demand and potential economic slowdown."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-bcjktsbzuwe-b4ec6e",
       "title": "Global Markets Comment A Few Follow Up Questions on Yen Intervention",
@@ -280,6 +321,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-justhncua8p-f7c7f4",
+      "title": "European Economics Analyst The Potential Impact of Heatwaves and Wildfires on the Euro Area Economies",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-07T02:10:23Z",
+      "summary_points": [
+        "**Heatwave/Wildfire Economic Impact**: Combined 12mo impact: -0.1% GDP drag (vs model's -0.2% to -0.4%) and +0.1% to +0.3% inflation boost, driven by France/Germany wildfires (0.2% GDP drag) and regional tourism/retail demand shocks.",
+        "**Regional Divergence**: France/Italy/Spain show heatwave-driven GDP lift (0.02-0.04%) and tourism inflation, while Germany exhibits negative manufacturing/electricity responses (-0.02% GDP) and wildfire exposure (-0.2% GDP drag).",
+        "**Energy & Supply Chain Risk**: Wildfires trigger double pressure on energy prices (cooling demand + supply disruption), amplifying inflation in energy-intensive sectors and driving headline inflation via non-core food/energy (FAT component +0.2%-0.3%).",
+        "**Wildfire Intensity Data**: July 2026 EU wildfires burned 350k hectares (4x 2006-2025 avg), with France/Spain exceeding historical norms, quantifying cross-border supply shock risk for tourism/agriculture."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },

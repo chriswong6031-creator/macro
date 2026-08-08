@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import json
+import math
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -33,6 +34,7 @@ from engine.capital_structure.source_store import (
 )
 from engine.capital_structure.source_identity import (
     ManifestIdentityError,
+    canonical_manifest_bytes,
     manifest_id_for,
 )
 from engine.capital_structure.source_ledger_io import (
@@ -1320,3 +1322,200 @@ def test_suspect_bundle_retry_advances_closed_version_and_compiles(
     )
     assert len(result["events"]) == 1
     assert result["telemetry"]["counts"]["compile_failures"] == 0
+
+
+# ---------------------------------------------------------------------------
+# W1-A nightly-unfreeze: the NaN manifest abort and the unbounded deferral.
+#
+# daily.yml failed 2026-08-03..08-06.  The 08-06 collect log carried 130 lines of
+# ``sec_capital_structure: <accession> deferred: TypeError: non-finite numbers are
+# not canonical manifest values`` — the same filings, every night, forever.
+# ---------------------------------------------------------------------------
+
+
+def test_iterrows_launders_a_null_discovery_scope_into_a_nan_sentinel():
+    """Pin the mechanism: the row-Series build is what turns ``None`` into NaN.
+
+    ``collection_scope`` is legitimately ``None`` for every discovery row written
+    before Wave 2C added the column, and ``_read_table`` migrates it as ``None`` in
+    an object column.  ``DataFrame.iterrows()`` then builds a per-row Series, and
+    THAT construction substitutes ``float('nan')`` — pandas' missing-value sentinel.
+    ``to_dict("records")`` does not.  If a future pandas stops laundering, this test
+    goes red and the extra hop in the collector can be retired deliberately.
+    """
+    frame = pd.DataFrame([{"accession": "a", "collection_scope": None}])
+    assert frame["collection_scope"].dtype == object
+    assert frame.iloc[0]["collection_scope"] is None
+
+    laundered = [series.to_dict()["collection_scope"] for _, series in frame.iterrows()]
+    assert len(laundered) == 1
+    assert isinstance(laundered[0], float) and math.isnan(laundered[0])
+
+    assert frame.to_dict("records")[0]["collection_scope"] is None
+
+
+def test_nan_scope_reaches_the_canonical_writer_as_a_typeerror():
+    """The blast: a NaN anywhere in a manifest aborts canonical encoding.
+
+    This is the exact exception the 08-06 nightly logged 130 times, raised from
+    ``engine/capital_structure/source_identity.py`` ``_native``.  The guard is
+    CORRECT and stays strict — a canonical manifest may not contain a non-finite
+    number — so the repair belongs upstream, at the frame boundary.
+    """
+    with pytest.raises(TypeError, match="non-finite numbers are not canonical"):
+        canonical_manifest_bytes({"filing": {"collection_scope": float("nan")}})
+
+
+def test_manifest_scalar_nulls_every_pandas_missing_sentinel_and_never_zeroes():
+    """NaN/NA/NaT become ``None``; real values and legitimate ``None`` are untouched."""
+    sanitized: list[str] = []
+    assert sec._manifest_scalar(float("nan"), field="filing.form", sanitized=sanitized) is None
+    assert sec._manifest_scalar(pd.NA, field="filing.accession", sanitized=sanitized) is None
+    assert sec._manifest_scalar(pd.NaT, field="filing.filing_date", sanitized=sanitized) is None
+    assert sanitized == ["filing.form", "filing.accession", "filing.filing_date"]
+
+    # A field that was ALREADY None is absent, not sanitized — reporting it would
+    # make ``filing.file_number`` (null by contract on most filings) read as a defect.
+    already: list[str] = []
+    assert sec._manifest_scalar(None, field="filing.file_number", sanitized=already) is None
+    assert already == []
+
+    # Real values survive, and nothing is ever coerced to a fabricated 0.
+    for value in ("S-3", "", 0, False, 12.5, ["a"], {"k": "v"}):
+        assert sec._manifest_scalar(value, field="x", sanitized=already) == value
+    assert already == []
+
+
+def test_manifest_record_with_a_nan_scope_encodes_canonically(tmp_path):
+    """The defect, end to end at the boundary that produced it.
+
+    Feed ``_manifest_record`` the row EXACTLY as the retrieval loop used to hand it
+    over — a NaN ``collection_scope`` and a NaN ``company_name`` — and require a
+    canonically-encodable, schema-valid manifest.  On the pre-fix collector this
+    raises ``TypeError: non-finite numbers are not canonical manifest values``
+    inside ``manifest_id_for``.
+    """
+    discovery = parse_form_index(INDEX)[0] | {
+        "ticker": "ACME",
+        "_first_seen": "2026-08-01T12:35:00+00:00",
+        # The two pandas sentinels a legacy discovery row carries after iterrows().
+        "collection_scope": float("nan"),
+        "company_name": float("nan"),
+    }
+    bundle = parse_submission(SUBMISSION)
+    digest = __import__("hashlib").sha256(SUBMISSION).hexdigest()
+    receipt = SourceReceipt(
+        object_key=f"capital_structure/sec/sha256/{digest[:2]}/{digest}",
+        sha256=digest, byte_length=len(SUBMISSION), media_type="text/plain",
+        backend="r2", store_id=STORE_ID_DEDICATED_R2,
+    )
+    sanitized: list[str] = []
+
+    record = SecCapitalStructureAdapter._manifest_record(
+        discovery=discovery, bundle=bundle,
+        source_id="0001234567-26-000001:0:complete-submission.txt",
+        canonical_url=discovery["canonical_url"],
+        document_name="complete-submission.txt", document_type="S-3",
+        document_role="complete_submission", sequence="0", raw=SUBMISSION,
+        receipt=receipt,
+        inspection=DocumentInspection("text/plain", "eligible", "clean"),
+        retrieved_at="2026-08-01T12:36:00+00:00",
+        first_seen_at=discovery["_first_seen"], document_version=1,
+        parent_manifest_id=None, sanitized=sanitized,
+    )
+
+    # The sentinel is recorded as the JSON null the contract declares...
+    assert record["filing"]["collection_scope"] is None
+    assert sanitized == ["filing.collection_scope"]
+    # ...never as a fabricated 0/"" value.
+    assert record["filing"]["collection_scope"] != 0
+    # NaN is truthy, so the raw value used to publish the alias ["nan"].
+    assert record["issuer"]["aliases"] == []
+    # And the record now encodes canonically instead of aborting the night.
+    assert canonical_manifest_bytes(record)
+    assert record["manifest_id"] == manifest_id_for(record)
+
+    schema = json.loads((
+        Path(__file__).resolve().parents[1]
+        / "contracts/capital_structure_source_manifest.schema.json"
+    ).read_text())
+    errors = list(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(record)
+    )
+    assert not errors, [error.message for error in errors]
+
+
+def test_legacy_discovery_ledger_migrates_to_a_json_representable_null(tmp_path):
+    """``pd.isna`` was too weak an assertion — it is true for BOTH None and NaN.
+
+    ``test_old_discovery_ledger_is_migrated_with_null_collection_scope`` asserted
+    only ``pd.isna(...)``, so it passed while the migrated value was a NaN that no
+    canonical writer could encode.  Assert JSON-representability instead.
+    """
+    legacy_columns = [
+        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
+    ]
+    path = tmp_path / "discovery.parquet"
+    pd.DataFrame([{
+        "accession": "legacy", "cik": "0001234567", "ticker": "ACME",
+        "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+        "file_path": "edgar/data/1234567/legacy.txt",
+        "canonical_url": "https://www.sec.gov/Archives/edgar/data/1234567/legacy.txt",
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])[legacy_columns].to_parquet(path, index=False)
+
+    migrated = sec._read_table(path, sec._DISCOVERY_COLUMNS)
+    row = migrated.to_dict("records")[0]
+
+    assert row["collection_scope"] is None
+    assert json.dumps(row["collection_scope"]) == "null"
+
+
+def test_repeatedly_failing_filing_is_parked_and_leaves_the_retrieval_queue():
+    """A filing may not be retried forever — the bound is what stops the creep."""
+    attempts = pd.DataFrame([
+        {"accession": "aaa", "state": "transient_error"},
+        {"accession": "aaa", "state": "transient_error"},
+        {"accession": "bbb", "state": "storage_deferred"},
+    ])
+    # Under the bound, neither has exhausted it yet.
+    assert sec.parked_accessions(attempts) == set()
+
+    attempts = pd.concat([attempts, pd.DataFrame([
+        {"accession": "aaa", "state": "transient_error"},
+    ])], ignore_index=True)
+    assert sec.parked_accessions(attempts) == {"aaa"}
+
+    # Retained bytes are not a failure: those states close the item via
+    # ``have_complete`` and must never count toward the bound.
+    retained = pd.DataFrame([
+        {"accession": "ccc", "state": "stored"},
+        {"accession": "ccc", "state": "stored_parser_deferred"},
+        {"accession": "ccc", "state": "stored"},
+    ])
+    assert sec.parked_accessions(retained) == set()
+
+    discovery = pd.DataFrame([
+        {
+            "accession": accession, "cik": "1234567", "ticker": "ACME",
+            "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+            "file_path": "p", "canonical_url": "https://example.test/x.txt",
+            "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+            "_first_seen": "2026-08-01T12:00:00Z",
+        }
+        for accession in ("aaa", "bbb")
+    ])
+    now = datetime(2026, 8, 7, 12, 0, tzinfo=timezone.utc)
+
+    unbounded = select_retrieval_queue(
+        discovery, have_complete=set(), max_filings=10, now=now,
+    )
+    assert set(unbounded["accession"]) == {"aaa", "bbb"}
+
+    bounded = select_retrieval_queue(
+        discovery, have_complete=set(), max_filings=10, now=now, parked={"aaa"},
+    )
+    assert set(bounded["accession"]) == {"bbb"}
+    # The receipt must not keep counting a parked filing as pending work.
+    assert bounded.attrs["retrieval_queue_receipt"]["selected_count"] == 1
+    assert bounded.attrs["retrieval_queue_receipt"]["deferred_count"] == 0

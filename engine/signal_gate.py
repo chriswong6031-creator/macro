@@ -102,7 +102,10 @@ def is_buyable(v: dict | None) -> bool:
 
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "reasons", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
-                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
+                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars",
+                 # the knowability-anchored twin of fresh_bars (bucket LAST session, not
+                 # its OPEN label). Display-tier: it feeds the shown age, never a gate.
+                 "fresh_bars_knowable", "ticks",
                  "provisional", "htf_s1", "htf_s2", "young_history", "history_bars",
                  # the bucketing era this verdict was graded under (R5) — a cohort label like
                  # young_history, so it travels the same way. `veto_legs_null` is deliberately
@@ -147,6 +150,36 @@ def _bars_since(daily_close, marker) -> int | None:
             return None
         return int((idx > pd.Timestamp(marker["date"])).sum())
     except Exception:
+        return None
+
+
+def _knowable_bars(daily_close, marker, *, market_of: str) -> int | None:
+    """Trading bars since the session the marker's 3D bucket CLOSED on (None if unknown).
+
+    The knowability twin of :func:`_bars_since`: same daily-index count, but anchored on
+    the bucket's LAST session instead of its OPEN label, so a signal is never reported as
+    older than it was ever possible to know about. The bucket geometry is not
+    re-implemented here — :func:`engine.signal_quality.marker_last_session` walks the same
+    grid ``analyze`` labelled the marker on, and the calendar is inferred from the ticker
+    exactly as the cascade's is.
+
+    Fail-soft and fail-CLOSED: any unreadable input returns ``None`` (a disclosed null the
+    caller falls back from), never a substituted count.
+    """
+    if not marker or not marker.get("date"):
+        return None
+    try:
+        from engine.signal_quality import marker_last_session
+
+        market = session_anchor.market_for_ticker(market_of)
+        session = marker_last_session(daily_close, marker["date"], market=market)
+        if session is None:
+            return None
+        idx = pd.to_datetime(pd.Index(getattr(daily_close, "index", [])))
+        if len(idx) == 0:
+            return None
+        return int((idx > pd.Timestamp(session)).sum())
+    except Exception:  # noqa: BLE001 — an additive disclosure never breaks the gate
         return None
 
 
@@ -242,6 +275,15 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     is_buy = bool(last_m and last_m.get("type") in _BUY_TYPES)   # take OR forming 'pending'
     take_date = last_m.get("date") if is_buy else None           # age the arrow by its OWN date
     v["fresh_bars"] = _bars_since(daily_close, last_m) if is_buy else None
+    # ...and the same count anchored on the bar the marker's bucket actually CLOSED on.
+    # `fresh_bars` counts from the bucket's OPEN label, so it ages a signal by up to two
+    # sessions it did not exist for (engine.signal_quality.marker_last_session). Emitted
+    # ALONGSIDE rather than replacing: `fresh_bars` gates eligibility/FRESH_TICKS across
+    # five boards and re-anchoring it is a semantic change owing a blast-radius report
+    # (research/SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md §4). This field feeds the
+    # DISPLAYED age only. None whenever the anchor is not derivable — a disclosed null.
+    v["fresh_bars_knowable"] = (
+        _knowable_bars(daily_close, last_m, market_of=ticker) if is_buy else None)
     # The 2D/3D buckets are anchored to a per-MARKET reference session calendar (R3). Inferring
     # it from the ticker suffix here is what lets every board (US/CN/HK/CA/Intl) route through
     # gate() and get the right calendar with no caller edit; unmapped suffixes resolve to US

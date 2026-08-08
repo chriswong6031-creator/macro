@@ -13,7 +13,7 @@
   "note": "PROVENANCE. Ticker symbols and issuer display names are public identifiers and are real. Every document body is SYNTHETIC prose written for this corpus -- no third-party transcript, press release, or filing body is copied into this repository, in line with the R0-D instruction to store hashes and minimal permitted excerpts rather than raw sources. CIK numbers, accession numbers, generation ids and transport lineage hashes are format-valid but synthetic. Everything hashed here is hashed for real: fixture sha256 values are over the committed bytes, transcript body_sha256 values use the production canonical_transcript_body_bytes(), and every exact-span receipt is produced by the production receipt_for_span(), which replays the byte slice and raises if it disagrees.",
   "builder": {
     "path": "scripts/research/build_company_intelligence_golden_corpus.py",
-    "sha256": "db17ff7e9f3a802b3bd2038126036f40ad946869447e9e3f2768868469189506",
+    "sha256": "519308b416be336a1773dda7ea9586d2635bdbcbf0bfeb2a47330e4598d69836",
     "deterministic": true,
     "seed": 20260806,
     "reproduce": "python3 scripts/research/build_company_intelligence_golden_corpus.py"
@@ -158,10 +158,10 @@
       "edgar_identity_join": 14
     },
     "by_expected_v2_outcome": {
-      "duplicate_collapsed": 16,
+      "duplicate_collapsed": 14,
       "exact_receipt": 155,
       "quarantined": 14,
-      "typed_absence": 49
+      "typed_absence": 51
     },
     "by_expected_receipt_locator_kind": {
       "text_span": 140,
@@ -183,8 +183,8 @@
       "bytes": 401232
     },
     "tests/fixtures/company_intelligence/golden_corpus_edgar_identity.v1.json": {
-      "sha256": "ac4fdbeeb4d0201614ac3dbb903d7070531bfac8c6227427e445193eb8c2d5ca",
-      "bytes": 13555
+      "sha256": "779e4c3e59ba8518d79fc30a09666aa6e18bcf708472e447d85a931b9fdab38c",
+      "bytes": 13543
     },
     "tests/fixtures/company_intelligence/golden_corpus_issuers.v1.json": {
       "sha256": "8a390606e39fe1e8b08a3d885bcbd30230aa0263f708db8492a5291a198fb5e4",
@@ -10716,7 +10716,7 @@
         }
       ],
       "v1_claim_citations_pending": true,
-      "expected_v2_outcome": "duplicate_collapsed",
+      "expected_v2_outcome": "typed_absence",
       "expected_receipt_locator_kind": null,
       "expected_event_identity": "preserved",
       "quarantine": null
@@ -10996,7 +10996,7 @@
         }
       ],
       "v1_claim_citations_pending": true,
-      "expected_v2_outcome": "duplicate_collapsed",
+      "expected_v2_outcome": "typed_absence",
       "expected_receipt_locator_kind": null,
       "expected_event_identity": "preserved",
       "quarantine": null

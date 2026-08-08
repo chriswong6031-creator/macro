@@ -18,7 +18,9 @@ Four falsifier sensors, each computed from ``data/edgar/statements.parquet``:
      Gross margin declining YoY while revenue is still growing (at least 3% YoY).
      Classic moat-erosion signal: top-line intact, but pricing power or cost
      structure weakening.  Fire threshold: revenue_growth >= 3% AND
-     gross_margin_pct latest < gross_margin_pct prior.
+     gross_margin_pct latest < gross_margin_pct prior.  Both periods need
+     POSITIVE revenue: a negative denominator sign-flips the margin and makes
+     the comparison meaningless, so it is not-evaluable rather than a verdict.
 
   2. receivables_stretch
      Accounts receivable growing materially faster than revenue.
@@ -37,8 +39,12 @@ Four falsifier sensors, each computed from ``data/edgar/statements.parquet``:
      indicating the business requires ever more capital to produce the
      same or less unit output.
      Fire threshold: capex_growth > revenue_growth + 10pp AND
-     capex_growth > op_income_growth + 10pp.  Op_income sign-flip edge case
-     handled: if op_income <= 0 the capex growth condition alone must hold.
+     capex_growth > op_income_growth + 10pp.  Op_income sign edge case handled:
+     if CURRENT op_income is known and <= 0 the capex-vs-revenue condition alone
+     must hold (the disclosed revenue-only fallback).  A MISSING/NaN op_income,
+     or a prior op_income of ~0, is NOT that case — the declared evidence is
+     absent, so the sensor returns None (not evaluable) instead of firing on the
+     revenue leg alone.  Unknown is not non-positive.
 
 For EACH sensor a universe-level base rate is computed:
   base_rate_annual — fraction of (ticker, fy) observations in the covered
@@ -190,7 +196,18 @@ def _pct_change(new_val: float, old_val: float) -> float | None:
 
 
 def _margin_pct(gross_profit: float, revenue: float) -> float | None:
-    if revenue is None or pd.isna(revenue) or abs(revenue) < 1e-9:
+    """Gross margin in percent, or None when the denominator cannot carry one.
+
+    Revenue must be POSITIVE, not merely non-zero. A negative denominator flips
+    the sign of the ratio, so a filer reporting negative revenue (contra-revenue
+    reversals, some insurance/energy presentations) yields a "margin" whose
+    ordering is inverted: the prior-vs-current comparison the sensor makes is
+    then meaningless, yet the sensor would answer True/False with full
+    confidence off it. scripts/build_fundamental_forensics.py::_ratio has always
+    required ``d > 0``; this matches it rather than leaving the two surfaces
+    answering differently on the same filer.
+    """
+    if revenue is None or pd.isna(revenue) or float(revenue) <= 1e-9:
         return None
     if gross_profit is None or pd.isna(gross_profit):
         return None
@@ -241,11 +258,39 @@ def _sensor_capex_intensity(row_cur: pd.Series, row_prior: pd.Series) -> bool | 
         return None
     oi_cur = row_cur.get("op_income")
     oi_prior = row_prior.get("op_income")
-    oi_g = _pct_change(oi_cur, oi_prior)
-    # If op_income <= 0 we can't compute a meaningful margin delta; relax to
-    # capex-vs-revenue only.
-    if oi_g is None or (oi_cur is not None and not pd.isna(oi_cur) and float(oi_cur) <= 0):
+    # UNKNOWN IS NOT NON-POSITIVE. Operating income has three distinct states
+    # here and collapsing them into one branch is what made this sensor fire on
+    # absent evidence:
+    #
+    #   1. current op_income is KNOWN and <= 0 — a percent change off a
+    #      non-positive base is uninterpretable, so the DISCLOSED revenue-only
+    #      fallback applies. This is deliberate and user-visible: the same rule
+    #      is implemented at scripts/build_fundamental_forensics.py and
+    #      published bilingually there ("revenue-only when operating income is
+    #      non-positive"), and the registry kernel takes the same branch
+    #      (engine/fundamental_forensics/detectors.py, emitting the limitation
+    #      "nonpositive_operating_income_revenue_only_branch").
+    #
+    #   2. op_income is ABSENT/NaN in either period, or the prior value is ~0 so
+    #      the growth is not computable — the evidence this detector DECLARES it
+    #      requires (see _sensor_cols(): revenue, capex, op_income) is simply not
+    #      there. That is NOT EVALUABLE. Firing on the revenue leg alone here
+    #      publishes a signal on evidence the module itself has already recorded
+    #      as incomplete (_assess_coverage marks such a row "partial"), and the
+    #      downstream consumers read `fired` without that coverage flag.
+    #
+    #   3. otherwise both conjuncts must hold.
+    #
+    # Order matters: (1) is checked first because the fallback is justified by
+    # the CURRENT value alone and does not need a prior — which is exactly how
+    # the projection builder's `op_cur is not None and op_cur <= 0` branch
+    # behaves, so the two surfaces agree on a loss-making filer.
+    oi_cur_known = oi_cur is not None and not pd.isna(oi_cur)
+    if oi_cur_known and float(oi_cur) <= 0:
         return bool(capex_g > rev_g + _CAPEX_INTENSITY_PP)
+    oi_g = _pct_change(oi_cur, oi_prior)
+    if oi_g is None:
+        return None
     return bool(capex_g > rev_g + _CAPEX_INTENSITY_PP and capex_g > oi_g + _CAPEX_INTENSITY_PP)
 
 

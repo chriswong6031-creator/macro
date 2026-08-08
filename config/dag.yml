@@ -3307,6 +3307,7 @@ modules:
       - data/baskets/membership.json
       - data/breadth/_closes_cache.parquet
       - data/stocks/*.parquet
+      - data/baskets/ohlcv/*.parquet
       - data/radar/theses.jsonl
     writes:
       - site/basketdata/baskets.json
@@ -3314,6 +3315,10 @@ modules:
       - site/basketdata/flow.json
       - site/basketdata/sector_pulse.json
       - data/baskets/latest.json
+      # W1-D: calls engine.us_basket_turn.run() inline — writes the state artifact
+      # and appends the forward ledger (COLLECT_LANE=nightly gate).
+      - site/basketdata/us_basket_turn.json
+      - data/us_basket_turn/ledger.jsonl
     impure: false
     needs_secrets: false
     event_driven: false

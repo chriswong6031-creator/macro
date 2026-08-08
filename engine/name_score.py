@@ -58,6 +58,39 @@ _TRIGGER = {
     "TOP WATCH": 0.15,           # extended — don't chase
     "ROLLING OVER": 0.05, "DECLINE": 0.00,
 }
+# Ladder states engine.cycles CAN emit that `_TRIGGER` does not price yet. They keep the
+# historical 0.4 mid-band DELIBERATELY — re-pricing a published score is a prereg + gauntlet
+# change, not a bug fix — but naming them here is what lets the silent `.get(state, 0.4)`
+# default be retired below.  That default was a FAIL-OPEN: it handed a mid-band trigger to
+# any state the map had never heard of, including the LIMITED sentinel that means "this
+# record could not be analysed at all" (scripts/build_stock_library._limited_rec).  Measured
+# 2026-08-01..08-06: nine curated gold/silver miner extras (AEM, KGC, AU, GFI, HMY, AGI,
+# EQX, EGO, BTG) published `score 14 · no_setup · "No setup" / 暂无买点` off `trigger 0.400`
+# × `fuel 0.000` on every nightly stamp while AEM ran +13.9% — a NULL rendered as a
+# measurement, which is exactly what the house epistemics forbid.
+_TRIGGER_UNPRICED = {
+    "CONFIRMING TURN": 0.40,   # cycles.LADDER member, cycles.LADDER_SCORE -15; unchanged
+}
+
+# Reasons a record cannot be scored at all.  Printed, never rendered as a number.
+NOT_SCORED_TIER = "not_scored"
+NOT_SCORED_BAND = "unscored"
+NOT_SCORED_EN = "Not scored — not enough data"
+NOT_SCORED_ZH = "数据不足，暂不评分"
+REASON_LIMITED = "limited_record"
+REASON_UNKNOWN_STATE = "unknown_cycle_state"
+_NOT_SCORED_NOTE = {
+    REASON_LIMITED: (
+        "There is not enough price history yet to read this name's cycle, so it carries "
+        "no score.",
+        "这只个股的价格历史还不够长，无法判断它所处的周期，因此不给评分。",
+    ),
+    REASON_UNKNOWN_STATE: (
+        "This name's cycle state is not one the score can read, so it carries no score.",
+        "这只个股的周期状态超出评分模型的判读范围，因此不给评分。",
+    ),
+}
+
 _ENTRY_CONFIRM = {"buy_now": 1.00, "wait_pullback": 0.88, "hold": 0.90,
                   "extended": 0.50, "later": 0.80,
                   # bounce_wait = the COUNTERTREND BOUNCE wording split off 'extended'
@@ -108,10 +141,21 @@ def _fuel(tech: dict) -> tuple[float, list[str]]:
     return _clip(fuel, 0.0, 1.0), why
 
 
-def _trigger(rec: dict) -> tuple[float, list[str]]:
+def _trigger(rec: dict) -> tuple[float | None, list[str]]:
+    """The turn gate, or ``None`` when this record has no readable cycle state.
+
+    ``None`` is the fail-CLOSED answer the old ``_TRIGGER.get(state, 0.4)`` default used
+    to swallow. It propagates to a printed null in :func:`potential_score` — never to a
+    number.
+    """
     lad = rec.get("ladder") or {}
-    state = (lad.get("state") or "").upper()
-    base = _TRIGGER.get(state, 0.4)
+    state = (lad.get("state") or "").strip().upper()
+    if state in _TRIGGER:
+        base = _TRIGGER[state]
+    elif state in _TRIGGER_UNPRICED:
+        base = _TRIGGER_UNPRICED[state]
+    else:
+        return None, []
     es = (rec.get("entry_signal") or {}).get("status")
     conf = _ENTRY_CONFIRM.get(es, 1.0)
     trig = base * conf
@@ -210,6 +254,30 @@ def _band(score: int) -> dict:
     return {"band": css, "tier": tier, "band_en": en, "band_zh": zh}
 
 
+def not_scored(reason: str) -> dict:
+    """The printed NULL: same shape as a scored payload, with no number in it.
+
+    Every numeric field is ``None`` — not ``0`` — because zero is a measurement and this
+    is the absence of one. ``call`` is ``None`` so the record never enters the forward
+    grading ledger (``build_stock_library._collect_potential_calls`` keys on it), and the
+    band is its own key rather than a reuse of ``low``: red is a claim about the name,
+    and we are not making one.
+    """
+    note_en, note_zh = _NOT_SCORED_NOTE.get(reason, _NOT_SCORED_NOTE[REASON_UNKNOWN_STATE])
+    return {
+        "score": None,
+        "scored": False,
+        "not_scored_reason": reason,
+        "band": NOT_SCORED_BAND, "tier": NOT_SCORED_TIER,
+        "band_en": NOT_SCORED_EN, "band_zh": NOT_SCORED_ZH,
+        "note_en": note_en, "note_zh": note_zh,
+        "components": {"fuel": None, "trigger": None, "survive": None,
+                       "tailwind": None, "confidence": None, "edge": None},
+        "reasoning": [],
+        "call": None,
+    }
+
+
 def potential_score(rec: dict, *, market: str = "CN", edge_z: float | None = None,
                     regime_stress: float = 0.0, basket_ctx: dict | None = None) -> dict:
     """Per-name POTENTIAL (buy-readiness) score 0-100 + tier + components + reasoning.
@@ -219,10 +287,22 @@ def potential_score(rec: dict, *, market: str = "CN", edge_z: float | None = Non
     gates the tier (front-running / trend-following); fuel sizes within it; edge_mult
     blends each market's real alpha. ``edge_z`` is the name's selection-axis z (pass the
     conviction selection z); ``market`` selects the edge blend. CN/HK ignore edge_z.
+
+    A record the model cannot read AT ALL — the LIMITED sentinel a builder emits for a
+    name with too little history, or a cycle state this module does not price — returns
+    :func:`not_scored` instead of a number. See :data:`_TRIGGER_UNPRICED` for the measured
+    failure that closed: an unrecognized state used to inherit a mid-band 0.4 trigger and
+    publish as a confident low score.
     """
     m = (market or "CN").upper()
-    fuel, fw = _fuel(rec.get("tech") or {})
+    if rec.get("limited"):
+        # The builder already said this record is not analysable; a score computed off
+        # its empty legs would be a fabrication with the sentinel's own name on it.
+        return not_scored(REASON_LIMITED)
     trig, tw = _trigger(rec)
+    if trig is None:
+        return not_scored(REASON_UNKNOWN_STATE)
+    fuel, fw = _fuel(rec.get("tech") or {})
     surv, sw = _survive(rec, regime_stress)
     tail, lw = _tailwind(rec, basket_ctx)
     conf, cw = _confidence(rec)
@@ -235,6 +315,7 @@ def potential_score(rec: dict, *, market: str = "CN", edge_z: float | None = Non
     reasoning = [*tw, *ew, *fw, *sw, *lw, *cw]   # trigger first (the actionable leg), then edge
     return {
         "score": score,
+        "scored": True,
         "band": band["band"], "tier": band["tier"],
         "band_en": band["band_en"], "band_zh": band["band_zh"],
         "components": {"fuel": round(fuel, 3), "trigger": round(trig, 3),

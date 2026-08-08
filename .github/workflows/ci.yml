@@ -391,6 +391,11 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # W7 seasonality research-browser API surface. engine/** already covers
+      # engine/seasonality/screener.py, but tests/test_seasonality_api.py imports
+      # app/seasonality.py, and a PR touching ONLY that handler would otherwise
+      # never start the stock-seasonality pack that executes the suite.
+      - "app/seasonality.py"
       # Signal-Lab promotion-stat display gate: the BTC Vector card's DSR/Sharpe/n
       # must equal what calibrate_vector actually computed. engine/** covers the
       # module, but a test-only re-pin (or a nightly refresh of the artifacts the
@@ -742,6 +747,24 @@ on:
       # their globs; the test file needs an explicit path so a test-only re-pin still
       # re-runs the rot-sweep step that carries it.
       - "tests/test_stock_personality_w4_surfaces.py"
+      # Earnings & Company Event suite, Wave 1B: the canonical EDGAR filing key
+      # (cik, accession) and the Exhibit 99.1 release binding. Both readers and
+      # both new modules are named, plus the fixtures — tests/** is deliberately
+      # NOT a catch-all here, and BOTH EDGAR reader suites were measured
+      # strictly dark (named by zero `run:` steps, matched by no glob) before
+      # this block and the earnings-release-identity job were added together.
+      - "engine/earnings_release/**"
+      - "collectors/edgar_earnings_8k.py"
+      - "engine/marketing/edgar_earnings_wire.py"
+      - "tests/fixtures/earnings_release/**"
+      - "tests/test_edgar_filing_identity_join.py"
+      - "tests/test_earnings_release_binding.py"
+      - "tests/test_edgar_earnings_8k.py"
+      - "tests/test_marketing_edgar_earnings_wire.py"
+      # The release binding normalizes through the disclosure-diff source-text
+      # engine, so a change there must also start the Wave 1B pack; the glob
+      # below already covers it.
+      #
       # Filing Forensics v1: immutable SEC lineage kernel + display-only workbench.
       # Keep every contract, fixture, page, collector, and context test wired even
       # when a PR changes only its config/schema/test side.
@@ -952,6 +975,15 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # Same contract for the MERGE orchestrator, and the same #3488 shape: the
+      # workflow-yaml job above runs tests/test_merge_on_green.py, but neither the
+      # sweeper nor its tests could start it — a PR editing the thing that decides
+      # every merge in this repo published no pack check at all, so the sweeper
+      # reported it "unproven" and would never merge it (measured on #4968, which
+      # had ZERO runs on its branch). A guard whose own change cannot trigger it is
+      # a guard that reviews as covered and runs never.
+      - "scripts/merge_on_green.py"
+      - "tests/test_merge_on_green.py"
       # SKIP-ONLY suite guard (job: workflow-yaml). scripts/*.py already reaches
       # the checker; these two are the other halves. requirements.txt matters
       # because a `-r requirements.txt` install line is how several jobs declare
@@ -2805,6 +2837,7 @@ on:
       - "tests/test_prophet_card_shared.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
+      - "tests/test_us_board_fail_closed_freshness.py"
       - "tests/test_us_board_lanes.py"
       - "tests/test_us_board_priority_ui.py"
       - "tests/test_us_board_rank.py"

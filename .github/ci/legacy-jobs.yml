@@ -392,10 +392,20 @@ jobs:
       # config/fundamental_forensics.yml (registry Decimal strings, SEC lineage
       # kernel). Nothing cross-pinned them, so a threshold edited in one store left
       # the same named detector answering differently on two live surfaces. This
-      # suite reads each store's own numbers — it hardcodes none of them — and pins
-      # the six disagreements that already ship. It belongs in THIS job because the
-      # step above already owns the detector contracts and already imports both
-      # engine.fundamental_forensics and engine.moat_falsifiers.
+      # suite reads each store's own numbers — it hardcodes none of them.
+      #
+      # Since 2026-08-07 it also pins EVALUABILITY, not just thresholds: section 6
+      # drives all three implementations off the registry's own companyfacts
+      # fixture across a table of missing-input scenarios and asserts the set of
+      # three-way disagreements is exactly the documented, deliberate ones. That
+      # section exists because the threshold pins were fully green while
+      # engine/moat_falsifiers.py fired capital_intensity_rising on absent
+      # op_income for 62 of 336 live fires (18%).
+      #
+      # It belongs in THIS job because the step above already owns the detector
+      # contracts and already imports engine.fundamental_forensics (including
+      # run_fixture_slice, which section 6 uses) and engine.moat_falsifiers, so
+      # this job's install string is already proven sufficient for both.
       - name: forensic detector cross-pin (three implementations, one detector id)
         run: python -m pytest tests/test_forensic_detector_crosspin.py -q
 
@@ -1195,6 +1205,8 @@ jobs:
           tests/test_seasonality_event_study.py
           tests/test_seasonality_model.py
           tests/test_seasonality_calibration.py
+          tests/test_seasonality_screener.py
+          tests/test_seasonality_api.py
           tests/test_seasonality_program_watch.py -q
       # W5 state v2. The suite that has to run here is the one about a
       # migration that has NOT happened yet: v1's ``forecast.p`` is a historical
@@ -5339,7 +5351,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
       # (forward-ledger audit 2026-08-05).  test_stage_analysis.py and
       # test_weinstein_stage.py were both enumerated in NO workflow
@@ -5482,7 +5494,17 @@ jobs:
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
     if: ${{ false }}
-    timeout-minutes: 6
+    # 6 -> 15. This job is STRUCTURALLY at-cap, not slowed by any change. Measured on a
+    # fast Mac Studio, its FIRST step alone (27 test files, 941 passed) runs 3:40 — 61% of
+    # a 6-minute budget that must ALSO cover `pip install ... scikit-learn` and seven more
+    # pytest steps. On the 4-core-bound, fleet-shared ubuntu-latest pack runner it crosses
+    # the cap whenever the pool is busy, so "timed out after 6 minutes" has been recurring
+    # on main and on every PR that inherits it — an unattributable red that repeatedly
+    # reads as the running PR's regression (it was pinned on #4883's proof run, where the
+    # PR's own step was 6.7s of the budget and its data change made the store 37% smaller).
+    # 15 is this manifest's existing ceiling for heavy jobs (options-estate-guards,
+    # collector-registry), both of which carry FEWER run steps than the eight here.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -6074,3 +6096,37 @@ jobs:
         run: python3 scripts/check_zh_filing_term.py
       - name: zh-filing-term guard suite (allowlist narrowness + pending ratchet)
         run: python -m pytest tests/test_zh_filing_term.py -q
+
+  earnings-release-identity:
+    # Wave 1B of the Earnings & Company Event suite: the EDGAR identity join and
+    # the release binding.
+    #
+    # TWO OF THESE FOUR SUITES WERE STRICTLY DARK before this job existed —
+    # tests/test_edgar_earnings_8k.py and tests/test_marketing_edgar_earnings_wire.py
+    # were named by ZERO `run:` steps anywhere in this file and matched by no path
+    # glob in ci.yml, so 133 assertions about the two EDGAR readers could not fail
+    # a pull request. They guard the exact-token Item-2.02 match (the difference
+    # between 2.02 and 12.02), the store's dedup key, the basis check that stops a
+    # GAAP figure being posted against an adjusted estimate, and the provider's
+    # fail-soft-never-fail-silent annotations. They are wired here.
+    #
+    # `requests` is in the install line because collectors/edgar_earnings_8k.py
+    # imports it at module scope; without it the collector suite errors on import
+    # rather than running, which reads as a pack failure rather than a missing dep.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: EDGAR filing identity join + release binding (Wave 1B)
+        run: >-
+          python -m pytest
+          tests/test_edgar_filing_identity_join.py
+          tests/test_earnings_release_binding.py
+          tests/test_edgar_earnings_8k.py
+          tests/test_marketing_edgar_earnings_wire.py -q -rs

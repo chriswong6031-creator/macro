@@ -583,15 +583,51 @@ def _outcome_for(cls: str, index: int) -> str:
     if cls == "changed_slide_family" and index % 4 == 3:
         # The retained families still resolve to an exact cell.
         return "exact_receipt"
-    if cls == "edgar_identity_join" and index % 7 == 6:
-        # The two readers saw the SAME filing; a join would collapse them.
-        return "duplicate_collapsed"
+    # edgar_identity_join has NO exception, on purpose.  Its finding is homogeneous:
+    # every pair's two readers share `ticker` and nothing else, so not one row carries
+    # observable duplication evidence.  A positional `duplicate_collapsed` here (this
+    # builder carried one until 2026-08-07) is gradeable only by its answer key, which
+    # is the one thing a benchmark may never require -- and the EDGAR fixture's own
+    # open_contract_question says so: "every edgar_identity_join case is a typed
+    # absence".  `duplicate_collapsed` stays in the vocabulary because duplicate_release
+    # earns it with fourteen two-revision cases.
     if cls == "amendment" and index % 8 == 7:
         # The amendment arrived with a period later than observation time.
         return "quarantined"
     if cls == "missing_release" and index % 6 == 5:
         return "quarantined"
     return default
+
+
+def _assert_duplicates_carry_their_evidence(cases: list[dict[str, Any]]) -> None:
+    """Every ``duplicate_collapsed`` case must ship the duplicate it collapses.
+
+    Keyed on the OUTCOME, not the difficulty class, which is exactly the hole the
+    positional edgar_identity_join rule fell through: CIE-GC-0227/0234 were labelled
+    duplicates while carrying a single ``release`` revision, so nothing observable
+    separated them from the twelve typed-absence siblings and only the answer key
+    could grade them.  An outcome that rests on nothing does not belong in a frozen
+    benchmark, and this refuses to write one.
+    """
+    offenders: list[str] = []
+    for case in cases:
+        if case["expected_v2_outcome"] != "duplicate_collapsed":
+            continue
+        revisions = case["document_revisions"]
+        if len(revisions) < 2:
+            offenders.append(case["case_id"])
+            continue
+        duplicate = revisions[1]
+        if (duplicate["document_kind"] != "release_duplicate"
+                or duplicate["source_sha256"] == revisions[0]["source_sha256"]
+                or duplicate["supersedes_source_sha256"] != revisions[0]["source_sha256"]):
+            offenders.append(case["case_id"])
+    if offenders:
+        raise SystemExit(
+            "duplicate_collapsed with no duplication evidence (needs a revision 2 of kind "
+            "'release_duplicate' whose supersedes_source_sha256 is revision 1's "
+            f"source_sha256): {', '.join(offenders)}"
+        )
 
 
 def build_cases(issuers: list[dict[str, Any]], rng: random.Random) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -752,6 +788,7 @@ def build_cases(issuers: list[dict[str, Any]], rng: random.Random) -> tuple[list
                 "quarantine": quarantine,
             })
 
+    _assert_duplicates_carry_their_evidence(cases)
     return cases, documents
 
 

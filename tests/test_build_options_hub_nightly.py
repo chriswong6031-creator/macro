@@ -18,7 +18,13 @@ suite pins:
 """
 from __future__ import annotations
 
-from scripts.build_options_hub_nightly import _attach_gex_history
+import json
+
+from scripts.build_options_hub_nightly import (
+    _attach_gex_history,
+    _nulled_nonfinite,
+    _write_json,
+)
 
 
 def test_history_omitted_key_stays_omitted_when_store_absent():
@@ -173,3 +179,52 @@ def test_trim_history_without_history_key_is_a_no_op():
     out = _trim_history_to(payload, "2026-07-20")
     assert "history" not in out
     assert out == payload
+
+
+# ── non-finite scrubbing on publish ───────────────────────────────────────────
+# On 2026-08-07 a single NaN inside the cross-root aggregate raised out of
+# json.dumps(allow_nan=False) and took the whole 380-root board with it. The
+# desks kept serving the previous incremental checkpoint (372 names) and reported
+# "Partial" for two days. These pin the blast radius at one cell, and pin that a
+# non-finite value still never reaches a reader as a number.
+
+def test_nonfinite_values_become_null_and_are_counted():
+    counter = [0]
+    out = _nulled_nonfinite(
+        {"good": 1.5, "nan": float("nan"), "inf": float("inf"),
+         "ninf": float("-inf")},
+        counter,
+    )
+    assert out == {"good": 1.5, "nan": None, "inf": None, "ninf": None}
+    assert counter[0] == 3
+
+
+def test_nested_lists_and_dicts_are_scrubbed_in_place_of_the_payload():
+    counter = [0]
+    out = _nulled_nonfinite(
+        {"rows": [{"root": "SPY", "gex": float("nan")},
+                  {"root": "QQQ", "gex": 2.0}]},
+        counter,
+    )
+    assert out["rows"][0]["gex"] is None
+    assert out["rows"][1]["gex"] == 2.0
+    assert out["rows"][0]["root"] == "SPY"   # non-floats pass through untouched
+    assert counter[0] == 1
+
+
+def test_clean_payload_is_untouched_and_counts_nothing():
+    counter = [0]
+    payload = {"asof": "2026-08-06", "rows": [{"gex": 1.0}], "n": 3}
+    assert _nulled_nonfinite(payload, counter) == payload
+    assert counter[0] == 0
+
+
+def test_write_json_publishes_a_payload_containing_a_nan(tmp_path):
+    """THE regression: one bad cell used to abort the entire publish."""
+    path = tmp_path / "oi_movers.json"
+    _write_json(path, {"asof": "2026-08-06",
+                       "rows": [{"root": "SPY", "d_oi_pct": float("nan")}]})
+    written = json.loads(path.read_text())
+    assert written["rows"][0]["d_oi_pct"] is None
+    assert written["asof"] == "2026-08-06"
+    assert "NaN" not in path.read_text()   # never the invalid JSON literal

@@ -99,7 +99,16 @@
     commodity: '<path d="M12 10h24v28H12zM12 18h24M12 30h24"/><path class="accent" d="M19 10v28M29 10v28"/><path d="M24 4s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>',
     reserves: '<path d="M8 38h32M11 34V18h8v16M20 34V10h8v24M29 34V22h8v12"/><path class="accent" d="M7 14h13M16 6h13M25 18h13"/><path class="ghost" d="M5 42h38"/>',
     forex: '<path d="M8 16h30M33 11l5 5-5 5M40 32H10M15 27l-5 5 5 5"/><circle class="soft-fill" cx="18" cy="16" r="5"/><circle class="soft-fill" cx="30" cy="32" r="5"/>',
-    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>'
+    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>',
+    /* The two Mastermind cards' own template glyphs (_navlinks.html.j2),
+       verbatim: the allocation donut (Portfolio — the user's book) and the
+       pinned processor (Bot — the AI's own paper book). They exist here so the
+       compatibility bridge can only ever normalise these cards to their REAL
+       icons — before this, both fell through to the `dashboard` default and the
+       two adjacent "Mastermind …" cards rendered byte-identical glyphs, which
+       read as one product listed twice (operator report, 2026-08-07). */
+    portfolio: '<path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/>',
+    bot: '<path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/>'
   };
   MOCKUP_ICON_PATHS.baskets = MOCKUP_ICON_PATHS.themes;
   MOCKUP_ICON_PATHS.alert = MOCKUP_ICON_PATHS.alerts;
@@ -136,6 +145,9 @@
 
   var MOCKUP_RESEARCH_ICON_BY_FILE = {
     'intelligence_hub.html': ['intelligence_hub', ''],
+    /* fileOf() reduces the Bot card's absolute href to its host string. */
+    'watchlist.html': ['portfolio', 'violet'],
+    'bot.mastermind-x.com': ['bot', 'cyan'],
     'reports.html': ['reports', ''],
     'research_vault.html': ['vault', 'violet'],
     'earnings_wire': ['earnings_wire', 'cyan'],
@@ -677,13 +689,23 @@
       if (desc) desc.classList.add('item-desc');
 
       var file = fileOf(item);
-      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file] || ['dashboard', ''];
+      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file];
       var exactDescription = MOCKUP_RESEARCH_DESCRIPTION_BY_FILE[file];
       var englishDescription = desc && desc.querySelector('.l-en');
       if (exactDescription && englishDescription) {
         englishDescription.textContent = exactDescription;
       }
-      var oldIcon = item.querySelector('.nm-ic');
+      /* Cards this bridge does not know KEEP their server-rendered icon.
+         The old fallback substituted the default dashboard spec for every
+         unknown card, stomping each one with the same identical glyph —
+         measured live 2026-08-07: the adjacent Mastermind Portfolio and
+         Mastermind Bot cards (plus Filing Forensics and Stock Seasonality)
+         all rendered the same dashboard square, and the two Mastermind cards
+         read as one product listed twice. Every card added since the mockup
+         era already ships its real icon-drawing markup server-side, so
+         leaving it alone IS the exact normalisation; only files named in the
+         map are legacy shapes this bridge exists to rewrite. */
+      var oldIcon = iconSpec ? item.querySelector('.nm-ic') : null;
       if (oldIcon) {
         oldIcon.className = 'icon-drawing nm-ic ' + iconSpec[1];
         oldIcon.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +

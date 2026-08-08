@@ -26,7 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -69,25 +69,88 @@ def _read_as_of(root: Path, spec: ArtifactSpec) -> str | None:
         return None
 
 
+#: Sessions behind at which a stale surface stops being a late render and becomes an
+#: outage worth waking someone for. ONE session behind is routine — a render that lands
+#: either side of a close, a lane that publishes on the next run. TWO or more means a
+#: session produced no artifact at all, which is the shape of the 2026-08-01..08-06
+#: incident: the board sat at as_of=2026-07-31 for six days while every night printed
+#: `SURFACE STALE` into a job summary nobody reads.
+ESCALATE_SESSIONS_BEHIND = 2
+
+
+def _escalate(stale: list[tuple[str, str]], worst: int, expected: str) -> None:
+    """Push the staleness digest to the ops spine. NEVER raises, never blocks.
+
+    ONE digest, not one alert per surface: six `SURFACE STALE` lines describing a single
+    frozen board is one incident, and six pushes is how an operator learns to mute the
+    channel. push_ops_alert's per-lane dedup then keeps a persistent outage to roughly a
+    daily reminder rather than a nightly repeat.
+
+    Why this exists: on 2026-08-04 this sentinel emitted eight staleness annotations and
+    nothing consumed them. The board stayed frozen until 08-06, when the operator noticed
+    the prices were wrong. The detection was never the gap — every fact needed to diagnose
+    it was already in the job summary. This routes it somewhere with a reader.
+    """
+    try:
+        from engine.alert_triage import push_ops_alert
+
+        names = ", ".join(path for path, _ in stale[:6])
+        more = f" (+{len(stale) - 6} more)" if len(stale) > 6 else ""
+        push_ops_alert(
+            source="surface_freshness",
+            type_="surfaces_stale",
+            message=(
+                f"{len(stale)} surface artifact(s) stale — worst is {worst} session(s) "
+                f"behind (expected {expected}). {names}{more}. A surface this far behind "
+                f"means a session published nothing; check the nightly's engine job and "
+                f"data/breadth/_closes_cache.parquet's tip before trusting any board."
+            ),
+            severity="major",
+            lane="surface_freshness",
+            window_hours=20,
+        )
+    except Exception as e:  # noqa: BLE001 — a sentinel must never break the render
+        log.warning("surface-freshness escalation failed (%s) — annotations still stand", e)
+
+
 def run(now: datetime | None = None, root: Path | None = None) -> int:
     """Check all artifacts; print ::warning:: for each stale one.  Always exits 0."""
     root = root or config.ROOT
-    expected = str(nyse_calendar.expected_last_session(now))
-    stale_count = 0
+    expected_date = nyse_calendar.expected_last_session(now)
+    expected = str(expected_date)
+    stale: list[tuple[str, str]] = []
     for spec in _ARTIFACTS:
         as_of = _read_as_of(root, spec)
         actual = as_of or "MISSING"
         if not as_of or as_of < expected:
-            stale_count += 1
+            stale.append((spec.path, actual))
             print(f"::warning::SURFACE STALE: {spec.path} as_of={actual} expected={expected}")
             log.warning("SURFACE STALE: %s as_of=%s expected=%s", spec.path, actual, expected)
         else:
             log.info("fresh: %s as_of=%s", spec.path, as_of)
+    stale_count = len(stale)
     if stale_count == 0:
         log.info("all %d surface artifacts are fresh for session %s", len(_ARTIFACTS), expected)
+        return 0
+    log.warning("%d/%d surface artifacts are stale (expected session %s)",
+                stale_count, len(_ARTIFACTS), expected)
+
+    # How far behind is the WORST one? A MISSING artifact has no date to measure, so it
+    # counts as maximally behind — an artifact that is not there published nothing.
+    worst = 0
+    for _path, actual in stale:
+        if actual == "MISSING":
+            worst = max(worst, ESCALATE_SESSIONS_BEHIND)
+            continue
+        try:
+            worst = max(worst, nyse_calendar.sessions_behind(date.fromisoformat(actual), now))
+        except Exception:  # noqa: BLE001 — an unparseable as_of is not this sentinel's subject
+            continue
+    if worst >= ESCALATE_SESSIONS_BEHIND:
+        _escalate(stale, worst, expected)
     else:
-        log.warning("%d/%d surface artifacts are stale (expected session %s)",
-                    stale_count, len(_ARTIFACTS), expected)
+        log.info("worst surface is %d session(s) behind (< %d) — annotation only, no page",
+                 worst, ESCALATE_SESSIONS_BEHIND)
     return 0   # warn-only — never blocks the render (FT-R8)
 
 

@@ -10,3 +10,7 @@
 {"date":"2026-08-02","theme":"Autonomous Systems","donor":"autonomousspecialized","receiver":"autonomoussoftware","confidence":0.353,"both_confirmed":false}
 {"date":"2026-08-02","theme":"Artificial Intelligence","donor":"aiedge","receiver":"aidata","confidence":0.35,"both_confirmed":false}
 {"date":"2026-08-02","theme":"Electric Vehicles","donor":"evssuppliers","receiver":"evsmanufacturers","confidence":0.294,"both_confirmed":false}
+{"date":"2026-08-07","theme":"Agriculture & FoodTech","donor":"agricultureprocessing","receiver":"agricultureindoorfarming","confidence":0.646,"both_confirmed":false}
+{"date":"2026-08-07","theme":"Commodities Energy","donor":"commenergyoil","receiver":"commenergyuranium","confidence":0.42,"both_confirmed":false}
+{"date":"2026-08-07","theme":"Energy Renewable","donor":"energycleanbiofuels","receiver":"energycleanmaterials","confidence":0.362,"both_confirmed":false}
+{"date":"2026-08-07","theme":"Crypto & Blockchain","donor":"blockchainpayments","receiver":"blockchainenterprise","confidence":0.216,"both_confirmed":false}

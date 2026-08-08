@@ -73,11 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 596, (
-        f"Expected 596 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 598, (
+        f"Expected 598 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (Biopharma Seasonality program watch registered data-seasonality-program-watch,"
-        " the operator-facing tripwire artifact = 595->596);"
+        " (Prophet-US W1-D added us-basket-turn + us-basket-turn-ledger — the US"
+        " washout-lifecycle organ, port of china_basket_turn = 595->597;"
+        " Biopharma Seasonality program watch then registered"
+        " data-seasonality-program-watch, the operator-facing tripwire = 597->598);"
         " (pin drifted: registry carried 595 while pin said 594 — racing merges during the"
         " 2026-08-05/06 Prophet-US + CN wave trains; repaired here);"
         " (CN Prophet W-C registered the loser/miss telemetry artifact + its forward"
