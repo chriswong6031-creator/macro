@@ -35,7 +35,13 @@ CLOSED_BETA_MANIFEST = ROOT / "config" / "biocatalyst_closed_beta_source_manifes
 
 RULING_REF = "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
 # The exact bytes of the ruling this enablement claims as its authorization.
-RULING_SHA256 = "f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a"
+# Re-bound 2026-08-08 when the ruling document gained Ruling 3 (the four
+# subsidiary sponsor rows).  Ruling 1 — the rights decision this file tests — is
+# unchanged in that document; the digest tracks the whole file, so an amendment
+# anywhere in it moves every binding that cites it.  The rights, runtime,
+# universe, and clock assertions below are untouched and still pin the same
+# facts.
+RULING_SHA256 = "6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530"
 
 SOURCE_ID = "clinicaltrials_gov_record_history"
 

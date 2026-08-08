@@ -5,12 +5,13 @@
 # universe.  It is NOT a general point-in-time identity service and it is NOT an
 # inferred join.
 #
-# EVERY LINK IN THIS FILE WAS SUGGESTED BY A MODEL.  29 of them were ADMITTED by
-# the repository operator on 2026-08-07 under the named ruling recorded in
-# `operator_ruling` below, and those 29 resolve.  A model still cannot admit its
-# own suggestion: an admitted row must carry an operator attestation — a named
-# human reviewer, a timestamp, and the ruling document bound by content digest —
-# and tests/test_biocatalyst_sponsor_ticker_map.py fails on any admitted row
+# EVERY LINK IN THIS FILE WAS SUGGESTED BY A MODEL.  33 of them were ADMITTED by
+# the repository operator under the named ruling recorded in `operator_ruling`
+# below — 29 on 2026-08-07 (Ruling 2) and four more on 2026-08-08 (Ruling 3) —
+# and those 33 resolve.  A model still cannot admit its own suggestion: an
+# admitted row must carry an operator attestation — a named human reviewer, a
+# timestamp, and the ruling document bound by content digest — and
+# tests/test_biocatalyst_sponsor_ticker_map.py fails on any admitted row
 # without one.  A model cannot manufacture attributed human authority, so the
 # fence is "nothing may be admitted WITHOUT attributed human authority" rather
 # than the weaker "nothing may be admitted".
@@ -20,9 +21,19 @@
 # ClinicalTrials.gov record" note, because that is what is true: the operator
 # authorized the admission, not a per-row check against a live record.
 #
-# THE 20 `ambiguous_queued` ROWS STAY QUEUED.  A blanket authorization cannot
-# resolve a subsidiary-versus-parent or joint-venture question; each of those
-# needs a per-case answer and remains a standing operator to-do.
+# THE TICKER IS NOT ALWAYS THE SPONSOR.  Every admitted row declares
+# `issuer_relationship`: `direct_issuer` means the sponsor string IS the listed
+# issuer; `parent_of_subsidiary_sponsor` means the sponsor string is a
+# SUBSIDIARY and the ticker is its PARENT.  Ruling 3 admitted the four
+# subsidiary rows — Cepheid to DHR, Genentech to RHHBY, Janssen R&D to JNJ,
+# Merck Sharp & Dohme to MRK — which is a modelling choice with a visible
+# consequence: a Genentech trial surfaces under Roche.  A reader must be able to
+# tell that apart from a trial the issuer sponsored itself, so the row says so.
+#
+# THE REMAINING 16 `ambiguous_queued` ROWS STAY QUEUED.  Neither a blanket
+# authorization nor Ruling 3's narrow group answers a renamed-entity,
+# joint-venture, CRO, or outside-the-universe question; each of those needs a
+# per-case answer and remains a standing operator to-do.
 #
 # Ambiguity is queued, never guessed.  A sponsor that matches several issuers,
 # is an operating subsidiary, is a joint venture, was renamed, or sits outside
@@ -44,7 +55,7 @@
 contract_id: biocatalyst_sponsor_ticker_map.v1
 schema: biocatalyst_sponsor_ticker_map.v1
 schema_version: "1.0.0"
-map_version: w3c.2
+map_version: w3c.3
 effective_at: "2026-08-07T00:00:00Z"
 owner: biocatalyst
 state: reviewed_map_contains_admitted_rows
@@ -57,11 +68,11 @@ purpose: post_selection_context_only
 # carry the authorization they claim, and validation fails closed.
 operator_ruling:
   reference: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-  sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+  sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
   ruled_at: "2026-08-07T00:00:00Z"
   authorizing_operator: "Repository operator (chriswong6031-creator)"
   instruction: "yes for both, do for me"
-  scope: admits_the_29_candidate_rows_only_the_20_ambiguous_rows_stay_queued
+  scope: "Ruling 2 (2026-08-07) admits the 29 candidate rows. Ruling 3 (2026-08-08) admits the four subsidiary_of_listed_issuer rows to their listed parents. The remaining 16 ambiguous rows stay queued."
 
 # Derived from data/baskets/membership.json at validation time, never hardcoded.
 universe:
@@ -108,6 +119,7 @@ rows:
     ticker: "ABBV"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -120,12 +132,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Abbott"
     ticker: "ABT"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -138,12 +151,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain: divisional strings such as an Abbott device unit are common and are NOT covered by this row."
   - sponsor_name: "Align Technology, Inc."
     ticker: "ALGN"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -156,12 +170,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Altimmune, Inc."
     ticker: "ALT"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -174,12 +189,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Amgen"
     ticker: "AMGN"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -192,12 +208,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "AstraZeneca"
     ticker: "AZN"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -210,12 +227,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "AZN is the US ADR line carried by the declared basket universe."
   - sponsor_name: "Baxter Healthcare Corporation"
     ticker: "BAX"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -228,7 +246,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the operating-entity suffix."
   - sponsor_name: "Bayer"
     ticker: null
@@ -251,6 +269,7 @@ rows:
     ticker: "BDX"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -263,12 +282,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the comma and suffix."
   - sponsor_name: "Biogen"
     ticker: "BIIB"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -281,7 +301,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Boehringer Ingelheim"
     ticker: null
@@ -304,6 +324,7 @@ rows:
     ticker: "BSX"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -316,12 +337,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
   - sponsor_name: "Bristol-Myers Squibb"
     ticker: "BMY"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -334,14 +356,14 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Cepheid"
-    ticker: null
-    candidate_tickers: ["DHR"]
-    review_state: ambiguous_queued
-    ambiguity_reason: subsidiary_of_listed_issuer
-    confidence_class: unresolved
+    ticker: "DHR"
+    candidate_tickers: []
+    review_state: reviewed_admitted
+    issuer_relationship: parent_of_subsidiary_sponsor
+    confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
     provenance:
@@ -349,14 +371,17 @@ rows:
       reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
       note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
     review:
-      reviewed_by: null
-      reviewed_at: null
-      review_reference: null
-    note: "Operating subsidiary. Whether a subsidiary sponsor may stand for its parent is a review decision, not an inference."
+      reviewed_by: "Repository operator (chriswong6031-creator)"
+      reviewed_at: "2026-08-08T00:00:00Z"
+      review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 3: the four subsidiary_of_listed_issuer rows are admitted to their listed parents; the other 16 stay queued."
+      ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
+    note: "TICKER IS THE PARENT, NOT THE SPONSOR: Cepheid is an operating subsidiary of Danaher, so its trials are attributed to DHR. Admitted by Ruling 3."
   - sponsor_name: "DexCom, Inc."
     ticker: "DXCM"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -369,7 +394,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain, including internal capitalisation; reviewer to confirm."
   - sponsor_name: "EMD Serono"
     ticker: null
@@ -392,6 +417,7 @@ rows:
     ticker: "EW"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -404,12 +430,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
   - sponsor_name: "Eli Lilly and Company"
     ticker: "LLY"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -422,7 +449,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Fortrea"
     ticker: null
@@ -459,11 +486,11 @@ rows:
       review_reference: null
     note: "Post-spin entity. Records sponsored under the former parent's name are a different effective interval a reviewer must open."
   - sponsor_name: "Genentech, Inc."
-    ticker: null
-    candidate_tickers: ["RHHBY"]
-    review_state: ambiguous_queued
-    ambiguity_reason: subsidiary_of_listed_issuer
-    confidence_class: unresolved
+    ticker: "RHHBY"
+    candidate_tickers: []
+    review_state: reviewed_admitted
+    issuer_relationship: parent_of_subsidiary_sponsor
+    confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
     provenance:
@@ -471,14 +498,17 @@ rows:
       reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
       note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
     review:
-      reviewed_by: null
-      reviewed_at: null
-      review_reference: null
-    note: "Operating subsidiary of a foreign parent whose only universe line is an ADR; both hops are review decisions."
+      reviewed_by: "Repository operator (chriswong6031-creator)"
+      reviewed_at: "2026-08-08T00:00:00Z"
+      review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 3: the four subsidiary_of_listed_issuer rows are admitted to their listed parents; the other 16 stay queued."
+      ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
+    note: "TICKER IS THE PARENT, NOT THE SPONSOR: Genentech is an operating subsidiary of Roche, so its trials are attributed to the RHHBY ADR line. Admitted by Ruling 3."
   - sponsor_name: "Gilead Sciences"
     ticker: "GILD"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -491,7 +521,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "GlaxoSmithKline"
     ticker: null
@@ -548,6 +578,7 @@ rows:
     ticker: "INCY"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -560,12 +591,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Insulet Corporation"
     ticker: "PODD"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -578,12 +610,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Intuitive Surgical"
     ticker: "ISRG"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -596,14 +629,14 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
   - sponsor_name: "Janssen Research & Development, LLC"
-    ticker: null
-    candidate_tickers: ["JNJ"]
-    review_state: ambiguous_queued
-    ambiguity_reason: subsidiary_of_listed_issuer
-    confidence_class: unresolved
+    ticker: "JNJ"
+    candidate_tickers: []
+    review_state: reviewed_admitted
+    issuer_relationship: parent_of_subsidiary_sponsor
+    confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
     provenance:
@@ -611,10 +644,12 @@ rows:
       reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
       note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
     review:
-      reviewed_by: null
-      reviewed_at: null
-      review_reference: null
-    note: "Operating subsidiary. Whether a subsidiary sponsor may stand for its parent is a review decision, not an inference."
+      reviewed_by: "Repository operator (chriswong6031-creator)"
+      reviewed_at: "2026-08-08T00:00:00Z"
+      review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 3: the four subsidiary_of_listed_issuer rows are admitted to their listed parents; the other 16 stay queued."
+      ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
+    note: "TICKER IS THE PARENT, NOT THE SPONSOR: Janssen R&D is the issuer's own pharmaceutical R&D entity, so its trials are attributed to JNJ. Admitted by Ruling 3."
   - sponsor_name: "Labcorp"
     ticker: null
     candidate_tickers: ["LH"]
@@ -636,6 +671,7 @@ rows:
     ticker: "MDT"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -648,7 +684,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain: divisional strings such as a Medtronic therapy unit are common and are NOT covered by this row."
   - sponsor_name: "Merck"
     ticker: null
@@ -685,11 +721,11 @@ rows:
       review_reference: null
     note: "The German Merck group, outside the declared universe and distinct from the US-listed issuer of a similar name."
   - sponsor_name: "Merck Sharp & Dohme LLC"
-    ticker: null
-    candidate_tickers: ["MRK"]
-    review_state: ambiguous_queued
-    ambiguity_reason: subsidiary_of_listed_issuer
-    confidence_class: unresolved
+    ticker: "MRK"
+    candidate_tickers: []
+    review_state: reviewed_admitted
+    issuer_relationship: parent_of_subsidiary_sponsor
+    confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
     provenance:
@@ -697,14 +733,17 @@ rows:
       reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
       note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
     review:
-      reviewed_by: null
-      reviewed_at: null
-      review_reference: null
-    note: "Operating subsidiary of the US-listed issuer. Common and probably admissible, but a human admits it, not a model."
+      reviewed_by: "Repository operator (chriswong6031-creator)"
+      reviewed_at: "2026-08-08T00:00:00Z"
+      review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 3: the four subsidiary_of_listed_issuer rows are admitted to their listed parents; the other 16 stay queued."
+      ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
+    note: "TICKER IS THE PARENT, NOT THE SPONSOR: Merck Sharp & Dohme is the US-listed issuer's own operating entity, so its trials are attributed to MRK. Admitted by Ruling 3."
   - sponsor_name: "ModernaTX, Inc."
     ticker: "MRNA"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -717,7 +756,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "ModernaTX is the operating sponsor entity of the listed issuer; reviewer to confirm the exact rendering."
   - sponsor_name: "Novartis Pharmaceuticals"
     ticker: null
@@ -740,6 +779,7 @@ rows:
     ticker: "NVO"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -752,12 +792,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "NVO is the US ADR line carried by the declared basket universe."
   - sponsor_name: "Pfizer"
     ticker: "PFE"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -770,12 +811,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "Regeneron Pharmaceuticals"
     ticker: "REGN"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -788,12 +830,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "ResMed"
     ticker: "RMD"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -806,7 +849,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Sanofi"
     ticker: null
@@ -829,6 +872,7 @@ rows:
     ticker: "SRRK"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -841,7 +885,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Solventum"
     ticker: null
@@ -864,6 +908,7 @@ rows:
     ticker: "SYK"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -876,7 +921,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain: national operating entities sponsor separately and are NOT covered by this row."
   - sponsor_name: "Takeda"
     ticker: null
@@ -899,6 +944,7 @@ rows:
     ticker: "VRTX"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: strong_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -911,7 +957,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Lead sponsor string for the listed issuer's own sponsored studies."
   - sponsor_name: "ViiV Healthcare"
     ticker: null
@@ -934,6 +980,7 @@ rows:
     ticker: "VKTX"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -946,12 +993,13 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
   - sponsor_name: "Zimmer Biomet"
     ticker: "ZBH"
     candidate_tickers: []
     review_state: reviewed_admitted
+    issuer_relationship: direct_issuer
     confidence_class: weak_candidate
     valid_from: "2026-08-07"
     valid_to: null
@@ -964,7 +1012,7 @@ rows:
       reviewed_at: "2026-08-07T00:00:00Z"
       review_reference: "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md Ruling 2: blanket admission of the 29 candidate rows; the 20 ambiguous rows stay queued."
       ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-      ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+      ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
 
 # Every declared-universe ticker no row claims. Recorded so absent coverage is
@@ -980,7 +1028,6 @@ unmapped_universe_tickers:
   - CRL
   - CVS
   - DGX
-  - DHR
   - DVA
   - ELV
   - GEHC
@@ -991,14 +1038,11 @@ unmapped_universe_tickers:
   - HUM
   - IDXX
   - IQV
-  - JNJ
   - LH
   - MCK
   - MOH
-  - MRK
   - MTD
   - OSCR
-  - RHHBY
   - RVTY
   - SOLV
   - STE
