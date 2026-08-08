@@ -159,3 +159,34 @@ def test_snapshot_stamps_regime_and_compute_breaks_out_by_regime(tmp_path, monke
     out = H.compute(_NOW, root=tmp_path)
     br = out["horizons"]["21"]["by_regime"]
     assert set(br) == {"Q1", "Q3"} and br["Q1"]["n"] == 12                  # None-regime row excluded
+
+
+# --------------------------------------------------------------------------- #
+# boundary tripwire: non-symbol keys are COUNTED and announced, never dropped
+# --------------------------------------------------------------------------- #
+def _snap_rows():
+    return [{"t": "AAPL", "opp": 70, "edge": 0.7, "stage": "emerging", "lean": 1},
+            {"t": "CONSECUTIVE", "opp": 40, "edge": 0.4, "stage": "early", "lean": 1},
+            {"t": "()", "opp": 20, "edge": 0.2, "stage": "exhausted", "lean": 1}]
+
+
+def test_snapshot_counts_nonsymbol_keys_but_still_writes_them(tmp_path, capsys):
+    """Dropping here would hide an EMITTER regression behind a clean-looking ledger —
+    the news/altdata gates own exclusion; this boundary only raises the alarm."""
+    import json
+    assert H.snapshot(_snap_rows(), _OLD, root=tmp_path) == 3
+    written = H._path(tmp_path).read_text().splitlines()
+    assert len(written) == 3                                    # nothing was dropped
+    assert {json.loads(l)["t"] for l in written} == {"AAPL", "CONSECUTIVE", "()"}
+
+    lines = [l for l in capsys.readouterr().out.splitlines() if "::" in l]
+    assert len(lines) == 1
+    # startswith("::") pins the line-start defect (a logger prefix kills the annotation).
+    assert lines[0].startswith("::")
+    assert lines[0].startswith("::warning title=hub-nonsymbol-tickers")
+    assert "2 non-symbol" in lines[0]
+
+
+def test_snapshot_clean_rows_emit_no_warning(tmp_path, capsys):
+    assert H.snapshot(_rows(4), _OLD, root=tmp_path) == 4
+    assert "::warning" not in capsys.readouterr().out
