@@ -5456,6 +5456,9 @@ def content_plan(
     # det = 0 on planned kinds"); `_copy_dropped` is the by-stage drop census.
     _copy_modes: dict[str, int] = {}
     _copy_dropped: dict[str, int] = {}
+    #: The writer's per-stage funnel for this plan (W2). {} when the LLM lane
+    #: never ran, which is itself the honest reading: no stage was reached.
+    _copy_funnel: dict = {}
     #: The same drops keyed by REASON, not stage. "provider" covers both "no
     #: credential was visible" and "the credential worked and the model
     #: returned nothing usable", and those have opposite fixes — see
@@ -5824,8 +5827,19 @@ def content_plan(
             _det_posts: list[dict] | None = None
             if _lane_armed:
                 try:
-                    from engine.marketing.copywriter import write_posts_llm_v2  # noqa: PLC0415
+                    from engine.marketing.copywriter import (  # noqa: PLC0415
+                        copy_funnel as _copy_funnel_fn,
+                        write_posts_llm_v2,
+                    )
                     posts = list(write_posts_llm_v2(contexts, _cw_cfg, root=root) or [])
+                    # The writer is the only place that sees every stage, so the
+                    # funnel is READ from it rather than reconstructed here from
+                    # the drop census (a reconstruction cannot see the repair
+                    # turns or which rung served).
+                    try:
+                        _copy_funnel = dict(_copy_funnel_fn() or {})
+                    except Exception:  # noqa: BLE001 — accounting is never fatal
+                        _copy_funnel = {}
                 except Exception:  # noqa: BLE001
                     posts = []
             if not posts:
@@ -6269,6 +6283,18 @@ def content_plan(
                 # missing credential from a served-but-unreadable response, and
                 # the plan artifact is what a postmortem reads a week later.
                 "dropped_reasons": _copy_drop_reasons,
+                # THE PER-STAGE FUNNEL (W2, 2026-08-08). `written`, `dropped` and
+                # the reason histogram above are all TRUE and together they still
+                # could not answer the one question a thin night raises: of the
+                # posts the planner selected, how many reached a model, how many
+                # died on the transport, how many died on the copy laws, how many
+                # a repair turn saved, and which RUNG served. Those are four
+                # different owners with four different remedies, and the artifact
+                # merged them into one number. The writer computes this because it
+                # is the only place that sees every stage; `rungs` is the half
+                # that finally makes a codex-first lane running entirely on the
+                # metered floor visible in the artifact itself.
+                "funnel": _copy_funnel,
                 "shape_mix": {
                     s: sum(m.get(s, 0) for m in _shape_mix_by_account.values())
                     for s in SHAPES
