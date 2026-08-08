@@ -219,6 +219,27 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("group_flow lens failed: %s", e)
 
+    # 📅 GROUP EARNINGS PULSE (Group Reads W-GR2, engine.group_earnings) — the earnings
+    # LAYER of each basket read: season clock, beat/miss rollup, guidance band (the
+    # guidance_gap classifier generalized to basket rosters), revision breadth, post-report
+    # drift, and the earnings SYMPATHY ratio (do this group's members move together around
+    # each other's prints). CONTEXT-ONLY: never ranked, sized, gated, or fused into a
+    # score; every stat carries its n and every floor refusal prints a null.
+    #
+    # Reads committed artifacts only (no network at build time) and caches the member
+    # return series ONCE for the whole 49-basket sweep — ~4s wall clock. The sympathy
+    # ledger append inside is lane-gated by engine.ledger_lane (nightly is the sole
+    # advancer), so the express/intraday lanes compute the JSON and discard the write.
+    # Additive — never breaks the page.
+    try:
+        from engine.group_earnings import compute_group_earnings
+        pulse = compute_group_earnings()
+        if pulse:
+            (fdir / "earnings_pulse.json").write_text(
+                json.dumps(pulse, separators=(",", ":"), default=str))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("group earnings pulse failed: %s", e)
+
     # SECTOR PULSE — compact per-theme rotation data product for Mastermind bot / Terminal.
     # Reads theme_intel (already computed above) and writes basketdata/sector_pulse.json.
     # Also merges per-theme velocity/heat keys into theme_intel so the page JS can render
