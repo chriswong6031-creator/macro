@@ -67,11 +67,16 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from engine.prophet_bridge import (
+    ADMITTED_STATUSES,
+    LEGACY_N_CANDIDATES,
     QUARANTINE_FILENAME,
     QUARANTINE_REASON,
     QUARANTINE_SCHEMA,
+    SELECTION_ERA,
     _panel_close_history,
     _PLAN_PRICE_DIRS,
+    append_legacy_shadow,
+    legacy_shadow_rows,
     load_quarantined_ids,
     originate_plans,
     plan_clock_date,
@@ -1357,6 +1362,46 @@ def main() -> None:
         print(f"::warning::prophet_arena hook failed: {e}", flush=True)
         log.warning("build_prophet: prophet_arena hook failed", exc_info=True)
 
+    # ── 2c. Legacy shadow ledger (ANTICIPATION §6.5) — ZERO AUTHORITY ─────────
+    # The pre-2026-08-08 admission gate keeps running every night against the same
+    # artifact and writes what it WOULD have selected. Nothing in the live pick chain
+    # reads this store; it exists so the operator's "compare them later" is answerable
+    # from two accrued ledgers instead of from memory.
+    #
+    # `existing_plans.keys()` rather than `existing_ids`: originate_plans MUTATES the
+    # set it is handed, so by this line `existing_ids` already carries tonight's new
+    # ids and the legacy replay would suppress rows the legacy gate never saw. Same
+    # reasoning as the arena block above.
+    #
+    # ONE call site, run once per nightly. The lane gate lives inside the writer
+    # (nightly is the sole ledger advancer), so an intraday or render lane reaches
+    # this line and writes nothing.
+    shadow_rows: list[dict] = []
+    shadow_written = 0
+    try:
+        with STANDOUTS_PATH.open(encoding="utf-8") as _f:
+            _shadow_standouts = json.load(_f)
+        shadow_rows = legacy_shadow_rows(
+            _shadow_standouts,
+            asof=asof,
+            existing_ids=set(existing_plans.keys()),
+            active_keys=active_keys,
+        )
+        shadow_written = append_legacy_shadow(shadow_rows, asof)
+        log.info(
+            "build_prophet: legacy shadow — %d legacy-admitted row(s), %d would have "
+            "been planned (cap %d); part now holds %d row(s)",
+            len(shadow_rows),
+            sum(1 for r in shadow_rows if r.get("would_have_planned")),
+            LEGACY_N_CANDIDATES,
+            shadow_written,
+        )
+    except Exception as e:  # noqa: BLE001 — a shadow ledger is NEVER fatal to the nightly
+        # Bare print at line start: a logger prefix makes GitHub drop the annotation.
+        print(f"::warning title=prophet-legacy-shadow::legacy shadow ledger failed: {e}",
+              flush=True)
+        log.warning("build_prophet: legacy shadow ledger failed", exc_info=True)
+
     # Merge all plans
     all_plans = {**existing_plans}
     for p in new_plans:
@@ -1539,6 +1584,16 @@ def main() -> None:
             # PSQ-TILT W1 provenance (whitelisted so the Terminal can consume it).
             "horizon_days": plan.get("horizon_days"),
             "stage_tilt": plan.get("stage_tilt"),
+            # ── ANTICIPATION §6.2 A1 provenance (ADDITIVE — nothing renamed) ─────
+            # Whitelisted onto the index row for the same reason stage_tilt is: the
+            # Terminal and the showcase read `index.json`, not the per-plan files, so
+            # a stamp that never reaches this dict is a stamp no surface can show.
+            # None on every plan originated before the era — that null IS the era
+            # boundary, and it is printed rather than back-filled.
+            "admission_class": plan.get("admission_class"),
+            "entry_status": plan.get("entry_status"),
+            "selection_era": plan.get("selection_era"),
+            "entry_basis": plan.get("entry_basis"),
         })
 
     # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
@@ -1596,6 +1651,10 @@ def main() -> None:
         "asof": asof,
         "cadence": "nightly-EOD",
         "authority_tier": "display",
+        # ANTICIPATION §6.2 A1 — the selection rule tonight's plans were originated
+        # under. Stamped at the top level as well as on every plan so a reader (and a
+        # later side-by-side) never has to infer the era from a date.
+        "selection_era": SELECTION_ERA,
         "gate_go": _read_standouts_gate_go(),
         "plan_count": len(all_plans),
         # MISNOMER, deliberately preserved: `active_count` (and `plans[]`) count every
@@ -1619,6 +1678,7 @@ def main() -> None:
         # many candidates the active-plan block kept from burning a second slot.
         "intake": {
             "sort_key": "us_prophet_v1 priority score desc, act_level desc, ticker asc",
+            "selection_era": SELECTION_ERA,
             "reorigination_blocked": intake_stats.get("reorigination_blocked", 0),
             "reorigination_blocked_keys": intake_stats.get(
                 "reorigination_blocked_keys", []
@@ -1630,14 +1690,47 @@ def main() -> None:
             "eligible_after_skips": intake_stats.get("eligible_after_skips"),
             "cap": intake_stats.get("cap"),
             "originated": len(new_plans),
+            # ── A1 disclosure: the new admission and both of its guards ──────────
+            "admitted_statuses": sorted(ADMITTED_STATUSES),
+            "admitted_by_class": intake_stats.get("admitted_by_class", {}),
+            "originated_by_class": intake_stats.get("originated_by_class", {}),
+            "unknown_status": intake_stats.get("unknown_status", 0),
+            "unknown_status_values": intake_stats.get("unknown_status_values", []),
+            "sector_cap": intake_stats.get("sector_cap"),
+            "sector_capped": intake_stats.get("sector_capped", 0),
+            "sector_unknown": intake_stats.get("sector_unknown", 0),
+            "stale_basis_max_sessions": intake_stats.get("stale_basis_max"),
+            "stale_basis_rederived": intake_stats.get("stale_basis_rederived", []),
+            "stale_basis_skipped": intake_stats.get("stale_basis_skipped", []),
+            "legacy_shadow": {
+                "rows": len(shadow_rows),
+                "would_have_planned": sum(
+                    1 for r in shadow_rows if r.get("would_have_planned")),
+                "cap": LEGACY_N_CANDIDATES,
+                "part_rows": shadow_written,
+                "store": "data/prophet/legacy_shadow/<YYYY-MM>/<YYYY-MM-DD>.parquet",
+                "authority": "none — shadow only; nothing in the pick chain reads it",
+            },
             "basis": (
-                "Ordering only — admission filters and the band gate are unchanged, and"
-                " candidates are ranked by the same us_prophet_v1 priority score the"
-                " board is ranked by. An open plan on the same ticker+direction blocks"
-                " re-origination until it closes in the forward ledger. The"
-                " 12-candidate cap is applied AFTER those skips (P4 2026-08-06), so a"
-                " night whose top-12 are all already-live names still originates from"
-                " the eligible names below them."
+                "Admission is a STATUS CLASS, not an act level (selection era"
+                f" {SELECTION_ERA}). A buy row is admitted when its entry status is one"
+                " of bounce_wait / wait_pullback / hold (patience — the turn is not"
+                " confirmed yet) or buy_now / partial (confirmation — the window is"
+                " open now), its conviction band is not low, and its direction is up."
+                " 'Extended' stays out as the anti-chase guard and 'buy soon' stays out"
+                " on its measured grade; any other status is refused and counted, never"
+                " defaulted. Ordering is unchanged — candidates are ranked by the same"
+                " us_prophet_v1 priority score the board is ranked by. An open plan on"
+                " the same ticker+direction blocks re-origination until it closes in the"
+                " forward ledger. The sector cap (4 per sector) and the 16-candidate cap"
+                " are applied AFTER those skips (P4 2026-08-06), so a night whose top"
+                " names are all already-live still originates from the eligible names"
+                " below them. A candidate whose entry basis trails this run by more than"
+                " 3 sessions has its entry, invalidation and targets re-derived from the"
+                " current close, or is skipped with a printed reason — no plan is"
+                " created at a stale price. The previous act-level gate keeps running"
+                " nightly as a zero-authority shadow ledger so the two selections can be"
+                " compared on the same tape."
             ),
         },
         # ── Forward-ledger quarantine (2026-08-06) ────────────────────────────
