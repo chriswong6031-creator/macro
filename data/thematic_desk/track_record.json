@@ -2,8 +2,8 @@
   "schema": "thematic_desk.v1",
   "as_of": "2026-08-08",
   "scored_total": 67,
-  "open": 125,
-  "unscored_soft": 31,
+  "open": 131,
+  "unscored_soft": 33,
   "overall": {
     "n": 67,
     "hits": 37,
@@ -64,7 +64,7 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "67 scored, hit-rate 0.552 (directional accuracy 0.358). Chance alone would land a hit-rate near 0.8583 (directional accuracy near 0.5144) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "67 scored, hit-rate 0.552 (directional accuracy 0.358). Chance alone would land a hit-rate near 0.8624 (directional accuracy near 0.5149) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
       "id": "us-2026-06-26-1",
