@@ -394,8 +394,10 @@ What the daily basis structurally cannot see, ranked by expected discriminative 
    size) at 15:00, daily snapshot, ~5k rows/day. Directly addresses the T+1 continuation
    question Stage 2 measures and cannot explain.
 3. **Intraday first-touch time and seal stability.** *Medium-high.* A 09:31 seal that never
-   breaks and a 14:55 seal are the same daily row; Stage 1's near-limit and failed-seal counts
-   are the crudest possible proxy for a continuous distinction. The standard practitioner split
+   breaks and a 14:55 seal are the same daily row; Stage 1's near-limit class — and the house
+   tape's separate failed-seal rows, which this catalog deliberately does not duplicate (its
+   charter is limit closes plus the return-based near-limit class) — are the crudest possible
+   proxy for a continuous distinction. The standard practitioner split
    (一字/秒板 vs 尾盘板) is currently entirely invisible to us.
    **Proposal:** per-limit-event intraday summary — first-touch timestamp, seal-break count,
    cumulative minutes sealed, final seal time. Needs minute bars for limit names only

@@ -2,8 +2,8 @@
   "instrument": "research/cn_prophet_audit/limit_move_footprint_v0.py",
   "charter": "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f)",
   "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
-  "generated_utc": "2026-08-08T11:30:04Z",
-  "runtime_sec": 39.0,
+  "generated_utc": "2026-08-08T11:34:58Z",
+  "runtime_sec": 39.8,
   "definitions": {
     "limit_up_close": "PRIMARY (strict): close >= round(prev_close*(1+w), 2). The market-true rule and the committed house tape's rule.",
     "limit_up_close_tolerant": "close >= round(prev_close*(1+w),2) * (1 - 0.002) — the build charter's at-or-within-0.2% wording, measured in full and reported in parallel, NOT used as the headline.",
@@ -28,7 +28,7 @@
   "meta": {
     "raw_store": "data/china_stocks_raw (nominal/unadjusted OHLCV — the correct basis; data/china_stocks is split/dividend adjusted and would fabricate limit misses)",
     "files_found": 1842,
-    "st_cohort": "n=100 tickers, single asof ['2026-07-06']",
+    "st_cohort": "n=100 tickers, asof ['2026-07-06']; engine ST_STORE_COVERAGE_DATE=2026-07-06; still-single-date=True",
     "st_excluded_tickers": 100,
     "sector_map": {
       "source": "data/china_search/members.parquet",
@@ -7589,7 +7589,7 @@
     },
     {
       "gap": "intraday first-touch time and seal stability",
-      "why_it_matters": "A 09:31 seal that never breaks and a 14:55 seal are the same daily row. STAGE 1's near_limit and failed-seal counts are the crudest possible proxy for a distinction that is continuous.",
+      "why_it_matters": "A 09:31 seal that never breaks and a 14:55 seal are the same daily row. STAGE 1's near_limit class — and the house tape's separate failed-seal rows, which this catalog deliberately does not duplicate — are the crudest possible proxy for a distinction that is continuous.",
       "proposal": "Collector: per-limit-event intraday summary — first touch timestamp, count of seal breaks, cumulative minutes sealed, final seal time. Requires minute bars for limit names only (~50-300 names/day), not the whole universe.",
       "expected_discriminative_value": "MEDIUM-HIGH for continuation; first-touch time is the standard practitioner split (一字/秒板 vs 尾盘板) and is currently entirely invisible to us."
     },

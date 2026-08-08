@@ -71,7 +71,7 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
-from engine.china_microstructure import (  # noqa: E402
+from engine.china_microstructure import (
     CHINEXT_STAR_IPO_WINDOW,
     CHINEXT_WIDE_DATE,
     IPO_PRE2014_DATE,
@@ -189,7 +189,8 @@ DATA_GAPS = [
         "gap": "intraday first-touch time and seal stability",
         "why_it_matters": (
             "A 09:31 seal that never breaks and a 14:55 seal are the same daily row. STAGE 1's "
-            "near_limit and failed-seal counts are the crudest possible proxy for a "
+            "near_limit class — and the house tape's separate failed-seal rows, which this "
+            "catalog deliberately does not duplicate — are the crudest possible proxy for a "
             "distinction that is continuous."
         ),
         "proposal": (
@@ -285,7 +286,15 @@ def load_st_cohort() -> tuple[frozenset[str], str]:
     df = pd.read_parquet(p)
     tick = frozenset(df["ticker"].astype(str).tolist())
     asof = sorted(set(df["asof"].astype(str)))
-    return tick, f"n={len(tick)} tickers, single asof {asof}"
+    # Assert the store still looks the way the engine's constant says it does. If china_st
+    # ever grows real membership history, this note changes and the wholesale exclusion
+    # should be revisited rather than silently kept.
+    expected = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
+    matches = (len(asof) == 1 and asof[0] == expected)
+    return tick, (
+        f"n={len(tick)} tickers, asof {asof}; engine ST_STORE_COVERAGE_DATE={expected}; "
+        f"still-single-date={matches}"
+    )
 
 
 def load_sector_map() -> tuple[dict[str, str], dict]:
@@ -322,7 +331,11 @@ def detect_ticker(ticker: str, df: pd.DataFrame, board: str) -> tuple[pd.DataFra
     df = df.sort_index()
     idx = pd.to_datetime(df.index)
     close = df["close"].to_numpy(dtype=np.float64)
-    high = df["high"].to_numpy(dtype=np.float64)
+    # NOTE: `high` is deliberately NOT read. The touched-but-unsealed class (the module's
+    # failed_up_seal, high >= lim_up with close below it) is a real, daily-visible event, but
+    # it is not in this catalog's charter — Stage 1 is specified as limit closes plus the
+    # return-based near-limit class. The house tape at data/china_microstructure already emits
+    # failed-seal rows for anyone who needs them; this instrument does not duplicate it.
     low = df["low"].to_numpy(dtype=np.float64)
     open_ = df["open"].to_numpy(dtype=np.float64)
     vol = df["volume"].to_numpy(dtype=np.float64)
@@ -388,7 +401,6 @@ def detect_ticker(ticker: str, df: pd.DataFrame, board: str) -> tuple[pd.DataFra
     lianban_dn_tol = streak_lengths(ld_tol)
 
     # --- pre-registered features, all observable at the bar's own close ---
-    s_close = pd.Series(close)
     s_vol = pd.Series(vol)
     base_mu = s_vol.shift(1).rolling(20, min_periods=15).mean().to_numpy()
     base_sd = s_vol.shift(1).rolling(20, min_periods=15).std(ddof=0).to_numpy()
@@ -501,7 +513,7 @@ def build_panel() -> tuple[pd.DataFrame, dict]:
     panel["year"] = panel["date"].dt.year.astype(np.int16)
     meta["sector_coverage_pct"] = round(
         100.0 * float((panel["sector"] != "UNKNOWN").mean()), 2)
-    meta["panel_rows"] = int(len(panel))
+    meta["panel_rows"] = len(panel)
     meta["live_rows"] = int(panel["live"].sum())
 
     # f4 — cohort heat, LEAVE-ONE-OUT so the feature measures the sector, not the name.
@@ -608,7 +620,7 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
             "tape_earliest_event": te.min().strftime("%Y-%m-%d") if len(te) else None,
         })
     per_ticker = {
-        "tickers_compared": int(len(cmp_t)),
+        "tickers_compared": len(cmp_t),
         "exact_agree": int((cmp_t["delta"] == 0).sum()),
         "exact_agree_pct": round(100.0 * float((cmp_t["delta"] == 0).mean()), 2),
         "tape_higher": int((cmp_t["delta"] < 0).sum()),
@@ -617,7 +629,7 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
         "delta_events_from_gap_names": int(gap["delta"].sum()),
     }
     return {
-        "tape_history_gap_names_total": int(len(gap)),
+        "tape_history_gap_names_total": len(gap),
         "tape_history_gap_names_absent_entirely": int((gap["tape"] == 0).sum()),
         "tape_history_gap_names": gap_names,
         "tape_history_gap_finding": (
@@ -629,7 +641,7 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
             "after the one-time historical backfill, with the nightly appender only ever adding "
             "new dates. This instrument does not touch the tape; the CN data-plane owner should."
         ),
-        "tape_rows_in_window": int(len(ev)),
+        "tape_rows_in_window": len(ev),
         "tape_tickers": int(ev["ticker"].nunique()),
         "panel_tickers": int(panel["ticker"].nunique()),
         "shared_tickers": len(shared),
@@ -664,12 +676,12 @@ def zt_pool_crosscheck(panel: pd.DataFrame) -> dict:
     mine = panel[panel["limit_up"]][["date", "ticker", "lianban"]]
     j = z.merge(mine, on=["date", "ticker"], how="inner")
     if j.empty:
-        return {"status": "no overlap", "zt_rows": int(len(z))}
+        return {"status": "no overlap", "zt_rows": len(z)}
     same = int((j["consec_boards"] == j["lianban"]).sum())
     return {
         "zt_pool_window": [z["date"].min().strftime("%Y-%m-%d"), z["date"].max().strftime("%Y-%m-%d")],
-        "zt_pool_rows": int(len(z)),
-        "zt_rows_matched_to_our_limit_up": int(len(j)),
+        "zt_pool_rows": len(z),
+        "zt_rows_matched_to_our_limit_up": len(j),
         "match_rate_pct": round(100.0 * len(j) / max(1, len(z)), 2),
         "lianban_exact_agree": same,
         "lianban_agree_pct": round(100.0 * same / max(1, len(j)), 2),
@@ -687,7 +699,7 @@ def stage1(panel: pd.DataFrame) -> dict:
     for (board, year), g in live.groupby(["board", "year"], observed=True):
         by_year.append({
             "board": board, "year": int(year),
-            "ticker_days": int(len(g)),
+            "ticker_days": len(g),
             "names": int(g["ticker"].nunique()),
             "limit_up": int(g["limit_up"].sum()),
             "limit_down": int(g["limit_down"].sum()),
@@ -707,7 +719,7 @@ def stage1(panel: pd.DataFrame) -> dict:
         by_board.append({
             "board": board,
             "names": int(g["ticker"].nunique()),
-            "ticker_days": int(len(g)),
+            "ticker_days": len(g),
             "limit_up": int(g["limit_up"].sum()),
             "limit_up_tol": int(g["limit_up_tol"].sum()),
             "limit_down": int(g["limit_down"].sum()),
@@ -728,7 +740,7 @@ def stage1(panel: pd.DataFrame) -> dict:
     sect = []
     for (board, sector), g in lu.groupby(["board", "sector"], observed=True):
         denom = int((live["board"] == board).sum())
-        sect.append({"board": board, "sector": sector, "limit_up": int(len(g)),
+        sect.append({"board": board, "sector": sector, "limit_up": len(g),
                      "share_of_board_limit_ups_pct": round(
                          100.0 * len(g) / max(1, int(lu["board"].eq(board).sum())), 2),
                      "board_ticker_days": denom})
@@ -739,7 +751,7 @@ def stage1(panel: pd.DataFrame) -> dict:
 # ── STAGE 2 — base rates ──────────────────────────────────────────────────────
 
 def _rate_block(g: pd.DataFrame, ycol: str) -> dict:
-    n = int(len(g))
+    n = len(g)
     k = int(g[ycol].sum())
     ci = wilson(k, n)
     return {
@@ -758,7 +770,7 @@ def _per_name_rate(g: pd.DataFrame, ycol: str) -> dict:
         return {"names": 0, "median_pct": None, "mean_pct": None}
     r = per["sum"] / per["size"]
     return {
-        "names": int(len(per)),
+        "names": len(per),
         "median_pct": round(100.0 * float(r.median()), 2),
         "mean_pct": round(100.0 * float(r.mean()), 2),
         "p25_pct": round(100.0 * float(r.quantile(0.25)), 2),
@@ -832,7 +844,7 @@ def stage2(panel: pd.DataFrame) -> dict:
         "name count so the thinness is visible rather than inferred."
     )
 
-    out["usable_rows"] = int(len(usable))
+    out["usable_rows"] = len(usable)
     out["rows_dropped_unusable_pair"] = int(
         (panel["live"] & ~panel["y_ok"]).sum())
     return out
@@ -859,7 +871,7 @@ def _decile_table(g: pd.DataFrame, feat: str, ycol: str) -> list[dict]:
             return []
     rows = []
     for b, gg in g.groupby(buckets, observed=True):
-        n, k = int(len(gg)), int(gg[ycol].sum())
+        n, k = len(gg), int(gg[ycol].sum())
         rows.append({
             "bucket": str(b), "n": n, "k": k,
             "rate_pct": round(100.0 * k / n, 4) if n else None,
@@ -903,7 +915,7 @@ def _per_name_lift(g: pd.DataFrame, feat: str, ycol: str) -> dict:
         "top_bucket_lift_mean": round(float(t.mean()), 3) if len(t) else None,
         "bottom_bucket_lift_median": round(float(bo.median()), 3) if len(bo) else None,
         "top_bucket_names_above_1": int((t > 1).sum()) if len(t) else 0,
-        "top_bucket_names_total": int(len(t)),
+        "top_bucket_names_total": len(t),
     }
 
 
@@ -937,7 +949,7 @@ def _conditioned_lift(hb: pd.DataFrame, feats: list[str]) -> dict:
     """
     sub = hb[~hb["f5_near_limit_prev"].astype(bool)]
     base = float(sub["y_limit_up"].mean()) if len(sub) else 0.0
-    out = {"rows": int(len(sub)), "base_rate_pct": round(100.0 * base, 4), "features": {}}
+    out = {"rows": len(sub), "base_rate_pct": round(100.0 * base, 4), "features": {}}
     for f in feats:
         if f == "f5_near_limit_prev":
             continue
@@ -951,7 +963,7 @@ def _per_name_availability(hb: pd.DataFrame) -> dict:
     per = hb.groupby("ticker", observed=True)["y_limit_up"].agg(["size", "sum"])
     ok = (per["size"] >= MIN_PER_NAME_OBS) & (per["sum"] >= MIN_PER_NAME_POS)
     return {
-        "names_total": int(len(per)),
+        "names_total": len(per),
         "names_qualifying": int(ok.sum()),
         "median_positives_per_name": float(per["sum"].median()),
         "floors": {"min_rows": MIN_PER_NAME_OBS, "min_positives": MIN_PER_NAME_POS},
@@ -978,8 +990,8 @@ def stage3(panel: pd.DataFrame) -> dict:
             "split_date": split_date.strftime("%Y-%m-%d"),
             "fit_dates": int(split_i),
             "holdout_dates": int(len(dates) - split_i),
-            "fit_rows": int(len(fit)),
-            "holdout_rows": int(len(hold)),
+            "fit_rows": len(fit),
+            "holdout_rows": len(hold),
         },
         "not_measurable": {},
         "by_board": {},
@@ -989,10 +1001,10 @@ def stage3(panel: pd.DataFrame) -> dict:
         fb, hb = fit[fit["board"] == board], hold[hold["board"] == board]
         if len(hb) < N_DECILES * THIN_CELL_N:
             res["by_board"][board] = {"status": "insufficient holdout rows",
-                                      "holdout_rows": int(len(hb))}
+                                      "holdout_rows": len(hb)}
             continue
         entry = {
-            "fit_rows": int(len(fb)), "holdout_rows": int(len(hb)),
+            "fit_rows": len(fb), "holdout_rows": len(hb),
             "fit_base_rate_pct": round(100.0 * float(fb["y_limit_up"].mean()), 4),
             "holdout_base_rate_pct": round(100.0 * float(hb["y_limit_up"].mean()), 4),
             "features": {},
@@ -1047,14 +1059,14 @@ def stage3(panel: pd.DataFrame) -> dict:
     era = {"rule": f"chinext rows on/after CHINEXT_WIDE_DATE {CHINEXT_WIDE_DATE:%Y-%m-%d} "
                    f"(the ±20% band era), re-split {int(FIT_FRACTION * 100)}/"
                    f"{100 - int(FIT_FRACTION * 100)} within that era",
-           "rows": int(len(cx))}
+           "rows": len(cx)}
     if len(cx) >= N_DECILES * THIN_CELL_N * 4:
         cdates = np.sort(cx["date"].unique())
         csplit = pd.Timestamp(cdates[int(len(cdates) * FIT_FRACTION)])
         cf, ch = cx[cx["date"] < csplit], cx[cx["date"] >= csplit]
         era.update({
             "split_date": csplit.strftime("%Y-%m-%d"),
-            "fit_rows": int(len(cf)), "holdout_rows": int(len(ch)),
+            "fit_rows": len(cf), "holdout_rows": len(ch),
             "fit_base_rate_pct": round(100.0 * float(cf["y_limit_up"].mean()), 4),
             "holdout_base_rate_pct": round(100.0 * float(ch["y_limit_up"].mean()), 4),
             "features": {},
@@ -1113,14 +1125,14 @@ def main() -> int:
     print("[stage 0] parity gate vs engine.china_microstructure._detect_limit_events ...",
           flush=True)
     parity = parity_gate()
-    print("          agreement %.3f%% on %d tickers (%d module events)"
-          % (parity["agreement_pct"], parity["tickers_sampled"], parity["events_module"]),
-          flush=True)
+    print(f"          recall {parity['module_event_recall_pct']:.3f}% / precision "
+          f"{parity['precision_vs_module_pct']:.3f}% on {parity['tickers_sampled']} tickers "
+          f"({parity['events_module']} module events)", flush=True)
 
     print("[stage 1] building panel ...", flush=True)
     panel, meta = build_panel()
-    print("          %d rows, %d names, %.1fs"
-          % (len(panel), panel["ticker"].nunique(), time.time() - t0), flush=True)
+    print(f"          {len(panel)} rows, {panel['ticker'].nunique()} names, "
+          f"{time.time() - t0:.1f}s", flush=True)
 
     s1 = stage1(panel)
     xc_tape = tape_crosscheck(panel)
@@ -1205,7 +1217,7 @@ def main() -> int:
     }
     payload["runtime_sec"] = round(time.time() - t0, 1)
     OUT_JSON.write_text(json.dumps(jsonable(payload), indent=2, ensure_ascii=False) + "\n")
-    print("[done] %.1fs -> %s" % (payload["runtime_sec"], OUT_JSON), flush=True)
+    print(f"[done] {payload['runtime_sec']:.1f}s -> {OUT_JSON}", flush=True)
     return 0
 
 
