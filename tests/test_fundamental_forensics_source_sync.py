@@ -18,6 +18,7 @@ from engine.fundamental_forensics.source_sync import (
     load_pinned_source_snapshot_strict,
     read_pinned_source_snapshot_file_strict,
     restore_source_roots,
+    source_object_key_for_sha256,
     sync_source_roots,
 )
 from engine.fundamental_forensics.models import canonical_json
@@ -655,3 +656,125 @@ def test_restore_rejects_traversal_manifest_before_writing_local_tree(tmp_path: 
     assert not raw.exists()
     assert not archive.exists()
     assert not (tmp_path / "outside.json").exists()
+
+
+class _CountingRestoreStore(LocalStore):
+    """Count object GETs so a skipped download is proven, not assumed."""
+
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.object_gets: list[str] = []
+
+    def get_bytes(self, key: str):
+        if "/objects/sha256/" in key:
+            self.object_gets.append(key)
+        return super().get_bytes(key)
+
+
+def test_verify_local_restore_trusts_a_hash_equal_warm_file_and_heals_a_corrupt_one(tmp_path: Path):
+    """The off-render lane keeps its store OUTSIDE the checkout, so most files are warm.
+
+    Default restore still pulls every byte from R2 (operator recovery); verify_local
+    replaces only the byte SOURCE with local disk under the same manifest-bound hash.
+    """
+    raw, archive = _roots(tmp_path)
+    store = _CountingRestoreStore(tmp_path / "private-store")
+    snapshot = sync_source_roots(
+        raw_root=raw, archive_root=archive, store=store, snapshot_at=SNAPSHOT_AT
+    )
+
+    store.object_gets.clear()
+    cold = restore_source_roots(raw_root=raw, archive_root=archive, store=store)
+    assert cold.current_files == snapshot.file_count
+    assert len(store.object_gets) == snapshot.file_count
+
+    store.object_gets.clear()
+    warm = restore_source_roots(
+        raw_root=raw, archive_root=archive, store=store, verify_local=True
+    )
+    assert warm.current_files == snapshot.file_count
+    assert warm.restored_files == 0
+    assert store.object_gets == []
+
+    victim = raw / "0000000001" / "submissions" / "latest.json"
+    original = victim.read_bytes()
+    victim.write_bytes(b"corrupted-local-copy")
+    store.object_gets.clear()
+    healed = restore_source_roots(
+        raw_root=raw, archive_root=archive, store=store, verify_local=True
+    )
+    assert healed.restored_files == 1
+    assert healed.current_files == snapshot.file_count - 1
+    assert len(store.object_gets) == 1
+    assert victim.read_bytes() == original
+
+
+def test_incremental_sync_creates_only_new_objects_but_still_enumerates_every_file(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    inner = LocalStore(tmp_path / "private-store")
+    store = _ConditionalProxy(inner)
+    first = sync_source_roots(
+        raw_root=raw, archive_root=archive, store=store, snapshot_at=SNAPSHOT_AT
+    )
+
+    new_bytes = b"new-compressed-submissions"
+    (raw / "0000000001" / "submissions" / "b.json.gz").write_bytes(new_bytes)
+    store.conditional_calls.clear()
+    second = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-02T12:00:00Z",
+        skip_objects_in_latest_manifest=True,
+    )
+
+    assert second.file_count == first.file_count + 1
+    assert [call[0] for call in store.conditional_calls] == [
+        source_object_key_for_sha256(sha256(new_bytes).hexdigest()),
+        second.manifest_key,
+        f"{SOURCE_SYNC_PREFIX}/latest.json",
+    ]
+
+    # Manifest completeness is unchanged: the new snapshot still restores the whole tree.
+    shutil.rmtree(raw)
+    shutil.rmtree(archive)
+    restored = restore_source_roots(raw_root=raw, archive_root=archive, store=inner)
+    assert restored.snapshot == second
+    assert restored.restored_files == second.file_count
+    assert (raw / "0000000001" / "submissions" / "b.json.gz").read_bytes() == new_bytes
+    assert (archive / "objects" / "sha256" / "ab" / "abcdef.bin.gz").read_bytes() == b"archive-source"
+
+
+def test_incremental_sync_is_a_full_sync_when_no_latest_snapshot_exists(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    store = _ConditionalProxy(LocalStore(tmp_path / "private-store"))
+
+    snapshot = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at=SNAPSHOT_AT,
+        skip_objects_in_latest_manifest=True,
+    )
+
+    keys = [call[0] for call in store.conditional_calls]
+    assert len(keys) == snapshot.file_count + 2
+    assert keys[-2:] == [snapshot.manifest_key, f"{SOURCE_SYNC_PREFIX}/latest.json"]
+
+
+def test_incremental_modes_reject_a_non_boolean_switch(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    store = LocalStore(tmp_path / "private-store")
+
+    with pytest.raises(SourceSyncError, match="skip_objects_in_latest_manifest must be a boolean"):
+        sync_source_roots(
+            raw_root=raw,
+            archive_root=archive,
+            store=store,
+            snapshot_at=SNAPSHOT_AT,
+            skip_objects_in_latest_manifest="yes",
+        )
+    with pytest.raises(SourceSyncError, match="verify_local must be a boolean"):
+        restore_source_roots(
+            raw_root=raw, archive_root=archive, store=store, verify_local="yes"
+        )
