@@ -19,6 +19,31 @@ This module gives the US board the CN lifecycle machine over its own baskets.
 It is a SECOND, SEPARATE organ — it does not replace, feed, or re-score
 `basket_turn_watch`, whose K-of-N leg design is deliberately NOT copied here.
 
+WHAT THE PORT ACTUALLY BUYS ON `gold_miners` (measured, not asserted)
+---------------------------------------------------------------------
+The paragraph above frames this organ against the incumbent's 2026-08-05
+IGNITION.  Read alone that invites the wrong inference, so here is this organ's
+OWN record on the same basket, replayed over the committed member tape
+(`python -m engine.us_basket_turn --replay gold_miners`, 12/12 members,
+2026-01-02..2026-08-06, re-measured 2026-08-07):
+
+    first post-trough TURNING    2026-07-22   dd_252 = -0.3572   (trough 07-20)
+    first CONFIRMED              2026-08-05   dd_252 = -0.3017
+
+`basket_turn_watch` printed IGNITION on 2026-08-05.  **Both organs reach their
+strongest state on the SAME session.**  This port has NO confirmed-state lead
+over the incumbent on the one basket where both have been measured.  Its only
+earlier print is TURNING — and TURNING oscillates by construction (see below):
+the same machine printed it on 06-16, 06-17, 07-02, 07-06, 07-09 and 07-10,
+each time at a LOWER low, and even the 07-22 run lapsed on 07-30 without ever
+confirming.  Six early prints preceded the one that held.
+
+The honest claim is therefore NOT "ten sessions earlier".  It is: this organ
+discloses the washout lifecycle CONTINUOUSLY — depth, arrest, reclaim, hold —
+where the incumbent emits a single binary event, and it pays for that with
+oscillation.  Whether the continuous disclosure is worth more than the event is
+an open question this ship does not answer, and no surface may imply it does.
+
 Scope / authority (masterplan G0.6)
 -----------------------------------
 DISPLAY TIER, ZERO SCORED AUTHORITY.  This module ranks nothing, gates nothing,
@@ -38,10 +63,13 @@ entry, a buy claim, or an input to one.  Sector-level standalone washout→turn 
 a scored trigger stays a printed NULL.
 
 A TURNING print is NOT a bottom call.  Replayed over the committed US member
-tape, `gold_miners` printed TURNING on 2026-06-16, 07-02, 07-09 and 07-10 and
-then made LOWER lows each time before the 07-20 trough.  The state machine
-oscillates inside a washout by construction; that is disclosure, not a signal,
-and any surface that renders it must say so.
+tape, `gold_miners` printed TURNING on 2026-06-16, 06-17, 07-02, 07-06, 07-09
+and 07-10 — SIX sessions, in three episodes — and made LOWER lows each time
+before the 07-20 trough.  (v1 of this docstring and the ledger README listed
+only four of those six; corrected 2026-08-07 against a re-run of the replay.
+Under-counting the oscillation is the one direction this disclosure may never
+err in.)  The state machine oscillates inside a washout by construction; that is
+disclosure, not a signal, and any surface that renders it must say so.
 
 DEVIATIONS FROM THE CN CONSTRUCTION (every one, and why)
 --------------------------------------------------------
@@ -68,12 +96,19 @@ CN-specific by construction:
    `data/baskets/ohlcv/` is the fallback rung.  CN needs no ladder because its
    input arrives already aggregated.
 
-3. COVERAGE IS PRINTED.  Because this module does its own aggregation it also
-   owns the coverage hole CN never sees.  `members_read` / `members_total` land
-   in the artifact AND in every ledger row, and a basket under
-   COVERAGE_WARN_FRACTION emits a bare `::warning` line at column 0.  W-B law:
-   a coverage hole must be visible, never silent — a basket scored on a fraction
-   of its members is not evidence about the basket.
+3. COVERAGE IS PRINTED, AND COUNTED AT THE STAMPED SESSION.  Because this module
+   does its own aggregation it also owns the coverage hole CN never sees.
+   `members_read` / `members_total` land in the artifact AND in every ledger row,
+   and a basket under COVERAGE_WARN_FRACTION emits a bare `::warning` line at
+   column 0.  W-B law: a coverage hole must be visible, never silent — a basket
+   scored on a fraction of its members is not evidence about the basket.
+
+   AMENDMENT 2026-08-07 (post-merge review of #4924): `members_read` counts
+   members carrying a bar ON the basket's stamped session (deviation 6), NOT
+   members that merely own a store file.  The v1 file-count reported 3/3 for a
+   basket whose entire tape was a week stale — it could see a missing FILE and
+   never a missing BAR, so it could not fence the stale-stamp defect below.
+   `members_with_store` keeps the old file-level count beside it for triage.
 
 4. MEMBER FLOOR.  The house EW construction needs >= 3 readable members
    (`engine/baskets._ew_level:82`, `basket_freeze._ew_level_from_closes:329`).
@@ -85,18 +120,48 @@ CN-specific by construction:
    `engine.ledger_lane.nightly_advance_enabled()`.  Same house law (nightly is
    the sole advancer of forward ledgers), different lane sentinel.
 
-6. SESSION STAMP FROM THE DATA PLANE.  CN's `as_of` is the last date of the
-   committed chart, which IS its data plane.  The US member store can freeze
-   under a live calendar (measured 2026-08-03..08-06), so the ledger date is
-   derived from the newest member bar the organ actually read — the #4568
-   forward-ledger audit pattern already binding on `basket_turn_watch`.  A run
-   against a frozen store therefore re-derives the session it already logged and
-   the keep-first dedupe refuses it, instead of re-describing old tape under a
-   fresh calendar date.
+6. SESSION STAMP FROM THE DATA PLANE — PER BASKET.  CN's `as_of` is the last
+   date of the committed chart, which IS its data plane, and every CN basket
+   shares that ONE date axis, so a single global stamp is correct there BY
+   CONSTRUCTION.  This module builds each basket's level series independently
+   from per-ticker parquet stores (deviation 1), which DESTROYS that
+   precondition: one basket's members can go dark while the rest of the estate
+   advances.  Each basket is therefore stamped from ITS OWN newest level session
+   (`levels.index[-1]`), and both the prior-state read and the keep-first dedupe
+   are keyed on that per-basket stamp.  A basket whose tape did not advance
+   re-derives the session it already logged, the dedupe refuses the row, and
+   `days_in_state` does not move.  A basket with NO readable level series has no
+   data plane at all and gets NO ledger row — never a borrowed date.  The
+   universe-wide `max()` survives ONLY as the artifact-level `as_of` display
+   header; no ledger row is ever stamped with it.
+
+   AMENDMENT 2026-08-07 (post-merge review of #4924).  v1 carried the CN GLOBAL
+   stamp — `max()` over every ticker in the US universe — while claiming the
+   per-basket property in these very words.  Measured on the patched branch: a
+   basket whose members froze at 2026-07-31 accrued rows dated 08-05, 08-06 and
+   08-07 with byte-identical `dd_252` and `ret_5d`, and self-promoted to
+   CONFIRMED on the third — `CONFIRMED_MIN_DAYS` satisfied by CALENDAR
+   REPETITION of one stale bar — while coverage read `3/3` because it counted
+   store files.  Keep-first could not refuse it: the key `(date, basket_id)` was
+   fresh every night.  The paragraph above was written for the intended design
+   and was FALSE of the shipped code until this amendment.  No production row
+   was ever written under the defect (`data/us_basket_turn/ledger.jsonl` did not
+   exist before this fix landed).
 
 7. UNIVERSE FILTER.  US baskets = `data/baskets/membership.json` minus the
    `cn_` / `hk_` / `ca_` prefixes — the same filter
    `basket_turn_watch._compute_inner` uses.
+
+8. HYSTERESIS RUNS REQUIRE ADJACENT SESSIONS.  CN chains `days_in_state` off the
+   newest prior ledger row, which is safe there because its input is one
+   contiguous chart axis advanced by one nightly.  Here the prior row can sit an
+   arbitrary distance back — a nightly outage, a lane that did not run, a basket
+   whose members went dark for a week — and counting it as "yesterday" inflates
+   the CONFIRMED hysteresis across a hole nobody observed.  The prior row is
+   therefore accepted only when its `date` equals the basket's own IMMEDIATELY
+   PRECEDING available session (`levels.index[-2]`); otherwise the run-length
+   RESETS to 1.  Deliberately conservative: a gap costs a CONFIRMED that would
+   have required the missing sessions to be real.  (Post-merge review of #4924.)
 
 NOT a deviation, checked and rejected: CN daily price limits (±10% / ±20%) and
 unadjusted A-share closes have no threshold that depends on them here.
@@ -557,15 +622,36 @@ def ew_level_from_closes(members: list[dict], closes: dict[str, pd.Series]) -> p
 
 
 def _load_membership(data_root: Path) -> dict[str, dict]:
-    """US baskets from data/baskets/membership.json (cn_/hk_/ca_ filtered out)."""
+    """US baskets from data/baskets/membership.json (cn_/hk_/ca_ filtered out).
+
+    A membership failure is TOTAL failure — it yields a zero-basket artifact —
+    so it is annotated, not merely logged.  v1 used `log.warning` here, which
+    means a 59%-coverage basket printed a `::warning` in the Actions summary
+    while the organ producing NOTHING AT ALL printed nothing: the louder the
+    failure, the quieter the signal.  The annotation must be a BARE print at
+    column 0 — this package's logging format prefixes every record and GitHub
+    silently drops a `::` that does not start its line
+    (tests/test_gh_annotation_line_start.py; this module runs inside an Actions
+    step via scripts/build_baskets.py, so it is NOT exempt).
+    """
     mp = data_root / "baskets" / "membership.json"
     if not mp.exists():
+        print(
+            f"::warning title=us-basket-turn::membership.json not found at {mp} "
+            f"— 0 US baskets classified, artifact and ledger are EMPTY for this run",
+            flush=True,
+        )
         log.warning("us_basket_turn: membership.json not found at %s", mp)
         return {}
     try:
         raw = json.loads(mp.read_text())
     except Exception as e:  # noqa: BLE001
-        log.warning("us_basket_turn: membership.json unreadable: %s", e)
+        print(
+            f"::warning title=us-basket-turn::membership.json unreadable ({e}) "
+            f"— 0 US baskets classified, artifact and ledger are EMPTY for this run",
+            flush=True,
+        )
+        log.warning("us_basket_turn: membership.json unreadable: %s", e, exc_info=True)
         return {}
     baskets = raw.get("baskets") or {}
     return {
@@ -603,20 +689,92 @@ def load_ledger(data_root: Path) -> list[dict]:
     return out
 
 
-def _prior_state(data_root: Path, before_date: str) -> dict[str, tuple[str, int]]:
-    """basket_id -> (state, days_in_state) from the newest row strictly before `before_date`."""
-    latest: dict[str, dict] = {}
+def _ledger_rows_by_basket(data_root: Path) -> dict[str, list[dict]]:
+    """basket_id -> its ledger rows, ascending by `date` (one read of the file)."""
+    by: dict[str, list[dict]] = {}
     for row in load_ledger(data_root):
         bid = row.get("basket_id") or ""
-        rdate = row.get("date") or ""
-        if not bid or not rdate or rdate >= before_date:
+        if not bid or not (row.get("date") or ""):
             continue
-        prev = latest.get(bid)
-        if prev is None or rdate > (prev.get("date") or ""):
-            latest[bid] = row
+        by.setdefault(bid, []).append(row)
+    for rows in by.values():
+        rows.sort(key=lambda r: r.get("date") or "")
+    return by
+
+
+def _prior_state(rows: list[dict], session: str,
+                 prev_session: str | None) -> tuple[str | None, int]:
+    """(state, days_in_state) to chain INTO `session`, or (None, 0) to reset.
+
+    Two fences, both deviations from CN (6 and 8):
+
+    * `session` is the BASKET's own stamped session, not a universe-wide date.
+      Rows at or after it are ignored — a row stamped at the session being
+      classified is this session's own output, never its prior.
+    * the surviving row must sit exactly at `prev_session`, the basket's own
+      immediately preceding available session.  A newer-but-not-adjacent row
+      means the ledger skipped sessions, and a run-length counted across that
+      hole is a hysteresis the sessions never supported, so the run RESETS.
+    """
+    if not session or not prev_session:
+        return (None, 0)
+    newest: dict | None = None
+    for row in rows:
+        rdate = row.get("date") or ""
+        if not rdate or rdate >= session:
+            continue
+        if newest is None or rdate > (newest.get("date") or ""):
+            newest = row
+    if newest is None or (newest.get("date") or "") != prev_session:
+        return (None, 0)
+    return (newest.get("state") or None, int(newest.get("days_in_state", 0) or 0))
+
+
+def _members_at_session(members: list[dict], closes: dict[str, pd.Series],
+                        session: str | None) -> int:
+    """Members carrying a non-null bar ON `session` (PIT `added` honoured).
+
+    Deviation 3's amendment: the coverage line counts BARS, not FILES, so it can
+    see a member whose tape went dark behind the basket's stamped session.
+    """
+    if not session:
+        return 0
+    try:
+        ts = pd.Timestamp(session)
+    except Exception:  # noqa: BLE001 — an unparseable stamp is not a coverage claim
+        return 0
+    n = 0
+    for m in members:
+        s = closes.get(m.get("ticker") or "")
+        if s is None:
+            continue
+        added = m.get("added")
+        if added:
+            try:
+                if pd.Timestamp(added) > ts:
+                    continue
+            except Exception:  # noqa: BLE001 — an unparseable added date does not gate
+                pass
+        try:
+            v = s.get(ts)
+        except Exception:  # noqa: BLE001
+            continue
+        if isinstance(v, pd.Series):  # defensive: _load_close already de-duplicates
+            v = v.iloc[-1] if len(v) else None
+        if v is None or pd.isna(v):
+            continue
+        n += 1
+    return n
+
+
+def _null_row(evidence: str) -> dict[str, Any]:
+    """The all-None state payload, with one descriptive evidence tag."""
     return {
-        bid: (row.get("state", "NONE"), int(row.get("days_in_state", 0) or 0))
-        for bid, row in latest.items()
+        "state": "NONE",
+        "evidence": [evidence],
+        "dd_252": None, "hist_d": None, "slope_20d": None,
+        "stoch_last": None, "ret_5d": None, "above_200d": None,
+        "days_in_state": 0,
     }
 
 
@@ -646,26 +804,53 @@ def compute_all(data_root: Path | None = None) -> dict[str, Any]:
         if s is not None:
             closes[tk] = s
 
-    # --- data-plane session stamp: the newest member bar the organ read -------
-    # Deviation 6.  MEMBER TAPE ONLY — no benchmark, no wall clock.
-    data_session: str | None = None
+    # --- universe display header (NOT a ledger stamp) -------------------------
+    # Deviation 6.  The newest member bar ANYWHERE in the US universe.  This is
+    # the artifact's freshness header and nothing else: every ledger row is
+    # stamped from its OWN basket's last level session, below.  Stamping a
+    # basket with this date is precisely the defect the amendment closed.
+    universe_session: str | None = None
     try:
         last_bars = [s.dropna().index.max() for s in closes.values() if len(s.dropna())]
         if last_bars:
-            data_session = str(pd.Timestamp(max(last_bars)).date())
+            universe_session = str(pd.Timestamp(max(last_bars)).date())
     except Exception as e:  # noqa: BLE001 — stamp derivation is never fatal
-        log.debug("us_basket_turn: data_session derivation failed: %s", e)
+        log.debug("us_basket_turn: universe_session derivation failed: %s", e)
 
-    as_of = data_session or datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    prior = _prior_state(root, as_of)
+    as_of = universe_session or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ledger_rows = _ledger_rows_by_basket(root)
 
     results: dict[str, dict] = {}
     coverage_holes: list[str] = []
+    stale_baskets: list[str] = []
+    sessionless: list[str] = []
 
     for bid in sorted(us_baskets):
         members = active_members(us_baskets[bid])
         total = len(members)
-        read = sum(1 for m in members if m["ticker"] in closes)
+        with_store = sum(1 for m in members if m["ticker"] in closes)
+
+        levels = pd.Series(dtype="float64")
+        build_error: str | None = None
+        try:
+            levels = ew_level_from_closes(members, closes)
+        except Exception as e:  # noqa: BLE001 — one basket never kills the organ
+            log.warning("us_basket_turn: %s level build failed: %s", bid, e)
+            build_error = f"error:{e}"
+
+        # Deviation 6: this basket's OWN data plane, and the session before it.
+        basket_session: str | None = None
+        prev_session: str | None = None
+        if not levels.empty:
+            basket_session = str(pd.Timestamp(levels.index[-1]).date())
+            if len(levels.index) >= 2:
+                prev_session = str(pd.Timestamp(levels.index[-2]).date())
+
+        # Coverage at the stamped session (deviation 3 amendment).  With no
+        # session there is no bar to count at, so the store-file count is the
+        # only reading available and stands in — the evidence tag says so.
+        read = _members_at_session(members, closes, basket_session) \
+            if basket_session else with_store
 
         # W-B law (deviation 3): the hole is printed, never silent.  BARE print at
         # line start, never a logger — GitHub only parses '::' at column 0 and this
@@ -679,41 +864,49 @@ def compute_all(data_root: Path | None = None) -> dict[str, Any]:
                 flush=True,
             )
 
-        ps, dis = prior.get(bid, (None, 0))
-        try:
-            levels = ew_level_from_closes(members, closes)
-            if levels.empty:
-                out = {
-                    "state": "NONE",
-                    "evidence": [f"insufficient_members:{read}/{total}"],
-                    "dd_252": None, "hist_d": None, "slope_20d": None,
-                    "stoch_last": None, "ret_5d": None, "above_200d": None,
-                    "days_in_state": 0,
-                }
-            else:
+        # A basket behind the estate is the shape that used to be written under a
+        # borrowed fresh date.  It is now stamped honestly AND said out loud.
+        if basket_session and universe_session and basket_session < universe_session:
+            stale_baskets.append(bid)
+            print(
+                f"::warning title=us-basket-turn-stale::{bid} last member bar is "
+                f"{basket_session}, behind the universe session {universe_session} "
+                f"— its row is stamped {basket_session} and re-derives, it does not accrue",
+                flush=True,
+            )
+        if basket_session is None:
+            sessionless.append(bid)
+
+        ps, dis = _prior_state(ledger_rows.get(bid, []), basket_session or "", prev_session)
+
+        if levels.empty:
+            out = _null_row(build_error or f"insufficient_members:{with_store}/{total}")
+        else:
+            try:
                 out = classify_basket(levels, prev_state=ps, days_in_state=dis)
-        except Exception as e:  # noqa: BLE001 — one basket never kills the organ
-            log.warning("us_basket_turn: %s failed: %s", bid, e)
-            out = {
-                "state": "NONE", "evidence": [f"error:{e}"],
-                "dd_252": None, "hist_d": None, "slope_20d": None,
-                "stoch_last": None, "ret_5d": None, "above_200d": None,
-                "days_in_state": 0,
-            }
+            except Exception as e:  # noqa: BLE001 — one basket never kills the organ
+                log.warning("us_basket_turn: %s failed: %s", bid, e)
+                out = _null_row(f"error:{e}")
 
         out["members_read"] = read
+        out["members_with_store"] = with_store
         out["members_total"] = total
+        out["data_session"] = basket_session
         results[bid] = out
 
     return {
         "schema": SCHEMA,
         "as_of": as_of,
-        "data_session": data_session,
+        # Universe-wide display header.  NOT the stamp on any ledger row — read
+        # `baskets[<id>]["data_session"]` for the session a row actually carries.
+        "data_session": universe_session,
         "disclosure": DISCLOSURE,
         "authority": AUTHORITY,
         "coverage": {
             "warn_fraction": COVERAGE_WARN_FRACTION,
             "baskets_below_warn": sorted(coverage_holes),
+            "baskets_behind_universe": sorted(stale_baskets),
+            "baskets_without_session": sorted(sessionless),
             "members_read": sum(r.get("members_read", 0) for r in results.values()),
             "members_total": sum(r.get("members_total", 0) for r in results.values()),
         },
@@ -747,18 +940,25 @@ def write_artifact(artifact: dict[str, Any], site_root: Path | None = None) -> P
 def append_ledger(artifact: dict[str, Any], data_root: Path) -> int:
     """Append one row per basket to the PIT forward ledger. Returns rows appended.
 
-    Append-only, keep-first per (date, basket_id).  Gated on the US nightly lane
-    (`COLLECT_LANE=nightly`, deviation 5) — house law: nightly is the sole
-    advancer of forward ledgers, and an intraday lane's `data/` writes are
-    discarded.
+    Append-only, keep-first per (date, basket_id), where `date` is the BASKET's
+    OWN stamped session (`baskets[<id>]["data_session"]`, deviation 6) — never
+    the artifact-level universe header.  That is what makes keep-first a real
+    fence: a basket whose tape did not advance re-derives the session it already
+    logged, so the key collides and the row is refused, instead of accruing a
+    fresh-dated duplicate of one stale bar.  A basket with no session at all
+    (no readable level series) gets NO row — a ledger date is a measurement, and
+    borrowing one from a sibling basket is a fabrication.
+
+    Gated on the US nightly lane (`COLLECT_LANE=nightly`, deviation 5) — house
+    law: nightly is the sole advancer of forward ledgers, and an intraday lane's
+    `data/` writes are discarded.
     """
     if not _ledger_advance_enabled():
         log.info("us_basket_turn: ledger append skipped (COLLECT_LANE != nightly)")
         return 0
 
-    stamp = artifact.get("data_session") or artifact.get("as_of") or ""
     baskets = artifact.get("baskets") or {}
-    if not stamp or not baskets:
+    if not baskets:
         return 0
 
     ledger_path = _ledger_path(data_root)
@@ -769,12 +969,19 @@ def append_ledger(artifact: dict[str, Any], data_root: Path) -> int:
     }
 
     rows_written = 0
+    skipped_no_session = 0
+    stamps: set[str] = set()
     with ledger_path.open("a") as fh:
         for bid in sorted(baskets):
             st = baskets[bid]
+            stamp = st.get("data_session") or ""
+            if not stamp:
+                skipped_no_session += 1
+                continue
             key = (stamp, bid)
             if key in seen:
                 continue
+            stamps.add(stamp)
             row = {
                 "date": stamp,
                 "as_of": stamp,
@@ -787,13 +994,16 @@ def append_ledger(artifact: dict[str, Any], data_root: Path) -> int:
                 "evidence": st.get("evidence", []),
                 "days_in_state": st.get("days_in_state", 0),
                 "members_read": st.get("members_read"),
+                "members_with_store": st.get("members_with_store"),
                 "members_total": st.get("members_total"),
             }
             fh.write(json.dumps(row, separators=(",", ":"), default=str) + "\n")
             rows_written += 1
             seen.add(key)
 
-    log.info("us_basket_turn: ledger appended %d rows for %s", rows_written, stamp)
+    log.info("us_basket_turn: ledger appended %d rows across sessions %s "
+             "(%d basket(s) had no data-plane session and were not written)",
+             rows_written, sorted(stamps) or "-", skipped_no_session)
     return rows_written
 
 

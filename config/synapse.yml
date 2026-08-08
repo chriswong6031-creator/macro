@@ -3249,9 +3249,16 @@ artifacts:
       NULL (Oracle P8 P-W1/S-W3; DNR:KILL-WASHOUT-TURN, which closed the 2W
       operator-seed SCORED entry trigger) — this is a different construction shipped
       display-tier as an expected-NULL forward meter. A TURNING print is a state
-      disclosure, never a bottom call. Member coverage (members_read/members_total)
-      is carried per basket and a hole under 60% prints a ::warning (W-B law).
-      may_rank/gate/size/escalate=false.
+      disclosure, never a bottom call — and NOT an earliness claim: replayed on
+      gold_miners this organ's first CONFIRMED is 2026-08-05, the same session
+      basket_turn_watch printed IGNITION, so it carries no confirmed-state lead over
+      the incumbent. Member coverage (members_read/members_total) is carried per
+      basket and a hole under 60% prints a ::warning (W-B law); members_read counts
+      members with a bar ON the basket's own stamped session, members_with_store
+      keeps the file-level count. Each basket carries its OWN data_session; the
+      artifact-level as_of/data_session is a universe-wide freshness header only and
+      stamps no ledger row. A basket behind the universe session prints a
+      ::warning too. may_rank/gate/size/escalate=false.
 
   # W1-D — US basket turn forward ledger (PIT, append-only, nightly-lane gated)
   us-basket-turn-ledger:
@@ -3278,9 +3285,21 @@ artifacts:
       ret_5d, evidence, days_in_state and the member-coverage counts. Append-only,
       keep-first on re-runs. Gated on COLLECT_LANE=nightly (house law: nightly is the
       sole advancer of data/ ledgers). The `date` stamp is derived from the DATA
-      PLANE — the newest member bar the organ actually read — not the wall clock, so
-      a run against a frozen store re-derives the session it already logged instead
-      of re-describing old tape under a fresh calendar date (#4568 pattern).
+      PLANE — PER BASKET: the newest bar in THAT basket's own equal-weight level
+      series, never the wall clock and never the newest bar in the estate. Baskets
+      here do not share a date axis (each is aggregated from its own member
+      parquets), so one nightly run legitimately writes rows carrying different
+      dates. A basket whose tape did not advance re-derives the session it already
+      logged, keep-first refuses the row, and days_in_state does not move (#4568
+      pattern); a basket with no readable level series gets no row at all.
+      days_in_state is counted only across ADJACENT sessions — a prior row that is
+      not on the basket's immediately preceding available session resets the run
+      rather than counting across a nightly outage. members_read counts members with
+      a bar ON the row's date (members_with_store keeps the file-level count).
+      AMENDED 2026-08-07 (post-merge review of #4924): v1 stamped every basket with
+      a universe-wide max(), so a basket frozen at 2026-07-31 accrued fresh-dated
+      rows with identical metrics and self-promoted to CONFIRMED on calendar
+      repetition of one stale bar; no production row was written under the defect.
       Starts at ship date; any earlier state is descriptive replay, never ledger
       evidence. Expected-NULL forward meter (FT-R9).
 
