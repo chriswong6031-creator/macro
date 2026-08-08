@@ -7,7 +7,7 @@
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -15.0,
+    "drawdown_pct": -14.97,
     "drawdown_z": -2.17,
     "as_of": "2026-08-07",
     "note": "Semis complex (SMH/SOXX equal-weight) is -15.0% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 8.6,
-        "stoch_d": 5.15,
+        "stoch_k": 7.72,
+        "stoch_d": 4.86,
         "stoch_curl": true,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0615,
+        "flatness": 0.0669,
         "armed": false,
         "stoch_curl_recent": true,
         "stoch_traverse": false,
@@ -83,7 +83,7 @@
       "copy_stale": false
     }
   ],
-  "state": "ELEVATED",
+  "state": "QUIET",
   "framing": "Conditions under which violent reversals are more likely \u2014 not intent, not timing.",
   "framing_zh": "\u8861\u91cf\u5267\u70c8\u53cd\u8f6c\u66f4\u53ef\u80fd\u53d1\u751f\u7684\u6761\u4ef6\u2014\u2014\u4e0d\u662f\u610f\u56fe\uff0c\u4e5f\u4e0d\u662f\u65f6\u70b9\u3002"
 }
