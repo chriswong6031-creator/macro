@@ -32,6 +32,26 @@
         "overflow_behavior": {"const": "unavailable_no_partial_tape"}
       }
     },
+    "value_disclosure": {
+      "description": "Additive, optional v1 extension. Declares whether every row carries the exact recorded before/after values plus their RFC 6901 source locator, and the bounds under which they are disclosed. Absent on tapes published before the extension; those tapes carry no row values and stay valid.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "encoding", "locator_grammar", "max_value_bytes",
+        "max_tape_value_bytes", "truncation_behavior", "unavailable_behavior",
+        "correction_assessed"
+      ],
+      "properties": {
+        "state": {"enum": ["exact_values_present", "exact_values_absent"]},
+        "encoding": {"const": "canonical_json_utf8"},
+        "locator_grammar": {"const": "rfc6901_json_pointer_into_source_record"},
+        "max_value_bytes": {"const": 4096},
+        "max_tape_value_bytes": {"const": 262144},
+        "truncation_behavior": {"const": "declared_prefix_with_original_byte_length"},
+        "unavailable_behavior": {"const": "explicit_row_marker_never_empty_and_never_guessed"},
+        "correction_assessed": {"const": false}
+      }
+    },
     "hash_scope": {"const": "canonical_payload_excluding_model_payload_sha256"},
     "model_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
   },
@@ -96,8 +116,140 @@
             "after": {"type": "integer", "minimum": 2}
           }
         },
-        "observed_at": {"type": "string", "format": "date-time"}
+        "observed_at": {"type": "string", "format": "date-time"},
+        "exact_values": {"$ref": "#/$defs/exact_values"},
+        "correction_lineage": {"$ref": "#/$defs/correction_lineage"}
+      },
+      "dependentRequired": {
+        "exact_values": ["correction_lineage"],
+        "correction_lineage": ["exact_values"]
       }
+    },
+    "exact_values": {
+      "description": "Exact recorded values for this operation, taken byte-for-byte from the replay-verified version chain. Never normalized, re-cased, or reconstructed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_pointer", "before", "after"],
+      "properties": {
+        "source_pointer": {"type": "string", "pattern": "^/", "maxLength": 512},
+        "before": {"$ref": "#/$defs/value_entry"},
+        "after": {"$ref": "#/$defs/value_entry"}
+      }
+    },
+    "value_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "value_json", "value_byte_length", "value_truncated",
+        "unavailable_reason"
+      ],
+      "properties": {
+        "state": {"enum": ["present", "missing", "unavailable"]},
+        "value_json": {
+          "description": "Exact canonical JSON text of the recorded value, or a declared codepoint-boundary prefix of it when value_truncated is true. Null when the value is missing or unavailable; never an empty string.",
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "value_byte_length": {
+          "description": "Byte length of the FULL canonical JSON value as recorded, before any truncation.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "value_truncated": {"type": "boolean"},
+        "unavailable_reason": {
+          "enum": [null, "tape_value_budget_exhausted", "value_bytes_not_representable"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "present"}}, "required": ["state"]},
+          "then": {
+            "properties": {
+              "value_json": {"type": "string"},
+              "unavailable_reason": {"const": null}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"state": {"const": "missing"}}, "required": ["state"]},
+          "then": {
+            "properties": {
+              "value_json": {"type": "null"},
+              "value_byte_length": {"const": 0},
+              "value_truncated": {"const": false},
+              "unavailable_reason": {"const": null}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"state": {"const": "unavailable"}}, "required": ["state"]},
+          "then": {
+            "properties": {
+              "value_json": {"type": "null"},
+              "value_truncated": {"const": false},
+              "unavailable_reason": {
+                "enum": ["tape_value_budget_exhausted", "value_bytes_not_representable"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "correction_lineage": {
+      "description": "Declared chain lineage: which earlier recorded value this row supersedes. States a predecessor version explicitly so a reader never infers a correction from op plus a version pair. Does NOT assess whether the change is a correction.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation", "predecessor_basis", "predecessor_source_version",
+        "predecessor_exact_operation_index", "correction_assessed"
+      ],
+      "properties": {
+        "relation": {
+          "enum": [
+            "no_prior_recorded_value",
+            "supersedes_prior_recorded_value",
+            "clears_prior_recorded_value"
+          ]
+        },
+        "predecessor_basis": {"enum": ["none", "before_version_record", "prior_tape_row"]},
+        "predecessor_source_version": {"type": ["integer", "null"], "minimum": 1},
+        "predecessor_exact_operation_index": {
+          "type": ["integer", "null"], "minimum": 0, "maximum": 4095
+        },
+        "correction_assessed": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"predecessor_basis": {"const": "none"}}, "required": ["predecessor_basis"]},
+          "then": {
+            "properties": {
+              "relation": {"const": "no_prior_recorded_value"},
+              "predecessor_source_version": {"type": "null"},
+              "predecessor_exact_operation_index": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"predecessor_basis": {"const": "before_version_record"}}, "required": ["predecessor_basis"]},
+          "then": {
+            "properties": {
+              "predecessor_source_version": {"type": "integer"},
+              "predecessor_exact_operation_index": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"predecessor_basis": {"const": "prior_tape_row"}}, "required": ["predecessor_basis"]},
+          "then": {
+            "properties": {
+              "predecessor_source_version": {"type": "integer"},
+              "predecessor_exact_operation_index": {"type": "integer"}
+            }
+          }
+        }
+      ]
     },
     "authority": {
       "type": "object",

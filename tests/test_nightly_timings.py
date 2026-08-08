@@ -155,7 +155,8 @@ def test_backfill_seeds_only_instrumented_jobs(env, tmp_path):
     rows = [json.loads(l) for l in (tmp_path / "ledger" / "engine.jsonl").read_text().splitlines()]
     assert rows[0]["elapsed_minutes"] == pytest.approx(150.0)
     assert rows[0]["source"] == "backfill-gh-api"
-    assert rows[0]["cap_minutes"] == 240.0
+    # engine cap history lives in daily.yml's timeout-minutes comment; 300 since 2026-08-08
+    assert rows[0]["cap_minutes"] == 300.0
 
 
 # ---------------------------------------------------------------------------
