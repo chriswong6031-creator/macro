@@ -222,3 +222,94 @@ def test_partial_artifact_is_rejected():
     assert signal_lab._btc_vector_figures({"allocation": {"optimal": {}}}, trial) is None
     assert signal_lab._btc_vector_figures(None, trial) is None
     assert signal_lab._btc_vector_figures({}, None) is None
+
+
+# ---------------------------------------------------------------------------
+# 5. The build path may not mutate the module registry
+# ---------------------------------------------------------------------------
+# Figures the frozen quote does not carry, written into a throwaway artifact so a
+# build against it renders visibly different digits. Both stay above the 0.95
+# SURVIVES bar so the fixture does not manufacture a promotion-authority warning.
+_DIVERGENT = {"dsr_raw": 0.9612, "sharpe_raw": 1.37}
+
+
+def _divergent_vector_dir(root: Path) -> Path:
+    """A data dir whose calibrator artifacts carry figures the frozen quote does not.
+
+    Built by re-quoting the REAL artifacts — the same source every other test here
+    reads — and moving two of the figures the card renders, so the artifact shape can
+    never drift out from under this fixture. This is the CI condition reproduced: a
+    job re-runs the calibrator, the on-disk numbers move, a later build renders them.
+    """
+    if not (CAL_PATH.exists() and TRIAL_PATH.exists()):
+        pytest.skip("data/vector artifacts absent — run calibrate_vector first")
+    cal = json.loads(CAL_PATH.read_text(encoding="utf-8"))
+    trial = json.loads(TRIAL_PATH.read_text(encoding="utf-8"))
+    cal["multiple_testing_raw"]["dsr"] = _DIVERGENT["dsr_raw"]
+    cal["allocation_raw"]["optimal"]["sharpe"] = _DIVERGENT["sharpe_raw"]
+    vdir = root / "vector"
+    vdir.mkdir(parents=True, exist_ok=True)
+    (vdir / "calibration.json").write_text(json.dumps(cal), encoding="utf-8")
+    (vdir / "trial_log.json").write_text(json.dumps(trial), encoding="utf-8")
+    return root
+
+
+def test_build_renders_live_without_polluting_the_registry(tmp_path, monkeypatch):
+    """A build renders the LIVE figures; REGISTRY keeps the frozen ones.
+
+    build_scorecard() used to hand the module-level REGISTRY straight to the three
+    resolvers, every one of which stamps its rows IN PLACE — so a single build
+    permanently rewrote the registry for the interpreter's lifetime. That is not a
+    theoretical leak, it is an ordering-dependent red: in CI the trial-budgets job
+    re-runs the calibrator and rewrites data/vector/calibration.json inside the
+    shared pack workspace, so the first build in a later pytest process renders the
+    RECOMPUTED digits into the module row, and the degrade-safe test above then
+    compares that row against the frozen quote and fails on middle digits nobody can
+    see. On an ordering where the artifact still matches the frozen stamp the whole
+    thing is masked, which is why it shipped. Reproduce the ordering exactly.
+    """
+    frozen = signal_lab._btc_vector_copy(signal_lab._BTC_VECTOR_FROZEN)
+    for key, val in _DIVERGENT.items():
+        assert signal_lab._BTC_VECTOR_FROZEN[key] != val, (
+            f"fixture figure {key}={val} now equals the frozen quote — this test can "
+            "only see the defect while the two disagree; pick another value"
+        )
+
+    live_dir = _divergent_vector_dir(tmp_path / "live")
+    monkeypatch.setattr(signal_lab.config, "data_dir", lambda: live_dir)
+    before = json.dumps(signal_lab.REGISTRY, default=str, sort_keys=True, ensure_ascii=False)
+
+    # 1. the build reads the divergent artifact and renders it
+    scorecard = signal_lab.build_scorecard()
+    row = next(r for t in scorecard["tiers"] for r in t["rows"]
+               if r["name"] == signal_lab._BTC_VECTOR_ROW_NAME)
+    assert row["dsr"] == pytest.approx(_DIVERGENT["dsr_raw"])
+    assert row["sharpe"] == pytest.approx(_DIVERGENT["sharpe_raw"])
+    assert f"{_DIVERGENT['dsr_raw']:.4f}" in row["why"], (
+        "the build did not render the divergent artifact — the fixture never took, so "
+        "the registry-purity assertions below would pass for the wrong reason"
+    )
+    assert row["why"] != frozen["why"]
+
+    # 2. ...and wrote NOTHING back into the module registry. Whole-registry compare,
+    #    so the dsr_provenance / source_refs stamps are pinned alongside the prose.
+    assert json.dumps(signal_lab.REGISTRY, default=str, sort_keys=True,
+                      ensure_ascii=False) == before, (
+        "build_scorecard() mutated the module-level REGISTRY — resolve over a copy"
+    )
+    assert _row()["why"] == frozen["why"], (
+        "the REGISTRY row no longer carries its import-time frozen prose"
+    )
+    assert _row()["dsr"] == signal_lab._BTC_VECTOR_FROZEN["dsr_raw"]
+
+    # 3. so the degrade-safe fallback still agrees with the frozen quote AFTER a build
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.setattr(signal_lab.config, "data_dir", lambda: empty)
+    registry = [dict(_row())]
+    warnings: list[str] = []
+    signal_lab._resolve_vector_live_stats(registry, warnings)
+    assert registry[0]["why"] == frozen["why"], (
+        "a preceding build left live prose in the registry the fallback reads from"
+    )
+    assert any("frozen quote" in w for w in warnings)

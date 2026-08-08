@@ -645,8 +645,10 @@ REGISTRY: list[dict] = [
          wired="macro.html banner (×1.0)"),
 
     # ---- SIGNAL-LAB EXPANSION (validated 2026-06 — research + adversarial-verify workflows) ----
-    # Prose + stats are FORMATTED from the calibrator's figures (frozen quote at
-    # import; overwritten with the live artifact by _resolve_vector_live_stats()).
+    # Prose + stats are FORMATTED from the calibrator's figures. What is stored HERE is
+    # the frozen quote, and it stays that way: build_scorecard() overwrites it with the
+    # live artifact via _resolve_vector_live_stats() on a PER-BUILD COPY of the registry,
+    # so this module constant is pristine no matter how many builds have run.
     _row(_BTC_VECTOR_ROW_NAME,
          "比特币向量 — optimal 动量×风险配置", "BTC", "scored",
          source="btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); "
@@ -1866,20 +1868,33 @@ def build_scorecard() -> dict:
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
 
+    # Resolve over a PER-BUILD COPY of the registry. All three resolvers below stamp
+    # their rows IN PLACE, and REGISTRY is module-level state that outlives the call:
+    # writing through would let one build permanently rewrite the registry for the
+    # interpreter's lifetime. That is exactly how a CI pack that recomputes
+    # data/vector/* before pytest turned the frozen-fallback test into an
+    # ordering-dependent red — the first build stamped the recomputed live prose into
+    # the module row, and the fallback test then compared that against the frozen quote.
+    # A SHALLOW per-row copy is a complete fence: every resolver replaces TOP-LEVEL keys
+    # wholesale with freshly-built objects (`row.update(_btc_vector_copy(...))`,
+    # `row["dsr_n_trials"]`, `eth["extra"] = [<new list>]`, `r["dsr_provenance"] = {...}`,
+    # `r["source_refs"] = [...]`) — none of them append into a nested list or dict.
+    registry = [dict(r) for r in REGISTRY]
+
     # Re-render the BTC Vector card off the calibrator's own artifacts BEFORE the
     # provenance pass, so the passport stamps the same n_trials the prose quotes.
-    _resolve_vector_live_stats(REGISTRY, warnings)
+    _resolve_vector_live_stats(registry, warnings)
 
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
     # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
-    _resolve_dsr_provenance(REGISTRY)
+    _resolve_dsr_provenance(registry)
 
     # A10: audit source references for each registry row
-    _audit_source_refs(REGISTRY)
+    _audit_source_refs(registry)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}
-    for r in REGISTRY:
+    for r in registry:
         by_tier.setdefault(r["tier"], []).append(r)
 
     tiers_out = []
@@ -1893,7 +1908,7 @@ def build_scorecard() -> dict:
 
     summary = {k: len(by_tier.get(k, [])) for k in
                ("scored", "confirmer", "display", "killed", "pending")}
-    summary["total"] = len(REGISTRY)
+    summary["total"] = len(registry)
     summary["factor_survivors"] = fdr_survivors_factor
     summary["factor_total"] = len(factor_rows)
 
