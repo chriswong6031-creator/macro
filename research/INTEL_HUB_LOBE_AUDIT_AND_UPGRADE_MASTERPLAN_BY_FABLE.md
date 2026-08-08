@@ -695,20 +695,13 @@ the night they ship. W3 collectors land in daily.yml off the render-critical pat
 
 ## §10 Open operator decisions
 
-1. **Policy vote — AWAITING OPERATOR RULING (operator engaged 2026-08-08, §3.5).**
-   Option A (recommended): W0 removes the free-form LLM vote as a standing-law heal;
-   W3 builds Policy Desk v2 (live mechanical substrate + LLM de-escalation/taxonomy);
-   the vote returns per-key through the gauntlet — live WH awareness ends up IN scoring,
-   lawfully, and stronger than today's weekly desk.
-   Option B: keep the current vote until W1 grades the 22 open theses, then re-decide.
-   Cost: a live A7 breach persists meanwhile, and n=22 weekly theses won't reach
-   significance quickly.
-   Option C (raised by operator): keep the architecture, swap DeepSeek → Fable/Opus
-   (+OpenAI fallback). Adjudicated §3.5: improves prose + uptime only; cures neither
-   origination nor the 0/22 grading hole; not recommended ALONE — the model upgrade
-   folds into v2's LLM roles regardless.
-   A veto of Option A that keeps the ungraded vote long-term needs a registry
-   amendment ratifying the exception to DNR:KILL-LLM-ORIGINATION.
+1. **Policy vote — RULED: OPTION A (operator, 2026-08-08).** W0 removes the free-form
+   LLM vote as a standing-law heal (policy stays fully visible as flags/chips/tile);
+   W1 still grades the 22 legacy theses for the record; W3 builds Policy Desk v2
+   (§3.5: live mechanical substrate + LLM de-escalation/taxonomy only — model
+   irrelevant to the score); the policy vote returns to `n_confirm` per-key as keys
+   clear the gauntlet. Options B/C recorded and declined (C's model-quality/fallback
+   ideas fold into v2's LLM roles).
 2. **Paid-data appetite**: this plan is free-first by design. If budget exists, the
    highest-value paid adds are (a) a second cross-check price/reference feed, (b) an
    options-flow feed for the squeeze/positioning plane, (c) an earnings-estimates feed
