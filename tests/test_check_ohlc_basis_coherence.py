@@ -200,7 +200,45 @@ def test_discovery_finds_the_real_us_breadth_panels():
     assert {"breadth", "midcap_breadth", "smallcap_breadth"} <= set(found)
 
 
-def test_guard_survives_the_live_committed_caches():
+def test_guard_survives_the_live_committed_caches(tmp_path):
     """Reader-level pin only. The verdict is deliberately not asserted — these
-    caches advance nightly, so asserting one would assert about today."""
-    assert guard.run(ROOT / "data") in (0, 3)
+    caches advance nightly, so asserting one would assert about today.
+
+    Runs against a SHADOW tree — every store symlinked, `quality/` a real directory — so
+    the reader still exercises the live committed caches while `guard.run`'s marker write
+    lands in tmp. It used to pass `ROOT / "data"` directly, and `run()` writes
+    `<data_dir>/quality/ohlc_basis_coherence.json` unconditionally, so the test session
+    rewrote a TRACKED file and `MM_DATA_GUARD` forced the job to exit 1:
+
+        test session dirtied the real data/ or site/ tree
+        (M data/quality/ohlc_basis_coherence.json)
+
+    That went unnoticed for as long as a fresh run reproduced the committed bytes. It
+    stopped doing so because the committed marker records a `russell_breadth` panel that a
+    clean checkout CANNOT produce: `discover_panels` requires the closes+high+low triple,
+    and `.gitignore:80` ignores `data/russell_breadth/_closes_cache.parquet` while its
+    high/low/volume siblings are tracked and every other breadth store ships its closes.
+    So the marker is only reproducible on a machine holding that untracked file — a dev
+    box or the nightly runner — and on `ubuntu-latest` the guard narrows to three panels
+    and rewrites the file every single run.
+
+    Fixing the WRITE rather than the CONTENT is deliberate: regenerating the marker
+    without russell would flip straight back to dirty on the nightly runner, which does
+    have the cache. The coverage gap that asymmetry creates is real and is NOT closed
+    here — see test_discovery_finds_the_real_us_breadth_panels, which pins only the three
+    panels a clean checkout can see.
+    """
+    real = ROOT / "data"
+    shadow = tmp_path / "data"
+    shadow.mkdir()
+    for child in real.iterdir():
+        if child.name == "quality":
+            continue  # a real dir, so the marker write cannot reach the tracked file
+        (shadow / child.name).symlink_to(child)
+    (shadow / "quality").mkdir()
+
+    assert guard.discover_panels(shadow), "shadow tree exposed no panels — vacuous"
+    assert guard.run(shadow) in (0, 3)
+    assert (shadow / "quality" / "ohlc_basis_coherence.json").exists(), (
+        "the marker did not land in the shadow tree — the write escaped the redirect "
+        "and this test is back to mutating the repo")
