@@ -238,10 +238,13 @@ REQUEST_TIMEOUT_SECONDS = 30
 #
 # MAX_PULLS_PER_SWEEP is the load-bearing one. The observed peak sweep rate is 28
 # non-skipped runs in an hour, so a sweep must cost at most 1000/28 = ~35 calls to
-# be sustainable at that rate. Fixed overhead is ~12 (1 listing + ~3 baseline + 1
-# main timeline + 4 for `main_proof` — two workflows x (newest run + its jobs) —
-# + up to 3 for `ensure_main_baseline`'s two in-flight polls and its dispatch),
-# which leaves ~23. 25 is the chosen cap: marginally above that steady-state
+# be sustainable at that rate. Fixed overhead against READ_TOKEN is ~9 (1 listing +
+# ~3 baseline + 1 main timeline + 4 for `main_proof` — two workflows x (newest run +
+# its jobs)); `ensure_main_baseline`'s 2 calls are charged to MERGE_TOKEN, a
+# different bucket, and are deliberately NOT counted here. The `fixed = 12` this
+# floor was sized against therefore now carries ~3 calls of headroom rather than
+# being exact, which is the safe direction. That leaves ~23. 25 is the chosen cap:
+# marginally above that steady-state
 # figure, because the sweep rate only peaks at 28 and RATE_LIMIT_RESERVE stops the
 # pass cleanly if a run does overshoot. Uncapped, the same 28 sweeps cost ~3,400
 # calls and empty the bucket in the first 8 of them.
@@ -1229,13 +1232,54 @@ MAIN_PROOF_RUN_WALK = 10
 #: to close was 12 HOURS, so anything in this range is a decisive improvement while
 #: leaving the hosted pool ~8 baselines a day at worst.
 MAIN_PROOF_MAX_AGE_HOURS = 3
+#: The floor between two sweeper-ordered baselines, and the STRUCTURAL bound on the
+#: dispatch rate — the one guard that does not depend on the proof being datable.
+#:
+#: Sweeps overlap by design (merge-on-green.yml carries no `concurrency:` block, and
+#: `ci`/`fences`/`integration-baseline` completions can wake three within seconds), so
+#: "is one already running?" is a read-then-write race that all of them can win. That
+#: race is not merely wasteful here: ci.yml runs under
+#: `group: ci-${{ pull_request.number || github.ref }}` + `cancel-in-progress: true`,
+#: so a dispatch on main lands in `ci-refs/heads/main` and a SECOND dispatch CANCELS
+#: THE FIRST — discarding up to 34 minutes of a 4-job run and leaving the proof stale
+#: another full cycle. Two `cancelled` `workflow_dispatch` runs on main, 53 minutes
+#: apart, are already in the record (31148430602, 31151246743 — 2026-08-07).
+#:
+#: 30 minutes is just under a run's own 30-34 minute duration, so in the normal case the
+#: newest run is still in flight and the status check answers first; the interval is what
+#: covers the two gaps that check cannot: the seconds between a dispatch and the new run
+#: becoming visible in the API, and racing sweeps that all read the pre-dispatch state.
+#: It is a rate BOUND, not a lock — three sweeps inside the same second can still all
+#: dispatch, because a stateless level-triggered reconciler has nowhere to hold a lock.
+#: Changing ci.yml's concurrency would close that fully and is an operator call with a
+#: much larger blast radius; this file does not make it unilaterally.
+MAIN_BASELINE_MIN_INTERVAL_MINUTES = 30
+#: What counts as main PROVING a name, which is NOT the same question `CLEAN_CONCLUSIONS`
+#: answers. That set's own comment says membership means "did not fail" and NEVER
+#: "passed", and `decide_verdict` supplies the affirmative-pass requirement separately —
+#: #4779: "an absence of failure is not a pass". `clean_names` has no such backstop: it
+#: is asserted evidence that main is GREEN on a name, used to excuse that name's red on a
+#: pull request, so here "did not fail" MUST be read as "passed".
+#:
+#: A `skipped` job on the baseline is the dangerous one. It is legitimate on a PR head (a
+#: path-filtered pack that skips is a real clean result, which is why `CLEAN_CONCLUSIONS`
+#: keeps `skipped` and must not be narrowed), but on main it means the job did not run,
+#: and treating that as proof would excuse a red on a check that produced no verdict.
+#: Costs nothing today: every real job on main's newest ci.yml + fences.yml runs
+#: (`ci-pack-0..3`, `fence-pack`, `self-mod-fence`, `capability-broker`, `grader-manifest`)
+#: is `success`; the only `skipped` entries are the fork-fallback jobs, which GitHub
+#: reports under their UNEVALUATED `name:` expression and so can never collide with a real
+#: check name. That accident is exactly why this must be pinned rather than left implicit —
+#: the first statically-named conditional job added to either workflow would end it.
+PROOF_CLEAN_CONCLUSIONS = {"success"}
 
 
 @dataclass(frozen=True)
 class MainProof:
     """What main is currently proven to pass, and WHEN it was proven.
 
-    ``clean_names`` — job names that CONCLUDED CLEAN on main, unioned across
+    ``clean_names`` — job names main PASSED (`PROOF_CLEAN_CONCLUSIONS`, not
+      `CLEAN_CONCLUSIONS` — see that constant), unioned across
       `MAIN_PROOF_WORKFLOWS`. Only ever WIDENS what a red pull request may do.
     ``proved_at``   — tz-aware UTC. The OLDEST of the per-workflow newest
       completions, because a proof is only as fresh as its stalest component.
@@ -1243,6 +1287,17 @@ class MainProof:
     ``head_sha``    — the main commit the anchor workflow's run was computed on.
     ``source``      — a short human string for the sweep log; on failure it says WHY
       there is no proof, which is the line a future session greps for.
+
+    EMPTY IS NOT THE SAME AS UNDATED, and conflating them is a live incident, not a
+    tidiness point. A main whose packs all FAILED yields no clean names, but it was
+    still proven, at a knowable instant — 4 of the newest 10 main ci.yml runs were
+    `failure` when this was measured. Dating that proof `None` made
+    `ensure_main_baseline`'s age gate unable to fire, so every sweep with a blocked
+    pull request ordered another baseline, which came back red, which dispatched
+    again: measured 10 dispatches in 10 consecutive sweeps, ~164 hosted jobs/day
+    against an intended ceiling of 8. So an all-red baseline returns an EMPTY
+    ``clean_names`` (nothing may be refreshed — correct) with a REAL ``proved_at``
+    (nothing needs re-proving — also correct), and only an UNREADABLE run is undated.
 
     Frozen because it is built once and read by every pull request in the sweep; a
     mutable shared answer is how one pull request's evaluation would silently
@@ -1262,18 +1317,34 @@ class MainProof:
         return (when - self.proved_at).total_seconds() / 3600.0
 
     def describe(self) -> str:
-        """One phrase for the sweep summary — never raises, always says something."""
+        """One phrase for the sweep summary — never raises, always says something.
+
+        The names and the date are reported INDEPENDENTLY, because they fail
+        independently: a proven-red main has a date and no names, and an unreadable
+        one has neither. Collapsing both into "none" is how the dispatch-loop
+        incident printed "never proven" about a main that had just been proven red.
+        """
         age = self.age_hours()
-        if age is None:
-            return f"main proof: none ({self.source})"
+        aged = "undated" if age is None else f"{age:.1f}h old"
+        names = (
+            f"{len(self.clean_names)} clean name(s)" if self.clean_names else "NO clean name"
+        )
         return (
-            f"main proof: {len(self.clean_names)} clean name(s) at "
-            f"{self.head_sha[:12] or 'unknown-sha'}, {age:.1f}h old ({self.source})"
+            f"main proof: {names} at {self.head_sha[:12] or 'unknown-sha'}, "
+            f"{aged} ({self.source})"
         )
 
 
-def _newest_concluded_main_run(repo: str, workflow: str, token: str) -> dict[str, Any] | None:
-    """The newest run of ``workflow`` on main that actually concluded. None on failure.
+def _newest_concluded_main_run(
+    repo: str, workflow: str, token: str
+) -> tuple[dict[str, Any] | None, str]:
+    """``(run, detail)`` for the newest run of ``workflow`` on main that CONCLUDED.
+
+    ``run`` is None when there is nothing usable, and ``detail`` then says why — with
+    the HTTP status when there was one. Those causes are not interchangeable: a
+    rate-limited read, a permissions regression and a genuinely absent run all used to
+    render as "has no concluded run on main", and this whole repair exists because the
+    old mechanism was inert AND its log could not say why.
 
     Skips `cancelled` runs rather than answering from them — see MAIN_PROOF_RUN_WALK.
     """
@@ -1286,48 +1357,82 @@ def _newest_concluded_main_run(repo: str, workflow: str, token: str) -> dict[str
         f"{urllib.parse.quote(workflow, safe='')}/runs?{query}",
         token,
     )
-    if status >= 400 or not isinstance(payload, dict):
-        return None
+    if status >= 400:
+        return None, f"{workflow} run listing failed (HTTP {status})"
+    if not isinstance(payload, dict):
+        return None, f"{workflow} run listing returned an unusable payload"
+    seen = 0
     for run in payload.get("workflow_runs") or []:
         if not isinstance(run, dict):
             continue
+        seen += 1
         if str(run.get("conclusion") or "").lower() == "cancelled":
             continue
-        return run
-    return None
+        if run.get("id") is None:
+            return None, f"{workflow}'s newest concluded run carries no id"
+        return run, ""
+    if seen:
+        return None, (
+            f"{workflow}'s newest {seen} completed run(s) on main were all cancelled"
+        )
+    return None, f"{workflow} has no completed run on main"
 
 
 def _run_clean_jobs(
     repo: str, run_id: Any, token: str
-) -> tuple[frozenset[str], dt.datetime | None] | None:
-    """``(clean job names, newest completion)`` for one workflow run. None on failure.
+) -> tuple[tuple[frozenset[str], dt.datetime | None] | None, str]:
+    """``(resolved, why)``. ``resolved`` is None ONLY when the run could not be READ.
+
+    ``resolved`` is ``(names main PASSED, when the run's verdict landed)``; ``why``
+    carries the HTTP status when the read failed, for the same reason
+    `_newest_concluded_main_run` does — "unreadable" and "read fine, proved nothing"
+    have opposite causes and opposite fixes, and the sweep log has to say which.
 
     PER JOB, not per run. A run whose overall conclusion is `failure` still proves
     every pack that passed inside it, and that distinction is most of the value here:
     a main whose `ci-pack-2` is green and `ci-pack-3` is red must refresh the pull
     requests red on 2 and keep blocking the ones red on 3.
 
-    ``newest`` is None when ANY clean job carries an unusable `completed_at`. The
-    timestamp is the loop guard (see `proof_postdates_failures`), so an undatable
-    component makes the whole proof undatable rather than optimistically dated.
+    PASSED, not "did not fail" — `PROOF_CLEAN_CONCLUSIONS`, see that constant for why
+    this is deliberately stricter than `CLEAN_CONCLUSIONS`.
+
+    THE RETURN VALUE ANSWERS TWO SEPARATE QUESTIONS, and an earlier revision answered
+    them with one `None` for both. "I could not read this run" and "I read it and every
+    job failed" are opposite facts: the first must leave the proof undated, the second
+    must date it — an all-red main is PROVEN, just proven red. Collapsing them made the
+    age gate in `ensure_main_baseline` unfireable and turned a red main into an
+    unbounded dispatch loop (10 dispatches in 10 sweeps, measured). So a run that reads
+    is always ``(names, when)`` even when ``names`` is empty, and ``None`` means only
+    that the read failed.
+
+    ``when`` is the newest completion among the CLEAN jobs when there are any, and
+    among all considered jobs otherwise. The first is the conservative choice for
+    `proof_postdates_failures` (a later red inside the same run must not re-date the
+    green that excuses a pull request); the second only ever applies when
+    ``clean_names`` is empty, where nothing can be excused at all and the date is used
+    purely to say "main was proven this recently, do not order another baseline".
+    Either way it is None if any job in the dating set carries an unusable
+    `completed_at` — an undatable component makes the proof undatable rather than
+    optimistically dated, and `MAIN_BASELINE_MIN_INTERVAL_MINUTES` bounds the dispatch
+    rate in that case instead.
 
     Under-reading is safe here and over-reading is not, which is why the single
     `per_page=100` page needs no truncation guard: a job past the first page is a job
     missing from `clean_names`, and a missing clean name can only WITHHOLD a refresh.
     """
     if run_id is None:
-        return None
+        return None, "the run carries no id"
     status, payload = _request(
         "GET", f"{GITHUB_API}/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100", token
     )
-    if status >= 400 or not isinstance(payload, dict):
-        return None
-    jobs = payload.get("jobs")
-    if not isinstance(jobs, list):
-        return None
+    if status >= 400:
+        return None, f"run {run_id}'s job listing failed (HTTP {status})"
+    if not isinstance(payload, dict) or not isinstance(payload.get("jobs"), list):
+        return None, f"run {run_id}'s job listing returned an unusable payload"
+    jobs = payload["jobs"]
     clean: set[str] = set()
-    newest: dt.datetime | None = None
-    undatable = False
+    clean_stamps: list[dt.datetime | None] = []
+    considered_stamps: list[dt.datetime | None] = []
     for job in jobs:
         if not isinstance(job, dict):
             continue
@@ -1336,17 +1441,16 @@ def _run_clean_jobs(
             continue
         if str(job.get("status") or "").lower() != "completed":
             continue
-        if str(job.get("conclusion") or "").lower() not in CLEAN_CONCLUSIONS:
+        when = _parse_dt(job.get("completed_at"))
+        considered_stamps.append(when)
+        if str(job.get("conclusion") or "").lower() not in PROOF_CLEAN_CONCLUSIONS:
             continue
         clean.add(name)
-        when = _parse_dt(job.get("completed_at"))
-        if when is None:
-            undatable = True
-        elif newest is None or when > newest:
-            newest = when
-    if not clean:
-        return None
-    return frozenset(clean), (None if undatable else newest)
+        clean_stamps.append(when)
+    dating = clean_stamps if clean else considered_stamps
+    if not dating or any(stamp is None for stamp in dating):
+        return (frozenset(clean), None), ""
+    return (frozenset(clean), max(stamp for stamp in dating if stamp is not None)), ""
 
 
 def main_proof(repo: str, token: str) -> MainProof:
@@ -1385,13 +1489,20 @@ def main_proof(repo: str, token: str) -> MainProof:
     run + its jobs) against up to 20 for the walk, on a `READ_TOKEN` whose quota is
     1,000/hour PER REPOSITORY and shared by every concurrent sweep.
 
-    FAILS CLOSED at every exit. A non-200, a missing run, an unparseable payload, a
-    workflow with no clean job, or any exception all return an EMPTY `clean_names`,
-    and an empty set can never be a superset of a non-empty failing set, so the
-    caller falls through to the unchanged `merge-blocked` path. Not knowing what main
-    proves is never permission to refresh anything. The fail-closed rule applies to
-    the WHOLE union, not per workflow: half a proof would let a `fence-pack` red be
-    excused by a ci.yml run that says nothing about fences.
+    FAILS CLOSED ON WHAT IT CANNOT READ. A non-200, a missing run, an unparseable
+    payload or any exception returns an EMPTY, UNDATED proof, and an empty set can
+    never be a superset of a non-empty failing set, so the caller falls through to the
+    unchanged `merge-blocked` path. Not knowing what main proves is never permission to
+    refresh anything. That rule applies to the WHOLE union, not per workflow: half a
+    proof would let a `fence-pack` red be excused by a ci.yml run that says nothing
+    about fences.
+
+    A RED WORKFLOW IS NOT AN UNREADABLE ONE. If a run reads and simply passed nothing,
+    its names are absent from the union — which already blocks every refresh that
+    depended on them — but the proof keeps its DATE, and the other workflow keeps its
+    names. Zeroing the union there would be wrong twice: it would discard a genuinely
+    green `fences.yml` because `ci.yml` is red, and it would leave the proof undated,
+    which is the shape that turned a red main into an unbounded baseline-dispatch loop.
 
     No exception escapes — the pre-existing "a diagnostic must never fail a sweep"
     property is preserved, and the sweep degrades to its pre-2026-08-07 behaviour.
@@ -1402,24 +1513,20 @@ def main_proof(repo: str, token: str) -> MainProof:
         sources: list[str] = []
         head_sha = ""
         for index, workflow in enumerate(MAIN_PROOF_WORKFLOWS):
-            run = _newest_concluded_main_run(repo, workflow, token)
+            run, why = _newest_concluded_main_run(repo, workflow, token)
             if run is None:
-                return MainProof(
-                    frozenset(), None, "", f"{workflow} has no concluded run on main"
-                )
+                return MainProof(frozenset(), None, "", why)
             run_sha = str(run.get("head_sha") or "")
-            resolved = _run_clean_jobs(repo, run.get("id"), token)
+            resolved, why = _run_clean_jobs(repo, run.get("id"), token)
             if resolved is None:
-                return MainProof(
-                    frozenset(),
-                    None,
-                    "",
-                    f"{workflow} run {run.get('id')} published no readable clean job",
-                )
+                return MainProof(frozenset(), None, "", f"{workflow} {why}")
             workflow_names, workflow_at = resolved
             names |= set(workflow_names)
             stamps.append(workflow_at)
-            sources.append(f"{workflow}@{run_sha[:12] or '?'}")
+            sources.append(
+                f"{workflow}@{run_sha[:12] or '?'}"
+                + (f" ({len(workflow_names)} passed)" if workflow_names else " (RED: nothing passed)")
+            )
             if index == 0:
                 head_sha = run_sha
         # The OLDEST of the per-workflow newest completions. A proof is exactly as
@@ -1500,15 +1607,29 @@ def ensure_main_baseline(
       2. at least one pull request this sweep evaluated was blocked on a non-spurious
          check — i.e. the staleness actually COST something. An idle repository never
          dispatches, however old its proof is; a proof nothing needed is not a problem;
-      3. no ci.yml run on main is already queued or in progress.
+      3. the newest ci.yml run on main has CONCLUDED and was created at least
+         MAIN_BASELINE_MIN_INTERVAL_MINUTES ago.
 
-    (3) IS THE ANTI-STAMPEDE GUARD and it is load-bearing: this sweep wakes every ~2
-    minutes, a run takes 30-34 minutes, and a lane that queued one baseline per wake-up
-    would put ~15 concurrent ci runs on a pool `ci` and `fences` already saturate —
-    trading a stale proof for the runner famine documented at the top of
-    .github/workflows/merge-on-green.yml. An UNREADABLE in-flight answer is treated as
-    "something is running", the direction that costs one sweep of latency rather than a
-    stampede.
+    (3) IS THE ANTI-STAMPEDE GUARD and it is load-bearing. It is ONE query for the
+    newest run at any status, not the two `status=in_progress` / `status=queued`
+    queries an earlier revision used, and the difference is not cosmetic:
+
+      * those two left `requested`, `waiting` and `pending` entirely unchecked;
+      * they were a read-then-write race between overlapping sweeps (this workflow
+        deliberately carries no `concurrency:` block, and three wake-ups can arrive
+        within seconds), and a raced dispatch does not merely waste a run — ci.yml's
+        `cancel-in-progress: true` group means the second dispatch CANCELS THE FIRST;
+      * they could not see the window between a successful dispatch and the new run
+        becoming visible in the API.
+
+    The created-at interval covers all three, bounds the dispatch rate even when
+    several sweeps race, and costs one call instead of two. It is a BOUND, not a lock —
+    sweeps inside the same second still see the same pre-dispatch state. An UNREADABLE
+    answer is treated as "something is running", the direction that costs one sweep of
+    latency rather than a stampede.
+
+    (1) and (2) are asked FIRST because they are free; only a sweep that has already
+    decided it wants a baseline spends a call asking whether it may have one.
 
     NEVER FATAL. Every failure path logs and returns; a sweep that merged pull requests
     correctly must not go red because it could not order a baseline. Returns a short
@@ -1521,19 +1642,30 @@ def ensure_main_baseline(
         if not blocked_names:
             return "not needed (no pull request was blocked on a check)"
         workflow = urllib.parse.quote(MAIN_BASELINE_WORKFLOW, safe="")
-        for state in ("in_progress", "queued"):
-            query = urllib.parse.urlencode(
-                {"branch": "main", "status": state, "per_page": "1"}
-            )
-            status, payload = _request(
-                "GET",
-                f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
-                token,
-            )
-            if status >= 400 or not isinstance(payload, dict):
-                return f"skipped (could not check for a {state} baseline: HTTP {status})"
-            if payload.get("workflow_runs"):
-                return f"skipped (a baseline is already {state})"
+        query = urllib.parse.urlencode({"branch": "main", "per_page": "1"})
+        status, payload = _request(
+            "GET",
+            f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+            token,
+        )
+        if status >= 400 or not isinstance(payload, dict):
+            return f"skipped (could not read the newest baseline run: HTTP {status})"
+        newest = next(iter(payload.get("workflow_runs") or []), None)
+        if isinstance(newest, dict):
+            state = str(newest.get("status") or "unknown").lower()
+            if state != "completed":
+                return f"skipped (the newest baseline is {state})"
+            created = _parse_dt(newest.get("created_at"))
+            if created is None:
+                # Undatable here means the interval cannot be enforced, and the
+                # interval is the only bound on the dispatch rate. Refuse.
+                return "skipped (the newest baseline run has no usable created_at)"
+            minutes = (dt.datetime.now(dt.timezone.utc) - created).total_seconds() / 60
+            if minutes < MAIN_BASELINE_MIN_INTERVAL_MINUTES:
+                return (
+                    f"skipped (a baseline was ordered {minutes:.0f} min ago, inside the "
+                    f"{MAIN_BASELINE_MIN_INTERVAL_MINUTES} min floor)"
+                )
         status, body = _request(
             "POST",
             f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/dispatches",
@@ -1541,7 +1673,10 @@ def ensure_main_baseline(
             {"ref": "main"},
         )
         if status in {201, 204}:
-            aged = "never proven" if age is None else f"{age:.1f}h old"
+            # NEVER "never proven" on an undated proof: main may have been proven and
+            # proven RED, which reads identically here and has the opposite cause. The
+            # proof's own `source` is the thing that distinguishes them, so print it.
+            aged = f"undated ({proof.source})" if age is None else f"{age:.1f}h old"
             _annotate(
                 "notice",
                 "merge-on-green",

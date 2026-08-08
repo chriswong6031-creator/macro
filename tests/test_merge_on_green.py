@@ -1941,8 +1941,17 @@ def test_a_head_already_current_falls_through_and_cannot_loop(monkeypatch, capsy
     """update-branch answers 422 when there is nothing to fast-forward.
 
     That is precisely the case where the red must be the pull request's own, so the
-    call falls through to `merge-blocked`. This is what makes the branch
-    self-terminating — a PR can never be refreshed twice for the same red.
+    call falls through to `merge-blocked` — pinned unchanged.
+
+    The STATED REASON has changed, though, and the old one is now repudiated in the
+    source. This 422 was once offered as proof that the branch was self-terminating —
+    "a PR can never be refreshed twice for the same red". That argument assumes a
+    STATIC main. main takes ~24 commits per 2 hours here, so a head stops being
+    "already current" within minutes and the 422 stops arriving. What actually
+    terminates the branch is `proof_postdates_failures`: a refresh makes the pull
+    request's checks newer than main's proof, so it cannot qualify again until main is
+    genuinely re-proven. This case is the narrow one where GitHub happens to refuse
+    too, not the mechanism.
     """
     pages = {1: {"total_count": 1, "check_runs": [_run("ci-pack-3", conclusion="failure")]}}
     calls = _fake_api(monkeypatch, check_pages=pages, update_status=422)
@@ -1983,12 +1992,29 @@ CI_RUN_ID = 31253226496
 FENCES_RUN_ID = 31276100400
 
 
-def _wf_run(run_id, head_sha="c" * 40, conclusion="success"):
+def _ago(**delta):
+    """An ISO-8601 `Z` stamp that many units before now, for the age/interval gates."""
+    return (
+        (dt.datetime.now(dt.timezone.utc) - dt.timedelta(**delta))
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+
+
+def _wf_run(
+    run_id,
+    head_sha="c" * 40,
+    conclusion="success",
+    status="completed",
+    created_at=None,
+):
     return {
         "id": run_id,
         "head_sha": head_sha,
-        "status": "completed",
+        "status": status,
         "conclusion": conclusion,
+        # The baseline interval gate reads this, so it defaults well outside the floor;
+        # a test about the floor passes its own.
+        "created_at": created_at or _ago(hours=6),
         "html_url": f"https://example.invalid/{run_id}",
     }
 
@@ -2009,28 +2035,36 @@ def _proof_api(
     jobs=None,
     run_status=None,
     jobs_status=None,
-    inflight=None,
     dispatch_status=204,
     runs_payload=None,
+    on_dispatch=None,
 ):
-    """Route the four calls `main_proof` makes, plus `ensure_main_baseline`'s.
+    """Route the calls `main_proof` makes, plus `ensure_main_baseline`'s.
 
     `runs` maps workflow file name -> the `workflow_runs` list; `jobs` maps run id ->
     the `jobs` list. `run_status` / `jobs_status` inject an HTTP failure for one
     workflow / run, and `runs_payload` replaces the whole body (for malformed shapes).
+    `on_dispatch` is called after a successful dispatch so a test can model what
+    GitHub does next — a new run appearing, or that run concluding.
 
-    TWO PROPERTIES ARE LOAD-BEARING and both were added after a surviving mutant.
+    FOUR PROPERTIES ARE LOAD-BEARING, every one of them added after a mutant survived
+    or a reviewer found a shape this could not express.
+
     The run listing HONOURS `per_page`, so a walk degenerated back to a single newest
     run is visible here rather than hidden by a fake that always returns everything —
-    the same trap the old commit-walk fake had to close. And an unknown run id
-    answers with a NAMED phantom job instead of nothing, so a fail-closed path that
-    silently fabricated a run would produce a name the assertions can see; without it
-    "returned no names" passed for the wrong reason.
-
-    A `/commits?` call raises: the proof must never walk main's history again, and a
-    test that let it silently do so would be pinning the mechanism this replaced.
+    the same trap the old commit-walk fake had to close. It also honours the `status=`
+    FILTER, out of one pool of runs: the shipped code queries the newest run at ANY
+    status, and an earlier revision queried `status=in_progress` then `status=queued`,
+    so a fake that ignored the parameter would let either shape read as correct against
+    fixtures written for the other. An unknown run id answers with a NAMED phantom job
+    instead of nothing, so a fail-closed path that silently fabricated a run would
+    produce a name the assertions can see; without it "returned no names" passed for
+    the wrong reason. And a `/commits?` call raises: the proof must never walk main's
+    history again, and a test that let it silently do so would be pinning the very
+    mechanism this replaced.
     """
     calls: list[tuple[str, str, dict | None]] = []
+    pool = {name: list(entries) for name, entries in (runs or {}).items()}
 
     def fake(method, url, token, payload=None):
         calls.append((method, url, payload))
@@ -2041,18 +2075,22 @@ def _proof_api(
             )
         if "/actions/workflows/" in url and "/runs?" in url:
             workflow = url.split("/actions/workflows/")[1].split("/runs?")[0]
-            state = url.rsplit("status=", 1)[1].split("&")[0]
+            state = url.rsplit("status=", 1)[1].split("&")[0] if "status=" in url else ""
             asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
-            # Checked BEFORE the state branch: an injected failure must reach the
-            # in-flight polls too, or the anti-stampede fail-closed path is untestable.
             code = (run_status or {}).get(workflow)
             if code is not None:
                 return code, {"message": "no"}
-            if state in {"in_progress", "queued"}:
-                return 200, {"workflow_runs": list((inflight or {}).get(state, []))}
             if runs_payload is not None:
                 return 200, runs_payload
-            return 200, {"workflow_runs": list((runs or {}).get(workflow, []))[:asked]}
+            entries = pool.get(workflow, [])
+            if state:
+                # `status=completed` is GitHub's own alias for "has a conclusion",
+                # which INCLUDES cancelled — the whole reason for MAIN_PROOF_RUN_WALK.
+                entries = [
+                    run for run in entries
+                    if str(run.get("status") or "") == state
+                ]
+            return 200, {"workflow_runs": entries[:asked]}
         if "/actions/runs/" in url and "/jobs" in url:
             run_id = int(url.split("/actions/runs/")[1].split("/jobs")[0])
             code = (jobs_status or {}).get(run_id)
@@ -2062,6 +2100,8 @@ def _proof_api(
                 "jobs": list((jobs or {}).get(run_id, [_job("phantom-pack")]))
             }
         if url.endswith("/dispatches"):
+            if dispatch_status in {201, 204} and on_dispatch is not None:
+                on_dispatch(pool, jobs)
             return dispatch_status, None
         raise AssertionError(f"unexpected call {method} {url}")
 
@@ -2120,6 +2160,32 @@ def test_main_proof_reads_the_packs_off_a_run_no_commit_window_could_reach(
     assert any(call[1].endswith("/update-branch") for call in calls)
 
 
+def test_every_proof_workflow_names_a_file_that_actually_exists():
+    """A renamed workflow would make this silently inert AND arm the dispatch loop.
+
+    `main_proof` fails closed on a 404, which is right — but the failure is invisible
+    at review time and permanent at run time: the proof goes empty and UNDATED forever,
+    which is precisely the state that turned the baseline dispatcher into a loop. The
+    file names are a contract with the repository, so pin them against the disk.
+    """
+    for workflow in MOG.MAIN_PROOF_WORKFLOWS:
+        assert (ROOT / ".github" / "workflows" / workflow).is_file(), (
+            f"MAIN_PROOF_WORKFLOWS names {workflow}, which does not exist — main would "
+            "be unprovable and every base-inherited red would block forever"
+        )
+    assert MOG.MAIN_BASELINE_WORKFLOW in MOG.MAIN_PROOF_WORKFLOWS, (
+        "the dispatched baseline must be one of the workflows the proof is read from, "
+        "or the sweeper would order a run whose result it never looks at"
+    )
+    dispatched = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / MOG.MAIN_BASELINE_WORKFLOW).read_text()
+    )
+    assert "workflow_dispatch" in _triggers(dispatched), (
+        f"{MOG.MAIN_BASELINE_WORKFLOW} must accept workflow_dispatch — that is the "
+        "only way main is ever proven, since it has no push trigger"
+    )
+
+
 def test_main_proof_costs_four_requests_not_a_twenty_commit_walk(monkeypatch):
     """Cheaper as well as correct, against the quota that starved this lane.
 
@@ -2159,6 +2225,19 @@ def test_main_proof_fails_closed_and_never_raises(monkeypatch, kwargs):
     assert proof.clean_names == frozenset()
     assert proof.proved_at is None
     assert proof.source, "a fail-closed proof must still say WHY it is empty"
+    # And WHY must be specific. A rate-limited read, a permissions regression and a
+    # genuinely absent run all used to render as "has no concluded run on main" — this
+    # whole PR exists because a mechanism was inert AND its log could not say why.
+    injected = {**kwargs.get("run_status", {}), **kwargs.get("jobs_status", {})}
+    for code in injected.values():
+        assert str(code) in proof.source, (
+            f"HTTP {code} must reach the sweep log, not be flattened into "
+            f"{proof.source!r}"
+        )
+    assert "no clean" not in proof.source, (
+        "an unreadable run must never be reported as a run that proved nothing — "
+        "those have opposite causes and opposite fixes"
+    )
 
 
 def test_main_proof_fails_closed_when_the_lookup_itself_explodes(monkeypatch):
@@ -2251,8 +2330,25 @@ def test_the_proof_is_per_JOB_so_a_red_run_still_proves_its_green_packs(monkeypa
     assert "ci-pack-2" in clean and "ci-pack-3" not in clean
 
 
-def test_the_proof_ignores_the_spurious_check_and_unfinished_jobs(monkeypatch):
-    """Only CONCLUDED, non-spurious, clean names may widen what a red PR can do."""
+def test_a_SKIPPED_job_on_main_is_not_proof_that_main_is_green(monkeypatch):
+    """AN ABSENCE OF FAILURE IS NOT A PASS — #4779, applied where it was still missing.
+
+    This test previously asserted the opposite, and the earlier reasoning was that
+    `main_proof` should mirror `CLEAN_CONCLUSIONS`. That was wrong, and the constant's
+    OWN comment says why: membership there means "did not fail" and NEVER "passed",
+    with `decide_verdict` supplying a separate affirmative-pass requirement. There is
+    no such backstop here. `clean_names` IS the assertion "main is green on this name",
+    and it is spent excusing that name's red on a pull request — so a job that did not
+    run cannot be in it, and `PROOF_CLEAN_CONCLUSIONS` is deliberately `{"success"}`.
+
+    `CLEAN_CONCLUSIONS` itself must NOT be narrowed to match: a path-filtered pack that
+    skips on a PR head is a real clean result there.
+
+    It is not exploitable today, and only by accident: GitHub reports fences.yml's
+    fork-fallback jobs under their UNEVALUATED `name:` expression, so their `skipped`
+    conclusions cannot collide with a real check name. The first statically-named
+    conditional or path-filtered job added to ci.yml or fences.yml would end that.
+    """
     runs, jobs = _both_workflows([("ci-pack-0", "success")])
     jobs[CI_RUN_ID] = [
         _job("ci-pack-0", "success"),
@@ -2260,10 +2356,20 @@ def test_the_proof_ignores_the_spurious_check_and_unfinished_jobs(monkeypatch):
         _job("ci-pack-1", None, status="in_progress", completed_at=None),
         _job("ci-pack-2", "failure"),
         _job("ci-pack-4", "skipped"),
+        _job("ci-pack-5", "neutral"),
     ]
     _proof_api(monkeypatch, runs=runs, jobs=jobs)
     clean = MOG.main_proof("acme/widgets", "read").clean_names
-    assert clean == frozenset({"ci-pack-0", "ci-pack-4", "fence-pack"})
+    assert "ci-pack-4" not in clean, (
+        "a job that was SKIPPED on main produced no verdict; treating it as proof "
+        "would excuse a pull request's red on a check that never ran"
+    )
+    assert "ci-pack-5" not in clean, "nor does `neutral` affirmatively pass"
+    assert clean == frozenset({"ci-pack-0", "fence-pack"})
+    assert MOG.CLEAN_CONCLUSIONS >= {"success", "neutral", "skipped"}, (
+        "decide_verdict still needs the wider set — a path-filtered pack that skips "
+        "on a PR head is a real clean result there"
+    )
 
 
 def test_an_undatable_clean_job_makes_the_whole_proof_undatable(monkeypatch):
@@ -2281,6 +2387,11 @@ def test_an_undatable_clean_job_makes_the_whole_proof_undatable(monkeypatch):
     proof = MOG.main_proof("acme/widgets", "read")
     assert proof.proved_at is None
     assert "ci-pack-0" in proof.clean_names, "the NAMES are still usable; the date is not"
+    # …and the summary must say both, separately. Collapsing an undated proof to
+    # "none" is how the dispatch-loop incident reported "never proven" about a main
+    # that had just been proven red: the names and the date fail independently.
+    described = proof.describe()
+    assert "undated" in described and "clean name" in described, described
 
 
 # --- the timestamp rule: a proof that predates the red does not excuse it -------
@@ -2483,7 +2594,7 @@ def test_proof_postdates_failures_is_pure_and_fail_closed():
 
 
 def _aged_proof(hours, *names):
-    """A proof `hours` old (None = never proven)."""
+    """A proof `hours` old (None = undated)."""
     when = None if hours is None else dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)
     return MOG.MainProof(frozenset(names or ("ci-pack-0",)), when, "a" * 40, "test")
 
@@ -2492,10 +2603,21 @@ def _dispatched(calls):
     return [call for call in calls if call[0] == "POST" and call[1].endswith("/dispatches")]
 
 
+def _baseline_api(monkeypatch, newest=None, **kwargs):
+    """`_proof_api` with only the dispatch target's run list, for the gate tests.
+
+    `newest` is the newest ci.yml run on main — the ONE thing the shipped gate reads.
+    Default: concluded, and created well outside the interval floor, so a test that is
+    not about the gate gets a dispatch.
+    """
+    runs = {"ci.yml": [] if newest is False else [newest or _wf_run(1)]}
+    return _proof_api(monkeypatch, runs=runs, **kwargs)
+
+
 def test_a_stale_proof_that_cost_the_sweep_something_orders_a_baseline(
     monkeypatch, capsys
 ):
-    calls = _proof_api(monkeypatch, inflight={})
+    calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline(
         "acme/widgets", _aged_proof(12), {"ci-pack-2", "ci-pack-3"}, "write"
     )
@@ -2510,18 +2632,31 @@ def test_a_stale_proof_that_cost_the_sweep_something_orders_a_baseline(
     ), "an order this lane places must be visible in the Actions summary"
 
 
-def test_a_never_proven_main_also_orders_a_baseline(monkeypatch):
-    calls = _proof_api(monkeypatch, inflight={})
+def test_an_undated_proof_also_orders_a_baseline_and_never_calls_it_never_proven(
+    monkeypatch, capsys
+):
+    """An undated proof still orders one — but the notice must not invent a cause.
+
+    "never proven" was printed on a main that HAD been proven, and proven RED; an
+    operator reading that goes looking for a missing dispatch instead of a broken main.
+    The proof's own `source` is what distinguishes the two, so it has to be in the line.
+    """
+    _baseline_api(monkeypatch)
+    proof = MOG.MainProof(frozenset(), None, "a" * 40, "ci.yml@abcdef (RED: nothing passed)")
     assert MOG.ensure_main_baseline(
-        "acme/widgets", _aged_proof(None), {"ci-pack-2"}, "write"
+        "acme/widgets", proof, {"ci-pack-2"}, "write"
     ) == "dispatched"
-    assert _dispatched(calls)
+    notice = [
+        line for line in capsys.readouterr().out.splitlines() if line.startswith("::notice")
+    ]
+    assert notice and "never proven" not in notice[0], notice
+    assert "RED: nothing passed" in notice[0], "the log must carry the actual cause"
 
 
 def test_a_fresh_proof_orders_nothing(monkeypatch):
     """A ci.yml run takes 30-34 minutes, so the age gate must not fire on a proof that
     is merely mid-flight — and a repository whose main is proven is not a problem."""
-    calls = _proof_api(monkeypatch, inflight={})
+    calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline(
         "acme/widgets", _aged_proof(MOG.MAIN_PROOF_MAX_AGE_HOURS - 0.5), {"ci-pack-2"}, "write"
     )
@@ -2532,41 +2667,108 @@ def test_a_fresh_proof_orders_nothing(monkeypatch):
 def test_an_idle_sweep_orders_nothing_however_old_the_proof_is(monkeypatch):
     """Condition 2. Staleness only matters if it COST something this pass; otherwise a
     quiet repository would dispatch a 30-minute pack run every two minutes forever."""
-    calls = _proof_api(monkeypatch, inflight={})
+    calls = _baseline_api(monkeypatch)
     outcome = MOG.ensure_main_baseline("acme/widgets", _aged_proof(99), set(), "write")
     assert outcome.startswith("not needed")
     assert not calls
 
 
-@pytest.mark.parametrize("state", ["in_progress", "queued"])
-def test_a_baseline_already_running_is_never_stampeded(monkeypatch, state):
-    """THE anti-stampede guard. This sweep wakes every ~2 minutes and a ci.yml run takes
-    30-34 minutes, so one dispatch per wake-up would put ~15 concurrent pack runs on the
-    pool `ci` and `fences` already saturate — trading a stale proof for the runner
-    famine documented in .github/workflows/merge-on-green.yml."""
-    calls = _proof_api(monkeypatch, inflight={state: [_wf_run(1)]})
+@pytest.mark.parametrize("state", ["in_progress", "queued", "requested", "waiting", "pending"])
+def test_a_baseline_that_has_not_CONCLUDED_is_never_stampeded(monkeypatch, state):
+    """THE anti-stampede guard, and it gates on the newest run's status whatever that
+    status is called.
+
+    The earlier revision asked two questions — `status=in_progress` then
+    `status=queued` — which left `requested`, `waiting` and `pending` unchecked, cost
+    two calls, and was still a read-then-write race. One "what is the newest run doing"
+    query covers every state GitHub has, present and future.
+    """
+    calls = _baseline_api(monkeypatch, newest=_wf_run(1, status=state, conclusion=None))
     outcome = MOG.ensure_main_baseline(
         "acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write"
     )
-    assert outcome == f"skipped (a baseline is already {state})"
+    assert outcome == f"skipped (the newest baseline is {state})"
     assert not _dispatched(calls)
 
 
-def test_an_unreadable_in_flight_answer_does_not_dispatch(monkeypatch):
-    """Fail toward NOT stampeding: one sweep of latency costs ~2 minutes, a stampede
-    costs the hosted pool."""
-    calls = _proof_api(monkeypatch, run_status={"ci.yml": 403})
+def test_a_baseline_ordered_inside_the_interval_floor_is_not_re_ordered(monkeypatch):
+    """The bound that survives the race the status check cannot win.
+
+    Sweeps overlap by design (no `concurrency:` block, and three wake-ups can arrive
+    within seconds), so several can all read "nothing in flight" and all dispatch. That
+    is not merely wasteful: ci.yml runs under `cancel-in-progress: true` keyed on the
+    ref, so a dispatch on main lands in `ci-refs/heads/main` and the SECOND dispatch
+    CANCELS THE FIRST — up to 34 minutes of a 4-job run discarded and the proof left
+    stale another cycle. Two cancelled `workflow_dispatch` runs on main 53 minutes
+    apart are already in the record (31148430602 / 31151246743, 2026-08-07).
+
+    It also covers the window where a dispatch has succeeded but its run is not yet
+    visible in the API — which the status check, reading only visible runs, cannot.
+    """
+    calls = _baseline_api(monkeypatch, newest=_wf_run(1, created_at=_ago(minutes=5)))
     outcome = MOG.ensure_main_baseline(
         "acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write"
     )
-    assert outcome.startswith("skipped")
+    assert outcome.startswith("skipped (a baseline was ordered 5 min ago"), outcome
     assert not _dispatched(calls)
+
+
+def test_a_baseline_older_than_the_interval_floor_may_be_re_ordered(monkeypatch):
+    """The floor is a bound, not a latch — it must open again."""
+    calls = _baseline_api(
+        monkeypatch,
+        newest=_wf_run(1, created_at=_ago(minutes=MOG.MAIN_BASELINE_MIN_INTERVAL_MINUTES + 1)),
+    )
+    assert MOG.ensure_main_baseline(
+        "acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write"
+    ) == "dispatched"
+    assert _dispatched(calls)
+
+
+def test_the_interval_gate_reads_one_call_not_two(monkeypatch):
+    """Against the READ/MERGE budget, and against the two-query race it replaced."""
+    calls = _baseline_api(monkeypatch)
+    MOG.ensure_main_baseline("acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write")
+    gets = [call for call in calls if call[0] == "GET"]
+    assert len(gets) == 1, [call[1] for call in gets]
+    assert "status=" not in gets[0][1], (
+        "the gate must see the newest run whatever its status — a status-filtered "
+        "query cannot distinguish `requested` from `nothing running`"
+    )
+
+
+@pytest.mark.parametrize(
+    "kwargs, why",
+    [
+        ({"run_status": {"ci.yml": 403}}, "an unreadable listing"),
+        ({"newest": _wf_run(1, created_at=None) | {"created_at": "not-a-date"}},
+         "an undatable newest run"),
+    ],
+)
+def test_an_unreadable_baseline_state_does_not_dispatch(monkeypatch, kwargs, why):
+    """Fail toward NOT stampeding: one sweep of latency costs ~2 minutes, and the
+    interval is the only bound on the dispatch rate — unenforceable means refuse."""
+    calls = _baseline_api(monkeypatch, **kwargs)
+    outcome = MOG.ensure_main_baseline(
+        "acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write"
+    )
+    assert outcome.startswith("skipped"), why
+    assert not _dispatched(calls)
+
+
+def test_a_repository_with_no_baseline_run_at_all_still_dispatches(monkeypatch):
+    """The gate must not deadlock a repo that has never run one."""
+    calls = _baseline_api(monkeypatch, newest=False)
+    assert MOG.ensure_main_baseline(
+        "acme/widgets", _aged_proof(None), {"ci-pack-2"}, "write"
+    ) == "dispatched"
+    assert _dispatched(calls)
 
 
 def test_a_failed_dispatch_is_logged_and_never_fatal(monkeypatch, capsys):
     """A sweep that merged pull requests correctly must not go red because it could not
     order a baseline."""
-    _proof_api(monkeypatch, inflight={}, dispatch_status=422)
+    _baseline_api(monkeypatch, dispatch_status=422)
     outcome = MOG.ensure_main_baseline(
         "acme/widgets", _aged_proof(12), {"ci-pack-2"}, "write"
     )
@@ -2574,6 +2776,96 @@ def test_a_failed_dispatch_is_logged_and_never_fatal(monkeypatch, capsys):
     assert any(
         line.startswith("::warning") for line in capsys.readouterr().out.splitlines()
     )
+
+
+def test_an_all_red_main_cannot_loop_the_dispatcher(monkeypatch):
+    """THE BLOCKER, reproduced end to end: a red main used to order baselines forever.
+
+    An earlier revision let `_run_clean_jobs` return `None` for two different facts —
+    "I could not read this run" and "I read it and every job failed" — and `main_proof`
+    dated both `None`. `MainProof.age_hours` was then None, so the
+    `age <= MAIN_PROOF_MAX_AGE_HOURS` gate could not fire; every sweep with a blocked
+    pull request dispatched, the run came back red, and the next sweep dispatched
+    again. Measured against the live shape of run 31220410022 (all four packs
+    `failure`), 10 dispatches in 10 consecutive sweeps — and 4 of the newest 10 main
+    ci.yml runs were `failure`, so this is the ordinary state of a red main, not a
+    corner. Steady state ~164 hosted jobs/day against an intended ceiling of 8.
+
+    The model here is the production steady state, which is what makes it a loop rather
+    than a one-off: each dispatch produces a run that CONCLUDES RED, so nothing is ever
+    "in flight" by the time the next sweep looks, and the newest run is always freshly
+    created. Both repairs are load-bearing under it — the proof is now DATED by an
+    all-red run (so the age gate closes it) and MAIN_BASELINE_MIN_INTERVAL_MINUTES
+    bounds the rate even if it were not.
+
+    Asserts the BOUND across the whole window, not which sweep won it: a test that
+    pinned "sweep 1 dispatched" would go green on an implementation that dispatched on
+    sweep 7 instead, and the invariant that matters is the total.
+    """
+    sweeps = 10
+    red_jobs = [
+        _job(f"ci-pack-{index}", "failure", completed_at=_ago(hours=12)) for index in range(4)
+    ]
+    runs = {
+        "ci.yml": [_wf_run(CI_RUN_ID, conclusion="failure", created_at=_ago(hours=12))],
+        "fences.yml": [_wf_run(FENCES_RUN_ID, head_sha="d" * 40, created_at=_ago(hours=12))],
+    }
+    jobs = {
+        CI_RUN_ID: red_jobs,
+        FENCES_RUN_ID: [_job("fence-pack", "success", completed_at=_ago(hours=12))],
+    }
+
+    def concluded_red(pool, job_table):
+        # What GitHub actually does next on a repository whose main is broken: the
+        # ordered baseline runs, fails, and is the newest COMPLETED run again.
+        pool["ci.yml"] = [
+            _wf_run(CI_RUN_ID, conclusion="failure", created_at=_ago(seconds=1))
+        ]
+        job_table[CI_RUN_ID] = [
+            _job(f"ci-pack-{index}", "failure", completed_at=_ago(seconds=1))
+            for index in range(4)
+        ]
+
+    calls = _proof_api(monkeypatch, runs=runs, jobs=jobs, on_dispatch=concluded_red)
+    for _ in range(sweeps):
+        proof = MOG.main_proof("acme/widgets", "read")
+        MOG.ensure_main_baseline("acme/widgets", proof, {"ci-pack-2"}, "write")
+
+    ordered = len(_dispatched(calls))
+    assert ordered <= 1, (
+        f"a red main ordered {ordered} baselines in {sweeps} sweeps; at this rate the "
+        "sweeper re-proves a main it has already proven red, forever"
+    )
+
+
+def test_an_all_red_baseline_is_dated_but_proves_nothing(monkeypatch):
+    """The two halves of the blocker's fix, asserted separately.
+
+    Empty `clean_names` is the CORRECT answer for a red main — nothing may be refreshed
+    against it. A `None` date is not: main WAS proven, and pretending otherwise is what
+    unbounded the dispatcher. Only an unreadable run may be undated.
+    """
+    runs, jobs = _both_workflows([(f"ci-pack-{index}", "failure") for index in range(4)])
+    jobs[CI_RUN_ID] = [
+        _job(f"ci-pack-{index}", "failure", completed_at="2026-08-07T22:06:43Z")
+        for index in range(4)
+    ]
+    # fences is the fresher half, so the union's instant is the ci one — which only
+    # exists at all because an all-red run is still dated.
+    jobs[FENCES_RUN_ID] = [_job("fence-pack", "success", completed_at="2026-08-08T20:13:21Z")]
+    _proof_api(monkeypatch, runs=runs, jobs=jobs)
+    proof = MOG.main_proof("acme/widgets", "read")
+    assert not any(name.startswith("ci-pack") for name in proof.clean_names), (
+        "a failed pack must never be proof"
+    )
+    assert proof.proved_at is not None, (
+        "an all-red baseline is PROVEN — dating it None makes the age gate unfireable"
+    )
+    assert proof.proved_at == MOG._parse_dt("2026-08-07T22:06:43Z")
+    assert "RED" in proof.source, "and the log must say which workflow was red"
+    # The other workflow's genuine green survives: a red ci.yml is information about
+    # ci.yml, not a reason to discard fences.yml's verdict.
+    assert "fence-pack" in proof.clean_names
 
 
 def test_a_raising_dispatch_is_swallowed(monkeypatch, capsys):
