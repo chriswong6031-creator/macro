@@ -12,6 +12,14 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Invoked by file path from the workflow, so sys.path[0] is scripts/ci/ — the
+# repo-root imports below (pandas is fine; collectors.* is not) need the root
+# explicitly. Dark until 2026-08-08: the first run to reach this script died on
+# the swapped call-site arg order before the import could even fail.
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 
 def _instant(state: dict, name: str) -> datetime:
     value = state.get(name)
