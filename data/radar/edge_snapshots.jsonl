@@ -9468,3 +9468,5 @@
 {"date":"2026-08-07","kind":"ticker","subject":"LNG","ticker":"LNG","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-07","kind":"ticker","subject":"SLB","ticker":"SLB","edge_score":0,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
 {"date":"2026-08-07","kind":"ticker","subject":"SNDK","ticker":"SNDK","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
+{"date":"2026-08-07","kind":"ticker","subject":"LMT","ticker":"LMT","edge_score":28,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-07","kind":"ticker","subject":"BA","ticker":"BA","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"signal"}
