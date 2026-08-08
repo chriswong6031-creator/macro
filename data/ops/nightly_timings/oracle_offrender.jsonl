@@ -1,1 +1,2 @@
 {"date":"2026-08-06","workflow":"daily","job":"oracle_offrender","run_id":"31067383446","run_attempt":"1","runner":"mac-builder-1","cap_minutes":40.0,"start":"2026-08-06T13:35:05Z","end":"2026-08-06T13:46:52Z","elapsed_minutes":11.8,"pct_of_cap":29.5,"bands":[],"source":"backfill-gh-api","conclusion":"success"}
+{"date":"2026-08-08","workflow":"daily","job":"oracle_offrender","run_id":"31210097197","run_attempt":"1","runner":"mac-builder-1","cap_minutes":40.0,"end":"2026-08-08T02:31:13Z","start":"2026-08-08T02:21:13Z","elapsed_minutes":10.0,"pct_of_cap":25.0,"bands":[]}

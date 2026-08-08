@@ -20,7 +20,17 @@ def test_artifact_contract_versions_semantic_lanes():
         e for e in ARTIFACT_MANIFEST
         if e["artifact"] == "site/factordata/china_standouts.json"
     )
-    assert entry["schema_version"] == "2.1.0"
+    # The contract under test is the SEMANTIC LANES below, not a version digit. This was
+    # `== "2.1.0"`, which reds on any backwards-compatible addition — it broke on the
+    # 2.1.0 -> 2.2.0 bump that merely declared `staleness`, a field the builder was
+    # already shipping. Pin the MAJOR (v2 is the disjoint-lane era; a v3 would be a
+    # breaking re-cut this test must not silently accept) and a floor on the minor, so an
+    # additive bump passes and a REMOVAL or rename still fails here.
+    major, minor, _patch = (int(p) for p in entry["schema_version"].split("."))
+    assert (major, minor) >= (2, 1), entry["schema_version"]
+    assert major == 2, (
+        f"china_standouts reached v{major} — a major bump means fields were removed or "
+        "renamed, so these lane assertions must be re-derived, not just re-floored")
     required = set(entry["schema_fields"])
     assert {
         "schema_version", "actionable", "board_definition",
