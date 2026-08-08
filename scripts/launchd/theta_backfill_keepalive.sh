@@ -57,7 +57,10 @@ ETF_ROOTS="SPY,QQQ,IWM,DIA,XLK,XLF,XLE,XLI,XLU,XLV,XLY,XLP,XLB,XLC,XLRE,SMH,SOXX
 # terminal caps ~8 concurrent requests, so keep this list liquidity-ranked, not
 # the full ~360-root universe. These previously sat "<year>: complete" in
 # _backfill_state.json forever and were skipped by the resumable backfill.
-SINGLE_NAMES="NVDA,TSLA,AAPL,META,AMZN,MSFT,GOOGL,GOOG,AMD,NFLX,AVGO,MU,PLTR,COIN,SMCI,MSTR,BABA,INTC,CRM,ORCL,QCOM,ARM,MARA,SOFI,UBER"
+# SPCX is floored to its 2026-06-12 relisting by ROOT_HISTORY_FLOOR in
+# backfill_thetadata_eod.py — the pre-2026-04 chains under that root belong to a
+# delisted SPAC ETF, not to Space Exploration Technologies.
+SINGLE_NAMES="NVDA,TSLA,AAPL,META,AMZN,MSFT,GOOGL,GOOG,AMD,NFLX,AVGO,MU,PLTR,COIN,SMCI,MSTR,BABA,INTC,CRM,ORCL,QCOM,ARM,MARA,SOFI,UBER,SPCX"
 
 # Everything the nightly ETF pass re-pulls fresh (ETF anchors + liquid singles).
 REFRESH_ROOTS="${ETF_ROOTS},${SINGLE_NAMES}"

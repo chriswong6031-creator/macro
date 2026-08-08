@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-08-07T11:21:22+00:00",
+  "checked_at": "2026-08-08T06:45:13+00:00",
   "expected_session": "2026-08-07",
   "stores": {
     "cache": {
-      "asof": "2026-08-07",
-      "lag_days": 0,
+      "asof": "2026-08-06",
+      "lag_days": 1,
       "state": "fresh"
     },
     "bellwether": {
@@ -13,8 +13,8 @@
       "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-08-06",
-      "lag_days": 1,
+      "asof": "2026-08-07",
+      "lag_days": 0,
       "state": "fresh"
     },
     "regime": {
@@ -30,17 +30,20 @@
   },
   "coherence": {
     "ok": true,
-    "standouts_asof": "2026-08-06",
+    "standouts_asof": "2026-08-07",
     "regime_date": "2026-08-07",
-    "gap_sessions": 1,
-    "note": "regime read is one session behind the stock scan \u2014 catches up after the next Asia close"
-  },
-  "regression": {
-    "ok": true,
-    "prev_cache_max": "2026-08-07",
-    "curr_cache_max": "2026-08-07",
+    "gap_sessions": 0,
     "note": null
   },
-  "verdict": "ok",
-  "banner_message": null
+  "regression": {
+    "ok": false,
+    "prev_cache_max": "2026-08-07",
+    "curr_cache_max": "2026-08-06",
+    "note": "cache rolled BACK from 2026-08-07 to 2026-08-06 (likely -X theirs clobber)"
+  },
+  "verdict": "stale",
+  "banner_message": {
+    "en": "HK data is stale \u2014 some numbers may be from an older session. Treat them as yesterday's until tonight's update. (today's prices came in older than yesterday's (back to 2026-08-07))",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u90e8\u5206\u6570\u503c\u53ef\u80fd\u6765\u81ea\u8f83\u65e9\u7684\u4ea4\u6613\u65e5\uff0c\u5728\u4eca\u665a\u66f4\u65b0\u524d\u8bf7\u5f53\u4f5c\u6628\u65e5\u6570\u636e\u770b\u5f85\u3002\uff08\u4eca\u65e5\u4ef7\u683c\u6bd4\u6628\u65e5\u66f4\u65e7\uff08\u56de\u9000\u81f3 2026-08-07\uff09\uff09"
+  }
 }

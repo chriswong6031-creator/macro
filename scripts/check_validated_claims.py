@@ -221,6 +221,39 @@ _THIRD_PARTY_PAGES = (
      '<script id="rv-catalog"',
      (("span", re.compile(r'<script id="rv-catalog" type="application/json">'),
        re.compile(r"</script>")),)),
+    # 4. The China news tape (templates/china_news.html.j2, rendered by
+    #    scripts/build_china.py:1555). Same family, different publisher: the page mirrors
+    #    externally published wire headlines verbatim, and 'validated' is ordinary English
+    #    in market reporting — the 2026-08-07 red was a Sina headline, "Strong momentum in
+    #    innovative drugs continues to be validated" (zh: 持续验证). The feed is regenerated
+    #    nightly from ingested headlines, so a per-quote allowlist entry could never hold:
+    #    tomorrow's tape brings a different sentence.
+    #
+    #    ATTESTATION: the feed container the template emits for the tape itself. It sits
+    #    inside `{% if lead %}`, so a render with no headlines carries no exemption — and
+    #    has no third-party text to mask either. A page hand-dropped at site/china_news.html
+    #    without it is scanned in full.
+    #
+    #    SINKS — the three places h.* headline fields reach the page (template lines
+    #    319 / 329 / 330). Everything else in the item is OURS and stays scanned: the theme
+    #    chip (.cn-tag), the importance label (.cn-imp), the channel chips (.cn-cchip), plus
+    #    the hero lead, the toolbar and the .cn-disc disclaimer around it. This is why the
+    #    wrapper <a class="tp-item"> is deliberately NOT the region: it contains our copy.
+    #
+    #    data-search is a whole-LINE region, matching the report page's <meta … content=>
+    #    rule and for the same reason — an attribute VALUE cannot be span-delimited safely
+    #    when the builder renders with autoescape=False (build_china.py:1523), so a headline
+    #    carrying a quote would truncate a span mid-value. The template emits the attribute
+    #    alone on its line. The only platform strings that ride into it are the channel
+    #    labels (engine.china_news.CHANNEL_LABEL / THEME_LABEL), which the tests assert
+    #    carry no token — and which are re-emitted, unmasked, in the .cn-cchip chips.
+    (re.compile(r"^site/china_news\.html$"),
+     '<div class="tp-feed" id="feed">',
+     (
+         ("line", re.compile(r'^\s*data-search="')),
+         ("span", re.compile(r'<h2 class="tp-title">'), re.compile(r"</h2>")),
+         ("span", re.compile(r'<p class="tp-sum">'), re.compile(r"</p>")),
+     )),
 )
 
 # Joiner for the surviving fragments of a partly-masked line. Chosen because it is outside
@@ -760,6 +793,73 @@ def _page(**over) -> str:
     return SELFTEST_REPORT_PAGE.format(**{**_NEUTRAL, **over})
 
 
+# The China news tape reduced to its load-bearing shape (templates/china_news.html.j2
+# lines 205-340): the hero lead, one .tp-item carrying all three third-party sinks plus
+# every piece of OUR chrome that shares the item, and the footer disclaimer. Exported for
+# the same reason as SELFTEST_REPORT_PAGE — --selftest and the regression test exercise ONE
+# fixture, so a template move breaks both at once.
+#
+# IN-REPO BYTES ON PURPOSE. The live tape rotates nightly, so a test pinned to today's
+# headline stops testing the moment the headline changes — the failure mode documented at
+# the foot of tests/test_validated_claims_thirdparty.py, where a live-content assertion went
+# green because its text rotated away rather than because the gate worked.
+#
+# `title` / `summary` / `search` are third-party (wire copy). `theme` / `chip` / `imp` are
+# ours INSIDE the same item; `hero` and `disc` are ours around it. All five of the latter
+# must still fire.
+SELFTEST_NEWS_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>China Tape — MastermindX</title>
+</head>
+<body>
+<main class="cn">
+  <header class="cn-hero">
+    <p class="cn-eyebrow"><span class="cn-brand">China Tape</span></p>
+    <p class="cn-lead"><span class="l-en">{hero}</span><span class="l-zh">{hero_zh}</span></p>
+  </header>
+  <section class="cn-main">
+    <div class="cn-feed-col">
+      <div class="tp-feed" id="feed">
+        <a class="tp-item th-markets lead" href="https://example.com/story" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="{search}">
+          <time class="tp-when" data-t="2026-08-07" datetime="2026-08-07">08-07</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-08-07"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              <span class="cn-tag"><span class="l-en">{theme}</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">新浪财经股票</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">{imp}</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">{title}</span><span class="l-zh">{title_zh}</span></h2>
+            <p class="tp-sum"><span class="l-en">{summary}</span><span class="l-zh">{summary_zh}</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">{chip}</span><span class="l-zh">股票市场</span></span></div>
+          </div>
+        </a>
+      </div>
+      <p class="cn-disc"><span class="l-en">{disc}</span></p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
+"""
+_NEWS_ATTEST = '<div class="tp-feed" id="feed">'
+_NEUTRAL_NEWS = {
+    "hero": "Nine stories cleared the macro filter.", "hero_zh": "九条通过宏观筛选。",
+    "search": "pboc holds the mlf rate steady 央行维持 mlf 利率不变 新浪财经股票 markets equity market",
+    "theme": "Markets", "imp": "medium", "chip": "equity market",
+    "title": "PBoC holds the MLF rate steady", "title_zh": "央行维持 MLF 利率不变",
+    "summary": "Liquidity was rolled over in full.", "summary_zh": "流动性等量续作。",
+    "disc": "Context only — not a signal. Nothing here is an input to any score.",
+}
+
+
+def _news_page(**over) -> str:
+    return SELFTEST_NEWS_PAGE.format(**{**_NEUTRAL_NEWS, **over})
+
+
 def selftest() -> int:
     """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh (all
     token variants), does NOT fire on negated uses, matches through HTML autoescaping
@@ -858,6 +958,15 @@ def selftest() -> int:
     quoted = "the June print validated two likely sources of ongoing disinflation"
     ours = "This edge is validated across every desk."
     rp = "site/research/us-daily-oil-and-inflation-3da181.html"
+    # The wire headline that reddened main on 2026-08-07 (site/china_news.html:857 + :867).
+    # Its zh half 创新药高景气持续验证 carries NO BC-2 token — 持续验证 is not one of the four
+    # TOKEN forms — so both live findings came from the English. `wire_zh` is therefore a zh
+    # wire sentence that DOES carry one (已经验证 → matched through 经验证); a zh case built on
+    # the live string would pass for having no token rather than for being masked.
+    wire = ("Power of earnings: CXO giant jumps 20% in a single week! Strong momentum in "
+            "innovative drugs continues to be validated.")
+    wire_zh = "创新药的高景气度已经验证。"
+    cn = "site/china_news.html"
     page_cases = [
         ("quoted 'validated' in the verbatim excerpt is not a claim",
          rp, _page(body=quoted), False),
@@ -892,6 +1001,33 @@ def selftest() -> int:
          "site/research_vault.html",
          '<script id="rv-catalog" type="application/json">{"items":[]}</script>\n'
          f"<p>{ours}</p>", True),
+        # ── the China news tape: wire headlines are the same structural non-claim ────
+        ("china tape: wire headline in .tp-title is not a claim",
+         cn, _news_page(title=wire), False),
+        ("china tape: a zh wire headline (已经验证) is not a claim either",
+         cn, _news_page(title_zh=wire_zh), False),
+        ("china tape: the same words in the data-search index are not a claim",
+         cn, _news_page(search=wire.lower() + " " + wire_zh), False),
+        ("china tape: wire summary in .tp-sum is not a claim",
+         cn, _news_page(summary=wire), False),
+        ("china tape: OUR theme chip inside the same item STILL FAILS",
+         cn, _news_page(title=wire, theme=ours), True),
+        ("china tape: OUR channel chip inside the same item STILL FAILS",
+         cn, _news_page(title=wire, chip=ours), True),
+        ("china tape: OUR importance label inside the same item STILL FAILS",
+         cn, _news_page(title=wire, imp=ours), True),
+        ("china tape: OUR hero lead above the feed STILL FAILS",
+         cn, _news_page(title=wire, hero=ours), True),
+        ("china tape: OUR zh disclaimer below the feed STILL FAILS",
+         cn, _news_page(title=wire, disc="该信号是已验证的。"), True),
+        ("china tape WITHOUT the feed attestation gets no exemption",
+         cn, _news_page(title=wire).replace(_NEWS_ATTEST, '<div class="tp-feed">'), True),
+        ("same page shape in templates/ is never exempt",
+         "templates/china_news.html.j2", _news_page(title=wire), True),
+        ("same page shape on another site page is never exempt",
+         "site/news.html", _news_page(title=wire), True),
+        ("china tape: unclosed .tp-title fails CLOSED (nothing masked)",
+         cn, _news_page(title=wire).replace("</h2>", "<!-- -->"), True),
     ]
     for name, rel, text, should_fire in page_cases:
         found, _ = scan_text(rel, text, allow)
