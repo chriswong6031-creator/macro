@@ -626,12 +626,14 @@ def test_leader_pullback_source_is_always_disclosed():
 # (13) Universe
 # ---------------------------------------------------------------------------
 
-def test_universe_excludes_index_fx_and_crypto_store_files(tmp_path):
+def test_universe_excludes_index_fx_futures_and_crypto_store_files(tmp_path):
     d = tmp_path / TW.DECK_STORE
     d.mkdir(parents=True)
-    for stem in ("AAPL", "NVDA", "_GSPC", "DX-Y.NYB", "BTC-USD", "USDSGD_X", "ETH-USD"):
+    for stem in ("AAPL", "NVDA", "PL", "_GSPC", "DX-Y.NYB", "BTC-USD", "USDSGD_X",
+                 "ETH-USD", "BTC_F", "GC_F", "PL_F"):
         (d / f"{stem}.parquet").write_bytes(b"")
-    assert TW.universe(tmp_path) == ["AAPL", "NVDA"]
+    # PL (Planet Labs) stays; PL_F (platinum futures) leaves — the suffix match is exact.
+    assert TW.universe(tmp_path) == ["AAPL", "NVDA", "PL"]
 
 
 def test_universe_limit_is_deterministic_alphabetical(tmp_path):

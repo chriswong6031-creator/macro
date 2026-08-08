@@ -115,7 +115,12 @@ DECK_STORE = "yahoo"
 #: excludes are the §6.3 B4 young-name shelf's business, not this deck's.
 MIN_BARS = 200
 #: Store files that are not single US equities a desk reviews: index proxies (``_GSPC``),
-#: FX/futures (``DX-Y.NYB``, ``USDSGD_X``) and crypto pairs (``BTC-USD``).
+#: FX/futures (``DX-Y.NYB``, ``USDSGD_X``, ``GC_F``) and crypto pairs (``BTC-USD``).
+#
+# The `_X`/`_F` suffixes are this store's safe-stem encoding of Yahoo's `=X` (FX) and `=F`
+# (futures) — 21 futures contracts and the FX crosses. They belong to the commodities lane,
+# not to a single-name turn desk, and the suffix match is EXACT so `PL_F` (platinum futures)
+# leaves while `PL` (Planet Labs, a live deck row) stays.
 #
 # The crypto/FX exclusion is not cosmetic.  Those tapes trade 24/7, so on 2026-08-08 five of
 # them (BTC-USD, ETH-USD, SOL-USD, USDIDR_X, USDSGD_X) already carried an 08-08 bar while all
@@ -126,7 +131,7 @@ MIN_BARS = 200
 # the universe, AND the session stamp below is majority-based with the max disclosed beside it.
 _UNIVERSE_SKIP_PREFIXES = ("_",)
 _UNIVERSE_SKIP_CHARS = (".", "=", "^")
-_UNIVERSE_SKIP_SUFFIXES = ("-USD", "_X", "-EUR", "-GBP")
+_UNIVERSE_SKIP_SUFFIXES = ("-USD", "-EUR", "-GBP", "_X", "_F")
 
 # ── triggers ────────────────────────────────────────────────────────────────────────────
 #: A trigger counts for admission while it fired within this many trailing sessions.
