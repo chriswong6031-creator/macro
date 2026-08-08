@@ -2001,7 +2001,7 @@
     "base_effect": {
       "growth_q1": 1,
       "inflation_q1": -1,
-      "growth_note": "easy comps a year ago -> base-forced acceleration in growth into Q1; YoY -0.9%->0.5% over 3q",
+      "growth_note": "easy comps a year ago -> base-forced acceleration in growth into Q1; YoY -0.9%->0.8% over 3q",
       "inflation_note": "tough comps a year ago -> base-forced deceleration in inflation into Q1; YoY 3.0%->3.0% over 3q",
       "revised": false,
       "graded": {
