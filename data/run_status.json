@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-08-08T13:25:51.165077+00:00",
+  "last_run": "2026-08-08T14:31:07.049206+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -12,8 +12,8 @@
         "frozen tail: cot_heating_oil last=2013-11-05 age=4659d"
       ],
       "probed_at": null,
-      "elapsed_sec": 21.0,
-      "checked_at": "2026-08-08T13:25:51.166308+00:00"
+      "elapsed_sec": 16.9,
+      "checked_at": "2026-08-08T14:31:07.049244+00:00"
     },
     "fred": {
       "source": "fred",
@@ -198,14 +198,14 @@
     },
     "sentiment_naaim": {
       "source": "sentiment_naaim",
-      "status": "failed",
+      "status": "dead",
       "rows": 0,
       "last_date": null,
-      "error": "ValueError: NAAIM since-inception workbook link not found on page",
+      "error": "circuit open (6 consecutive failures)",
       "notes": [],
-      "probed_at": "2026-08-08T11:43:00.999490+00:00",
-      "elapsed_sec": 0.5,
-      "checked_at": "2026-08-08T13:25:51.165448+00:00"
+      "probed_at": null,
+      "elapsed_sec": 0.0,
+      "checked_at": "2026-08-08T14:31:07.049222+00:00"
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
@@ -216,7 +216,7 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 3.7,
-      "checked_at": "2026-08-08T13:25:51.165466+00:00"
+      "checked_at": "2026-08-08T14:31:07.049230+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",
@@ -248,8 +248,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 8.8,
-      "checked_at": "2026-08-08T13:25:51.165580+00:00"
+      "elapsed_sec": 8.2,
+      "checked_at": "2026-08-08T14:31:07.049235+00:00"
     },
     "coinmetrics": {
       "source": "coinmetrics",
@@ -461,8 +461,8 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 195.5,
-      "checked_at": "2026-08-08T13:25:51.165591+00:00"
+      "elapsed_sec": 188.1,
+      "checked_at": "2026-08-08T14:31:07.049240+00:00"
     },
     "china_universe": {
       "source": "china_universe",
@@ -1807,8 +1807,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-08-08T07:29:38.500679+00:00",
-      "checked_at": "2026-08-08T07:29:40.334345+00:00"
+      "as_of": "2026-08-08T15:52:19.346985+00:00",
+      "checked_at": "2026-08-08T15:52:20.613569+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1867,12 +1867,12 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 1035,
-      "n_graded_ok": 4616,
+      "n_new": 0,
+      "n_graded_ok": 0,
       "n_scored_this_run": 0,
-      "elapsed_sec": 9.8,
+      "elapsed_sec": 8.7,
       "last_date": "2026-08-08",
-      "checked_at": "2026-08-08T07:38:51.359734+00:00"
+      "checked_at": "2026-08-08T15:59:04.463065+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",
@@ -3319,7 +3319,7 @@
       "last_obs": "2022-02-01",
       "cadence_days": 12,
       "age_days": 1649,
-      "detected_at": "2026-08-08T12:50:19.971399+00:00"
+      "detected_at": "2026-08-08T14:31:07.045634+00:00"
     },
     {
       "group": "cot",
@@ -3327,7 +3327,7 @@
       "last_obs": "2013-11-05",
       "cadence_days": 12,
       "age_days": 4659,
-      "detected_at": "2026-08-08T12:50:19.971403+00:00"
+      "detected_at": "2026-08-08T14:31:07.045643+00:00"
     },
     {
       "group": "fred",
@@ -3593,6 +3593,6 @@
         "state": "fresh"
       }
     },
-    "asof": "2026-08-08 09:43:09.734512+00:00"
+    "asof": "2026-08-08 16:38:12.015976+00:00"
   }
 }

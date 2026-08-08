@@ -2,14 +2,14 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-08T08:34:44Z",
+  "produced_at": "2026-08-08T16:53:13Z",
   "tier": "display",
   "as_of": "2026-08-08",
   "feeds": [
     {
       "name": "prophet",
       "ok": true,
-      "n_assets": 111,
+      "n_assets": 123,
       "as_of": "2026-06-04"
     },
     {
@@ -38,7 +38,7 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 160,
+    "n_tickers": 179,
     "window_plans": 7
   },
   "surplus": [
@@ -107,12 +107,12 @@
       "opportunity_id": "radar-earnings-APGE-2026-08-08"
     },
     {
-      "ticker": "AVGO",
-      "feed": "confluence",
-      "why": "confluence combo Double bottom (fast) + ribbon flips up + Golden Star 21/100 firing, test WR 71%",
+      "ticker": "ARI",
+      "feed": "earnings",
+      "why": "earnings 2026-08-11",
       "as_of": "2026-08-08",
       "staleness_days": 0,
-      "opportunity_id": "radar-confluence-AVGO-2026-08-08"
+      "opportunity_id": "radar-earnings-ARI-2026-08-08"
     },
     {
       "ticker": "AVNS",
@@ -163,14 +163,6 @@
       "opportunity_id": "radar-stage-CRNX-2026-08-08"
     },
     {
-      "ticker": "CVX",
-      "feed": "confluence",
-      "why": "confluence combo Weekly RSI crosses above 50 + reclaims 21-day line + double bottom (fast) + Golden Star 21/100 firing, test WR 73%",
-      "as_of": "2026-08-08",
-      "staleness_days": 0,
-      "opportunity_id": "radar-confluence-CVX-2026-08-08"
-    },
-    {
       "ticker": "EBAY",
       "feed": "confluence",
       "why": "confluence combo Weekly short-term uptrend + RSI-14 washed out + POC retest holds firing, test WR 65%",
@@ -217,6 +209,14 @@
       "as_of": "2026-08-08",
       "staleness_days": 0,
       "opportunity_id": "radar-confluence-NRG-2026-08-08"
+    },
+    {
+      "ticker": "TTD",
+      "feed": "confluence",
+      "why": "confluence combo Weekly RSI stack washed out + weekly RSI stack curls up + RSI stack curls up firing, test WR 77%",
+      "as_of": "2026-08-08",
+      "staleness_days": 0,
+      "opportunity_id": "radar-confluence-TTD-2026-08-08"
     },
     {
       "ticker": "VST",
@@ -267,6 +267,14 @@
       "opportunity_id": "radar-movers-FIVN-2026-08-07"
     },
     {
+      "ticker": "HD",
+      "feed": "prophet",
+      "why": "active Prophet plan HD-BULL-20260807, phase pre_trigger, conviction 52",
+      "as_of": "2026-08-07",
+      "staleness_days": 1,
+      "opportunity_id": "radar-prophet-HD-2026-08-07"
+    },
+    {
       "ticker": "LASR",
       "feed": "movers",
       "why": "S&P mover -25.6% 1D ()",
@@ -291,12 +299,12 @@
       "opportunity_id": "radar-movers-PGNY-2026-08-07"
     },
     {
-      "ticker": "CTS",
+      "ticker": "FUL",
       "feed": "prophet",
-      "why": "active Prophet plan CTS-BULL-20260805, phase pre_trigger, conviction 43",
+      "why": "active Prophet plan FUL-BULL-20260805, phase pre_trigger, conviction 47",
       "as_of": "2026-08-05",
       "staleness_days": 3,
-      "opportunity_id": "radar-prophet-CTS-2026-08-05"
+      "opportunity_id": "radar-prophet-FUL-2026-08-05"
     },
     {
       "ticker": "NVDA",
@@ -307,12 +315,20 @@
       "opportunity_id": "radar-prophet-NVDA-2026-08-05"
     },
     {
-      "ticker": "SOUN",
+      "ticker": "ROIV",
       "feed": "prophet",
-      "why": "active Prophet plan SOUN-BULL-20260805, phase pre_trigger, conviction 78",
+      "why": "active Prophet plan ROIV-BULL-20260805, phase pre_trigger, conviction 34",
       "as_of": "2026-08-05",
       "staleness_days": 3,
-      "opportunity_id": "radar-prophet-SOUN-2026-08-05"
+      "opportunity_id": "radar-prophet-ROIV-2026-08-05"
+    },
+    {
+      "ticker": "UAL",
+      "feed": "prophet",
+      "why": "active Prophet plan UAL-BULL-20260805, phase pre_trigger, conviction 53",
+      "as_of": "2026-08-05",
+      "staleness_days": 3,
+      "opportunity_id": "radar-prophet-UAL-2026-08-05"
     },
     {
       "ticker": "VSEC",
@@ -345,36 +361,20 @@
       "as_of": "2026-08-03",
       "staleness_days": 5,
       "opportunity_id": "radar-prophet-SOFI-2026-08-03"
-    },
-    {
-      "ticker": "HEI",
-      "feed": "prophet",
-      "why": "active Prophet plan HEI-BULL-20260731, phase pre_trigger, conviction 32",
-      "as_of": "2026-07-31",
-      "staleness_days": 8,
-      "opportunity_id": "radar-prophet-HEI-2026-07-31"
-    },
-    {
-      "ticker": "NGVT",
-      "feed": "prophet",
-      "why": "active Prophet plan NGVT-BULL-20260731, phase pre_trigger, conviction 35",
-      "as_of": "2026-07-31",
-      "staleness_days": 8,
-      "opportunity_id": "radar-prophet-NGVT-2026-07-31"
     }
   ],
   "queue": {
-    "added": 29,
-    "expired": 8,
-    "total": 271,
-    "open": 156,
+    "added": 6,
+    "expired": 0,
+    "total": 277,
+    "open": 162,
     "doa_skipped": 8
   },
   "tiers_summary": {
     "as_of": "2026-08-07",
     "t1": 28,
-    "t2": 1165,
-    "t3": 1478
+    "t2": 1170,
+    "t3": 1475
   },
   "cadence": {
     "available": true,

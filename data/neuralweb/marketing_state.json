@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 156,
+    "opportunity_queue_depth": 162,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,14 +1690,14 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 156,
-      "scored": 270,
+      "open": 162,
+      "scored": 276,
       "newest": [
         {
           "id": "radar-earnings-AAON-2026-08-08",
           "problem_or_desire": "$AAON: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.39027,
+          "score": 0.307012,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-earnings-ABSI-2026-08-08",
           "problem_or_desire": "$ABSI: earnings 2026-08-11 after hours",
           "expected_value": 0.5,
-          "score": 0.39027,
+          "score": 0.307012,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-earnings-ACHR-2026-08-08",
           "problem_or_desire": "$ACHR: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.39027,
+          "score": 0.307012,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1985,9 +1985,9 @@
     }
   ],
   "content": {
-    "total_posts": 14,
+    "total_posts": 16,
     "signal_posts": 2,
-    "charts": 95,
+    "charts": 105,
     "accounts": 13,
     "state": "present",
     "as_of": "2026-08-08"
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-08T08:34:44Z",
-  "inputs_hash": "sha256:e2321e047caa75b7ac890ed35aeacadf288360bb62a41ac3a95c0f39dc401ba4",
+  "produced_at": "2026-08-08T16:53:14Z",
+  "inputs_hash": "sha256:80bb702d58e55e405f66bfdcf92e8199f7fa14a1112ee76b6d2b21f2fe3ee61d",
   "tier": "display"
 }

@@ -12,29 +12,29 @@
       "fails": [],
       "warns": [],
       "as_of": "2026-08-07",
-      "n": 78,
-      "coverage": 78,
+      "n": 79,
+      "coverage": 79,
       "row": {
         "run_date": "2026-08-08",
         "surface": "standouts",
         "as_of": "2026-08-07",
-        "n_records": 78,
-        "coverage": 78,
-        "fingerprint": "02fec7ce07f5b553",
+        "n_records": 79,
+        "coverage": 79,
+        "fingerprint": "4c8e97d646cb4188",
         "scores": {
           "conviction.composite_z": {
-            "n_sub": 78,
-            "pop": 78,
-            "uniq": 75,
-            "mean": -0.049371794871794876,
-            "std": 0.4606616509330554
+            "n_sub": 79,
+            "pop": 79,
+            "uniq": 76,
+            "mean": -0.05920253164556963,
+            "std": 0.4631960893712086
           },
           "alpha": {
-            "n_sub": 78,
-            "pop": 78,
+            "n_sub": 79,
+            "pop": 79,
             "uniq": 67,
-            "mean": 0.1203846153846154,
-            "std": 0.861353202380123
+            "mean": 0.12924050632911394,
+            "std": 0.8387042026990565
           }
         }
       }
@@ -54,21 +54,21 @@
         "as_of": "2026-08-08",
         "n_records": 25,
         "coverage": 25,
-        "fingerprint": "6c177677c2204f78",
+        "fingerprint": "86be21e685b1419a",
         "scores": {
           "priority": {
             "n_sub": 25,
             "pop": 25,
-            "uniq": 20,
-            "mean": 0.292,
-            "std": 0.0689457757951856
+            "uniq": 19,
+            "mean": 0.30404,
+            "std": 0.06635750447387244
           },
           "strength": {
             "n_sub": 25,
             "pop": 25,
-            "uniq": 13,
-            "mean": 0.37160000000000004,
-            "std": 0.07170383532280543
+            "uniq": 12,
+            "mean": 0.38,
+            "std": 0.06922427319950712
           }
         }
       }
@@ -88,14 +88,14 @@
         "as_of": "2026-08-08",
         "n_records": 250,
         "coverage": 250,
-        "fingerprint": "6808d68cb3004e6d",
+        "fingerprint": "51a18a0059eaf4b9",
         "scores": {
           "edge_score": {
-            "n_sub": 240,
-            "pop": 240,
+            "n_sub": 241,
+            "pop": 241,
             "uniq": 34,
-            "mean": 7.733333333333333,
-            "std": 9.201207650206696
+            "mean": 7.767634854771784,
+            "std": 9.294844765748703
           }
         }
       }
@@ -115,21 +115,21 @@
         "as_of": "2026-08-08",
         "n_records": 30,
         "coverage": 30,
-        "fingerprint": "0151a1e7d53d740f",
+        "fingerprint": "e93b46d63d908449",
         "scores": {
           "signal_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 17,
-            "mean": 40.7,
-            "std": 11.567627241573788
+            "uniq": 18,
+            "mean": 39.333333333333336,
+            "std": 11.308796969124916
           },
           "weighted_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 15,
-            "mean": 1.3116666666666668,
-            "std": 0.46272442002653036
+            "uniq": 16,
+            "mean": 1.2916666666666667,
+            "std": 0.4713603245454114
           }
         }
       }
@@ -185,28 +185,28 @@
         "as_of": "2026-08-08",
         "n_records": 30,
         "coverage": 30,
-        "fingerprint": "08fdf8febbecbce0",
+        "fingerprint": "bcec769b62a91558",
         "scores": {
           "composite_conviction": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 25,
-            "mean": 35.940000000000005,
-            "std": 12.918890561241446
+            "uniq": 24,
+            "mean": 37.96,
+            "std": 10.087206418693597
           },
           "opportunity_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 17,
-            "mean": 25.906666666666663,
-            "std": 9.247627924079895
+            "uniq": 19,
+            "mean": 25.896666666666665,
+            "std": 9.25020660429929
           },
           "edge_remaining": {
             "n_sub": 30,
             "pop": 30,
             "uniq": 19,
-            "mean": 0.6805333333333333,
-            "std": 0.1387642445140518
+            "mean": 0.6718,
+            "std": 0.1480644904537659
           }
         }
       }
@@ -221,5 +221,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-08-08T08:01:04.763564+00:00"
+  "evaluated_at": "2026-08-08T16:21:20.681148+00:00"
 }

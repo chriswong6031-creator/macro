@@ -1,7 +1,7 @@
 {
   "schema": "rates_command.v1",
   "asof": "2026-08-07",
-  "built": "2026-08-08T08:01:04.644208+00:00",
+  "built": "2026-08-08T16:24:05.711399+00:00",
   "display_only": true,
   "authority": false,
   "board": {
@@ -10,11 +10,11 @@
       "policy_rate": 3.63,
       "implied_path": {
         "m1": 3.66,
-        "m3": 3.77,
-        "m6": 3.93,
-        "m12": 4.05
+        "m3": 3.78,
+        "m6": 3.94,
+        "m12": 4.06
       },
-      "implied_bp_12m": 42,
+      "implied_bp_12m": 43,
       "implied_cuts_12m": -2,
       "path_plain": {
         "en": "about two hikes",
@@ -43,8 +43,8 @@
         "lean_en": "market ≈ the Fed",
         "lean_zh": "市场与美联储基本一致"
       },
-      "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.05%)",
-      "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.05%）",
+      "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.06%)",
+      "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.06%）",
       "read_en": "At end-2026 the market implies 3.83% vs the Fed's 3.80% median dot (+3bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.59pp).",
       "read_zh": "在end-2026，市场隐含 3.83% 对比美联储 3.80% 的中位点（+3基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.59个百分点）。",
       "source_en": "ZQ fed-funds futures",
@@ -119,9 +119,9 @@
         "key": "H1_path_repricing",
         "active": false,
         "weight": 2,
-        "value": 7.5,
-        "detail_en": "12-month rate futures moved +7.5bp over 20 trading days (threshold: +15bp).",
-        "detail_zh": "20个交易日内12个月利率期货变动+7.5个基点（阈值：+15bp）。",
+        "value": 8.0,
+        "detail_en": "12-month rate futures moved +8.0bp over 20 trading days (threshold: +15bp).",
+        "detail_zh": "20个交易日内12个月利率期货变动+8.0个基点（阈值：+15bp）。",
         "null_reason": null
       },
       {
@@ -240,8 +240,8 @@
     {
       "key": "D3_pressure_vs_market",
       "active": true,
-      "detail_en": "Easing pressure building but futures imply +42bp over 12m — market still priced for tightening.",
-      "detail_zh": "宽松压力积聚但期货12个月隐含+42个基点——市场仍定价紧缩。"
+      "detail_en": "Easing pressure building but futures imply +43bp over 12m — market still priced for tightening.",
+      "detail_zh": "宽松压力积聚但期货12个月隐含+43个基点——市场仍定价紧缩。"
     }
   ],
   "conditions": [
@@ -273,15 +273,15 @@
   "market_check": {
     "futures": {
       "m1": 3.66,
-      "m3": 3.77,
-      "m6": 3.93,
-      "m12": 4.05,
-      "implied_bp_12m": 42,
-      "plain_read_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.05%)",
-      "plain_read_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.05%）"
+      "m3": 3.78,
+      "m6": 3.94,
+      "m12": 4.06,
+      "implied_bp_12m": 43,
+      "plain_read_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.06%)",
+      "plain_read_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.06%）"
     },
     "prediction_markets": {
-      "as_of": "2026-08-07",
+      "as_of": "2026-08-08",
       "source": "Polymarket",
       "events": [
         {
@@ -290,7 +290,7 @@
           "label_zh": "下次美联储决议",
           "top_outcome": "No change",
           "top_prob": 62.5,
-          "chg_pp": 8.0,
+          "chg_pp": 0.0,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         },
@@ -299,8 +299,8 @@
           "label_en": "Fed cuts this year",
           "label_zh": "今年降息次数",
           "top_outcome": "0 (0 bps)",
-          "top_prob": 86.1,
-          "chg_pp": -1.5,
+          "top_prob": 85.4,
+          "chg_pp": -0.7,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         },
@@ -309,8 +309,8 @@
           "label_en": "CPI outcome market",
           "label_zh": "CPI市场预期",
           "top_outcome": "0.2%",
-          "top_prob": 50.1,
-          "chg_pp": -4.5,
+          "top_prob": 47.8,
+          "chg_pp": -2.3,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         }
