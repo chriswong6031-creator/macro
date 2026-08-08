@@ -278,6 +278,18 @@ space is the program's main enemy and is designed against, not hoped away. Data-
 builds. Same hypothesis class as §6.8(e): anticipatory-flow footprints before discrete
 events; mechanism-agnostic wording, A7 bounds, display-tier until gauntleted.
 
+**(g) v2-vs-v3 RULING (operator question 2026-08-08: "does 300363 mean v2 > v3?").** NO
+reversion. v3's re-ordering was measured on hundreds of episodes and cut losses; 300363 is
+n=1, and re-weighting to capture a known winner is the outcome-audition kill. Under v3 the
+name loses the #1 SLOT, not visibility (reversal_member + washout channels survive intact;
+it still scores the top band). The actual lesson: a single GLOBAL entry ladder is too blunt —
+`partial` inside a washout-reversal cohort is EARLY; `partial` chasing a late trend is what
+v3's measurement punished. The board already stamps `species_id` (cn_washout) → the clean
+design is a SPECIES-CONDITIONAL entry ladder (per-species values, per-cohort measurement,
+§6.6 revision rules), which reconciles v3's loss reduction with v2's winner capture. Gate:
+a full-board v2-vs-v3 counterfactual replay over the whole episode history measuring BOTH
+loser rate AND top-slot winner capture — chartered for the chain, before any ladder change.
+
 Cross-repo: Terminal Golden Oracle = charting-app `signal_layer/golden_gate.py` (possible 4th
 confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
 grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
