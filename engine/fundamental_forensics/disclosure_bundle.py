@@ -539,6 +539,10 @@ def restore_disclosure_bundle(
         raise DisclosureBundleError("disclosure bundle is not canonically encoded")
     if str(bundle["bundle_id"]) != str(pointer["bundle_id"]):
         raise DisclosureBundleError("disclosure bundle pointer does not bind this bundle")
+    # The age gate above trusted the pointer's clock before the bundle was
+    # readable; a rewritten pointer must not be able to freshen a stale bundle.
+    if str(bundle["published_at"]) != str(pointer["published_at"]):
+        raise DisclosureBundleError("disclosure bundle pointer clock does not match its bundle")
 
     present = sorted(str(item) for item in bundle["tickers"])
     if present != expected:

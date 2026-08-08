@@ -340,6 +340,27 @@ def test_restore_refuses_a_pointer_that_binds_a_different_bundle(
         )
 
 
+def test_restore_refuses_a_pointer_clock_that_freshens_a_stale_bundle(
+    tmp_path: Path, projections: dict[str, dict]
+) -> None:
+    local_dir = tmp_path / "private-store"
+    store = LocalStore(local_dir)
+    _publish(store, projections)
+
+    # The age gate reads the pointer before the bundle exists in memory, so a
+    # rewritten pointer clock (same id, same key, canonical bytes) is the one
+    # substitution that could mask a stale bundle's age. Only the post-read
+    # pointer/bundle clock cross-check can catch it.
+    pointer = json.loads((store.get_bytes(DISCLOSURE_BUNDLE_LATEST_KEY) or b"{}").decode("utf-8"))
+    pointer["published_at"] = "2026-08-02T06:00:00.000000Z"  # normalized, passes the pointer decode
+    (local_dir / DISCLOSURE_BUNDLE_LATEST_KEY).write_bytes(canonical_json(pointer).encode("utf-8"))
+
+    with pytest.raises(DisclosureBundleError, match="pointer clock does not match its bundle"):
+        restore_disclosure_bundle(
+            store, output_root=tmp_path / "out", expected_tickers=["TST", "TSU"], now=NOW
+        )
+
+
 def test_validate_rejects_a_ticker_index_that_disagrees_with_the_projections(
     projections: dict[str, dict],
 ) -> None:
