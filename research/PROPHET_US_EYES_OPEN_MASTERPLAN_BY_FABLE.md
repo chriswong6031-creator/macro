@@ -187,6 +187,55 @@ dispatched to #4976 before merge; a NEUTRALITY pin test replaces the ordering pi
 | Signal dates | #4987 | armed | `signal_date`/`confirmed_date`/`recorded_at` split, additive, mutation-fenced; **outage audit: forward ledger CLEAN (0/27), no run-date stamping** — but marker `date` is the bucket OPEN label (panel "Buy Aug 7" for NVDA was honest; the chart x-anchor misleads), 7/7 pre-outage ledger rows carry the OPEN label as signal_date, QCOM/MS rows carry non-bucket dates (board-as_of leak) → board-coherence follow-up gated on #4976 |
 | §6.6 instrument | #4988 | armed | table above; also surfaced: W7 grade store never advanced (own lane needed) |
 
+### §6.8 ENTRY LANES BATTERY + ORACLE V3 + EARNINGS IGNITION (operator session 2026-08-08, second wave of orders)
+
+**(a) Structure-stop redesign (Tencent receipt — "sold at the lowest point of the mini cycle").**
+The swing-low-break confirm fired at the terminal flush while the 3D MACD-RSI was rising — the
+break WAS the capitulation, not distribution. HK-O2 design: condition the CONFIRM on context —
+momentum divergence (3D MACD-RSI above signal and rising since ARM ⇒ disarm or demote to
+"flush watch"), washout-maturity, and volume-climax signature; a contradicted break emits
+"stop hit — flush signature, re-entry watch armed" (the RE-ENTRY machinery already exists)
+instead of a clean SELL. MEASURE FIRST: replay all sell_confirms — P(low within ±2 sessions |
+confirm) split by momentum-context; if the contradicted-confirm cohort marks lows, the
+conditioning ships.
+
+**(b) Grey dot → EARLY TURN lane (operator: "redo grey dot into something else").** Promote
+`early_dots` from a 2.2px toggle-hidden glyph to a first-class starter-grade marker tier:
+visible, labeled as a window not a certainty (voice law), qualified by HTF-washout maturity
+(cuts noise), carrying a zone (buy band + chase-above) — the STARTER entry; the full BUY
+becomes the ADD. Two-stage entries replace single-shot confirmation chasing.
+
+**(c) Washout-state release (Alibaba 90→128 missed).** `bear_block`'s sole release (completed
+2W cross) gains a second release: monthly/2W washout-mature + turning + cohort confirmation
+(the discriminator stack) ⇒ starter-grade emission below the 200dMA. Plus the shallow-cross
+re-fire repair (a name grinding −20% inside one bull cross can never re-fire — Tencent Jul-3).
+
+**(d) US entry-lanes battery (operator: "is the 3D edge crowded? how do institutions buy?").**
+Working hypothesis, honestly held: single-name lagging-confluence entries on liquid US names
+are heavily arbitraged; edge migrates to composition and context. Institutions run BOOKS of
+entry types, not one signal. We mirror with stacked lanes, each measured side-by-side in the
+shadow/scorecard framework: (1) WASHOUT-IGNITION (built — deep-base + cohort + turn); (2)
+**LEADER-PULLBACK — the NVDA/AVGO-class catcher** (they were never washed out: high-RS leaders,
+shallow controlled retrace, daily stoch reset <20-30 while the 3D uptrend stays intact, entry
+at rising structure — anchored VWAP / prior breakout / 20-50d MA — on the resumption print);
+(3) FLOW-CONFIRMATION chips from in-house planes (polygon GEX dealer positioning, darkpool_eod,
+si_handoff short structure) as confluence context, display-tier first; (4) EVENT lane = (e).
+Each lane display-tier → forward-graded → promoted per §6.6 mechanics. NO claim that one lane
+is THE answer; the battery is the answer.
+
+**(e) EARNINGS IGNITION (AMZN Jul-31, MSFT Jul-29 re-entry, DLB Jul-23 receipts).** The
+observable phenomenon: fresh buy-confluence within days before earnings = anticipatory
+positioning flow, whatever its source — we detect the FOOTPRINT, mechanism-agnostic (no
+insider-knowledge claims in any user copy). Measurement lane FIRST (launched 2026-08-08):
+all fresh confluences within 5 sessions pre-earnings over the marker history — reaction
+stats vs SPY, vs non-earnings confluences, vs earnings-without-confluence base rate; the
+ADVERSE TAIL is the load-bearing unknown (does a confluence ever precede a miss? this
+quarter's broad beats confound — measure across quarters). LLM role bounded by A7: transcript/
+history analysis may de-escalate or contextualize (display-tier chips), never originate or
+escalate a signal. Coordinate with the active 'Earnings Intelligence' session (Struct/Jodie
+group-reaction build) — cite, never duplicate; group/peer-reaction inputs come from their
+artifacts when they land.
+
 Cross-repo: Terminal Golden Oracle = charting-app `signal_layer/golden_gate.py` (possible 4th
 confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
 grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
