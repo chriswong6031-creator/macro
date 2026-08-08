@@ -75,7 +75,7 @@ artifacts:
     producer: scripts/run_fundamental_forensics_wave2.py
     known_extra_writers: []
     owner_program: fundamental-forensics
-    cadence: daily-engine
+    cadence: nightly-sec
     storage: r2
     asof_field: snapshot_at
     freshness_sla_hours: 30
@@ -96,6 +96,40 @@ artifacts:
       and object read-back. It is never copied to git, the public site, or a public
       bucket; it is an evidence/provenance rail with no score, rank, gate, or trade
       authority.
+
+  fundamental-forensics-disclosure-bundle:
+    path: fundamental_forensics/disclosures/v1/latest.json
+    format: json
+    producer: scripts/fundamental_forensics_disclosure_bundle.py
+    known_extra_writers: []
+    owner_program: fundamental-forensics
+    cadence: nightly-sec
+    storage: r2
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: fundamental_forensics.disclosure_projection_bundle_latest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/fundamental_forensics_disclosure_bundle.py
+      - scripts/build_fundamental_forensics.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Immutable content-addressed disclosure-projection bundle plus this CAS
+      latest pointer (implementation: engine/fundamental_forensics/disclosure_bundle.py),
+      published by the scheduled filing-forensics-sec lane (02:30 UTC,
+      .github/workflows/filing-forensics-sec.yml) after restore -> strict
+      acquire -> projections -> incremental sync, then byte-verified through the
+      same restore path the engine runs. daily.yml's engine job restores ONLY
+      this bundle before the broad build (one bounded pointer GET + one bundle
+      GET — constant cost as the SEC source store grows); a red lane publishes
+      nothing, leaving the pointer at the last COMPLETE bundle, so the render is
+      stale-but-complete (restore warns beyond 3 days, refuses beyond 21).
+      Private Research R2 only — never git, the public site, or a public bucket;
+      an evidence/context rail with no score, rank, gate, or trade authority.
 
   fundamental-forensics-private-state:
     path: fundamental_forensics/state.json.gz
