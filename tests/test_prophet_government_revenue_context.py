@@ -336,6 +336,51 @@ def test_loader_suppresses_stale_opportunities_but_keeps_fresh_awards(
     assert context["LMT"]["opportunity_candidates"] == []
 
 
+def test_award_event_rail_state_is_disclosed_not_only_acted_on(tmp_path: Path) -> None:
+    """A suppressed award-event rail must SAY so, not just return an empty list.
+
+    ``effective_freshness`` excludes the award-event rail from the aggregate
+    (``engine/government_revenue/freshness.py`` line 171), so a failed spine
+    still leaves ``freshness.status == "ok"`` and Prophet's own gate cannot see
+    it.  ``reviewed_award_change_context`` gates on the rail separately, so the
+    published list empties silently.  Without the rail state in the block, a
+    consumer cannot tell "the spine is dead" from "this ticker had no award
+    changes" — the two have opposite meanings for the same empty list.
+    Mastermind already discloses it (``mastermind_context.py`` line 2101).
+    """
+    standouts_path = _write_standouts(tmp_path)
+    artifact = tmp_path / "data" / "government_revenue" / "latest.json"
+    artifact.parent.mkdir(parents=True)
+
+    def write(award_event_status: str) -> None:
+        artifact.write_text(
+            json.dumps({
+                "schema_version": "company_government_revenue.v1",
+                "as_of": "2026-07-31",
+                "known_at": "2026-08-01T23:00:00Z",
+                "freshness": _artifact_freshness(award_event_status=award_event_status),
+                "companies": [{
+                    "ticker": "LMT",
+                    "metrics": {"award_velocity_yoy_pct": 14.25},
+                }],
+            }),
+            encoding="utf-8",
+        )
+
+    for award_event_status in ("failed", "stale", "partial", "unavailable"):
+        write(award_event_status)
+        context = pb._load_government_revenue_context(standouts_path, "2026-08-01")["LMT"]
+        # The rail is excluded from the aggregate, so the block still publishes.
+        assert context["freshness"]["status"] == "ok"
+        # Acting on the rail is not the same as disclosing it.
+        assert context["award_change_events"] == []
+        assert context["freshness"]["award_events"] == award_event_status
+
+    write("ok")
+    healthy = pb._load_government_revenue_context(standouts_path, "2026-08-01")["LMT"]
+    assert healthy["freshness"]["award_events"] == "ok"
+
+
 def test_loader_recomputes_elapsed_sla_before_prophet_annotation(tmp_path: Path) -> None:
     standouts_path = _write_standouts(tmp_path)
     artifact = tmp_path / "data" / "government_revenue" / "latest.json"
