@@ -1167,8 +1167,22 @@ class TestPublisherCapIsRampAware:
 
     def test_admin_outbox_exposes_the_per_account_caps(self, tmp_path):
         """The scalar `cap` stays the base ceiling (frozen contract); the honest
-        per-desk number rides alongside it."""
+        per-desk number rides alongside it.
+
+        The desk ages are RELATIVE to today, unlike this class's siblings. They pin the
+        clock (`dry_run_report(..., now=...)`); `admin.marketing.outbox(root)` takes no
+        `now`, and `_caps_by_account`'s `as_of` is not reachable through it — so this test
+        necessarily reads the real calendar. It was written with `created: "2026-07-25"`
+        for the week-1 desk, which is inside `weeks_1_2` for exactly 14 days: it went red
+        on its own on 2026-08-08 with nothing changed, and would have taken every open PR
+        with it via ci-pack-2. Anchoring to `date.today()` keeps each desk in the tier the
+        assertion names on every future run. Do not re-freeze these literals without also
+        threading a clock through `outbox()`.
+        """
         import admin.marketing as am
+        today = date.today()
+        cold = today - timedelta(days=2)      # inside weeks_1_2 (first 14 days) -> cap 2
+        warm = today - timedelta(days=400)    # far past graduate_after_days=56 -> cap -1
         (tmp_path / "config").mkdir()
         (tmp_path / "config" / "marketing.yml").write_text(
             "sentinel:\n"
@@ -1183,10 +1197,10 @@ class TestPublisherCapIsRampAware:
             "  accounts:\n"
             "    - id: cold\n"
             "      enabled: true\n"
-            "      created: \"2026-07-25\"\n"
+            f"      created: \"{cold.isoformat()}\"\n"
             "    - id: warm\n"
             "      enabled: true\n"
-            "      created: \"2025-01-01\"\n",
+            f"      created: \"{warm.isoformat()}\"\n",
             encoding="utf-8")
         (tmp_path / "data" / "marketing" / "outbox").mkdir(parents=True)
 
