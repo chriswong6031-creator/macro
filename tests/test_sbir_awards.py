@@ -411,6 +411,24 @@ def test_pii_source_fields_are_never_persisted_in_a_row_or_a_receipt():
     assert sbir._contains_forbidden_receipt_key(_receipt()) is False
 
 
+def test_the_canonical_column_list_is_the_defended_privacy_seam(monkeypatch):
+    """The row is filtered to the canonical columns, so that list is the gate.
+
+    Adding a contact-shaped field to the intermediate row dict is harmless — it
+    is dropped by the projection onto ``SBIR_OBSERVATION_COLUMNS``.  The real
+    regression is a PII-named column joining that list, so pin it there: the
+    census below fails on such an addition, and the in-normalizer guard refuses
+    to emit the row at all rather than trusting the census to have caught it.
+    """
+    assert [column for column in SBIR_OBSERVATION_COLUMNS if sbir._PII_KEY.search(column)] == []
+
+    monkeypatch.setattr(
+        sbir, "SBIR_OBSERVATION_COLUMNS", [*SBIR_OBSERVATION_COLUMNS, "poc_email"]
+    )
+    with pytest.raises(ValueError, match="would persist PII columns"):
+        normalize_sbir_award_observation(_award("T1"), _receipt(), OBSERVED)
+
+
 def test_receipts_are_canonical_hash_only_and_binding_is_checked(tmp_path):
     response = [_award("T1")]
     first = _receipt(response=response)
