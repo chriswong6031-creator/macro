@@ -337,6 +337,27 @@ class TestCounterpartyQuality:
         """'Bank' is too common to be a self-name signal."""
         assert m8k._counterparty_is_valid("Bank of America", "Bank of New York Mellon") is True
 
+    @pytest.mark.parametrize("title", [
+        "Seventh Supplemental Indenture", "Floating Rate Notes",
+        "Houston Electric Amendment", "ICANN's Base Registry Agreement",
+        "Third Amended Credit Facility", "Secretary of State",
+        "U.S. Securities",
+    ])
+    def test_rejects_document_titles_by_their_tail_word(self, title):
+        """~7% of extracted names on the first backfill pass were document titles."""
+        assert m8k._counterparty_is_valid(title) is False
+
+    def test_tail_rule_only_looks_at_the_tail(self):
+        """A real entity that merely CONTAINS furniture vocabulary still passes."""
+        assert m8k._counterparty_is_valid("Agreement Dynamics Corp") is True
+
+    def test_self_name_matches_across_a_spacing_variant(self):
+        assert m8k._counterparty_is_valid("Go Daddy Operating Company", "GoDaddy Inc.") is False
+
+    def test_spacing_variant_match_respects_token_boundaries(self):
+        """'America' must not read as a self-name for 'American Airlines'."""
+        assert m8k._counterparty_is_valid("Bank of America", "American Airlines Group") is True
+
     def test_walks_past_the_registrant_to_the_real_counterparty(self):
         text = ("entered into a Credit Agreement by and among Amazon.com, Inc., the lenders "
                 "party thereto, and Wells Fargo Bank, National Association, as Agent.")

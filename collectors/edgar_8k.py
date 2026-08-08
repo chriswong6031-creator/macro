@@ -333,7 +333,7 @@ _ENRICH_WINDOW_DAYS = 45   # only fetch primary doc for recent filings on increm
 # extraction_ok, whose False is a real coverage fact the graded ledger reads
 # (engine/eightk_magnitude.py: n_extraction_ok / extraction_ok_pct / the amount gate).
 # Bump this when the extraction rules change enough that old rows deserve another pass.
-_ENRICH_REV = 1
+_ENRICH_REV = 2
 
 # GR3b — exhibit fetch bounds.  Material-agreement 8-Ks carry the contract itself as an
 # EX-10 (or EX-2 for a separation/merger), and the parties + dollars live there rather
@@ -443,6 +443,24 @@ _CP_PHRASE_BLOCKLIST = frozenset({
     "new york stock exchange", "nyse american", "nasdaq stock market",
     "nasdaq global select market", "nasdaq global market", "nasdaq capital market",
     "securities and exchange commission", "cboe bqx exchange", "cboe bzx exchange",
+    "us securities", "secretary of state",
+    "secretary of state of the state of delaware", "internal revenue service",
+})
+# Entries above are matched against a punctuation-free normal form, so 'U.S. Securities'
+# and 'US Securities' are one key rather than two spellings to remember.
+_CP_PUNCT_RE = re.compile(r"[^a-z0-9 ]")
+
+# A candidate whose LAST word is document furniture is a document title that survived the
+# clause split, not a party: 'Seventh Supplemental Indenture', 'Floating Rate Notes',
+# 'Houston Electric Amendment', "ICANN's Base Registry Agreement".  Measured at ~7% of
+# extracted names on the trailing-24m backfill before this rule (2026-08-08).  Keyed on
+# the TAIL specifically, so 'Agreement Corp' or 'Indenture Trustee Bank Ltd' would still
+# be considered on their own merits.
+_CP_TAIL_FURNITURE = frozenset({
+    "agreement", "agreements", "amendment", "amendments", "indenture", "indentures",
+    "supplement", "supplemental", "note", "notes", "certificate", "certificates",
+    "letter", "plan", "schedule", "annex", "exhibit", "waiver", "consent",
+    "guaranty", "guarantee", "deed", "lease", "loan", "facility", "commitment",
 })
 
 # Lower-case tokens allowed INSIDE a name without breaking its "looks like a proper
@@ -515,6 +533,20 @@ def _is_self_name(candidate: str, registrant: str | None) -> bool:
     n = min(len(c), len(r))
     if c[:n] == r[:n]:
         return True
+
+    # Spacing variants: 'Go Daddy Operating Company' is the filer 'GoDaddy Inc.'.
+    # Compared as joined TOKEN PREFIXES rather than raw string prefixes, so the match
+    # has to land on a token boundary — 'America' must not read as a self-name for
+    # 'American Airlines' just because one spells the other's first eight letters.
+    def _prefixes(toks: list[str]) -> set[str]:
+        acc, out = "", set()
+        for t in toks:
+            acc += t
+            out.add(acc)
+        return out
+
+    if "".join(r) in _prefixes(c) or "".join(c) in _prefixes(r):
+        return True
     # A shared DISTINCTIVE first token is the same tell one level looser: 'Cognizant
     # Worldwide Limited' is a financing subsidiary of 'Cognizant Technology Solutions
     # Corp', not its counterparty.  Restricted to a non-generic head word so that
@@ -537,7 +569,9 @@ def _counterparty_is_valid(name: str, registrant: str | None = None) -> bool:
         return False
 
     lowered = [t.strip(_CP_TOKEN_STRIP).lower() for t in raw_tokens]
-    if " ".join(lowered) in _CP_PHRASE_BLOCKLIST:
+    if _WS_RE.sub(" ", _CP_PUNCT_RE.sub("", " ".join(lowered))).strip() in _CP_PHRASE_BLOCKLIST:
+        return False
+    if lowered[-1] in _CP_TAIL_FURNITURE:
         return False
     has_suffix = any(t in _CP_LEGAL_SUFFIXES for t in lowered)
 
