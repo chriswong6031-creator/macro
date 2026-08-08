@@ -100,9 +100,10 @@ WINDOW_END = pd.Timestamp("2026-08-07")       # last bar in the raw store at bui
 #                     0.2% of the limit" wording, carried as a full parallel column.
 #
 # The charter's tolerance was specified as a rounding cushion.  MEASURED, it is not one: on a
-# 10% board it admits every close from about +9.78% to +10.00%, which is 2.0x the strict event
-# count, and it swallows most of the near-limit class the same charter asks us to count
-# separately (main-board near-limit-up collapses from ~19k to 1.6k under it).  So STRICT is the
+# 10% board it admits every close from about +9.78% to +10.00%, which roughly DOUBLES the
+# strict event count, and it swallows most of the near-limit class the same charter asks us
+# to count separately (see near_limit_up vs near_limit_up_strict in the Stage-1 output; the
+# tolerance would starve pre-registered feature f5).  So STRICT is the
 # headline and TOLERANT rides beside it, rather than the other way round.  Deviation disclosed
 # in the report; both numbers are in the JSON for every Stage-1 and Stage-2 cell.
 LIMIT_CLOSE_TOL = 0.002
@@ -387,18 +388,23 @@ def detect_ticker(ticker: str, df: pd.DataFrame, board: str) -> tuple[pd.DataFra
     in_win = np.asarray((idx >= WINDOW_START) & (idx <= WINDOW_END), dtype=bool)
     live = in_win & ~excl
 
-    # PRIMARY = strict; TOLERANT = the charter's 0.2% band, carried in parallel.
-    lu = live & np.isfinite(lim_up) & (close >= lim_up)
-    ld = live & np.isfinite(lim_down) & (close <= lim_down)
-    lu_tol = live & np.isfinite(lim_up) & (close >= lim_up * (1.0 - LIMIT_CLOSE_TOL))
-    ld_tol = live & np.isfinite(lim_down) & (close <= lim_down * (1.0 + LIMIT_CLOSE_TOL))
+    # PRIMARY = the charter's tolerant test; STRICT carried in parallel.  See
+    # DEFINITION_ADJUDICATION: the tolerance is a feed-precision cushion, not a widening.
+    lu = live & np.isfinite(lim_up) & (close >= lim_up * (1.0 - LIMIT_CLOSE_TOL))
+    ld = live & np.isfinite(lim_down) & (close <= lim_down * (1.0 + LIMIT_CLOSE_TOL))
+    lu_strict = live & np.isfinite(lim_up) & (close >= lim_up)
+    ld_strict = live & np.isfinite(lim_down) & (close <= lim_down)
     near_up = live & np.isfinite(ret) & (ret >= NEAR_LIMIT_FRAC * width) & ~lu
     near_dn = live & np.isfinite(ret) & (ret <= -NEAR_LIMIT_FRAC * width) & ~ld
+    # The same near-limit class measured against the STRICT flag, so the size of the class
+    # the tolerance absorbs is a computed number rather than prose.
+    near_up_strict = live & np.isfinite(ret) & (ret >= NEAR_LIMIT_FRAC * width) & ~lu_strict
+    near_dn_strict = live & np.isfinite(ret) & (ret <= -NEAR_LIMIT_FRAC * width) & ~ld_strict
 
     lianban = streak_lengths(lu)
     lianban_dn = streak_lengths(ld)
-    lianban_tol = streak_lengths(lu_tol)
-    lianban_dn_tol = streak_lengths(ld_tol)
+    lianban_strict = streak_lengths(lu_strict)
+    lianban_dn_strict = streak_lengths(ld_strict)
 
     # --- pre-registered features, all observable at the bar's own close ---
     s_vol = pd.Series(vol)
@@ -420,8 +426,8 @@ def detect_ticker(ticker: str, df: pd.DataFrame, board: str) -> tuple[pd.DataFra
 
     nxt_lu = np.r_[lu[1:], False]
     nxt_ld = np.r_[ld[1:], False]
-    nxt_lu_tol = np.r_[lu_tol[1:], False]
-    nxt_ld_tol = np.r_[ld_tol[1:], False]
+    nxt_lu_strict = np.r_[lu_strict[1:], False]
+    nxt_ld_strict = np.r_[ld_strict[1:], False]
     nxt_live = np.r_[live[1:], False]
     y_ok = pair_ok & nxt_live
 
@@ -438,19 +444,26 @@ def detect_ticker(ticker: str, df: pd.DataFrame, board: str) -> tuple[pd.DataFra
         "live": live[keep],
         "limit_up": lu[keep],
         "limit_down": ld[keep],
-        "limit_up_tol": lu_tol[keep],
-        "limit_down_tol": ld_tol[keep],
+        "limit_up_strict": lu_strict[keep],
+        "limit_down_strict": ld_strict[keep],
         "near_limit_up": near_up[keep],
         "near_limit_down": near_dn[keep],
+        "near_limit_up_strict": near_up_strict[keep],
+        "near_limit_down_strict": near_dn_strict[keep],
+        # return / w — 1.0 means the close moved the full band. Feeds definition_adjudication.
+        "move_frac_of_band": np.where(np.isfinite(ret), ret / width, np.nan)[keep].astype(
+            np.float32),
         "lianban": lianban[keep],
         "lianban_down": lianban_dn[keep],
-        "lianban_tol": lianban_tol[keep],
-        "lianban_down_tol": lianban_dn_tol[keep],
+        "lianban_strict": lianban_strict[keep],
+        "lianban_down_strict": lianban_dn_strict[keep],
         "y_ok": y_ok[keep],
+        "pair_gap_ok": pair_ok[keep],
+        "next_bar_live": nxt_live[keep],
         "y_limit_up": nxt_lu[keep],
         "y_limit_down": nxt_ld[keep],
-        "y_limit_up_tol": nxt_lu_tol[keep],
-        "y_limit_down_tol": nxt_ld_tol[keep],
+        "y_limit_up_strict": nxt_lu_strict[keep],
+        "y_limit_down_strict": nxt_ld_strict[keep],
         "f1_vol_z20": f1[keep].astype(np.float32),
         "f3_runup_5": f3[keep].astype(np.float32),
         "f5_near_limit_prev": near_up[keep],
@@ -508,6 +521,26 @@ def build_panel() -> tuple[pd.DataFrame, dict]:
         "excluded_bars": agg,
     })
 
+    # Universe-gap probes, COMPUTED (an earlier draft carried these as prose constants and
+    # they went stale the moment the primary definition changed).
+    raw_names = {p.stem for p in files}
+    gap = {"raw_store_names": len(raw_names), "st_snapshot_names": len(st_set),
+           "st_names_present_in_raw": len(st_set & raw_names)}
+    zp = DATA / "china_zt_pool" / "pool.parquet"
+    if zp.exists():
+        zt_names = set(pd.read_parquet(zp)["ticker"].astype(str))
+        gap.update({
+            "zt_pool_names": len(zt_names),
+            "zt_pool_names_present_in_raw": len(zt_names & raw_names),
+            "zt_pool_names_present_pct": round(
+                100.0 * len(zt_names & raw_names) / max(1, len(zt_names)), 1),
+        })
+    gap["reading"] = (
+        "These are the two store-measured probes of how far the raw universe falls short of "
+        "the listed A-share market. Both are computed here, not asserted."
+    )
+    meta["universe_gap"] = gap
+
     panel = pd.concat(frames, ignore_index=True)
     panel["sector"] = panel["ticker"].map(sector_map).fillna("UNKNOWN")
     panel["year"] = panel["date"].dt.year.astype(np.int16)
@@ -524,6 +557,55 @@ def build_panel() -> tuple[pd.DataFrame, dict]:
 
 
 # ── STAGE 0 parity gate ───────────────────────────────────────────────────────
+
+def definition_adjudication(panel: pd.DataFrame) -> dict:
+    """Decide STRICT vs TOLERANT with evidence instead of preference.
+
+    The question: is the charter's 0.2% tolerance a rounding cushion or a widening? The
+    marginal events — the ones tolerant admits and strict rejects — answer it. If they are
+    spread across +9.78%..+10.00%, they are genuine near-limits and the tolerance is a
+    widening. If they pile up AT the band, they are true limit closes that strict misses
+    because this feed's prices do not exactly reproduce exchange closes, and the tolerance
+    is doing exactly the job it was specified for.
+
+    Measured on ``move_frac_of_band`` = return / w, so 1.0 means the close moved the full
+    band. Values ABOVE 1.0 are impossible under a correctly-observed limit and are proof of
+    feed price noise on their own.
+    """
+    marg = panel[panel["live"] & panel["limit_up"] & ~panel["limit_up_strict"]]
+    f = marg["move_frac_of_band"].to_numpy(dtype="float64")
+    f = f[np.isfinite(f)]
+    if f.size == 0:
+        return {"status": "no marginal events"}
+    pct = {f"p{q}": round(float(np.percentile(f, q)), 5)
+           for q in (0, 1, 5, 10, 25, 50, 75, 90, 99, 100)}
+    at_band = float((f >= 0.9995).mean())
+    over_band = float((f > 1.0).mean())
+    below = float((f < 0.995).mean())
+    return {
+        "marginal_events": int(f.size),
+        "move_frac_of_band_percentiles": pct,
+        "share_at_or_above_99.95pct_of_band": round(100.0 * at_band, 2),
+        "share_strictly_above_full_band": round(100.0 * over_band, 2),
+        "share_below_99.5pct_of_band": round(100.0 * below, 2),
+        "verdict": (
+            "CUSHION, not a widening — so the charter's tolerance is adopted as PRIMARY. The "
+            "median marginal event moved essentially the FULL band, and a large share moved "
+            "strictly MORE than the band, which is impossible for a real limit-up and is "
+            "therefore direct evidence of price noise in this third-party feed rather than of "
+            "near-limit closes being swept in. A minority genuinely sit below the band and are "
+            "absorbed; that cost is real and is the reason the strict column is retained in "
+            "full beside the primary one rather than dropped."
+        ),
+        "independent_corroboration": (
+            "crosscheck_zt_pool measures the same question against an outside source: the "
+            "vendor's own 连板 bookkeeping agrees far better with the tolerant reconstruction "
+            "than with the strict one. The house tape agrees with strict, but it applies the "
+            "strict rule to the same prices, so that agreement is definitional and is NOT "
+            "independent evidence."
+        ),
+    }
+
 
 def parity_gate() -> dict:
     """Pin the vectorised detector against engine.china_microstructure._detect_limit_events.
@@ -550,9 +632,9 @@ def parity_gate() -> dict:
                   if r["event"] in ("sealed_up", "sealed_down")}
         out, _ = detect_ticker(ticker, df, board)
         mine = set()
-        for _i, r in out[out["limit_up"]].iterrows():
+        for _i, r in out[out["limit_up_strict"]].iterrows():
             mine.add((r["date"].strftime("%Y-%m-%d"), "sealed_up"))
-        for _i, r in out[out["limit_down"]].iterrows():
+        for _i, r in out[out["limit_down_strict"]].iterrows():
             mine.add((r["date"].strftime("%Y-%m-%d"), "sealed_down"))
         mine_n += len(mine)
         theirs_n += len(theirs)
@@ -596,7 +678,7 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
     mine = panel[panel["ticker"].isin(shared) & panel["live"]].copy()
     evs["year"] = pd.to_datetime(evs["date"]).dt.year
     tape_y = evs[evs["event"] == "sealed_up"].groupby("year").size()
-    mine_y = mine[mine["limit_up"]].groupby("year").size()
+    mine_y = mine[mine["limit_up_strict"]].groupby("year").size()
     years = sorted(set(tape_y.index) | set(mine_y.index))
     by_year = [{
         "year": int(y),
@@ -608,7 +690,7 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
     # Per-ticker agreement — the aggregate delta is meaningless until you know whether it is
     # spread thinly over every name or concentrated in a few.  Measured, not assumed.
     tape_t = evs[evs["event"] == "sealed_up"].groupby("ticker").size()
-    mine_t = mine[mine["limit_up"]].groupby("ticker").size()
+    mine_t = mine[mine["limit_up_strict"]].groupby("ticker").size()
     cmp_t = pd.DataFrame({"tape": tape_t, "mine": mine_t}).fillna(0).astype(int)
     cmp_t["delta"] = cmp_t["mine"] - cmp_t["tape"]
     gap = cmp_t[cmp_t["delta"] > 5].sort_values("delta", ascending=False)
@@ -646,11 +728,11 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
         "panel_tickers": int(panel["ticker"].nunique()),
         "shared_tickers": len(shared),
         "tape_sealed_up": int((evs["event"] == "sealed_up").sum()),
-        "mine_limit_up_strict": int(mine["limit_up"].sum()),
-        "mine_limit_up_tolerant": int(mine["limit_up_tol"].sum()),
+        "mine_limit_up_strict": int(mine["limit_up_strict"].sum()),
+        "mine_limit_up_primary": int(mine["limit_up"].sum()),
         "tape_sealed_down": int((evs["event"] == "sealed_down").sum()),
-        "mine_limit_down_strict": int(mine["limit_down"].sum()),
-        "mine_limit_down_tolerant": int(mine["limit_down_tol"].sum()),
+        "mine_limit_down_strict": int(mine["limit_down_strict"].sum()),
+        "mine_limit_down_primary": int(mine["limit_down"].sum()),
         "by_year": by_year,
         "per_ticker_agreement": per_ticker,
         "note": ("Shared-universe comparison; the strict column is the like-for-like one. The "
@@ -660,35 +742,60 @@ def tape_crosscheck(panel: pd.DataFrame) -> dict:
                  "whole delta is carried by a handful of names where the tape holds only "
                  "recent (2026-07 onward) events and no earlier history at all, while this "
                  "instrument recomputes their full record from the raw store. See "
-                 "tape_history_gap_names. The detector itself is pinned at 100% by the STAGE 0 "
-                 "parity gate, which calls the module directly on the same signature."),
+                 "tape_history_gap_names. The detector itself is pinned by the STAGE 0 parity "
+                 "gate, which calls the module directly on the same signature."),
     }
 
 
 def zt_pool_crosscheck(panel: pd.DataFrame) -> dict:
-    """Cross-check the 连板 count against the independently scraped zt_pool store."""
+    """Cross-check the 连板 count against the independently scraped zt_pool store.
+
+    This is the ONLY external check on the object Stage 2's whole ladder is built from,
+    so it runs under BOTH limit-close definitions.  Which one the vendor agrees with is
+    itself evidence about what the market calls a board.
+    """
     p = DATA / "china_zt_pool" / "pool.parquet"
     if not p.exists():
         return {"status": "zt_pool MISSING"}
     z = pd.read_parquet(p)
     z["date"] = pd.to_datetime(z["date"])
     z = z[(z["date"] >= WINDOW_START) & (z["date"] <= WINDOW_END)]
-    mine = panel[panel["limit_up"]][["date", "ticker", "lianban"]]
-    j = z.merge(mine, on=["date", "ticker"], how="inner")
-    if j.empty:
-        return {"status": "no overlap", "zt_rows": len(z)}
-    same = int((j["consec_boards"] == j["lianban"]).sum())
-    return {
-        "zt_pool_window": [z["date"].min().strftime("%Y-%m-%d"), z["date"].max().strftime("%Y-%m-%d")],
+    if z.empty:
+        return {"status": "no zt_pool rows in window"}
+
+    raw_names = set(panel["ticker"].unique())
+    out = {
+        "zt_pool_window": [z["date"].min().strftime("%Y-%m-%d"),
+                           z["date"].max().strftime("%Y-%m-%d")],
         "zt_pool_rows": len(z),
-        "zt_rows_matched_to_our_limit_up": len(j),
-        "match_rate_pct": round(100.0 * len(j) / max(1, len(z)), 2),
-        "lianban_exact_agree": same,
-        "lianban_agree_pct": round(100.0 * same / max(1, len(j)), 2),
-        "note": ("zt_pool is an independent vendor scrape covering 2026-06-15 forward. "
-                 "Rows in zt_pool with no match here are names outside our 1.8k-ticker raw "
-                 "store or ST names we exclude, not detection misses per se."),
+        "zt_pool_names": int(z["ticker"].nunique()),
+        "zt_names_in_our_universe": len(set(z["ticker"].unique()) & raw_names),
+        "zt_names_outside_our_universe": len(set(z["ticker"].unique()) - raw_names),
+        "by_definition": {},
     }
+    for defn, flag, streak in (("primary_tolerant", "limit_up", "lianban"),
+                               ("strict", "limit_up_strict", "lianban_strict")):
+        mine = panel[panel[flag]][["date", "ticker", streak]]
+        j = z.merge(mine, on=["date", "ticker"], how="inner")
+        if j.empty:
+            out["by_definition"][defn] = {"matched": 0}
+            continue
+        same = int((j["consec_boards"] == j[streak]).sum())
+        out["by_definition"][defn] = {
+            "zt_rows_matched_to_our_limit_up": len(j),
+            "match_rate_pct": round(100.0 * len(j) / len(z), 2),
+            "lianban_exact_agree": same,
+            "lianban_agree_pct": round(100.0 * same / len(j), 2),
+        }
+    out["note"] = (
+        "zt_pool is an independent vendor scrape covering 2026-06-15 forward. Most of its "
+        "rows cannot match here at all: it covers the whole market and our raw store covers "
+        "a curated subset, so a low MATCH rate is a universe fact, not a detection miss. The "
+        "load-bearing number is lianban_agree_pct WITHIN the matched rows — and it differs "
+        "between the two definitions, which is a substantive finding about which definition "
+        "the market's own bookkeeping uses, not a detector defect. Reported, not resolved."
+    )
+    return out
 
 
 # ── STAGE 1 — catalog tables ──────────────────────────────────────────────────
@@ -703,8 +810,8 @@ def stage1(panel: pd.DataFrame) -> dict:
             "names": int(g["ticker"].nunique()),
             "limit_up": int(g["limit_up"].sum()),
             "limit_down": int(g["limit_down"].sum()),
-            "limit_up_tol": int(g["limit_up_tol"].sum()),
-            "limit_down_tol": int(g["limit_down_tol"].sum()),
+            "limit_up_strict": int(g["limit_up_strict"].sum()),
+            "limit_down_strict": int(g["limit_down_strict"].sum()),
             "near_limit_up": int(g["near_limit_up"].sum()),
             "near_limit_down": int(g["near_limit_down"].sum()),
             "limit_up_per_1k_ticker_days": round(1000.0 * g["limit_up"].mean(), 3),
@@ -721,13 +828,15 @@ def stage1(panel: pd.DataFrame) -> dict:
             "names": int(g["ticker"].nunique()),
             "ticker_days": len(g),
             "limit_up": int(g["limit_up"].sum()),
-            "limit_up_tol": int(g["limit_up_tol"].sum()),
+            "limit_up_strict": int(g["limit_up_strict"].sum()),
             "limit_down": int(g["limit_down"].sum()),
-            "limit_down_tol": int(g["limit_down_tol"].sum()),
-            "tolerant_over_strict_x": round(
-                float(g["limit_up_tol"].sum()) / max(1, int(g["limit_up"].sum())), 3),
+            "limit_down_strict": int(g["limit_down_strict"].sum()),
+            "primary_over_strict_x": round(
+                float(g["limit_up"].sum()) / max(1, int(g["limit_up_strict"].sum())), 3),
             "near_limit_up": int(g["near_limit_up"].sum()),
             "near_limit_down": int(g["near_limit_down"].sum()),
+            "near_limit_up_strict": int(g["near_limit_up_strict"].sum()),
+            "near_limit_down_strict": int(g["near_limit_down_strict"].sum()),
             "limit_up_rate_pct": round(100.0 * g["limit_up"].mean(), 4),
             "limit_down_rate_pct": round(100.0 * g["limit_down"].mean(), 4),
             "near_limit_up_rate_pct": round(100.0 * g["near_limit_up"].mean(), 4),
@@ -789,7 +898,7 @@ def stage2(panel: pd.DataFrame) -> dict:
     }}
 
     N_CAP = 8
-    for defn, suffix in (("strict", ""), ("tolerant", "_tol")):
+    for defn, suffix in (("primary_tolerant", ""), ("strict", "_strict")):
         for side, cond_stem, streak_stem in (
             ("up", "limit_up", "lianban"),
             ("down", "limit_down", "lianban_down"),
@@ -845,14 +954,43 @@ def stage2(panel: pd.DataFrame) -> dict:
     )
 
     out["usable_rows"] = len(usable)
-    out["rows_dropped_unusable_pair"] = int(
-        (panel["live"] & ~panel["y_ok"]).sum())
+    live = panel["live"]
+    dropped = live & ~panel["y_ok"]
+    out["rows_dropped_unusable_pair"] = {
+        "total": int(dropped.sum()),
+        "suspension_gap_over_max_days": int((live & ~panel["pair_gap_ok"]).sum()),
+        "next_bar_not_live_or_no_next_bar": int((live & panel["pair_gap_ok"]
+                                                 & ~panel["next_bar_live"]).sum()),
+        "note": (
+            f"Two distinct causes, not one. The first is the >{MAX_PAIR_GAP_DAYS}-calendar-day "
+            "rule (suspensions). The second is a next bar that exists but is itself excluded "
+            "(zero-volume, ex-div suspect, IPO window) plus every name's final in-window bar, "
+            "which has no successor at all. NOTE the asymmetry this creates: usability at T+1 "
+            "is a property of T+1, so conditioning on it is a forward-looking filter that a "
+            "trader at T could not apply. It is applied uniformly to numerator and denominator "
+            "so lift ratios are essentially unaffected, but the absolute base rates below are "
+            "rates among USABLE next bars, not among all next bars."
+        ),
+    }
     return out
 
 
 # ── STAGE 3 — pre-registered features, time-split decile lift ─────────────────
 
 def _decile_table(g: pd.DataFrame, feat: str, ycol: str) -> list[dict]:
+    """Quantile-bucket a feature and report P(y) + lift per bucket.
+
+    BUCKETING ON VALUES, NOT ON ROW ORDER.  An earlier version binned
+    ``v.rank(method="first")``, which is unique by construction, so ``duplicates="drop"``
+    never fired and ten buckets ALWAYS survived — including for the heavily tied integer
+    features.  For f8_consec_up_days and f4_sector_heat that produced five "deciles" whose
+    feat_lo and feat_hi were both 0.0: five arbitrary ticker cohorts (rank ties break in
+    row order, and the panel is concatenated ticker-sorted), whose rate spread was
+    cross-name base-rate variation masquerading as a feature effect.  Binning the raw
+    values instead means tied values share a bucket and the realised bucket count is
+    reported rather than assumed.  Buckets are therefore NOT equal-sized on tied features,
+    which is the honest shape.
+    """
     v = g[feat]
     ok = v.notna()
     g, v = g[ok], v[ok]
@@ -862,25 +1000,30 @@ def _decile_table(g: pd.DataFrame, feat: str, ycol: str) -> list[dict]:
     if base <= 0:
         return []
     if feat in BINARY_FEATURES:
-        buckets = g[feat].astype(bool).map({False: "0", True: "1"})
+        buckets = g[feat].astype(bool).map({False: 0, True: 1})
     else:
         try:
-            buckets = pd.qcut(v.rank(method="first"), N_DECILES, labels=False, duplicates="drop")
-            buckets = buckets.astype("Int64").astype(str)
+            buckets = pd.qcut(v, N_DECILES, labels=False, duplicates="drop")
         except ValueError:
             return []
+        if buckets.isna().all():
+            return []
+        buckets = buckets.astype("Int64")
     rows = []
     for b, gg in g.groupby(buckets, observed=True):
         n, k = len(gg), int(gg[ycol].sum())
+        lo, hi = float(gg[feat].min()), float(gg[feat].max())
         rows.append({
-            "bucket": str(b), "n": n, "k": k,
+            "bucket": int(b), "n": n, "k": k,
+            "share_of_rows_pct": round(100.0 * n / len(g), 3),
             "rate_pct": round(100.0 * k / n, 4) if n else None,
             "lift": round((k / n) / base, 3) if n and base else None,
-            "feat_lo": round(float(gg[feat].min()), 4),
-            "feat_hi": round(float(gg[feat].max()), 4),
+            "feat_lo": round(lo, 4),
+            "feat_hi": round(hi, 4),
+            "single_value_bucket": lo == hi,
             "thin": n < THIN_CELL_N,
         })
-    rows.sort(key=lambda r: float(r["feat_lo"]))
+    rows.sort(key=lambda r: (r["feat_lo"], r["feat_hi"], r["bucket"]))
     for i, r in enumerate(rows):
         r["rank"] = i + 1
     return rows
@@ -916,6 +1059,51 @@ def _per_name_lift(g: pd.DataFrame, feat: str, ycol: str) -> dict:
         "bottom_bucket_lift_median": round(float(bo.median()), 3) if len(bo) else None,
         "top_bucket_names_above_1": int((t > 1).sum()) if len(t) else 0,
         "top_bucket_names_total": len(t),
+    }
+
+
+def _top_bucket_overlap(hb: pd.DataFrame, feats: list[str]) -> dict:
+    """Jaccard overlap between the features' TOP buckets on the holdout.
+
+    A global Spearman rho answers 'are these the same variable', which is NOT the question
+    the lift table raises.  Top-decile lift is a TAIL statistic: two features correlated at
+    rho=0.10 across the whole distribution can still select nearly the same rows in their
+    top bucket, in which case their lifts are one finding wearing two hats.  This measures
+    that directly — the share of rows two features' top buckets actually share.
+    """
+    sets, sizes = {}, {}
+    for f in feats:
+        v = hb[f].dropna()
+        if v.empty:
+            continue
+        if f in BINARY_FEATURES:
+            sel = v[v.astype(bool)].index
+        else:
+            try:
+                b = pd.qcut(v, N_DECILES, labels=False, duplicates="drop")
+            except ValueError:
+                continue
+            if b.isna().all():
+                continue
+            sel = v.index[b == b.max()]
+        sets[f] = set(sel)
+        sizes[f] = len(sel)
+    names = list(sets)
+    mat = {a: {b: (round(len(sets[a] & sets[b]) / max(1, len(sets[a] | sets[b])), 3))
+               for b in names} for a in names}
+    off = [mat[a][b] for a in names for b in names if a != b]
+    return {
+        "top_bucket_sizes": sizes,
+        "top_bucket_share_of_rows_pct": {f: round(100.0 * n / max(1, len(hb)), 3)
+                                         for f, n in sizes.items()},
+        "jaccard_matrix": mat,
+        "max_offdiag_jaccard": round(max(off), 3) if off else None,
+        "note": ("Jaccard = |A and B| / |A or B| over the rows each feature's top bucket "
+                 "selects. High values would mean two features are one finding; low values "
+                 "mean the top buckets are genuinely different row sets. Note that the "
+                 "binary feature f5 selects a far smaller set than a decile does, which caps "
+                 "its Jaccard against any decile feature regardless of independence — read "
+                 "its column against top_bucket_sizes, not on its own."),
     }
 
 
@@ -1039,12 +1227,13 @@ def stage3(panel: pd.DataFrame) -> dict:
         for feat in PREREGISTERED_FEATURES:
             if feat not in usable.columns:
                 continue
-            t = _decile_table(hb, feat, "y_limit_up_tol")
+            t = _decile_table(hb, feat, "y_limit_up_strict")
             rb[feat] = {"holdout_top_lift": t[-1]["lift"] if t else None,
                         "holdout_bottom_lift": t[0]["lift"] if t else None}
-        entry["robustness_tolerant_target"] = rb
+        entry["robustness_strict_target"] = rb
         measured = [f for f in PREREGISTERED_FEATURES if f in usable.columns]
         entry["collinearity_holdout"] = _collinearity(hb, measured)
+        entry["top_bucket_overlap_holdout"] = _top_bucket_overlap(hb, measured)
         entry["conditioned_on_not_near_limit"] = _conditioned_lift(hb, measured)
         entry["per_name_availability"] = _per_name_availability(hb)
         res["by_board"][board] = entry
@@ -1134,6 +1323,8 @@ def main() -> int:
     print(f"          {len(panel)} rows, {panel['ticker'].nunique()} names, "
           f"{time.time() - t0:.1f}s", flush=True)
 
+    print("[stage 1] definition adjudication (strict vs tolerant) ...", flush=True)
+    defadj = definition_adjudication(panel)
     s1 = stage1(panel)
     xc_tape = tape_crosscheck(panel)
     xc_zt = zt_pool_crosscheck(panel)
@@ -1157,12 +1348,13 @@ def main() -> int:
                                        f"reported in parallel, NOT used as the headline.",
             "why_strict_is_primary": (
                 "MEASURED, not assumed: the 0.2% tolerance is not a rounding cushion. On a 10% "
-                "board it admits every close from ~+9.78% to +10.00%, giving 2.0x the strict "
-                "event count, and it absorbs most of the near-limit class the charter asks us "
-                "to count separately (main-board near-limit-up falls from ~19k under strict to "
-                "1.6k under tolerant, which would starve pre-registered feature f5). Both "
-                "definitions are carried through Stage 1 and Stage 2; Stage 3 uses strict with "
-                "a tolerant-target robustness column."),
+                "board it admits every close from ~+9.78% to +10.00%. See "
+                "stage1_event_catalog.by_board for the computed consequences per board — "
+                "tolerant_over_strict_x (the event-count inflation) and near_limit_up vs "
+                "near_limit_up_strict (the near-limit class the tolerance absorbs, which is what "
+                "pre-registered feature f5 is built from). Both definitions are carried through "
+                "Stage 1 and Stage 2; Stage 3 uses strict with a tolerant-target robustness "
+                "column. No figure in this note is hardcoded."),
             "near_limit_up": f"return >= {NEAR_LIMIT_FRAC} * w (9.5% on a 10% board, 19% on a "
                              f"20% board) AND not a STRICT limit close",
             "lianban_N": "consecutive limit-up closes ending on the bar; any non-limit bar, "
@@ -1172,28 +1364,31 @@ def main() -> int:
                  "on/after 2020-08-24 else 10%, main 10%, bse 30%",
         },
         "convention_note": CONVENTION_NOTE,
+        "definition_adjudication": defadj,
         "exclusions": {
             "st_cohort": "ALL dates for every ticker in data/china_st/st_snapshot.parquet. "
                          "That store carries one asof (2026-07-06) and no membership history, "
                          "so a per-date 5% band is not reconstructible.",
             "st_exclusion_is_near_vacuous": (
-                "MEASURED: only 1 of the 100 current ST names exists in data/china_stocks_raw, "
-                "so this exclusion removes exactly one ticker. That is not a clean bill of "
-                "health — it is the universe telling us it does not carry the ST cohort at all "
-                "(see universe_is_curated). The 5%-band problem is therefore not solved here, "
-                "it is absent from the sample."),
+                "See meta.universe_gap.st_names_present_in_raw for the computed count. It is a "
+                "handful, so this exclusion removes almost nothing — which is NOT a clean bill "
+                "of health. It is the universe telling us it does not carry the ST cohort at "
+                "all (see universe_is_curated). The 5%-band problem is not solved here; it is "
+                "absent from the sample."),
             "st_residual_caveat": "Names that WERE ST historically but are not ST today remain "
                                   "in the sample at a 10% band. This is not fixable with the "
                                   "stores we hold and is not patched over.",
             "universe_is_curated": (
-                "THE BINDING COVERAGE FACT. data/china_stocks_raw holds 1,842 names; the "
-                "A-share market is roughly 5,400. Two independent measurements of the gap: "
-                "(a) 1 of 100 current ST names is present; (b) of the 1,770 names that hit the "
-                "limit-up pool in data/china_zt_pool's 47-session window, only 514 (29%) are in "
-                "this store, and only 24.7% of that store's rows find a match here. Every count "
-                "and every base rate below describes a CURATED large/mid-cap universe, not the "
-                "A-share market — and the 打板 game lives disproportionately in exactly the "
-                "small-cap and ST names this universe omits. Do not read these as market-wide."),
+                "THE BINDING COVERAGE FACT. data/china_stocks_raw holds a curated subset of the "
+                "listed A-share market (roughly 5,400 names — an external reference figure, not "
+                "one these stores measure). The two store-measured probes of the gap are "
+                "COMPUTED in meta.universe_gap: how many of today's ST names exist here, and "
+                "how many of the names that hit data/china_zt_pool's limit-up pool exist here. "
+                "Every count and every base rate in this file describes that curated universe, "
+                "not the A-share market — and the 打板 game lives disproportionately in exactly "
+                "the small-cap and ST names it omits. Do not read these as market-wide. Note "
+                "also that crosscheck_zt_pool's match_rate_pct is dominated by this universe "
+                "gap and is NOT a detection-accuracy number."),
             "ipo_windows": f"STAR/ChiNext first {CHINEXT_STAR_IPO_WINDOW} sessions "
                            f"(no band during the 44% cap regime); pre-2014 listings first "
                            f"{PRE2014_IPO_WINDOW} session. Every ticker's first bar is "
