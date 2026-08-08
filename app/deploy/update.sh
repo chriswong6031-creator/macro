@@ -588,6 +588,16 @@ fi
 #                          gate banned_language() must fail loudly, so the publisher
 #                          imports it at module scope — which puts copywriter in
 #                          the panel's load-time closure too).
+#   marketing/social_publisher
+#                          Same edge, one module further (2026-08-08): the
+#                          publisher imports subscription_locked/lock_expires_at
+#                          at module scope for the same "must fail loudly" reason
+#                          — a lazily-imported lock predicate that failed to
+#                          import would read as "no lock", i.e. silently restore
+#                          the requeue loop it exists to stop. That top-level
+#                          import is what puts social_publisher in the panel's
+#                          closure, so it belongs here rather than in the
+#                          nightly-only list below.
 #   sentinel               marketing.py's caps_by_account (#3884) → resolve_ramp:
 #                          the per-account D08 ramp caps shown in the outbox +
 #                          publisher payloads import sentinel into the panel.
@@ -599,8 +609,10 @@ fi
 #     tool-schema/dispatch paths that lazily import cortex are never called from
 #     admin, so cortex is absent from the panel's sys.modules. admin ships its own
 #     tool dispatcher.
-#   - The rest of engine/marketing (breaking_feed, seo_director, social_publisher,
-#     …) — nightly-only, never imported by a panel.
+#   - The rest of engine/marketing (breaking_feed, seo_director, …) —
+#     nightly-only, never imported by a panel. social_publisher WAS listed here
+#     and no longer is: see its entry above. A name in this list is a claim about
+#     the closure, so it has to be deleted the moment the closure disagrees.
 # Admin systemd sandbox: reconcile the reviewed unit before deciding whether to
 # restart, so a unit-only hardening/provider change cannot land dead on disk.
 ADMIN_UNIT_UPDATED=0
@@ -642,7 +654,7 @@ fi
 # the panel queueing against the OLD rule out of sys.modules — the outbox gap
 # (2026-07-26) again, but on the path where being stale means a wrong-desk or
 # double-owner post rather than a stale reading.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|social_publisher|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
