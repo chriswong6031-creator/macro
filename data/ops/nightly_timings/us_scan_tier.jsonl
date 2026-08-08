@@ -1,1 +1,2 @@
 {"date":"2026-08-08","workflow":"daily","job":"us_scan_tier","run_id":"31210097197","run_attempt":"1","runner":"mac-builder-5","cap_minutes":60.0,"end":"2026-08-08T02:14:59Z","start":"2026-08-08T02:05:54Z","elapsed_minutes":9.1,"pct_of_cap":15.1,"bands":[]}
+{"date":"2026-08-08","workflow":"daily","job":"us_scan_tier","run_id":"31226002132","run_attempt":"1","runner":"mac-builder-5","cap_minutes":60.0,"end":"2026-08-08T08:47:30Z","start":"2026-08-08T08:37:57Z","elapsed_minutes":9.6,"pct_of_cap":15.9,"bands":[]}

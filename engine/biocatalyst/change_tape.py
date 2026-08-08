@@ -11,6 +11,20 @@ Prospective classifications remain explicitly unavailable here.  T2b requires
 two exact, run-bound activation proofs, and the existing prospective
 publication seam does not retain those proofs.  Serving a convenient
 approximation from the public prospective model would weaken that boundary.
+
+Exact field values and their source locator are an *additive, optional* v1
+extension (``exact_values`` and ``correction_lineage`` per row, declared once
+per tape by ``value_disclosure``).  A previously published tape carries none of
+them and stays valid, which is required because a carried-forward history lane
+is copied byte-for-byte from the prior artifact rather than rebuilt.  Readers
+that do not know the extension keep reading the field-class ledger unchanged.
+
+The values are the exact canonical JSON bytes recorded in the replay-verified
+version chain: never re-cased, re-formatted, summarized, or reconstructed.  A
+value that cannot be disclosed is marked unavailable with a reason; it is never
+an empty string and never a guess.  ``correction_lineage`` states which earlier
+recorded value a row supersedes; it does NOT assess whether a change is a
+correction, which stays outside this model's authority (``assess_correction``).
 """
 from __future__ import annotations
 
@@ -42,6 +56,37 @@ _CONTRACT_ID = "trial_change_tape_read_model.v1"
 _MAX_HISTORY_PAIRS = 128
 _MAX_ROWS = 512
 _NCT_ID_PREFIX = "NCT"
+_MAX_VALUE_JSON_BYTES = 4_096
+_MAX_TAPE_VALUE_JSON_BYTES = 262_144
+_MAX_SOURCE_POINTER_BYTES = 512
+_MAX_DECLARED_VALUE_BYTE_LENGTH = 16_777_216
+_VALUE_ENTRY_KEYS = {
+    "state",
+    "value_json",
+    "value_byte_length",
+    "value_truncated",
+    "unavailable_reason",
+}
+_VALUE_UNAVAILABLE_REASONS = {
+    "tape_value_budget_exhausted",
+    "value_bytes_not_representable",
+}
+_LINEAGE_KEYS = {
+    "relation",
+    "predecessor_basis",
+    "predecessor_source_version",
+    "predecessor_exact_operation_index",
+    "correction_assessed",
+}
+_VALUE_DISCLOSURE_BASE = {
+    "encoding": "canonical_json_utf8",
+    "locator_grammar": "rfc6901_json_pointer_into_source_record",
+    "max_value_bytes": _MAX_VALUE_JSON_BYTES,
+    "max_tape_value_bytes": _MAX_TAPE_VALUE_JSON_BYTES,
+    "truncation_behavior": "declared_prefix_with_original_byte_length",
+    "unavailable_behavior": "explicit_row_marker_never_empty_and_never_guessed",
+    "correction_assessed": False,
+}
 _AUTHORITY = {
     "classification": "deterministic_registry_change_read_model",
     "decision_authority": False,
@@ -103,19 +148,131 @@ def _unavailable_prospective(reason: str) -> dict[str, Any]:
     }
 
 
+def _value_disclosure(state: str) -> dict[str, Any]:
+    disclosure = dict(_VALUE_DISCLOSURE_BASE)
+    disclosure["state"] = state
+    return disclosure
+
+
+def _encode_exact_value(value: Any) -> tuple[str | None, int, bool]:
+    """Return the exact canonical JSON text, its full byte length, truncation.
+
+    Over the per-value cap the text is a *declared prefix* cut on a codepoint
+    boundary, never a re-encoding, and the caller states the original length.
+    """
+
+    try:
+        raw = canonical_json_bytes(value)
+    except ContractError:
+        return None, 0, False
+    length = len(raw)
+    if length <= _MAX_VALUE_JSON_BYTES:
+        return raw.decode("utf-8"), length, False
+    prefix = raw[:_MAX_VALUE_JSON_BYTES]
+    while prefix:
+        try:
+            return prefix.decode("utf-8"), length, True
+        except UnicodeDecodeError:
+            prefix = prefix[:-1]
+    return None, length, False
+
+
+def _value_entry(*, present: bool, value: Any, budget: list[int]) -> dict[str, Any]:
+    """Disclose one exact recorded value, or state precisely why it is absent."""
+
+    if not present:
+        return {
+            "state": "missing",
+            "value_json": None,
+            "value_byte_length": 0,
+            "value_truncated": False,
+            "unavailable_reason": None,
+        }
+    text, length, truncated = _encode_exact_value(value)
+    if text is None or not text or length > _MAX_DECLARED_VALUE_BYTE_LENGTH:
+        return {
+            "state": "unavailable",
+            "value_json": None,
+            "value_byte_length": min(length, _MAX_DECLARED_VALUE_BYTE_LENGTH),
+            "value_truncated": False,
+            "unavailable_reason": "value_bytes_not_representable",
+        }
+    charged = len(text.encode("utf-8"))
+    if charged > budget[0]:
+        return {
+            "state": "unavailable",
+            "value_json": None,
+            "value_byte_length": length,
+            "value_truncated": False,
+            "unavailable_reason": "tape_value_budget_exhausted",
+        }
+    budget[0] -= charged
+    return {
+        "state": "present",
+        "value_json": text,
+        "value_byte_length": length,
+        "value_truncated": truncated,
+        "unavailable_reason": None,
+    }
+
+
+def _correction_lineage(
+    *,
+    op: str,
+    before_version: int,
+    predecessor: tuple[int, int] | None,
+) -> dict[str, Any]:
+    """Declare which earlier recorded value this row supersedes.
+
+    This is a chain fact, not a judgement: it names the predecessor version so
+    a reader never has to infer a correction from ``op`` plus a version pair.
+    Whether the change *is* a correction stays unassessed by this model.
+    """
+
+    if predecessor is not None:
+        basis = "prior_tape_row"
+        predecessor_version: int | None = predecessor[0]
+        predecessor_index: int | None = predecessor[1]
+    elif op in {"replace", "remove"}:
+        basis = "before_version_record"
+        predecessor_version = before_version
+        predecessor_index = None
+    else:
+        basis = "none"
+        predecessor_version = None
+        predecessor_index = None
+    if op == "remove":
+        relation = "clears_prior_recorded_value"
+    elif basis == "none":
+        relation = "no_prior_recorded_value"
+    else:
+        relation = "supersedes_prior_recorded_value"
+    return {
+        "relation": relation,
+        "predecessor_basis": basis,
+        "predecessor_source_version": predecessor_version,
+        "predecessor_exact_operation_index": predecessor_index,
+        "correction_assessed": False,
+    }
+
+
 def _public_row(
     row: Mapping[str, Any],
     *,
+    operation: Mapping[str, Any],
     before_version: int,
     after_version: int,
     observed_at: str,
+    budget: list[int],
+    last_row_by_pointer: dict[str, tuple[int, int]],
 ) -> dict[str, Any]:
     """Strip a T2b row down to its display/context-only semantics.
 
-    In particular this intentionally omits row/diff hashes, references,
-    source paths, source-snapshot identities, raw operation values, and any
-    activation provenance.  The legacy history endpoint is the separately
-    governed surface for public history values.
+    The exact recorded before/after values and their RFC 6901 source locator
+    are disclosed from the replay-verified operation this row classifies; the
+    caller has already bound the operation to that row's canonical hash.  This
+    still intentionally omits row/diff hashes, references, source-snapshot
+    identities, and any activation provenance.
     """
 
     expected = {
@@ -134,16 +291,81 @@ def _public_row(
     public["exact_operation_index"] = row.get("exact_op_index")
     if set(public) != ((expected - {"exact_op_index"}) | {"exact_operation_index"}):
         raise ChangeTapeError("change_tape_classification_row_invalid")
+    pointer = operation.get("json_path")
+    if (
+        not isinstance(pointer, str)
+        or not pointer.startswith("/")
+        or len(pointer.encode("utf-8")) > _MAX_SOURCE_POINTER_BYTES
+    ):
+        raise ChangeTapeError("change_tape_source_pointer_invalid")
+    display_before = before_version + 1
+    display_after = after_version + 1
     public.update(
         {
             "source_versions": {
-                "before": before_version + 1,
-                "after": after_version + 1,
+                "before": display_before,
+                "after": display_after,
             },
             "observed_at": observed_at,
+            "exact_values": {
+                "source_pointer": pointer,
+                "before": _value_entry(
+                    present=public["before_state"] == "present",
+                    value=operation.get("before_value"),
+                    budget=budget,
+                ),
+                "after": _value_entry(
+                    present=public["after_state"] == "present",
+                    value=operation.get("after_value"),
+                    budget=budget,
+                ),
+            },
+            "correction_lineage": _correction_lineage(
+                op=public["op"],
+                before_version=display_before,
+                predecessor=last_row_by_pointer.get(pointer),
+            ),
         }
     )
+    last_row_by_pointer[pointer] = (display_after, public["exact_operation_index"])
     return public
+
+
+def _bound_operation(
+    row: Mapping[str, Any], operations: Sequence[Any]
+) -> Mapping[str, Any] | None:
+    """Return the exact diff operation a T2b row classifies, or ``None``.
+
+    The row's own ``canonical_op_sha256`` is the binding: it was computed by
+    the compiler over the operation, and the diff's operations were themselves
+    re-derived from both immutable source snapshots.  A chain whose recorded
+    content no longer produces that hash cannot disclose values here.
+    """
+
+    index = row.get("exact_op_index")
+    if (
+        not isinstance(index, int)
+        or isinstance(index, bool)
+        or not 0 <= index < len(operations)
+    ):
+        return None
+    operation = operations[index]
+    if not isinstance(operation, Mapping):
+        return None
+    if "before_value" not in operation or "after_value" not in operation:
+        return None
+    try:
+        operation_hash = canonical_json_sha256(operation)
+    except ContractError:
+        return None
+    if operation_hash != row.get("canonical_op_sha256"):
+        return None
+    if any(
+        operation.get(field) != row.get(field)
+        for field in ("op", "json_path", "before_state", "after_state")
+    ):
+        return None
+    return operation
 
 
 def _history_rows_from_evidence(
@@ -167,6 +389,8 @@ def _history_rows_from_evidence(
             return "retrospective_evidence_replay_failed"
     examined_pair_count = 0
     rows: list[dict[str, Any]] = []
+    budget = [_MAX_TAPE_VALUE_JSON_BYTES]
+    last_row_by_pointer: dict[str, tuple[int, int]] = {}
     for before, after in zip(ordered, ordered[1:]):
         if before.get("canonical_content_sha256") == after.get("canonical_content_sha256"):
             continue
@@ -189,27 +413,36 @@ def _history_rows_from_evidence(
         if classification.get("available") is not True:
             return "retrospective_classification_unavailable"
         raw_rows = classification.get("rows")
+        operations = diff.get("operations")
         observed_at = after.get("retrieved_at")
         before_version = before.get("source_version")
         after_version = after.get("source_version")
         if (
             not isinstance(raw_rows, list)
+            or not isinstance(operations, list)
             or not isinstance(observed_at, str)
             or not isinstance(before_version, int)
             or not isinstance(after_version, int)
         ):
             return "retrospective_evidence_replay_failed"
         try:
-            rows.extend(
-                _public_row(
-                    row,
-                    before_version=before_version,
-                    after_version=after_version,
-                    observed_at=observed_at,
+            for row in raw_rows:
+                if not isinstance(row, Mapping):
+                    continue
+                operation = _bound_operation(row, operations)
+                if operation is None:
+                    return "retrospective_evidence_replay_failed"
+                rows.append(
+                    _public_row(
+                        row,
+                        operation=operation,
+                        before_version=before_version,
+                        after_version=after_version,
+                        observed_at=observed_at,
+                        budget=budget,
+                        last_row_by_pointer=last_row_by_pointer,
+                    )
                 )
-                for row in raw_rows
-                if isinstance(row, Mapping)
-            )
         except ChangeTapeError:
             return "retrospective_evidence_replay_failed"
         if len(rows) > _MAX_ROWS:
@@ -290,6 +523,9 @@ def build_trial_change_tape_read_model(
             "max_rows": _MAX_ROWS,
             "overflow_behavior": "unavailable_no_partial_tape",
         },
+        "value_disclosure": _value_disclosure(
+            "exact_values_present" if _lane_discloses_values(history) else "exact_values_absent"
+        ),
         "hash_scope": "canonical_payload_excluding_model_payload_sha256",
     }
     model = _with_hash(payload)
@@ -324,7 +560,134 @@ def validate_trial_change_tape_read_model(
         raise ChangeTapeError("change_tape_lane_invalid")
     _validate_lane_semantics(history, name="history", require_versions=True)
     _validate_lane_semantics(prospective, name="prospective", require_versions=False)
+    _validate_value_disclosure(normalized.get("value_disclosure"), history=history)
     return normalized
+
+
+def _lane_discloses_values(lane: Mapping[str, Any]) -> bool:
+    """Report whether every row in a lane carries the exact-value extension."""
+
+    rows = lane.get("rows")
+    if not isinstance(rows, list) or not rows:
+        return False
+    return all(isinstance(row, Mapping) and "exact_values" in row for row in rows)
+
+
+def _validate_value_disclosure(
+    disclosure: Any, *, history: Mapping[str, Any]
+) -> None:
+    """Bind the tape's declared value policy to what its rows actually carry.
+
+    A tape published before this extension declares nothing and carries no
+    values; that stays valid.  A tape that declares values must carry them in
+    every row, and a tape that carries them must declare them.
+    """
+
+    discloses = _lane_discloses_values(history)
+    if disclosure is None:
+        if discloses:
+            raise ChangeTapeError("change_tape_value_disclosure_undeclared")
+        rows = history.get("rows")
+        if isinstance(rows, list) and any(
+            isinstance(row, Mapping) and "exact_values" in row for row in rows
+        ):
+            raise ChangeTapeError("change_tape_value_disclosure_undeclared")
+        return
+    expected = _value_disclosure(
+        "exact_values_present" if discloses else "exact_values_absent"
+    )
+    if _copy(disclosure) != expected:
+        raise ChangeTapeError("change_tape_value_disclosure_invalid")
+
+
+def _validate_row_value_entry(entry: Any, *, row_state: str) -> int:
+    """Validate one disclosed value; return the payload bytes it charges."""
+
+    if not isinstance(entry, Mapping) or set(entry) != _VALUE_ENTRY_KEYS:
+        raise ChangeTapeError("change_tape_history_value_invalid")
+    state = entry.get("state")
+    value_json = entry.get("value_json")
+    byte_length = entry.get("value_byte_length")
+    truncated = entry.get("value_truncated")
+    reason = entry.get("unavailable_reason")
+    if (
+        not isinstance(byte_length, int)
+        or isinstance(byte_length, bool)
+        or not 0 <= byte_length <= _MAX_DECLARED_VALUE_BYTE_LENGTH
+        or not isinstance(truncated, bool)
+    ):
+        raise ChangeTapeError("change_tape_history_value_invalid")
+    if row_state == "missing":
+        if state != "missing":
+            raise ChangeTapeError("change_tape_history_value_state_invalid")
+    elif state not in {"present", "unavailable"}:
+        raise ChangeTapeError("change_tape_history_value_state_invalid")
+    if state == "missing":
+        if value_json is not None or byte_length != 0 or truncated or reason is not None:
+            raise ChangeTapeError("change_tape_history_value_invalid")
+        return 0
+    if state == "unavailable":
+        if (
+            value_json is not None
+            or truncated
+            or reason not in _VALUE_UNAVAILABLE_REASONS
+        ):
+            raise ChangeTapeError("change_tape_history_value_invalid")
+        return 0
+    if not isinstance(value_json, str) or not value_json or reason is not None:
+        raise ChangeTapeError("change_tape_history_value_invalid")
+    charged = len(value_json.encode("utf-8"))
+    if charged > _MAX_VALUE_JSON_BYTES:
+        raise ChangeTapeError("change_tape_history_value_bytes_invalid")
+    if truncated:
+        if byte_length <= _MAX_VALUE_JSON_BYTES:
+            raise ChangeTapeError("change_tape_history_value_bytes_invalid")
+    elif byte_length != charged:
+        raise ChangeTapeError("change_tape_history_value_bytes_invalid")
+    return charged
+
+
+def _validate_row_exact_values(
+    row: Mapping[str, Any],
+    *,
+    last_row_by_pointer: dict[str, tuple[int, int]],
+    before_version: int,
+    after_version: int,
+    operation_index: int,
+) -> int:
+    """Validate one row's disclosed values and declared lineage."""
+
+    values = row.get("exact_values")
+    if not isinstance(values, Mapping) or set(values) != {
+        "source_pointer",
+        "before",
+        "after",
+    }:
+        raise ChangeTapeError("change_tape_history_value_invalid")
+    pointer = values.get("source_pointer")
+    if (
+        not isinstance(pointer, str)
+        or not pointer.startswith("/")
+        or len(pointer.encode("utf-8")) > _MAX_SOURCE_POINTER_BYTES
+    ):
+        raise ChangeTapeError("change_tape_source_pointer_invalid")
+    charged = _validate_row_value_entry(
+        values.get("before"), row_state=row.get("before_state")
+    ) + _validate_row_value_entry(
+        values.get("after"), row_state=row.get("after_state")
+    )
+    lineage = row.get("correction_lineage")
+    if not isinstance(lineage, Mapping) or set(lineage) != _LINEAGE_KEYS:
+        raise ChangeTapeError("change_tape_history_lineage_invalid")
+    expected = _correction_lineage(
+        op=row.get("op"),
+        before_version=before_version,
+        predecessor=last_row_by_pointer.get(pointer),
+    )
+    if _copy(dict(lineage)) != expected:
+        raise ChangeTapeError("change_tape_history_lineage_invalid")
+    last_row_by_pointer[pointer] = (after_version, operation_index)
+    return charged
 
 
 def _validate_lane_semantics(
@@ -367,6 +730,9 @@ def _validate_lane_semantics(
     previous_index: int | None = None
     previous_observed_at: datetime | None = None
     pair_observed_literal: str | None = None
+    last_row_by_pointer: dict[str, tuple[int, int]] = {}
+    disclosing: bool | None = None
+    charged_bytes = 0
     expected_states = {
         "add": ("missing", "present"),
         "remove": ("present", "missing"),
@@ -440,6 +806,23 @@ def _validate_lane_semantics(
             or row.get("semantic_resolution") != "registry_field_class_only"
         ):
             raise ChangeTapeError("change_tape_history_semantic_invalid")
+        row_discloses = "exact_values" in row
+        if disclosing is None:
+            disclosing = row_discloses
+        elif disclosing is not row_discloses:
+            raise ChangeTapeError("change_tape_history_value_disclosure_mixed")
+        if row_discloses:
+            charged_bytes += _validate_row_exact_values(
+                row,
+                last_row_by_pointer=last_row_by_pointer,
+                before_version=before,
+                after_version=after,
+                operation_index=operation_index,
+            )
+            if charged_bytes > _MAX_TAPE_VALUE_JSON_BYTES:
+                raise ChangeTapeError("change_tape_history_value_budget_exceeded")
+        elif "correction_lineage" in row:
+            raise ChangeTapeError("change_tape_history_lineage_invalid")
     if len(seen_pairs) != classifications:
         raise ChangeTapeError("change_tape_history_classification_count_invalid")
 

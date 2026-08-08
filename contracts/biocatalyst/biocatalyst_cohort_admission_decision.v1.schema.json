@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_cohort_admission_decision.v1.schema.json",
+  "title": "BioCatalyst Reviewed Fixed-Cohort Admission Decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "decision_id", "source_id",
+    "source_native_identifier_kind", "coverage_epoch_ref", "coverage_payload_sha256",
+    "coverage_transaction_from", "discovered_record_count", "cohort_id",
+    "cohort_payload_sha256", "reviewed_membership_bound", "decisions",
+    "admitted_nct_ids", "refused_nct_ids", "admission_authority",
+    "admission_semantics", "decided_at", "transaction_from", "transaction_to",
+    "hash_scope", "decision_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_cohort_admission_decision.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "decision_id": {"type": "string", "pattern": "^biocatalyst_cohort_admission_[a-f0-9]{24}$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "source_native_identifier_kind": {"const": "nct_id"},
+    "coverage_epoch_ref": {"type": "string", "pattern": "^ctgov_discovery_coverage_[A-Za-z0-9_-]{1,96}$"},
+    "coverage_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "coverage_transaction_from": {"type": "string", "format": "date-time"},
+    "discovered_record_count": {"type": "integer", "minimum": 0, "maximum": 200000},
+    "cohort_id": {"type": "string", "pattern": "^ctgov_fixed_cohort_[a-f0-9]{24}$"},
+    "cohort_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "reviewed_membership_bound": {"type": "integer", "minimum": 1, "maximum": 25},
+    "decisions": {
+      "type": "array", "minItems": 1, "maxItems": 25,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["nct_id", "decision", "reason"],
+        "properties": {
+          "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+          "decision": {"type": "string", "enum": ["admitted", "refused"]},
+          "reason": {
+            "type": "string",
+            "enum": [
+              "nominated_reviewed_cohort_member",
+              "not_a_reviewed_cohort_member",
+              "not_recorded_in_the_bound_coverage_epoch"
+            ]
+          }
+        }
+      }
+    },
+    "admitted_nct_ids": {
+      "type": "array", "maxItems": 25, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^NCT[0-9]{8}$"}
+    },
+    "refused_nct_ids": {
+      "type": "array", "maxItems": 25, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^NCT[0-9]{8}$"}
+    },
+    "admission_authority": {"const": "reviewed_fixed_cohort_membership_only"},
+    "admission_semantics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["membership_change", "record_identity", "authority", "discovery_binding"],
+      "properties": {
+        "membership_change": {"const": "admission_never_enlarges_a_reviewed_cohort"},
+        "record_identity": {"const": "source_native_nct_id_only_no_company_or_security_inference"},
+        "authority": {"const": "facts_and_context_only_no_scoring_ordering_sizing_or_alerting"},
+        "discovery_binding": {"const": "candidates_must_be_recorded_in_the_bound_coverage_epoch"}
+      }
+    },
+    "decided_at": {"type": "string", "format": "date-time"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "hash_scope": {"const": "canonical_payload_excluding_decision_payload_sha256"},
+    "decision_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
