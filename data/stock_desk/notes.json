@@ -1,26 +1,26 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-08-07",
-  "generated_at": "2026-08-08T02:07:45.796720+00:00",
+  "generated_at": "2026-08-08T08:49:01.886397+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-08-07-GPCR-20260808020745-1",
+      "id": "2026-08-07-GPCR-20260808084901-1",
       "ticker": "GPCR",
       "name": null,
       "lean": "constructive",
       "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The stock is in a base-building phase with favorable entry conditions, supported by residual momentum and event-edge signals; the deteriorating GLP-1 basket warrants caution but does not invalidate the constructive setup.",
+      "thesis": "Stock is building a base with residual momentum and supportive insider-buying/PEAD context. Off-high -43% provides room. The GLP-1 basket deterioration tempers conviction but does not negate the constructive lean.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base, high band",
-        "Residual momentum present (alpha z: 1.07)",
-        "Entry axis not blocked (pullback, off-high, RSI normal)",
-        "Event-edge trust tier: insider buying + PEAD context"
+        "verdict: Constructive \u2014 building a base",
+        "selection axis: residual momentum z=0.34, insider buying",
+        "entry not blocked, off-high -43%, state FRESH BUY",
+        "event-edge trust tier (insider buying + PEAD + revisions)"
       ],
-      "dissent": "If the GLP-1/Obesity basket deterioration deepens, it could drag GPCR down regardless of its own base formation, turning what looks like accumulation into a distribution trap.",
+      "dissent": "If the deteriorating GLP-1 & Obesity basket drags sentiment and breaks the base formation, the constructive lean will fail.",
       "falsifier": {
-        "text": "GPCR closes below its 50-day simple moving average on above-average volume, breaking the base structure.",
+        "text": "Price falls below the recent base low (approx 48-50 area) and fails to recover within the horizon.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "GPCR",
@@ -34,122 +34,22 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-08-07-ROIV-20260808020745-2",
-      "ticker": "ROIV",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong residual momentum clashes with deteriorating revisions, poor quality scores, and a cycle-blocked, overextended entry signal, leaving no reliable directional edge.",
-      "evidence": [
-        "Verdict: Extended \u2014 wait for a pullback, neutral band",
-        "Entry blocked: 35% above trend, overbought, over 200dma",
-        "Cycle blocked true",
-        "Revisions z: -2.43 (negative), Quality z: -2.08 (accounting watch)"
-      ],
-      "dissent": "Momentum alone could persist, pushing the stock higher despite the fundamental red flags, especially if the broader biotech or obesity theme catches a bid.",
-      "falsifier": {
-        "text": "ROIV closes above its recent swing high by more than 3% on expanding volume, defying the overextended caution.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-04",
-      "engine_verdict": "Extended \u2014 wait for a pullback"
-    },
-    {
-      "id": "2026-08-07-VSEC-20260808020745-3",
-      "ticker": "VSEC",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Mixed cross-sectional signals\u2014unremarkable SUE, negative revisions, modest momentum, and an accounting watch\u2014cancel each other out, yielding no distinct directional advantage.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis slightly positive but no validated edge (SUE z: 1.32, revisions z: -0.43)",
-        "Entry not blocked but no urgency edge",
-        "Accounting flag: watch"
-      ],
-      "dissent": "A positive earnings-surprise tailwind or a sudden defense-contractor rotation could break the stalemate to the upside, rewarding long-side risk.",
-      "falsifier": {
-        "text": "VSEC breaks out above its recent consolidation range with volume confirmation and sustains above its 50-day moving average.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-04",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-08-07-WT-20260808020745-4",
-      "ticker": "WT",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Negative fundamental signals (SUE, revisions) and an extremely overextended, cycle-blocked entry are offset by mildly positive residual momentum, leaving no clear directional bet.",
-      "evidence": [
-        "Verdict: Extended \u2014 wait for a pullback, neutral band",
-        "Entry blocked: 36% above trend, overbought, vol-squeeze, over 200dma",
-        "Cycle blocked true",
-        "SUE z: -1.49, Revisions z: -1.11 (negative)"
-      ],
-      "dissent": "Residual momentum could persist, squeezing the stock higher in the short term and punishing any wait-for-pullback posture.",
-      "falsifier": {
-        "text": "WT closes above its prior monthly high with above-average volume, ignoring the negative fundamental and extension signals.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-04",
-      "engine_verdict": "Extended \u2014 wait for a pullback"
-    },
-    {
-      "id": "2026-08-07-XPEL-20260808020745-5",
-      "ticker": "XPEL",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The profile lacks a definitive edge; near-zero cross-sectional scores, an accounting quality flag, and a no-edge verdict discourage any directional commitment.",
-      "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis z: -0.09 (flat)",
-        "Entry positive but no urgency or block",
-        "Accounting flag: watch"
-      ],
-      "dissent": "A sudden positive earnings revision or a thematic shift in the auto/aftermarket space could ignite a rally from the current pullback level.",
-      "falsifier": {
-        "text": "XPEL rallies above its recent high on expanding volume, confirming a breakout from the current range.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-09-04",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-08-07-BIDU-20260808020745-6",
+      "id": "2026-08-07-BIDU-20260808084901-2",
       "ticker": "BIDU",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Despite a high cross-sectional rank, the setup relies solely on residual momentum without fundamental backing or a validated edge, leaving no clear directional signal.",
+      "thesis": "No clear edge: residual momentum is modest, tailwinds negative, and board state is TURN SIGNALED with mixed macro sensitivity. Directional outcome relative to S&P 500 is ambiguous.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis: residual momentum only (alpha z: 0.74)",
-        "No SUE, no revision support",
-        "Tailwind absent, quality metrics null"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z=0.24, momentum z=0.75 (context tier)",
+        "tailwind z=-0.32, spotlights only",
+        "board: TURN SIGNALED, off-high -32.5%"
       ],
-      "dissent": "Momentum could propel the stock higher in a risk-on tape, especially if Chinese tech sentiment recovers, making a neutral stance too conservative.",
+      "dissent": "A sustained turnaround could materialize, but the signals do not reliably differentiate direction over this horizon.",
       "falsifier": {
-        "text": "BIDU closes below its 50-day moving average, snapping the momentum and confirming the lack of edge.",
+        "text": "Stock's total return deviates from the S&P 500 by more than 5% over the next 20 days.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -157,6 +57,106 @@
       },
       "check_by": "2026-09-04",
       "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-08-07-ROIV-20260808084901-3",
+      "ticker": "ROIV",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Extended and cycle-blocked with negative earnings/revisions; entry is blocked and quality flagged. Momentum is positive but cannot offset the risk reset. Awaiting a pullback.",
+      "evidence": [
+        "verdict: Extended \u2014 wait for a pullback, band neutral",
+        "cycle_blocked=true, entry blocked (z=-1.05)",
+        "selection: revisions z=-2.43, accounting quality watch",
+        "cautions: trades 35% above trend, market cycle argues for waiting"
+      ],
+      "dissent": "If the momentum leg dominates and the stock continues to rally, neutral will underperform the upside.",
+      "falsifier": {
+        "text": "Price closes above 37.5 (new high) on above-average weekly volume within 20 days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Extended \u2014 wait for a pullback"
+    },
+    {
+      "id": "2026-08-07-VSEC-20260808084901-4",
+      "ticker": "VSEC",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Entry urgency and -8.3% off-high provide a decent setup, but accounting watch and negative revisions offset the SUE and momentum signals. No reliable edge to tilt directionally.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "entry driver: urgency present, off-high -8.3%, FRESH BUY",
+        "selection: SUE z=1.32 (fresh 69d) vs revisions z=-0.43",
+        "quality: accounting watch"
+      ],
+      "dissent": "If the accounting concern is overblown and the post-earnings drift catches, the stock could outperform.",
+      "falsifier": {
+        "text": "Price exceeds 238 and holds above that level for three consecutive sessions within 20 days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-08-07-ADAM-20260808084901-5",
+      "ticker": "ADAM",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Strong fundamentals (SUE, revisions, momentum) make it a leader, but extreme extension (at high, off-high 0%) signals poor entry. Chasing here risks mean reversion; stay neutral until a base forms.",
+      "evidence": [
+        "verdict: Leader \u00b7 poor entry \u2014 wait for a base",
+        "selection: z=1.14 with SUE, revisions, momentum",
+        "entry: extension present, off-high 0%, HOLD \u2014 EXTENDED",
+        "cautions: accounting watch"
+      ],
+      "dissent": "If the leader's momentum continues without a meaningful pullback, the neutral lean will miss further gains.",
+      "falsifier": {
+        "text": "Price rises to 10.8 or higher without first dipping at least 5% from current levels within the horizon.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
+    },
+    {
+      "id": "2026-08-07-WT-20260808084901-6",
+      "ticker": "WT",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Extended and cycle-blocked; entry is blocked with negative SUE and revisions. Residual momentum is positive but insufficient to override the risk controls. Waiting for a pullback is warranted.",
+      "evidence": [
+        "verdict: Extended \u2014 wait for a pullback, band neutral",
+        "cycle_blocked=true, entry blocked (z=-1.48), extension flagged",
+        "selection: SUE z=-1.49, revisions z=-1.11",
+        "cautions: trades 35% above trend, accounting watch"
+      ],
+      "dissent": "Momentum may persist, keeping the stock elevated; neutral will not capture any continued upside.",
+      "falsifier": {
+        "text": "Price closes above 22.5 (new 20-day high) and maintains that level for two consecutive days within the horizon.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Extended \u2014 wait for a pullback"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

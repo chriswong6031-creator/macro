@@ -751,6 +751,246 @@ function wireKeyAlertCopies(ka) {
   });
 }
 
+/* ---- SEASONALITY PROGRAM WATCH ------------------------------------------ */
+/* The seasonality program's own watch: which of its tripwires need the operator
+   tonight, and the ready-to-paste prompt for each. Fired rows come first and carry
+   a --bad left rail plus an s-bad state pill, so a quiet watch and an unread one
+   can never look the same. The copy button reuses the Key-alerts clipboard idiom.
+   This is the operator surface, so operator vocabulary (module paths, PR shapes,
+   research/ docs) is rendered verbatim instead of laundered into customer words.
+   That is a VOCABULARY reason, not a secrecy one — the artifact is committed to a
+   public repo, so nothing genuinely private may be put in it on the strength of
+   this panel sitting behind the auth wall.
+   Freshness verdicts come from the server (pw.freshness) so one place owns the
+   thresholds; both clocks (market as-of and file write time) are printed. */
+const PW_PILL = { fired: "s-bad", unavailable: "s-warn", waiting: "s-mut" };
+const PW_LABEL = { fired: "FIRED", unavailable: "NO READ", waiting: "waiting" };
+/* Own-property lookups only: a producer state of "constructor"/"__proto__" must
+   not resolve to something off Object.prototype and get painted into the page. */
+function pwOwn(map, k, fallback) {
+  return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : fallback;
+}
+
+function pwScalar(v) {
+  if (v == null) return "—";
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  const s = String(v);
+  return s.length > 220 ? s.slice(0, 219) + "…" : s;
+}
+/* Evidence is engine-shaped nested JSON of unbounded depth. Render it as readable
+   lines — never a raw JSON blob, and never an "…" where a p-value was. Truncation
+   always says how much it dropped. */
+function pwCompact(v, depth) {
+  if (v == null || v === "") return "—";
+  if (typeof v !== "object") return pwScalar(v);
+  if (depth <= 0) return Array.isArray(v) ? v.length + (v.length === 1 ? " item" : " items") : "{…}";
+  if (Array.isArray(v)) {
+    if (!v.length) return "none";
+    const shown = v.slice(0, 6).map(x => pwCompact(x, depth - 1));
+    if (v.length > 6) shown.push(`+${v.length - 6} more`);
+    return shown.join(", ");
+  }
+  const ks = Object.keys(v);
+  if (!ks.length) return "none";
+  const shown = ks.slice(0, 8).map(k => `${k}=${pwCompact(v[k], depth - 1)}`);
+  if (ks.length > 8) shown.push(`+${ks.length - 8} more`);
+  return "{" + shown.join(", ") + "}";
+}
+function pwValue(v) {
+  if (v == null || v === "") return "—";
+  if (typeof v !== "object") return pwScalar(v);
+  if (Array.isArray(v)) {
+    if (!v.length) return "none";
+    const shown = v.slice(0, 6).map(x => pwCompact(x, 2));
+    if (v.length > 6) shown.push(`+${v.length - 6} more`);
+    return shown.join(", ");
+  }
+  const ks = Object.keys(v);
+  if (!ks.length) return "none";
+  const shown = ks.slice(0, 8).map(k => `${k} ${pwCompact(v[k], 2)}`);
+  if (ks.length > 8) shown.push(`+${ks.length - 8} more`);
+  return shown.join(" · ");
+}
+/* A list of objects is where the producer puts follow-up items, and `detail` /
+   `prompt` on those items ARE the instruction. Collapsing them to a bare key list
+   sends the operator back to the JSON this panel exists to replace. */
+function pwItemList(k, list) {
+  const items = list.map(x => {
+    if (!x || typeof x !== "object") {
+      return `<div style="padding:2px 0 2px 8px">${esc(pwScalar(x))}</div>`;
+    }
+    const name = String(x.key || x.id || x.name || "item");
+    const st = x.state == null ? "" : String(x.state);
+    const rest = Object.keys(x).filter(kk => !["key", "id", "name", "state", "detail", "prompt"].includes(kk));
+    return `<div style="margin-top:4px;padding:2px 0 4px 8px;border-left:2px solid var(--border)">
+      <div><b>${esc(name)}</b>${st ? ` <span class="sub">· ${esc(st)}</span>` : ""}</div>
+      ${x.detail ? `<div class="sub" style="margin-top:2px;word-break:break-word">${esc(String(x.detail))}</div>` : ""}
+      ${x.prompt ? `<div style="margin-top:3px;word-break:break-word">${esc(String(x.prompt))}</div>` : ""}
+      ${rest.length ? `<div class="sub" style="margin-top:2px;word-break:break-word">${esc(rest.slice(0, 8).map(kk => `${kk} ${pwCompact(x[kk], 2)}`).join(" · "))}</div>` : ""}
+    </div>`;
+  }).join("");
+  return `<div style="padding:4px 0"><span class="sub">${esc(k)} · ${list.length} item${list.length === 1 ? "" : "s"}</span>${items}</div>`;
+}
+function pwEvidence(ev) {
+  if (ev == null || ev === "") return "";
+  let entries;
+  if (typeof ev !== "object") entries = [["evidence", ev]];          // a bare string still shows
+  else if (Array.isArray(ev)) entries = ev.length ? [["items", ev]] : [];
+  else entries = Object.keys(ev).map(k => [k, ev[k]]);
+  if (!entries.length) return "";
+  const body = entries.map(([k, v]) => {
+    if (Array.isArray(v) && v.some(x => x && typeof x === "object")) return pwItemList(k, v);
+    return `<div style="display:flex;gap:8px;padding:2px 0">
+      <span class="sub" style="min-width:190px;flex:none">${esc(k)}</span>
+      <span style="flex:1;min-width:0;word-break:break-word">${esc(pwValue(v))}</span>
+    </div>`;
+  }).join("");
+  const n = entries.length;
+  return `<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Evidence (${n} field${n === 1 ? "" : "s"})</summary>
+    <div style="margin-top:6px;font-size:12px">${body}</div></details>`;
+}
+/* The open follow-ups nested in evidence carry their own paste-ready prompt.
+   A copied brief that omits them is not self-contained. */
+function pwOpenItems(ev) {
+  if (!ev || typeof ev !== "object") return [];
+  const lists = Array.isArray(ev) ? [ev] : Object.keys(ev).map(k => ev[k]).filter(Array.isArray);
+  const out = [], seen = new Set();
+  lists.forEach(list => list.forEach(x => {
+    if (!x || typeof x !== "object" || typeof x.prompt !== "string" || !x.prompt.trim()) return;
+    const st = String(x.state == null ? "" : x.state).toLowerCase();
+    if (["closed", "done", "resolved", "clear"].includes(st)) return;
+    /* The producer carries the same item in more than one list (checked + open);
+       the same instruction twice in a paste reads as two jobs. */
+    const id = `${x.key || x.id || x.name || ""}|${x.prompt.trim()}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push(x);
+  }));
+  return out;
+}
+/* The pasted prompt must stand on its own in a fresh session: the operator's
+   prompt, the open sub-items' own prompts, the handoff doc, and the provenance. */
+function pwCopyText(pw, it) {
+  const prompt = String(it.operator_prompt || "").trim();
+  const parts = [];
+  if (prompt) {
+    parts.push(prompt);
+  } else {
+    parts.push(String(it.headline || it.key || "Seasonality program watch tripwire").trim()
+      + (it.why ? `\n\nWhy it is up: ${String(it.why).trim()}` : "")
+      + "\n\n(This tripwire carries no operator_prompt — scripts/build_program_watch.py "
+      + "should give it one; the lines below are all the context the artifact holds.)");
+  }
+  const open = pwOpenItems(it.evidence);
+  if (open.length) {
+    parts.push("Open items this tripwire is counting, each with its own instruction:\n"
+      + open.map((x, i) => `${i + 1}. ${x.key || x.id || x.name || "item"} — ${String(x.prompt).trim()}`
+        + (x.detail ? `\n   Observed: ${String(x.detail).trim()}` : "")).join("\n"));
+  }
+  if (it.handoff_doc && parts.join("\n").indexOf(it.handoff_doc) === -1) {
+    parts.push(`Context doc: ${it.handoff_doc}`);
+  }
+  parts.push(`Source: data/seasonality/program_watch.json — tripwire "${it.key || "?"}", `
+    + `state ${it.state || "?"}, artifact asof ${(pw && pw.asof) || "unknown"}.`);
+  return parts.join("\n\n");
+}
+function pwCard(tone, title, body) {
+  return `<div class="card" style="border-left:3px solid var(--${tone})">
+    <div style="color:var(--${tone})"><b>${title}</b></div>
+    <div class="sub" style="margin-top:4px">${body}</div></div>`;
+}
+function renderProgramWatch(pw) {
+  const head = `<div class="section">Seasonality program watch</div>`;
+  const wrap = (inner) => `<div id="pwPanel">${head}${inner}</div>`;
+  if (!pw) {
+    /* Version skew: an older server that predates this panel sends no key. Say so —
+       a panel that silently disappears is the quiet-vs-unread collapse again. */
+    return wrap(pwCard("warn", "Watch unread — the server did not send it.",
+      "/api/summary carried no program_watch key. That is an admin server older than this "
+      + "console build, not an all-clear. Restart/redeploy the admin service."));
+  }
+  if (pw.error) {
+    return wrap(pwCard("warn", "Watch unread.",
+      `The console could not build this panel: ${esc(pw.error)}. That is not an all-clear.`));
+  }
+  if (!pw.available || !Array.isArray(pw.tripwires)) {
+    return wrap(pwCard("warn", "Watch unread — no artifact to read.",
+      esc(pw.note || "No note given.")));
+  }
+  const c = pw.counts || {};
+  const fr = pw.freshness || {};
+  const bad = fr.level === "stale";
+  const unknown = fr.level === "unknown";
+  const tone = bad ? "bad" : unknown ? "warn" : "";
+  const bar = (bad || unknown) && fr.note
+    ? `<div style="margin:-2px 0 10px;padding:8px 10px;border-radius:6px;background:var(--${tone}-bg);color:var(--${tone})">
+        <b>${bad ? "This watch is behind." : "This watch's freshness is unknown."}</b>
+        <span class="sub" style="color:inherit">${esc(fr.note)}</span></div>`
+    : "";
+  const ages = [
+    typeof pw.stale_days === "number" ? `${pw.stale_days.toFixed(1)}d behind (market as-of)` : "age unreadable",
+    typeof pw.built_days === "number" ? `file written ${pw.built_days.toFixed(1)}d ago` : "",
+  ].filter(Boolean).join(" · ");
+  const other = c.other ? ` · <b style="color:var(--warn)">${c.other} unrecognised</b>` : "";
+  const meta = `<div class="sub" style="margin-bottom:10px">asof ${esc(pw.asof == null ? "—" : String(pw.asof))} · ${ages} · `
+    + `<b style="color:var(--bad)">${c.fired || 0} fired</b> · ${c.unavailable || 0} no-read · ${c.waiting || 0} waiting${other}</div>`;
+  const rows = pw.tripwires.map((it, i) => {
+    const st = String(it.state || "").toLowerCase();
+    const fired = st === "fired";
+    const pill = pwOwn(PW_PILL, st, "s-warn");   // an unknown state is news, not muted noise
+    const label = pwOwn(PW_LABEL, st, st || "?");
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0 10px ${fired ? "9" : "0"}px;border-top:1px solid var(--border)${fired ? ";border-left:3px solid var(--bad)" : ""}">
+      <div style="flex:none;width:96px;padding-top:2px">
+        <span class="statpill ${pill}" style="font-size:11px;letter-spacing:.03em">${esc(label)}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="${fired ? "font-weight:600" : ""}">${esc(it.headline || it.key || "")}</div>
+        <div class="sub" style="margin-top:3px">${esc(it.why || "")}</div>
+        <div class="sub" style="margin-top:3px">${esc(it.key || "")}${it.handoff_doc ? " · " + esc(it.handoff_doc) : ""}</div>
+        ${pwEvidence(it.evidence)}
+      </div>
+      <div style="flex:none">
+        <button class="btn" data-pw-copy="${i}" title="${it.operator_prompt
+          ? "Copy this tripwire's prompt, its open items and their context — paste it into a new session"
+          : "This tripwire carries no operator_prompt; copies its headline, why and provenance instead"}">📋 Copy prompt</button>
+      </div>
+    </div>`;
+  }).join("");
+  const empty = pw.tripwires.length ? "" :
+    `<div class="sub">The artifact carries no tripwires. That is an empty watch, not a clear one — check scripts/build_program_watch.py.</div>`;
+  const more = pw.truncated ? `<div class="sub" style="margin-top:8px">More tripwires exist than this panel shows — read data/seasonality/program_watch.json.</div>` : "";
+  const foot = `<div style="margin-top:10px"><button class="btn" id="pwRecheck" title="Re-read data/seasonality/program_watch.json now, bypassing the 15s response cache">⟳ Recheck now</button></div>`;
+  return wrap(`<div class="card"${tone ? ` style="border-left:3px solid var(--${tone})"` : ""}>${bar}${meta}${rows}${empty}${more}${foot}</div>`);
+}
+function wireProgramWatch(pw) {
+  document.querySelectorAll("[data-pw-copy]").forEach(btn => {
+    btn.onclick = async () => {
+      const it = (pw && Array.isArray(pw.tripwires)) ? pw.tripwires[Number(btn.dataset.pwCopy)] : null;
+      if (!it) return;
+      try { await navigator.clipboard.writeText(pwCopyText(pw, it)); toast("Prompt copied — paste it into a new session"); }
+      catch (e) { toast("Copy failed — clipboard blocked", true); }
+    };
+  });
+  const re = document.getElementById("pwRecheck");
+  if (re) {
+    re.onclick = async () => {
+      re.disabled = true;
+      try {
+        /* force=1 is the house cache-bypass on both sides (client API_CACHE and the
+           server's 15s response cache), so "recheck" really re-reads the artifact. */
+        const fresh = await api("/api/program_watch?force=1");
+        const host = document.getElementById("pwPanel");
+        if (SUMMARY) SUMMARY.program_watch = fresh;
+        if (host) { host.outerHTML = renderProgramWatch(fresh); wireProgramWatch(fresh); }
+        toast("Watch re-read");
+      } catch (e) {
+        re.disabled = false;
+        toast("Recheck failed — " + ((e && e.message) || "unknown error"), true);
+      }
+    };
+  }
+}
+
 /* ---- OVERVIEW ----------------------------------------------------------- */
 RENDER.overview = async () => {
   const v = $("#view"), s = SUMMARY;
@@ -769,9 +1009,11 @@ RENDER.overview = async () => {
       ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest && s.experiments.soonest.days_until > 0 ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
     ${renderKeyAlerts(s.key_alerts)}
+    ${renderProgramWatch(s.program_watch)}
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
   wireKeyAlertCopies(s.key_alerts);
+  wireProgramWatch(s.program_watch);
   const qa = $("#qa");
   const rebuild = h(`<button class="btn primary">▶ Rebuild &amp; deploy now</button>`);
   rebuild.onclick = () => dispatch("daily.yml"); rebuild.disabled = !m.has_token; qa.appendChild(rebuild);
