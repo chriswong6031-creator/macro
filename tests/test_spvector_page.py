@@ -9,6 +9,8 @@
    kwargs build_landing still passes.
 
 Run as a script (no pytest needed): python -m tests.test_spvector_page
+Under pytest the same checks hard-gate: check() only records, and each test ends
+with _flush(), which raises on everything recorded since the previous flush.
 """
 from __future__ import annotations
 
@@ -18,6 +20,11 @@ from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 PASS, FAIL = 0, 0
+_PENDING: list[str] = []
+
+
+class CheckFailures(AssertionError):
+    """Raised by _flush(); every failure inside was already printed + tallied."""
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -27,7 +34,19 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  PASS  {name}")
     else:
         FAIL += 1
+        _PENDING.append(f"{name}  {detail}".rstrip())
         print(f"  FAIL  {name}  {detail}")
+
+
+def _flush() -> None:
+    """Every check()-based test MUST end with _flush(): check() never raises, so
+    a test that skips it cannot fail under pytest — that vacuity let four stale
+    template markers ride green CI until 2026-08-08. Plain-assert tests need no
+    flush."""
+    global _PENDING
+    failed, _PENDING = _PENDING, []
+    if failed:
+        raise CheckFailures(f"{len(failed)} check(s) failed:\n  " + "\n  ".join(failed))
 
 
 def _env() -> Environment:
@@ -80,6 +99,7 @@ def test_spvector_renders():
     for s in ["Allocation Strategy", "drawdown / Sharpe engine", "Taxable-account",
               "Macro-stress drawdown gauge", "rule-book", "permutation null", "after-tax"]:
         check(f"spvector contains: {s}", s.lower() in html.lower(), "missing")
+    _flush()
 
 
 def test_dashboard_compiles_and_splits():
@@ -91,22 +111,30 @@ def test_dashboard_compiles_and_splits():
         except Exception as e:                  # noqa: BLE001
             check(f"{tpl} compiles", False, str(e))
     src = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    # "Regime-approved sectors" was the v1 macro→stocks cross-link copy; the v2
+    # board (#2249) replaced it with markets-tray deep links into us_stocks.html.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', "Regime-approved sectors",
+              'id="index-health"', 'id="stocks-header"', "us_stocks.html#holdings",
               "Index risk model", "rm-bar", "chart_risk_model"):  # integrated risk model
         check(f"dashboard has split marker: {m}", m in src, "missing")
     # China + HK mirror the same macro/stocks mode split (rendered twice by their
     # builders -> <market>.html + <market>_stocks.html).
     cn = (ROOT / "templates" / "china.html.j2").read_text()
+    # The id="index-health" panel moved into the Markets dialog in the mx5
+    # redesign (#2589); the feature's contract is now the index_health loop.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', 'id="standouts"',
+              "for ix in index_health", 'id="stocks-header"', 'id="standouts"',
               "china_stocks.html"):
         check(f"china has split marker: {m}", m in cn, "missing")
     hk = (ROOT / "templates" / "hk.html.j2").read_text()
+    # #1337 (copy simplification) folded the id="index-health" panel into the
+    # hkx strip/dialog (the index_health loops) and reworded the screener's
+    # "stock-selection edge" help() — its stable name is the h2 title.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', 'id="hk-screener"',
-              "hk_stocks.html", "stock-selection edge"):
+              "for ih in index_health", 'id="stocks-header"', 'id="hk-screener"',
+              "hk_stocks.html", "Global-risk screener"):
         check(f"hk has split marker: {m}", m in hk, "missing")
+    _flush()
 
 
 def test_hub_split_cards():
@@ -143,12 +171,20 @@ def test_hub_split_cards():
         us_stocks={"present": False}, commodities={"present": False}, forex={"present": False},
         bonds={"present": False}, etf={"present": False}, watchlist={"present": False})
     check("hub graceful without China/HK (US still present)", "United States" in html2)
+    _flush()
 
 
 def main() -> int:
+    global FAIL
     for fn in (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards):
         print(f"\n{fn.__name__}")
-        fn()
+        try:
+            fn()
+        except CheckFailures:
+            pass  # already printed + tallied line-by-line by check()
+        except AssertionError as e:  # a plain-assert test: tally it so the exit code stays honest
+            FAIL += 1
+            print(f"  FAIL  {fn.__name__}  {e}")
     print(f"\n{'=' * 40}\n{PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0
 
