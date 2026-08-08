@@ -1169,6 +1169,16 @@ _LONG_HORIZON_ANGLES: frozenset[str] = frozenset({
 })
 
 
+#: The ticker allocator's long-view pool name, imported by VALUE rather than
+#: re-spelled, so the producer and the one consumer of this handshake cannot drift
+#: apart on a string. Falls back to the literal only if the module is unavailable,
+#: which makes the handshake inert rather than wrong.
+try:  # pragma: no cover - import guard
+    from engine.marketing.ticker_allocator import POOL_LONG_VIEW as _ALLOCATOR_LONG_VIEW_POOL
+except Exception:  # noqa: BLE001
+    _ALLOCATOR_LONG_VIEW_POOL = "allocator_long_view"
+
+
 def director_timeframe_hint(angle: str, today: object = None) -> str | None:
     """WEEKLY / MONTHLY / None for the director, from the angle and the day.
 
@@ -1196,6 +1206,7 @@ def _director_chart(
     today: object = None,
     cta: bool = True,
     facts_cache: dict | None = None,
+    timeframe_override: str | None = None,
 ) -> tuple[str, object] | None:
     """``(svg, spec)`` from the chart director, or None. Never raises.
 
@@ -1203,13 +1214,23 @@ def _director_chart(
     for three desks computes its facts once. The PR-B pools underneath are
     memoised per process as well (`chart_facts._POOL_CACHE`); this second layer
     saves the parquet reads and the resampling, which is the expensive half.
+
+    *timeframe_override* wins over :func:`director_timeframe_hint`. It exists for
+    the ticker allocator's LONG-VIEW subjects (W3): those are chosen ON the axis
+    they are meant to be drawn on — the allocator refuses a subject whose weekly
+    or monthly series is too short to be a longer view — and that decision is
+    made before any angle exists. Without the override the subject arrived tagged
+    `long_view` and was drawn on the DAILY axis anyway, which is the tag lying
+    about the picture. `None` keeps the angle-derived hint, so every existing
+    caller is unchanged.
     """
     tkr = str(ticker or "").upper()
     if not tkr:
         return None
     try:
         from engine.marketing import chart_director as _cd  # noqa: PLC0415
-        hint = director_timeframe_hint(angle, today)
+        hint = (str(timeframe_override).upper() if timeframe_override
+                else director_timeframe_hint(angle, today))
         packet = None
         if facts_cache is not None:
             packet = facts_cache.get((tkr, hint))
@@ -1314,6 +1335,7 @@ def _alarm_on_starved_receipts(
     n_receipts: int,
     window_days: int,
     today: str | None = None,
+    receipt_items: int | None = None,
 ) -> None:
     """A receipts desk with budget and no supply must say which it is.
 
@@ -1329,7 +1351,33 @@ def _alarm_on_starved_receipts(
     it grades is a permanent famine. So when there are ZERO receipts but resolved
     plans exist just outside the window, this names the oldest one and the number
     of days by which the window missed it.
+
+    THE SECOND SILENCE, AND IT WAS THIS FUNCTION'S OWN (2026-08-08). The early
+    return below read `if n_receipts: return` — i.e. "something was graded, so
+    the desk is fed". That is a claim about the SOURCE, and it was used to certify
+    the OUTCOME. For the whole life of the outbox both were true at once: 6
+    receipts graded, and 0 receipt items in 570 rows, because a receipt slot could
+    not draw a resolved plan's ticker (see `receipt_pool` in plan_account). The
+    monitor built to catch receipt starvation was the one thing guaranteeing
+    nobody saw it: a graded receipt made it return before it looked at whether a
+    single receipt POST existed.
+
+    So `receipt_items` — how many receipt-typed items survived onto the emitted
+    day — is now part of the verdict. Graded > 0 and items == 0 is its own alarm
+    with its own wording, because the fix is a different fix: not a window, a
+    supply seam. `None` means the caller did not measure it, and then only the
+    original window check runs (no caller is silently upgraded into a new alarm
+    it cannot satisfy).
     """
+    if n_receipts and receipt_items is not None and receipt_items == 0:
+        print(f"::warning title=marketing-receipts-unattached::"
+              f"{n_receipts} receipt(s) were GRADED and 0 receipt posts reached "
+              f"the emitted day. The supply exists and nothing is drawing it: a "
+              f"receipt slot must take its ticker from a RESOLVED plan "
+              f"(plan_account receipt_plans / receipt_pool), and a slot drawing "
+              f"from the live-signal pool can never join one. Check that "
+              f"content_plan is passing receipt_plans.", flush=True)
+        return
     if n_receipts:
         return
     try:
@@ -2688,6 +2736,11 @@ def plan_account(
     ticker_supply: list[dict] | None = None,
     chart_post_counts: dict[str, int] | None = None,
     max_chart_posts_per_ticker: int = 3,
+    # The RESOLVED plans that have a graded receipt. Default None reproduces the
+    # pre-W3 behaviour exactly (no receipt ever finds a ticker, every receipt slot
+    # reallocates to watchlist), so a caller that has not been updated is
+    # unchanged rather than broken. See `receipt_pool` below for the defect.
+    receipt_plans: list[dict] | None = None,
 ) -> list[ContentItem]:
     """Generate a deterministic content queue for one account.
 
@@ -2835,6 +2888,34 @@ def plan_account(
     signal_pool = [p for p in plan_pool
                    if str(p.get("asset", "")).upper() not in _cooled_s]
 
+    # ── RECEIPTS DRAW FROM RESOLVED PLANS, NOT LIVE ONES (W3, 2026-08-08) ─────
+    # THE DEFECT. `kind=receipt` had shipped ZERO posts in the outbox's entire
+    # 570-row history, and nothing in the stack was broken: the kind is in
+    # outbox.KINDS, in PLANNED_KINDS, in _ANGLE_BY_KIND, in the approval-desk
+    # decider list, and carries a non-zero tilt weight on all thirteen desks.
+    # `graded_receipts()` returns real rows most nights (6 tickers inside the
+    # 30-day window on 2026-08-08: SFM, GME, MSFT, GPI, QCOM, ARES).
+    #
+    # The break was here, and it was STRUCTURAL rather than intermittent. A
+    # receipt slot drew its ticker from `watch_pool`, i.e. from
+    # `postable_signals(plans)`, which admits ONLY `_LIVE_PHASES` —
+    # triggered_pre_t1 / triggered / active / pre_trigger / running. A graded
+    # receipt requires the opposite: `receipt_source._is_resolved`, i.e. phase
+    # `invalidated` or a DONE profit-plan level. One plan cannot be
+    # pre-resolution and resolved at the same time, so the pool a receipt slot
+    # could draw from and the pool that could HAVE a receipt were disjoint by
+    # construction, every night, forever. The join downstream
+    # (`_receipts_by_ticker.get(ticker)`) therefore always missed and every
+    # receipt item was silently reallocated to `watchlist` before the writer ran.
+    #
+    # `receipt_pool` is that missing pool: the resolved plans whose ticker has a
+    # graded receipt, cooled by the same coverage cooldown as `watch_pool` so a
+    # receipt cannot re-post a name the desk just used. Absent/empty → the slot
+    # behaves exactly as it does today (drops, or reallocates to watchlist), so a
+    # night with nothing resolved is unchanged.
+    receipt_pool = [p for p in (receipt_plans or [])
+                    if str(p.get("asset", "")).upper() not in _cooled_w]
+
     # Attention supply — the pool a ticker-less chart-family slot draws from.
     # Walked as a CURSOR, never re-sorted: `attention_supply` already ordered it
     # by editorial claim (hot story first, long-tail-fresh first within each
@@ -2881,9 +2962,28 @@ def plan_account(
         ticker = ""
         cashtag = ""
         supply_row: dict | None = None
-        if type_id in ("signal", "chart", "receipt") and plan_pool:
+        if type_id in ("signal", "chart", "receipt") and (plan_pool or receipt_pool):
             pool = plan_pool
-            if slot.startswith(f"{emit_day_prefix}-"):
+            if type_id == "receipt" and receipt_pool:
+                # A receipt is ONLY ever a resolved plan — off the emitted day
+                # too, because a forward-day receipt slot that drew a live plan
+                # would produce the same never-joinable item the emitted day
+                # used to.
+                #
+                # THE FALLBACK IS DELIBERATE AND IT IS NOT A HOLE. With no graded
+                # receipt tonight this branch does not fire, the rung keeps
+                # drawing from the coverage pool, and the downstream join
+                # reallocates it to `watchlist` — which is EXACTLY what happened
+                # before this fix, on every rung, every night. Sending the rung
+                # to the `if not pool` drop instead would have been the tidier
+                # code and a volume REGRESSION: it deletes a post that used to
+                # ship (measured: the guarantee that every content family gets
+                # >= 1 allocated rung, pinned by
+                # tests/test_marketing_content.py::test_all_types_present_in_every_account,
+                # is what breaks first). A receipt is an UPGRADE on a watchlist
+                # rung when the data exists, never a condition of having one.
+                pool = receipt_pool
+            elif slot.startswith(f"{emit_day_prefix}-"):
                 pool = signal_pool if type_id == "signal" else watch_pool
             if not pool:
                 # Nothing fresh to say about any name tonight for this kind.
@@ -3506,6 +3606,81 @@ def content_plan(
     # Shared across accounts so §0 gate 6's per-ticker/day cap is a NETWORK cap.
     _chart_post_counts: dict[str, int] = {}
 
+    # ── DAILY TICKER ALLOCATOR (W3 volume supply) ────────────────────────────
+    # The pools above overlap at the top of the liquidity board and `house_picks`
+    # yields at most 7 names a night, so the network kept re-posting the same
+    # handful of mega-caps while the 2,600-name liquidity board underneath went
+    # untouched. `ticker_allocator` partitions that board across the desks: a
+    # PER-ACCOUNT subject list with zero cross-account overlap, a mega-cap quota
+    # so the familiar names keep a presence, and per-account cooldowns UNDER the
+    # network cooldown that `_draw_supply` still applies to every row.
+    #
+    # It emits the same row shape `attention_supply` does, so nothing downstream
+    # changes shape and no cooldown, cap or budget is bypassed. The allocator's
+    # rows go FIRST and the attention pools stay behind them as the backfill: a
+    # desk with more chart rungs than allocated subjects fills the remainder
+    # exactly as it does today. Disabled, or an absent/stale pack → `_allocated`
+    # is empty and every desk gets `[] + _attention_supply`, which is today's
+    # supply, in today's order.
+    _allocated: dict[str, list[dict]] = {}
+    try:
+        from engine.marketing import ticker_allocator as _ticker_allocator  # noqa: PLC0415
+        _alloc_ids = [
+            str(_a.get("id") or "") for _a in eff_accounts
+            if _a.get("enabled")
+            and _drafts_nightly_copy(cfg, str(_a.get("id") or ""))]
+        _allocated = _ticker_allocator.supply_rows(_ticker_allocator.allocate(
+            root, as_of=today, accounts=_alloc_ids, cfg=cfg,
+            posted_recent=_posted_recent))
+    except Exception:  # noqa: BLE001 — supply is additive; never break a plan
+        _allocated = {}
+    # No counter of its own: `_draw_supply` already reports every draw under its
+    # row's `pool`, so the artifact's `supply_used_by_pool` shows the allocator's
+    # contribution as `allocator_megacap` / `allocator_tail` /
+    # `allocator_long_view` without a second number to keep in step. A report key
+    # the artifact never copies is a receipt nobody can read.
+    # The long-tail quota is measured against what the SUPPLY SIDE offered, and
+    # the allocator is now part of that side. Measuring it against the attention
+    # pools alone would print a shortfall every night for fresh names the plan
+    # did use — a warning that fires nightly is a warning nobody reads.
+    _supply_offered = _attention_supply + [
+        _r for _rows in _allocated.values() for _r in _rows]
+
+    # ── RECEIPT SUPPLY, RESOLVED BEFORE THE LADDER IS ALLOCATED (W3) ──────────
+    # `graded_receipts` is already called further down to build
+    # `_receipts_by_ticker` for the JOIN, but that is far too late to decide which
+    # ticker a receipt slot gets: `plan_account` runs first and was drawing from
+    # the live-signal pool, which can never contain a resolved plan (see the
+    # `receipt_pool` comment in plan_account). So the graded set is resolved HERE,
+    # ahead of the account loop, and handed down.
+    #
+    # Deliberately a SECOND call rather than a refactor of the join below: the two
+    # sites want different things (a plan pool here, a ticker->receipt map there)
+    # and this one has to run before the loop the other one lives inside. It is
+    # cheap — the age/phase filter is pure logic over ~116 plans and only the
+    # handful that are RESOLVED ever reach `closes_loader`.
+    # THE TWO CALLS MUST BE ARGUMENT-IDENTICAL. `closes_loader` is deliberately
+    # NOT passed, and neither is it at the join site: passing it here alone would
+    # let this pool hold a ticker the join's map lacks, which is the SAME
+    # never-joins defect in a new place. If the join site ever starts passing a
+    # loader, this call has to as well.
+    _receipt_plans: list[dict] = []
+    try:
+        from engine.marketing.receipt_source import (  # noqa: PLC0415
+            graded_receipts as _graded_early,
+            receipt_max_age_days as _receipt_window_fn,
+        )
+        _graded_tickers = {
+            str(_r.get("ticker") or "").upper()
+            for _r in (_graded_early(plans or [], today=today,
+                                     max_age_days=_receipt_window_fn(cfg)) or [])
+            if _r.get("ticker")}
+        _receipt_plans = [
+            _p for _p in (plans or [])
+            if str(_p.get("asset") or "").upper() in _graded_tickers]
+    except Exception:  # noqa: BLE001 — no receipts is a quiet night, not a crash
+        _receipt_plans = []
+
     # ── LADDER SHAPE + RAMP FORMAT PERMISSIONS (W4a/W4b) ─────────────────────
     # Resolve the D08 ramp table ONCE for the whole plan: both the per-account
     # rung count (`ladder_shape_for`) and the per-account banned formats
@@ -3617,9 +3792,10 @@ def content_plan(
             cooled_watch=_cooled_watch,
             cooled_signal=_cooled_signal,
             report=_sel_report,
-            ticker_supply=_attention_supply,
+            ticker_supply=(_allocated.get(acct_id) or []) + _attention_supply,
             chart_post_counts=_chart_post_counts,
             max_chart_posts_per_ticker=_max_chart_per_ticker,
+            receipt_plans=_receipt_plans,
         )
         all_items.extend(items)
 
@@ -3758,6 +3934,34 @@ def content_plan(
                      if p.get("asset") == ticker and is_postable_signal(p)),
                     None,
                 )
+                # A RECEIPT'S PLAN IS RESOLVED BY DEFINITION, SO THE SIGNAL GATE
+                # CANNOT BE THE ONE THAT CLEARS IT (W3, 2026-08-08). Once receipt
+                # slots started drawing from `receipt_pool` they name plans whose
+                # phase is `invalidated` or a DONE profit level — precisely the
+                # states `is_postable_signal` exists to refuse — so `plan_match`
+                # came back None, the `supply_pool` escape below does not apply to
+                # receipts (only `_draw_supply` sets that field, and only for
+                # watchlist/chart), and every receipt fell through the `continue`
+                # with NO chart_id. Under the ticker-post-carries-a-chart law that
+                # is a post that defers forever: the receipt fix would have traded
+                # "reallocated to watchlist" for "never ships", which is worse.
+                #
+                # The guard's reasoning is unchanged and still fully in force for
+                # signals — do not chart an entry claim that is no longer live.
+                # A receipt makes the OPPOSITE claim: it says how the call turned
+                # out, so the resolved plan IS its subject and its chart.
+                if plan_match is None and item_type == "receipt":
+                    try:
+                        from engine.marketing.receipt_source import (  # noqa: PLC0415
+                            _is_resolved as _rs_is_resolved,
+                        )
+                        plan_match = next(
+                            (p for p in plans
+                             if p.get("asset") == ticker and _rs_is_resolved(p)),
+                            None,
+                        )
+                    except Exception:  # noqa: BLE001 — fall through to the skip
+                        plan_match = None
                 if plan_match is None:
                     # A SUPPLY-SOURCED ITEM HAS NO PROPHET PLAN BY CONSTRUCTION
                     # (TrendSpider PR-C §3). This gate is defence-in-depth
@@ -3873,6 +4077,24 @@ def content_plan(
                         marker_date=(signal_date or None),
                         today=today, cta=_card_cta,
                         facts_cache=_director_facts,
+                        # THE LONG-VIEW HANDSHAKE (W3). `supply_pool` is the one
+                        # field that survives from the allocator's row all the way
+                        # into the item, the artifact and the outbox provenance —
+                        # `angle` does not, because apply_reuse_budget rewrites it
+                        # unconditionally. So the pool name is what says "this
+                        # subject was picked to be drawn as a longer view".
+                        #
+                        # WEEKLY, NOT THE SUBJECT'S OWN TIMEFRAME, and that is a
+                        # known narrowing: the allocator picks WEEKLY or MONTHLY
+                        # per subject, but ContentItem carries only the pool, so a
+                        # MONTHLY pick is drawn weekly. Both are a longer view and
+                        # the allocator verified the monthly history exists;
+                        # carrying the exact axis needs a new ContentItem field,
+                        # which is a schema change and not this wave's.
+                        timeframe_override=(
+                            "WEEKLY"
+                            if str(item_dict.get("supply_pool") or "")
+                            == _ALLOCATOR_LONG_VIEW_POOL else None),
                     )
                     if _dres is not None:
                         svg, _dspec = _dres
@@ -5480,11 +5702,23 @@ def content_plan(
         _graded_receipts_list = graded_receipts(
             plans or [], today=today, max_age_days=_receipt_window)
         _copy_n_receipts = len(_graded_receipts_list)
-        _alarm_on_starved_receipts(
-            plans or [], _copy_n_receipts, _receipt_window, today)
         _receipts_by_ticker: dict[str, dict] = {
             r["ticker"]: r for r in _graded_receipts_list
         }
+        # How many receipt slots actually found a ticker a graded receipt can
+        # ATTACH to. Counted here, before the reallocation branch below runs, and
+        # keyed on membership in the join map rather than on the type alone: a
+        # receipt item holding a ticker no receipt covers is exactly the item that
+        # is about to become a watchlist post, and counting it would report the
+        # defect as healthy. Emitted day only — a forward-day rung ships nothing.
+        _receipt_attachable = sum(
+            1 for _row in account_rows for _it in (_row.get("queue") or [])
+            if str(_it.get("type") or "") == "receipt"
+            and str(_it.get("slot") or "").startswith(f"{_EMIT_DAY}-")
+            and str(_it.get("ticker") or "") in _receipts_by_ticker)
+        _alarm_on_starved_receipts(
+            plans or [], _copy_n_receipts, _receipt_window, today,
+            receipt_items=_receipt_attachable)
 
         # Build a ticker→plan lookup for fast signal matching
         _plan_by_ticker: dict[str, dict] = {}
@@ -6150,7 +6384,7 @@ def content_plan(
         and str(_it.get("slot") or "").startswith("D1-")
     }
     _lt_used, _lt_quota_n, _lt_avail = long_tail_shortfall(
-        root, _attention_supply, _chart_family_used)
+        root, _supply_offered, _chart_family_used)
     _lt_warned = warn_long_tail(_lt_used, _lt_quota_n, _lt_avail)
     _sel_report["long_tail"] = {
         "fresh_used": _lt_used,

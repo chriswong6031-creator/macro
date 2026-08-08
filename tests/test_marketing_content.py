@@ -153,7 +153,22 @@ def test_gate_rejects_dead_actions():
 
 
 def test_invalidated_plan_never_appears_in_signal_posts_or_charts(monkeypatch):
-    """Full pipeline: a QCOM-class invalidated plan must not leak anywhere."""
+    """Full pipeline: a QCOM-class invalidated plan must not leak anywhere.
+
+    "ANYWHERE" IS NARROWED TO "AS A LIVE CLAIM" (W3, 2026-08-08), the same
+    narrowing as
+    tests/test_marketing_chart_coverage.py::test_an_invalidated_plan_is_never_charted_as_a_live_claim
+    and for the same reason. `receipt` slots now draw from the RESOLVED plan pool
+    (they drew from the live-signal pool before, which is why `kind=receipt` had
+    never once posted in the outbox's 570-row history), so an invalidated plan is
+    exactly what a LOSS receipt is about. A ticker-bearing post with no chart_id
+    defers forever at publish, so an absolute reading of this law would mean the
+    receipts desk can only ever publish wins.
+
+    The signal half below is UNCHANGED and absolute: an invalidated plan may never
+    be a signal post. Only the chart half is scoped, and it is scoped by KIND
+    rather than relaxed.
+    """
     import engine.marketing.chart_render as cr
     from engine.marketing.content_studio import content_plan
     from engine.marketing.chart_render import load_closes
@@ -175,7 +190,18 @@ def test_invalidated_plan_never_appears_in_signal_posts_or_charts(monkeypatch):
     }
     chart_tickers = {c["ticker"] for c in plan["featured_charts"]}
     assert "QCOM" not in sig_tickers, "invalidated signal leaked into a signal post"
-    assert "QCOM" not in chart_tickers, "invalidated signal leaked into a chart"
+    # Which kinds actually carry QCOM. Vacuous-green guard first: if QCOM stopped
+    # reaching any item, the chart assertion below would pass for the wrong reason.
+    qcom_kinds = {
+        str(p.get("type") or "")
+        for a in plan["accounts"] for p in a["queue"]
+        if str(p.get("ticker") or "") == "QCOM"
+    }
+    assert qcom_kinds, "QCOM reached no item at all — this test asserts nothing"
+    if qcom_kinds - {"receipt"}:
+        assert "QCOM" not in chart_tickers, (
+            f"invalidated signal leaked into a chart as {sorted(qcom_kinds - {'receipt'})}"
+        )
 
 
 def test_content_plan_non_empty_queues():

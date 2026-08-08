@@ -1024,6 +1024,42 @@ def posted_today_rows_by_account(
 # Enqueue
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _anchor_claimants(anchors: dict, as_of: object, key: str) -> tuple[str, ...]:
+    """Ids holding ``(as_of, key)``, in claim order. Never raises.
+
+    W3 widened ``fact_anchors`` from ``(as_of, key) -> item_id`` to
+    ``(as_of, key) -> [item_id, ...]`` because a budget cannot be enforced
+    against a value that can only say "someone". Order is CLAIM order, so the
+    first element is still the owner the pre-W3 map stored.
+
+    THE SCALAR FORM IS STILL ACCEPTED, and not only for the two tests that build
+    a ctx by hand: ``_ctx`` is a public-ish parameter of :func:`enqueue`, so a
+    caller outside this module may hold the old shape, and reading it as a
+    one-element claim list is exactly what it meant. An unrecognised value reads
+    as NO claimants rather than raising — the alternative is a corpus row with a
+    surprising type taking down every enqueue on the host.
+    """
+    raw = anchors.get((as_of, key))
+    if isinstance(raw, str):
+        return (raw,) if raw else ()
+    if isinstance(raw, (list, tuple)):
+        return tuple(str(c) for c in raw if c)
+    return ()
+
+
+def _claim_anchor(anchors: dict, as_of: object, key: str, item_id: str) -> None:
+    """Record ``item_id`` as a claimant of ``(as_of, key)``. Idempotent.
+
+    Idempotent because ``read_items_all`` UNIONS the tracked ledger with the
+    daemon spool, so one item can legitimately be seen twice while the map is
+    built. Counting it twice would spend two slots of a budget on one post.
+    """
+    held = list(_anchor_claimants(anchors, as_of, key))
+    if item_id and item_id not in held:
+        held.append(item_id)
+    anchors[(as_of, key)] = held
+
+
 def _rejection_reason(
     *,
     item_id: str,
@@ -1125,14 +1161,30 @@ def _rejection_reason(
     # fact was new because its framing quoted an older print, and the two gates
     # answering "is this the same fact?" differently is how a post gets refused
     # here and would have shipped there.
+    #
+    # ONE OWNER BECAME A BUDGET (W3, operator order 2026-08-08). The check below
+    # used to refuse the moment ANY other live item held the lead key. That is
+    # still the answer for `ratio:` and every other family — `default: 1`
+    # reproduces it exactly — but it made the operator's macro fan-out
+    # unexpressible: a CPI print written up by three desks from three angles died
+    # at the second desk, before the near-dup gates that exist to judge whether a
+    # sibling is a different read or a reskin ever ran. Those gates are unchanged
+    # and still run on every sibling; this budget only stops the FACT-level gate
+    # from deleting the second read sight-unseen.
     anchors = ctx.get("fact_anchors")
     if anchors is not None and trigger != BRIEF_TRIGGER:
+        budgets = ctx.get("fanout_budgets")
         for key in _clock.lead_fact_keys(str(text or ""), kind):
-            owner = anchors.get((as_of, key))
-            if owner and owner != item_id:
+            others = [c for c in _anchor_claimants(anchors, as_of, key)
+                      if c != item_id]
+            if not others:
+                continue
+            budget = _clock.fact_fanout_max_accounts(key, budgets)
+            if len(others) >= budget:
                 log.warning(
-                    "outbox.enqueue: %s rejected — fact %s already anchors %s "
-                    "on %s", account, key, owner, as_of)
+                    "outbox.enqueue: %s rejected — fact %s already anchors %d "
+                    "item(s) on %s (%s); budget is %d", account, key,
+                    len(others), as_of, ", ".join(others), budget)
                 return "fact_fanout"
         # CORRECTION C2, the same bound the publisher applies: a new lead may
         # carry ONE already-owned supporting fact as framing, not a paragraph of
@@ -1140,17 +1192,27 @@ def _rejection_reason(
         # reasoning as the lead-key check above — the two gates that answer "is
         # this the same fact?" must answer it identically, or a post is refused
         # at publish time that this one queued.
+        #
+        # THE BUDGET ABOVE DOES NOT REACH HERE, deliberately. That budget answers
+        # "how many desks may LEAD on this fact"; this answers "how much
+        # already-owned material may ride behind a new lead", and widening the
+        # first is not an argument for widening the second — a fan-out sibling
+        # earns a second LEAD, never a second recital. So this stays "any other
+        # claimant counts as owned", which is exactly what it tested when the map
+        # held one id per key.
         ride_max = _clock.fact_ride_along_max(ctx.get("ride_along_max"))
         if ride_max >= 0:
             owned = [k for k in sorted(_clock.ride_along_keys(str(text or ""), kind))
-                     if anchors.get((as_of, k))
-                     and anchors.get((as_of, k)) != item_id]
+                     if any(c != item_id
+                            for c in _anchor_claimants(anchors, as_of, k))]
             if len(owned) > ride_max:
                 log.warning(
                     "outbox.enqueue: %s rejected — %d supporting facts already "
                     "anchor live siblings on %s (%s); at most %d may ride along "
                     "with a new lead", account, len(owned), as_of,
-                    ", ".join(f"{k}->{anchors.get((as_of, k))}" for k in owned),
+                    ", ".join(
+                        f"{k}->{'/'.join(_anchor_claimants(anchors, as_of, k))}"
+                        for k in owned),
                     ride_max)
                 return "fact_recital"
     # Cap: every existing same-day item consumed a slot regardless of
@@ -1181,10 +1243,17 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
         # cooldown windows the publisher reads.
         "ride_along_max": ((cfg or {}).get("publish") or {}).get(
             "fact_ride_along_max"),
-        # (as_of, anchor_key) -> the id that claimed it. Dead items release
-        # their anchors for the same reason they leave the text corpus: a
-        # quarantined post is not competing for the slot, so it must not veto
-        # the replacement written to take its place.
+        # How many items may lead on one key, by key family. Resolved from the
+        # same `publish` block as the two bounds above so the three answers to
+        # "is this the same fact?" are read from one place.
+        "fanout_budgets": ((cfg or {}).get("publish") or {}).get(
+            "fact_fanout_max_accounts"),
+        # (as_of, anchor_key) -> [ids that claimed it], in claim order. A LIST
+        # since W3: the gate spends a per-family budget, and a scalar owner can
+        # only ever answer "taken". Dead items release their anchors for the same
+        # reason they leave the text corpus: a quarantined post is not competing
+        # for the slot, so it must not veto the replacement written to take its
+        # place.
         "fact_anchors": {},
     }
     for i in existing:
@@ -1195,7 +1264,7 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
             continue
         for ak in _clock.lead_fact_keys(str(i.get("text") or ""),
                                         str(i.get("kind") or "")):
-            ctx["fact_anchors"].setdefault((i.get("as_of"), ak), iid)
+            _claim_anchor(ctx["fact_anchors"], i.get("as_of"), ak, iid)
     return ctx
 
 
@@ -1404,7 +1473,7 @@ def enqueue(
             _anchors = ctx.setdefault("fact_anchors", {})
             for _ak in _clock.lead_fact_keys(
                     str(item.get("text") or ""), str(item.get("kind") or "")):
-                _anchors.setdefault((as_of, _ak), item_id)
+                _claim_anchor(_anchors, as_of, _ak, item_id)
             return "queued"
 
         if _ctx is not None:
@@ -1412,6 +1481,9 @@ def enqueue(
             _ctx.setdefault("ride_along_max",
                             ((cfg or {}).get("publish") or {}).get(
                                 "fact_ride_along_max"))
+            _ctx.setdefault("fanout_budgets",
+                            ((cfg or {}).get("publish") or {}).get(
+                                "fact_fanout_max_accounts"))
             return _check_and_append(_ctx)
 
         with _outbox_lock(root):
