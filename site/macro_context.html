@@ -802,12 +802,12 @@
             </span>
           </div>
           
-          <div class="field-chip changed-today"
+          <div class="field-chip"
                data-tip-en="Vol Risk Premium"
                data-tip-zh="波动风险溢价">
             <span class="field-chip-name"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
             <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span>
+              <span class="l-en">thin (vol underpriced — fragile)</span><span class="l-zh">thin (vol underpriced — fragile)</span>
             </span>
           </div>
           
@@ -1018,8 +1018,8 @@
           <span class="domain-name-en"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-08-07"
-                data-tip-zh="数据截至 2026-08-07">2026-08-07</span>
+                data-tip-en="Source as-of 2026-08-08"
+                data-tip-zh="数据截至 2026-08-08">2026-08-08</span>
           
         </div>
         <div class="domain-chips">
@@ -1726,12 +1726,12 @@
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Overlay"
                data-tip-zh="叠加状态">
             <span class="field-chip-name"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
-            <span class="field-chip-val" style="color:var(--up)">
-              <span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
             </span>
           </div>
           
@@ -2488,7 +2488,7 @@
       <span class="breaking-text">
         7 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
         
-        — <span class="l-en">Canada</span><span class="l-zh">加拿大</span>: <span class="l-en">Cycle</span><span class="l-zh">周期阶段</span>, <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span>: <span class="l-en">Oil</span><span class="l-zh">原油</span>, <span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span>: <span class="l-en">Curve Trade</span><span class="l-zh">曲线交易</span> +4 <span class="l-en">more</span><span class="l-zh">更多</span>
+        — <span class="l-en">Canada</span><span class="l-zh">加拿大</span>: <span class="l-en">Cycle</span><span class="l-zh">周期阶段</span>, <span class="l-en">Canada</span><span class="l-zh">加拿大</span>: <span class="l-en">Overlay</span><span class="l-zh">叠加状态</span>, <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span>: <span class="l-en">Oil</span><span class="l-zh">原油</span> +4 <span class="l-en">more</span><span class="l-zh">更多</span>
         
       </span>
     </div>
@@ -2509,6 +2509,14 @@
           <span class="tl-from"><span class="l-en">mid</span><span class="l-zh">中期</span></span>
           <span class="tl-arrow">&#8594;</span>
           <span class="tl-to"><span class="l-en">late</span><span class="l-zh">晚期</span></span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
+          <span class="tl-from"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
         </div>
         
         <div class="tl-event hot">
@@ -2549,14 +2557,6 @@
           <span class="tl-from"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
           <span class="tl-arrow">&#8594;</span>
           <span class="tl-to"><span class="l-en">Crowded long</span><span class="l-zh">Crowded long</span></span>
-        </div>
-        
-        <div class="tl-event hot">
-          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from"><span class="l-en">thin (vol underpriced — fragile)</span><span class="l-zh">thin (vol underpriced — fragile)</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span></span>
         </div>
         
       </div>
@@ -3098,7 +3098,7 @@
   <div id="footnote" class="section">
     <div class="sec-lbl"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></div>
     <div class="footnote">
-      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>7ea03e4baf605d2c</code>
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>fc74f7e48eeb03e7</code>
       &nbsp;·&nbsp;
       <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-08-08
       &nbsp;·&nbsp;
@@ -3113,7 +3113,7 @@
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-08-08 10:11 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-08-08 16:15 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -3124,5 +3124,6 @@
 </footer>
 
 <script src="theme.js?v=8df4ebee" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

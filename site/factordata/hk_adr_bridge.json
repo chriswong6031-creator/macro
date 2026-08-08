@@ -10,27 +10,27 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "BIDU": {
-      "asof": "2026-08-07",
-      "lag_days": 0,
-      "state": "fresh"
-    },
     "JD": {
       "asof": "2026-08-07",
       "lag_days": 0,
       "state": "fresh"
     },
-    "KWEB": {
-      "asof": "2026-08-07",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "FXI": {
+    "BIDU": {
       "asof": "2026-08-07",
       "lag_days": 0,
       "state": "fresh"
     },
     "BABA": {
+      "asof": "2026-08-07",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "TCOM": {
+      "asof": "2026-08-07",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "KWEB": {
       "asof": "2026-08-07",
       "lag_days": 0,
       "state": "fresh"

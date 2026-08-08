@@ -14,36 +14,35 @@
   "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
   "headline_min_closed": 20,
   "harness_validity": {
-    "c0_plan_ids": [
-      "ADAM-BULL-20260626",
-      "GPCR-BULL-20260604",
-      "NGVT-BULL-20260731",
-      "NVDA-BULL-20260805",
-      "ROIV-BULL-20260805",
-      "SOUN-BULL-20260805",
-      "VSEC-BULL-20260805",
-      "WT-BULL-20260710",
-      "XPEL-BULL-20260805"
-    ],
+    "c0_plan_ids": [],
     "live_plan_ids": [
-      "ADAM-BULL-20260626",
-      "CTS-BULL-20260805",
-      "GPCR-BULL-20260604",
-      "NGVT-BULL-20260731",
-      "NVDA-BULL-20260805",
-      "ROIV-BULL-20260805",
-      "SOUN-BULL-20260805",
-      "UAL-BULL-20260805",
-      "UEC-BULL-20260731",
-      "VSEC-BULL-20260805",
-      "WT-BULL-20260710",
-      "XPEL-BULL-20260805"
+      "ALG-BULL-20260612",
+      "AMZN-BULL-20260731",
+      "APO-BULL-20260731",
+      "AVGO-BULL-20260731",
+      "AYI-BULL-20260731",
+      "CMC-BULL-20260731",
+      "ENR-BULL-20260731",
+      "FUL-BULL-20260805",
+      "HD-BULL-20260807",
+      "SMR-BULL-20260731",
+      "TTC-BULL-20260731",
+      "WS-BULL-20260731"
     ],
-    "c0_mismatch_count": 3,
+    "c0_mismatch_count": 12,
     "missing_from_mirror": [
-      "CTS-BULL-20260805",
-      "UAL-BULL-20260805",
-      "UEC-BULL-20260731"
+      "ALG-BULL-20260612",
+      "AMZN-BULL-20260731",
+      "APO-BULL-20260731",
+      "AVGO-BULL-20260731",
+      "AYI-BULL-20260731",
+      "CMC-BULL-20260731",
+      "ENR-BULL-20260731",
+      "FUL-BULL-20260805",
+      "HD-BULL-20260807",
+      "SMR-BULL-20260731",
+      "TTC-BULL-20260731",
+      "WS-BULL-20260731"
     ],
     "extra_in_mirror": [],
     "harness_ok": false,
@@ -197,7 +196,7 @@
       "label": "weekly-aligned only",
       "label_zh": "\u4ec5\u9650\u5468\u7ebf\u540c\u5411",
       "grain": "selection",
-      "n_open": 10,
+      "n_open": 11,
       "n_closed": 2,
       "win_rate_pct": 0.0,
       "avg_pct": -7.06,
@@ -290,7 +289,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 16.4
+        "runtime_s": 15.2
       }
     },
     "policies": {
@@ -303,39 +302,29 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS"
         ],
-        "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
-        ],
-        "n_plans": 9,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 10,
           "skipped_open_plan": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "originated": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C1_buy_soon_first": {
         "selected_tickers": [
@@ -350,38 +339,31 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT"
+          "NVDA"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
           "ALG-BULL-20260612",
           "FSS-BULL-20260728",
-          "GPCR-BULL-20260604",
-          "GTES-BULL-20260731",
-          "NGVT-BULL-20260731",
-          "ROIV-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "GTES-BULL-20260731"
         ],
-        "n_plans": 10,
+        "n_plans": 3,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
           "act_level_2": 6,
           "lifted": 6
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 10
+          "originated": 3
         },
-        "ledger_rows_appended": 10,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C2_stage_ran_preferred": {
         "selected_tickers": [
@@ -399,22 +381,17 @@
           "XPEL"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
           "DHR-BULL-20260521",
           "DRI-BULL-20260731",
-          "GPCR-BULL-20260604",
           "HAYW-BULL-20260731",
           "HRMY-BULL-20260731",
           "LECO-BULL-20260731",
-          "ROIV-BULL-20260805",
           "SHEN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WFRD-BULL-20260731",
-          "XPEL-BULL-20260805"
+          "WFRD-BULL-20260731"
         ],
-        "n_plans": 12,
+        "n_plans": 7,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
           "stage_ran_in_champion_pool": 0,
           "stage_ran_admitted_by_widening": 7,
@@ -423,15 +400,15 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 0,
+          "skipped_duplicate_id": 5,
           "skipped_open_plan": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 12
+          "originated": 7
         },
-        "ledger_rows_appended": 12,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C3_door_w_union": {
         "selected_tickers": [
@@ -442,28 +419,21 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
+          "NVDA",
           "AEM",
           "KGC",
           "HII",
           "HL"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
           "AEM-BULL-20260807",
-          "GPCR-BULL-20260604",
           "HII-BULL-20260807",
           "HL-BULL-20260807",
-          "KGC-BULL-20260807",
-          "NGVT-BULL-20260731",
-          "ROIV-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "KGC-BULL-20260807"
         ],
-        "n_plans": 11,
+        "n_plans": 4,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
           "door_w_offered": 43,
           "door_w_already_in_champion_pool": 0,
@@ -473,15 +443,15 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 11
+          "originated": 4
         },
-        "ledger_rows_appended": 11,
-        "ledger_closures_appended": 5
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C4_dispersion_cap": {
         "selected_tickers": [
@@ -492,39 +462,29 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS"
         ],
-        "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
-        ],
-        "n_plans": 9,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 10,
           "skipped_open_plan": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "originated": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C5_align2_gate": {
         "selected_tickers": [
@@ -532,53 +492,46 @@
           "VSEC",
           "XPEL",
           "WT",
+          "NVDA",
           "UEC",
           "UAL",
           "HD",
           "SOFI",
           "CMC",
           "SMR",
-          "ALG",
-          "FSS"
+          "APO"
         ],
         "plan_ids": [
-          "ALG-BULL-20260612",
+          "APO-BULL-20260731",
           "CMC-BULL-20260731",
-          "FSS-BULL-20260728",
-          "GPCR-BULL-20260604",
           "HD-BULL-20260807",
-          "SMR-BULL-20260731",
-          "UAL-BULL-20260805",
-          "UEC-BULL-20260731",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "SMR-BULL-20260731"
         ],
-        "n_plans": 11,
+        "n_plans": 4,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
           "align_gate": {
-            "admitted": 13,
+            "admitted": 16,
             "admitted_via_fallback": 7,
-            "excluded_misaligned": 14,
+            "excluded_misaligned": 10,
             "excluded_unreadable": 4,
             "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
           },
-          "passed_gate": 13,
-          "excluded": 18
+          "passed_gate": 16,
+          "excluded": 14
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 0,
+          "skipped_duplicate_id": 7,
           "skipped_open_plan": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 11
+          "originated": 4
         },
-        "ledger_rows_appended": 11,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 1,
+        "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
         "selected_tickers": [
@@ -589,40 +542,30 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS"
         ],
-        "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
-        ],
-        "n_plans": 9,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
           "selection_basis": "identical to C0 by construction"
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 10,
           "skipped_open_plan": 2,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "originated": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       }
     }
   },

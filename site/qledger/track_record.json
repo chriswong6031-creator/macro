@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T09:27:27.465528+00:00",
+  "generated_at": "2026-08-08T14:34:01.962030+00:00",
   "grade_horizons": [
     5,
     21,
@@ -35,10 +35,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 4692,
+        "n_obs": 4693,
         "n_dates": 22,
-        "hit_rate": 0.462535,
-        "excess_mean": -0.019349,
+        "hit_rate": 0.462651,
+        "excess_mean": -0.019353,
         "wilson_ci_low": 0.2692,
         "state": "ACCRUING"
       }
@@ -245,10 +245,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 4692,
+        "n_obs": 4693,
         "n_dates": 22,
-        "hit_rate": 0.462535,
-        "excess_mean": -0.019349,
+        "hit_rate": 0.462651,
+        "excess_mean": -0.019353,
         "wilson_ci_low": 0.2692,
         "state": "ACCRUING"
       }
@@ -543,13 +543,13 @@
     }
   },
   "counts": {
-    "n_claims": 41769,
-    "n_grades": 46960,
+    "n_claims": 41777,
+    "n_grades": 46961,
     "n_placebo": 920,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 44180
+      "next_bar": 44181
     },
     "n_claims_unstamped_regime": 5825
   },
@@ -1019,7 +1019,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-08T09:27:53.197280+00:00",
+  "ladder_states_at": "2026-08-08T14:34:28.351014+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1597,8 +1597,8 @@
         "n_dates": 22,
         "needed": 25,
         "wilson_ci_low": 0.2692,
-        "hit_rate": 0.462535,
-        "excess_mean": -0.019349,
+        "hit_rate": 0.462651,
+        "excess_mean": -0.019353,
         "ready": false,
         "approaching": true,
         "projected_ready_date": "2026-08-10",
@@ -1926,5 +1926,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-08T09:28:33.353564+00:00"
+  "promotion_readiness_at": "2026-08-08T14:35:08.735071+00:00"
 }

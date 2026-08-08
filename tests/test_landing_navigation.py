@@ -1,6 +1,7 @@
 """Landing information-architecture, brand, and disclosure-nav contracts."""
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -102,6 +103,29 @@ def test_navigation_script_supports_keyboard_and_outside_close(path: Path):
 def test_landing_plain_copy_pairs_match():
     assert HTML_PATHS[0].read_bytes() == HTML_PATHS[1].read_bytes()
     assert CSS_PATHS[0].read_bytes() == CSS_PATHS[1].read_bytes()
+
+
+@pytest.mark.parametrize("path", HTML_PATHS)
+def test_chinese_hero_uses_optically_centered_authored_lines(path: Path):
+    text = path.read_text(encoding="utf-8")
+    start = text.index('<h1 data-adtest-slot="hero_headline"')
+    hero = text[start:text.index("</h1>", start)]
+    data_zh = re.search(r'data-zh="([^"]+)"', hero)
+    assert data_zh
+    assert data_zh.group(1).count("zh-line-punct") == 2
+
+    cfg_start = text.index('<script type="application/json" id="mm-adtest">')
+    cfg_start = text.index(">", cfg_start) + 1
+    cfg = json.loads(text[cfg_start:text.index("</script>", cfg_start)])
+    for arm in cfg["arms"]:
+        zh = arm["copy"]["hero_headline"]["zh"]
+        if "。" in zh:
+            assert "zh-line-punct" in zh
+
+    css = CSS_PATHS[0].read_text(encoding="utf-8")
+    assert 'html[data-lang="zh"] .cov-copy h1 .zh-line{' in css
+    assert 'html[data-lang="zh"] .cov-copy h1 .zh-line-punct{' in css
+    assert "transform:translateX(.26em)" in css
 
 
 def test_mobile_navigation_css_is_an_in_flow_accordion():
