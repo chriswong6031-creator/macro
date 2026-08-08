@@ -2,11 +2,11 @@
   "date": "2026-08-07",
   "quad": "Q2",
   "quad_name": "Reflation",
-  "growth_score": 0.533,
+  "growth_score": 0.4,
   "inflation_score": 0.429,
-  "growth_confidence": 0.533,
+  "growth_confidence": 0.267,
   "inflation_confidence": 0.429,
-  "confidence": 0.481,
+  "confidence": 0.348,
   "liquidity_overlay": "neutral",
   "cycle_tag": "late",
   "pending_quad": NaN,
@@ -16,7 +16,9 @@
     "growth_cyclical_defensive",
     "inflation_inflation_beta_basket"
   ],
-  "contradicting": [],
+  "contradicting": [
+    "growth_breadth_direction"
+  ],
   "sector_rs": [
     {
       "ticker": "XIT.TO",
@@ -176,33 +178,33 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": -1.49
+      "chg_20d_pct": -0.34
     }
   },
   "overlay": {
-    "score": 0.333,
-    "state": "Risk-on",
+    "score": 0.167,
+    "state": "Neutral",
     "factors": [
       {
         "key": "oil",
         "label": "WTI crude oil",
-        "z": -0.19,
+        "z": -0.1,
         "sign": 1.0,
         "risk": "neutral",
-        "level": 77.08
+        "level": 78.18
       },
       {
         "key": "gold",
         "label": "Gold",
-        "z": 1.1,
+        "z": 0.93,
         "sign": 1.0,
         "risk": "on",
-        "level": 4401.2998
+        "level": 4340.7002
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": -0.61,
+        "z": -0.46,
         "sign": 1.0,
         "risk": "off",
         "level": 0.0015
@@ -210,10 +212,10 @@
       {
         "key": "usdcad",
         "label": "USD / CAD",
-        "z": -0.71,
+        "z": -0.17,
         "sign": -1,
-        "risk": "on",
-        "level": 1.3936
+        "risk": "neutral",
+        "level": 1.4014
       },
       {
         "key": "spy",
@@ -234,10 +236,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": -1.08,
+        "z": -1.09,
         "sign": -1,
         "risk": "on",
-        "level": 99.604
+        "level": 99.6
       }
     ],
     "terms_of_trade": "improving",
