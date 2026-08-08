@@ -1,0 +1,933 @@
+# BioCatalyst W3-C — sponsor -> ticker REVIEWED CANDIDATE map (CANDIDATES ONLY).
+#
+# A bounded, curated, PR-reviewed lookup from a ClinicalTrials.gov
+# `leadSponsor.name` string to one ticker inside the declared healthcare basket
+# universe.  It is NOT a general point-in-time identity service and it is NOT an
+# inferred join.
+#
+# EVERY ROW IN THIS FILE IS A CANDIDATE A MODEL SUGGESTED.  No row has been
+# admitted by a human, so this map resolves NOTHING: the reader in
+# engine/biocatalyst/sponsor_identity.py returns unavailable-with-reason for
+# every row here, and only a `reviewed_admitted` row a named human wrote in a
+# reviewed pull request will ever resolve.  A model may not admit its own
+# suggestion; tests/test_biocatalyst_sponsor_ticker_map.py fails if this file
+# ever contains an admitted row.
+#
+# Ambiguity is queued, never guessed.  A sponsor that matches several issuers,
+# is an operating subsidiary, is a joint venture, was renamed, or sits outside
+# the declared universe carries `ambiguous_queued` with its competing candidates
+# recorded for the reviewer.
+#
+# Every link carries an effective interval, so a later rename, spin-off, or
+# ticker reuse opens a NEW interval instead of rewriting what the map said
+# before.  Because these rows are model-suggested they may not be back-dated:
+# `valid_from` is the day the candidate was asserted, not a claim about history.
+#
+# This exists for post-selection context only — explaining a name AFTER Prophet
+# selects it.  It may never originate, rank, reorder, size, or gate a candidate,
+# and it is wired to no scoring path, no Prophet path, and no Neural Web path.
+#
+# `contract_id` registers the document with ContractRegistry; `schema` mirrors
+# the first-line idiom of the sibling BioCatalyst config files.
+
+contract_id: biocatalyst_sponsor_ticker_map.v1
+schema: biocatalyst_sponsor_ticker_map.v1
+schema_version: "1.0.0"
+map_version: w3c.1
+effective_at: "2026-08-07T00:00:00Z"
+owner: biocatalyst
+state: candidate_map_no_admitted_rows
+authority: facts_and_context_only
+authority_ceiling: A1_EXPLAIN
+purpose: post_selection_context_only
+
+# Derived from data/baskets/membership.json at validation time, never hardcoded.
+universe:
+  source_file: data/baskets/membership.json
+  baskets:
+    - big_pharma
+    - managed_care
+    - obesity_glp1
+    - us_sector_health
+  distinct_ticker_count: 70
+  derivation: union_of_declared_basket_members_read_at_validation_time
+
+review_policy:
+  admission_authority: named_human_pull_request_review_only
+  model_may_admit: false
+  default_review_state: candidate_unreviewed
+  resolvable_review_states:
+    - reviewed_admitted
+  unresolved_row_behavior: return_unavailable_with_reason_never_a_guess
+
+interval_semantics:
+  kind: candidate_assertion_window_not_historical_claim
+  valid_to_null_meaning: open_ended_until_a_reviewer_closes_it
+  model_suggested_backdating: forbidden_valid_from_is_at_or_after_effective_at
+
+prohibited_uses:
+  - originate_signal
+  - rank_security
+  - reorder_candidate
+  - select_security
+  - size_position
+  - gate_decision
+  - score
+  - prophet_authority
+  - neural_web_authority
+  - alerts
+  - public_projection
+  - fuzzy_name_matching
+
+# Each row is one candidate link a human still has to judge.  `confidence_class`
+# is a review-triage word, never a probability, weight, or score.
+rows:
+  - sponsor_name: "AbbVie"
+    ticker: "ABBV"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Abbott"
+    ticker: "ABT"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain: divisional strings such as an Abbott device unit are common and are NOT covered by this row."
+  - sponsor_name: "Align Technology, Inc."
+    ticker: "ALGN"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Altimmune, Inc."
+    ticker: "ALT"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Amgen"
+    ticker: "AMGN"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "AstraZeneca"
+    ticker: "AZN"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "AZN is the US ADR line carried by the declared basket universe."
+  - sponsor_name: "Baxter Healthcare Corporation"
+    ticker: "BAX"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the operating-entity suffix."
+  - sponsor_name: "Bayer"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Listed abroad and outside the four declared healthcare baskets; forcing it onto a universe ticker would be a guess."
+  - sponsor_name: "Becton, Dickinson and Company"
+    ticker: "BDX"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the comma and suffix."
+  - sponsor_name: "Biogen"
+    ticker: "BIIB"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Boehringer Ingelheim"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: unlisted_or_private_entity
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Privately held. There is no ticker to admit, and a near-name match to a listed peer would be wrong."
+  - sponsor_name: "Boston Scientific Corporation"
+    ticker: "BSX"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
+  - sponsor_name: "Bristol-Myers Squibb"
+    ticker: "BMY"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Cepheid"
+    ticker: null
+    candidate_tickers: ["DHR"]
+    review_state: ambiguous_queued
+    ambiguity_reason: subsidiary_of_listed_issuer
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Operating subsidiary. Whether a subsidiary sponsor may stand for its parent is a review decision, not an inference."
+  - sponsor_name: "DexCom, Inc."
+    ticker: "DXCM"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain, including internal capitalisation; reviewer to confirm."
+  - sponsor_name: "EMD Serono"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "US operating name of the German Merck group, which is outside the declared universe and is a different company from the US-listed Merck."
+  - sponsor_name: "Edwards Lifesciences"
+    ticker: "EW"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
+  - sponsor_name: "Eli Lilly and Company"
+    ticker: "LLY"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Fortrea"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Contract research organisation listed outside the declared universe; a CRO lead sponsor is also not evidence of asset ownership."
+  - sponsor_name: "GE HealthCare"
+    ticker: null
+    candidate_tickers: ["GEHC"]
+    review_state: ambiguous_queued
+    ambiguity_reason: renamed_entity
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Post-spin entity. Records sponsored under the former parent's name are a different effective interval a reviewer must open."
+  - sponsor_name: "Genentech, Inc."
+    ticker: null
+    candidate_tickers: ["RHHBY"]
+    review_state: ambiguous_queued
+    ambiguity_reason: subsidiary_of_listed_issuer
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Operating subsidiary of a foreign parent whose only universe line is an ADR; both hops are review decisions."
+  - sponsor_name: "Gilead Sciences"
+    ticker: "GILD"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "GlaxoSmithKline"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Listed abroad and outside the four declared healthcare baskets."
+  - sponsor_name: "Hoffmann-La Roche"
+    ticker: null
+    candidate_tickers: ["RHHBY"]
+    review_state: ambiguous_queued
+    ambiguity_reason: foreign_listing_or_adr_ambiguity
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "The local listing and the ADR line are different securities; only the ADR is in the universe and the choice is a reviewer's."
+  - sponsor_name: "IQVIA Biotech"
+    ticker: null
+    candidate_tickers: ["IQV"]
+    review_state: ambiguous_queued
+    ambiguity_reason: contract_research_organization_sponsor
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "A CRO sponsor entity. Identity to the listed parent and asset ownership are two separate questions, and neither is inferred here."
+  - sponsor_name: "Incyte Corporation"
+    ticker: "INCY"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Insulet Corporation"
+    ticker: "PODD"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Intuitive Surgical"
+    ticker: "ISRG"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Device sponsor; divisional sponsor strings are separate rows a reviewer must add."
+  - sponsor_name: "Janssen Research & Development, LLC"
+    ticker: null
+    candidate_tickers: ["JNJ"]
+    review_state: ambiguous_queued
+    ambiguity_reason: subsidiary_of_listed_issuer
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Operating subsidiary. Whether a subsidiary sponsor may stand for its parent is a review decision, not an inference."
+  - sponsor_name: "Labcorp"
+    ticker: null
+    candidate_tickers: ["LH"]
+    review_state: ambiguous_queued
+    ambiguity_reason: renamed_entity
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Renamed entity with a subsequent spin-off; the earlier corporate name belongs to a different effective interval."
+  - sponsor_name: "Medtronic"
+    ticker: "MDT"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain: divisional strings such as a Medtronic therapy unit are common and are NOT covered by this row."
+  - sponsor_name: "Merck"
+    ticker: null
+    candidate_tickers: ["MRK"]
+    review_state: ambiguous_queued
+    ambiguity_reason: multiple_matching_issuers
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "The bare string is the textbook collision: the US-listed Merck and the German Merck group are different companies that both render as Merck."
+  - sponsor_name: "Merck KGaA, Darmstadt, Germany"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "The German Merck group, outside the declared universe and distinct from the US-listed issuer of a similar name."
+  - sponsor_name: "Merck Sharp & Dohme LLC"
+    ticker: null
+    candidate_tickers: ["MRK"]
+    review_state: ambiguous_queued
+    ambiguity_reason: subsidiary_of_listed_issuer
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Operating subsidiary of the US-listed issuer. Common and probably admissible, but a human admits it, not a model."
+  - sponsor_name: "ModernaTX, Inc."
+    ticker: "MRNA"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "ModernaTX is the operating sponsor entity of the listed issuer; reviewer to confirm the exact rendering."
+  - sponsor_name: "Novartis Pharmaceuticals"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Listed abroad and outside the four declared healthcare baskets."
+  - sponsor_name: "Novo Nordisk A/S"
+    ticker: "NVO"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "NVO is the US ADR line carried by the declared basket universe."
+  - sponsor_name: "Pfizer"
+    ticker: "PFE"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "Regeneron Pharmaceuticals"
+    ticker: "REGN"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "ResMed"
+    ticker: "RMD"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Sanofi"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Listed abroad and outside the four declared healthcare baskets."
+  - sponsor_name: "Scholar Rock, Inc."
+    ticker: "SRRK"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Solventum"
+    ticker: null
+    candidate_tickers: ["SOLV"]
+    review_state: ambiguous_queued
+    ambiguity_reason: renamed_entity
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Post-spin entity; records sponsored under the former parent's name are a different effective interval a reviewer must open."
+  - sponsor_name: "Stryker Corporation"
+    ticker: "SYK"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain: national operating entities sponsor separately and are NOT covered by this row."
+  - sponsor_name: "Takeda"
+    ticker: null
+    candidate_tickers: []
+    review_state: ambiguous_queued
+    ambiguity_reason: issuer_outside_declared_universe
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Listed abroad and outside the four declared healthcare baskets."
+  - sponsor_name: "Vertex Pharmaceuticals Incorporated"
+    ticker: "VRTX"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: strong_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Lead sponsor string for the listed issuer's own sponsored studies."
+  - sponsor_name: "ViiV Healthcare"
+    ticker: null
+    candidate_tickers: ["PFE"]
+    review_state: ambiguous_queued
+    ambiguity_reason: joint_venture
+    confidence_class: unresolved
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "A joint venture with several owners, only one of which is in the declared universe. A JV is never one issuer's trial by inference."
+  - sponsor_name: "Viking Therapeutics, Inc."
+    ticker: "VKTX"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+  - sponsor_name: "Zimmer Biomet"
+    ticker: "ZBH"
+    candidate_tickers: []
+    review_state: candidate_unreviewed
+    confidence_class: weak_candidate
+    valid_from: "2026-08-07"
+    valid_to: null
+    provenance:
+      kind: model_suggested_candidate
+      reference: "research/BIOCATALYST_SIGNAL_PATH_STRATEGY_2026-08-07.md Move 4; W3-C reviewed admission"
+      note: "Suggested by a model from public company knowledge and the declared basket universe. Unverified against a live ClinicalTrials.gov record."
+    review:
+      reviewed_by: null
+      reviewed_at: null
+      review_reference: null
+    note: "Exact rendering uncertain; reviewer to confirm the suffix against a live record."
+
+# Every declared-universe ticker no row claims. Recorded so absent coverage is
+# visible instead of implied: a name missing here is not a name we resolved.
+unmapped_universe_tickers:
+  - A
+  - ALHC
+  - CAH
+  - CI
+  - CNC
+  - COO
+  - COR
+  - CRL
+  - CVS
+  - DGX
+  - DHR
+  - DVA
+  - ELV
+  - GEHC
+  - GPCR
+  - HCA
+  - HIMS
+  - HSIC
+  - HUM
+  - IDXX
+  - IQV
+  - JNJ
+  - LH
+  - MCK
+  - MOH
+  - MRK
+  - MTD
+  - OSCR
+  - RHHBY
+  - RVTY
+  - SOLV
+  - STE
+  - TECH
+  - TMO
+  - UHS
+  - UNH
+  - VEEV
+  - VTRS
+  - WAT
+  - WST
+  - ZTS
