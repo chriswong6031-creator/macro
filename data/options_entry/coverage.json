@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-08T14:35:10.307499+00:00",
+  "generated_at": "2026-08-08T20:01:23.114681+00:00",
   "as_of": "2026-08-08",
   "absent_stores": [],
   "feature_coverage": {
@@ -480,7 +480,7 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-08 07:54 UTC",
+          "latest_as_of": "2026-08-08 16:14 UTC",
           "age_days_from_today": 0,
           "status": "FRESH"
         },
@@ -494,17 +494,15 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-08T14:35:10.256617+00:00",
+      "generated_at": "2026-08-08T20:01:23.065624+00:00",
       "ok": true,
       "fail_reasons": [],
-      "warnings": [
-        "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
-      ]
+      "warnings": []
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-08T14:35:10.307488+00:00",
+    "generated_at_utc": "2026-08-08T20:01:23.114674+00:00",
     "as_of": "2026-08-08",
     "absent_stores": []
   }
