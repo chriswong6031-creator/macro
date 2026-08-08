@@ -213,7 +213,11 @@ def _targets() -> tuple[tuple[str, Path, object], ...]:
         for f in sorted(base.rglob("*")):
             if not f.is_file() or f.suffix not in TEXT_SUFFIXES:
                 continue
-            if "node_modules" in f.parts:
+            # Prune on the path RELATIVE to the scan root, never the absolute one:
+            # an absolute-parts test also matches every directory ABOVE the root, so
+            # a checkout that happens to live under a matching ancestor silently
+            # scans nothing at all (#3802).
+            if "node_modules" in f.relative_to(ROOT).parts:
                 continue
             out.append((f.relative_to(ROOT).as_posix(), f, scan_text))
     for sub in PY_DIRS:
@@ -221,8 +225,9 @@ def _targets() -> tuple[tuple[str, Path, object], ...]:
         if not base.exists():
             continue
         for f in sorted(base.rglob("*.py")):
-            rel = f.relative_to(ROOT).as_posix()
-            if rel == SELF_REL or "node_modules" in f.parts:
+            rel_path = f.relative_to(ROOT)
+            rel = rel_path.as_posix()
+            if rel == SELF_REL or "node_modules" in rel_path.parts:
                 continue
             out.append((rel, f, scan_python))
     return tuple(out)

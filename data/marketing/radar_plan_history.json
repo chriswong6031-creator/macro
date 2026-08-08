@@ -2,6 +2,12 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-08",
+      "tickers": [
+        "CDW"
+      ]
+    },
+    {
       "as_of": "2026-08-07",
       "tickers": [
         "APH",
@@ -59,36 +65,6 @@
         "CSR",
         "CUBI",
         "HSY",
-        "JBLU",
-        "KMT",
-        "KWR",
-        "LKFN",
-        "LPG",
-        "MSFT",
-        "NSSC",
-        "PI",
-        "ROST",
-        "SHOO",
-        "TEAM",
-        "TPR"
-      ]
-    },
-    {
-      "as_of": "2026-08-01",
-      "tickers": [
-        "AMZN",
-        "ARES",
-        "ARLO",
-        "AVNT",
-        "BDC",
-        "CBOE",
-        "CDW",
-        "CSR",
-        "CUBI",
-        "CVI",
-        "CWK",
-        "EPAC",
-        "EQT",
         "JBLU",
         "KMT",
         "KWR",
