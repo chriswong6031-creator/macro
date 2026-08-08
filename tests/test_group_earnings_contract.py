@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 
 import pandas as pd
 import pytest
@@ -246,6 +247,36 @@ def test_every_basket_is_contract_conformant(pulse):
         assert obj["authority"] == "context_only"
         assert obj["basket_id"] == bid
         assert obj["as_of"] == AS_OF
+
+
+FUSED_KEY = re.compile(r"score|rank|heat|signal|conviction|grade", re.I)
+
+
+def test_the_artifact_mints_no_fused_score_rank_or_heat(pulse):
+    """§0 G0-2 tripwire, grep-able. This wave ships six INDEPENDENT legs; the moment one
+    key fuses them into a number the artifact stops being context and starts being an
+    implied ranking. The exact-key-set validator already forbids new keys — this asserts
+    the property by NAME so it survives any future widening of the contract."""
+    def walk(o, path=""):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                assert not FUSED_KEY.search(k), f"fused-score key {path}{k}"
+                walk(v, f"{path}{k}.")
+        elif isinstance(o, list):
+            for e in o:
+                walk(e, path)
+    for bid, obj in pulse.items():
+        walk(obj, f"{bid}.")
+
+
+def test_no_entry_or_alert_authority_vocabulary_reaches_the_artifact(pulse):
+    """§0 G0-3: no entry/rank/size/gate/alert authority, and the words "igniting"/"ignition"
+    are banned on these surfaces. Checked against the SERIALIZED payload, values included —
+    a band or basis string is as user-facing as a key."""
+    blob = json.dumps(pulse).lower()
+    for word in ("ignition", "igniting", "validated", "buy", "sell", "entry",
+                 "position size", "alert"):
+        assert word not in blob, f"authority/banned vocabulary in the artifact: {word!r}"
 
 
 def test_pulse_is_json_serialisable_without_a_default_hook(pulse):
