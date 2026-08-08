@@ -33,7 +33,7 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 1.0,
-      "whale": 51.6,
+      "whale": 51.7,
       "whale_chg": 0.2
     },
     {
@@ -41,8 +41,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.899,
-      "whale": 47.7,
-      "whale_chg": 7.0
+      "whale": 47.8,
+      "whale_chg": 7.1
     },
     {
       "ticker": "ADI",
@@ -73,8 +73,8 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.103,
-      "whale": 46.6,
-      "whale_chg": -5.3
+      "whale": 46.7,
+      "whale_chg": -5.2
     },
     {
       "ticker": "AEP",
@@ -97,7 +97,7 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.977,
-      "whale": 51.3,
+      "whale": 51.4,
       "whale_chg": 5.7
     },
     {
@@ -113,8 +113,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.831,
-      "whale": 51.0,
-      "whale_chg": 0.0
+      "whale": 51.1,
+      "whale_chg": 0.1
     },
     {
       "ticker": "AMT",
@@ -129,7 +129,7 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.841,
-      "whale": 47.8,
+      "whale": 47.7,
       "whale_chg": -8.1
     },
     {
@@ -137,16 +137,16 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.642,
-      "whale": 57.0,
-      "whale_chg": 3.2
+      "whale": 56.9,
+      "whale_chg": 3.1
     },
     {
       "ticker": "APD",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.579,
-      "whale": 42.7,
-      "whale_chg": -11.2
+      "whale": 42.9,
+      "whale_chg": -11.0
     },
     {
       "ticker": "APH",
@@ -154,7 +154,7 @@
       "band": "elevated",
       "score_pct": 0.601,
       "whale": 50.9,
-      "whale_chg": 5.9
+      "whale_chg": 5.8
     },
     {
       "ticker": "APP",
@@ -169,8 +169,8 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.02,
-      "whale": 42.0,
-      "whale_chg": -9.6
+      "whale": 41.9,
+      "whale_chg": -9.7
     },
     {
       "ticker": "AVB",
@@ -201,8 +201,8 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.625,
-      "whale": 44.2,
-      "whale_chg": -8.9
+      "whale": 44.3,
+      "whale_chg": -8.8
     },
     {
       "ticker": "BA",
@@ -216,9 +216,9 @@
       "ticker": "BAC",
       "state": "neutral",
       "band": "elevated",
-      "score_pct": 0.762,
-      "whale": 52.1,
-      "whale_chg": 0.6
+      "score_pct": 0.768,
+      "whale": 52.3,
+      "whale_chg": 0.7
     },
     {
       "ticker": "BKNG",
@@ -233,15 +233,15 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.349,
-      "whale": 41.6,
-      "whale_chg": -8.1
+      "whale": 41.4,
+      "whale_chg": -8.3
     },
     {
       "ticker": "BLK",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.875,
-      "whale": 44.0,
+      "whale": 44.1,
       "whale_chg": -6.7
     },
     {
@@ -257,16 +257,16 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.674,
-      "whale": 51.0,
-      "whale_chg": -4.5
+      "whale": 50.9,
+      "whale_chg": -4.6
     },
     {
       "ticker": "BRK-B",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.812,
-      "whale": 52.9,
-      "whale_chg": 9.3
+      "whale": 53.1,
+      "whale_chg": 9.4
     },
     {
       "ticker": "BX",
@@ -281,15 +281,15 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.619,
-      "whale": 45.2,
-      "whale_chg": -6.8
+      "whale": 45.3,
+      "whale_chg": -6.7
     },
     {
       "ticker": "CASY",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.187,
-      "whale": 47.1,
+      "whale": 47.0,
       "whale_chg": -18.5
     },
     {
@@ -338,7 +338,7 @@
       "band": "neutral",
       "score_pct": 0.23,
       "whale": 48.9,
-      "whale_chg": -4.1
+      "whale_chg": -4.0
     },
     {
       "ticker": "CHTR",
@@ -353,16 +353,16 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.758,
-      "whale": 49.4,
-      "whale_chg": -2.9
+      "whale": 49.5,
+      "whale_chg": -2.8
     },
     {
       "ticker": "CL",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.938,
-      "whale": 49.5,
-      "whale_chg": 2.6
+      "whale": 49.7,
+      "whale_chg": 2.7
     },
     {
       "ticker": "CMCSA",
@@ -393,8 +393,8 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.06,
-      "whale": 46.7,
-      "whale_chg": -5.7
+      "whale": 46.6,
+      "whale_chg": -5.8
     },
     {
       "ticker": "COF",
@@ -409,8 +409,8 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.591,
-      "whale": 52.0,
-      "whale_chg": -2.3
+      "whale": 52.2,
+      "whale_chg": -2.1
     },
     {
       "ticker": "COST",
@@ -418,15 +418,15 @@
       "band": "neutral",
       "score_pct": 0.544,
       "whale": 45.6,
-      "whale_chg": -7.4
+      "whale_chg": -7.3
     },
     {
       "ticker": "CRH",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.202,
-      "whale": 45.5,
-      "whale_chg": -5.8
+      "score_pct": 0.22,
+      "whale": 45.9,
+      "whale_chg": -5.4
     },
     {
       "ticker": "CRWD",
@@ -472,7 +472,7 @@
       "ticker": "CVS",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.188,
+      "score_pct": 0.183,
       "whale": 55.5,
       "whale_chg": 1.8
     },
@@ -482,7 +482,7 @@
       "band": "neutral",
       "score_pct": 0.355,
       "whale": 51.3,
-      "whale_chg": -1.6
+      "whale_chg": -1.7
     },
     {
       "ticker": "D",
@@ -529,16 +529,16 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.954,
-      "whale": 57.6,
-      "whale_chg": 5.9
+      "whale": 57.7,
+      "whale_chg": 6.0
     },
     {
       "ticker": "DIS",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.813,
-      "whale": 45.1,
-      "whale_chg": -3.3
+      "whale": 45.2,
+      "whale_chg": -3.2
     },
     {
       "ticker": "DLR",
@@ -560,7 +560,7 @@
       "ticker": "DTE",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.117,
+      "score_pct": 0.123,
       "whale": 44.9,
       "whale_chg": -3.0
     },
@@ -569,8 +569,8 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.312,
-      "whale": 48.7,
-      "whale_chg": -0.9
+      "whale": 48.8,
+      "whale_chg": -0.8
     },
     {
       "ticker": "DVN",
@@ -584,9 +584,9 @@
       "ticker": "EA",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.272,
-      "whale": 34.5,
-      "whale_chg": -17.9
+      "score_pct": 0.274,
+      "whale": 34.7,
+      "whale_chg": -17.2
     },
     {
       "ticker": "EBAY",
@@ -608,7 +608,7 @@
       "ticker": "ECL",
       "state": "neutral",
       "band": "extended",
-      "score_pct": 0.964,
+      "score_pct": 0.962,
       "whale": 49.9,
       "whale_chg": -2.5
     },
@@ -617,24 +617,24 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.331,
-      "whale": 44.8,
-      "whale_chg": -5.2
+      "whale": 44.9,
+      "whale_chg": -5.1
     },
     {
       "ticker": "EIX",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.145,
-      "whale": 47.7,
-      "whale_chg": -6.0
+      "whale": 47.9,
+      "whale_chg": -5.8
     },
     {
       "ticker": "ELV",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.754,
-      "whale": 55.6,
-      "whale_chg": 4.7
+      "whale": 55.7,
+      "whale_chg": 4.8
     },
     {
       "ticker": "EOG",
@@ -649,7 +649,7 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.185,
-      "whale": 46.0,
+      "whale": 45.9,
       "whale_chg": -12.6
     },
     {
@@ -657,7 +657,7 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.413,
-      "whale": 47.5,
+      "whale": 47.6,
       "whale_chg": -2.7
     },
     {
@@ -680,23 +680,23 @@
       "ticker": "ESS",
       "state": "neutral",
       "band": "elevated",
-      "score_pct": 0.633,
-      "whale": 51.3,
-      "whale_chg": 0.7
+      "score_pct": 0.631,
+      "whale": 51.4,
+      "whale_chg": 0.8
     },
     {
       "ticker": "ETN",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.923,
-      "whale": 53.3,
+      "whale": 53.2,
       "whale_chg": 3.4
     },
     {
       "ticker": "ETR",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.032,
+      "score_pct": 0.034,
       "whale": 46.2,
       "whale_chg": -7.4
     },
@@ -721,16 +721,16 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.482,
-      "whale": 48.6,
-      "whale_chg": -6.0
+      "whale": 48.5,
+      "whale_chg": -6.1
     },
     {
       "ticker": "F",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.222,
-      "whale": 47.9,
-      "whale_chg": 2.0
+      "whale": 48.0,
+      "whale_chg": 2.1
     },
     {
       "ticker": "FANG",
@@ -801,15 +801,15 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.988,
-      "whale": 47.9,
-      "whale_chg": -0.5
+      "whale": 48.0,
+      "whale_chg": -0.4
     },
     {
       "ticker": "GOOG",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.315,
-      "whale": 48.6,
+      "score_pct": 0.304,
+      "whale": 48.5,
       "whale_chg": -8.9
     },
     {
@@ -825,8 +825,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.971,
-      "whale": 49.0,
-      "whale_chg": -4.5
+      "whale": 49.1,
+      "whale_chg": -4.4
     },
     {
       "ticker": "GS",
@@ -856,9 +856,9 @@
       "ticker": "HLT",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.159,
-      "whale": 42.1,
-      "whale_chg": -10.2
+      "score_pct": 0.157,
+      "whale": 42.0,
+      "whale_chg": -10.3
     },
     {
       "ticker": "HON",
@@ -881,7 +881,7 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.69,
-      "whale": 51.2,
+      "whale": 51.1,
       "whale_chg": 2.2
     },
     {
@@ -889,24 +889,24 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.395,
-      "whale": 54.6,
-      "whale_chg": -1.1
+      "whale": 54.5,
+      "whale_chg": -1.2
     },
     {
       "ticker": "IBM",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.228,
-      "whale": 52.9,
-      "whale_chg": 1.0
+      "whale": 53.0,
+      "whale_chg": 1.1
     },
     {
       "ticker": "IFF",
       "state": "neutral",
       "band": "extended",
-      "score_pct": 0.936,
-      "whale": 46.8,
-      "whale_chg": -6.5
+      "score_pct": 0.938,
+      "whale": 47.0,
+      "whale_chg": -6.4
     },
     {
       "ticker": "INTC",
@@ -929,16 +929,16 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.619,
-      "whale": 47.3,
+      "whale": 47.4,
       "whale_chg": -0.9
     },
     {
       "ticker": "IRM",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.292,
+      "score_pct": 0.29,
       "whale": 48.3,
-      "whale_chg": -7.0
+      "whale_chg": -7.1
     },
     {
       "ticker": "ISRG",
@@ -953,8 +953,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.907,
-      "whale": 45.9,
-      "whale_chg": -7.1
+      "whale": 45.8,
+      "whale_chg": -7.2
     },
     {
       "ticker": "JNJ",
@@ -986,7 +986,7 @@
       "band": "neutral",
       "score_pct": 0.234,
       "whale": 44.9,
-      "whale_chg": -5.9
+      "whale_chg": -5.8
     },
     {
       "ticker": "KLAC",
@@ -1002,15 +1002,15 @@
       "band": "elevated",
       "score_pct": 0.72,
       "whale": 49.0,
-      "whale_chg": -2.9
+      "whale_chg": -2.8
     },
     {
       "ticker": "KMI",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.012,
-      "whale": 46.6,
-      "whale_chg": -6.1
+      "score_pct": 0.01,
+      "whale": 46.5,
+      "whale_chg": -6.2
     },
     {
       "ticker": "KO",
@@ -1025,15 +1025,15 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.284,
-      "whale": 43.4,
-      "whale_chg": -7.1
+      "whale": 43.5,
+      "whale_chg": -7.0
     },
     {
       "ticker": "KVUE",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.794,
-      "whale": 48.7,
+      "whale": 48.8,
       "whale_chg": -3.6
     },
     {
@@ -1049,24 +1049,24 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.71,
-      "whale": 48.0,
-      "whale_chg": 0.7
+      "whale": 48.1,
+      "whale_chg": 0.8
     },
     {
       "ticker": "LMT",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.798,
-      "whale": 47.6,
-      "whale_chg": -1.0
+      "whale": 47.7,
+      "whale_chg": -0.9
     },
     {
       "ticker": "LOW",
       "state": "neutral",
       "band": "extended",
-      "score_pct": 0.831,
-      "whale": 46.5,
-      "whale_chg": 0.7
+      "score_pct": 0.839,
+      "whale": 46.6,
+      "whale_chg": 0.8
     },
     {
       "ticker": "LRCX",
@@ -1080,8 +1080,8 @@
       "ticker": "LYV",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.27,
-      "whale": 49.9,
+      "score_pct": 0.264,
+      "whale": 49.8,
       "whale_chg": -0.7
     },
     {
@@ -1097,14 +1097,14 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.069,
-      "whale": 50.1,
-      "whale_chg": -1.7
+      "whale": 49.8,
+      "whale_chg": -1.9
     },
     {
       "ticker": "MCD",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.417,
+      "score_pct": 0.419,
       "whale": 43.8,
       "whale_chg": -2.0
     },
@@ -1113,8 +1113,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.853,
-      "whale": 46.5,
-      "whale_chg": -4.7
+      "whale": 46.4,
+      "whale_chg": -4.8
     },
     {
       "ticker": "MDLZ",
@@ -1129,8 +1129,8 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.708,
-      "whale": 47.5,
-      "whale_chg": 6.4
+      "whale": 47.6,
+      "whale_chg": 6.5
     },
     {
       "ticker": "META",
@@ -1145,16 +1145,16 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.141,
-      "whale": 45.0,
-      "whale_chg": -2.1
+      "whale": 45.1,
+      "whale_chg": -2.0
     },
     {
       "ticker": "MMM",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.676,
-      "whale": 43.7,
-      "whale_chg": -4.2
+      "whale": 43.8,
+      "whale_chg": -4.0
     },
     {
       "ticker": "MNST",
@@ -1169,24 +1169,24 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.069,
-      "whale": 49.2,
-      "whale_chg": -0.1
+      "whale": 49.5,
+      "whale_chg": 0.2
     },
     {
       "ticker": "MPC",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.427,
-      "whale": 51.8,
-      "whale_chg": -3.0
+      "whale": 51.9,
+      "whale_chg": -2.9
     },
     {
       "ticker": "MRK",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.438,
-      "whale": 47.0,
-      "whale_chg": -3.0
+      "score_pct": 0.442,
+      "whale": 47.2,
+      "whale_chg": -2.8
     },
     {
       "ticker": "MRVL",
@@ -1209,8 +1209,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.874,
-      "whale": 53.2,
-      "whale_chg": 2.6
+      "whale": 53.1,
+      "whale_chg": 2.5
     },
     {
       "ticker": "MU",
@@ -1224,8 +1224,8 @@
       "ticker": "NEE",
       "state": "neutral",
       "band": "washed",
-      "score_pct": 0.01,
-      "whale": 49.9,
+      "score_pct": 0.012,
+      "whale": 50.0,
       "whale_chg": -0.2
     },
     {
@@ -1233,7 +1233,7 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.815,
-      "whale": 49.9,
+      "whale": 50.0,
       "whale_chg": -4.0
     },
     {
@@ -1249,16 +1249,16 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.454,
-      "whale": 48.0,
-      "whale_chg": 6.0
+      "whale": 47.9,
+      "whale_chg": 5.9
     },
     {
       "ticker": "NRG",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.02,
-      "whale": 45.0,
-      "whale_chg": -1.9
+      "whale": 44.9,
+      "whale_chg": -2.1
     },
     {
       "ticker": "NUE",
@@ -1297,24 +1297,24 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.25,
-      "whale": 49.3,
-      "whale_chg": -3.4
+      "whale": 49.2,
+      "whale_chg": -3.5
     },
     {
       "ticker": "OMC",
       "state": "neutral",
       "band": "extended",
-      "score_pct": 0.931,
-      "whale": 45.7,
-      "whale_chg": -5.0
+      "score_pct": 0.937,
+      "whale": 45.8,
+      "whale_chg": -4.9
     },
     {
       "ticker": "ORCL",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.446,
-      "whale": 46.2,
-      "whale_chg": -2.8
+      "whale": 46.3,
+      "whale_chg": -2.6
     },
     {
       "ticker": "ORLY",
@@ -1329,7 +1329,7 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.667,
-      "whale": 48.9,
+      "whale": 49.0,
       "whale_chg": -7.1
     },
     {
@@ -1338,23 +1338,23 @@
       "band": "neutral",
       "score_pct": 0.587,
       "whale": 66.8,
-      "whale_chg": 14.3
+      "whale_chg": 14.2
     },
     {
       "ticker": "PCG",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.736,
-      "whale": 50.2,
-      "whale_chg": 0.8
+      "whale": 50.3,
+      "whale_chg": 0.9
     },
     {
       "ticker": "PEG",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.085,
-      "whale": 45.7,
-      "whale_chg": -4.1
+      "whale": 45.9,
+      "whale_chg": -4.0
     },
     {
       "ticker": "PEP",
@@ -1369,8 +1369,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.966,
-      "whale": 44.7,
-      "whale_chg": -4.7
+      "whale": 44.8,
+      "whale_chg": -4.6
     },
     {
       "ticker": "PG",
@@ -1393,16 +1393,16 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.972,
-      "whale": 50.4,
-      "whale_chg": 1.4
+      "whale": 50.2,
+      "whale_chg": 1.2
     },
     {
       "ticker": "PKG",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.897,
-      "whale": 52.0,
-      "whale_chg": 3.7
+      "whale": 52.1,
+      "whale_chg": 3.9
     },
     {
       "ticker": "PLD",
@@ -1433,7 +1433,7 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.524,
-      "whale": 53.4,
+      "whale": 53.5,
       "whale_chg": 4.9
     },
     {
@@ -1448,9 +1448,9 @@
       "ticker": "PSA",
       "state": "neutral",
       "band": "elevated",
-      "score_pct": 0.671,
-      "whale": 48.1,
-      "whale_chg": -6.6
+      "score_pct": 0.679,
+      "whale": 48.3,
+      "whale_chg": -6.5
     },
     {
       "ticker": "PSX",
@@ -1458,7 +1458,7 @@
       "band": "neutral",
       "score_pct": 0.494,
       "whale": 51.4,
-      "whale_chg": -1.3
+      "whale_chg": -1.2
     },
     {
       "ticker": "PWR",
@@ -1472,7 +1472,7 @@
       "ticker": "QCOM",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.538,
+      "score_pct": 0.54,
       "whale": 46.4,
       "whale_chg": -3.7
     },
@@ -1481,7 +1481,7 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.844,
-      "whale": 49.0,
+      "whale": 48.9,
       "whale_chg": 5.2
     },
     {
@@ -1489,8 +1489,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.986,
-      "whale": 52.6,
-      "whale_chg": -0.1
+      "whale": 52.7,
+      "whale_chg": 0.0
     },
     {
       "ticker": "ROST",
@@ -1504,16 +1504,16 @@
       "ticker": "RTX",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.546,
-      "whale": 51.8,
-      "whale_chg": 3.0
+      "score_pct": 0.562,
+      "whale": 52.0,
+      "whale_chg": 3.1
     },
     {
       "ticker": "SBAC",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.524,
-      "whale": 45.3,
+      "whale": 45.4,
       "whale_chg": -11.2
     },
     {
@@ -1521,7 +1521,7 @@
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.492,
-      "whale": 44.2,
+      "whale": 44.3,
       "whale_chg": -8.7
     },
     {
@@ -1529,23 +1529,23 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.944,
-      "whale": 53.2,
-      "whale_chg": 2.9
+      "whale": 53.3,
+      "whale_chg": 3.0
     },
     {
       "ticker": "SHW",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.964,
-      "whale": 49.2,
-      "whale_chg": 2.2
+      "whale": 49.3,
+      "whale_chg": 2.3
     },
     {
       "ticker": "SLB",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.768,
-      "whale": 47.7,
+      "whale": 47.6,
       "whale_chg": -1.5
     },
     {
@@ -1561,8 +1561,8 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.196,
-      "whale": 45.7,
-      "whale_chg": -3.2
+      "whale": 45.8,
+      "whale_chg": -3.1
     },
     {
       "ticker": "SPG",
@@ -1578,7 +1578,7 @@
       "band": "extended",
       "score_pct": 0.821,
       "whale": 49.4,
-      "whale_chg": -0.8
+      "whale_chg": -0.7
     },
     {
       "ticker": "SRE",
@@ -1608,25 +1608,25 @@
       "ticker": "SW",
       "state": "neutral",
       "band": "elevated",
-      "score_pct": 0.761,
-      "whale": 52.3,
-      "whale_chg": 1.0
+      "score_pct": 0.774,
+      "whale": 52.5,
+      "whale_chg": 1.2
     },
     {
       "ticker": "SYK",
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.788,
-      "whale": 52.3,
-      "whale_chg": 10.2
+      "whale": 52.4,
+      "whale_chg": 10.3
     },
     {
       "ticker": "SYY",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.403,
-      "whale": 55.5,
-      "whale_chg": 2.7
+      "score_pct": 0.407,
+      "whale": 55.7,
+      "whale_chg": 2.9
     },
     {
       "ticker": "T",
@@ -1641,7 +1641,7 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.796,
-      "whale": 55.2,
+      "whale": 55.3,
       "whale_chg": -0.4
     },
     {
@@ -1649,8 +1649,8 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.919,
-      "whale": 49.2,
-      "whale_chg": -4.5
+      "whale": 49.3,
+      "whale_chg": -4.4
     },
     {
       "ticker": "TKO",
@@ -1664,33 +1664,33 @@
       "ticker": "TMO",
       "state": "neutral",
       "band": "elevated",
-      "score_pct": 0.75,
-      "whale": 56.1,
-      "whale_chg": 5.8
+      "score_pct": 0.76,
+      "whale": 56.4,
+      "whale_chg": 6.1
     },
     {
       "ticker": "TMUS",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.208,
-      "whale": 47.6,
-      "whale_chg": -1.8
+      "whale": 47.5,
+      "whale_chg": -1.9
     },
     {
       "ticker": "TPL",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.015,
-      "whale": 44.7,
-      "whale_chg": -6.9
+      "whale": 44.6,
+      "whale_chg": -7.0
     },
     {
       "ticker": "TRGP",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.107,
-      "whale": 49.3,
-      "whale_chg": -6.3
+      "whale": 49.0,
+      "whale_chg": -6.6
     },
     {
       "ticker": "TSLA",
@@ -1730,15 +1730,15 @@
       "band": "neutral",
       "score_pct": 0.419,
       "whale": 50.1,
-      "whale_chg": -2.2
+      "whale_chg": -2.1
     },
     {
       "ticker": "UBER",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.883,
-      "whale": 50.0,
-      "whale_chg": 3.0
+      "whale": 50.1,
+      "whale_chg": 3.1
     },
     {
       "ticker": "UNH",
@@ -1761,24 +1761,24 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.661,
-      "whale": 53.9,
-      "whale_chg": 5.2
+      "whale": 54.0,
+      "whale_chg": 5.3
     },
     {
       "ticker": "V",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.828,
-      "whale": 50.3,
-      "whale_chg": 2.2
+      "whale": 50.2,
+      "whale_chg": 2.1
     },
     {
       "ticker": "VICI",
       "state": "neutral",
       "band": "neutral",
       "score_pct": 0.546,
-      "whale": 42.4,
-      "whale_chg": -9.9
+      "whale": 42.5,
+      "whale_chg": -9.7
     },
     {
       "ticker": "VLO",
@@ -1786,7 +1786,7 @@
       "band": "neutral",
       "score_pct": 0.246,
       "whale": 59.4,
-      "whale_chg": 4.0
+      "whale_chg": 4.1
     },
     {
       "ticker": "VMC",
@@ -1817,7 +1817,7 @@
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.113,
-      "whale": 45.9,
+      "whale": 46.0,
       "whale_chg": -1.4
     },
     {
@@ -1825,16 +1825,16 @@
       "state": "neutral",
       "band": "elevated",
       "score_pct": 0.708,
-      "whale": 48.6,
-      "whale_chg": -0.7
+      "whale": 48.7,
+      "whale_chg": -0.5
     },
     {
       "ticker": "VZ",
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.869,
-      "whale": 49.1,
-      "whale_chg": 0.8
+      "whale": 49.3,
+      "whale_chg": 1.0
     },
     {
       "ticker": "WBD",
@@ -1850,14 +1850,14 @@
       "band": "neutral",
       "score_pct": 0.238,
       "whale": 45.4,
-      "whale_chg": -5.7
+      "whale_chg": -5.8
     },
     {
       "ticker": "WEC",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.079,
-      "whale": 44.2,
+      "whale": 44.3,
       "whale_chg": -5.4
     },
     {
@@ -1905,24 +1905,24 @@
       "state": "neutral",
       "band": "extended",
       "score_pct": 0.978,
-      "whale": 44.9,
-      "whale_chg": -0.9
+      "whale": 44.8,
+      "whale_chg": -1.0
     },
     {
       "ticker": "XEL",
       "state": "neutral",
       "band": "washed",
       "score_pct": 0.119,
-      "whale": 42.5,
-      "whale_chg": -9.6
+      "whale": 42.6,
+      "whale_chg": -9.5
     },
     {
       "ticker": "XOM",
       "state": "neutral",
       "band": "neutral",
-      "score_pct": 0.56,
-      "whale": 55.5,
-      "whale_chg": 4.4
+      "score_pct": 0.567,
+      "whale": 55.7,
+      "whale_chg": 4.5
     }
   ],
   "caveat": "Descriptive positioning readout only \u2014 no directional read. Time-controlled replication retired all contrarian claims (2026-07-06): the 2021+ survivorship-honest panel was all-null (DT-W1a), and on the 64y panel the one pooled survivor (accumulation-surge fade) is null in the modern era (2011-2026 CI spans zero) and survivor-flattered (DT-W2). Values describe where the name sits; they do not predict."
