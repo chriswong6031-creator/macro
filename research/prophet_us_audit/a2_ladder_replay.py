@@ -11,13 +11,16 @@ Three receipts:
 1. **The ext_z blackout.**  The 2026-08-06 board (69/69 rows with no extension
    reading) published ``featured: 0``.  Replayed under HEAD it features again, every
    featured row flagged ``ext_unknown``, and the outage raises a ``::warning``.
-2. **The ladder re-order.**  The current committed board, ranked under both ladders,
-   old rank -> new rank.
+2. **The map re-order.**  The current committed board, ranked under both maps, old
+   rank -> new rank.  HEAD's map is FLAT across the five admissible statuses
+   (ANTICIPATION v1 amendment, after the §6.6 first run read adverse to the CN
+   ordering), so the movement here is the ``buy_soon`` demotion and the collapse of
+   the trend-tape ordering among admissible rows — not a patience-first lift.
 3. **What the stage bucket still hides.**  The sort key is
    ``(stage_rank, -score, ticker)``, so a ``setting_up`` row cannot outrank a ``live``
-   row however high it scores.  Under the patience-first ladder the highest-scoring
-   rows on the board are ``bounce_wait`` rows that render ~30 places down.  This is
-   the measurement that says the stage gate — not the ladder — is now the binding
+   row however high it scores.  Even under the flat map some ``bounce_wait`` rows
+   outscore every ``live`` row and still render ~30 places down.  This is the
+   measurement that says the stage gate — not the entry map — is the binding
    constraint on §6.2.
 
 Usage (from the repo root)::
