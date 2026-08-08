@@ -213,7 +213,15 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["total"] == 0
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
+    # The award-event rail activated on 2026-08-08T18:30Z ("receipt-bound forward
+    # award-event projection completed", activation_state=live, 610 events visible),
+    # after days of reporting unavailable. Zero candidates is unchanged, but the
+    # REASON for zero moved from "the rail could not be read" to "the rail was read
+    # and nothing met exact candidate eligibility" -- which is what the engine emits
+    # as not_observed. This pin is deliberately a snapshot tripwire: it must fire
+    # again, and be re-read by a human, the next time this state moves.
+    assert queue["freshness"]["award_events_status"] == "ok"
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
     assert queue["coverage"]["reviewed_issuer_company_count"] == 1
     assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
     assert next(
