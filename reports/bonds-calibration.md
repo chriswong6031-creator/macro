@@ -11,20 +11,20 @@ Verdicts: **CONFIRMED** = stress→worse outcome, positive sign in full + both h
 
 | Signal | Verdict | IC dd (full/pre/post) | IC recession | hi-tercile P(dd10) vs base | span | n |
 |---|---|---|--:|---|---|--:|
-| recession (Recession-risk composite (0-100)) | **DIRECTIONAL** | 0.149/0.179/0.038 | 0.506 | 0.22 vs 0.122 (+9.8pp) | 1967-06-01..2026-04-28 | 15369 |
-| drawdown (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.225/0.261/0.104 | 0.538 | 0.243 vs 0.125 (+11.8pp) | 1969-07-31..2026-04-28 | 14804 |
-| credit (HY-OAS credit stress (0-100)) | **DIRECTIONAL** | 0.178/0.287/-0.076 | 0.285 | 0.288 vs 0.158 (+13.0pp) | 1996-12-31..2026-04-28 | 7651 |
-| rates_vol (MOVE rates-vol stress (0-100)) | **CONFIRMED** | 0.167/0.244/0.08 | 0.182 | 0.204 vs 0.132 (+7.2pp) | 2002-11-12..2026-04-28 | 6121 |
-| plumbing (SOFR-IORB funding stress (0-100)) | **CONTEXT** | -0.055/nan/-0.055 | None | 0.148 vs 0.144 (+0.4pp) | 2021-07-29..2026-04-28 | 1239 |
-| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.208/0.242/0.074 | 0.546 | 0.238 vs 0.122 (+11.6pp) | 1967-06-01..2026-04-28 | 15369 |
+| recession (Recession-risk composite (0-100)) | **DIRECTIONAL** | 0.149/0.18/0.04 | 0.507 | 0.22 vs 0.122 (+9.8pp) | 1967-06-01..2026-05-12 | 15379 |
+| drawdown (Drawdown-risk gauge (0-100, already MEASURED)) | **CONFIRMED** | 0.225/0.261/0.106 | 0.539 | 0.243 vs 0.125 (+11.8pp) | 1969-07-31..2026-05-12 | 14814 |
+| credit (HY-OAS credit stress (0-100)) | **DIRECTIONAL** | 0.18/0.287/-0.071 | 0.285 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-12 | 7661 |
+| rates_vol (MOVE rates-vol stress (0-100)) | **CONFIRMED** | 0.168/0.244/0.079 | 0.182 | 0.204 vs 0.132 (+7.2pp) | 2002-11-12..2026-05-12 | 6131 |
+| plumbing (SOFR-IORB funding stress (0-100)) | **CONTEXT** | -0.068/nan/-0.068 | None | 0.147 vs 0.143 (+0.4pp) | 2021-07-29..2026-05-12 | 1249 |
+| composite (Bond-stress composite = 100 - health score (the headline)) | **CONFIRMED** | 0.208/0.242/0.076 | 0.546 | 0.24 vs 0.122 (+11.8pp) | 1967-06-01..2026-05-12 | 15379 |
 
 ## Diagnostic curve signals
 
 | Signal | Verdict | IC dd (full/pre/post) | IC recession | hi-tercile P(dd10) vs base | span | n |
 |---|---|---|--:|---|---|--:|
-| ny_fed_prob (NY-Fed 3m10y recession probit) | **DIRECTIONAL** | 0.053/0.079/-0.019 | 0.335 | 0.153 vs 0.12 (+3.3pp) | 1962-01-02..2026-04-28 | 16781 |
-| neg_ntfs (Near-term forward spread (sign-flipped: low = stress)) | **CONTEXT** | -0.02/0.073/-0.197 | 0.237 | 0.103 vs 0.117 (-1.4pp) | 1976-06-01..2026-04-28 | 13021 |
-| hy_oas (High-yield OAS level (%)) | **DIRECTIONAL** | 0.178/0.288/-0.076 | 0.285 | 0.288 vs 0.158 (+13.0pp) | 1996-12-31..2026-04-28 | 7651 |
+| ny_fed_prob (NY-Fed 3m10y recession probit) | **CONTEXT** | -0.023/-0.005/-0.02 | 0.219 | 0.13 vs 0.119 (+1.1pp) | 1981-09-01..2026-05-12 | 11661 |
+| neg_ntfs (Near-term forward spread (sign-flipped: low = stress)) | **CONTEXT** | -0.042/0.054/-0.188 | 0.169 | 0.103 vs 0.119 (-1.6pp) | 1981-09-01..2026-05-12 | 11661 |
+| hy_oas (High-yield OAS level (%)) | **DIRECTIONAL** | 0.18/0.288/-0.071 | 0.285 | 0.287 vs 0.157 (+13.0pp) | 1996-12-31..2026-05-12 | 7661 |
 
 ## Does the blend beat the best single leg?
 
@@ -32,15 +32,14 @@ Composite IC **0.208** vs best leg `drawdown` **0.225** (Δ -0.017). **best sing
 
 ## NY-Fed recession-probit reliability
 
-Brier **0.1642** vs base-rate climatology 0.1783 (skill score 0.079; base recession rate 0.232). Reliability curve (predicted vs observed):
+Brier **0.1576** vs base-rate climatology 0.1502 (skill score -0.049; base recession rate 0.184). Reliability curve (predicted vs observed):
 
 | prob bin | n | predicted | observed |
 |---|--:|--:|--:|
-| 0.0-0.2 | 11962 | 0.058 | 0.144 |
-| 0.2-0.4 | 3352 | 0.278 | 0.416 |
-| 0.4-0.6 | 747 | 0.491 | 0.649 |
-| 0.6-0.8 | 442 | 0.67 | 0.373 |
-| 0.8-1.0 | 89 | 0.87 | 1.0 |
+| 0.0-0.2 | 8999 | 0.052 | 0.138 |
+| 0.2-0.4 | 1798 | 0.278 | 0.407 |
+| 0.4-0.6 | 395 | 0.495 | 0.337 |
+| 0.6-0.8 | 280 | 0.662 | 0.011 |
 
 ## Measured-informed leg weights
 
