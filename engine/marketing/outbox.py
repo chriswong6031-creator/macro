@@ -130,6 +130,28 @@ TRANSITIONS: dict[str, frozenset[str]] = {
 # is quarantined ("quarantine after 2 attempts, never retry-spam").
 MAX_POST_ATTEMPTS: int = 2
 
+#: The note the publisher stamps on the `posting -> failed` leg of a rate-limit
+#: requeue. ONE literal, written by scripts/marketing_publisher.py and read back
+#: by :func:`fold_state` — a counter keyed on a string the writer can change
+#: independently is a counter that silently reads zero.
+RATE_LIMITED_NOTE_PREFIX: str = "rate_limited (transient)"
+
+#: How many times a rate limit may send ONE item back to `approved` before the
+#: publisher stops requeueing it and leaves it at `failed`.
+#:
+#: THE UNBOUNDED LOOP THIS CLOSES (measured 2026-08-08). The requeue branch has
+#: no counter: a 429 walks the item posting -> failed -> approved and the next
+#: sweep picks it up again, forever. That is right for a quota blip measured in
+#: minutes and wrong for anything longer — while the Buffer plan was locked
+#: (2026-08-06 onward) the same items requeued every 30 minutes for days, each
+#: pass writing two ledger rows about copy that was already stale.
+#:
+#: 8 is ~4 hours at the 30-minute sweep cadence: long enough that a genuine
+#: shared-token exhaustion (a 24h allowance refilling) is ridden out without an
+#: operator, short enough that nothing spends a day pretending it is about to
+#: post. Past it the item stops moving and waits for a human.
+MAX_RATE_LIMITED_REQUEUES: int = 8
+
 # Ultra-fallback ONLY for when engine.marketing.sentinel cannot be imported at
 # all. Matches Sentinel's weeks_1_2 floor (2/day). The real authority is the
 # sentinel: block in config/marketing.yml — see effective_cap().
@@ -896,9 +918,19 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
       "status":    {id: folded status},
       "last":      {id: last APPLIED ledger row (at/actor/note/receipt)},
       "attempts":  {id: count of transitions INTO 'failed'},
+      "rate_limited": {id: count of those failures that were RATE-LIMIT
+                    requeues (note starts with RATE_LIMITED_NOTE_PREFIX)},
       "decisions": {id: latest decision row},
       "held":      set of ids (status queued AND latest decision 'hold'),
     }
+
+    ``rate_limited`` is a SUBSET of ``attempts`` on purpose. A rate limit is not
+    a verdict on the post, so the publisher walks it posting -> failed ->
+    approved and it lands in the failure count as collateral; counting the
+    requeues separately is what lets the runner bound them
+    (:data:`MAX_RATE_LIMITED_REQUEUES`) without also bounding real failures.
+    Computed in the SAME ledger pass — a second read of a 400KB append-only
+    ledger on every sweep is a cost with no buyer.
 
     Only legal transitions are applied; illegal or unknown rows are skipped
     with a log.warning (defensive — the ledger should never carry illegal rows
@@ -916,6 +948,7 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
     status: dict[str, str] = {i: items[i].get("status", "queued") for i in order}
     last: dict[str, dict] = {}
     attempts: dict[str, int] = {}
+    rate_limited: dict[str, int] = {}
 
     for row in read_jsonl(_ledger_path(root)):
         item_id = row.get("id")
@@ -937,6 +970,8 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
         last[item_id] = row
         if to_status == "failed":
             attempts[item_id] = attempts.get(item_id, 0) + 1
+            if str(row.get("note") or "").startswith(RATE_LIMITED_NOTE_PREFIX):
+                rate_limited[item_id] = rate_limited.get(item_id, 0) + 1
 
     decisions: dict[str, dict] = {}
     for row in read_jsonl(_decisions_path(root)):
@@ -955,6 +990,7 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
         "status": status,
         "last": last,
         "attempts": attempts,
+        "rate_limited": rate_limited,
         "decisions": decisions,
         "held": held,
     }
@@ -1487,6 +1523,13 @@ def transition(
             state["last"][item_id] = row
             if to == "failed":
                 state["attempts"][item_id] = state["attempts"].get(item_id, 0) + 1
+                # Same bookkeeping fold_state does, so a batch caller holding a
+                # snapshot never disagrees with a fresh fold of the same ledger.
+                # `.setdefault` on the dict itself: a snapshot taken before this
+                # key existed (a caller that hand-built a state) must not KeyError.
+                if str(note or "").startswith(RATE_LIMITED_NOTE_PREFIX):
+                    _rl = state.setdefault("rate_limited", {})
+                    _rl[item_id] = _rl.get(item_id, 0) + 1
             return True
 
         if _state is not None:
@@ -1976,6 +2019,7 @@ def expire_stale_planned(
     *,
     now: datetime | None = None,
     max_age_hours: int = _STALE_QUEUED_HOURS,
+    exempt_ids: frozenset[str] | set[str] | None = None,
     actor: str = "nightly_expiry",
 ) -> dict[str, Any]:
     """Retire planned-kind items that sat unposted long past their slot.
@@ -2009,6 +2053,13 @@ def expire_stale_planned(
     two-day-old tape. A reaper whose scope is "this lane's items" must not carry
     a second, narrower scope that quietly disagrees with it.
 
+    ``exempt_ids``: ids this sweep must leave alone whatever their age. Same
+    contract, and the same reason, as :func:`expire_stale_wire`'s — the
+    publisher now runs this reaper on every sweep (see its call site), and
+    without the exemption an operator's ``--post-now`` on a planned item that
+    took a while to get a human decision would be self-defeating: the run
+    summoned to send it would quarantine it, TERMINALLY, on the way in.
+
     Uses the canonical writer (`transition`) on a single pre-folded snapshot, the
     same batch pattern supersede_lane uses — never a hand-appended ledger row.
     Never raises: expiry failing must not stop tonight's emission.
@@ -2017,8 +2068,13 @@ def expire_stale_planned(
     try:
         ts_now = now if now is not None else datetime.now(timezone.utc)
         cutoff = ts_now - timedelta(hours=max(int(max_age_hours), 0))
+        spared = frozenset(exempt_ids or ())
         state = fold_state(root)
         for iid, it in (state.get("items") or {}).items():
+            if iid in spared:
+                # Checked FIRST, ahead of every other filter, so no later scope
+                # change can sneak past it (expire_stale_wire, same rule).
+                continue
             if str(state["status"].get(iid) or "") not in ("queued", "approved"):
                 continue
             if str(it.get("provenance") or "") != "content_studio":

@@ -37,18 +37,25 @@ _AS_OF = "2026-07-19"
 def _seed_approved_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day. Watching the soldiers now.",
                         account: str = "flagship", as_of: str = _AS_OF,
                         scheduled_at: str = "immediate",
-                        kind: str = "signal") -> str:
+                        kind: str = "signal",
+                        created_at: datetime = _FIXED_NOW) -> str:
     """Enqueue one item and drive it to 'approved'. Returns its id.
 
     `kind` is settable because the session-freshness gate (2026-08-06) refuses a
     stale item of a TAPE kind before most of the publisher's other rules are
     reached. A test about one of those later rules seeds a non-tape kind so its
     subject is the rule it names.
+
+    `created_at` is settable because ``outbox.enqueue`` CLAMPS a `scheduled_at`
+    that precedes the item's creation stamp forward to creation time — so a test
+    that wants an item genuinely late for its slot has to move the birth stamp
+    too, not just the slot. (Found the hard way: a fixture with a 40h-old slot
+    and a fresh birth stamp was silently rewritten to due-now.)
     """
     from engine.marketing.outbox import make_item, enqueue, transition
     item = make_item(
         account=account, kind=kind, text=text, as_of=as_of,
-        scheduled_at=scheduled_at, provenance="content_studio", now=_FIXED_NOW,
+        scheduled_at=scheduled_at, provenance="content_studio", now=created_at,
     )
     # Raise the ENQUEUE-time cap (the outbox's weeks_1_2 floor is 2/account/day)
     # so tests can seed several approved items; the PUBLISHER-tier daily cap is a
@@ -59,13 +66,22 @@ def _seed_approved_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-d
 
 
 def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
-                       links_allowed: bool = True) -> None:
-    """Write a minimal config/marketing.yml with the publish + sentinel blocks."""
+                       links_allowed: bool = True,
+                       approval_desk: bool = True) -> None:
+    """Write a minimal config/marketing.yml with the publish + sentinel blocks.
+
+    ``approval_desk`` is settable because the desk runs INSIDE the publish sweep
+    and calls ``outbox.expire_stale_planned`` on the way through. A test about
+    what the publisher itself does with a stale item has to turn the desk off, or
+    it is testing the desk.
+    """
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     (cfg_dir / "marketing.yml").write_text(
         "sentinel:\n"
         "  max_posts_per_account_per_day: 2\n"
+        "approval_desk:\n"
+        f"  enabled: {'true' if approval_desk else 'false'}\n"
         "publish:\n"
         "  backend: buffer\n"
         "  require_approval: true\n"
@@ -1203,3 +1219,415 @@ class TestTheFoldIsTheOnlyStatusThePublisherReads:
         assert not any(r.get("from") == "quarantined" for r in rows), (
             "something transitioned OUT of a terminal state — the writer is "
             "reading a stale status")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. A SIXTEEN-DAY 429 IS NOT A RATE LIMIT (2026-08-08)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _SubscriptionLockedPublisher(_FakePublisher):
+    """Buffer refusing the ACCOUNT, verbatim from the live outage.
+
+    From 2026-08-06T00:42Z every publish attempt came back 429 with
+    ``Retry-After: 1376827`` — sixteen days, counting down to ~2026-08-21T23:09Z
+    — because the subscription lapsed around 08-05. A 24h quota allowance cannot
+    produce that number, and the difference matters: the quota answer is "requeue
+    and try next sweep", which for this is "requeue 49 posts every 30 minutes for
+    a fortnight while their copy goes stale".
+    """
+
+    RETRY_AFTER_S = 1376827.0
+
+    def __init__(self) -> None:
+        super().__init__(ok=False, error=(
+            "subscription_locked: Buffer rate limit (429); retry after 1376827"))
+
+    def publish(self, **kwargs):
+        from engine.marketing.social_publisher import Receipt
+        self.calls.append(kwargs)
+        at = (kwargs.get("now") or _FIXED_NOW).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return Receipt(False, None, None, self._error, self.backend, at,
+                       retryable=False, retry_after_s=self.RETRY_AFTER_S)
+
+
+class TestTheTwo429sAreClassifiedApart:
+    """The split, at the seam that makes it: BufferPublisher.publish."""
+
+    def _publisher_raising(self, monkeypatch, retry_after: str):
+        from engine.marketing.social_publisher import (
+            BufferPublisher, BufferRateLimited)
+
+        pub = BufferPublisher(token="tkn", organization_id="org-1")
+
+        def boom(payload):
+            raise BufferRateLimited(
+                f"Buffer rate limit (429); retry after {retry_after}",
+                retry_after=retry_after)
+
+        monkeypatch.setattr(pub, "_transport", boom)
+        return pub
+
+    def test_a_short_retry_after_stays_a_retryable_rate_limit(self, monkeypatch):
+        """60s is the shared-token quota — the pre-existing behaviour, unchanged."""
+        pub = self._publisher_raising(monkeypatch, "60")
+        r = pub.publish(text="hi", channel_id="c1", now=_FIXED_NOW)
+        assert r.ok is False
+        assert r.retryable is True
+        assert r.error.startswith("rate_limited: ")
+        assert r.retry_after_s == 60.0
+
+    def test_a_retry_after_past_24h_is_a_subscription_lock(self, monkeypatch):
+        """200000s is ~55h. No 24h allowance can ask us to wait that long."""
+        from engine.marketing.social_publisher import subscription_locked
+
+        pub = self._publisher_raising(monkeypatch, "200000")
+        r = pub.publish(text="hi", channel_id="c1", now=_FIXED_NOW)
+        assert r.ok is False
+        assert r.retryable is False, (
+            "a two-day lock marked retryable is the requeue loop the split "
+            "exists to close")
+        assert r.error.startswith("subscription_locked: ")
+        assert r.retry_after_s == 200000.0
+        assert subscription_locked(r) is True
+
+    def test_the_live_outage_value_classifies_as_a_lock(self, monkeypatch):
+        pub = self._publisher_raising(monkeypatch, "1376827")
+        r = pub.publish(text="hi", channel_id="c1", now=_FIXED_NOW)
+        assert r.retryable is False
+        assert r.error.startswith("subscription_locked: ")
+
+    def test_exactly_24h_is_still_a_rate_limit(self, monkeypatch):
+        """The boundary is what a 24h allowance can explain, so 86400 is IN."""
+        pub = self._publisher_raising(monkeypatch, "86400")
+        r = pub.publish(text="hi", channel_id="c1", now=_FIXED_NOW)
+        assert r.retryable is True
+        assert r.error.startswith("rate_limited: ")
+
+    def test_an_unreadable_retry_after_falls_back_to_retryable(self, monkeypatch):
+        """UNKNOWN is not LOCKED. A missing header must not strand a good post."""
+        from engine.marketing.social_publisher import subscription_locked
+
+        pub = self._publisher_raising(monkeypatch, "")
+        r = pub.publish(text="hi", channel_id="c1", now=_FIXED_NOW)
+        assert r.retryable is True
+        assert r.retry_after_s is None
+        assert subscription_locked(r) is False
+
+    def test_subscription_locked_does_not_fire_on_an_ordinary_failure(self):
+        """Every ordinary failure is non-retryable too, so the predicate has to
+        be keyed on the reason rather than on the absence of `retryable`."""
+        from engine.marketing.social_publisher import Receipt, subscription_locked
+        r = Receipt(False, None, None, "buffer_error: Invalid post: Whoops",
+                    "buffer", "2026-08-08T12:00:00Z")
+        assert subscription_locked(r) is False
+
+    def test_retry_after_seconds_reads_the_other_legal_forms(self):
+        from engine.marketing.social_publisher import retry_after_seconds
+        assert retry_after_seconds("Wed, 21 Oct 2015 07:28:00 GMT") == 0.0  # past
+        assert retry_after_seconds("not a header") is None
+        assert retry_after_seconds(None) is None
+
+
+class TestASubscriptionLockStopsTheRunAndKeepsThePosts:
+    """The publisher must go idle: not shred the queue, and not spin on it."""
+
+    def test_the_first_lock_skips_every_remaining_candidate(
+            self, monkeypatch, tmp_path):
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path)
+        a = _seed_approved_item(tmp_path, text="First post of the day here.",
+                                scheduled_at="2026-07-19T12:00:00Z")
+        b = _seed_approved_item(tmp_path, text="Second post would follow it.",
+                                scheduled_at="2026-07-19T12:00:00Z")
+        fake = _SubscriptionLockedPublisher()
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert rc == 0
+        # ONE network call for TWO candidates: the second was never attempted.
+        assert len(fake.calls) == 1, (
+            "every candidate was tried against a backend that had already said "
+            f"no: {len(fake.calls)} calls")
+        statuses = current_statuses(tmp_path)
+        # Both survive, both re-armed, neither quarantined.
+        assert statuses[a] == "approved"
+        assert statuses[b] == "approved"
+
+    def test_the_locked_item_walks_back_to_approved_by_legal_edges(
+            self, monkeypatch, tmp_path):
+        """posting -> failed -> approved, exactly as the rate-limit branch does.
+
+        transition(iid, "approved") straight from `posting` is ILLEGAL and would
+        strand the item mid-flight forever — the defect this walk exists for.
+        """
+        from engine.marketing.ledgers import read_jsonl
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path,
+                                      scheduled_at="2026-07-19T12:00:00Z")
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_SubscriptionLockedPublisher(),
+                       kill_switch=True)
+
+        ledger = [r for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+            if r.get("id") == item_id]
+        assert [(r["from"], r["to"]) for r in ledger[-3:]] == [
+            ("approved", "posting"), ("posting", "failed"), ("failed", "approved")]
+        assert "subscription_locked" in (ledger[-2].get("note") or "")
+        assert "subscription_locked" in (ledger[-1].get("note") or "")
+
+    def test_a_lock_does_not_count_against_the_rate_limit_budget(
+            self, monkeypatch, tmp_path):
+        """The requeue budget is about OUR polling. A plan lock is not that, and
+        spending the budget on it would park good posts at `failed` for an
+        outage they had no part in."""
+        from engine.marketing.outbox import fold_state
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path,
+                                      scheduled_at="2026-07-19T12:00:00Z")
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_SubscriptionLockedPublisher(),
+                       kill_switch=True)
+
+        assert fold_state(tmp_path)["rate_limited"].get(item_id, 0) == 0
+
+    def test_one_annotation_per_run_at_line_start(
+            self, monkeypatch, tmp_path, capsys):
+        """ONE line for the whole run, and it must START the line or GitHub
+        drops it (house law). 49 copies of one fact is 49 posts of noise."""
+        _write_publish_cfg(tmp_path)
+        _seed_approved_item(tmp_path, text="First post of the day here.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+        _seed_approved_item(tmp_path, text="Second post would follow it.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_SubscriptionLockedPublisher(),
+                       kill_switch=True)
+
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if "marketing-buffer-subscription-locked" in ln]
+        assert len(hits) == 1, hits
+        assert hits[0].startswith(
+            "::error title=marketing-buffer-subscription-locked::"), hits[0]
+        # It has to answer "how long" and "until when" without a second click.
+        assert " h (" in hits[0], hits[0]
+        assert "2026-08" in hits[0], hits[0]
+
+    def test_the_activity_row_carries_the_lock_for_the_admin(
+            self, monkeypatch, tmp_path):
+        """The Floor reads activity.jsonl. A lock the panel cannot see is a lock
+        the operator finds by looking at the X account instead of at the run."""
+        from engine.marketing.ledgers import read_jsonl
+
+        _write_publish_cfg(tmp_path)
+        _seed_approved_item(tmp_path, text="First post of the day here.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+        _seed_approved_item(tmp_path, text="Second post would follow it.",
+                            scheduled_at="2026-07-19T12:00:00Z")
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_SubscriptionLockedPublisher(),
+                       kill_switch=True)
+
+        rows = [r for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "activity.jsonl")
+            if r.get("lane") == "publisher_live"]
+        assert rows, "the run logged no activity row"
+        row = rows[-1]
+        assert row["skipped_subscription_locked"] == 2
+        assert row["buffer_locked_until"] and row["buffer_locked_until"] > "2026-08"
+        assert row["last_lock_seen_at"]
+
+    def test_a_healthy_run_reports_no_lock(self, monkeypatch, tmp_path):
+        """The stamps must be None when nothing is locked, or the panel would
+        show a permanent outage the day after one ended."""
+        from engine.marketing.ledgers import read_jsonl
+
+        _write_publish_cfg(tmp_path)
+        _seed_approved_item(tmp_path, scheduled_at="2026-07-19T12:00:00Z")
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_FakePublisher(ok=True), kill_switch=True)
+
+        rows = [r for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "activity.jsonl")
+            if r.get("lane") == "publisher_live"]
+        assert rows[-1]["skipped_subscription_locked"] == 0
+        assert rows[-1]["buffer_locked_until"] is None
+        assert rows[-1]["last_lock_seen_at"] is None
+
+
+class TestTheRateLimitRequeueIsBounded:
+    """"Retry next sweep" with no counter is a loop, and the outage proved it."""
+
+    def _burn_requeues(self, tmp_path, item_id: str, n: int) -> None:
+        """n prior rate-limit requeues, written the way the publisher writes them."""
+        from engine.marketing.outbox import RATE_LIMITED_NOTE_PREFIX, transition
+        for _ in range(n):
+            assert transition(item_id, "failed", actor="publisher", root=tmp_path,
+                              note=f"{RATE_LIMITED_NOTE_PREFIX}, not a verdict "
+                                   f"on the post: buffer 429")
+            assert transition(item_id, "approved", actor="publisher",
+                              root=tmp_path, note="requeued for the next sweep")
+
+    def test_the_fold_counts_only_rate_limit_failures(self, tmp_path):
+        """A real failure must not spend the requeue budget, and vice versa."""
+        from engine.marketing.outbox import fold_state, transition
+
+        item_id = _seed_approved_item(tmp_path)
+        self._burn_requeues(tmp_path, item_id, 3)
+        assert transition(item_id, "failed", actor="publisher", root=tmp_path,
+                          note="buffer_error: Invalid post: Whoops")
+        assert transition(item_id, "approved", actor="admin", root=tmp_path)
+
+        state = fold_state(tmp_path)
+        assert state["rate_limited"][item_id] == 3
+        assert state["attempts"][item_id] == 4    # rate limits are a SUBSET
+
+    def test_the_ninth_rate_limit_parks_the_item_at_failed(
+            self, monkeypatch, tmp_path, capsys):
+        from engine.marketing.outbox import (
+            MAX_RATE_LIMITED_REQUEUES, current_statuses)
+        from engine.marketing.ledgers import read_jsonl
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path,
+                                      scheduled_at="2026-07-19T12:00:00Z")
+        self._burn_requeues(tmp_path, item_id, MAX_RATE_LIMITED_REQUEUES)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=_RateLimitedPublisher(),
+                            kill_switch=True)
+
+        assert rc == 0
+        assert current_statuses(tmp_path)[item_id] == "failed", (
+            "the requeue is still unbounded — this item would cycle forever")
+        ledger = [r for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+            if r.get("id") == item_id]
+        # NOT quarantined: nothing is wrong with the post, and quarantine is
+        # terminal. failed -> approved is the legal edge back.
+        assert ledger[-1]["to"] == "failed"
+        assert ledger[-1]["note"].startswith(
+            f"rate_limited_exhausted after {MAX_RATE_LIMITED_REQUEUES} sweeps")
+        out = capsys.readouterr().out
+        assert any(ln.startswith("::warning title=publisher-requeue-exhausted::")
+                   for ln in out.splitlines()), out
+
+    def test_the_eighth_rate_limit_still_requeues(self, monkeypatch, tmp_path):
+        """The bound must be a bound, not an off-by-one that clips a good post
+        one sweep early."""
+        from engine.marketing.outbox import (
+            MAX_RATE_LIMITED_REQUEUES, current_statuses)
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path,
+                                      scheduled_at="2026-07-19T12:00:00Z")
+        self._burn_requeues(tmp_path, item_id, MAX_RATE_LIMITED_REQUEUES - 1)
+
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_RateLimitedPublisher(), kill_switch=True)
+
+        assert current_statuses(tmp_path)[item_id] == "approved"
+
+
+class TestAnApprovedItemCannotOutliveItsWindow:
+    """The 36h window, applied where posts are actually SENT.
+
+    outbox.expire_stale_planned always covered `approved` as well as `queued`,
+    and the publish sweep does reach it — but ONLY through `approval_desk.run`,
+    which returns early on `approval_desk.enabled: false`. So the window was
+    enforced at dispatch exactly as long as the desk was armed, and switching the
+    desk off switched the age gate off with it, silently. The publisher's own
+    selection is no help: `_select_approved_due` asks how LATE an item is
+    (`_is_due`), never how OLD.
+    """
+
+    #: 40h behind the run's now (2026-07-19T13:00:00Z). Written an hour before
+    #: its own slot, because outbox.enqueue clamps a slot that precedes the
+    #: item's birth stamp forward to creation time.
+    _STALE_SLOT = "2026-07-17T21:00:00Z"
+    _STALE_BIRTH = datetime(2026, 7, 17, 20, 0, 0, tzinfo=timezone.utc)
+
+    def _seed_stale(self, tmp_path) -> str:
+        return _seed_approved_item(
+            tmp_path, as_of="2026-07-17", scheduled_at=self._STALE_SLOT,
+            created_at=self._STALE_BIRTH)
+
+    @staticmethod
+    def _notes(tmp_path, item_id: str) -> list:
+        from engine.marketing.ledgers import read_jsonl
+        return [r.get("note") for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+            if r.get("id") == item_id]
+
+    def test_a_forty_hour_old_approved_item_cannot_post_with_the_desk_off(
+            self, monkeypatch, tmp_path):
+        """THE GAP. With the desk disabled nothing on the publish path applied
+        the window, and a two-day-old approved post was a good candidate."""
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path, approval_desk=False)
+        item_id = self._seed_stale(tmp_path)
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert rc == 0
+        assert not fake.calls, (
+            "a 40h-old approved post reached the network — with the approval "
+            "desk off, nothing on the publish path applies the age window")
+        assert current_statuses(tmp_path)[item_id] == "quarantined"
+        # The SAME note the nightly reaper writes — one mechanism, three callers.
+        assert self._notes(tmp_path, item_id)[-1] == (
+            "expired: superseded by tonight's plan")
+
+    def test_the_desk_still_owns_the_window_when_it_is_armed(
+            self, monkeypatch, tmp_path):
+        """The pre-existing half, pinned: with the desk on it does the retiring,
+        and the publisher's fallback must NOT double up on it."""
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path)          # desk armed (shipped default)
+        item_id = self._seed_stale(tmp_path)
+        fake = _FakePublisher(ok=True)
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=fake, kill_switch=True)
+
+        assert not fake.calls
+        assert current_statuses(tmp_path)[item_id] == "quarantined"
+        # ONE retirement, not two: exactly one reaper ran this sweep.
+        assert self._notes(tmp_path, item_id).count(
+            "expired: superseded by tonight's plan") == 1
+
+    def test_a_fresh_approved_item_still_posts(self, monkeypatch, tmp_path):
+        _write_publish_cfg(tmp_path, approval_desk=False)
+        _seed_approved_item(tmp_path, scheduled_at="2026-07-19T12:00:00Z")
+        fake = _FakePublisher(ok=True)
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=fake, kill_switch=True)
+        assert len(fake.calls) == 1
+
+    def test_post_now_is_exempt_from_the_publishers_reaper(
+            self, monkeypatch, tmp_path):
+        """#3960's rule, applied to the planned reaper: the run summoned to send
+        an item must not quarantine it on the way in.
+
+        Scoped to the desk-off path because the desk's OWN expire_stale_planned
+        call takes no exempt_ids — a pre-existing gap, reported rather than
+        widened here.
+        """
+        _write_publish_cfg(tmp_path, approval_desk=False)
+        item_id = self._seed_stale(tmp_path)
+        fake = _FakePublisher(ok=True)
+        _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", item_id],
+                       fake_publisher=fake, kill_switch=True)
+
+        # Keyed on the REAPER's note, not on the final status: a post-now item
+        # may still be stopped by a later gate, and this test is only about
+        # whether the reaper took it on the way in.
+        assert "expired: superseded by tonight's plan" not in self._notes(
+            tmp_path, item_id)
