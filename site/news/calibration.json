@@ -2,7 +2,7 @@
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
   "asof": "2026-08-07",
-  "n_events_logged": 316,
+  "n_events_logged": 318,
   "n_events_graded": 165,
   "classes": [
     {
@@ -73,12 +73,12 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 62,
+      "n": 64,
       "n_graded": 28,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.02018930357142857,
-      "avg_rel_21d": -0.03592623214285715,
+      "avg_rel_21d": -0.037349660714285714,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -104,7 +104,7 @@
       "hit_5d": 0.2,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.001961,
-      "avg_rel_21d": 0.07114433333333334,
+      "avg_rel_21d": 0.059041666666666666,
       "wilson_low_5d": 0.036223,
       "wilson_high_5d": 0.624472,
       "verdict": "insufficient"
@@ -130,7 +130,7 @@
       "hit_5d": 0.43373493975903615,
       "hit_21d": 0.3235294117647059,
       "avg_rel_5d": 0.011215941767068272,
-      "avg_rel_21d": 0.02248895588235294,
+      "avg_rel_21d": 0.02258101470588235,
       "wilson_low_5d": 0.33239,
       "wilson_high_5d": 0.540943,
       "verdict": "context_only"
@@ -169,7 +169,7 @@
       "hit_5d": 0.5,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0071108333333333345,
-      "avg_rel_21d": -0.060413,
+      "avg_rel_21d": -0.06244133333333334,
       "wilson_low_5d": 0.187613,
       "wilson_high_5d": 0.812387,
       "verdict": "insufficient"
@@ -182,7 +182,7 @@
       "hit_5d": 1.0,
       "hit_21d": 1.0,
       "avg_rel_5d": 0.07516300000000001,
-      "avg_rel_21d": 0.004754,
+      "avg_rel_21d": 0.005929,
       "wilson_low_5d": 0.342372,
       "wilson_high_5d": 1.0,
       "verdict": "insufficient"
@@ -247,7 +247,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": -0.0006166666666666659,
-      "avg_rel_21d": 0.03334466666666667,
+      "avg_rel_21d": 0.032612,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 598,
+    "n_sampled": 605,
     "n_graded": 0,
     "classes": []
   }
