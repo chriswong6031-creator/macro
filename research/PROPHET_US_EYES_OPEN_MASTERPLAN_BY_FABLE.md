@@ -244,6 +244,21 @@ escalate a signal. Coordinate with the active 'Earnings Intelligence' session (S
 group-reaction build) — cite, never duplicate; group/peer-reaction inputs come from their
 artifacts when they land.
 
+**(f) CN WINNER CHAIN + LIMIT-MOVE FOOTPRINT (operator 2026-08-08, third wave).** (1) 300363.SZ
+full-chain case study — detection organs → #1 rank decomposition → Mastermind Portfolio AI
+ingestion (5% half-tier add at 17.03, +20% limit day, sold next day) → exit; solidify the
+load-bearing organs so the chain repeats; extends the prior `missing-300363` session's work
+(#4877 census, #4964 PIT latch), never duplicates it; the 2-session signal-skew discrepancy
+rides along unresolved-or-resolved, not hidden. (2) Limit-move footprint v0 — event catalog
+(limit-up/down + near-limit closes, board-type width 10%/20%) from CN daily stores; base-rate
+tables FIRST (first-board continuation by era/sector/cap — the 连板 dynamics); then a SMALL
+pre-registered footprint set (≤8 features, named before measuring) with time-split holdout,
+per-name-first beside pooled — the false-discovery risk in thousands-of-names × rare-events
+space is the program's main enemy and is designed against, not hoped away. Data-gap receipt
+(closing-auction imbalance, 封单, intraday first-touch) lands as COLLECTOR PROPOSALS, not
+builds. Same hypothesis class as §6.8(e): anticipatory-flow footprints before discrete
+events; mechanism-agnostic wording, A7 bounds, display-tier until gauntleted.
+
 Cross-repo: Terminal Golden Oracle = charting-app `signal_layer/golden_gate.py` (possible 4th
 confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
 grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
