@@ -145,50 +145,85 @@ class TestSignalLeg:
 
 
 class TestEntryLeg:
-    def test_the_ladder_is_patience_first_and_stays_that_way(self):
-        """THE ORDER IS THE RULING — this test exists to fail on a re-inversion.
+    def test_the_admissible_statuses_are_flat(self):
+        """NEUTRALITY IS THE RULING — this test exists to fail on any re-introduced
+        ordering, in EITHER direction.
 
-        Era history, because this constant has now been all three things:
+        Era history, because this constant has now been all four things:
           * pre-2026-08-04 the US and CN maps were IDENTICAL, on the premise that
             the entry-status vocabulary is market-independent;
-          * 2026-08-04 the CN V1 loser audit refuted that premise for the VALUES
-            (not the vocabulary) — in the A-share tape the patience statuses were
-            the era's best cohort (bounce_wait 6.9% loser rate, wait_pullback
-            7.7%) and the action statuses its worst (buy_soon 46.7%, partial
-            41.4%, buy_now 30.0%; CN masterplan §2.3/§2.11).  cn_prophet_v3
-            adopted that order; the US map kept the trend-tape order, and the
-            predecessor of this test pinned that fork as deliberate.
-          * 2026-08-08 (ANTICIPATION §6.2) the US map adopts the CN ORDERING.
-            The parity anatomy measured the cost of the fork: CN's live board is
-            24/24 patience statuses, the US admitted set was 27/27 action
-            statuses, and the US board already carries the bounce_wait cohort —
-            it ranked it last.  Operator ruling 2026-08-08: ship the ordering,
-            revise the constants from the §6.6 US re-measurement.
+          * 2026-08-04 the CN V1 loser audit refuted that premise for the VALUES —
+            in the A-share tape the patience statuses were the era's best cohort
+            (bounce_wait 6.9% loser rate) and the action statuses its worst
+            (buy_now 30.0%; CN masterplan §2.3/§2.11).  cn_prophet_v3 adopted that
+            order; the US map kept the trend-tape order;
+          * 2026-08-08, first draft of A2: the US map adopted the CN ordering on
+            the parity anatomy's evidence.  It never reached main;
+          * 2026-08-08, this amendment: the §6.6 US re-measurement's first run
+            (`research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md`,
+            2,816 statused episodes, 23 board dates 06-15..07-30) read ADVERSE —
+            buy lane H=5 `bounce_wait` 54.9% loser (n=153) vs `buy_now` 39.0%
+            (n=95), H=10 `bounce_wait` 65.4% (n=52), and the watch lane repeating
+            55.3% (n=76) on an independent population.  AND `bounce_wait` has ZERO
+            marks at H=21 anywhere out of 345 episodes, with H=63 never matured for
+            any status — so the horizon the patience thesis actually claims has no
+            US data at all.
 
-        So the ordering is no longer a fork and the old fork test would now be
-        asserting the reverse of the ruling.  What must never silently move is
-        the ORDER, and that is what the chain below pins: any re-inversion, and
-        any pairwise swap inside the chain, fails here.
+        The short ruler refutes the CN order; the right ruler is unmeasured.  So the
+        map claims NOTHING about the order among admissible statuses, and this test
+        is what keeps it that way.  Re-introducing an ordering — patience-first,
+        chase-first, or any other — must go through the pre-registered revision rule
+        in the module comment (chartered horizon, n >= 50 per cell, sign-stable
+        across two half-splits, on `anticipation-v1` era-stamped episodes), not
+        through an edit that quietly greens this file.
         """
-        values = [ubr._ENTRY_VALUE[status] for status in ubr.ENTRY_LADDER_ORDER]
-        assert ubr.ENTRY_LADDER_ORDER == (
-            "bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "buy_soon")
-        assert values == sorted(values, reverse=True), ubr.ENTRY_LADDER_ORDER
-        assert len(set(values)) == len(values), "the ladder must be STRICTLY ordered"
-        # The two ends, named, so a reader of a failure sees the ruling itself.
-        assert max(ubr._ENTRY_VALUE, key=ubr._ENTRY_VALUE.get) == "bounce_wait"
-        assert ubr._ENTRY_VALUE["bounce_wait"] > ubr._ENTRY_VALUE["buy_now"]
+        values = [ubr._ENTRY_VALUE[s] for s in ubr.ENTRY_NEUTRAL_STATUSES]
+        assert ubr.ENTRY_NEUTRAL_STATUSES == (
+            "bounce_wait", "wait_pullback", "hold", "buy_now", "partial")
+        assert set(values) == {ubr.ENTRY_NEUTRAL_VALUE}, dict(
+            zip(ubr.ENTRY_NEUTRAL_STATUSES, values))
+        # Named both ways round, so a failure reads as the ruling rather than as a
+        # number mismatch: neither end of the old argument may reappear.
+        assert ubr._ENTRY_VALUE["bounce_wait"] == ubr._ENTRY_VALUE["buy_now"]
+        assert ubr._ENTRY_VALUE["hold"] == ubr._ENTRY_VALUE["partial"]
 
-    def test_the_values_are_the_v1_provisional_constants(self):
-        """The VALUES, pinned separately from the order — the §6.6 US
-        re-measurement is expected to revise these numbers WITHOUT touching the
-        order above, and the two failures should be readable apart."""
+    def test_the_flat_leg_still_separates_admissible_from_the_rest(self):
+        """Falsifier: flat must not mean INERT.  If every status collapsed to one
+        value the leg would carry no information at all — what it still says is
+        "this row is in the admissible set", and that claim is measured upstream by
+        the confluence gate rather than by the §6.6 ledger."""
+        for status in ubr.ENTRY_NEUTRAL_STATUSES:
+            for other in ("later", "await", "await_confluence", "watch", "buy_soon",
+                          "extended", "topping", "blocked", "exit", "avoid"):
+                assert ubr._ENTRY_VALUE[status] > ubr._ENTRY_VALUE[other], (
+                    status, other)
+
+    def test_the_neutral_cohort_matches_the_featured_set_today(self):
+        """The two sets coincide, and they are separate constants on purpose —
+        "which statuses may be featured" and "which statuses the evidence cannot
+        rank" are different questions.  Pinned so the day they diverge it is a
+        decision someone made, not a drift nobody saw."""
+        assert set(ubr.ENTRY_NEUTRAL_STATUSES) == ubr._FEATURED_ENTRY_STATUSES
+
+    def test_the_flat_leg_caps_the_attainable_score(self):
+        """The disclosed consequence of `ENTRY_NEUTRAL_VALUE < 1.0`: no row can score
+        100 any more.  Pinned because it is the kind of fact that otherwise gets
+        rediscovered as a bug report six months later."""
+        ceiling = sum(
+            ubr.SCORE_WEIGHTS[leg] * (ubr.ENTRY_NEUTRAL_VALUE if leg == "entry" else 1.0)
+            for leg in ubr.SCORE_WEIGHTS)
+        assert ceiling == pytest.approx(93.75)
+
+    def test_the_values_are_the_v1_constants(self):
+        """The VALUES, pinned separately from the flatness — the revision rule may
+        move the numbers (all five together) without touching the ruling above, and
+        the two failures should be readable apart."""
         assert ubr._ENTRY_VALUE == {
-            "bounce_wait": 1.0,
-            "wait_pullback": 0.95,
-            "hold": 0.8,
-            "buy_now": 0.7,
-            "partial": 0.6,
+            "bounce_wait": 0.75,
+            "wait_pullback": 0.75,
+            "hold": 0.75,
+            "buy_now": 0.75,
+            "partial": 0.75,
             "later": 0.55,
             "await": 0.45,
             "await_confluence": 0.45,
@@ -200,23 +235,28 @@ class TestEntryLeg:
             "exit": 0.0,
             "avoid": 0.0,
         }
+        assert ubr.ENTRY_NEUTRAL_VALUE == 0.75
 
     def test_the_vocabulary_is_shared_with_china_but_the_map_is_not_a_copy(self):
-        """One status set, and two maps that agree on the ORDER without being the
-        same object.  The US keeps its own `later` and `extended` values (the CN
-        map has 0.5 / 0.3), so a future "just import CN's map" shortcut still has
-        to be a decision rather than an accident."""
+        """One status set, two different maps — and from 2026-08-08 they are not even
+        the same KIND of map.  CN's is an ordering measured on CN episodes; the US
+        one declines to order.  A future "just import CN's map" shortcut has to be a
+        decision rather than an accident, and importing it would now also import a
+        claim the US ledger has refuted at H=5/H=10."""
         from engine import china_board_rank as cn
 
         assert set(ubr._ENTRY_VALUE) == set(cn._ENTRY_VALUE)
         assert ubr._ENTRY_VALUE != cn._ENTRY_VALUE
         assert ubr._ENTRY_VALUE["extended"] == 0.0 and cn._ENTRY_VALUE["extended"] == 0.3
-        # The ordering agreement is the point of this era — both lead on patience.
+        # CN still leads on patience — measured there, and left alone by this ruling.
         assert max(cn._ENTRY_VALUE, key=cn._ENTRY_VALUE.get) == "bounce_wait"
+        # ... and the US map no longer has a single leader at all.
+        top = max(ubr._ENTRY_VALUE.values())
+        assert sum(1 for v in ubr._ENTRY_VALUE.values() if v == top) == 5
 
     @pytest.mark.parametrize("status,expected", [
-        ("bounce_wait", 1.0), ("wait_pullback", 0.95), ("hold", 0.8),
-        ("buy_now", 0.7), ("partial", 0.6), ("await_confluence", 0.45),
+        ("bounce_wait", 0.75), ("wait_pullback", 0.75), ("hold", 0.75),
+        ("buy_now", 0.75), ("partial", 0.75), ("await_confluence", 0.45),
         ("watch", 0.4), ("buy_soon", 0.35),
         ("extended", 0.0), ("topping", 0.0), ("blocked", 0.0), ("avoid", 0.0),
     ])
@@ -229,8 +269,8 @@ class TestEntryLeg:
         assert ubr.entry_value(None) == 0.0
 
     def test_status_is_case_insensitive(self):
-        assert ubr.entry_value({"status": "BOUNCE_WAIT"}) == pytest.approx(1.0)
-        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(0.7)
+        assert ubr.entry_value({"status": "BOUNCE_WAIT"}) == pytest.approx(0.75)
+        assert ubr.entry_value({"status": "BUY_NOW"}) == pytest.approx(0.75)
 
 
 class TestEdgeLeg:
@@ -964,31 +1004,40 @@ class TestScoreRows:
         assert 0.0 <= score <= 100.0
         assert round(score, 1) == score
 
-    def test_a_perfect_row_scores_100(self):
-        """100 needs a real cross-section: `edge` is a percentile, and m3 gives a pool
-        of ONE no percentile at all (top and bottom coincide), so the same row alone
-        tops out at 75.
+    @pytest.mark.parametrize("status", list(ubr.ENTRY_NEUTRAL_STATUSES))
+    def test_a_best_case_row_scores_the_flat_ceiling(self, status):
+        """A best-case row tops out at 93.75, not 100 — the flat entry leg pays 0.75
+        rather than 1.0 (ANTICIPATION v1, 2026-08-08).  100 also needs a real
+        cross-section: `edge` is a percentile and a pool of ONE has no percentile at
+        all, hence the second row.
 
-        The perfect row's entry status is ``bounce_wait`` from ANTICIPATION v1
-        (2026-08-08): the entry leg pays 1.0 for the top of the ladder, and the top of
-        the ladder is now the patience end.  A ``buy_now`` row can no longer reach 100
-        — that is the ruling, not a regression.
+        Parametrized over all five admissible statuses because that IS the ruling:
+        every one of them must produce the SAME score from the same inputs.  A
+        re-introduced ordering fails here on four of the five.
+
+        Asserted on `points` as well as `score`: `score` is published to one decimal,
+        so the exact 93.75 ceiling renders as 93.8 — half a tenth ABOVE the true
+        ceiling.  Pinning the unrounded points is what makes this test about the
+        arithmetic rather than about the rounding.
         """
         scored = ubr.score_rows(
-            [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
+            [_row("A", status=status, tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True}),
-             _row("Z", status="bounce_wait", tier="T2", ticks=1, alpha=0.0,
+             _row("Z", status=status, tier="T2", ticks=1, alpha=0.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
         assert scored[0]["ticker"] == "A"
-        assert scored[0]["prophet"]["score"] == pytest.approx(100.0)
+        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(93.75)
+        assert scored[0]["prophet"]["points"]["entry"] == pytest.approx(18.75)
+        assert scored[0]["prophet"]["score"] == pytest.approx(93.8)
 
-    def test_a_lone_perfect_row_tops_out_at_the_scoreable_range(self):
+    def test_a_lone_best_case_row_tops_out_at_the_scoreable_range(self):
         scored = ubr.score_rows(
             [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
-        assert scored[0]["prophet"]["score"] == pytest.approx(75.0)
+        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(68.75)
+        assert scored[0]["prophet"]["score"] == pytest.approx(68.8)
 
     def test_points_reconstruct_the_score(self):
         scored = ubr.score_rows([_row("A", ext_z=1.0, coiled={"coiled": True})],
@@ -1055,9 +1104,15 @@ class TestRankingBlock:
         # The surviving mention must be scoped to the VOCABULARY — the values are not
         # shared, and that distinction is the whole point of the rewrite.
         assert "vocabulary shared with the China board" in entry["basis"]
-        assert "bounce_wait 1.0" in entry["basis"]
         assert ubr.SELECTION_ERA in entry["basis"]
-        assert "has not been run" in entry["basis"]
+        # It must publish the FLATNESS, the adverse §6.6 read and the empty horizon —
+        # a board that ships a non-ordering must say that is what it is shipping.
+        assert "flat value" in entry["basis"]
+        assert "ADVERSE" in entry["basis"]
+        assert "H=21/H=63" in entry["basis"]
+        assert "93.75" in entry["basis"]
+        for status in ubr.ENTRY_NEUTRAL_STATUSES:
+            assert status in entry["basis"], status
 
     def test_block_discloses_the_formula_and_the_scoreless_inputs(self):
         # ext_z=0.0: a KNOWN un-extended reading, so the `extended` veto is provably

@@ -29,7 +29,11 @@ Three US-specific departures from the CN module are deliberate and evidenced:
    weekend, every market holiday — the last row was crypto-only, every equity's
    ``ext_z`` came back NaN, and no board row carried the leg's input.  Splitting that
    panel by calendar restores it (68/71 of the same buy lane score non-zero, and the
-   attainable range returns to 0–100 from the 0–90 the dead leg imposed).
+   attainable range returns to 0–100 from the 0–90 the dead leg imposed).  *That 0–100
+   was the trend-tape era's ceiling; from ANTICIPATION v1 the flat entry leg caps the
+   attainable score at 93.75 — see :data:`ENTRY_NEUTRAL_VALUE`.  Flat is not dead: the
+   leg still scores non-zero on every admissible row and still separates admissible
+   from non-admissible, it simply declines to order within.*
 
    Do not re-freeze a number here.  Every ``ranking`` block carries
    :func:`component_coverage`, computed from the rows actually scored, so the LIVE
@@ -135,55 +139,94 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 
 # Frozen definition inputs, not fitted coefficients.  The tier cascade and
 # entry-status VOCABULARIES are shared with engine.china_board_rank; the VALUES are
-# this board's own and have now been through two eras.
+# this board's own.
 #
-# ANTICIPATION v1 (2026-08-08) — PATIENCE-FIRST.  From 2026-08-04 to 2026-08-08 this
-# map ran the trend-tape order (``buy_now 1.0 … bounce_wait 0.35``), the mirror image
-# of CN v3.  The parity anatomy
-# (``research/prophet_us_audit/CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md``) measured
-# what that costs: CN's live board is 24/24 patience statuses while the US admitted
-# set was 27/27 action statuses, and the US board ALREADY CARRIES the bounce_wait
-# cohort — it just ranked it last.  The ordering below adopts CN v3's
-# (``engine/china_board_rank.py:96-112``).
+# ANTICIPATION v1 (2026-08-08) — THE ADMISSIBLE STATUSES ARE FLAT, ON PURPOSE.
 #
-# THESE ARE v1-PROVISIONAL CONSTANTS, NOT A US MEASUREMENT.  The ordering rests on a
-# CN cohort (407 matured episodes, CN masterplan §2.3: bounce_wait 6.9% loser rate vs
-# buy_now 30.0%) and that evidence is CN-tape evidence.  The US re-measurement over
-# the W7 full-population stamped store is the §6.6 work item and it has NOT been run;
-# until it lands nothing here may be described as US-measured.  Operator ruling
-# 2026-08-08: ship the ordering live now, revise the numbers from the nightly
-# re-measurement when it exists.
+# How this landed here.  A2 was first written PATIENCE-FIRST, adopting CN v3's ladder
+# outright (``bounce_wait 1.0 … buy_soon 0.35``, ``engine/china_board_rank.py:96-112``)
+# on the strength of the parity anatomy — CN's live board is 24/24 patience statuses
+# where the US admitted set was 27/27 action statuses, and the US board already carries
+# the bounce_wait cohort.  That ordering never reached main.  The §6.6 US
+# re-measurement's first run
+# (``research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md``) came back
+# ADVERSE to it, on the US board's own graded episodes:
 #
-# Two values are DELIBERATELY not CN's, so the maps stay distinct (see the fork test):
-#   * ``later`` stays 0.55 (CN 0.5) — no evidence names it on either tape;
-#   * ``extended`` stays 0.0 (CN 0.3) — CN keeps an already-ran name rankable, the US
-#     ``ran`` shelf demotes it, and re-valuing that is its own ruling.
+#   * buy lane, H=5, both cells above the 20-mark floor: ``bounce_wait`` 54.9% loser
+#     (n=153, median excess −0.96%) vs ``buy_now`` 39.0% (n=95, +1.05%).  That is CN's
+#     ordering read backwards, by 15.9 points of loser rate.
+#   * H=10 keeps the direction: ``bounce_wait`` 65.4% (n=52).
+#   * the watch lane repeats it on an independently selected population:
+#     ``bounce_wait`` 55.3% (n=76) / 55.9% (n=34).
+#   * AND THE NULL THAT OUTWEIGHS ALL OF IT: ``bounce_wait`` has ZERO graded marks at
+#     H=21 in any lane, out of 345 episodes, and H=63 has never matured for any status.
+#     The patience thesis's claim is "these names need time"; the horizons that would
+#     test it carry no US observations at all (the W7 horizon map charters basing at
+#     H=63).
+#
+# So the short ruler refutes the CN ordering in this window, and the RIGHT ruler is
+# unmeasured.  Neither patience-first nor chase-first is defensible as a ranking claim
+# today, and the map must not encode a claim the evidence cannot carry in EITHER
+# direction.  The five admissible statuses therefore share ONE value: the entry leg
+# still separates admissible from non-admissible, and says nothing whatever about the
+# order among them.  A flat leg cannot mis-rank.
+#
+# THE PRE-REGISTERED REVISION RULE.  A status ORDERING may be re-introduced among these
+# five only when all three hold:
+#   1. measured at the status's CHARTERED HORIZON (H=21/H=63 for the patience statuses,
+#      not the 5-session ruler that is mostly reading the tape);
+#   2. n >= 50 graded marks per cell;
+#   3. sign-stable across two half-splits of the window, on episodes stamped
+#      ``selection_era: anticipation-v1-2026-08-08`` — one selection regime, not two.
+# Anything less re-opens the same argument with the same absent data.
+# ``tests/test_us_board_rank.py::TestEntryLeg`` pins the flatness, so a re-introduced
+# ordering has to go through this rule rather than through an edit.
+#
+# WHY 0.75 AND NOT 1.0.  The top of the leg is left unclaimed deliberately: no US
+# entry status has yet earned "best possible entry state", and a leg whose maximum is
+# occupied by a status that has not been measured there would be the same overclaim in
+# quieter clothing.  Consequence, disclosed rather than hidden: the attainable board
+# score now tops out at 93.75 rather than 100 (30 signal + 18.75 entry + 25 edge + 10
+# runway + 10 quality).  This is flat across every admissible row, so it shifts no
+# ORDER — see ``ranking_block``'s entry ``basis``, which prints it.
+#
+# The non-admissible values are unchanged from the trend-tape era and are NOT part of
+# this ruling: ``later`` 0.55, ``await``/``await_confluence`` 0.45, ``watch`` 0.4,
+# ``buy_soon`` 0.35, and the zeros.  ``extended`` stays 0.0 where CN keeps 0.3 — the US
+# ``ran`` shelf owns that state and re-valuing it is its own ruling.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
+
+# The one value every admissible status carries.  Named so the flatness is a fact the
+# map is BUILT from rather than a coincidence a reader has to notice.
+ENTRY_NEUTRAL_VALUE = 0.75
+
+# The five statuses the entry leg refuses to order.  Identical to
+# :data:`_FEATURED_ENTRY_STATUSES` today and pinned as such by a test — but kept as its
+# own constant, because "which statuses may be featured" and "which statuses the
+# evidence cannot rank" are two different questions that happen to share an answer.
+ENTRY_NEUTRAL_STATUSES = (
+    "bounce_wait", "wait_pullback", "hold", "buy_now", "partial",
+)
+
 _ENTRY_VALUE = {
-    "bounce_wait": 1.0,       # CN §2.3: 6.9% loser rate — the era's best cohort
-    "wait_pullback": 0.95,    # CN §2.3: 7.7% loser rate
-    "hold": 0.8,              # no CN cohort printed — ordinal: patience, below the two leaders
-    "buy_now": 0.7,           # CN §2.3: 30.0% loser rate — the confirmed-late window
-    "partial": 0.6,           # CN §2.3: 41.4% loser rate
-    "later": 0.55,            # US-only value; no cohort on either tape
+    # --- admissible: FLAT, pending the revision rule above -------------------
+    "bounce_wait": ENTRY_NEUTRAL_VALUE,
+    "wait_pullback": ENTRY_NEUTRAL_VALUE,
+    "hold": ENTRY_NEUTRAL_VALUE,
+    "buy_now": ENTRY_NEUTRAL_VALUE,
+    "partial": ENTRY_NEUTRAL_VALUE,
+    # --- not admissible: unchanged, and not part of the §6.6 ruling -----------
+    "later": 0.55,
     "await": 0.45,
     "await_confluence": 0.45,
     "watch": 0.4,
-    "buy_soon": 0.35,         # CN §2.3: 46.7% loser rate — the era's worst
-    "extended": 0.0,          # US-only value; the ``ran`` shelf owns this state
+    "buy_soon": 0.35,
+    "extended": 0.0,
     "topping": 0.0,
     "blocked": 0.0,
     "exit": 0.0,
     "avoid": 0.0,
 }
-
-# The strictly-decreasing spine of the ladder above, in the order the ANTICIPATION
-# ruling fixed.  Named here rather than left implicit so a test can pin the ORDER
-# (which is the ruling) separately from the VALUES (which the §6.6 US re-measurement
-# is expected to revise).  Re-inverting the ladder breaks this chain.
-ENTRY_LADDER_ORDER = (
-    "bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "buy_soon",
-)
 
 # Stage buckets — timing is the WHEN-gate and owns grouping, never order.
 STAGE_LIVE = "live"
@@ -1050,13 +1093,20 @@ def ranking_block(
             {"component": "entry", "points": SCORE_WEIGHTS["entry"],
              "reads": "entry_signal.status",
              # Was "frozen status map, shared with the China board" — untrue since the
-             # 2026-08-04 fork, and this era diverges further.  The VOCABULARY is
-             # shared; the VALUES are this board's own and are provisional.
-             "basis": "patience-first status ladder (bounce_wait 1.0 · wait_pullback "
-                      "0.95 · hold 0.8 · buy_now 0.7 · partial 0.6 · buy_soon 0.35); "
-                      "status vocabulary shared with the China board, values are this "
-                      f"board's own. {SELECTION_ERA}: ordering adopted from the CN "
-                      "cohort, the US re-measurement has not been run"},
+             # 2026-08-04 fork.  The VOCABULARY is shared; the VALUES are this board's
+             # own, and what they now say is that the order is UNKNOWN.
+             "basis": "admissible statuses share one flat value ("
+                      + " = ".join(ENTRY_NEUTRAL_STATUSES)
+                      + f" = {ENTRY_NEUTRAL_VALUE}); the leg separates admissible from "
+                      "non-admissible (later 0.55 · await 0.45 · watch 0.4 · buy_soon "
+                      "0.35 · extended/topping/blocked/exit/avoid 0.0) and orders "
+                      "nothing within the admissible set. Status vocabulary shared "
+                      "with the China board, values are this board's own. "
+                      f"{SELECTION_ERA}: the §6.6 US re-measurement read ADVERSE to "
+                      "the CN ordering at H=5 and H=10 and has no marks at all at "
+                      "H=21/H=63, so no ordering is claimed in either direction; a "
+                      "flat leg caps the attainable score at 93.75 and shifts no "
+                      "order"},
             {"component": "edge", "points": SCORE_WEIGHTS["edge"],
              "reads": edge_reads,
              "basis": "clip01((pctile − 0.25) / 0.75) — bottom quartile earns 0"},
