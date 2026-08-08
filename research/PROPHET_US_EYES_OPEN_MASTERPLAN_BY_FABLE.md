@@ -357,6 +357,18 @@ R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, pa
 legacy shadow rows accruing, zones if R3 landed); check `data/us_prophet_rank/grades/`
 advanced (W7 store dark since merge) — if still empty, spawn its heal.
 R7 session-chain handoff: update §6.7/§6.9 execution records + memory with every PR/outcome.
+**RESUME STATE 2026-08-08 13:05Z (session limit hit, resets 15:20Z):** R4 DONE (#5007 armed —
+RESET_TURN null standalone/confluence-input, ZONE proven 7.26%→2.29% entry-vs-low; NVDA/AVGO/
+ADAM missed under v0 with leg-timing causes + 3 pre-registered v1 candidates; NEW v1 candidate
+from operator chart review: zone-with-expiry-to-starter, class-conditioned washout-vs-V).
+R8 data plane PARTIAL: builder died at session limit with 55 tests passing in worktree
+`agent-acb91d77c23bc843c` (branch `worktree-agent-acb91d77c23bc843c`) — RESUME IT via its
+transcript, do not rebuild. Wave-A merges: none of ours landed by 13:00Z (nine siblings did);
+runs from the 11:35Z branch-refresh conclude ~13:10Z+ — on wake, check states, diagnose any
+NEW red honestly (nine merges moved main), then R2 (#4976→A3+cohort), R3 (#4977→entry
+mechanics incl. BABA/NVDA/ADAM acceptance + expiry-to-starter), R5, R6 nightly verify.
+Armed set: 4972 4976 4977 4979 4987 4988 4993 4999 5000 5007.
+
 R8 **TURN WATCH desk (operator reframe 2026-08-08: "if we get the signal early, I do the
 holistic review myself — but if we don't surface them, names reach my desk up 10-15% and I
 chase").** The operator IS the second-stage filter, so this surface optimizes RECALL + CONTEXT
