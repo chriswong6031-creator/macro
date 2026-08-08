@@ -729,7 +729,6 @@ lanes:
             # on the prior vintage and the cycle-consistency gate fails (#2728; render.yml
             # already paired them).
             - scripts.build_markets
-            - scripts.build_measurement
             - scripts.append_sync_gauge
             - engine.policy_intent_desk
             - scripts.build_policy_watch
@@ -757,6 +756,21 @@ lanes:
             # it reads are gitignored except SPY, so only that builder puts them in
             # the working tree.
             - scripts.build_seasonality_shadow_state
+            # Measurement hub. Moved BELOW build_seasonality_shadow_state
+            # (2026-08-07): the Calibration Lab hero now renders the seasonal
+            # forward-record counts read from data/seasonality/nw_forward_ledger.jsonl,
+            # and build_seasonality_shadow_state is that ledger's sole nightly
+            # advancer. Built at its old position it published the PREVIOUS night's
+            # counts, so the page and the same night's program_watch.json disagreed
+            # about one ledger on one commit. Nothing later in cl_misc reads
+            # measurement's outputs, so the move is ordering-only.
+            - scripts.build_measurement
+            # Program watch. DAILY-ONLY and LAST in the seasonality run: it reads
+            # the state the two builders above have just written (the forward
+            # ledger counts in particular), so running it earlier would report the
+            # PREVIOUS night's ledger. Pure stdlib, sub-second, writes one JSON and
+            # emits a ::notice per fired tripwire; it never blocks the nightly.
+            - scripts.build_program_watch
       # serial post-band
       - id: check_builder_failstreaks
         module: scripts.check_builder_failstreaks
