@@ -85,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 1.31,
+          "value": 1.21,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

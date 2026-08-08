@@ -65,7 +65,7 @@
                 "note_zh": "雷达背离z=-0.54"
               }
             ],
-            "bottleneck_band": "TIGHT (text)"
+            "bottleneck_band": "NEUTRAL"
           }
         },
         {
@@ -170,7 +170,7 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 1.74,
+                "radar_divergence_z": 1.739,
                 "note_en": "Radar divergence z=+1.74",
                 "note_zh": "雷达背离z=+1.74"
               }
@@ -276,7 +276,7 @@
                 "note_zh": "雷达背离z=+0.09"
               }
             ],
-            "bottleneck_band": "NEUTRAL"
+            "bottleneck_band": "TIGHT (text)"
           }
         },
         {
@@ -514,12 +514,12 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 1.74,
+                "radar_divergence_z": 1.739,
                 "note_en": "Radar divergence z=+1.74",
                 "note_zh": "雷达背离z=+1.74"
               }
             ],
-            "bottleneck_band": "TIGHT (text)"
+            "bottleneck_band": "TIGHTENING"
           }
         },
         {
@@ -557,7 +557,7 @@
             "basket_activity": [
               {
                 "basket_id": "nuclear_power",
-                "radar_divergence_z": 2.137,
+                "radar_divergence_z": 2.136,
                 "note_en": "Radar divergence z=+2.14",
                 "note_zh": "雷达背离z=+2.14"
               },
@@ -688,7 +688,7 @@
             "basket_activity": [
               {
                 "basket_id": "nuclear_power",
-                "radar_divergence_z": 2.137,
+                "radar_divergence_z": 2.136,
                 "note_en": "Radar divergence z=+2.14",
                 "note_zh": "雷达背离z=+2.14"
               }
@@ -806,7 +806,7 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 1.74,
+                "radar_divergence_z": 1.739,
                 "note_en": "Radar divergence z=+1.74",
                 "note_zh": "雷达背离z=+1.74"
               }
@@ -827,7 +827,7 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 1.74,
+                "radar_divergence_z": 1.739,
                 "note_en": "Radar divergence z=+1.74",
                 "note_zh": "雷达背离z=+1.74"
               }
@@ -1041,7 +1041,7 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": -0.27,
+                "radar_divergence_z": -0.272,
                 "note_en": "Radar divergence z=-0.27",
                 "note_zh": "雷达背离z=-0.27"
               }
@@ -1062,7 +1062,7 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": -0.27,
+                "radar_divergence_z": -0.272,
                 "note_en": "Radar divergence z=-0.27",
                 "note_zh": "雷达背离z=-0.27"
               }
@@ -1083,7 +1083,7 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": -0.27,
+                "radar_divergence_z": -0.272,
                 "note_en": "Radar divergence z=-0.27",
                 "note_zh": "雷达背离z=-0.27"
               }
@@ -1104,7 +1104,7 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": -0.27,
+                "radar_divergence_z": -0.272,
                 "note_en": "Radar divergence z=-0.27",
                 "note_zh": "雷达背离z=-0.27"
               }
@@ -1620,9 +1620,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 2.065,
-                "note_en": "Radar divergence z=+2.06",
-                "note_zh": "雷达背离z=+2.06"
+                "radar_divergence_z": 2.067,
+                "note_en": "Radar divergence z=+2.07",
+                "note_zh": "雷达背离z=+2.07"
               }
             ],
             "bottleneck_band": null
@@ -1641,12 +1641,12 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 2.065,
-                "note_en": "Radar divergence z=+2.06",
-                "note_zh": "雷达背离z=+2.06"
+                "radar_divergence_z": 2.067,
+                "note_en": "Radar divergence z=+2.07",
+                "note_zh": "雷达背离z=+2.07"
               }
             ],
-            "bottleneck_band": "NEUTRAL"
+            "bottleneck_band": "TIGHT (text)"
           }
         },
         {
@@ -1662,9 +1662,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 2.065,
-                "note_en": "Radar divergence z=+2.06",
-                "note_zh": "雷达背离z=+2.06"
+                "radar_divergence_z": 2.067,
+                "note_en": "Radar divergence z=+2.07",
+                "note_zh": "雷达背离z=+2.07"
               }
             ],
             "bottleneck_band": null
@@ -1683,9 +1683,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 2.065,
-                "note_en": "Radar divergence z=+2.06",
-                "note_zh": "雷达背离z=+2.06"
+                "radar_divergence_z": 2.067,
+                "note_en": "Radar divergence z=+2.07",
+                "note_zh": "雷达背离z=+2.07"
               }
             ],
             "bottleneck_band": null
@@ -1785,7 +1785,7 @@
                 "note_zh": "雷达背离z=+3.02"
               }
             ],
-            "bottleneck_band": "TIGHT (text)"
+            "bottleneck_band": "NEUTRAL"
           }
         },
         {
@@ -1987,7 +1987,7 @@
           "rationale": "Natural gas is ~70-80% of nitrogen fertilizer production cost; price volatility is the primary margin swing factor for nitrogen producers.",
           "evidence": {
             "basket_activity": [],
-            "bottleneck_band": "TIGHT (text)"
+            "bottleneck_band": "LOOSE"
           }
         },
         {
@@ -5120,7 +5120,7 @@
   "stale_legs": [],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-08T08:02:14Z",
-  "inputs_hash": "sha256:b11c2b53d5c4610474bd9141370147565d52fa6e3404710b814cebe68870931b",
+  "produced_at": "2026-08-08T16:24:08Z",
+  "inputs_hash": "sha256:afe084e7db8f037bde5a67978400adaeb4f83792a22cbd3235348fc8a719d350",
   "tier": "display"
 }
