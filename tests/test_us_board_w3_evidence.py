@@ -17,7 +17,13 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.grade_us_board import _row_features, build_track  # noqa: E402
-from tests.test_grade_us_board import _minimal_grade_df  # noqa: E402
+# `_IN_ERA` is imported rather than re-declared so both build_track suites move together
+# the next time the era boundary does. build_track applies the file's ONE era rule
+# (G3 2026-08-06, #4684): rows dated before LEDGER_HISTORY_FROM describe the 120-name
+# broad-screen board, not the product that ships today, so they are filtered out and the
+# function early-returns `{"empty": True}` with no `per_horizon` key. These strata tests
+# assert on `per_horizon`, so their fixtures must date IN-ERA.
+from tests.test_grade_us_board import _IN_ERA, _minimal_grade_df  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -324,7 +330,7 @@ class TestBuildTrackW3Strata:
 
     def _grade_df_with_w3(self, n: int = 4) -> pd.DataFrame:
         """Extend _minimal_grade_df with W3 columns."""
-        df = _minimal_grade_df(n=n, lane="buy")
+        df = _minimal_grade_df(as_of=_IN_ERA, n=n, lane="buy")
         # Add W3 columns; alternate True/False/None to exercise strata
         df["insider_cluster"] = [True, False, True, False][:n]
         df["gex_confirm_verdict"] = ["confirm", None, "caution", None][:n]
@@ -338,57 +344,57 @@ class TestBuildTrackW3Strata:
 
     def test_by_insider_cluster_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_insider_cluster" in buy_h5, "by_insider_cluster missing from buy_lane"
 
     def test_by_gex_confirm_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_gex_confirm" in buy_h5
 
     def test_by_altdata_conv_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_altdata_conv" in buy_h5
 
     def test_by_sue_fresh_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_sue_fresh" in buy_h5
 
     def test_by_news_burst_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_news_burst" in buy_h5
 
     def test_by_smartmoney_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_smartmoney" in buy_h5
 
     def test_by_stop_guidance_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_stop_guidance" in buy_h5
 
     def test_by_confluence_k_in_buy_lane(self):
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         assert "by_confluence_k" in buy_h5
 
     def test_w3_strata_absent_when_column_missing(self):
         """Boards before W3 (missing columns) return {} for the slice, not an error."""
-        df = _minimal_grade_df(n=4, lane="buy")
+        df = _minimal_grade_df(as_of=_IN_ERA, n=4, lane="buy")
         # No W3 columns added — pre-schema df
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         # Keys should be present but with empty dict (missing column -> {})
         assert "by_insider_cluster" in buy_h5
@@ -398,7 +404,7 @@ class TestBuildTrackW3Strata:
     def test_strata_hit_stats_bounded(self):
         """Each stratum's hit_rate is between 0 and 1."""
         df = self._grade_df_with_w3()
-        track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+        track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
         buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
         for key in ("by_insider_cluster", "by_sue_fresh", "by_smartmoney"):
             for strat, stats in buy_h5[key].items():

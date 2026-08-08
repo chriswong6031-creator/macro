@@ -211,12 +211,15 @@ ARTIFACT_MANIFEST = [
      "as_of_field": "asof",
      "consumers": ["terminal:pull_macro_intel", "bot:conviction"],
      "note": "per-stock decision/conviction/gex intel; the Terminal intel bridge reads this"},
+    # 1.1.0 -> 1.2.0 (2026-08-07): the anchor-era programme stamps `anchor_era` on
+    # every per-stock signal file. REQUIRED, not conditional — measured present on
+    # 240/240 committed site/signals/*.json.
     {"artifact": "site/signals/<SYM>.json",
      "kind": "per_stock_signal",
-     "schema_version": "1.1.0",
+     "schema_version": "1.2.0",
      "schema_fields": [
-         "above200", "asof", "early_markers", "early_now", "markers", "pit",
-         "risk_flags", "state", "tf", "ticker", "trail_breach", "trail_stop",
+         "above200", "anchor_era", "asof", "early_markers", "early_now", "markers",
+         "pit", "risk_flags", "state", "tf", "ticker", "trail_breach", "trail_stop",
          "weekly_bull",
      ],
      "expected_max_age_td": 2,
@@ -254,9 +257,11 @@ ARTIFACT_MANIFEST = [
     # including its fail-open behaviour on a stale row. Both are registered in
     # optional_fields (the may-be-absent register) rather than promoted; graduation to a
     # required item field waits on a committed render that proves the builder emits them.
+    # 1.7.0 -> 1.8.0 (2026-08-07): `universe_sources` registered as OPTIONAL (see the
+    # note in optional_fields below for why it is not required).
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.7.0",
+     "schema_version": "1.8.0",
      "schema_fields": [
          # 1.6.0 GRADUATION (2026-08-03): board_definition / ran / ranking /
          # themes_in_favour moved up from optional_fields after the first committed
@@ -280,8 +285,15 @@ ARTIFACT_MANIFEST = [
          # attached per row only when the earnings store can answer for that name, so a
          # consumer must treat both as may-be-absent and must not infer "no report
          # scheduled" from their absence.
+         # `universe_sources` (2026-08-07) is the universe-source disclosure. OPTIONAL,
+         # not required: build_stock_library emits it inside a try/except whose handler
+         # is explicit that the key is dropped on failure ("disclosure is additive, never
+         # fatal" -> "block absent from artifact"). Registering it in schema_fields would
+         # flap this lane red<->green with that failure, which is exactly what
+         # optional_fields exists to prevent. Consumers must not read its absence as a
+         # complete universe — absence means the disclosure itself failed.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "anchor", "earnings_soon", "post_earnings_move",
+         "anchor", "earnings_soon", "post_earnings_move", "universe_sources",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
@@ -304,15 +316,21 @@ ARTIFACT_MANIFEST = [
      "as_of_field": "as_of",
      "consumers": ["bot:lenses", "bot:strategist", "terminal:screener"],
      "note": "US Buy Board — sizes the autonomous book's US candidate universe"},
+    # 2.1.0 -> 2.2.0 (2026-08-07): `staleness` (the price-age disclosure) is REQUIRED,
+    # not conditional. build_china_library computes it "with the other conservative
+    # defaults so the key always exists on the artifact" and is fail-soft INSIDE, so a
+    # failure empties the disclosure rather than dropping the key — and the zero-collapse
+    # fallback carries `"staleness": compute_board_staleness()` for the same reason
+    # ("a zero-name collapse is exactly when the reader most needs to know").
     {"artifact": "site/factordata/china_standouts.json",
      "kind": "board",
-     "schema_version": "2.1.0",
+     "schema_version": "2.2.0",
      "schema_fields": [
          "actionable", "as_of", "board_definition", "buy", "cap_composition",
          "coverage", "eligible", "execution_coverage", "forming", "laggards",
          "lane_counts", "late_or_unfillable", "more_actionable", "quality_screen",
          "ran", "rank_by", "ranking", "ripening", "ripening_falling",
-         "schema_version", "sleeve_chip", "track_ledger", "universe",
+         "schema_version", "sleeve_chip", "staleness", "track_ledger", "universe",
      ],
      "optional_fields": [
          # data_outage — W0.7 board-width guard stamp, present only on a collapsed
@@ -436,9 +454,10 @@ ARTIFACT_MANIFEST = [
     # field the artifact has not been rebuilt with yet reads as `removed` drift).
     # They GRADUATE to schema_fields on a minor bump once the first hk_prophet_v1
     # render is committed — the same order us_standouts reached 1.5.0 in.
+    # 1.0.0 -> 1.1.0 (2026-08-07): `ripening` registered as optional (see below).
     {"artifact": "site/factordata/hk_standouts.json",
      "kind": "board",
-     "schema_version": "1.0.0",
+     "schema_version": "1.1.0",
      "schema_fields": [
          "as_of", "board_track", "buy", "calm", "cohort", "context_chips",
          "eligible", "health", "laggards", "leadership", "liquidity_regime",
@@ -453,10 +472,18 @@ ARTIFACT_MANIFEST = [
          #   lane_counts                            per-lane + per-stage counts
          #   leaders / ran / vetoed                 the three display-tier lanes
          #   universe_excluded / universe_source_rows  the disclosed universe gap
+         #   ripening (2026-08-07)                  the HK ripening shelf
+         # `ripening` is emitted unconditionally — a plain key in build_hk_library's
+         # payload literal, beside leaders/ran/vetoed — so it is registered HERE rather
+         # than in schema_fields for the same reason those three are: this entry is still
+         # at the pre-graduation stage described above, and the whole hk_prophet_v1 group
+         # graduates together on one minor bump once the first render is committed.
+         # Splitting it out early would claim a guarantee the rest of its own wave does
+         # not yet carry.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
          "board_definition", "dispersion_regime", "lane_counts", "leaders",
-         "ran", "rank_by", "ranking", "universe_excluded", "universe_source_rows",
-         "vetoed",
+         "ran", "rank_by", "ranking", "ripening", "universe_excluded",
+         "universe_source_rows", "vetoed",
      ],
      "schema_item_fields": [
          "ah_value", "align_tier", "alpha", "alpha_entry", "anchor", "beta",

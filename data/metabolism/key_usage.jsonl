@@ -889,3 +889,5 @@
 {"schema":"metabolism.key_usage.v1","ts":"2026-08-06T22:54:24+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
 {"schema":"metabolism.key_usage.v1","ts":"2026-08-06T22:54:25+00:00","key_id":"claude_code_oauth_6","status":429,"headers":{}}
 {"schema":"metabolism.key_usage.v1","ts":"2026-08-06T22:54:26+00:00","key_id":"claude_code_oauth_7","status":403,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-08-07T22:27:32+00:00","key_id":"deepseek_api_key","status":200,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-08-07T23:07:37+00:00","key_id":"deepseek_api_key","status":200,"headers":{}}
