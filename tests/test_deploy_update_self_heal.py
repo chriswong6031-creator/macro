@@ -193,6 +193,16 @@ MUST_RESTART = [
     "engine/government_revenue/subaward_dossiers.py",
     "contracts/government_revenue/government_revenue_candidate.v1.schema.json",
     "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
+    # ...and the schemas their validators pin with lru_cache(maxsize=1): read
+    # once, held for the life of the process, so a merged schema-only change
+    # never goes live until macro-api restarts (the Wave 8 merged-but-dead shape).
+    "contracts/government_revenue/government_revenue_dossiers.v1.schema.json",
+    "contracts/government_revenue/government_idv_dossiers.v1.schema.json",
+    "contracts/government_revenue/government_subaward_dossiers.v1.schema.json",
+    "contracts/government_revenue/government_procurement_event.v2.schema.json",
+    "contracts/government_revenue/government_procurement_workspace.v2.schema.json",
+    "contracts/government_revenue/government_entity_coverage.v1.schema.json",
+    "contracts/government_revenue/government_recipient_resolution_coverage.v1.schema.json",
     # The public Company Intelligence API imports the reader plus this
     # non-inert package at process startup (contracts, health, and views).
     "engine/neuralweb/company_intelligence_reader.py",
@@ -278,6 +288,10 @@ MUST_NOT_RESTART = [
     "engine/context_index/ingest.py",
     "engine/context_index/chunking.py",
     "engine/context_index/health.py",
+    # schemas read WITHOUT lru_cache re-read the file per call and self-heal
+    # without a restart; the v1 procurement generation is nightly-only
+    "contracts/government_revenue/government_budget_program_graph.v1.schema.json",
+    "contracts/government_revenue/government_procurement_event.v1.schema.json",
     # nightly-only marketing modules — the package is named, not globbed
     "engine/marketing/seo_director.py",
     "engine/marketing/social_publisher.py",
@@ -649,6 +663,94 @@ def test_load_time_closure_probe_is_not_vacuous():
     # nightly-only modules must stay OUT, else the closure is over-broad
     assert "engine/master_brain.py" not in closure
     assert "engine/china_radar.py" not in closure
+
+
+def _pinned_schema_basenames(path: Path) -> set[str]:
+    """contracts *.schema.json basenames read under functools.lru_cache in `path`.
+
+    A schema loaded inside an lru_cache'd function is pinned in the process for
+    its whole lifetime, so a merged schema-only change deploys and the API keeps
+    validating against the stale cached contract until something unrelated
+    restarts it.  Reads without a cache re-fetch the file per call and self-heal,
+    so they must NOT widen the trigger — the narrow-restart intent stands.
+    """
+    src = path.read_text(encoding="utf-8")
+    found: set[str] = set()
+    for node in ast.walk(ast.parse(src)):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        cached = any(
+            "lru_cache" in ast.unparse(dec) or ast.unparse(dec) in ("cache", "functools.cache")
+            for dec in node.decorator_list
+        )
+        if not cached:
+            continue
+        for inner in ast.walk(node):
+            if (isinstance(inner, ast.Constant) and isinstance(inner.value, str)
+                    and inner.value.endswith(".schema.json")):
+                found.add(inner.value.rsplit("/", 1)[-1])
+    return found
+
+
+def _pinned_contract_schema_paths() -> set[str]:
+    """Repo paths of contract schemas pinned in macro-api via the app/ closure.
+
+    Basenames are resolved against the real contracts/ tree, so both spellings
+    in the wild bind to the same file: the single full-path literal
+    (candidates.py) and the component build (`... / "contracts" /
+    "government_revenue" / name` in the dossier validators).  A basename that
+    resolves to several contract files requires them all — fail-closed.
+    """
+    basenames: set[str] = set()
+    for rel in _api_load_time_closure():
+        basenames |= _pinned_schema_basenames(ROOT / rel)
+    by_name: dict[str, list[Path]] = {}
+    for p in (ROOT / "contracts").rglob("*.schema.json"):
+        by_name.setdefault(p.name, []).append(p)
+    return {
+        str(p.relative_to(ROOT))
+        for name in basenames if "*" not in name and "?" not in name
+        for p in by_name.get(name, ())
+    }
+
+
+def test_contract_schema_pinned_by_api_closure_triggers_restart():
+    """Every contract schema an api-closure module lru_caches must force a restart.
+
+    The Wave 8 shape: engine/government_revenue validators pin their
+    contracts/government_revenue schemas with lru_cache(maxsize=1), so a merged
+    schema change shipped without a restart and the API served the stale cached
+    contract until something unrelated restarted it.  Derived from the closure
+    rather than enumerated, so the next lru_cache'd schema read joins the
+    requirement the day it is written.
+    """
+    uncovered = sorted(
+        rel for rel in _pinned_contract_schema_paths()
+        if not _triggers_restart(rel)
+    )
+    assert not uncovered, (
+        "pinned in macro-api by an lru_cache'd schema read in the app/ import "
+        f"closure but missing from the restart regex in app/deploy/update.sh: {uncovered}\n"
+        "A merged change to these files deploys and never goes live — add them "
+        "to the contracts alternation on the macro-api restart line."
+    )
+
+
+def test_pinned_schema_probe_is_not_vacuous():
+    """Guard the guard: both path spellings must parse, and un-cached reads stay out."""
+    pinned = _pinned_contract_schema_paths()
+    # component-style path build in the lru_cache'd dossier validators
+    assert "contracts/government_revenue/government_revenue_dossiers.v1.schema.json" in pinned
+    assert "contracts/government_revenue/government_idv_dossiers.v1.schema.json" in pinned
+    assert "contracts/government_revenue/government_subaward_dossiers.v1.schema.json" in pinned
+    # single full-path literal (candidates.py) — the pair the regex carried first
+    assert "contracts/government_revenue/government_revenue_candidate.v1.schema.json" in pinned
+    # workspace validators pin the current (v2) procurement generation
+    assert "contracts/government_revenue/government_procurement_workspace.v2.schema.json" in pinned
+    # un-cached reads self-heal per call and must stay OUT, else the narrow
+    # trigger grows into restart-on-every-contract-commit
+    assert "contracts/government_revenue/government_budget_program_graph.v1.schema.json" not in pinned
+    assert not any(p.endswith("capital_structure_projection.schema.json") for p in pinned)
 
 
 def test_admin_load_time_import_closure_is_covered_by_restart_regex():
