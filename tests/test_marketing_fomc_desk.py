@@ -117,10 +117,15 @@ def seeded_root(tmp_path: Path) -> Path:
 
     July is therefore diffable but not yet collected, which is the state the lane
     is in at 14:00 ET on a decision day.
+
+    Paths come from fomc_statements.STORE_DIR rather than a literal, so relocating
+    the store cannot leave this fixture pointing at a directory that no longer
+    exists (it did, once — the store moved under data/marketing/ so the press-wire
+    workflow's sparse checkout could actually see it).
     """
-    store = tmp_path / "data" / "fomc" / "statements"
+    store = tmp_path / fomc_statements.STORE_DIR
     store.mkdir(parents=True)
-    shutil.copyfile(ROOT / "data" / "fomc" / "statements" / f"{JUNE}.txt",
+    shutil.copyfile(ROOT / fomc_statements.STORE_DIR / f"{JUNE}.txt",
                     store / f"{JUNE}.txt")
     return tmp_path
 
@@ -129,6 +134,30 @@ def seeded_root(tmp_path: Path) -> Path:
 def july_page() -> str:
     assert PAGE_FIXTURE.exists(), f"missing page fixture {PAGE_FIXTURE}"
     return PAGE_FIXTURE.read_text(encoding="utf-8", errors="replace")
+
+
+@pytest.fixture
+def hosted_card(monkeypatch):
+    """Make the diff card HOSTED, which the flagship post requires.
+
+    Not a convenience: since the M6 fix an unhosted card SKIPS the flagship (the
+    analysis lives only on the card, so a hook with no card is a post about
+    nothing). There is no R2 credential in a test, and no Chrome in the thin CI
+    lane, so any test that expects the flagship to ship must arrange its
+    precondition explicitly rather than depend on the environment.
+    """
+    from engine.marketing import media_publish
+
+    monkeypatch.setattr(
+        media_publish, "publish_card",
+        lambda svg, **kw: {
+            "svg_path": f"data/marketing/outbox/media/{kw.get('as_of')}/"
+                        f"{kw.get('chart_id')}.svg",
+            "media_png_path": f"data/marketing/outbox/media/{kw.get('as_of')}/"
+                              f"{kw.get('chart_id')}.png",
+            "media_render": "svg_raster",
+            "media_url": f"https://cdn.example.com/{kw.get('chart_id')}.png",
+        })
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -309,15 +338,178 @@ def test_unrecognised_construction_refuses_the_whole_decision():
     assert fomc_desk.deterministic_relay(facts) is None
 
 
-def test_range_is_never_read_off_a_different_rate():
-    """The anchor is the federal funds target range, not any nearby percentage."""
+def test_range_is_never_read_off_the_dissenters_preferred_range():
+    """The range is the COMMITTEE'S, even when a dissent names another one.
+
+    NOT VACUOUS: the second paragraph contains a full, well-formed
+    "target range for the federal funds rate ... at 2 to 2-1/4 percent" — the exact
+    string the old document-wide search would match. The surviving mutation the
+    first version of this test missed was "search the whole statement instead of
+    the decision sentence", because its distractor said "interest rate on reserve
+    balances", which the anchor never matched in the first place.
+    """
+    paragraphs = [
+        "The Committee decided to maintain the target range for the federal funds "
+        "rate at 3-1/2 to 3-3/4 percent, in support of the dual mandate.",
+        "Voting against this action was Loretta J. Mester, who preferred to "
+        "maintain the target range for the federal funds rate at 2 to 2-1/4 "
+        "percent.",
+    ]
+    facts = fomc_diff.extract_facts(paragraphs)
+    assert facts["target_range"] == "3-1/2 to 3-3/4 percent"
+    assert facts["action"] == "maintain"
+    assert "2 to 2-1/4" not in str(fomc_diff.decision_line(facts))
+    assert "2 to 2-1/4" not in str(fomc_desk.deterministic_relay(facts))
+
+
+def test_comma_form_cut_reads_the_committees_range_not_the_dissenters():
+    """2020-03-03: the comma form, with a dissent range sitting right after it.
+
+    Both halves of the M1 fix are load-bearing here. Without the comma in the
+    pattern the decision sentence is unreadable; without decision-sentence scoping
+    the search then lands on Mester's preferred 2 to 2-1/4 percent and the relay
+    ships the rate the Committee voted against.
+    """
+    paragraphs = [
+        "The Committee decided to lower the target range for the federal funds "
+        "rate by 1/2 percentage point, to 1 to 1-1/4 percent.",
+        "Voting against this action was Loretta J. Mester, who preferred to "
+        "maintain the target range for the federal funds rate at 2 to 2-1/4 "
+        "percent.",
+    ]
+    facts = fomc_diff.extract_facts(paragraphs)
+    assert facts["action"] == "lower"
+    assert facts["target_range"] == "1 to 1-1/4 percent"
+    assert fomc_diff.decision_line(facts) == (
+        "Fed lowered the federal funds target range to 1 to 1-1/4 percent")
+
+
+def test_action_and_range_never_come_from_different_sentences():
+    """Two fields describing one decision come from one sentence, or from neither."""
+    # A statement whose decision sentence has an unreadable range: BOTH refuse,
+    # rather than pairing this action with some other sentence's number.
+    facts = fomc_diff.extract_facts([
+        "The Committee decided to lower the target range for the federal funds "
+        "rate to a level it will announce separately.",
+        "The previous target range for the federal funds rate was at 4 to 4-1/4 "
+        "percent.",
+    ])
+    assert facts["action"] == "lower"
+    assert facts["target_range"] is None
+    assert fomc_diff.decision_line(facts) is None
+    assert fomc_desk.deterministic_relay(facts) is None
+
+
+# ── The 2019-09-18 blocker: a MIXED dissent block ────────────────────────────
+
+MIXED_DISSENT = [
+    "In light of the implications of global developments for the economic "
+    "outlook, the Committee decided to lower the target range for the federal "
+    "funds rate to 1-3/4 to 2 percent.",
+    "Voting against this action were Esther L. George and Eric S. Rosengren, who "
+    "preferred to maintain the target range at 2 to 2-1/4 percent; and James "
+    "Bullard, who preferred at this meeting to lower the target for the federal "
+    "funds rate by 1/2 percentage point to 1-1/2 to 1-3/4 percent.",
+]
+
+
+def test_mixed_dissent_never_attributes_a_borrowed_preference():
+    """THE B2 BLOCKER, pinned on the real 2019-09-18 wording.
+
+    Before the per-clause parser this returned dissenters=['James Bullard'] with
+    preference='maintain' and size='1/2' — because the names capture stopped at the
+    first ", who" while the preference and size searches ran over the WHOLE block.
+    The relay then read "Bullard preferred to maintain by 1/2 point", crediting a
+    named Federal Reserve official on a stance-free wire account with the exact
+    opposite of his actual vote. He wanted a DEEPER cut.
+    """
+    facts = fomc_diff.extract_facts(MIXED_DISSENT)
+    # All three names, none dropped.
+    assert facts["dissenters"] == [
+        "Esther L. George", "Eric S. Rosengren", "James Bullard"]
+    # FAIL CLOSED: the groups disagree, so no single direction is claimed.
+    assert facts["dissent_preference"] is None
+    assert facts["dissent_size"] is None
+    # The per-group truth is preserved and correctly bound.
+    assert facts["dissent_groups"] == [
+        {"names": ["Esther L. George", "Eric S. Rosengren"],
+         "preference": "maintain", "size": None},
+        {"names": ["James Bullard"], "preference": "lower", "size": "1/2"},
+    ]
+    # And the wire says only what is proven.
+    relay = fomc_desk.deterministic_relay(facts)
+    assert relay == ("Fed lowered the federal funds target range to 1-3/4 to 2 "
+                     "percent. George, Rosengren and Bullard dissented.")
+    assert "maintain" not in relay
+    assert "Bullard preferred" not in relay
+
+
+def test_mixed_dissent_card_names_them_without_a_direction(diff):
+    """The card may not paper over an unprovable direction either."""
+    from engine.marketing import fomc_card
+
+    facts = fomc_diff.extract_facts(MIXED_DISSENT)
+    svg = fomc_card.render_fomc_card(
+        date_str="2019-09-18", decision_line=fomc_diff.decision_line(facts),
+        analysis_paragraphs=["A paragraph.", "Another paragraph."],
+        highlights=[], facts=facts, unchanged_count=None, prior_date=None,
+    )
+    drawn = " ".join((el.text or "") for el in ET.fromstring(svg).iter()
+                     if el.tag.endswith("text"))
+    for surname in ("George", "Rosengren", "Bullard"):
+        assert surname in drawn, surname
+    assert "George, Rosengren, Bullard dissented" in drawn
+    # NO DIRECTION IS ATTRIBUTED TO THEM: the groups disagree, so any single one
+    # would be a lie about at least one of the three names on the card. Scoped to
+    # the dissent phrasing — the hero legitimately says the Fed "lowered".
+    assert "wanted to" not in drawn
+    assert "Bullard wanted" not in drawn
+    for claim in ("dissenters wanted to maintain", "wanted to lower",
+                  "wanted to maintain"):
+        assert claim not in drawn, claim
+
+
+def test_single_group_dissent_still_states_its_direction(facts):
+    """Fail-closed must not mean fail-silent: one group, one direction, stated."""
+    assert facts["dissent_preference"] == "raise"
+    assert facts["dissent_size"] == "1/4"
+    assert facts["dissent_groups"] == [{
+        "names": ["Beth M. Hammack", "Neel Kashkari", "Lorie K. Logan"],
+        "preference": "raise", "size": "1/4"}]
+
+
+def test_roster_colon_form_does_not_null_every_dissent_fact():
+    """"were:" used to be cut by the sentence splitter into a 5-word fragment."""
     facts = fomc_diff.extract_facts([
         "The Committee decided to maintain the target range for the federal funds "
         "rate at 3-1/2 to 3-3/4 percent.",
-        "The interest rate on reserve balances was set at 9 to 11 percent and the "
-        "primary credit rate at 1 to 2 percent.",
-        "Inflation remains elevated relative to the Committee's 2 percent goal."])
-    assert facts["target_range"] == "3-1/2 to 3-3/4 percent"
+        "Voting against the action were: Charles L. Evans and Narayana "
+        "Kocherlakota, who preferred to lower the target range by 1/4 percentage "
+        "point.",
+    ])
+    assert facts["dissenters"] == ["Charles L. Evans", "Narayana Kocherlakota"]
+    assert facts["dissent_preference"] == "lower"
+    assert facts["dissent_size"] == "1/4"
+
+
+def test_dissent_with_no_preference_clause_claims_none():
+    facts = fomc_diff.extract_facts([
+        "The Committee decided to maintain the target range for the federal funds "
+        "rate at 0 to 1/4 percent.",
+        "Voting against this action was Jeffrey M. Lacker.",
+    ])
+    assert facts["dissenters"] == ["Jeffrey M. Lacker"]
+    assert facts["dissent_preference"] is None
+    assert fomc_desk.deterministic_relay(facts) == (
+        "Fed held the federal funds target range at 0 to 1/4 percent. "
+        "Lacker dissented.")
+
+
+def test_vote_line_accepts_an_eleven_one():
+    """"by an 11-1 vote" — the archive's own article."""
+    facts = fomc_diff.extract_facts(
+        ["The Committee approved the statement by an 11-1 vote:"])
+    assert facts["vote"] == {"for": 11, "against": 1}
 
 
 def test_singular_dissent_wording():
@@ -875,6 +1067,110 @@ def test_untraceable_numbers_folds_the_feds_dash():
     corpus = "by a 9 – 3 vote at 3-1/2 to 3-3/4 percent by 1/4 percentage point"
     assert fomc_desk.untraceable_numbers("9-3 and 3-1/2 and 1/4", corpus) == []
     assert fomc_desk.untraceable_numbers("a 70 percent chance", corpus) == ["70"]
+    # A compound the corpus GAVE us may be decomposed: "the vote was 9 to 3".
+    assert fomc_desk.untraceable_numbers("the vote was 9 to 3", corpus) == []
+
+
+def test_traceability_is_token_boundary_not_substring(sheet):
+    """Single digits must not ride inside a longer corpus number.
+
+    SURVIVING MUTATION THE OLD TESTS MISSED: `token in normalized_corpus`. Under
+    substring containment 14 of the integers 0-99 passed free — "7" and "9" inside
+    the fact sheet's own header date "2026-07-29", "5" inside a "3-1/2", and so on.
+    Every integer below is absent from the July material as a TOKEN, and each one
+    is a substring of something in it.
+    """
+    corpus = fomc_desk.fact_sheet_text(sheet)
+    # Multi-digit inventions, each a substring of something in the material.
+    for invented in ("70", "45", "26", "20", "07", "29", "202"):
+        assert fomc_desk.untraceable_numbers(f"a level of {invented}", corpus), \
+            f"{invented} passed the traceability guard"
+    # SINGLE DIGITS TOO. Surviving mutation this closes: "skip tokens shorter than
+    # two characters", which is the cheapest way to make the whole guard blind to
+    # the numbers most likely to be fabricated in a rate post. 5 and 7 appear
+    # nowhere in the July material once the header dates are excluded.
+    for invented in ("5", "7"):
+        assert fomc_desk.untraceable_numbers(f"about {invented} percent", corpus), \
+            f"single digit {invented} passed the traceability guard"
+    # The control: digits the material really does contain still pass.
+    for supported in ("9", "3", "12", "1/4", "3-1/2"):
+        assert fomc_desk.untraceable_numbers(f"{supported} here", corpus) == [], \
+            supported
+
+
+def test_iso_header_dates_do_not_donate_numbers(sheet):
+    """The fact sheet's own YYYY-MM-DD header is excluded from the corpus.
+
+    Otherwise our bookkeeping launders numbers the statement never contained.
+    """
+    corpus = fomc_desk.fact_sheet_text(sheet)
+    assert "2026-07-29" in corpus, "the header really is in the text"
+    assert fomc_desk.untraceable_numbers("2026", corpus) == ["2026"]
+    # And the prompt advertises exactly what the validator enforces.
+    allowed = fomc_desk.build_user_message(sheet).split("ALLOWED NUMBERS")[1]
+    assert "2026-07-29" not in allowed
+    assert "2026-06-17" not in allowed
+
+
+def test_spelled_out_counts_must_trace_in_a_quantitative_use(sheet):
+    """"Nine of twelve members" is a claim about a vote count and must trace."""
+    corpus = fomc_desk.fact_sheet_text(sheet)
+    # 7 and 11 are nowhere in the July material.
+    assert fomc_desk.untraceable_numbers("seven of eleven members agreed", corpus)
+    # 6 and 9 are (unchanged=6, sentences=9), so this is fine.
+    assert fomc_desk.untraceable_numbers("six of nine sentences", corpus) == []
+    # ORDINARY ENGLISH IS NOT AUDITED: "one phrase" is not a quantitative use, and
+    # flagging it would cost a repair turn on correct copy.
+    assert fomc_desk.untraceable_numbers(
+        "One phrase of policy language moved with them", corpus) == []
+
+
+def test_forecast_tells_catch_the_market_pricing_family(sheet):
+    """Measured misses. The statement never says what anything is priced at."""
+    for guilty in (
+        "Traders had priced a deeper move.",
+        "Options pricing implies a move by December.",
+        "There is a chance of another hold.",
+        "We see a 12 percent chance of a hike.",
+        "Markets expect the range to move.",
+        "Futures are pricing in a hold.",
+    ):
+        parsed = fomc_desk.parse_sections(_reply(
+            [CLEAN_ANALYSIS[0], guilty], CLEAN_HOOK, CLEAN_RELAY))
+        violations = fomc_desk.validate_copy(parsed, sheet)["analysis"]
+        assert any("forecast" in v for v in violations), guilty
+
+
+def test_forecast_tells_apply_to_the_hook_as_well_as_the_analysis(sheet):
+    parsed = fomc_desk.parse_sections(_reply(
+        CLEAN_ANALYSIS,
+        "Fed held at 3-1/2 to 3-3/4 percent. Markets expect a cut next.",
+        CLEAN_RELAY))
+    assert any("forecast" in v
+               for v in fomc_desk.validate_copy(parsed, sheet)["hook"])
+
+
+def test_relay_presence_guards_are_not_vacuous_on_single_digits():
+    """A single-digit head or vote is a substring of nearly any number.
+
+    SURVIVING MUTATION: substring matching in the range/vote presence checks. With
+    a ZIRP range whose head is "0" and a vote of 9, a relay naming neither still
+    contains a "0" and a "9" inside other numbers, so `in` passed it.
+    """
+    facts = {"target_range": "0 to 1/4 percent", "action": "maintain",
+             "vote": {"for": 9, "against": 0}, "unanimous": False,
+             "dissenters": None, "dissent_preference": None, "dissent_size": None,
+             "dissent_groups": None}
+    sheet = fomc_desk.build_fact_sheet(
+        date_str=JULY, prior_date=JUNE, current_paragraphs=[], prior_paragraphs=[],
+        diff={}, facts=facts, highlight_rows=[])
+    parsed = fomc_desk.parse_sections(_reply(
+        ["Paragraph one here.", "Paragraph two here."],
+        "A hook line about the decision.",
+        "The Committee acted on 90 different considerations and 109 pages."))
+    violations = fomc_desk.validate_copy(parsed, sheet)["relay"]
+    assert any("target range" in v for v in violations), violations
+    assert any("vote" in v for v in violations), violations
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -882,7 +1178,7 @@ def test_untraceable_numbers_folds_the_feds_dash():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_fire_enqueues_both_desks_in_routing_fallback_mode(
-    monkeypatch, seeded_root, desk_cfg, july_page,
+    monkeypatch, seeded_root, desk_cfg, july_page, hosted_card,
 ):
     """Both posts, both desks, immediate rail, event_class fomc.
 
@@ -933,7 +1229,8 @@ def test_fire_enqueues_both_desks_in_routing_fallback_mode(
     assert {i["id"] for i in report["emitted"]} <= queued
 
 
-def test_fire_is_idempotent_per_meeting(monkeypatch, seeded_root, desk_cfg, july_page):
+def test_fire_is_idempotent_per_meeting(monkeypatch, seeded_root, desk_cfg,
+                                       july_page, hosted_card):
     """Second firing for the same meeting no-ops. One meeting, one firing."""
     _stub_waterfall(monkeypatch, [CLEAN_REPLY, CLEAN_REPLY, CLEAN_REPLY])
     first = fomc_desk.fire(date_str=JULY, root=seeded_root, cfg=desk_cfg,
@@ -951,24 +1248,154 @@ def test_fire_is_idempotent_per_meeting(monkeypatch, seeded_root, desk_cfg, july
     assert len(outbox.read_items_all(seeded_root)) == 2, "no second pair of posts"
 
 
+STATEMENT_ITEM = {
+    "id": "fed-1", "source": "fed_press", "source_name": "Federal Reserve",
+    "source_tier": "official",
+    "url": ("https://www.federalreserve.gov/newsevents/pressreleases/"
+            "monetary20260729a.htm"),
+    "published_at": "2026-07-29T18:00:00Z",
+    "headline": "Federal Reserve issues FOMC statement",
+}
+
+
 def test_maybe_fire_trigger_and_its_idempotency(
-    monkeypatch, seeded_root, desk_cfg, july_page,
+    monkeypatch, seeded_root, desk_cfg, july_page, hosted_card,
 ):
     """The press-tick seam fires once, then never again for this meeting."""
     _stub_waterfall(monkeypatch, [CLEAN_REPLY, CLEAN_REPLY])
     monkeypatch.setattr(fomc_statements, "fetch_page", lambda url, **kw: july_page)
 
-    item = {
-        "id": "fed-1", "source": "fed_press", "source_name": "Federal Reserve",
-        "source_tier": "official",
-        "url": ("https://www.federalreserve.gov/newsevents/pressreleases/"
-                "monetary20260729a.htm"),
-        "published_at": "2026-07-29T18:00:00Z",
-        "headline": "Federal Reserve issues FOMC statement",
-    }
-    first = fomc_desk.maybe_fire([item], root=seeded_root, cfg=desk_cfg, now=NOW)
+    first = fomc_desk.maybe_fire([dict(STATEMENT_ITEM)], root=seeded_root,
+                                 cfg=desk_cfg, now=NOW)
     assert first and first["fired"] is True
-    assert fomc_desk.maybe_fire([item], root=seeded_root, cfg=desk_cfg, now=NOW) is None
+    assert fomc_desk.maybe_fire([dict(STATEMENT_ITEM)], root=seeded_root,
+                                cfg=desk_cfg, now=NOW) is None
+
+
+def test_maybe_fire_keeps_scanning_past_an_out_of_scope_item(
+    monkeypatch, seeded_root, desk_cfg, july_page, hosted_card,
+):
+    """An archive item AHEAD of the live statement must not cost the meeting.
+
+    SURVIVING MUTATION THIS CLOSES: `return None` in the item-rejection branch. The
+    Fed's feed is not ordered for our convenience and it carries archive links and
+    reissues beside the fresh release, so the first statement-shaped item in a batch
+    is routinely not the one we want. Bailing out on it loses the meeting entirely.
+
+    Written against the REJECTION branch on purpose. The sibling
+    `already_collected` branch also continues, but that one is defensive rather
+    than observable: exactly one meeting is ever in a tick's scope (the two
+    candidate dates can never both be decision days, since a meeting's decision day
+    is its second), so every item resolving in a tick resolves to the SAME date and
+    "already collected" is true for all of them or none. Asserting a difference
+    there would be a test of nothing.
+    """
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    monkeypatch.setattr(fomc_statements, "fetch_page", lambda url, **kw: july_page)
+
+    ahead = [
+        # An archive link to a past meeting, statement-shaped and first in line.
+        {"source": "fed_press",
+         "headline": "Federal Reserve issues FOMC statement",
+         "url": ("https://www.federalreserve.gov/newsevents/pressreleases/"
+                 "monetary20260617a.htm")},
+        # A statement-shaped item with no date in its URL at all.
+        {"source": "fed_press",
+         "headline": "Federal Reserve issues FOMC statement",
+         "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm"},
+    ]
+    # The dateless item resolves to today, so put the live one first among the
+    # DATED items and prove the archive link does not stop the walk.
+    report = fomc_desk.maybe_fire([ahead[0], dict(STATEMENT_ITEM)],
+                                  root=seeded_root, cfg=desk_cfg, now=NOW)
+    assert report is not None, "the archive item must not end the scan"
+    assert report["fired"] is True
+    assert report["date"] == JULY
+    assert len(report["emitted"]) == 2
+
+
+def test_a_stale_url_on_a_real_decision_day_is_rejected(
+    monkeypatch, seeded_root, desk_cfg, july_page,
+):
+    """A 2019 archive URL arriving on 2026-07-29 must not be posted as today.
+
+    SURVIVING MUTATION THE OLD TEST MISSED: dating from the clock while fetching
+    the ITEM's url. The old `meeting_date_for` fell back to the clock whenever the
+    URL date was not a decision day, and `fire` then fetched the item's URL — so a
+    2019 statement was stored as 2026-07-29.txt, diffed against June 2026, and
+    posted as today's decision, consuming the meeting's one firing.
+    """
+    fetched: list[str] = []
+
+    def _fetch(url, **kw):
+        fetched.append(url)
+        return july_page
+
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    monkeypatch.setattr(fomc_statements, "fetch_page", _fetch)
+
+    stale = {
+        "source": "fed_press",
+        "headline": "Federal Reserve issues FOMC statement",
+        "url": ("https://www.federalreserve.gov/newsevents/pressreleases/"
+                "monetary20190918a.htm"),
+    }
+    assert fomc_desk.is_statement_release(stale), "it IS statement-shaped"
+    assert fomc_desk.resolve_meeting(stale, now=NOW) is None
+    assert fomc_desk.maybe_fire([stale], root=seeded_root, cfg=desk_cfg,
+                                now=NOW) is None
+    assert fetched == [], "nothing may be fetched for a rejected item"
+    assert not fomc_statements.is_collected(JULY, seeded_root)
+    assert fomc_statements.read_statement(JULY, seeded_root) == []
+
+
+def test_a_dateless_url_is_fetched_from_the_canonical_url(monkeypatch, seeded_root,
+                                                          desk_cfg, july_page,
+                                                          hosted_card):
+    """When the clock dates the item, the fetch uses OUR url, never the item's."""
+    fetched: list[str] = []
+
+    def _fetch(url, **kw):
+        fetched.append(url)
+        return july_page
+
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    monkeypatch.setattr(fomc_statements, "fetch_page", _fetch)
+    item = {"source": "fed_press",
+            "headline": "Federal Reserve issues FOMC statement",
+            "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm"}
+    report = fomc_desk.maybe_fire([item], root=seeded_root, cfg=desk_cfg, now=NOW)
+    assert report and report["fired"] is True
+    assert fetched == [fomc_statements.statement_url(JULY)]
+
+
+def test_release_dates_use_new_york_not_a_fixed_offset():
+    """14:00 ET is 18:00 UTC under EDT. Sep and Oct 2026 are both EDT.
+
+    SURVIVING MUTATION: a hardcoded UTC-5. It gives the wrong ET date for every
+    EDT meeting whenever the two calendars disagree, which is what a flat offset
+    cannot know.
+    """
+    # 2026-09-16 18:05 UTC is 14:05 EDT: the September decision day resolves.
+    edt_tick = datetime(2026, 9, 16, 18, 5, tzinfo=timezone.utc)
+    assert fomc_desk._et_candidate_dates(edt_tick)[0] == "2026-09-16"
+
+    # THE DIVERGENCE. 2026-09-17 04:30 UTC is 00:30 EDT on the 17th, so the
+    # September meeting is OVER. A flat UTC-5 reads it as 23:30 on the 16th and
+    # would still call that a decision day — the desk would treat a closed meeting
+    # as live. This is the assertion a hardcoded offset cannot pass.
+    after_edt_midnight = datetime(2026, 9, 17, 4, 30, tzinfo=timezone.utc)
+    dates = fomc_desk._et_candidate_dates(after_edt_midnight)
+    assert dates[0] == "2026-09-17", dates
+    assert "2026-09-16" not in dates, dates
+    assert fomc_desk.resolve_meeting(
+        {"source": "fed_press", "headline": "Federal Reserve issues FOMC statement",
+         "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm"},
+        now=after_edt_midnight) is None
+
+    # EST side, where the two agree: the retry window still names December's day.
+    est_tick = datetime(2026, 12, 10, 0, 30, tzinfo=timezone.utc)
+    assert "2026-12-09" in fomc_desk._et_candidate_dates(est_tick)
 
 
 def test_trigger_predicate_is_narrow():
@@ -1084,8 +1511,15 @@ def test_no_prior_statement_stores_the_baseline_and_posts_nothing(
     assert any(ln.startswith("::warning title=fomc-no-baseline") for ln in lines)
 
 
-def test_dry_run_writes_no_queue(monkeypatch, seeded_root, desk_cfg, july_page):
-    """`--dry-run` on the press wire must not enqueue or claim the meeting."""
+def test_dry_run_writes_no_queue_and_no_store(
+    monkeypatch, seeded_root, desk_cfg, july_page, hosted_card,
+):
+    """`--dry-run` must not enqueue, claim the meeting, OR touch the store.
+
+    SURVIVING MUTATION THE OLD TEST MISSED: collect() wrote the store
+    unconditionally. The press wire has a --dry-run mode, so a read-only rehearsal
+    was overwriting the very file the NEXT meeting diffs against.
+    """
     _stub_waterfall(monkeypatch, [CLEAN_REPLY])
     report = fomc_desk.fire(date_str=JULY, root=seeded_root, cfg=desk_cfg,
                             now=NOW, html_text=july_page, dry_run=True)
@@ -1097,12 +1531,36 @@ def test_dry_run_writes_no_queue(monkeypatch, seeded_root, desk_cfg, july_page):
     assert outbox.read_items_all(seeded_root) == []
     assert not fomc_statements.is_collected(JULY, seeded_root), \
         "a dry run may not consume the one firing this meeting gets"
+    assert fomc_statements.read_statement(JULY, seeded_root) == [], \
+        "a dry run may not write the store"
+    assert fomc_statements.ledger_rows(seeded_root) == []
+    # And the June baseline it read is byte-identical to the committed seed.
+    assert fomc_statements.read_statement(JUNE, seeded_root) == \
+        fomc_statements.read_statement(JUNE, ROOT)
 
 
-def test_fire_never_raises_on_a_broken_renderer(
-    monkeypatch, seeded_root, desk_cfg, july_page,
+def test_dry_run_on_a_missing_baseline_writes_nothing_either(
+    monkeypatch, tmp_path, desk_cfg, july_page,
 ):
-    """The desk fails soft. A wire tick outranks a card."""
+    """The no_prior_statement path also has a ledger write to suppress."""
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    report = fomc_desk.fire(date_str=JULY, root=tmp_path, cfg=desk_cfg, now=NOW,
+                            html_text=july_page, dry_run=True)
+    assert report["reason"] == "no_prior_statement"
+    assert fomc_statements.ledger_rows(tmp_path) == []
+    assert fomc_statements.read_statement(JULY, tmp_path) == []
+
+
+def test_a_broken_renderer_skips_the_flagship_but_the_relay_STILL_SHIPS(
+    monkeypatch, seeded_root, desk_cfg, july_page, capsys,
+):
+    """M5. "A picture may degrade, never block" — structurally, not by inspection.
+
+    SURVIVING MUTATION THE OLD TEST ENSHRINED: the old test asserted
+    fired=False, i.e. it pinned the DEFECT while its own docstring claimed the
+    opposite. An exception in the card path propagated past the relay emit and
+    killed both posts.
+    """
     _stub_waterfall(monkeypatch, [CLEAN_REPLY])
     from engine.marketing import fomc_card
 
@@ -1112,8 +1570,107 @@ def test_fire_never_raises_on_a_broken_renderer(
     monkeypatch.setattr(fomc_card, "render_fomc_card", _boom)
     report = fomc_desk.fire(date_str=JULY, root=seeded_root, cfg=desk_cfg,
                             now=NOW, html_text=july_page)
-    assert report["fired"] is False
-    assert report["reason"].startswith("error:")
+    assert report["fired"] is True, "the relay must still go out"
+    assert [i["fomc_role"] for i in report["emitted"]] == ["relay"]
+    assert report["emitted"][0]["account"] == "mastermind_news"
+    assert report["emitted"][0]["text"] == CLEAN_RELAY
+    lines = capsys.readouterr().out.splitlines()
+    assert any(ln.startswith("::warning title=fomc-analysis-post-failed")
+               for ln in lines), lines
+
+
+def test_an_unhosted_card_skips_the_flagship_but_the_relay_STILL_SHIPS(
+    monkeypatch, seeded_root, desk_cfg, july_page, capsys,
+):
+    """M6. A hook with no card is a post about nothing, and loses the analysis."""
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    from engine.marketing import media_publish
+
+    # publish_card succeeds locally but cannot reach R2 — the real failure shape.
+    monkeypatch.setattr(
+        media_publish, "publish_card",
+        lambda svg, **kw: {"svg_path": "data/marketing/outbox/media/x.svg",
+                           "media_png_path": "data/marketing/outbox/media/x.png",
+                           "media_render": "svg_raster", "media_url": None})
+    report = fomc_desk.fire(date_str=JULY, root=seeded_root, cfg=desk_cfg,
+                            now=NOW, html_text=july_page)
+    assert report["fired"] is True
+    assert report["card_hosted"] is False
+    assert [i["fomc_role"] for i in report["emitted"]] == ["relay"]
+    lines = capsys.readouterr().out.splitlines()
+    assert any(ln.startswith("::warning title=fomc-card-unhosted") for ln in lines)
+
+
+def test_a_hosted_card_ships_the_flagship(monkeypatch, seeded_root, desk_cfg,
+                                          july_page):
+    """The positive control for the two tests above."""
+    _stub_waterfall(monkeypatch, [CLEAN_REPLY])
+    from engine.marketing import media_publish
+
+    monkeypatch.setattr(
+        media_publish, "publish_card",
+        lambda svg, **kw: {"svg_path": "data/marketing/outbox/media/x.svg",
+                           "media_png_path": "data/marketing/outbox/media/x.png",
+                           "media_render": "svg_raster",
+                           "media_url": "https://cdn.example.com/x.png"})
+    report = fomc_desk.fire(date_str=JULY, root=seeded_root, cfg=desk_cfg,
+                            now=NOW, html_text=july_page)
+    assert report["card_hosted"] is True
+    by_role = {i["fomc_role"]: i for i in report["emitted"]}
+    assert set(by_role) == {"analysis", "relay"}
+    assert by_role["analysis"]["media"][0]["media_url"] == \
+        "https://cdn.example.com/x.png"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The environment this lane actually runs in
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_press_wire_workflow_covers_the_store():
+    """The press-wire workflow must be able to READ and WRITE the desk's store.
+
+    THE BLOCKER THIS PINS. `.github/workflows/marketing-press-wire.yml` runs this
+    desk on ubuntu with a SPARSE CHECKOUT, every 5 minutes, and stages only its own
+    paths. The store originally lived at `data/fomc/`, which is in neither list. On
+    the live 2026-09-16 firing that means: the baseline statement and the ledger are
+    not on disk, so every tick reads [] and refuses for `no_prior_statement`;
+    federalreserve.gov is fetched 288 times; every collected file is discarded at
+    job end, so the NEXT meeting has no baseline either; and the ledger never
+    survives a tick, so "one firing per meeting" is not true.
+
+    None of that is visible from inside the module, and no unit test with a
+    tmp_path root can see it — which is exactly why this string-level check on the
+    YAML exists.
+    """
+    workflow = (ROOT / ".github" / "workflows" / "marketing-press-wire.yml")
+    text = workflow.read_text(encoding="utf-8")
+    store_root = fomc_statements.STORE_ROOT.as_posix()   # data/marketing/fomc
+
+    # READ: some prefix of the store root is in the sparse-checkout cone.
+    cone = text.split("sparse-checkout: |", 1)[1].split("token:", 1)[0]
+    cone_paths = [ln.strip() for ln in cone.splitlines() if ln.strip()]
+    assert any(store_root == p or store_root.startswith(p.rstrip("/") + "/")
+               for p in cone_paths), (
+        f"{store_root} is outside the sparse cone {cone_paths}: the desk would "
+        "read no baseline and no ledger on the runner")
+
+    # WRITE: the store root (or a prefix of it) is staged for commit.
+    staged = re.findall(r"git add (\S+)", text)
+    assert any(store_root == p or store_root.startswith(p.rstrip("/") + "/")
+               for p in staged), (
+        f"{store_root} is never staged ({staged}): everything the desk collects "
+        "is discarded when the job ends")
+
+    # And the store is NOT at the old, uncovered location.
+    assert not (ROOT / "data" / "fomc").exists(), \
+        "the pre-relocation store is still on disk"
+
+
+def test_committed_store_is_where_the_module_says_it_is():
+    for date_str in (JUNE, JULY):
+        path = ROOT / fomc_statements.STORE_DIR / f"{date_str}.txt"
+        assert path.exists(), path
+    assert (ROOT / fomc_statements.LEDGER_PATH).exists()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1185,7 +1742,7 @@ def test_routing_never_asks_about_an_undeclared_class(monkeypatch):
 
 
 def test_colliding_desks_keep_only_the_analysis(
-    monkeypatch, seeded_root, july_page, capsys,
+    monkeypatch, seeded_root, july_page, capsys, hosted_card,
 ):
     """One desk does not post the same fact twice in two registers."""
     _stub_waterfall(monkeypatch, [CLEAN_REPLY])

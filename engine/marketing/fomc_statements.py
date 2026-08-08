@@ -74,8 +74,27 @@ _FOMC_2026_FALLBACK: tuple[str, ...] = (
 STATEMENT_RELEASE_ET = "14:00"
 
 #: Where the store lives, relative to the repo root.
-STORE_DIR = Path("data") / "fomc" / "statements"
-LEDGER_PATH = Path("data") / "fomc" / "statements.jsonl"
+#:
+#: UNDER data/marketing/ ON PURPOSE, AND THIS IS LOAD-BEARING.
+#: `.github/workflows/marketing-press-wire.yml` runs this desk on ubuntu with a
+#: SPARSE CHECKOUT every 5 minutes, and its cone is engine/scripts/lib/config/
+#: data-marketing/site-live. A store at `data/fomc/` is outside that cone, so on
+#: a live decision day the prior statement and the ledger would simply not be on
+#: disk: every tick would read [] for the baseline, refuse for
+#: `no_prior_statement`, re-fetch federalreserve.gov, and throw the result away
+#: at job end — 288 GETs, zero posts, no idempotency (the ledger never survives a
+#: tick either), and the NEXT meeting left with no baseline as well.
+#:
+#: `data/marketing` is already in the cone, so the read path costs nothing. The
+#: WRITE path still has to be declared: the workflow stages only this lane's own
+#: paths (its "ledger law" comment), so `data/marketing/fomc` is named in its
+#: `git add` list. Both halves are pinned by
+#: tests/test_marketing_fomc_desk.py::test_press_wire_workflow_covers_the_store,
+#: because this coupling is invisible from inside the module and it is exactly
+#: what would have shipped a silently dead lane.
+STORE_ROOT = Path("data") / "marketing" / "fomc"
+STORE_DIR = STORE_ROOT / "statements"
+LEDGER_PATH = STORE_ROOT / "statements.jsonl"
 
 #: Monetary-policy press releases are `monetary<YYYYMMDD>a.htm`. The trailing
 #: `a` is the Fed's own release-letter suffix (the Implementation Note that ships
@@ -422,13 +441,20 @@ def collect(
     now: datetime | None = None,
     timeout_s: int = _FETCH_TIMEOUT_S,
     html_text: str | None = None,
+    dry_run: bool = False,
 ) -> dict | None:
     """Fetch, extract and STORE the statement for a decision date.
 
-    Writes ``data/fomc/statements/<date>.txt``. Does NOT write the ledger — that
-    row is the desk's own record of a completed firing and is appended by
-    :func:`record_collection` after the posts are enqueued, so an interrupted
-    firing retries on the next tick instead of being remembered as done.
+    Writes ``data/marketing/fomc/statements/<date>.txt``. Does NOT write the
+    ledger — that row is the desk's own record of a completed firing and is
+    appended by :func:`record_collection` after the posts are enqueued, so an
+    interrupted firing retries on the next tick instead of being remembered as
+    done.
+
+    `dry_run` suppresses the store write. It is not a nicety: the press wire has a
+    `--dry-run` mode, and a dry tick that wrote the store would OVERWRITE the
+    baseline the next real meeting diffs against — a read-only rehearsal silently
+    mutating the one file the lane's product depends on.
 
     `url` overrides the derived press-release URL (the press wire hands us the
     link straight off the Fed's RSS item, which is more authoritative than a
@@ -456,9 +482,10 @@ def collect(
         return None
 
     text = statement_text(paragraphs)
-    path = store_path(date_str, root)
-    if path is not None:
-        _atomic_write(path, text + "\n")
+    if not dry_run:
+        path = store_path(date_str, root)
+        if path is not None:
+            _atomic_write(path, text + "\n")
 
     ts = (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {

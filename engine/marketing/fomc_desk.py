@@ -158,6 +158,12 @@ def build_fact_sheet(
             "dissenters": facts.get("dissenters"),
             "dissent_preference": facts.get("dissent_preference"),
             "dissent_size_percentage_points": facts.get("dissent_size"),
+            # PER-GROUP truth. A mixed dissent block (2019-09-18: two members
+            # wanted a hold, one wanted a deeper cut) leaves the flat
+            # `dissent_preference` None on purpose, and the groups are the only
+            # place the real directions exist. Without them the model would be
+            # handed three names and no way to say anything true about them.
+            "dissent_groups": facts.get("dissent_groups"),
         },
         "diff_summary": {
             "sentences_now": diff.get("current_sentences"),
@@ -200,6 +206,9 @@ def fact_sheet_text(sheet: dict) -> str:
         f"  dissenters preferred to: {d.get('dissent_preference')}",
         f"  dissent size (percentage points): "
         f"{d.get('dissent_size_percentage_points')}",
+        f"  dissent groups (each group's OWN preference; when the groups "
+        f"disagree the single 'preferred to' above is None and you may NOT "
+        f"attribute one direction to all of them): {d.get('dissent_groups')}",
         "",
         "DIFF vs THE LAST STATEMENT:",
         f"  sentences in this statement: {s.get('sentences_now')}",
@@ -282,7 +291,10 @@ def build_system_prompt() -> str:
 def build_user_message(sheet: dict) -> str:
     """The user turn: the fact sheet, and the numbers the copy may use."""
     corpus = fact_sheet_text(sheet)
-    allowed = sorted(_numbers_in(corpus), key=lambda s: (-len(s), s))
+    # THE SAME SET THE VALIDATOR ENFORCES (_corpus_tokens), not a looser cousin.
+    # Advertising a number the validator will reject is a trap that costs a repair
+    # turn and blames the model for obeying us.
+    allowed = sorted(_corpus_tokens(corpus), key=lambda s: (-len(s), s))
     return (
         f"{corpus}\n"
         "\n"
@@ -370,34 +382,87 @@ def _normalize_numbers(text: str) -> str:
     return re.sub(r"\s+", " ", out).lower()
 
 
+#: ISO dates in the fact sheet's own header. EXCLUDED from the traceable corpus:
+#: "2026-07-29" donates 2026, 07, 29, 7 and 9 as free integers to any copy that
+#: wants them, which is how a fabricated figure gets laundered by our own
+#: bookkeeping. The copy never needs to print an ISO date.
+_ISO_DATE_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+
+#: Spelled-out numbers, scanned ONLY in a quantitative construction (see
+#: `_SPELLED_USE_RE`). "Nine of twelve members" is a claim about a vote count and
+#: must trace; "one phrase of policy language" is English and must not be dragged
+#: into a numeric audit.
+_SPELLED: dict[str, int] = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
+_COUNTED_NOUNS = (
+    "members", "sentences", "dissenters", "participants", "votes", "voters",
+    "paragraphs", "officials", "policymakers", "governors", "presidents",
+)
+_SPELLED_USE_RE = re.compile(
+    r"\b(" + "|".join(_SPELLED) + r")\b\s+(?:of\b|(?:" +
+    "|".join(_COUNTED_NOUNS) + r")\b)", re.IGNORECASE)
+
+
 def _numbers_in(text: str) -> set[str]:
     return set(_NUM_RE.findall(_normalize_numbers(text)))
 
 
+def _corpus_tokens(corpus: str) -> set[str]:
+    """Every number the copy is ALLOWED to write, as tokens.
+
+    TOKEN MEMBERSHIP, NOT SUBSTRING CONTAINMENT. The first version asked
+    `token in normalized_corpus`, which let 14 of the integers 0-99 through free:
+    "7" and "9" ride inside the header's own "2026-07-29", "2" and "0" inside
+    "2026", and so on. A fabricated market probability only has to collide with
+    one of those to pass. Tokenising both sides closes it.
+
+    SUB-TOKENS ARE EXPANDED, deliberately. The corpus writes the vote as one token
+    "9-3", so a legitimate sentence saying "the vote was 9 to 3" would otherwise be
+    rejected — a false positive that costs a repair turn and can cost the flagship.
+    A compound the corpus gave us may be decomposed; a number it never mentioned in
+    any form still cannot appear.
+    """
+    body = _ISO_DATE_RE.sub(" ", str(corpus or ""))
+    tokens: set[str] = set()
+    for token in _NUM_RE.findall(_normalize_numbers(body)):
+        tokens.add(token)
+        # "3-1/2" -> {"3", "1/2", "1", "2"};  "9-3" -> {"9", "3"}
+        for piece in re.split(r"[-/]", token):
+            if piece:
+                tokens.add(piece)
+        for piece in re.split(r"-", token):
+            if "/" in piece:
+                tokens.add(piece)
+    return tokens
+
+
 def untraceable_numbers(text: str, corpus: str) -> list[str]:
-    """Numbers in *text* that do not appear in *corpus*, in order of appearance.
+    """Numbers in *text* with no source in *corpus*, in order of appearance.
 
     THE INVENTION THIS CATCHES. A model writing about a rate decision reaches for
     the market's reaction ("traders now price a 70% chance of a September cut") as
     naturally as it reaches for the statement, and none of that is in the
-    statement. Checking every digit run against the material we supplied is a
-    cheap, total guard: a number we did not give it cannot appear.
-
-    Substring containment is deliberate, not laziness. "9-3" must match the
-    statement's "9 - 3", and "3-1/2" must match inside "3-1/2 to 3-3/4 percent" —
-    both fold to the same normalised form. It admits a false NEGATIVE (a "2" that
-    happens to occur somewhere), which is the safe direction: the failure being
-    guarded is a number with no source at all.
+    statement. Every number the copy writes must trace to the material we handed
+    it — digits, and spelled-out counts in a quantitative construction.
     """
-    haystack = _normalize_numbers(corpus)
+    allowed = _corpus_tokens(corpus)
     bad: list[str] = []
     seen: set[str] = set()
     for token in _NUM_RE.findall(_normalize_numbers(text)):
         if token in seen:
             continue
         seen.add(token)
-        if token not in haystack:
+        if token not in allowed:
             bad.append(token)
+    for match in _SPELLED_USE_RE.finditer(str(text or "")):
+        word = match.group(1).lower()
+        as_int = str(_SPELLED[word])
+        if word in seen or as_int in allowed:
+            continue
+        seen.add(word)
+        bad.append(f"{word} ({as_int})")
     return bad
 
 
@@ -405,11 +470,19 @@ def untraceable_numbers(text: str, corpus: str) -> list[str]:
 #: (copywriter.banned_language, applied separately) already carry the long list,
 #: and these are the two families a rate-decision post reaches for that the house
 #: list does not name.
+#: "..." inside a tell means "up to 30 characters of anything" — the market-pricing
+#: constructions are split by a number the copy inserts ("see a 70 percent chance"),
+#: so a literal phrase cannot catch them.
 _FORECAST_TELLS: tuple[str, ...] = (
     "we expect", "i expect", "will likely", "likely to cut", "likely to raise",
     "probability", "odds of", "priced in", "prices in", "our forecast",
     "we forecast", "next meeting will", "expect a cut", "expect a hike",
     "should cut", "should raise", "base case",
+    # Measured misses: the market-pricing family. This lane reads a STATEMENT and
+    # the statement never says what anything is priced at, so every one of these
+    # is necessarily an import from outside the material.
+    "priced a", "had priced", "pricing implies", "chance of", "see a ... chance",
+    "sees a ... chance", "pricing in", "market expects", "markets expect",
 )
 _ADVICE_TELLS: tuple[str, ...] = (
     "you should", "you need to", "buy ", "sell ", "position for",
@@ -432,9 +505,12 @@ _STANCE_TELLS: tuple[str, ...] = (
 #: "myriad" and "i" inside anything are the same bug. Every tell here is matched
 #: as a whole word or whole phrase.
 def _tell_pattern(tell: str) -> re.Pattern:
-    body = re.escape(tell.strip())
-    left = r"\b" if tell.strip()[:1].isalnum() else ""
-    right = r"\b" if tell.strip()[-1:].isalnum() else ""
+    stem = tell.strip()
+    # "see a ... chance" -> a bounded gap. Bounded on purpose: an unbounded .* would
+    # match across whole paragraphs and flag copy that never made the claim.
+    body = r".{0,30}".join(re.escape(part.strip()) for part in stem.split("..."))
+    left = r"\b" if stem[:1].isalnum() else ""
+    right = r"\b" if stem[-1:].isalnum() else ""
     return re.compile(f"{left}{body}{right}", re.IGNORECASE)
 
 
@@ -534,15 +610,24 @@ def validate_copy(parsed: dict, sheet: dict) -> dict:
             result["relay"].append(
                 f"relay: the wire account takes no stance, and this reads as "
                 f"one: {tell}")
+        # TOKEN MEMBERSHIP, not substring. A single-digit head ("0" of the ZIRP
+        # "0 to 1/4 percent") or a single-digit vote ("9") is a substring of almost
+        # any number, so `in` made both of these guards vacuous exactly where the
+        # numbers are smallest. The relay's own tokens are compared as tokens.
+        relay_tokens = _numbers_in(relay)
+        for token in list(relay_tokens):
+            for piece in re.split(r"[-/]", token):
+                if piece:
+                    relay_tokens.add(piece)
         facts = (sheet or {}).get("decision") or {}
         target = str(facts.get("target_range") or "")
         if target:
-            head = _normalize_numbers(target).split(" to ")[0]
-            if head and head not in _normalize_numbers(relay):
+            head = _normalize_numbers(target).split(" to ")[0].strip()
+            if head and head not in relay_tokens:
                 result["relay"].append("relay: does not state the target range")
         vote = facts.get("vote")
         if isinstance(vote, dict) and vote.get("for") is not None:
-            if str(vote.get("for")) not in _normalize_numbers(relay):
+            if str(vote.get("for")) not in relay_tokens:
                 result["relay"].append("relay: does not state the vote")
     return result
 
@@ -822,25 +907,38 @@ def resolve_accounts(cfg: dict | None, *, root: Path | str | None = None) -> dic
 
 def _card_media(
     svg: str, *, item_id: str, as_of: str, root: Path, dry_run: bool
-) -> list[dict]:
-    """Write the card, raster it, publish the PNG. Returns the media[] list.
+) -> tuple[list[dict], bool]:
+    """Write the card, raster it, publish the PNG. -> (media[], hosted?).
 
     Mirrors press_lane._host_card_media exactly, through the SAME
     media_publish.publish_card seam, so the posted PNG is a raster of the same
-    SVG the admin preview shows. A card that cannot be hosted still leaves its
-    local pointer for scripts/marketing_media_backfill.py to upload later.
+    SVG the admin preview shows.
+
+    `hosted` is the second half of the M6 contract and the caller MUST honour it.
+    On this lane the analysis lives ONLY on the card: a flagship post whose card
+    has no public URL is a hook pointing at nothing, with the entire 2-4 paragraph
+    argument silently discarded (Buffer/X can attach a HOSTED image only). So an
+    unhosted card SKIPS the flagship rather than shipping a gutted one — the relay
+    is unaffected either way.
+
+    `path` is only claimed when publish_card reports the SVG actually landed, so
+    the sidecar pointer scripts/marketing_media_backfill.py reads can never
+    dangle. Under dry_run nothing is written or uploaded and `hosted` is reported
+    True, because a rehearsal is not evidence about R2.
     """
     rel_svg = f"data/marketing/outbox/media/{as_of}/{item_id}.svg"
     entry: dict = {"kind": "chart_svg", "path": rel_svg, "chart_id": item_id}
-    if not svg or dry_run:
-        return [entry]
+    if not svg:
+        return [entry], False
+    if dry_run:
+        return [entry], True
     try:
         from engine.marketing.media_publish import publish_card  # noqa: PLC0415
         published = publish_card(svg, chart_id=item_id, as_of=as_of, root=root) or {}
     except Exception as exc:  # noqa: BLE001 — a picture may degrade, never block
         print(f"::warning title=fomc-card-publish-failed::{item_id}: "
               f"{type(exc).__name__}: {exc}", flush=True)
-        return [entry]
+        return [entry], False
     if published.get("svg_path"):
         entry["path"] = published["svg_path"]
     if published.get("media_png_path"):
@@ -850,11 +948,12 @@ def _card_media(
     url = str(published.get("media_url") or "").strip()
     if url.lower().startswith(("http://", "https://")):
         entry["media_url"] = url
-    else:
-        print("::warning title=fomc-card-unhosted::"
-              f"{item_id}: the diff card has no public URL, so the analysis post "
-              "would ship without the card that carries its analysis", flush=True)
-    return [entry]
+        return [entry], True
+    print("::warning title=fomc-card-unhosted::"
+          f"{item_id}: the diff card has no public URL, so the flagship analysis "
+          "post is SKIPPED rather than shipping a hook with no card and losing "
+          "the analysis. The relay still ships.", flush=True)
+    return [entry], False
 
 
 def emit_item(
@@ -1021,7 +1120,8 @@ def fire(
             return report
 
         collected = fomc_statements.collect(
-            date_str, url=url, root=repo_root, now=ts, html_text=html_text)
+            date_str, url=url, root=repo_root, now=ts, html_text=html_text,
+            dry_run=dry_run)
         if not collected:
             report["reason"] = "statement_unreadable"
             return report
@@ -1039,9 +1139,10 @@ def fire(
                   "stored as the next meeting's baseline and nothing is posted",
                   flush=True)
             report["reason"] = "no_prior_statement"
-            fomc_statements.record_collection(
-                collected, root=repo_root,
-                extra={"emitted": [], "mode": "no_prior_statement"})
+            if not dry_run:
+                fomc_statements.record_collection(
+                    collected, root=repo_root,
+                    extra={"emitted": [], "mode": "no_prior_statement"})
             return report
 
         diff = fomc_diff.diff_statements(prior, current)
@@ -1074,47 +1175,77 @@ def fire(
         violations = written.get("violations") or {}
 
         # ── The FLAGSHIP analysis post (LLM-required) ────────────────────────
-        analysis_ok = (
+        copy_ok = (
             bool(written.get("analysis")) and bool(str(written.get("hook") or "").strip())
             and not violations.get("analysis") and not violations.get("hook")
         )
-        if analysis_ok:
-            from engine.marketing.fomc_card import render_fomc_card  # noqa: PLC0415
+        analysis_ok = copy_ok
+        if copy_ok:
+            # THE FLAGSHIP'S FAILURES ARE THE FLAGSHIP'S ALONE (M5/M6).
+            #
+            # This whole block is wrapped because everything in it is optional to
+            # the RELAY and none of it may take the relay down. `render_fomc_card`
+            # is itself fail-soft, but "the renderer cannot raise" is a property of
+            # today's renderer, not a law of the lane — and the first version put
+            # this code on the relay's only path, so one exception here killed both
+            # posts while the module docstring promised "a picture may degrade,
+            # never block". The wrap makes the promise true structurally instead of
+            # by inspection.
+            try:
+                from engine.marketing.fomc_card import render_fomc_card  # noqa: PLC0415
 
-            fit: dict = {}
-            svg = render_fomc_card(
-                date_str=date_str,
-                decision_line=fomc_diff.decision_line(facts),
-                analysis_paragraphs=list(written["analysis"]),
-                highlights=highlight_rows,
-                facts=facts,
-                unchanged_count=diff["unchanged_count"],
-                prior_date=prior_date,
-                fit=fit,
-            )
-            report["fit"] = fit
-            supplied = int(fit.get("paragraphs_supplied") or 0)
-            drawn = int(fit.get("paragraphs_drawn") or 0)
-            if supplied and drawn < supplied:
-                # The analysis IS the product on this post. A dropped paragraph is
-                # a silent content loss, so it is announced rather than absorbed.
-                print("::warning title=fomc-card-analysis-truncated::"
-                      f"{date_str}: the card drew {drawn} of {supplied} analysis "
-                      "paragraphs; the rest did not fit", flush=True)
-            item_id = f"fomc-{date_str}"
-            media = _card_media(svg, item_id=item_id, as_of=as_of,
-                                root=repo_root, dry_run=dry_run)
-            item = emit_item(
-                role=ROLE_ANALYSIS, account=accounts["analysis"],
-                text=str(written["hook"]).strip(), as_of=as_of, date_str=date_str,
-                source_url=source_url, root=repo_root, cfg=cfg, now=ts,
-                media=media, dry_run=dry_run, priority=1,
-            )
-            if item:
-                emitted.append(item)
-        else:
+                fit: dict = {}
+                svg = render_fomc_card(
+                    date_str=date_str,
+                    decision_line=fomc_diff.decision_line(facts),
+                    analysis_paragraphs=list(written["analysis"]),
+                    highlights=highlight_rows,
+                    facts=facts,
+                    unchanged_count=diff["unchanged_count"],
+                    prior_date=prior_date,
+                    fit=fit,
+                )
+                report["fit"] = fit
+                supplied = int(fit.get("paragraphs_supplied") or 0)
+                drawn = int(fit.get("paragraphs_drawn") or 0)
+                if supplied and drawn < supplied:
+                    # The analysis IS the product on this post. A dropped paragraph
+                    # is a silent content loss, so it is announced, not absorbed.
+                    print("::warning title=fomc-card-analysis-truncated::"
+                          f"{date_str}: the card drew {drawn} of {supplied} "
+                          "analysis paragraphs; the rest did not fit", flush=True)
+                item_id = f"fomc-{date_str}"
+                media, hosted = _card_media(svg, item_id=item_id, as_of=as_of,
+                                            root=repo_root, dry_run=dry_run)
+                report["card_hosted"] = hosted
+                if not hosted:
+                    # _card_media already printed WHY. The analysis exists only on
+                    # the card, so a hook with no card is a post about nothing.
+                    analysis_ok = False
+                else:
+                    item = emit_item(
+                        role=ROLE_ANALYSIS, account=accounts["analysis"],
+                        text=str(written["hook"]).strip(), as_of=as_of,
+                        date_str=date_str, source_url=source_url, root=repo_root,
+                        cfg=cfg, now=ts, media=media, dry_run=dry_run, priority=1,
+                    )
+                    if item:
+                        emitted.append(item)
+                    else:
+                        analysis_ok = False
+            except Exception as exc:  # noqa: BLE001 — the relay outranks the card
+                analysis_ok = False
+                report["card_hosted"] = False
+                print("::warning title=fomc-analysis-post-failed::"
+                      f"{date_str}: the flagship analysis post failed "
+                      f"({type(exc).__name__}: {exc}) and is SKIPPED. The relay "
+                      "still ships.", flush=True)
+                log.warning("fomc_desk: flagship analysis path failed for %s (%s: %s)",
+                            date_str, type(exc).__name__, exc)
+        if not copy_ok:
             # PLANNED-KIND SEMANTICS: no model copy, no house read. Counted and
-            # named, never templated.
+            # named, never templated. A card/hosting failure has already printed
+            # its own reason, so only the COPY reason is announced here.
             _why = f"writer mode={written['mode']}"
             _bad = list(violations.get("analysis") or []) + \
                 list(violations.get("hook") or [])
@@ -1217,43 +1348,84 @@ def is_statement_release(item: dict, *, source_keys: tuple[str, ...] = ("fed_pre
     return bool(_URL_RE.search(str(item.get("url") or "")))
 
 
-def meeting_date_for(item: dict, *, now: datetime | None = None) -> str | None:
-    """The decision date this item belongs to, or None.
-
-    Read from the release-letter URL when it carries one (`monetary20260916a.htm`
-    names its own date, which is the authoritative answer and survives a tick that
-    runs just after midnight UTC — 14:00 ET is 18:00 or 19:00 UTC, so the ET
-    decision day and the UTC day agree, but the URL removes the question). Falls
-    back to the tick's own ET date.
-    """
+def _url_date(item: dict) -> str | None:
+    """The date the release-letter URL names, as YYYY-MM-DD, or None."""
     m = _URL_RE.search(str((item or {}).get("url") or ""))
-    if m:
-        raw = m.group(1)
-        candidate = f"{raw[0:4]}-{raw[4:6]}-{raw[6:8]}"
-        if fomc_statements.is_decision_day(candidate):
-            return candidate
-    ts = now or datetime.now(timezone.utc)
-    for date_str in _et_candidate_dates(ts):
-        if fomc_statements.is_decision_day(date_str):
-            return date_str
-    return None
+    if not m:
+        return None
+    raw = m.group(1)
+    return f"{raw[0:4]}-{raw[4:6]}-{raw[6:8]}"
 
 
 def _et_candidate_dates(ts: datetime) -> list[str]:
-    """The UTC date and the ET date of *ts*, in that order, de-duplicated.
+    """The candidate decision dates for a tick at *ts*: the ET date, then UTC.
 
-    ET is UTC-4 or UTC-5, so a 14:00 ET release lands at 18:00/19:00 UTC on the
-    SAME calendar day. The only disagreement is a tick between 00:00 and 05:00
-    UTC, which is the previous ET day — and a tick at 00:30 UTC on the day after a
-    decision is exactly the retry a crashed firing needs, so both are candidates.
+    ET, NOT A HARDCODED OFFSET. The statement drops at 14:00 ET, which is 18:00
+    UTC under EDT and 19:00 under EST — and the September and October 2026
+    meetings are both EDT. The first version subtracted a flat 5 hours, which is
+    simply the wrong date for half the year's meetings whenever the two disagree.
+    `zoneinfo` knows the rule; we do not need to.
+
+    Both dates are candidates because a tick between 00:00 and ~05:00 UTC is still
+    the previous ET day, and a tick just after midnight UTC on the day after a
+    decision is exactly the retry a crashed firing needs.
     """
     utc = ts.astimezone(timezone.utc)
-    out = [utc.strftime("%Y-%m-%d")]
-    from datetime import timedelta  # noqa: PLC0415
-    et_guess = (utc - timedelta(hours=5)).strftime("%Y-%m-%d")
-    if et_guess not in out:
-        out.append(et_guess)
+    out: list[str] = []
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415
+        out.append(utc.astimezone(ZoneInfo("America/New_York")).strftime("%Y-%m-%d"))
+    except Exception:  # noqa: BLE001 — no tzdata: UTC alone still covers 14:00 ET
+        pass
+    utc_date = utc.strftime("%Y-%m-%d")
+    if utc_date not in out:
+        out.append(utc_date)
     return out
+
+
+def resolve_meeting(item: dict, *, now: datetime | None = None) -> dict | None:
+    """Which meeting this item is about, and WHICH URL to fetch. None to reject.
+
+    THE DEFECT THIS CLOSES (measured). The first version dated an item from the
+    URL when the URL named a decision day and otherwise fell back to the clock —
+    but it then fetched the ITEM'S url either way. So an archive link or a reissue
+    whose URL named some other date (a 2019 statement, say) arriving on a real
+    2026 decision day was dated 2026-07-29 by the clock and then fetched from the
+    2019 URL: the 2019 text was stored as `2026-07-29.txt`, diffed against June
+    2026, and posted as today's decision. Wrong statement, wrong numbers,
+    flagship account, and the meeting's one firing consumed.
+
+    The rule is now agreement or rejection:
+      • the tick's own ET/UTC dates decide which meetings are in scope at all;
+      • a URL that names a date must name one of those, or the item is rejected;
+      • when the URL names no date, the fetch uses the CANONICAL url for the
+        resolved date, never the item's.
+
+    Returns {"date": str, "url": str} or None.
+    """
+    ts = now or datetime.now(timezone.utc)
+    candidates = [d for d in _et_candidate_dates(ts)
+                  if fomc_statements.is_decision_day(d)]
+    if not candidates:
+        return None
+
+    named = _url_date(item)
+    if named is not None:
+        if named not in candidates:
+            # A statement-shaped item pointing at another day. Real causes: the
+            # archive, a reissue, a correction notice. Not an error, not ours.
+            return None
+        return {"date": named, "url": str((item or {}).get("url") or "")
+                or fomc_statements.statement_url(named) or ""}
+
+    date_str = candidates[0]
+    return {"date": date_str, "url": fomc_statements.statement_url(date_str) or ""}
+
+
+def meeting_date_for(item: dict, *, now: datetime | None = None) -> str | None:
+    """The decision date this item belongs to, or None. See :func:`resolve_meeting`."""
+    resolved = resolve_meeting(item, now=now)
+    return resolved["date"] if resolved else None
 
 
 def maybe_fire(
@@ -1280,14 +1452,23 @@ def maybe_fire(
     for item in items:
         if not is_statement_release(item):
             continue
-        date_str = meeting_date_for(item, now=ts)
-        if not date_str:
-            # An FOMC-statement-shaped headline on a day that is not a decision
-            # day. Real cause: the Fed reissues statements and minutes, and the
-            # archive is linked from the feed. Not an error.
+        resolved = resolve_meeting(item, now=ts)
+        if not resolved:
+            # A statement-shaped item that is not THIS meeting's release: an
+            # archive link, a reissue, a correction, or a day that is not a
+            # decision day at all. Real, common, and not an error.
             continue
-        if fomc_statements.is_collected(date_str, root):
-            return None
-        return fire(date_str=date_str, root=root, cfg=cfg, now=ts,
-                    url=str(item.get("url") or "") or None, dry_run=dry_run)
+        if fomc_statements.is_collected(resolved["date"], root):
+            # `continue`, not `return`: "already done" is a fact about this ITEM.
+            # DEFENSIVE RATHER THAN OBSERVABLE TODAY, and worth being honest about:
+            # a tick has exactly one meeting in scope (its two candidate dates can
+            # never both be decision days, since a meeting's decision day is its
+            # second), so every item that resolves in one tick resolves to the same
+            # date and this is true for all of them or none. It is written this way
+            # because the branch ABOVE — item rejection — is genuinely order
+            # sensitive and is tested as such, and a reader should not have to
+            # work out which of two adjacent skips was the load-bearing one.
+            continue
+        return fire(date_str=resolved["date"], root=root, cfg=cfg, now=ts,
+                    url=resolved["url"] or None, dry_run=dry_run)
     return None

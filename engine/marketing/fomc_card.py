@@ -363,39 +363,60 @@ def _render(
             parts.append(_text(pad, y, line, hero_size, "#ffffff", weight=900))
         y += u(26)
 
-    # ── Vote chip ────────────────────────────────────────────────────────────
+    # ── Vote chip + dissent line ─────────────────────────────────────────────
+    #
+    # THE TWO ARE INDEPENDENT, and the first version wrongly nested them.
+    # The "by a 9 - 3 vote" preamble is a 2026-format feature; the statements
+    # before it carry a "Voting against ..." block and NO vote count at all. With
+    # the dissent drawn inside `if vote:`, every one of those meetings produced a
+    # card that named nobody — the dissent, which is usually the whole story, was
+    # silently dropped for want of an unrelated line. Each half now draws on its
+    # own evidence, and the row exists if either does.
     vote = _vote_caption(facts)
-    if vote:
+    dissent = facts.get("dissenters") if isinstance(facts, dict) else None
+    dissent_tail = ""
+    if isinstance(dissent, list) and dissent:
+        # A DIRECTION IS ONLY DRAWN WHEN IT IS PROVEN FOR ALL OF THEM.
+        # fomc_diff.parse_dissent leaves `dissent_preference` None on a MIXED block
+        # (2019-09-18: two members wanted a hold, a third wanted a deeper cut), and
+        # the card must not paper over that by attributing one direction to every
+        # name on it. With no single direction the card names who dissented and
+        # stops, which is the whole truth available in one line.
+        surnames = [str(n).split()[-1] for n in dissent if str(n).strip()]
+        pref = str(facts.get("dissent_preference") or "").strip()
+        size_txt = str(facts.get("dissent_size") or "").strip()
+        dissent_tail = ", ".join(surnames)
+        if pref and size_txt:
+            dissent_tail = f"{dissent_tail} wanted to {pref} by {size_txt} point"
+        elif pref:
+            dissent_tail = f"{dissent_tail} wanted to {pref}"
+        else:
+            dissent_tail = f"{dissent_tail} dissented"
+
+    if vote or dissent_tail:
         chip_size = u(27)
         chip_h = u(58)
         chip_pad = u(26)
-        chip_w = chip_pad * 2 + _bc_text_w(vote, chip_size) + u(4) * len(vote)
-        dissent = facts.get("dissenters") if isinstance(facts, dict) else None
         accent = _BREAK_AMBER if (dissent or not facts.get("unanimous")) else _BREAK_GREY
-        parts.append(
-            f'<rect x="{pad:.1f}" y="{y:.1f}" width="{chip_w:.1f}" '
-            f'height="{chip_h:.1f}" rx="{chip_h / 2:.1f}" fill="none" '
-            f'stroke="{accent}" stroke-width="{max(2.0, u(3)):.1f}"/>'
-        )
-        parts.append(_text(pad + chip_pad, y + chip_h * 0.66, vote, chip_size,
-                           accent, weight=900, track=u(4)))
-        # Dissent names ride beside the chip, plain-word, never a slug.
-        if isinstance(dissent, list) and dissent:
-            surnames = [str(n).split()[-1] for n in dissent if str(n).strip()]
-            pref = str(facts.get("dissent_preference") or "").strip()
-            size_txt = str(facts.get("dissent_size") or "").strip()
-            tail = ", ".join(surnames)
-            if pref and size_txt:
-                tail = f"{tail} wanted to {pref} by {size_txt} point"
-            elif pref:
-                tail = f"{tail} wanted to {pref}"
+        chip_w = 0.0
+        if vote:
+            chip_w = chip_pad * 2 + _bc_text_w(vote, chip_size) + u(4) * len(vote)
+            parts.append(
+                f'<rect x="{pad:.1f}" y="{y:.1f}" width="{chip_w:.1f}" '
+                f'height="{chip_h:.1f}" rx="{chip_h / 2:.1f}" fill="none" '
+                f'stroke="{accent}" stroke-width="{max(2.0, u(3)):.1f}"/>'
+            )
+            parts.append(_text(pad + chip_pad, y + chip_h * 0.66, vote, chip_size,
+                               accent, weight=900, track=u(4)))
+        if dissent_tail:
+            # Beside the chip when there is one, in its place when there is not.
+            d_x = pad + (chip_w + u(24) if chip_w else 0.0)
             d_size = u(26)
             d_lines, _over = _bc_wrap_w(
-                tail, d_size, col_w - chip_w - u(24), 2, bold=False)
-            dy = y + chip_h * 0.44
+                dissent_tail, d_size, (width - pad) - d_x, 2, bold=False)
+            dy = y + chip_h * (0.44 if chip_w else 0.40)
             for line in d_lines:
-                parts.append(_text(pad + chip_w + u(24), dy, line, d_size,
-                                   _BREAK_GREY, weight=600))
+                parts.append(_text(d_x, dy, line, d_size, _BREAK_GREY, weight=600))
                 dy += d_size * 1.24
         y += chip_h + u(34)
 

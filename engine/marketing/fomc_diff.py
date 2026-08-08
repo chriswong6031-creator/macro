@@ -403,12 +403,17 @@ _RANGE_BOUND = r"(?:\d+/\d+|\d+(?:-\d+/\d+)?)"
 _RANGE_BODY = rf"{_RANGE_BOUND}\s+to\s+{_RANGE_BOUND}\s+percent"
 
 #: Anchored on the Fed's boilerplate "target range for the federal funds rate".
-#: The optional middle clause absorbs the CUT/HIKE wording ("... by 1/4
-#: percentage point to 4 to 4-1/4 percent") without loosening the anchor.
+#: The optional middle clause absorbs the CUT/HIKE wording, in BOTH orderings the
+#: archive uses:
+#:   "... by 1/4 percentage point to 4 to 4-1/4 percent"     (2024-09-18)
+#:   "... by 1/2 percentage point, to 1 to 1-1/4 percent"    (2020-03-03, comma)
+#: The comma form is here because without it the decision sentence is unreadable
+#: and the search used to fall through to a LATER sentence — see the scoping note
+#: on :func:`decision_sentence`, which is the real fix.
 _TARGET_RANGE_RE = re.compile(
     r"target range for the federal funds rate"
     r"(?:\s+by\s+[\d/\s]+percentage\s+points?)?"
-    rf"\s+(?:at|to)\s+({_RANGE_BODY})",
+    rf"\s*,?\s*(?:at|to)\s+({_RANGE_BODY})",
     re.IGNORECASE,
 )
 
@@ -418,12 +423,18 @@ _TARGET_RANGE_RE = re.compile(
 #: extracts NO action and the desk refuses rather than mapping an unlisted verb
 #: onto one of ours.
 _ACTION_RE = re.compile(
-    r"\bdecided\s+(?:today\s+)?to\s+(maintain|lower|raise)\b", re.IGNORECASE)
+    r"\bdecid(?:ed|es)\s+(?:today\s+)?to\s+(maintain|lower|raise)\b", re.IGNORECASE)
 
-#: "by a 9 - 3 vote" with any dash the Fed's typesetter uses (the live 2026 pages
-#: carry a spaced EN DASH, U+2013 — a hyphen-only pattern reads zero votes).
+#: The sentence in which the COMMITTEE acted. Everything about the decision is
+#: read from this ONE sentence and nowhere else — see :func:`decision_sentence`.
+_DECIDES_RE = re.compile(r"\bdecid(?:ed|es)\b", re.IGNORECASE)
+_FUNDS_RATE_RE = re.compile(r"federal funds rate", re.IGNORECASE)
+
+#: "by a 9 - 3 vote", "by an 11-1 vote". Any dash the Fed's typesetter uses (the
+#: live 2026 pages carry a spaced EN DASH, U+2013 — a hyphen-only pattern reads
+#: zero votes), and `an` because the archive writes "by an 11-1 vote".
 _VOTE_RE = re.compile(
-    r"by\s+a\s+(\d{1,2})\s*[-‐‑‒–—]\s*(\d{1,2})\s+vote",
+    r"by\s+an?\s+(\d{1,2})\s*[-‐‑‒–—]\s*(\d{1,2})\s+vote",
     re.IGNORECASE,
 )
 
@@ -440,16 +451,37 @@ _VOTE_RE = re.compile(
 #: The document already has an abbreviation-aware sentence splitter above, built
 #: for exactly this corpus. Using it is the fix: isolate the sentence, then read
 #: the names out of it with no period-sensitive boundary anywhere.
+#: Widened to every "Voting against ..." opener the archive uses, including the
+#: bare "the action" form and the roster COLON ("... were: Charles L. Evans and
+#: ..."). The colon matters twice over: the sentence splitter treats ':' as a
+#: boundary, so a colon form would be cut into a five-word fragment and every
+#: dissent fact would come back None. :func:`dissent_sentence` therefore reads
+#: PARAGRAPHS, not sentences — the dissent block is its own paragraph in this
+#: corpus, and reading it whole sidesteps the splitter entirely.
 _DISSENT_SENTENCE_RE = re.compile(
-    r"^Voting\s+against\s+(?:the\s+monetary\s+policy\s+action|this\s+action)\b",
+    r"^Voting\s+against\s+"
+    r"(?:the\s+monetary\s+policy\s+action|the\s+action|this\s+action)\b",
     re.IGNORECASE,
 )
 
-_DISSENT_NAMES_RE = re.compile(
-    r"\b(?:were|was)\s+(.+?)(?:,\s*who\b|\s*$)", re.IGNORECASE | re.DOTALL)
+#: Strips the opener so what remains is the roster. `were:` / `was,` included.
+_DISSENT_PREFIX_RE = re.compile(
+    r"^Voting\s+against\s+"
+    r"(?:the\s+monetary\s+policy\s+action|the\s+action|this\s+action)\s+"
+    r"(?:were|was)\s*[:,]?\s*",
+    re.IGNORECASE,
+)
 
-_DISSENT_PREF_RE = re.compile(
-    r"who\s+preferred\s+to\s+(maintain|lower|raise)\b", re.IGNORECASE)
+#: ONE dissent group: the names, then that group's OWN preference clause.
+#: Both orderings the archive uses are accepted:
+#:   "..., who preferred to lower the target range by 1/2 percentage point"
+#:   "..., who preferred at this meeting to lower the target ..."   (2019-09-18)
+_DISSENT_GROUP_RE = re.compile(
+    r"^(?P<names>.+?),\s*who\s+preferred\s+"
+    r"(?:at\s+this\s+meeting\s+)?to\s+(?P<pref>maintain|lower|raise)\b"
+    r"(?P<tail>.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
 
 _DISSENT_SIZE_RE = re.compile(
     r"by\s+(\d+(?:/\d+)?)\s+percentage\s+point", re.IGNORECASE)
@@ -472,9 +504,125 @@ def _split_names(blob: str) -> list[str]:
 
 
 def dissent_sentence(paragraphs: list[str]) -> str | None:
-    """The statement's "Voting against ..." sentence, or None."""
+    """The statement's "Voting against ..." block, or None.
+
+    Reads PARAGRAPHS, not sentences. The dissent block is its own paragraph in
+    this corpus, and the sentence splitter treats ':' as a boundary — so on the
+    roster-colon wording ("Voting against the action were: Charles L. Evans
+    and ...") a sentence-level search returns a five-word fragment and every
+    dissent fact comes back None. It also keeps a multi-GROUP block (semicolon
+    separated, see :func:`parse_dissent`) intact, which is the whole point.
+    """
+    for para in (paragraphs or []):
+        text = " ".join(str(para or "").split())
+        if _DISSENT_SENTENCE_RE.match(text):
+            return text
+    # Fall back to the sentence walk for a statement that packs the dissent into
+    # a shared paragraph. Same matcher, so nothing new is admitted.
     for sentence in statement_sentences(paragraphs or []):
         if _DISSENT_SENTENCE_RE.match(sentence.strip()):
+            return sentence.strip()
+    return None
+
+
+def parse_dissent(sentence: str) -> dict:
+    """Per-GROUP dissent parse. {"groups": [...], "dissenters": [...],
+    "preference": str|None, "size": str|None}.
+
+    THE DEFECT THIS EXISTS TO KILL (measured on the real 2019-09-18 statement).
+    That statement's dissent block carries TWO groups:
+
+        Voting against this action were Esther L. George and Eric S. Rosengren,
+        who preferred to maintain the target range at 2 to 2-1/4 percent; and
+        James Bullard, who preferred at this meeting to lower the target for the
+        federal funds rate by 1/2 percentage point to 1-1/2 to 1-3/4 percent.
+
+    The previous implementation took names up to the FIRST ", who" and then
+    searched the WHOLE block for a preference and a size. Result:
+    dissenters=['James Bullard'] with preference='maintain' and size='1/2' — a
+    named Federal Reserve official credited on a stance-free wire account with
+    the exact opposite of his actual vote. That is the worst thing this lane
+    could ship, so preference and size are now bound to each group's OWN clause
+    and never to the block.
+
+    FAIL CLOSED ON AMBIGUITY. The top-level `preference`/`size` are populated
+    only when every group that HAS a preference agrees on it. A mixed block (a
+    hawk and a dove in the same meeting, which is exactly 2019-09-18) yields
+    `preference=None`, so the relay states the vote split and nothing else, and
+    the card names the dissenters without attributing a direction to them. The
+    per-group detail is still returned for a caller that can render it honestly.
+    """
+    text = " ".join(str(sentence or "").split())
+    if not text:
+        return {"groups": [], "dissenters": [], "preference": None, "size": None}
+    roster = _DISSENT_PREFIX_RE.sub("", text).strip()
+    if roster.endswith("."):
+        roster = roster[:-1]
+
+    groups: list[dict] = []
+    for chunk in roster.split(";"):
+        part = chunk.strip()
+        # Subsequent groups are joined with "; and ..." — drop the conjunction so
+        # it cannot be read as part of the first name.
+        part = re.sub(r"^and\s+", "", part, flags=re.IGNORECASE).strip()
+        if not part:
+            continue
+        m = _DISSENT_GROUP_RE.match(part)
+        if m:
+            names = _split_names(m.group("names"))
+            size_m = _DISSENT_SIZE_RE.search(m.group("tail") or "")
+            groups.append({
+                "names": names,
+                "preference": m.group("pref").lower(),
+                "size": size_m.group(1) if size_m else None,
+            })
+        else:
+            # A group with no readable preference clause. The NAMES still count;
+            # the direction does not exist rather than being borrowed from a
+            # sibling group.
+            groups.append({"names": _split_names(part),
+                           "preference": None, "size": None})
+
+    groups = [g for g in groups if g["names"]]
+    dissenters = [n for g in groups for n in g["names"]]
+
+    prefs = {g["preference"] for g in groups if g["preference"]}
+    sizes = {g["size"] for g in groups if g["size"]}
+    # One preference across every group that stated one, and every group stated
+    # one. Anything else is ambiguous and refuses.
+    unanimous_pref = (
+        next(iter(prefs)) if len(prefs) == 1
+        and all(g["preference"] for g in groups) else None
+    )
+    unanimous_size = next(iter(sizes)) if unanimous_pref and len(sizes) == 1 else None
+    return {
+        "groups": groups,
+        "dissenters": dissenters,
+        "preference": unanimous_pref,
+        "size": unanimous_size,
+    }
+
+
+def decision_sentence(paragraphs: list[str]) -> str | None:
+    """The sentence in which the COMMITTEE acted, or None.
+
+    THE DEFECT THIS SCOPING KILLS (measured on the real 2020-03-03 statement).
+    That statement reads "...decided to lower the target range for the federal
+    funds rate by 1/2 percentage point, to 1 to 1-1/4 percent." — with a COMMA
+    before the "to". The target-range pattern did not admit the comma, so a
+    document-wide search fell through the decision sentence and matched the NEXT
+    thing that looked like a target range. In a dissent statement that next thing
+    is the DISSENTER'S PREFERRED RANGE (2019-09-18: "who preferred to maintain
+    the target range at 2 to 2-1/4 percent"), so the relay would have shipped the
+    rate the Committee voted AGAINST as the rate it set.
+
+    Both halves are needed: the comma form is now readable, AND action and range
+    are extracted from this one sentence only. Two fields that describe one
+    decision may never come from two different sentences, so when this returns
+    None both are None and the desk refuses.
+    """
+    for sentence in statement_sentences(paragraphs or []):
+        if _DECIDES_RE.search(sentence) and _FUNDS_RATE_RE.search(sentence):
             return sentence.strip()
     return None
 
@@ -487,9 +635,15 @@ def extract_facts(paragraphs: list[str]) -> dict:
         action            "maintain" | "lower" | "raise" | None
         vote              {"for": int, "against": int} | None
         dissenters        ["Beth M. Hammack", ...] | None
-        dissent_preference "raise" | "lower" | "maintain" | None
+        dissent_preference "raise" | "lower" | "maintain" | None  (see below)
         dissent_size      "1/4" | None   (percentage points)
+        dissent_groups    [{"names", "preference", "size"}, ...] | None
         unanimous         True/False | None  (None when there is no vote line)
+
+    `action` and `target_range` come from ONE sentence (:func:`decision_sentence`)
+    or from neither. `dissent_preference`/`dissent_size` are populated only when
+    every dissent group agrees; a MIXED block leaves them None and the per-group
+    detail in `dissent_groups` (:func:`parse_dissent`).
 
     NOTHING IS INFERRED FROM ABSENCE except `unanimous`, which is read off the
     vote count itself (against == 0) and is therefore not an inference at all. In
@@ -507,19 +661,23 @@ def extract_facts(paragraphs: list[str]) -> dict:
         "dissenters": None,
         "dissent_preference": None,
         "dissent_size": None,
+        "dissent_groups": None,
         "unanimous": None,
     }
     if not text:
         return facts
 
-    m = _TARGET_RANGE_RE.search(text)
-    if m:
-        facts["target_range"] = " ".join(m.group(1).split())
+    # ── The decision: ONE sentence, both fields, or neither ──────────────────
+    decision = decision_sentence(paragraphs)
+    if decision:
+        m = _ACTION_RE.search(decision)
+        if m:
+            facts["action"] = m.group(1).lower()
+        m = _TARGET_RANGE_RE.search(decision)
+        if m:
+            facts["target_range"] = " ".join(m.group(1).split())
 
-    m = _ACTION_RE.search(text)
-    if m:
-        facts["action"] = m.group(1).lower()
-
+    # ── The vote: the roll-call line, anywhere in the statement ──────────────
     m = _VOTE_RE.search(text)
     if m:
         try:
@@ -530,18 +688,15 @@ def extract_facts(paragraphs: list[str]) -> dict:
             facts["vote"] = {"for": votes_for, "against": votes_against}
             facts["unanimous"] = votes_against == 0
 
+    # ── The dissent: per-group, fail closed on a mixed block ─────────────────
     sentence = dissent_sentence(paragraphs)
     if sentence:
-        m = _DISSENT_NAMES_RE.search(sentence)
-        names = _split_names(m.group(1)) if m else []
-        if names:
-            facts["dissenters"] = names
-        pref = _DISSENT_PREF_RE.search(sentence)
-        if pref:
-            facts["dissent_preference"] = pref.group(1).lower()
-        size = _DISSENT_SIZE_RE.search(sentence)
-        if size:
-            facts["dissent_size"] = size.group(1)
+        parsed = parse_dissent(sentence)
+        if parsed["dissenters"]:
+            facts["dissenters"] = parsed["dissenters"]
+            facts["dissent_groups"] = parsed["groups"]
+            facts["dissent_preference"] = parsed["preference"]
+            facts["dissent_size"] = parsed["size"]
 
     return facts
 
