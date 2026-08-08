@@ -1657,7 +1657,7 @@ jobs:
     needs: [collect, government_revenue_projection]
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 240    # was 200 — the 2026-08-05 AND 08-06 nights were BOTH hard-cancelled at ~205m (cap + grace) on different hosts (mac-builder-5, then mac-builder-1), before the pages artifact landed → publish's "No artifacts named github-pages", two consecutive stale-site nights, and the 6-day Prophet-pick gap found 2026-08-06. Two hosts rules out one sick machine; this is workload creep plus the cold-spare law the collect job's 185→240 bump above already states: the macstudio label can fail over to a cold runner (fresh venv, no warm GHA/R2 caches), so the cap must clear the COLD pace, not the warm one. 240 = the observed ~205m kill point + 35m headroom; the job exits when its steps finish, so a larger cap costs nothing on a healthy night. The real fix is the workload trim — the cap raise buys the nights back while that lands. Prior: was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_site — W3 re-measure 2026-08-06 (never inherit step-cost labels): build_news is NO LONGER the lever; the GDELT circuit breaker (#3442, 2026-07-24) already collapsed it from ~26–29m to a measured 4.3–5.9m/night (07-27 green 5.9m, 08-03 4.3m, 08-05 4.7m, 08-06 5.4m — ~2m of that is the nightly one-time 429 ladder that arms the breaker). The band that IS creeping is build_site: ~33m (07-21 measurement) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06) — +25m in two weeks, the single largest step in the job. Profile build_site's page loop before touching anything else. Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
+    timeout-minutes: 300    # was 240 — the 2026-08-07 night died AT the raised 240 cap too (22:00:48→02:05:48, killed in the final commit/push band ~2 min from done: last step group logged 02:03:28, so the workload is now ~242m and the site commit never landed → THIRD consecutive stale-site night and the frozen /prophet surface found 2026-08-08). 300 = the observed ~242m + ~58m headroom on the same cold-spare law as before. NOT a wedge: step groups tick seconds apart through the tail band, this is workload size. build_site is NO LONGER the creep lever (back to ~24m on 08-07 after the earlier 61.7m peak — do not inherit that label); the next profile must find where the other ~80m vs the 135-160m era went before any further cap raise. Prior: was 200 — the 2026-08-05 AND 08-06 nights were BOTH hard-cancelled at ~205m (cap + grace) on different hosts (mac-builder-5, then mac-builder-1), before the pages artifact landed → publish's "No artifacts named github-pages", two consecutive stale-site nights, and the 6-day Prophet-pick gap found 2026-08-06. Two hosts rules out one sick machine; this is workload creep plus the cold-spare law the collect job's 185→240 bump above already states: the macstudio label can fail over to a cold runner (fresh venv, no warm GHA/R2 caches), so the cap must clear the COLD pace, not the warm one. 240 = the observed ~205m kill point + 35m headroom; the job exits when its steps finish, so a larger cap costs nothing on a healthy night. The real fix is the workload trim — the cap raise buys the nights back while that lands. Prior: was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_site — W3 re-measure 2026-08-06 (never inherit step-cost labels): build_news is NO LONGER the lever; the GDELT circuit breaker (#3442, 2026-07-24) already collapsed it from ~26–29m to a measured 4.3–5.9m/night (07-27 green 5.9m, 08-03 4.3m, 08-05 4.7m, 08-06 5.4m — ~2m of that is the nightly one-time 429 ladder that arms the breaker). The band that IS creeping is build_site: ~33m (07-21 measurement) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06) — +25m in two weeks, the single largest step in the job. Profile build_site's page loop before touching anything else. Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
     env:
       COLLECT_LANE: nightly   # job-level sentinel: inherited by every step; ensures all
                               # forward-ledger writers in this job (build_track_record,
@@ -1681,18 +1681,20 @@ jobs:
       - run: pip install -r requirements.txt
       - name: timings band — restores-preamble (W2)
         run: python3 scripts/nightly_timings.py mark --band restores-preamble || echo "::warning::timings band mark failed (non-fatal)"
-      - name: restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)
-        # This is intentionally BEFORE every broad Filing Forensics state build.
-        # The SEC source cache is private/ignored, so a clean nightly checkout has
-        # no accession evidence until this step restores the last read-back-verified
-        # R2 snapshot. A restore, strict-acquisition, projection, or source-sync
-        # failure must skip the later broad build/publish rather than silently
-        # replace entitled disclosure coverage with an empty/shallow state.
+      - name: restore Filing Forensics disclosure projections (hard gate)
+        # Acquire/project/sync moved to .github/workflows/filing-forensics-sec.yml
+        # (02:30 UTC) on 2026-08-08 after the inline step grew 7.4m -> 23.8m across the
+        # 08-05..08-08 engine executions with the growing immutable SEC source store
+        # (measurements in the lane file). This step now restores ONLY the 12 private
+        # disclosure projections the workbench attaches: one bounded R2 pointer GET, one
+        # bounded bundle GET, verified local writes — constant cost as the store grows.
         #
-        # The first call is restore -> acquire and refuses partial target coverage.
-        # The second is projection -> sync, with computed_at sampled only after
-        # source retrieval so its explicit clock cannot precede a receipt. The
-        # commands never render the public shell or publish private browser state.
+        # Gate contract UNCHANGED: any restore or validation failure fails this job
+        # before the broad build, so entitled disclosure coverage is never silently
+        # replaced by an empty/shallow state. A red SEC lane leaves the pointer at the
+        # last COMPLETE bundle, so the render is stale-but-complete (warn beyond 3 days,
+        # refuse beyond 21) instead of losing the night to one SEC outage. Never renders
+        # the public shell or publishes private browser state.
         env:
           R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
           R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
@@ -1700,32 +1702,9 @@ jobs:
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: |
           set -euo pipefail
-          targets=(
-            --target SMCI=0001375365
-            --target NVDA=0001045810
-            --target AAPL=0000320193
-            --target MSFT=0000789019
-            --target GOOGL=0001652044
-            --target AMZN=0001018724
-            --target META=0001326801
-            --target TSLA=0001318605
-            --target AVGO=0001730168
-            --target PLTR=0001321655
-            --target AMD=0000002488
-            --target ORCL=0001341439
-          )
-          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
-          as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
-          recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
-
-          python -m scripts.run_fundamental_forensics_wave2 \
-            "${targets[@]}" --restore --acquire --require-complete-acquisition \
-            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
-
-          computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
-          python -m scripts.run_fundamental_forensics_wave2 \
-            "${targets[@]}" --build-projections --sync \
-            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
+          now="$(python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))')"
+          python -m scripts.fundamental_forensics_disclosure_bundle \
+            --restore --targets-file config/fundamental_forensics/wave2_targets.v1.json --now "$now"
       - name: restore attention store from R2 (wiki chip reads it at render)
         # build_site.build_attention_data reads data/attention/*.parquet — git-ignored
         # since 2026-07-06, R2-hosted, kept current by the collect job's publish-back.
@@ -2242,9 +2221,20 @@ jobs:
         # site/prophet/** and data/prophet/ledger.jsonl — no extra git add needed).
         # continue-on-error: true — a prophet failure must never abort the nightly deploy.
         # R2 creds: passed when present; build_prophet skips upload gracefully when absent.
-        # Wall-time: seconds (no heavy compute; reads committed parquets + standouts JSON).
+        # Wall-time: SECONDS measured (24s on the green 2026-08-08 run, <2m every other
+        # observed night) — but on 2026-08-07 this step WEDGED pre-first-write for 173m
+        # on mac-builder-1 (run 31210097197: 23:07:57→02:00:56, cancelled AT the job cap,
+        # ZERO site/prophet|data/prophet|data/prophet_arena writes in its 02:04 commit)
+        # and, because stdout was buffered into RUNNER_TEMP and cat only on completion,
+        # the cancelled step left NO log at all. Hence belt-and-braces like the arming
+        # pass below: timeout-minutes bounds a wedge (15m ≥ 7× the worst legit night),
+        # continue-on-error keeps the bound non-fatal, and output now STREAMS
+        # (PYTHONUNBUFFERED, no temp-file buffer) so a killed step shows exactly
+        # where it died.
+        timeout-minutes: 15
         continue-on-error: true
         env:
+          PYTHONUNBUFFERED: "1"
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -2252,8 +2242,7 @@ jobs:
         run: |
           set +e
           echo "::group::build_prophet (plan refresh + ledger advancement)"
-          python -m scripts.build_prophet --publish > "$RUNNER_TEMP/prophet.log" 2>&1; rc=$?
-          cat "$RUNNER_TEMP/prophet.log"
+          python -m scripts.build_prophet --publish 2>&1; rc=$?
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"; fi
           exit 0
@@ -4062,7 +4051,7 @@ jobs:
           path: site/
       - name: timings ledger + 85% budget tripwire (W2)
         if: always()
-        run: bash scripts/ci/nightly_timings_finish.sh 240
+        run: bash scripts/ci/nightly_timings_finish.sh 300
 
   # The factor-portfolio RETURN SERIES (factors-page chart) is a ~22-min month-end
   # walk (compute_factors x ~38 month-ends x 2 universes) — it was the real engine
