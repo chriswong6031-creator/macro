@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-08-08T07:11:10.988964+00:00",
+  "generated_at": "2026-08-08T15:32:30.349934+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -192,7 +192,7 @@
           "n": 712
         },
         "mean_diff_t": 0.42,
-        "mean_diff_p": 0.6746
+        "mean_diff_p": 0.6747
       },
       "extension_drawdown": {
         "fwd_days": 63,
