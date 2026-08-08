@@ -20,6 +20,7 @@ from typing import Any, Mapping
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 
+from app import edge_client
 from engine.company_intelligence.contracts import ContractError, safe_ticker
 router = APIRouter()
 log = logging.getLogger("macro.api.company_intelligence")
@@ -205,17 +206,18 @@ def _public_projection(result: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _claimed_client_identity(request: Request) -> str:
-    """Return the claimed edge-client identity, with a safe local fallback.
+    """Return the per-visitor identity for the tight bucket, with a local fallback.
 
-    EO/CF headers are useful for a fair per-visitor bucket but are not trusted
-    for a hard abuse boundary — an attacker at the origin can rotate them.  We
-    intentionally omit arbitrary ``X-Forwarded-For`` chains, which are even
-    easier to spoof before a proxy normalizes them.
+    Resolved by app/edge_client.py, which reads only the header the edge overwrites.
+    This used to read ``EO-Client-IP`` then ``CF-Connecting-IP``; both are measured to
+    arrive carrying whatever a direct-to-origin caller sent, so the "claimed" key was
+    free to rotate per request and the tight budget below bounded nobody. It is still
+    only the tight half — ``_trusted_peer_identity`` remains the hard boundary — but a
+    caller behind the edge can no longer choose it at all.
     """
-    for header in ("eo-client-ip", "cf-connecting-ip"):
-        value = str(request.headers.get(header) or "").strip()
-        if value:
-            return value[:128]
+    resolved = edge_client.client_ip(request.headers)
+    if resolved != edge_client.UNKNOWN:
+        return resolved[:128]
     return str(request.client.host if request.client else "unknown")[:128]
 
 
