@@ -1,11 +1,11 @@
 {
   "status": "ok",
-  "checked_at": "2026-08-08T05:15:24.681453+00:00",
+  "checked_at": "2026-08-08T13:23:35.102405+00:00",
   "threshold_sessions": 3,
   "store_max": "2026-08-07",
   "n_members": 702,
   "n_stale": 0,
-  "n_behind_within_threshold": 1,
+  "n_behind_within_threshold": 0,
   "stale": {},
   "missing": [],
   "inactive": {
