@@ -278,6 +278,23 @@ space is the program's main enemy and is designed against, not hoped away. Data-
 builds. Same hypothesis class as §6.8(e): anticipatory-flow footprints before discrete
 events; mechanism-agnostic wording, A7 bounds, display-tier until gauntleted.
 
+**§6.8(f)(2) FIRST RUN VERDICT (2026-08-08, PR #4999): POSITIVE, sign-stable, era-controlled.**
+Base rates: P(next board | 连板 N) main 16.5%(N=1)→72.8%(N=6), ChiNext 16.8%→78.8%(N=5) —
+a first board alone is a **13× lift** over the 1.27% unconditional. Holdout lifts (main,
+base 1.245%), sign-stable on ALL three boards AND the ChiNext band-era control: run-up
+3.93× · dist-52w-low 3.27× · gap 3.07× · vol-z 2.58× · **sector heat 2.39×** (the cohort
+thesis) · consec-up 2.33×. The pre-registration mechanism fired correctly: f5 near-limit-prev
+(the most discovery-looking feature) printed UNSTABLE; f2 turnover a printed null (no share
+counts). Definitional integrity: the 0.2% tolerance vindicated by measurement (marginal
+events median exactly 100.000% of band = feed noise; vendor 连板 agreement 99.79% tolerant
+vs 91.13% strict). BINDING CAVEAT: 1,842-name curated store vs ~5,400 market — the 打板 game
+lives largely in omitted names; nothing here is market-wide. LICENSED next (display-tier):
+CN limit-continuation context chips (连板 N + the six stable features) on CN surfaces;
+v1 = combined-feature calibration behind §6.6 discipline. COLLECTOR PROPOSALS to operator:
+封单 order-wall (47 dates already held), closing-auction imbalance, first-touch timing.
+Data-plane defect flagged for the CN owner: china_microstructure limit_events missing
+pre-2026-07 history for 34 names while `backfill=True` claims completeness.
+
 **(g) v2-vs-v3 RULING (operator question 2026-08-08: "does 300363 mean v2 > v3?").** NO
 reversion. v3's re-ordering was measured on hundreds of episodes and cut losses; 300363 is
 n=1, and re-weighting to capture a known winner is the outcome-audition kill. Under v3 the
