@@ -2,60 +2,52 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-06T22:48:02.466701+00:00",
+  "generated_at": "2026-08-08T07:43:13.324151+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-05",
+  "state_asof": "2026-08-07",
   "tldr": [
-    "Technology stocks are leading the market rally: chip stocks still dominate, but the bond and credit markets are getting worried.",
-    "Economic reflation strengthens: Growth picked up, inflation cooled \u2014 a near-ideal economy within the second quarter.",
-    "Dollar's negative impact: A strengthening dollar is a headwind for gold, copper, and developing-country markets.",
-    "What to do: Watch carefully \u2014 don\u2019t chase the rally."
+    "Economic regime: Recovery with inflation, but growth cooling \u2014 moving toward the edge.",
+    "Drop in inflation-adjusted bond yields: falling yields give gold and long-term bonds a boost while stocks absorb the news.",
+    "Gap: corporate bond markets are nervous and the US dollar is strong, but stocks haven't reacted strongly.",
+    "What to do: Watch \u2014 don't chase."
   ],
-  "summary": "Economic reflation strengthens as growth speeds up and inflation slows, but the credit market is signaling caution.",
-  "regime_read": "The overall US economic landscape stays in a reflation phase (growth with moderate inflation), with growth strengthening and inflation cooling over the past week \u2014 an almost perfect economic balance within the second quarter. We are moving deeper into this growth\u2011with\u2011moderate\u2011inflation phase, not flipping to another environment. The main market driver is still artificial-intelligence\u2011led technology, with semiconductor stocks showing extreme outperformance.\n\nBut bond and credit markets are not as calm. The extra yield investors demand for risky company debt is widening, the usual opposite movement between stocks and bonds has broken (government bonds aren\u2019t hedging stock losses), and inflation\u2011adjusted bond yields are at levels that could choke off growth. The cross\u2011asset picture shows a split: stocks are in risk\u2011taking mode, while the credit market is flashing a warning. A strong dollar adds a drag for gold, copper, and developing\u2011country stocks, even as those assets show pockets of strength.",
+  "summary": "The US recovery with inflation is cooling; falling inflation-adjusted yields ease pressure, but caution in corporate bonds and a strong dollar keep things mixed.",
+  "regime_read": "The US economy is still in a recovery-with-inflation territory \u2014 growth is above-average and inflation remains stubborn. But confidence is low and the regime is shifting: growth has cooled from a month ago, and a few more weak economic reports could tip us toward a third-quarter environment of high inflation and slow growth. The map says recovery, but we are drifting closer to the edge.\n\nToday's main driver is a sharp drop in inflation-adjusted long-term interest rates, giving a boost to gold and long-term bonds. That eases borrowing conditions even though the central bank is holding rates steady. However, the corporate bond market is flashing caution \u2014 junk bond yield premiums are widening \u2014 and the dollar is strengthening, which usually pressures stocks. For now, stocks are absorbing this without much stress, but the gap is worth watching.",
   "conflicts": [
-    "Late\u2011economic\u2011cycle tension: Stocks stay in risk\u2011taking mode, but borrowing costs for risky companies are rising \u2014 recession risk isn\u2019t priced in.",
-    "Gold caught in a tug\u2011of\u2011war: Sticky inflation supports gold, but a strong dollar and rising inflation\u2011adjusted bond yields are heavy weights.",
-    "Dollar\u2019s drag: A firm dollar is leaning on gold, copper, and developing\u2011country stocks, even though those markets remain preferred."
+    "Stocks vs corporate bonds: Stock index is showing appetite for risk, but junk bond yield premiums are widening \u2014 a classic sign that the economic expansion may be nearing its end.",
+    "Dollar headwind: A strong dollar is normally bad for US stocks and emerging markets, but stocks haven't responded yet."
   ],
-  "rotation_check": null,
+  "rotation_check": "The sequence of the market playbook is visible: leadership is shifting away from semiconductor and memory-company stocks into software and industrial stocks, which fits the economic slowdown phase.",
   "transmission": [
-    "If risky company borrowing costs keep widening \u2192 the risk of a stock market drawdown rises, especially for rate\u2011sensitive tech stocks.",
-    "If inflation\u2011adjusted bond yields stay at 2.4% \u2014 near a five\u2011year high \u2192 growth stocks and gold face a persistent negative force."
+    "If inflation-adjusted yields keep falling \u2192 gold and long-term bonds may rally further, making borrowing conditions even looser.",
+    "If corporate bond risk premiums keep widening \u2192 stock markets eventually catch down, raising the risk of a market decline."
   ],
   "watch_items": [
-    "Monthly jobs data (August 7): A weak number would challenge the central bank\u2019s steady hand.",
-    "Consumer price data (August 12): A cooler\u2011than\u2011expected reading would confirm cooling inflation and support a risk\u2011taking mood.",
-    "Risky company borrowing costs: Further widening would raise recession alarms.",
-    "Dollar\u2019s strength measure: A break higher would intensify pressure on gold and developing\u2011country markets."
+    "Consumer prices report next Wednesday: a lower-than-expected number would support the falling-yield demand; a higher-than-expected number could reverse it.",
+    "Junk bond yield premiums: a breakout higher would signal broader stress.",
+    "Dollar: further strengthening would increase pressure on emerging markets and commodity-related stocks."
   ],
-  "confidence": "medium",
+  "confidence": "low",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Tech-led rally: Semis still dominate, but bonds and credit are getting nervous.\",\n    \"Reflation solidifies: Growth picked up, inflation cooled \u2014 Goldilocks under a Q2 hood.\",\n    \"Dollar drag: A strengthening dollar is a headwind for gold, copper, and emerging markets.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"Reflation strengthens as growth ticks up and inflation cools, but credit is flashing caution.\",\n  \"regime_read\": \"The US macro map remains in Reflation, with growth strengthening and inflation cooling over the past week \u2014 a close-to-Goldilocks re-acceleration inside a Q2 box. The transition is toward deeper Reflation, not a flip to another regime. The dominant market driver is still AI-led tech, with semiconductors showing extreme leadership.\\n\\nBut bond and credit markets are not as calm. High-yield spreads are widening, the stock-bond correlation has broken (Treasuries aren't hedging stocks), and real yields are at restrictive levels. The cross-asset read is a divergence: equities are risk-on, while the credit canary is chirping. A strong dollar adds a headwind for gold, copper, and emerging markets, even as those assets show pockets of strength.\",\n  \"conflicts\": [\n    \"Late-cycle friction: Stocks stay risk-on, but high-yield spreads are widening \u2014 recession risk isn't priced.\",\n    \"Gold crossfire: Sticky inflation props gold up, but a strong dollar and rising real yields are heavy weights.\",\n    \"Dollar drag: A firm dollar is leaning on gold, copper, and emerging-market stocks, even as those markets remain favored.\"\n  ],\n  \"transmission\": [\n    \"If high-yield spreads keep widening \u2192 equity drawdown risk rises, especially in rate-sensitive tech.\",\n    \"If real yields stay at 2.4% \u2014 near a 5-year high \u2192 growth stocks and gold face a persistent headwind.\"\n  ],\n  \"watch_items\": [\n    \"Jobs report (8/7): A weak number would challenge the Fed's steady hand.\",\n    \"CPI (8/12): A cold print would confirm cooling inflation and support risk-on.\",\n    \"High-yield spreads: Further widening would raise recession alarms.\",\n    \"Dollar index: A break higher would intensify headwinds for gold and emerging markets.\"\n  ],\n  \"confidence\": \"medium\",\n  \"theses\": [\n    {\n      \"subject\": \"VIX\",\n      \"lean\": \"fade-fear\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Credit caution has not spilled into the volatility surface yet \u2014 fear is overpriced.\",\n      \"falsifier_text\": \"VIX spikes above 20 or high-yield spreads jump sharply.\"\n    }\n  ],\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-08-07\",\n      \"label\": \"Jobs report (nonfarm payrolls)\",\n      \"kind\": \"NFP\",\n      \"note\": \"Model central estimate near zero, with a wide range from -421k to +337k.\"\n    },\n    {\n      \"date\": \"2026-08-12\",\n      \"label\": \"CPI (consumer prices)\",\n      \"kind\": \"CPI\",\n      \"note\": \"Model expects -0.05% m/m; market implied 0.2% \u2014 a miss would be cold.\"\n    },\n    {\n      \"date\": \"2026-08-13\",\n      \"label\": \"PPI (producer prices)\",\n      \"kind\": \"PPI\",\n      \"note\": \"No model projection available; watch for pipeline inflation clues.\"\n    }\n  ],\n  \"forward_read\": \"The 8/7 payrolls report is the next big test: the model's wide range signals high uncertainty, and any print below 50k could shake the Fed's steady stance. The following week's CPI is expected to be cold, with the model giving a 75% probability of a below-forecast reading \u2014 a print at -0.05% month-on-month would reinforce the Goldilocks narrative.\"\n}",
+  "raw_text": "{\n  \"tldr\": [\n    \"Regime: Reflation, but growth cooling \u2014 edging toward the border.\",\n    \"Real-rate shock: falling yields give gold and bonds a bid while equities digest.\",\n    \"Divergence: credit is nervous and the dollar is strong, but stocks haven't blinked.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"US Reflation is cooling; falling real yields ease pressure, but credit caution and a strong dollar keep things mixed.\",\n  \"regime_read\": \"The US economy is still in Reflation territory \u2014 growth is above-trend and inflation remains sticky. But confidence is low and the regime is transitioning: growth has cooled from a month ago, and a few more soft prints could tip us toward the Q3 Stagflation border. The map says Reflation, but we are drifting closer to the edge.\\n\\nToday's main driver is a real-rate shock: long-term real yields have dropped sharply, giving a boost to gold and long-duration bonds. That eases financial conditions even though the Fed is on hold. However, the corporate bond market is flashing caution \u2014 high-yield spreads are widening \u2014 and the dollar is strengthening, which usually weighs on stocks. For now, equities are absorbing this without much stress, but the divergence is worth watching.\",\n  \"conflicts\": [\n    \"Equities vs credit: Stock index is risk-on, but high-yield spreads are widening \u2014 a classic late-cycle warning.\",\n    \"Dollar headwind: A strong dollar is normally bad for US stocks and emerging markets, but equities haven't responded yet.\"\n  ],\n  \"transmission\": [\n    \"If real yields keep falling \u2192 gold and long bonds may rally further, making financial conditions even looser.\",\n    \"If credit spreads keep widening \u2192 equity markets eventually catch down, raising drawdown risk.\"\n  ],\n  \"rotation_check\": \"The playbook's unwinding sequence is visible: leadership is rotating away from semiconductors and memory into software and industrials, which fits the contraction phase.\",\n  \"watch_items\": [\n    \"CPI next Wednesday: a cold print would support the falling-yield bid; a hot print could snap it back.\",\n    \"High-yield spreads: a break higher would signal broader stress.\",\n    \"Dollar: further strengthening would tighten the vise on EM and commodity stocks.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    { \"date\": \"2026-08-12\", \"label\": \"CPI (consumer prices)\", \"kind\": \"CPI\", \"note\": \"Model sees a cold reading as very likely; could anchor the falling real yield narrative.\" },\n    { \"date\": \"2026-08-13\", \"label\": \"PPI (producer prices)\", \"kind\": \"PPI\", \"note\": \"Model leans hot, but PPI is less market-moving; focus remains on CPI.\" }\n  ],\n  \"forward_read\": \"Next week's CPI release on Wednesday is the main event: the model strongly leans toward a cold reading, which would support the easing narrative. PPI the day after leans hot, but investors typically focus more on consumer prices.\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
   "forward_watch": [
     {
-      "date": "2026-08-07",
-      "label": "Jobs report (nonfarm payrolls)",
-      "kind": "Employment report",
-      "note": "Our model\u2019s central estimate is near zero, with forecasts ranging widely from a loss of 421,000 to a gain of 337,000."
-    },
-    {
       "date": "2026-08-12",
-      "label": "Consumer price index",
-      "kind": "Consumer prices",
-      "note": "Our model expects a small 0.05% month\u2011on\u2011month decline; market expectations are for a 0.2% rise \u2014 a miss would be a very"
+      "label": "Consumer prices report",
+      "kind": "consumer prices",
+      "note": "Model sees a lower-than-expected reading as very likely; could anchor the story of falling inflation-adjusted yields."
     },
     {
       "date": "2026-08-13",
-      "label": "Producer price index",
-      "kind": "Producer prices",
-      "note": "No model forecast available; watch for clues on future consumer inflation."
+      "label": "Producer prices report",
+      "kind": "producer prices",
+      "note": "Model leans toward a higher-than-expected number, but producer prices are less market-moving; focus remains on consumer "
     }
   ],
-  "forward_read": "The August 7 jobs report is the next big test: our model\u2019s wide forecast range signals high uncertainty, and any number below 50,000 new jobs could shake the central bank\u2019s steady stance. The following week\u2019s consumer price data is expected to be cooler than forecasts, with our model giving a 75% chance of a reading below market expectations \u2014 a 0.05% monthly decline would reinforce the narrative of a just\u2011right economy.",
+  "forward_read": "Next week's consumer prices report on Wednesday is the main event: the model strongly leans toward a lower-than-expected reading, which would support the expectation of easier financial conditions. The producer prices report the day after leans higher, but investors typically focus more on consumer prices.",
   "nw_context_used": true,
   "cortex_status": "degraded",
   "refresh_days": 1,
@@ -104,35 +96,33 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "AI / semis",
-      "value_zh": "AI / semis",
+      "value_en": "Real-rate shock",
+      "value_zh": "Real-rate shock",
       "tone": "info"
     }
   ],
   "zh": {
-    "summary": "\u7ecf\u6d4e\u518d\u901a\u80c0\u52bf\u5934\u589e\u5f3a\uff0c\u589e\u957f\u52a0\u5feb\u800c\u901a\u80c0\u653e\u7f13\uff0c\u4f46\u4fe1\u8d37\u5e02\u573a\u53d1\u51fa\u8b66\u793a\u4fe1\u53f7\u3002",
-    "regime_read": "\u7f8e\u56fd\u6574\u4f53\u7ecf\u6d4e\u683c\u5c40\u4ecd\u5904\u4e8e\u518d\u901a\u80c0\u9636\u6bb5\uff08\u589e\u957f\u4f34\u968f\u6e29\u548c\u901a\u80c0\uff09\uff0c\u8fc7\u53bb\u4e00\u5468\u589e\u957f\u8d70\u5f3a\u800c\u901a\u80c0\u964d\u6e29\u2014\u2014\u7b2c\u4e8c\u5b63\u5ea6\u5185\u51e0\u4e4e\u5b8c\u7f8e\u7684\u7ecf\u6d4e\u5e73\u8861\u3002\u6211\u4eec\u6b63\u66f4\u6df1\u5730\u8fdb\u5165\u8fd9\u4e2a\u589e\u957f\u4f34\u968f\u6e29\u548c\u901a\u80c0\u7684\u9636\u6bb5\uff0c\u800c\u975e\u8f6c\u5411\u53e6\u4e00\u79cd\u73af\u5883\u3002\u5e02\u573a\u4e3b\u8981\u9a71\u52a8\u529b\u4ecd\u662f\u4eba\u5de5\u667a\u80fd\u5f15\u9886\u7684\u79d1\u6280\u80a1\uff0c\u534a\u5bfc\u4f53\u80a1\u7968\u8868\u73b0\u6781\u4e3a\u7a81\u51fa\u3002\n\n\u4f46\u503a\u5238\u548c\u4fe1\u8d37\u5e02\u573a\u5e76\u975e\u540c\u6837\u5e73\u9759\u3002\u6295\u8d44\u8005\u5bf9\u9ad8\u98ce\u9669\u516c\u53f8\u503a\u8981\u6c42\u7684\u989d\u5916\u6536\u76ca\u7387\u6b63\u5728\u8d70\u9614\uff0c\u80a1\u7968\u4e0e\u503a\u5238\u4e4b\u95f4\u901a\u5e38\u7684\u8d1f\u76f8\u5173\u5173\u7cfb\u5df2\u88ab\u6253\u7834\uff08\u56fd\u503a\u65e0\u6cd5\u5bf9\u51b2\u80a1\u7968\u4e8f\u635f\uff09\uff0c\u901a\u80c0\u8c03\u6574\u540e\u7684\u503a\u5238\u6536\u76ca\u7387\u5df2\u5904\u4e8e\u53ef\u80fd\u627c\u6740\u589e\u957f\u7684\u6c34\u5e73\u3002\u8de8\u8d44\u4ea7\u56fe\u666f\u5448\u73b0\u5206\u5316\uff1a\u80a1\u7968\u5904\u4e8e\u98ce\u9669\u504f\u597d\u6a21\u5f0f\uff0c\u800c\u4fe1\u8d37\u5e02\u573a\u6b63\u5728\u95ea\u70c1\u8b66\u793a\u4fe1\u53f7\u3002\u7f8e\u5143\u8d70\u5f3a\u5bf9\u9ec4\u91d1\u3001\u94dc\u548c\u65b0\u5174\u5e02\u573a\u80a1\u7968\u6784\u6210\u62d6\u7d2f\uff0c\u5c3d\u7ba1\u8fd9\u4e9b\u8d44\u4ea7\u663e\u793a\u51fa\u5c40\u90e8\u5f3a\u52bf\u3002",
-    "rotation_check": null,
+    "summary": "\u7f8e\u56fd\u590d\u82cf\u4f34\u968f\u901a\u80c0\u6b63\u5728\u964d\u6e29\uff1b\u5b9e\u9645\u6536\u76ca\u7387\u4e0b\u964d\u7f13\u89e3\u538b\u529b\uff0c\u4f46\u516c\u53f8\u503a\u7684\u8c28\u614e\u60c5\u7eea\u548c\u5f3a\u52bf\u7f8e\u5143\u4f7f\u5f62\u52bf\u559c\u5fe7\u53c2\u534a\u3002",
+    "regime_read": "\u7f8e\u56fd\u7ecf\u6d4e\u4ecd\u5904\u4e8e\u590d\u82cf\u4f34\u968f\u901a\u80c0\u7684\u533a\u95f4\u2014\u2014\u589e\u957f\u9ad8\u4e8e\u5e73\u5747\u6c34\u5e73\uff0c\u901a\u80c0\u4f9d\u7136\u987d\u56fa\u3002\u4f46\u4fe1\u5fc3\u4f4e\u8ff7\uff0c\u683c\u5c40\u6b63\u5728\u8f6c\u53d8\uff1a\u589e\u957f\u8f83\u4e00\u4e2a\u6708\u524d\u6709\u6240\u964d\u6e29\uff0c\u82e5\u518d\u51fa\u73b0\u51e0\u4efd\u75b2\u5f31\u7684\u7ecf\u6d4e\u62a5\u544a\uff0c\u53ef\u80fd\u5c06\u6211\u4eec\u63a8\u5411\u7b2c\u4e09\u5b63\u5ea6\u9ad8\u901a\u80c0\u4f4e\u589e\u957f\u7684\u73af\u5883\u3002\u5730\u56fe\u663e\u793a\u590d\u82cf\uff0c\u4f46\u6211\u4eec\u6b63\u9010\u6e10\u903c\u8fd1\u8fb9\u7f18\u3002\n\n\u4eca\u65e5\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u662f\u7ecf\u901a\u80c0\u8c03\u6574\u7684\u957f\u671f\u5229\u7387\u5927\u5e45\u4e0b\u964d\uff0c\u63d0\u632f\u4e86\u9ec4\u91d1\u548c\u957f\u671f\u503a\u5238\u3002\u5c3d\u7ba1\u592e\u884c\u7ef4\u6301\u5229\u7387\u4e0d\u53d8\uff0c\u8fd9\u4ecd\u7f13\u89e3\u4e86\u501f\u8d37\u6761\u4ef6\u3002\u7136\u800c\uff0c\u516c\u53f8\u503a\u5e02\u573a\u6b63\u5728\u53d1\u51fa\u8c28\u614e\u4fe1\u53f7\u2014\u2014\u5783\u573e\u503a\u5238\u6536\u76ca\u7387\u6ea2\u4ef7\u8d70\u9614\u2014\u2014\u540c\u65f6\u7f8e\u5143\u8d70\u5f3a\uff0c\u8fd9\u901a\u5e38\u4f1a\u7ed9\u80a1\u5e02\u5e26\u6765\u538b\u529b\u3002\u76ee\u524d\u80a1\u5e02\u5c1a\u80fd\u6d88\u5316\u8fd9\u4e9b\u538b\u529b\uff0c\u4f46\u8fd9\u4e00\u5dee\u8ddd\u503c\u5f97\u5173\u6ce8\u3002",
+    "rotation_check": "\u5e02\u573a\u5267\u672c\u7684\u987a\u5e8f\u6e05\u6670\u53ef\u89c1\uff1a\u9886\u6da8\u677f\u5757\u6b63\u4ece\u534a\u5bfc\u4f53\u548c\u5b58\u50a8\u82af\u7247\u80a1\u8f6c\u5411\u8f6f\u4ef6\u548c\u5de5\u4e1a\u80a1\uff0c\u8fd9\u4e0e\u7ecf\u6d4e\u653e\u7f13\u9636\u6bb5\u76f8\u7b26\u3002",
     "tldr": [
-      "\u79d1\u6280\u80a1\u9886\u6da8\u5e02\u573a\uff1a\u82af\u7247\u80a1\u4ecd\u5360\u4e3b\u5bfc\uff0c\u4f46\u503a\u5238\u548c\u4fe1\u8d37\u5e02\u573a\u5f00\u59cb\u611f\u5230\u62c5\u5fe7\u3002",
-      "\u7ecf\u6d4e\u518d\u901a\u80c0\u589e\u5f3a\uff1a\u589e\u957f\u56de\u5347\uff0c\u901a\u80c0\u964d\u6e29\u2014\u2014\u7b2c\u4e8c\u5b63\u5ea6\u5185\u7684\u8fd1\u4e4e\u7406\u60f3\u7ecf\u6d4e\u72b6\u6001\u3002",
-      "\u7f8e\u5143\u7684\u8d1f\u9762\u5f71\u54cd\uff1a\u7f8e\u5143\u8d70\u5f3a\u5bf9\u9ec4\u91d1\u3001\u94dc\u53ca\u65b0\u5174\u5e02\u573a\u6784\u6210\u9006\u98ce\u3002",
-      "\u5982\u4f55\u5e94\u5bf9\uff1a\u4ed4\u7ec6\u89c2\u5bdf\u2014\u2014\u4e0d\u8981\u8ffd\u6da8\u3002"
+      "\u7ecf\u6d4e\u683c\u5c40\uff1a\u590d\u82cf\u4f34\u968f\u901a\u80c0\uff0c\u4f46\u589e\u957f\u964d\u6e29\u2014\u2014\u6b63\u8d70\u5411\u4e34\u754c\u70b9\u3002",
+      "\u5b9e\u9645\u503a\u5238\u6536\u76ca\u7387\u4e0b\u964d\uff1a\u6536\u76ca\u7387\u4e0b\u884c\u5229\u597d\u9ec4\u91d1\u548c\u957f\u671f\u503a\u5238\uff0c\u800c\u80a1\u5e02\u5219\u6d88\u5316\u8fd9\u4e00\u6d88\u606f\u3002",
+      "Gap\uff1a\u516c\u53f8\u503a\u5e02\u573a\u7d27\u5f20\uff0c\u7f8e\u5143\u8d70\u5f3a\uff0c\u4f46\u80a1\u5e02\u53cd\u5e94\u4e0d\u5927\u3002",
+      "\u600e\u4e48\u505a\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u8981\u8ffd\u6da8\u3002"
     ],
     "conflicts": [
-      "\u7ecf\u6d4e\u5468\u671f\u5c3e\u58f0\u7684\u7d27\u5f20\uff1a\u80a1\u5e02\u4ecd\u5904\u4e8e\u98ce\u9669\u504f\u597d\u6a21\u5f0f\uff0c\u4f46\u9ad8\u98ce\u9669\u516c\u53f8\u7684\u501f\u8d37\u6210\u672c\u6b63\u5728\u4e0a\u5347\u2014\u2014\u8870\u9000\u98ce\u9669\u5c1a\u672a\u88ab\u5b9a\u4ef7\u3002",
-      "\u9ec4\u91d1\u9677\u5165\u62c9\u952f\u6218\uff1a\u7c98\u6027\u901a\u80c0\u652f\u6491\u91d1\u4ef7\uff0c\u4f46\u7f8e\u5143\u8d70\u5f3a\u548c\u901a\u80c0\u8c03\u6574\u540e\u503a\u5238\u6536\u76ca\u7387\u4e0a\u5347\u6784\u6210\u6c89\u91cd\u538b\u529b\u3002",
-      "\u7f8e\u5143\u7684\u62d6\u7d2f\uff1a\u7f8e\u5143\u8d70\u5f3a\u6b63\u538b\u5236\u9ec4\u91d1\u3001\u94dc\u548c\u65b0\u5174\u5e02\u573a\u80a1\u7968\uff0c\u5c3d\u7ba1\u8fd9\u4e9b\u5e02\u573a\u4ecd\u53d7\u9752\u7750\u3002"
+      "\u80a1\u7968\u4e0e\u516c\u53f8\u503a\uff1a\u80a1\u7968\u6307\u6570\u663e\u793a\u51fa\u98ce\u9669\u504f\u597d\uff0c\u4f46\u5783\u573e\u503a\u5238\u6536\u76ca\u7387\u6ea2\u4ef7\u6b63\u5728\u8d70\u9614\u2014\u2014\u8fd9\u662f\u7ecf\u6d4e\u6269\u5f20\u53ef\u80fd\u63a5\u8fd1\u5c3e\u58f0\u7684\u5178\u578b\u4fe1\u53f7\u3002",
+      "\u7f8e\u5143\u9006\u98ce\uff1a\u5f3a\u52bf\u7f8e\u5143\u901a\u5e38\u4e0d\u5229\u4e8e\u7f8e\u80a1\u548c\u65b0\u5174\u5e02\u573a\uff0c\u4f46\u80a1\u5e02\u5c1a\u672a\u5bf9\u6b64\u4f5c\u51fa\u53cd\u5e94\u3002"
     ],
     "transmission": [
-      "\u5982\u679c\u9ad8\u98ce\u9669\u516c\u53f8\u7684\u501f\u8d37\u6210\u672c\u6301\u7eed\u8d70\u9614\u2192\u80a1\u5e02\u56de\u64a4\u98ce\u9669\u4e0a\u5347\uff0c\u5c24\u5176\u5bf9\u5229\u7387\u654f\u611f\u7684\u79d1\u6280\u80a1\u3002",
-      "\u5982\u679c\u7ecf\u901a\u80c0\u8c03\u6574\u7684\u503a\u5238\u6536\u76ca\u7387\u4fdd\u6301\u57282.4%\u2014\u2014\u63a5\u8fd1\u4e94\u5e74\u9ad8\u4f4d\uff0c\u6210\u957f\u80a1\u548c\u9ec4\u91d1\u5c06\u9762\u4e34\u6301\u7eed\u7684\u8d1f\u9762\u538b\u529b\u3002"
+      "\u5982\u679c\u5b9e\u9645\u6536\u76ca\u7387\u6301\u7eed\u4e0b\u964d\u2192\u9ec4\u91d1\u548c\u957f\u671f\u503a\u5238\u53ef\u80fd\u8fdb\u4e00\u6b65\u4e0a\u6da8\uff0c\u4f7f\u501f\u8d37\u6761\u4ef6\u66f4\u52a0\u5bbd\u677e\u3002",
+      "\u5982\u679c\u516c\u53f8\u503a\u5238\u98ce\u9669\u6ea2\u4ef7\u6301\u7eed\u6269\u5927\u2192\u80a1\u5e02\u6700\u7ec8\u4f1a\u8ddf\u8dcc\uff0c\u52a0\u5927\u5e02\u573a\u4e0b\u8dcc\u7684\u98ce\u9669\u3002"
     ],
     "watch_items": [
-      "\u6708\u5ea6\u5c31\u4e1a\u6570\u636e\uff088\u67087\u65e5\uff09\uff1a\u82e5\u6570\u636e\u75b2\u5f31\uff0c\u5c06\u8003\u9a8c\u592e\u884c\u7684\u7a33\u5065\u64cd\u4f5c\u3002",
-      "\u6d88\u8d39\u8005\u4ef7\u683c\u6570\u636e\uff088\u670812\u65e5\uff09\uff1a\u82e5\u8bfb\u6570\u4f4e\u4e8e\u9884\u671f\uff0c\u5c06\u786e\u8ba4\u901a\u80c0\u964d\u6e29\uff0c\u5e76\u652f\u6301\u98ce\u9669\u504f\u597d\u60c5\u7eea\u3002",
-      "\u9ad8\u98ce\u9669\u516c\u53f8\u501f\u8d37\u6210\u672c\uff1a\u8fdb\u4e00\u6b65\u6269\u5927\u5c06\u5f15\u53d1\u8870\u9000\u8b66\u62a5\u3002",
-      "\u7f8e\u5143\u5f3a\u52bf\u6307\u6807\uff1a\u82e5\u7a81\u7834\u4e0a\u884c\uff0c\u5c06\u52a0\u5927\u9ec4\u91d1\u548c\u65b0\u5174\u5e02\u573a\u56fd\u5bb6\u7684\u538b\u529b\u3002"
+      "\u4e0b\u5468\u4e09\u7684\u6d88\u8d39\u8005\u4ef7\u683c\u62a5\u544a\uff1a\u82e5\u6570\u636e\u4f4e\u4e8e\u9884\u671f\uff0c\u5c06\u652f\u6301\u6536\u76ca\u7387\u4e0b\u884c\u7684\u9700\u6c42\uff1b\u82e5\u9ad8\u4e8e\u9884\u671f\uff0c\u5219\u53ef\u80fd\u9006\u8f6c\u8fd9\u4e00\u8d8b\u52bf\u3002",
+      "\u5783\u573e\u503a\u5238\u6536\u76ca\u7387\u6ea2\u4ef7\uff1a\u82e5\u5411\u4e0a\u7a81\u7834\uff0c\u5c06\u9884\u793a\u66f4\u5e7f\u6cdb\u7684\u538b\u529b\u3002",
+      "\u7f8e\u5143\uff1a\u8fdb\u4e00\u6b65\u8d70\u5f3a\u5c06\u52a0\u5927\u65b0\u5174\u5e02\u573a\u548c\u5927\u5b97\u5546\u54c1\u76f8\u5173\u80a1\u7968\u7684\u538b\u529b\u3002"
     ]
   }
 }

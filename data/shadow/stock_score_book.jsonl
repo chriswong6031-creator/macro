@@ -2984,3 +2984,13 @@
 {"date": "2026-08-07", "ticker": "PAYC", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "FLR", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-07", "ticker": "SCL", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "GTES", "score": 49.0, "percentile": 49.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "BKSY", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "HAYW", "score": 34.0, "percentile": 34.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "CL", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "KWR", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "SVM", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "SBUX", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "SNDR", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "ODFL", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-07", "ticker": "LGIH", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}

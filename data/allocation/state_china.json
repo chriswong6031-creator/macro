@@ -13,12 +13,12 @@
     "cn_semis"
   ],
   "held": [
-    "cn_ai_compute",
     "cn_metals",
+    "cn_ai_compute",
     "cn_pharma_cxo",
     "cn_robotics"
   ],
-  "leader": "cn_ai_compute",
+  "leader": "cn_metals",
   "names": {
     "cn_ai_compute": "AI Compute & Optics",
     "cn_appliances": "Home Appliances",

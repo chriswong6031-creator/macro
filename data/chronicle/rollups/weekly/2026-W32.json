@@ -11,6 +11,12 @@
     {
       "clusters": [
         {
+          "n_events": 477,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
           "n_events": 282,
           "source": "research_vault",
           "theme": null,
@@ -68,15 +74,15 @@
           ]
         },
         {
-          "n_events": 240,
-          "source": "earnings_call",
-          "theme": "earnings",
+          "n_events": 7,
+          "source": "prophet_ledger",
+          "theme": null,
           "top_events": []
         },
         {
-          "n_events": 6,
-          "source": "prophet_ledger",
-          "theme": null,
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
           "top_events": []
         },
         {
@@ -160,15 +166,15 @@
           "top_events": []
         },
         {
-          "n_events": 3,
-          "source": "risk_band",
-          "theme": "risk",
+          "n_events": 5,
+          "source": "prophet_ledger",
+          "theme": null,
           "top_events": []
         },
         {
-          "n_events": 2,
-          "source": "prophet_ledger",
-          "theme": null,
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
           "top_events": []
         },
         {
@@ -449,18 +455,6 @@
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
-            {
-              "date": "2026-05-14",
-              "id": "cev-earnings-0c92d841b18b",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "UMAC#2026-05-14",
-              "tickers": [
-                "UMAC"
-              ],
-              "title": "Earnings: UMAC actual vs est",
-              "weight_hint": 2
-            },
             {
               "date": "2026-05-13",
               "id": "cev-earnings-0c9841e78414",

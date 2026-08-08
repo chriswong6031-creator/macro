@@ -2,26 +2,27 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-07",
-  "generated_utc": "2026-08-08T06:44:55Z",
+  "generated_utc": "2026-08-08T07:02:55Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 9,
-    "n_eff": 3.07,
+    "n": 10,
+    "n_eff": 2.87,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 3.07 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 10 candidates \u2248 2.87 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "AYI",
         "FSS",
+        "KWR",
         "LITE",
         "STLD",
         "TOL",
         "VSEC"
       ],
-      "size": 6,
+      "size": 7,
       "basis": "membership-jaccard",
       "label": "Industrials"
     }
@@ -184,12 +185,14 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "TOL",
-          "combined": 0.8146,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8146,
+          "ticker": "KWR",
+          "combined": 0.9091,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9091,
           "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
+          "shared_groups": [
+            "sector:Materials"
+          ],
           "same_earnings_week": null
         }
       ],
@@ -201,6 +204,98 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as FSS \u2014 shared factor profile (similarity 97%).",
       "why_zh": "\u4e0e FSS \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 97%\uff09\u3002"
+    },
+    "UAMY": {
+      "verdict": "partial",
+      "max_similarity": 0.5,
+      "basis": "membership-only:no-beta",
+      "nearest": [
+        {
+          "ticker": "KWR",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [
+            "sector:Materials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "STLD",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [
+            "sector:Materials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "M",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.20<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-11",
+        "same_week_peers": [
+          "LITE"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Partial overlap with KWR \u2014 Materials (similarity 50%).",
+      "why_zh": "\u4e0e KWR \u90e8\u5206\u91cd\u53e0 \u2014 Materials\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
+    },
+    "KWR": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9557,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "TOL",
+          "combined": 0.9557,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9557,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "VSEC",
+          "combined": 0.9553,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9553,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "STLD",
+          "combined": 0.9091,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9091,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Materials"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as TOL \u2014 shared factor profile (similarity 96%).",
+      "why_zh": "\u4e0e TOL \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 96%\uff09\u3002"
     },
     "AYI": {
       "verdict": "duplicate",
@@ -322,10 +417,10 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "STLD",
-          "combined": 0.9371,
+          "ticker": "KWR",
+          "combined": 0.9553,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.9371,
+          "factor_cosine": 0.9553,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
@@ -364,10 +459,10 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "VSEC",
-          "combined": 0.3528,
+          "ticker": "KWR",
+          "combined": 0.4402,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.3528,
+          "factor_cosine": 0.4402,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
@@ -384,9 +479,18 @@
     },
     "TOL": {
       "verdict": "duplicate",
-      "max_similarity": 0.9193,
+      "max_similarity": 0.9557,
       "basis": "membership+high-tier-factor",
       "nearest": [
+        {
+          "ticker": "KWR",
+          "combined": 0.9557,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9557,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
         {
           "ticker": "VSEC",
           "combined": 0.9193,
@@ -404,15 +508,6 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
-        },
-        {
-          "ticker": "FSS",
-          "combined": 0.7588,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.7588,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
@@ -421,8 +516,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as VSEC \u2014 shared factor profile (similarity 92%).",
-      "why_zh": "\u4e0e VSEC \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 92%\uff09\u3002"
+      "why_en": "Same bet as KWR \u2014 shared factor profile (similarity 96%).",
+      "why_zh": "\u4e0e KWR \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 96%\uff09\u3002"
     }
   },
   "pair_basis": {
@@ -441,6 +536,20 @@
       "shared_groups": []
     },
     "M__STLD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
+    "M__UAMY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
+    "M__KWR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -491,52 +600,10 @@
       "factor_basis": "beta-read-thin:insufficient-factors",
       "shared_groups": []
     },
-    "UAMY__STLD": {
+    "LITE__KWR": {
       "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "UAMY__AYI": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "UAMY__FSS": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "UAMY__VSEC": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "UAMY__CL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "UAMY__TOL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:insufficient-factors",
-      "shared_groups": []
-    },
-    "LITE__STLD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.1769,
-      "combined": 0.1769,
+      "factor_cosine": 0.1476,
+      "combined": 0.1476,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -575,6 +642,24 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "STLD__UAMY": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": [
+        "sector:Materials"
+      ]
+    },
+    "STLD__KWR": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9091,
+      "combined": 0.9091,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Materials"
+      ]
+    },
     "STLD__AYI": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.7368,
@@ -607,6 +692,85 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.8146,
       "combined": 0.8146,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "UAMY__KWR": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": [
+        "sector:Materials"
+      ]
+    },
+    "UAMY__AYI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "UAMY__FSS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "UAMY__VSEC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "UAMY__CL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "UAMY__TOL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "KWR__AYI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7334,
+      "combined": 0.7334,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__FSS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8753,
+      "combined": 0.8753,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__VSEC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9553,
+      "combined": 0.9553,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__CL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4402,
+      "combined": 0.4402,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__TOL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9557,
+      "combined": 0.9557,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -695,7 +859,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.6,
+    "entry_open": 2.5,
     "setting_up": 1.5
   },
   "source_passport": {
