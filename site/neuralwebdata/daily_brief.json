@@ -1,21 +1,28 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-08T08:03:16.831553+00:00",
+  "produced_at": "2026-08-08T08:36:45.587113+00:00",
   "as_of": "2026-08-07",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
-    "cortex_status": "degraded",
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "cortex_status": "fresh",
+    "tool_call_batches": 3,
+    "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex degraded — model_unavailable"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-08-08T08:35:33+00:00"
   },
   "what_changed": [
     {
       "kind": "as_of_advanced",
       "id": "system",
       "summary": "as_of advanced from 2026-08-06T22:35:28.535477+00:00 to 2026-08-07",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "cortex_status_changed",
+      "id": "cortex",
+      "summary": "cortex status changed: degraded → fresh",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
@@ -403,12 +410,6 @@
   },
   "operator_attention": [
     {
-      "priority": 1,
-      "area": "cortex",
-      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
-      "action_type": "ops_fix"
-    },
-    {
       "priority": 2,
       "area": "causal-edges",
       "summary": "lobe causal-edges is warn — age 328.67h vs SLA 192h",
@@ -604,14 +605,14 @@
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 285,
+      "accruing": 286,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "11 overdue, 7 due, 1 missing, 1 stale, 2 blocked, 285 accruing. Top due: qledger:placebo."
+    "morning_line": "11 overdue, 7 due, 1 missing, 1 stale, 2 blocked, 286 accruing. Top due: qledger:placebo."
   },
   "china_market_state": {
     "available": true,

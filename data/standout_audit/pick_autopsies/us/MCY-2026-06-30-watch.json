@@ -1,0 +1,114 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "MCY-2026-06-30-watch",
+  "ticker": "MCY",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "MCY",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "MCY",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Financials",
+    "excess_spy": -0.014785704401021227,
+    "excess_sector": -0.052513164657750466,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The supplied record attributes the stopped, benchmark-negative outcome to an idiosyncratic break while marking the process clean. With no dated event or fundamental evidence, the break is only claimed; if real, the appropriate response is company-break conditioning research rather than gate tightening.",
+    "root_cause": "The supplied record attributes the stopped, benchmark-negative outcome to an idiosyncratic break while marking the process clean. With no dated event or fundamental evidence, the break is only claimed; if real, the appropriate response is company-break conditioning research rather than gate tightening.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The watch book surfaced the candidate, but company-alpha, catalyst, and break-detection organs did not provide enough ex-ante evidence to distinguish a foreseeable deterioration from an unforeseen event.",
+    "engines_credit": "Process organs are recorded as clean; company-break and catalyst-attribution books are the research laggards because visibility and timing evidence are missing.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific deterioration reportedly broke the thesis.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "If peer and factor controls explain the decline, an idiosyncratic break would not be necessary.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "excess_spy negative"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "A company event, revision, or information release may have transmitted the idiosyncratic deterioration into price.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "A pre-event decline with visible accumulation in the opposite direction would challenge a sudden-event explanation.",
+        "evidence_refs": [
+          "outcome_cause=idio_break",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The adverse company-specific path reached the stop under a process classified as clean.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "Absent the idiosyncratic break, the clean process might not have terminated the position.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A broader insurance-industry move caused the decline.",
+      "The break followed external news that was not foreseeable at entry.",
+      "Deterioration was visible before entry but remained unpriced or unrecognized.",
+      "The stopped path reflected ordinary volatility rather than a fundamental break."
+    ],
+    "missing_evidence": [
+      "Dated company and insurance-industry news",
+      "Pre-entry revisions, estimates, and price-volume behavior",
+      "Peer-relative and factor-neutral returns",
+      "Original thesis and invalidation conditions",
+      "Exact stop path and post-stop behavior"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "prebreak_deterioration",
+        "feature": "Ex-ante deterioration preceding company-specific breaks",
+        "measurement": "Measure dated estimate revisions, peer-relative weakness, abnormal volume, and thesis-variable deterioration before entry.",
+        "expected_direction": "More pre-entry deterioration would support foreseeable-but-unpriced break conditioning.",
+        "falsifier": "Break cases show no distinguishable pre-entry deterioration and are concentrated around genuinely new events.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

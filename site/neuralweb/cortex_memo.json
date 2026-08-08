@@ -1,137 +1,104 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-08T02:15:17+00:00",
-  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
-  "what_fired": [],
-  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
-  "decaying_families": [],
-  "deserves_operator": [],
+  "as_of": "2026-08-08T08:35:33+00:00",
+  "summary": "Context-only committee read: the dashboard is mixed, with a low-confidence transitioning Q2 reflation label, contracting but orderly liquidity, restrictive rising real yields, and a caution risk radar led by bubble/global concerns. The caution label is not presently an empirical drawdown edge: its measured 21-day pullback frequency is 16.0% versus a 17.8% baseline, the context gate is unmet, breadth remains healthy, credit is tight, and funding is calm. Cross-asset confirmation is divergent, so the regime label should be treated as fragile context rather than a unified macro conclusion. No signal, trade, ranking, sizing change, or escalation is originated.",
+  "what_fired": [
+    "Risk radar: caution, dominant bubble/blow-off unwind score 71.2; rising phase, but unconfirmed and below-baseline 21-day pullback frequency.",
+    "Global breadth scare: watch, with confirmed/accruing JPY-carry leg; broader US breadth remains healthy.",
+    "Liquidity plumbing: orderly drain, net liquidity down $211.4B over 20 days, RRP buffer exhausted, TGA build active, without confirming credit stress.",
+    "Factor weather: mixed style regime with value leading; factor panel has only 11 dates and has not met its history floor.",
+    "Cross-asset contradiction detector: FX-dollar and rates-credit disagree with the Q2 equity regime.",
+    "Theme and leadership context: rotation is under way; old memory/storage leadership is broken while semiconductor-relative weakness remains visible."
+  ],
+  "contradictions_review": "Six display-only contradictions were reviewed. The principal macro tension is low-confidence Q2 reflation versus a caution risk radar and divergent bonds/FX confirmation. The radar deserves attention but not escalation because its own measured 21-day pullback rate is below baseline and the tape gate is unmet. Options skew contradicts nine buy-lane names, but the cited bullish skew-decay prior is unsupported and therefore cannot support a directional conclusion. Pair G factor contradictions are dormant because the factor panel has fewer than 60 dates. Open master-brain theses were checked: the China-overweight thesis conflicts with China Q3/contracting liquidity, HK weak-side outflow, mature China/HK risk-off context, and stale China market-state coverage; the long-Treasury overweight thesis conflicts with restrictive rising real yields and a bear steepener. Semiconductor-underweight and growth-underweight theses broadly agree with current relative-performance context rather than conflict with it.",
+  "decaying_families": [
+    "Radar at 21 days: shrunken IC -0.007289 on signed excess despite high sample reliability; not armed.",
+    "Thematic desk at 63 days: negative signed excess in Q1 and Q2; not armed.",
+    "Stock desk and AI desk at 63 days: negative signed excess; not armed.",
+    "Policy and White House families: negative signed excess with thin samples; not armed.",
+    "Factor composite: non-tradeable, history floor unmet, with investment/low-vol/low-beta/composite negative-IC legs.",
+    "Cortex attention track record: only one effective event in the kernel and zero factor-attention gradings; authority remains shadow."
+  ],
+  "deserves_operator": [
+    "Review whether the risk-radar caution banner is communicating more urgency than its below-baseline measured drawdown frequency and unmet context gate justify; grade on a 21-day >=5% SPY pullback plus tape-break criterion.",
+    "Review open China-overweight thesis mb-2026-07-09-1 against current China Q3/contracting, HK weak-side outflow, mature risk-off context, and stale China-state coverage.",
+    "Close, refresh, or explicitly retain the overdue long-Treasury thesis mb-2026-07-01-1; current restrictive rising real yields and bear steepening contradict its stated rationale.",
+    "Monitor whether FX-dollar and rates-credit disagreement with Q2 persists for 10 of 15 sessions; until then treat Q2 as a low-confidence transitioning label.",
+    "Repair data-health gaps affecting international/China and capital-structure coverage before interpreting absence of confirmation as economic evidence.",
+    "Do not infer factor contradiction absence: Pair G is dormant because only 11 panel dates exist, below the 60-date activation floor."
+  ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-07",
+    "as_of": "2026-08-08",
     "granted": false,
     "tier": "A0/A1 shadow",
-    "reason": "insufficient-n: n=4 < min_n=25",
+    "reason": "insufficient-n: n=5 < min_n=25",
     "lift_lb": null,
     "wilson_lb": null,
     "lapses_at": null,
-    "evidence_asof": "2026-08-07",
+    "evidence_asof": "2026-08-08",
     "attention_track_record": {
-      "n": 4,
+      "n": 5,
       "hits": 0,
       "base_rate": 0.5
     },
     "is_context_only": true
   },
-  "tool_call_census": {},
+  "tool_call_census": {
+    "read_world_state": 1,
+    "read_factor_state": 1,
+    "query_spine": 1,
+    "read_contradictions": 1,
+    "list_factor_contradictions": 1,
+    "read_kernel": 1,
+    "read_master_brain_theses": 1,
+    "flag_attention": 1,
+    "write_memo": 1
+  },
   "is_context_only": true,
   "run_status": {
-    "status": "degraded",
-    "degraded": true,
-    "degradation_reason": "model_unavailable",
-    "model_used": "claude-sonnet-4-6",
+    "status": "ok",
+    "degraded": false,
+    "degradation_reason": null,
+    "model_used": "claude-opus-4-8",
     "provider_attempts": [
       {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUXKzbYFryy8nuJA3Us'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUYdfzg3z2JnCT6LSK4'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUdFPSaREhapXwXvgw6'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUrjvHrX16hWbqag8sr'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUwDgW2DAAqHWD1juYw'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUwPcJPJg1JmuxKMXXk'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUwZQAK4MAfe8rm8mQN'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdpUwkAK2G71VUBeKAfxi'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       }
     ],
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "tool_call_batches": 3,
+    "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-08T02:02:26Z"
+    "context_as_of": "2026-08-08T08:01:44Z"
   }
 }
