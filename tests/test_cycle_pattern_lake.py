@@ -207,6 +207,53 @@ def test_osc_nonnull_for_liquid_entities(state):
     assert xlk["mmacd_sign"].isin([-1.0, 1.0, 0.0]).all(), "mmacd_sign must be -1/0/+1"
 
 
+def test_yahoo_tape_is_resolved_with_the_case_the_store_actually_uses(entities):
+    """The oscillator read must name its file in the store's OWN case.
+
+    `_compute_monthly_oscs_for_entity` used to `.lower()` the native_id before
+    `store.read("yahoo", ...)`. Every file in that side-store is UPPERCASE, so the lowered
+    name resolves on a case-INSENSITIVE checkout (macOS/APFS — every dev machine here, and
+    the self-hosted mac lanes) and returns None on `ubuntu-latest`, where the ci-pack jobs
+    run. A None read is indistinguishable from "this entity has no tape", so the whole US
+    sector/country cross-section silently fell through to osc_missing=True and
+    test_osc_nonnull_for_liquid_entities above failed on an empty frame — a red that
+    CANNOT be reproduced on the machine most of us verify on.
+
+    So this compares against `os.listdir`, which reports the name as STORED even on a
+    case-insensitive filesystem. `Path.exists()` would not: it is the very check that
+    lies here, and a guard that cannot see the failure it names is decoration.
+    """
+    import os
+
+    ydir = Path(config.data_dir()) / "yahoo"
+    if not ydir.is_dir():
+        pytest.skip("yahoo side-store is not present in this checkout")
+    on_disk = set(os.listdir(ydir))
+
+    backed = entities[entities["engine"].isin(["us_sector_cycles", "country_cycles"])]
+    native_ids = sorted({str(n) for n in backed["native_id"]})
+    assert native_ids, "no yahoo-backed entities — this guard would be vacuous"
+
+    # THE READER'S OWN function, not a re-implementation of it. A copy of the rule here
+    # would pass while the reader lowered its key, which is exactly the defect.
+    def _resolve(nid: str) -> str:
+        return f"{lake.yahoo_key(nid)}.parquet"
+
+    present = [n for n in native_ids if _resolve(n) in on_disk]
+    assert present, (
+        "not ONE yahoo-backed entity resolves to a file whose case matches the store. "
+        f"tried e.g. {[_resolve(n) for n in native_ids[:4]]}; the store holds "
+        f"{sorted(on_disk)[:4]}")
+
+    # And the lowered spelling — the defect — must NOT be what the store holds, or this
+    # guard is pinning a convention that does not exist.
+    lowered = [n for n in present if _resolve(n).lower() in on_disk
+               and _resolve(n).lower() != _resolve(n)]
+    assert not lowered, (
+        f"the store holds lowercase names for {lowered[:4]} — the convention this guard "
+        "pins has changed; update the reader and this test together")
+
+
 def test_osc_missing_early_periods_us(state):
     """Rows with fewer than 40 completed monthly bars at stamp date must be osc_missing."""
     # XLC launched 2018; backfill goes back to ~2019; early rows have <40 monthly bars.

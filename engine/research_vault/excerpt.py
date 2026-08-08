@@ -183,6 +183,30 @@ def snapshot(conn, catalog_ids) -> dict[str, list[str]]:
     return {doc_id: paras for doc_id, paras in sorted(pairs, key=lambda kv: kv[0])}
 
 
+# Share of the committed corpus an incoming one must retain to be written.
+# 0.5 is deliberately loose: it has to clear ordinary churn (a withdrawn doc, a
+# parser skipping a malformed PDF) while still catching a collapse. The observed
+# failure was 912 -> 2, i.e. 0.2% — three orders of magnitude below this line,
+# so the floor's exact value is not what decides that case.
+_COLLAPSE_FLOOR = 0.5
+
+
+def _committed_excerpt_count(path) -> int:
+    """Excerpt count in the snapshot already on disk, or 0 if unreadable.
+
+    0 means "nothing to protect" and lets the write through: a first write, a
+    deleted file, or corrupt JSON must not be able to wedge the lane shut.
+    """
+    try:
+        blob = json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 — absent/unreadable/corrupt all mean "no floor"
+        return 0
+    if not isinstance(blob, dict):
+        return 0
+    payload = blob.get("excerpts")
+    return len(payload) if isinstance(payload, dict) else 0
+
+
 def write_repo_snapshot(excerpts: dict[str, list[str]], path) -> bool:
     """Write the repo-committed excerpts snapshot. Returns True when written.
 
@@ -191,6 +215,20 @@ def write_repo_snapshot(excerpts: dict[str, list[str]], path) -> bool:
     clobber a good committed snapshot with ``{}`` and blank the excerpt on every
     SEO page. Losing an hour of new excerpts is cheap; losing all of them is not.
 
+    ALSO REFUSES A COLLAPSE, not merely an empty read. The empty-only test was
+    the whole guard until 2026-08-07, and it is not what the sentence above
+    promises: on 2026-08-06 22:39 a partial corpus of 2 documents passed it and
+    overwrote a committed snapshot of 912, blanking the excerpt block on ~900
+    public report pages. A degraded restore rarely returns exactly nothing — it
+    returns a handful — so "empty" is the one shape the failure almost never
+    takes. The floor below is proportional for that reason.
+
+    Shrinking is legitimate (a doc can be withdrawn), so this is a FLOOR, not an
+    equality check: a write is refused only when the incoming corpus holds less
+    than ``_COLLAPSE_FLOOR`` of what is already committed. An unreadable or
+    absent committed snapshot means there is nothing to protect, so the write
+    proceeds — the guard never blocks a first write or a genuine rebuild.
+
     The payload is sorted + indented + carries NO timestamp, so an hour that
     changed nothing serializes byte-identically and produces no git diff.
     Never raises.
@@ -198,6 +236,22 @@ def write_repo_snapshot(excerpts: dict[str, list[str]], path) -> bool:
     if not excerpts:
         log.warning("research_vault: excerpt snapshot is empty — refusing to write "
                     "(protects the committed snapshot)")
+        return False
+    committed = _committed_excerpt_count(path)
+    if committed and len(excerpts) < committed * _COLLAPSE_FLOOR:
+        # Bare print: GitHub drops an annotation emitted through a logger, and
+        # this one must reach the Actions summary — a silent refusal reads as a
+        # quiet night, which is exactly how the 2026-08-06 wipe went unnoticed.
+        print(
+            f"::error title=research-vault-excerpt-collapse::excerpt snapshot "
+            f"collapsed {committed} -> {len(excerpts)} "
+            f"(floor {_COLLAPSE_FLOOR:.0%}) — refusing to write. The committed "
+            f"snapshot is kept; investigate the corpus restore before re-running.",
+            flush=True,
+        )
+        log.warning("research_vault: excerpt snapshot collapsed %d -> %d — refusing "
+                    "to write (protects the committed snapshot)",
+                    committed, len(excerpts))
         return False
     try:
         p = Path(path)

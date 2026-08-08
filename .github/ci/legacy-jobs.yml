@@ -392,10 +392,20 @@ jobs:
       # config/fundamental_forensics.yml (registry Decimal strings, SEC lineage
       # kernel). Nothing cross-pinned them, so a threshold edited in one store left
       # the same named detector answering differently on two live surfaces. This
-      # suite reads each store's own numbers — it hardcodes none of them — and pins
-      # the six disagreements that already ship. It belongs in THIS job because the
-      # step above already owns the detector contracts and already imports both
-      # engine.fundamental_forensics and engine.moat_falsifiers.
+      # suite reads each store's own numbers — it hardcodes none of them.
+      #
+      # Since 2026-08-07 it also pins EVALUABILITY, not just thresholds: section 6
+      # drives all three implementations off the registry's own companyfacts
+      # fixture across a table of missing-input scenarios and asserts the set of
+      # three-way disagreements is exactly the documented, deliberate ones. That
+      # section exists because the threshold pins were fully green while
+      # engine/moat_falsifiers.py fired capital_intensity_rising on absent
+      # op_income for 62 of 336 live fires (18%).
+      #
+      # It belongs in THIS job because the step above already owns the detector
+      # contracts and already imports engine.fundamental_forensics (including
+      # run_fixture_slice, which section 6 uses) and engine.moat_falsifiers, so
+      # this job's install string is already proven sufficient for both.
       - name: forensic detector cross-pin (three implementations, one detector id)
         run: python -m pytest tests/test_forensic_detector_crosspin.py -q
 
@@ -5470,7 +5480,17 @@ jobs:
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
     if: ${{ false }}
-    timeout-minutes: 6
+    # 6 -> 15. This job is STRUCTURALLY at-cap, not slowed by any change. Measured on a
+    # fast Mac Studio, its FIRST step alone (27 test files, 941 passed) runs 3:40 — 61% of
+    # a 6-minute budget that must ALSO cover `pip install ... scikit-learn` and seven more
+    # pytest steps. On the 4-core-bound, fleet-shared ubuntu-latest pack runner it crosses
+    # the cap whenever the pool is busy, so "timed out after 6 minutes" has been recurring
+    # on main and on every PR that inherits it — an unattributable red that repeatedly
+    # reads as the running PR's regression (it was pinned on #4883's proof run, where the
+    # PR's own step was 6.7s of the budget and its data change made the store 37% smaller).
+    # 15 is this manifest's existing ceiling for heavy jobs (options-estate-guards,
+    # collector-registry), both of which carry FEWER run steps than the eight here.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
