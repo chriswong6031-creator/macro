@@ -838,6 +838,17 @@
 .anv2-board .anv2-name-link:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
 .anv2-board .anv2-go{font-size:10px;opacity:.55;margin-left:3px}
 .anv2-board .anv2-empty{padding:10px 13px;color:var(--muted);font-size:11px}
+/* Hover-card mark — monoline (doctrine §5.8, emoji are not UI icons). Draws from
+   templates/_icons.html.j2 (24×24, stroke=currentColor) so it inherits .row-pop-mark's
+   ink (--link). Overrides this page's 1em inline .ic-svg base (head <style>) on
+   specificity; NO bare `.ic-svg {}` rule is added here — hosts scope their own copies
+   and a global rule shipped from a board would fight them. Explicit selectors only.
+   .row-pop-mark is deliberately NOT scoped to #act-now — theme.js clones the hover
+   card onto document.body, so an id-scoped rule would style the hidden source and
+   miss the card the reader actually sees. */
+.row-pop-mark .ic-svg{fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.row-pop-mark .ic-svg{width:17px;height:17px;display:block}
 </style>
 {{ lens.lens_css() }}
 <div class="panel anv2-board" id="act-now">
@@ -903,7 +914,7 @@
       {%- if _ca_sc is not none and _ca_sc.get('dc_day') is not none %}周期第 {{ _ca_sc.get('dc_day') }} 日{% endif -%}
       {%- endset -%}
       {{ dc.dc_card({
-        'kind': 'sector', 'mark': '🏛', 'tone': _ca_tone,
+        'kind': 'sector', 'mark': icon('sector'), 'tone': _ca_tone,
         'eyebrow': ('Sector pulse · ' ~ it.ticker, '板块脉搏 · ' ~ it.ticker),
         'name': (td(it.name),),
         'tag': (td(it.label),) if it.label else none,
