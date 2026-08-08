@@ -3332,14 +3332,18 @@ def main(argv: list[str] | None = None) -> int:
             # directions: nothing was sent, so no slot was spent, and the retry
             # competes for tomorrow's slots on equal terms.
             #
-            # KNOWN COST, ACCEPTED: fold_state counts transitions INTO `failed`
-            # as `attempts`, so a rate limit now burns one of the
+            # THAT KNOWN COST IS PAID OFF (2026-08-08). This comment used to
+            # read "KNOWN COST, ACCEPTED: fold_state counts transitions INTO
+            # `failed` as `attempts`, so a rate limit burns one of the
             # MAX_POST_ATTEMPTS (2) that outbox.apply_decisions spends before it
-            # quarantines an operator re-approval. That path only triggers for an
-            # item sitting AT `failed` when a fresh approve arrives, and this one
-            # leaves `failed` immediately — but an item that later genuinely
-            # fails reaches the human-look bar sooner. A post that has burned
-            # three dispatch attempts deserves that look.
+            # quarantines an operator re-approval" — accepted on the reasoning
+            # that the item leaves `failed` immediately. It was not survivable
+            # at outage scale: the plan lock kept every item cycling for days, so
+            # two quota refusals were enough to make the admin's Approve button
+            # DELETE the post it was clicked to save. The note this branch writes
+            # is now classified (outbox._failure_class) and the cap spends
+            # outbox.effective_attempts, which counts genuine failures only. A
+            # post still reaches the human-look bar at two REAL failures.
             #
             # BOUNDED (2026-08-08). "Retry next sweep" with no counter is a loop,
             # and a loop is what the Buffer outage turned it into: from
@@ -3359,7 +3363,12 @@ def main(argv: list[str] | None = None) -> int:
             _rl_receipt = {"backend": receipt.backend, "error": receipt.error,
                            "at": receipt.at}
             if _rl_prior >= _outbox.MAX_RATE_LIMITED_REQUEUES:
-                _rl_note = (f"rate_limited_exhausted after "
+                # Through the shared constant, so the fold classifies this row as
+                # a rate limit rather than as a verdict on the post. That is what
+                # keeps the annotation below honest: it tells the operator to
+                # re-arm from the admin Outbox, and outbox.effective_attempts is
+                # what makes that click re-arm instead of quarantine.
+                _rl_note = (f"{_outbox.RATE_LIMITED_EXHAUSTED_NOTE_PREFIX} after "
                             f"{_outbox.MAX_RATE_LIMITED_REQUEUES} sweeps: {_rl_err}")
                 if _outbox.transition(iid, "failed", actor="publisher", root=root,
                                       note=_rl_note, receipt=_rl_receipt):
