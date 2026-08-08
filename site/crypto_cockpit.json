@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-07",
-  "generated_at": "2026-08-08T05:09:13+00:00",
+  "as_of": "2026-08-08",
+  "generated_at": "2026-08-08T07:09:00+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 64922.19,
-    "change_24h_pct": 1.02,
-    "stance_en": "RISK-ON",
-    "stance_zh": "偏多",
-    "summary_en": "The big picture reads risk-on. Support comes from the trend and ETF flows; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向偏多。支撑来自趋势与ETF 资金流；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 13,
+    "price": 64989.42,
+    "change_24h_pct": 0.15,
+    "stance_en": "NEUTRAL",
+    "stance_zh": "中性",
+    "summary_en": "The big picture reads neutral. Support comes from the trend and fundamentals; the drag comes from futures positioning and momentum. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向中性。支撑来自趋势与基本面；拖累来自期货持仓与动量。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 11,
     "exposure_pct": 0,
     "gate_active": true
   },
@@ -109,13 +109,13 @@
       "label_zh": "流动性与资金流",
       "primary": {
         "key": "etf",
-        "label_en": "ETF flows",
-        "label_zh": "ETF 资金流",
+        "label_en": "Etf",
+        "label_zh": "etf",
         "source": "master.board.etf",
-        "state_en": "Accumulation",
-        "state_zh": "吸筹",
-        "tone": "bull",
-        "grade": "DIRECTIONAL"
+        "state_en": "Unavailable",
+        "state_zh": "暂无",
+        "tone": "neutral",
+        "grade": null
       },
       "spark_source": "signals.etf_flow_z",
       "receipt_members": [
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-07"
+        "as_of": "2026-08-08"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
