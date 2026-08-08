@@ -4144,7 +4144,8 @@ def test_proxy_headers_ignored_without_secret():
     """No BRAIN_PROXY_SECRET configured → forwarded x-mm-aid is NEVER trusted (public
     traffic can't forge a device); the real cookie/IP win."""
     aid, ip, dh = _identity({"mm_aid": "real-visitor"},
-                            {"x-mm-aid": "forged", "x-mm-ip": "9.9.9.9", "eo-client-ip": "1.2.3.4"},
+                            {"x-mm-aid": "forged", "x-mm-ip": "9.9.9.9",
+                             "eo-connecting-ip": "1.2.3.4"},
                             "")
     assert aid == "real-visitor" and ip == "1.2.3.4"
 
@@ -4153,7 +4154,7 @@ def test_proxy_headers_ignored_with_wrong_secret():
     """A public client that guesses the header name but not the secret is ignored."""
     aid, ip, dh = _identity({"mm_aid": "real-visitor"},
                             {"x-mm-aid": "forged", "x-mm-proxy-secret": "wrong",
-                             "eo-client-ip": "1.2.3.4"},
+                             "eo-connecting-ip": "1.2.3.4"},
                             "s3cret")
     assert aid == "real-visitor" and ip == "1.2.3.4"
 
