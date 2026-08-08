@@ -321,6 +321,58 @@ def add_pending(candidates: Sequence[dict], *, root: Path | str | None = None,
 # ---------------------------------------------------------------------------
 # Promotion — OPERATOR/ADMIN ONLY. Never called by the harvester.
 # ---------------------------------------------------------------------------
+#: The desk a candidate is judged AS. ``register_v4_violations`` scopes its
+#: wire-opener ban by ACCOUNT (``copywriter.WIRE_ACCOUNTS``): 'BREAKING' is the
+#: news wire's whole job and every analytical desk's defect, so a candidate has
+#: to be judged as the kind of desk that would be handed it to imitate. A `wire`
+#: exemplar only ever reaches the wire desk and every other register only ever
+#: reaches an analytical one (``HOUSE_REGISTER_MAP``); `flagship` is the enabled
+#: analytical desk in config/marketing.yml ``desk_network.accounts``.
+_V4_WIRE_DESK = "mastermind_news"
+_V4_ANALYTICAL_DESK = "flagship"
+
+
+def _v4_ctx(register: str | None) -> dict:
+    """The judging context for a candidate stored under ``register``.
+
+    DELIBERATELY CARRIES NO ``type``. A kind in ``copywriter.WIRE_KINDS``
+    licenses the wire opener wherever it runs, and a candidate is somebody
+    else's post — it has no house kind to license it with, so the account is the
+    only lever and the analytical desk is judged with the ban fully armed.
+    """
+    reg = str(register or "").strip().lower()
+    return {"account": _V4_WIRE_DESK if reg == "wire" else _V4_ANALYTICAL_DESK}
+
+
+def _v4_screen(pending: Sequence[dict]) -> tuple[list[dict], list[dict]]:
+    """Split the pool into (promotable, refused) on the voice pack v4 bans.
+
+    The import is function-local ON PURPOSE. ``copywriter`` reaches DOWN into
+    this module (``store_exemplar_block`` -> ``active_exemplars``), so a
+    module-level import here would close that loop; deferring it to the operator
+    act keeps the import graph one-way at load time in either order.
+    """
+    from engine.marketing.copywriter import register_v4_violations  # noqa: PLC0415
+
+    promotable: list[dict] = []
+    refused: list[dict] = []
+    for cand in pending:
+        register = str(cand.get("register") or "unknown")
+        reasons = register_v4_violations(str(cand.get("text") or ""),
+                                         _v4_ctx(register))
+        if not reasons:
+            promotable.append(cand)
+            continue
+        refused.append({
+            "register": register,
+            "post_id": str(cand.get("post_id") or ""),
+            "author": str(cand.get("author") or ""),
+            "text_key": str(cand.get("text_key") or _text_key(cand.get("text"))),
+            "violations": list(reasons),
+        })
+    return promotable, refused
+
+
 def promote_pending(
     version_note: str,
     *,
@@ -347,6 +399,26 @@ def promote_pending(
     ``ratified_by`` is REQUIRED and non-empty: an unattributed ratification is
     indistinguishable from an automatic one, which is the thing this gate exists
     to prevent.
+
+    **IT REFUSES v4 VIOLATORS BEFORE THEY BECOME EXEMPLARS** (2026-08-08 audit of
+    the 40-candidate pool: 6 tripped ``copywriter.register_v4_violations`` against
+    their own stored register — 5 wire openers filed under `aggregator`, one
+    orphan superlative under `trader`). A version is quoted VERBATIM into the
+    writer's system prompt as style to imitate, so a violator teaches the model
+    exactly what the validators then reject — the self-cancelling loop of the
+    2026-07-31 HEDGES autopsy. The screen runs over the POOL, before a single
+    entry is minted, so an excluded candidate frees its slot instead of spending
+    one.
+
+    NOTHING IS EXCLUDED SILENTLY: ``n_excluded`` and the per-candidate
+    ``excluded`` reasons ride in the returned dict, the count lands in the frozen
+    version record, and a ``::warning`` names them at line start.
+
+    A refused candidate is NOT parked in ``pending``. ``clear_pending`` drains
+    exactly what it drained before, because "refused but still pending" is a
+    third state this store has no vocabulary for, and the screen is
+    deterministic — the harvester re-proposes the post from the append-only
+    corpus on its next pass and it is refused again, so nothing is lost.
     """
     who = str(ratified_by or "").strip()
     if not who:
@@ -359,18 +431,31 @@ def promote_pending(
     pending = list(st.get("pending") or [])
     if not pending:
         return {"ok": False, "reason": "pending pool is empty — nothing to promote",
-                "version": None, "store": st}
+                "version": None, "n_excluded": 0, "excluded": [], "store": st}
+
+    promotable, refused = _v4_screen(pending)
+    if not promotable:
+        return {
+            "ok": False,
+            "reason": (f"all {len(pending)} pending candidates trip a voice pack v4 "
+                       f"register ban — an empty version is worse than none"),
+            "version": None, "n_excluded": len(refused), "excluded": refused,
+            "store": st,
+        }
 
     version = int(st.get("latest_version") or 0) + 1
     # Entries are copied, not aliased: a version is a FROZEN artifact and must
     # not move because someone later mutates the pending list it came from.
-    entries = [dict(cand) for cand in pending]
+    entries = [dict(cand) for cand in promotable]
     st.setdefault("versions", []).append({
         "version": version,
         "ratified_by": who,
         "ratified_at": iso_stamp(stamp),
         "note": str(version_note or ""),
         "n_entries": len(entries),
+        # Why a version can hold fewer entries than the pool it came from. The
+        # header carries the count only; the reasons are in the return value.
+        "n_excluded": len(refused),
         "registers": sorted({str(e.get("register") or "unknown") for e in entries}),
         "entries": entries,
     })
@@ -382,15 +467,30 @@ def promote_pending(
 
     print(
         f"::notice title=x-intel-exemplars::exemplar store version {version} minted "
-        f"by {who} ({len(entries)} entries). IT IS NOT LIVE: set "
-        f"intel.exemplar_store.active_version: {version} in config/marketing.yml "
-        f"to let the writer read it.",
+        f"by {who} ({len(entries)} entries, {len(refused)} excluded by voice pack "
+        f"v4). IT IS NOT LIVE: set intel.exemplar_store.active_version: {version} "
+        f"in config/marketing.yml to let the writer read it.",
         flush=True,
     )
+    # AFTER the notice, so the headline stays the first line of the promotion.
+    if refused:
+        detail = "; ".join(
+            f"{r['post_id'] or r['text_key']} [{r['register']}] {r['violations'][0]}"
+            for r in refused[:6]
+        )
+        print(
+            f"::warning title=x-intel-exemplars::{len(refused)} of {len(pending)} "
+            f"pending candidates were EXCLUDED from exemplar version {version} by the "
+            f"voice pack v4 register bans — quoting them into the writer prompt would "
+            f"teach the model the forms validate_copy_v2 then rejects. {detail}",
+            flush=True,
+        )
     return {
         "ok": True,
         "version": version,
         "n_entries": len(entries),
+        "n_excluded": len(refused),
+        "excluded": refused,
         "ratified_by": who,
         "activation_hint": (
             "config/marketing.yml -> intel: exemplar_store: active_version: "
@@ -489,7 +589,10 @@ def active_exemplars(register: str | None = None, k: int = 6, *,
         engine/marketing/reply_voice.py  system_prompt()
                                          -> voice_or_fallback
 
-    The dependency still points ONE WAY: this module imports neither of them.
+    The dependency still points ONE WAY AT LOAD TIME: this module imports neither
+    of them at module level. Its one reach upward is ``_v4_screen``'s
+    function-local ``copywriter.register_v4_violations``, on the operator's
+    promotion path only — never on this read path.
 
         from engine.marketing import exemplar_store
         shots = exemplar_store.active_exemplars(register, k=4, cfg=cfg)

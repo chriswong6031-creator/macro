@@ -44,6 +44,7 @@ Public API:
     classify(text, *, has_media=False) -> dict    # deterministic format tags
     is_retweet(raw) -> bool
     extract_tweets(response) -> list[dict]        # data.tweets nesting
+    stored_register(register, text) -> str        # a wire opener beats the roster
     normalize_tweet(raw, *, handle, register, captured_at, source) -> dict | None
     load_corpus(root|path) -> list[dict]          # folded newest-per-id
     append_corpus(rows, *, root) -> int
@@ -510,6 +511,32 @@ def _author_block(raw: dict) -> dict:
     return {}
 
 
+def stored_register(register: str | None, text: str) -> str:
+    """The register a post is STORED under: the roster's, unless it opens a wire.
+
+    The roster declares one register per ACCOUNT, but a post is not its account:
+    an aggregator or a commentary desk that opens "BREAKING:" has written a wire
+    post, and filing it under the account's register mislabels the corpus and
+    then poisons the exemplar pool downstream — ``exemplar_store.promote_pending``
+    judges each candidate against its STORED register, so a wire opener parked
+    under an analytical one trips the v4 wire-opener ban and is refused (5 of the
+    6 refusals in the 2026-08-08 audit of the pending pool were exactly this: all
+    five filed under `aggregator`).
+
+    The opener list is the copy validator's own ``_WIRE_OPENER_RE``, imported
+    rather than re-listed so the harvest and the gate cannot drift apart. The
+    import is function-local because this is the corpus layer and the validator
+    is the writer layer (``exemplar_store`` sits between them and imports this
+    module at load time) — deferring it keeps every module-level import one-way.
+    """
+    from engine.marketing.copywriter import _WIRE_OPENER_RE  # noqa: PLC0415
+
+    reg = str(register or "unknown")
+    if reg != "wire" and _WIRE_OPENER_RE.match(str(text or "")):
+        return "wire"
+    return reg
+
+
 def normalize_tweet(
     raw: dict,
     *,
@@ -565,7 +592,7 @@ def normalize_tweet(
         "schema": SCHEMA,
         "id": tid,
         "author": who,
-        "author_register": str(register or "unknown"),
+        "author_register": stored_register(register, text),
         "author_followers": _opt_int(
             author.get("followers") or author.get("followers_count")
             or author.get("followersCount")
@@ -1355,7 +1382,7 @@ __all__ = [
     "HOUSE_REGISTER_MAP",
     "resolve_cfg", "roster",
     "intel_dir", "corpus_path", "state_path", "report_path", "weekly_report_path",
-    "classify", "is_retweet", "extract_tweets", "normalize_tweet",
+    "classify", "is_retweet", "extract_tweets", "stored_register", "normalize_tweet",
     "load_corpus", "append_corpus",
     "iso_stamp", "write_json_atomic",
     "load_state", "save_state", "month_bucket", "budget_check",

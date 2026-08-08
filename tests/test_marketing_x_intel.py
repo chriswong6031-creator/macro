@@ -187,6 +187,28 @@ class TestHarvestParsesTheRealShape:
         assert row["author_register"] == "wire"
         assert row["created_day"] == "2026-07-28"
 
+    def test_a_wire_opener_is_STORED_as_wire_whatever_the_account_is(self):
+        """The roster declares a register per ACCOUNT, but a post is not its
+        account: an aggregator that opens "BREAKING:" wrote a wire post. Storing
+        it under the account's register mislabels the corpus and then poisons the
+        exemplar pool, where the v4 wire-opener ban refuses it (2026-08-08)."""
+        rows = [
+            xi.normalize_tweet(_tweet(301, "BREAKING: KOSPI plunges 9.6% at the open.",
+                                      author="unusual_whales"),
+                               handle="unusual_whales", register="aggregator",
+                               captured_at="2026-07-29T22:00:00Z"),
+            xi.normalize_tweet(_tweet(302, "JUST IN: Fed cuts by 25 basis points.",
+                                      author="KobeissiLetter"),
+                               handle="KobeissiLetter", register="commentary",
+                               captured_at="2026-07-29T22:00:00Z"),
+        ]
+        assert [r["author_register"] for r in rows] == ["wire", "wire"]
+        # A post that does not open on a wire keeps the roster's register.
+        kept = xi.normalize_tweet(_tweet(303, TRADER_SETUP, author="traderstewie"),
+                                  handle="traderstewie", register="trader",
+                                  captured_at="2026-07-29T22:00:00Z")
+        assert kept["author_register"] == "trader"
+
     def test_an_absent_counter_is_None_not_zero(self):
         """"nobody looked" and "we were not told" are different facts, and every
         rate downstream depends on keeping them apart."""
@@ -724,6 +746,134 @@ class TestExemplarStore:
         meta = xs.active_version_meta(root=tmp_path, cfg=cfg)
         assert meta["pinned"] is None
         assert "dark default" in meta["reason"]
+
+
+# ===========================================================================
+# GATE E3.6b — the VOICE PACK v4 PRE-FILTER (W2, 2026-08-08)
+#
+# A version is quoted VERBATIM into the writer's system prompt, so a candidate
+# that trips `copywriter.register_v4_violations` against its own stored register
+# would teach the model the forms `validate_copy_v2` then rejects. The audit of
+# the live 40-candidate pool found 6 such candidates, 5 of them wire openers
+# parked under an analytical register.
+# ===========================================================================
+HASHTAG_CANDIDATE = "Copper just cleared its 200-day. #metals"
+WIRE_OPENER_CANDIDATE = "BREAKING: KOSPI plunges 9.6% at the open."
+
+
+def _candidate(text, *, register, post_id, key, rate=0.5):
+    """One PENDING pool entry, on the shape `propose_candidates` writes."""
+    return {
+        "register": register, "text": text, "author": "someone",
+        "url": f"https://x.com/someone/status/{post_id}", "post_id": str(post_id),
+        "created_at": "Tue Jul 28 21:03:12 +0000 2026", "shape": "one_liner",
+        "engagement": {"views": 100_000, "likes": 800, "retweets": 40,
+                       "replies": 60, "interaction_rate": rate},
+        "text_key": key, "added": "2026-07-29T22:00:00Z",
+    }
+
+
+class TestExemplarV4PreFilter:
+    def _promote(self, tmp_path, cfg, candidates):
+        """Promote a hand-built pool. NEVER touches the live data/ store."""
+        store = xs.load_store(tmp_path)
+        store["pending"] = list(candidates)
+        xs.save_store(store, tmp_path, now=NOW)
+        return xs.promote_pending("v4 screen", ratified_by="chris", root=tmp_path,
+                                  cfg=cfg, now=NOW)
+
+    def _texts(self, tmp_path, cfg, res):
+        pinned = {**cfg, "intel": {**cfg["intel"],
+                                   "exemplar_store": {**cfg["intel"]["exemplar_store"],
+                                                      "active_version": res["version"]}}}
+        return [e["text"] for e in xs.active_exemplars(None, k=50, root=tmp_path,
+                                                       cfg=pinned)]
+
+    def test_a_hashtag_candidate_does_not_survive_promotion(self, tmp_path, cfg):
+        res = self._promote(tmp_path, cfg, [
+            _candidate(HASHTAG_CANDIDATE, register="commentary", post_id=1,
+                       key="hashtag00000000"),
+            _candidate(TRADER_SETUP, register="trader", post_id=2,
+                       key="clean00000000000", rate=0.4),
+        ])
+        assert res["ok"] is True
+        assert HASHTAG_CANDIDATE not in self._texts(tmp_path, cfg, res)
+
+    def test_a_wire_opener_under_a_NON_WIRE_register_does_not_survive(self, tmp_path,
+                                                                      cfg):
+        """The ban is desk-scoped, not a blanket one: the SAME text stored under
+        `wire` is judged as the wire desk (mastermind_news), whose whole job it
+        is, and survives. Filed under `aggregator` it is the defect."""
+        res = self._promote(tmp_path, cfg, [
+            _candidate(WIRE_OPENER_CANDIDATE, register="aggregator", post_id=1,
+                       key="mislabelled00000"),
+            _candidate(TRADER_SETUP, register="trader", post_id=2,
+                       key="clean00000000000", rate=0.4),
+        ])
+        assert WIRE_OPENER_CANDIDATE not in self._texts(tmp_path, cfg, res)
+
+        second = tmp_path / "as_wire"
+        res2 = self._promote(second, cfg, [
+            _candidate(WIRE_OPENER_CANDIDATE, register="wire", post_id=1,
+                       key="mislabelled00000"),
+        ])
+        assert res2["n_excluded"] == 0
+        assert WIRE_OPENER_CANDIDATE in self._texts(second, cfg, res2)
+
+    def test_a_clean_candidate_DOES_survive_promotion(self, tmp_path, cfg):
+        res = self._promote(tmp_path, cfg, [
+            _candidate(TRADER_SETUP, register="trader", post_id=2,
+                       key="clean00000000000"),
+        ])
+        assert res["ok"] is True and res["n_entries"] == 1
+        assert self._texts(tmp_path, cfg, res) == [TRADER_SETUP]
+
+    def test_the_exclusion_count_is_REPORTED_not_silent(self, tmp_path, cfg, capsys):
+        res = self._promote(tmp_path, cfg, [
+            _candidate(HASHTAG_CANDIDATE, register="commentary", post_id=1,
+                       key="hashtag00000000"),
+            _candidate(WIRE_OPENER_CANDIDATE, register="aggregator", post_id=2,
+                       key="mislabelled00000", rate=0.45),
+            _candidate(TRADER_SETUP, register="trader", post_id=3,
+                       key="clean00000000000", rate=0.4),
+        ])
+        assert res["n_excluded"] == 2
+        assert len(res["excluded"]) == 2
+        assert res["n_entries"] == 1
+        assert {r["post_id"] for r in res["excluded"]} == {"1", "2"}
+        assert all(r["violations"] for r in res["excluded"])
+        # The frozen version record carries the count too, so the audit trail
+        # explains a version that is smaller than the pool it came from.
+        assert xs.versions(tmp_path)[-1]["n_excluded"] == 2
+        line = next(ln for ln in capsys.readouterr().out.splitlines()
+                    if "EXCLUDED" in ln)
+        assert line.startswith("::warning title=x-intel-exemplars::")
+        assert "2 of 3" in line
+
+    def test_a_refused_candidate_is_drained_with_the_rest_not_parked(self, tmp_path,
+                                                                     cfg):
+        """`clear_pending` drains what it always drained: "refused but still
+        pending" is a state this store has no vocabulary for, and the corpus is
+        append-only, so the harvester re-proposes and the screen refuses again."""
+        self._promote(tmp_path, cfg, [
+            _candidate(HASHTAG_CANDIDATE, register="commentary", post_id=1,
+                       key="hashtag00000000"),
+            _candidate(TRADER_SETUP, register="trader", post_id=2,
+                       key="clean00000000000", rate=0.4),
+        ])
+        assert xs.load_store(tmp_path)["pending"] == []
+
+    def test_an_all_violator_pool_is_a_REFUSAL_not_an_empty_version(self, tmp_path,
+                                                                    cfg):
+        res = self._promote(tmp_path, cfg, [
+            _candidate(HASHTAG_CANDIDATE, register="commentary", post_id=1,
+                       key="hashtag00000000"),
+        ])
+        assert res["ok"] is False and res["version"] is None
+        assert res["n_excluded"] == 1
+        assert xs.load_store(tmp_path)["versions"] == []
+        # Nothing was minted, so nothing was drained either.
+        assert len(xs.load_store(tmp_path)["pending"]) == 1
 
 
 # ===========================================================================
