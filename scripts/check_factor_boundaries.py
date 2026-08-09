@@ -211,6 +211,17 @@ _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS = {
     ),
 }
 
+# These constructs can replace a validated producer or its executable body
+# without creating an ``ast.Name(Store)`` binding. Fixed-emission modules do
+# not receive a warrant when any of them is present; the lexical/semantic token
+# scan then fails closed on the otherwise-exempt emission key.
+_REFLECTIVE_EMITTER_NAMES = frozenset(
+    {"globals", "locals", "vars", "exec", "eval", "setattr", "delattr"}
+)
+_REFLECTIVE_EMITTER_ATTRIBUTES = frozenset(
+    {"modules", "__code__", "__dict__", "__defaults__", "__kwdefaults__"}
+)
+
 # ---------------------------------------------------------------------------
 # Forbidden field names in state-builder and shadow script (check-c)
 # ---------------------------------------------------------------------------
@@ -443,6 +454,22 @@ def _enclosing_function(
     return None
 
 
+def _has_reflective_emitter_mutation(tree: ast.Module) -> bool:
+    """Return whether source can replace a validated producer indirectly."""
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Name)
+            and node.id in _REFLECTIVE_EMITTER_NAMES
+        ):
+            return True
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr in _REFLECTIVE_EMITTER_ATTRIBUTES
+        ):
+            return True
+    return False
+
+
 def _approved_direct_return_emitters(
     tree: ast.Module,
     rel_path: str,
@@ -450,7 +477,7 @@ def _approved_direct_return_emitters(
 ) -> frozenset[int]:
     """Return identities of sealed, named module-level producer functions."""
     expected = _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.get(rel_path, frozenset())
-    if not expected:
+    if not expected or _has_reflective_emitter_mutation(tree):
         return frozenset()
 
     approved: set[int] = set()
@@ -487,7 +514,9 @@ def _is_allowed_actions_value_position(
     """Return whether *value* is in a named producer's direct return mapping."""
     parent = parents.get(id(value))
     if isinstance(parent, ast.Dict):
-        for key, candidate in zip(parent.keys, parent.values):
+        for index, (key, candidate) in enumerate(
+            zip(parent.keys, parent.values)
+        ):
             if candidate is value:
                 return_node = parents.get(id(parent))
                 function = (
@@ -495,9 +524,19 @@ def _is_allowed_actions_value_position(
                     if isinstance(return_node, ast.Return)
                     else None
                 )
+                # A later **unpack or computed key could overwrite the fixed
+                # mirror. Literal, known-different keys are safe. Unpacks and
+                # computed keys before this final override remain safe, which
+                # preserves production's {**out, "allowed_actions": ...} shape.
+                safe_tail = all(
+                    isinstance(later_key, ast.Constant)
+                    and later_key.value != "allowed_actions"
+                    for later_key in parent.keys[index + 1 :]
+                )
                 return (
                     isinstance(key, ast.Constant)
                     and key.value == "allowed_actions"
+                    and safe_tail
                     and isinstance(return_node, ast.Return)
                     and return_node.value is parent
                     and function is not None
@@ -509,6 +548,26 @@ def _is_allowed_actions_value_position(
 def _is_fixed_actions_emission_value(node: ast.AST) -> bool:
     """Recognize only an inline six-key, all-False literal mapping."""
     return _is_fixed_false_actions_dict(node)
+
+
+def _constant_string_value(node: ast.AST) -> str | None:
+    """Resolve a side-effect-free constant string expression, if possible."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _constant_string_value(node.left)
+        right = _constant_string_value(node.right)
+        if left is not None and right is not None:
+            return left + right
+    if isinstance(node, ast.JoinedStr):
+        pieces: list[str] = []
+        for value in node.values:
+            piece = _constant_string_value(value)
+            if piece is None:
+                return None
+            pieces.append(piece)
+        return "".join(pieces)
+    return None
 
 
 def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]:
@@ -538,6 +597,7 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
     )
     source_lines = source.splitlines()
     permitted_spans: set[tuple[int, int, int]] = set()
+    permitted_key_ids: set[int] = set()
 
     def char_offset(line: str, byte_offset: int) -> int:
         """Translate CPython AST UTF-8 byte columns to string offsets."""
@@ -554,8 +614,8 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
             permitted_spans.add(
                 (key.lineno, token_start, token_start + len("allowed_actions"))
             )
+            permitted_key_ids.add(id(key))
 
-    lines: set[int] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for key, value in zip(node.keys, node.values):
@@ -579,6 +639,16 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
             span = (line_no, occurrence.start(), occurrence.end())
             if span not in permitted_spans:
                 lines.add(line_no)
+
+    # Python folds adjacent literals and can build the authority key with
+    # constant concatenation while the raw source never contains the token.
+    # Treat every statically resolvable occurrence as equivalent to the literal
+    # spelling, except for the exact AST key node warranted above.
+    for node in ast.walk(tree):
+        if id(node) in permitted_key_ids:
+            continue
+        if _constant_string_value(node) == "allowed_actions":
+            lines.add(node.lineno)
 
     return sorted(lines)
 

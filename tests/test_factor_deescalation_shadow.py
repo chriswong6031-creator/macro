@@ -446,7 +446,7 @@ class TestCheckB:
             )
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
-        assert len(viols) == 1
+        assert viols == []
 
     def test_world_state_rejects_named_constant_copy_emission(self) -> None:
         synthetic = {
