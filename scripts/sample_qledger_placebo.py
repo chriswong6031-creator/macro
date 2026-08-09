@@ -65,8 +65,7 @@ import pandas as pd
 
 _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from engine.qledger import make_claim, register_batch  # noqa: E402
 
