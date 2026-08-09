@@ -33,6 +33,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 # field name -> the directional tokens that must NOT sit on the same rendered chip unless the
 # chip is explicitly neutralized (class "muted" / a display-only/context label present).
