@@ -1560,11 +1560,11 @@ def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
 
 def nowcast_history(f: "pd.DataFrame") -> dict:
     """Per-metric historical mini-charts for the Macro-nowcast hover popovers.
-    Reuses the SAME transforms the dashboard headline numbers use (raw level for
-    WEI/GDPNow, the annualized-smoothed monthly print for sticky/flexible CPI) so
-    the last charted point matches the displayed value. Returns SVG + key stats
-    keyed by metric; metrics absent from the feature frame are simply omitted."""
-    from engine.conditions import _smooth_annual_rate
+    Reuses the SAME transforms the dashboard headline numbers use: raw level for
+    WEI/GDPNow and exact contiguous raw-month compounding for sticky/flexible CPI.
+    The inflation history never derives monthly observations from the forward-filled
+    feature frame. Returns SVG + key stats keyed by metric; absent inputs are omitted."""
+    from engine.conditions import raw_atlanta_inflation_history
     sm = config.load()["engine"]["conditions"]["inflation_nowcast"]["smooth_months"]
     out: dict[str, dict] = {}
 
@@ -1588,10 +1588,21 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
                 return "cooling", "good"
         return "flat", "flat"
 
-    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps, monthly=False):
+    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps,
+             monthly=False, contiguous=False):
         if raw is None:
             return
-        s = raw.dropna()
+        s = raw
+        if contiguous:
+            # Do not show an older valid print as current or connect a chart across
+            # a missing raw-month window. Keep only the latest uninterrupted run.
+            if s.empty or pd.isna(s.iloc[-1]):
+                return
+            missing = np.flatnonzero(s.isna().to_numpy())
+            if len(missing):
+                s = s.iloc[missing[-1] + 1:]
+        else:
+            s = s.dropna()
         if monthly:                       # collapse ffilled daily rows to monthly prints
             s = s[s.ne(s.shift())]
         s = s.iloc[-keep:]
@@ -1610,14 +1621,13 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     # GDPNow window stops short of the 2020 COVID -32%→+37% whipsaw, which would
     # otherwise squash all post-pandemic detail into a flat line.
     pack("gdpnow", col("gdpnow"), "var(--link)", 0.0, 20, 4, "growth", 1, 0.10, monthly=True)
-    sticky = col("sticky_cpi")
-    flex = col("flex_cpi")
-    if sticky is not None:
-        pack("sticky", _smooth_annual_rate(sticky, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.10, monthly=True)
-    if flex is not None:
-        pack("flexible", _smooth_annual_rate(flex, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.30, monthly=True)
+    inflation = raw_atlanta_inflation_history(
+        sm, as_of=(f.index.max() if len(f.index) else None)
+    )
+    pack("sticky", inflation["sticky"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.10, contiguous=True)
+    pack("flexible", inflation["flexible"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.30, contiguous=True)
     return out
 
 
