@@ -21,11 +21,12 @@ and the two intraday collectors that are now cheap.
 - Armed merge-on-green, awaiting the base-red heal swarm: #5055 (L3 onset), #5059 (L0 heals),
   #5061 (L1 rider), #5074 (w4_feed schema re-pin, this session's heal), and the Wave-1
   adjudication PR carrying this file.
-- L2 (regime): lane died on a session limit AFTER completing measurement; salvage lane was
-  finishing at handoff time (branch `claude/cn-limit-w1-regime`, M5 re-validated against L0's
-  healed zt_pool — the pre-heal store carried 11 phantom dates). If its PR is not open/merged,
-  the four finished artifacts are recoverable from the salvage branch or, worst case, the dead
-  worktree `agent-a6c9b9c64bebd39bd` (files staged on its index).
+- L2 (regime): SALVAGED AND APPROVED — #5078 (branch `claude/cn-limit-w1-regime-salvage`),
+  armed. M5 verdict CLEAN (triple-gated phantom detection; healed-store re-run moved zero
+  numbers). Key instruments for W2: i5_realized_continuation_ma5 (THE dial), raw breadth
+  counts FORBIDDEN as absolutes (within-year sign inversion). The dead worktree
+  `agent-a6c9b9c64bebd39bd` and its `claude/cn-limit-w1-regime` local branch are redundant —
+  leave them to worktree GC.
 - Upstream chain (sibling program, armed): #4972 (charter doc), #4999 (v0), #5000, #5007.
 - Base-red heal swarm (NOT ours, do not duplicate — verify landed): #5064/#5065 (pack-0
   earnings-seasons date bomb), #5033/#5034/#5023/#5031/#5036 (packs 2/3: ETHA beta knife-edge,

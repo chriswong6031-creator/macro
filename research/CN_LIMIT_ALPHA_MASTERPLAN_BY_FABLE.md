@@ -179,10 +179,16 @@ LEVEL, not ORDER. B2 (f3×f6×N empirical buckets) is the only positive-skill si
 (+0.32% main, best ECE, best top-10); **f3+N alone beats everything at +0.71%** — and f3's
 coefficient flips sign as ladder dummies enter: v0's flagship 3.93× run-up lift is
 substantially **the 连板 ladder wearing a feature's clothes**. Forward ledger seeded (2,000
-retro + 100 live rows; live = 2026-08-07 features → 2026-08-10). L2: measurement completed,
-lane died on a session limit at the commit step; salvage lane finishing (M5 re-validated
-against L0's healed store — the 11 phantom dates would otherwise have injected
-fake-agreement rows).
+retro + 100 live rows; live = 2026-08-07 features → 2026-08-10). L2 #5078 APPROVED
+(salvaged): the original lane's triple-gated phantom detection (weekend + payload-hash-dupe +
+trading-calendar) meant L0's heal moved ZERO published numbers (series parquet SHA-identical) —
+receipt self-protection is now the house standard. Findings: **i5 realized-continuation-ma5 is
+THE regime dial** (holdout top-vs-bottom quintile 26.73% vs 12.61% = 2.121×, rho 1.0,
+era-neutral 12/16 years — Wave-2 §8.1's calibration conditioner); **raw 涨停家数 breadth
+INVERTS within-year** (era artifact, use within-series ranks); 高标断板 marks a bad day,
+barely a bad tomorrow (same-day 0.759× → next-day 0.911×, sign flips positive at H≥5);
+vendor-pool undercount median 2.748× and UNSTABLE (IQR/median 0.53) — curated-universe dials
+must never ship as absolute counts.
 
 **The synthesis — the mechanism is real; the naive monetization is dead; both sharpen the
 program:**
