@@ -17,6 +17,7 @@ Run as a script (no pytest needed): python -m tests.test_spvector_page
 """
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -74,6 +75,33 @@ def test_spvector_renders():
     for s in ["Allocation Strategy", "drawdown / Sharpe engine", "Taxable-account",
               "Macro-stress drawdown gauge", "rule-book", "permutation null", "after-tax"]:
         assert s.lower() in html.lower(), f"spvector missing mandated copy: {s!r}"
+
+
+def test_suite_has_no_decorative_soft_check_helper():
+    """Keep #5076's useful diagnosis without restoring its stale page markers.
+
+    The stronger #5062 repair replaced the old print-and-tally ``check()`` helper
+    with direct assertions. A later copy/paste of that helper would make failures
+    decorative under pytest again, so guard the shape through the Python AST while
+    leaving the current dashboard, China, and HK successor markers authoritative.
+    """
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    soft_defs = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "check"
+    ]
+    soft_calls = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "check"
+    ]
+    assert not soft_defs and not soft_calls, (
+        "test_spvector_page.py reintroduced decorative check() gates: "
+        f"definitions={soft_defs}, calls={soft_calls}"
+    )
 
 
 def test_dashboard_compiles_and_splits():
@@ -142,7 +170,12 @@ def test_hub_split_cards():
 
 
 def main() -> int:
-    tests = (test_spvector_renders, test_dashboard_compiles_and_splits, test_hub_split_cards)
+    tests = (
+        test_spvector_renders,
+        test_suite_has_no_decorative_soft_check_helper,
+        test_dashboard_compiles_and_splits,
+        test_hub_split_cards,
+    )
     failed = 0
     for fn in tests:
         print(f"\n{fn.__name__}")
