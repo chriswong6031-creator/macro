@@ -17,12 +17,17 @@ BOUND on true recall. Run: python -m scripts.benchmark_vs_digest
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
-from lib import config
-from engine import special_situations as sse
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from engine import special_situations as sse  # noqa: E402
 
 
 def _norm(t) -> str | None:

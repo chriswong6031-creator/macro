@@ -51,8 +51,9 @@ DISTRIBUTION_OBLIGATIONS = {
     "display_source_submitter_responsibility_note",
 }
 
-# The three outcome families the rights ruling made gate-ELIGIBLE. None of them
-# may have a clock: there is no proven collection path for this source.
+# The three outcome families the rights ruling made rights-eligible. None of
+# them may have a clock: there is still no active collection path for this
+# source.
 HISTORY_BACKED_FAMILIES = {
     "trial_progression_termination",
     "timing_slip",
@@ -184,10 +185,14 @@ def test_no_outcome_family_clock_was_opened_by_the_rights_enablement() -> None:
         gate = family["entry_gate"]
         assert family["state"] == "clock_not_opened", name
         assert gate["satisfied"] is False, name
-        # The rights ruling made these families gate-ELIGIBLE. The writer is what
-        # is still missing, and it is missing for every one of them.
-        assert "o1b_outcome_writer" in gate["unsatisfied_preconditions"], name
-        assert gate["blockers"], name
+        # BC-O1b landed after the ruling branch fork, so the writer now exists.
+        # The separately controlled runtime/universe gates are what still keep
+        # the source activation-ineligible and prevent fabricated accrual.
+        assert "o1b_outcome_writer" not in gate["unsatisfied_preconditions"], name
+        assert (
+            "eligible_source_registration" in gate["unsatisfied_preconditions"]
+        ), name
+        assert "required_source_not_activation_eligible" in gate["blockers"], name
         assert "clinicaltrials_gov_record_history" in gate["required_source_ids"], name
 
 

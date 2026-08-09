@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ETN-2026-06-30-buy",
+  "ticker": "ETN",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ETN",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ETN",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Industrials",
+    "excess_spy": 0.005306337790880633,
+    "excess_sector": 0.026206555612269478,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The pick finished benchmark-positive despite a stopped terminal state, and the supplied record labels the process clean. The mixed outcome cause cannot be decomposed into rotation, sector, company, or catalyst effects from the available evidence.",
+    "root_cause": "The pick finished benchmark-positive despite a stopped terminal state, and the supplied record labels the process clean. The mixed outcome cause cannot be decomposed into rotation, sector, company, or catalyst effects from the available evidence.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "The selection stack produced relative strength, but the attribution books did not preserve enough evidence to identify which engine supplied the edge.",
+    "engines_credit": "The buy-selection organs receive provisional credit; macro, rotation, sector, catalyst, and company-alpha attribution books remain indeterminate rather than demonstrated role models or laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Unspecified company-level strength may have contributed to the favorable relative result.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "If company-specific strength was absent, sector or market rotation would need to explain the result.",
+        "evidence_refs": [
+          "outcome_cause=mixed",
+          "excess_spy positive"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Capital rotation into industrial exposures may have supported relative performance.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Industry-neutral relative strength would weaken the rotation explanation.",
+        "evidence_refs": [
+          "sector=Industrials",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The path reached a stopped state even though the matured benchmark-relative result was favorable.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A different path treatment could have changed realized participation, but no supplied process-fault label supports calling the treatment defective.",
+        "evidence_refs": [
+          "terminal_state=STOPPED",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Industrials rotation rather than company-specific alpha drove the result.",
+      "A post-entry catalyst produced the strength.",
+      "The benchmark-relative gain occurred only after the stop and was not economically captured."
+    ],
+    "missing_evidence": [
+      "Trade path and realized exit",
+      "Industry-relative and factor-neutral performance",
+      "Ex-ante thesis and feature snapshots",
+      "Dated news and revisions",
+      "Reason the clean process legitimately produced a stopped state"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "industrial_residual_strength",
+        "feature": "Company return residual after market, sector, and industry effects",
+        "measurement": "Estimate the pick-horizon residual using only factor definitions available at entry.",
+        "expected_direction": "Persistent positive residuals would favor company-alpha attribution.",
+        "falsifier": "The result disappears after sector and industry adjustment.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

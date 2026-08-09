@@ -67,14 +67,25 @@ def test_extract_token_no_access_token_key():
     assert m._mm_supabase_access_token(_FakeReq(cookies=ck)) is None
 
 
-def test_client_ip_prefers_eo_client_ip():
+def test_client_ip_prefers_the_edge_written_header():
+    """Was `prefers_eo_client_ip`, and that preference was the bug: EO-Client-IP is
+    forwarded verbatim on admin.* and is set by nothing at the origin, so it let a
+    direct-to-origin caller name itself. The full forgery matrix lives in
+    tests/test_edge_client_ip.py; this pins that app.main uses the shared resolver."""
     h = {"eo-client-ip": "1.2.3.4", "eo-connecting-ip": "5.6.7.8", "x-forwarded-for": "9.9.9.9"}
-    assert m._mm_client_ip(_FakeReq(headers=h)) == "1.2.3.4"
+    assert m._mm_client_ip(_FakeReq(headers=h)) == "5.6.7.8"
 
 
-def test_client_ip_falls_back_to_xff_first_hop():
+def test_client_ip_falls_back_to_xff_last_hop():
+    """LAST, not first. Caddy replaces the inbound chain today, so this is a single
+    value in production; under append semantics the first element is the caller's."""
     h = {"x-forwarded-for": "9.9.9.9, 1.1.1.1"}
-    assert m._mm_client_ip(_FakeReq(headers=h)) == "9.9.9.9"
+    assert m._mm_client_ip(_FakeReq(headers=h)) == "1.1.1.1"
+
+
+def test_client_ip_prefers_the_trusted_peer_over_forwarded_for():
+    h = {"x-mm-peer": "5.5.5.5", "x-forwarded-for": "9.9.9.9"}
+    assert m._mm_client_ip(_FakeReq(headers=h)) == "5.5.5.5"
 
 
 def test_client_ip_unknown_when_no_headers():

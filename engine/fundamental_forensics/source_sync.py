@@ -22,6 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from hashlib import sha256
+import logging
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -39,6 +40,8 @@ from engine.research_vault.r2_store import (
 
 from .models import canonical_json, parse_utc, utc_text
 
+
+log = logging.getLogger("fundamental_forensics.source_sync")
 
 SOURCE_SYNC_SCHEMA = "fundamental_forensics.sec_source_snapshot/v1"
 SOURCE_SYNC_LATEST_SCHEMA = "fundamental_forensics.sec_source_latest/v1"
@@ -999,6 +1002,7 @@ def sync_source_roots(
     max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
     publish_latest: bool = True,
+    skip_objects_in_latest_manifest: bool = False,
 ) -> SourceSnapshot:
     """Synchronize both SEC roots into a verified immutable private snapshot.
 
@@ -1007,6 +1011,15 @@ def sync_source_roots(
     exact-predecessor CAS when ``publish_latest`` is true.  A sealed bootstrap
     can set it false to leave both source evidence and an existing latest
     pointer untouched until a later explicit publication authority exists.
+
+    ``skip_objects_in_latest_manifest`` is an opt-in incremental mode for a
+    scheduled lane: an object whose content-addressed key already appears in
+    the CURRENT latest manifest is not re-created.  Those bytes were verified
+    by exact readback at their original immutable create and remain bound by an
+    immutable, readback-verified manifest, so the skip drops a redundant remote
+    round-trip, never a verification.  The NEW manifest still enumerates every
+    file, and pointer publication is unchanged.  It defaults False so an
+    operator recovery run keeps re-proving every object every night.
     """
     limits = _validate_limits(
         max_files=max_files,
@@ -1015,6 +1028,8 @@ def sync_source_roots(
     )
     if type(publish_latest) is not bool:
         raise SourceSyncError("publish_latest must be a boolean")
+    if type(skip_objects_in_latest_manifest) is not bool:
+        raise SourceSyncError("skip_objects_in_latest_manifest must be a boolean")
     if not isinstance(store, StrictConditionalWriteStore):
         raise SourceSyncError(
             "source sync requires a StrictConditionalWriteStore adapter"
@@ -1055,15 +1070,33 @@ def sync_source_roots(
             trees={"raw": raw_entries, "archive": archive_entries},
         )
     )
+    # Objects already bound by the current latest manifest, keyed by their
+    # content-addressed key: key equality IS byte identity (the key is the
+    # SHA-256 of the bytes), and the length check is a belt.  An absent latest
+    # pointer is the bootstrap case and leaves the baseline empty (full sync);
+    # a present-but-undecodable one still raises.
+    baseline: dict[str, int] = {}
+    if skip_objects_in_latest_manifest and store.get_bytes(_latest_key()) is not None:
+        latest_manifest, _ = _load_snapshot(store, snapshot_id=None)
+        baseline = {
+            str(entry["object_key"]): int(entry["byte_length"])
+            for _, entry in _manifest_entries(latest_manifest)
+        }
     # Content objects are immutable and content-addressed. Each write is an
     # atomic absent-key create; a losing or ambiguous response is resolved by
     # bounded exact-byte readback, never by a legacy overwrite.
+    created = 0
+    skipped = 0
     for kind, root, entries in (
         ("raw", Path(raw_root), raw_entries),
         ("archive", Path(archive_root), archive_entries),
     ):
         checked_root = _root_path(root, name=kind)
         for entry in entries:
+            object_key = str(entry["object_key"])
+            if baseline.get(object_key) == int(entry["byte_length"]):
+                skipped += 1
+                continue
             path = _safe_child(checked_root, str(entry["relative_path"]))
             content = path.read_bytes()
             digest = sha256(content).hexdigest()
@@ -1071,7 +1104,7 @@ def sync_source_roots(
                 raise SourceSyncError("source file changed after snapshot enumeration")
             _create_immutable(
                 store,
-                key=str(entry["object_key"]),
+                key=object_key,
                 payload=content,
                 maximum_bytes=int(entry["byte_length"]),
                 content_type=str(entry["content_type"]),
@@ -1079,6 +1112,13 @@ def sync_source_roots(
                 collision_error="source snapshot immutable object collision",
                 readback_error="private source-store immutable object read-back mismatch",
             )
+            created += 1
+    if skip_objects_in_latest_manifest:
+        log.info(
+            "incremental sync: %d objects already bound by latest manifest, %d created",
+            skipped,
+            created,
+        )
     manifest_bytes = _manifest_bytes(manifest)
     _create_immutable(
         store,
@@ -1152,13 +1192,24 @@ def restore_source_roots(
     max_files: int = DEFAULT_MAX_FILES,
     max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
+    verify_local: bool = False,
 ) -> RestoreResult:
-    """Restore a complete verified private source snapshot without pruning local files."""
+    """Restore a complete verified private source snapshot without pruning local files.
+
+    ``verify_local`` is an opt-in mode for a lane with a warm store root: a
+    local file whose length and SHA-256 already match the manifest entry counts
+    as current without the remote GET.  Verification strength is unchanged —
+    the same manifest-bound hash decides, only the byte source is local disk
+    instead of a network round-trip.  It defaults False so an operator recovery
+    run keeps proving every byte against R2.
+    """
     limits = _validate_limits(
         max_files=max_files,
         max_file_bytes=max_file_bytes,
         max_total_bytes=max_total_bytes,
     )
+    if type(verify_local) is not bool:
+        raise SourceSyncError("verify_local must be a boolean")
     if not isinstance(store, Store):
         raise SourceSyncError("source restore requires a repository Store adapter")
     manifest, snapshot = _load_snapshot(store, snapshot_id=snapshot_id)
@@ -1178,12 +1229,20 @@ def restore_source_roots(
             raise SourceSyncError("source snapshot exceeds local restore byte limits")
         total_bytes += length
         key = str(entry["object_key"])
-        content = _read_required(store, key)
-        if len(content) != length or sha256(content).hexdigest() != entry["sha256"]:
-            raise SourceSyncError(f"source snapshot object failed checksum: {key}")
         destination = _safe_child(
             roots[kind], str(entry["relative_path"]), create_parent=True
         )
+        if verify_local and destination.is_file():
+            try:
+                local = destination.read_bytes()
+            except OSError as exc:
+                raise SourceSyncError(f"cannot read local restore target: {destination}") from exc
+            if len(local) == length and sha256(local).hexdigest() == entry["sha256"]:
+                current += 1
+                continue
+        content = _read_required(store, key)
+        if len(content) != length or sha256(content).hexdigest() != entry["sha256"]:
+            raise SourceSyncError(f"source snapshot object failed checksum: {key}")
         try:
             existing = destination.read_bytes() if destination.is_file() else None
         except OSError as exc:

@@ -44,7 +44,7 @@ Public repo, so the droplet self-clones:
 
 ```bash
 ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
-  'curl -fsSL https://raw.githubusercontent.com/chriswong6031-creator/macro/main/app/deploy/setup.sh | bash'
+  'curl -fsSL https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/main/app/deploy/setup.sh | bash'
 ```
 
 `setup.sh` is idempotent: installs Caddy, clones the repo to `/opt/macro`, installs the
@@ -272,6 +272,34 @@ by probing the live host through the edge with every real-client header forged:
 `X-Real-IP` and `CF-Connecting-IP` all arrived carrying the forged values, and a clean
 edge request carries no `EO-Client-IP` at all. Trusting any of those would replace an
 operator-lockout DoS with unlimited brute-force bucket rotation.
+
+**The `EO-Client-IP` finding above is about `admin.*` only.** Re-probing
+`www.mastermind-x.com` the same way (2026-08-07, headers captured off the loopback hop
+to `:8000`) found the EdgeOne "Client IP Header" rule IS active on that zone: a clean
+www request carries `EO-Client-IP`, and a forged copy arrives overwritten with the true
+client. The zones are configured differently, so neither table generalises — re-probe
+whichever one you are editing. Measured on www:
+
+| header sent through the edge | arrived at the origin as |
+|---|---|
+| `EO-Connecting-IP: 203.0.113.13` | `104.36.50.44` — OVERWRITTEN, true client |
+| `EO-Client-IP: 203.0.113.11, .12` | `104.36.50.44` — OVERWRITTEN, single value |
+| `-Client-IPCountry: XX` | `US` — OVERWRITTEN, true country |
+| `EO-Client-IPCountry: XX` | `XX` — passed through, FORGED (edge never sets it) |
+| `True-Client-IP` / `X-Real-IP` / `CF-Connecting-IP` / `CF-IPCountry` | passed through, FORGED |
+| `X-Forwarded-For: 198.51.100.7` | `43.175.104.147` — dropped by the edge, Caddy re-set it to the peer |
+
+Two consequences, both now handled in code. The public resolver `app/edge_client.py`
+reads only `EO-Connecting-IP` (the one row that holds on *both* zones) and then falls
+back to the Caddy-injected `X-MM-Peer` — never to the four forgeable headers, which the
+old `app/main.py::_mm_client_ip` preferred ahead of it. And `app/gate.py` now reads
+`-Client-IPCountry` *before* the configured `EO-Client-IPCountry`, because the edge sets
+the former and not the latter: country blocking was reading a header any caller can set
+while ignoring the real one. The gate ships disabled, so that half was latent.
+
+The missing `EO` prefix on `-Client-IPCountry` looks like a console-rule quirk. If it is
+ever corrected upstream the header simply goes absent and the configured name answers on
+the next rung, so the shipped order is right before and after such a fix.
 
 ## Files
 

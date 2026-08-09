@@ -4,7 +4,7 @@
 <!--
   com.mastermind.liveflow.plist — launchd agent for the live options-flow poller.
 
-  Autostart on weekdays at 09:25 ET. The poller runs --rth-only so it self-exits
+  Autostart on weekdays at 09:25 ET. The poller runs in RTH-only mode so it self-exits
   after 16:05 ET.  launchd fires it again at 09:25 the next weekday.
 
   INSTALL (as the mac user who runs Theta Terminal — not root):
@@ -30,10 +30,18 @@
     (or the path in EnvironmentVariables below).  Required vars:
       R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
 
-  STATE WIPE (smoke / retention reset):
-    rm data/live_flow_state/day_state_YYYY-MM-DD.json
-    Then relaunch or run:
-      python -m scripts.live_flow_poller --once --date YYYY-MM-DD --retention-hours 96
+  STATE RECOVERY:
+    Never delete or quarantine the current session's day_state alone. It is the
+    transaction partner of the append-only event stage and may own an unstaged
+    pending-learning WAL. Preserve both files for forensics, stop the lane for
+    that session, and use the reviewed recovery procedure in the runbook (or
+    resume cleanly on the next session after the stranded-WAL check is cleared).
+    Do not use this combined live poller as a historical smoke test. In
+    particular, never run the once or historical-date modes: both can mutate live R2
+    current/replay surfaces and historical dates violate exact PIT clocks.
+    After a reviewed wipe, let launchd resume on the next live RTH session.
+    Offline validation is limited to import and help output; follow
+    ops/LIVE_FLOW_RUNBOOK.md for the supervised next-RTH proof.
 
   LOG TAILING:
     tail -f /tmp/liveflow.stdout.log /tmp/liveflow.stderr.log
@@ -149,10 +157,15 @@
   <key>StandardErrorPath</key>
   <string>/tmp/liveflow.stderr.log</string>
 
-  <!-- Do NOT set KeepAlive: the poller self-exits via --rth-only; launchd
-       respawns at the next StartCalendarInterval. -->
+  <!-- Restart only abnormal exits. A crash, power-recovery relaunch, or
+       Theta-unavailable exit is retried so a same-session pending WAL drains;
+       the poller's clean post-RTH exit 0 remains stopped until the next calendar
+       trigger. -->
   <key>KeepAlive</key>
-  <false/>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
 
   <!-- Throttle: if the job exits in under 10s (crash), wait 60s before retrying. -->
   <key>ThrottleInterval</key>

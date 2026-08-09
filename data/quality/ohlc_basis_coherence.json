@@ -117,24 +117,14 @@
     "russell_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 8,
+      "noise_tickers": 10,
       "findings": [
-        {
-          "ticker": "ARL",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.039333,
-          "worst_date": "2026-08-07",
-          "inverted_bars": 0
-        },
         {
           "ticker": "FIBK",
           "verdict": "noise",
-          "bad_bars": 1,
+          "bad_bars": 2,
           "bars": 524,
-          "bad_share": 0.0019,
+          "bad_share": 0.0038,
           "worst_excess": 0.011822,
           "worst_date": "2026-07-06",
           "inverted_bars": 0
@@ -170,6 +160,16 @@
           "inverted_bars": 0
         },
         {
+          "ticker": "AROC",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.001312,
+          "worst_date": "2026-07-07",
+          "inverted_bars": 0
+        },
+        {
           "ticker": "WABC",
           "verdict": "noise",
           "bad_bars": 1,
@@ -197,6 +197,26 @@
           "bad_share": 0.0019,
           "worst_excess": 0.000914,
           "worst_date": "2026-07-06",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "NWBI",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.000706,
+          "worst_date": "2026-07-07",
+          "inverted_bars": 0
+        },
+        {
+          "ticker": "BMRC",
+          "verdict": "noise",
+          "bad_bars": 1,
+          "bars": 524,
+          "bad_share": 0.0019,
+          "worst_excess": 0.000204,
+          "worst_date": "2026-07-07",
           "inverted_bars": 0
         }
       ]
@@ -271,5 +291,5 @@
   },
   "splits": 0,
   "status": "coherent",
-  "noise_tickers": 24
+  "noise_tickers": 26
 }

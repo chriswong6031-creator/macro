@@ -11,6 +11,11 @@ mutation run proved the corpus suite could not see them:
 * Point-in-time re-attribution: the corpus commits no alias windows.
 * Lifecycle legality and the availability firewall: the corpus never presents an
   illegal transition.
+
+The resolver section at the end is a fourth instance of the same problem, found
+by census rather than by mutation: the corpus supplies no declared duplicate, so
+it graded identically whether or not the resolver accepted one.  What the corpus
+cannot see, it cannot defend.
 """
 from __future__ import annotations
 
@@ -63,6 +68,16 @@ from engine.company_intelligence.identity import (
     ListingAlias,
     company_id_for_cik,
     security_id_for,
+)
+from engine.company_intelligence.resolution import (
+    DECLARED_BASES,
+    EVIDENCE_BASES,
+    EventObservation,
+    Resolution,
+    ResolutionError,
+    canonical_events,
+    documents_that_mint_events,
+    resolve,
 )
 
 
@@ -509,6 +524,120 @@ def test_an_absence_reason_must_come_from_the_closed_vocabulary() -> None:
         TypedAbsence(reason="dunno", subject="revenue")
     with pytest.raises(DocumentError, match="must name its subject"):
         TypedAbsence(reason="no_transcript", subject="")
+
+
+# --------------------------------------------------------------------------
+# the resolver: a collapse must be EARNED
+# --------------------------------------------------------------------------
+#
+# The corpus grades the collapse in aggregate (14 cases) but never unit-tests it,
+# and it cannot see the removal below at all — a resolver that still accepted a
+# declared duplicate would grade identically, because no corpus case supplies
+# one.  These pin both halves directly.
+
+CLOCK = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
+
+
+def _observation(chain: DocumentRevisionChain, **kwargs) -> EventObservation:
+    return EventObservation(
+        observation_ref="obs_test",
+        company_id=APPLE,
+        fiscal_period=Q3_2026,
+        tickers=("AAPL",),
+        revisions=chain,
+        effective_at=date(2026, 10, 29),
+        **kwargs,
+    )
+
+
+def test_a_duplicate_re_delivery_collapses_onto_the_event_the_original_minted() -> None:
+    """The earned collapse: outcome, basis, non-minting, and it keeps the event id."""
+    chain = DocumentRevisionChain(
+        revisions=(_document(1, "release"), _document(2, "release_duplicate", previous="doc_r1"))
+    )
+    resolution = resolve(_observation(chain), clock=CLOCK)
+
+    assert resolution.outcome == "duplicate_collapsed"
+    assert resolution.evidence_basis == "supersession_chain"
+    assert resolution.mints_event is False
+    # It resolves TO the original's event rather than minting a second one, so the
+    # id must be present and canonical — an empty id here would silently orphan
+    # the re-delivery instead of collapsing it.  It is also the id the chain's own
+    # documents carry, which is what "collapsed onto the original" means.
+    assert resolution.event_id == canonical_event_id(APPLE, Q3_2026, "earnings_results")
+    assert resolution.event_id == chain.event_id
+    assert resolution.document_id == "doc_r2"
+    assert resolution.document_revision == 2
+    # Collapsed, not erased: it addresses the event but adds nothing to the mint set.
+    assert canonical_events((resolution,)) == (resolution.event_id,)
+    assert documents_that_mint_events((resolution,)) == ()
+    # The verdict rests on evidence, so stripping producer assertions cannot move it.
+    assert resolution.is_declared is False
+    stripped = resolve(_observation(chain).without_declared_inputs(), clock=CLOCK)
+    assert stripped.outcome == resolution.outcome
+    assert stripped.evidence_basis == resolution.evidence_basis
+
+
+def test_a_producer_cannot_assert_a_duplicate_and_suppress_an_event() -> None:
+    """``declared_duplicate_of`` / ``declared_duplicate_filing`` are GONE, on purpose.
+
+    They were live code with no producer: the sole use in the repo's history was
+    the corpus suite reproducing two positionally-mislabelled cases, removed in
+    #4926.  Deleting them was the honest change rather than testing them, because
+    a declared duplicate fails the opposite way from ``declared_locator``.  The
+    collapse branch runs BEFORE the byte replay and sets ``mints_event=False``, so
+    an assertion entering there outranks proof — it would drop a replayable
+    receipt and suppress an event on the strength of nothing.  ``declared_locator``
+    is safe precisely because stripping it only ever costs evidence.
+
+    Duplicate detection is settled upstream on the frozen ``(cik, accession)`` key:
+    ``engine.earnings_release.binding.collapse_release_events`` earns every collapse
+    it reports, and ``tests/test_edgar_filing_identity_join.py`` shows it resolving
+    the same fourteen corpus cases with no assertion.
+    """
+    with pytest.raises(TypeError, match="declared_duplicate_of"):
+        _observation(
+            DocumentRevisionChain(revisions=(_document(1, "release"),)),
+            declared_duplicate_of="evt_cik0000320193_2026q3_results",
+        )
+
+    assert "declared_duplicate_filing" not in EVIDENCE_BASES
+    assert DECLARED_BASES == {"declared_locator"}
+    with pytest.raises(ResolutionError, match="unknown evidence basis"):
+        Resolution(
+            observation_ref="obs_test",
+            outcome="duplicate_collapsed",
+            evidence_basis="declared_duplicate_filing",
+        )
+
+
+def test_a_lone_revision_is_a_typed_absence_and_never_collapses_itself() -> None:
+    """The complement: with nothing to supersede, the fall-through is absence.
+
+    This is what CIE-GC-0227 / CIE-GC-0234 resolve to now.  It is also the
+    assertion that would have broken had the declared branch survived with
+    ``collapsed = duplicates[-1] if duplicates else latest`` — that fallback
+    collapsed a single-revision chain onto ITSELF.
+    """
+    chain = DocumentRevisionChain(revisions=(_document(1, "release"),))
+    resolution = resolve(_observation(chain, absence_reason="no_transcript"), clock=CLOCK)
+
+    assert resolution.outcome == "typed_absence"
+    assert resolution.evidence_basis == "no_derivable_receipt"
+    assert resolution.mints_event is True
+    assert documents_that_mint_events((resolution,)) == ("doc_r1",)
+    assert resolution.absence is not None and resolution.absence.reason == "no_transcript"
+
+
+def test_an_amendment_is_a_correction_not_a_duplicate() -> None:
+    """An 8-K/A restates the event; collapsing it would delete the correction."""
+    chain = DocumentRevisionChain(
+        revisions=(_document(1, "release"), _document(2, "release_amendment", previous="doc_r1"))
+    )
+    resolution = resolve(_observation(chain, absence_reason="no_transcript"), clock=CLOCK)
+
+    assert resolution.outcome == "typed_absence"
+    assert resolution.mints_event is True
 
 
 # --------------------------------------------------------------------------

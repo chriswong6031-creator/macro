@@ -39,9 +39,11 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# BLS Dec-2025 relative-importance weights (CPI-U, U.S. city average)
+# BLS Dec-2025 starting relative-importance values (CPI-U, U.S. city average)
 # Source: https://www.bls.gov/cpi/tables/relative-importance/2025.htm
-# In effect Jan–Dec 2026. Refresh each January.
+# Expenditure weights update annually, but relative importance evolves as indexes
+# move and is published monthly.  These fixed December values are therefore an
+# explicit approximation, not the exact RI for every 2026 print.
 # Manually verified against fetched table (2026-07-08).
 # ---------------------------------------------------------------------------
 
@@ -484,18 +486,33 @@ def _compute_core_goods_pipeline(
 
 
 # ---------------------------------------------------------------------------
-# Block 5: Core Services ex-Shelter — CUSR0000SASLE persistence
+# Block 5: historical "core services ex-shelter" proxy ID.
+#
+# IMPORTANT: CUSR0000SASLE is officially Services Less Energy Services.  It
+# includes shelter and is therefore not a true core-services-ex-shelter index.
+# The stable block ID remains for append-only ledger compatibility, but every
+# new receipt carries an explicit scope warning and the challenger stays
+# display-only/non-authoritative pending a real BLS-consistent reconstruction.
 # ---------------------------------------------------------------------------
 
 def _compute_core_services_ex_shelter(
     root: Path,
     asof: date,
 ) -> tuple[float | None, dict]:
-    """Core services ex-shelter: CUSR0000SASLE lag-1 MoM (persistence).
+    """Services-less-energy proxy persistence under a legacy stable block ID.
 
     Non-vintaged; declared revision_optimistic.
     """
-    prov: dict[str, Any] = {"block": "core_services_ex_shelter", "status": "ok"}
+    prov: dict[str, Any] = {
+        "block": "core_services_ex_shelter",
+        "source_series_label": "Services Less Energy Services",
+        "scope_matches_block_id": False,
+        "scope_warning": (
+            "CUSR0000SASLE includes shelter and is not a true "
+            "core-services-ex-shelter index"
+        ),
+        "status": "ok",
+    }
     asof_ts = pd.Timestamp(asof)
     asof_period = asof_ts.to_period("M")
     cutoff_period = asof_period - 2
@@ -806,6 +823,11 @@ def compute_cpi_bridge(
         "coverage_residual_pp": coverage_residual_pp,
         "prior_driven_share": prior_driven_share,
         "degraded_blocks": degraded_blocks,
+        "weight_basis": "bls_dec_2025_starting_relative_importance_fixed_approximation",
+        "weight_basis_warning": (
+            "BLS relative importance evolves monthly as component indexes move; "
+            "this legacy challenger holds December 2025 values fixed"
+        ),
         "benchmark_set": {
             "naive_prior": round(naive_prior, 4) if naive_prior is not None else None,
             "trailing_3m": round(trailing_3m, 4) if trailing_3m is not None else None,
@@ -818,6 +840,14 @@ def compute_cpi_bridge(
             "display_only": True,
             "authority": False,
             "block_provenance": all_prov,
+            "known_scope_mismatches": [
+                {
+                    "block": "core_services_ex_shelter",
+                    "series": "CUSR0000SASLE",
+                    "official_label": "Services Less Energy Services",
+                    "warning": "includes shelter; not core services ex shelter",
+                }
+            ],
         },
         "display_only": True,
         "authority": False,

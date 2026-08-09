@@ -43,6 +43,8 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from engine.prophet_integrity import effective_public_plan_date
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -1233,7 +1235,7 @@ def receipts_context(root: Path | str | None = None,
 
     Single read of site/prophet/index.json.
 
-    receipts_age_days = age in days of the NEWEST _signal_date across plans
+    receipts_age_days = age in days of the newest family-native public plan date
     (None when unavailable — the gate then quarantines receipt items only,
     printed honestly in the report).
 
@@ -1272,7 +1274,7 @@ def receipts_context(root: Path | str | None = None,
     today = datetime.now(timezone.utc).date()
     ages: list[int] = []
     for p in plans:
-        sd = str(p.get("_signal_date") or "")[:10]
+        sd = effective_public_plan_date(p) or ""
         if not sd:
             continue
         try:

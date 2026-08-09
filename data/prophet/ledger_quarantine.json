@@ -1,0 +1,93 @@
+{
+  "schema": "prophet.ledger_quarantine/v1",
+  "quarantined_on": "2026-08-06",
+  "count": 11,
+  "rule": "a forward-ledger row whose close_date strictly predates the plan's own origination date (plan.asof) \u2014 the outcome was scanned from the base formation anchor, so it was graded on bars the plan was never live for",
+  "effect": "the row STAYS in ledger.jsonl (append-only); every reader that summarises the record excludes these ids from both numerator and denominator",
+  "note": "11 early rows quarantined 2026-08-06 \u2014 graded on a clock that predated the plan",
+  "note_zh": "11 \u6761\u65e9\u671f\u8bb0\u5f55\u4e8e 2026-08-06 \u9694\u79bb \u2014 \u7ed3\u7b97\u6240\u7528\u7684\u65f6\u95f4\u65e9\u4e8e\u8ba1\u5212\u672c\u8eab",
+  "quarantined": [
+    {
+      "id": "KKR-BULL-20260318",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-05-04",
+      "origination_date": "2026-07-14"
+    },
+    {
+      "id": "FOXF-BULL-20260526",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-10",
+      "origination_date": "2026-07-15"
+    },
+    {
+      "id": "AEO-BULL-20260415",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-04-20",
+      "origination_date": "2026-07-17"
+    },
+    {
+      "id": "EXC-BULL-20260609",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-24",
+      "origination_date": "2026-07-25"
+    },
+    {
+      "id": "SYK-BULL-20260518",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-02",
+      "origination_date": "2026-07-25"
+    },
+    {
+      "id": "AMPH-BULL-20260604",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-20",
+      "origination_date": "2026-07-28"
+    },
+    {
+      "id": "CCS-BULL-20260601",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-16",
+      "origination_date": "2026-07-28"
+    },
+    {
+      "id": "U-BULL-20260327",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-05-11",
+      "origination_date": "2026-07-29"
+    },
+    {
+      "id": "KSS-BULL-20260522",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-06",
+      "origination_date": "2026-07-29"
+    },
+    {
+      "id": "SYY-BULL-20260731",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-08-04",
+      "origination_date": "2026-08-05",
+      "sources": [
+        "derived_chronology",
+        "ledger_correction"
+      ],
+      "correction_reason": "outage-era plan was published after its entry-price session; the hypothetical timely plan geometry cannot be reconstructed; proven date facts are projected but this terminal outcome remains excluded from record claims"
+    },
+    {
+      "id": "REZI-BULL-20260703",
+      "reason": "graded_on_pre_origination_clock",
+      "quarantined": "2026-08-06",
+      "close_date": "2026-07-06",
+      "origination_date": "2026-07-10"
+    }
+  ]
+}

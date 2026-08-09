@@ -154,21 +154,19 @@ def adapt_prophet_ledger(repo: Path) -> tuple[list[dict], str | None]:
     if not path.exists():
         return [], f"{rel} absent"
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        from engine.prophet_integrity import load_effective_ledger  # noqa: PLC0415
+
+        projection = load_effective_ledger(repo)
+        rows = tuple(
+            row for row in projection.rows
+            if str(row.get("id") or "") not in projection.quarantined_ids
+        )
     except Exception as exc:  # noqa: BLE001
-        return [], f"{rel} unreadable: {exc}"
+        return [], f"{rel} or its correction projection unreadable: {exc}"
 
     events: list[dict] = []
     skipped = 0
-    for line in lines:
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        try:
-            row = json.loads(line)
-        except Exception:  # noqa: BLE001
-            skipped += 1
-            continue
+    for row in rows:
         try:
             outcome = row.get("outcome")
             close_date = row.get("close_date")

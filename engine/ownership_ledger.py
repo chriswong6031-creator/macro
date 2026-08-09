@@ -51,12 +51,16 @@ _LEDGER_DIR = Path("smart_money") / "ledgers"
 
 # Cohort natural keys — used for idempotency (unique-on, dedup before write)
 _NATURAL_KEYS: dict[str, list[str]] = {
-    "L1": ["ticker", "anchor_date", "slug"],
-    "L2": ["ticker", "anchor_date"],
+    "L1": ["ticker", "anchor_date", "slug", "method_version"],
+    "L2": ["ticker", "anchor_date", "method_version"],
     "L3": ["ticker", "anchor_date", "filer"],
-    "L4": ["ticker", "anchor_date"],
-    "L5": ["ticker", "anchor_date"],
+    "L4": ["ticker", "anchor_date", "method_version"],
+    "L5": ["ticker", "anchor_date", "composite_version", "method_version"],
 }
+
+_METHOD_V1 = "filing-date-v1"
+_METHOD_V2 = "public-availability-v2"
+_VERSIONED_COHORTS = {"L1", "L2", "L4", "L5"}
 
 # Grading horizons (trading days) — §5 of masterplan
 _HORIZONS = (21, 63, 126, 252)
@@ -104,31 +108,111 @@ def _save_ledger(df: pd.DataFrame, cohort: str, root: Path | None = None) -> Non
 
 def _append_rows(cohort: str, new_rows: list[dict],
                  root: Path | None = None) -> int:
-    """Append rows to a cohort ledger, idempotent on the natural key. Returns n added."""
+    """Append new entries and mature null outcome cells in existing entries.
+
+    The natural-key row is the immutable registration record.  Nightly rebuilds
+    are allowed to fill an outcome that was previously unavailable (for example
+    ``excess_63`` once 63 sessions have elapsed), but they may never revise a
+    non-null outcome or any entry/cohort fact.  This gives the forward ledgers
+    one-way maturation without turning them into mutable backtests.
+
+    Returns the number of newly registered rows; null-cell maturations do not
+    count as new rows.
+    """
     if not new_rows:
         return 0
     existing = _load_ledger(cohort, root)
     new_df = pd.DataFrame(new_rows)
+    metadata_changed = False
+    if cohort in _VERSIONED_COHORTS:
+        if "method_version" not in new_df.columns:
+            new_df["method_version"] = _METHOD_V2
+        else:
+            new_df["method_version"] = new_df["method_version"].fillna(
+                _METHOD_V2)
+        if not existing.empty:
+            if "method_version" not in existing.columns:
+                existing["method_version"] = _METHOD_V1
+                metadata_changed = True
+            missing_method = existing["method_version"].isna()
+            if missing_method.any():
+                existing.loc[missing_method, "method_version"] = _METHOD_V1
+                metadata_changed = True
+            # Rows emitted by the acceptance-aware writer already carry their
+            # actual filing_date. This recognizes the first migration run, which
+            # necessarily happened before method_version existed.
+            if cohort == "L1" and "filing_date" in existing.columns:
+                has_filing = existing["filing_date"].notna() & (
+                    existing["filing_date"].astype(str).str.strip() != "")
+                promote = has_filing & (existing["method_version"] == _METHOD_V1)
+                if promote.any():
+                    existing.loc[promote, "method_version"] = _METHOD_V2
+                    metadata_changed = True
     nk = _NATURAL_KEYS[cohort]
 
+    # A duplicated candidate inside one run must not create duplicate ledger
+    # registrations.  Keep the first occurrence, matching the frozen-vintage law.
+    new_df = new_df.drop_duplicates(subset=nk, keep="first").reset_index(drop=True)
     if existing.empty:
-        combined = new_df
-    else:
-        # Drop any new_df rows whose natural key already exists in existing
-        key_existing: set[tuple] = set()
-        for col_subset in existing[nk].itertuples(index=False, name=None):
-            key_existing.add(col_subset)
-        mask = []
-        for r in new_df[nk].itertuples(index=False, name=None):
-            mask.append(r not in key_existing)
-        truly_new = new_df[mask]
-        if truly_new.empty:
-            return 0
-        combined = pd.concat([existing, truly_new], ignore_index=True)
+        _save_ledger(new_df, cohort, root)
+        return len(new_df)
 
-    _save_ledger(combined, cohort, root)
-    n_added = len(combined) - (0 if existing.empty else len(existing))
-    return max(0, n_added)
+    def _missing(value: Any) -> bool:
+        try:
+            return bool(pd.isna(value))
+        except (TypeError, ValueError):
+            return value is None
+
+    def _maturing_column(col: str) -> bool:
+        return (
+            col in {"entry_price", "fill_date"}
+            or col.startswith(("fwd_ret_", "fwd_mdd_", "fwd_mfe_", "excess_", "mae_"))
+        )
+
+    combined = existing.copy()
+    key_to_index = {
+        tuple(values): idx
+        for idx, values in zip(
+            combined.index,
+            combined[nk].itertuples(index=False, name=None),
+        )
+    }
+    append_records: list[dict] = []
+    matured_cells = 0
+
+    for record in new_df.to_dict(orient="records"):
+        key = tuple(record.get(col) for col in nk)
+        existing_idx = key_to_index.get(key)
+        if existing_idx is None:
+            append_records.append(record)
+            # Reserve the key immediately so duplicate candidates in this batch
+            # cannot register twice.
+            key_to_index[key] = -1
+            continue
+
+        if existing_idx == -1:
+            continue
+        for col, incoming in record.items():
+            if not _maturing_column(col) or _missing(incoming):
+                continue
+            if col not in combined.columns:
+                combined[col] = pd.NA
+            if _missing(combined.at[existing_idx, col]):
+                combined.at[existing_idx, col] = incoming
+                matured_cells += 1
+
+    if append_records:
+        combined = pd.concat(
+            [combined, pd.DataFrame.from_records(append_records)],
+            ignore_index=True,
+        )
+
+    if append_records or matured_cells or metadata_changed:
+        _save_ledger(combined, cohort, root)
+        if matured_cells:
+            log.info("ownership_ledger %s: matured %d previously-null cells",
+                     cohort, matured_cells)
+    return len(append_records)
 
 
 # --------------------------------------------------------------------------- #
@@ -222,7 +306,7 @@ def _l1_entries(funds: dict[str, dict], panel: Any) -> list[dict]:
     """
     from engine.smart_money import (
         _read_two, diff_snapshots, resolve_tickers, name_ticker_map, full_cusip_map,
-        _snapshot_filing_date,
+        _snapshot_available_date, _snapshot_filing_date,
     )
     from engine.manager_lag import (fund_turnover as _ft, effective_holding_period as _ehp,
                                     lag_tier as _lt, _load_equiv_table, _read_all_snaps_for_lag)
@@ -250,7 +334,8 @@ def _l1_entries(funds: dict[str, dict], panel: Any) -> list[dict]:
         if latest is None or latest.empty:
             continue
         filing_date = _snapshot_filing_date(latest)
-        if not filing_date:
+        available_date = _snapshot_available_date(latest) or filing_date
+        if not available_date:
             continue
 
         diff = diff_snapshots(prev, latest)
@@ -267,14 +352,16 @@ def _l1_entries(funds: dict[str, dict], panel: Any) -> list[dict]:
             pct = float(r.pct_portfolio) if r.pct_portfolio is not None else 0.0
             if pct < _L1_MIN_BOOK_PCT:
                 continue
-            m = _grade_entry(str(r.ticker), filing_date, panel)
-            spy_m = _spy_grade(filing_date, panel)
+            m = _grade_entry(str(r.ticker), available_date, panel)
+            spy_m = _spy_grade(available_date, panel)
             row: dict = {
                 "cohort": "L1",
                 "ticker": str(r.ticker),
                 "issuer": str(getattr(r, "issuer", "") or ""),
                 "slug": slug,
-                "anchor_date": filing_date,
+                "anchor_date": available_date,
+                "filing_date": filing_date,
+                "method_version": _METHOD_V2,
                 "action": r.action,
                 "pct_portfolio": round(pct, 2),
                 "turnover_tier": lt["tier"],
@@ -322,12 +409,12 @@ def _l2_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
         if not holders:
             continue
         non_exit_holders = [h for h in holders if h.get("action") != "exit"]
-        # Anchor = max filing_date across non-exit holders (PIT law: filing_date is the
-        # only look-ahead-free anchor; period_end is ~45d before the data was public).
-        # Fall back to None (skip entry) if no holder carries a filing_date.
-        filing_dates = [h["filing_date"] for h in non_exit_holders
-                        if h.get("filing_date")]
-        anchor_date = max(filing_dates) if filing_dates else None
+        # Anchor = max public-availability date across the holding set. Legacy
+        # holders degrade to filing_date; period_end is never an entry clock.
+        availability_dates = [h.get("available_date") or h.get("filing_date")
+                              for h in non_exit_holders
+                              if h.get("available_date") or h.get("filing_date")]
+        anchor_date = max(availability_dates) if availability_dates else None
         if not anchor_date:
             continue
         # Aggregate shares from holder records (populated by E2.5 fix in compute_smart_money).
@@ -371,6 +458,7 @@ def _l2_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
             "fill_date": m.get("fill_date"),
             "prior_note": ("Phase-0 prior: marginal non-robust drawdown ~0.6pp@63d; "
                            "this accrual is continuation against that prior"),
+            "method_version": _METHOD_V2,
         }
         for h in _HORIZONS:
             row[f"fwd_ret_{h}"] = m.get(f"fwd_ret_{h}")
@@ -443,13 +531,14 @@ def _l4_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
         ticker = rec.get("ticker", "")
         if not ticker:
             continue
-        # Anchor = max filing_date across the ticker's holders (PIT law: filing_date is
-        # the only look-ahead-free anchor; period_end / as_of is ~45d before public).
-        # Fall back to skip (null-honest) if no holder carries a filing_date.
+        # Anchor = max availability across the ticker's holders. Fall back to
+        # filing_date for legacy rows; skip when neither public clock exists.
         bt = sm_payload.get("by_ticker", {}).get(ticker, {})
         holders = bt.get("holders", [])
-        filing_dates = [h["filing_date"] for h in holders if h.get("filing_date")]
-        anchor_date = max(filing_dates) if filing_dates else None
+        availability_dates = [h.get("available_date") or h.get("filing_date")
+                              for h in holders
+                              if h.get("available_date") or h.get("filing_date")]
+        anchor_date = max(availability_dates) if availability_dates else None
         if not anchor_date:
             continue
         m = _grade_entry(ticker, anchor_date, panel)
@@ -460,6 +549,7 @@ def _l4_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
             "issuer": "",
             "anchor_date": anchor_date,
             "n_funds": int(rec.get("n_funds", 0)),
+            "method_version": _METHOD_V2,
             "entry_price": m.get("entry_price"),
             "fill_date": m.get("fill_date"),
         }
@@ -474,7 +564,7 @@ def _l4_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
 
 _L5_RULE = ("top conviction_buys composite at each filing cycle "
             "(conviction×grade composite, weights v2026-07); "
-            "anchor = max buying-fund filing_date; descriptive composite earning a "
+            "anchor = max buying-fund public availability; descriptive composite earning a "
             "forward record — pre-registered before any performance claim")
 
 
@@ -512,8 +602,8 @@ def _l5_entries(models: dict | None, panel: Any) -> list[dict]:
             continue
         dates: list[str] = []
         fund_ids: set[str] = set()
-        if r.get("filing_date"):
-            dates.append(str(r["filing_date"]))
+        if r.get("available_date") or r.get("filing_date"):
+            dates.append(str(r.get("available_date") or r["filing_date"]))
         for k in ("slug", "fund", "name"):
             if r.get(k):
                 fund_ids.add(str(r[k]))
@@ -522,8 +612,8 @@ def _l5_entries(models: dict | None, panel: Any) -> list[dict]:
             for f in (r.get(key) or []):
                 if not isinstance(f, dict):
                     continue
-                if f.get("filing_date"):
-                    dates.append(str(f["filing_date"]))
+                if f.get("available_date") or f.get("filing_date"):
+                    dates.append(str(f.get("available_date") or f["filing_date"]))
                 fid = f.get("slug") or f.get("name")
                 if fid:
                     fund_ids.add(str(fid))
@@ -547,6 +637,7 @@ def _l5_entries(models: dict | None, panel: Any) -> list[dict]:
             "anchor_date": anchor_date,
             "n_buying_funds": int(len(rec["funds"])),
             "composite_version": "v2026-07",
+            "method_version": _METHOD_V2,
             "entry_price": m.get("entry_price"),
             "fill_date": m.get("fill_date"),
         }
@@ -656,14 +747,16 @@ def advance_ledgers(funds: dict[str, dict],
 
 _COHORT_RULES = {
     "L1": ("new/add ≥ 1% book from low-turnover-tier funds; "
-           "anchor = filing_date; measurement: does low-turnover conviction survive the lag? "
+           "anchor = acceptance-aware public availability; measurement: does "
+           "low-turnover conviction survive the lag? "
            "(both directions; NEXTL-U13 bars positive-direction promotion)"),
-    "L2": ("top days_to_exit quintile at filing cycle; anchor = filing_date; "
+    "L2": ("top days_to_exit quintile at filing cycle; "
+           "anchor = latest public availability; "
            "downside MAE + excess vs roster; prior: Phase-0 weak non-robust drawdown result"),
     "L3": ("activist/flip events with signal == high; anchor = date_filed; "
            "question: classified feed reproduces announcement + drift on live data"),
     "L4": ("top-20 by #funds holding at each filing cycle; "
-           "baseline for L1–L3 comparisons; anchor = latest filing_date"),
+           "baseline for L1–L3 comparisons; anchor = latest public availability"),
     "L5": _L5_RULE,
 }
 
@@ -684,6 +777,16 @@ def ledger_summary(root: Path | None = None) -> dict[str, dict]:
 
     for cohort in ("L1", "L2", "L3", "L4", "L5"):
         df = _load_ledger(cohort, root)
+        n_all_vintages = len(df) if not df.empty else 0
+        method_version = None
+        if (cohort in _VERSIONED_COHORTS and not df.empty
+                and "method_version" in df.columns):
+            method_version = _METHOD_V2
+            current = df[df["method_version"].astype(str) == method_version]
+            if not current.empty:
+                df = current
+            else:
+                method_version = _METHOD_V1
         n_total = len(df) if not df.empty else 0
 
         if df.empty:
@@ -719,6 +822,8 @@ def ledger_summary(root: Path | None = None) -> dict[str, dict]:
             "entered_this_cycle": entered_this_cycle,
             "entry_asof": entry_asof,
             "n_total": n_total,
+            "n_total_all_vintages": n_all_vintages,
+            "method_version": method_version,
             "legs": legs,
             "status": "accruing",
         }

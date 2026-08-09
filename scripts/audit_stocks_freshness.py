@@ -73,14 +73,18 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from collectors.sector_holdings import _dead_tickers, top10_union
-from lib import config, nyse_calendar
-from scripts import audit_common as ac
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.sector_holdings import _dead_tickers, top10_union  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
+from scripts import audit_common as ac  # noqa: E402
 
 log = logging.getLogger("audit.stocks_freshness")
 

@@ -6,14 +6,14 @@
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
-    "evidence_asof": "2026-08-06",
-    "evaluated_at": "2026-08-06T23:07:57+00:00"
+    "evidence_asof": "2026-08-08",
+    "evaluated_at": "2026-08-08T16:17:10+00:00"
   },
-  "generated_at": "2026-08-06T23:07:57.751497+00:00",
-  "state_asof": "2026-08-06",
+  "generated_at": "2026-08-08T16:17:10.492848+00:00",
+  "state_asof": "2026-08-08",
   "model": "claude-opus-4-8",
-  "regime_read": "Convergence is concentrated in AI compute, memory and cloud platforms, with NVDA showing the broadest independent alignment and MU/MSFT offering cleaner second-order exposure. Signals remain provisional because the desk has no scored history, while social sentiment, affiliations and lobbying are supporting rather than decisive evidence.",
-  "regime_read_zh": "\u5f53\u524d\u4fe1\u53f7\u4e3b\u8981\u96c6\u4e2d\u4e8eAI\u7b97\u529b\u3001\u5b58\u50a8\u548c\u4e91\u5e73\u53f0\uff0c\u5176\u4e2dNVDA\u7684\u72ec\u7acb\u4fe1\u53f7\u5171\u632f\u6700\u5e7f\uff0cMU\u4e0eMSFT\u5219\u63d0\u4f9b\u8f83\u6e05\u6670\u7684\u4e8c\u9636\u655e\u53e3\u3002\u7531\u4e8e\u8be5\u7b56\u7565\u5c1a\u65e0\u5df2\u8bc4\u5206\u8bb0\u5f55\uff0c\u6240\u6709\u5224\u65ad\u4ecd\u5c5e\u521d\u6b65\uff1b\u793e\u4ea4\u60c5\u7eea\u3001\u5173\u8054\u5173\u7cfb\u548c\u6e38\u8bf4\u6d3b\u52a8\u53ea\u80fd\u4f5c\u4e3a\u8f85\u52a9\u8bc1\u636e\u3002",
+  "regime_read": "Convergence is concentrated in AI compute, software platforms, memory, and selected industrials, but the desk has no scored history, so conviction remains modest. NVDA has the broadest independent alignment; GOOGL, MSFT, MU, and BA offer narrower non-extended reads, while retail-heavy signals elsewhere are less actionable.",
+  "regime_read_zh": "\u5f53\u524d\u4fe1\u53f7\u4e3b\u8981\u6c47\u805a\u4e8eAI\u7b97\u529b\u3001\u8f6f\u4ef6\u5e73\u53f0\u3001\u5b58\u50a8\u82af\u7247\u53ca\u90e8\u5206\u5de5\u4e1a\u80a1\uff0c\u4f46\u672c\u684c\u5c1a\u65e0\u5df2\u8bc4\u5206\u5386\u53f2\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u4fdd\u6301\u514b\u5236\u3002NVDA\u7684\u72ec\u7acb\u4fe1\u53f7\u8986\u76d6\u6700\u5e7f\uff1bGOOGL\u3001MSFT\u3001MU\u548cBA\u5219\u63d0\u4f9b\u8f83\u7a84\u4f46\u5c1a\u672a\u8fc7\u5ea6\u5ef6\u4f38\u7684\u673a\u4f1a\uff0c\u5176\u4f59\u504f\u6563\u6237\u60c5\u7eea\u7684\u4fe1\u53f7\u53ef\u64cd\u4f5c\u6027\u8f83\u5f31\u3002",
   "theses": [
     {
       "ticker": "NVDA",
@@ -21,24 +21,24 @@
       "conviction": "low",
       "action": "AVOID",
       "horizon_d": 60,
-      "thesis": "The pack's strongest convergence combines institutional adding, dark-pool accumulation, analyst upgrades, developer momentum and a large patent cluster [13f_add] [darkpool_accum] [analyst_upgrade_cluster] [github_momentum] [patent_cluster]. Disclosed holdings by Nancy Pelosi, Marjorie Taylor Greene and Michael McCaul add an influence-graph confirmation, although they do not establish causality [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]. The shares are not extended versus SPY, so the entry constraint does not block an overweight; earnings in 20 days create event risk as well as a validation point [earnings_metric].",
-      "thesis_zh": "\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u5171\u632f\u6765\u81ea\u673a\u6784\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\u3001\u5206\u6790\u5e08\u96c6\u4e2d\u4e0a\u8c03\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u548c\u5927\u578b\u4e13\u5229\u96c6\u7fa4 [13f_add] [darkpool_accum] [analyst_upgrade_cluster] [github_momentum] [patent_cluster]\u3002Nancy Pelosi\u3001Marjorie Taylor Greene\u548cMichael McCaul\u62ab\u9732\u6301\u4ed3\uff0c\u4e3a\u5f71\u54cd\u529b\u56fe\u63d0\u4f9b\u989d\u5916\u5370\u8bc1\uff0c\u4f46\u4e0d\u4ee3\u8868\u56e0\u679c\u5173\u7cfb [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]\u3002\u76f8\u5bf9SPY\u5e76\u672a\u5904\u4e8e\u8fc7\u5ea6\u5ef6\u4f38\u72b6\u6001\uff0c\u56e0\u6b64\u53ef\u91c7\u53d6\u589e\u6301\u503e\u5411\uff1b20\u4e2a\u4ea4\u6613\u65e5\u540e\u7684\u8d22\u62a5\u65e2\u662f\u98ce\u9669\u4e8b\u4ef6\uff0c\u4e5f\u662f\u9a8c\u8bc1\u8282\u70b9 [earnings_metric]\u3002",
+      "thesis": "The pack's strongest convergence combines smart-money additions, dark-pool accumulation, developer momentum, patent activity, and a near-unanimous analyst cluster [13f_add] [darkpool_accum] [github_momentum] [patent_cluster] [analyst_upgrade_cluster]. Disclosed holdings by Nancy Pelosi, Marjorie Taylor Greene, and Michael McCaul add actor breadth without proving causality [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]. The shares are non-extended and have lagged SPY over 60 days, so this is not a momentum chase; earnings in 18 days make the path event-sensitive.",
+      "thesis_zh": "\u8be5\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u6c47\u805a\u6765\u81ea\u806a\u660e\u8d44\u91d1\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u3001\u4e13\u5229\u6d3b\u52a8\u53ca\u9ad8\u5ea6\u4e00\u81f4\u7684\u5206\u6790\u5e08\u770b\u591a\u96c6\u7fa4 [13f_add] [darkpool_accum] [github_momentum] [patent_cluster] [analyst_upgrade_cluster]\u3002Nancy Pelosi\u3001Marjorie Taylor Greene\u548cMichael McCaul\u7684\u62ab\u9732\u6301\u4ed3\u589e\u52a0\u4e86\u53c2\u4e0e\u8005\u5e7f\u5ea6\uff0c\u4f46\u5e76\u4e0d\u8bc1\u660e\u56e0\u679c\u5173\u7cfb [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]\u3002\u80a1\u4ef7\u672a\u5904\u4e8e\u8fc7\u5ea6\u5ef6\u4f38\u72b6\u6001\uff0c\u4e14\u8fc7\u53bb60\u65e5\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\uff1b18\u5929\u540e\u516c\u5e03\u8d22\u62a5\u4f7f\u8def\u5f84\u9ad8\u5ea6\u4f9d\u8d56\u4e8b\u4ef6\u7ed3\u679c\u3002",
       "second_order": [
-        "MU \u2014 AI-compute deployment implies greater demand for memory capacity.",
-        "LITE \u2014 continued data-center scaling can support optical-connectivity demand.",
-        "AI power and data-center infrastructure \u2014 compute deployment requires additional power, cooling and physical capacity."
+        "MU \u2014 memory demand is a second-order beneficiary of sustained AI-compute deployment, with its own insider, patent, and analyst convergence.",
+        "MSFT \u2014 cloud and AI-platform monetization can benefit from continued accelerator adoption and is supported by app, developer, and patent signals.",
+        "CEG \u2014 AI data-center expansion implies greater power demand, though its own convergence is only three channels."
       ],
       "evidence": [
         "[13f_add]",
         "[darkpool_accum]",
-        "[analyst_upgrade_cluster]",
         "[github_momentum]",
         "[patent_cluster]",
+        "[analyst_upgrade_cluster]",
         "[actor:Nancy Pelosi]",
         "[actor:Marjorie Taylor Greene]",
         "[actor:Michael McCaul]"
       ],
-      "dissent": "Retail buzz and analyst agreement may reflect an already crowded consensus, while the upcoming earnings event can overwhelm slower-moving alternative-data signals.",
+      "dissent": "Retail buzz and analyst unanimity may reflect a crowded consensus, while the imminent earnings event can overwhelm the slower-moving alternative-data signals.",
       "weighted_score": 2.85,
       "channels": [
         "13f_add",
@@ -50,11 +50,11 @@
         "retail_buzz",
         "special_situation"
       ],
-      "rs_vs_spy_60d": -2.4,
+      "rs_vs_spy_60d": -3.2,
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Dark-pool accumulation reverses and the next earnings update fails to sustain the demand narrative.",
+        "text": "Dark-pool accumulation reverses while developer and model-download momentum weaken after the next earnings report.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "NVDA",
@@ -64,7 +64,7 @@
           "horizon_d": 60
         }
       },
-      "check_by": "2026-10-29",
+      "check_by": "2026-10-30",
       "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); conviction 'medium' \u2192 'low' (deterministic ceiling); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)",
       "det_baseline": {
         "action": "AVOID",
@@ -73,26 +73,127 @@
       }
     },
     {
-      "ticker": "MU",
-      "lean": "overweight",
-      "conviction": "medium",
-      "action": "ACCUMULATE",
+      "ticker": "GOOGL",
+      "lean": "underweight",
+      "conviction": "low",
+      "action": "AVOID",
       "horizon_d": 60,
-      "thesis": "MU aligns analyst upgrades, insider purchase intensity and a substantial patent cluster, while the reported acceleration in government grants supplies a distinct policy/capex channel [analyst_upgrade_cluster] [insider_mspr] [patent_cluster] [gov_grant_accel]. Ro Khanna's disclosed affiliation is supplementary influence evidence [actor:Ro Khanna]. Relative performance is positive but remains below the pack's extended threshold.",
-      "thesis_zh": "MU\u540c\u65f6\u51fa\u73b0\u5206\u6790\u5e08\u4e0a\u8c03\u3001\u8f83\u5f3a\u7684\u5185\u90e8\u4eba\u4e70\u5165\u6307\u6807\u548c\u53ef\u89c2\u7684\u4e13\u5229\u96c6\u7fa4\uff0c\u653f\u5e9c\u8865\u52a9\u52a0\u901f\u5219\u63d0\u4f9b\u4e86\u72ec\u7acb\u7684\u653f\u7b56\u4e0e\u8d44\u672c\u6295\u5165\u4fe1\u53f7 [analyst_upgrade_cluster] [insider_mspr] [patent_cluster] [gov_grant_accel]\u3002Ro Khanna\u62ab\u9732\u7684\u5173\u8054\u5173\u7cfb\u63d0\u4f9b\u8f85\u52a9\u6027\u7684\u5f71\u54cd\u529b\u8bc1\u636e [actor:Ro Khanna]\u3002\u5176\u76f8\u5bf9\u8868\u73b0\u867d\u4e3a\u6b63\uff0c\u4f46\u4ecd\u4f4e\u4e8e\u8bc1\u636e\u5305\u8bbe\u5b9a\u7684\u8fc7\u5ea6\u5ef6\u4f38\u95e8\u69db\u3002",
+      "thesis": "App demand, model-download momentum, open-source developer activity, lobbying, and analyst upgrades align across product usage, ecosystem adoption, policy engagement, and institutional opinion [app_demand] [hf_model_momentum] [github_momentum] [lobbying] [analyst_upgrade_cluster]. Nancy Pelosi's disclosed holding adds an actor signal [actor:Nancy Pelosi]. The stock is non-extended and has materially lagged SPY over 60 days, providing a less crowded entry than the signal breadth might imply.",
+      "thesis_zh": "\u5e94\u7528\u9700\u6c42\u3001\u6a21\u578b\u4e0b\u8f7d\u52a8\u80fd\u3001\u5f00\u6e90\u5f00\u53d1\u8005\u6d3b\u52a8\u3001\u6e38\u8bf4\u6295\u5165\u548c\u5206\u6790\u5e08\u4e0a\u8c03\uff0c\u5206\u522b\u4ece\u4ea7\u54c1\u4f7f\u7528\u3001\u751f\u6001\u91c7\u7528\u3001\u653f\u7b56\u53c2\u4e0e\u548c\u673a\u6784\u89c2\u70b9\u5f62\u6210\u6c47\u805a [app_demand] [hf_model_momentum] [github_momentum] [lobbying] [analyst_upgrade_cluster]\u3002Nancy Pelosi\u7684\u62ab\u9732\u6301\u4ed3\u589e\u52a0\u4e86\u4e00\u9879\u53c2\u4e0e\u8005\u4fe1\u53f7 [actor:Nancy Pelosi]\u3002\u8be5\u80a1\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u8fc7\u53bb60\u65e5\u660e\u663e\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u76f8\u5bf9\u4e8e\u4fe1\u53f7\u5e7f\u5ea6\u800c\u8a00\uff0c\u5165\u573a\u62e5\u6324\u5ea6\u8f83\u4f4e\u3002",
       "second_order": [
-        "NVDA \u2014 stronger memory investment supports the broader AI-accelerator ecosystem.",
-        "Semiconductor-equipment theme \u2014 additional memory capacity requires fabrication and packaging equipment.",
-        "Data-center infrastructure \u2014 memory expansion reinforces continued server deployment."
+        "NVDA \u2014 continued model usage and developer activity support accelerator demand, although NVDA has stronger standalone convergence.",
+        "MSFT \u2014 broader AI application adoption validates cloud-platform demand across the competing hyperscaler complex.",
+        "CEG \u2014 expanding AI workloads imply rising data-center electricity requirements, but CEG's evidence remains comparatively thin."
       ],
       "evidence": [
+        "[app_demand]",
+        "[hf_model_momentum]",
+        "[github_momentum]",
+        "[lobbying]",
         "[analyst_upgrade_cluster]",
-        "[insider_mspr]",
+        "[actor:Nancy Pelosi]"
+      ],
+      "dissent": "Lobbying and app engagement do not necessarily translate into incremental margins, and the 60-day relative weakness may reflect unresolved monetization or regulatory concerns.",
+      "weighted_score": 2.2,
+      "channels": [
+        "affiliation",
+        "analyst_upgrade_cluster",
+        "app_demand",
+        "github_momentum",
+        "hf_model_momentum",
+        "lobbying"
+      ],
+      "rs_vs_spy_60d": -13.2,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "App engagement and model-download momentum roll over without a corresponding improvement in relative performance.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "GOOGL",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-30",
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); conviction 'medium' \u2192 'low' (deterministic ceiling); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)",
+      "det_baseline": {
+        "action": "AVOID",
+        "conviction": "low",
+        "lean": "underweight"
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "ACCUMULATE",
+      "horizon_d": 60,
+      "thesis": "Consumer app demand, developer momentum, patent clustering, and lobbying form a reasonably diversified operating signal [app_demand] [github_momentum] [patent_cluster] [lobbying]. The partnership link to Sam Altman reinforces the AI-platform interpretation [actor:Sam Altman]. The stock is not flagged extended, but its positive relative performance makes the entry less forgiving than GOOGL or NVDA, and one channel is a media pick rather than harder operating evidence [cnbc_pick].",
+      "thesis_zh": "\u6d88\u8d39\u8005\u5e94\u7528\u9700\u6c42\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u3001\u4e13\u5229\u96c6\u7fa4\u548c\u6e38\u8bf4\u6295\u5165\u6784\u6210\u4e86\u76f8\u5bf9\u591a\u5143\u7684\u7ecf\u8425\u4fe1\u53f7 [app_demand] [github_momentum] [patent_cluster] [lobbying]\u3002\u4e0eSam Altman\u7684\u5408\u4f5c\u5173\u7cfb\u5f3a\u5316\u4e86AI\u5e73\u53f0\u903b\u8f91 [actor:Sam Altman]\u3002\u8be5\u80a1\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u5176\u76f8\u5bf9\u6536\u76ca\u4e3a\u6b63\uff0c\u5165\u573a\u5bb9\u9519\u7387\u4f4e\u4e8eGOOGL\u6216NVDA\uff1b\u540c\u65f6\u5176\u4e2d\u4e00\u4e2a\u6e20\u9053\u53ea\u662f\u5a92\u4f53\u8350\u80a1\uff0c\u800c\u975e\u66f4\u624e\u5b9e\u7684\u7ecf\u8425\u8bc1\u636e [cnbc_pick]\u3002",
+      "second_order": [
+        "NVDA \u2014 continued cloud AI deployment supports accelerator consumption.",
+        "MU \u2014 scaling cloud inference and training raises demand for memory capacity and bandwidth.",
+        "CEG \u2014 hyperscale data-center growth can lift power demand, subject to the thin company-specific evidence."
+      ],
+      "evidence": [
+        "[app_demand]",
+        "[github_momentum]",
         "[patent_cluster]",
+        "[lobbying]",
+        "[actor:Sam Altman]",
+        "[cnbc_pick]"
+      ],
+      "dissent": "The evidence lacks dark-pool, insider-buying, or contract-acceleration confirmation, while recent outperformance leaves less room for execution disappointment.",
+      "weighted_score": 2.15,
+      "channels": [
+        "affiliation",
+        "app_demand",
+        "cnbc_pick",
+        "github_momentum",
+        "lobbying",
+        "patent_cluster"
+      ],
+      "rs_vs_spy_60d": 18.1,
+      "extended": false,
+      "scorable": true,
+      "falsifier": {
+        "text": "App demand and developer momentum weaken while patent activity fails to translate into sustained platform adoption.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MSFT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "check_by": "2026-10-30"
+    },
+    {
+      "ticker": "MU",
+      "lean": "overweight",
+      "conviction": "low",
+      "action": "ACCUMULATE",
+      "horizon_d": 60,
+      "thesis": "Insider buying intensity, unanimous analyst bullishness, patent activity, and positive retail sentiment align around a memory-cycle recovery [insider_mspr] [analyst_upgrade_cluster] [patent_cluster] [stocktwits_bull]. Government-grant acceleration is also strong in the metrics, although it is not listed as one of the scored convergence channels [gov_grant_accel]. The stock is non-extended, but the five-channel score includes softer affiliation and retail inputs, keeping conviction low.",
+      "thesis_zh": "\u5185\u90e8\u4eba\u4e70\u5165\u5f3a\u5ea6\u3001\u5206\u6790\u5e08\u4e00\u81f4\u770b\u591a\u3001\u4e13\u5229\u6d3b\u52a8\u548c\u6b63\u9762\u6563\u6237\u60c5\u7eea\u5171\u540c\u6307\u5411\u5b58\u50a8\u5468\u671f\u590d\u82cf [insider_mspr] [analyst_upgrade_cluster] [patent_cluster] [stocktwits_bull]\u3002\u6307\u6807\u4e2d\u7684\u653f\u5e9c\u8865\u52a9\u589e\u901f\u4e5f\u5f88\u5f3a\uff0c\u4f46\u5e76\u672a\u88ab\u5217\u4e3a\u8be5\u80a1\u5df2\u8bc4\u5206\u7684\u6c47\u805a\u6e20\u9053 [gov_grant_accel]\u3002\u80a1\u4ef7\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u4e94\u9879\u4fe1\u53f7\u4e2d\u5305\u542b\u8f83\u8f6f\u7684\u5173\u8054\u548c\u6563\u6237\u8f93\u5165\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u4f4e\u4f4d\u3002",
+      "second_order": [
+        "NVDA \u2014 stronger memory demand would corroborate sustained AI-accelerator production and deployment.",
+        "INTC \u2014 domestic semiconductor support is thematically adjacent, though its own signals are weaker and relative performance is poor.",
+        "QCOM \u2014 broader semiconductor-cycle improvement could aid adjacent chip demand, but its evidence points more to patents and congressional buying."
+      ],
+      "evidence": [
+        "[insider_mspr]",
+        "[analyst_upgrade_cluster]",
+        "[patent_cluster]",
+        "[stocktwits_bull]",
         "[gov_grant_accel]",
         "[actor:Ro Khanna]"
       ],
-      "dissent": "Memory remains cyclical, and analyst optimism plus bullish social sentiment can peak near favorable points in the cycle rather than lead them.",
+      "dissent": "Analyst unanimity and retail optimism can be late-cycle signals, and the pack provides no direct demand, contract, or dark-pool confirmation for MU.",
       "weighted_score": 1.95,
       "channels": [
         "affiliation",
@@ -101,11 +202,11 @@
         "patent_cluster",
         "stocktwits_bull"
       ],
-      "rs_vs_spy_60d": 15.2,
+      "rs_vs_spy_60d": 9.7,
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Government-grant acceleration stalls and insider buying is not followed by improving operating demand.",
+        "text": "Insider support disappears and analyst sentiment deteriorates without confirmation from end-demand indicators.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MU",
@@ -115,125 +216,30 @@
           "horizon_d": 60
         }
       },
-      "check_by": "2026-10-29"
-    },
-    {
-      "ticker": "MSFT",
-      "lean": "overweight",
-      "conviction": "low",
-      "action": "ACCUMULATE",
-      "horizon_d": 75,
-      "thesis": "MSFT has multi-channel alignment across app demand, open-source activity, patents and lobbying, supported by its factual partnership with Sam Altman [app_demand] [github_momentum] [patent_cluster] [lobbying] [actor:Sam Altman]. These signals collectively point to durable AI-platform engagement, but the absence of institutional-flow or insider-buying confirmation keeps conviction low.",
-      "thesis_zh": "MSFT\u5728\u5e94\u7528\u9700\u6c42\u3001\u5f00\u6e90\u6d3b\u52a8\u3001\u4e13\u5229\u548c\u6e38\u8bf4\u6e20\u9053\u4e0a\u5f62\u6210\u591a\u91cd\u5171\u632f\uff0c\u5e76\u83b7\u5f97\u5176\u4e0eSam Altman\u771f\u5b9e\u5408\u4f5c\u5173\u7cfb\u7684\u652f\u6301 [app_demand] [github_momentum] [patent_cluster] [lobbying] [actor:Sam Altman]\u3002\u8fd9\u4e9b\u4fe1\u53f7\u5171\u540c\u6307\u5411\u8f83\u6301\u7eed\u7684AI\u5e73\u53f0\u53c2\u4e0e\u5ea6\uff0c\u4f46\u7f3a\u5c11\u673a\u6784\u8d44\u91d1\u6d41\u6216\u5185\u90e8\u4eba\u4e70\u5165\u786e\u8ba4\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u4f4e\u4f4d\u3002",
-      "second_order": [
-        "NVDA \u2014 cloud AI usage can translate into accelerator demand.",
-        "MU \u2014 expanding cloud inference and training require additional memory.",
-        "AI power and data-center infrastructure \u2014 cloud capacity growth increases physical-infrastructure requirements."
-      ],
-      "evidence": [
-        "[app_demand]",
-        "[github_momentum]",
-        "[patent_cluster]",
-        "[lobbying]",
-        "[actor:Sam Altman]"
-      ],
-      "dissent": "Lobbying and developer activity do not necessarily convert into incremental profit, and the shares have already outperformed SPY over 60 days.",
-      "weighted_score": 1.9,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "github_momentum",
-        "lobbying",
-        "patent_cluster"
-      ],
-      "rs_vs_spy_60d": 13.3,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "App demand and developer momentum weaken together without evidence of continued AI-platform adoption.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MSFT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 75
-        }
-      },
-      "check_by": "2026-11-19"
-    },
-    {
-      "ticker": "GOOGL",
-      "lean": "underweight",
-      "conviction": "low",
-      "action": "AVOID",
-      "horizon_d": 75,
-      "thesis": "GOOGL combines app demand, model-download momentum and lobbying activity, with disclosed ownership by Nancy Pelosi adding influence-graph confirmation [app_demand] [hf_model_momentum] [lobbying] [actor:Nancy Pelosi]. Its marked relative underperformance means the signal is not being chased, but there is no flow or insider channel to justify more than low conviction.",
-      "thesis_zh": "GOOGL\u540c\u65f6\u5177\u5907\u5e94\u7528\u9700\u6c42\u3001\u6a21\u578b\u4e0b\u8f7d\u52a8\u80fd\u548c\u6e38\u8bf4\u6d3b\u52a8\u4fe1\u53f7\uff0cNancy Pelosi\u62ab\u9732\u6301\u4ed3\u5219\u63d0\u4f9b\u5f71\u54cd\u529b\u56fe\u5c42\u9762\u7684\u786e\u8ba4 [app_demand] [hf_model_momentum] [lobbying] [actor:Nancy Pelosi]\u3002\u5176\u660e\u663e\u843d\u540e\u4e8eSPY\uff0c\u56e0\u800c\u4e0d\u5b58\u5728\u8ffd\u9ad8\u95ee\u9898\uff1b\u4f46\u7f3a\u5c11\u8d44\u91d1\u6d41\u6216\u5185\u90e8\u4eba\u6e20\u9053\uff0c\u7f6e\u4fe1\u5ea6\u53ea\u80fd\u7ef4\u6301\u4f4e\u4f4d\u3002",
-      "second_order": [
-        "NVDA \u2014 sustained model usage supports continued AI-compute demand.",
-        "MU \u2014 model training and inference increase memory requirements.",
-        "Data-center power infrastructure \u2014 higher compute utilization requires additional energy and capacity."
-      ],
-      "evidence": [
-        "[app_demand]",
-        "[hf_model_momentum]",
-        "[lobbying]",
-        "[actor:Nancy Pelosi]"
-      ],
-      "dissent": "Severe relative weakness may reflect fundamental or competitive concerns that usage metrics alone do not capture.",
-      "weighted_score": 1.8,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "cnbc_pick",
-        "hf_model_momentum",
-        "lobbying"
-      ],
-      "rs_vs_spy_60d": -13.9,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "Model-download and app-demand momentum roll over while relative performance continues to deteriorate.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "GOOGL",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 75
-        }
-      },
-      "check_by": "2026-11-19",
-      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)",
-      "det_baseline": {
-        "action": "AVOID",
-        "conviction": "low",
-        "lean": "underweight"
-      }
+      "check_by": "2026-10-30"
     },
     {
       "ticker": "BA",
       "lean": "underweight",
       "conviction": "low",
       "action": "AVOID",
-      "horizon_d": 90,
-      "thesis": "BA shows a modest but diversified alignment across government-grant acceleration, insider purchase intensity and patent activity [gov_grant] [insider_mspr] [patent_cluster]. Pending FY2027 defense authorization activity provides a broad sector backdrop, although the pack does not tie the legislation directly to BA [bill:HRES1438]. Jim Cramer's endorsement and bullish social sentiment are weak supporting signals only [actor:Jim Cramer] [stocktwits_bull].",
-      "thesis_zh": "BA\u5448\u73b0\u6e29\u548c\u4f46\u76f8\u5bf9\u591a\u5143\u7684\u5171\u632f\uff0c\u5305\u62ec\u653f\u5e9c\u8865\u52a9\u52a0\u901f\u3001\u5185\u90e8\u4eba\u4e70\u5165\u6307\u6807\u548c\u4e13\u5229\u6d3b\u52a8 [gov_grant] [insider_mspr] [patent_cluster]\u3002\u5f85\u63a8\u8fdb\u76842027\u8d22\u5e74\u56fd\u9632\u6388\u6743\u4e8b\u9879\u6784\u6210\u5e7f\u4e49\u884c\u4e1a\u80cc\u666f\uff0c\u4f46\u8bc1\u636e\u5305\u5e76\u672a\u5c06\u8be5\u6cd5\u6848\u76f4\u63a5\u5173\u8054\u81f3BA [bill:HRES1438]\u3002Jim Cramer\u7684\u80cc\u4e66\u53ca\u770b\u591a\u793e\u4ea4\u60c5\u7eea\u53ea\u80fd\u89c6\u4e3a\u8f83\u5f31\u7684\u8f85\u52a9\u4fe1\u53f7 [actor:Jim Cramer] [stocktwits_bull]\u3002",
+      "horizon_d": 75,
+      "thesis": "Insider buying, accelerating government grants, patent activity, and bullish investor sentiment align around a potential operational and policy-supported recovery [insider_mspr] [gov_grant] [patent_cluster] [stocktwits_bull]. Jim Cramer's endorsement is additive but qualitative and should carry little weight [actor:Jim Cramer]. Defense authorization activity provides a broad sector backdrop, not a BA-specific award [bill:HRES1438]. The shares are non-extended and have lagged SPY, but the evidence does not establish execution improvement.",
+      "thesis_zh": "\u5185\u90e8\u4eba\u4e70\u5165\u3001\u52a0\u901f\u7684\u653f\u5e9c\u8865\u52a9\u3001\u4e13\u5229\u6d3b\u52a8\u548c\u770b\u591a\u6295\u8d44\u8005\u60c5\u7eea\u5171\u540c\u6307\u5411\u6f5c\u5728\u7684\u7ecf\u8425\u4fee\u590d\u53ca\u653f\u7b56\u652f\u6301 [insider_mspr] [gov_grant] [patent_cluster] [stocktwits_bull]\u3002Jim Cramer\u7684\u80cc\u4e66\u4ec5\u5c5e\u5b9a\u6027\u8865\u5145\uff0c\u5e94\u8d4b\u4e88\u8f83\u4f4e\u6743\u91cd [actor:Jim Cramer]\u3002\u56fd\u9632\u6388\u6743\u8fdb\u5c55\u53ea\u6784\u6210\u884c\u4e1a\u80cc\u666f\uff0c\u5e76\u975eBA\u7279\u5b9a\u8ba2\u5355 [bill:HRES1438]\u3002\u80a1\u4ef7\u672a\u8fc7\u5ea6\u5ef6\u4f38\u4e14\u8dd1\u8f93SPY\uff0c\u4f46\u8fd9\u4e9b\u8bc1\u636e\u5c1a\u4e0d\u80fd\u8bc1\u660e\u6267\u884c\u5c42\u9762\u5df2\u6539\u5584\u3002",
       "second_order": [
-        "Aerospace-supplier theme \u2014 improving production or program activity would flow through the component supply chain.",
-        "Defense-electronics theme \u2014 FY2027 defense activity may support adjacent program suppliers.",
-        "Advanced-manufacturing theme \u2014 BA's patent activity implies ongoing demand for specialized engineering inputs."
+        "SPCX \u2014 a broader aerospace recovery could benefit the space-sector basket, although its own convergence is limited to positioning and media channels.",
+        "PLTR \u2014 continued federal and defense spending can support government technology procurement, backed by its own contract signal.",
+        "CEG \u2014 defense and industrial activity can support power demand only indirectly; company-specific linkage is weak."
       ],
       "evidence": [
-        "[gov_grant]",
         "[insider_mspr]",
+        "[gov_grant]",
         "[patent_cluster]",
-        "[bill:HRES1438]",
+        "[stocktwits_bull]",
         "[actor:Jim Cramer]",
-        "[stocktwits_bull]"
+        "[bill:HRES1438]"
       ],
-      "dissent": "The government-grant signal is small relative to BA's scale, and neither broad defense legislation nor social optimism proves improved execution.",
+      "dissent": "Grant activity and sentiment can coexist with persistent production, certification, or execution problems, none of which the pack directly tests.",
       "weighted_score": 2.1,
       "channels": [
         "affiliation",
@@ -242,21 +248,21 @@
         "patent_cluster",
         "stocktwits_bull"
       ],
-      "rs_vs_spy_60d": -3.2,
+      "rs_vs_spy_60d": -5.8,
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Grant acceleration fades and insider buying is not followed by evidence of better program execution.",
+        "text": "Government support stops accelerating while insider buying fades and operational execution does not improve.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BA",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 90
+          "horizon_d": 75
         }
       },
-      "check_by": "2026-12-10",
+      "check_by": "2026-11-20",
       "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'ACCUMULATE' \u2192 'AVOID' (deterministic ceiling)",
       "det_baseline": {
         "action": "AVOID",
@@ -267,9 +273,9 @@
   ],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-08-06",
+    "as_of": "2026-08-08",
     "scored_total": 0,
-    "open": 4,
+    "open": 7,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -326,7 +332,7 @@
   },
   "confidence": "low",
   "n_clusters": 12,
-  "raw_text": "{\"regime_read\":\"Convergence is concentrated in AI compute, memory and cloud platforms, with NVDA showing the broadest independent alignment and MU/MSFT offering cleaner second-order exposure. Signals remain provisional because the desk has no scored history, while social sentiment, affiliations and lobbying are supporting rather than decisive evidence.\",\"regime_read_zh\":\"\u5f53\u524d\u4fe1\u53f7\u4e3b\u8981\u96c6\u4e2d\u4e8eAI\u7b97\u529b\u3001\u5b58\u50a8\u548c\u4e91\u5e73\u53f0\uff0c\u5176\u4e2dNVDA\u7684\u72ec\u7acb\u4fe1\u53f7\u5171\u632f\u6700\u5e7f\uff0cMU\u4e0eMSFT\u5219\u63d0\u4f9b\u8f83\u6e05\u6670\u7684\u4e8c\u9636\u655e\u53e3\u3002\u7531\u4e8e\u8be5\u7b56\u7565\u5c1a\u65e0\u5df2\u8bc4\u5206\u8bb0\u5f55\uff0c\u6240\u6709\u5224\u65ad\u4ecd\u5c5e\u521d\u6b65\uff1b\u793e\u4ea4\u60c5\u7eea\u3001\u5173\u8054\u5173\u7cfb\u548c\u6e38\u8bf4\u6d3b\u52a8\u53ea\u80fd\u4f5c\u4e3a\u8f85\u52a9\u8bc1\u636e\u3002\",\"theses\":[{\"ticker\":\"NVDA\",\"lean\":\"overweight\",\"conviction\":\"medium\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"The pack's strongest convergence combines institutional adding, dark-pool accumulation, analyst upgrades, developer momentum and a large patent cluster [13f_add] [darkpool_accum] [analyst_upgrade_cluster] [github_momentum] [patent_cluster]. Disclosed holdings by Nancy Pelosi, Marjorie Taylor Greene and Michael McCaul add an influence-graph confirmation, although they do not establish causality [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]. The shares are not extended versus SPY, so the entry constraint does not block an overweight; earnings in 20 days create event risk as well as a validation point [earnings_metric].\",\"thesis_zh\":\"\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u5171\u632f\u6765\u81ea\u673a\u6784\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\u3001\u5206\u6790\u5e08\u96c6\u4e2d\u4e0a\u8c03\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u548c\u5927\u578b\u4e13\u5229\u96c6\u7fa4 [13f_add] [darkpool_accum] [analyst_upgrade_cluster] [github_momentum] [patent_cluster]\u3002Nancy Pelosi\u3001Marjorie Taylor Greene\u548cMichael McCaul\u62ab\u9732\u6301\u4ed3\uff0c\u4e3a\u5f71\u54cd\u529b\u56fe\u63d0\u4f9b\u989d\u5916\u5370\u8bc1\uff0c\u4f46\u4e0d\u4ee3\u8868\u56e0\u679c\u5173\u7cfb [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]\u3002\u76f8\u5bf9SPY\u5e76\u672a\u5904\u4e8e\u8fc7\u5ea6\u5ef6\u4f38\u72b6\u6001\uff0c\u56e0\u6b64\u53ef\u91c7\u53d6\u589e\u6301\u503e\u5411\uff1b20\u4e2a\u4ea4\u6613\u65e5\u540e\u7684\u8d22\u62a5\u65e2\u662f\u98ce\u9669\u4e8b\u4ef6\uff0c\u4e5f\u662f\u9a8c\u8bc1\u8282\u70b9 [earnings_metric]\u3002\",\"second_order\":[\"MU \u2014 AI-compute deployment implies greater demand for memory capacity.\",\"LITE \u2014 continued data-center scaling can support optical-connectivity demand.\",\"AI power and data-center infrastructure \u2014 compute deployment requires additional power, cooling and physical capacity.\"],\"evidence\":[\"[13f_add]\",\"[darkpool_accum]\",\"[analyst_upgrade_cluster]\",\"[github_momentum]\",\"[patent_cluster]\",\"[actor:Nancy Pelosi]\",\"[actor:Marjorie Taylor Greene]\",\"[actor:Michael McCaul]\",\"[earnings_metric]\"],\"dissent\":\"Retail buzz and analyst agreement may reflect an already crowded consensus, while the upcoming earnings event can overwhelm slower-moving alternative-data signals.\",\"falsifier_text\":\"Dark-pool accumulation reverses and the next earnings update fails to sustain the demand narrative.\"},{\"ticker\":\"MU\",\"lean\":\"overweight\",\"conviction\":\"medium\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"MU aligns analyst upgrades, insider purchase intensity and a substantial patent cluster, while the reported acceleration in government grants supplies a distinct policy/capex channel [analyst_upgrade_cluster] [insider_mspr] [patent_cluster] [gov_grant_accel]. Ro Khanna's disclosed affiliation is supplementary influence evidence [actor:Ro Khanna]. Relative performance is positive but remains below the pack's extended threshold.\",\"thesis_zh\":\"MU\u540c\u65f6\u51fa\u73b0\u5206\u6790\u5e08\u4e0a\u8c03\u3001\u8f83\u5f3a\u7684\u5185\u90e8\u4eba\u4e70\u5165\u6307\u6807\u548c\u53ef\u89c2\u7684\u4e13\u5229\u96c6\u7fa4\uff0c\u653f\u5e9c\u8865\u52a9\u52a0\u901f\u5219\u63d0\u4f9b\u4e86\u72ec\u7acb\u7684\u653f\u7b56\u4e0e\u8d44\u672c\u6295\u5165\u4fe1\u53f7 [analyst_upgrade_cluster] [insider_mspr] [patent_cluster] [gov_grant_accel]\u3002Ro Khanna\u62ab\u9732\u7684\u5173\u8054\u5173\u7cfb\u63d0\u4f9b\u8f85\u52a9\u6027\u7684\u5f71\u54cd\u529b\u8bc1\u636e [actor:Ro Khanna]\u3002\u5176\u76f8\u5bf9\u8868\u73b0\u867d\u4e3a\u6b63\uff0c\u4f46\u4ecd\u4f4e\u4e8e\u8bc1\u636e\u5305\u8bbe\u5b9a\u7684\u8fc7\u5ea6\u5ef6\u4f38\u95e8\u69db\u3002\",\"second_order\":[\"NVDA \u2014 stronger memory investment supports the broader AI-accelerator ecosystem.\",\"Semiconductor-equipment theme \u2014 additional memory capacity requires fabrication and packaging equipment.\",\"Data-center infrastructure \u2014 memory expansion reinforces continued server deployment.\"],\"evidence\":[\"[analyst_upgrade_cluster]\",\"[insider_mspr]\",\"[patent_cluster]\",\"[gov_grant_accel]\",\"[actor:Ro Khanna]\"],\"dissent\":\"Memory remains cyclical, and analyst optimism plus bullish social sentiment can peak near favorable points in the cycle rather than lead them.\",\"falsifier_text\":\"Government-grant acceleration stalls and insider buying is not followed by improving operating demand.\"},{\"ticker\":\"MSFT\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":75,\"thesis\":\"MSFT has multi-channel alignment across app demand, open-source activity, patents and lobbying, supported by its factual partnership with Sam Altman [app_demand] [github_momentum] [patent_cluster] [lobbying] [actor:Sam Altman]. These signals collectively point to durable AI-platform engagement, but the absence of institutional-flow or insider-buying confirmation keeps conviction low.\",\"thesis_zh\":\"MSFT\u5728\u5e94\u7528\u9700\u6c42\u3001\u5f00\u6e90\u6d3b\u52a8\u3001\u4e13\u5229\u548c\u6e38\u8bf4\u6e20\u9053\u4e0a\u5f62\u6210\u591a\u91cd\u5171\u632f\uff0c\u5e76\u83b7\u5f97\u5176\u4e0eSam Altman\u771f\u5b9e\u5408\u4f5c\u5173\u7cfb\u7684\u652f\u6301 [app_demand] [github_momentum] [patent_cluster] [lobbying] [actor:Sam Altman]\u3002\u8fd9\u4e9b\u4fe1\u53f7\u5171\u540c\u6307\u5411\u8f83\u6301\u7eed\u7684AI\u5e73\u53f0\u53c2\u4e0e\u5ea6\uff0c\u4f46\u7f3a\u5c11\u673a\u6784\u8d44\u91d1\u6d41\u6216\u5185\u90e8\u4eba\u4e70\u5165\u786e\u8ba4\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u4f4e\u4f4d\u3002\",\"second_order\":[\"NVDA \u2014 cloud AI usage can translate into accelerator demand.\",\"MU \u2014 expanding cloud inference and training require additional memory.\",\"AI power and data-center infrastructure \u2014 cloud capacity growth increases physical-infrastructure requirements.\"],\"evidence\":[\"[app_demand]\",\"[github_momentum]\",\"[patent_cluster]\",\"[lobbying]\",\"[actor:Sam Altman]\"],\"dissent\":\"Lobbying and developer activity do not necessarily convert into incremental profit, and the shares have already outperformed SPY over 60 days.\",\"falsifier_text\":\"App demand and developer momentum weaken together without evidence of continued AI-platform adoption.\"},{\"ticker\":\"GOOGL\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":75,\"thesis\":\"GOOGL combines app demand, model-download momentum and lobbying activity, with disclosed ownership by Nancy Pelosi adding influence-graph confirmation [app_demand] [hf_model_momentum] [lobbying] [actor:Nancy Pelosi]. Its marked relative underperformance means the signal is not being chased, but there is no flow or insider channel to justify more than low conviction.\",\"thesis_zh\":\"GOOGL\u540c\u65f6\u5177\u5907\u5e94\u7528\u9700\u6c42\u3001\u6a21\u578b\u4e0b\u8f7d\u52a8\u80fd\u548c\u6e38\u8bf4\u6d3b\u52a8\u4fe1\u53f7\uff0cNancy Pelosi\u62ab\u9732\u6301\u4ed3\u5219\u63d0\u4f9b\u5f71\u54cd\u529b\u56fe\u5c42\u9762\u7684\u786e\u8ba4 [app_demand] [hf_model_momentum] [lobbying] [actor:Nancy Pelosi]\u3002\u5176\u660e\u663e\u843d\u540e\u4e8eSPY\uff0c\u56e0\u800c\u4e0d\u5b58\u5728\u8ffd\u9ad8\u95ee\u9898\uff1b\u4f46\u7f3a\u5c11\u8d44\u91d1\u6d41\u6216\u5185\u90e8\u4eba\u6e20\u9053\uff0c\u7f6e\u4fe1\u5ea6\u53ea\u80fd\u7ef4\u6301\u4f4e\u4f4d\u3002\",\"second_order\":[\"NVDA \u2014 sustained model usage supports continued AI-compute demand.\",\"MU \u2014 model training and inference increase memory requirements.\",\"Data-center power infrastructure \u2014 higher compute utilization requires additional energy and capacity.\"],\"evidence\":[\"[app_demand]\",\"[hf_model_momentum]\",\"[lobbying]\",\"[actor:Nancy Pelosi]\"],\"dissent\":\"Severe relative weakness may reflect fundamental or competitive concerns that usage metrics alone do not capture.\",\"falsifier_text\":\"Model-download and app-demand momentum roll over while relative performance continues to deteriorate.\"},{\"ticker\":\"BA\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":90,\"thesis\":\"BA shows a modest but diversified alignment across government-grant acceleration, insider purchase intensity and patent activity [gov_grant] [insider_mspr] [patent_cluster]. Pending FY2027 defense authorization activity provides a broad sector backdrop, although the pack does not tie the legislation directly to BA [bill:HRES1438]. Jim Cramer's endorsement and bullish social sentiment are weak supporting signals only [actor:Jim Cramer] [stocktwits_bull].\",\"thesis_zh\":\"BA\u5448\u73b0\u6e29\u548c\u4f46\u76f8\u5bf9\u591a\u5143\u7684\u5171\u632f\uff0c\u5305\u62ec\u653f\u5e9c\u8865\u52a9\u52a0\u901f\u3001\u5185\u90e8\u4eba\u4e70\u5165\u6307\u6807\u548c\u4e13\u5229\u6d3b\u52a8 [gov_grant] [insider_mspr] [patent_cluster]\u3002\u5f85\u63a8\u8fdb\u76842027\u8d22\u5e74\u56fd\u9632\u6388\u6743\u4e8b\u9879\u6784\u6210\u5e7f\u4e49\u884c\u4e1a\u80cc\u666f\uff0c\u4f46\u8bc1\u636e\u5305\u5e76\u672a\u5c06\u8be5\u6cd5\u6848\u76f4\u63a5\u5173\u8054\u81f3BA [bill:HRES1438]\u3002Jim Cramer\u7684\u80cc\u4e66\u53ca\u770b\u591a\u793e\u4ea4\u60c5\u7eea\u53ea\u80fd\u89c6\u4e3a\u8f83\u5f31\u7684\u8f85\u52a9\u4fe1\u53f7 [actor:Jim Cramer] [stocktwits_bull]\u3002\",\"second_order\":[\"Aerospace-supplier theme \u2014 improving production or program activity would flow through the component supply chain.\",\"Defense-electronics theme \u2014 FY2027 defense activity may support adjacent program suppliers.\",\"Advanced-manufacturing theme \u2014 BA's patent activity implies ongoing demand for specialized engineering inputs.\"],\"evidence\":[\"[gov_grant]\",\"[insider_mspr]\",\"[patent_cluster]\",\"[bill:HRES1438]\",\"[actor:Jim Cramer]\",\"[stocktwits_bull]\"],\"dissent\":\"The government-grant signal is small relative to BA's scale, and neither broad defense legislation nor social optimism proves improved execution.\",\"falsifier_text\":\"Grant acceleration fades and insider buying is not followed by evidence of better program execution.\"}],\"confidence\":\"low\"}",
+  "raw_text": "{\"regime_read\":\"Convergence is concentrated in AI compute, software platforms, memory, and selected industrials, but the desk has no scored history, so conviction remains modest. NVDA has the broadest independent alignment; GOOGL, MSFT, MU, and BA offer narrower non-extended reads, while retail-heavy signals elsewhere are less actionable.\",\"regime_read_zh\":\"\u5f53\u524d\u4fe1\u53f7\u4e3b\u8981\u6c47\u805a\u4e8eAI\u7b97\u529b\u3001\u8f6f\u4ef6\u5e73\u53f0\u3001\u5b58\u50a8\u82af\u7247\u53ca\u90e8\u5206\u5de5\u4e1a\u80a1\uff0c\u4f46\u672c\u684c\u5c1a\u65e0\u5df2\u8bc4\u5206\u5386\u53f2\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u4fdd\u6301\u514b\u5236\u3002NVDA\u7684\u72ec\u7acb\u4fe1\u53f7\u8986\u76d6\u6700\u5e7f\uff1bGOOGL\u3001MSFT\u3001MU\u548cBA\u5219\u63d0\u4f9b\u8f83\u7a84\u4f46\u5c1a\u672a\u8fc7\u5ea6\u5ef6\u4f38\u7684\u673a\u4f1a\uff0c\u5176\u4f59\u504f\u6563\u6237\u60c5\u7eea\u7684\u4fe1\u53f7\u53ef\u64cd\u4f5c\u6027\u8f83\u5f31\u3002\",\"theses\":[{\"ticker\":\"NVDA\",\"lean\":\"overweight\",\"conviction\":\"medium\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"The pack's strongest convergence combines smart-money additions, dark-pool accumulation, developer momentum, patent activity, and a near-unanimous analyst cluster [13f_add] [darkpool_accum] [github_momentum] [patent_cluster] [analyst_upgrade_cluster]. Disclosed holdings by Nancy Pelosi, Marjorie Taylor Greene, and Michael McCaul add actor breadth without proving causality [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]. The shares are non-extended and have lagged SPY over 60 days, so this is not a momentum chase; earnings in 18 days make the path event-sensitive.\",\"thesis_zh\":\"\u8be5\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u6c47\u805a\u6765\u81ea\u806a\u660e\u8d44\u91d1\u589e\u6301\u3001\u6697\u6c60\u5438\u7b79\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u3001\u4e13\u5229\u6d3b\u52a8\u53ca\u9ad8\u5ea6\u4e00\u81f4\u7684\u5206\u6790\u5e08\u770b\u591a\u96c6\u7fa4 [13f_add] [darkpool_accum] [github_momentum] [patent_cluster] [analyst_upgrade_cluster]\u3002Nancy Pelosi\u3001Marjorie Taylor Greene\u548cMichael McCaul\u7684\u62ab\u9732\u6301\u4ed3\u589e\u52a0\u4e86\u53c2\u4e0e\u8005\u5e7f\u5ea6\uff0c\u4f46\u5e76\u4e0d\u8bc1\u660e\u56e0\u679c\u5173\u7cfb [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]\u3002\u80a1\u4ef7\u672a\u5904\u4e8e\u8fc7\u5ea6\u5ef6\u4f38\u72b6\u6001\uff0c\u4e14\u8fc7\u53bb60\u65e5\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\uff1b18\u5929\u540e\u516c\u5e03\u8d22\u62a5\u4f7f\u8def\u5f84\u9ad8\u5ea6\u4f9d\u8d56\u4e8b\u4ef6\u7ed3\u679c\u3002\",\"second_order\":[\"MU \u2014 memory demand is a second-order beneficiary of sustained AI-compute deployment, with its own insider, patent, and analyst convergence.\",\"MSFT \u2014 cloud and AI-platform monetization can benefit from continued accelerator adoption and is supported by app, developer, and patent signals.\",\"CEG \u2014 AI data-center expansion implies greater power demand, though its own convergence is only three channels.\"],\"evidence\":[\"[13f_add]\",\"[darkpool_accum]\",\"[github_momentum]\",\"[patent_cluster]\",\"[analyst_upgrade_cluster]\",\"[actor:Nancy Pelosi]\",\"[actor:Marjorie Taylor Greene]\",\"[actor:Michael McCaul]\"],\"dissent\":\"Retail buzz and analyst unanimity may reflect a crowded consensus, while the imminent earnings event can overwhelm the slower-moving alternative-data signals.\",\"falsifier_text\":\"Dark-pool accumulation reverses while developer and model-download momentum weaken after the next earnings report.\"},{\"ticker\":\"GOOGL\",\"lean\":\"overweight\",\"conviction\":\"medium\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"App demand, model-download momentum, open-source developer activity, lobbying, and analyst upgrades align across product usage, ecosystem adoption, policy engagement, and institutional opinion [app_demand] [hf_model_momentum] [github_momentum] [lobbying] [analyst_upgrade_cluster]. Nancy Pelosi's disclosed holding adds an actor signal [actor:Nancy Pelosi]. The stock is non-extended and has materially lagged SPY over 60 days, providing a less crowded entry than the signal breadth might imply.\",\"thesis_zh\":\"\u5e94\u7528\u9700\u6c42\u3001\u6a21\u578b\u4e0b\u8f7d\u52a8\u80fd\u3001\u5f00\u6e90\u5f00\u53d1\u8005\u6d3b\u52a8\u3001\u6e38\u8bf4\u6295\u5165\u548c\u5206\u6790\u5e08\u4e0a\u8c03\uff0c\u5206\u522b\u4ece\u4ea7\u54c1\u4f7f\u7528\u3001\u751f\u6001\u91c7\u7528\u3001\u653f\u7b56\u53c2\u4e0e\u548c\u673a\u6784\u89c2\u70b9\u5f62\u6210\u6c47\u805a [app_demand] [hf_model_momentum] [github_momentum] [lobbying] [analyst_upgrade_cluster]\u3002Nancy Pelosi\u7684\u62ab\u9732\u6301\u4ed3\u589e\u52a0\u4e86\u4e00\u9879\u53c2\u4e0e\u8005\u4fe1\u53f7 [actor:Nancy Pelosi]\u3002\u8be5\u80a1\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u8fc7\u53bb60\u65e5\u660e\u663e\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u76f8\u5bf9\u4e8e\u4fe1\u53f7\u5e7f\u5ea6\u800c\u8a00\uff0c\u5165\u573a\u62e5\u6324\u5ea6\u8f83\u4f4e\u3002\",\"second_order\":[\"NVDA \u2014 continued model usage and developer activity support accelerator demand, although NVDA has stronger standalone convergence.\",\"MSFT \u2014 broader AI application adoption validates cloud-platform demand across the competing hyperscaler complex.\",\"CEG \u2014 expanding AI workloads imply rising data-center electricity requirements, but CEG's evidence remains comparatively thin.\"],\"evidence\":[\"[app_demand]\",\"[hf_model_momentum]\",\"[github_momentum]\",\"[lobbying]\",\"[analyst_upgrade_cluster]\",\"[actor:Nancy Pelosi]\"],\"dissent\":\"Lobbying and app engagement do not necessarily translate into incremental margins, and the 60-day relative weakness may reflect unresolved monetization or regulatory concerns.\",\"falsifier_text\":\"App engagement and model-download momentum roll over without a corresponding improvement in relative performance.\"},{\"ticker\":\"MSFT\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"Consumer app demand, developer momentum, patent clustering, and lobbying form a reasonably diversified operating signal [app_demand] [github_momentum] [patent_cluster] [lobbying]. The partnership link to Sam Altman reinforces the AI-platform interpretation [actor:Sam Altman]. The stock is not flagged extended, but its positive relative performance makes the entry less forgiving than GOOGL or NVDA, and one channel is a media pick rather than harder operating evidence [cnbc_pick].\",\"thesis_zh\":\"\u6d88\u8d39\u8005\u5e94\u7528\u9700\u6c42\u3001\u5f00\u53d1\u8005\u52a8\u80fd\u3001\u4e13\u5229\u96c6\u7fa4\u548c\u6e38\u8bf4\u6295\u5165\u6784\u6210\u4e86\u76f8\u5bf9\u591a\u5143\u7684\u7ecf\u8425\u4fe1\u53f7 [app_demand] [github_momentum] [patent_cluster] [lobbying]\u3002\u4e0eSam Altman\u7684\u5408\u4f5c\u5173\u7cfb\u5f3a\u5316\u4e86AI\u5e73\u53f0\u903b\u8f91 [actor:Sam Altman]\u3002\u8be5\u80a1\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u5176\u76f8\u5bf9\u6536\u76ca\u4e3a\u6b63\uff0c\u5165\u573a\u5bb9\u9519\u7387\u4f4e\u4e8eGOOGL\u6216NVDA\uff1b\u540c\u65f6\u5176\u4e2d\u4e00\u4e2a\u6e20\u9053\u53ea\u662f\u5a92\u4f53\u8350\u80a1\uff0c\u800c\u975e\u66f4\u624e\u5b9e\u7684\u7ecf\u8425\u8bc1\u636e [cnbc_pick]\u3002\",\"second_order\":[\"NVDA \u2014 continued cloud AI deployment supports accelerator consumption.\",\"MU \u2014 scaling cloud inference and training raises demand for memory capacity and bandwidth.\",\"CEG \u2014 hyperscale data-center growth can lift power demand, subject to the thin company-specific evidence.\"],\"evidence\":[\"[app_demand]\",\"[github_momentum]\",\"[patent_cluster]\",\"[lobbying]\",\"[actor:Sam Altman]\",\"[cnbc_pick]\"],\"dissent\":\"The evidence lacks dark-pool, insider-buying, or contract-acceleration confirmation, while recent outperformance leaves less room for execution disappointment.\",\"falsifier_text\":\"App demand and developer momentum weaken while patent activity fails to translate into sustained platform adoption.\"},{\"ticker\":\"MU\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"Insider buying intensity, unanimous analyst bullishness, patent activity, and positive retail sentiment align around a memory-cycle recovery [insider_mspr] [analyst_upgrade_cluster] [patent_cluster] [stocktwits_bull]. Government-grant acceleration is also strong in the metrics, although it is not listed as one of the scored convergence channels [gov_grant_accel]. The stock is non-extended, but the five-channel score includes softer affiliation and retail inputs, keeping conviction low.\",\"thesis_zh\":\"\u5185\u90e8\u4eba\u4e70\u5165\u5f3a\u5ea6\u3001\u5206\u6790\u5e08\u4e00\u81f4\u770b\u591a\u3001\u4e13\u5229\u6d3b\u52a8\u548c\u6b63\u9762\u6563\u6237\u60c5\u7eea\u5171\u540c\u6307\u5411\u5b58\u50a8\u5468\u671f\u590d\u82cf [insider_mspr] [analyst_upgrade_cluster] [patent_cluster] [stocktwits_bull]\u3002\u6307\u6807\u4e2d\u7684\u653f\u5e9c\u8865\u52a9\u589e\u901f\u4e5f\u5f88\u5f3a\uff0c\u4f46\u5e76\u672a\u88ab\u5217\u4e3a\u8be5\u80a1\u5df2\u8bc4\u5206\u7684\u6c47\u805a\u6e20\u9053 [gov_grant_accel]\u3002\u80a1\u4ef7\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u4e94\u9879\u4fe1\u53f7\u4e2d\u5305\u542b\u8f83\u8f6f\u7684\u5173\u8054\u548c\u6563\u6237\u8f93\u5165\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u4f4e\u4f4d\u3002\",\"second_order\":[\"NVDA \u2014 stronger memory demand would corroborate sustained AI-accelerator production and deployment.\",\"INTC \u2014 domestic semiconductor support is thematically adjacent, though its own signals are weaker and relative performance is poor.\",\"QCOM \u2014 broader semiconductor-cycle improvement could aid adjacent chip demand, but its evidence points more to patents and congressional buying.\"],\"evidence\":[\"[insider_mspr]\",\"[analyst_upgrade_cluster]\",\"[patent_cluster]\",\"[stocktwits_bull]\",\"[gov_grant_accel]\",\"[actor:Ro Khanna]\"],\"dissent\":\"Analyst unanimity and retail optimism can be late-cycle signals, and the pack provides no direct demand, contract, or dark-pool confirmation for MU.\",\"falsifier_text\":\"Insider support disappears and analyst sentiment deteriorates without confirmation from end-demand indicators.\"},{\"ticker\":\"BA\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":75,\"thesis\":\"Insider buying, accelerating government grants, patent activity, and bullish investor sentiment align around a potential operational and policy-supported recovery [insider_mspr] [gov_grant] [patent_cluster] [stocktwits_bull]. Jim Cramer's endorsement is additive but qualitative and should carry little weight [actor:Jim Cramer]. Defense authorization activity provides a broad sector backdrop, not a BA-specific award [bill:HRES1438]. The shares are non-extended and have lagged SPY, but the evidence does not establish execution improvement.\",\"thesis_zh\":\"\u5185\u90e8\u4eba\u4e70\u5165\u3001\u52a0\u901f\u7684\u653f\u5e9c\u8865\u52a9\u3001\u4e13\u5229\u6d3b\u52a8\u548c\u770b\u591a\u6295\u8d44\u8005\u60c5\u7eea\u5171\u540c\u6307\u5411\u6f5c\u5728\u7684\u7ecf\u8425\u4fee\u590d\u53ca\u653f\u7b56\u652f\u6301 [insider_mspr] [gov_grant] [patent_cluster] [stocktwits_bull]\u3002Jim Cramer\u7684\u80cc\u4e66\u4ec5\u5c5e\u5b9a\u6027\u8865\u5145\uff0c\u5e94\u8d4b\u4e88\u8f83\u4f4e\u6743\u91cd [actor:Jim Cramer]\u3002\u56fd\u9632\u6388\u6743\u8fdb\u5c55\u53ea\u6784\u6210\u884c\u4e1a\u80cc\u666f\uff0c\u5e76\u975eBA\u7279\u5b9a\u8ba2\u5355 [bill:HRES1438]\u3002\u80a1\u4ef7\u672a\u8fc7\u5ea6\u5ef6\u4f38\u4e14\u8dd1\u8f93SPY\uff0c\u4f46\u8fd9\u4e9b\u8bc1\u636e\u5c1a\u4e0d\u80fd\u8bc1\u660e\u6267\u884c\u5c42\u9762\u5df2\u6539\u5584\u3002\",\"second_order\":[\"SPCX \u2014 a broader aerospace recovery could benefit the space-sector basket, although its own convergence is limited to positioning and media channels.\",\"PLTR \u2014 continued federal and defense spending can support government technology procurement, backed by its own contract signal.\",\"CEG \u2014 defense and industrial activity can support power demand only indirectly; company-specific linkage is weak.\"],\"evidence\":[\"[insider_mspr]\",\"[gov_grant]\",\"[patent_cluster]\",\"[stocktwits_bull]\",\"[actor:Jim Cramer]\",\"[bill:HRES1438]\"],\"dissent\":\"Grant activity and sentiment can coexist with persistent production, certification, or execution problems, none of which the pack directly tests.\",\"falsifier_text\":\"Government support stops accelerating while insider buying fades and operational execution does not improve.\"}],\"confidence\":\"low\"}",
   "degraded_reason": null,
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and checkable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

@@ -1,6 +1,6 @@
 {
   "schema": "bottom_sensors_geometry_audit.v1",
-  "n_booked": 40591,
+  "n_booked": 40592,
   "booked_dates": [
     "2026-07-06",
     "2026-08-07"
@@ -13,41 +13,41 @@
       "decline_geometry": {
         "buckets": {
           "flush": {
-            "mean_fwd_ret": 0.0056636360866032165,
+            "mean_fwd_ret": 0.00552864539877687,
             "n": 290
           },
           "grind": {
-            "mean_fwd_ret": 0.023128931713400837,
+            "mean_fwd_ret": 0.02304662336876227,
             "n": 297
           },
           "mixed": {
-            "mean_fwd_ret": 0.02363290839564748,
+            "mean_fwd_ret": 0.023602644183514345,
             "n": 299
           }
         },
-        "flush_minus_grind": -0.01746529562679762
+        "flush_minus_grind": -0.0175179779699854
       },
       "underwater_state": {
         "buckets": {
           "long": {
-            "mean_fwd_ret": 0.03665458610142575,
+            "mean_fwd_ret": 0.036746834512778416,
             "n": 292
           },
           "mid": {
-            "mean_fwd_ret": 0.019291042857460354,
+            "mean_fwd_ret": 0.019012727550995367,
             "n": 293
           },
           "short": {
-            "mean_fwd_ret": -0.002582816958666521,
+            "mean_fwd_ret": -0.002642724030347063,
             "n": 301
           }
         },
-        "long_minus_short": 0.039237403060092275
+        "long_minus_short": 0.03938955854312548
       }
     }
   },
   "interpretation": "Realized forward-return gaps of the FROZEN structural descriptors per horizon: decline_geometry flush\u2212grind (family E, DISPLAY-CANDIDATE) and underwater_state long\u2212short (family F, ADVERSE-CONTEXT). Descriptive only; empty/thin until horizons elapse.",
   "authority": "DISPLAY-ONLY \u2014 no ranking/gating/allocation surface is touched; a positive gap does NOT promote either descriptor. CHIP promotion is blocked until the true eq_band cache lands (RUL-28).",
   "survivorship": "OPTIMISTIC bound \u2014 free prices serve currently-listed names only.",
-  "generated_utc": "2026-08-08T02:02:31+00:00"
+  "generated_utc": "2026-08-09T01:32:57+00:00"
 }

@@ -77,6 +77,10 @@ from starlette.datastructures import MutableHeaders
 # an answer the model already produced. Pure stdlib, no app import cycle.
 from app import brain_runs
 
+# Which forwarded header actually carries the visitor (and which four are forgeable).
+# Pure stdlib, no app import cycle. Read its header before changing any identity call.
+from app import edge_client
+
 # Add repo root to sys.path so engine.neuralweb can be imported from /opt/macro
 _REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
@@ -233,22 +237,16 @@ def _mm_is_loggable_ip(ip: str) -> bool:
 
 
 def _mm_client_ip(request: Request) -> str:
-    # Real VISITOR IP, not the CDN edge. mastermind-x.com is behind Tencent EdgeOne. EdgeOne does NOT
-    # send a real-client-IP header by default, so X-Forwarded-For is the EdgeOne EDGE IP (e.g.
-    # "Tucumcari NM" / a Singapore PoP for China traffic), not the person. Once the operator adds the
-    # EdgeOne rule "Client IP Header" = EO-Client-IP (Network Optimization), the real IP arrives here.
-    # Precedence: the configured real-IP header first (EO-Client-IP), then the other CDN real-client
-    # headers, then XFF/x-real-ip. All of these pass through Caddy untouched. See app/deploy/SITE_GATE.md
-    # and the edgeone-real-ip-headers note.
-    h = request.headers
-    for k in ("eo-client-ip", "eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
-        v = (h.get(k) or "").strip()
-        if v:
-            return v[:64]
-    xff = h.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()[:64]
-    return (h.get("x-real-ip") or "").strip()[:64] or "unknown"
+    """Real VISITOR IP, not the CDN edge — resolved by app/edge_client.py.
+
+    Read that module before touching the order. Until 2026-08-07 this preferred
+    ``EO-Client-IP`` and then fell through ``CF-Connecting-IP`` / ``True-Client-IP`` /
+    ``X-Forwarded-For``[0] / ``X-Real-IP`` — five headers measured to arrive carrying
+    whatever the caller forged, ahead of the one the edge actually overwrites. With ufw
+    permitting 80,443/tcp from Anywhere, that let a direct-to-origin caller name itself
+    and rotate the name per request, minting a fresh rate-limit bucket every time.
+    """
+    return edge_client.client_ip(request.headers)
 
 
 # ── Registered-visitor identity (attribute authenticated visitors to their user) ──
@@ -1863,6 +1861,12 @@ app.include_router(earnings_router)
 # recommendation surface.
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
+
+# Market Memory is a read-only product projection over two existing context
+# engines (Brain macro analogues + Signal Episode Atlas).  The router enforces
+# site-full entitlement and carries an all-false authority block on every read.
+from app.market_memory import router as market_memory_router  # noqa: E402
+app.include_router(market_memory_router)
 
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
