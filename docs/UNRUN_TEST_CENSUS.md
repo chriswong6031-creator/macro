@@ -1,9 +1,72 @@
 # Unrun-test census — CI coverage triage
 
-**Regenerate:** `python3 scripts/audit_unrun_tests.py` (add `--tier P1`, `--json out.json`).
+**Regenerate:** `python3 scripts/audit_unrun_tests.py` (add `--tier P1`, `--json out.json`,
+`--selftest`).
 
 This document records the systemic version of the hole PR #3595 fixed for six suites: test
 suites that exist, pass locally, and are executed by **no CI job at all**.
+
+## Scope: the whole tree, since 2026-08-06 (#4693)
+
+Every number below dated before 2026-08-06 was measured with the census — and both guards
+that import from it — **hard-scoped to `tests/`**. That scope was exactly backwards: research
+packets here are routinely fenced to files-only, so a packet's guard suite gets written
+**next to its instrument** under `research/` rather than in `tests/`, and those are the
+suites most likely to be dark. Measured on 2026-08-06:
+
+| suite | tests | status when found |
+|---|---|---|
+| `research/prophet_us_audit/test_label_grading_battery.py` | 16 | named by no `run:` step since #4547 landed |
+| `research/signal_engine/test_buy_filters.py` | 6 | named by no `run:` step since it landed |
+| `scripts/research/test_run_w4_controls_fingerprints.py` | 17 | named by no `run:` step since it landed |
+
+All three were **triggerable** — `research/**/*.py` and `scripts/**/*.py` are both in
+`ci.yml`'s filter — which is the worse half of the trap: the workflow starts, the pack goes
+green, and the suite that would have caught the break never runs. None of the three censuses
+could see any of it, so all three reported the repo covered.
+
+**A `test_`-shaped filename is not a suite.** Widening by name would have swapped a blind
+census for a noisy one, and a census that cries wolf stops being read — the exact failure
+mode `check_ci_trigger_closure.py` exists to end. Three files under `research/` are CLI
+measurement instruments (`def main()` behind `if __name__ == "__main__"`, no test functions);
+`pytest` exits 5 on each. Classification therefore asks pytest's own question — does the file
+define a `test*` function, or a `Test*` class holding one — and agrees with
+`pytest --collect-only` on all 2,020 filename-shaped candidates in the tree. The three
+non-suites are **printed under their own heading**, never silently dropped:
+
+```
+research/cn_prophet_audit/sector_intel_exante_test.py
+research/signal_engine/test_breadth_consume.py
+research/signal_engine/test_buyfilter.py
+```
+
+**Discovery is `git ls-files`, with a pruned walk as fallback.** That is load-bearing, not
+defensive: the primary checkout carries **357,599** test-shaped files under
+`.claude/worktrees/` alone, so an unpruned walk turns a 2,017-row census into a 368,938-row
+one. Tracked-only is also the correct semantics — CI runs committed code.
+
+The widening moved no existing number: census **+3 rows** (exactly the three suites above),
+0 removed, 0 tier changes; skip-only 91 rows with 0 drift; trigger-closure 1,046 rows with
+0 drift.
+
+### Newly-visible backlog — reported, deliberately not bulk-wired
+
+All three were run locally on 2026-08-06 and **all three pass** (39 tests). They are still
+listed as backlog rather than wired in the same PR, for the standing reason `P4`/`P5` are:
+bulk-adding blows the ci-pack budget, and a never-run suite lands red often enough
+(~5–14%) that wiring unverified ones costs more than it buys.
+
+| suite | tests | local runtime | disposition |
+|---|---|---|---|
+| `research/prophet_us_audit/test_label_grading_battery.py` | 16 | 1.4 s | being wired into `signal-contract` by in-flight #4693 — **do not duplicate** |
+| `research/signal_engine/test_buy_filters.py` | 6 | 0.3 s | same PR, same job |
+| `scripts/research/test_run_w4_controls_fingerprints.py` | 17 | **54.6 s** | **open — nobody is wiring this one.** Not named in #4693. Needs an owner decision: 55 s is a real ci-pack cost for a research fingerprint-parity suite, so it wants either a cheaper subset or a lane that already carries a long tail |
+
+The first two are the reason the widening exists, and #4693 wired them by hand *because* no
+census could verify that wiring. With the widening in, the closure gate now checks them
+automatically the moment that PR lands: `test_label_grading_battery.py` reads
+`engine/us_board_rank.py`, which `engine/**` reaches, so it will read OK rather than as a
+gap.
 
 ## The two independent holes
 
@@ -12,7 +75,7 @@ assertion. Those are separate failures, and the census measures them separately.
 
 | | meaning | why it is invisible |
 |---|---|---|
-| **UNRUN** | the filename appears in no `run:` step in any of the 51 workflows | there is no broad `pytest tests/` anywhere — every invocation carries an explicit file list, so an unnamed suite is never executed |
+| **UNRUN** | the suite appears in no `run:` step in any of the 51 workflows | there is no broad `pytest tests/` anywhere — every invocation carries an explicit file list, so an unnamed suite is never executed. Nor is there a broad `pytest research/`, which is why a suite written outside `tests/` is unrun **by default** |
 | **UNTRIGGERABLE** | nothing that changes the verdict is matched by `ci.yml`'s `on.pull_request.paths` | the workflow never fires, so even a wired job never runs |
 
 A suite that is both is **strictly dark**: no possible edit produces a signal. Wiring a suite
@@ -728,6 +791,17 @@ order:
   wired in B6) is also touched by #4331: expect its first post-merge run through the new
   lane to be that PR's evidence, not this pass's.
 
+  **RESOLVED 2026-08-04.** #4331 merged 2026-08-03 and the follow-up lane staged the
+  family the next day: the four above plus `tests/test_cn_prophet_audit.py` and
+  `tests/test_us_context_vector.py` (the contract-§4 schema pin, dark since #4540).
+  All six green in the exact CI-minimal venv, serially and through the combined pack
+  run-lines (911 passed picks-boards / 301 passed learning-loop). Board-store family
+  (`china_board_rank`, `china_prophet_shadow`, `us_context_vector`) joined
+  `unrun-picks-boards`; the study half (`cn_prophet_audit`, `htf_super_tiers`,
+  `prophet_stage_fusion`) joined `unrun-prophet-learning-loop`, with
+  `data/china_standout_track/**` + `data/china_stocks/**` added to `ci.yml` paths so a
+  hand rewrite of the frozen reproduction's input grid can start the workflow.
+
 P4 (~436) and P5 (~455) remain the deliberate backlog. Wire in blast-radius order, batch
 per PR, stage serially first — and re-run `audit_unrun_tests.py` for current numbers
 rather than trusting this snapshot; the leak reopens weekly.
@@ -770,3 +844,153 @@ must start the workflow; the nightly asia collection pushes straight to main, so
 costs nothing on the daily bake). The regeneration remedy —
 `scripts/regen_hk_g1_fixture.py` + `tests/test_regen_hk_g1_fixture.py` — is #4565, in
 flight separately with its own `regen-hk-g1-fixture-guard` job.
+
+## 2026-08-05, second pass: the reclaim-veto leg's own guards were dark
+
+The `unrun-hk-board` wiring above closed the HK board *pair*. A same-day audit of the
+`engine.signal_quality` importers found the leak had a second specimen in that estate, and
+a more pointed one: the two suites guarding `_buy_filter`'s 200-day reclaim-veto leg — the
+exact leg the reclaim-veto decision packet
+(`research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md`, #4607) measures — were
+named by no `run:` step in any workflow either.
+
+- **`tests/test_hk_reclaim_veto_policy.py`** (10 tests) — the operator's 2026-08-03
+  admission ruling. Pins the one leg HK drops (`reclaim_veto=False`) and, more
+  load-bearing, the *blast radius*: US/CN keep the validated default at every layer
+  (`_buy_filter`, `analyze`, `signal_gate.gate`), keyword-only so argument order cannot
+  flip it, and `build_hk_library` is the only caller opting out. Joined `unrun-hk-board`,
+  not a new job: it imports `scripts.build_hk_library` (which pulls the
+  `engine.i18n`/`stock_score`/`cycles` chain) and `engine.hk_board_rank`, so it needs that
+  job's wide install exactly — the same dep-list trap recorded for the pair above.
+- **`tests/test_signal_quality_no_leak.py`** (3 tests) — the §7 marker-date look-ahead
+  guard on the *default* (validated) filter. A take/block label reads bars i+1 (and i+2 on
+  the counter-trend branch), so a forward-return grade anchored on the marker date embeds
+  the confirmation bars it consumed (+5.7pp/10d measured). Joined `signal-contract`, the
+  job that already owns the §7 contract; `pandas` + `numpy` were already in its install
+  line, so it added no wheel, no venv and no job.
+
+**Why this pair rated a same-day PR.** A decision packet was arguing the merits of a policy
+whose guards CI had never once executed. Both suites were green in hand runs the entire
+time — which is the unrun-suite rot shape exactly: a green suite no CI job runs is dark,
+and its greenness is a claim, not evidence.
+
+Runtimes, measured in the exact CI-minimal venvs (not a local environment):
+
+| Suite | Tests | Cost where it now runs |
+|---|---|---|
+| `test_signal_quality_no_leak.py` | 3 | step goes 31 → 34 tests for ~0.2s (0.76s → 0.92s steady state) |
+| `test_hk_reclaim_veto_policy.py` | 10 | 1.5s as `unrun-hk-board` step 3; job total ~83s (68.5 + 13.5 + 1.5) vs `timeout-minutes: 8` |
+
+Pack balance moved 789/789/789/788 → 790/790/790/790; no job was added, so the partition
+structure is unchanged (`run_ci_pack.py --validate-only`, 159 jobs).
+
+**A note on the first-run number.** Each suite's *first* invocation in a freshly built
+venv reports ~13s and ~17s. That is `pandas`/`numpy` cold-start, paid by whichever pytest
+step runs first in a job and already on the job's bill — not an increment either suite
+adds. Quoting it as the wiring cost would have overstated both by an order of magnitude;
+the steady-state and full-job-sequence numbers above are the honest ones.
+
+Trigger halves shipped in the same PR: both test files added to `ci.yml` paths. The code
+halves already reached the list (`engine/**` for `signal_quality`/`signal_gate`/
+`hk_board_rank`, `scripts/**/*.py` for `build_hk_library`), but neither test file matched
+anything — so an edit *narrowing one of these pins* could not start the workflow that runs
+it. That is the #3488/#4559 shape, and it is the half most often forgotten.
+
+**Deliberately not wired by this pass.** The same importer census turns up eight more
+suites reaching `engine.signal_quality` that no `run:` step names, in any workflow:
+`test_bar_derive.py`, `test_basket_breadth_divergence.py`,
+`test_china_sector_cycles_grader.py`, `test_confluence_warmup_floor.py`,
+`test_hk_v2_reason_copy_and_ran_lane.py`, `test_ohlc_reconstruct.py`,
+`test_pick_lab_snapshot_producer.py`, `test_rule_replay_core.py`. They span several
+different blast radii (bar derivation, breadth divergence, CN cycle grading, the pick-lab
+snapshot producer) and each needs its own dep measurement, so they belong in their own
+staged batch per this census's wire-in-blast-radius-order rule rather than riding along
+with a reclaim-veto PR. Recorded here so the next pass starts from a list, not a re-audit.
+
+## 2026-08-06: the P4/P5 red-on-arrival re-drain — 959 suites re-run, 8 red
+
+Nine days after the 2026-07-27 sweep measured the then-870 unrun suites, the leak had
+refilled to **963 unrun of 2,015** (`audit_unrun_tests.py`: P1 13, P3 9, P4 469, P5 472).
+All **959** files the pack harvester finds unnamed were executed again, one pytest process
+per suite, in the exact CI-minimal venv (`pytest pandas numpy pyarrow pyyaml jinja2 plotly
+requests beautifulsoup4 openpyxl scikit-learn`).
+
+| outcome | n |
+|---|---|
+| green but dark | 951 |
+| **red on `main`** | **8** |
+| total re-run | 959 |
+
+**0.83% red**, against 1.1% at the last sweep — the rate is stable, so the class is a
+standing leak and not a one-off backlog.
+
+### The measurement trap this pass added to the list
+
+**Running the census in parallel manufactures reds, and they look real.** `MM_DATA_GUARD`
+is a *session-level* tripwire over the repo's whole `data/`+`site/` tree, so when six
+pytest processes share one checkout, one suite's stray write fails every session that
+spans it. Five suites reported red that way and are green run alone:
+`test_country_cycles`, `test_country_fx`, `test_dashboard_template_render`,
+`test_dislocation_accrual`, `test_dislocation_honesty`. The tell is a tail that reads
+`N passed` *above* the guard banner — all tests green, non-zero exit.
+
+The write was real, though, and the culprit is one of the eight: `test_deterioration_cascade`
+writes `data/deterioration_cascade/{forward_log.jsonl,latest.json}` from a clean tree.
+**Re-verify every red serially, from `git checkout -- data/ site/`, before triaging it** —
+the same shape as the `-x`-hides-siblings note from the last sweep.
+
+### The eight
+
+| suite | tier | one-line diagnosis | class |
+|---|---|---|---|
+| `test_dnr_registry_keys` | P3 | §4 row carries a `KILL-` key (§4 is `HOLD-`); appended by #4617 | real bug (registry) |
+| `test_levels_engine` | P5 | 2 tests assert the retired `_flip_from_rows` reconstruction; the engine renders an honest null | stale assertion |
+| `test_cycle_pattern_lake` | P5 | `us_basket: 47` literal vs 48 in `data/baskets/membership.json` (code comment still says 46) | stale assertion over a growing store |
+| `test_deterioration_cascade` | P5 | 28/28 tests pass; the suite writes the real `data/deterioration_cascade/` forward ledger and `MM_DATA_GUARD` fails the session | non-hermetic |
+| `test_admin_server` | P5 | expected-key set never learned `key_alerts` (#4612) | stale assertion — **owned by #4824** |
+| `test_china_continuation_watch` | P5 | block-marker strings drifted from the live buy-filter copy | stale assertion — **owned by #4775** |
+| `test_calibration_frame` | P5 | drawdown snapshot passport reads `partial`, test asserts `measured` — asserted against the live store, so the verdict moves with coverage | non-hermetic by design |
+| `test_china_analyst_ticker` | P5 | committed stores carry Beijing `92xxxx` codes on a `.SS` suffix (510 rows in `china_lhb/detail`, 2,674 in `china_lhb/events`) | real bug (data + mapper) |
+
+Three shipped in the batch below. `test_deterioration_cascade` (isolate a forward-ledger
+writer), `test_calibration_frame` (a live-store passport assertion) and
+`test_china_analyst_ticker` (a data repair plus a mapper audit) each need their own PR and
+their own judgement call; they are recorded here so the next pass starts from a list.
+
+### Batch D — the three cheap unclaimed reds
+
+Wired into the job whose `pip install` line already carries their import closure, so no
+batch adds a wheel:
+
+| suite | host job | why that job | added cost |
+|---|---|---|---|
+| `test_dnr_registry_keys` | `capability-broker` | already runs `check_blocklist_drift.py` over the same two files | 1.8 s |
+| `test_levels_engine` | `unrun-market-plumbing` | already runs the four Level Report Card grader suites; this is the engine they grade | 0.9 s |
+| `test_cycle_pattern_lake` | `unrun-neuralweb-cortex` | already runs `test_build_cycle_pattern_state.py`, which builds on this substrate | 27 s |
+
+Host jobs staged green as units in the CI-minimal venv (a pack is one check):
+`unrun-market-plumbing` 1,425 passed / 70 s against a 6-min cap; `unrun-neuralweb-cortex`
+238 passed / 35 s against a 4-min cap. The three land in packs 1 and 3, so no single pack
+absorbs the whole increment; pack weights stay balanced at 808 each.
+
+### What the dark set costs in ci-pack minutes — measure before wiring the remainder
+
+The 959 suites are **not** uniformly cheap. Wall-clock from the census run:
+
+- median **3.9 s**
+- **15** suites over 60 s, **7** over 120 s
+- worst: `test_country_fx` **309 s** (serial, clean tree), `test_build_cycle` 185 s,
+  `test_radar` 170 s, `test_rerun_options_gates` 157 s, `test_thetadata_store` 150 s,
+  `test_fund_followability` 141 s, `test_country_cycles` 128 s
+
+`unrun-*` caps run 3–8 minutes. `test_country_fx` alone would consume most of any of them,
+and a hosted ubuntu runner is slower than this box — so the >120 s suites need either their
+own job with its own cap or an explicit cap raise in the same PR. Do not append one to an
+existing step and assume the cap absorbs it.
+
+### Still true, and still the root cause
+
+There is no broad `pytest tests/` anywhere in this repo, `tests/**` is deliberately not in
+`ci.yml`'s paths filter, and `check_house_law_registry.py` only censuses
+`scripts/check_*.py` — so a guard-shaped pytest file arrives dark by default and stays
+dark until someone runs this census. P4 (~466) and P5 (~469) remain the deliberate backlog.

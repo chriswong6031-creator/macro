@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/institutional_13f_bulk_revision.v1.schema.json",
+  "title": "Institutional 13F bulk revision receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "revision_id", "window_start", "window_end", "source_url", "retained_at", "producer_version", "raw_object"],
+  "properties": {
+    "schema": {"const": "institutional_13f.bulk_revision_receipt/v1"},
+    "revision_id": {"type": "string", "pattern": "^i13fbulk_[a-f0-9]{64}$"},
+    "window_start": {"type": "string", "format": "date"},
+    "window_end": {"type": "string", "format": "date"},
+    "source_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "retained_at": {"type": "string", "format": "date-time"},
+    "producer_version": {"type": "string", "minLength": 1, "maxLength": 128},
+    "raw_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "object_key", "sha256", "byte_length", "content_type", "row_count"],
+      "properties": {
+        "role": {"const": "sec_form13f_bulk_zip"},
+        "object_key": {"type": "string", "pattern": "^smart-money/13f/evidence/v1/objects/sha256/"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "content_type": {"const": "application/octet-stream"},
+        "row_count": {"type": "null"}
+      }
+    }
+  }
+}

@@ -20,3 +20,5 @@
 {"asof": "2026-07-31", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}
 {"asof": "2026-08-03", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}
 {"asof": "2026-08-04", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}
+{"asof": "2026-08-05", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}
+{"asof": "2026-08-07", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}

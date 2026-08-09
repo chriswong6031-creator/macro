@@ -87,7 +87,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=6fd34b5e">
-<link rel="stylesheet" href="landing.css?v=2c429a7b">
+<link rel="stylesheet" href="landing.css?v=c6bcae92">
 <link rel="stylesheet" href="scene-motion.css?v=f426716d">
 </head>
 <body>
@@ -210,7 +210,7 @@
            The same span is carried by BOTH adtest arms below: adtest.js rewrites this
            h1's innerHTML wholesale when the arena goes live, so a brand that lived only
            here would silently vanish from the h1 the day the test starts. -->
-      <h1 data-adtest-slot="hero_headline" data-zh="<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>"><span class="h1-brand" style="display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)">MastermindX</span>Your personal<br>market intelligence desk.<br><span class="dim">Institutional-grade.</span></h1>
+      <h1 data-adtest-slot="hero_headline" data-zh="<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span><span class='zh-line'>你的专属</span><span class='zh-line zh-line-punct'>市场情报台。</span><span class='dim zh-line zh-line-punct'>机构级标准。</span>"><span class="h1-brand" style="display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)">MastermindX</span>Your personal<br>market intelligence desk.<br><span class="dim">Institutional-grade.</span></h1>
       <p class="sub" data-adtest-slot="hero_sub" data-zh="宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>">Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b></p>
       <div class="cta-row">
         <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
@@ -232,7 +232,7 @@
          after the slots above are parsed, so the swap lands before first paint.
          This block must match data/marketing/ad_central/arenas.jsonl —
          tests/test_marketing_ad_plane_o.py fails if the two drift apart. -->
-    <script type="application/json" id="mm-adtest">{"arena_id":"hero-promise-vs-receipt","status":"planned","mode":"shadow","holdout":0.0,"arms":[{"id":"adc-a929e26ce95c","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Your personal<br>market intelligence desk.<br><span class=\"dim\">Institutional-grade.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>"},"hero_sub":{"html":"Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b>","zh":"宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>"}}},{"id":"adc-67661666832f","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Every call we make<br>goes on the record.<br><span class=\"dim\">Including the wrong ones.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>我们的每一次判断<br>都会留下记录。<span class='dim'>包括错的那些。</span>"},"hero_sub":{"html":"Macro, signals, options flow and deep research — timestamped when we say it, graded after the market answers. <b>Live, below.</b>","zh":"宏观、信号、期权流与深度研究——判断发出即打时间戳，事后由市场检验并留档。<b>就在下方，实时运行。</b>"}}}]}</script>
+    <script type="application/json" id="mm-adtest">{"arena_id":"hero-promise-vs-receipt","status":"planned","mode":"shadow","holdout":0.0,"arms":[{"id":"adc-a929e26ce95c","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Your personal<br>market intelligence desk.<br><span class=\"dim\">Institutional-grade.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span><span class='zh-line'>你的专属</span><span class='zh-line zh-line-punct'>市场情报台。</span><span class='dim zh-line zh-line-punct'>机构级标准。</span>"},"hero_sub":{"html":"Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b>","zh":"宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>"}}},{"id":"adc-67661666832f","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Every call we make<br>goes on the record.<br><span class=\"dim\">Including the wrong ones.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span><span class='zh-line'>我们的每一次判断</span><span class='zh-line zh-line-punct'>都会留下记录。<span class='dim'>包括错的那些。</span></span>"},"hero_sub":{"html":"Macro, signals, options flow and deep research — timestamped when we say it, graded after the market answers. <b>Live, below.</b>","zh":"宏观、信号、期权流与深度研究——判断发出即打时间戳，事后由市场检验并留档。<b>就在下方，实时运行。</b>"}}}]}</script>
     <script src="adtest.js?v=1f2ceb11" defer></script>
 
     <!-- the pyramid — five live desk cards, one choreographed regime cycle -->
@@ -874,15 +874,14 @@
       <div class="f-cols">
         <div class="f-col">
           <p data-zh="平台">Platform</p>
-          <a href="products/index.html" data-zh="平台概览">Platform overview</a>
           <a href="products/market-terminal.html">Market Terminal</a>
           <a href="products/mastermind-ai.html">Mastermind AI</a>
-          <a href="products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="products/market-dashboards.html" data-zh="市场情报">Market Intelligence</a>
           <a href="plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
         </div>
         <div class="f-col">
           <p data-zh="研究">Research</p>
-          <a href="research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="research_vault.html" data-zh="机构研报">Institutional research</a>
           <a href="stocks/index.html" data-zh="股票档案">Stock dossiers</a>
           <a href="about-research.html" data-zh="关于研究">About the research</a>
         </div>
@@ -2278,6 +2277,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
-<script src="onboard.js?v=4c212c03" defer></script>
+<script src="onboard.js?v=9b7b4c73" defer></script>
 </body>
 </html>

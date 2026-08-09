@@ -1,0 +1,112 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "WMB-2026-06-30-buy",
+  "ticker": "WMB",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "WMB",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "WMB",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Energy",
+    "excess_spy": -0.018605498713622715,
+    "excess_sector": -0.14452981134423293,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "WMB underperformed SPY and ended DEAD_MONEY, with idiosyncratic break recorded as the cause. The record does not show whether the break was a fake breakout, company deterioration, or an external event visible before entry.",
+    "root_cause": "WMB underperformed SPY and ended DEAD_MONEY, with idiosyncratic break recorded as the cause. The record does not show whether the break was a fake breakout, company deterioration, or an external event visible before entry.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The outcome book surfaced an idiosyncratic break, while breakout-quality, catalyst, Energy-rotation, and ex-ante visibility books missed the discriminating evidence.",
+    "engines_credit": "The failure taxonomy ledger gets credit for preserving the clean process; the fake-breakout, catalyst, rotation, and path-risk organs are laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific thesis or price structure broke after selection.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Close tracking of Energy peers would contradict an idiosyncratic break.",
+        "evidence_refs": [
+          "outcome_cause=idio_break"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "A company event could have triggered the break, but its existence and ex-ante visibility are not supplied.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "No material event near the break would favor failed-cycle or rotation explanations.",
+        "evidence_refs": [
+          "sector=Energy"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The break failed to recover sufficiently and matured as DEAD_MONEY.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A prompt reclaim with renewed relative momentum would indicate transient path risk rather than a durable break.",
+        "evidence_refs": [
+          "excess_spy negative",
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Energy rotation may have caused a systematic rather than idiosyncratic decline.",
+      "A fake breakout or failed cycle may have preceded the break.",
+      "An unforeseeable external event may have caused the outcome."
+    ],
+    "missing_evidence": [
+      "Break timestamp and price-volume structure",
+      "Energy and midstream peer-relative returns",
+      "Company news and filing chronology",
+      "Ex-ante catalyst calendar and visibility",
+      "Entry-date breakout extension and momentum measures"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "idio_break_preconditions",
+        "feature": "Idiosyncratic-break preconditions",
+        "measurement": "Measure pre-entry extension, volume divergence, peer-relative momentum decay, and nearby visible catalysts.",
+        "expected_direction": "Greater extension and weakening peer-relative momentum should precede more failed-cycle outcomes.",
+        "falsifier": "These entry-date conditions do not distinguish breaks from durable continuations.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

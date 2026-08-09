@@ -23,7 +23,9 @@ name: merge-on-green
 # repository's workflow load. `workflow_run` is now the primary trigger: the
 # sweeper wakes as soon as either proof workflow or the main-baseline workflow
 # concludes. The cron remains only as a recovery net for third-party checks and
-# missed events.
+# missed events, and it is a WEAK one: measured 2026-08-06, exactly 1 of the last
+# 100 sweep runs was a `schedule` event across a 117-minute window (~0.5/hr
+# against a nominal 6/hr). Nothing in this lane may lean on the cron alone.
 on:
   workflow_run:
     workflows: [ci, fences, integration-baseline]
@@ -34,36 +36,167 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read          # read integration-baseline workflow-run state
+  actions: write         # READ the integration-baseline / ci / fences workflow-run
+                         # state, and WRITE one `workflow_dispatch` of ci.yml on main.
+                         # The write half is new (2026-08-08) and is load-bearing: the
+                         # base-inherited-red refresh can only tell an inherited red
+                         # from a real one against a RECENT proof of main, ci.yml has
+                         # no `push` trigger, and the nightly/wire lanes push ~24
+                         # `[skip ci]` commits per 2 hours — so main's proof was
+                         # measured 12 HOURS stale while 48 pull requests sat armed,
+                         # waiting for a human to run `gh workflow run ci.yml --ref
+                         # main`. The sweeper now orders that baseline itself when its
+                         # proof is too old to answer the reds it just saw.
+                         #
+                         # It dispatches integration-baseline.yml on main for the same
+                         # class of reason (2026-08-08). That workflow DOES have a
+                         # `push` trigger, but its paths: filter excludes data/site
+                         # publisher commits, so only SOURCE pushes re-prove main and
+                         # only merges make source pushes — a baseline that ages past
+                         # the freshness bound therefore blocks the merges that would
+                         # have refreshed it. Both dispatches are rate-floored in
+                         # scripts/merge_on_green.py and never fail the sweep.
   contents: write        # squash-merge, delete the merged head ref, and merge
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
 
-concurrency:
-  # One sweep at a time. cancel-in-progress: false because a sweep that is
-  # mid-merge must finish — cancelling it could leave a PR labeled but unmerged.
-  group: merge-on-green
-  cancel-in-progress: false
+# NO `concurrency:` BLOCK — DELIBERATELY. Do not reintroduce one (2026-08-06).
+#
+# This lane used to carry `group: merge-on-green` + `cancel-in-progress: false`,
+# reasoning that "a sweep that is mid-merge must finish — cancelling it could
+# leave a PR labeled but unmerged". The property is right; the mechanism did the
+# opposite of protecting it. Measured on the 100 runs before this commit:
+#
+#   conclusions        cancelled: 98, (in flight): 2, success: 0   <- in ~2 hours
+#   94 of 98 cancelled runs died within 3 SECONDS of the NEXT run being created
+#   the longest-lived cancelled run (482 s) had ZERO jobs materialised
+#
+# `cancel-in-progress: false` protects only an IN-PROGRESS run. GitHub keeps
+# exactly ONE *pending* run per group and cancels the previous one on every new
+# arrival, and the pending state includes the wait for a runner. Triggers arrive
+# here every 50 s (median; 0.86/min), so the pending slot was overwritten long
+# before it could ever be promoted.
+#
+# What held the group was not a sweep doing work. `ci` (48 queued / 8 running)
+# and `fences` (34 queued / 1 running) are ALSO `ubuntu-latest`, so the sweeper
+# queues behind its own triggers on a capacity-capped pool: run 31055861804 sat
+# `queued` for 107 minutes, and the last run that ever succeeded (31054326485)
+# waited 25m38s for a runner and then did the entire sweep in 46 SECONDS. The
+# group therefore serialised a multi-hour queue wait, and every wake-up that
+# arrived during it was destroyed. A livelock, not a backlog.
+#
+# Removing the group cannot reintroduce the labeled-but-unmerged hazard: with no
+# group, NOTHING here is ever cancelled by concurrency at all — which protects a
+# mid-merge sweep strictly more than `cancel-in-progress: false` did, since that
+# setting never protected the pending runs that were the ones actually dying. The
+# sweep is a level-triggered reconciler (it re-lists every labeled PR and re-derives
+# every verdict from GitHub's live state on each run, carrying nothing across runs),
+# so overlapping sweeps are safe; the one genuine race — a second sweep mistaking
+# "another sweep already merged this" for a conflict and labelling a MERGED PR
+# `merge-blocked` — is guarded in scripts/merge_on_green.py (`already_settled`)
+# and pinned by tests/test_merge_on_green.py.
 
 jobs:
   sweep:
     name: sweep
-    # DELIBERATELY GitHub-hosted, never [self-hosted, macstudio]. The mac pool is
-    # the render/nightly/engine lane and is routinely saturated; a merge sweep
-    # queued behind a 67-minute render would defeat its own purpose. This job is
-    # a handful of API calls and needs nothing from that pool.
-    runs-on: ubuntu-latest
+    # Runner-minute control now lives HERE rather than in a concurrency group,
+    # because a skipped job costs no runner, no queue slot, and no minutes, while
+    # a cancelled one cost us the sweep itself.
+    #
+    # A merge becomes possible only when a check goes GREEN. A triggering run that
+    # concluded `cancelled`, `failure`, or `skipped` cannot make any PR mergeable,
+    # and waking for those is what produced 0.86 runs/min. Measured on ci's last
+    # 100 completed runs: 51 failure, 25 cancelled, 18 skipped, 6 success — so this
+    # gate drops ~94% of the wake-ups while keeping every one that can actually
+    # unblock a merge. Expected volume is ~5-6 real sweeps/hour, at or below what
+    # the nominal 10-minute cron was always meant to cost.
+    #
+    # What this trades away: prompt `merge-blocked` labelling on a fresh red. That
+    # ride now falls to the cron or to the next green anywhere in the repo. It fails
+    # SAFE in the only direction that matters — a red PR simply stays armed and
+    # unmerged, which is the correct outcome either way.
+    if: >-
+      github.event_name != 'workflow_run'
+      || github.event.workflow_run.conclusion == 'success'
+
+    # NEVER [self-hosted, macstudio] — that pool is the render/nightly/engine lane
+    # and is routinely saturated; a merge sweep queued behind a 67-minute render
+    # would defeat its own purpose. That reasoning stands; what changed is that
+    # `ubuntu-latest` stopped satisfying it.
+    #
+    # A CONTROL-PLANE JOB MUST NEVER QUEUE BEHIND THE WORKLOAD IT ARBITRATES
+    # (2026-08-08). `ci` and `fences` are also `ubuntu-latest`, so with ~100 PRs
+    # open the sweeper waits behind the very CI it exists to act on — a priority
+    # inversion, and it self-reinforces: the longer the queue, the later merges
+    # land, the more PRs stay open. Measured: sweeps CREATED 03:46-04:00Z did not
+    # execute until 05:46-06:28Z — a ~2 HOUR queue delay on a job whose actual
+    # work is a handful of API calls and 46 seconds of runtime (the run that most
+    # recently succeeded before this change waited 25m38s for a runner and then
+    # swept in 46 s). See also the 107-minute `queued` run cited above.
+    #
+    # `render-linux` is pc-render-1..4 (also used by render.yml/engine-render.yml
+    # via dispatch input), a SEPARATE Linux pool that was 4-idle-of-4 when this was
+    # measured — so this cannot starve the render lane, whose default runner is the
+    # macstudio `render-heavy` host. The move is safe for this job specifically
+    # because it needs only `python3` and network: the steps are a sparse
+    # `actions/checkout@v4`, one `pip install pyyaml`, and one `python3` invocation,
+    # with NO `actions/setup-python` (which is what makes a hosted image load-
+    # bearing). tests/test_merge_on_green.py pins both halves of that argument, so
+    # adding a setup step here fails the pack rather than silently breaking sweeps.
+    #
+    # integration-baseline.yml now routes only main-ref proofs to this same pool and
+    # keeps off-main manual proofs on hosted runners. Its self-hosted path clears any
+    # inherited sparse-checkout state before checkout, and its setup-python contract
+    # is pinned separately in tests/test_merge_on_green.py.
+    runs-on: [self-hosted, render-linux]
     timeout-minutes: 15
 
     steps:
-      # The sweeper needs one tracked Python file, not the repository's ~53k-file
+      # The sweeper needs a handful of tracked files, not the repository's ~53k-file
       # working tree. The old full checkout took ~100 seconds before the first
       # API call and made a two-minute control-plane action a four-minute one.
+      #
+      # `.github/workflows/` is here because the tested-surface gate reads every
+      # `on.pull_request` workflow's `paths:` filter to decide whether main has moved
+      # under a pull request's proof (#4583). The whole directory, never a hardcoded
+      # ci.yml/fences.yml pair: a new PR-triggered workflow must be seen the day it
+      # is added, not the day someone remembers to edit this list. If it stops being
+      # fetched the sweep aborts loudly (`Could not establish the tested-surface
+      # gate`) rather than merging on undated greens.
       - uses: actions/checkout@v4
         with:
           filter: blob:none
-          sparse-checkout: scripts/merge_on_green.py
+          sparse-checkout: |
+            scripts/merge_on_green.py
+            scripts/gh_path_filter.py
+            .github/workflows
           sparse-checkout-cone-mode: false
+
+      # PyYAML parses those path filters. Installed EXPLICITLY rather than assumed:
+      # whether the runner image ships it is not a contract, and the failure mode of
+      # guessing wrong is a sweep that aborts on every run.
+      #
+      # IMPORT-FIRST, WITH FALLBACKS, because this job now runs self-hosted. A bare
+      # `python3 -m pip install` into the system interpreter is what the hosted image
+      # tolerated; on a modern Debian/Ubuntu host (render-linux is the WSL2 PC) it dies
+      # PEP 668 `externally-managed-environment`, and this repository's other
+      # self-hosted lanes all build a venv precisely because of that. A sweeper that
+      # aborts on every run would be a worse outage than the queue delay this move
+      # repairs, so: skip when PyYAML is already importable, then try the plain
+      # install, then --user, then --break-system-packages. Nothing here writes a venv
+      # — the sweep imports only stdlib + yaml, and a per-runner venv would be state
+      # this level-triggered job otherwise has none of.
+      - name: install the yaml parser
+        run: |
+          if python3 -c "import yaml" 2>/dev/null; then
+            echo "pyyaml already importable on ${RUNNER_NAME:-this runner}"
+            exit 0
+          fi
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check --user pyyaml \
+            || python3 -m pip install --quiet --disable-pip-version-check \
+                 --break-system-packages pyyaml
+          python3 -c "import yaml"
 
       - name: sweep merge-on-green pull requests
         env:
@@ -81,5 +214,21 @@ jobs:
           # On the fallback the merge still lands and the VPS's 3-minute pull of
           # main plus the nightly scope=all re-render still deliver it — degraded,
           # not broken, which is why the fallback is allowed to exist at all.
+          #
+          # This is also the token that dispatches the main baseline (see the
+          # `actions: write` note above), and the PAT is preferred there for the same
+          # anti-recursion reason. On the GITHUB_TOKEN fallback the dispatch degrades
+          # the same way the merge does: worst case main keeps being proven only by a
+          # human dispatch, which is exactly the status quo this repairs — never worse.
           MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
+          # The head the workflow_run that woke this sweep concluded on. The sweeper
+          # now evaluates at most MAX_PULLS_PER_SWEEP pull requests per run (the
+          # READ_TOKEN quota is 1,000/hr PER REPOSITORY and an uncapped pass of this
+          # backlog costs ~121 of them — 28 sweeps/hr emptied the bucket and every
+          # later sweep 403'd on its first call, 03:34Z-04:38Z on 2026-08-07). This
+          # puts the pull request the trigger is ABOUT first inside that cap, so the
+          # cap costs no latency in the case the workflow_run trigger exists to
+          # serve. Empty for schedule/workflow_dispatch, which is harmless — it only
+          # reorders within the cap and never passes a gate.
+          TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: python3 scripts/merge_on_green.py

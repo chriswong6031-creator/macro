@@ -1,32 +1,32 @@
 {
-  "583c2066a715": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 63.5
-  },
-  "61a2bd64e3b0": {
+  "0b79cc6a5e31": {
     "name_en": "Cross-sector cluster \u00b7 Technology + Industrials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Industrials",
-    "score": 86.8
+    "score": 84.9
   },
-  "7708065facfa": {
+  "3a96fbbd95c3": {
     "name_en": "Cross-sector cluster \u00b7 Basic Materials + Industrials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Industrials",
-    "score": 70.3
+    "score": 61.4
   },
-  "8434fa96afd4": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 63.0
+  "8b2268949508": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 48.9
   },
   "8fb317321251": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Healthcare",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Healthcare",
-    "score": 60.4
+    "score": 60.1
   },
   "8fc0dcf3b9d7": {
     "name_en": "Cross-sector cluster (5 names)",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4\uff085\u53ea\uff09",
-    "score": 77.4
+    "score": 80.0
+  },
+  "9cd9c62a5bfd": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Industrials",
+    "score": 63.5
   }
 }

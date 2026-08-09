@@ -397,6 +397,12 @@ body[data-regime="stagflation"]{--field-tint:#f0e7d4}
    face is genuinely expanded (the old 2.15rem floor overflowed to 5 ragged
    lines on phones); >=698px still caps at 3.05rem, so desktop is unchanged. */
 .cov-copy h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:.99;font-size:clamp(1.4rem,7vw,3.05rem);margin:16px 0 0}
+/* Chinese full stops occupy a square advance but draw their ink in the lower-left
+   corner.  Centring that advance leaves every punctuated hero line looking about
+   one-third of a glyph too far left.  Keep each authored line on the hero axis and
+   optically compensate only the lines that end in CJK punctuation. */
+html[data-lang="zh"] .cov-copy h1 .zh-line{display:block;width:max-content;max-width:100%;margin-inline:auto}
+html[data-lang="zh"] .cov-copy h1 .zh-line-punct{transform:translateX(.26em)}
 /* IDENTITY — operator ruling 2026-07-29: the gradient third line and the dark
    LIVE pill ARE the house voice; they stay through any redesign. `.hd-mut`
    (two-tone continuation) is a reserved utility, unused in the hero. */

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 import json
+import math
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -33,6 +34,7 @@ from engine.capital_structure.source_store import (
 )
 from engine.capital_structure.source_identity import (
     ManifestIdentityError,
+    canonical_manifest_bytes,
     manifest_id_for,
 )
 from engine.capital_structure.source_ledger_io import (
@@ -1320,3 +1322,385 @@ def test_suspect_bundle_retry_advances_closed_version_and_compiles(
     )
     assert len(result["events"]) == 1
     assert result["telemetry"]["counts"]["compile_failures"] == 0
+
+
+# ---------------------------------------------------------------------------
+# W1-A nightly-unfreeze: the NaN manifest abort and the unbounded deferral.
+#
+# daily.yml failed 2026-08-03..08-06.  The 08-06 collect log carried 130 lines of
+# ``sec_capital_structure: <accession> deferred: TypeError: non-finite numbers are
+# not canonical manifest values`` — the same filings, every night, forever.
+# ---------------------------------------------------------------------------
+
+
+def test_iterrows_launders_a_null_discovery_scope_into_a_nan_sentinel():
+    """Pin the mechanism: the row-Series build is what turns ``None`` into NaN.
+
+    ``collection_scope`` is legitimately ``None`` for every discovery row written
+    before Wave 2C added the column, and ``_read_table`` migrates it as ``None`` in
+    an object column.  ``DataFrame.iterrows()`` then builds a per-row Series, and
+    THAT construction substitutes ``float('nan')`` — pandas' missing-value sentinel.
+    ``to_dict("records")`` does not.  If a future pandas stops laundering, this test
+    goes red and the extra hop in the collector can be retired deliberately.
+    """
+    frame = pd.DataFrame([{"accession": "a", "collection_scope": None}])
+    assert frame["collection_scope"].dtype == object
+    assert frame.iloc[0]["collection_scope"] is None
+
+    laundered = [series.to_dict()["collection_scope"] for _, series in frame.iterrows()]
+    assert len(laundered) == 1
+    assert isinstance(laundered[0], float) and math.isnan(laundered[0])
+
+    assert frame.to_dict("records")[0]["collection_scope"] is None
+
+
+def test_nan_scope_reaches_the_canonical_writer_as_a_typeerror():
+    """The blast: a NaN anywhere in a manifest aborts canonical encoding.
+
+    This is the exact exception the 08-06 nightly logged 130 times, raised from
+    ``engine/capital_structure/source_identity.py`` ``_native``.  The guard is
+    CORRECT and stays strict — a canonical manifest may not contain a non-finite
+    number — so the repair belongs upstream, at the frame boundary.
+    """
+    with pytest.raises(TypeError, match="non-finite numbers are not canonical"):
+        canonical_manifest_bytes({"filing": {"collection_scope": float("nan")}})
+
+
+def test_manifest_scalar_nulls_every_pandas_missing_sentinel_and_never_zeroes():
+    """NaN/NA/NaT become ``None``; real values and legitimate ``None`` are untouched."""
+    sanitized: list[str] = []
+    assert sec._manifest_scalar(float("nan"), field="filing.form", sanitized=sanitized) is None
+    assert sec._manifest_scalar(pd.NA, field="filing.accession", sanitized=sanitized) is None
+    assert sec._manifest_scalar(pd.NaT, field="filing.filing_date", sanitized=sanitized) is None
+    assert sanitized == ["filing.form", "filing.accession", "filing.filing_date"]
+
+    # A field that was ALREADY None is absent, not sanitized — reporting it would
+    # make ``filing.file_number`` (null by contract on most filings) read as a defect.
+    already: list[str] = []
+    assert sec._manifest_scalar(None, field="filing.file_number", sanitized=already) is None
+    assert already == []
+
+    # Real values survive, and nothing is ever coerced to a fabricated 0.
+    for value in ("S-3", "", 0, False, 12.5, ["a"], {"k": "v"}):
+        assert sec._manifest_scalar(value, field="x", sanitized=already) == value
+    assert already == []
+
+
+def test_manifest_record_with_a_nan_scope_encodes_canonically(tmp_path):
+    """The defect, end to end at the boundary that produced it.
+
+    Feed ``_manifest_record`` the row EXACTLY as the retrieval loop used to hand it
+    over — a NaN ``collection_scope`` and a NaN ``company_name`` — and require a
+    canonically-encodable, schema-valid manifest.  On the pre-fix collector this
+    raises ``TypeError: non-finite numbers are not canonical manifest values``
+    inside ``manifest_id_for``.
+    """
+    discovery = parse_form_index(INDEX)[0] | {
+        "ticker": "ACME",
+        "_first_seen": "2026-08-01T12:35:00+00:00",
+        # The two pandas sentinels a legacy discovery row carries after iterrows().
+        "collection_scope": float("nan"),
+        "company_name": float("nan"),
+    }
+    bundle = parse_submission(SUBMISSION)
+    digest = __import__("hashlib").sha256(SUBMISSION).hexdigest()
+    receipt = SourceReceipt(
+        object_key=f"capital_structure/sec/sha256/{digest[:2]}/{digest}",
+        sha256=digest, byte_length=len(SUBMISSION), media_type="text/plain",
+        backend="r2", store_id=STORE_ID_DEDICATED_R2,
+    )
+    sanitized: list[str] = []
+
+    record = SecCapitalStructureAdapter._manifest_record(
+        discovery=discovery, bundle=bundle,
+        source_id="0001234567-26-000001:0:complete-submission.txt",
+        canonical_url=discovery["canonical_url"],
+        document_name="complete-submission.txt", document_type="S-3",
+        document_role="complete_submission", sequence="0", raw=SUBMISSION,
+        receipt=receipt,
+        inspection=DocumentInspection("text/plain", "eligible", "clean"),
+        retrieved_at="2026-08-01T12:36:00+00:00",
+        first_seen_at=discovery["_first_seen"], document_version=1,
+        parent_manifest_id=None, sanitized=sanitized,
+    )
+
+    # The sentinel is recorded as the JSON null the contract declares...
+    assert record["filing"]["collection_scope"] is None
+    # ...and BOTH conversions are named.  ``issuer.aliases`` used to sanitize
+    # silently, so a NaN company name dropped the alias with nothing in the run
+    # output to say which field went missing.
+    assert sanitized == ["issuer.aliases", "filing.collection_scope"]
+    # ...never as a fabricated 0/"" value.
+    assert record["filing"]["collection_scope"] != 0
+    # NaN is truthy, so the raw value used to publish the alias ["nan"].
+    assert record["issuer"]["aliases"] == []
+    # And the record now encodes canonically instead of aborting the night.
+    assert canonical_manifest_bytes(record)
+    assert record["manifest_id"] == manifest_id_for(record)
+
+    schema = json.loads((
+        Path(__file__).resolve().parents[1]
+        / "contracts/capital_structure_source_manifest.schema.json"
+    ).read_text())
+    errors = list(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(record)
+    )
+    assert not errors, [error.message for error in errors]
+
+
+def test_legacy_discovery_ledger_migrates_to_a_json_representable_null(tmp_path):
+    """``pd.isna`` was too weak an assertion — it is true for BOTH None and NaN.
+
+    ``test_old_discovery_ledger_is_migrated_with_null_collection_scope`` asserted
+    only ``pd.isna(...)``, so it passed while the migrated value was a NaN that no
+    canonical writer could encode.  Assert JSON-representability instead.
+    """
+    legacy_columns = [
+        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
+    ]
+    path = tmp_path / "discovery.parquet"
+    pd.DataFrame([{
+        "accession": "legacy", "cik": "0001234567", "ticker": "ACME",
+        "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+        "file_path": "edgar/data/1234567/legacy.txt",
+        "canonical_url": "https://www.sec.gov/Archives/edgar/data/1234567/legacy.txt",
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])[legacy_columns].to_parquet(path, index=False)
+
+    migrated = sec._read_table(path, sec._DISCOVERY_COLUMNS)
+    row = migrated.to_dict("records")[0]
+
+    assert row["collection_scope"] is None
+    assert json.dumps(row["collection_scope"]) == "null"
+
+
+def test_repeatedly_failing_filing_is_parked_and_leaves_the_retrieval_queue():
+    """A filing may not be retried forever — the bound is what stops the creep."""
+    attempts = pd.DataFrame([
+        {"accession": "aaa", "state": "transient_error"},
+        {"accession": "aaa", "state": "transient_error"},
+        {"accession": "bbb", "state": "storage_deferred"},
+    ])
+    # Under the bound, neither has exhausted it yet.
+    assert sec.parked_accessions(attempts) == set()
+
+    attempts = pd.concat([attempts, pd.DataFrame([
+        {"accession": "aaa", "state": "transient_error"},
+    ])], ignore_index=True)
+    assert sec.parked_accessions(attempts) == {"aaa"}
+
+    # ``stored`` closes the item via ``have_complete``, so it never counts toward
+    # the bound however many times it is recorded.
+    retained = pd.DataFrame([
+        {"accession": "ccc", "state": "stored"},
+        {"accession": "ccc", "state": "stored"},
+        {"accession": "ccc", "state": "stored"},
+    ])
+    assert sec.parked_accessions(retained) == set()
+
+    discovery = pd.DataFrame([
+        {
+            "accession": accession, "cik": "1234567", "ticker": "ACME",
+            "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+            "file_path": "p", "canonical_url": "https://example.test/x.txt",
+            "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+            "_first_seen": "2026-08-01T12:00:00Z",
+        }
+        for accession in ("aaa", "bbb")
+    ])
+    now = datetime(2026, 8, 7, 12, 0, tzinfo=timezone.utc)
+
+    unbounded = select_retrieval_queue(
+        discovery, have_complete=set(), max_filings=10, now=now,
+    )
+    assert set(unbounded["accession"]) == {"aaa", "bbb"}
+
+    bounded = select_retrieval_queue(
+        discovery, have_complete=set(), max_filings=10, now=now, parked={"aaa"},
+    )
+    assert set(bounded["accession"]) == {"bbb"}
+    # The receipt must not keep counting a parked filing as pending work.
+    assert bounded.attrs["retrieval_queue_receipt"]["selected_count"] == 1
+    assert bounded.attrs["retrieval_queue_receipt"]["deferred_count"] == 0
+
+
+def _parser_deferred_manifest(accession: str) -> dict:
+    """A retained-but-parser-deferred complete submission, as the collector writes it."""
+    return {
+        "filing": {
+            "accession": accession,
+            "file_number_provenance": {"state": "unavailable", "observations": []},
+        },
+        "document": {"document_role": "complete_submission"},
+        "parser": {"eligibility": "deferred", "corruption_state": "suspect"},
+    }
+
+
+def test_parser_deferred_filing_counts_toward_the_bound_because_it_never_closes():
+    """Retained bytes are not a closed queue item, and the bound must see that.
+
+    ``_eligible_complete_accessions`` admits only ``eligible``/``clean`` manifests,
+    so a ``stored_parser_deferred`` filing is BY DEFINITION never in
+    ``have_complete``: it re-enters the retrieval queue every night, forever.  The
+    shipped rationale said its retained bytes closed the queue item and therefore
+    excluded it from the bound — which reopened the exact unbounded backlog the
+    bound exists to close, for the WORST class of filing (an SEC error page, a
+    corrupt bundle, suspect bytes).  It was latent only because every committed
+    manifest today is eligible/clean.
+    """
+    # The premise, asserted rather than assumed: retained bytes do NOT close it.
+    assert sec._eligible_complete_accessions([_parser_deferred_manifest("ddd")]) == set()
+
+    attempts = pd.DataFrame(
+        [{"accession": "ddd", "state": "stored_parser_deferred"}]
+        * sec.MAX_RETRIEVAL_ATTEMPTS
+    )
+    assert sec.parked_accessions(attempts) == {"ddd"}
+
+    # One short of the bound is still retried — parking is the ceiling, not a rule
+    # that suspect bytes get one look.
+    assert sec.parked_accessions(attempts.head(sec.MAX_RETRIEVAL_ATTEMPTS - 1)) == set()
+
+    # Mixed unclosed states share one counter: the queue item stayed open either way.
+    mixed = pd.DataFrame([
+        {"accession": "eee", "state": "transient_error"},
+        {"accession": "eee", "state": "stored_parser_deferred"},
+        {"accession": "eee", "state": "storage_deferred"},
+    ])
+    assert sec.parked_accessions(mixed) == {"eee"}
+
+    # The control: ``stored`` closes the item via ``have_complete``, so it never
+    # counts however many times it is recorded.
+    stored = pd.DataFrame(
+        [{"accession": "fff", "state": "stored"}] * (sec.MAX_RETRIEVAL_ATTEMPTS + 2)
+    )
+    assert sec.parked_accessions(stored) == set()
+
+    # And a parked parser-deferred filing actually leaves the queue.
+    discovery = pd.DataFrame([{
+        "accession": "ddd", "cik": "1234567", "ticker": "ACME",
+        "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+        "file_path": "p", "canonical_url": "https://example.test/x.txt",
+        "collection_scope": sec.DISCOVERY_SCOPE_REGISTRATION,
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])
+    bounded = select_retrieval_queue(
+        discovery,
+        have_complete=sec._eligible_complete_accessions([_parser_deferred_manifest("ddd")]),
+        max_filings=10,
+        now=datetime(2026, 8, 7, 12, 0, tzinfo=timezone.utc),
+        parked=sec.parked_accessions(attempts),
+    )
+    assert bounded.empty
+
+
+def test_attempt_bound_env_override_is_the_real_unpark_lever(monkeypatch):
+    """``CS_MAX_RETRIEVAL_ATTEMPTS`` exists, and is read at the point of use.
+
+    The shipped prose promised "a later ``--rebuild`` or a raised bound" would pick
+    a parked filing back up.  There is no ``--rebuild`` flag on this collector and
+    the bound was a frozen literal, so the documented lever did not exist at all —
+    an operator following the docstring had nothing to pull.
+    """
+    attempts = pd.DataFrame(
+        [{"accession": "ggg", "state": "transient_error"}] * sec.MAX_RETRIEVAL_ATTEMPTS
+    )
+    monkeypatch.delenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, raising=False)
+    assert sec._max_retrieval_attempts() == sec.MAX_RETRIEVAL_ATTEMPTS
+    assert sec.parked_accessions(attempts) == {"ggg"}
+
+    # The lever: raising the bound picks the parked filing straight back up, with
+    # no edit, no deploy, and nothing to rebuild.
+    monkeypatch.setenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, "10")
+    assert sec._max_retrieval_attempts() == 10
+    assert sec.parked_accessions(attempts) == set()
+
+    # Garbage, zero, and negative fall back to the default WITHOUT raising: a typo
+    # in a workflow variable may neither abort the night nor uncap the backlog.
+    for raw in ("", "   ", "three", "0", "-1", "2.5", "10x"):
+        monkeypatch.setenv(sec.MAX_RETRIEVAL_ATTEMPTS_ENV, raw)
+        assert sec._max_retrieval_attempts() == sec.MAX_RETRIEVAL_ATTEMPTS
+        assert sec.parked_accessions(attempts) == {"ggg"}
+
+
+class SeededDiscoveryAdapter(SecCapitalStructureAdapter):
+    """Retrieval-only run: the queue comes from a pre-existing discovery ledger."""
+
+    def _fetch_index(self, value, ua):
+        raise AssertionError("seeded-discovery run must not fetch a daily index")
+
+    def _fetch_submission(self, url, ua):
+        return SUBMISSION
+
+
+def test_legacy_null_scope_survives_the_retrieval_loop_unlaundered(
+    tmp_path, monkeypatch, capsys
+):
+    """The retrieval loop must hand the manifest writer ``None``, not a NaN.
+
+    A discovery row written before Wave 2C added ``collection_scope`` carries a
+    legitimate ``None``.  ``iterrows()`` builds a per-row Series and that build
+    substitutes ``float('nan')``; ``to_dict("records")`` does not.  Both shapes now
+    produce a schema-valid manifest — ``_manifest_scalar`` nulls the sentinel — so
+    the only thing that still separates them is the DISCLOSURE: under ``iterrows``
+    the collector reports a sanitized field for a value that was never a sentinel,
+    which is precisely the conflation ``_manifest_scalar`` documents as forbidden
+    ("sanitized" must never mean "legitimately absent").  Asserting the annotation's
+    ABSENCE is therefore the fence on the ``to_dict("records")`` hunk; reverting
+    that hunk turns this test red.
+    """
+    monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
+    monkeypatch.setattr(sec, "_cik_map", lambda: {})
+    monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    # No index is due: this run is the retrieval half of the night, nothing else.
+    monkeypatch.setattr(sec, "due_index_dates", lambda *args, **kwargs: [])
+
+    root = tmp_path / "capital_structure"
+    root.mkdir(parents=True)
+    # Seeded exactly as the legacy ledger is on disk — the column simply is not
+    # there — so ``_read_table`` performs the real production migration to ``None``.
+    legacy_columns = [
+        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
+    ]
+    pd.DataFrame([{
+        "accession": "0001234567-26-000001",
+        "cik": "0001234567",
+        "ticker": "ACME",
+        "company_name": "ACME CORP",
+        "form": "S-3",
+        "filing_date": "2026-08-01",
+        "file_path": "edgar/data/1234567/0001234567-26-000001.txt",
+        "canonical_url": (
+            "https://www.sec.gov/Archives/edgar/data/1234567/"
+            "0001234567-26-000001.txt"
+        ),
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])[legacy_columns].to_parquet(root / "discovery.parquet", index=False)
+
+    store = ContentAddressedSourceStore(LocalStore(tmp_path / "objects"), backend="local")
+    adapter = SeededDiscoveryAdapter(
+        source_store=store,
+        now_fn=lambda: datetime(2026, 8, 1, 13, 0, tzinfo=timezone.utc),
+        max_filings_per_run=10,
+    )
+
+    heartbeat = adapter.fetch()["sec_evidence__ingest"]
+    captured = capsys.readouterr().out
+
+    # The filing really was retrieved through the loop under test.
+    assert int(heartbeat.iloc[0]["retrieved"]) == 1
+    manifests = read_source_ledger(source_ledger_path(root))
+    assert manifests
+    for record in manifests:
+        assert record["filing"]["collection_scope"] is None
+        assert json.dumps(record["filing"]["collection_scope"]) == "null"
+    # The alias survives, so nothing else in this row was a sentinel either.
+    assert manifests[0]["issuer"]["aliases"] == ["ACME CORP"]
+
+    # THE FENCE.  A legitimately-absent scope was never converted, so the collector
+    # must report no sanitized field at all.  Under ``iterrows()`` the same row
+    # arrives as NaN, ``_manifest_scalar`` converts it, and this annotation fires
+    # for every manifest in the bundle.
+    assert "capital-structure-manifest-null-fields" not in captured
+    assert "filing.collection_scope" not in captured

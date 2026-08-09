@@ -1,0 +1,2567 @@
+{
+ "asof": "2026-08-09",
+ "audit": "stocks",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "massive_max_gap_bdays": 5,
+  "massive_stale_bdays": 5,
+  "massive_manifest_ahead_bdays": 2,
+  "massive_min_files": 100,
+  "massive_recent_window_bdays": 90,
+  "stocks_stale_calendar_days": 7,
+  "email_alerts": false
+ },
+ "n": 3018,
+ "n_failed": 0,
+ "fail_pct": 0.0,
+ "n_flags": 140,
+ "universes": [
+  {
+   "name": "stocks",
+   "n": 239,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 2,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "EA",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
+    },
+    {
+     "name": "ECHO",
+     "kind": "zombie",
+     "detail": "dead-registry name advancing 1719d past its 2021-11-22 registry bar; overlap corr -0.139"
+    }
+   ]
+  },
+  {
+   "name": "baskets_ohlcv",
+   "n": 2779,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 138,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "AAOI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ADTN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9998) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "AHRT",
+     "kind": "zombie",
+     "detail": "dead-registry name advancing 137d past its 2026-03-23 registry bar; overlap too thin to verify (16 rows)"
+    },
+    {
+     "name": "AMCX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ANGI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ANGO",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ANGPY",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
+    },
+    {
+     "name": "APEI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "APPS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ASIX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ATNI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "AVD",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BBBY",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.3573) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BDN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9849) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BELFB",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9998) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BGS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BLMN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BNED",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "BOOM",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CAL",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9999) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CAMP",
+     "kind": "rebirth",
+     "detail": "recycled string; new security starts 2024-10-11, prior holder's last registry bar 2022-09-19"
+    },
+    {
+     "name": "CARS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CCRN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CCSI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CEVA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CHCT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CHRS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CLDT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CLFD",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CLW",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CMP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CPS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CRMT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CRNC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "CYH",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DAKT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DBI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DDD",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DHC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9982) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DIN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "DOUG",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9993) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "EA",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
+    },
+    {
+     "name": "EBS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ECHO",
+     "kind": "zombie",
+     "detail": "dead-registry name advancing 1719d past its 2021-11-22 registry bar; overlap corr -0.139"
+    },
+    {
+     "name": "EGHT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "EHTH",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ELME",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FF",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9993) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FLGT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FORR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FOSL",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "FSP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "GCO",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "GDOT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "GPRE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "HAIN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "HELE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "HPP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9984) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "HVT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ILPT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9992) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "IMPUY",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
+    },
+    {
+     "name": "INGN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "INN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9965) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "IRWD",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "IVR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "JACK",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9995) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "JRVR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "JYNT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "KELYA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "KREF",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9827) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "LOCO",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MATV",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MCS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MED",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9987) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MEI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.999) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MGPI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9997) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MLAB",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MMC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9993) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MOV",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9962) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MPAA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MSTR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MTRX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MYE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9985) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "MYGN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "NBR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "NFBK",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9969) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "NKTR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9996) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "NP",
+     "kind": "rebirth",
+     "detail": "recycled string; new security starts 2025-10-01, prior holder's last registry bar 2022-07-05"
+    },
+    {
+     "name": "NTGR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "NUS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9986) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "OFIX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ONL",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9952) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "OPRX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ORGO",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "OSPN",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9999) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "OSUR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "PKE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9626) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "PLAY",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "PNTG",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "PUMP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.985) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RGNX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RGP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9967) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RGR",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9899) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RHHBY",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-07) but no current NASDAQ/NYSE listing"
+    },
+    {
+     "name": "RILY",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9982) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RMAX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9982) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "RPT",
+     "kind": "zombie",
+     "detail": "dead-registry name advancing 924d past its 2023-12-29 registry bar; overlap corr 0.2233"
+    },
+    {
+     "name": "RYAM",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SENEA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SITC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.5382) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SLP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SLQT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SPOK",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SPWR",
+     "kind": "zombie",
+     "detail": "dead-registry name advancing 700d past its 2024-08-09 registry bar; overlap corr -0.1298"
+    },
+    {
+     "name": "SSP",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SSTK",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9991) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SVC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9967) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "SXC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9984) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TBI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TCMD",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TG",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9968) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "THRY",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TREE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TTEC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9994) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TTGT",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "TWI",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "UIS",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "USNA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "UVE",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9981) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "VNDA",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "VREX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "WNC",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9998) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "WOLF",
+     "kind": "rebirth",
+     "detail": "recycled string; new security starts 2025-09-29, prior holder's last registry bar 2025-07-01"
+    },
+    {
+     "name": "XPER",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.7569) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "XRX",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 0.9977) \u2014 the registry, not the store, carries foreign/live tape"
+    },
+    {
+     "name": "ZUMZ",
+     "kind": "registry_mismatch",
+     "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
+    }
+   ]
+  }
+ ],
+ "grace_days": 30,
+ "stale_calendar_days": 7,
+ "totals": {
+  "zombie": 5,
+  "rebirth": 3,
+  "registry_mismatch": 127,
+  "delisted_printing": 5
+ },
+ "stores": [
+  {
+   "store": "stocks",
+   "n_files": 239,
+   "zombie": [
+    {
+     "ticker": "ECHO",
+     "registry_last": "2021-11-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1719,
+     "overlap": {
+      "n_overlap": 99,
+      "ret_corr_full": -0.0318,
+      "ret_corr_recent": -0.139,
+      "min_ret_corr": -0.139
+     },
+     "listed_now": true,
+     "acked": true,
+     "ack": "EchoStar Corp (NASDAQ dir 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00) under its 2026-06-24 SATS->ECHO rename \u2014 store holds EchoStar's full history (2008->). Prior holder Echo Global Logistics (CUSIP 27875T101, take-private 2021-12 @ $48.25) lives ONLY in the dead registry."
+    }
+   ],
+   "rebirth": [],
+   "registry_mismatch": [],
+   "delisted_printing": [
+    {
+     "ticker": "EA",
+     "store_tip": "2026-08-07",
+     "acked": false
+    }
+   ]
+  },
+  {
+   "store": "baskets/ohlcv",
+   "n_files": 2779,
+   "zombie": [
+    {
+     "ticker": "AHRT",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 16
+     },
+     "listed_now": true,
+     "acked": true,
+     "ack": "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) \u2014 registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
+    },
+    {
+     "ticker": "ECHO",
+     "registry_last": "2021-11-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1719,
+     "overlap": {
+      "n_overlap": 99,
+      "ret_corr_full": -0.0318,
+      "ret_corr_recent": -0.139,
+      "min_ret_corr": -0.139
+     },
+     "listed_now": true,
+     "acked": true,
+     "ack": "EchoStar Corp (NASDAQ dir 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00) under its 2026-06-24 SATS->ECHO rename \u2014 store holds EchoStar's full history (2008->). Prior holder Echo Global Logistics (CUSIP 27875T101, take-private 2021-12 @ $48.25) lives ONLY in the dead registry."
+    },
+    {
+     "ticker": "RPT",
+     "registry_last": "2023-12-29",
+     "store_tip": "2026-07-10",
+     "days_past_death": 924,
+     "overlap": {
+      "n_overlap": 627,
+      "ret_corr_full": 0.4074,
+      "ret_corr_recent": 0.2233,
+      "min_ret_corr": 0.2233
+     },
+     "listed_now": true,
+     "acked": true,
+     "ack": "Rithm Property Trust took RPT in 2024 after RPT Realty merged into Kimco 2024-01 \u2014 store rows spanning the corpse era are Rithm's spliced tape (overlap corr ~0.22)."
+    },
+    {
+     "ticker": "SPWR",
+     "registry_last": "2024-08-09",
+     "store_tip": "2026-07-10",
+     "days_past_death": 700,
+     "overlap": {
+      "n_overlap": 403,
+      "ret_corr_full": 0.0459,
+      "ret_corr_recent": -0.1298,
+      "min_ret_corr": -0.1298
+     },
+     "listed_now": true,
+     "acked": true,
+     "ack": "New SunPower (ex-Complete Solaria) adopted the SPWR ticker 2024-09 after SunPower Corp's 2024-08 Ch.11 \u2014 store rows spanning the corpse era are the new holder's tape (overlap corr ~0.05)."
+    }
+   ],
+   "rebirth": [
+    {
+     "ticker": "CAMP",
+     "registry_last": "2022-09-19",
+     "store_start": "2024-10-11",
+     "store_tip": "2026-08-07"
+    },
+    {
+     "ticker": "NP",
+     "registry_last": "2022-07-05",
+     "store_start": "2025-10-01",
+     "store_tip": "2026-08-07"
+    },
+    {
+     "ticker": "WOLF",
+     "registry_last": "2025-07-01",
+     "store_start": "2025-09-29",
+     "store_tip": "2026-08-07"
+    }
+   ],
+   "registry_mismatch": [
+    {
+     "ticker": "AAOI",
+     "registry_last": "2021-11-09",
+     "store_tip": "2026-07-10",
+     "days_past_death": 1704,
+     "overlap": {
+      "n_overlap": 90,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ADTN",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 774,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9998,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9998
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "AMCX",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 2742,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ANGI",
+     "registry_last": "2026-05-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 78,
+     "overlap": {
+      "n_overlap": 561,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ANGO",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "APEI",
+     "registry_last": "2022-09-19",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1418,
+     "overlap": {
+      "n_overlap": 305,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "APPS",
+     "registry_last": "2024-03-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 872,
+     "overlap": {
+      "n_overlap": 680,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ASIX",
+     "registry_last": "2026-02-19",
+     "store_tip": "2026-08-07",
+     "days_past_death": 169,
+     "overlap": {
+      "n_overlap": 1826,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ATNI",
+     "registry_last": "2024-08-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 715,
+     "overlap": {
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "AVD",
+     "registry_last": "2023-12-01",
+     "store_tip": "2026-07-10",
+     "days_past_death": 952,
+     "overlap": {
+      "n_overlap": 1272,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BBBY",
+     "registry_last": "2023-05-19",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1176,
+     "overlap": {
+      "n_overlap": 2362,
+      "ret_corr_full": 0.9305,
+      "ret_corr_recent": 0.3573,
+      "min_ret_corr": 0.3573
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BDN",
+     "registry_last": "2026-01-07",
+     "store_tip": "2026-08-07",
+     "days_past_death": 212,
+     "overlap": {
+      "n_overlap": 1133,
+      "ret_corr_full": 0.99,
+      "ret_corr_recent": 0.9849,
+      "min_ret_corr": 0.9849
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BELFB",
+     "registry_last": "2021-08-03",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1830,
+     "overlap": {
+      "n_overlap": 21,
+      "ret_corr_full": 0.9998,
+      "ret_corr_recent": 0.9998,
+      "min_ret_corr": 0.9998
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BGS",
+     "registry_last": "2025-11-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 260,
+     "overlap": {
+      "n_overlap": 1766,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BLMN",
+     "registry_last": "2026-05-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 78,
+     "overlap": {
+      "n_overlap": 1890,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BNED",
+     "registry_last": "2022-04-04",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1586,
+     "overlap": {
+      "n_overlap": 190,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "BOOM",
+     "registry_last": "2023-08-17",
+     "store_tip": "2026-07-10",
+     "days_past_death": 1058,
+     "overlap": {
+      "n_overlap": 1198,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CAL",
+     "registry_last": "2025-11-04",
+     "store_tip": "2026-08-07",
+     "days_past_death": 276,
+     "overlap": {
+      "n_overlap": 1090,
+      "ret_corr_full": 0.9999,
+      "ret_corr_recent": 0.9999,
+      "min_ret_corr": 0.9999
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CARS",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CCRN",
+     "registry_last": "2024-10-01",
+     "store_tip": "2026-07-20",
+     "days_past_death": 657,
+     "overlap": {
+      "n_overlap": 816,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": false
+    },
+    {
+     "ticker": "CCSI",
+     "registry_last": "2024-03-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 872,
+     "overlap": {
+      "n_overlap": 613,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CEVA",
+     "registry_last": "2026-02-19",
+     "store_tip": "2026-08-07",
+     "days_past_death": 169,
+     "overlap": {
+      "n_overlap": 1826,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CHCT",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 1517,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CHRS",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CLDT",
+     "registry_last": "2024-08-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 715,
+     "overlap": {
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CLFD",
+     "registry_last": "2023-12-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 963,
+     "overlap": {
+      "n_overlap": 619,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CLW",
+     "registry_last": "2024-11-04",
+     "store_tip": "2026-08-07",
+     "days_past_death": 641,
+     "overlap": {
+      "n_overlap": 840,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CMP",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 2742,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CPS",
+     "registry_last": "2022-03-14",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1607,
+     "overlap": {
+      "n_overlap": 175,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CRMT",
+     "registry_last": "2024-03-18",
+     "store_tip": "2026-07-10",
+     "days_past_death": 844,
+     "overlap": {
+      "n_overlap": 680,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CRNC",
+     "registry_last": "2024-08-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 715,
+     "overlap": {
+      "n_overlap": 1064,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "CYH",
+     "registry_last": "2024-02-15",
+     "store_tip": "2026-08-07",
+     "days_past_death": 904,
+     "overlap": {
+      "n_overlap": 2548,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DAKT",
+     "registry_last": "2021-11-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1725,
+     "overlap": {
+      "n_overlap": 95,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DBI",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 1517,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DDD",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 2742,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DHC",
+     "registry_last": "2022-12-19",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1327,
+     "overlap": {
+      "n_overlap": 369,
+      "ret_corr_full": 0.9993,
+      "ret_corr_recent": 0.9982,
+      "min_ret_corr": 0.9982
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DIN",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 1517,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "DOUG",
+     "registry_last": "2023-06-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1148,
+     "overlap": {
+      "n_overlap": 368,
+      "ret_corr_full": 0.9993,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9993
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "EBS",
+     "registry_last": "2023-08-25",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1078,
+     "overlap": {
+      "n_overlap": 540,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "EGHT",
+     "registry_last": "2023-11-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 995,
+     "overlap": {
+      "n_overlap": 1262,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "EHTH",
+     "registry_last": "2022-09-19",
+     "store_tip": "2026-07-10",
+     "days_past_death": 1390,
+     "overlap": {
+      "n_overlap": 305,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ELME",
+     "registry_last": "2026-04-02",
+     "store_tip": "2026-08-07",
+     "days_past_death": 127,
+     "overlap": {
+      "n_overlap": 1856,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "FF",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 0.9993,
+      "ret_corr_recent": 0.9995,
+      "min_ret_corr": 0.9993
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "FI",
+     "registry_last": "2025-11-10",
+     "store_tip": "2026-08-07",
+     "days_past_death": 270,
+     "overlap": {
+      "n_overlap": 610,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": false
+    },
+    {
+     "ticker": "FLGT",
+     "registry_last": "2025-05-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 442,
+     "overlap": {
+      "n_overlap": 1446,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "FORR",
+     "registry_last": "2024-05-16",
+     "store_tip": "2026-07-10",
+     "days_past_death": 785,
+     "overlap": {
+      "n_overlap": 1386,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "FOSL",
+     "registry_last": "2022-11-17",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1359,
+     "overlap": {
+      "n_overlap": 2237,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "FSP",
+     "registry_last": "2023-05-18",
+     "store_tip": "2026-07-21",
+     "days_past_death": 1160,
+     "overlap": {
+      "n_overlap": 1136,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "GCO",
+     "registry_last": "2023-08-17",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1086,
+     "overlap": {
+      "n_overlap": 1198,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "GDOT",
+     "registry_last": "2025-05-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 442,
+     "overlap": {
+      "n_overlap": 1869,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "GPRE",
+     "registry_last": "2025-05-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 442,
+     "overlap": {
+      "n_overlap": 1640,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "HAIN",
+     "registry_last": "2025-05-22",
+     "store_tip": "2026-07-21",
+     "days_past_death": 425,
+     "overlap": {
+      "n_overlap": 2865,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "HELE",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "HPP",
+     "registry_last": "2024-12-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 592,
+     "overlap": {
+      "n_overlap": 874,
+      "ret_corr_full": 0.9984,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9984
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "HVT",
+     "registry_last": "2024-11-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 624,
+     "overlap": {
+      "n_overlap": 1517,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ILPT",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 0.9992,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9992
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "INGN",
+     "registry_last": "2023-08-17",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1086,
+     "overlap": {
+      "n_overlap": 2393,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "INN",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 0.9985,
+      "ret_corr_recent": 0.9965,
+      "min_ret_corr": 0.9965
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "IRWD",
+     "registry_last": "2025-04-10",
+     "store_tip": "2026-08-07",
+     "days_past_death": 484,
+     "overlap": {
+      "n_overlap": 981,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "IVR",
+     "registry_last": "2024-02-15",
+     "store_tip": "2026-08-07",
+     "days_past_death": 904,
+     "overlap": {
+      "n_overlap": 1323,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "JACK",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 0.9995,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9995
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "JRVR",
+     "registry_last": "2024-02-15",
+     "store_tip": "2026-08-07",
+     "days_past_death": 904,
+     "overlap": {
+      "n_overlap": 1323,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "JYNT",
+     "registry_last": "2023-03-03",
+     "store_tip": "2026-07-10",
+     "days_past_death": 1225,
+     "overlap": {
+      "n_overlap": 722,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "KELYA",
+     "registry_last": "2025-02-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 533,
+     "overlap": {
+      "n_overlap": 1576,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "KREF",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 0.984,
+      "ret_corr_recent": 0.9827,
+      "min_ret_corr": 0.9827
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "LOCO",
+     "registry_last": "2023-08-31",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1072,
+     "overlap": {
+      "n_overlap": 1208,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MATV",
+     "registry_last": "2025-05-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 442,
+     "overlap": {
+      "n_overlap": 1640,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MCS",
+     "registry_last": "2024-08-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 715,
+     "overlap": {
+      "n_overlap": 1453,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MED",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-07-10",
+     "days_past_death": 746,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9987,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9987
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MEI",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 774,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9997,
+      "ret_corr_recent": 0.999,
+      "min_ret_corr": 0.999
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MGPI",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 0.9999,
+      "ret_corr_recent": 0.9997,
+      "min_ret_corr": 0.9997
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MLAB",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MMC",
+     "registry_last": "2026-01-13",
+     "store_tip": "2026-08-07",
+     "days_past_death": 206,
+     "overlap": {
+      "n_overlap": 1137,
+      "ret_corr_full": 0.9993,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9993
+     },
+     "listed_now": false
+    },
+    {
+     "ticker": "MOV",
+     "registry_last": "2024-10-01",
+     "store_tip": "2026-08-07",
+     "days_past_death": 675,
+     "overlap": {
+      "n_overlap": 816,
+      "ret_corr_full": 0.9965,
+      "ret_corr_recent": 0.9962,
+      "min_ret_corr": 0.9962
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MPAA",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MSTR",
+     "registry_last": "2021-09-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1782,
+     "overlap": {
+      "n_overlap": 54,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MTRX",
+     "registry_last": "2021-12-30",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1681,
+     "overlap": {
+      "n_overlap": 125,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MYE",
+     "registry_last": "2024-11-27",
+     "store_tip": "2026-08-07",
+     "days_past_death": 618,
+     "overlap": {
+      "n_overlap": 857,
+      "ret_corr_full": 0.9991,
+      "ret_corr_recent": 0.9985,
+      "min_ret_corr": 0.9985
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "MYGN",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "NBR",
+     "registry_last": "2025-03-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 501,
+     "overlap": {
+      "n_overlap": 934,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "NFBK",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-07-21",
+     "days_past_death": 757,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9969,
+      "ret_corr_recent": 0.9981,
+      "min_ret_corr": 0.9969
+     },
+     "listed_now": false
+    },
+    {
+     "ticker": "NKTR",
+     "registry_last": "2023-04-05",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1220,
+     "overlap": {
+      "n_overlap": 442,
+      "ret_corr_full": 0.9999,
+      "ret_corr_recent": 0.9996,
+      "min_ret_corr": 0.9996
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "NTGR",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "NUS",
+     "registry_last": "2024-09-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 683,
+     "overlap": {
+      "n_overlap": 810,
+      "ret_corr_full": 0.9986,
+      "ret_corr_recent": 0.9997,
+      "min_ret_corr": 0.9986
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "OFIX",
+     "registry_last": "2023-12-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 963,
+     "overlap": {
+      "n_overlap": 619,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ONL",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 456,
+      "ret_corr_full": 0.9982,
+      "ret_corr_recent": 0.9952,
+      "min_ret_corr": 0.9952
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "OPRX",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-07-10",
+     "days_past_death": 1208,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ORGO",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "OSPN",
+     "registry_last": "2023-12-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 963,
+     "overlap": {
+      "n_overlap": 619,
+      "ret_corr_full": 0.9999,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9999
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "OSUR",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 774,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "PKE",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 0.9857,
+      "ret_corr_recent": 0.9626,
+      "min_ret_corr": 0.9626
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "PLAY",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "PNTG",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "PUMP",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RC",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 0.985,
+      "ret_corr_recent": 0.9917,
+      "min_ret_corr": 0.985
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RGNX",
+     "registry_last": "2024-12-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 592,
+     "overlap": {
+      "n_overlap": 874,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RGP",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-07-10",
+     "days_past_death": 746,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9987,
+      "ret_corr_recent": 0.9967,
+      "min_ret_corr": 0.9967
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RGR",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 0.9899,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9899
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RILY",
+     "registry_last": "2024-09-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 683,
+     "overlap": {
+      "n_overlap": 810,
+      "ret_corr_full": 0.9982,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9982
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RMAX",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 0.9984,
+      "ret_corr_recent": 0.9982,
+      "min_ret_corr": 0.9982
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "RYAM",
+     "registry_last": "2023-06-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1148,
+     "overlap": {
+      "n_overlap": 492,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SENEA",
+     "registry_last": "2023-07-03",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1131,
+     "overlap": {
+      "n_overlap": 502,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SITC",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 0.6596,
+      "ret_corr_recent": 0.5382,
+      "min_ret_corr": 0.5382
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SLP",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SLQT",
+     "registry_last": "2022-10-03",
+     "store_tip": "2026-07-21",
+     "days_past_death": 1387,
+     "overlap": {
+      "n_overlap": 315,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SPOK",
+     "registry_last": "2021-08-04",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1829,
+     "overlap": {
+      "n_overlap": 22,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SSP",
+     "registry_last": "2024-04-03",
+     "store_tip": "2026-08-07",
+     "days_past_death": 856,
+     "overlap": {
+      "n_overlap": 691,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SSTK",
+     "registry_last": "2026-06-02",
+     "store_tip": "2026-08-07",
+     "days_past_death": 66,
+     "overlap": {
+      "n_overlap": 1233,
+      "ret_corr_full": 0.9991,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9991
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SVC",
+     "registry_last": "2024-12-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 592,
+     "overlap": {
+      "n_overlap": 874,
+      "ret_corr_full": 0.9967,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.9967
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "SXC",
+     "registry_last": "2026-03-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 137,
+     "overlap": {
+      "n_overlap": 1184,
+      "ret_corr_full": 0.9984,
+      "ret_corr_recent": 0.999,
+      "min_ret_corr": 0.9984
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TBI",
+     "registry_last": "2024-03-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 872,
+     "overlap": {
+      "n_overlap": 680,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TCMD",
+     "registry_last": "2022-06-21",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1508,
+     "overlap": {
+      "n_overlap": 243,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TG",
+     "registry_last": "2023-06-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1148,
+     "overlap": {
+      "n_overlap": 492,
+      "ret_corr_full": 0.9973,
+      "ret_corr_recent": 0.9968,
+      "min_ret_corr": 0.9968
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "THRY",
+     "registry_last": "2025-12-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 228,
+     "overlap": {
+      "n_overlap": 1123,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TREE",
+     "registry_last": "2023-06-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1148,
+     "overlap": {
+      "n_overlap": 492,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TTEC",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-07-10",
+     "days_past_death": 746,
+     "overlap": {
+      "n_overlap": 747,
+      "ret_corr_full": 0.9994,
+      "ret_corr_recent": 0.9998,
+      "min_ret_corr": 0.9994
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TTGT",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "TWI",
+     "registry_last": "2026-04-02",
+     "store_tip": "2026-08-07",
+     "days_past_death": 127,
+     "overlap": {
+      "n_overlap": 1192,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "UIS",
+     "registry_last": "2023-03-20",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1236,
+     "overlap": {
+      "n_overlap": 430,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "USNA",
+     "registry_last": "2025-10-31",
+     "store_tip": "2026-08-07",
+     "days_past_death": 280,
+     "overlap": {
+      "n_overlap": 1088,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "UVE",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 0.9981,
+      "ret_corr_recent": 0.9981,
+      "min_ret_corr": 0.9981
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "VNDA",
+     "registry_last": "2023-09-18",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1054,
+     "overlap": {
+      "n_overlap": 555,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "VREX",
+     "registry_last": "2024-09-23",
+     "store_tip": "2026-08-07",
+     "days_past_death": 683,
+     "overlap": {
+      "n_overlap": 810,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "WNC",
+     "registry_last": "2025-03-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 501,
+     "overlap": {
+      "n_overlap": 934,
+      "ret_corr_full": 0.9998,
+      "ret_corr_recent": 0.9998,
+      "min_ret_corr": 0.9998
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "XPER",
+     "registry_last": "2024-06-24",
+     "store_tip": "2026-08-07",
+     "days_past_death": 774,
+     "overlap": {
+      "n_overlap": 442,
+      "ret_corr_full": 0.7569,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 0.7569
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "XRX",
+     "registry_last": "2025-09-22",
+     "store_tip": "2026-08-07",
+     "days_past_death": 319,
+     "overlap": {
+      "n_overlap": 1059,
+      "ret_corr_full": 0.9977,
+      "ret_corr_recent": 0.9999,
+      "min_ret_corr": 0.9977
+     },
+     "listed_now": true
+    },
+    {
+     "ticker": "ZUMZ",
+     "registry_last": "2023-06-16",
+     "store_tip": "2026-08-07",
+     "days_past_death": 1148,
+     "overlap": {
+      "n_overlap": 492,
+      "ret_corr_full": 1.0,
+      "ret_corr_recent": 1.0,
+      "min_ret_corr": 1.0
+     },
+     "listed_now": true
+    }
+   ],
+   "delisted_printing": [
+    {
+     "ticker": "ANGPY",
+     "store_tip": "2026-08-07",
+     "acked": false
+    },
+    {
+     "ticker": "EA",
+     "store_tip": "2026-08-07",
+     "acked": false
+    },
+    {
+     "ticker": "IMPUY",
+     "store_tip": "2026-08-07",
+     "acked": false
+    },
+    {
+     "ticker": "RHHBY",
+     "store_tip": "2026-08-07",
+     "acked": true
+    }
+   ]
+  }
+ ],
+ "reused_ticker_acks": {
+  "ECHO": "EchoStar Corp (NASDAQ dir 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00) under its 2026-06-24 SATS->ECHO rename \u2014 store holds EchoStar's full history (2008->). Prior holder Echo Global Logistics (CUSIP 27875T101, take-private 2021-12 @ $48.25) lives ONLY in the dead registry.",
+  "SPWR": "New SunPower (ex-Complete Solaria) adopted the SPWR ticker 2024-09 after SunPower Corp's 2024-08 Ch.11 \u2014 store rows spanning the corpse era are the new holder's tape (overlap corr ~0.05).",
+  "RPT": "Rithm Property Trust took RPT in 2024 after RPT Realty merged into Kimco 2024-01 \u2014 store rows spanning the corpse era are Rithm's spliced tape (overlap corr ~0.22).",
+  "FI": "Membership key FI = Fiserv, deliberately fetched via the FISV vendor alias (lib/ticker_aliases; Fiserv left NYSE 'FI' ~2025-11, NASDAQ lists FISV). The registry's FI rows are foreign tape \u2014 registry-side contamination, not a store defect.",
+  "AHRT": "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) \u2014 registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
+ },
+ "delisted_printing_acks": [
+  "RHHBY"
+ ],
+ "unacked_zombies": [],
+ "unacked_delisted_printing": [
+  "stocks/EA",
+  "baskets/ohlcv/ANGPY",
+  "baskets/ohlcv/EA",
+  "baskets/ohlcv/IMPUY"
+ ]
+}

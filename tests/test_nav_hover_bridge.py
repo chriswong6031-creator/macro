@@ -1,3 +1,5 @@
+import hashlib
+import re
 from pathlib import Path
 
 
@@ -14,6 +16,26 @@ TEMPLATE_ACCOUNT_JS = (ROOT / "templates" / "account.js").read_text(encoding="ut
 SITE_ACCOUNT_JS = (ROOT / "site" / "account.js").read_text(encoding="utf-8")
 START_HTML = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
 MACRO_HTML = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
+
+# The cache-buster the theme.js -> account.js -> nav_market.js chain is pinned
+# to, and a digest of the payload that key is responsible for busting. They MUST
+# move together -- see test_nav_release_key_moves_with_the_payload_it_busts.
+NAV_RELEASE_KEY = "20260809-market-memory"
+NAV_PAYLOAD_DIGEST = "af8e4276"
+
+
+def _payload_digest() -> str:
+    """First 8 hex of sha256 over the two assets fetched at the fixed key.
+
+    The key is redacted out of each body before hashing, so bumping the key does
+    not perturb the digest -- the two constants stay independent and a bump is
+    one edit, not a chase. theme.js is deliberately excluded: it is referenced
+    from HTML, so optimize_assets.py content-hashes it and it self-busts.
+    """
+    digest = hashlib.sha256()
+    for text in (TEMPLATE_JS, TEMPLATE_ACCOUNT_JS):
+        digest.update(re.sub(r"\d{8}-[\w-]+", "<KEY>", text).encode("utf-8"))
+    return digest.hexdigest()[:8]
 
 
 def test_top_market_menus_keep_hover_bridge_while_folded_countries_click() -> None:
@@ -146,18 +168,56 @@ def test_primary_public_dashboards_ship_the_static_earnings_wire_card() -> None:
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
-    assert "account.js?v=20260803-onemenu" in TEMPLATE_THEME_JS
-    assert "account.js?v=20260803-onemenu" in SITE_THEME_JS
-    assert "nav_market.js?v=20260803-onemenu" in TEMPLATE_ACCOUNT_JS
+    assert f"account.js?v={NAV_RELEASE_KEY}" in TEMPLATE_THEME_JS
+    assert f"account.js?v={NAV_RELEASE_KEY}" in SITE_THEME_JS
+    assert f"nav_market.js?v={NAV_RELEASE_KEY}" in TEMPLATE_ACCOUNT_JS
     for stale in (
         "20260730-exact6",
         "20260730-exact7",
         "20260731-folded2",
         "20260801-crossfade",
+        "20260806-zh-megamenu",
+        "20260803-onemenu",
+        "20260806-us-confluence",
+        "20260807-post-sweep",
+        "20260807-mm-icons",
     ):
         assert stale not in TEMPLATE_THEME_JS
         assert stale not in SITE_THEME_JS
         assert stale not in TEMPLATE_ACCOUNT_JS
+
+
+def test_nav_release_key_moves_with_the_payload_it_busts() -> None:
+    """A nav asset change must be accompanied by a release-key bump.
+
+    theme.js -> account.js -> nav_market.js is a fixed-URL chain served
+    `immutable, max-age=31536000` (Caddyfile @public_versioned). account.js and
+    nav_market.js are fetched at this hand-written key, NOT at a content hash --
+    optimize_assets.py only stamps refs inside site/**/*.html, never an `s.src`
+    built in JS. So a nav change that does not move the key is invisible to every
+    returning visitor for a year, while shipping clean to anyone with a cold
+    cache -- the most confusing possible failure, because the person verifying it
+    in a fresh browser sees the new menu and calls it live.
+
+    That is not hypothetical. #4512 rewrites the market mega menu into Chinese
+    (13 -> 131 zh lines in nav_market.js) against this unchanged key, so returning
+    visitors in China would have kept the English menu. Four earlier keys in the
+    stale list above (exact6, exact7, folded2, crossfade) show the bump is a
+    forgettable ritual, and pinning the literal key cannot catch a miss -- that
+    assertion fails when you bump the key, not when you forget to.
+
+    So the payload is pinned separately here: touch nav_market.js or account.js
+    and this fails, naming the bump you owe.
+    """
+    assert _payload_digest() == NAV_PAYLOAD_DIGEST, (
+        "templates/nav_market.js or templates/account.js changed, but they are "
+        f"served `immutable, max-age=31536000` at the fixed key {NAV_RELEASE_KEY!r} "
+        "-- returning visitors would keep the year-cached OLD nav menu and never "
+        "see this change. Bump the key in templates/theme.js, site/theme.js, "
+        "templates/account.js and site/account.js (and NAV_RELEASE_KEY above), "
+        f"then set NAV_PAYLOAD_DIGEST = {_payload_digest()!r}. "
+        "Both constants move together or the bump did not happen."
+    )
 
 
 def test_trigger_row_carries_an_invisible_hover_bridge() -> None:
@@ -251,7 +311,13 @@ def test_switching_menus_cross_fades_over_one_morphing_plate() -> None:
 
 def test_panel_choreography_is_killed_by_name_under_reduced_motion() -> None:
     """Repo law: a reduced-motion kill block names its pseudo-elements."""
-    block = TEMPLATE_CSS.split("@media (prefers-reduced-motion: reduce) {")[-1]
+    from tests.test_navigation_refresh import media_block_containing
+
+    block = media_block_containing(
+        TEMPLATE_CSS,
+        "@media (prefers-reduced-motion: reduce) {",
+        ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
+    )
     for selector in (
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-out",
@@ -278,4 +344,36 @@ def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
         assert "new URL('.', _mmThemeScript" in source
         assert source.count("var pfx = _mmSharedAssetRoot;") == 3
         assert "location.pathname.indexOf('/sectors/')" not in source
-        assert "s.src = pfx + 'account.js?v=20260803-onemenu'" in source
+        assert f"s.src = pfx + 'account.js?v={NAV_RELEASE_KEY}'" in source
+
+
+def test_research_icon_bridge_never_stomps_an_unknown_card() -> None:
+    """The Mastermind twins must not wear one glyph (operator report 2026-08-07).
+
+    enhanceResearchMenu's icon leg is a compatibility bridge for LEGACY pages:
+    it rewrites a card's icon to the mockup drawing when the card's file is in
+    MOCKUP_RESEARCH_ICON_BY_FILE.  Its old fallback — `|| ['dashboard', '']` —
+    stomped every UNKNOWN card with the same default square, so the adjacent
+    "Mastermind Portfolio" and "Mastermind Bot" cards (and Filing Forensics and
+    Stock Seasonality) all rendered byte-identical glyphs and the two Mastermind
+    cards read as one product listed twice.  Cards born after the mockup era
+    already ship their real icon-drawing markup server-side, so the exact
+    normalisation for an unknown card is to leave it alone.
+    """
+    for source in (TEMPLATE_JS, SITE_JS):
+        # the stomp is gone, in the one place it lived
+        assert "|| ['dashboard', '']" not in source
+        # unknown card => no icon rewrite (the gate rides the map lookup)
+        assert "var oldIcon = iconSpec ? item.querySelector('.nm-ic') : null;" in source
+        # the two Mastermind cards are KNOWN, each with its own glyph + tint
+        assert "'watchlist.html': ['portfolio', 'violet']" in source
+        assert "'bot.mastermind-x.com': ['bot', 'cyan']" in source
+        # and the glyphs are the template's own drawings, not the dashboard square
+        assert "portfolio: '<path class=\"ghost\" d=\"M25 7a17 17 0 0 1 16 16\"/>" in source
+        assert "bot: '<path d=\"M17 11V6M24 11V6M31 11V6" in source
+        # the two drawings must stay DISTINCT from each other and from the default
+        import re as _re
+        icons = dict(_re.findall(r"\n    (portfolio|bot): '([^']+)'", source))
+        assert icons["portfolio"] != icons["bot"]
+        dashboard = _re.search(r"\n    dashboard: '([^']+)'", source).group(1)
+        assert icons["portfolio"] != dashboard and icons["bot"] != dashboard

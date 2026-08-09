@@ -192,7 +192,7 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # Canada net-liquidity / regime overlay is a single macro label that conditions
     # every TSX-listed name's buy-setup conviction (mirrors the US library; macro_drag
     # / VIX legs are US-only and intentionally dropped here).
-    res = analyze(c, high, kind="equity", liquidity=liquidity)
+    res = analyze(c, high, kind="equity", liquidity=liquidity, market="CA")
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -953,6 +953,7 @@ def main(alpha: dict | None = None) -> dict | None:
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         attach_latest_volume(idx, ticker, latest_volumes)
+        stock_technicals.attach_chg_1d(idx, rec.get("tech"))   # `c1` — mirrors tech.chg_1d
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)

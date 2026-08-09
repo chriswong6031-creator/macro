@@ -21,6 +21,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.grade_us_board import (  # noqa: E402
     _merge_into_store,
     _backfill_regime_stamps,
+    _backfill_archetype,
+    _archetype_pit,
     _excess_close_path_mae,
     build_track,
     grade_boards,
@@ -28,6 +30,7 @@ from scripts.grade_us_board import (  # noqa: E402
     LEDGER_DIR,
     HORIZONS,
     _REGIME_STAMP_COLS,
+    _RETIRED_LEDGER_COLS,
 )
 
 
@@ -96,21 +99,31 @@ def test_merge_accumulates_new_date(tmp_path, monkeypatch):
 
 
 def test_merge_deduplicates_on_key(tmp_path, monkeypatch):
-    """Re-grading the same (as_of, ticker, lane, horizon) replaces the stored row."""
+    """Re-grading the same (as_of, ticker, lane, horizon) yields ONE row, and does not
+    restate its price-derived measurement.
+
+    INVERTED 2026-08-06. This asserted `excess_spy` took the fresh value, which is the
+    behaviour that let a re-based breadth cache silently rewrite published returns: 75
+    shipped rows moved on a re-run, 19 materially. Dedup-to-one-row is still the
+    contract; the measurement is now write-once (see _FROZEN_PRICE_COLS)."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
     first = _minimal_grade_df(as_of="2026-01-02", n=3)
     _merge_into_store(first)
+    # each seeded row carries a DIFFERENT excess_spy, so compare per ticker rather than
+    # against one scalar — a scalar comparison would pass on a single-row fixture and
+    # hide a merge that collapsed every row onto the same value.
+    original = first.set_index("ticker")["excess_spy"]
 
-    # Re-grade same keys with updated excess_spy value
     updated = first.copy()
     updated["excess_spy"] = 0.99
     result = _merge_into_store(updated)
-    # De-dup should keep fresh (0.99), not the old value
-    assert len(result) == 3
-    assert (result["excess_spy"] == 0.99).all()
+    assert len(result) == 3, "dedup must still collapse to one row per key"
+    got = result.set_index("ticker")["excess_spy"]
+    assert got.reindex(original.index).equals(original), (
+        "a published excess return was restated by a re-grade")
 
 
 def test_merge_with_empty_fresh_returns_stored(tmp_path, monkeypatch):
@@ -148,6 +161,16 @@ def test_merge_idempotent(tmp_path, monkeypatch):
 # build_track tests
 # ---------------------------------------------------------------------------
 
+# build_track applies the file's ONE era rule (G3 2026-08-06): rows dated before
+# LEDGER_HISTORY_FROM describe the 120-name broad-screen board, not the product that
+# ships today, and are excluded here exactly as emit_ledger already excluded them.
+# These fixtures therefore date IN-ERA. The date is a fixed constant, not a
+# wall-clock offset, so it cannot expire; the exclusion itself is pinned separately
+# in TestOneEraRule below.
+_IN_ERA = "2026-06-30"
+_PRE_ERA = "2026-06-16"
+
+
 def _boards_stub(*as_ofs):
     return [{"as_of": a, "rows": []} for a in as_ofs]
 
@@ -158,16 +181,16 @@ def _names_stub():
 
 def test_build_track_never_empty_with_rows():
     """build_track must not emit empty:true when df has rows — the core regression."""
-    df = _minimal_grade_df(n=5)
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=5)
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "empty" not in track, "build_track emitted empty:true with non-empty df"
     assert track["graded_rows_total"] == 5
 
 
 def test_build_track_hit_rate_in_range():
     """Hit rate is between 0 and 1; n matches input."""
-    df = _minimal_grade_df(n=10, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=10, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
     assert 0.0 <= buy_h5["hit_rate"] <= 1.0
     assert buy_h5["n"] == 10
@@ -182,8 +205,8 @@ def test_build_track_empty_df_emits_empty_flag():
 
 def test_build_track_precision_at_k_present():
     """precision_at_k keys exist for the buy lane at each horizon."""
-    df = _minimal_grade_df(n=6, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=6, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "precision_at_k_board_order_vs_spy" in buy_h5
     assert "precision_at_k_alpha_order_vs_spy" in buy_h5
@@ -208,8 +231,8 @@ def test_graded_df_carries_tier_cascade():
 def test_build_track_by_tier_cascade_present():
     """W0.2b: build_track emits by_tier_cascade in the buy_lane block so downstream
     consumers can stratify graded results by T1/T2/T3/T4 cascade tier."""
-    df = _minimal_grade_df(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "by_tier_cascade" in buy_h5, "by_tier_cascade missing from buy_lane output"
     # the strata should be non-empty (the df has T1/T2/T3/T4 with n=1 each)
@@ -218,8 +241,8 @@ def test_build_track_by_tier_cascade_present():
 
 def test_by_tier_cascade_hit_stats_are_bounded():
     """W0.2b: per-tier hit_rate in by_tier_cascade is between 0 and 1 (sanity)."""
-    df = _minimal_grade_df(n=8, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=8, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     by_tier = track["per_horizon"]["h5"]["buy_lane"]["by_tier_cascade"]
     for tier, stats in by_tier.items():
         if "hit_rate" in stats:
@@ -369,7 +392,7 @@ def _minimal_grade_df_with_h63(as_of="2026-01-02", n=3, lane="buy"):
             "fused_risk_label": None, "vol_regime": None,
             "risk_radar_state": None, "regime_vector_degraded": None,
             "vector_asof": None, "staleness_hours": None,
-            "species_id": None, "archetype": None,
+            "archetype": None,
         }
         for i in range(n)
     ]
@@ -384,8 +407,8 @@ def test_63d_lane_in_horizons():
 
 def test_63d_lane_graded_in_build_track():
     """W0.1 B-b: build_track processes h63 rows and emits per_horizon.h63 block."""
-    df = _minimal_grade_df_with_h63(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df_with_h63(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "h63" in track.get("per_horizon", {}), "h63 block missing from per_horizon"
     h63_block = track["per_horizon"]["h63"]
     assert h63_block.get("overall_vs_spy", {}).get("n", 0) == 4
@@ -443,7 +466,8 @@ def _grade_df_with_spine(n=4, as_of="2026-01-02", horizon=5):
             "regime_vector_degraded": False,
             "vector_asof": "2026-01-02",
             "staleness_hours": 0.0,
-            "species_id": None,
+            # species_id is NOT here: retired 2026-08-04, so a graded frame no longer
+            # carries it (see the retirement tests below)
             "archetype": "COILED",
         })
     return pd.DataFrame(rows)
@@ -457,15 +481,15 @@ def test_spine_columns_present_in_graded_df():
         "post_cushion_breach", "rate_pressure", "quad_hard_label",
         "fused_risk_label", "vol_regime", "risk_radar_state",
         "regime_vector_degraded", "vector_asof", "staleness_hours",
-        "species_id", "archetype",
+        "archetype",
     ]:
         assert col in df.columns, f"spine column {col!r} missing"
 
 
-def test_species_id_always_null():
-    """W0.1 B-b §3.4: species_id is null for all rows (ambiguous multi-species ledger)."""
-    df = _grade_df_with_spine(n=6, horizon=5)
-    assert df["species_id"].isna().all(), "species_id must be null (ambiguous ledger)"
+# NOTE 2026-08-04: the former test_species_id_always_null pinned species_id as a
+# permanently-null spine column.  The column is retired (no species uniquely binds this
+# ledger, so it could never populate) and its replacement pins the retirement itself, at
+# the two places that can resurrect it: the rec dict and the store-merge carry path.
 
 
 def test_archetype_from_payload():
@@ -555,24 +579,31 @@ def test_schema_union_legacy_rows_get_nulls(tmp_path, monkeypatch):
     assert new_rows["fwd_mfe_5"].notna().all(), "new rows should have non-null fwd_mfe_5"
 
 
-def test_schema_union_keep_fresh_replaces_stored_row(tmp_path, monkeypatch):
-    """W0.1 B-b: keep-FIRST — dedup on (as_of, ticker, lane, horizon) never overwrites
-    stored non-null with null (fresh takes precedence on the full row)."""
+def test_schema_union_freezes_prices_but_still_accrues_annotations(tmp_path, monkeypatch):
+    """W0.1 B-b schema-union still works; the PRICE half of the row is now write-once.
+
+    INVERTED 2026-08-06 (was: fresh replaces the stored row wholesale). `fwd_mfe_5` is
+    computed off the close panel, and the panel is re-based in place, so replacing it on
+    every run restates history. Annotations must still land, or the regime/archetype
+    backfills stop reaching historical rows."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
     pq = tmp_path / "retro_grades.parquet"
     monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
 
-    # First insert: rows with spine values
     first = _grade_df_with_spine(n=2, as_of="2026-01-02", horizon=5)
     _merge_into_store(first)
+    original_mfe = float(first["fwd_mfe_5"].iloc[0])
 
-    # Second insert (same keys): fresh rows should REPLACE stored rows (fresh takes precedence)
     second = first.copy()
-    second["fwd_mfe_5"] = 0.99
+    second["fwd_mfe_5"] = 0.99                       # price-derived  -> frozen
+    second["archetype"] = "coiled"                   # annotation     -> accrues
     result = _merge_into_store(second)
+
     assert len(result) == 2, "dedup should yield 2 rows"
-    # fresh wins -> new value 0.99
-    assert (result["fwd_mfe_5"] == 0.99).all(), "fresh row should replace stored row"
+    assert (result["fwd_mfe_5"] == original_mfe).all(), (
+        "a price-derived spine column was restated")
+    assert (result["archetype"] == "coiled").all(), (
+        "annotations must still reach historical rows")
 
 
 # ---------------------------------------------------------------------------
@@ -775,7 +806,7 @@ def test_backfill_does_not_overwrite_existing_non_null():
             "hold_anchor_src": None, "tier_cascade": "T1",
             "fwd_mfe_5": 0.08, "terminal_state_clean15_126": "CUSHIONED",
             "terminal_state_clean8_21": "STOPPED", "post_cushion_breach": True,
-            "species_id": None, "archetype": None,
+            "archetype": None,
         }
         for i in range(2)
     ]
@@ -806,7 +837,7 @@ def test_backfill_does_not_overwrite_existing_non_null():
             "hold_anchor_src": None, "tier_cascade": "T1",
             "fwd_mfe_5": 0.08, "terminal_state_clean15_126": "CUSHIONED",
             "terminal_state_clean8_21": "STOPPED", "post_cushion_breach": None,
-            "species_id": None, "archetype": None,
+            "archetype": None,
         }
         for i in range(2)
     ]
@@ -829,3 +860,265 @@ def test_backfill_does_not_overwrite_existing_non_null():
     # Rows 2,3 get the new stamp
     assert result_df.loc[2, "rate_pressure"] == "flat"
     assert result_df.loc[3, "rate_pressure"] == "flat"
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-04 — species_id retirement + archetype wiring
+# ---------------------------------------------------------------------------
+
+_ARCH_ASOF = "engine.neuralweb.context_api.archetype_asof"
+
+
+def _archetype_boards(as_of, *, payload_archetype):
+    """One board date, one row, with the payload archetype under test."""
+    return [{
+        "as_of": as_of, "rank_by": "test",
+        "rows": [{
+            "ticker": "ARCH", "lane": "buy", "position": 0, "sector": "Technology",
+            "spot_sector_etf": None, "archetype": payload_archetype,
+        }],
+    }]
+
+
+def _run_grade_boards(boards):
+    """Grade `boards` against a synthetic 80-bar price history (no wall clock)."""
+    idx = pd.bdate_range("2026-01-02", periods=80)
+    names_df = pd.DataFrame(
+        {"ARCH": pd.Series([100.0 * (1.01 ** i) for i in range(80)], index=idx)}, index=idx)
+    etfs_df = pd.DataFrame(
+        {"SPY": pd.Series([100.0 * (1.005 ** i) for i in range(80)], index=idx)}, index=idx)
+    with mock.patch("scripts.grade_us_board.load_dead_prices", return_value={}), \
+         mock.patch("scripts.grade_us_board.get_vector_for_date",
+                    return_value={k: None for k in _REGIME_STAMP_COLS}):
+        return grade_boards(boards, names_df, etfs_df)
+
+
+# ── species_id retirement ────────────────────────────────────────────────────
+
+def test_graded_frame_carries_no_retired_column(monkeypatch):
+    """The rec dict no longer emits species_id (retired 2026-08-04)."""
+    monkeypatch.setattr(_ARCH_ASOF, lambda ticker, date, root=None: None)
+    df = _run_grade_boards(_archetype_boards("2026-01-02", payload_archetype=None))
+    assert not df.empty, "harness produced no matured rows"
+    for col in _RETIRED_LEDGER_COLS:
+        assert col not in df.columns, f"retired column {col!r} is still written by grade_boards"
+
+
+def test_merge_drops_retired_column_from_legacy_store(tmp_path, monkeypatch):
+    """The store-merge carry path sheds species_id — by NAME, not by null-ness.
+
+    The seeded value is NON-NULL on purpose: a drop implemented as "remove all-null
+    columns" would pass with a null seed and leave the real store untouched.
+    """
+    monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
+    pq = tmp_path / "retro_grades.parquet"
+    monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
+
+    legacy = _minimal_grade_df(as_of="2026-01-01", n=3)
+    legacy["species_id"] = "S-LEGACY"
+    legacy.to_parquet(pq, index=False)
+
+    result = _merge_into_store(_minimal_grade_df(as_of="2026-01-10", n=2))
+
+    assert len(result) == 5, "legacy + fresh rows must both survive the drop"
+    assert "species_id" not in result.columns, "retired column survived the merge"
+    assert "species_id" not in pd.read_parquet(pq).columns, "retired column was written back"
+
+
+def test_merge_empty_fresh_also_sheds_retired_column(tmp_path, monkeypatch):
+    """A night that matures no new rows returns the store — it must be shed there too."""
+    monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
+    pq = tmp_path / "retro_grades.parquet"
+    monkeypatch.setattr("scripts.grade_us_board.RETRO_PARQUET", pq)
+
+    legacy = _minimal_grade_df(as_of="2026-01-01", n=3)
+    legacy["species_id"] = "S-LEGACY"
+    legacy.to_parquet(pq, index=False)
+
+    result = _merge_into_store(pd.DataFrame())
+
+    assert len(result) == 3, "the empty-fresh path must still return the accumulated store"
+    assert "species_id" not in result.columns, (
+        "the fresh.empty early return handed a retired column downstream"
+    )
+
+
+# ── archetype: payload first, else PIT ───────────────────────────────────────
+
+def test_archetype_pit_returns_store_label(monkeypatch):
+    monkeypatch.setattr(_ARCH_ASOF, lambda ticker, date, root=None: "rate_sensitive")
+    assert _archetype_pit("AAPL", "2026-07-01") == "rate_sensitive"
+
+
+def test_archetype_pit_none_when_reader_finds_nothing(monkeypatch):
+    monkeypatch.setattr(_ARCH_ASOF, lambda ticker, date, root=None: None)
+    assert _archetype_pit("NOSUCH", "2026-07-01") is None
+
+
+def test_archetype_payload_wins_over_pit(monkeypatch):
+    """A payload archetype is authoritative — the PIT store is the fallback, not an override."""
+    monkeypatch.setattr(_ARCH_ASOF, lambda ticker, date, root=None: "STORE_ARCH")
+    df = _run_grade_boards(_archetype_boards("2026-01-02", payload_archetype="PAYLOAD_ARCH"))
+    assert not df.empty
+    assert (df["archetype"] == "PAYLOAD_ARCH").all()
+
+
+def test_archetype_falls_back_to_pit_when_payload_absent(monkeypatch):
+    """The payload has never carried the field, so this is the leg that populates it."""
+    seen = []
+
+    def _fake(ticker, date, root=None):
+        seen.append((ticker, date))
+        return "STORE_ARCH"
+
+    monkeypatch.setattr(_ARCH_ASOF, _fake)
+    df = _run_grade_boards(_archetype_boards("2026-01-02", payload_archetype=None))
+    assert not df.empty
+    assert (df["archetype"] == "STORE_ARCH").all()
+    # PIT: the lookup date is the board's own as_of, never a wall clock
+    assert seen and all(d == "2026-01-02" for _t, d in seen), seen
+
+
+# ── archetype backfill over existing rows ────────────────────────────────────
+
+def test_backfill_archetype_fills_only_null_rows(monkeypatch):
+    """Fill-null-only, per-row PIT, and a name the store cannot classify stays null."""
+    seen = []
+
+    def _fake(ticker, date, root=None):
+        seen.append((ticker, date))
+        return {"COVERED": "STORE_ARCH"}.get(ticker)
+
+    monkeypatch.setattr(_ARCH_ASOF, _fake)
+
+    df = pd.DataFrame([
+        {"as_of": "2026-01-02", "ticker": "COVERED", "lane": "buy", "horizon": 5,
+         "archetype": None},
+        {"as_of": "2026-01-02", "ticker": "PINNED", "lane": "buy", "horizon": 5,
+         "archetype": "PAYLOAD_ARCH"},
+        {"as_of": "2026-01-09", "ticker": "UNKNOWN", "lane": "buy", "horizon": 5,
+         "archetype": None},
+    ])
+
+    out, n_filled = _backfill_archetype(df)
+
+    assert n_filled == 1, f"only the covered null row should fill, got {n_filled}"
+    assert out.at[0, "archetype"] == "STORE_ARCH"
+    assert out.at[1, "archetype"] == "PAYLOAD_ARCH", "a non-null archetype was overwritten"
+    assert pd.isna(out.at[2, "archetype"]), "an uncovered name must stay null, never guessed"
+    # the non-null row is never even queried; each queried row uses its OWN as_of
+    assert ("PINNED", "2026-01-02") not in seen
+    assert ("COVERED", "2026-01-02") in seen
+    assert ("UNKNOWN", "2026-01-09") in seen
+
+
+def test_backfill_archetype_is_idempotent(monkeypatch):
+    """A second pass over the same frame fills nothing (no churn, no rewrite)."""
+    monkeypatch.setattr(_ARCH_ASOF, lambda ticker, date, root=None: "STORE_ARCH")
+    df = pd.DataFrame([
+        {"as_of": "2026-01-02", "ticker": "COVERED", "lane": "buy", "horizon": 5,
+         "archetype": None},
+    ])
+    out1, n1 = _backfill_archetype(df)
+    out2, n2 = _backfill_archetype(out1)
+    assert (n1, n2) == (1, 0)
+    assert out2.at[0, "archetype"] == "STORE_ARCH"
+
+
+def test_backfill_archetype_noop_without_the_column():
+    """A legacy frame with no archetype column is left alone (schema-union owns that)."""
+    df = pd.DataFrame([{"as_of": "2026-01-02", "ticker": "T", "lane": "buy", "horizon": 5}])
+    out, n = _backfill_archetype(df)
+    assert n == 0
+    assert "archetype" not in out.columns
+
+
+# ── disclosed null eras: the hole that must NOT be repaired by backfilling ────
+#
+# data/us_board_ledger/snapshots.jsonl has no rows for 2026-08-03..08-06. That
+# looks exactly like an outage someone should fix, and the obvious fix — backfill
+# the dates — is the WRONG action, because the board published on those days but
+# ranked on factors frozen at 2026-07-31.
+#
+# scripts/build_stock_library.py:3850 ranks by alpha
+# (`rank_setups(cand, as_of=alpha_asof, rank_by="alpha", ...)`), and every
+# site/factordata/alpha.json revision from 2026-07-31T20:35Z to 2026-08-06T16:36Z
+# carries as_of=2026-07-31 — one distinct value across the whole window. So those
+# boards ordered names by six-day-stale factors while pricing entry zones off
+# current data. Grading them would teach Prophet from that hybrid.
+#
+# Operator adjudication 2026-08-07: disclosed null era, no graded entries. These
+# tests are what make the disclosure load-bearing rather than prose — filling the
+# window turns them red and forces a conscious decision.
+
+import json as _json  # noqa: E402
+
+_LEDGER_DIR = Path(__file__).resolve().parents[1] / "data" / "us_board_ledger"
+_DISCLOSED_GAPS = _LEDGER_DIR / "disclosed_gaps.json"
+_SNAPSHOTS = _LEDGER_DIR / "snapshots.jsonl"
+
+
+def _gaps() -> list[dict]:
+    doc = _json.loads(_DISCLOSED_GAPS.read_text())
+    assert doc.get("schema_version"), "disclosed_gaps.json must carry a schema_version"
+    return doc.get("gaps") or []
+
+
+def _snapshot_dates() -> set[str]:
+    out = set()
+    for line in _SNAPSHOTS.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.add(str(_json.loads(line).get("as_of"))[:10])
+        except Exception:  # noqa: BLE001 — a malformed line is not this test's subject
+            continue
+    return out
+
+
+def test_the_disclosed_null_era_is_declared_with_its_reason():
+    """A gap with no stated reason is indistinguishable from an unnoticed outage."""
+    gaps = _gaps()
+    assert gaps, "disclosed_gaps.json lists no gaps — did the file get truncated?"
+    frozen = [g for g in gaps if g.get("id") == "us-board-frozen-alpha-2026-08"]
+    assert frozen, "the 2026-08 frozen-alpha era must stay declared"
+    g = frozen[0]
+    assert g["gradeable"] is False
+    assert g["backfillable"] is False
+    assert g["missing_trading_days"] == [
+        "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"
+    ]
+    # the reason must name the MECHANISM, not just assert badness
+    assert "rank_by" in g["why_not_gradeable"] or "alpha" in g["why_not_gradeable"]
+    assert g["adjudication"]["by"] == "operator"
+
+
+def test_no_graded_rows_were_backfilled_into_a_disclosed_null_era():
+    """THE load-bearing assertion: the hole must stay a hole.
+
+    If a future session 'repairs' the gap by backfilling snapshots for those dates,
+    this goes red. That is the point — the window is not missing data, it is data
+    that must not be graded, and reopening it needs a NEW board_definition era (a
+    re-ranked board is a different admission rule from the one that published).
+    """
+    dates = _snapshot_dates()
+    for g in _gaps():
+        if g.get("gradeable") is not False:
+            continue
+        intruders = sorted(set(g["missing_trading_days"]) & dates)
+        assert not intruders, (
+            f"snapshots.jsonl now carries rows for {intruders}, which sit inside the "
+            f"disclosed null era {g['id']!r} ({g['headline']}). Those days are not "
+            f"gradeable: {g['why_not_gradeable'][:160]}... If this backfill is "
+            f"deliberate, it needs a NEW board_definition era stamp and this gap "
+            f"record must be amended in the same change — do not just delete the test."
+        )
+
+
+def test_the_disclosed_window_is_still_absent_from_the_ledger():
+    """Guards the guard: if snapshots.jsonl ever loses its 07-31 anchor the test above
+    could pass vacuously against an empty file."""
+    dates = _snapshot_dates()
+    assert len(dates) >= 17, f"snapshots.jsonl shrank to {len(dates)} dates — read it before trusting the gap assertions"
+    assert "2026-07-31" in dates, "the pre-gap anchor date is missing; the ledger changed shape"

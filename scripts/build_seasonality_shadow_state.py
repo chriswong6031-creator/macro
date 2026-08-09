@@ -123,12 +123,22 @@ def append_ledger(root: Path, rows: list[dict]) -> None:
             handle.write(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n")
 
 
-def load_closes(root: Path, symbols: list[str], gaps: list[dict]) -> dict[str, list[tuple[date, float]]]:
+def load_closes(
+    root: Path, symbols: list[str], gaps: list[dict]
+) -> dict[str, list[tuple[date, float]]] | None:
     """Load ascending ``(session_date, adjusted_close)`` pairs for ``symbols``.
 
     Uses the panel's own loader, so the grading leg reads the SAME adjusted
     ``close`` column the year panel was folded from — a grade computed off the
     raw ``close_price`` series would put every split into the realized return.
+
+    ``None`` (the store itself is absent) and ``{}`` (the store is there and no
+    requested symbol loaded from it) are DIFFERENT answers and are returned as
+    different values.  Collapsing them is what made the 30-day
+    ``ungradable_missing_prices`` close-out unreachable in the one case it was
+    written for: a symbol that left the store cannot be closed out if "no frames
+    loaded" is read as "there is no price store", and the row then sits PENDING
+    forever, inflating the pending count and never entering ``live_n``.
     """
     store = root / "data" / "yahoo"
     if not store.is_dir():
@@ -138,7 +148,7 @@ def load_closes(root: Path, symbols: list[str], gaps: list[dict]) -> dict[str, l
                 f"{store} absent — matured registrations left PENDING, nothing graded",
             )
         )
-        return {}
+        return None
     frames: dict[str, list[tuple[date, float]]] = {}
     for symbol in symbols:
         try:
@@ -213,7 +223,13 @@ def build(*, root: Path, now: datetime | None = None) -> dict:
     new_grades: list[dict] = []
     if matured:
         frames = load_closes(root, matured, gaps)
-        if frames:
+        # `frames is None` means the price store itself is absent — an infra
+        # outage, under which nothing is gradable and nothing may be closed out.
+        # An EMPTY dict is the opposite: the store is there and these symbols
+        # are not in it, which is exactly the case `grade_rows` closes out as
+        # `ungradable_missing_prices` after 30 days. So the empty dict is passed
+        # through rather than treated as an outage.
+        if frames is not None:
             new_grades = season_state.grade_rows(pending, frames, asof_date)
             # Idempotence: a key already graded on a prior night is never re-graded.
             new_grades = [
@@ -223,8 +239,12 @@ def build(*, root: Path, now: datetime | None = None) -> dict:
     live_n = season_state.live_n_by_symbol(ledger_rows + new_grades)
 
     # --- states ---
+    # ``root`` is what lets the lobe read the covariance spine for its overlap
+    # measurement. Without it the overlap slot still emits — as its explicit
+    # ``spine_artifact_unavailable`` form — so a checkout with no spine produces
+    # a visibly unmeasured overlap rather than a silent one.
     states, symbol_gaps = season_state.build_states(
-        index, root / ENTITIES_DIR, live_n, now
+        index, root / ENTITIES_DIR, live_n, now, root=root
     )
     gaps.extend(symbol_gaps)
 
@@ -235,6 +255,13 @@ def build(*, root: Path, now: datetime | None = None) -> dict:
     n_covered = len(season_state.covered_symbols(index))
     payload: dict[str, Any] = {
         "schema": season_state.STATE_FILE_SCHEMA,
+        # The ENVELOPE schema above and the PER-STATE schema here are two
+        # different versions and always were: the file's shape (universe block,
+        # states map, gaps list) is unchanged, while the states inside moved
+        # v1 -> v2. Declaring the inner schema at the top level means a consumer
+        # can dispatch without opening a state, and means the day they diverge
+        # again nobody has to infer it from a sample.
+        "state_schema": season_state.EMITTED_STATE_SCHEMA,
         "as_of": index.get("as_of"),
         "generated_at": season_state.utc_iso(now),
         "universe": {

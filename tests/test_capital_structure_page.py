@@ -35,7 +35,7 @@ def test_observed_desk_template_renders_bilingually_without_inline_application_c
     html = _render_template()
     assert "{{" not in html and "{%" not in html and "{#" not in html
     assert "Observed Filing State" in html
-    assert "已观察申报状态" in html
+    assert "已观察披露状态" in html
     assert html.count('class="l-en"') >= 20
     assert html.count('class="l-zh"') >= 20
     assert 'class="site-nav"' in html
@@ -181,7 +181,7 @@ def test_event_labels_are_explicitly_bilingual_with_a_safe_generic_fallback() ->
     assert hooks["subtype"] == ["SEC effectiveness notice", "SEC 生效通知"]
     assert hooks["classification"] == ["Link review pending", "待关联复核"]
     assert hooks["change"] == ["SEC effectiveness notice observed", "已观察到 SEC 生效通知"]
-    assert hooks["unknown"] == ["Observed SEC filing", "已观察 SEC 申报"]
+    assert hooks["unknown"] == ["Observed SEC filing", "已观察 SEC 披露"]
     js = (TEMPLATES / "capital_structure.js").read_text(encoding="utf-8")
     assert "titleCase(" not in js
     assert "labelFor('change', change.change_type)" in js
@@ -246,7 +246,7 @@ def test_plans_matrix_states_the_paid_observed_filing_state_feature(tmp_path: Pa
     plans = (tmp_path / "plans.html").read_text(encoding="utf-8")
     assert "Capital Structure" in plans
     assert "Observed filing state" in plans
-    assert "已观察申报状态" in plans
+    assert "已观察披露状态" in plans
     assert "Full observed state &amp; SEC receipts" in plans
     shipped = (SITE / "plans.html").read_text(encoding="utf-8")
     assert "Capital Structure" in shipped

@@ -308,6 +308,15 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .cell .cmeta { display: flex; justify-content: space-between; margin-top: 5px;
                font-size: 11px; color: var(--faint); }
 .cell .cst { margin-top: 4px; font-size: 11px; color: var(--mut); }
+/* W-C display-tier chips. Deliberately NOT green: "igniting" is a watch state,
+   so it borrows the washout/watch blue. The dual-read chip carries no direction
+   colour at all — the whole point is that the read is unresolved. */
+.cchip { display: inline-block; margin-top: 5px; font-size: 10px; line-height: 1.35;
+         padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line2);
+         color: var(--mut); }
+.cchip.ignite { border-color: rgba(93,139,255,.42); background: rgba(93,139,255,.12);
+                color: var(--blue); font-weight: 600; }
+.cchip.dual   { border-style: dashed; color: var(--faint); }
 /* 1m% bar at bottom of cell */
 .cell .chg-bar {
   position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 0 0;
@@ -849,7 +858,16 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
     </div>
     <div class="cst">
       <span class="l-en">{{ m.state_short_en or '—' }}</span><span class="l-zh">{{ m.state_short_zh or '—' }}</span>
+      {# W-C(3): momentum state is unchanged — this only discloses that the
+         short-term thrust and the slow trend anchors currently disagree. #}
+      {% if m.dual_read %}
+      <span class="cchip dual"><span class="l-en">{{ m.dual_read_en }}</span><span class="l-zh">{{ m.dual_read_zh }}</span></span>
+      {% endif %}
     </div>
+    {# W-C(4): watch-tier ignition chip — never buy words. #}
+    {% if m.igniting %}
+    <div><span class="cchip ignite"><span class="l-en">{{ m.igniting_en }}</span><span class="l-zh">{{ m.igniting_zh }}</span></span></div>
+    {% endif %}
     {# 1m% bar at bottom of cell — width capped at 100%, ∝|chg| with scale ~10% = 100% #}
     {% if m.chg_1m_pct is not none %}
     <div class="chg-bar" data-w="{{ [((m.chg_1m_pct|abs) * 10)|round|int, 100]|min }}"></div>
@@ -915,6 +933,19 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
             <span class="l-en">{{ d.cycle_phase_en }}</span><span class="l-zh">{{ d.cycle_phase_zh }}</span>
             {% if d.cycle_hazard %}<span class="badge top" style="margin-left:6px">{{ t('hazard','风险') }}</span>{% endif %}
           </div>
+          {# W-C(4): watch-tier ignition chip — never buy words. #}
+          {% if d.igniting %}
+          <div style="margin-top:4px">
+            <span class="cchip ignite"><span class="l-en">{{ d.igniting_en }}</span><span class="l-zh">{{ d.igniting_zh }}</span></span>
+          </div>
+          {% endif %}
+          {# W-C(1): the divergence shape held out of the top score because the
+             clock sits in the bottoming zone — disclosed, not silently dropped. #}
+          {% if d.turn_developing %}
+          <div style="margin-top:4px">
+            <span class="cchip dual"><span class="l-en">{{ d.turn_developing_en }}</span><span class="l-zh">{{ d.turn_developing_zh }}</span></span>
+          </div>
+          {% endif %}
           {% if d.shock_state and d.shock_state != 'normal' %}
           <div class="faint" style="font-size:11px;margin-top:3px">
             <span class="l-en">{{ d.shock_en }}</span><span class="l-zh">{{ d.shock_zh }}</span>

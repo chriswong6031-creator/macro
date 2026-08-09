@@ -27,6 +27,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config  # noqa: E402
 from scripts.fetch_basket_ohlcv import (  # noqa: E402
     COLS,
+    _membership_tickers,
+    _removed_members,
+    _absent_from_all_rungs,
     _resolve_universe,
     _sessions_behind,
     check_membership_staleness,
@@ -37,6 +40,13 @@ def _write_membership(tmp_path: Path, tickers: list[str]) -> None:
     p = tmp_path / "baskets" / "membership.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps({"baskets": {"b1": {"members": [{"ticker": t} for t in tickers]}}}))
+
+
+def _write_membership_rows(tmp_path: Path, baskets: dict[str, list[dict]]) -> None:
+    """Membership with explicit member ROWS (so `removed` stamps can be exercised)."""
+    p = tmp_path / "baskets" / "membership.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"baskets": {k: {"members": v} for k, v in baskets.items()}}))
 
 
 def _write_ohlcv(tmp_path: Path, ticker: str, end: str, periods: int = 30) -> None:
@@ -125,6 +135,196 @@ def test_census_never_raises_on_empty_store(tmp_path, monkeypatch):
     _write_membership(tmp_path, ["A"])
     payload = check_membership_staleness(ops_alert=False)
     assert payload["status"] == "no_store"
+
+
+# ------------------------------------------ removed/delisted members (BLD, 2026-08-05)
+# BLD (TopBuild) was acquired by QXO — merger completed 2026-07-01, NYSE trading suspended
+# before the open that day, renamed QXO Insulation LLC, Form 15-12G deregistration
+# 2026-07-13. Its tape CANNOT resume: holders got cash + QXO stock, so no successor ticker
+# carries BLD's price series. It read as an unexplained 22-session red line for a month
+# because the census judged EVERY membership row, including exited ones — while its own
+# docstring claimed "active". These pin the exit ledger as the census's ruler, and pin
+# that an exited-and-stopped tape is DISCLOSED rather than silently dropped.
+def test_active_only_drops_wholly_removed_but_keeps_cross_listed(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {
+        "housing": [{"ticker": "LIVE"}, {"ticker": "GONE", "removed": "2026-07-01"}],
+        # Cross-listed exits (12 of the 15 live rows are these): active is per-TICKER, not
+        # per-row. Pinned in BOTH row orders — a per-ROW filter that merely discards on a
+        # `removed` row passes when the active row comes LAST and fails when it comes
+        # first, so one ordering alone leaves the guard half-open.
+        "crypto": [{"ticker": "AFTER", "removed": "2026-06-18"}],       # removed, then live
+        "fintech": [{"ticker": "AFTER"}, {"ticker": "BEFORE"}],
+        "defense": [{"ticker": "BEFORE", "removed": "2026-06-18"}],     # live, then removed
+    })
+    assert _membership_tickers(active_only=True) == ["AFTER", "BEFORE", "LIVE"]
+    # the FETCH universe is unchanged — a removed member's history still refreshes/repairs
+    assert _membership_tickers() == ["AFTER", "BEFORE", "GONE", "LIVE"]
+    assert _resolve_universe([], [], False) == ["AFTER", "BEFORE", "GONE", "LIVE"]
+    assert set(_removed_members()) == {"GONE"}
+
+
+def test_census_discloses_removed_member_instead_of_flagging_it(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {"housing": [
+        {"ticker": "LIVE"},
+        {"ticker": "GONE", "removed": "2026-07-01", "rationale": "DELISTED: acquired"},
+    ]})
+    _write_ohlcv(tmp_path, "LIVE", "2026-07-15")
+    _write_ohlcv(tmp_path, "GONE", "2026-06-29")     # 11 sessions behind: would have been stale
+
+    payload = check_membership_staleness(ops_alert=False)
+    # not a broken pull -> green, and OUT of the stale count entirely
+    assert payload["status"] == "ok"
+    assert payload["stale"] == {} and payload["missing"] == []
+    assert payload["n_members"] == 1                  # active membership is the ruler
+    # ...but never invisible: the marker EXPLAINS it
+    assert payload["inactive"]["GONE"] == {
+        "last": "2026-06-29", "sessions_behind": 11,
+        "removed": "2026-07-01", "rationale": "DELISTED: acquired"}
+    marker = json.loads((tmp_path / "quality" / "basket_ohlcv_freshness.json").read_text())
+    assert marker["inactive"]["GONE"]["removed"] == "2026-07-01"
+
+
+def test_census_does_not_disclose_a_removed_member_whose_tape_is_fresh(tmp_path, monkeypatch):
+    # 12 of the 15 exits are curation moves on names that still trade — they must not
+    # clutter the disclosure, which is reserved for tapes that have actually STOPPED.
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {"housing": [
+        {"ticker": "LIVE"},
+        {"ticker": "EXITED_AT_MAX", "removed": "2026-06-18"},
+        {"ticker": "EXITED_LAGGING", "removed": "2026-06-18"},
+    ]})
+    _write_ohlcv(tmp_path, "LIVE", "2026-07-15")
+    _write_ohlcv(tmp_path, "EXITED_AT_MAX", "2026-07-15")     # at the store max
+    _write_ohlcv(tmp_path, "EXITED_LAGGING", "2026-07-14")    # 1 session behind: still trading
+
+    payload = check_membership_staleness(ops_alert=False)
+    # a tape that is merely BEHIND (not stopped) is not a delisting — the same
+    # >threshold ruler the active set uses decides what counts as "stopped"
+    assert payload["status"] == "ok" and payload["inactive"] == {}
+
+
+def test_census_still_flags_a_stale_ACTIVE_member(tmp_path, monkeypatch):
+    # the guard must not become a blanket amnesty — an un-removed laggard stays red
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {"housing": [
+        {"ticker": "LIVE"}, {"ticker": "BROKEN"},
+        {"ticker": "GONE", "removed": "2026-07-01"}]})
+    _write_ohlcv(tmp_path, "LIVE", "2026-07-15")
+    _write_ohlcv(tmp_path, "BROKEN", "2026-06-29")
+    _write_ohlcv(tmp_path, "GONE", "2026-06-29")
+
+    payload = check_membership_staleness(ops_alert=False)
+    assert payload["status"] == "stale"
+    assert set(payload["stale"]) == {"BROKEN"} and set(payload["inactive"]) == {"GONE"}
+
+
+def test_bld_is_stamped_removed_in_live_membership():
+    """BLD cannot trade again — if the row is still there it MUST carry its exit stamp.
+    Un-removing it silently restores the permanent red line."""
+    p = Path(__file__).resolve().parent.parent / "data" / "baskets" / "membership.json"
+    rows = [m for b in json.loads(p.read_text())["baskets"].values()
+            for m in b.get("members", []) if m.get("ticker") == "BLD"]
+    for m in rows:
+        assert m.get("removed"), (
+            "BLD (TopBuild) was delisted 2026-07-01 (acquired by QXO, renamed QXO "
+            "Insulation LLC, Form 15-12G 2026-07-13) — no successor ticker carries its "
+            "price series, so an un-removed BLD row is a permanent staleness red line")
+        assert "DELIST" in (m.get("rationale") or "").upper(), (
+            "BLD's exit must DISCLOSE the delisting, not read as a curation swap")
+
+
+# ------------------------ delisted BEFORE anyone curated the row (MAG/GATO, 2026-08-07)
+# BLD above is the ordinary shape: a live member whose security later stopped existing, so
+# its history is real and worth repairing — which is why the FETCH universe deliberately
+# keeps removed members. MAG and GATO are the other shape. Both had already been acquired
+# when silver_miners was curated on 2026-08-05 (MAG: Pan American Silver, Form 25-NSE
+# 2025-09-04; GATO: First Majestic Silver, Form 25-NSE 2025-01-16 — and both acquirers are
+# themselves members of the sleeve). There is no history on disk to repair and the vendor
+# can never return one, so keeping them in the fetch universe would request two dead
+# symbols nightly forever. They were also the ONLY two members of any basket with no price
+# series on any rung, which is why the all-rungs census was screaming about a hole no
+# fetch could ever fill.
+def test_a_member_delisted_before_curation_leaves_the_fetch_universe(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership_rows(tmp_path, {"silver_miners": [
+        {"ticker": "LIVE"},
+        # ordinary exit: removed, but its tape existed — stays in the FETCH universe
+        {"ticker": "GONE", "removed": "2026-07-01"},
+        # never traded as a member: out of BOTH universes
+        {"ticker": "DEAD", "removed": "2025-09-04", "delisted_before_curation": True},
+    ]})
+    assert _membership_tickers(active_only=True) == ["LIVE"]
+    assert _membership_tickers() == ["GONE", "LIVE"]
+    assert _resolve_universe([], [], False) == ["GONE", "LIVE"]
+
+
+def test_mag_and_gato_are_stamped_delisted_in_live_membership():
+    """Un-stamping either row silently puts a dead symbol back on the nightly request
+    list and re-arms the all-rungs coverage alarm on a hole nothing can fill."""
+    p = Path(__file__).resolve().parent.parent / "data" / "baskets" / "membership.json"
+    rows = {m["ticker"]: m for b in json.loads(p.read_text())["baskets"].values()
+            for m in b.get("members", []) if m.get("ticker") in {"MAG", "GATO"}}
+    assert set(rows) == {"MAG", "GATO"}
+    for t, m in rows.items():
+        assert m.get("removed"), f"{t} lost its exit stamp"
+        assert m.get("delisted_before_curation") is True
+        assert "25-NSE" in (m.get("rationale") or ""), (
+            f"{t}'s exit must carry its SEC exchange-delisting receipt")
+    # the LIVE file, not a fixture: neither symbol may reach the nightly request list
+    live_universe = set(_membership_tickers())
+    assert not ({"MAG", "GATO"} & live_universe)
+# ------------------------------------------------- absent from ALL rungs (2026-08-05)
+# Absence from THIS store is graceful degradation — engine/basket_index falls through to
+# data/stocks, data/china_stocks and data/yahoo. Absence from every rung is data loss: the
+# basket renders and grades on N-1 members and its coverage receipt just rounds down. MMC
+# was dark on all four for seven months (Marsh renamed MMC->MRSH 2026-01-14) and the only
+# tell was a "structural" line in a coverage receipt.
+def _write_rung(tmp_path: Path, rung: tuple[str, ...], ticker: str) -> None:
+    p = tmp_path.joinpath(*rung) / f"{ticker}.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"close": [1.0]}, index=pd.DatetimeIndex(["2026-07-15"], name="Date")).to_parquet(p)
+
+
+def test_absent_from_all_rungs_ignores_names_a_fallback_covers(tmp_path):
+    _write_rung(tmp_path, ("stocks",), "COVERED_US")
+    _write_rung(tmp_path, ("china_stocks",), "600519.SS")
+    _write_rung(tmp_path, ("yahoo",), "COVERED_Y")
+    dark = _absent_from_all_rungs(
+        ["COVERED_US", "600519.SS", "COVERED_Y", "DARK"], tmp_path)
+    assert dark == ["DARK"]
+
+
+def test_census_warns_loudly_only_for_members_dark_on_every_rung(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership(tmp_path, ["FRESH", "FALLBACK", "DARK"])
+    _write_ohlcv(tmp_path, "FRESH", "2026-07-15")
+    _write_rung(tmp_path, ("yahoo",), "FALLBACK")     # missing here, but covered downstream
+
+    payload = check_membership_staleness(ops_alert=False)
+    assert payload["missing"] == ["DARK", "FALLBACK"]      # both absent from THIS store
+    assert payload["absent_all_rungs"] == ["DARK"]         # only one is actual loss
+    assert payload["n_absent_all_rungs"] == 1
+
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if "no-price-series" in ln]
+    assert len(lines) == 1, "the all-rungs disclosure must be emitted exactly once"
+    # GitHub drops an annotation that does not START the line — a logger prefix ("WARNING
+    # ::warning ...") reviews as an alarm, runs clean, and produces nothing in the summary.
+    assert lines[0].startswith("::warning title=basket-member-no-price-series::")
+    assert "DARK" in lines[0] and "FALLBACK" not in lines[0]
+    assert "lib/ticker_aliases" in lines[0], "the disclosure must name the usual repair"
+
+
+def test_census_silent_on_all_rungs_when_every_member_resolves(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _write_membership(tmp_path, ["A", "B"])
+    _write_ohlcv(tmp_path, "A", "2026-07-15")
+    _write_rung(tmp_path, ("stocks",), "B")
+
+    payload = check_membership_staleness(ops_alert=False)
+    assert payload["absent_all_rungs"] == []
+    assert "no-price-series" not in capsys.readouterr().out
 
 
 # ------------------------------------------------------------------ collect.py wiring pin

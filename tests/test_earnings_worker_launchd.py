@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import contextlib
+import json
 import os
 import plistlib
 import shutil
 import stat
 import subprocess
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +19,7 @@ RUNNER = ROOT / "ops" / "launchd" / "run_earnings_worker.sh"
 BOOTSTRAP = ROOT / "ops" / "bootstrap_earnings_worker.sh"
 PLIST = ROOT / "ops" / "launchd" / "com.mastermind.earnings-worker.plist"
 REQUIREMENTS = ROOT / "ops" / "earnings_worker_requirements.txt"
+QUAL_CONFIG = ROOT / "config" / "earnings_qual.yml"
 
 
 def _run(script: Path, *args: str, env: dict[str, str] | None = None):
@@ -87,7 +94,7 @@ def test_plist_is_tcc_safe_secretless_and_has_two_retry_windows():
     ]
     assert payload["EnvironmentVariables"] == {
         "EARNINGS_LLM_BASE_URL": "http://127.0.0.1:11435/v1",
-        "EARNINGS_LLM_MODEL": "qwen3:14b",
+        "EARNINGS_LLM_MODEL": "qwen3.5:9b",
     }
     assert not any(
         marker in key.upper()
@@ -96,6 +103,72 @@ def test_plist_is_tcc_safe_secretless_and_has_two_retry_windows():
     )
     assert "/Documents/" not in " ".join(payload["ProgramArguments"])
     assert "/Documents/" not in payload["WorkingDirectory"]
+
+
+def test_plist_model_matches_the_config_openai_compat_default():
+    """The scheduler's env var OVERRIDES config/earnings_qual.yml.
+
+    EARNINGS_LLM_MODEL wins over ``openai_compat.model`` for every scheduled
+    run, so a value that drifts from the config default is not a cosmetic
+    mismatch: the local rung 404s on every call and the harness silently
+    completes on the paid DeepSeek rung.  That is exactly what shipped — the
+    plist said ``qwen3:14b`` while the endpoint served only ``qwen3.5:9b`` —
+    and nothing in the estate could see it.  Pin the two together.
+    """
+    with PLIST.open("rb") as handle:
+        payload = plistlib.load(handle)
+    config = yaml.safe_load(QUAL_CONFIG.read_text(encoding="utf-8"))
+    config_model = str((config.get("openai_compat") or {}).get("model") or "")
+
+    assert config_model, "config/earnings_qual.yml is missing openai_compat.model"
+    assert payload["EnvironmentVariables"]["EARNINGS_LLM_MODEL"] == config_model
+
+
+class _ModelsEndpointHandler(BaseHTTPRequestHandler):
+    """Minimal OpenAI-compatible /v1/models responder (loopback, no network)."""
+
+    served_ids: tuple[str, ...] = ()
+
+    def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler contract)
+        if not self.path.rstrip("/").endswith("/models"):
+            self.send_response(404)
+            self.end_headers()
+            return
+        body = json.dumps(
+            {
+                "object": "list",
+                "data": [
+                    {"id": model_id, "object": "model"}
+                    for model_id in type(self).served_ids
+                ],
+            }
+        ).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *_args) -> None:
+        return
+
+
+@contextlib.contextmanager
+def _models_endpoint(served_ids: tuple[str, ...]):
+    handler = type(
+        "_BoundModelsHandler",
+        (_ModelsEndpointHandler,),
+        {"served_ids": served_ids},
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/v1"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 def test_env_check_reports_names_only_and_respects_local_qwen_override():
@@ -137,7 +210,12 @@ def test_env_check_reports_names_only_and_respects_local_qwen_override():
     assert "DEEPSEEK_API_KEY" not in result.stdout
 
 
-def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
+def _build_ops_clone_fixture(tmp_path: Path) -> dict:
+    """Stand up the appliance's origin/clone/venv fixture.
+
+    Returns the pieces both the fast-forward contract test and the local-LLM
+    preflight test need to drive a full (non ``--check-env``) runner pass.
+    """
     source = tmp_path / "source"
     origin = tmp_path / "origin.git"
     ops = tmp_path / "earnings-ops-wt"
@@ -195,8 +273,31 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
             "EARNINGS_RUNTIME_ROOT": str(runtime),
             "EARNINGS_TEST_CAPTURE": str(capture),
             "EARNINGS_TEST_ENV_CAPTURE": str(env_capture),
+            # Keep the diagnostic probe from adding real seconds to the suite.
+            "EARNINGS_LLM_PREFLIGHT_TIMEOUT": "2",
         }
     )
+    return {
+        "runner": runner_dest,
+        "env": env,
+        "capture": capture,
+        "env_capture": env_capture,
+        "ops": ops,
+        "runtime": runtime,
+        "lock": lock,
+    }
+
+
+def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
+    fixture = _build_ops_clone_fixture(tmp_path)
+    runner_dest = fixture["runner"]
+    env = fixture["env"]
+    capture = fixture["capture"]
+    env_capture = fixture["env_capture"]
+    ops = fixture["ops"]
+    runtime = fixture["runtime"]
+    lock = fixture["lock"]
+
     result = _run(runner_dest, env=env)
     assert result.returncode == 0, result.stdout + result.stderr
     argv = capture.read_text(encoding="utf-8").splitlines()
@@ -241,7 +342,7 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
     capture.unlink()
     local_env = dict(env)
     local_env["EARNINGS_LLM_BASE_URL"] = "http://192.0.2.10:11434/v1"
-    local_env["EARNINGS_LLM_MODEL"] = "qwen3:14b"
+    local_env["EARNINGS_LLM_MODEL"] = "qwen3.5:9b"
     result = _run(runner_dest, env=local_env)
     assert result.returncode == 0, result.stdout + result.stderr
     local_argv = capture.read_text(encoding="utf-8").splitlines()
@@ -326,3 +427,77 @@ def test_check_env_rejects_relative_broad_and_tcc_unsafe_roots(tmp_path: Path):
     result = _run(RUNNER, "--check-env", env=env)
     assert result.returncode != 0
     assert "outside ~/Documents" in result.stderr
+
+
+def test_local_llm_preflight_names_each_outcome_without_changing_the_run(
+    tmp_path: Path,
+):
+    """The probe is diagnostic only, and each outcome is named distinctly.
+
+    A model id the endpoint does not serve 404s every openai_compat call, after
+    which the harness completes on DeepSeek and writes a row that looks healthy.
+    The preflight makes that legible in the scheduler log BEFORE the first call,
+    but it must never abort the run or edit PROVIDER_ORDER — DeepSeek stays the
+    automatic fallback.
+    """
+    fixture = _build_ops_clone_fixture(tmp_path)
+    runner_dest = fixture["runner"]
+    capture = fixture["capture"]
+
+    def _provider_order(argv: list[str]) -> str:
+        return argv[argv.index("--provider-order") + 1]
+
+    with _models_endpoint(("qwen3.5:9b",)) as base_url:
+        # (1) endpoint healthy and the configured model is served.
+        env = dict(fixture["env"])
+        env["EARNINGS_LLM_BASE_URL"] = base_url
+        env["EARNINGS_LLM_MODEL"] = "qwen3.5:9b"
+        result = _run(runner_dest, env=env)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "local-llm preflight OK" in result.stdout
+        assert "served=qwen3.5:9b" in result.stdout
+        assert _provider_order(
+            capture.read_text(encoding="utf-8").splitlines()
+        ) == "openai_compat,deepseek"
+
+        # (2) endpoint reachable, configured model NOT in the served list.
+        #     This is the shipped defect: the plist's qwen3:14b against an
+        #     endpoint whose entire catalogue is qwen3.5:9b.
+        capture.unlink()
+        env["EARNINGS_LLM_MODEL"] = "qwen3:14b"
+        result = _run(runner_dest, env=env)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "local-llm preflight MODEL_NOT_SERVED" in result.stdout
+        assert "model=qwen3:14b" in result.stdout
+        # The served ids must be printed, or the drift is not legible.
+        assert "served=qwen3.5:9b" in result.stdout
+        # Diagnostic only: the run proceeds and the waterfall is untouched.
+        assert _provider_order(
+            capture.read_text(encoding="utf-8").splitlines()
+        ) == "openai_compat,deepseek"
+
+    # (3) endpoint unreachable — the fixture server is now shut down, so the
+    #     same port refuses the connection.
+    capture.unlink()
+    env = dict(fixture["env"])
+    env["EARNINGS_LLM_BASE_URL"] = base_url
+    env["EARNINGS_LLM_MODEL"] = "qwen3.5:9b"
+    result = _run(runner_dest, env=env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "local-llm preflight UNREACHABLE" in result.stdout
+    # The curl exit code is what distinguishes refused (7) from timeout (28).
+    assert "curl_exit=" in result.stdout
+    assert "curl_exit=0" not in result.stdout
+    assert _provider_order(
+        capture.read_text(encoding="utf-8").splitlines()
+    ) == "openai_compat,deepseek"
+
+
+def test_local_llm_preflight_is_skipped_without_a_configured_endpoint(
+    tmp_path: Path,
+):
+    """No endpoint pair means no probe and no misleading log line."""
+    fixture = _build_ops_clone_fixture(tmp_path)
+    result = _run(fixture["runner"], env=fixture["env"])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "local-llm preflight" not in result.stdout

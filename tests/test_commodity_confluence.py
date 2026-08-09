@@ -271,6 +271,90 @@ def test_euphoric_member_top_score_above_bottom() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# W-C(1): divergence de-perversion — the top-side divergence is not a valid
+# top read inside the bottoming zone (cycle pos <= 32).  Same frame, same
+# conditions; ONLY the cycle position moves.  Display-tier: `turn_developing`
+# carries no score weight on either side.
+# --------------------------------------------------------------------------- #
+_BOTTOM_POS = 20.0   # inside the bottoming zone (<= 32)
+_TOP_POS = 80.0      # outside it
+
+
+def test_divergence_active_above_bottoming_threshold() -> None:
+    """pos > 32: the divergence condition still fires and still feeds the top."""
+    df = _euphoric_frame()
+    res = assess_member("div_top", "precious", df, CFG,
+                        cycle_phase="Expansion", cycle_pos=_TOP_POS)
+    assert "divergence" in {c["code"] for c in res["top_fired"]}
+    assert res["turn_developing"] is False
+
+
+def test_divergence_suppressed_inside_bottoming_zone() -> None:
+    """pos <= 32: the SAME frame must not fire divergence as a top signal."""
+    df = _euphoric_frame()
+    res = assess_member("div_bottom", "precious", df, CFG,
+                        cycle_phase="Trough", cycle_pos=_BOTTOM_POS)
+    assert "divergence" not in {c["code"] for c in res["top_fired"]}
+    assert res["turn_developing"] is True
+
+
+def test_divergence_suppression_is_position_driven_only() -> None:
+    """The gate must be the ONLY difference: same frame, two positions.
+
+    Pins the de-perversion to the cycle position rather than to any incidental
+    property of the fixture — and pins the direction (suppressing a fired top
+    condition must not raise the top score).
+    """
+    df = _euphoric_frame()
+    top = assess_member("d", "precious", df, CFG, cycle_phase="Expansion",
+                        cycle_pos=_TOP_POS)
+    bot = assess_member("d", "precious", df, CFG, cycle_phase="Expansion",
+                        cycle_pos=_BOTTOM_POS)
+    # the suppressed condition leaves the top side entirely (not merely unfired)
+    assert bot["n_top_applicable"] == top["n_top_applicable"] - 1
+    assert (bot["top_score"] or 0) < (top["top_score"] or 0)
+    # bottom side is untouched by a TOP-side gate
+    assert bot["bottom_score"] == top["bottom_score"]
+    assert bot["n_bottom_applicable"] == top["n_bottom_applicable"]
+
+
+def test_divergence_threshold_boundary_is_inclusive_at_32() -> None:
+    """pos == 32 is inside the bottoming zone; 32.1 is outside (mirrors sector_cycles)."""
+    df = _euphoric_frame()
+    at = assess_member("d", "precious", df, CFG, cycle_pos=32.0)
+    just_above = assess_member("d", "precious", df, CFG, cycle_pos=32.1)
+    assert at["turn_developing"] is True
+    assert just_above["turn_developing"] is False
+
+
+def test_divergence_gate_open_when_cycle_position_absent() -> None:
+    """No position -> pre-W-C behaviour (the gate cannot fire on missing data)."""
+    df = _euphoric_frame()
+    res = assess_member("d", "precious", df, CFG, cycle_pos=None)
+    assert "divergence" in {c["code"] for c in res["top_fired"]}
+    assert res["turn_developing"] is False
+
+
+def test_turn_developing_requires_the_divergence_shape() -> None:
+    """A bottoming member WITHOUT the up-trend/bear-momentum shape stays False.
+
+    Guards against `turn_developing` degenerating into "is in the bottoming zone".
+    """
+    df = _neutral_frame()   # ts_trend='up' but momentum_state='neutral'
+    res = assess_member("d", "grain", df, CFG, cycle_phase="Trough",
+                        cycle_pos=_BOTTOM_POS)
+    assert res["turn_developing"] is False
+
+
+def test_turn_developing_present_on_error_path() -> None:
+    """The null result must carry the display keys (fail-closed, never KeyError)."""
+    res = assess_member("broken", "energy", "not a frame", CFG)  # type: ignore[arg-type]
+    assert res["turn_developing"] is False
+    assert res["basing"] is False
+    assert res["armed_recent"] is False
+
+
+# --------------------------------------------------------------------------- #
 # assess_member: availability normalisation (no COT, no shock)
 # --------------------------------------------------------------------------- #
 def test_no_cot_no_shock_still_scores() -> None:

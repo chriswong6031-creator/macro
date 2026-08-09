@@ -56,7 +56,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from lib import config
-from lib import symbol_aliases       # a rename is not a death — see _dead_only()
+from lib import ticker_aliases       # stable keys whose vendor listing moved
 
 log = logging.getLogger(__name__)
 
@@ -298,12 +298,13 @@ def _dead_only(m: pd.DataFrame) -> set[str]:
         The old interval is genuinely closed, so this one IS dead-name work.
       * A DELISTING — company and symbol both gone. The real subject here.
 
-    Renames are excluded via lib.symbol_aliases, whose map is the retired -> live
-    list config already keeps, so this cannot drift from what the universe uses.
+    Known listing moves are excluded via the stable-key boundary in
+    ``lib.ticker_aliases``.  That map keeps MMC/FI as universe and ledger keys
+    while fetching their current vendor series under MRSH/FISV.
     """
     closed = set(m[m["end_date"].notna()]["ticker"].astype(str))
     live = set(m[m["end_date"].isna()]["ticker"].astype(str))
-    return closed - live - set(symbol_aliases.rename_map())
+    return closed - live - set(ticker_aliases.YAHOO_FETCH_ALIASES)
 FTS_FORMS = "10-K,20-F,40-F"        # annual reports carry the cover-page trading symbol
 FTS_MIN_DOCS = 4                    # the dominant entity must have >= this many hits...
 FTS_DOMINANCE = 2.5                 # ...and >= this multiple of the runner-up entity

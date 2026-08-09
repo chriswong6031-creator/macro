@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from lib import config
-from lib import symbol_aliases          # retired ticker -> the live symbol
+from lib import ticker_aliases          # provider symbol -> stable company key
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +55,9 @@ _TICKER_RE = re.compile(r"^[A-Z][A-Z0-9]{0,8}([.\-][A-Z0-9]{1,3})?$")
 def _valid_ticker(v) -> str | None:
     """A canonical, validated ticker, or None. Rejects placeholder junk ('N/A' and
     friends) and shape-invalid strings so no garbage name reaches the convergence
-    board, and resolves a RETIRED symbol to the one that name currently trades
-    under. This is the single hygiene gate the kernel routes every ticker through.
+    board, and collapses a provider symbol back onto the repository's stable
+    membership key. This is the single hygiene gate the kernel routes every
+    ticker through.
 
     Resolving the rename HERE is what makes the merge free: every channel reaches
     a record through rec()/add(), so both symbols land in the same ``by`` entry and
@@ -73,8 +74,8 @@ def _valid_ticker(v) -> str | None:
     u = s.upper()
     if u in _TICKER_JUNK or not _TICKER_RE.match(u):
         return None
-    live = symbol_aliases.resolve(u)
-    return live if live != u else s
+    stable = ticker_aliases.store_key(u)
+    return stable if stable != u else s
 
 
 def _f(v) -> float:

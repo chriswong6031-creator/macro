@@ -3,6 +3,11 @@
 The regression fixture is the exact observed mutation (masterplan §0.4): the b-ai-software
 2026-07-06 buy marker, rendered on 07-07, was silently replaced by a 2026-07-09 marker in
 the 07-10 render. Under the law the rendered date must win. Network-free.
+
+The second half of this file pins R-SQ7 — the ONE explained mutation the law admits: an
+adjudicated bucketing-era change (research/SIGNAL_QUALITY_SESSION_ANCHOR_ADJUDICATION_BY_
+FABLE.md). Every test above it is the SAME-ERA law and must keep passing byte-identically;
+if one of them breaks, the era gate leaked into the ordinary path.
 """
 from __future__ import annotations
 
@@ -101,3 +106,105 @@ def test_date_jitter_within_tolerance_keeps_rendered_date():
     (m,) = out["markers"]
     assert m["date"] == "2024-03-11"
     assert out["pit"]["last_night"]["drift_lost"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# R-SQ7 — the era cutover: the one EXPLAINED mutation the law admits
+# --------------------------------------------------------------------------- #
+
+ERA = "sq-abs-session-2026-08-06"
+
+
+def _redrawn():
+    """The same three physical prints as ``_hist()``, re-dated by a grid re-anchor.
+
+    Two of the three move WITHIN ``TOL_DAYS`` (so the same-era law would freeze the old
+    dates) and one moves far beyond it (so the same-era law would drop it as invented deep
+    history AND ghost-retain the original). Both halves of the swallow are exercised.
+    """
+    return [
+        {"date": "2015-02-04", "type": "buy", "quality": "take",
+         "reason": "held confirmation"},                      # -2d: inside tolerance
+        {"date": "2015-04-27", "type": "sell"},               # +28d: beyond tolerance
+        {"date": "2026-06-10", "type": "sell"},               # -2d: inside tolerance
+    ]
+
+
+def test_era_flip_takes_tonights_marker_history_wholesale():
+    """R-SQ7. A re-anchored grid legitimately re-dates every historical marker at once.
+
+    Under the same-era law that re-draw is swallowed: the two in-tolerance prints keep
+    their OLD rendered dates forever and the out-of-tolerance one is dropped as
+    ``drift_deep_new`` while its original is ghost-retained. The rendered chart would then
+    hold the old grid while every live gate() consumer moved to the new one the same
+    night. The era gate is what makes the crossing happen exactly once, by law.
+    """
+    prev = {"asof": "2026-08-05", "markers": _hist()}          # rendered PRE-era: no stamp
+    new = {"asof": "2026-08-06", "anchor_era": ERA, "markers": _redrawn()}
+    out = mi.merge_payload(prev, new)
+    assert out["markers"] == _redrawn(), "tonight's re-drawn history must win wholesale"
+    # ...and specifically: no old date survived, and nothing was ghost-retained
+    assert "2015-02-06" not in [m["date"] for m in out["markers"]]
+    assert len(out["markers"]) == 3
+    for k in ("kept_frozen", "drift_lost", "drift_deep_new", "appended"):
+        assert k not in out["pit"]["last_night"], (
+            f"a cutover is not drift — {k} must not be reported for the crossing night")
+
+
+def test_era_cutover_is_recorded_on_the_payload_forever():
+    prev = {"asof": "2026-08-05", "markers": _hist()}
+    new = {"asof": "2026-08-06", "anchor_era": ERA, "markers": _redrawn()}
+    out = mi.merge_payload(prev, new)
+    assert out["pit"]["era_cutover"] == {
+        "from": None, "to": ERA, "at_asof": "2026-08-06", "prev_markers": 3}
+    assert out["pit"]["last_night"] == {"era_cutover": out["pit"]["era_cutover"]}
+    assert out["asof"] == "2026-08-06"          # live fields still pass through
+
+
+def test_cumulative_drift_counters_survive_the_cutover():
+    """The counters measure the SAME-ERA law's history. A crossing is not drift, so it
+    neither resets them nor adds to them — otherwise a one-time re-draw would bury every
+    real drift signal that came before it."""
+    prev = {"asof": "2026-08-05", "pit": {"relabel_blocked": 2, "drift_lost": 5},
+            "markers": _hist()}
+    new = {"asof": "2026-08-06", "anchor_era": ERA, "markers": _redrawn()}
+    out = mi.merge_payload(prev, new)
+    assert out["pit"]["relabel_blocked"] == 2 and out["pit"]["drift_lost"] == 5
+
+
+def test_the_law_resumes_under_the_new_era_the_very_next_night():
+    """The cutover yields ONCE. On night two the same re-dating is unexplained again."""
+    night1 = mi.merge_payload({"asof": "2026-08-05", "markers": _hist()},
+                              {"asof": "2026-08-06", "anchor_era": ERA,
+                               "markers": _redrawn()})
+    jittered = [dict(m, date="2026-06-12") if m["date"] == "2026-06-10" else m
+                for m in _redrawn()]
+    night2 = mi.merge_payload(night1, {"asof": "2026-08-07", "anchor_era": ERA,
+                                       "markers": jittered})
+    dates = [m["date"] for m in night2["markers"]]
+    assert "2026-06-10" in dates and "2026-06-12" not in dates, (
+        "same era again — a re-dated marker is kept-frozen exactly as before")
+    assert night2["pit"]["last_night"]["kept_frozen"] == 3
+    # the crossing stays on the record even though tonight was an ordinary night
+    assert night2["pit"]["era_cutover"]["to"] == ERA
+
+
+def test_matching_eras_are_the_incumbent_law_byte_identical():
+    """Adding the stamp to BOTH sides must change nothing at all."""
+    prev = {"asof": "2026-07-06", "markers": _hist()}
+    new = {"asof": "2026-07-10",
+           "markers": _hist() + [{"date": "2026-07-10", "type": "buy",
+                                  "quality": "pending"}]}
+    plain = mi.merge_payload(prev, new)
+    stamped = mi.merge_payload(dict(prev, anchor_era=ERA), dict(new, anchor_era=ERA))
+    assert stamped["markers"] == plain["markers"]
+    assert stamped["pit"]["last_night"] == plain["pit"]["last_night"]
+
+
+def test_a_first_render_is_never_a_cutover():
+    """No previous file = nothing to cross FROM; the new-file passthrough owns that case."""
+    out = mi.merge_payload(None, {"asof": "2026-08-06", "anchor_era": ERA,
+                                  "markers": _redrawn()})
+    assert out["markers"] == _redrawn()
+    assert out["pit"]["last_night"]["new_file"] is True
+    assert "era_cutover" not in out["pit"]

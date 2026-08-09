@@ -49,13 +49,12 @@ SURFACERS of imminent base3d buys on the 110 held-out US names. (a) dominated (b
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pandas as pd
 
+from engine import signal_quality     # the §7 marker master (its own bucketing era, R-SQ3)
 from engine.signal_quality import analyze
 from engine import confluence_tiers   # owner's weighted T1->T4 cascade (TIERED_CASCADE.md)
+from engine import session_anchor     # absolute session-calendar anchor (per-market, R3)
 
 TAKE = "take"
 ANTICIPATION = "anticipation"
@@ -103,8 +102,26 @@ def is_buyable(v: dict | None) -> bool:
 
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "reasons", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
-                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
-                 "provisional", "htf_s1", "htf_s2", "young_history", "history_bars")
+                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars",
+                 # the knowability-anchored twin of fresh_bars (bucket LAST session, not
+                 # its OPEN label). Display-tier: it feeds the shown age, never a gate.
+                 "fresh_bars_knowable", "ticks",
+                 # Cascade-native provenance. Never substitute `last.date`: T2/T3/T4 can
+                 # coexist with an unrelated §7 marker. T3/T4 are observations without a
+                 # fired event, so their event date is null and the provisional bit is true.
+                 "tier_event_date", "tier_observed_date",
+                 "tier_observation_provisional",
+                 "provisional", "htf_s1", "htf_s2", "young_history", "history_bars",
+                 # the bucketing era this verdict was graded under (R5) — a cohort label like
+                 # young_history, so it travels the same way. `veto_legs_null` is deliberately
+                 # NOT here: it is a warmup DISCLOSURE and rides beside `null_legs`, which the
+                 # compact row has never carried either.
+                 "anchor_era",
+                 # ...and the §7 marker stream's OWN bucketing era (R-SQ3). A verdict is
+                 # jointly produced by TWO grids — the cascade's and signal_quality's — and
+                 # they moved to the absolute anchor in different PRs, so a graded row must
+                 # be able to place itself against both. Same cohort-label idiom as above.
+                 "sq_anchor_era")
 
 _BLOCKED_PREFIX = "buy blocked by filter: "
 
@@ -141,6 +158,73 @@ def _bars_since(daily_close, marker) -> int | None:
         return None
 
 
+def _knowable_bars(daily_close, marker, *, market_of: str) -> int | None:
+    """Trading bars since the session the marker's 3D bucket CLOSED on (None if unknown).
+
+    The knowability twin of :func:`_bars_since`: same daily-index count, but anchored on
+    the bucket's LAST session instead of its OPEN label, so a signal is never reported as
+    older than it was ever possible to know about. The bucket geometry is not
+    re-implemented here — :func:`engine.signal_quality.marker_last_session` walks the same
+    grid ``analyze`` labelled the marker on, and the calendar is inferred from the ticker
+    exactly as the cascade's is.
+
+    Fail-soft and fail-CLOSED: any unreadable input returns ``None`` (a disclosed null the
+    caller falls back from), never a substituted count.
+    """
+    if not marker or not marker.get("date"):
+        return None
+    try:
+        from engine.signal_quality import marker_last_session
+
+        market = session_anchor.market_for_ticker(market_of)
+        session = marker_last_session(daily_close, marker["date"], market=market)
+        if session is None:
+            return None
+        idx = pd.to_datetime(pd.Index(getattr(daily_close, "index", [])))
+        if len(idx) == 0:
+            return None
+        return int((idx > pd.Timestamp(session)).sum())
+    except Exception:  # noqa: BLE001 — an additive disclosure never breaks the gate
+        return None
+
+
+def _emitted_marker_event_date(daily_close, marker) -> str | None:
+    """Validate an explicitly emitted marker ``signal_date`` against this input tape.
+
+    Used only for the forming-T1 path that signal_gate promotes after cascade() returns
+    no native tier. There is intentionally no fallback to the legacy bucket-open
+    ``marker['date']``: a missing or invalid knowability close stays null.
+    """
+    if not marker or "signal_date" not in marker or marker.get("signal_date") is None:
+        return None
+    try:
+        stamp = pd.Timestamp(marker["signal_date"])
+        if pd.isna(stamp):
+            return None
+        if stamp.tzinfo is not None:
+            stamp = stamp.tz_localize(None)
+        stamp = stamp.normalize()
+        idx = pd.DatetimeIndex(getattr(daily_close, "index", []))
+        if idx.tz is not None:
+            idx = idx.tz_localize(None)
+        if int(idx.normalize().get_indexer([stamp])[0]) < 0:
+            return None
+        return str(stamp.date())
+    except (TypeError, ValueError):
+        return None
+
+
+def _observed_session_date(daily_close) -> str | None:
+    """The final observed session in the exact tape handed to gate(), or null."""
+    try:
+        idx = pd.DatetimeIndex(getattr(daily_close, "index", []))
+        if len(idx) == 0:
+            return None
+        return str(pd.Timestamp(idx[-1]).date())
+    except (TypeError, ValueError):
+        return None
+
+
 def _extra_block_legs(marker: dict) -> list[str]:
     """The blocking legs BEYOND the first-match one, off a §7 buy marker's `reasons` list.
 
@@ -163,10 +247,14 @@ def verdict(result: dict | None) -> dict:
     # `reason`/`reasons` are seeded here (not via _set_reason) so the key ORDER of a verdict
     # dict is identical to the pre-change one — a raw verdict serialized to JSON keeps its
     # byte layout, with `reasons` slotted directly behind the label it accounts for.
+    # `sq_anchor_era` is seeded on EVERY verdict shape, blanks included: the row was
+    # produced by THIS engine under THIS bucketing era whether or not `result` had enough
+    # history to grade (R-SQ3). Reading it off the payload would leave the "insufficient
+    # history" refusal — the one row a cohort audit most needs to place — unlabelled.
     v = {"eligible": False, "tier": None, "sub": None, "reason": "no signal",
          "reasons": ["no signal"],
          "state": None, "above200": None, "weekly_bull": None, "early_now": False,
-         "asof": None, "last": None}
+         "asof": None, "last": None, "sq_anchor_era": signal_quality.ANCHOR_ERA}
     if not result:
         _set_reason(v, "insufficient history")
         return v
@@ -207,14 +295,18 @@ def verdict(result: dict | None) -> dict:
     return v
 
 
-def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
+def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=None) -> dict:
     """analyze() the close series, then return the verdict PLUS the raw analyze() result
     (the §7 site/signals/<T>.json payload) under "result". Never raises on thin/bad data.
 
     ``reclaim_veto`` passes through to :func:`engine.signal_quality._buy_filter`. DEFAULT
     True keeps every existing caller (US, CN, and the ~12 modules importing this) on the
     validated policy byte-for-byte; HK passes False per the 2026-08-03 operator ruling —
-    see that function's docstring for the mechanism."""
+    see that function's docstring for the mechanism.
+
+    ``event_latch`` (engine.confluence_latch.EventLatch) makes the T2 event history immutable
+    so the incomplete trailing bucket cannot un-fire an event on a bar that already printed.
+    DEFAULT None = unchanged for every caller that does not opt in."""
     try:
         res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto)
     except Exception:
@@ -228,9 +320,34 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     last_m = v.get("last")
     is_buy = bool(last_m and last_m.get("type") in _BUY_TYPES)   # take OR forming 'pending'
     take_date = last_m.get("date") if is_buy else None           # age the arrow by its OWN date
+    # The event date is a separate clock: the bucket's knowability close emitted by §7.
+    # Pass it only when the producer supplied the field, preserving narrow monkeypatched
+    # cascade signatures and legacy callers that predate the date family.
+    _event_kw = ({"take_event_date": last_m.get("signal_date")}
+                 if is_buy and "signal_date" in last_m else {})
     v["fresh_bars"] = _bars_since(daily_close, last_m) if is_buy else None
+    # ...and the same count anchored on the bar the marker's bucket actually CLOSED on.
+    # `fresh_bars` counts from the bucket's OPEN label, so it ages a signal by up to two
+    # sessions it did not exist for (engine.signal_quality.marker_last_session). Emitted
+    # ALONGSIDE rather than replacing: `fresh_bars` gates eligibility/FRESH_TICKS across
+    # five boards and re-anchoring it is a semantic change owing a blast-radius report
+    # (research/SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md §4). This field feeds the
+    # DISPLAYED age only. None whenever the anchor is not derivable — a disclosed null.
+    v["fresh_bars_knowable"] = (
+        _knowable_bars(daily_close, last_m, market_of=ticker) if is_buy else None)
+    # The 2D/3D buckets are anchored to a per-MARKET reference session calendar (R3). Inferring
+    # it from the ticker suffix here is what lets every board (US/CN/HK/CA/Intl) route through
+    # gate() and get the right calendar with no caller edit; unmapped suffixes resolve to US
+    # openly (engine/session_anchor.market_for_ticker).
+    market = session_anchor.market_for_ticker(ticker)
+    # Pass the latch kwargs ONLY when a latch was supplied: every other caller — and the
+    # several suites that monkeypatch cascade with a narrow stub — then see the exact call
+    # signature they saw before, so opting in stays a strictly additive change.
+    _latch_kw = ({"event_latch": event_latch, "latch_key": ticker}
+                 if event_latch is not None else {})
     casc = confluence_tiers.cascade(daily_close, take_active=take_active,
-                                    take_date=take_date)
+                                    take_date=take_date, market=market,
+                                    **_event_kw, **_latch_kw)
     topped = not casc.get("not_topped", True)
     tier_c = casc.get("tier")
     ticks = casc.get("ticks")
@@ -258,7 +375,12 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # A forming 'pending' master counts as T1, but only while it is JUST-fired (<= FRESH_TICKS)
     # and not already topping -- otherwise it too is stale and drops off the board.
     if tier_c is None and v.get("sub") == "pending":
-        if not topped and fresh:
+        # `evaluated` gate (audit F2 2026-08-06): a CRASHED cascade returns a blank whose
+        # not_topped=True / ticks=None read here as clean-and-fresh — awarding T1 off a
+        # data failure. Missing key (older callers/fixtures) defaults True: only the
+        # explicit crash marker refuses. The legitimate forming-master path (ticks=None
+        # because no completed cross exists yet) is untouched — it carries evaluated=True.
+        if not topped and fresh and casc.get("evaluated", True):
             tier_c = "T1"
         else:
             why = "already topping" if topped else "risen for many days"
@@ -271,7 +393,24 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
                 v["near_miss_reason"] = "not_topped_veto"
             else:
                 v["near_miss_reason"] = "freshness_expired"
+    tier_event_date = casc.get("tier_event_date")
+    tier_observed_date = casc.get("tier_observed_date")
+    tier_observation_provisional = bool(casc.get("tier_observation_provisional"))
+    if tier_c == "T1" and casc.get("tier") != "T1":
+        # signal_gate's forming-master promotion is the one T1 path cascade() cannot name:
+        # it deliberately receives take_active=False until the buy filter clears. The
+        # marker's emitted close is authoritative; its confirmation is still pending.
+        tier_event_date = _emitted_marker_event_date(daily_close, last_m)
+        tier_observed_date = _observed_session_date(daily_close)
+        tier_observation_provisional = True
+    elif tier_c is None:
+        tier_event_date = None
+        tier_observed_date = None
+        tier_observation_provisional = False
     v["tier_cascade"] = tier_c
+    v["tier_event_date"] = tier_event_date
+    v["tier_observed_date"] = tier_observed_date
+    v["tier_observation_provisional"] = tier_observation_provisional
     v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
     v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
     v["bars_to_cross"] = casc.get("bars_to_cross")
@@ -293,9 +432,25 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # young_history is the GRADED-COHORT LABEL: True = the name tiered on fewer daily bars
     # than the pre-change 200-bar floor, so the ledger can forever separate the pre/post
     # populations. Carried on every verdict, eligible or not.
-    v["young_history"] = bool(casc.get("young_history"))
+    # None passes THROUGH (audit F5 2026-08-06): a cascade that never ran carries
+    # young_history=None ("never got that far"); bool(None) stamped it into the MATURE
+    # graded cohort — the exact above200-PLTR shape the era law forbids, two lines down
+    # from the code that gets it right for above200.
+    _yh = casc.get("young_history")
+    v["young_history"] = None if _yh is None else bool(_yh)
     v["history_bars"] = casc.get("bars")
     v["null_legs"] = casc.get("null_legs") or {}
+    # veto_legs_null names each NOT-TOPPED VETO leg the history could not check (F6/R4). It
+    # rides beside null_legs for the same reason: the veto shipped `not_topped=True` on names
+    # whose macd_bear leg was structurally unknowable, as if all three legs had been checked.
+    v["veto_legs_null"] = casc.get("veto_legs_null") or {}
+    # anchor_era is the graded-COHORT label for the bucketing era (R5) — it travels exactly
+    # like young_history, onto every verdict and into the slim board dict. sq_anchor_era is
+    # its §7 twin (R-SQ3), already seeded by verdict() above; re-asserting it here keeps the
+    # two eras adjacent in the dict and makes a gate() verdict self-describing even if a
+    # future caller hands in a hand-built verdict dict.
+    v["anchor_era"] = casc.get("anchor_era")
+    v["sq_anchor_era"] = signal_quality.ANCHOR_ERA
     # above200 HEALING, not widening. signal_quality.analyze needs ~270 daily bars, so it
     # returns None for a name the cascade can now grade — leaving above200 None on a series
     # whose 200dMA IS computable. Every consumer tests `is True`, so that None reads exactly
@@ -356,17 +511,27 @@ def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_o
     import bisect
     tf = TIER_FRAC if tier_frac is None else tier_frac
     wf = max(0.0, min(1.0, wn_floor))
-    vals = sorted((base_of(x) or 0.0) for x in items)
+
+    def _base(x):
+        # `or 0.0` passes NaN through (NaN is truthy) — one NaN base left `vals` unsorted,
+        # ranked the NaN row FIRST and corrupted EVERY row's bisect percentile (audit F7
+        # 2026-08-06). NaN and None both mean "no basis": rank as 0.0.
+        v = base_of(x)
+        return 0.0 if v is None or v != v else float(v)
+
+    vals = sorted(_base(x) for x in items)
     n = len(vals) or 1
 
     def _score(x):
         b = (bonus_of(x) if bonus_of else 0.0) or 0.0           # optional additive lift/penalty
+        if b != b:
+            b = 0.0                                              # NaN lift is no lift (F7 sibling)
         w = (verdict_of(x) or {}).get("weight") or 0.0
         if not w:
             return -1.0 + b
         wn = max(0.0, min(1.0, (w - 0.4) / 0.6))                 # T1->1.0 .. T4->0.0
         wn = wf + (1.0 - wf) * wn                                # compress toward parity (CN flatten)
-        pct = bisect.bisect_right(vals, base_of(x) or 0.0) / n   # conviction percentile in pool
+        pct = bisect.bisect_right(vals, _base(x)) / n            # conviction percentile in pool
         return tf * wn + (1.0 - tf) * pct + b                    # convex blend + optional lift
 
     return sorted(items, key=_score, reverse=reverse)
@@ -385,24 +550,16 @@ def compact(v: dict | None) -> dict:
 # payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
 # freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
 _BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional",
-             "htf_s1", "htf_s2", "young_history")
+             "htf_s1", "htf_s2", "young_history", "anchor_era", "sq_anchor_era")
 
 
 def buy_signal(v: dict | None) -> dict:
     """Slim, JSON-safe buy verdict: confluence tier + freshness + HTF badges, no markers."""
     if not v:
+        # a BLANK is still a post-era row: the board persisted it under this anchor, so the
+        # graded record must be able to place it in the right cohort (R5/R-SQ3). BOTH eras
+        # ride along — the row was produced by both grids, blank or not.
         return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False,
-                "young_history": False}
+                "young_history": False, "anchor_era": confluence_tiers.ANCHOR_ERA,
+                "sq_anchor_era": signal_quality.ANCHOR_ERA}
     return {k: v.get(k) for k in _BUY_KEYS}
-
-
-def write_signal_file(out_dir, ticker: str, result: dict | None) -> bool:
-    """Write the §7 site/signals/<T>.json marker file (the chart contract). Returns True
-    if written; skips None (thin history). Same shape/asof as analyze() so the chart and
-    the grid gate are guaranteed consistent."""
-    if not result:
-        return False
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{ticker}.json").write_text(json.dumps(result, separators=(",", ":")))
-    return True

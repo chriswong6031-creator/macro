@@ -143,6 +143,10 @@
            padding:14px 16px; margin-bottom:14px; }
   .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
   .muted { color:var(--muted); }
+  /* R1 feed-freshness disclosure (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
+     FRESHNESS.md): appended to the same r_asof line, never a new layout row. Cause-
+     neutral by design — no "stale"/"delisted" wording (cause is not established). */
+  .feed-stale-note { color:color-mix(in srgb, var(--warn) 55%, var(--muted)); }
   .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
            font-size:12.5px; }
   .searchwrap { position:relative; flex:1; min-width:260px; max-width:460px; }
@@ -214,6 +218,15 @@
   .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
   .help:hover .tip { display: block; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  /* Blow-off (terminal) risk chip — the per-stock twin of the board card's .pv-mk-blow.
+     Same measured read (engine/roc_blowoff.py), same words, so the two surfaces cannot
+     say different things about one name. NOT a directional token: zh flips up/down inks
+     (红涨绿跌) and a risk chip must read identically in both languages. */
+  .bochip { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
+          font-size:12px; font-weight:800; letter-spacing:.03em; cursor:help; white-space:nowrap;
+          color:var(--ink-warn,var(--warn));
+          background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+          border:1px solid color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent); }
   /* ---- fundamentals suite (Phase 1) ---- */
   .arch { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
           font-size:12.5px; font-weight:700; cursor:help; border:1px solid var(--line); white-space:nowrap; }
@@ -594,6 +607,10 @@
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span id="r_archetype" class="arch" style="display:none"></span>
+        <!-- Blow-off (terminal) risk — display-only risk context, filled from rec.blowoff.
+             Hover copy rides data-tip-en/zh (the site LENS popover), never a translated
+             title= attribute. -->
+        <span id="r_blowoff" class="bochip" style="display:none"></span>
         <span style="flex:1"></span>
         <span class="af-wrap">
           <button id="r_afbtn" class="af-toggle" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed" style="display:none"></button>
@@ -609,6 +626,11 @@
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
       <div id="sv-decision"></div>
+      <!-- Weekly washout-turn dual-read — sits DIRECTLY under the entry-status
+           headline in #sv-decision, never instead of it (engine/washout_turn). -->
+      <div id="r_washout" style="display:none"></div>
+      <!-- Matching past episodes for the current event class (engine/event_atlas) -->
+      <div id="r_episodes" style="display:none"></div>
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
       <!-- W6-C HOLD tracker — basing state / invalidation (display-only) -->
@@ -689,7 +711,7 @@
     <div class="panel" id="panel_fin" style="display:none">
       <h2>📊 {{ t('Financials & growth', '财务与增长') }}
         {{ help('Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.',
-          '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至申报日。摊薄EPS为申报口径，未跨年做拆股调整。') }}</h2>
+          '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至披露日。摊薄EPS为披露口径，未跨年做拆股调整。') }}</h2>
       <div id="r_multiyear" style="margin-bottom:8px"></div>
       <div id="r_finrows"></div>
       <details><summary>{{ t('more metrics & financial health', '更多指标与财务健康') }}</summary>
@@ -700,7 +722,7 @@
     <div class="panel" id="panel_aq" style="display:none">
       <h2>🧾 {{ t('Accounting quality', '会计质量') }}
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
-          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
+          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至披露日；年度数据，对部分公司不全。') }}</h2>
       <div id="r_aq"></div>
     </div>
 
@@ -716,7 +738,7 @@
     <div class="panel" id="panel_evwin" style="display:none">
       <h2>🗓 {{ t('Event windows', '事件窗口') }}
         {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
-          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
+          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC披露日期。') }}</h2>
       <div id="r_evwin"></div>
     </div>
 
@@ -765,7 +787,7 @@
     <div class="panel" id="panel_pos" style="display:none">
       <h2>🩳 {{ t('Positioning', '持仓与做空') }}
         {{ help('Short interest from FINRA (bi-monthly, ~2-week lag). Insider net open-market buying/selling from SEC Form-4 filings, shown as a % of market cap (size-normalised so small/mid-cap conviction is not drowned by megacap dollars) with the count of distinct insiders — a cluster of independent buyers is the higher-conviction signal. Heavy or rising short interest with insider selling is a caution.',
-          '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4申报，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
+          '做空数据来自FINRA（每半月，约两周滞后）。内部人净公开市场买卖来自SEC Form-4披露，按占市值%显示（经规模标准化，避免小/中盘信念被大盘美元金额淹没），并附不同内部人人数——多名独立买家形成的集群信号确信度更高。高或上升的做空＋内部人卖出为警示。') }}</h2>
       <div id="r_pos" class="twocol"></div>
     </div>
 
@@ -777,7 +799,7 @@
     <div class="panel" id="panel_flow" style="display:none">
       <h2>🐳 {{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
         {{ help("Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.",
-          "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与申报面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
+          "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与披露面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
       <div id="r_flow"></div>
     </div>
 
@@ -790,8 +812,8 @@
 
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
-        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
-          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
+        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag and reports long positions for managers with at least $100M in Section 13(f) securities (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
+          "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
     </div>
     </details>
@@ -848,7 +870,12 @@
           bullx: ' bars to bull cross', bearx: ' bars to bear cross',
           ph: 'Search any S&P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
-          th_dipm: 'typical dip', th_dipb: 'bad-case dip' },
+          th_dipm: 'typical dip', th_dipb: 'bad-case dip',
+          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored',
+          delisted_pre: '· stopped trading ', delisted_by: ' — bought by ',
+          delisted_post: '; no longer scored', delisted_only: ' — no longer scored',
+          months: ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                   'August', 'September', 'October', 'November', 'December'] },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -856,11 +883,40 @@
           bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
           ph: '搜索任意标普500股票、ETF、大宗商品或加密货币…（例如 AAPL、Energy、Bitcoin）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
-          th_dipm: '典型回撤', th_dipb: '最坏回撤' } };
+          th_dipm: '典型回撤', th_dipb: '最坏回撤',
+          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分',
+          // No padding around the acquirer slot: Chinese sets Latin runs off with
+          // spaces ("被 Devon Energy 收购") but sets CJK names solid ("被住友林业
+          // 收购"). Hardcoding either one is wrong for the other name, so the
+          // spacing is decided at render time — see zhPad() in render().
+          delisted_pre: '· ', delisted_by: '停止交易 — 被',
+          delisted_post: '收购；不再评分', delisted_only: '停止交易 — 不再评分',
+          months: null } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   // pick the Chinese variant of a composed analysis string when in zh mode
   // (the per-stock JSON carries parallel *_zh fields from engine/cycles.py)
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+  // ISO date -> the reader's own convention: "7 May 2026" / "2026年5月7日".
+  // Parsed by hand rather than through Date(): `new Date('2026-05-07')` is UTC
+  // midnight, which renders as the PREVIOUS day for every viewer west of Greenwich
+  // — and a delisting note that names the wrong date is worse than no note.
+  // Falls back to the raw ISO string on anything unexpected; never throws.
+  function fmtDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) { return String(iso || ''); }
+    var y = m[1], mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+    if (lang() === 'zh') { return y + '年' + mo + '月' + d + '日'; }
+    var names = L('months');
+    return (names && names[mo - 1]) ? (d + ' ' + names[mo - 1] + ' ' + y) : String(iso);
+  }
+  // Chinese sets a Latin run off with spaces ("被 Devon Energy 收购") and a CJK
+  // name solid ("被住友林业收购"). English carries its own spacing in the string
+  // table, so this is a no-op there. Returns '' or ' ' for the given edge.
+  function zhPad(s, edge) {
+    if (lang() !== 'zh' || !s) { return ''; }
+    var ch = edge === 'end' ? s.charAt(s.length - 1) : s.charAt(0);
+    return /[A-Za-z0-9]/.test(ch) ? ' ' : '';
+  }
 
   // ===== fundamentals suite (Phase 1) — render panels baked by engine/stock_fundamentals.py =====
   var TF = {
@@ -1085,7 +1141,7 @@
       'Recipient→ticker matching is curated (fuzzy string) — subsidiary contracts may be missed (R9a). ' +
       'Market-cap denominator is price-live while awards are lagged (R9e). ' +
       'Annual XBRL evidence; display-only; score cap 60.';
-    var tipZh = 'TTM联邦主合同+补贴奖励÷当前市值。奖励滞后1–2个月（USAspending申报延迟）。' +
+    var tipZh = 'TTM联邦主合同+补贴奖励÷当前市值。奖励滞后1–2个月（USAspending报送延迟）。' +
       '受益方→股票代码匹配为人工维护（模糊字符串）—子公司合同可能遗漏（R9a）。' +
       '市值分母为实时价格而奖励数据有滞后（R9e）。年度XBRL数据；仅展示；评分上限60。';
     box.innerHTML =
@@ -1813,7 +1869,7 @@
         dfields.push((isZh ? '净债务: ' : 'Net debt: ') + '<b class="' + ndSign + '">' + esc(fmtUSD(debt.net_debt)) + '</b>');
       }
       if (dfields.length) {
-        var filedNote = debt.filed ? (isZh ? ' · 申报日: ' : ' · filed ') + esc(debt.filed) : '';
+        var filedNote = debt.filed ? (isZh ? ' · 披露日: ' : ' · filed ') + esc(debt.filed) : '';
         rows.push('<div class="evwin-row evwin-debt"><span class="evwin-label">' +
           esc(isZh ? 'EDGAR债务快照' : 'EDGAR debt snapshot') + '</span>' +
           '<span class="evwin-val">' + dfields.join(' · ') + '</span>' +
@@ -2568,14 +2624,14 @@
       var sfCol = sf.ret_pct == null ? 'muted' : sf.ret_pct >= 0 ? 'pos' : 'neg';
       var sfExCol = sf.ex_spy_pct == null ? 'muted' : sf.ex_spy_pct >= 0 ? 'pos' : 'neg';
       sinceFilingLine = '<p class="srcline sm-asof" style="margin:-2px 0 10px">' +
-        lz('Stock since filing public', '申报公开后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
+        lz('Stock since filing public', '披露后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
         '<b class="' + sfCol + '">' + sfRet + '</b>' +
         ' · ' + lz('vs SPY', '相对标普') + ': <b class="' + sfExCol + '">' + sfEx + '</b></p>';
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
-        '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
+        '13F filed quarterly, ~45-day lag — reported long positions from managers with at least $100M in Section 13(f) securities (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F 季度披露、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
 
@@ -2970,6 +3026,114 @@
     if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
   }
 
+  // ---- Weekly washout-turn dual-read chip (engine/washout_turn, display-tier) ----
+  // Anchored immediately under #sv-decision — the band that carries the entry-status
+  // headline ("Bounce — turn not confirmed; wait"). The whole point is that it sits
+  // BESIDE that verdict, not instead of it: the daily entry gauge and the weekly
+  // washout read can honestly disagree, and stacking one trailing verdict with no
+  // counter-read is what hid MCD's 6th-percentile weekly cross on 2026-07-31.
+  // Display-tier watch vocabulary: no act-now verb, no rank, no size, no title=
+  // attribute (translated title text is CI-banned).
+  function renderWashoutTurn(d) {
+    var box = el('r_washout');
+    if (!box) return;
+    var w = d && d.washout_turn;
+    if (!w || !w.state) { box.innerHTML = ''; box.style.display = 'none'; return; }
+
+    var isTurn = w.state === 'WASHOUT_TURN';
+    var head = isTurn
+      ? lz('Washout turn', '洗盘转向')
+      : lz('Deep base — momentum curling up', '深部筑底 — 动能回升中');
+    var detail = isTurn
+      ? lz('weekly momentum crossed up from a deep base · since ' + (w.since || '—'),
+           '周线动能自深部上穿 · 起于 ' + (w.since || '—'))
+      : '';
+    var stance = lz('watch — early turn; windows, not certainties',
+                    '观察 — 转向初期；窗口而非定论');
+
+    // Receipts line: own-history depth + base rates, or the plain-word null form.
+    var h = w.history || {};
+    var n = (h.n == null) ? 0 : h.n;
+    var dp = (w.depth_pctile == null) ? '—' : w.depth_pctile;
+    var receipts;
+    if (n < 8 || h.med_13w == null || h.med_26w == null) {
+      // Hybrid null form: the depth receipt stands even when the base-rate
+      // sample is too thin to summarize — thin history is not no history.
+      receipts = lz('depth: bottom ' + dp + '% of own history · too few prior turns to summarize (n=' + n + ')',
+                    '深度：自身历史最低 ' + dp + '% · 历史样本不足（n=' + n + '）');
+    } else {
+      receipts = lz('depth: bottom ' + dp + '% of own history · similar turns n=' + n +
+                      ': 13w median ' + h.med_13w + '% · 26w median ' + h.med_26w + '%',
+                    '深度：自身历史最低 ' + dp + '% · 类似转向 n=' + n +
+                      '：13周中位 ' + h.med_13w + '% · 26周中位 ' + h.med_26w + '%');
+    }
+    // Disclose a lagging tape rather than letting a stale read pass as current.
+    if (w.data_through) {
+      var lagMs = Date.now() - Date.parse(w.data_through + 'T00:00:00Z');
+      if (isFinite(lagMs) && lagMs > 3 * 86400000) {
+        receipts += lz(' · data through ' + w.data_through,
+                       ' · 数据截至 ' + w.data_through);
+      }
+    }
+
+    box.innerHTML =
+      '<div style="margin:8px 0 2px">' +
+        '<span class="alpha-entry ' + (isTurn ? 'ae-intact' : 'ae-neutral') + '">' +
+          esc(head) + '</span>' +
+        (detail ? '<span class="muted" style="font-size:11.5px;margin-left:7px">' +
+          esc(detail) + '</span>' : '') +
+        '<span class="muted" style="font-size:11px;margin-left:7px">' +
+          esc(stance) + '</span>' +
+      '</div>' +
+      '<div class="muted" style="font-size:11px;margin:0 0 4px">' + esc(receipts) + '</div>';
+    box.style.display = '';
+  }
+
+  // ---- Matching past episodes (engine/event_atlas, display-tier) ----------------
+  // Sibling of the washout chip: that one says the name IS in a deep-base turn,
+  // this one says what the matching historical episodes of the SAME class did —
+  // on this name, and on its cohort, blended by how much history the name has.
+  // Every number is null-tolerant: a missing component renders an em dash, never
+  // "NaN" or "undefined". No act-now verb, no rank, no title= attribute.
+  function renderEpisodes(d) {
+    var box = el('r_episodes');
+    if (!box) return;
+    var ea = d && d.event_atlas;
+    var wk = ea && ea.grids && ea.grids.W;
+    // Show beside the washout chip, or on its own when the weekly read is fresh.
+    var show = wk && ((wk.live_fresh === true) || (d && d.washout_turn));
+    if (!show) { box.innerHTML = ''; box.style.display = 'none'; return; }
+
+    var rc = wk.receipt || {};
+    var hz = rc.horizons || {};
+    var h13 = hz['13w'] || {};
+    var h26 = hz['26w'] || {};
+    function num(v) { return (v === null || v === undefined || isNaN(v)) ? '—' : v; }
+    // Percentages carry one decimal in both slots — JS drops a trailing ".0",
+    // and "13w 3% · 26w 5.5%" reads as two different precisions of the same
+    // measure. Counts stay integers.
+    function pct(v) {
+      return (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(1);
+    }
+    var nName = num(h13.n_name);
+    var nArch = num(h13.n_archetype);
+    var med13 = pct((h13.name_post || {}).med);
+    var med26 = pct((h26.name_post || {}).med);
+    var align = num(wk.align_class);
+
+    var line = lz(
+      'similar past setups on this name: n=' + nName + ' · with its cohort n=' + nArch +
+        ' · typical 13w ' + med13 + '% · 26w ' + med26 + '%',
+      '本股类似历史形态：n=' + nName + ' · 同类股 n=' + nArch +
+        ' · 典型13周 ' + med13 + '% · 26周 ' + med26 + '%');
+    var mini = lz('grids aligned: ' + align + '/2', '周期共振：' + align + '/2');
+
+    box.innerHTML =
+      '<div class="muted" style="font-size:11px;margin:0 0 6px">' + esc(line) +
+        '<span style="margin-left:7px;opacity:.75">' + esc(mini) + '</span></div>';
+    box.style.display = '';
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
@@ -2981,7 +3145,40 @@
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
-    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    var r_asof = document.getElementById('r_asof');
+    r_asof.textContent = L('asof') + ' ' + d.asof;
+    // Two mutually exclusive honesty notes on the as-of line, never both.
+    //
+    // `delisted` (config/delisted_symbols.yml -> _apply_delisting): the security
+    // stopped existing and we have the SEC receipts, so the page says so and names
+    // who bought it. #4616's law — delisted is not stale — and the cause-neutral
+    // wording the #4643 adjudication mandated applied only while the cause was
+    // unresolved; it is resolved for these names (research/RESOLUTION_20260806_
+    // SIDE_STORE_SYMBOLS.md). No apology, no hedge: what happened, and what it
+    // means for the score.
+    //
+    // `feed_stale` (R1, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
+    // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its
+    // page but loses scoring authority. Cause-neutral on purpose — "stale" vs
+    // "delisted" is exactly what is NOT known for a name in this branch. Uses
+    // behind_days (not d.asof again): the r_asof line above already states the date
+    // once, and repeating it here read as a self-quoting non-sequitur.
+    if (d.delisted && d.delisted.on) {
+      var dl = document.createElement('span');
+      dl.className = 'feed-stale-note';
+      var who = lang() === 'zh' ? (d.delisted.acquirer_zh || d.delisted.acquirer)
+                                : d.delisted.acquirer;
+      dl.textContent = ' ' + L('delisted_pre') + fmtDate(d.delisted.on) +
+        (who ? L('delisted_by') + zhPad(who, 'start') + who + zhPad(who, 'end') +
+               L('delisted_post')
+             : L('delisted_only'));
+      r_asof.appendChild(dl);
+    } else if (d.feed_stale && d.feed_stale.behind_days != null) {
+      var fs = document.createElement('span');
+      fs.className = 'feed-stale-note';
+      fs.textContent = ' ' + L('feedstale_pre') + d.feed_stale.behind_days + L('feedstale_post');
+      r_asof.appendChild(fs);
+    }
 
     // Unified decision-first layout from the canonical view-model (engine/stock_view).
     // The shared renderer replaces the four competing top-line verdicts + the macro-sens
@@ -2992,6 +3189,8 @@
       if (_sd) _sd.innerHTML = '<div class="panel"><p class="muted">' +
         lz('Could not render the analysis — please refresh.', '无法渲染分析——请刷新页面。') + '</p></div>';
     }
+    renderWashoutTurn(d);   // dual-read chip, directly under the entry-status headline
+    renderEpisodes(d);      // matching past episodes for the current event class
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -3009,6 +3208,24 @@
       eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
       eqEl.style.display = 'inline-flex';
     } else { eqEl.style.display = 'none'; }
+
+    // Blow-off (terminal) risk chip — DISPLAY-ONLY risk context (engine/roc_blowoff.py).
+    // Same construction and the SAME WORDS as the board card's .pv-mk-blow chip, so the
+    // two surfaces cannot disagree about one name. Distinct from the ext_z anti-chase
+    // read the decision band already carries: different measurement, max |rho| 0.43 —
+    // which is why this chip never uses the bare word "Extended".
+    // Bilingual is baked as l-en/l-zh spans (no re-render on language switch); hover copy
+    // rides data-tip-en/zh so the LENS popover owns it, never a translated title=.
+    var boEl = document.getElementById('r_blowoff');
+    if (boEl) {
+      var bo = d.blowoff;
+      if (bo && bo.blowoff_risk) {
+        boEl.innerHTML = '<span class="l-en">Blow-off risk</span><span class="l-zh">冲顶风险</span>';
+        boEl.setAttribute('data-tip-en', '12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.');
+        boEl.setAttribute('data-tip-zh', '12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。');
+        boEl.style.display = 'inline-flex';
+      } else { boEl.style.display = 'none'; }
+    }
 
     // Bottom Confidence (multi-timeframe) — only on bottoming states
     var bcEl = document.getElementById('r_bc');
@@ -3160,7 +3377,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_washout', 'r_episodes', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

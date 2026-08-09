@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-02",
+ "as_of": "2026-08-09",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -40,12 +40,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "QCOM",
@@ -86,10 +86,6 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
     },
@@ -98,16 +94,20 @@
      "name": "Intuit Inc"
     },
     {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
+    },
+    {
      "ticker": "ADSK",
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",
@@ -148,12 +148,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -200,12 +200,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "MELI",
-     "name": "MercadoLibre Inc"
-    },
-    {
      "ticker": "DASH",
      "name": "DoorDash Inc"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
     }
    ]
   },
@@ -294,12 +294,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -334,12 +334,12 @@
    "sector": "Software & Cloud",
    "members": [
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -394,12 +394,12 @@
      "name": "Texas Instruments Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "QCOM",
@@ -466,12 +466,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -504,12 +504,12 @@
      "name": "Synopsys Inc"
     },
     {
-     "ticker": "NBIS",
-     "name": "Nebius Group NV"
-    },
-    {
      "ticker": "CRWV",
      "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
     },
     {
      "ticker": "ZS",
@@ -528,10 +528,6 @@
      "name": "Adobe Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
     },
@@ -540,16 +536,20 @@
      "name": "Intuit Inc"
     },
     {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
+    },
+    {
      "ticker": "ADSK",
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "PAYX",
-     "name": "Paychex Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
     },
     {
      "ticker": "ROP",
@@ -572,12 +572,12 @@
      "name": "Copart Inc"
     },
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -630,12 +630,12 @@
      "name": "PDD Holdings Inc ADR"
     },
     {
-     "ticker": "MELI",
-     "name": "MercadoLibre Inc"
-    },
-    {
      "ticker": "DASH",
      "name": "DoorDash Inc"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
     },
     {
      "ticker": "TMUS",
@@ -663,7 +663,7 @@
     },
     {
      "ticker": "EA",
-     "name": "Electronic Arts Inc"
+     "name": "EA"
     },
     {
      "ticker": "TTWO",

@@ -61,7 +61,12 @@
 html[data-theme="light"] {
   --sx-ink: #6a5cc0;
   --sx-hair: color-mix(in srgb, var(--line) 92%, transparent);
-  --sx-text-2: color-mix(in srgb, var(--text) 70%, transparent);
+  /* 70% put every muted line on this page at 4.42:1 over the light panel —
+     under AA, and doctrine §5.8 judges light as a design, not a translation.
+     78% clears 4.5:1 on both --panel and --bg without flattening the hierarchy
+     (primary --text stays a clear step above). Dark is untouched: it measures
+     5.9–13.7 already. */
+  --sx-text-2: color-mix(in srgb, var(--text) 78%, transparent);
   --sx-card-shadow: inset 0 1px 0 rgba(255, 255, 255, .72),
     0 1px 2px rgba(20, 30, 50, .05), 0 14px 30px -20px rgba(20, 30, 50, .16);
 }
@@ -82,15 +87,11 @@ body {
 .sx-wrap { max-width: 1180px; margin: 0 auto; padding: var(--sx-sp-5) 18px 64px; }
 @media (min-width: 1100px) { .sx-wrap { padding: 26px var(--sx-sp-6) 72px; } }
 
-/* Overlines: macro.html's single value. The terminal-era .14em tracking this
-   page shipped with fragmented every label it touched; .06em on the Display
-   face at 12/16 is the house rhythm. */
-.sx-eyebrow {
-  font: 600 12px/16px var(--sx-display);
-  text-transform: uppercase; letter-spacing: .06em; color: var(--sx-text-2);
-  margin: 0 0 6px;
-}
-html[data-lang="zh"] .sx-eyebrow { letter-spacing: 0; }
+/* Overlines: macro.html's single value — .06em on the Display face at 12/16 is
+   the house rhythm (the terminal-era .14em this page shipped with fragmented
+   every label it touched). The masthead's own .sx-eyebrow was retired when the
+   mode bar took that slot; the surviving overlines below are the ledger's
+   .sx-led-state / .sx-led-break / .sx-led-h3. */
 
 /* ── masthead: identity left, instrument search right, one baseline ────────
    Previously two floating blocks that shared no alignment. One hairline-ruled
@@ -102,6 +103,76 @@ html[data-lang="zh"] .sx-eyebrow { letter-spacing: 0; }
   border-bottom: 1px solid var(--sx-hair);
 }
 .sx-mast-id { flex: 1 1 340px; min-width: 0; }
+
+/* ── the MODE control ───────────────────────────────────────────────────────
+   Calendar clock / Catalyst is a higher-order control than a lens: it changes
+   what the page is about, not how one chart is drawn. So it sits above the H1,
+   in the slot the page's own name used to hold, and never in the lens row under
+   the chart. It borrows the segmented track so it reads as the same family, and
+   earns its seniority THREE ways: a real type step (13.5px display against the
+   lens rows' 12.5px data face — the first cut was 12.5px too, so the whole
+   claimed hierarchy was a weight change and placement), more air, and a pressed
+   fill at roughly twice the lens rows' ink.
+
+   The pressed FILL is keyed off html[data-sx-mode], not off aria-pressed: a
+   ?mode=catalyst deep link paints the catalyst body from <head>, so a fill that
+   waits for the end-of-body script showed "Calendar clock" pressed over a
+   catalyst page — and permanently if the script never loads. Derived from the
+   document's own mode attribute it cannot desync. aria-pressed stays the ARIA
+   truth and is reconciled inline during parse. */
+.sx-modebar { display: flex; align-items: center; gap: 5px; margin: 0 0 12px; position: relative; }
+/* The tip anchors to the BAR, not to the `?`. House tips centre on their glyph,
+   which is safe while the glyph is near the gutter — but the type step above
+   pushed this one 44px further right and its tip 44px past the viewport at
+   375px. The bar always starts at the wrap's left gutter, so opening from the
+   bar's own left edge cannot overflow at any width. `position: static` on the
+   trigger is what re-parents the tip's containing block to the bar. */
+.sx-modebar .sx-help { position: static; }
+.sx-modebar .sx-help .sx-tip { left: 0; transform: none; }
+.sx-seg.sx-mode {
+  border-color: color-mix(in srgb, var(--sx-ink) 30%, var(--line));
+  background: color-mix(in srgb, var(--panel2) 94%, transparent);
+}
+.sx-seg.sx-mode .gbtn {
+  font: 600 13.5px/1 var(--sx-display); letter-spacing: .005em;
+  padding: 8px 15px;
+  /* The mode track is deliberately deeper than the lens track, which pushed the
+     UNPRESSED label to 4.37:1 in light — below the lens rows' own 4.49 baseline.
+     The label is set here rather than inherited from .sx-seg's muted default. */
+  color: color-mix(in srgb, var(--text) 84%, transparent);
+}
+html[data-lang="zh"] .sx-seg.sx-mode .gbtn { letter-spacing: 0; }
+html:not([data-sx-mode="catalyst"]) .sx-seg.sx-mode .gbtn[data-v="calendar"],
+html[data-sx-mode="catalyst"] .sx-seg.sx-mode .gbtn[data-v="catalyst"] {
+  background: color-mix(in srgb, var(--sx-ink) 42%, var(--panel));
+  border-color: color-mix(in srgb, var(--sx-ink) 72%, transparent);
+  color: var(--text);
+}
+/* Light: the ink at 20% over white put the PRESSED label at 4.84:1 — the
+   superior control was the least legible segment on the page. Deepen the ink
+   under it and take the label to near-primary. */
+html[data-theme="light"]:not([data-sx-mode="catalyst"]) .sx-seg.sx-mode .gbtn[data-v="calendar"],
+html[data-theme="light"][data-sx-mode="catalyst"] .sx-seg.sx-mode .gbtn[data-v="catalyst"] {
+  background: color-mix(in srgb, var(--sx-ink) 26%, #fff);
+  border-color: color-mix(in srgb, var(--sx-ink) 62%, transparent);
+  color: color-mix(in srgb, var(--sx-ink) 34%, var(--text));
+}
+/* .gbtn ships a --link focus ring; every other focusable on this page rings in
+   the page ink, and a segmented control is where the keyboard needs it most. */
+.sx-seg .gbtn:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 2px; }
+
+/* Announcement target for the mode change — never rendered, always read. */
+.sx-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+
+/* Mode swaps the page body. Only `hide` is ever expressed, so no element loses
+   its own display value on the way back. */
+.sx-cat { display: none; }
+html[data-sx-mode="catalyst"] .sx-cat { display: block; }
+html[data-sx-mode="catalyst"] .sx-cal { display: none; }
 .sx-h1 {
   font: 700 clamp(19px, 2vw, 23px)/1.25 var(--sx-display);
   letter-spacing: -.02em; margin: 0;
@@ -151,6 +222,15 @@ html[data-lang="zh"] .sx-verdict { letter-spacing: 0; max-width: 22em; }
 .sx-chip-mkt {
   border-color: color-mix(in srgb, var(--info) 46%, var(--line));
   background: color-mix(in srgb, var(--info) 12%, var(--panel));
+}
+/* "2 connected" is a COUNT OF SOURCES, not a direction, so it must not wear
+   --up: that token is price language and the zh 红涨绿跌 swap flips it to red,
+   which reads as a market call about a coverage fact. The page ink is the right
+   token — it is already what the rails and the CONNECTED state word carry, so
+   the chip, the rail and the word are one colour story in both languages. */
+.sx-chip-ink {
+  border-color: color-mix(in srgb, var(--sx-ink) 46%, var(--line));
+  background: color-mix(in srgb, var(--sx-ink) 14%, var(--panel));
 }
 .sx-chip-thin { border-style: dashed; color: var(--sx-text-2); }
 .sx-chip-expl { border-style: dashed; color: var(--sx-text-2); background: transparent; }
@@ -473,6 +553,138 @@ html[data-lang="zh"] .sx-quick-lab { letter-spacing: 0; }
 html[data-lang="zh"] .sx-honesty dt { letter-spacing: 0; }
 .sx-honesty dd { margin: 0; font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2); }
 
+/* ── CATALYST MODE — the evidence boundary ─────────────────────────────────
+   There is no event data, so this mode draws NOTHING that could be mistaken for
+   it: no timeline, no axes, no dimmed chart waiting to be filled. Its one
+   graphic device is the RAIL at the head of each ledger row — solid ink where a
+   source is connected, a hollow 1px outline where it is not — so the reader
+   counts the boundary before reading a word (the doctrine's canonized
+   "non-verbal encoding that needs no vocabulary"). The break line between the
+   two groups is the signature: the ledger is bisected exactly where the
+   evidence ends, and it says so. Everything else in this mode is deliberately
+   quiet type on the existing card system — one bold idea, not five. */
+/* The stance line — Law 1's "so what do I do". It is the second thing read on
+   this surface, so it takes near-primary ink, not the muted footnote token: at
+   --sx-text-2 on the raw canvas (no panel lift under it) it measured 4.26:1 in
+   light, the worst copy on the mode and the one line that must not be skimmable
+   past. */
+.sx-cat-act {
+  font: 500 15px/1.5 var(--font-ui);
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+  margin: -6px 0 var(--sx-sp-4); max-width: 56ch; text-wrap: pretty;
+}
+html[data-lang="zh"] .sx-cat-act { max-width: 30em; }
+
+.sx-ledcard { padding-top: var(--sx-sp-5); }
+.sx-led { list-style: none; margin: 0; padding: 0; }
+.sx-led-row {
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr) auto;
+  gap: 0 var(--sx-sp-4);
+  align-items: start;
+  padding: var(--sx-sp-3) 0;
+  border-top: 1px solid var(--sx-hair);
+}
+.sx-led-row:first-child { border-top: 0; padding-top: 4px; }
+/* The whole point of the mark: filled = we have it, hollow = we do not. It is
+   the only place in this mode where ink is spent. */
+.sx-rail { display: block; align-self: stretch; min-height: 30px; border-radius: 2px; }
+.is-on  > .sx-rail { background: var(--sx-ink); }
+/* A hollow 1px outline was tried first and does not read at a 3px width — it
+   renders as a slightly paler solid line, which is the opposite of the point.
+   Dashed is this page's own vocabulary for "not settled" already (the gate
+   rules, the exploratory chip, the notice boxes), so the boundary is spoken in
+   a language the reader has met three times before they reach it. */
+.is-off > .sx-rail {
+  background: repeating-linear-gradient(to bottom,
+    color-mix(in srgb, var(--text) 32%, transparent) 0 3px, transparent 3px 7px);
+}
+/* THE THIRD STATE. `Forecasts` and `Symbol screening` are not sources we lack —
+   we chose never to build them. Marking a choice on the evidence axis is what
+   made the ledger glance as "3 gaps" when there is exactly one, so these rows
+   carry NO rail: the grid column stays for alignment and is simply empty. */
+.sx-led-h3 {
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase;
+  letter-spacing: .08em; color: var(--sx-text-2);
+  margin: var(--sx-sp-5) 0 var(--sx-sp-2);
+}
+html[data-lang="zh"] .sx-led-h3 { letter-spacing: .02em; text-transform: none; font-size: 12px; }
+.sx-led-never .sx-led-row { grid-template-columns: 3px minmax(0, 1fr) auto; }
+.sx-led-never .sx-led-body { grid-column: 2; }
+.sx-led-never .sx-led-state { grid-column: 3; }
+
+/* The route out of the boundary: where trial dates actually live. Sits with the
+   dark group because that is where the reader asks the question. */
+.sx-led-route {
+  font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2);
+  margin: var(--sx-sp-3) 0 0; padding-left: calc(3px + var(--sx-sp-4));
+}
+.sx-led-route a { color: var(--sx-ink); text-underline-offset: 3px; }
+
+.sx-led-body { display: block; min-width: 0; }
+.sx-led-name {
+  display: block; font: 600 14px/1.35 var(--sx-display); letter-spacing: -.005em;
+  color: var(--text);
+}
+html[data-lang="zh"] .sx-led-name { letter-spacing: 0; }
+.is-off .sx-led-name { color: var(--sx-text-2); }
+.sx-led-why { display: block; font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2); margin-top: 2px; }
+.sx-led-state {
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase;
+  letter-spacing: .06em; color: var(--sx-text-2); white-space: nowrap; padding-top: 2px;
+}
+html[data-lang="zh"] .sx-led-state { letter-spacing: 0; }
+.is-on .sx-led-state { color: color-mix(in srgb, var(--sx-ink) 76%, var(--text)); }
+
+/* The break: a hairline that carries its own label. The ledger is bisected
+   where the evidence ends — the rule is the finding, not decoration. */
+.sx-led-break {
+  display: flex; align-items: center; gap: var(--sx-sp-3);
+  margin: var(--sx-sp-4) 0; padding: 0;
+}
+.sx-led-break::before, .sx-led-break::after {
+  content: ""; flex: 1 1 auto; height: 1px;
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+}
+.sx-led-break::before { flex-grow: 0; flex-basis: 3px; }
+.sx-led-break span {
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase;
+  letter-spacing: .08em; color: var(--sx-text-2); white-space: nowrap;
+}
+html[data-lang="zh"] .sx-led-break span { letter-spacing: .02em; }
+
+.sx-list { list-style: none; margin: 0; padding: 0; }
+.sx-list li {
+  font: 400 13.5px/1.55 var(--font-ui); color: var(--text);
+  padding: 9px 0; border-top: 1px solid var(--sx-hair);
+}
+.sx-list li:first-child { border-top: 0; padding-top: 0; }
+.sx-cat-lead { font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2); margin: 0 0 var(--sx-sp-3); }
+.sx-cat-close { font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2); margin: var(--sx-sp-3) 0 0; }
+
+/* The one-click route back. It is the only affordance in this mode that should
+   attract a click, so it is the only thing wearing the ink as a fill. */
+.sx-cta {
+  display: inline-flex; align-items: center; margin-top: var(--sx-sp-4);
+  padding: 10px 15px; border-radius: var(--sx-r-md); cursor: pointer;
+  font: 600 13px/1 var(--sx-display); letter-spacing: -.005em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--sx-ink) 26%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--sx-ink) 52%, var(--line));
+  transition: background .16s ease, border-color .16s ease;
+}
+html[data-lang="zh"] .sx-cta { letter-spacing: 0; }
+.sx-cta:hover {
+  background: color-mix(in srgb, var(--sx-ink) 38%, var(--panel));
+  border-color: color-mix(in srgb, var(--sx-ink) 70%, var(--line));
+}
+.sx-cta:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 2px; }
+html[data-theme="light"] .sx-cta {
+  background: color-mix(in srgb, var(--sx-ink) 14%, #fff);
+  color: color-mix(in srgb, var(--sx-ink) 80%, var(--text));
+}
+html[data-theme="light"] .sx-cta:hover { background: color-mix(in srgb, var(--sx-ink) 22%, #fff); }
+
 /* ── mobile: recompose, never squeeze (§7) ─────────────────────────────── */
 @media (max-width: 720px) {
   .sx-wrap { padding: var(--sx-sp-4) 14px 56px; }
@@ -493,6 +705,14 @@ html[data-lang="zh"] .sx-honesty dt { letter-spacing: 0; }
   .sx-years { max-height: none; overflow: visible; }
   .sx-pick { flex: 1 1 100%; }
   .sx-honesty dl { grid-template-columns: 1fr; gap: var(--sx-sp-3); }
+  /* The ledger drops the status column under the row rather than squeezing it
+     against the name; the rail then spans both lines so the mark still reads as
+     one row's worth of evidence. */
+  .sx-led-row, .sx-led-never .sx-led-row { grid-template-columns: 3px minmax(0, 1fr); gap: 0 var(--sx-sp-3); }
+  .sx-rail { grid-row: 1 / span 2; }
+  .sx-led-state, .sx-led-never .sx-led-state { grid-column: 2; margin-top: 6px; padding-top: 0; }
+  .sx-led-route { padding-left: calc(3px + var(--sx-sp-3)); }
+  .sx-cat-act { font-size: 14px; }
   /* years table -> cards, 2 per row */
   table.sx-tbl thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   table.sx-tbl, table.sx-tbl tbody { display: block; }
@@ -543,7 +763,13 @@ html[data-lang="zh"] .sx-honesty dt { letter-spacing: 0; }
   .sxf-strand, .sxf-band, .sxf-median, .sxf-gate, .sxf-gatefill,
   .sxf-handle, .sxf-today, .sx-chip, .sx-fan .f, .sx-fan .fmed,
   .sx-pick-field, .sx-pick-ic, .sx-pick-kbd, .sx-seg .gbtn, .sx-quick button,
-  .sx-help {
+  /* .sx-cta is the only new thing on the Catalyst surface that moves (a
+     background/border transition). .sx-cta::before/::after and
+     .sx-led-break::before/::after were named here in the first cut and carry no
+     animation and no transition — .sx-cta has no generated content at all — so
+     the kill block was pinning dead selectors and the guard asserting them was
+     vacuous. Pseudos are still named the moment one of them actually moves. */
+  .sx-help, .sx-cta {
     animation: none !important; transition: none !important;
     opacity: 1; transform: none;
   }

@@ -746,6 +746,33 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   text-align: center;
 }
 
+/* Honest empty state: a market that failed to load says so here instead of
+   being silently reported as "no matches". Muted, one line, with the one
+   action that can fix it. */
+.search-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 18px;
+  color: var(--muted, #8d97a8);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.search-notice button {
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--link, #5b79ff) 40%, var(--nr-line));
+  border-radius: 999px;
+  color: var(--link, #5b79ff);
+  background: color-mix(in srgb, var(--link, #5b79ff) 9%, var(--nr-soft));
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .logo-dev-attribution {
   padding: 0 18px 13px;
   color: var(--muted, #8d97a8);
@@ -1722,6 +1749,16 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
   .topbar .nav-dd.nav-hover-open > a.nav-link .caret {
     transform: rotate(180deg);
   }
+
+  /* A folded country drill is opened by CLICK, so `.is-open` is its state —
+     but the blanket `.nav-dd > .nav-dd-menu { display:none }` above only ever
+     lifted for `:hover`/`:focus-within`. The open panel therefore survived
+     purely because the pointer happened to still be on the trigger it had just
+     clicked, and vanished the moment it drifted. State, not hover, decides. */
+  .site-nav .nav-dd .nav-market-drill.is-open > .nav-dd-menu,
+  .topbar .nav-dd .nav-market-drill.is-open > .nav-dd-menu {
+    display: block;
+  }
 }
 
 /* In the content-aware two-row state, an icon-only brand recovers enough room
@@ -2100,6 +2137,50 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .icon-drawing.violet .soft
   font-weight: 650;
   line-height: 1.26;
   letter-spacing: -.012em;
+}
+
+/* ── Tier mark ─────────────────────────────────────────────────────────────
+   The FIRST tier badge in the navigation (2026-08-07, Mastermind Bot). There
+   was no lock/tier convention here before, so this rule IS the convention.
+
+   STATIC AND UNCONDITIONAL — rendered identically for Free, Essential and Pro.
+   That is the house tier-preview pattern (docs/TIER_PREVIEW_PATTERN.md): show
+   every visitor the shell so a Free account can see what Pro buys, and let the
+   server gate the payload. No JS, no /api/me call, no conditional markup —
+   "hiding rows with CSS or a JS tier check is a marketing wall, not a gate".
+
+   HUE-STABLE ON PURPOSE. It reads the menu's one interactive hue (--mock-blue),
+   never the per-card icon accent, so a future PRO on a violet or cyan card is
+   the same mark rather than a colour that means "cyan". Quiet by construction:
+   9.5px against a 15px/650 title, hairline border, wash background, no hover
+   state of its own — it labels, the title leads. Tier names are NAMED here and
+   explained on plans.html; "PRO" is the tier's proper name in both languages
+   (plans.html.j2 writes "Pro 试用" in Chinese), so it is deliberately untranslated
+   and carries no t() twins. --mock-blue-deep is fallback-guarded for the brief
+   window on a stale page where nav_market.js has not yet added .mega-menu. */
+.nav-dd-menu.mega-menu .nm-tier {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 5px;
+  border: 1px solid rgba(88, 119, 233, .30);
+  border-radius: 4px;
+  color: var(--mock-blue-deep, #425ec9);
+  background: rgba(88, 119, 233, .10);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+
+/* Dark needs a warmer wash and a stronger edge: the light values sink into
+   #11151d and the pill loses its shape. Ink stays --mock-blue-deep, which the
+   dark token block already re-points to #9dafef. */
+html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nm-tier {
+  border-color: rgba(121, 148, 255, .34);
+  background: rgba(121, 148, 255, .16);
 }
 
 .nav-dd-menu.mega-menu .item-desc,
@@ -2666,7 +2747,11 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
      against the themed .mega-menu surface rules without !important. */
   .site-nav .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in,
   .topbar .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in {
-    z-index: 91;
+    /* one above the nav layer (theme.css HEADER LAYER LAW, 150) so the incoming
+       panel rides over the outgoing one. Tracks the base rule — it was 91 when
+       the base was 90; leaving it at 91 would have sunk every cross-fading
+       panel back under page content for the length of the swap. */
+    z-index: 151;
     background: transparent;
     border-color: transparent;
     box-shadow: none;
@@ -2760,4 +2845,119 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
   visibility: visible;
   pointer-events: auto;
   transform: translateX(0);
+}
+
+/* ---------------------------------------------------------------------------
+   Folded country drills on MOBILE — the sheet.
+   ---------------------------------------------------------------------------
+   A country folded into International (nav_market.js toSubmenu) becomes a
+   drill: theme.js initNavDrills toggles `.is-open`. But the mobile nav is an
+   accordion keyed on `.open`, and theme.js injects NAV_MOBILE_CSS into <head>
+   AFTER this stylesheet loads — so its
+     `.has-nav-toggle .nav-links .nav-dd-menu { max-height:0; position:static }`
+   won every equal-specificity contest above and pinned the drill panel to zero
+   height. Tapping "United States" inside International therefore did nothing
+   visible: the reader stayed on the International menu with no signal that a
+   market had been chosen (operator report, 2026-08-04).
+
+   The fix is the same idiom desktop already uses — the country's own panel
+   REPLACES the plate — expressed as a full-screen sheet, which is what a
+   phone can actually show. Every selector here carries ≥4 classes so it beats
+   the runtime-injected accordion rules without !important.
+   ------------------------------------------------------------------------ */
+@media (max-width: 900px) {
+  /* backdrop-filter (theme.css gives every .nav-dd-menu the glass blur) makes an
+     element the containing block for position:fixed DESCENDANTS. Inside the
+     collapsed mobile menu the host panel is 0-tall, so the sheet below resolved
+     inset:0 against a zero box and measured 0×0 — rendered, focusable, invisible.
+     The blur buys nothing here anyway: theme.js already forces these panels to
+     background:transparent inside an opaque .nav-links card. Drop it. */
+  .has-nav-toggle .nav-links .nav-dd-menu,
+  .has-nav-toggle .nav-links .nav-dd:hover > .nav-dd-menu,
+  .has-nav-toggle .nav-links .nav-dd:focus-within > .nav-dd-menu {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    /* theme.css's `.site-nav .nav-dd:hover > .nav-dd-menu { transform:
+       translateY(0) }` is (0,3,1) and out-ranked theme.js's mobile
+       `transform:none` at (0,3,0). An IDENTITY transform still makes the
+       element a containing block, and a tap leaves :hover latched on mobile
+       browsers — so the panel silently became the fixed sheet's viewport.
+       These selectors are (0,4,0) and settle it for the whole mobile nav. */
+    transform: none;
+  }
+
+  /* Closed: fully out of the flow. Zero height alone still let the panel's
+     children contribute to the accordion's scroll width. */
+  .has-nav-toggle .nav-links .nav-market-drill:not(.is-open) > .nav-dd-menu.nav-market-drill-panel {
+    display: none;
+  }
+
+  .has-nav-toggle .nav-links .nav-market-drill.is-open > .nav-dd-menu.nav-market-drill-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: block;
+    box-sizing: border-box;
+    width: auto;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    margin: 0;
+    padding: 14px 16px calc(30px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 0;
+    border-radius: 0;
+    background: var(--nr-surface-solid);
+    box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    animation: nav-market-sheet-in .26s cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  /* The back control is the sheet's only exit, so it must never scroll away. */
+  .has-nav-toggle .nav-links .nav-market-drill.is-open > .nav-market-drill-panel > .nav-drill-back {
+    position: sticky;
+    top: -14px;
+    z-index: 3;
+    width: 100%;
+    min-height: 44px;
+    margin: -14px 0 6px;
+    padding: 12px 4px;
+    justify-content: flex-start;
+    color: var(--text, var(--ink));
+    background: var(--nr-surface-solid);
+    font-size: 13.5px;
+  }
+
+  /* The panel is the whole screen now, so drop the desktop plate's top inset
+     that reserved room for an absolutely-positioned back button. */
+  .has-nav-toggle .nav-links .nav-market-drill.is-open > .nav-market-drill-panel > .nav-market-main {
+    padding-top: 0;
+  }
+
+  /* Sheets stack full-bleed: the rail's left border and inner gutters were
+     drawn for a two-column plate. */
+  .has-nav-toggle .nav-links .nav-market-drill.is-open > .nav-market-drill-panel > .nav-market-rail {
+    margin-top: 4px;
+    padding: 18px 0 0;
+  }
+}
+
+/* Slide only. Fading the sheet in would tie its VISIBILITY to an animation
+   completing, and an animation that never advances (suppressed compositor,
+   background tab, a UA that ignores the keyframes) would leave a fully
+   interactive full-screen panel at opacity 0. Motion is decoration here. */
+@keyframes nav-market-sheet-in {
+  from { transform: translateX(26px); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-nav-toggle .nav-links .nav-market-drill.is-open > .nav-dd-menu.nav-market-drill-panel {
+    animation: none;
+  }
 }

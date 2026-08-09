@@ -185,6 +185,10 @@
   // ---- DOM refs (populated on init) ---------------------------------------
   var idxBy = {}, listEl, countEl, sugg, q, observer, sel = -1, sItems = [];
 
+  // ---- book (market) filtering --------------------------------------------
+  function activeBook() { return window.MB ? window.MB.getBook() : 'all'; }
+  function inBook(t) { return window.MB ? window.MB.inActive(t) : true; }
+
   // ---- rendering ----------------------------------------------------------
   // ordered + filtered view of the watched items, resolved against the index
   function viewItems() {
@@ -194,6 +198,8 @@
       return { t: it.t, added: it.added, rec: rec,
                st: rec ? rec.st : null, n: rec ? rec.n : it.t, s: rec ? rec.s : '' };
     });
+    // the active book is a VIEW over the same list — never a different list
+    rows = rows.filter(function (r) { return inBook(r.t); });
     if (only) rows = rows.filter(function (r) { return r.st && BUYSOON[r.st]; });
     var ord = blob.order;
     rows.sort(function (a, b) {
@@ -210,9 +216,11 @@
     return rows;
   }
 
+  // counts the FILTERED set — the pill must agree with the cards on screen
   function buysoonCount() {
     var n = 0;
     blob.items.forEach(function (it) {
+      if (!inBook(it.t)) return;
       var rec = idxBy[it.t]; if (rec && BUYSOON[rec.st]) n++;
     });
     return n;
@@ -252,8 +260,15 @@
 
   function render() {
     if (!listEl) return;
-    // feed the Portfolio Factor Exposure panel the current holdings (factor_exposure.js)
-    if (window.FX) window.FX.update(blob.items.map(function (it) { return it.t; }));
+    // Feed the factor panel the current holdings — MODELED names only. The factor
+    // model is USD and carries no suffixed tickers, so a .HK/.SS/.TO name here would
+    // corrupt every book statistic downstream (A3 law 3).
+    if (window.FX) {
+      var syms = blob.items.map(function (it) { return it.t; });
+      window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
+    }
+    // the books strip reads the full list (membership is never filtered by the view)
+    if (window.MB) window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
     var rows = viewItems();
     // header counter
     var n = buysoonCount();
@@ -267,9 +282,22 @@
     }
     empty.style.display = 'none';
     document.getElementById('wl_controls').style.display = 'flex';
+    if (!rows.length) {
+      // the list is not empty — this BOOK is. Say which one, and what to do.
+      listEl.innerHTML = '<p class="muted wl-bkempty">' + esc(bookEmptyMsg()) + '</p>';
+      return;
+    }
     listEl.innerHTML = rows.map(cardHTML).join('');
     // (re)observe enrich hosts for lazy detail loading
     wireEnrich();
+  }
+  function bookEmptyMsg() {
+    var bk = activeBook();
+    var meta = (window.MB && window.MB.BOOKS && window.MB.BOOKS[bk]) || null;
+    var name = meta ? (lang() === 'zh' ? meta.zh : meta.en) : bk;
+    return lang() === 'zh'
+      ? '清单中还没有' + name + '名称——在上方搜索添加。'
+      : 'No ' + name + ' names on your list yet — search above to add one.';
   }
 
   // ---- lazy Tier-2 enrichment (entry cue + momentum strip) ----------------
@@ -330,12 +358,15 @@
   // ---- search-to-add (cloned from the stock analyzer) ---------------------
   function wireSearch(list) {
     q.placeholder = L('ph');
-    q.addEventListener('input', function () {
+    var searchList = list, widened = false;
+
+    function paint() {
       var v = q.value.trim().toLowerCase(); sel = -1;
       if (!v) { sugg.style.display = 'none'; return; }
-      sItems = list.filter(function (x) {
+      sItems = searchList.filter(function (x) {
         return x.t.toLowerCase().indexOf(v) === 0 ||
-               x.n.toLowerCase().indexOf(v) >= 0 || x.s.toLowerCase().indexOf(v) >= 0;
+               (x.n || '').toLowerCase().indexOf(v) >= 0 ||
+               (x.s || '').toLowerCase().indexOf(v) >= 0;
       }).sort(function (a, b) {
         var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
         if (ae !== be) return ae - be;
@@ -343,14 +374,29 @@
             bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
         return ap - bp || a.t.localeCompare(b.t);
       }).slice(0, 12);
+      // a suffixed query (".HK") or a miss widens the search to every market ONCE —
+      // the indexes are small, and this keeps first paint on the US index alone
+      if ((!sItems.length || v.indexOf('.') >= 0) && !widened && window.SD.loadIndexes) {
+        widened = true;
+        window.SD.loadIndexes(['us', 'cn', 'hk', 'ca', 'intl']).then(function (r) {
+          searchList = r.list; idxBy = r.byTicker; paint();
+        });
+      }
       sugg.innerHTML = sItems.map(function (x, i) {
         var inList = has(x.t) ? ' ✓' : '';
-        return '<div data-i="' + i + '"><b>' + esc(x.t) + '</b><small>' + esc(x.n) +
-          (x.s ? ' · ' + esc(x.s) : '') + '</small><span class="muted wl-sst">' +
+        var mkt = window.MB ? window.MB.marketOf(x.t) : 'us';
+        var meta = (window.MB && window.MB.BOOKS[mkt]) || null;
+        var glyph = (mkt !== 'us' && meta)
+          ? '<span class="bk-glyph wl-mkt">' + esc(meta.glyph) + '</span>' : '';
+        return '<div data-i="' + i + '"><b>' + esc(x.t) + '</b>' + glyph +
+          '<small>' + esc(x.n || '') + (x.s ? ' · ' + esc(x.s) : '') +
+          '</small><span class="muted wl-sst">' +
           esc(window.SD.label(x.st)) + inList + '</span></div>';
       }).join('');
       sugg.style.display = sItems.length ? 'block' : 'none';
-    });
+    }
+
+    q.addEventListener('input', paint);
     q.addEventListener('keydown', function (e) {
       if (sugg.style.display === 'none') return;
       var divs = sugg.querySelectorAll('div');
@@ -500,14 +546,32 @@
     window.addEventListener('storage', onStorage);
     document.addEventListener('themechange', repaintEnriched);
     document.addEventListener('langchange', function () { q.placeholder = L('ph'); render(); });
+    // the active book changed -> re-render the grid as a filtered VIEW of the same list
+    document.addEventListener('bk-change', render);
 
-    // resolve the live universe, then first paint
-    window.SD.loadIndex().then(function (r) {
+    // resolve the live universe across every market the saved list actually touches
+    var markets = { us: 1 };
+    if (window.MB) blob.items.forEach(function (it) { markets[window.MB.marketOf(it.t)] = 1; });
+    window.SD.loadIndexes(Object.keys(markets)).then(function (r) {
       idxBy = r.byTicker;
       wireSearch(r.list);
       consumeShareHash();   // a #wl= link merges before first visible paint
       render();
+      publishSeenDiff();
     }).catch(function () { render(); });
+  }
+
+  /* "N signals changed since your last visit" — computed over the FULL set, never the
+     filtered view, and the new snapshot is written AFTER the diff so the count is
+     always "since the last time you looked", not "since the last render". */
+  function publishSeenDiff() {
+    if (!window.MB || !window.MB.seenDiff) return;
+    var stMap = {};
+    blob.items.forEach(function (it) {
+      var rec = idxBy[it.t];
+      if (rec && rec.st) stMap[it.t] = rec.st;
+    });
+    window.MB.setFact('changed', window.MB.seenDiff(stMap));
   }
 
   // does setItem actually work? (Safari private mode throws on write, not read)

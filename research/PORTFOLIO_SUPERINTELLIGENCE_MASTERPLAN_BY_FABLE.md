@@ -1,6 +1,6 @@
 # Portfolio Superintelligence (PSI) — completion & integration masterplan (by Fable)
 
-Date: 2026-08-03 (amended same day — operator round 2)
+Date: 2026-08-03 (amended same day — operator round 2; **Amendment A3 2026-08-07 — §20 market-partitioned books**, operator round 4)
 Status: CHARTER + build contract — the **Codex execution handoff** for the operator's
 portfolio-risk-intelligence vision. Operator-directed (2026-08-03 session): "independent
 watchlist system … complete risk analysis of their portfolio … overallocation, cross
@@ -9,7 +9,7 @@ and market state … master intelligence tracking on every ticker they own … w
 strongest strengths … holistic score with breakdown scores."
 **Round-2 operator directives (2026-08-03, recorded verbatim in effect):** (a) **PRD-R2
 OVERRIDDEN** for this surface — "this isn't a live money portfolio, it's just for viewing
-by the user" → the holistic score SHIPS (§3.1 rewritten; PRD Amendment 2; DNR row
+by the user" → the holistic score SHIPS (§3.1 rewritten; PRD Amendment 2; DNR:KILL-FUSED-COMPOSITE row
 amended); (b) the portfolio analyzer becomes the **public freebie lead-magnet** — anonymous
 instant analysis, free-account long-term tracking with **daily change emails**, a custom
 public landing/portal, onboarding integration (§19); (c) macro-side frontend must be
@@ -24,7 +24,7 @@ Parents (all still in force; this doc composes them, it does not re-litigate the
 - `OPTIONS_INTELLIGENCE` program (OIP masterplan + R0–R3 waves) — the options data plane.
 Registries consulted 2026-08-03: `docs/ACTIVE_BUILD_MAP.md` (no colliding open lane; #4331
 prophet-board and #4319/#4327 capital-structure/company-intel touch adjacent per-ticker data,
-not this surface), `research/DO_NOT_REBUILD.md` (rows honored throughout — esp. row 45
+not this surface), `research/DO_NOT_REBUILD.md` (rows honored throughout — esp. DNR:KILL-FUSED-COMPOSITE
 fused-score, Signal-Commons positioning-fusion, RIC-R3 event-window gating, PSS-CD1 frozen
 correlation-hazard charter), `config/ruling_graph.yml` (NWC-U4, NWP-U18, RUL-F3.2 intact).
 
@@ -157,7 +157,7 @@ unmodified after v2 lands; its sections simply grow (PSI-W3 extends the same com
 
 Inherited rulings, restated once (violating any of these is a rejected PR, not a debate):
 
-- **PRD-R2 — AMENDED by operator override 2026-08-03 (PRD Amendment 2; DNR row 45
+- **PRD-R2 — AMENDED by operator override 2026-08-03 (PRD Amendment 2; DNR:KILL-FUSED-COMPOSITE
   updated in this PR).** The user-facing display-tier composite portfolio score is now
   ALLOWED on watchlist/portfolio surfaces and in digest emails, under the §3.1
   construction law (transparent legs, printed weights, abstention, nightly grading).
@@ -424,8 +424,8 @@ such on Tier-2). PSI's source-of-truth mapping for the ctx-v2 blocks:
 
 | Block | Source artifact (nightly, this repo) | Notes |
 |---|---|---|
-| `tech` | per-ticker stockdata JSON blocks the WRI L1 lanes already read (ext / MA / RS / ATR / drawdown); `realized_vol_63d`, `updown_dollar_vol_ratio` from the fingerprint-survivor set | survivors are DISPLAY-TIER ONLY (DNR row 115: promotion of either needs fresh prereg; full-population effect sizes may not be cited) |
-| `tech.washout` | `engine/rsi_stack_signals.py` states (`rsi_stack_oversold` all-TF ≤30 / `rsi_stack_overbought` all-TF ≥80, curl events) + washout-watcher states where a desk prints one (`hk_washout_watch`; `mag7_washout` is background-only per its DNR row) | display state only — washout×turn as an ENTRY signal is KILLED (DNR row 78); we show the state word, never an entry implication |
+| `tech` | per-ticker stockdata JSON blocks the WRI L1 lanes already read (ext / MA / RS / ATR / drawdown); `realized_vol_63d`, `updown_dollar_vol_ratio` from the fingerprint-survivor set | survivors are DISPLAY-TIER ONLY (DNR:KILL-VOLUME-FINGERPRINTS: promotion of either needs fresh prereg; full-population effect sizes may not be cited) |
+| `tech.washout` | `engine/rsi_stack_signals.py` states (`rsi_stack_oversold` all-TF ≤30 / `rsi_stack_overbought` all-TF ≥80, curl events) + washout-watcher states where a desk prints one (`hk_washout_watch`; `mag7_washout` is background-only per its DNR row) | display state only — washout×turn as an ENTRY signal is KILLED (DNR:KILL-WASHOUT-TURN); we show the state word, never an entry implication |
 | `tech.ext` | `engine/extension.py` — `ext_z` (distance-from-200dma z vs own history), `grade` ∈ in-trend/steady/stretched/**parabolic**, `near_52wh` | already feeds us_standouts rows; verbatim grade words |
 | `vol` / `gex` / `flow.opt` | OIP artifacts: options_hub IV-rank + bands (#4130 vocabulary), `gex_state` (gamma_regime/flip/walls + `_index.json` aggregate #4292), options_skew snapshots, oi_change / flow-leaders touch states | **Coverage reality: the ThetaData EOD store spans ~380 roots (2012–2026), not the full ~1,500-name universe** — most books will have partial options coverage and the block prints its coverage count honestly; W2 field census decides exact fields; uncovered names OMIT the blocks |
 | `msens` | `stock_macro_sensitivity` chip + `factor_betas.json` rate/dollar/credit betas | verbatim tier words |
@@ -493,7 +493,7 @@ Per-name (ctx `vol`/`gex`/`flow.opt`, §5.1) → three surfaces:
 - **Brief v2 options section** (prose): 2–3 deterministic sentences from the same facts.
 
 Explicitly NOT in scope: any options-derived signal (DOI is DEAD, skew-deceleration
-UNSUPPORTED — W-E1 gauntlet; DNR rows 80–81), dealer-positioning fusion into any state
+UNSUPPORTED — W-E1 gauntlet; DNR:KILL-DOI-FAMILY / DNR:KILL-SKEW-DECELERATION), dealer-positioning fusion into any state
 (Signal Commons), options-based sizing. W-F (options) stays PARKED per its own row.
 
 ## 9. Tape context — "the market you hold this book in" (regime & market-state conditioning)
@@ -994,6 +994,85 @@ live:
   back to the macro analyzer; the SAME Supabase book renders on both (already true);
   brief v2 packet renders on both (W3). Live quotes on the Terminal side stay on ITS
   quote hub (separate plane — do not cross the streams).
+
+## 20. Amendment A3 — market-partitioned books (operator round 4, 2026-08-07)
+
+Operator directive (recorded in effect): *"separate portfolios by country, so US HK CN CA
+don't commingle together since they use different calculations … we're connecting Terminal
+with the Macro Dashboard's watchlist portfolios so that they are both in sync."* This
+amendment charters the partition WITHOUT breaking the one-store sync law (UWP) or the
+factor-model honesty rules (WRI-R6). Adjudicated facts it rests on (verified 2026-08-07):
+
+- The macro per-ticker plane is **FIVE parallel stores** (census 2026-08-07):
+  `site/stockdata/` (US, 2,930-entry index), `site/chinastockdata/` (~1,450 `.SS/.SZ`),
+  `site/hkstockdata/` (~164 `.HK` + `_HSI/_HSCC/_HSCE` benchmark files),
+  `site/canadastockdata/` (~236 `.TO/.V` + `_GSPTSE`), `site/intlstockdata/` (~992) —
+  each with its own `index.json` `{t,n,s,st,a}` (`a` = **alpha-z, NOT day change**; no
+  1-day-change field exists in any store) and the SAME rich per-ticker schema: identical
+  37-key `tech`, `mtf`, `ladder` (incl. `ladder.state` signal enum for ALL markets and a
+  universal `ladder.alignment.overextended` bool), bilingual `entry_signal` (same
+  13-status vocabulary), `conviction`, seasonality. Market extras: CN `consensus`/
+  `val_pctile`, HK `southbound`/`global_beta`, CA `insider`/`factor_beta`. US-only
+  blocks: the precise `ext` grade (intrend/steady/stretched/**parabolic**), Weinstein
+  `stage` (engine classifies US-listed only), and the 9-factor model
+  (`factor_betas.json`: 1,533 tickers, zero suffixed). Builders:
+  `scripts/build_{stock,china,hk,canada,intl}_library.py`. In production every
+  `*stockdata/`/`*ohlc/` fetch is client-rewritten to the public R2 CDN
+  (`templates/data_base.js` + `scripts/inject_data_base.py`) — the per-ticker plane is
+  anonymously fetchable BY DESIGN even though VPS paths 401; `site/data/portfolio_ctx.json`
+  is NOT in the rewrite list (stays account-gated). Suffix→market prior art exists twice
+  (`engine/live_overlay.py region_for` ↔ `templates/live.js regionOf`; store-router
+  `templates/mm_brain.js chartStore`; store registry `templates/theme.js STOCK_MARKETS`
+  keyed `us/cn/hk/ca/intl` — the SAME vocabulary the Terminal uses).
+- mastermind-terminal `terminal/lib/markets.ts` already owns a market vocabulary:
+  `MarketId = us|cn|hk|ca|intl|crypto` via venue map + suffix fallback (`.SS/.SZ/.BJ`→cn,
+  `.HK`→hk, `.TO/.V/.NE`→ca, `-USD(T)`→crypto). Terminal has NO `portfolio_positions`
+  awareness (its Conviction Book is a signal-annotated watchlist) — the brief seam (PR
+  #170) is how positions reach it.
+- All per-ticker data JSONs are 401-gated for anon on the site (deliberate, #4519 +
+  regwall law); only `live/quotes.json` is open. The §19.2 anon full-analysis unlock is
+  an access-policy change that stays in W10 — the books UI must degrade gracefully for
+  anon TODAY (local book + at-cost values + value-framed sign-in line), not silently
+  depend on walled fetches.
+
+**A3 law:**
+
+1. **Derivation, not schema**: a book is a VIEW derived from the symbol by a pure client
+   function `marketOf(sym)` that mirrors the Terminal's suffix rules EXACTLY (vocabulary
+   of record: `us|cn|hk|ca|intl|crypto`, plus a macro-side-only `macro` bucket for
+   `^…`/`…=F`/`…=X`/`DX-Y.NYB` index/commodity/FX instruments). No Supabase migration, no
+   market column, no per-market lists — the one-store sync law (UWP) is untouched and the
+   Terminal keeps working unmodified. The two repos may never disagree on a symbol's
+   market: the macro implementation ships a derivation test table copied from the
+   Terminal's rules.
+2. **Math never commingles across books**: each book's aggregates (value, day, since-entry)
+   are computed only from its own members, in its **native currency** (US$ · HK$ · ¥ ·
+   C$); there is NO cross-currency summed total while no FX artifact ships (a combined
+   line may appear only in a later wave WITH a client FX artifact + asof stamp, never by
+   silently mixing units). The WRI factor stack (betas/ENB/twins/patch-bay/score legs
+   later) runs ONLY on the modeled us+crypto subset and its panels say so in plain words;
+   a cn/hk/ca book gets the honest one-line coverage note instead of a fabricated
+   posture (WRI-R6 / gate 6).
+3. **Coverage honesty per market**: cn/hk/ca/intl names FETCH from their own stores
+   (`{china,hk,canada,intl}stockdata/<SYM>.json`) — signals (`ladder.state`), entry
+   status, technicals, and the `overextended` read all render per market. What stays
+   US-only prints honestly: the Weinstein stage row and the precise extension grade
+   (non-US uses `ladder.alignment.overextended` + `tech.pct_vs_200dma` wording), and the
+   factor/risk model (gate 2's note). Truly-uncovered names (absent from every index)
+   degrade to entry math at cost + one quiet line — never per-row spam. **FX-corruption
+   guard (bug-class, binding):** non-USD prices now resolve, so factor auto-weights and
+   every WRI book-math input MUST filter to the modeled us+crypto (factor-model) subset —
+   an HKD/CNY/CAD dollar-value may never enter a USD weight sum.
+4. **W2.5 (chartered, not built here) — per-market plane deltas**: add a `chg_1d` field
+   to the five library bakes (no day-change field exists today — the only reason the Day
+   column/movers chips are deferred), consider CSI300/SSE benchmark files for the CN
+   store (`_` files exist for HK/CA already), and evaluate stage seeds for non-US.
+   Budget-stamped, synapse-checked, own PR.
+5. **Zero regression for single-market users**: the books strip renders only when the
+   user's names span ≥2 markets; a US-only book sees today's page unchanged.
+6. **Design spec of record** for the surface rebuild:
+   `research/PSI_MARKET_BOOKS_DESIGN_SPEC.md` (committed with the build PR; crops to
+   `mockups/refs/psi/books/`).
 
 ## App-A. Engine/artifact inventory (verified 2026-08-03 — grep before wiring, never from memory)
 

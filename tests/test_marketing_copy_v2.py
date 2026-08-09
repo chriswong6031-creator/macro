@@ -478,7 +478,7 @@ def test_sibling_six_gram_overlap_rejects():
     sibling = ("ARES dipped back to 122, the most-traded price of the past "
                "four months, and held.")
     mine = ("Watching $ARES here. It dipped back to 122, the most-traded price "
-            "of the past four months, and held. Not chasing.")
+            "of the past four months, and held. Buyers keep showing up there.")
     hits = cw.sibling_overlap_violations(mine, [sibling])
     assert hits and "sibling overlap" in hits[0], hits
 
@@ -504,7 +504,7 @@ def test_headline_outside_two_part_rejects():
 
 def test_one_liner_rejects_a_line_break_and_a_long_line():
     assert any("single line" in v for v in cw.shape_violations(
-        "$ARES held 122.\nNot chasing.", "one_liner"))
+        "$ARES held 122.\nBuyers keep showing up there.", "one_liner"))
     assert any("chars" in v for v in cw.shape_violations("x" * 141, "one_liner"))
 
 
@@ -584,7 +584,7 @@ def test_one_poisoned_item_costs_one_post_not_the_night(monkeypatch):
         idx = int(tk[2:])
         if idx == 4:
             raise RuntimeError("poisoned item: provider exploded")
-        return '{"text": "%s $%s at 122. Not chasing it here."}' % (_OPENERS[idx], tk)
+        return '{"text": "%s $%s at 122. Buyers keep showing up."}' % (_OPENERS[idx], tk)
 
     _arm(monkeypatch, handler)
     contexts = [_chart_ctx(ticker=t) for t in tickers]
@@ -626,7 +626,7 @@ def test_a_high_drop_rate_raises_the_gate_5_annotation(monkeypatch, capsys):
         idx = int((m.group(1) if m else "TK0")[2:])
         if idx < 3:  # 3 of 5 break the numbers law and cannot be repaired
             return '{"text": "$TK%d ripped to 999.99 and never looked back."}' % idx
-        return '{"text": "%s $TK%d at 122. Not chasing it here."}' % (_OPENERS[idx], idx)
+        return '{"text": "%s $TK%d at 122. Buyers keep showing up."}' % (_OPENERS[idx], idx)
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx(ticker=f"TK{i}") for i in range(5)],
@@ -682,7 +682,7 @@ def test_clean_copy_passes_writer_validators_and_critic(monkeypatch):
     def handler(*, system, user, max_tokens):
         if _is_critic(system):
             return '{"verdict": "pass", "reasons": []}'
-        return '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}'
+        return '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}'
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx()], ARMED_CFG)
@@ -718,7 +718,7 @@ def test_two_critic_rejects_drop_the_post(monkeypatch):
     def handler(*, system, user, max_tokens):
         if _is_critic(system):
             return '{"verdict": "reject", "reasons": ["dangling reference"]}'
-        return '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}'
+        return '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}'
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx()], ARMED_CFG)
@@ -738,7 +738,7 @@ def test_a_validator_failure_gets_exactly_one_repair(monkeypatch):
         if state["writer"] == 1:
             return '{"text": "$ARES held 122. Quietly the best chart on my screen."}'
         assert "REJECTED" in user and "internal jargon" in user
-        return '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}'
+        return '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}'
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx()], ARMED_CFG)
@@ -781,12 +781,12 @@ def test_critic_cannot_rewrite_the_post(monkeypatch):
         if _is_critic(system):
             return ('{"verdict": "pass", "reasons": [], '
                     '"rewrite": "$ARES to the moon", "text": "$ARES 999"}')
-        return '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}'
+        return '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}'
 
     _arm(monkeypatch, handler)
     posts = cw.write_posts_llm_v2([_chart_ctx()], ARMED_CFG)
     assert posts[0]["text"] == (
-        "$ARES dipped back to 122 and held. Not chasing it here.")
+        "$ARES dipped back to 122 and held. Buyers keep showing up there.")
     assert set(posts[0]["critic"]) == {"verdict", "reasons"}
 
 
@@ -1558,7 +1558,7 @@ def test_the_writer_threads_the_durable_history_into_the_dial(monkeypatch):
             return '{"verdict": "pass", "reasons": []}'
         m = re.search(r'"cashtag": "\$(TK\d+)"', user)
         tk = m.group(1) if m else "TK0"
-        return '{"text": "%s $%s at 122. Not chasing it here."}' % (
+        return '{"text": "%s $%s at 122. Buyers keep showing up."}' % (
             _OPENERS[int(tk[2:])], tk)
 
     _arm(monkeypatch, handler)
@@ -2337,7 +2337,8 @@ class TestTheReceiptsDeskCanActuallyProduce:
         y, m, d = (int(x) for x in today.split("-"))
         sig = (date(y, m, d) - timedelta(days=days_ago)).isoformat()
         plan = {"asset": ticker, "entry": 100.0, "invalidation": 85.0,
-                "targets": [115.0], "_signal_date": sig, "phase": "triggered_pre_t1",
+                "targets": [115.0], "_signal_date": sig, "signal_date": sig,
+                "signal_date_basis": "tier_event_date", "phase": "triggered_pre_t1",
                 "profit_plan": [{"status": "PENDING", "price": 115.0}]}
         if resolved:
             plan["profit_plan"] = [{"status": "DONE", "price": 115.0}]
@@ -3303,7 +3304,7 @@ def _arm_ladder(monkeypatch, rungs, *, switch=True):
     return ledger
 
 
-def _good(text: str = "$ARES dipped back to 122 and held. Not chasing it here."):
+def _good(text: str = "$ARES dipped back to 122 and held. Buyers keep showing up there."):
     return lambda **_kw: _Resp('{"text": "%s"}' % text)
 
 
@@ -3320,7 +3321,7 @@ def test_a_thinking_only_response_buys_one_retry_on_the_same_provider(monkeypatc
     """
     def script(*, n, call):
         return _EmptyResp() if n == 1 else _Resp(
-            '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}')
+            '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}')
 
     ledger = _arm_ladder(monkeypatch, [("deepseek", script), ("oauth", _good())])
     posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
@@ -3338,7 +3339,7 @@ def test_a_client_without_the_switch_gets_a_doubled_budget_instead(monkeypatch):
     """The codex shape: **kwargs is not a capability, so buy budget instead."""
     def script(*, n, call):
         return _EmptyResp() if n == 1 else _Resp(
-            '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}')
+            '{"text": "$ARES dipped back to 122 and held. Buyers keep showing up there."}')
 
     ledger = _arm_ladder(monkeypatch, [("codex", script)], switch=False)
     posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)

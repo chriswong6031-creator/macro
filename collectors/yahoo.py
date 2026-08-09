@@ -26,9 +26,54 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config, store
+from lib import config, delisted_symbols, store
+from lib.ticker_aliases import fetch_symbol
 
 log = logging.getLogger(__name__)
+
+
+def _drop_delisted(tickers: list[str]) -> list[str]:
+    """Remove securities that stopped existing from a fetch list.
+
+    A delisted symbol can never return data, so requesting it every night puts a
+    permanent entry in `_report_missing_symbols`' warning — the one tripwire that
+    exists to catch the NEXT symbol yfinance goes quiet on. A warning that is
+    always on is a warning nobody reads, which is how CTRA/TPH sat frozen for
+    three months (research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md).
+
+    Membership is untouched: the ticker stays in `stock_search.extra_tickers`, its
+    store keeps every bar, and its page stays searchable (CSP-R1). Only the
+    pointless network request goes away.
+
+    PURE — the disclosure lives in `_report_delisted_exclusions`, called once per
+    `fetch()`. This function runs on several lists per run (the ticker union, then
+    the re-read extras list for the Stooq fallback); printing here would emit the
+    same notice two or three times and read as three separate events."""
+    dead = delisted_symbols.tickers()
+    if not dead:
+        return tickers
+    return [t for t in tickers if t not in dead]
+
+
+def _report_delisted_exclusions(tickers: list[str]) -> list[str]:
+    """Name every symbol this run deliberately did NOT request, and why.
+
+    Silence would re-create the exact failure mode #4643 was built to end — a name
+    leaving the collector's attention with nothing in the log to say it happened.
+    A ::notice rather than a ::warning: this is the system working as designed, not
+    a defect. Bare print, never through the logger (a logger-prefixed annotation is
+    silently discarded by GitHub Actions). Returns the excluded list so a test can
+    assert on the classification without re-parsing the printed line."""
+    dead = delisted_symbols.tickers()
+    dropped = sorted(t for t in tickers if t in dead)
+    if dropped:
+        rows = delisted_symbols.ledger()
+        detail = ", ".join(f"{t}(last session {rows[t]['last_session']}, "
+                           f"{rows[t]['reason']})" for t in dropped)
+        print(f"::notice title=yahoo collector delisted::{len(dropped)} symbol(s) not "
+              f"requested — the security stopped existing, so no feed can return it; "
+              f"store and page kept: {detail}", flush=True)
+    return dropped
 
 
 class YahooAdapter(Adapter):
@@ -58,10 +103,26 @@ class YahooAdapter(Adapter):
             for t in ((theme or {}).get("tickers") or []):
                 if t and not str(t).startswith("^"):
                     out.append(t)
-        return list(dict.fromkeys(out))
+        # A delisted security is dropped from the FETCH only (config membership and
+        # the store are untouched — see _drop_delisted). `maintained_tickers()` is
+        # the un-filtered view for the store-tip audit, which must still see those
+        # stores; every other caller of all_tickers() wants the fetch list.
+        return _drop_delisted(list(dict.fromkeys(out)))
+
+    def maintained_tickers(self) -> list[str]:
+        """Every ticker whose data/yahoo store this group owns — the fetch list PLUS
+        the delisted names whose stores it still carries.
+
+        `all_tickers()` is what gets requested; this is what gets audited. Feeding
+        `audit_store_freshness` the fetch list alone would make a delisted store
+        invisible to the one check that reads stores rather than fetch results, and
+        an invisible store is how a wrong ledger row (or a ticker reused by a new
+        issuer) would never be caught."""
+        return list(dict.fromkeys(self.all_tickers() + sorted(delisted_symbols.tickers())))
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         tickers = self.all_tickers()
+        _report_delisted_exclusions(self.maintained_tickers())
         period = "max" if full_history else "1mo"
         # Keep intraday High/Low for the volatility group (^VIX etc.) — the daily
         # VIX wick (intraday high vs close) is a washout / thin-quote tell that
@@ -73,7 +134,10 @@ class YahooAdapter(Adapter):
         bs = self.cfg["batch_size"]
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
-            df = self._download(batch, period)
+            # Renamed names are REQUESTED under the vendor's symbol and STORED under the
+            # config ticker (lib/ticker_aliases) — without this, Marsh (MMC->MRSH, 2026-01-14)
+            # 404s every run and never reaches the store.
+            df = self._download([fetch_symbol(t) for t in batch], period)
             for t in batch:
                 sub_out = self._extract(df, t, ohlc, no_adj_close)
                 if sub_out is not None:
@@ -87,8 +151,20 @@ class YahooAdapter(Adapter):
         # Stooq fallback for searchable single stocks Yahoo refused this run.
         # Basis-deferred names are NOT refilled: Stooq is a different source/basis,
         # so a refill would splice exactly what the guard just refused.
-        extras = config.load().get("stock_search", {}).get("extra_tickers", []) or []
+        # `_drop_delisted` filtered `tickers`, but this list is re-read from config,
+        # where a delisted name deliberately KEEPS its membership (its page must stay
+        # searchable) — so it has to be filtered again here, or the Stooq fallback
+        # spends a request per night probing a security that stopped existing.
+        extras = _drop_delisted(
+            config.load().get("stock_search", {}).get("extra_tickers", []) or [])
         self._fill_missing_extras(frames, [t for t in extras if t not in deferred])
+        # M3: `deferred` names WERE returned this run (yfinance served real data for
+        # them) — they were pulled out of `frames` only because `_rebase_shifted`'s
+        # re-pull failed on a basis mismatch (kept out of THIS run so the guard
+        # re-flags them next night, never spliced onto a stale basis). Reconciling
+        # against `frames` alone would relabel them "returned no data", which is
+        # false and would mislead every nightly read of this warning.
+        _report_missing_symbols(tickers, set(frames) | set(deferred))
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"yahoo returned only {len(frames)}/{len(tickers)} tickers")
         return frames
@@ -96,9 +172,13 @@ class YahooAdapter(Adapter):
     def _extract(self, df: pd.DataFrame, t: str, ohlc: set[str],
                  no_adj_close: list[str]) -> pd.DataFrame | None:
         """Slice one ticker out of a (possibly MultiIndex) yf.download response and
-        rename to the store schema; None when yfinance returned nothing for it."""
+        rename to the store schema; None when yfinance returned nothing for it.
+
+        `t` is the CONFIG ticker throughout (store key, ohlc-group membership, log lines);
+        the response is keyed by the vendor symbol, which differs for renamed names."""
         try:
-            sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+            sym = fetch_symbol(t)
+            sub = df[sym] if isinstance(df.columns, pd.MultiIndex) else df
             # W1.3 dual-basis rename:
             #   Adj Close -> close     (TR, byte-identical to old auto_adjust=True Close)
             #   Close     -> close_price (split-adj, div-UNadj — structure-math basis)
@@ -162,7 +242,7 @@ class YahooAdapter(Adapter):
         for i in range(0, len(shifted), bs):
             batch = shifted[i:i + bs]
             try:
-                df = self._download(batch, "max")
+                df = self._download([fetch_symbol(t) for t in batch], "max")
             except Exception as e:  # noqa: BLE001 — degrade: skip tonight, re-flag next run
                 log.warning("yahoo: basis refetch failed for %d name(s) (%s) — kept out "
                             "of this run; the guard retries next night", len(batch), e)
@@ -222,6 +302,29 @@ class YahooAdapter(Adapter):
                 log.warning("yfinance batch failed (%s); retry in %.0fs", e, wait)
                 time.sleep(wait)
         raise last_exc  # type: ignore[misc]
+
+
+def _report_missing_symbols(requested: list[str], frames_keys) -> list[str]:
+    """Requested-vs-returned reconciliation for one fetch() run (R4, never-silent
+    collectors, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md).
+
+    `_extract()` already drops a requested-but-unreturned symbol via a log-only
+    `except KeyError`, and both `detect_stale_series` (collectors/base) and this
+    module's own `check_yahoo_freshness` only inspect frames a fetch DID return —
+    a symbol yfinance silently refuses (CTRA/TPH/TCNNF class) was invisible to
+    every guard, with only the 70%-of-run aggregate floor as a backstop. This is
+    the per-run, per-symbol disclosure that floor doesn't provide. Bare
+    ::warning (annotation law — never through the logger); returns the missing
+    list so a caller/test can assert on it without re-parsing the printed text."""
+    have = set(frames_keys)
+    missing = [t for t in requested if t not in have]
+    if missing:
+        shown = missing[:15]
+        more = len(missing) - len(shown)
+        print(f"::warning title=yahoo collector missing symbols::{len(missing)} requested "
+              f"symbol(s) returned no data: {', '.join(shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    return missing
 
 
 # ---------------------------------------------------------------------------
@@ -292,3 +395,115 @@ def check_yahoo_freshness(max_lag_sessions: int = 3, min_rows: int = 1000) -> li
         log.info("yahoo freshness: all %d engine-critical series fresh "
                  "(last expected session %s)", len(ENGINE_CRITICAL_SERIES), expected)
     return problems
+
+
+_STALE_CAL_DAYS = 7  # cross-ref: engine.name_score_grader._MAX_BAR_LAG_DAYS — the SAME
+# 7-calendar-day staleness law as the scan/ledger admission gate. Collectors must not
+# import engine (layering), so this is a deliberate duplicate of that constant's VALUE,
+# not an independently chosen policy — keep the two in sync if the law ever moves.
+
+
+def audit_store_freshness(tickers: list[str], group: str = "yahoo") -> dict:
+    """Store-tip freshness audit across every ticker `group` is asked to maintain —
+    NOT just the 3-name ENGINE_CRITICAL_SERIES tuple `check_yahoo_freshness` covers
+    (that function and this one are deliberately independent; leave both as-is).
+    This is the R4 "store-tip audit covers every name the yahoo group maintains"
+    disclosure: CTRA/TPH/RGI/CNH=X froze for weeks as ordinary side-store extras,
+    never engine-critical, so the narrow tripwire never saw them.
+
+    Reads each store tip ONCE via lib.store.read (no network — ~740 parquet reads
+    for the full yahoo group, acceptable once per nightly collect). Classifies
+    against the GROUP's own max tip (self-relative, no wall-clock dependency):
+      delisted — the security stopped existing (config/delisted_symbols.yml). A
+                 finished tape is not a defect, so these are reported separately
+                 and are excluded from `stale`/`stub`; #4616's law, "delisted is
+                 not stale", applies to this audit as much as to the page copy.
+      stale   — tip present but more than _STALE_CAL_DAYS behind the group's ref tip
+      stub    — fewer than 60 rows (a name that never grew past its first backfill)
+      missing — no store file, or an empty/unparseable one
+    A name may be BOTH stub and stale. Bare ::warning per non-empty category (cap
+    15, annotation law — never through the logger); never raises. Returns
+    {"ref": <ISO date str | None>, "stale": {ticker: tip}, "stub": {ticker: rows},
+    "missing": [ticker, ...], "delisted": {ticker: tip}} so a caller/test can
+    assert on the classification."""
+    tips: dict[str, pd.Timestamp] = {}
+    rows_by: dict[str, int] = {}
+    missing: list[str] = []
+    for t in tickers:
+        df = store.read(group, t)
+        if df is None or df.empty:
+            missing.append(t)
+            continue
+        rows_by[t] = len(df)
+        try:
+            ts = pd.Timestamp(df.index.max())
+            if pd.isna(ts):
+                raise ValueError
+            tips[t] = ts
+        except (TypeError, ValueError):
+            missing.append(t)
+    ref_ts = max(tips.values()) if tips else None
+    ref = str(ref_ts.date()) if ref_ts is not None else None
+    # Exit rows come out of the defect buckets BEFORE they are computed — a delisted
+    # name is permanently behind the group ref and (for a young listing) permanently
+    # short of 60 rows, so leaving it in would make both warnings unclearable and
+    # cost them the attention the next real freeze needs.
+    dead_rows = delisted_symbols.ledger()
+    delisted = {t: str(ts.date()) for t, ts in tips.items() if t in dead_rows}
+    stale: dict[str, str] = {}
+    if ref_ts is not None:
+        for t, ts in tips.items():
+            if t not in dead_rows and (ref_ts - ts).days > _STALE_CAL_DAYS:
+                stale[t] = str(ts.date())
+    stub = {t: n for t, n in rows_by.items() if n < 60 and t not in dead_rows}
+    if delisted:
+        shown = sorted(delisted)[:15]
+        more = len(delisted) - len(shown)
+        print(f"::notice title={group} store audit delisted::{len(delisted)} name(s) "
+              f"hold a finished tape (not scored, store kept): "
+              f"{', '.join(f'{t}({delisted[t]})' for t in shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    # A store that advanced PAST its recorded last session contradicts its own exit
+    # row: either the resolution was wrong, or the symbol was reused by a different
+    # issuer (the ECHO/EchoStar class — a reused ticker refills with the new holder's
+    # history and looks born-clean). Loud, because the page is asserting a delisting
+    # date that the data no longer supports.
+    for t, tip in sorted(delisted.items()):
+        recorded = str(dead_rows[t].get("last_session"))
+        if tip > recorded:
+            print(f"::warning title={group} store audit delisted contradiction::{t} "
+                  f"store tip {tip} is AFTER its recorded last session {recorded} — "
+                  "the exit row in config/delisted_symbols.yml is wrong, or the "
+                  "symbol was reused by another issuer; re-resolve before trusting "
+                  "either the page copy or this store", flush=True)
+    if stale:
+        shown = sorted(stale)[:15]
+        more = len(stale) - len(shown)
+        print(f"::warning title={group} store audit frozen::{len(stale)} name(s) "
+              f">{_STALE_CAL_DAYS}d behind ref {ref}: "
+              f"{', '.join(f'{t}({stale[t]})' for t in shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    if stub:
+        shown = sorted(stub)[:15]
+        more = len(stub) - len(shown)
+        print(f"::warning title={group} store audit stub::{len(stub)} name(s) under "
+              f"60 rows: {', '.join(f'{t}({stub[t]})' for t in shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    if missing:
+        shown = sorted(missing)[:15]
+        more = len(missing) - len(shown)
+        print(f"::warning title={group} store audit missing::{len(missing)} name(s) "
+              f"have no store: {', '.join(shown)}"
+              f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    # M1: self-relative blindness backstop — every check above is relative to `ref`
+    # (this group's own max tip), so a TOTAL freeze (every ticker frozen together)
+    # is invisible to them. Disclosure only, against wall-clock now — never a gate.
+    if ref_ts is not None:
+        _now = pd.Timestamp.utcnow().tz_localize(None)
+        _behind_wall = (_now.normalize() - ref_ts.tz_localize(None).normalize()).days \
+            if ref_ts.tzinfo is not None else (_now.normalize() - ref_ts.normalize()).days
+        if _behind_wall > _STALE_CAL_DAYS:
+            print(f"::warning title={group} store audit tip stale::group ref tip {ref} "
+                  f"is >{_STALE_CAL_DAYS}d behind today — possible collector outage", flush=True)
+    return {"ref": ref, "stale": stale, "stub": stub, "missing": missing,
+            "delisted": delisted}

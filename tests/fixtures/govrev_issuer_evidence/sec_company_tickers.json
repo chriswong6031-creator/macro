@@ -1,0 +1,32 @@
+{
+  "0": {
+    "cik_str": 12927,
+    "ticker": "BA",
+    "title": "BOEING CO"
+  },
+  "1": {
+    "cik_str": 1486957,
+    "ticker": "BWXT",
+    "title": "BWX Technologies, Inc."
+  },
+  "2": {
+    "cik_str": 40545,
+    "ticker": "GE",
+    "title": "GENERAL ELECTRIC CO"
+  },
+  "3": {
+    "cik_str": 1418819,
+    "ticker": "IRDM",
+    "title": "Iridium Communications Inc."
+  },
+  "4": {
+    "cik_str": 1321655,
+    "ticker": "PLTR",
+    "title": "Palantir Technologies Inc."
+  },
+  "5": {
+    "cik_str": 1501585,
+    "ticker": "HII",
+    "title": "HUNTINGTON INGALLS INDUSTRIES, INC."
+  }
+}

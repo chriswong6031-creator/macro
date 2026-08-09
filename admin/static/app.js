@@ -4,6 +4,15 @@
 const $ = (sel, el = document) => el.querySelector(sel);
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* Render `{tier: "pro"}` as ` data-tier="pro"`, so an inline handler can read a
+   value off `this.dataset` instead of having it interpolated into its own JS
+   source. Keys must be lowercase/hyphenated — HTML lowercases attribute names,
+   so `data-deptId` would arrive as `dataset.deptid`. Null/undefined values are
+   dropped: an absent attribute reads back as `undefined`, which is what a
+   handler expecting "no value" wants. */
+const dataAttrs = (data) => Object.entries(data || {})
+  .filter(([, v]) => v != null)
+  .map(([k, v]) => ` data-${k}="${esc(v)}"`).join("");
 const fmtAge = (hrs) => hrs == null ? "—" : hrs < 1 ? `${Math.round(hrs * 60)}m` : hrs < 48 ? `${hrs.toFixed(0)}h` : `${(hrs / 24).toFixed(0)}d`;
 const fmtUSD = (n) => n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1e6 ? `${(Number(n)/1e6).toFixed(2)}M` : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(Math.round(Number(n)));
@@ -204,6 +213,8 @@ const ICONS = {
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
   mastermind_logs: NAV_ICO('<path d="M4 5.5h16M4 12h16M4 18.5h10"/><circle cx="18.5" cy="18" r="3"/><path d="M18.5 16.6v1.4l1 .8"/>'),
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
+  /* Macro Thesis: a ledger page with several plane-lines converging on one mark. */
+  macro_thesis:  NAV_ICO('<path d="M5 3.5h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z"/><path d="M7.5 8h5M7.5 11.5h4M7.5 15h6"/><circle cx="16.5" cy="12" r="2.2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
   revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
   /* Support: a life-ring — the outer float, the inner hub, and the four lugs. */
@@ -243,7 +254,7 @@ const ICONS = {
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["macro_thesis", "Macro Thesis"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Research", items: [["research_tools", "Research Tools"]] },
   /* Marketing was one flat 19-item list — "SUPER messy" (operator, 2026-07-29).
      Split along the operator's actual loops: the nightly production line he
@@ -276,6 +287,7 @@ const TAB_PREFETCH_PATHS = {
   neural_web: ["/api/neural_web/lobes"],
   orchestrator: ["/api/orchestrator", "/api/prophet"],
   prophet: ["/api/prophet", "/api/prophet/trade-memory"],
+  macro_thesis: ["/api/macro-thesis"],
   marketing_overview: ["/api/marketing/overview"],
   marketing_departments: ["/api/marketing/departments"],
   marketing_campaigns: ["/api/marketing/campaigns"],
@@ -697,6 +709,288 @@ function meter(label, pct, valText, cls) {
 
 const RENDER = {};
 
+/* ---- KEY ALERTS (landing rail) ------------------------------------------ */
+/* The "needs your eyes" rail: cascades not dormant, FIRED tripwires, high-priority
+   triage rows — each with a one-click "Brief for Fable" copy button so checking in
+   with a Claude session starts from the alert's full context instead of a blank page. */
+const KA_KIND = { cascade: ["⛓", "Cascade"], tripwire: ["⚡", "Tripwire"], triage: ["🚨", "Alert"] };
+const KA_TONE = (it) => {
+  const s = String(it.state || "").toLowerCase();
+  if (s === "expressed" || s === "failed" || s === "fired") return "var(--bad)";
+  if (s === "propagating") return "var(--warn)";
+  return "var(--muted)";
+};
+function renderKeyAlerts(ka) {
+  if (!ka || ka.error || !Array.isArray(ka.items)) return "";
+  if (!ka.items.length) {
+    return `<div class="section">Key alerts</div>
+      <div class="card"><div class="sub">Nothing needs your eyes right now — no active cascades, fired tripwires, or high-priority alerts.</div></div>`;
+  }
+  const rows = ka.items.map((it, i) => {
+    const [icon, kind] = KA_KIND[it.kind] || ["•", it.kind || ""];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+      <span title="${esc(kind)}">${icon}</span>
+      <span style="min-width:86px"><b style="color:${KA_TONE(it)}">${esc(it.state || "")}</b></span>
+      <span style="flex:1;min-width:0"><b>${esc(it.title || "")}</b>
+        <span class="sub" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.detail || "")}${it.asof ? " · " + esc(String(it.asof).slice(0, 10)) : ""}</span></span>
+      <button class="btn" data-ka-copy="${i}" title="Copy a ready-to-paste briefing prompt for a Fable session">📋 Brief for Fable</button>
+    </div>`;
+  }).join("");
+  const more = ka.truncated ? `<div class="sub" style="margin-top:6px">${ka.total - ka.items.length} more below the cap — see the Alerts tab.</div>` : "";
+  return `<div class="section">Key alerts — check in with Fable</div><div class="card">${rows}${more}</div>`;
+}
+function wireKeyAlertCopies(ka) {
+  if (!ka || !Array.isArray(ka.items)) return;
+  document.querySelectorAll("[data-ka-copy]").forEach(btn => {
+    btn.onclick = async () => {
+      const it = ka.items[Number(btn.dataset.kaCopy)];
+      if (!it || !it.brief_prompt) return;
+      try { await navigator.clipboard.writeText(it.brief_prompt); toast("Briefing copied — paste it into a Fable session"); }
+      catch (e) { toast("Copy failed — clipboard blocked", true); }
+    };
+  });
+}
+
+/* ---- SEASONALITY PROGRAM WATCH ------------------------------------------ */
+/* The seasonality program's own watch: which of its tripwires need the operator
+   tonight, and the ready-to-paste prompt for each. Fired rows come first and carry
+   a --bad left rail plus an s-bad state pill, so a quiet watch and an unread one
+   can never look the same. The copy button reuses the Key-alerts clipboard idiom.
+   This is the operator surface, so operator vocabulary (module paths, PR shapes,
+   research/ docs) is rendered verbatim instead of laundered into customer words.
+   That is a VOCABULARY reason, not a secrecy one — the artifact is committed to a
+   public repo, so nothing genuinely private may be put in it on the strength of
+   this panel sitting behind the auth wall.
+   Freshness verdicts come from the server (pw.freshness) so one place owns the
+   thresholds; both clocks (market as-of and file write time) are printed. */
+const PW_PILL = { fired: "s-bad", unavailable: "s-warn", waiting: "s-mut" };
+const PW_LABEL = { fired: "FIRED", unavailable: "NO READ", waiting: "waiting" };
+/* Own-property lookups only: a producer state of "constructor"/"__proto__" must
+   not resolve to something off Object.prototype and get painted into the page. */
+function pwOwn(map, k, fallback) {
+  return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : fallback;
+}
+
+function pwScalar(v) {
+  if (v == null) return "—";
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  const s = String(v);
+  return s.length > 220 ? s.slice(0, 219) + "…" : s;
+}
+/* Evidence is engine-shaped nested JSON of unbounded depth. Render it as readable
+   lines — never a raw JSON blob, and never an "…" where a p-value was. Truncation
+   always says how much it dropped. */
+function pwCompact(v, depth) {
+  if (v == null || v === "") return "—";
+  if (typeof v !== "object") return pwScalar(v);
+  if (depth <= 0) return Array.isArray(v) ? v.length + (v.length === 1 ? " item" : " items") : "{…}";
+  if (Array.isArray(v)) {
+    if (!v.length) return "none";
+    const shown = v.slice(0, 6).map(x => pwCompact(x, depth - 1));
+    if (v.length > 6) shown.push(`+${v.length - 6} more`);
+    return shown.join(", ");
+  }
+  const ks = Object.keys(v);
+  if (!ks.length) return "none";
+  const shown = ks.slice(0, 8).map(k => `${k}=${pwCompact(v[k], depth - 1)}`);
+  if (ks.length > 8) shown.push(`+${ks.length - 8} more`);
+  return "{" + shown.join(", ") + "}";
+}
+function pwValue(v) {
+  if (v == null || v === "") return "—";
+  if (typeof v !== "object") return pwScalar(v);
+  if (Array.isArray(v)) {
+    if (!v.length) return "none";
+    const shown = v.slice(0, 6).map(x => pwCompact(x, 2));
+    if (v.length > 6) shown.push(`+${v.length - 6} more`);
+    return shown.join(", ");
+  }
+  const ks = Object.keys(v);
+  if (!ks.length) return "none";
+  const shown = ks.slice(0, 8).map(k => `${k} ${pwCompact(v[k], 2)}`);
+  if (ks.length > 8) shown.push(`+${ks.length - 8} more`);
+  return shown.join(" · ");
+}
+/* A list of objects is where the producer puts follow-up items, and `detail` /
+   `prompt` on those items ARE the instruction. Collapsing them to a bare key list
+   sends the operator back to the JSON this panel exists to replace. */
+function pwItemList(k, list) {
+  const items = list.map(x => {
+    if (!x || typeof x !== "object") {
+      return `<div style="padding:2px 0 2px 8px">${esc(pwScalar(x))}</div>`;
+    }
+    const name = String(x.key || x.id || x.name || "item");
+    const st = x.state == null ? "" : String(x.state);
+    const rest = Object.keys(x).filter(kk => !["key", "id", "name", "state", "detail", "prompt"].includes(kk));
+    return `<div style="margin-top:4px;padding:2px 0 4px 8px;border-left:2px solid var(--border)">
+      <div><b>${esc(name)}</b>${st ? ` <span class="sub">· ${esc(st)}</span>` : ""}</div>
+      ${x.detail ? `<div class="sub" style="margin-top:2px;word-break:break-word">${esc(String(x.detail))}</div>` : ""}
+      ${x.prompt ? `<div style="margin-top:3px;word-break:break-word">${esc(String(x.prompt))}</div>` : ""}
+      ${rest.length ? `<div class="sub" style="margin-top:2px;word-break:break-word">${esc(rest.slice(0, 8).map(kk => `${kk} ${pwCompact(x[kk], 2)}`).join(" · "))}</div>` : ""}
+    </div>`;
+  }).join("");
+  return `<div style="padding:4px 0"><span class="sub">${esc(k)} · ${list.length} item${list.length === 1 ? "" : "s"}</span>${items}</div>`;
+}
+function pwEvidence(ev) {
+  if (ev == null || ev === "") return "";
+  let entries;
+  if (typeof ev !== "object") entries = [["evidence", ev]];          // a bare string still shows
+  else if (Array.isArray(ev)) entries = ev.length ? [["items", ev]] : [];
+  else entries = Object.keys(ev).map(k => [k, ev[k]]);
+  if (!entries.length) return "";
+  const body = entries.map(([k, v]) => {
+    if (Array.isArray(v) && v.some(x => x && typeof x === "object")) return pwItemList(k, v);
+    return `<div style="display:flex;gap:8px;padding:2px 0">
+      <span class="sub" style="min-width:190px;flex:none">${esc(k)}</span>
+      <span style="flex:1;min-width:0;word-break:break-word">${esc(pwValue(v))}</span>
+    </div>`;
+  }).join("");
+  const n = entries.length;
+  return `<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Evidence (${n} field${n === 1 ? "" : "s"})</summary>
+    <div style="margin-top:6px;font-size:12px">${body}</div></details>`;
+}
+/* The open follow-ups nested in evidence carry their own paste-ready prompt.
+   A copied brief that omits them is not self-contained. */
+function pwOpenItems(ev) {
+  if (!ev || typeof ev !== "object") return [];
+  const lists = Array.isArray(ev) ? [ev] : Object.keys(ev).map(k => ev[k]).filter(Array.isArray);
+  const out = [], seen = new Set();
+  lists.forEach(list => list.forEach(x => {
+    if (!x || typeof x !== "object" || typeof x.prompt !== "string" || !x.prompt.trim()) return;
+    const st = String(x.state == null ? "" : x.state).toLowerCase();
+    if (["closed", "done", "resolved", "clear"].includes(st)) return;
+    /* The producer carries the same item in more than one list (checked + open);
+       the same instruction twice in a paste reads as two jobs. */
+    const id = `${x.key || x.id || x.name || ""}|${x.prompt.trim()}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    out.push(x);
+  }));
+  return out;
+}
+/* The pasted prompt must stand on its own in a fresh session: the operator's
+   prompt, the open sub-items' own prompts, the handoff doc, and the provenance. */
+function pwCopyText(pw, it) {
+  const prompt = String(it.operator_prompt || "").trim();
+  const parts = [];
+  if (prompt) {
+    parts.push(prompt);
+  } else {
+    parts.push(String(it.headline || it.key || "Seasonality program watch tripwire").trim()
+      + (it.why ? `\n\nWhy it is up: ${String(it.why).trim()}` : "")
+      + "\n\n(This tripwire carries no operator_prompt — scripts/build_program_watch.py "
+      + "should give it one; the lines below are all the context the artifact holds.)");
+  }
+  const open = pwOpenItems(it.evidence);
+  if (open.length) {
+    parts.push("Open items this tripwire is counting, each with its own instruction:\n"
+      + open.map((x, i) => `${i + 1}. ${x.key || x.id || x.name || "item"} — ${String(x.prompt).trim()}`
+        + (x.detail ? `\n   Observed: ${String(x.detail).trim()}` : "")).join("\n"));
+  }
+  if (it.handoff_doc && parts.join("\n").indexOf(it.handoff_doc) === -1) {
+    parts.push(`Context doc: ${it.handoff_doc}`);
+  }
+  parts.push(`Source: data/seasonality/program_watch.json — tripwire "${it.key || "?"}", `
+    + `state ${it.state || "?"}, artifact asof ${(pw && pw.asof) || "unknown"}.`);
+  return parts.join("\n\n");
+}
+function pwCard(tone, title, body) {
+  return `<div class="card" style="border-left:3px solid var(--${tone})">
+    <div style="color:var(--${tone})"><b>${title}</b></div>
+    <div class="sub" style="margin-top:4px">${body}</div></div>`;
+}
+function renderProgramWatch(pw) {
+  const head = `<div class="section">Seasonality program watch</div>`;
+  const wrap = (inner) => `<div id="pwPanel">${head}${inner}</div>`;
+  if (!pw) {
+    /* Version skew: an older server that predates this panel sends no key. Say so —
+       a panel that silently disappears is the quiet-vs-unread collapse again. */
+    return wrap(pwCard("warn", "Watch unread — the server did not send it.",
+      "/api/summary carried no program_watch key. That is an admin server older than this "
+      + "console build, not an all-clear. Restart/redeploy the admin service."));
+  }
+  if (pw.error) {
+    return wrap(pwCard("warn", "Watch unread.",
+      `The console could not build this panel: ${esc(pw.error)}. That is not an all-clear.`));
+  }
+  if (!pw.available || !Array.isArray(pw.tripwires)) {
+    return wrap(pwCard("warn", "Watch unread — no artifact to read.",
+      esc(pw.note || "No note given.")));
+  }
+  const c = pw.counts || {};
+  const fr = pw.freshness || {};
+  const bad = fr.level === "stale";
+  const unknown = fr.level === "unknown";
+  const tone = bad ? "bad" : unknown ? "warn" : "";
+  const bar = (bad || unknown) && fr.note
+    ? `<div style="margin:-2px 0 10px;padding:8px 10px;border-radius:6px;background:var(--${tone}-bg);color:var(--${tone})">
+        <b>${bad ? "This watch is behind." : "This watch's freshness is unknown."}</b>
+        <span class="sub" style="color:inherit">${esc(fr.note)}</span></div>`
+    : "";
+  const ages = [
+    typeof pw.stale_days === "number" ? `${pw.stale_days.toFixed(1)}d behind (market as-of)` : "age unreadable",
+    typeof pw.built_days === "number" ? `file written ${pw.built_days.toFixed(1)}d ago` : "",
+  ].filter(Boolean).join(" · ");
+  const other = c.other ? ` · <b style="color:var(--warn)">${c.other} unrecognised</b>` : "";
+  const meta = `<div class="sub" style="margin-bottom:10px">asof ${esc(pw.asof == null ? "—" : String(pw.asof))} · ${ages} · `
+    + `<b style="color:var(--bad)">${c.fired || 0} fired</b> · ${c.unavailable || 0} no-read · ${c.waiting || 0} waiting${other}</div>`;
+  const rows = pw.tripwires.map((it, i) => {
+    const st = String(it.state || "").toLowerCase();
+    const fired = st === "fired";
+    const pill = pwOwn(PW_PILL, st, "s-warn");   // an unknown state is news, not muted noise
+    const label = pwOwn(PW_LABEL, st, st || "?");
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0 10px ${fired ? "9" : "0"}px;border-top:1px solid var(--border)${fired ? ";border-left:3px solid var(--bad)" : ""}">
+      <div style="flex:none;width:96px;padding-top:2px">
+        <span class="statpill ${pill}" style="font-size:11px;letter-spacing:.03em">${esc(label)}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="${fired ? "font-weight:600" : ""}">${esc(it.headline || it.key || "")}</div>
+        <div class="sub" style="margin-top:3px">${esc(it.why || "")}</div>
+        <div class="sub" style="margin-top:3px">${esc(it.key || "")}${it.handoff_doc ? " · " + esc(it.handoff_doc) : ""}</div>
+        ${pwEvidence(it.evidence)}
+      </div>
+      <div style="flex:none">
+        <button class="btn" data-pw-copy="${i}" title="${it.operator_prompt
+          ? "Copy this tripwire's prompt, its open items and their context — paste it into a new session"
+          : "This tripwire carries no operator_prompt; copies its headline, why and provenance instead"}">📋 Copy prompt</button>
+      </div>
+    </div>`;
+  }).join("");
+  const empty = pw.tripwires.length ? "" :
+    `<div class="sub">The artifact carries no tripwires. That is an empty watch, not a clear one — check scripts/build_program_watch.py.</div>`;
+  const more = pw.truncated ? `<div class="sub" style="margin-top:8px">More tripwires exist than this panel shows — read data/seasonality/program_watch.json.</div>` : "";
+  const foot = `<div style="margin-top:10px"><button class="btn" id="pwRecheck" title="Re-read data/seasonality/program_watch.json now, bypassing the 15s response cache">⟳ Recheck now</button></div>`;
+  return wrap(`<div class="card"${tone ? ` style="border-left:3px solid var(--${tone})"` : ""}>${bar}${meta}${rows}${empty}${more}${foot}</div>`);
+}
+function wireProgramWatch(pw) {
+  document.querySelectorAll("[data-pw-copy]").forEach(btn => {
+    btn.onclick = async () => {
+      const it = (pw && Array.isArray(pw.tripwires)) ? pw.tripwires[Number(btn.dataset.pwCopy)] : null;
+      if (!it) return;
+      try { await navigator.clipboard.writeText(pwCopyText(pw, it)); toast("Prompt copied — paste it into a new session"); }
+      catch (e) { toast("Copy failed — clipboard blocked", true); }
+    };
+  });
+  const re = document.getElementById("pwRecheck");
+  if (re) {
+    re.onclick = async () => {
+      re.disabled = true;
+      try {
+        /* force=1 is the house cache-bypass on both sides (client API_CACHE and the
+           server's 15s response cache), so "recheck" really re-reads the artifact. */
+        const fresh = await api("/api/program_watch?force=1");
+        const host = document.getElementById("pwPanel");
+        if (SUMMARY) SUMMARY.program_watch = fresh;
+        if (host) { host.outerHTML = renderProgramWatch(fresh); wireProgramWatch(fresh); }
+        toast("Watch re-read");
+      } catch (e) {
+        re.disabled = false;
+        toast("Recheck failed — " + ((e && e.message) || "unknown error"), true);
+      }
+    };
+  }
+}
+
 /* ---- OVERVIEW ----------------------------------------------------------- */
 RENDER.overview = async () => {
   const v = $("#view"), s = SUMMARY;
@@ -714,8 +1008,12 @@ RENDER.overview = async () => {
       ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
       ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest && s.experiments.soonest.days_until > 0 ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
+    ${renderKeyAlerts(s.key_alerts)}
+    ${renderProgramWatch(s.program_watch)}
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
+  wireKeyAlertCopies(s.key_alerts);
+  wireProgramWatch(s.program_watch);
   const qa = $("#qa");
   const rebuild = h(`<button class="btn primary">▶ Rebuild &amp; deploy now</button>`);
   rebuild.onclick = () => dispatch("daily.yml"); rebuild.disabled = !m.has_token; qa.appendChild(rebuild);
@@ -1718,6 +2016,20 @@ RENDER.users = async () => {
     </div>
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
+    <div class="section">Reset a password</div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:10px">Sets the password directly. The customer is
+        <b>not</b> emailed &mdash; hand the new one over yourself, on a channel you trust.
+        Their existing sessions stay signed in.</div>
+      <div class="pw-row">
+        <input id="pwEmail" class="ent-search" type="email" placeholder="customer email, or user id…"
+               autocomplete="off" spellcheck="false">
+        <input id="pwValue" class="ent-search" type="text" placeholder="leave blank to generate one"
+               autocomplete="off" spellcheck="false">
+        <button class="btn" onclick="usrResetPassword()">Set password</button>
+      </div>
+      <div id="pwOut"></div>
+    </div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
     <div id="uTbl"><div class="spin">loading…</div></div>
     <div class="section" style="margin-top:22px">Subscribers &amp; entitlements <span class="cnt" id="entCnt"></span>
@@ -1733,9 +2045,10 @@ RENDER.users = async () => {
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
-    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+    $("#uTbl").innerHTML = `<table><thead><tr><th>User</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th><th></th></tr></thead><tbody>
       ${rec.users.map(u => `<tr><td><b>${esc(u.name || u.email || "—")}</b>${u.name && u.email ? `<div class="mono sub">${esc(u.email)}</div>` : ""}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
-        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
+        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
+        <td>${u.email ? `<button class="btn ghost sm" data-email="${esc(u.email)}" onclick="usrPickForReset(this.dataset.email)">Reset password</button>` : ""}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
 
@@ -1749,6 +2062,59 @@ RENDER.users = async () => {
   entLoad();
 };
 
+/* ---- operator password reset -------------------------------------------- */
+/* Sets the password DIRECTLY (POST /api/users/reset_password). Deliberately not a
+   "send them a reset link" button: the site's browser SDK is pinned to PKCE, so a
+   link minted server-side — here, by /auth/v1/recover, or by the Supabase dashboard's
+   own Reset-password button — comes back as an implicit #access_token fragment that
+   the client refuses by design, and lands the customer on a page that does nothing.
+   See admin/users.py. The customer's self-serve "Forgot your password?" on the site
+   IS browser-initiated, so that path works and remains the one to prefer. */
+function usrPickForReset(email) {
+  const f = $("#pwEmail"); if (!f) return;
+  f.value = email;
+  f.scrollIntoView({ behavior: "smooth", block: "center" });
+  f.focus();
+}
+
+async function usrResetPassword() {
+  const who = ($("#pwEmail").value || "").trim();
+  const chosen = ($("#pwValue").value || "").trim();
+  const out = $("#pwOut");
+  if (!who) { toast("Enter the customer's email or user id", true); $("#pwEmail").focus(); return; }
+  if (!confirm(`Set a new password for ${who}?\n\nThey are NOT emailed — you hand it over yourself.`)) return;
+  out.innerHTML = `<div class="spin">working…</div>`;
+  const body = { email: who };
+  if (chosen) body.password = chosen;
+  const r = await post("/api/users/reset_password", body);
+  if (!r.ok) {
+    out.innerHTML = `<div class="pw-out err"><b>Could not reset.</b> <span class="sub">${esc(r.error || "unknown error")}</span>
+      ${(r.setup_steps || []).length ? `<ol class="steps" style="margin-top:8px">${r.setup_steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}</div>`;
+    toast("Password reset failed", true);
+    return;
+  }
+  const u = r.user || {};
+  // The generated password is shown ONCE, here, and is not stored on either side.
+  // A reload loses it — that is the intent, not a gap.
+  out.innerHTML = `<div class="pw-out ok">
+      <b>Password set for ${esc(u.email || who)}</b>
+      ${r.password ? `<div class="pw-secret"><code class="mono">${esc(r.password)}</code>
+        <button class="btn ghost sm" onclick="usrCopyPw(this)">Copy</button></div>
+        <div class="sub">Shown once — it is not stored anywhere. Reload and it is gone.</div>` : ``}
+      <div class="sub" style="margin-top:8px">${esc(r.note || "")}</div>
+    </div>`;
+  $("#pwValue").value = "";
+  toast("Password updated");
+}
+
+function usrCopyPw(btn) {
+  const code = btn.parentNode.querySelector("code");
+  if (!code) return;
+  navigator.clipboard.writeText(code.textContent).then(
+    () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1600); },
+    () => toast("Clipboard blocked — select and copy manually", true));
+}
+
 /* ---- entitlements management (subscribers panel) ------------------------ */
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
 const ENT_TIERS = ["free", "essential", "pro"];
@@ -1761,8 +2127,15 @@ const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
 
 function entIdentity(u) { return u.name || u.email || u.user_id; }
 
-function entChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* `on` is JS SOURCE pasted into an HTML attribute, so it must never carry an
+   interpolated string literal: JSON.stringify emits double quotes, those close
+   the onclick attribute, and the parser drops everything after them — the chip
+   renders looking normal and the click does nothing. Pass the value through
+   `data` (attribute-escaped) and read it back as `this.dataset.<key>`, which
+   keeps `on` a fixed, code-only string. esc(on) is the belt: it keeps a future
+   caller's quoted literal from truncating the attribute the same way. */
+function entChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 
 async function entLoad() {
@@ -1785,9 +2158,9 @@ async function entLoad() {
   const byTier = {}, byStatus = {};
   (d.summary || []).forEach(r => { const ct = entCanonTier(r.tier); byTier[ct] = (byTier[ct] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
   const chips = [entChip("All", !f.tier && !f.status, "entSetFilter('tier',null)")]
-    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, `entSetFilter('tier',${JSON.stringify(t)})`)))
+    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, "entSetFilter('tier',this.dataset.tier)", { tier: t })))
     .concat(['<span class="ent-chip-sep"></span>'])
-    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, `entSetFilter('status',${JSON.stringify(s)})`)));
+    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, "entSetFilter('status',this.dataset.status)", { status: s })));
   $("#entChips").innerHTML = chips.join("");
   $("#entSummary").innerHTML = `<div class="card">${(d.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>"}</div>`;
   $("#entCnt").textContent = d.total != null ? d.total : ENT.rows.length;
@@ -2964,6 +3337,81 @@ function nwMapLabel(label) {
     .trim();
 }
 
+/* ── Observatory map switch ──────────────────────────────────────────────────
+   Two genuinely different pictures of the same brain, so this is a toggle and
+   not a replacement:
+     · lobes   — nwSystemMap's computed radial dendrogram: which lobe sits WHERE,
+                 a deterministic structural map that looks the same all day.
+     · synapse — committee.html's living canvas map: which signals are FIRING
+                 right now, with pulses travelling real confluence edges.
+
+   The synapse map is EMBEDDED, never re-implemented here. It is ~200 lines of
+   canvas simulation (pulses, dust, pan/zoom, hover cards) over a 616KB
+   confluence_graph payload; a second copy in this file would drift from the
+   original the first time either side changed, and the drift would be invisible
+   because both would still render something.
+
+   The embed is same-origin, which is what makes it presentable: Caddy serves
+   /research-tools/* from THIS host (admin.mastermind-x.com, handle_path +
+   forward_auth to /api/auth-check), so we can reach into the frame and hide the
+   donor page's own hero/nav/footer rather than living with them in a panel. */
+const NW_MAP_VIEWS = [["lobes", "Lobe map"], ["synapse", "Synapse map"]];
+const NW_MAP_KEY = "nw_map_view";
+
+function nwMapView() {
+  try { return localStorage.getItem(NW_MAP_KEY) === "synapse" ? "synapse" : "lobes"; }
+  catch (e) { return "lobes"; }
+}
+function nwSetMapView(v) { try { localStorage.setItem(NW_MAP_KEY, v); } catch (e) {} }
+
+function nwMapSwitch(d) {
+  const cur = nwMapView();
+  const tabs = NW_MAP_VIEWS.map(([id, label]) =>
+    `<button class="an-tab${cur === id ? " active" : ""}" data-nwmap="${id}">${label}</button>`).join("");
+  return `<div class="an-tabs" style="margin:14px 0 10px;width:max-content">${tabs}</div>
+    <div id="nw-map-body">${cur === "synapse" ? nwSynapseEmbed() : nwSystemMap(d)}</div>`;
+}
+
+function nwSynapseEmbed() {
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <iframe id="nw-synapse-frame" src="/research-tools/committee.html"
+      title="Synapse map — Neural Web confluence graph" loading="lazy"
+      style="width:100%;height:760px;border:0;display:block"></iframe>
+  </div>`;
+}
+
+/* Strip the donor page down to its graph by HIDING, never removing.
+   The map's own script keeps live references (#graph_loading, the chips, the
+   control buttons) and runs a rAF loop against them, so deleting nodes would
+   throw inside a frame whose errors we never see. Hiding leaves every reference
+   resolvable. Fail-soft in both directions: a cross-origin frame or moved donor
+   markup leaves the page whole and scrolled to the map rather than blank. */
+function nwWireSynapseFrame(root) {
+  const f = root.querySelector("#nw-synapse-frame");
+  if (!f) return;
+  f.addEventListener("load", () => {
+    let doc = null;
+    try { doc = f.contentDocument; } catch (e) { doc = null; }
+    if (!doc || !doc.body) return;
+    const wrap = doc.getElementById("graph_wrap");
+    if (!wrap) { try { f.contentWindow.location.hash = "#graph_wrap"; } catch (e) {} return; }
+
+    const KEEP = { graph_legend: 1, graph_subset_note: 1, graph_wrap: 1 };
+    for (let el = wrap; el && el !== doc.documentElement; el = el.parentElement) {
+      const p = el.parentElement;
+      if (!p) break;
+      Array.prototype.forEach.call(p.children, (c) => {
+        if (c === el || KEEP[c.id] || c.tagName === "SCRIPT" || c.tagName === "STYLE" || c.tagName === "LINK") return;
+        c.style.display = "none";
+      });
+      if (p === doc.body) break;
+    }
+    doc.body.style.background = "transparent";
+    doc.body.style.padding = "10px 12px";
+    doc.documentElement.style.background = "transparent";
+  });
+}
+
 /* Radial dendrogram: core → group hubs → named lobe leaves, with curved
    hue-coloured synapse links. Deterministic layout (angle from index). */
 function nwSystemMap(d) {
@@ -3092,7 +3540,7 @@ RENDER.neural_web = async () => {
     <div class="lobe-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(8)}</div>`;
   const d = await api("/api/neural_web/lobes");
   if (!d.ok) { v.innerHTML = nwEmpty("Could not load the lobe map", d.error || "panel error"); return; }
-  let html = nwHero(d) + mbHeroCard(d.orchestrator_hero) + nwSystemMap(d);
+  let html = nwHero(d) + mbHeroCard(d.orchestrator_hero) + nwMapSwitch(d);
   (d.groups || []).forEach(g => {
     if (!g.lobes || !g.lobes.length) return;
     html += `<div class="section">${esc(g.label)} <span class="cnt">${g.lobes.length}</span></div>
@@ -3108,10 +3556,26 @@ RENDER.neural_web = async () => {
 
   v.innerHTML = html;
   const mbBtn = $("#mb-open"); if (mbBtn) mbBtn.onclick = () => go("orchestrator");
-  v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
+
+  /* The map switch swaps only #nw-map-body — re-rendering the whole view would
+     refetch /api/neural_web/lobes and throw away the lobe cards and the open
+     Operator HQ details for a change that touches one panel. */
+  const wireMapNodes = () => v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
     el.addEventListener("click", () => gotoLobe(el.dataset.lobe));
     wireLobeTipNode(el);
   });
+  v.querySelectorAll("[data-nwmap]").forEach(btn => btn.addEventListener("click", () => {
+    const want = btn.dataset.nwmap;
+    if (want === nwMapView()) return;
+    nwSetMapView(want);
+    v.querySelectorAll("[data-nwmap]").forEach(b => b.classList.toggle("active", b.dataset.nwmap === want));
+    const body = v.querySelector("#nw-map-body");
+    if (!body) return;
+    body.innerHTML = want === "synapse" ? nwSynapseEmbed() : nwSystemMap(d);
+    if (want === "synapse") nwWireSynapseFrame(body); else wireMapNodes();
+  }));
+  if (nwMapView() === "synapse") nwWireSynapseFrame(v); else wireMapNodes();
+
   loadLegacyOps();
 };
 /* Section G — Evidence Clock (EC-R5) */
@@ -3944,6 +4408,185 @@ RENDER.prophet = async () => {
     }
     toast(`${result.ticker || body.ticker} saved privately`);
     await RENDER.prophet();
+  };
+};
+
+/* ---- MACRO THESIS LEDGER --------------------------------------------------- */
+/* Operator-conviction register at THESIS grain. ops/journal tier, ZERO AUTHORITY:
+   a track record OF macro synthesis, never a signal into any surface. Sibling of
+   Trade Memory (per-trade / Supabase) — different grain, different store.
+   Forward and retro are rendered as SEPARATE sections and are never summed
+   together; the engine raises if anything tries to pool them. */
+
+const MT_STATUS_CLS = { accruing: "s-mut", interim: "s-warn", graded_21: "s-ok", graded_63: "s-ok" };
+const mtPct = (x) => x == null ? "—" : `${x >= 0 ? "+" : ""}${(Number(x) * 100).toFixed(2)}%`;
+const mtStatusCls = (s) => MT_STATUS_CLS[s] || (String(s || "").startsWith("graded_") ? "s-ok" : "s-mut");
+
+function mtLegRowsHtml(legs) {
+  if (!legs || !legs.length) return `<div class="sub muted">No legs recorded.</div>`;
+  return `<div class="table-wrap"><table><thead><tr><th>Plane</th><th>Kind</th><th>Claim</th><th>State ref @ registration</th></tr></thead><tbody>
+    ${legs.map(leg => {
+      const sr = leg.state_ref;
+      /* A calibrated leg shows the artifact + key that HELD the state, and the
+         literal value read then — without the observed value the pointer is
+         useless by the time anyone grades the thesis. */
+      const refCell = sr
+        ? `<code class="muted">${esc(sr.artifact)}</code> → <code class="muted">${esc(sr.key)}</code>${
+            sr.observed !== undefined
+              ? `<div class="note">observed: <b>${esc(typeof sr.observed === "object" ? JSON.stringify(sr.observed) : sr.observed)}</b></div>`
+              : ""}`
+        : `<span class="muted">— plane not wired (judgment)</span>`;
+      return `<tr>
+        <td><b>${esc(leg.plane)}</b></td>
+        <td><span class="statpill ${leg.leg_kind === "calibrated" ? "s-ok" : "s-mut"}">${esc(leg.leg_kind)}</span></td>
+        <td>${esc(leg.claim)}</td>
+        <td>${refCell}</td>
+      </tr>`;
+    }).join("")}
+  </tbody></table></div>`;
+}
+
+function mtInstrumentRowsHtml(instruments, horizons) {
+  if (!instruments || !instruments.length) return `<div class="sub muted">No instruments.</div>`;
+  const hs = horizons || [21, 63];
+  return `<div class="table-wrap"><table><thead><tr>
+      <th>Series</th><th>Benchmark</th><th>Anchor</th><th>Sessions</th>
+      ${hs.map(h => `<th>H${h} ret</th><th>H${h} excess</th>`).join("")}
+      <th>Interim</th><th>Interim excess</th></tr></thead><tbody>
+    ${instruments.map(i => {
+      if (i.resolution === "unresolved") {
+        /* Disclosed null, never a silent zero and never a crash. */
+        return `<tr><td><b>${esc(i.series)}</b></td>
+          <td colspan="${3 + hs.length * 2 + 2}"><span class="statpill s-warn">unresolved</span>
+          <span class="note muted">${esc(i.reason || "series did not resolve in any price store")}</span></td></tr>`;
+      }
+      return `<tr>
+        <td><b>${esc(i.series)}</b>${i.kind === "basket" ? ` <span class="statpill s-mut">EW basket · ${Number((i.members || []).length)}</span>` : ""}</td>
+        <td>${esc(i.benchmark)}</td>
+        <td>${esc(i.anchor_date)}</td>
+        <td>${Number(i.sessions_elapsed)}</td>
+        ${hs.map(h => `<td>${mtPct((i.returns || {})[String(h)])}</td><td>${mtPct((i.excess || {})[String(h)])}</td>`).join("")}
+        <td>${mtPct(i.interim)}</td>
+        <td>${mtPct(i.interim_excess)}</td>
+      </tr>`;
+    }).join("")}
+  </tbody></table></div>`;
+}
+
+function mtThesisHtml(t) {
+  const hs = t.horizon_sessions || [21, 63];
+  const roll = t.rollup || {};
+  const retro = t.entry_class === "retro";
+  return `<div class="card">
+    <h3>${esc(t.title)}
+      <span class="statpill ${mtStatusCls(t.status)}">${esc(t.status)}</span>
+      <span class="statpill s-mut">${esc(t.direction)}</span>
+      <span class="statpill s-mut">conviction ${Number(t.conviction)}/5</span>
+    </h3>
+    <div class="sub">${esc(t.thesis_id)}</div>
+    <div class="kv"><span>Registered</span><b>${esc(t.registered_at)} · ${esc(t.author)}</b></div>
+    <div class="kv"><span>Anchor (first close on/after)</span><b>${esc(t.anchor_date)}</b></div>
+    ${retro && t.event_period ? `<div class="kv"><span>Event period</span><b>${esc(t.event_period.from)} → ${esc(t.event_period.to)}</b></div>` : ""}
+    ${t.amended_from ? `<div class="kv"><span>Amends</span><b>${esc(t.amended_from)}</b></div>` : ""}
+    <div class="kv"><span>Legs</span><b>${Number(t.legs_calibrated)} calibrated · ${Number(t.legs_judgment)} judgment</b></div>
+    <div class="kv"><span>Rollup (median across instruments)</span><b>${
+      hs.map(h => `H${h} ${mtPct((roll.returns || {})[String(h)])} / excess ${mtPct((roll.excess || {})[String(h)])}`).join(" &middot; ")
+    } &middot; interim ${mtPct(roll.interim)}</b></div>
+    ${Number(t.unresolved_n) ? `<div class="note muted">${Number(t.unresolved_n)} instrument(s) unresolved — disclosed below, excluded from the rollup.</div>` : ""}
+    ${retro ? `<div class="note"><b>Hindsight risk (mandatory disclosure):</b> ${esc(t.hindsight_risk)}</div>` : ""}
+    <div class="section">Instruments</div>
+    ${mtInstrumentRowsHtml(t.instruments, hs)}
+    <div class="section">Legs</div>
+    ${mtLegRowsHtml(t.legs)}
+    ${t.confirm_watch ? `<div class="note"><b>Confirm watch:</b> ${esc(t.confirm_watch)}</div>` : ""}
+    ${t.risk_watch ? `<div class="note"><b>Risk watch:</b> ${esc(t.risk_watch)}</div>` : ""}
+    ${retro && (t.sources || []).length ? `<div class="note muted"><b>Sources:</b> ${(t.sources || []).map(s => esc(s)).join(" &middot; ")}</div>` : ""}
+  </div>`;
+}
+
+function mtSectionHtml(section, emptyMsg) {
+  if (!section) return `<div class="sub muted">${esc(emptyMsg)}</div>`;
+  const s = section.summary || {};
+  const theses = section.theses || [];
+  const med = s.median_return || {};
+  const excess = s.median_excess || {};
+  const hs = Object.keys(med);
+  const byStatus = Object.entries(s.by_status || {}).map(([k, v]) => `${esc(k)} ${Number(v)}`).join(" · ");
+  return `<div class="card">
+      <h3>${esc(section.label)} <span class="cnt">${Number(s.n || 0)} theses</span></h3>
+      <div class="kv"><span>Status</span><b>${byStatus || "—"}</b></div>
+      <div class="kv"><span>Median return</span><b>${hs.length ? hs.map(h => `H${esc(h)} ${mtPct(med[h])}`).join(" &middot; ") : "—"}</b></div>
+      <div class="kv"><span>Median excess</span><b>${hs.length ? hs.map(h => `H${esc(h)} ${mtPct(excess[h])}`).join(" &middot; ") : "—"}</b></div>
+      <div class="kv"><span>Legs</span><b>${Number(s.legs_calibrated || 0)} calibrated · ${Number(s.legs_judgment || 0)} judgment</b></div>
+    </div>
+    ${theses.length ? theses.map(mtThesisHtml).join("") : `<div class="sub muted">${esc(emptyMsg)}</div>`}`;
+}
+
+RENDER.macro_thesis = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/macro-thesis");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Macro Thesis unavailable", (d && (d.error || d.reason)) || "panel error");
+    return;
+  }
+
+  /* The schema is nested (legs[] and instruments[] are lists of objects), which a
+     flat field-per-input form cannot express. The paste box uses the same
+     form/post/toast idiom as the Trade Memory form — no new UI machinery. */
+  const template = JSON.stringify({
+    registered_at: new Date().toISOString().slice(0, 10),
+    author: "operator",
+    title: "",
+    direction: "long",
+    horizon_sessions: [21, 63],
+    conviction: 3,
+    entry_class: "forward",
+    legs: [{ plane: "rates", claim: "", leg_kind: "judgment", state_ref: null }],
+    instruments: [{ series: "", benchmark: "absolute" }],
+    confirm_watch: "",
+    risk_watch: "",
+  }, null, 2);
+
+  v.innerHTML = `<div class="section">Macro Thesis Ledger <span class="cnt">${Number((d.forward && d.forward.summary && d.forward.summary.n) || 0)} forward · ${Number((d.retro && d.retro.summary && d.retro.summary.n) || 0)} retro</span></div>
+    <div class="card">
+      <h3>Record the synthesis, then grade it</h3>
+      <div class="sub">A multivariable macro thesis is written down point-in-time and graded at fixed horizons, building a track record of macro synthesis. Human now, Neural Web later.</div>
+      <div class="note muted"><b>Authority: ${esc(d.authority)}</b></div>
+      <div class="note muted">${esc(d.store)}</div>
+      <div class="note muted">${esc(d.firewall)}</div>
+    </div>
+    <form id="macroThesisForm" class="tm-form">
+      <label class="tm-wide"><span>Thesis JSON</span><textarea name="thesis" rows="16" spellcheck="false" placeholder="Paste one thesis object">${esc(template)}</textarea></label>
+      <div class="tm-wide"><button class="btn" type="submit">Register thesis</button><span id="macroThesisSaveState" class="sub muted"></span></div>
+    </form>
+    <div class="section">Forward register</div>
+    ${mtSectionHtml(d.forward, "No forward theses registered yet.")}
+    <div class="section">Retro library</div>
+    <div class="note muted">Retro rows are curated in hindsight. They exist for schema exercise and Neural Web reconstruction training, and are never pooled into the forward track record.</div>
+    ${mtSectionHtml(d.retro, "No retro theses recorded yet.")}`;
+
+  const form = $("#macroThesisForm");
+  if (form) form.onsubmit = async (event) => {
+    event.preventDefault();
+    const state = $("#macroThesisSaveState");
+    let body;
+    try {
+      body = JSON.parse(String(new FormData(form).get("thesis") || ""));
+    } catch (err) {
+      if (state) state.textContent = `Not valid JSON: ${err.message}`;
+      toast("Not valid JSON", true);
+      return;
+    }
+    if (state) state.textContent = "Registering…";
+    const result = await post("/api/macro-thesis", body);
+    if (!result.ok) {
+      if (state) state.textContent = result.error || "Registration failed";
+      toast(result.error || "Registration failed", true);
+      return;
+    }
+    toast(`${result.thesis_id} registered`);
+    await RENDER.macro_thesis();
   };
 };
 
@@ -5195,7 +5838,7 @@ RENDER.marketing_departments = async () => {
       const shortName = dept.name || dept.id;
       const formalName = dept.formal_name || dept.name || dept.id;
       const engCount = engines.length;
-      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" onclick="event.preventDefault();gotoMktDept(${JSON.stringify(dept.id)})">
+      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" data-dept-id="${esc(dept.id)}" onclick="event.preventDefault();gotoMktDept(this.dataset.deptId)">
         <h3><span class="mkt-dept-icon">${icon}</span>${esc(shortName)}
           ${mktLifecyclePill(dept.lifecycle_state)}
           ${mktAuthPill(dept.authority_level)}
@@ -5909,7 +6552,7 @@ function csFunnel(d) {
       loss = `<div class="fn-lost">−${flrN(st.lost)}</div>
         <div class="fn-lost-word">${esc(st.lossWord || "lost here")}</div>`;
     }
-    return `<button class="${cls}" onclick="${st.go}">
+    return `<button class="${cls}" onclick="${esc(st.go)}">
       <span class="fn-ord">${i + 1}</span>
       <div class="fn-name">${esc(st.name)}</div>
       <div class="fn-n${st.out === 0 ? " is-zero" : ""}">${isNull ? "—" : flrN(st.out)}</div>
@@ -12651,8 +13294,9 @@ const SUP_ACTION_LABEL = { reply: "Reply", resolve: "Resolve", close: "Close", r
    "reopen" into "reopend". */
 const SUP_ACTION_DONE = { reply: "replied to", resolve: "resolved", close: "closed", reopen: "reopened" };
 
-function supChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function supChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour carries WHOSE move it is, not the raw state name: warn = waiting on you,
    ok = resolved, muted = idle (pending on the user, or closed). */
@@ -12705,7 +13349,7 @@ async function supLoad() {
   const counts = d.counts || {};
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   $("#supChips").innerHTML = [supChip(`All (${total})`, !SUP.status, "supSetStatus(null)")]
-    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, `supSetStatus(${JSON.stringify(s)})`)))
+    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, "supSetStatus(this.dataset.status)", { status: s })))
     .join("");
   $("#supCnt").textContent = d.total != null ? d.total : SUP.rows.length;
   setNavDot("support_tickets", d.open_count || 0, "ticket");
@@ -12761,7 +13405,7 @@ async function supRenderThread(id) {
   const legal = d.legal_actions || [];
   const canReply = legal.includes("reply");
   const stateButtons = legal.filter(a => a !== "reply")
-    .map(a => `<button class="ent-act" onclick="supAct(${JSON.stringify(id)},${JSON.stringify(a)})">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
+    .map(a => `<button class="ent-act" data-id="${esc(id)}" data-action="${esc(a)}" onclick="supAct(this.dataset.id,this.dataset.action)">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
     .join("");
 
   det.innerHTML = `
@@ -12791,7 +13435,7 @@ async function supRenderThread(id) {
           placeholder="Write your reply — it is recorded on this ticket and emailed to ${esc(t.email || "the sender")}."></textarea>` : `
         <div class="sub muted" style="margin-bottom:10px">This ticket is ${esc(t.status || "closed")} — reopen it to reply.</div>`}
       <div class="ent-form-actions" style="justify-content:flex-start">
-        ${canReply ? `<button class="ent-act ent-primary" onclick="supReply(${JSON.stringify(id)})">Send reply</button>` : ""}
+        ${canReply ? `<button class="ent-act ent-primary" data-id="${esc(id)}" onclick="supReply(this.dataset.id)">Send reply</button>` : ""}
         ${stateButtons}
       </div>
     </div>`;
@@ -12851,8 +13495,9 @@ async function supReply(id) {
 const EC = { tab: "people", segment: "all", q: "", page: 1, supQ: "", supPage: 1,
              zhDelim: "===zh===", editing: null };
 
-function ecChip(label, active, on) {
-  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+/* Values ride in `data`, never interpolated into `on` — see entChip. */
+function ecChip(label, active, on, data) {
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
 }
 /* Colour says whether we may mail this person, which is the only question this
    table exists to answer: ok = yes, bad = on the kill list, warn = opted out. */
@@ -12977,7 +13622,7 @@ async function ecLoadPeople() {
 
   const segs = $("#ecSegs");
   if (segs) segs.innerHTML = (d.segments || []).map(s =>
-    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, `ecSetSegment('${s.key}')`)).join("");
+    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, "ecSetSegment(this.dataset.segment)", { segment: s.key })).join("");
 
   const link = $("#ecExport");
   if (link) {

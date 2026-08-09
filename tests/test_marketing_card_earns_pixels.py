@@ -13,6 +13,24 @@ own file); every fixture below is a REAL shipped post, not an invention.
     illegible in a phone feed; the canvas is now 1080x1080 (AD_MASTER_PAPER
     §4.1) with the mobile type floors of §0 AG-3.
 
+SECOND OPERATOR DEFECT REPORT, 2026-08-05 — three more live RADAR posts
+(@mastermindx001, Aug 4-5) shipped cards that restated the tweet, clipped
+mid-clause on a static PNG, and printed the source's masthead. A 14-agent
+adversarial audit confirmed 35 defects; the root causes are pinned below.
+
+  Defect 5 — the gate could not say no. card_earns_attachment was
+    APPROVAL-ONLY: its summary branch returned True and no branch returned
+    False on the strength of the card BODY, so control fell through to a
+    headline check and attached. Nothing ever asked whether the card's HERO
+    restated the tweet, which is exactly what the India card did.
+  Defect 6 — the card could not fit, and shipped clipped anyway. The summary
+    wrap's `overflowed` flag was discarded at the call site, so a 320-char
+    producer budget met a ~140-char box and lost the difference behind an
+    ellipsis that no gate and no provenance record could see.
+  Defect 7 — the chip branded the source. It printed "<Outlet> · WIRE SERVICE"
+    by design; the only suppressor was a six-entry denylist of generic
+    placeholders that cannot match a real masthead.
+
 Every pin here was mutation-checked: the production change was reverted, the
 test observed to FAIL, then restored.
 """
@@ -24,17 +42,19 @@ import xml.etree.ElementTree as ET
 import pytest
 
 from engine.marketing.breaking_summary import (
-    _CASHTAG_RE,
     card_earns_attachment,
+    containment,
     restatement_score,
     restatement_tokens,
     summary_earns_the_card,
 )
 from engine.marketing.chart_render import (
     _bc_fit_headline,
+    _bc_fit_summary,
     _bc_text_w,
     _bc_wrap_w,
     _BC_HL_LADDER,
+    card_summary_budget_chars,
     render_breaking_card,
 )
 
@@ -70,6 +90,57 @@ TRUTH_POST = (
     "opening the Hormuz Strait and ending Iran's nuclear threat. Israel joins "
     "the commitment to pursue a deal. -- on Truth Social"
 )
+
+
+# ── The three live posts of 2026-08-04/05 (@mastermindx001) ─────────────────
+# Reconstructed from the operator defect report. Each shipped a RADAR card that
+# restated the tweet, and two of the three clipped mid-clause on a static PNG.
+
+# P1 — ZeroHedge relay. The card body is the post's own sentence, ellipsised.
+P1_POST = (
+    "On the tape: Over 200 years, global economic leadership has shifted from "
+    "China to the British Empire, then to the United States, and increasingly "
+    "toward Asia. The share of global GDP held by major economies changed from "
+    "1820 to 2025."
+)
+P1_CARD_HEAD = "How Economic Power Has Shifted Over The Past 200 Years"
+P1_CARD_BODY = P1_POST.replace("On the tape: ", "")
+
+# P2 — CNBC relay. The card HERO is the post, verbatim. This is the one no gate
+# could see: its body genuinely differed from its own headline, so the
+# approval-only summary branch waved the whole card through.
+P2_POST = (
+    "India's central bank keeps benchmark rates steady, cites 'moderate' core "
+    "inflation"
+)
+P2_CARD_HEAD = P2_POST
+P2_CARD_BODY = (
+    "The Reserve Bank of India held the repo rate at 5.50% for a third straight "
+    "meeting."
+)
+
+# P3 — ForexLive relay. Card body is the post again; the hero is a label.
+P3_POST = (
+    "The US non-farm payrolls report is due this week, with July headline "
+    "estimates at +80k versus June's +57k, while unemployment is expected at "
+    "4.2%..."
+)
+P3_CARD_HEAD = "Reminder: US non-farm payrolls will be on the data docket this week"
+P3_CARD_BODY = (
+    "The US non-farm payrolls report is due this week, with July headline "
+    "estimates at +80k versus June's +57k, while unemployment is expected at 4.2%."
+)
+
+# ── THE CARD THAT MUST SURVIVE ──────────────────────────────────────────────
+# A macro print whose card carries the figure against prior AND consensus —
+# information the tweet does not have. Making every card disappear is the
+# opposite defect, and this fixture is the tripwire for it.
+PRINT_POST = (
+    "On the tape: US CPI rose to 2.4% in July, the third straight month of "
+    "cooling. -- wire reports"
+)
+PRINT_CARD_HEAD = "US CPI 2.4% in July"
+PRINT_CARD_BODY = "Consensus was 2.6% and June printed 2.7%."
 
 
 def _parse(svg: str) -> ET.Element:
@@ -212,6 +283,95 @@ def test_payload_exposes_the_dispatch_contract():
     assert "card_summary" in p
     assert "card_tickers" in p
     assert isinstance(p["card_tickers"], list)
+    # ...and WHAT THE CARD DREW of the summary, which is the string the gate
+    # scores. Scoring card_summary judged a 320-char paragraph against a box
+    # that draws ~140 characters of it.
+    assert "card_summary_drawn" in p
+    assert isinstance(p["card_summary_drawn"], str)
+
+
+def test_payload_reports_what_the_card_drew_not_what_it_was_given(monkeypatch, capsys):
+    """THE WIRING PIN: the payload surfaces the RENDERER's report, not its input.
+
+    Stubbed on purpose. The renderer's own trim behaviour is pinned directly in
+    the geometry section below; what this has to prove is the plumbing — that
+    `card_summary_drawn` and `provenance.card_fit` carry what the card DREW.
+    A live fixture cannot prove it: the summarizer emits one short sentence, so
+    drawn == card_summary and the test would pass just as happily against the
+    old code, which had no report to read at all. The stub makes the two strings
+    differ, which is the only way to see which one the payload used.
+    """
+    from engine.marketing import chart_render
+
+    def _stub(*_a, fit=None, **_k):
+        if isinstance(fit, dict):
+            fit.update({
+                "summary_source_chars": 200, "summary_card_chars": 40,
+                "summary_chars_dropped": 160, "summary_drawn": "Only this fits.",
+                "headline_drawn": "hero",
+            })
+        return "<svg></svg>"
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _stub)
+    p = _payload(
+        "India holds rates",
+        "The Reserve Bank of India held its benchmark repo rate at 5.50% for a "
+        "third consecutive meeting, and the stance was left unchanged.",
+    )
+    assert p["card_summary"], "the fixture's summary never reached the card"
+    assert p["card_summary_drawn"] == "Only this fits.", (
+        "the payload reported what the card was GIVEN, not what it drew"
+    )
+    fit = p["provenance"]["card_fit"]
+    assert fit["summary_source_chars"] == 200
+    assert fit["summary_card_chars"] == 40
+    assert fit["summary_chars_dropped"] == 160
+    # ...and the drop is announced, line-start, with the box's budget named so
+    # an operator can fix the cause and not just this one symptom.
+    out = capsys.readouterr().out
+    lines = [ln for ln in out.splitlines()
+             if "breaking-card-summary-trimmed" in ln]
+    assert lines, "a trimmed card body was silent"
+    for ln in lines:
+        assert ln.startswith("::warning"), f"annotation does not start the line: {ln!r}"
+    assert str(card_summary_budget_chars()) in lines[0]
+
+
+def test_payload_drops_the_card_when_the_render_degrades():
+    """No fit report means the render failed, and a failed render does not ship.
+
+    REWRITTEN 2026-08-06. This used to assert the CONSERVATIVE FALLBACK — that
+    card_summary_drawn keeps the text the card was handed "so the gate still has
+    something to score". That reasoning is right for a card that rendered and
+    reported nothing back, and wrong for the only way the key can actually go
+    missing: render_breaking_card's outer fail-soft, which returns a blank
+    placeholder SVG. The gate then scored a body that was demonstrably NOT on
+    the card, could answer attach=True on it, and a blank rectangle shipped as
+    media. A card nobody can read is not a card.
+
+    The conservative default still stands INSIDE the try (it is what the gate
+    reads if a future renderer reports a partial fit); what changed is that a
+    non-empty card_svg with no report at all is treated as the degradation it is.
+    """
+    from engine.marketing import chart_render
+
+    import pytest as _pytest
+
+    monkeypatch = _pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(
+            chart_render, "render_breaking_card",
+            lambda *_a, **_k: "<svg></svg>")
+        p = _payload(
+            "India holds rates",
+            "The Reserve Bank of India held its repo rate at 5.50% today.",
+        )
+    finally:
+        monkeypatch.undo()
+    assert p["card_svg"] == "", "a card with no fit report was kept"
+    assert p["card_summary_drawn"] == ""
+    # The POST is untouched — the full summary still ships as copy.
+    assert p["summary"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -259,21 +419,59 @@ def test_the_good_case_keeps_its_card():
 
 
 def test_distinct_summary_earns_the_attachment():
+    """A body that adds detail keeps the card — GIVEN A HERO THAT IS NOT THE POST.
+
+    REWRITTEN 2026-08-05; the original encoded the OLD approval-only policy. It
+    passed GOLD_POST/GOLD_HEAD — a post whose every word IS the hero — with a
+    distinct summary and asserted attach=True, which is precisely the shape the
+    new law refuses: a genuinely additive body cannot buy back a hero that
+    reprints the tweet at poster scale (L1, one fact one surface). The property
+    the test was written for — an additive body earns the picture — is intact
+    and is what it now pins, on a hero that does not restate the post.
+    """
     attach, why = card_earns_attachment(
-        GOLD_POST, GOLD_HEAD,
-        "Spot gold last traded at $4,070.40, a five-session high.", [],
+        PRINT_POST, PRINT_CARD_HEAD, PRINT_CARD_BODY, [],
     )
     assert attach is True
     assert "summary" in why
 
 
+def test_an_additive_summary_cannot_rescue_a_restating_hero():
+    """The other half of the rewrite above, pinned directly.
+
+    THE VETOES RUN FIRST. This is the India post's exact shape and the reason it
+    shipped: its card body said something its own headline did not, the
+    approval-only branch returned True on that alone, and the hero — the tweet,
+    verbatim — was never examined by anything.
+    """
+    attach, why = card_earns_attachment(GOLD_POST, GOLD_HEAD,
+                                        "Spot gold last traded at $4,070.40.", [])
+    assert attach is False
+    assert "restates" in why
+
+
 def test_a_tape_reading_earns_the_attachment():
+    """A price/move the copy lacks keeps the card — again, on a lawful hero.
+
+    REWRITTEN 2026-08-05 for the same reason as the summary case above: the
+    original asked GOLD_POST/GOLD_HEAD, whose hero is the whole post.
+    """
     attach, why = card_earns_attachment(
-        GOLD_POST, GOLD_HEAD, "",
+        PRINT_POST, PRINT_CARD_HEAD, "",
         [{"ticker": "GLD", "price": 401.55, "pct": -0.3}],
     )
     assert attach is True
     assert "tape" in why
+
+
+def test_a_tape_reading_cannot_rescue_a_restating_hero():
+    """A tape strip is information, but it is not a licence to reprint the tweet."""
+    attach, why = card_earns_attachment(
+        GOLD_POST, GOLD_HEAD, "",
+        [{"ticker": "GLD", "price": 401.55, "pct": -0.3}],
+    )
+    assert attach is False
+    assert "restates" in why
 
 
 def test_a_cashtag_only_row_is_not_a_tape_reading():
@@ -296,6 +494,135 @@ def test_nan_row_is_not_a_tape_reading():
 def test_empty_post_text_keeps_the_card():
     attach, _ = card_earns_attachment("", GOLD_HEAD, "", [])
     assert attach is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Defect 5 — THE GATE MUST BE ABLE TO SAY NO (the 2026-08-05 root cause)
+#
+# The three live posts, each through the gate that let it ship. None of these
+# could fail before the fix: the function had no branch that returned False on
+# the strength of the card body, and no branch that looked at the hero at all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_p1_zerohedge_card_body_restates_the_post_and_is_dropped():
+    """A card whose BODY restates the post ships text-only. (L1/L2)
+
+    The live P1 card printed the post's own sentence as its body, ellipsised.
+    Before the fix the body was scored only against the card's own HEADLINE, so
+    a body that differed from the hero was approved without anyone asking
+    whether it differed from the TWEET.
+    """
+    attach, why = card_earns_attachment(P1_POST, P1_CARD_HEAD, P1_CARD_BODY, [])
+    assert attach is False, f"P1 still ships a card: {why}"
+    assert "body restates" in why
+
+
+def test_p2_india_card_headline_is_the_post_verbatim_and_is_dropped():
+    """A card whose HERO is the post text verbatim ships text-only.
+
+    THE ONE NOTHING ASKED. P2's body genuinely added a figure (the 5.50% repo
+    rate), so every content check the old gate ran said "this card adds
+    something" — while the hero, at poster scale, was the tweet word for word.
+    """
+    attach, why = card_earns_attachment(P2_POST, P2_CARD_HEAD, P2_CARD_BODY, [])
+    assert attach is False, f"P2 still ships a card: {why}"
+    assert "headline restates" in why
+
+
+def test_p3_forexlive_card_body_restates_the_post_and_is_dropped():
+    """P3's hero was a label and its body was the tweet again."""
+    attach, why = card_earns_attachment(P3_POST, P3_CARD_HEAD, P3_CARD_BODY, [])
+    assert attach is False, f"P3 still ships a card: {why}"
+    assert "body restates" in why
+
+
+def test_a_macro_print_card_still_earns_its_pixels():
+    """THE OPPOSITE DEFECT. Making every card disappear is not the fix.
+
+    The card carries the print against prior and consensus; the tweet carries
+    neither. This is the case the gate exists to KEEP, and it is the tripwire
+    on every future tightening of the thresholds above.
+    """
+    attach, why = card_earns_attachment(
+        PRINT_POST, PRINT_CARD_HEAD, PRINT_CARD_BODY, [],
+    )
+    assert attach is True, f"the good macro-print card was dropped: {why}"
+
+
+def test_a_ticker_post_gets_no_free_pass():
+    """A cashtag in the copy is not evidence the card adds value.
+
+    REPLACES the old `test_cashtag_post_always_keeps_its_card`, which pinned a
+    short-circuit that returned attach=True on a cashtag match BEFORE any
+    content check — exempting every ticker post from the card-value law
+    wholesale. The S. Korea flash is the live instance: the wire's own "$MACRO"
+    tag made a post that restates itself totally into an automatic card.
+
+    The publisher's bare-cashtag quarantine (operator 2026-07-30) is unchanged
+    and still fires, so this post is now HELD for review rather than shipped
+    with a doubled card. Holding a restatement is the correct outcome.
+    """
+    post = f"{SKOREA_HEAD}\n\n{SKOREA_HEAD}"
+    assert restatement_score(post, SKOREA_HEAD) > 0.9
+    attach, why = card_earns_attachment(post, SKOREA_HEAD, "", [])
+    assert attach is False, f"a ticker post bypassed the gate: {why}"
+    assert "restates" in why
+
+
+def test_a_card_of_pure_chrome_does_not_attach():
+    """No hero, no body, no tape: masthead, rule and footer are not information.
+
+    Before the fix an empty headline scored 0.0 against the post, which is below
+    the restatement threshold, so the terminal branch attached on the reason
+    "card headline differs from the post text (0.00)" — a card with no headline
+    at all shipping because its absent headline was found to be different.
+    """
+    attach, why = card_earns_attachment(GOLD_POST, "", "", [])
+    assert attach is False
+    assert "no headline" in why
+
+
+def test_a_bare_label_hero_does_not_attach_on_its_own():
+    """A hero every word of which the post already carries, with nothing else.
+
+    This survives the hero VETO (it is not the whole post — the post says much
+    more), so it is the branch below that has to catch it: a caption in a frame
+    is not a card.
+    """
+    attach, why = card_earns_attachment(PRINT_POST, PRINT_CARD_HEAD, "", [])
+    assert attach is False, f"a bare label hero attached: {why}"
+    assert "adds nothing" in why
+
+
+def test_containment_is_directional():
+    """The measure the two vetoes rest on, and the direction each one needs.
+
+    Getting this backwards refuses exactly the cards we want: a body that quotes
+    the post and then adds prior and consensus contains the whole post, which
+    reads as 1.0 in one direction and near 0.0 in the other.
+    """
+    post = "US CPI rose to 2.4% in July."
+    additive = "US CPI rose to 2.4% in July, versus 2.6% consensus and 2.7% prior."
+    # The post is entirely inside the additive body...
+    assert containment(post, additive) == pytest.approx(1.0)
+    # ...but the body carries figures the post does not, so it ADDS.
+    assert containment(additive, post) < 0.70
+
+
+def test_the_gate_returns_a_reason_on_every_path():
+    """A dropped card must be explainable — press_lane records and prints this."""
+    cases = [
+        (P1_POST, P1_CARD_HEAD, P1_CARD_BODY, []),
+        (P2_POST, P2_CARD_HEAD, P2_CARD_BODY, []),
+        (P3_POST, P3_CARD_HEAD, P3_CARD_BODY, []),
+        (PRINT_POST, PRINT_CARD_HEAD, PRINT_CARD_BODY, []),
+        (GOLD_POST, "", "", []),
+        ("", GOLD_HEAD, "", []),
+    ]
+    for post, head, body, rows in cases:
+        attach, why = card_earns_attachment(post, head, body, rows)
+        assert isinstance(attach, bool)
+        assert isinstance(why, str) and why.strip(), f"no reason for {head[:40]!r}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -360,31 +687,125 @@ def test_dispatch_actually_strips_the_card_from_a_restating_post():
             "no card_dropped reason recorded on the emission"
 
 
-def test_dispatch_does_not_blanket_drop_every_card():
-    """The opposite direction, through the same wiring — and it is the ticker law.
+def test_dispatch_does_not_blanket_drop_every_card(tmp_path, monkeypatch):
+    """The opposite direction, END TO END through a real lane's real emission.
 
-    Worth stating plainly, because it shaped the gate: the composed post is
-    `headline + blank line + body`, so on the ordinary path the card's headline
-    AND its summary are both already in the post text and the card genuinely
-    adds nothing. A card earns its place when the X clamp drops the headline
-    from the post (the operator's Truth Social good case — card = the quote,
-    post = the terms), when it carries a tape reading, or — here — when the copy
-    names a ticker and the picture becomes a shipping requirement.
+    REWRITTEN TWICE. The original pinned the ticker short-circuit (a cashtag
+    post keeps its card BECAUSE it names a cashtag) — the bypass the card law
+    removes — and was vacuous besides: its fixture carried no figure, the
+    citation policy downgraded the item to `digest`, and the `pytest.skip`
+    branch ran on every execution since the test was written. The second pass
+    dropped to a UNIT call on hand-written strings at the exact moment the
+    builder's own note said no card survives the real path, so the suite had
+    zero evidence that any real item can still ship one.
+
+    THE LANE THAT ACTUALLY KEEPS A CARD IS THE EARNINGS-CALL LANE, and it is a
+    real production emission: a company's transcript summary ("Revenue held
+    above plan while management kept full-year guidance") says something the
+    composed post does not, which is the whole test the gate applies. It runs
+    through the SAME `card_earns_attachment` as press_lane (wired 2026-08-06),
+    so a change that blanket-drops cards fails here.
+
+    WHY NOT A PRESS TICK — and this is a product fact worth stating rather than
+    routing around: on the DETERMINISTIC press path the post body and the card
+    summary are the same string (both are summarize_item's output), and the X
+    clamp only ever gives the post MORE of it than the card's own box budget
+    allows. So the card's body is a subset of the post by construction and the
+    hero is the headline the post already carries. Text-only is the correct
+    outcome for a pure text relay (operator: an illustration must add value),
+    and the press-side pin is the one below it — the post SHIPS.
+    """
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import _event, _hosted, NOW
+
+    calls = _hosted(monkeypatch)
+    result = _ecl.enqueue_event(_event(), root=tmp_path, now=NOW)
+    assert result["status"] == "queued", result
+    assert len(calls) == 1, "no card was rendered at all"
+    item = result["item"]
+    assert item["media"], "an additive card was dropped by the dispatch"
+    assert item["media"][0].get("media_url"), "the kept card never got hosted"
+    assert not (item.get("source") or {}).get("card_withheld_for_value")
+
+
+def _stub_renderer(monkeypatch, *, hero: str):
+    """Force the renderer's FIT REPORT to say it drew `hero`, and nothing else.
+
+    The producer's own `card_headline` is untouched, so the only thing that moves
+    between two runs of the same item is what the card is reported to have DRAWN
+    — which is exactly the variable the gate is supposed to read.
+    """
+    from engine.marketing import chart_render
+
+    def _render(*_a, fit=None, **_kw):
+        if isinstance(fit, dict):
+            fit["headline_drawn"] = hero
+            fit["summary_drawn"] = ""      # hero-only, so the hero decides alone
+            fit["summary_source_chars"] = 0
+            fit["summary_card_chars"] = 0
+            fit["summary_chars_dropped"] = 0
+        return '<svg viewBox="0 0 1080 1080"><text>stub</text></svg>'
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _render)
+
+
+def test_dispatch_scores_the_hero_the_renderer_actually_draws(monkeypatch):
+    """press_lane passed the RAW wire headline while the card drew card_headline.
+
+    The raw field can be an entire relayed post; the hero is the W4g
+    sentence-bounded derivation of it, and the renderer may place less of even
+    that. Scoring anything but the drawn string asks the gate a question about
+    text no reader ever saw.
+
+    BEHAVIOURAL, NOT A SOURCE SLICE (round-3 review, finding 4). The previous
+    version sliced run_press_tick's source between `card_earns_attachment(` and
+    its matching close paren and asserted `'card_headline' in call`. The reviewer
+    MUTATION-VERIFIED it vacuous: reverting the hero argument to the raw
+    `headline` left it GREEN, because the sliced text still contained the in-call
+    comment describing the argument. That is the exact shape this file rejects
+    at test_every_card_drawing_lane_consults_the_gate ("a first version grepped
+    the file text and passed with the gate's import deleted").
+
+    THE PIN: run the SAME item twice through the real tick, changing only what
+    the fit report says the card DREW. An additive hero must keep the card; a
+    hero that is the post again must drop it. A lane reading the producer's
+    pre-render string cannot tell the two runs apart and fails one of them —
+    which is what the A/B replay could not show, since on the live corpus the
+    drawn and producer heroes agreed on all 75 shipped items.
+
+    MUTATION (verified): replace the hero argument in press_lane.run_press_tick
+    with the raw `headline` and the restating arm fails — the card is kept.
     """
     item = _relay_item(
-        "keep-1",
-        "Nvidia guides data-center revenue above consensus for $NVDA",
-        "The company said supply, not demand, remains the constraint and lifted "
-        "its outlook for the January quarter.",
+        "drawn-hero-1",
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks",
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks",
     )
-    res = _press_tick([item])
-    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
-    if not emitted:
-        pytest.skip("item did not clear the emission floor in this config")
-    for e in emitted:
-        dropped = (e.get("source") or {}).get("card_dropped")
-        assert not dropped, f"a cashtag post lost its card: {dropped}"
-        assert e.get("media"), "a cashtag post must ship a picture"
+
+    # ── ARM A: the card drew a hero that says far more than the post ─────────
+    _stub_renderer(monkeypatch, hero=(
+        "Gold rose about 0.6% to around $4,070 an ounce after fresh Iran talks, "
+        "extending a run that has added roughly 14% since the June low while "
+        "real yields slipped and central-bank buying stayed heavy"
+    ))
+    kept = [e for e in _press_tick([item])["emitted"] if e.get("kind") == "breaking"]
+    assert kept, "the additive-hero arm did not emit at all, so nothing is pinned"
+    assert kept[0].get("media"), (
+        "a card whose DRAWN hero is strictly additive was dropped")
+    post_text = str(kept[0].get("text") or "")
+    assert post_text, "the emission carried no text to compare against"
+
+    # ── ARM B: same item, same producer hero — the card drew the POST ────────
+    _stub_renderer(monkeypatch, hero=post_text)
+    dropped = [e for e in _press_tick([item])["emitted"]
+               if e.get("kind") == "breaking"]
+    assert dropped, (
+        "the restating-hero arm deleted the post instead of slimming it")
+    assert dropped[0].get("media") in ([], None), (
+        "the gate scored a hero the card did not draw: the DRAWN hero is the "
+        "post verbatim and the card was kept anyway")
+    assert (dropped[0].get("source") or {}).get("card_dropped"), \
+        "no card_dropped reason recorded on the emission"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -423,31 +844,34 @@ def test_card_handle_annotation_starts_the_line(capsys):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# The ticker-post law OUTRANKS the card-value law
+# The cashtag mirror is gone — the drift pin moves to its surviving pair
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_cashtag_post_always_keeps_its_card():
-    """A `breaking` post naming tickers is quarantined without a picture.
+def test_cashtag_pattern_matches_the_publisher():
+    """Drift pin, REPOINTED 2026-08-05.
 
-    scripts/marketing_publisher._bare_cashtag_post, operator 2026-07-30. If the
-    card-value gate stripped the card here it would not produce a leaner post —
-    it would kill the post. The S. Korea flash is the live instance: the wire's
-    own "$MACRO" tag reads as a cashtag to that gate.
+    It used to compare breaking_summary._CASHTAG_RE against press_lane's. That
+    copy existed only to feed card_earns_attachment's short-circuit; with the
+    short-circuit gone nothing in breaking_summary reads a cashtag, so the
+    constant went with it (a constant nothing reads is the same class of defect
+    this file is about). The two regexes that DO still gate live behaviour are
+    press_lane's and the publisher's, and those must not drift.
     """
-    post = f"{SKOREA_HEAD}\n\n{SKOREA_HEAD}"
-    # Restatement is total...
-    assert restatement_score(post, SKOREA_HEAD) > 0.9
-    # ...and the card is kept anyway, for the stated reason.
-    attach, why = card_earns_attachment(post, SKOREA_HEAD, "", [])
-    assert attach is True
-    assert "$MACRO" in why
-
-
-def test_cashtag_pattern_matches_press_lane():
-    """Drift pin: the two gates must ask the same question of the same string."""
     from engine.marketing import press_lane
+    from scripts import marketing_publisher
 
-    assert _CASHTAG_RE.pattern == press_lane._CASHTAG_RE.pattern
+    assert press_lane._CASHTAG_RE.pattern == marketing_publisher._CASHTAG_RE.pattern
+
+
+def test_breaking_summary_defines_no_cashtag_mirror():
+    """Mutation pin on the removal: re-adding the constant means re-adding a reader.
+
+    If a future change needs a cashtag test in this module it must WIRE it —
+    reintroducing the unread mirror is how the short-circuit came back.
+    """
+    from engine.marketing import breaking_summary
+
+    assert not hasattr(breaking_summary, "_CASHTAG_RE")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -606,6 +1030,156 @@ def test_headline_never_overflows_the_content_column():
             )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Defect 6 — A CARD MUST FIT, OR NOT RENDER (no truncation on a static image)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A hero long enough to take most of the copy box, so the second voice below
+#: it is genuinely constrained. THIS IS LOAD-BEARING: with a short hero the
+#: summary now has room to step down its size ladder and place almost anything,
+#: which is the fix working — and it means a short-hero fixture cannot exercise
+#: the trim at all. The first draft of these tests used "India holds rates" and
+#: went quietly vacuous the moment the ladder landed.
+_LONG_HERO = (
+    "The United States has agreed to cancel a planned strike after being asked "
+    "to hold off while the parameters of a wider agreement are negotiated in "
+    "full, according to two people briefed on the discussions."
+)
+
+#: A body written to the producer's budget (_MAX_SUMMARY_CHARS = 320). Its tail
+#: used to be lost behind an ellipsis, because the summary wrap's overflow flag
+#: was discarded at the call site.
+_OVER_BUDGET_BODY = (
+    "The agreement would reopen the strait to commercial traffic within thirty "
+    "days of signature and wind down enrichment under international inspection. "
+    "A first compliance report is due ninety days after signature, and a joint "
+    "commission would arbitrate every dispute over access to the declared sites."
+)
+
+
+def test_a_body_longer_than_the_box_never_ships_a_mid_clause_ellipsis():
+    """THE LIVE DEFECT. A PNG has no "read more" (operator law 2026-08-05).
+
+    The old call site was `sm_lines, _ = _bc_wrap_w(...)`: the overflow signal
+    was thrown away, the last line was hard-clipped to fit an ellipsis, and the
+    card shipped "...for the coming quarters…" mid-clause. Nothing above could
+    see it — provenance.card_fit reported zero characters dropped.
+    """
+    assert len(_OVER_BUDGET_BODY) > card_summary_budget_chars(), (
+        "fixture no longer over-runs the box; it cannot pin the defect"
+    )
+    svg = render_breaking_card(
+        _LONG_HERO, "Newswire", "wire", "2026-08-05T00:12:02Z",
+        summary=_OVER_BUDGET_BODY,
+    )
+    assert "…" not in svg, "the card body shipped clipped"
+    assert "..." not in " ".join(_texts(svg)), "the card body shipped clipped"
+
+
+def test_the_drawn_body_ends_on_a_sentence_boundary():
+    """What survives is whole sentences in the source's own words, never a clause cut."""
+    fit: dict = {}
+    render_breaking_card(
+        _LONG_HERO, "Newswire", "wire", "2026-08-05T00:12:02Z",
+        summary=_OVER_BUDGET_BODY, fit=fit,
+    )
+    drawn = fit["summary_drawn"]
+    assert drawn, "the whole body was dropped when part of it fits"
+    assert drawn.endswith("."), f"drawn body ends mid-clause: {drawn!r}"
+    # Relay, never editorialize: it is a verbatim prefix of the source text.
+    assert _OVER_BUDGET_BODY.startswith(drawn)
+
+
+def test_the_overflow_signal_is_no_longer_discarded():
+    """The clip is COUNTED and persisted — the half that made it invisible."""
+    fit: dict = {}
+    render_breaking_card(
+        _LONG_HERO, "Newswire", "wire", "2026-08-05T00:12:02Z",
+        summary=_OVER_BUDGET_BODY, fit=fit,
+    )
+    assert fit["summary_source_chars"] == len(_OVER_BUDGET_BODY)
+    assert fit["summary_chars_dropped"] > 0
+    assert fit["summary_card_chars"] == len(fit["summary_drawn"])
+    assert (fit["summary_card_chars"] + fit["summary_chars_dropped"]
+            == fit["summary_source_chars"])
+
+
+def test_a_single_sentence_wider_than_the_box_drops_the_block_not_a_clip():
+    """When nothing fits whole, the card draws NO second voice rather than a clipped one."""
+    monster = (
+        "The committee reiterated its unchanged assessment of conditions across "
+        "output, employment, inflation expectations, credit spreads, and the "
+        "external balance, while noting that the risks around the central "
+        "projection remain broadly balanced over the forecast horizon and that "
+        "policy will stay restrictive until progress is sustained."
+    )
+    fit: dict = {}
+    svg = render_breaking_card(
+        _LONG_HERO, "Newswire", "wire", "2026-08-05T00:12:02Z",
+        summary=monster, fit=fit,
+    )
+    assert fit["summary_drawn"] == ""
+    assert fit["summary_chars_dropped"] == len(monster)
+    assert "…" not in svg
+    # The hero still carries the card.
+    assert "cancel a planned strike" in " ".join(_texts(svg))
+
+
+def test_the_summary_budget_is_a_number_the_box_can_honour():
+    """A number the renderer cannot honour is the defect. (Both halves of it.)
+
+    The two constants this replaces (240 / 170 chars) were read by nothing and
+    agreed with neither the box nor the producer's 320-char budget. The FIRST
+    draft of the replacement was a division — average advance width into the
+    column — which reported 46/92/139 chars for 1/2/3 lines and NONE of them
+    fit: greedy wrap cannot use the tail of a line when the next word does not
+    fit there. An estimate that over-predicts is the same defect wearing a
+    measurement's clothes, so the budget is now taken by wrapping.
+    """
+    for lines in (1, 2, 3):
+        budget = card_summary_budget_chars(lines)
+        prose = ("The Reserve Bank of India held its benchmark repo rate at "
+                 "5.50% for a third consecutive meeting and left the stance "
+                 "unchanged through the quarter.")
+        _, overflowed = _bc_wrap_w(
+            prose[:budget], 41.0, 936.0 - 30.0, lines, bold=False)
+        assert not overflowed, (
+            f"budget of {budget} chars does not fit {lines} line(s) of prose"
+        )
+    # ...and it tracks the box: more lines, more room.
+    assert (card_summary_budget_chars(1) < card_summary_budget_chars(2)
+            < card_summary_budget_chars(3))
+
+
+def test_the_producer_budget_is_reconciled_with_the_card():
+    """The 320-char producer budget governs the POST BODY, not the card.
+
+    Pinned so the two numbers cannot silently be assumed equal again: the card
+    holds well under half of what the producer writes, and the renderer is the
+    thing that reconciles them by trimming to whole sentences.
+    """
+    from engine.marketing.breaking_summary import _MAX_SUMMARY_CHARS
+
+    assert card_summary_budget_chars() < _MAX_SUMMARY_CHARS
+
+
+def test_fit_summary_never_reports_a_clean_fit_it_did_not_achieve():
+    """Property: the returned lines always ARE the returned drawn text, intact."""
+    bodies = [_OVER_BUDGET_BODY, PRINT_CARD_BODY, P1_CARD_BODY, P3_CARD_BODY,
+              "One short line.", ""]
+    for body in bodies:
+        for cap in (1, 2, 3):
+            lines, drawn, dropped = _bc_fit_summary(
+                body, 41.0, 906.0, cap, bold=False)
+            assert not any("…" in ln for ln in lines), (
+                f"{body[:30]!r} at cap {cap} shipped an ellipsis"
+            )
+            if lines:
+                assert " ".join(lines) == " ".join(drawn.split())
+                assert " ".join(body.split()).startswith(drawn)
+            assert dropped == len(" ".join(body.split())) - len(drawn)
+
+
 def test_long_headline_fills_the_box_rather_than_clipping():
     """A capped line count clipped a wire flash while leaving room below it.
 
@@ -619,32 +1193,323 @@ def test_long_headline_fills_the_box_rather_than_clipping():
     assert "…" not in body, "headline was clipped despite room on the card"
 
 
-def test_generic_source_name_shows_one_fact_not_two():
-    """De-handling makes every relay "Newswire"; the chip must not say it twice.
+# ─────────────────────────────────────────────────────────────────────────────
+# Defect 7 — NEVER BRAND THE SOURCE (operator law 2026-08-05), narrowed to
+# "name real newswires only" (operator ruling 2026-08-06)
+# ─────────────────────────────────────────────────────────────────────────────
 
-    The original form of this test asserted the chip fell back to the word
-    "AGGREGATOR". Operator order 2026-08-03 ("get rid of the 'aggregator' string
-    from illustrations") took that badge away one day later, so the chip now
-    carries the relay's own name instead — still exactly one fact, and never an
-    empty signature. The no-duplication rule this test exists for is unchanged;
-    only which of the two words survives moved.
+def _chip_cfg() -> dict:
+    """The OPERATOR'S OWN allowlist, read from config — never a test fixture.
+
+    The ruling put the list in config/press_sources.yml precisely so the operator
+    can move a masthead without a deploy. A test that invented its own list would
+    pin the mechanism and leave the live answer unmeasured, which is how "the
+    suppressor never once fired on the case it was needed for" happened.
+    """
+    from pathlib import Path
+
+    import yaml
+
+    root = Path(__file__).resolve().parent.parent
+    cfg = yaml.safe_load((root / "config" / "press_sources.yml").read_text())
+    return (cfg or {}).get("citation") or {}
+
+
+def _chip_text(svg: str) -> str:
+    """The provenance chip's own text, not "anywhere in the SVG". "" = seal only.
+
+    A whole-document substring is NOT a pin for this law and reads as one: the
+    deterministic fallback summary ends "— {source_name}", so a card whose chip
+    correctly shows "WIRE SERVICE" alone still contains the masthead in its BODY.
+    A first cut of test_the_press_lane_hands_the_renderer_the_operator_list
+    asserted `"CNBC" in svg` and passed with the config unwired for exactly that
+    reason. The chip is the only element carrying a tier caption, so that is what
+    identifies it.
+    """
+    for body in re.findall(r"<text[^>]*>(.*?)</text>", svg, re.S):
+        if "WIRE SERVICE" in body or "OFFICIAL SOURCE" in body:
+            return body
+    return ""
+
+
+@pytest.mark.parametrize("outlet", [
+    # THE TWO THE OPERATOR NAMED as still-unnamed after the narrowing. Both are
+    # configured `tier: wire` in config/marketing.yml breaking.sources, so the
+    # TIER cannot be what refuses them — only the allowlist can.
+    "ZeroHedge", "ForexLive",
+    # ...and the aggregators/relays the 08-05 blanket law was written against.
+    "Investing.com", "SomeBlog", "Newswire",
+])
+def test_a_chip_never_carries_an_unadmitted_name(outlet):
+    """THE PIN FOR THE LIVE DEFECT, on the real outlets, after the narrowing.
+
+    HISTORY, because this test has now asserted three different laws and the
+    next reader needs to know which one is live. Before 2026-08-05 it required
+    "Federal Reserve · OFFICIAL SOURCE" and passed on a fixture ("Newswire") that
+    the six-entry generic-name denylist could actually match — no test ever asked
+    what happened to a REAL masthead, which is how three of them reached the
+    timeline in our own card art. On 2026-08-05 the operator killed the name
+    outright and this test asserted that no name is ever drawn. On 2026-08-06 the
+    operator narrowed that: "name real newswires only".
+
+    So the law is now DEFAULT-DENY, not silence. A publication a reader does not
+    gain from seeing stays off our card art; a real newswire may be named. These
+    are the ones that must still be refused, and the tier is never what refuses
+    them — ZeroHedge and ForexLive are configured `wire`, the same tier as CNBC.
+    """
+    cfg = _chip_cfg()
+    for tier in ("wire", "official", "aggregator", "mirror", "x_relay"):
+        svg = render_breaking_card(
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=cfg)
+        assert outlet not in svg, (
+            f"{outlet!r} was branded onto a {tier} card"
+        )
+
+
+@pytest.mark.parametrize("outlet,tier,caption", [
+    # THE OPERATOR'S OWN EXAMPLE, verbatim: "Federal Reserve · OFFICIAL SOURCE
+    # is two facts and is lawful".
+    ("Federal Reserve", "official", "OFFICIAL SOURCE"),
+    ("Bureau of Labor Statistics", "official", "OFFICIAL SOURCE"),
+    # THE LIVE CASE THE 08-05 BLANKET LAW TOOK DOWN WITH THE OTHER TWO.
+    ("CNBC", "wire", "WIRE SERVICE"),
+    ("Reuters", "wire", "WIRE SERVICE"),
+    ("MarketWatch", "wire", "WIRE SERVICE"),
+])
+def test_a_real_newswire_or_primary_source_is_named(outlet, tier, caption):
+    """The other half of the ruling: an admitted source IS named, beside its tier.
+
+    MUTATION: delete the source's line from `citation.card_chip` in
+    config/press_sources.yml and this fails — which is the point of putting the
+    list in config: the operator's edit is the behaviour, with no deploy.
     """
     svg = render_breaking_card(
-        GOLD_HEAD, "Newswire", "aggregator", "2026-08-03T00:12:02Z")
-    assert "AGGREGATOR" not in svg.replace("bc-tier-aggregator", "")
-    assert "Newswire · AGGREGATOR" not in svg
-    assert "Newswire" in svg, "a label-less tier must not blank the signature chip"
-    # ...and the tier itself still rides on the chip's class, not on a caption.
-    assert "bc-tier-aggregator" in svg
-    # A generic relay on a tier that DOES have a badge still drops to the badge.
-    wired = render_breaking_card(
-        GOLD_HEAD, "Newswire", "wire", "2026-08-03T00:12:02Z")
-    assert "Newswire · WIRE SERVICE" not in wired
-    assert "WIRE SERVICE" in wired
-    # A real publication still earns its name beside the tier.
-    named = render_breaking_card(
-        GOLD_HEAD, "Federal Reserve", "official", "2026-08-03T00:12:02Z")
-    assert "Federal Reserve · OFFICIAL SOURCE" in named
+        GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+    chip = _chip_text(svg)
+    assert chip == f"{outlet} · {caption}", (
+        f"{outlet!r} is on the allowlist; the chip read {chip!r}")
+
+
+def test_the_chip_allowlist_is_default_deny():
+    """No config, no name — for the SAME sources the config would admit.
+
+    A policy whose fallback is "print it" fails open on exactly the surface the
+    operator has now ruled on twice. This drives the two arms against each other:
+    the same call, the only difference being whether the operator's list was
+    handed to the renderer.
+
+    MUTATION: make card_chip_name return the name when `cfg` is None/absent and
+    both assertions here fail.
+    """
+    for outlet, tier in (("CNBC", "wire"), ("Federal Reserve", "official")):
+        bare = render_breaking_card(
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z")
+        armed = render_breaking_card(
+            GOLD_HEAD, outlet, tier, "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+        assert outlet not in _chip_text(bare), (
+            f"{outlet!r} was drawn with no allowlist in hand")
+        assert outlet in _chip_text(armed), (
+            "the config arm is not actually admitting it")
+
+
+@pytest.mark.parametrize("name", ["Not-CNBC", "Reuters-style", "cnbc.com",
+                                  "The Reuters Institute"])
+def test_the_chip_allowlist_never_matches_a_substring(name):
+    """Exact, lower-cased, whole-string — the failure mode _MARQUEE_NAMES documents.
+
+    A substring match would let any relay promote itself by putting a masthead
+    in its own display name, which is the same laundering the tier weights exist
+    to stop.
+    """
+    svg = render_breaking_card(
+        GOLD_HEAD, name, "wire", "2026-08-05T00:12:02Z", chip_cfg=_chip_cfg())
+    assert name not in svg
+    assert "WIRE SERVICE" in svg
+
+
+def test_our_own_desks_are_not_on_the_allowlist():
+    """DEFAULT-DENY COVERS THIS WITHOUT A CARVE-OUT, and that is the design.
+
+    Round 3 deleted an own-desk allowlist for being unreachable (it matched bare
+    X handles against a display-name field, so no production value could hit it)
+    and the ruling says not to revive it. With the policy default-deny, our own
+    names are refused by the same rule that refuses every unlisted source — no
+    special case to keep in sync, and no way for one to rot open.
+
+    It also covers the earnings lane's "Earnings call transcript", which is a
+    description of an artefact rather than a masthead: a card that signs itself
+    is not a citation.
+    """
+    cfg = _chip_cfg()
+    lists = (cfg.get("card_chip") or {})
+    flat = {str(x).strip().lower()
+            for key in ("official", "newswire")
+            for x in (lists.get(key) or [])}
+    for ours in ("mastermind", "mastermindx001", "@mastermindx001",
+                 "earnings call transcript"):
+        assert ours not in flat, f"{ours!r} is on the card-chip allowlist"
+    svg = render_breaking_card(
+        "$AAPL Q3 FY2026 call: confident tone.", "Earnings call transcript",
+        "official", "2026-08-05T00:12:02Z", eyebrow="EARNINGS CALL", chip_cfg=cfg)
+    assert "Earnings call transcript" not in svg
+    assert "OFFICIAL SOURCE" in svg
+
+
+def test_the_chip_keeps_the_tier_admission():
+    """The name goes; the tier stays. A card that says nothing is not the fix."""
+    wire = render_breaking_card(GOLD_HEAD, "CNBC", "wire", "2026-08-05T00:12:02Z")
+    assert "WIRE SERVICE" in wire
+    official = render_breaking_card(
+        GOLD_HEAD, "Federal Reserve", "official", "2026-08-05T00:12:02Z")
+    assert "OFFICIAL SOURCE" in official
+    # The label-less aggregator tier claims NOTHING — no name, no invented
+    # caption, and still never the internal grade word.
+    agg = render_breaking_card(GOLD_HEAD, "SomeBlog", "aggregator",
+                               "2026-08-05T00:12:02Z")
+    assert "RELAYED" not in agg.upper()
+    assert "AGGREGATOR" not in agg.replace("bc-tier-aggregator", "")
+    # ...and the tier still rides on the chip class, so nothing launders up.
+    assert "bc-tier-aggregator" in agg
+    assert "bc-tier-official" in official
+
+
+@pytest.mark.parametrize("tier", ["aggregator", "mirror", "", "UNKNOWN", None])
+def test_the_unlabelled_tier_claims_nothing(tier):
+    """A tier with no badge word must not be handed a positive claim.
+
+    THE DEFECT (adversarial review, 2026-08-05). The first pass filled the empty
+    pill with "RELAYED REPORT". Every UNKNOWN tier routes to the aggregator
+    treatment (_break_tier_style), and `mirror` — how a Truth Social DIRECT
+    QUOTE renders — routes there too, as did the earnings-call lane's own
+    transcript card. Measured then: an earnings-call transcript rendered a chip
+    reading "RELAYED REPORT". A primary artefact was being told to the reader as
+    somebody else's relayed report, and no test in the suite could see it.
+
+    Absence of a badge is the honest signal for "we have not graded this". A
+    lane with a positive grade to make passes `source_tier` for it.
+    """
+    svg = render_breaking_card(GOLD_HEAD, "SomeBlog", tier, "2026-08-05T00:12:02Z")
+    assert "RELAYED" not in svg.upper()
+    assert "SomeBlog" not in svg
+    # Not blank either: the seal is drawn and still carries the tier class, so
+    # the anti-laundering weight survives the caption's removal.
+    assert re.search(r'<circle[^>]*class="bc-tier bc-tier-aggregator"', svg)
+
+
+def test_a_transcript_card_is_not_captioned_as_a_relay():
+    """The live instance of the finding, through the lane that draws it.
+
+    engine/marketing/earnings_call_lane renders a company's own earnings-call
+    transcript. It used to pass source_tier='aggregator' (the fail-closed grade
+    for UNKNOWN provenance), and the invented caption then told the reader it
+    was a relayed report. The lane now states the grade it actually has.
+    """
+    from engine.marketing import earnings_call_lane as _ecl
+    import inspect
+
+    src = inspect.getsource(_ecl._media_for_event)
+    assert 'source_tier="official"' in src, (
+        "the transcript card is back on an unnamed/aggregator grade")
+    svg = render_breaking_card(
+        "$AAPL Q3 FY2026 call: confident tone.", "Earnings call transcript",
+        "official", "2026-08-05T00:12:02Z", eyebrow="EARNINGS CALL",
+    )
+    assert "RELAYED" not in svg.upper()
+    assert "Earnings call transcript" not in svg  # still no masthead
+    assert "OFFICIAL SOURCE" in svg
+
+
+def test_the_chip_label_takes_no_per_item_citation_ruling():
+    """The `citation` kwarg and the own-desk allowlist are GONE, not dormant.
+
+    Both were dead weight the review measured: deleting the citation branch
+    changed no test's answer (it could only return the tier, which is what the
+    function returned anyway), and the own-desk allowlist compared bare X handles
+    against a display-name field, so no production value could match it. A
+    dormant special case in a law-bearing function is a place for the law to
+    leak back out.
+
+    `citation_cfg`/`chip_cfg` ARE NOT THAT KWARG COMING BACK. The dead one
+    carried a per-ITEM source_authority RULING made for the post body; these
+    carry the OPERATOR'S CONFIG LIST, they have a live consumer, and reverting
+    them fails test_a_real_newswire_or_primary_source_is_named. The distinction
+    that matters here is per-item ruling vs standing policy: a policy the
+    operator edits is not a field kept "in case".
+    """
+    import inspect
+    from engine.marketing import chart_render
+    from engine.marketing.chart_render import _break_chip_label
+
+    assert not hasattr(chart_render, "_bc_own_desk_names")
+    assert not hasattr(chart_render, "_BC_UNNAMED_CREDIT")
+    # THE WHOLE CHAIN, not just its last link: press_lane ->
+    # build_breaking_payload -> render_breaking_card -> _break_chip_label. A
+    # parameter left accepted-but-unread at any rung is a dead field wearing a
+    # docstring, which is the shape this repo keeps getting bitten by.
+    from engine.marketing.breaking_summary import build_breaking_payload
+
+    for fn in (_break_chip_label, chart_render.render_breaking_card,
+               build_breaking_payload):
+        assert "citation" not in inspect.signature(fn).parameters, fn.__name__
+    # ...and the chip config rung is live at EVERY link of that chain, which is
+    # what stops it becoming the dead kwarg it replaced.
+    assert "chip_cfg" in inspect.signature(_break_chip_label).parameters
+    assert "chip_cfg" in inspect.signature(chart_render.render_breaking_card).parameters
+    assert "citation_cfg" in inspect.signature(build_breaking_payload).parameters
+    # With no list in hand, every source_name — ours or theirs, admitted
+    # elsewhere or not — resolves to the tier and nothing else.
+    for name in ("Reuters", "CNBC", "mastermindx001", "@mastermindx001", ""):
+        assert _break_chip_label(name, "WIRE SERVICE") == "WIRE SERVICE"
+        assert _break_chip_label(name, "") == ""
+    # ...and an EMPTY tier label never carries a name on its own, however
+    # admitted the source is: a masthead floating with no grade beside it is the
+    # branding the 2026-08-05 law was written against.
+    assert _break_chip_label("Reuters", "", chip_cfg=_chip_cfg()) == ""
+
+
+def test_the_press_lane_hands_the_renderer_the_operator_list(monkeypatch):
+    """THE CHAIN IS WIRED, driven rather than grepped.
+
+    The allowlist can be perfect and the card still unbranded if press_lane never
+    passes it — an imported policy that is never consulted is the failure mode
+    this file keeps re-learning. This drives the REAL tick on a CNBC-tier item
+    and reads the SVG the REAL renderer produced inside it, so nothing about the
+    assertion can be satisfied by the test supplying the config itself.
+
+    MUTATION: drop `citation_cfg=citation_cfg` from press_lane's
+    build_breaking_payload call and the CNBC assertion fails ("WIRE SERVICE" with
+    no name). Dropping `chip_cfg=citation_cfg` from build_breaking_payload's
+    card_kwargs fails it the same way.
+    """
+    from engine.marketing import chart_render
+
+    drawn: list[str] = []
+    real = chart_render.render_breaking_card
+
+    def _spy(*a, **kw):
+        svg = real(*a, **kw)
+        drawn.append(svg)
+        return svg
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _spy)
+
+    item = _relay_item(
+        "chip-wired-1",
+        "US CPI cooled to 2.4% in July, versus 2.6% consensus and 2.7% prior",
+        "The July print came in under consensus, with core easing for a third "
+        "month and shelter decelerating.",
+    )
+    item["source"] = "cnbc_top"
+    item["source_name"] = "CNBC"
+    item["source_tier"] = "wire"
+    item["url"] = "https://www.cnbc.com/2026/08/03/cpi.html"
+    _press_tick([item])
+
+    assert drawn, "the lane rendered no card at all, so the chip is untested"
+    chips = [_chip_text(svg) for svg in drawn]
+    assert chips == ["CNBC · WIRE SERVICE"] * len(chips), (
+        "the lane drew its card without the operator's allowlist in hand — the "
+        f"chip read {chips!r}")
 
 
 def test_anti_laundering_survives_the_redesign():
@@ -754,3 +1619,1173 @@ def test_fitter_prefers_the_largest_size_that_fits():
 def test_caps_are_measured_wider_than_lowercase():
     """The mis-calibration that let the tier chip's text escape its own pill."""
     assert _bc_text_w("AGGREGATOR", 28) > _bc_text_w("aggregator", 28)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE KILL PATHS — a withheld card must slim the post down, never delete it
+#
+# Round 1 gave the gate the power to refuse a card and stopped there. Both gates
+# that read `media` downstream take an empty list as "this post has no
+# evidence", which is the wrong inference when we deliberately withheld a
+# picture that added nothing. Measured end to end on 2026-08-05, on the repo's
+# own press fixture: no digit in the copy -> value_gate `proof:below_hard`,
+# ABSTAINED, nothing emitted; digit present -> emitted with media=[] and then
+# QUARANTINED by scripts/marketing_publisher._bare_cashtag_post. The operator's
+# complaint was a doubled card and the delivered behaviour was no post at all.
+#
+# THE RULING THAT DECIDES HOW THIS IS FIXED (2026-08-06). The first repair
+# taught value_gate to read a WITHHELD card as `hard` proof. That was circular:
+# the only thing that sets the withheld flag is card_earns_attachment answering
+# False, whose meaning is exactly "this picture contains nothing the post does
+# not already say", and the claim was persisted into `source.value_gate`, the
+# calibration record. A WIRE RELAY'S PROOF IS ITS SOURCE, not a picture of its
+# own text — so the withheld proof rung is gone and the repaired citation rung
+# (press_lane read provenance["url"], build_breaking_payload writes
+# "source_url") carries these posts.
+#
+# MEASURED, WITH THE METHOD STATED (re-run 2026-08-06; the earlier figure of "6
+# carried by that rung ALONE" carried no method and did not reproduce). Read
+# data/marketing/outbox/items.jsonl, keep source.lane == "press" (75 rows), and
+# for each row re-evaluate value_gate with has_media=False — the withheld-card
+# world — twice: once with the row's own source.source_url as `citation`, once
+# with citation="". Splitting the persisted `text` on outbox.compose_text's
+# "\n\n" gives the headline/body pair the gate saw. RESULT: 75/75 (100%) carry an
+# http(s) source_url; 15 reach `hard` ONLY with the citation, i.e. the repaired
+# rung is what carries them; 0 are held for want of proof. A post with no figure,
+# no link and no picture is held, and that is the gate working.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _kill_fixture(proof: str = "none", cashtag: bool = True) -> list[dict]:
+    """The repo's own press-copy fixture item (tests/test_marketing_press_copy).
+
+    `proof` names what the copy has to rest on once the card is withheld,
+    because value_gate reaches `hard` by several rungs and — since the ruling —
+    none of them is the card we chose not to print:
+
+      "digit"    — a figure in the headline, so the copy proves itself.
+      "url"      — the fixture's own source link, via the citation rung. This is
+                   the ORDINARY case: every real press emission has one.
+      "none"     — neither, and an opaque non-URL source id. No figure, no link,
+                   no visible picture: nothing checkable at all. HELD, and that
+                   is correct. Kept in the matrix as the floor, not as a target.
+    """
+    if cashtag:
+        head = (
+            "Trump orders a new 25% tariff and export controls on $AAPL and $NVDA"
+            if proof == "digit" else
+            "Trump orders new tariffs and export controls on $AAPL and $NVDA"
+        )
+        body = "The president said tariffs and export controls on $AAPL and $NVDA rise."
+    else:
+        head = (
+            "Trump says tariff rates will rise because trading partners refused "
+            "to lower their own barriers, the White House says"
+        )
+        body = (
+            "The president said the increase takes effect because negotiations "
+            "stalled, and that rates stay until partners move, the White House says."
+        )
+    return [{
+        "id": "trumpstruth:strong", "source": "trumpstruth",
+        "source_name": "Truth Social (via trumpstruth.org)",
+        "source_tier": "mirror",
+        "url": ("https://trumpstruth.org/statuses/strong" if proof == "url"
+                else "trumpstruth:strong"),
+        "published_at": "2026-07-27T13:59:00Z",
+        "headline": head,
+        "body_snippet": body,
+        "truth_status_id": "strong", "corroboration_class": "direct-quote",
+    }]
+
+
+def _emitting_tick(items: list[dict], *, state: dict | None = None,
+                   seen: set | None = None) -> dict:
+    """run_press_tick at PRODUCTION config — no floors relaxed.
+
+    `state` and `seen` default to fresh objects, i.e. one isolated tick. Pass
+    the SAME objects across calls to model consecutive daemon ticks: the
+    transient-refusal retry tally lives in `state`, so a bound on it is
+    unreachable — and any test of one vacuous — with a per-tick dict.
+    """
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    import yaml
+
+    from engine.marketing.press_lane import run_press_tick
+
+    root = Path(__file__).resolve().parent.parent
+    return run_press_tick(
+        items, root=str(root),
+        now=datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc),
+        cfg=yaml.safe_load((root / "config" / "marketing.yml").read_text()),
+        press_cfg=yaml.safe_load((root / "config" / "press_sources.yml").read_text()),
+        state={} if state is None else state,
+        seen_ids=set() if seen is None else seen,
+        dry_run=True,
+    )
+
+
+@pytest.mark.parametrize("proof", ["url", "digit"])
+def test_a_withheld_card_ships_the_post_text_only(proof):
+    """BLOCKER 1 — a withheld card must not delete the post.
+
+    Mechanism: value_gate.KIND_PROOF["breaking"] == "hard", and `_proof_tier`
+    reached `hard` for a press flash only through `has_media`, because the
+    citation rung was reading a provenance key nothing writes. Dropping the card
+    removed the post's only reachable hard proof, press_lane saw an armed
+    abstention (config/marketing.yml enforce: true, breaking in enforce_kinds)
+    and returned None.
+
+    `proof="url"` IS THE PIN FOR THE REPAIR, and it is behavioural, not textual:
+    it passes only because press_lane hands value_gate
+    `provenance["source_url"]`. `proof="digit"` proves the withheld card does
+    not BLOCK a post that proves itself either.
+
+    MUTATION (run in place, restored): revert press_lane's citation read to
+    `provenance.get("url")` and `proof="url"` goes back to EMITTED 0 /
+    `outbox_refused` with `::warning ... ABSTAINED, not posted
+    (proof:below_hard)`.
+    """
+    res = _emitting_tick(_kill_fixture(proof))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, (
+        "the post did not ship at all: "
+        f"{[s.get('reason') for s in res.get('skipped') or []]}"
+    )
+    item = emitted[0]
+    # ...text-only, and the withholding is RECORDED rather than inferred.
+    assert item.get("media") in ([], None)
+    assert (item.get("source") or {}).get("card_dropped")
+    assert (item.get("source") or {}).get("card_withheld_for_value") is True
+    # The gate stamped a PASS, and its record says which media state it read.
+    verdict = (item.get("source") or {}).get("value_gate") or {}
+    assert verdict.get("verdict") == "pass", verdict
+    # ...and the pass rests on the copy's OWN evidence, never on the picture we
+    # just declared uninformative.
+    assert (verdict.get("components") or {}).get("reached_proof") == "hard"
+    assert (verdict.get("components") or {}).get("surplus", {}).get("media") is False
+
+
+def test_a_post_with_nothing_checkable_is_held_and_that_is_correct():
+    """THE FLOOR OF THE RULING, stated as a test so it cannot be quietly moved.
+
+    No figure, no source link, and a picture the gate judged to add nothing: the
+    post rests on nothing a reader can check, and `breaking` requires `hard`. It
+    is HELD. That is the gate working, not a kill path — and it is the outcome
+    the removed `media_withheld -> hard` rung was buying its way out of.
+
+    MEASURED SCOPE, so nobody re-adds the rung on a guess: 75/75 shipped
+    press-lane items in data/marketing/outbox/items.jsonl carry an http(s)
+    `source_url`, so this shape does not occur on the live lane at all.
+
+    MUTATION: restore `if has_media or media_withheld: return "hard"` in
+    value_gate._proof_tier and this test fails (the post emits).
+    """
+    res = _emitting_tick(_kill_fixture("none"))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted == [], "a post with no checkable evidence shipped anyway"
+    assert [s.get("reason") for s in res.get("skipped") or []] == ["outbox_refused"]
+
+
+def test_the_publisher_does_not_quarantine_a_withheld_card_post():
+    """BLOCKER 2 — the publisher's bare-cashtag gate reads the same distinction.
+
+    `breaking` is in _BARE_CASHTAG_KINDS by explicit design (19 posts queued and
+    quarantined on 2026-07-30 because they shipped bare), so an emitted press
+    post naming $AAPL and $NVDA with media=[] was transitioned to `quarantined`
+    — terminal, not deferred. This feeds the REAL emitted item to the REAL gate.
+
+    MUTATION: delete the `_card_withheld_for_value(it)` branch in
+    scripts/marketing_publisher._bare_cashtag_post and this returns
+    "$AAPL $NVDA" again.
+    """
+    from pathlib import Path
+
+    import yaml
+
+    import scripts.marketing_publisher as mp
+
+    root = Path(__file__).resolve().parent.parent
+    pub_cfg = (yaml.safe_load(
+        (root / "config" / "marketing.yml").read_text()) or {}).get("publish") or {}
+    res = _emitting_tick(_kill_fixture("digit"))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, "nothing emitted, so the publisher gate is untested"
+    item = emitted[0]
+    assert "$AAPL" in item["text"], "the fixture stopped naming tickers"
+    assert mp._bare_cashtag_post(item, pub_cfg, []) == "", (
+        "a post whose card was withheld for adding nothing was quarantined"
+    )
+
+
+def test_a_post_that_never_had_a_card_is_still_quarantined():
+    """The distinction is a DISTINCTION, not a blanket exemption.
+
+    The 2026-07-30 outage was posts that carried no media and no withholding
+    decision. Nothing sets the flag except a gate that has SEEN a rendered card,
+    so a lane cannot buy its way out by skipping the render — and this is the
+    test that fails if the new branch is ever widened to "no media at all".
+    """
+    import scripts.marketing_publisher as mp
+
+    bare = {"kind": "breaking", "text": "$ALL $ERIE $TRV lead the tape today.",
+            "media": [], "source": {"lane": "press"}}
+    assert mp._bare_cashtag_post(bare, {"media_enabled": True}, []) == \
+        "$ALL $ERIE $TRV"
+    withheld = dict(bare, source={"lane": "press", "card_withheld_for_value": True})
+    assert mp._bare_cashtag_post(withheld, {"media_enabled": True}, []) == ""
+
+
+def test_a_withheld_card_buys_no_proof_and_no_gift():
+    """THE RULING (2026-08-06), pinned on the gate itself.
+
+    `media_state` stays three-valued — a card drawn and deliberately not printed
+    is a different FACT about the post from a card that never existed, and the
+    calibration record should be able to tell them apart — but it is a
+    DIAGNOSTIC and it gates nothing. Reading it as `hard` proof was circular:
+    the only thing that sets it is card_earns_attachment answering "this picture
+    contains nothing the post does not already say".
+
+    MUTATION: restore `if has_media or media_withheld: return "hard"` in
+    value_gate._proof_tier and the `held.proof is False` assertion fails.
+    """
+    from engine.marketing import value_gate as vg
+
+    copy = "Trump orders new tariffs and export controls on $AAPL and $NVDA"
+    none_ = vg.evaluate("", copy, kind="breaking")
+    held = vg.evaluate("", copy, kind="breaking", media_withheld=True)
+    shown = vg.evaluate("", copy, kind="breaking", has_media=True)
+
+    # The record still distinguishes all three.
+    assert none_.components["media_state"] == "none"
+    assert held.components["media_state"] == "withheld_for_value"
+    assert shown.components["media_state"] == "shown"
+    # ...and only a card the READER SEES counts, on either arm.
+    assert none_.proof is False and held.proof is False and shown.proof is True
+    assert held.components["surplus"]["media"] is False
+    assert shown.components["surplus"]["media"] is True
+    # No withheld post is ever stamped with a proof tier it did not reach.
+    assert held.components["reached_proof"] == none_.components["reached_proof"]
+
+
+def test_the_citation_rung_is_what_carries_a_wire_post():
+    """The URL proof rung was dead on this lane: `url` vs `source_url`.
+
+    build_breaking_payload writes provenance["source_url"]; press_lane asked for
+    provenance["url"] and got "" on every press emission, so value_gate's
+    citation rung — a wire item's actual evidence, the link back to the source —
+    had never once fired here. Invisible while every press post carried a card
+    (has_media short-circuits to `hard` first), and load-bearing the moment the
+    withheld-card rung was removed as circular.
+
+    BEHAVIOURAL, NOT A SOURCE GREP (review F5). The previous version asserted
+    `'provenance.get("source_url")' in inspect.getsource(...)`, which passes for
+    a rung that is present and dead — the exact shape this file rejects
+    elsewhere. This drives the rung: the value press_lane actually assembles is
+    fed to the real gate, with no picture and no digit anywhere in the copy, and
+    `hard` can only have come from the citation.
+    """
+    from engine.marketing import value_gate as vg
+
+    p = _payload("US CPI cooled again in July", "Consensus was for a hold.")
+    cite = str(p["provenance"].get("source_url") or "")
+    assert cite, "build_breaking_payload stopped writing the key press_lane reads"
+
+    copy = ("Trump says tariff rates will rise because trading partners refused "
+            "to lower their own barriers, the White House says")
+    assert not any(ch.isdigit() for ch in copy), "the fixture grew a digit"
+
+    with_cite = vg.evaluate("", copy, kind="breaking", has_media=False, citation=cite)
+    without = vg.evaluate("", copy, kind="breaking", has_media=False, citation="")
+    assert with_cite.components["reached_proof"] == "hard"
+    assert with_cite.proof is True
+    assert without.proof is False, (
+        "the citation is not what carried this post — the test cannot see the rung")
+
+
+def test_a_degraded_render_is_retried_not_quarantined_and_not_deleted():
+    """BLOCKER 3 — the FOURTH producer of `media == []`.
+
+    The M9 degraded-render fix drops the renderer's blank fail-soft fallback,
+    which is right, but it lands in the dispatch looking exactly like a post
+    that never wanted a picture. MEASURED before the fix, forcing the fail-soft
+    by making chart_render._bc_fit_headline raise: the ticker post EMITTED with
+    media=[] and the REAL publisher gate returned "$AAPL $NVDA" — quarantined,
+    terminal. A failed render is an ENVIRONMENT fault, so it now joins
+    press_lane._TRANSIENT_REFUSALS: the story is not marked seen and comes back
+    next tick with a fresh render.
+
+    THE NO-TICKER HALF STILL SHIPS. A post that owes nobody a picture goes on to
+    the value gate and passes on its own citation, which is the whole point of
+    the ruling.
+
+    MUTATION: delete the `card_absent_reason == "render_degraded"` branch in
+    press_lane._emit_outbox_item and the first half fails with
+    `_bare_cashtag_post -> "$AAPL $NVDA"`; remove `card_absent_reason` from
+    build_breaking_payload's provenance and it fails the same way.
+    """
+    import scripts.marketing_publisher as mp
+    from engine.marketing import chart_render
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("forced fail-soft")
+
+    orig = chart_render._bc_fit_headline
+    chart_render._bc_fit_headline = _boom
+    try:
+        ticker_res = _emitting_tick(_kill_fixture("url"))
+        prose_res = _emitting_tick(_kill_fixture("url", cashtag=False))
+    finally:
+        chart_render._bc_fit_headline = orig
+
+    # (1) A ticker post owes a picture it did not get: refused TRANSIENTLY, so
+    #     the story survives to the next tick instead of dying in quarantine.
+    assert [e for e in ticker_res["emitted"] if e.get("kind") == "breaking"] == []
+    reasons = [s.get("reason") for s in ticker_res.get("skipped") or []]
+    assert reasons == ["card_render_degraded"], reasons
+    from engine.marketing.press_lane import _TRANSIENT_REFUSALS
+    assert "card_render_degraded" in _TRANSIENT_REFUSALS, (
+        "the refusal is terminal, so a renderer hiccup permanently kills the story")
+
+    # (2) A post with no cashtag ships TEXT-ONLY on its citation, and the real
+    #     publisher gate lets it through.
+    emitted = [e for e in prose_res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, (
+        "a degraded render deleted a post that owed nobody a picture: "
+        f"{[s.get('reason') for s in prose_res.get('skipped') or []]}"
+    )
+    item = emitted[0]
+    assert item.get("media") in ([], None)
+    assert mp._bare_cashtag_post(item, {"media_enabled": True}, []) == ""
+    verdict = (item.get("source") or {}).get("value_gate") or {}
+    assert (verdict.get("components") or {}).get("reached_proof") == "hard"
+    # ...and it is NOT stamped as a withheld card: nothing judged this picture.
+    assert (item.get("source") or {}).get("card_withheld_for_value") is None
+
+
+def test_the_withheld_exemption_does_not_reach_a_chart_bearing_kind():
+    """Review F6 — the exemption is a per-KIND relaxation, so it is kind-scoped.
+
+    `_bare_cashtag_post` honoured a bare boolean off `source`, above the kind
+    test. Nothing sets it on a chart-bearing kind today, but the rule it stands
+    down ("these kinds always carry their chart") is exactly the rule those
+    kinds exist under, and a future producer stamping the flag would have bought
+    its way out silently.
+
+    MUTATION: drop the kind check from
+    scripts/marketing_publisher._card_withheld_for_value and the `signal` /
+    `mover` assertions fail.
+    """
+    import scripts.marketing_publisher as mp
+
+    flagged = {"card_withheld_for_value": True, "lane": "press"}
+    text = "$ALL $ERIE $TRV lead the tape today."
+    cfg = {"media_enabled": True}
+
+    # The two kinds whose lanes legitimately set it.
+    for kind in ("breaking", "earnings"):
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "", kind
+    # ...and every kind that owes a picture by its own definition.
+    for kind in sorted(mp._CHART_BEARING_KINDS | mp._TICKER_ROLLUP_KINDS):
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "$ALL $ERIE $TRV", (
+            f"a {kind} item bought an exemption from the rule it exists under")
+    # NAMED EXPLICITLY, not only reached through the frozensets: `theme_list` and
+    # `mover` are the two kinds the 2026-07-30 outage actually shipped bare, and
+    # the operator's 2026-08-06 narrowing is scoped to leave them untouched. A
+    # loop over a set can go quiet if the set is edited; these two cannot.
+    for kind in ("theme_list", "mover"):
+        assert kind in mp._TICKER_ROLLUP_KINDS
+        it = {"kind": kind, "text": text, "media": [], "source": dict(flagged)}
+        assert mp._bare_cashtag_post(it, cfg, []) == "$ALL $ERIE $TRV", kind
+
+
+def test_a_real_press_emission_relabelled_to_a_rollup_kind_is_still_quarantined():
+    """THE NARROWING PROVEN BOTH WAYS, on a REAL emitted item (operator 2026-08-06).
+
+    "Charts yes, text cards no." The wire flash ships; the price/rollup post does
+    not. The sibling above builds its item by hand, which pins the gate but not
+    the SHAPE the lane actually produces — so this takes the real emission from a
+    real tick (media=[], source.card_withheld_for_value=True, a live withheld
+    stamp no test wrote) and asks the REAL publisher gate the same question under
+    two kinds. Nothing changes but `kind`.
+
+    MUTATION: drop the kind check from
+    scripts/marketing_publisher._card_withheld_for_value and the rollup arms
+    return "" — the 2026-07-30 law would be standing down for the posts it was
+    written about.
+    """
+    import scripts.marketing_publisher as mp
+
+    res = _emitting_tick(_kill_fixture("digit"))
+    emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, "nothing emitted, so the publisher gate is untested"
+    item = emitted[0]
+    assert "$AAPL" in item["text"], "the fixture stopped naming tickers"
+    assert (item.get("source") or {}).get("card_withheld_for_value") is True
+    cfg = {"media_enabled": True}
+
+    # (1) THE WIRE FLASH SHIPS. A card was drawn, measured and found to restate
+    #     the post; the operator ruled that a text card is a screenshot of the
+    #     post, not data, so withholding it is not shipping naked.
+    assert mp._bare_cashtag_post(item, cfg, []) == "", (
+        "the ratified wire-flash exemption stopped working")
+
+    # (2) THE SAME ITEM AS A PRICE/ROLLUP POST IS STILL QUARANTINED. Same text,
+    #     same withheld stamp, same empty media — only the kind moves.
+    for kind in ("theme_list", "mover", "signal", "chart", "watchlist", "receipt"):
+        relabelled = dict(item, kind=kind)
+        assert mp._bare_cashtag_post(relabelled, cfg, []) == "$AAPL $NVDA", (
+            f"a {kind} post bought the wire flash's exemption")
+
+
+def test_a_policy_refused_card_is_refused_at_the_lane_not_quarantined_downstream():
+    """THE FOURTH KILL PATH (round-3 review, finding 1).
+
+    press_lane's routing block tested `card_absent_reason == "render_degraded"`
+    alone. build_breaking_payload also produces "policy_refused" — a foreign
+    @handle reached a card param (_CardHandleLeak) — and that state fell straight
+    through to the emission with media=[] and NO withheld stamp. MEASURED by the
+    reviewer: the item was ENQUEUED and then TERMINALLY quarantined by
+    scripts/marketing_publisher._bare_cashtag_post ("$AAPL $NVDA"), i.e. the
+    branch's own citation repair relocated a lane-side refusal into the exact
+    2026-07-30 bare-cashtag signature it exists to prevent, burning a queue slot
+    and a quarantine record.
+
+    THE HONEST DISPOSITION, and why it is not the sibling's. A retry redraws the
+    IDENTICAL unlawful card from the identical stored item, so the transient lane
+    is wrong; but a publisher quarantine of the POST for a CARD policy fault is
+    also wrong — it records a copy violation the copy never committed and asks a
+    reviewer to approve text that was never in question. So the refusal is taken
+    at the LANE, non-transiently, named in the skip census.
+
+    MUTATION: drop `_ABSENT_POLICY_REFUSED` from press_lane's routing test and
+    the ticker arm emits again, with mp._bare_cashtag_post -> "$AAPL $NVDA".
+    """
+    import scripts.marketing_publisher as mp
+    from engine.marketing import breaking_summary as _bs
+    from engine.marketing.press_lane import _TRANSIENT_REFUSALS
+
+    orig = _bs._card_param_violations
+    _bs._card_param_violations = lambda _kw: [
+        "card param 'summary': source handle mention: '@FirstSquawk'"]
+    try:
+        ticker_res = _emitting_tick(_kill_fixture("url"))
+        prose_res = _emitting_tick(_kill_fixture("url", cashtag=False))
+    finally:
+        _bs._card_param_violations = orig
+
+    # (1) A ticker post whose card may not lawfully be drawn is refused HERE.
+    assert [e for e in ticker_res["emitted"] if e.get("kind") == "breaking"] == [], (
+        "a policy-refused card still bought a queue slot the publisher would "
+        "terminally quarantine")
+    rows = ticker_res.get("skipped") or []
+    assert [r.get("reason") for r in rows] == ["card_policy_refused"], rows
+    assert rows[0].get("violations") == ["$AAPL", "$NVDA"], rows
+
+    # ...and it is NOT retried: the redraw is the same unlawful card.
+    assert "card_policy_refused" not in _TRANSIENT_REFUSALS, (
+        "a policy refusal is being retried, which re-pays an LLM call to reach "
+        "the identical answer")
+    # The MIRROR-COLLAPSED emission key ("truth:strong"), which is what the seen
+    # ledger stores — not the feed id.
+    assert "truth:strong" in (ticker_res.get("_seen") or []), (
+        "the story was left unseen, so every tick will redraw the same "
+        f"unlawful card forever: {ticker_res.get('_seen')}")
+
+    # (2) THE NO-TICKER HALF STILL SHIPS, exactly as on the degraded sibling: the
+    #     fault is in the picture, and a post that owed nobody one is not
+    #     implicated by it.
+    emitted = [e for e in prose_res["emitted"] if e.get("kind") == "breaking"]
+    assert emitted, (
+        "a card policy fault deleted a post that owed nobody a picture: "
+        f"{[s.get('reason') for s in prose_res.get('skipped') or []]}")
+    assert emitted[0].get("media") in ([], None)
+    assert mp._bare_cashtag_post(emitted[0], {"media_enabled": True}, []) == ""
+
+
+def test_the_handle_leak_annotation_no_longer_promises_a_post(capsys):
+    """It said "card dropped, posting text-only" on a path that does not post.
+
+    The sibling degraded-render line was corrected for exactly this and this one
+    was missed (round-3 review, finding 1). A ticker post whose card is
+    policy-refused is REFUSED by press_lane; an annotation that promises the
+    reader a post is a false promise in the Actions summary, and it is the
+    operator-facing half of the same defect.
+
+    MUTATION: put "posting text-only" back in breaking_summary's handle-mention
+    print and this fails.
+    """
+    from engine.marketing import breaking_summary as _bs
+
+    orig = _bs._card_param_violations
+    _bs._card_param_violations = lambda _kw: [
+        "card param 'summary': source handle mention: '@FirstSquawk'"]
+    try:
+        _payload("US CPI cooled again in July", "Consensus was for a hold.")
+    finally:
+        _bs._card_param_violations = orig
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if "breaking-card-handle-mention" in ln]
+    assert lines, "the handle-leak path printed nothing at all"
+    for ln in lines:
+        assert ln.startswith("::warning title="), ln
+        assert "posting text-only" not in ln, (
+            "the annotation promises a post the dispatch then refuses")
+
+
+def test_a_deterministic_render_failure_gives_up_instead_of_retrying_forever():
+    """Review F6 — `card_render_degraded` had no give-up bound.
+
+    It joined _TRANSIENT_REFUSALS on the stated grounds of being "an ENVIRONMENT
+    fault, same class as a lost raster". What it actually names is
+    render_breaking_card's outer blanket `except Exception` around a
+    DETERMINISTIC pure-Python layout over the same stored strings, so an
+    unexpected glyph or a malformed ticker row raises identically on every tick:
+    the story was never marked seen, nothing bounded the retries, and each
+    attempt re-paid the summarize_item LLM call.
+
+    THE BOUND IS PER-REASON on purpose. `media_unhosted` stays unbounded — during
+    a real R2 outage every story is refused, and giving up would be a mass kill.
+
+    MUTATION: empty press_lane._TRANSIENT_GIVE_UP_AT and the bound assertion
+    fails; raise the bound to 999 and it fails too, because a give-up nobody
+    reaches inside a daemon's working life is the same as no give-up. (The test
+    reads the bound from the module rather than hard-coding 5 — the NUMBER is a
+    tunable, the existence and reachability of the bound are the law.)
+    """
+    from engine.marketing import chart_render
+    from engine.marketing.press_lane import (
+        _TRANSIENT_GIVE_UP_AT,
+        _TRANSIENT_REFUSALS,
+    )
+
+    assert "media_unhosted" not in _TRANSIENT_GIVE_UP_AT, (
+        "a genuine host outage now kills every story it touches")
+    bound = _TRANSIENT_GIVE_UP_AT.get("card_render_degraded")
+    assert bound and 1 < bound <= 10, (
+        "a deterministic renderer failure has no REACHABLE give-up bound: "
+        f"{bound!r}. Below 2 a single blip kills the story; above ~10 the story "
+        "is held and billed for hours, which is the defect this bound closes.")
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("forced fail-soft")
+
+    orig = chart_render._bc_fit_headline
+    chart_render._bc_fit_headline = _boom
+    try:
+        # ONE PERSISTENT state dict across ticks — the retry tally lives in
+        # daemon state, so a per-tick dict would make the bound unreachable and
+        # the test vacuous.
+        state: dict = {}
+        seen: set = set()
+        results = [_emitting_tick(_kill_fixture("url"), state=state, seen=seen)
+                   for _ in range(bound)]
+    finally:
+        chart_render._bc_fit_headline = orig
+
+    for i, res in enumerate(results, start=1):
+        assert [r.get("reason") for r in res.get("skipped") or []] == \
+            ["card_render_degraded"], (i, res.get("skipped"))
+        assert "card_render_degraded" in _TRANSIENT_REFUSALS
+        # "truth:strong" is the MIRROR-COLLAPSED emission key the seen ledger
+        # stores; the feed id ("trumpstruth:strong") never appears in it.
+        story_seen = "truth:strong" in (res.get("_seen") or [])
+        if i < bound:
+            assert not story_seen, (
+                f"gave up after {i} ticks, before the bound of {bound} — a "
+                "raster blip now kills the story")
+        else:
+            assert story_seen, (
+                f"still retrying after {bound} identical failures: a "
+                "deterministic renderer bug holds the story and bills an LLM "
+                "call every tick")
+
+
+def test_the_held_class_is_countable_per_run(capsys):
+    """Operator ruling 2026-08-06 — HOLD THEM, and make the class countable.
+
+    "A post whose only value was a picture of its own text has nothing to say."
+    No surplus rung is invented to rescue it. What the operator asked for is a
+    COUNT, not an alarm, so the run prints one ::notice naming how many posts
+    were held with their card withheld.
+
+    RE-MEASURED ONCE (three figures had been quoted for this class): 4 of the 75
+    shipped press-lane emissions, 5.3%, counted from their persisted
+    source.value_gate.components.surplus — the record of what the gate actually
+    saw — as the rows whose ONLY true surplus key is `media`. The method is
+    stated at the emission site in press_lane; this pins the mechanism.
+
+    MUTATION: delete the `refusal["held_card_withheld"]` stamp in
+    press_lane._emit_outbox_item and the ::notice never prints.
+    """
+    res = _emitting_tick(_kill_fixture("none"))
+    assert [e for e in res["emitted"] if e.get("kind") == "breaking"] == []
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if "press-lane-held-card-withheld" in ln]
+    assert len(lines) == 1, lines
+    # HOUSE LAW: bare line-start annotation, never through a logger.
+    assert lines[0].startswith("::notice title=press-lane-held-card-withheld::")
+    assert "1 post(s) held" in lines[0], lines[0]
+    assert "gift:no_informational_surplus" in lines[0]
+
+
+def test_the_held_class_notice_is_silent_on_a_clean_run(capsys):
+    """A quiet tick stays quiet — a count that always prints is not a count."""
+    res = _emitting_tick(_kill_fixture("url"))
+    assert [e for e in res["emitted"] if e.get("kind") == "breaking"]
+    assert not [ln for ln in capsys.readouterr().out.splitlines()
+                if "press-lane-held-card-withheld" in ln]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VETO 1 IS NEAR-EQUALITY — it must not eat the additive hero
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("post,hero", [
+    # The reviewer's counter-example, measured on round 1: containment(post,
+    # hero) == 1.00 and the card was dropped as "the hero is the tweet again".
+    ("Nvidia beats. -- wire reports",
+     "Nvidia beats on revenue at $46.7B and guides Q3 above the street"),
+    ("Fed holds rates steady. -- wire reports",
+     "Fed holds rates at 4.25% to 4.50% with two dissents"),
+    ("On the tape: US CPI cooled again in July. -- wire reports",
+     "US CPI cooled to 2.4% in July, versus 2.6% consensus and 2.7% prior"),
+])
+def test_an_additive_hero_attaches(post, hero):
+    """A hero that COVERS a terse post while saying more is the card, not the defect.
+
+    `containment(post, hero)` alone is 1.0 whenever the hero is a strict
+    SUPERSET of a short post, which is exactly the case the card exists for. The
+    veto now asks near-equality — cover the post AND add nothing to it — because
+    the defect it was built for (the India card) is hero == post in BOTH
+    directions, which is what restatement_score already scores 1.0.
+
+    MUTATION: restore `if containment(post, head) >= _RESTATE_THRESHOLD` as the
+    whole condition and all three of these drop, under a logged reason ("the
+    hero is the tweet again") that is false about every one of them.
+    """
+    attach, why = card_earns_attachment(post, hero, "", [])
+    assert attach is True, f"the additive hero was dropped: {why}"
+
+
+def test_veto_one_still_fires_on_true_near_equality():
+    """...and the India card, the defect the veto exists for, still dies."""
+    attach, why = card_earns_attachment(P2_POST, P2_CARD_HEAD, P2_CARD_BODY, [])
+    assert attach is False
+    assert "restates" in why
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE GATE IS NOT PRESS-LANE-LOCAL
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_every_card_drawing_lane_consults_the_gate():
+    """A gate scoped to one lane while a sibling bypasses it IS the defect.
+
+    engine/marketing/earnings_call_lane drew a breaking-family card whose hero
+    is its own post's first line (`f"${ticker} {quarter} FY{year} call: {tone}
+    tone."`) and never imported card_earns_attachment. It emits from the same
+    breaking family as press_lane (wire_routing lists it), so the exact shape
+    the fix was commissioned for kept shipping from next door.
+
+    STRUCTURAL, because that is the property that decays: any module that calls
+    render_breaking_card must also consult the gate. A new lane added without
+    one fails here rather than in production.
+
+    IT COUNTS CALLS, NOT SUBSTRINGS. A first version grepped the file text and
+    passed with the gate's import deleted, because the word survived in a
+    comment describing the call — the exact "guard that passes on broken code"
+    shape. The AST is the only reading that cannot be satisfied by prose.
+    """
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+
+    def _called_names(tree: ast.AST) -> set:
+        out = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                fn = node.func
+                if isinstance(fn, ast.Name):
+                    out.add(fn.id)
+                elif isinstance(fn, ast.Attribute):
+                    out.add(fn.attr)
+        return out
+
+    def _defined_names(tree: ast.AST) -> set:
+        return {n.name for n in ast.walk(tree)
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+    offenders = []
+    for py in sorted((root / "engine").rglob("*.py")) + \
+            sorted((root / "scripts").rglob("*.py")):
+        if py.name == "chart_render.py":       # the renderer itself
+            continue
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:                     # not ours to police
+            continue
+        calls = _called_names(tree)
+        if "render_breaking_card" not in calls:
+            continue
+        # breaking_summary DEFINES the gate and hands its payload to press_lane,
+        # which applies it (pinned by test_dispatch_actually_strips_the_card_...
+        # and test_dispatch_scores_the_hero_the_renderer_actually_draws). Every
+        # OTHER module that draws a card owns the decision itself.
+        if "card_earns_attachment" in calls or \
+                "card_earns_attachment" in _defined_names(tree):
+            continue
+        offenders.append(str(py.relative_to(root)))
+    assert offenders == [], (
+        f"these lanes draw a breaking card without consulting the card-value "
+        f"gate: {offenders}"
+    )
+
+
+def test_every_card_drawing_lane_judges_what_the_card_drew():
+    """The gate's own law, applied to the lanes that call it (review F4/M12).
+
+    card_earns_attachment's contract is "both texts must be WHAT THE READER
+    SEES". press_lane obeyed it; earnings_call_lane did not — it scored
+    `_short_clause(summary, 190)` against a box whose measured capacity is
+    card_summary_budget_chars() == 129, and it decided BEFORE calling the
+    renderer at all. A summary whose drawn head restates the post and whose
+    UNDRAWN tail is additive therefore attached a restating card, which is the
+    defect the gate exists for. The same fact falsified the premise
+    scripts/marketing_publisher._card_withheld_for_value's exemption rests on
+    ("nothing sets this flag except a gate that has SEEN a rendered card").
+
+    STRUCTURAL, on the AST, because prose decays and this is a property of every
+    future lane too: the gate's `summary` argument must read the render's fit
+    report, not the producer's string.
+
+    IT ENUMERATES THE SAME CALL SET AS ITS SIBLING (round-3 review, finding 5).
+    This matched `ast.Name` only, while test_every_card_drawing_lane_consults_the
+    _gate collects `fn.id` AND `fn.attr` — so a lane written as
+    `breaking_summary.card_earns_attachment(post, card_headline, ...)` satisfied
+    the consults-the-gate pin and was completely INVISIBLE here, free to score
+    the producer's pre-render strings. Two structural guards that disagree about
+    what a call is leave the gap on whichever one enforces the newer law.
+
+    MUTATION: pass `card_summary or ""` back to card_earns_attachment in
+    earnings_call_lane._media_for_event and this fails naming that file. SECOND
+    MUTATION (for the widening itself): rewrite either lane's call as a module
+    attribute with a producer-string hero and this still fails; before the fix it
+    passed.
+    """
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+
+    def _is_gate_call(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        fn = node.func
+        # BOTH shapes: a bare name and a module attribute. Mirrors _called_names
+        # in test_every_card_drawing_lane_consults_the_gate exactly.
+        return ((isinstance(fn, ast.Name) and fn.id == "card_earns_attachment")
+                or (isinstance(fn, ast.Attribute)
+                    and fn.attr == "card_earns_attachment"))
+
+    offenders = []
+    for rel in ("engine/marketing/press_lane.py",
+                "engine/marketing/earnings_call_lane.py"):
+        tree = ast.parse((root / rel).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not _is_gate_call(node):
+                continue
+            # args: (post_text, hero, body, tickers). The two the CARD drew are
+            # 1 and 2, and EACH must be sourced from a drawn/fit field — a
+            # version that checked them together passed on press_lane, whose
+            # hero was still the producer's pre-render string.
+            for pos, role in ((1, "hero"), (2, "body")):
+                expr = ast.unparse(node.args[pos])
+                if "drawn" not in expr:
+                    offenders.append(f"{rel}: {role}={expr}")
+    assert offenders == [], (
+        "these gate calls judge text the card never drew: " + "; ".join(offenders))
+
+
+def test_the_earnings_lane_renders_before_it_judges(tmp_path, monkeypatch):
+    """...and the render really does come first, not just the argument.
+
+    The publisher's exemption is justified by "a gate that has SEEN a rendered
+    card, so a lane cannot buy an exemption by skipping the render". This drives
+    the lane and asserts the renderer ran before the gate decided.
+
+    MUTATION: move the card_earns_attachment call back above
+    render_breaking_card in earnings_call_lane._media_for_event and `order`
+    comes back ['gate'] with no 'render' before it.
+    """
+    from engine.marketing import breaking_summary as _bs
+    from engine.marketing import chart_render
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import NOW, _event, _hosted
+
+    _hosted(monkeypatch)
+    order: list[str] = []
+    real_render = chart_render.render_breaking_card
+    real_gate = _bs.card_earns_attachment
+
+    def _render(*a, **k):
+        order.append("render")
+        return real_render(*a, **k)
+
+    def _gate(*a, **k):
+        order.append("gate")
+        return real_gate(*a, **k)
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _render)
+    monkeypatch.setattr(_bs, "card_earns_attachment", _gate)
+    _ecl.enqueue_event(_event(summary="Revenue grew 93% in a spectacular quarter."),
+                       root=tmp_path, now=NOW)
+    assert order[:2] == ["render", "gate"], (
+        f"the earnings lane judged a card it had not drawn: {order}")
+
+
+def test_a_degraded_earnings_render_never_buys_the_withheld_exemption(
+        tmp_path, monkeypatch):
+    """The premise the publisher's exemption rests on, on the sibling lane.
+
+    Rendering first is what makes "nothing sets this flag except a gate that has
+    SEEN a rendered card" true — but only if a render that FAILED is refused
+    instead of judged. Without the fit-report guard the lane falls back to the
+    producer's hero, the gate compares it to the post's own first line, answers
+    False, and stamps `card_withheld_for_value` on a card nobody ever drew: an
+    exemption bought by a broken renderer, which is the exact thing the premise
+    denies is possible.
+
+    MUTATION: disable the `if "headline_drawn" not in fit` branch in
+    earnings_call_lane._media_for_event and this fails with status 'queued' and
+    the flag set.
+    """
+    from engine.marketing import chart_render
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import NOW, _event, _hosted
+
+    cards = _hosted(monkeypatch)
+    monkeypatch.setattr(
+        chart_render, "_bc_fit_headline",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("forced fail-soft")))
+    result = _ecl.enqueue_event(_event(), root=tmp_path, now=NOW)
+
+    assert result["status"] == "media_unhosted", result
+    assert result["item"] is None
+    assert cards == [], "a card with no fit report was published anyway"
+
+
+def test_the_earnings_call_lane_withholds_a_restating_card(tmp_path, monkeypatch):
+    """The live instance: a transcript card whose hero is the post's own line.
+
+    MUTATION: remove the card_earns_attachment call from
+    earnings_call_lane._media_for_event and a card is rendered again for a post
+    the card can only repeat.
+    """
+    from engine.marketing import earnings_call_lane as _ecl
+    from tests.test_marketing_earnings_call_lane import NOW, _event, _hosted
+
+    calls = _hosted(monkeypatch)
+    # A number in model prose is not its own receipt, so _short_clause redacts
+    # this summary in full — the card is hero-only and the hero is the post's
+    # first line.
+    event = _event(summary="Revenue grew 93% in a spectacular quarter.")
+    result = _ecl.enqueue_event(event, root=tmp_path, now=NOW)
+    assert result["status"] == "queued", result
+    assert calls == [], "a card that could only repeat the post was still drawn"
+    assert result["item"]["source"]["card_withheld_for_value"] is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE TWO BUDGETS ARE RECONCILED, AND THE SECOND VOICE IS BOUNDED
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _body_rungs(svg: str) -> set:
+    return {float(s) for s in re.findall(
+        r'fill="#C8D4EA" font-size="([0-9.]+)"', svg)}
+
+
+def _body_line_count(svg: str) -> int:
+    return len(re.findall(r'fill="#C8D4EA"', svg))
+
+
+def _hero_line_count(svg: str) -> int:
+    return len(re.findall(r'font-weight="800"', svg))
+
+
+def test_an_in_budget_summary_never_reaches_the_legibility_floor():
+    """The card body has its own budget now, so the ladder starts with room.
+
+    THE DEFECT. breaking_summary._MAX_SUMMARY_CHARS is 320 — a budget about a
+    TWEET — and the same string was handed to the card. The renderer honoured it
+    the only way it could, by stepping the second voice to _BREAK_BODY_MIN, the
+    AG-3 LEGIBILITY FLOOR (~8.8 CSS px in an X phone media well). Measured on
+    round 1: a 255-char summary drew at 26.0px with 0 dropped, i.e. the ORDINARY
+    case became the smallest type the card is allowed to draw. The truncation
+    defect had been traded for a legibility defect.
+
+    MUTATION: return the argument unchanged from _bc_card_body_budgeted and a
+    126-char summary falls from 41px back to 26px.
+    """
+    from engine.marketing.chart_render import (
+        _BC_SM_PROBE,
+        card_summary_budget_chars,
+        render_breaking_card,
+    )
+
+    budget = card_summary_budget_chars()
+    prose = _BC_SM_PROBE[:budget].rsplit(" ", 1)[0] + "."
+    assert len(prose) <= budget
+    fit: dict = {}
+    svg = render_breaking_card("Fed holds", "Reuters", "wire",
+                               "2026-07-19T14:32:00Z", summary=prose, fit=fit)
+    assert fit["summary_chars_dropped"] == 0, "an in-budget summary was trimmed"
+    assert min(_body_rungs(svg)) >= 31.0, (
+        f"an in-budget summary reached {min(_body_rungs(svg))}px")
+
+
+def test_an_over_budget_summary_is_bounded_and_the_drop_is_counted():
+    """The post keeps its 320; the card takes whole sentences within its own box."""
+    from engine.marketing.chart_render import (
+        _bc_card_body_budgeted,
+        render_breaking_card,
+    )
+
+    long_ = (
+        "The committee left the target range unchanged and said supply, not "
+        "demand, remains the binding constraint on activity. Two members "
+        "dissented in favour of an immediate reduction of 25 basis points. The "
+        "statement kept its reference to restrictive policy for some time."
+    )
+    bounded = _bc_card_body_budgeted(long_)
+    assert bounded and long_.startswith(bounded)
+    assert len(bounded) < len(long_), "the card took the whole post budget"
+    assert bounded.endswith("."), "the card body budget cut a clause"
+    fit: dict = {}
+    render_breaking_card("Fed holds", "Reuters", "wire", "2026-07-19T14:32:00Z",
+                         summary=long_, fit=fit)
+    # Counted against the SOURCE, so the tail the card does not show is visible
+    # in provenance.card_fit rather than reported as a clean fit.
+    assert fit["summary_source_chars"] == len(" ".join(long_.split()))
+    assert fit["summary_chars_dropped"] > 0
+
+
+@pytest.mark.parametrize("long_summary", [
+    # MULTI-SENTENCE — the card-body budget trims it to whole sentences long
+    # before the fitter is asked, so stage (1) succeeds and the ladder never
+    # descends. This case pins the BUDGET.
+    ("Fed officials said the target range is unchanged and that supply, not "
+     "demand, remains the binding constraint on activity through the second "
+     "half of the year. They added that the committee will keep policy "
+     "restrictive until inflation returns durably to target, and that two "
+     "members dissented in favour of a cut."),
+    # ONE SENTENCE, over budget — there is no boundary to trim to, so the
+    # budget falls back to the whole clause and stage (2) is the loop that
+    # actually runs. This case pins the CAP. Measured with the cap removed:
+    # SEVEN 36px summary lines under a two-line hero.
+    ("Fed officials said the target range is unchanged and that supply not "
+     "demand remains the binding constraint on activity through the second "
+     "half of the year while the committee keeps policy restrictive until "
+     "inflation returns durably to target and two members dissent in favour "
+     "of an immediate reduction of twenty five basis points."),
+])
+def test_the_second_voice_cannot_dominate_the_hero(long_summary):
+    """The 3-line cap was traded away by the very loop that follows it.
+
+    _fit_second_voice stage (2) dropped the tidy block height entirely and took
+    `int(room // (size * 1.42))` — up to ~15 lines at 26px on a 1080 square.
+    Measured on round 1: hero "Fed holds" with a 306-char summary drew SEVEN
+    summary lines against TWO hero lines, inverting the card's hierarchy, and no
+    assertion anywhere in tests/ looked at summary line count or block height.
+
+    A CAPPED STAGE 2 MAY DRAW NOTHING, and that is the intended trade, not a
+    void: the second voice is all-or-nothing per sentence (the no-clip law), so
+    one clause too long for the bounded box is a paragraph this card does not
+    have room for. card_earns_attachment upstream then judges the hero alone —
+    the same disposal route the fitter's docstring already describes.
+
+    MUTATION: drop `stage2_cap` from the stage-(2) `_try` call and the
+    single-sentence case returns to 7 lines. The multi-sentence case does NOT
+    move, which is why both are here: the budget and the cap fix different
+    halves and each needs a fixture that can see it.
+    """
+    from engine.marketing.chart_render import (
+        _BC_SM_LINES_HARD,
+        _BC_SM_LINES_PER_HERO_LINE,
+        _BC_SM_MAX_LINES,
+        render_breaking_card,
+    )
+
+    svg = render_breaking_card("Fed holds", "Reuters", "wire",
+                               "2026-07-19T14:32:00Z", summary=long_summary)
+    hero_lines = _hero_line_count(svg)
+    body_lines = _body_line_count(svg)
+    assert hero_lines >= 1
+    assert body_lines <= _BC_SM_LINES_HARD, f"{body_lines} summary lines"
+    assert body_lines <= max(
+        _BC_SM_MAX_LINES, hero_lines * _BC_SM_LINES_PER_HERO_LINE
+    ), f"{body_lines} summary lines under a {hero_lines}-line hero"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NO-CLIP IS A MEASUREMENT, NOT A FLAG
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("summary", [
+    # A CJK run has no spaces, so the wrapper places it as ONE over-wide word.
+    "美国消费者物价指数七月同比上涨百分之二点四低于市场预期的百分之二点六前值百分之二点七。",
+    # A URL-length token, the other shape the brief named.
+    "https://example.invalid/" + "a" * 90 + " and the rest of the sentence.",
+])
+def test_an_over_wide_token_is_never_drawn_past_the_column(summary):
+    """`overflowed` answers "were words left unplaced", not "does this fit".
+
+    _bc_wrap_w's own contract places a single word wider than the column on its
+    own line rather than dropping it, so an over-wide token comes back with
+    overflowed=False. Measured on round 1 in a 906px column: a 56-character CJK
+    summary measured 1454.7px and a single 84-character Latin token at 41px
+    measured 1781.5px, both with the flag False and `summary_chars_dropped = 0`
+    — the exact invisibility the fit report exists to remove, on the exact
+    inputs the brief named.
+
+    MUTATION: delete the `_bc_any_line_over_wide` term from _bc_fit_summary's
+    accept condition and the drawn line runs 60-95% past the text column while
+    the card reports a clean fit.
+    """
+    import xml.etree.ElementTree as ET
+
+    from engine.marketing.chart_render import (
+        _BC_W_SAFETY,
+        _bc_text_w,
+        render_breaking_card,
+    )
+
+    fit: dict = {}
+    svg = render_breaking_card("Fed holds", "Reuters", "wire",
+                               "2026-07-19T14:32:00Z", summary=summary, fit=fit)
+    ET.fromstring(svg)                       # still valid SVG
+    lines = re.findall(
+        r'fill="#C8D4EA" font-size="([0-9.]+)"[^>]*>([^<]*)<', svg)
+    for size, text in lines:
+        w = _bc_text_w(text, float(size), bold=False)
+        # 906 is the summary column (col_w - indent) on the 1080 card.
+        assert w <= 906.0 * _BC_W_SAFETY, (
+            f"body line runs {w:.0f}px in a 906px column: {text[:40]!r}")
+    drawn = "".join(t for _, t in lines)
+    if len(drawn) < fit["summary_source_chars"]:
+        assert fit["summary_chars_dropped"] > 0
+
+
+def test_the_wrapper_still_reports_the_flag_it_always_did():
+    """The backstop is ADDITIVE — _bc_wrap_w's contract is unchanged."""
+    from engine.marketing.chart_render import _bc_any_line_over_wide, _bc_wrap_w
+
+    lines, overflowed = _bc_wrap_w("x" * 200, 41, 300, 3, bold=False)
+    assert overflowed is False, "the wrapper's own contract changed"
+    assert _bc_any_line_over_wide(lines, 41, 300, bold=False) is True, (
+        "the backstop cannot see what the flag misses")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A DEGRADED RENDER DOES NOT SHIP
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_degraded_render_does_not_attach(monkeypatch, capsys):
+    """render_breaking_card's fail-soft returns a BLANK card and no fit report.
+
+    build_breaking_payload then kept card_svg non-empty while card_summary_drawn
+    fell back to the FULL summary, so the dispatch gate scored a 300-char body
+    that is not on the card, could answer attach=True, and a blank
+    "MASTERMIND · Breaking" rectangle shipped as media with provenance.card_fit
+    reporting summary_source_chars = 0. The docstring claimed a caller reading a
+    missing key knows the render degraded; the caller now ACTS on it.
+
+    MUTATION: restore `if "summary_drawn" in card_fit_report:` with no else
+    branch and the payload comes back with a non-empty card_svg.
+    """
+    from engine.marketing import chart_render
+
+    def _blank(*_a, **_kw):
+        return chart_render._break_fallback_svg(1080, 1080)
+
+    monkeypatch.setattr(chart_render, "render_breaking_card", _blank)
+    p = _payload("US CPI cooled to 2.4% in July",
+                 "Consensus was 2.6% and June printed 2.7%.")
+    assert p["card_svg"] == "", "a blank fallback card was offered to the gate"
+    assert p["card_summary_drawn"] == ""
+    out = capsys.readouterr().out
+    assert any(ln.startswith("::warning title=breaking-card-render-degraded::")
+               for ln in out.splitlines()), out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE RENDER BUDGET IS LAW HERE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_width_estimator_is_memoised():
+    """A pure, deterministic, extremely hot leaf must not lose its cache.
+
+    The no-clip fitter turned `_bc_text_w` from a once-per-line call into an
+    inner loop: two layout passes x two ladder stages x every sentence-end
+    candidate x an O(words^2) greedy wrap. Pinned STRUCTURALLY as well as by the
+    benchmark below, because a cache is a property with no behaviour to observe
+    — removing it changes nothing a functional assertion can see, and the timing
+    tripwire alone is dominated by the budget fix (measured: without the cache
+    the same fixture is 0.22ms a card, comfortably inside any threshold a shared
+    runner can hold).
+    """
+    from engine.marketing.chart_render import _bc_em_w, _bc_text_w
+
+    assert hasattr(_bc_em_w, "cache_info"), "the width estimator lost its memo"
+    # Keyed WITHOUT the size — width scales linearly in it, so one entry has to
+    # serve every rung of the ladder, which is where the reuse actually is.
+    before = _bc_em_w.cache_info()
+    _bc_text_w("a probe string for the memo", 41.0, bold=False)
+    _bc_text_w("a probe string for the memo", 26.0, bold=False)
+    after = _bc_em_w.cache_info()
+    assert after.hits > before.hits, "a second size missed the cache"
+
+
+def test_card_render_cost_did_not_regress_500x():
+    """The render budget is law in this repo; a 55x card is not a rounding error.
+
+    Measured across the round-1 change on a summary with eight sentence-end
+    candidates (the shape that drives the candidate walk):
+
+        round-1 shape (no card-body budget, no memo)   5.45 ms/card
+        memo only                                      0.77 ms/card
+        budget only                                    0.22 ms/card
+        both                                           0.10 ms/card
+
+    The dominant fix is the card-body budget: bounding the second voice to its
+    own box means the fitter is no longer handed a 320-char paragraph to walk.
+
+    WHAT THIS CEILING DOES AND DOES NOT DISCRIMINATE, stated rather than implied.
+    It is a LOOSE tripwire for the combined round-1 shape (5.45ms, ~55x), with
+    ~10x headroom over the current 0.09ms so a shared 4-core runner cannot flake
+    it. Reverting either fix ALONE stays under it, which is why neither rests on
+    this test: the budget is pinned behaviourally by
+    test_an_in_budget_summary_never_reaches_the_legibility_floor and the memo
+    structurally by test_the_width_estimator_is_memoised. A timing assertion
+    tight enough to separate 0.22ms from 0.09ms would be a flake, not a guard.
+    """
+    import time
+
+    from engine.marketing.chart_render import render_breaking_card
+
+    summary = " ".join(
+        f"The committee said supply not demand remains the binding "
+        f"constraint number {i}." for i in range(8)
+    )
+    render_breaking_card(GOLD_HEAD, "Reuters", "wire", "2026-08-05T00:12:02Z",
+                         summary=summary)                      # warm the caches
+    t0 = time.perf_counter()
+    for i in range(20):
+        render_breaking_card(f"{GOLD_HEAD} {i}", "Reuters", "wire",
+                             "2026-08-05T00:12:02Z", summary=summary)
+    per_card = (time.perf_counter() - t0) / 20
+    assert per_card < 0.0010, f"{per_card * 1000:.2f}ms a card"

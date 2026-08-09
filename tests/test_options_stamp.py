@@ -16,8 +16,8 @@ Covers (per the wave spec):
   - schema-union non-destructiveness: an existing-value row is never overwritten.
   - backfill-does-not-overwrite: an already-stamped row is never re-stamped.
 * Gate (scripts/validate_options_entry.py):
-  - building_history path: scored=False, no verdict when buckets are under n≥30.
-  - synthetic n≥30 with a real conditioned effect produces a "signal" verdict.
+  - canonical fire reduction, declared buy-lane population, and 30-date maturity.
+  - synthetic effects can produce only a descriptive blocked candidate, never authority.
   - W-C new-bucket building_history: all five new buckets report correctly.
   - synthetic n≥30 for S-IVSPREAD-F produces a signal verdict.
 """
@@ -32,21 +32,28 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.options_stamp import (  # noqa: E402
-    STAMP_COLS,
     STAMP_COVERAGE_COLS,
-    _skew_stamp,
+    STAMP_COLS,
     _ivspread_stamp,
+    _skew_stamp,
     stamp_options_state,
 )
 from scripts.stamp_options_state import stamp_ledger  # noqa: E402
 from scripts.validate_options_entry import (  # noqa: E402
-    build_gate,
-    MIN_PER_BUCKET,
     CLEAN,
+    MIN_PER_BUCKET,
+    _benjamini_hochberg,
+    _canonical_fire_frame,
+    build_gate,
 )
 
 
 # ── synthetic store builders ─────────────────────────────────────────────────
+def _spread_as_of(anchor: str, index: int) -> str:
+    """Give paired buckets the same >=30 distinct dates without changing fire count."""
+    return (_dt.date.fromisoformat(anchor) + _dt.timedelta(days=index)).isoformat()
+
+
 def _summary_frame(dates, *, iv30=0.25, regime="long"):
     """A polygon_gex summary frame: DatetimeIndex, the columns the stamp reads."""
     idx = pd.to_datetime(list(dates))
@@ -274,37 +281,152 @@ def test_backfill_does_not_overwrite(monkeypatch):
 
 # ── gate: building_history + synthetic-signal ────────────────────────────────
 def _stamped_ledger(n_per_bucket, *, effect=0.0, voi=True):
-    """Synthetic stamped ledger with 2*n_per_bucket fires split by voi_flag, with an optional
-    conditioned effect on the clean-liftoff rate (higher CLEAN incidence in the voi=True bucket)."""
+    """Production-shaped horizon ledger split by VOI, spanning one paired date per fire."""
     rng = np.random.default_rng(42)
     rows = []
     for i in range(n_per_bucket):
-        # conditioned (voi True) bucket — CLEAN with prob 0.5+effect
-        rows.append({
-            "as_of": "2026-06-20", "ticker": f"T{i}", "lane": "buy", "horizon": 21,
-            "opt_voi_flag": True,
-            "post_cushion_breach": bool(rng.random() < 0.5 - effect),
-            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 + effect else "STOPPED",
-            "fwd_mfe_21": float(rng.normal(0.10 + effect, 0.02)),
-            "fwd_ret_5": float(rng.normal(0.02 + effect, 0.01)),
-            "fwd_mfe_5": float(rng.normal(0.03 + effect, 0.01)),
-        })
+        as_of = _spread_as_of("2026-06-20", i)
+        breach = bool(rng.random() < 0.5 - effect)
+        clean = CLEAN if rng.random() < 0.5 + effect else "STOPPED"
+        ret5 = float(rng.normal(0.02 + effect, 0.01))
+        mfe5 = float(rng.normal(0.03 + effect, 0.01))
+        mfe21 = float(rng.normal(0.10 + effect, 0.02))
+        for horizon in (5, 21):
+            rows.append({
+                "as_of": as_of, "ticker": f"T{i}", "lane": "buy", "horizon": horizon,
+                "opt_voi_flag": True,
+                "post_cushion_breach": breach,
+                "terminal_state_clean8_21": clean,
+                "ret": ret5 if horizon == 5 else float(rng.normal(0.04, 0.01)),
+                "fwd_mfe_5": mfe5 if horizon == 5 else None,
+                "fwd_mfe_21": mfe21 if horizon == 21 else None,
+            })
     for i in range(n_per_bucket):
-        rows.append({
-            "as_of": "2026-06-20", "ticker": f"B{i}", "lane": "buy", "horizon": 21,
-            "opt_voi_flag": False,
-            "post_cushion_breach": bool(rng.random() < 0.5),
-            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
-            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
-            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
-            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
-        })
+        as_of = _spread_as_of("2026-06-20", i)
+        breach = bool(rng.random() < 0.5)
+        clean = CLEAN if rng.random() < 0.5 else "STOPPED"
+        ret5 = float(rng.normal(0.02, 0.01))
+        mfe5 = float(rng.normal(0.03, 0.01))
+        mfe21 = float(rng.normal(0.10, 0.02))
+        for horizon in (5, 21):
+            rows.append({
+                "as_of": as_of, "ticker": f"B{i}", "lane": "buy", "horizon": horizon,
+                "opt_voi_flag": False,
+                "post_cushion_breach": breach,
+                "terminal_state_clean8_21": clean,
+                "ret": ret5 if horizon == 5 else float(rng.normal(0.04, 0.01)),
+                "fwd_mfe_5": mfe5 if horizon == 5 else None,
+                "fwd_mfe_21": mfe21 if horizon == 21 else None,
+            })
     df = pd.DataFrame(rows)
     # add the remaining stamp cols as null so STAMP_COLS coverage math works
     for c in STAMP_COLS:
         if c not in df.columns:
             df[c] = None
     return df
+
+
+def test_options_entry_canonical_fire_maps_exact_horizons_and_filters_lane():
+    """Horizon projections collapse to one buy-lane fire with exact outcome sources."""
+    rows = []
+    for lane, ticker in (("buy", "AAA"), ("watch", "WATCH")):
+        for horizon in (5, 10, 21):
+            rows.append({
+                "as_of": "2026-07-01",
+                "ticker": ticker,
+                "lane": lane,
+                "horizon": horizon,
+                "ret": {5: 0.05, 10: 0.10, 21: 0.21}[horizon],
+                # This stale legacy-looking field must never override horizon=5 ret.
+                "fwd_ret_5": 9.99,
+                "fwd_mfe_5": 0.15 if horizon == 5 else None,
+                "fwd_mfe_21": 0.41 if horizon == 21 else None,
+                "opt_voi_flag": True,
+                "post_cushion_breach": False,
+                "terminal_state_clean8_21": CLEAN,
+            })
+
+    raw = pd.DataFrame(rows)
+    fires, population = _canonical_fire_frame(raw)
+
+    assert len(fires) == 1
+    assert fires.iloc[0]["ticker"] == "AAA"
+    assert fires.iloc[0]["fwd_ret_5"] == pytest.approx(0.05)
+    assert fires.iloc[0]["fwd_mfe_5"] == pytest.approx(0.15)
+    assert fires.iloc[0]["fwd_mfe_21"] == pytest.approx(0.41)
+    assert fires.iloc[0]["post_cushion_breach"] is False or not bool(
+        fires.iloc[0]["post_cushion_breach"]
+    )
+    assert population["event_key"] == ["as_of", "lane", "ticker"]
+    assert population["declared_lane"] == "buy"
+    assert population["raw_rows"] == 6
+    assert population["declared_lane_rows"] == 3
+    assert population["excluded_non_buy_rows"] == 3
+    assert population["canonical_events"] == 1
+    gate = build_gate(raw)
+    assert gate["schema"] == "options_entry.gate.v3"
+    assert gate["n_ledger_rows"] == 6
+    assert gate["n_canonical_events"] == 1
+
+    shuffled, _ = _canonical_fire_frame(raw.sample(frac=1.0, random_state=17))
+    pd.testing.assert_frame_equal(fires, shuffled)
+
+
+@pytest.mark.parametrize(
+    ("column", "other"),
+    [
+        ("opt_voi_flag", False),
+        ("post_cushion_breach", True),
+        ("terminal_state_clean8_21", "STOPPED"),
+    ],
+)
+def test_options_entry_canonical_fire_rejects_conflicting_repeated_values(column, other):
+    rows = [
+        {
+            "as_of": "2026-07-01", "ticker": "AAA", "lane": "buy", "horizon": 5,
+            "ret": 0.05, "fwd_mfe_5": 0.10, "opt_voi_flag": True,
+            "post_cushion_breach": False, "terminal_state_clean8_21": CLEAN,
+        },
+        {
+            "as_of": "2026-07-01", "ticker": "AAA", "lane": "buy", "horizon": 21,
+            "ret": 0.20, "fwd_mfe_21": 0.30, "opt_voi_flag": True,
+            "post_cushion_breach": False, "terminal_state_clean8_21": CLEAN,
+        },
+    ]
+    rows[1][column] = other
+
+    with pytest.raises(ValueError, match="conflicting repeated event-level values"):
+        _canonical_fire_frame(pd.DataFrame(rows))
+
+
+def test_options_entry_canonical_fire_rejects_duplicate_event_horizon():
+    row = {
+        "as_of": "2026-07-01", "ticker": "AAA", "lane": "buy", "horizon": 5,
+        "ret": 0.05, "opt_voi_flag": True,
+    }
+    with pytest.raises(ValueError, match=r"duplicate options-entry event\+horizon"):
+        _canonical_fire_frame(pd.DataFrame([row, dict(row)]))
+
+
+def test_options_entry_top_risk_requires_both_logical_legs_known():
+    rows = [
+        {
+            "as_of": "2026-07-01", "ticker": "MISSING", "lane": "buy", "horizon": 21,
+            "opt_skew_5d_chg": 0.2, "opt_ivspread_rel": None,
+        },
+        {
+            "as_of": "2026-07-01", "ticker": "FLAG", "lane": "buy", "horizon": 21,
+            "opt_skew_5d_chg": 0.2, "opt_ivspread_rel": 0.1,
+        },
+        {
+            "as_of": "2026-07-01", "ticker": "BASE", "lane": "buy", "horizon": 21,
+            "opt_skew_5d_chg": -0.2, "opt_ivspread_rel": 0.1,
+        },
+    ]
+    top = build_gate(pd.DataFrame(rows))["tests"]["S-TOP_RISK"]
+
+    assert (top["n_cond"], top["n_base"]) == (1, 1)
+    assert top["n_excluded_missing_leg"] == 1
 
 
 def test_gate_building_history_below_threshold():
@@ -317,15 +439,19 @@ def test_gate_building_history_below_threshold():
     # S-VOI not ready
     assert gate["tests"]["S-VOI"]["ready"] is False
     assert gate["verdicts"]["S-VOI"] == "building_history"
+    assert gate["tests"]["S-DOI"]["promotion_blockers"] == [
+        "JOINED_HAC_RECEIPT_REQUIRED"
+    ]
 
 
 def test_gate_synthetic_signal_produces_verdict():
-    """Fed n≥30 per bucket WITH a real conditioned effect, the bucket math produces a
-    'signal' verdict — proving the machine can decide once history accrues."""
+    """A strong mature effect is visible but cannot become signal authority."""
     df = _stamped_ledger(MIN_PER_BUCKET + 20, effect=0.30)  # strong effect, 50 per bucket
     gate = build_gate(df)
     assert gate["tests"]["S-VOI"]["ready"] is True
-    assert gate["verdicts"]["S-VOI"] == "signal"
+    assert gate["verdicts"]["S-VOI"] == "candidate_signal_blocked"
+    assert gate["status"] == "building_history"
+    assert "DATE_CLUSTER_INFERENCE_REQUIRED" in gate["promotion_blockers"]
     # at least one primitive delta CI excludes 0 in the beneficial direction
     t = gate["tests"]["S-VOI"]
     beneficial = (
@@ -339,11 +465,11 @@ def test_gate_synthetic_signal_produces_verdict():
 
 
 def test_gate_null_effect_no_signal():
-    """Fed n≥30 per bucket but NO conditioned effect, the ready bucket returns 'no_effect'."""
+    """A noisy null with a stray directional CI is inconclusive, not a false null claim."""
     df = _stamped_ledger(MIN_PER_BUCKET + 20, effect=0.0)
     gate = build_gate(df)
     assert gate["tests"]["S-VOI"]["ready"] is True
-    assert gate["verdicts"]["S-VOI"] == "no_effect"
+    assert gate["verdicts"]["S-VOI"] == "inconclusive_fdr"
 
 
 # ── W-C: PIT no-lookahead for skew/ivspread snapshots ───────────────────────
@@ -521,7 +647,7 @@ def _stamped_ledger_with_ivspread(n_per_bucket, *, effect=0.0):
     # conditioned (ivspread_rel > 0): higher clean rate
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"T{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"T{i}", "lane": "buy", "horizon": 21,
             "opt_ivspread_rel": 0.01 + float(rng.random() * 0.05),  # positive
             "post_cushion_breach": bool(rng.random() < 0.5 - effect),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 + effect else "STOPPED",
@@ -531,7 +657,7 @@ def _stamped_ledger_with_ivspread(n_per_bucket, *, effect=0.0):
     # base (ivspread_rel <= 0): lower clean rate
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"B{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"B{i}", "lane": "buy", "horizon": 21,
             "opt_ivspread_rel": -0.01 - float(rng.random() * 0.05),  # negative
             "post_cushion_breach": bool(rng.random() < 0.5),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
@@ -575,13 +701,13 @@ def test_wc_buckets_building_history_below_threshold():
 
 
 def test_wc_ivspread_f_synthetic_signal():
-    """S-IVSPREAD-F produces a 'signal' verdict when n>=30 and a strong effect is present."""
+    """S-IVSPREAD-F can produce only a blocked descriptive candidate."""
     df = _stamped_ledger_with_ivspread(MIN_PER_BUCKET + 20, effect=0.35)
     gate = build_gate(df)
     t = gate["tests"]["S-IVSPREAD-F"]
     assert t["ready"] is True, f"Expected ready=True, got n_cond={t['n_cond']} n_base={t['n_base']}"
-    assert gate["verdicts"]["S-IVSPREAD-F"] == "signal", (
-        f"Expected 'signal', got {gate['verdicts']['S-IVSPREAD-F']}"
+    assert gate["verdicts"]["S-IVSPREAD-F"] == "candidate_signal_blocked", (
+        f"Expected blocked candidate, got {gate['verdicts']['S-IVSPREAD-F']}"
     )
     # gate is still NOT scored (machine, not a lever)
     assert gate["scored"] is False
@@ -715,7 +841,7 @@ def _stamped_ledger_with_pin_risk(n_per_bucket, *, clean_effect=0.0, mfe21_effec
     rows = []
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"P{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"P{i}", "lane": "buy", "horizon": 21,
             "opt_pin_risk": True,
             "post_cushion_breach": bool(rng.random() < 0.5),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 + clean_effect else "STOPPED",
@@ -725,7 +851,7 @@ def _stamped_ledger_with_pin_risk(n_per_bucket, *, clean_effect=0.0, mfe21_effec
         })
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"Q{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"Q{i}", "lane": "buy", "horizon": 21,
             "opt_pin_risk": False,
             "post_cushion_breach": bool(rng.random() < 0.5),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
@@ -763,7 +889,9 @@ def test_pin_risk_verdict_uses_clean_and_mfe21_not_breach():
     verdict = gate_beneficial["verdicts"]["S-PIN_RISK"]
     # We don't assert "signal" here because both must hold with conjunction;
     # we assert that breach is NOT the deciding factor by checking its non-use
-    assert verdict in ("signal", "no_effect"), f"Unexpected verdict: {verdict}"
+    assert verdict in ("candidate_signal_blocked", "inconclusive_fdr", "no_effect"), (
+        f"Unexpected verdict: {verdict}"
+    )
 
 
 def test_pin_risk_verdict_is_not_breach_driven():
@@ -776,7 +904,7 @@ def test_pin_risk_verdict_is_not_breach_driven():
     n = MIN_PER_BUCKET + 20
     for i in range(n):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"P{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"P{i}", "lane": "buy", "horizon": 21,
             "opt_pin_risk": True,
             "post_cushion_breach": True,  # ALL breach in pin_risk=True bucket
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",  # neutral clean
@@ -786,7 +914,7 @@ def test_pin_risk_verdict_is_not_breach_driven():
         })
     for i in range(n):
         rows.append({
-            "as_of": "2026-07-05", "ticker": f"Q{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-05", i), "ticker": f"Q{i}", "lane": "buy", "horizon": 21,
             "opt_pin_risk": False,
             "post_cushion_breach": False,  # NO breach in base bucket
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
@@ -821,7 +949,7 @@ def _stamped_ledger_with_vanna_relief(n_per_bucket, *, breach_effect=0.0):
     # conditioned (vanna_relief=True): lower breach rate
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-17", "ticker": f"VR{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-17", i), "ticker": f"VR{i}", "lane": "buy", "horizon": 21,
             "opt_vanna_relief": True,
             "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
@@ -831,7 +959,7 @@ def _stamped_ledger_with_vanna_relief(n_per_bucket, *, breach_effect=0.0):
         })
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-17", "ticker": f"VB{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-17", i), "ticker": f"VB{i}", "lane": "buy", "horizon": 21,
             "opt_vanna_relief": False,
             "post_cushion_breach": bool(rng.random() < 0.5),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
@@ -856,8 +984,9 @@ def _stamped_ledger_with_front_charm(n_per_bucket, *, breach_effect=0.0):
     # conditioned (top-tercile charm share): higher breach rate
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-17", "ticker": f"FC{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-17", i), "ticker": f"FC{i}", "lane": "buy", "horizon": 21,
             "opt_front7_charm_share": 0.80 + float(rng.random() * 0.10),  # > 2/3 quantile
+            "opt_root_class": "single_name",
             "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
             "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
@@ -866,8 +995,9 @@ def _stamped_ledger_with_front_charm(n_per_bucket, *, breach_effect=0.0):
         })
     for i in range(n_per_bucket):
         rows.append({
-            "as_of": "2026-07-17", "ticker": f"FB{i}", "lane": "buy", "horizon": 21,
+            "as_of": _spread_as_of("2026-07-17", i), "ticker": f"FB{i}", "lane": "buy", "horizon": 21,
             "opt_front7_charm_share": 0.10 + float(rng.random() * 0.20),  # < 2/3 quantile
+            "opt_root_class": "single_name",
             "post_cushion_breach": bool(rng.random() < 0.5),
             "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
             "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
@@ -892,20 +1022,21 @@ def test_ovc_vanna_relief_building_history_below_threshold():
 
 
 def test_ovc_vanna_relief_signal_when_breach_reduced():
-    """S-VANNA-RELIEF produces 'signal' when n>=30 AND breach rate is lower in flagged bucket."""
-    # breach_effect = -0.35 → flagged bucket has breach rate ≈ 0.5 - 0.35 = 0.15 (much lower)
-    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=-0.35)
+    """A mature Vanna effect remains a blocked descriptive candidate."""
+    # Complete separation is intentionally strong enough to clear the 36-cell BH family.
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=-0.50)
     gate = build_gate(df)
     t = gate["tests"]["S-VANNA-RELIEF"]
     assert t.get("ready") is True
-    assert gate["verdicts"]["S-VANNA-RELIEF"] == "signal", (
-        f"Expected 'signal' for S-VANNA-RELIEF with large breach reduction, "
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "candidate_signal_blocked", (
+        f"Expected blocked candidate for S-VANNA-RELIEF with large breach reduction, "
         f"got {gate['verdicts']['S-VANNA-RELIEF']}"
     )
     # primary primitive: breach delta < 0 AND CI excludes 0
     b = t["breach"]
     assert b.get("excludes_zero") is True
     assert b.get("delta") is not None and b["delta"] < 0
+    assert b.get("fdr_pass") is True
     # gate still not scored (machine, not a lever)
     assert gate["scored"] is False
 
@@ -928,26 +1059,29 @@ def test_ovc_front_charm_building_history_below_threshold():
 
 
 def test_ovc_front_charm_signal_when_breach_elevated():
-    """S-FRONT-CHARM produces 'signal' (caution-only) when breach is higher in top-tercile.
+    """S-FRONT-CHARM produces a blocked candidate when breach is higher in top-tercile.
 
     Beneficial direction for caution: flagged fires (top-tercile charm) have MORE stop-outs
     → correctly identifies vol-exposed entries."""
-    # breach_effect = +0.35 → flagged bucket has breach rate ≈ 0.5 + 0.35 = 0.85 (much higher)
-    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.35)
+    # Complete separation is intentionally strong enough to clear the 36-cell BH family.
+    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.50)
     gate = build_gate(df)
     t = gate["tests"]["S-FRONT-CHARM"]
     assert t.get("ready") is True
-    assert gate["verdicts"]["S-FRONT-CHARM"] == "signal", (
-        f"Expected 'signal' for S-FRONT-CHARM with large breach elevation, "
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "candidate_signal_blocked", (
+        f"Expected blocked candidate for S-FRONT-CHARM with large breach elevation, "
         f"got {gate['verdicts']['S-FRONT-CHARM']}"
     )
     # primary primitive: breach delta > 0 (higher breach in flagged = caution-only signal)
     b = t["breach"]
     assert b.get("excludes_zero") is True
     assert b.get("delta") is not None and b["delta"] > 0
+    assert b.get("fdr_pass") is True
     # gate is still caution-only (scored=False)
     assert gate["scored"] is False
     assert t.get("caution_only") is True
+    assert "single_name" in t["root_class_breakdown"]
+    assert t["promotion_blockers"] == ["ROOT_CLASS_STRATIFICATION_AUTHORITY_REQUIRED"]
 
 
 def test_ovc_front_charm_no_effect_when_no_breach_difference():
@@ -970,6 +1104,148 @@ def test_ovc_gate_family_size_is_36():
         f"Expected family_size=36 (28 OVC + 8 FS-3 S-FLOWML cells), got {gate['fdr_family']['family_size']}. "
         "See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 Enlarged-family BH-FDR statement (2026-07-13)."
     )
+
+
+def test_options_entry_bh_step_up_uses_full_36_cell_denominator():
+    """BH ranks over 36 cells, not just the subset with attractive p-values."""
+    cells = [
+        {"id": "cell-00", "p_value": 0.001},
+        {"id": "cell-01", "p_value": 0.004},
+        {"id": "cell-02", "p_value": 0.009},
+    ] + [
+        {"id": f"cell-{i:02d}", "p_value": 1.0}
+        for i in range(3, 36)
+    ]
+    result = _benjamini_hochberg(cells, alpha=0.10)
+    by_id = {cell["id"]: cell for cell in result}
+
+    # k=2 threshold is 2/36*0.10 = 0.00556, so the first two reject; k=3
+    # threshold is 0.00833, so the third and all p=1 cells do not.
+    assert by_id["cell-00"]["fdr_pass"] is True
+    assert by_id["cell-01"]["fdr_pass"] is True
+    assert by_id["cell-02"]["fdr_pass"] is False
+    assert by_id["cell-01"]["bh_threshold"] == pytest.approx(2 / 36 * 0.10)
+
+
+def test_options_entry_gate_keeps_all_eight_fs3_cells_reserved_at_p_one():
+    """Unavailable FS-3 results remain explicit p=1 members of the 36-cell family."""
+    gate = build_gate(_stamped_ledger(5))
+    fdr = gate["fdr_family"]
+    cells = fdr["cells"]
+    reserved = [cell for cell in cells if cell["reserved"]]
+
+    assert len(cells) == 36
+    assert len(reserved) == 8
+    assert all(cell["family"].startswith("S-FLOWML-") for cell in reserved)
+    assert all(cell["available"] is False for cell in reserved)
+    assert all(cell["mature"] is False for cell in reserved)
+    assert all(cell["p_value"] == pytest.approx(1.0) for cell in reserved)
+    assert all(cell["fdr_pass"] is False for cell in reserved)
+    assert fdr["p_value_method"] == {
+        "name": "two-sided IID permutation/randomization diagnostic",
+        "resamples": 2000,
+        "finite_sample_correction": "+1 numerator and denominator",
+        "immature_or_unavailable_p_value": 1.0,
+        "authority": "descriptive_only",
+    }
+    assert fdr["confidence_interval_method"] == {
+        "name": "IID nonparametric percentile bootstrap diagnostic",
+        "confidence_level": 0.95,
+        "resamples": 2000,
+        "percentiles": [2.5, 97.5],
+        "authority": "descriptive_only",
+    }
+
+
+def test_options_entry_metric_maturity_cannot_be_inferred_from_raw_fire_counts():
+    """A 40/40 exposure split with only 29 matured outcomes cannot be adjudicated."""
+    rows = []
+    for conditioned in (True, False):
+        for i in range(40):
+            rows.append({
+                "as_of": "2026-07-05",
+                "ticker": f"{'C' if conditioned else 'B'}{i}",
+                "lane": "buy",
+                "horizon": 21,
+                "opt_ivspread_rel": 0.2 if conditioned else -0.2,
+                "post_cushion_breach": None,
+                "terminal_state_clean8_21": None,
+                # Preliminary conditioned delta is huge, but only 29 exact outcomes matured.
+                "fwd_mfe_21": (1.0 if conditioned else 0.0)
+                if (not conditioned or i < MIN_PER_BUCKET - 1) else None,
+            })
+    df = pd.DataFrame(rows)
+    for col in STAMP_COLS:
+        if col not in df.columns:
+            df[col] = None
+
+    gate = build_gate(df)
+    test = gate["tests"]["S-IVSPREAD-F"]
+    metric = test["mfe21"]
+    receipt = next(
+        cell for cell in gate["fdr_family"]["cells"]
+        if cell["id"] == "S-IVSPREAD-F:mfe21:2026+"
+    )
+
+    assert (test["n_cond"], test["n_base"]) == (40, 40)
+    assert (metric["n_cond"], metric["n_base"]) == (29, 40)
+    assert metric["ready"] is False
+    assert metric["p_value"] == pytest.approx(1.0)
+    assert receipt["mature"] is False
+    assert receipt["p_value"] == pytest.approx(1.0)
+    assert receipt["fdr_pass"] is False
+    assert gate["verdicts"]["S-IVSPREAD-F"] == "building_history"
+
+
+def test_options_entry_one_day_many_fires_cannot_mature_or_conclude():
+    """Many same-day fires are one cross-section, not 30 independent dates."""
+    rows = []
+    for conditioned in (True, False):
+        for i in range(MIN_PER_BUCKET + 5):
+            rows.append({
+                "as_of": "2026-07-05",
+                "ticker": f"{'C' if conditioned else 'B'}{i}",
+                "lane": "buy",
+                "horizon": 21,
+                "opt_ivspread_rel": 0.2 if conditioned else -0.2,
+                # Mature and exactly null breach cell.
+                "post_cushion_breach": bool(i % 2),
+                # Registered siblings have not matured.
+                "terminal_state_clean8_21": None,
+                "fwd_mfe_21": None,
+            })
+    df = pd.DataFrame(rows)
+    for col in STAMP_COLS:
+        if col not in df.columns:
+            df[col] = None
+
+    gate = build_gate(df)
+    test = gate["tests"]["S-IVSPREAD-F"]
+    assert test["breach"]["n_cond"] == MIN_PER_BUCKET + 5
+    assert test["breach"]["n_dates_cond"] == 1
+    assert test["breach"]["n_overlap_dates"] == 1
+    assert test["breach"]["ready"] is False
+    assert test["breach"]["fdr_pass"] is False
+    assert test["clean"]["ready"] is False
+    assert test["mfe21"]["ready"] is False
+    assert test["ready"] is False
+    assert gate["verdicts"]["S-IVSPREAD-F"] == "building_history"
+    assert gate["status"] == "building_history"
+
+
+def test_options_entry_ci_without_bh_rejection_cannot_signal():
+    """Direction + CI + maturity are insufficient when the 36-cell BH gate fails."""
+    # This deterministic sample has a directional 95% CI, but p≈0.005 does not
+    # clear the first 36-cell BH threshold (0.00278).
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=-0.35)
+    gate = build_gate(df)
+    breach = gate["tests"]["S-VANNA-RELIEF"]["breach"]
+
+    assert breach["ready"] is True
+    assert breach["delta"] < 0
+    assert breach["excludes_zero"] is True
+    assert breach["fdr_pass"] is False
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "inconclusive_fdr"
 
 
 def test_ovc_gate_schema_is_v3():
@@ -1518,6 +1794,118 @@ def test_restamp_positional_leaves_unstamped_rows_to_the_normal_gate(monkeypatch
     assert foo["opt_gamma_regime"].notna().all()
 
 
+# ── ERA SCOPING: --restamp-cols writes ONLY its own cause ────────────────────────────
+# --restamp-positional re-opens the ORDINARY pass, so it writes the whole options family.
+# Measured on the real ledger at 2026-08-07 (post-#4883 store): the three chain-derived
+# columns move 319 cells, but the unscoped run moves 1,713 across 14 columns — the other
+# 1,394 ride along on a ledger whose sole advancer is the nightly. restamp_columns is the
+# narrow instrument; these tests pin the narrowness, because "it happened not to write
+# anything else THIS time" is not a contract.
+
+_SESSIONS_TO_0622 = [_dt.date(2026, 6, 11), _dt.date(2026, 6, 12), _dt.date(2026, 6, 15),
+                     _dt.date(2026, 6, 16), _dt.date(2026, 6, 17), _dt.date(2026, 6, 18),
+                     _dt.date(2026, 6, 22)]
+
+
+def _patch_stores_iv30(monkeypatch, iv30):
+    """_patch_stores, but with a summary iv30 that DIFFERS from the locked ledger's 0.25.
+
+    The difference is the point: it gives the wide pass a non-named column it provably
+    rewrites, so a scoped pass that also rewrote it would fail rather than pass silently.
+    """
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates",
+                        lambda: list(_SESSIONS_TO_0622))
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates",
+                        lambda: list(_SESSIONS_TO_0622))
+    monkeypatch.setattr("engine.options_stamp._default_read_chain",
+                        lambda d: _chain_frame("FOO", call_oi=1000.0 + 100.0 * d.day))
+    monkeypatch.setattr(
+        "engine.options_stamp._default_read_summary",
+        lambda t: (_summary_frame([d.isoformat() for d in _SESSIONS_TO_0622], iv30=iv30)
+                   if t == "FOO" else None))
+    # the gitignored R2 snapshot stores must not leak into a unit test
+    monkeypatch.setattr("scripts.stamp_options_state._default_read_skew_snapshots",
+                        lambda: None)
+    monkeypatch.setattr("scripts.stamp_options_state._default_read_ivspread_snapshots",
+                        lambda: None)
+
+
+def test_restamp_cols_writes_only_the_named_column(monkeypatch):
+    """The scoping contract: the wide flag rewrites the family, the scoped one does not.
+
+    Both arms run against the SAME fixture, so the assertions on the wide arm are what
+    make the scoped arm's assertions mean something: opt_iv30 and opt_dist_to_flip_pct
+    are demonstrably writable here, and the scoped pass still leaves them alone.
+    """
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)      # ledger carries 0.25
+
+    wide, _ = stamp_ledger(_positional_locked_ledger(), restamp_positional=True)
+    assert wide["opt_iv30"].iloc[0] == 0.44, "wide arm did not rewrite opt_iv30 — fixture is not a discriminator"
+    assert pd.notna(wide["opt_dist_to_flip_pct"].iloc[0]), "wide arm did not fill opt_dist_to_flip_pct"
+    wide_slope = wide["opt_doi_slope_5d"].iloc[0]
+    assert wide_slope != _SENTINEL_SLOPE, "wide arm did not recompute the positional column"
+
+    scoped, stats = restamp_columns(_positional_locked_ledger(), ["opt_doi_slope_5d"])
+
+    # the named column moves, and to exactly the value the wide pass computed
+    assert scoped["opt_doi_slope_5d"].iloc[0] == wide_slope
+    assert stats["opt_doi_slope_5d"]["changed"] == 1
+    # ...and nothing else does
+    assert scoped["opt_iv30"].iloc[0] == 0.25, "scoped pass wrote a non-named column"
+    assert pd.isna(scoped["opt_dist_to_flip_pct"].iloc[0]), "scoped pass filled a non-named column"
+    assert bool(scoped["opt_voi_flag"].iloc[0]) is True, "scoped pass wrote an unnamed positional column"
+
+
+def test_restamp_cols_never_opens_or_closes_the_retry_gate(monkeypatch):
+    """A row that never carried the column is UNSTAMPED, not stale — leave it to nightly.
+
+    Filling it here would flip the row's coverage status and lock the ordinary gate.
+    """
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)
+
+    df = _positional_locked_ledger()
+    df["opt_doi_slope_5d"] = None                 # never stamped on this row
+
+    before = df[[c for c in STAMP_COVERAGE_COLS if c in df.columns]].isna().all(axis=1)
+    out, stats = restamp_columns(df, ["opt_doi_slope_5d"])
+    after = out[[c for c in STAMP_COVERAGE_COLS if c in out.columns]].isna().all(axis=1)
+
+    assert pd.isna(out["opt_doi_slope_5d"].iloc[0]), "scoped pass filled a null it was not asked to fill"
+    assert stats["opt_doi_slope_5d"] == {"changed": 0, "unchanged": 0, "filled": 0, "blanked": 0}
+    assert list(before) == list(after), "retry-gate eligibility moved"
+
+
+def test_restamp_cols_never_nulls_an_existing_value(monkeypatch):
+    """Non-destructive contract, kept: no chains store → no-op, and the loss is COUNTED."""
+    from scripts.stamp_options_state import restamp_columns
+    _patch_stores_iv30(monkeypatch, 0.44)
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates", lambda: [])
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates", lambda: [])
+
+    out, stats = restamp_columns(_positional_locked_ledger(), ["opt_doi_slope_5d"])
+
+    assert out["opt_doi_slope_5d"].iloc[0] == _SENTINEL_SLOPE, "a null overwrote a value"
+    assert stats["opt_doi_slope_5d"]["blanked"] == 1, (
+        "a value that could not be recomputed must be COUNTED, not silently kept"
+    )
+
+
+def test_restamp_cols_refuses_a_cross_sectional_column():
+    """opt_vanna_relief is a tercile over the pass's own universe — narrowing re-adjudicates it."""
+    from scripts.stamp_options_state import (
+        restamp_columns, _RESTAMP_COLS_ALLOWED, _POSITIONAL_WINDOW_COLS,
+    )
+
+    assert "opt_vanna_relief" in _POSITIONAL_WINDOW_COLS, "premise moved"
+    assert "opt_vanna_relief" not in _RESTAMP_COLS_ALLOWED
+
+    with pytest.raises(SystemExit) as e:
+        restamp_columns(_positional_locked_ledger(), ["opt_vanna_relief"])
+    assert "cross-sectional" in str(e.value)
+
+
 # ── W-OVC silent-null repair (2026-08-02; registry defect opex-vanna-charm-wovc) ────
 # From the W-OVC build (2026-07-17) to 2026-08-02 opt_front7_charm_share and
 # opt_root_class never reached the ledger (0/2282) while the display store carried
@@ -1739,3 +2127,290 @@ def test_committed_ledger_has_no_silent_null_stamp_cols():
         "silent-permanent-null stamp columns — ledger write path is dead while the "
         f"display store computes fine: {dead}"
     )
+
+
+# ── the 5-SESSION basis resolves its far endpoint by DATE, not by POSITION ───────────
+#
+# The session filters above make every row in a positional window a real SESSION. They do
+# NOT make a six-row window five sessions WIDE — the store is also missing sessions the
+# collector never ran for, and no reader-side filter can conjure those. Measured on
+# data/polygon_gex/summary_AAPL.parquet at as_of 2026-08-06, the six trailing session rows
+# are 07-27, 07-28, 07-29, 07-30, 07-31, 08-06: SIX rows spanning NINE sessions, because
+# the 08-03..08-05 collection outage punched a hole into the tail window. `iloc[-6]`
+# therefore resolved 2026-07-27 where the 5-sessions-back session is 2026-07-30 — a
+# NINE-session change shipped labelled "5d" into opt_vanna_relief's cross-sectional
+# tercile (the same class that flipped the sign on 10 of 10 sampled names at 2026-07-21).
+#
+# A two-endpoint difference has an exact repair: resolve the far endpoint BY DATE. Only
+# the endpoints enter a difference, so an interior hole is irrelevant and the stat
+# recovers exactly; a hole AT the target session is unmeasurable, so the stat is null —
+# never a mislabeled basis. Both readers below route through
+# engine.options_stamp._row_n_sessions_back. (The display twin
+# engine/options_entry_state._compute_vanna_hedge_5d is pinned in
+# tests/test_options_entry_state.py; the resolver itself in
+# tests/test_options_session_guards.py.)
+
+# The real outage geometry, replayed. iv30 is chosen so the CALENDAR answer and the
+# POSITIONAL answer land on OPPOSITE SIDES of the latest reading — a test that only
+# asserted "the value changed" would pass on a rounding difference.
+_GAP_ROWS = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31",
+             "2026-08-06"]
+_GAP_IV30 = [0.20, 0.22, 0.24, 0.30, 0.28, 0.26]
+_GAP_NET_VEX = 1_000_000.0
+_GAP_ASOF = _dt.date(2026, 8, 6)
+_GAP_FIVE_BACK = _dt.date(2026, 7, 30)    # 08-05, 08-04, 08-03, 07-31, 07-30
+_GAP_ILOC6 = _dt.date(2026, 7, 27)        # what the positional read used to give
+# calendar   : 0.26 − 0.30 = −0.04  →  vanna = −net_vex × chg = +40,000
+# positional : 0.26 − 0.20 = +0.06  →  vanna = −net_vex × chg = −60,000
+_GAP_CAL_CHG = _GAP_IV30[-1] - _GAP_IV30[3]
+_GAP_POS_CHG = _GAP_IV30[-1] - _GAP_IV30[0]
+
+# Seven rows — clear of the ≥6-row floor — with the 5-back session (07-30) absent.
+# iloc[-6] is 07-24, so a positional read WOULD have returned a number here.
+_MISSING_ROWS = ["2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+                 "2026-07-29", "2026-07-31", "2026-08-06"]
+_MISSING_IV30 = [0.18, 0.20, 0.20, 0.22, 0.24, 0.28, 0.26]
+
+# Six CONSECUTIVE sessions: dense, so the calendar target IS index[-6] and the value must
+# be byte-identical to what the old positional code produced.
+_DENSE_ROWS = ["2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+               "2026-08-05", "2026-08-06"]
+_DENSE_IV30 = [0.30, 0.28, 0.27, 0.29, 0.31, 0.26]
+
+
+def _vanna_summary_frame(dates, iv30s, *, net_vex=_GAP_NET_VEX):
+    """A polygon_gex summary frame carrying the two columns the 5-session basis reads."""
+    idx = pd.to_datetime(list(dates))
+    n = len(idx)
+    return pd.DataFrame(
+        {
+            "gamma_regime": ["long"] * n,
+            "dist_to_flip_pct": [5.0] * n,
+            "magnet_up": [110.0] * n,
+            "magnet_down": [95.0] * n,
+            "net_vex": [float(net_vex)] * n,
+            "iv30": [float(v) for v in iv30s],
+        },
+        index=idx,
+    )
+
+
+def _assert_outage_geometry(frame):
+    """PREMISE for every gap test: six rows spanning NINE sessions.
+
+    Without this the fixture can rot dense — the calendar and positional answers would
+    coincide and the behavioural assertions would pass for the wrong reason.
+    """
+    from lib import nyse_calendar
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+    assert len(frame) == 6, f"the outage fixture must hold exactly six rows, got {len(frame)}"
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 9, (
+        f"fixture premise gone: {idx[0]}..{idx[-1]} no longer spans nine sessions, so "
+        "positional and calendar resolution would agree and this test is vacuous")
+    assert idx[3] == _GAP_FIVE_BACK and idx[0] == _GAP_ILOC6
+    assert _GAP_CAL_CHG < 0 < _GAP_POS_CHG, (
+        "fixture premise: the calendar and positional answers must differ in SIGN")
+
+
+# ── site (1): engine/options_stamp._vanna_hedge_5d_basis → opt_vanna_relief ──────────
+
+def test_vanna_5d_basis_resolves_the_far_endpoint_by_calendar_not_by_position():
+    """The measured outage shape: 6 rows / 9 sessions, opposite-sign answers."""
+    from engine.options_stamp import BASIS_OK, _vanna_hedge_5d_basis
+
+    frame = _vanna_summary_frame(_GAP_ROWS, _GAP_IV30)
+    _assert_outage_geometry(frame)
+
+    cal = round(-_GAP_NET_VEX * _GAP_CAL_CHG, 6)      # +40,000 — the 07-30 endpoint
+    pos = round(-_GAP_NET_VEX * _GAP_POS_CHG, 6)      # −60,000 — the iloc[-6] endpoint
+    assert cal > 0 > pos, "fixture premise: the two answers have opposite signs"
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got == pytest.approx(cal), (
+        f"shipped {got}; five sessions before {_GAP_ASOF} is {_GAP_FIVE_BACK} "
+        f"(iv30 {_GAP_IV30[3]}), so vanna_hedge_5d is {cal}")
+    assert got != pytest.approx(pos), (
+        f"shipped the POSITIONAL iloc[-6] answer {pos} — the {_GAP_ILOC6} endpoint is "
+        "NINE sessions back, and this stat is labelled '5d'")
+    assert status == BASIS_OK
+    # The wrapper the ledger path actually calls must agree with the basis it wraps.
+    from engine.options_stamp import _vanna_hedge_5d_from_summary
+    assert _vanna_hedge_5d_from_summary(_GAP_ASOF, frame) == pytest.approx(cal)
+
+
+def test_vanna_5d_basis_nulls_when_the_five_back_session_has_no_row():
+    """≥6 rows and still None — the null comes from RESOLUTION, not the row floor."""
+    from engine.options_stamp import (BASIS_GAP, _vanna_hedge_5d_basis,
+                                      _vanna_hedge_5d_from_summary)
+    from lib import nyse_calendar
+
+    frame = _vanna_summary_frame(_MISSING_ROWS, _MISSING_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — SEVEN rows. Load-bearing: the reader already nulls below six rows, so at
+    # exactly the floor a None could not be attributed to the missing target session.
+    assert len(frame) >= 6, "a None here must come from target resolution, not the floor"
+    assert nyse_calendar.is_session(_GAP_FIVE_BACK), "fixture premise: 07-30 trades"
+    assert _GAP_FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+    # A positional read would have returned a number (iloc[-6] = 07-24, iv30 0.20).
+    assert pd.Timestamp(frame.iloc[-6].name).date() == _dt.date(2026, 7, 24)
+    would_have = round(-_GAP_NET_VEX * (_MISSING_IV30[-1] - _MISSING_IV30[1]), 6)
+    assert would_have == pytest.approx(-60_000.0), "fixture premise: iloc[-6] is non-null"
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got is None, (
+        f"shipped {got} for a store with no {_GAP_FIVE_BACK} row — unmeasurable is a "
+        "null, never a substituted endpoint")
+    assert status == BASIS_GAP, (
+        f"status {status!r}: seven rows with one session missing is a collection GAP, "
+        "not absent history — the tercile's coverage floor reads that distinction")
+    assert _vanna_hedge_5d_from_summary(_GAP_ASOF, frame) is None
+
+
+def test_vanna_5d_basis_on_a_dense_store_is_the_old_positional_value():
+    """Strict refinement: no gap, no change — every healthy date keeps its value."""
+    from engine.options_stamp import BASIS_OK, _vanna_hedge_5d_basis
+    from lib import nyse_calendar
+
+    frame = _vanna_summary_frame(_DENSE_ROWS, _DENSE_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — six rows over exactly six sessions: dense, so calendar target == index[-6].
+    assert len(frame) == 6
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+        "fixture premise gone: these six dates no longer span exactly six sessions")
+
+    # The literal the OLD positional code produced, computed from the fixture's own
+    # numbers (not from a second call to the function under test).
+    expected = round(-_GAP_NET_VEX * (_DENSE_IV30[-1] - _DENSE_IV30[0]), 6)
+    assert expected == pytest.approx(40_000.0)
+
+    got, status = _vanna_hedge_5d_basis(_GAP_ASOF, frame)
+    assert got == pytest.approx(expected), (
+        f"dense store shipped {got}, not the unchanged positional value {expected}")
+    assert status == BASIS_OK
+
+
+# ── site (2): scripts/stamp_options_state._get_iv30_5d_chg_from_summary ─────────────
+# The relief SIGN input: reads the store from disk through _default_read_summary, so
+# these go through the real on-disk path, not an injected frame.
+
+def _plant_summary(tmp_path, monkeypatch, dates, iv30s, ticker="FOO"):
+    from engine import options_stamp as st
+    _vanna_summary_frame(dates, iv30s).to_parquet(tmp_path / f"summary_{ticker}.parquet")
+    monkeypatch.setattr(st, "_summary_dir", lambda: tmp_path)
+    planted = st._default_read_summary(ticker)
+    assert planted is not None and len(planted) == len(dates), (
+        "the session filter dropped a fixture row — every fixture date must be a session")
+    return planted
+
+
+def test_iv30_5d_chg_resolves_the_far_endpoint_by_calendar_not_by_position(
+        monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+
+    frame = _plant_summary(tmp_path, monkeypatch, _GAP_ROWS, _GAP_IV30)
+    _assert_outage_geometry(frame)
+
+    got = _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {})
+    assert got == pytest.approx(_GAP_CAL_CHG), (
+        f"read {got}; the {_GAP_FIVE_BACK} endpoint gives {_GAP_CAL_CHG}")
+    assert got != pytest.approx(_GAP_POS_CHG), (
+        f"read the POSITIONAL iloc[-6] change {_GAP_POS_CHG} — nine sessions of iv30 "
+        "move, signed the other way, feeding opt_vanna_relief")
+    assert got < 0 < _GAP_POS_CHG, "the shipped answer must carry the CALENDAR sign"
+
+
+def test_iv30_5d_chg_nulls_when_the_five_back_session_has_no_row(monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+
+    frame = _plant_summary(tmp_path, monkeypatch, _MISSING_ROWS, _MISSING_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    # PREMISE — SEVEN rows, so a None cannot come from the reader's own <6-row floor.
+    assert len(frame) >= 6
+    assert _GAP_FIVE_BACK not in idx, "fixture premise: the store has no 07-30 row"
+    assert pd.Timestamp(frame.iloc[-6].name).date() == _dt.date(2026, 7, 24), (
+        "fixture premise: a positional read would have returned the 07-24 row")
+
+    assert _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {}) is None, (
+        "a missing 5-back session must null the relief sign input, not widen its basis")
+
+
+def test_iv30_5d_chg_on_a_dense_store_is_the_old_positional_value(monkeypatch, tmp_path):
+    from scripts.stamp_options_state import _get_iv30_5d_chg_from_summary
+    from lib import nyse_calendar
+
+    frame = _plant_summary(tmp_path, monkeypatch, _DENSE_ROWS, _DENSE_IV30)
+    idx = [pd.Timestamp(d).date() for d in frame.index]
+
+    assert len(frame) == 6
+    assert len(nyse_calendar.sessions_between(idx[0], idx[-1])) == 6, (
+        "fixture premise gone: these six dates no longer span exactly six sessions")
+
+    expected = _DENSE_IV30[-1] - _DENSE_IV30[0]     # literal from the fixture
+    assert expected == pytest.approx(-0.04)
+    assert _get_iv30_5d_chg_from_summary("2026-08-06", "FOO", {}) == pytest.approx(expected)
+
+
+# ---------------------------------------------------------------------------
+# The tercile COVERAGE FLOOR (2026-08-06).
+#
+# Calendar-resolving the 5-session basis makes it null on a store gap, and that null is
+# DATE-wide rather than per-name: every ticker reads the same store on the same schedule.
+# The pre-existing `len(vals) >= 3` floor cannot see that — it answers "enough values to
+# draw a boundary", never "do these values represent the universe".  These guards pin the
+# distinction, using the geometry actually measured on the committed store.
+# ---------------------------------------------------------------------------
+
+def test_tercile_refuses_a_date_whose_ranked_names_are_coverage_selected(capsys):
+    """The measured collapse: 5 ranked of 375 measurable must NOT produce a threshold."""
+    from scripts.stamp_options_state import _TERCILE_MIN_NAMES, _tercile_thresholds
+
+    survivors = [-3000.0, -1500.0, -850.0, -400.0, 25000.0]
+    # PREMISE: the old `>= 3` floor would have FIRED on this input — otherwise this test
+    # would pass for the wrong reason (too few values, not too little coverage).
+    assert len(survivors) >= _TERCILE_MIN_NAMES
+
+    out = _tercile_thresholds({"2026-07-22": survivors}, {"2026-07-22": 375})
+    assert "2026-07-22" not in out, (
+        "a date ranking 5 of 375 measurable names (1.3%) was given a tercile boundary — "
+        "that redefines 'top tercile of the market' as 'top tercile of 5 "
+        "coverage-selected names'")
+
+    # Surfaced, never silent — and as a LINE-START annotation, or Actions drops it.
+    line = [ln for ln in capsys.readouterr().out.splitlines() if "vanna-tercile" in ln]
+    assert line and line[0].startswith("::warning "), (
+        "the refusal must emit a line-start ::warning; a prefixed logger call is dropped "
+        "by GitHub Actions")
+    assert "5 of 375" in line[0]
+
+
+def test_tercile_still_ranks_a_healthy_date(capsys):
+    """The other side of the floor: 374 of 375 (99.7%) is the normal case and must rank."""
+    from scripts.stamp_options_state import _tercile_thresholds
+
+    vals = [float(i) for i in range(374)]
+    out = _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 375})
+    assert "2026-07-27" in out, (
+        "a date ranking 99.7% of its measurable names was refused — the floor is "
+        "supposed to sit between the 1.3% and 99.7% populations, not above both")
+    assert out["2026-07-27"] == pytest.approx(np.percentile(vals, 100.0 * 2.0 / 3.0))
+    assert "vanna-tercile" not in capsys.readouterr().out
+
+
+def test_coverage_denominator_excludes_names_that_were_never_candidates():
+    """Coverage is ranked ÷ MEASURABLE, never ÷ the whole board.
+
+    Only 214 of 2,287 ledger rows carry this flag at all.  Dividing by the board would
+    refuse to rank on every healthy date — the denominator must exclude names with no
+    options history (BASIS_NO_HISTORY), which is why the producer reports WHY a value is
+    null instead of just returning None.
+    """
+    from scripts.stamp_options_state import _tercile_thresholds
+
+    vals = [1.0, 2.0, 3.0, 4.0]
+    # 4 ranked, 4 measurable (100%) — but 2,287 names exist on the board overall.
+    assert "2026-07-27" in _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 4})
+    # Had the denominator been the whole board, this same date would be refused:
+    assert "2026-07-27" not in _tercile_thresholds({"2026-07-27": vals}, {"2026-07-27": 2287})

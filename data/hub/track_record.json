@@ -1,252 +1,252 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-05",
-  "generated_at": "2026-08-05T16:15:47.310855+00:00",
+  "as_of": "2026-08-08",
+  "generated_at": "2026-08-08T16:18:59.918994+00:00",
   "is_context_only": true,
-  "n_snapshots": 164514,
+  "n_snapshots": 170689,
   "horizons": {
     "5": {
-      "n_matured": 17256,
-      "opportunity_ic_pooled": 0.0385,
+      "n_matured": 19799,
+      "opportunity_ic_pooled": 0.0381,
       "opportunity_ic_daily": {
-        "mean_ic": 0.0221,
-        "ic_vol": 0.1523,
-        "ic_ir": 0.145,
-        "ic_ir_ann": 0.458,
-        "t_hac": 0.572,
-        "p_hac": 0.5675,
-        "hit": 0.562,
-        "n": 32,
+        "mean_ic": 0.0159,
+        "ic_vol": 0.1453,
+        "ic_ir": 0.11,
+        "ic_ir_ann": 0.346,
+        "t_hac": 0.455,
+        "p_hac": 0.649,
+        "hit": 0.514,
+        "n": 35,
         "hac_lags": 5,
         "hac_lags_requested": 5
       },
-      "opportunity_ic": 0.0221,
-      "edge_ic_pooled": 0.0529,
+      "opportunity_ic": 0.0159,
+      "edge_ic_pooled": 0.0487,
       "by_stage": {
         "early": {
-          "n": 897,
-          "mean_fwd_rel": -0.0011,
-          "hit_rate": 0.501
+          "n": 1064,
+          "mean_fwd_rel": -0.0025,
+          "hit_rate": 0.472
         },
         "emerging": {
-          "n": 315,
-          "mean_fwd_rel": -0.0059,
-          "hit_rate": 0.486
+          "n": 343,
+          "mean_fwd_rel": -0.0053,
+          "hit_rate": 0.472
         },
         "building": {
-          "n": 8118,
-          "mean_fwd_rel": -0.0027,
-          "hit_rate": null
-        },
-        "consensus": {
-          "n": 1568,
-          "mean_fwd_rel": -0.0012,
-          "hit_rate": null
-        },
-        "exhausted": {
-          "n": 2063,
-          "mean_fwd_rel": -0.0018,
-          "hit_rate": 0.526
-        },
-        "distribution": {
-          "n": 2276,
-          "mean_fwd_rel": -0.006,
-          "hit_rate": 0.549
-        },
-        "discovery": {
-          "n": 335,
-          "mean_fwd_rel": 0.0031,
-          "hit_rate": 0.543
-        },
-        "faltering": {
-          "n": 1684,
-          "mean_fwd_rel": 0.0061,
-          "hit_rate": null
-        }
-      },
-      "by_source": {
-        "insider_cluster": {
-          "n": 112,
-          "mean_fwd_rel": -0.0068,
-          "hit_rate": 0.42
-        },
-        "radar_quiet": {
-          "n": 19,
-          "mean_fwd_rel": 0.0398,
-          "hit_rate": 0.421
-        },
-        "federal_velocity": {
-          "n": 18,
-          "mean_fwd_rel": 0.0192,
-          "hit_rate": 0.611
-        },
-        "activist_ownership": {
-          "n": 7,
-          "mean_fwd_rel": 0.0204,
-          "hit_rate": 0.714
-        }
-      },
-      "by_regime": {
-        "Q1": {
-          "n": 2210,
-          "mean_fwd_rel": -0.0004,
-          "hit_rate": 0.489,
-          "opportunity_ic": 0.0428
-        },
-        "Q2": {
-          "n": 393,
-          "mean_fwd_rel": 0.0031,
-          "hit_rate": 0.534,
-          "opportunity_ic": 0.0854
-        }
-      }
-    },
-    "10": {
-      "n_matured": 15031,
-      "opportunity_ic_pooled": -0.0098,
-      "opportunity_ic_daily": {
-        "mean_ic": 0.0239,
-        "ic_vol": 0.1577,
-        "ic_ir": 0.151,
-        "ic_ir_ann": 0.677,
-        "t_hac": 0.374,
-        "p_hac": 0.7087,
-        "hit": 0.593,
-        "n": 27,
-        "hac_lags": 10,
-        "hac_lags_requested": 10
-      },
-      "opportunity_ic": 0.0239,
-      "edge_ic_pooled": 0.0074,
-      "by_stage": {
-        "early": {
-          "n": 817,
-          "mean_fwd_rel": -0.0091,
-          "hit_rate": 0.485
-        },
-        "emerging": {
-          "n": 289,
-          "mean_fwd_rel": -0.0163,
-          "hit_rate": 0.433
-        },
-        "building": {
-          "n": 7263,
+          "n": 9258,
           "mean_fwd_rel": -0.0034,
           "hit_rate": null
         },
         "consensus": {
-          "n": 1391,
-          "mean_fwd_rel": -0.0006,
+          "n": 1751,
+          "mean_fwd_rel": -0.0016,
           "hit_rate": null
         },
         "exhausted": {
-          "n": 1863,
-          "mean_fwd_rel": -0.009,
-          "hit_rate": 0.537
+          "n": 2454,
+          "mean_fwd_rel": -0.005,
+          "hit_rate": 0.559
         },
         "distribution": {
-          "n": 1876,
-          "mean_fwd_rel": -0.0093,
-          "hit_rate": 0.519
+          "n": 2564,
+          "mean_fwd_rel": -0.0048,
+          "hit_rate": 0.551
         },
         "discovery": {
-          "n": 295,
-          "mean_fwd_rel": 0.0018,
-          "hit_rate": 0.525
+          "n": 359,
+          "mean_fwd_rel": 0.0045,
+          "hit_rate": 0.552
         },
         "faltering": {
-          "n": 1237,
-          "mean_fwd_rel": -0.0079,
+          "n": 2006,
+          "mean_fwd_rel": 0.0116,
           "hit_rate": null
         }
       },
       "by_source": {
         "insider_cluster": {
-          "n": 18,
-          "mean_fwd_rel": 0.0126,
-          "hit_rate": 0.5
+          "n": 180,
+          "mean_fwd_rel": -0.0008,
+          "hit_rate": 0.478
         },
         "radar_quiet": {
-          "n": 2,
-          "mean_fwd_rel": 0.09,
-          "hit_rate": 0.5
+          "n": 31,
+          "mean_fwd_rel": 0.0246,
+          "hit_rate": 0.452
         },
         "federal_velocity": {
-          "n": 3,
-          "mean_fwd_rel": 0.0768,
-          "hit_rate": 0.667
+          "n": 27,
+          "mean_fwd_rel": 0.0324,
+          "hit_rate": 0.593
         },
         "activist_ownership": {
-          "n": 1,
-          "mean_fwd_rel": 0.0553,
-          "hit_rate": 1.0
+          "n": 15,
+          "mean_fwd_rel": -0.0096,
+          "hit_rate": 0.4
         }
       },
       "by_regime": {
         "Q1": {
-          "n": 380,
-          "mean_fwd_rel": 0.0179,
-          "hit_rate": 0.429,
-          "opportunity_ic": 0.0952
+          "n": 2708,
+          "mean_fwd_rel": -0.0047,
+          "hit_rate": 0.496,
+          "opportunity_ic": 0.036
+        },
+        "Q2": {
+          "n": 2228,
+          "mean_fwd_rel": 0.0033,
+          "hit_rate": 0.527,
+          "opportunity_ic": -0.0139
+        }
+      }
+    },
+    "10": {
+      "n_matured": 17006,
+      "opportunity_ic_pooled": -0.0041,
+      "opportunity_ic_daily": {
+        "mean_ic": 0.024,
+        "ic_vol": 0.1499,
+        "ic_ir": 0.16,
+        "ic_ir_ann": 0.715,
+        "t_hac": 0.425,
+        "p_hac": 0.6707,
+        "hit": 0.567,
+        "n": 30,
+        "hac_lags": 10,
+        "hac_lags_requested": 10
+      },
+      "opportunity_ic": 0.024,
+      "edge_ic_pooled": 0.0013,
+      "by_stage": {
+        "early": {
+          "n": 926,
+          "mean_fwd_rel": -0.0089,
+          "hit_rate": 0.469
+        },
+        "emerging": {
+          "n": 314,
+          "mean_fwd_rel": -0.0161,
+          "hit_rate": 0.43
+        },
+        "building": {
+          "n": 8179,
+          "mean_fwd_rel": -0.0046,
+          "hit_rate": null
+        },
+        "consensus": {
+          "n": 1530,
+          "mean_fwd_rel": -0.0016,
+          "hit_rate": null
+        },
+        "exhausted": {
+          "n": 2118,
+          "mean_fwd_rel": -0.0103,
+          "hit_rate": 0.55
+        },
+        "distribution": {
+          "n": 2122,
+          "mean_fwd_rel": -0.0077,
+          "hit_rate": 0.518
+        },
+        "discovery": {
+          "n": 319,
+          "mean_fwd_rel": 0.0041,
+          "hit_rate": 0.524
+        },
+        "faltering": {
+          "n": 1498,
+          "mean_fwd_rel": -0.0008,
+          "hit_rate": null
+        }
+      },
+      "by_source": {
+        "insider_cluster": {
+          "n": 80,
+          "mean_fwd_rel": -0.0001,
+          "hit_rate": 0.412
+        },
+        "radar_quiet": {
+          "n": 11,
+          "mean_fwd_rel": 0.0582,
+          "hit_rate": 0.455
+        },
+        "federal_velocity": {
+          "n": 12,
+          "mean_fwd_rel": 0.051,
+          "hit_rate": 0.5
+        },
+        "activist_ownership": {
+          "n": 8,
+          "mean_fwd_rel": -0.0459,
+          "hit_rate": 0.125
+        }
+      },
+      "by_regime": {
+        "Q1": {
+          "n": 2143,
+          "mean_fwd_rel": -0.0013,
+          "hit_rate": 0.469,
+          "opportunity_ic": 0.0328
         }
       }
     },
     "21": {
-      "n_matured": 10209,
-      "opportunity_ic_pooled": -0.0606,
+      "n_matured": 12488,
+      "opportunity_ic_pooled": -0.0831,
       "opportunity_ic_daily": {
-        "mean_ic": -0.032,
-        "ic_vol": 0.1695,
-        "ic_ir": -0.189,
-        "ic_ir_ann": -1.224,
-        "t_hac": -0.45,
-        "p_hac": 0.6526,
-        "hit": 0.526,
-        "n": 19,
-        "hac_lags": 18,
+        "mean_ic": -0.041,
+        "ic_vol": 0.1478,
+        "ic_ir": -0.278,
+        "ic_ir_ann": -1.799,
+        "t_hac": -0.816,
+        "p_hac": 0.4147,
+        "hit": 0.5,
+        "n": 22,
+        "hac_lags": 21,
         "hac_lags_requested": 21
       },
-      "opportunity_ic": -0.032,
-      "edge_ic_pooled": 0.0293,
+      "opportunity_ic": -0.041,
+      "edge_ic_pooled": -0.0325,
       "by_stage": {
         "early": {
-          "n": 747,
-          "mean_fwd_rel": -0.02,
-          "hit_rate": 0.439
+          "n": 764,
+          "mean_fwd_rel": -0.0192,
+          "hit_rate": 0.445
         },
         "emerging": {
-          "n": 249,
-          "mean_fwd_rel": -0.0395,
-          "hit_rate": 0.301
+          "n": 252,
+          "mean_fwd_rel": -0.0386,
+          "hit_rate": 0.31
         },
         "building": {
-          "n": 5243,
-          "mean_fwd_rel": -0.0166,
+          "n": 6374,
+          "mean_fwd_rel": -0.0149,
           "hit_rate": null
         },
         "consensus": {
-          "n": 1177,
-          "mean_fwd_rel": -0.0171,
+          "n": 1234,
+          "mean_fwd_rel": -0.0172,
           "hit_rate": null
         },
         "exhausted": {
-          "n": 1230,
-          "mean_fwd_rel": -0.0338,
-          "hit_rate": 0.623
+          "n": 1550,
+          "mean_fwd_rel": -0.0278,
+          "hit_rate": 0.61
         },
         "distribution": {
-          "n": 833,
-          "mean_fwd_rel": -0.0293,
-          "hit_rate": 0.544
+          "n": 1293,
+          "mean_fwd_rel": -0.0085,
+          "hit_rate": 0.487
         },
         "discovery": {
-          "n": 216,
-          "mean_fwd_rel": -0.0081,
-          "hit_rate": 0.551
+          "n": 244,
+          "mean_fwd_rel": -0.0085,
+          "hit_rate": 0.525
         },
         "faltering": {
-          "n": 514,
-          "mean_fwd_rel": -0.0172,
+          "n": 777,
+          "mean_fwd_rel": -0.0062,
           "hit_rate": null
         }
       },

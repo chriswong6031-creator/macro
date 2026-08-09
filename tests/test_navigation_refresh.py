@@ -12,6 +12,54 @@ MARKET_JS = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
 REFRESH_CSS = (ROOT / "templates" / "navigation-refresh.css").read_text(encoding="utf-8")
 
 
+def media_block_containing(css: str, opener: str, marker: str) -> str:
+    """The top-level `@media` block opened by `opener` that contains `marker`.
+
+    Selecting it by CONTENT rather than by position: these tests used to take
+    the LAST block of a given kind, which quietly asserted "no one may ever
+    append another mobile / reduced-motion block to this stylesheet". Adding
+    one (the folded-country sheet, 2026-08-04) broke tests that had nothing to
+    do with it. Top-level blocks close on a column-0 `}`; every rule inside is
+    indented, so `\\n}` bounds a block exactly.
+    """
+    blocks: list[str] = []
+    idx = 0
+    while (i := css.find(opener, idx)) >= 0:
+        j = css.find("\n}", i + len(opener))
+        blocks.append(css[i: j if j >= 0 else len(css)])
+        idx = i + len(opener)
+    for block in blocks:
+        if marker in block:
+            return block
+    raise AssertionError(
+        f"no `{opener}` block in this stylesheet contains {marker!r} "
+        f"({len(blocks)} block(s) searched)"
+    )
+
+
+def research_rail(nav: str) -> str:
+    """The Research mega-menu's Explore rail (`<aside class="mega-rail …>` … `</aside>`).
+
+    Sliced by CONTENT so a placement guard can say "not in the rail" instead of
+    "not anywhere in the file" — the distinction matters because the Mastermind
+    Bot link is legitimate in the Core Research grid and forbidden in the rail.
+    """
+    start = nav.find('<aside class="mega-rail')
+    assert start >= 0, "the Research mega-menu lost its Explore rail"
+    end = nav.find("</aside>", start)
+    assert end >= 0, "the Explore rail is unclosed"
+    return nav[start:end]
+
+
+def core_research_grid(nav: str) -> str:
+    """The Core Research section's `.item-grid`, sliced from its section label."""
+    start = nav.find("Core Research")
+    assert start >= 0, "the Research mega-menu lost its Core Research section"
+    end = nav.find("</section>", start)
+    assert end >= 0, "the Core Research section is unclosed"
+    return nav[start:end]
+
+
 def test_public_research_menu_is_product_focused() -> None:
     for internal_page in (
         "measurement.html",
@@ -36,6 +84,57 @@ def test_public_research_menu_is_product_focused() -> None:
         "confluence_screener.html",
     ):
         assert f'href="{{{{ NP }}}}{public_page}"' in NAV
+
+
+def test_mastermind_bot_is_a_core_research_card_marked_pro() -> None:
+    """The Bot's THIRD attempt at a nav home — this one in the Core Research grid.
+
+    Twice reverted before (rail card #4078, header pill 2026-08-01), so this pins
+    the placement, not just the presence: the card sits in the Core Research grid
+    directly after Mastermind Portfolio, because Portfolio is the user's book and
+    the Bot is the AI's own — the pair is the reason for the position.
+    """
+    grid = core_research_grid(NAV)
+    assert 'href="https://bot.mastermind-x.com"' in grid
+
+    # Adjacency: Portfolio, then Bot, then Reports. Position IS the design here.
+    order = [NAV.find(h) for h in (
+        '{{ NP }}watchlist.html"',
+        'href="https://bot.mastermind-x.com"',
+        '{{ NP }}reports.html"',
+    )]
+    assert all(i > 0 for i in order), order
+    assert order == sorted(order), (
+        "Mastermind Bot must sit between Mastermind Portfolio and Research Reports"
+    )
+
+    # External, and opened the way the Terminal cross-product link is opened.
+    card = grid[grid.find('href="https://bot.mastermind-x.com"'):]
+    card = card[:card.find("</a>")]
+    assert 'target="_blank"' in card and 'rel="noopener"' in card
+
+    # It must NOT reuse the reverted rail class — nav_market.js:724 deletes it.
+    assert "nav-mastermind-cta" not in card
+
+    # Static tier mark, visible to every tier (docs/TIER_PREVIEW_PATTERN.md):
+    # the shell is shown to Free, the server gates the payload. Nothing about
+    # this badge may become conditional or JS-driven.
+    assert '<span class="nm-tier">PRO</span>' in card
+    assert ".nm-tier" in REFRESH_CSS
+    assert "/api/me" not in card
+
+    # Bilingual, and honest in BOTH languages: this is a paper account, so the
+    # ZH side must carry 模拟 and neither side may read as live trading.
+    assert "Mastermind Bot" in card
+    assert "Mastermind 交易机器人" in card
+    assert "The AI’s own paper account — every trade explained" in card
+    assert "AI 自己的模拟账户，每笔交易都附理由" in card
+    assert "模拟" in card, "the ZH copy must say paper account, not live trading"
+
+    # No translated text in title= (CI-guarded house law) and no emoji glyph —
+    # the card draws the house monoline icon like every sibling in this grid.
+    assert "title=" not in card
+    assert 'class="icon-drawing nm-ic cyan"' in card
 
 
 def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
@@ -239,12 +338,31 @@ def test_navigation_is_content_aware_and_research_rail_matches_mockup() -> None:
     ):
         assert marker in THEME_JS
 
+    # The two REVERTED Mastermind Bot entries stay reverted. Neither line ever
+    # banned the URL — each pinned a specific dead form, and the bare-substring
+    # spelling only looked like a URL ban because no live form existed yet:
+    #
+    #   · the Research-RAIL card (.nav-mastermind-cta, shipped 2026-07-29,
+    #     removed 2026-07-30 by #4078). nav_market.js:724 still deletes that
+    #     class from the rail at runtime, so re-using the name would make the
+    #     entry vanish on every page. The class must stay unused, and the rail
+    #     must stay free of the link — the Core Research grid is its home now.
+    #   · the sitewide header pill (removed 2026-08-01 as a duplicate of the
+    #     native mm_brain.js launcher) — see the shared-chrome check below.
     assert 'class="nav-mastermind-cta"' not in NAV
-    assert 'href="https://bot.mastermind-x.com"' not in NAV
+    assert "https://bot.mastermind-x.com" not in research_rail(NAV), (
+        "the Bot link belongs in the Core Research grid, not the Explore rail — "
+        "the rail form was reverted by #4078 and nav_market.js still strips it"
+    )
     assert "Cleaner by design" in NAV
     assert "Detailed diagnostics and proprietary labs move to the admin console." in NAV
     shared_chrome = (ROOT / "templates" / "_site_nav.html.j2").read_text(encoding="utf-8")
     assert "mastermind-link" not in shared_chrome
+    # The header's one external entry is Terminal. theme.js:1492 also strips any
+    # `.nav-ctrls a[href*="bot.mastermind-x.com"]` at runtime; the source must not
+    # rely on that, so the chrome carries no Bot link of any spelling.
+    assert "bot.mastermind-x.com" not in shared_chrome
+    assert 'href="https://app.mastermind-x.com"' in shared_chrome
 
 
 def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -> None:
@@ -264,11 +382,13 @@ def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -
 
 
 def test_mobile_ticker_input_does_not_trigger_ios_focus_zoom() -> None:
-    final_mobile_rules = REFRESH_CSS.rsplit("@media (max-width: 900px)", 1)[1]
-    assert "iOS Safari zooms the page" in final_mobile_rules
+    mobile_rules = media_block_containing(
+        REFRESH_CSS, "@media (max-width: 900px)", ".ticker-search .ticker-input"
+    )
+    assert "iOS Safari zooms the page" in mobile_rules
     assert (
         ".ticker-search .ticker-input { font-size: 16px; }"
-        in final_mobile_rules
+        in mobile_rules
     )
 
 

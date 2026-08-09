@@ -4,7 +4,7 @@ graded, per-TRADE scorecard so we can see *who made the excellent trades*.
 The neighbouring engine.smart_money diffs each fund's quarters into new/add/trim/exit
 and answers "who holds this name". This module asks the sharper question the desk
 actually cares about: **after a fund made a move, did it WORK?** For every position
-change we place a look-ahead-free entry on the fund's PUBLIC filing date and measure
+change we place a look-ahead-free entry when the filing became publicly available and measure
 the SPY-relative ("excess") return — both at a fixed 63-session horizon (apples-to-
 apples skill) and live-to-latest-close (the realised "front-ran the rally" P&L). From
 those rows we roll up:
@@ -27,7 +27,8 @@ benchmark — so the globally-diversified super-investors are finally measured o
 whole book.
 
 HONESTY (surfaced on the page): 13F is quarterly with a ~45-day lag, long-only US
-equity stakes ≥ $100M — no shorts, options, or non-US/private positions. "Since-filing"
+positions from managers above the $100M filing threshold — no shorts, options, or
+non-US/private positions. "Since-filing"
 excess uses a VARIABLE hold (an older quarter's trade has run longer than a recent
 one), so it is a realised-P&L read, not a fixed-horizon skill metric; the 63-day excess
 is the apples-to-apples figure. This is descriptive CONTEXT and a *track record*, never
@@ -42,9 +43,11 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from engine.smart_money import (NOTE, _read_all, diff_snapshots, full_cusip_map,
-                                name_ticker_map, resolve_tickers)
+from engine.smart_money import (NOTE, _read_all, _snapshot_available_date,
+                                diff_snapshots, full_cusip_map, name_ticker_map,
+                                resolve_tickers)
 from lib import config
+from lib.closes_panel import disclose_merge, merge_close_caches
 
 log = logging.getLogger(__name__)
 
@@ -77,9 +80,9 @@ TRACKER_NOTE = (
     + NOTE)
 
 TRACKER_NOTE_ZH = (
-    "精选超级投资者 13F 交易的业绩记录。每笔操作以基金的公开申报日为入场点（无前视偏差），"
+    "精选超级投资者 13F 交易的业绩记录。每笔操作以基金的公开披露日为入场点（无前视偏差），"
     "并以相对标普500的超额收益评分。基金按交易超额收益的中位数排名（抗异常值）——已实现的"
-    "“自申报”均值采用可变持有期（较早的交易运行更久），因此是盈亏而非选股能力；63日超额收益"
+    "“自披露”均值采用可变持有期（较早的交易运行更久），因此是盈亏而非选股能力；63日超额收益"
     "为固定持有期口径。部分非指数成分（境外 ADR、小盘股）无法定价而被剔除，故每只基金均标注"
     "覆盖率。13F 持仓为季度披露、约45天滞后，仅含 ≥1亿美元的美股多头，不含空头、期权或非美持仓；"
     "为背景信息与业绩记录，并非买入建议或实时信号，且从不接入任何评分/配置。")
@@ -195,20 +198,14 @@ def _breadth_panel() -> pd.DataFrame | None:
     """Combined date×ticker close panel from the breadth caches (S&P large/small/mid),
     deduped on ticker. None if none are present (then the tracker degrades to yahoo-only
     coverage)."""
-    frames = []
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
-        p = config.data_dir() / grp / "_closes_cache.parquet"
-        if p.exists():
-            try:
-                frames.append(pd.read_parquet(p))
-            except Exception:  # noqa: BLE001
-                continue
-    if not frames:
+    # Freshest column per ticker (lib/closes_panel.py). The SINCE return runs to the
+    # column's last bar, so a tier-order pick of an index migrant's frozen column would
+    # publish a "since the trade" number that silently stopped on the migration date.
+    panel, meta = merge_close_caches(("breadth", "smallcap_breadth", "midcap_breadth"))
+    if panel.empty:
         return None
-    panel = pd.concat(frames, axis=1, sort=False)    # union of dates; sorted explicitly below
-    panel = panel.loc[:, ~panel.columns.duplicated()]
-    panel.index = pd.to_datetime(panel.index)
-    return panel.sort_index()
+    disclose_merge(meta, "manager_trades")
+    return panel
 
 
 # --------------------------------------------------------------------------- #
@@ -244,7 +241,8 @@ def score_fund_trades(slug: str, name: str, panel: ClosePanel,
     for i in range(len(snaps) - 1):
         _pe_prev, _fd_prev, prev = snaps[i]
         pe_cur, fd_cur, cur = snaps[i + 1]
-        if not fd_cur:                               # no public date → can't place entry
+        available_date = _snapshot_available_date(cur) or fd_cur
+        if not available_date:                       # no public date → can't place entry
             continue
         diff = diff_snapshots(prev, cur)
         if diff.empty:
@@ -266,18 +264,19 @@ def score_fund_trades(slug: str, name: str, panel: ClosePanel,
                 continue                             # skip 'hold' — not a trade
             if counters is not None:
                 counters["attempted"] = counters.get("attempted", 0) + 1
-            since = panel.excess(r.ticker, fd_cur)
+            since = panel.excess(r.ticker, available_date)
             if since is None:
                 continue                             # unpriced → not on the record
             if counters is not None:
                 counters["priced"] = counters.get("priced", 0) + 1
-            fwd = panel.excess(r.ticker, fd_cur, horizon=horizon)
+            fwd = panel.excess(r.ticker, available_date, horizon=horizon)
             scp = getattr(r, "shares_change_pct", None)
             rows.append({
                 "slug": slug, "fund": slug.upper(), "name": name,
                 "ticker": r.ticker, "issuer": str(getattr(r, "issuer", "") or ""),
                 "action": r.action,
                 "period_end": pe_cur, "filing_date": fd_cur,
+                "available_date": available_date,
                 "pct_portfolio": round(float(r.pct_portfolio), 2),
                 "shares_change_pct": (None if scp is None or pd.isna(scp)
                                       else round(float(scp), 1)),
@@ -415,6 +414,7 @@ def _slim(t: dict | None) -> dict | None:
     if not t:
         return None
     return {k: t[k] for k in ("ticker", "issuer", "action", "period_end", "filing_date",
+                              "available_date",
                               "pct_portfolio", "shares_change_pct", "since_excess",
                               "since_abs", "spy_since", "hold_days", "fwd_excess") if k in t}
 
@@ -610,7 +610,7 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
     all_trades: list[dict] = []
     by_fund: dict[str, dict] = {}
     scorecards: dict[str, dict] = {}
-    as_of_dates, filing_dates = [], []
+    filing_dates = []
 
     for slug, spec in funds.items():
         name = spec.get("name", slug)
@@ -667,8 +667,9 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
             buy_trades = [t for t in trades if t["action"] in _BUY]
             decay: dict[str, dict] = {}
             for h in (21, 63, 126):
-                exs = [panel.excess(t["ticker"], t["filing_date"], horizon=h)
-                       for t in buy_trades if t.get("filing_date")]
+                exs = [panel.excess(
+                    t["ticker"], t.get("available_date") or t["filing_date"], horizon=h)
+                    for t in buy_trades if t.get("available_date") or t.get("filing_date")]
                 vals = [e["excess"] for e in exs if e is not None]
                 decay[f"h{h}"] = {"med": round(_st.median(vals), 4) if vals else None,
                                    "n": len(vals)}
@@ -692,8 +693,6 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
         latest_by_tk = {t["ticker"]: t for t in trades if t["period_end"] == latest_period}
         top, period_end, filing_date, book = _top_holdings(
             slug, panel, name_map, cusip_map, latest_by_tk)
-        if period_end:
-            as_of_dates.append(period_end)
         if filing_date:
             filing_dates.append(filing_date)
         rot = fund_rotation(slug, name, trades, top, latest_period or period_end)
@@ -721,8 +720,24 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
     featured = _featured(by_fund, leaderboard, pair)
 
     n_priced = sum(1 for t in all_trades if t["since_excess"] is not None)
+    # The tracker contains each manager's latest individual book, but its top-level
+    # period must describe the active cohort rather than whichever early filer is
+    # newest. Preserve that leading edge separately for operational visibility.
+    active_period_counts: dict[str, int] = {}
+    for slug, fund_row in by_fund.items():
+        if str((funds.get(slug) or {}).get("status", "")).lower() == "closed":
+            continue
+        period = str(fund_row.get("period_end") or "")
+        if period:
+            active_period_counts[period] = active_period_counts.get(period, 0) + 1
+    cohort_as_of = (
+        max(active_period_counts, key=lambda p: (active_period_counts[p], p))
+        if active_period_counts else ""
+    )
     return {
-        "as_of": max(as_of_dates) if as_of_dates else "",
+        "as_of": cohort_as_of,
+        "latest_manager_period": max(active_period_counts) if active_period_counts else "",
+        "period_counts": active_period_counts,
         "latest_filing": max(filing_dates) if filing_dates else "",
         "built": datetime.now(timezone.utc).isoformat(),
         "note": {"en": TRACKER_NOTE, "zh": TRACKER_NOTE_ZH},

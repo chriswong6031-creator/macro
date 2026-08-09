@@ -99,7 +99,16 @@
     commodity: '<path d="M12 10h24v28H12zM12 18h24M12 30h24"/><path class="accent" d="M19 10v28M29 10v28"/><path d="M24 4s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>',
     reserves: '<path d="M8 38h32M11 34V18h8v16M20 34V10h8v24M29 34V22h8v12"/><path class="accent" d="M7 14h13M16 6h13M25 18h13"/><path class="ghost" d="M5 42h38"/>',
     forex: '<path d="M8 16h30M33 11l5 5-5 5M40 32H10M15 27l-5 5 5 5"/><circle class="soft-fill" cx="18" cy="16" r="5"/><circle class="soft-fill" cx="30" cy="32" r="5"/>',
-    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>'
+    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>',
+    /* The two Mastermind cards' own template glyphs (_navlinks.html.j2),
+       verbatim: the allocation donut (Portfolio — the user's book) and the
+       pinned processor (Bot — the AI's own paper book). They exist here so the
+       compatibility bridge can only ever normalise these cards to their REAL
+       icons — before this, both fell through to the `dashboard` default and the
+       two adjacent "Mastermind …" cards rendered byte-identical glyphs, which
+       read as one product listed twice (operator report, 2026-08-07). */
+    portfolio: '<path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/>',
+    bot: '<path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/>'
   };
   MOCKUP_ICON_PATHS.baskets = MOCKUP_ICON_PATHS.themes;
   MOCKUP_ICON_PATHS.alert = MOCKUP_ICON_PATHS.alerts;
@@ -116,6 +125,7 @@
   MOCKUP_ICON_PATHS.reports = '<path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/>';
   MOCKUP_ICON_PATHS.vault = '<path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/>';
   MOCKUP_ICON_PATHS.neural = '<path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/>';
+  MOCKUP_ICON_PATHS.market_memory = '<path class="ghost" d="M8 10h32v28H8z"/><path d="M7 8h14c5 0 8 3 8 8v24c0-5-3-8-8-8H7zM41 8H27v32c0-5 3-8 8-8h6z"/><path class="accent" d="M13 16h9M13 21h7M33 15h4M33 20h4"/><circle class="soft-fill" cx="27" cy="29" r="4"/><path d="M24 29h6"/>';
   MOCKUP_ICON_PATHS.foresight = '<path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/>';
   MOCKUP_ICON_PATHS.theme_tracker = '<path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/>';
   MOCKUP_ICON_PATHS.divergence = '<path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/>';
@@ -136,10 +146,14 @@
 
   var MOCKUP_RESEARCH_ICON_BY_FILE = {
     'intelligence_hub.html': ['intelligence_hub', ''],
+    /* fileOf() reduces the Bot card's absolute href to its host string. */
+    'watchlist.html': ['portfolio', 'violet'],
+    'bot.mastermind-x.com': ['bot', 'cyan'],
     'reports.html': ['reports', ''],
     'research_vault.html': ['vault', 'violet'],
     'earnings_wire': ['earnings_wire', 'cyan'],
     'neural_web.html': ['neural', 'cyan'],
+    'market_memory.html': ['market_memory', 'violet'],
     'foresight.html': ['foresight', ''],
     'state_of_themes.html': ['theme_tracker', 'violet'],
     'radar.html': ['divergence', 'cyan'],
@@ -162,6 +176,7 @@
     'research_vault.html': 'Search every published research note',
     'earnings_wire': 'Verified calls, weekly intelligence and company context',
     'neural_web.html': 'See how every signal votes',
+    'market_memory.html': 'Put today beside comparable episodes',
     'foresight.html': 'Themes before markets price them',
     'state_of_themes.html': 'What’s strengthening and fading now',
     'radar.html': 'Where price and reality split',
@@ -180,14 +195,25 @@
     return anchor ? anchor.getAttribute('href') : fallback;
   }
 
+  /* Every row is bilingual. The row shape is
+       [en title, en desc, href, icon, zh title, zh desc, tone, href-gate]
+     and a section is [en heading, rows, zh heading]; titles/subtitles/rail
+     headings/notes carry a `…Zh` sibling key. langText() below picks the pair,
+     so a row that forgets its Chinese silently ships English into Chinese mode
+     — which is exactly the bug this table used to have. Keep both columns
+     filled when adding a destination. */
   var MARKET_MENU = {
     us: {
       title: 'United States',
+      titleZh: '美国',
       subtitle: 'Macro context, stocks, sectors and live market desks.',
+      subtitleZh: '宏观环境、个股、板块与实时行情台。',
       sections: [
         ['Market overview', [
-          ['Market Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard'],
-          ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks'],
+          ['Market Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard',
+            '宏观仪表盘', '当前周期、增长与通胀'],
+          ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks',
+            '股票仪表盘', '领涨股、板块与资金流'],
           // OIP W1 §1.3: Daily Movers sits beside the Stock Dashboard (stock-level
           // content), verbatim copy from _navlinks.html.j2's own relocated row.
           ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
@@ -202,24 +228,28 @@
           // Sector Intelligence consolidation (#4237, 2026-08): Sector Central + Theme
           // Baskets + Subsector Rotation are ONE page now (the old URLs are redirect
           // stubs) — one menu row, matching the collapsed _navlinks flyout.
-          ['Sector Intelligence', 'Sectors, themes & rotation in one read', 'sector_central.html', 'sectors']
-        ]],
+          ['Sector Intelligence', 'Sectors, themes & rotation in one read', 'sector_central.html', 'sectors',
+            '行业智慧', '板块、主题与轮动一页读']
+        ], '市场总览'],
         ['Signals & strategy', [
-          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'subsectors.html', 'confluence'],
-          ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy'],
-          ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert'],
-          ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news']
-        ]],
+          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'sector_central.html#confluence', 'confluence',
+            '子行业汇聚', '现可入场子行业 · 双重闸门选股'],
+          ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy',
+            '策略', '战术记分卡与仓位'],
+          ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert',
+            '警报中心', '分级的市场异动警报'],
+          ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news',
+            '新闻流', '催化事件、头条与情绪']
+        ], '信号与策略'],
         // OIP W1.6-B "One Door", mirrored from _navlinks.html.j2's own flyout
         // (ONE_DOOR_RULING_AND_SPEC.md §3/§4). The workspace absorbed gex.html
         // along with the screener, flow desk and flow leaders; all four are
         // redirect stubs now, so this section drops the 'Options Desk' row rather
         // than pointing a reader at a bounce. Intraday Flow Tracker moved up to
         // 'Market overview'. Dark Pool Desk stays guarded exactly like its
-        // template row (8th element = the href gate). Section NAME is unchanged:
-        // langText() renders it identically in both languages, and the label the
-        // ruling renamed is the template flyout's trigger, which has no
-        // counterpart here.
+        // template row (8th element = the href gate). The label the ruling
+        // renamed is the template flyout's trigger, which has no counterpart
+        // here.
         ['Market structure', [
           ['Options — the workspace', 'Daily Brief · Flow · Scanner · Ticker · Leaders',
             'options.html', 'options', '期权工作台', '每日简报 · 资金流 · 筛选 · 个股 · 领头股'],
@@ -228,166 +258,230 @@
             null, 'darkpool.html'],
           ['Market Structure', 'GEX regime · machine flows · dispersion · weekly range',
             'market_structure.html', 'structure', '市场结构', '做市商制度 · 机器资金 · 离散度 · 周度区间']
-        ]]
+        ], '市场结构']
       ],
+      // 'Stock Terminal' (stock.html with no ticker) was removed 2026-08-04 on
+      // operator report: the bare analyzer has nothing to show until a ticker is
+      // picked, so the rail's most prominent row led to an empty page. Ticker
+      // entry belongs to the global nav search, which every page already carries.
       rail: [
-        ['Stock Terminal', 'Open any U.S. ticker', 'stock.html', 'stocks'],
-        ['Market Heatmap', 'See the whole tape', 'sector_central.html', 'heatmap'],
-        ['Subsector Confluence', 'Find aligned groups', 'subsectors.html', 'confluence'],
-        ['Browse U.S. markets', 'All U.S. destinations', 'macro.html', 'dashboard']
+        ['Market Heatmap', 'See the whole tape', 'sector_central.html', 'heatmap', '市场热力图'],
+        ['Subsector Confluence', 'Find aligned groups', 'sector_central.html#confluence', 'confluence', '子行业汇聚'],
+        ['Browse U.S. markets', 'All U.S. destinations', 'macro.html', 'dashboard', '浏览美国全部页面']
       ],
-      note: ['Built for quick decisions', 'The most-used desks stay one click away.']
+      note: ['Built for quick decisions', 'The most-used desks stay one click away.'],
+      noteZh: ['为快速决策而建', '最常用的页面永远一键可达。']
     },
     cn: {
       title: 'China',
+      titleZh: '中国',
       subtitle: 'A-shares, policy, capital flows and fast-moving themes.',
+      subtitleZh: 'A股、政策、资金流与快速轮动的主题。',
       sections: [
         ['Market overview', [
-          ['Market Dashboard', 'A-share regime and breadth', 'china.html', 'dashboard'],
-          ['Stock Dashboard', 'Standouts, alpha and setups', 'china_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Every A-share at a glance', 'china_heatmap.html', 'heatmap'],
-          ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence']
-        ]],
+          ['Market Dashboard', 'A-share regime and breadth', 'china.html', 'dashboard',
+            '宏观仪表盘', 'A股周期与市场广度'],
+          ['Stock Dashboard', 'Standouts, alpha and setups', 'china_stocks.html', 'stocks',
+            '股票仪表盘', '领涨股、阿尔法与布局'],
+          ['Market Heatmap', 'Every A-share at a glance', 'china_heatmap.html', 'heatmap',
+            '市场热力图', '全部A股一眼看尽'],
+          ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence',
+            '中国情报中心', '信号、政策与叙事']
+        ], '市场总览'],
         ['Themes & rotation', [
           // 2026-08 China SI consolidation: the three sector/theme/rotation pages are one now
           // (baskets_china.html / subsector_rotation_china.html are redirect stubs).
-          ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors'],
-          ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative', null, null, '']
-        ]],
+          ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors',
+            '行业智慧', '门控研判、周期图谱与轮动一页尽览'],
+          ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative',
+            '主题篮子雷达', '看清哪个叙事正在运行', '']
+        ], '主题与轮动'],
         ['Flows & policy', [
-          ['Capital Flow Velocity', 'Where big money accelerates', 'flow_velocity.html', 'flow'],
-          ['Policy Watch', 'PBoC and sector policy shifts', 'china_policy_watch.html', 'policy'],
-          ['Market Mechanics', 'Participation, limits and tape', 'china_mechanics.html', 'structure', null, null, 'violet'],
-          ['Special Situations', 'Unlocks, pledges and catalysts', 'china_special_situations.html', 'event', null, null, '']
-        ]]
+          ['Capital Flow Velocity', 'Where big money accelerates', 'flow_velocity.html', 'flow',
+            '资金流速', '主力资金在哪里加速'],
+          ['Policy Watch', 'PBoC and sector policy shifts', 'china_policy_watch.html', 'policy',
+            '政策观察', '央行与行业政策变化'],
+          ['Market Mechanics', 'Participation, limits and tape', 'china_mechanics.html', 'structure',
+            '市场结构', '参与度、涨跌停与盘面', 'violet'],
+          ['Special Situations', 'Unlocks, pledges and catalysts', 'china_special_situations.html', 'event',
+            '特殊事件', '解禁、质押与催化事件', '']
+        ], '资金与政策']
       ],
       railTitle: 'Explore',
+      railTitleZh: '探索',
       rail: [
-        ['China News', 'Official sources and catalysts', 'china_news.html', 'news'],
-        ['Strategies', 'Tactical China scorecards', 'china_strategies.html', 'strategy'],
-        ['Alternative Data', 'Signals beyond price', 'china_altdata.html', 'research'],
-        ['Browse China research', 'All China research', 'china_intel.html', 'intelligence']
+        ['China News', 'Official sources and catalysts', 'china_news.html', 'news', '中国新闻流'],
+        ['Strategies', 'Tactical China scorecards', 'china_strategies.html', 'strategy', '策略'],
+        ['Alternative Data', 'Signals beyond price', 'china_altdata.html', 'research', '另类数据'],
+        ['Browse China research', 'All China research', 'china_intel.html', 'intelligence', '浏览中国全部研究']
       ],
-      note: ['One China system', 'Market, policy and capital context stay connected.']
+      note: ['One China system', 'Market, policy and capital context stay connected.'],
+      noteZh: ['一个中国体系', '市场、政策与资金脉络始终相连。']
     },
     hk: {
       title: 'Hong Kong',
+      titleZh: '香港',
       subtitle: 'HSI context, southbound flows and Hong Kong-listed leaders.',
+      subtitleZh: '恒指环境、南向资金与港股龙头。',
       sections: [
         ['Market overview', [
-          ['Market Dashboard', 'HSI, liquidity and global risk', 'hk.html', 'dashboard'],
-          ['Stock Dashboard', 'Hong Kong standouts and alpha', 'hk_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Turnover-sized market overview', 'hk_heatmap.html', 'heatmap'],
-          ['Capital Flow Velocity', 'Southbound money in motion', 'flow_velocity.html', 'flow']
-        ]],
+          ['Market Dashboard', 'HSI, liquidity and global risk', 'hk.html', 'dashboard',
+            '宏观仪表盘', '恒指、流动性与全球风险'],
+          ['Stock Dashboard', 'Hong Kong standouts and alpha', 'hk_stocks.html', 'stocks',
+            '股票仪表盘', '港股领涨股与阿尔法'],
+          ['Market Heatmap', 'Turnover-sized market overview', 'hk_heatmap.html', 'heatmap',
+            '市场热力图', '按成交额加权的全景'],
+          ['Capital Flow Velocity', 'Southbound money in motion', 'flow_velocity.html', 'flow',
+            '资金流速', '南向资金动向']
+        ], '市场总览'],
         ['Themes & rotation', [
-          ['Thematic Baskets', 'Equal-weight themes versus HSI', 'baskets_hk.html', 'baskets'],
-          ['Narrative Rotation', 'What to hold and rotate', 'allocation_hk.html', 'rotation']
-        ]]
+          ['Thematic Baskets', 'Equal-weight themes versus HSI', 'baskets_hk.html', 'baskets',
+            '主题篮子', '等权主题篮子 vs 恒指'],
+          ['Narrative Rotation', 'What to hold and rotate', 'allocation_hk.html', 'rotation',
+            '主题轮动', '持有哪个主题 · 何时轮动']
+        ], '主题与轮动']
       ],
       railTitle: 'Quick access',
+      railTitleZh: '快速入口',
       rail: [
-        ['China Intelligence', 'Shared policy context', 'china_intel.html', 'intelligence'],
-        ['Policy Watch', 'Liquidity and policy shifts', 'china_policy_watch.html', 'policy'],
-        ['Hong Kong baskets', 'Browse active themes', 'baskets_hk.html', 'baskets'],
-        ['Browse Hong Kong', 'Return to market overview', 'hk.html', 'dashboard']
+        ['China Intelligence', 'Shared policy context', 'china_intel.html', 'intelligence', '中国情报中心'],
+        ['Policy Watch', 'Liquidity and policy shifts', 'china_policy_watch.html', 'policy', '政策观察'],
+        ['Hong Kong baskets', 'Browse active themes', 'baskets_hk.html', 'baskets', '香港主题篮子'],
+        ['Browse Hong Kong', 'Return to market overview', 'hk.html', 'dashboard', '浏览香港全部页面']
       ],
-      note: ['Lean by design', 'Six core destinations cover the Hong Kong workflow.']
+      note: ['Lean by design', 'Six core destinations cover the Hong Kong workflow.'],
+      noteZh: ['精简设计', '六个核心页面覆盖香港的完整流程。']
     },
     ca: {
       title: 'Canada',
+      titleZh: '加拿大',
       subtitle: 'TSX context, commodity sensitivity and Canadian market leaders.',
+      subtitleZh: '多伦多指数环境、商品敏感度与加股龙头。',
       sections: [
         ['Market overview', [
-          ['Market Dashboard', 'TSX, BoC and commodities', 'canada.html', 'dashboard'],
-          ['Stock Dashboard', 'Canadian standouts and alpha', 'canada_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Every TSX name at a glance', 'canada_heatmap.html', 'heatmap']
-        ]],
+          ['Market Dashboard', 'TSX, BoC and commodities', 'canada.html', 'dashboard',
+            '宏观仪表盘', 'TSX、加央行与大宗商品'],
+          ['Stock Dashboard', 'Canadian standouts and alpha', 'canada_stocks.html', 'stocks',
+            '股票仪表盘', '加股领涨股与阿尔法'],
+          ['Market Heatmap', 'Every TSX name at a glance', 'canada_heatmap.html', 'heatmap',
+            '市场热力图', '全部TSX个股一眼看尽']
+        ], '市场总览'],
         ['Themes & rotation', [
-          ['Thematic Baskets', 'Themes versus the TSX', 'baskets_canada.html', 'baskets'],
-          ['Narrative Rotation', 'What to hold and rotate', 'allocation_canada.html', 'rotation']
-        ]]
+          ['Thematic Baskets', 'Themes versus the TSX', 'baskets_canada.html', 'baskets',
+            '主题篮子', '主题篮子 vs 标普/多伦多'],
+          ['Narrative Rotation', 'What to hold and rotate', 'allocation_canada.html', 'rotation',
+            '主题轮动', '持有哪个主题 · 何时轮动']
+        ], '主题与轮动']
       ],
       railTitle: 'Quick access',
+      railTitleZh: '快速入口',
       rail: [
-        ['Banks & insurers', 'Canadian financial leadership', 'canada_stocks.html', 'stocks'],
-        ['Energy complex', 'Oil-sensitive market context', 'commodities.html', 'commodities'],
-        ['Gold & materials', 'Materials leadership', 'baskets_canada.html', 'baskets'],
-        ['Browse Canada', 'Return to market overview', 'canada.html', 'dashboard']
+        ['Banks & insurers', 'Canadian financial leadership', 'canada_stocks.html', 'stocks', '银行与保险'],
+        ['Energy complex', 'Oil-sensitive market context', 'commodities.html', 'commodities', '能源板块'],
+        ['Gold & materials', 'Materials leadership', 'baskets_canada.html', 'baskets', '黄金与原材料'],
+        ['Browse Canada', 'Return to market overview', 'canada.html', 'dashboard', '浏览加拿大全部页面']
       ],
-      note: ['Home-market aware', 'Search examples and popular tickers adapt to Canada.']
+      note: ['Home-market aware', 'Search examples and popular tickers adapt to Canada.'],
+      noteZh: ['识别主场市场', '搜索示例与热门代码会跟着切到加拿大。']
     },
     intl: {
       title: 'International',
+      titleZh: '国际',
       subtitle: 'Compare major markets, global leaders and cross-country themes.',
+      subtitleZh: '比较主要市场、全球龙头与跨国主题。',
       sections: [
         ['Global markets', [
-          ['World Dashboard', 'Major markets compared together', 'intl.html', 'global'],
-          ['Stock Dashboard', 'Cross-market standouts and sectors', 'intl_stocks.html', 'stocks'],
-          ['Global Market Cycles', 'Every major market on one clock', 'markets.html', 'cycle'],
-          ['Country Cycles', 'Countries and regions compared', 'country_cycles.html', 'country', null, null, '']
-        ]],
+          ['World Dashboard', 'Major markets compared together', 'intl.html', 'global',
+            '全球仪表盘', '主要市场同台对比'],
+          ['Stock Dashboard', 'Cross-market standouts and sectors', 'intl_stocks.html', 'stocks',
+            '股票仪表盘', '跨市场领涨股与板块'],
+          ['Global Market Cycles', 'Every major market on one clock', 'markets.html', 'cycle',
+            '全球市场周期', '主要市场同在一张周期钟上'],
+          ['Country Cycles', 'Countries and regions compared', 'country_cycles.html', 'country',
+            '国家周期', '国家与区域对比', '']
+        ], '全球市场'],
         ['Themes', [
-          ['Thematic Baskets', 'Cross-country themes outside America', 'baskets_intl.html', 'baskets', null, null, 'cyan']
-        ]]
+          ['Thematic Baskets', 'Cross-country themes outside America', 'baskets_intl.html', 'baskets',
+            '主题篮子', '跨国主题篮子 · 除美', 'cyan']
+        ], '主题']
       ],
       railTitle: 'Regions',
+      railTitleZh: '国家与区域',
       rail: [
-        ['Japan', 'BoJ, wages, JGBs and yen', intlCountryHref('jp', 'japan.html'), 'dashboard'],
-        ['South Korea', 'BOK, exports, credit and won', intlCountryHref('kr', 'south_korea.html'), 'dashboard'],
-        ['Euro Area', 'EA21, ECB, HICP and bank credit', intlCountryHref('ez', 'euro_area.html'), 'dashboard'],
-        ['United Kingdom', 'BoE, services inflation and gilts', intlCountryHref('gb', 'united_kingdom.html'), 'dashboard'],
-        ['India', 'RBI, food inflation, credit and rupee', intlCountryHref('in', 'india.html'), 'dashboard']
+        ['Japan', 'BoJ, wages, JGBs and yen', intlCountryHref('jp', 'japan.html'), 'dashboard', '日本'],
+        ['South Korea', 'BOK, exports, credit and won', intlCountryHref('kr', 'south_korea.html'), 'dashboard', '韩国'],
+        ['Euro Area', 'EA21, ECB, HICP and bank credit', intlCountryHref('ez', 'euro_area.html'), 'dashboard', '欧元区'],
+        ['United Kingdom', 'BoE, services inflation and gilts', intlCountryHref('gb', 'united_kingdom.html'), 'dashboard', '英国'],
+        ['India', 'RBI, food inflation, credit and rupee', intlCountryHref('in', 'india.html'), 'dashboard', '印度']
       ],
-      note: ['One global lens', 'Country context without a maze of nested menus.']
+      note: ['One global lens', 'Country context without a maze of nested menus.'],
+      noteZh: ['一个全球视角', '看懂各国脉络，不必层层翻菜单。']
     },
     crypto: {
       title: 'Crypto',
+      titleZh: '加密资产',
       subtitle: 'Cycle, risk, allocation and strategy for digital assets.',
+      subtitleZh: '数字资产的周期、风险、配置与策略。',
       sections: [
         ['Market overview', [
-          ['Crypto Cockpit', 'Market board, flows and leverage', 'crypto.html', 'dashboard'],
-          ['Bitcoin Vector', 'State, risk and cycle', 'vector.html', 'bitcoin']
-        ]],
+          ['Crypto Cockpit', 'Market board, flows and leverage', 'crypto.html', 'dashboard',
+            '加密驾驶舱', '行情盘、资金流与杠杆'],
+          ['Bitcoin Vector', 'State, risk and cycle', 'vector.html', 'bitcoin',
+            '比特币向量', '状态、风险与周期']
+        ], '市场总览'],
         ['Portfolio', [
-          ['Allocation', 'Bitcoin, ether, alts and cash', 'crypto.html#allocation', 'allocation'],
-          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy']
-        ]]
+          ['Allocation', 'Bitcoin, ether, alts and cash', 'crypto.html#allocation', 'allocation',
+            '配置', '比特币、以太坊、山寨与现金'],
+          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy',
+            '策略战绩', '周期与配置的实证']
+        ], '组合']
       ],
       rail: [
-        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'bitcoin'],
-        ['Allocation', 'Current portfolio stance', 'crypto.html#allocation', 'allocation'],
-        ['Browse Crypto', 'Return to the cockpit', 'crypto.html', 'dashboard']
+        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'bitcoin', '比特币终端'],
+        ['Allocation', 'Current portfolio stance', 'crypto.html#allocation', 'allocation', '配置'],
+        ['Browse Crypto', 'Return to the cockpit', 'crypto.html', 'dashboard', '浏览加密全部页面']
       ]
     },
     assets: {
       title: 'Other Assets',
+      titleZh: '其他资产',
       subtitle: 'Digital assets, commodities, currencies and fixed income.',
+      subtitleZh: '数字资产、大宗商品、货币与固定收益。',
       sections: [
         ['Digital assets', [
-          ['Crypto Intelligence', 'Market state, flows, leverage and asset lanes', 'crypto.html', 'crypto'],
-          ['Bitcoin Vector', 'Bitcoin state, risk and cycle evidence', 'vector.html', 'bitcoin', null, null, ''],
-          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy', null, null, 'cyan']
-        ]],
+          ['Crypto Intelligence', 'Market state, flows, leverage and asset lanes', 'crypto.html', 'crypto',
+            '加密情报', '市场状态、资金流、杠杆与资产分道'],
+          ['Bitcoin Vector', 'Bitcoin state, risk and cycle evidence', 'vector.html', 'bitcoin',
+            '比特币向量', '比特币状态、风险与周期实证', ''],
+          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy',
+            '策略战绩', '周期与配置的实证', 'cyan']
+        ], '数字资产'],
         ['Commodities', [
-          ['Commodity Dashboard', 'Gold, oil, copper and silver', 'commodities.html', 'commodity', null, null, ''],
-          ['Commodity Strategies', 'Tactical views by commodity', 'commodity_strategies.html', 'scanner', null, null, 'violet'],
-          ['Strategic Reserves', 'Global stockpiles versus oil', 'spr.html', 'reserves', null, null, 'cyan']
-        ]],
+          ['Commodity Dashboard', 'Gold, oil, copper and silver', 'commodities.html', 'commodity',
+            '商品仪表盘', '黄金、原油、铜与白银', ''],
+          ['Commodity Strategies', 'Tactical views by commodity', 'commodity_strategies.html', 'scanner',
+            '商品策略', '分品种的战术观点', 'violet'],
+          ['Strategic Reserves', 'Global stockpiles versus oil', 'spr.html', 'reserves',
+            '战略储备', '各国储备水平与油价对照', 'cyan']
+        ], '大宗商品'],
         ['Rates & FX', [
-          ['Forex', 'Dollar, carry and currency pairs', 'forex.html', 'forex'],
-          ['Bonds', 'Curve, credit and duration', 'bonds.html', 'bonds']
-        ]]
+          ['Forex', 'Dollar, carry and currency pairs', 'forex.html', 'forex',
+            '外汇', '美元、套息与货币对'],
+          ['Bonds', 'Curve, credit and duration', 'bonds.html', 'bonds',
+            '债券', '曲线、信用与久期']
+        ], '利率与外汇']
       ],
       railTitle: 'Quick access',
+      railTitleZh: '快速入口',
       rail: [
-        ['Gold', 'Precious metals context', 'commodities.html#gold', 'commodities'],
-        ['Crude oil', 'Energy market context', 'commodities.html#oil', 'commodities'],
-        ['Copper', 'Industrial metals context', 'commodities.html#copper', 'commodities'],
-        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'crypto'],
-        ['Browse other assets', 'All non-equity desks', 'commodities.html', 'dashboard']
+        ['Gold', 'Precious metals context', 'commodities.html#gold', 'commodities', '黄金'],
+        ['Crude oil', 'Energy market context', 'commodities.html#oil', 'commodities', '原油'],
+        ['Copper', 'Industrial metals context', 'commodities.html#copper', 'commodities', '铜'],
+        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'crypto', '比特币终端'],
+        ['Browse other assets', 'All non-equity desks', 'commodities.html', 'dashboard', '浏览其他资产']
       ],
-      note: ['Grouped by behavior', 'Related assets sit together without extra hover layers.']
+      note: ['Grouped by behavior', 'Related assets sit together without extra hover layers.'],
+      noteZh: ['按行为分组', '相关资产放在一起，不必再多一层悬停。']
     }
   };
 
@@ -474,20 +568,21 @@
         total++;
       }
       main += '<section class="mega-section nav-market-section"><div class="section-label nav-market-heading">' +
-        langText(section[0]) + '</div><div class="item-grid nav-market-grid">' + items + '</div></section>';
+        langText(section[0], section[2]) + '</div><div class="item-grid nav-market-grid">' + items + '</div></section>';
     }
     for (var k = 0; k < data.rail.length; k++) rail += destinationMarkup(data.rail[k], prefix, true);
     if (data.note) {
-      rail += '<div class="rail-note nav-market-note"><strong>' + langText(data.note[0]) +
-        '</strong><span>' + langText(data.note[1]) + '</span></div>';
+      var noteZh = data.noteZh || [];
+      rail += '<div class="rail-note nav-market-note"><strong>' + langText(data.note[0], noteZh[0]) +
+        '</strong><span>' + langText(data.note[1], noteZh[1]) + '</span></div>';
     }
     return '<div class="mega-main nav-market-main"><header class="menu-intro nav-market-intro">' +
-      '<div><h2 class="nav-market-name">' + langText(data.title) + '</h2>' +
-      '<p class="nav-market-subtitle">' + langText(data.subtitle) + '</p></div>' +
-      '<span class="menu-count nav-market-count">' + total +
-      ' destinations</span></header>' + main + '</div>' +
+      '<div><h2 class="nav-market-name">' + langText(data.title, data.titleZh) + '</h2>' +
+      '<p class="nav-market-subtitle">' + langText(data.subtitle, data.subtitleZh) + '</p></div>' +
+      '<span class="menu-count nav-market-count">' +
+      langText(total + ' destinations', total + ' 个入口') + '</span></header>' + main + '</div>' +
       '<aside class="mega-rail nav-market-rail"><div class="section-label nav-market-heading">' +
-      langText(data.railTitle || 'Explore') +
+      langText(data.railTitle || 'Explore', data.railTitleZh || '探索') +
       '</div>' + rail + '</aside>';
   }
 
@@ -597,13 +692,23 @@
       if (desc) desc.classList.add('item-desc');
 
       var file = fileOf(item);
-      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file] || ['dashboard', ''];
+      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file];
       var exactDescription = MOCKUP_RESEARCH_DESCRIPTION_BY_FILE[file];
       var englishDescription = desc && desc.querySelector('.l-en');
       if (exactDescription && englishDescription) {
         englishDescription.textContent = exactDescription;
       }
-      var oldIcon = item.querySelector('.nm-ic');
+      /* Cards this bridge does not know KEEP their server-rendered icon.
+         The old fallback substituted the default dashboard spec for every
+         unknown card, stomping each one with the same identical glyph —
+         measured live 2026-08-07: the adjacent Mastermind Portfolio and
+         Mastermind Bot cards (plus Filing Forensics and Stock Seasonality)
+         all rendered the same dashboard square, and the two Mastermind cards
+         read as one product listed twice. Every card added since the mockup
+         era already ships its real icon-drawing markup server-side, so
+         leaving it alone IS the exact normalisation; only files named in the
+         map are legacy shapes this bridge exists to rewrite. */
+      var oldIcon = iconSpec ? item.querySelector('.nm-ic') : null;
       if (oldIcon) {
         oldIcon.className = 'icon-drawing nm-ic ' + iconSpec[1];
         oldIcon.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +
@@ -628,9 +733,16 @@
 
     var drillTrigger = rail.querySelector(':scope > .nav-drill > .nav-drill-trigger');
     if (drillTrigger) {
-      var drillTitle = drillTrigger.querySelector('.nm-t');
+      // The label may arrive as an older page's `.nm-t`, or as the current
+      // template's bare bilingual <span>. Take whichever exists and keep its
+      // markup: the previous hardcoded 'Global Cycles' fallback fired on every
+      // current page (they have no .nm-t here) and replaced the l-en/l-zh pair
+      // with one English string, so this row shipped English in Chinese mode.
+      var drillTitle = drillTrigger.querySelector('.nm-t') ||
+        drillTrigger.querySelector(':scope > span:not(.nav-drill-arrow):not(.rail-arrow)');
       drillTrigger.classList.add('rail-link');
-      drillTrigger.innerHTML = '<span>' + (drillTitle ? drillTitle.innerHTML : 'Global Cycles') +
+      drillTrigger.innerHTML = '<span>' + (drillTitle ? drillTitle.innerHTML :
+        '<span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span>') +
         '</span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>';
     }
 
@@ -1167,6 +1279,10 @@
       dd.setAttribute('data-nm-bound', '1');
       trigger.addEventListener('click', function (e) {
         if (window.innerWidth > 900) return;
+        // Same yield as theme.js initMobileNav: a folded country's trigger is a
+        // drill, owned by the delegated [data-nav-drill-open] handler on
+        // `document`. stopPropagation() here would strand it closed on mobile.
+        if (trigger.hasAttribute('data-nav-drill-open')) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function (d) {

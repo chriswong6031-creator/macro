@@ -214,7 +214,10 @@ def test_armed_window_recompute(tmp_path):
     standouts_path = site_dir / "factordata" / "us_standouts.json"
     standouts_path.write_text(json.dumps({"as_of": "2024-03-15", "buy": [], "watch": []}))
 
-    ok = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    # Unpack the FULL 4-tuple exactly as scripts/oracle_nightly.py main() does. A
+    # single-name `ok = ...` here would pass against a bare-bool return and leave the
+    # production unpack unguarded — that gap is what let the 2026-08-04 TypeError ship.
+    ok, armed, panel_asof, all_dates = _step_turn_desk(data_dir, site_dir, dry_run=False)
     assert ok, "step should succeed with synthetic data"
 
     artifact = json.loads((site_dir / "basketdata" / "oracle_turn_desk.json").read_text())
@@ -255,7 +258,7 @@ def test_no_fires_quiet_payload(tmp_path):
         json.dumps({"as_of": "2024-03-15", "buy": [], "watch": []})
     )
 
-    ok = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    ok, armed, panel_asof, all_dates = _step_turn_desk(data_dir, site_dir, dry_run=False)
     assert ok
 
     artifact = json.loads((site_dir / "basketdata" / "oracle_turn_desk.json").read_text())
@@ -291,7 +294,7 @@ def test_member_fire_join(tmp_path):
     standouts = _make_standouts(it_sector, "NVDA", tier="T1", provisional=False)
     (site_dir / "factordata" / "us_standouts.json").write_text(json.dumps(standouts))
 
-    ok = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    ok, armed, panel_asof, all_dates = _step_turn_desk(data_dir, site_dir, dry_run=False)
     assert ok
 
     artifact = json.loads((site_dir / "basketdata" / "oracle_turn_desk.json").read_text())
@@ -332,7 +335,7 @@ def test_provisional_flag_carried(tmp_path):
     standouts = _make_standouts("Information Technology", "TEST", tier="T3", provisional=True)
     (site_dir / "factordata" / "us_standouts.json").write_text(json.dumps(standouts))
 
-    ok = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    ok, armed, panel_asof, all_dates = _step_turn_desk(data_dir, site_dir, dry_run=False)
     assert ok
 
     artifact = json.loads((site_dir / "basketdata" / "oracle_turn_desk.json").read_text())
@@ -372,7 +375,7 @@ def test_staleness_dual_asof(tmp_path):
         json.dumps({"as_of": stale_date, "buy": [], "watch": []})
     )
 
-    ok = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    ok, armed, panel_asof, all_dates = _step_turn_desk(data_dir, site_dir, dry_run=False)
     assert ok
 
     artifact = json.loads((site_dir / "basketdata" / "oracle_turn_desk.json").read_text())
@@ -408,8 +411,9 @@ def test_ledger_keep_first(tmp_path):
         json.dumps({"as_of": "2024-03-15", "buy": [], "watch": []})
     )
 
-    _step_turn_desk(data_dir, site_dir, dry_run=False)
-    _step_turn_desk(data_dir, site_dir, dry_run=False)  # second run same night
+    ok1, _a1, _p1, _d1 = _step_turn_desk(data_dir, site_dir, dry_run=False)
+    ok2, _a2, _p2, _d2 = _step_turn_desk(data_dir, site_dir, dry_run=False)  # same night
+    assert ok1 and ok2
 
     ledger_path = data_dir / "oracle" / "turn_desk_ledger.jsonl"
     if ledger_path.exists():
@@ -544,3 +548,168 @@ def test_template_smoke():
     # unearned claim from a backed one) and runs in CI as the `validated-claims`
     # step, so duplicating it with a blunter rule here would only produce false
     # reds on the merged surface.
+
+
+# ---------------------------------------------------------------------------
+# Test J: missing-input skip returns the caller's shape (2026-08-04 regression)
+# ---------------------------------------------------------------------------
+#
+# Nightly run 30960328285 (engine job): _step_turn_desk printed
+#   "::error::oracle_nightly: turn_desk — panel_s.parquet missing, skipping"
+# and then the pipeline died anyway with
+#   TypeError: cannot unpack non-iterable bool object
+# at scripts/oracle_nightly.py main(), because the skip branch returned a bare
+# `False` while main() unpacks four names. The disclosed skip was real; the SKIP
+# was not. Steps 16-19 (reversion promotion scan, qual filter stamps, tape
+# outcomes, tape onset) never ran that night as a result.
+#
+# These tests pin BOTH halves: the skip is disclosed AND it is survivable.
+
+def _bare_dirs(tmp_path):
+    """data/site trees with the oracle dir present but no panel/episodes parquet."""
+    data_dir = tmp_path / "data"
+    site_dir = tmp_path / "site"
+    (data_dir / "oracle").mkdir(parents=True)
+    (site_dir / "basketdata").mkdir(parents=True)
+    (site_dir / "factordata").mkdir(parents=True)
+    return data_dir, site_dir
+
+
+@pytest.mark.parametrize("present", ["none", "panel_only"])
+def test_missing_input_skips_without_exception(tmp_path, capsys, present):
+    """Missing panel_s/episodes_s → disclosed skip, 4-tuple, NO exception."""
+    from scripts.oracle_nightly import _step_turn_desk
+
+    data_dir, site_dir = _bare_dirs(tmp_path)
+    if present == "panel_only":
+        # panel exists, episodes absent -> exercises the SECOND skip branch
+        _make_panel(["XLK"], n_days=30).to_parquet(
+            data_dir / "oracle" / "panel_s.parquet")
+        expected_missing = "episodes_s.parquet"
+    else:
+        expected_missing = "panel_s.parquet"
+
+    # The load-bearing assertion is the unpack itself: this line is the exact
+    # shape scripts/oracle_nightly.py main() uses. A bare-bool return raises
+    # TypeError HERE, which is the production failure reproduced in-suite.
+    ok, armed, panel_asof, all_dates = _step_turn_desk(
+        data_dir, site_dir, dry_run=False)
+
+    assert ok is False, "a missing input must report failure, not success"
+    assert armed == [], "a skipped step must not hand Step 17 any armed windows"
+    assert panel_asof == ""
+    assert all_dates == []
+
+    # Disclosed, not silent — and via a line-START annotation (house law: the
+    # bare print, never a prefixing logger, or GitHub drops it).
+    out = capsys.readouterr().out
+    ann = [ln for ln in out.splitlines() if ln.startswith("::error::")]
+    assert any(expected_missing in ln and "skipping" in ln for ln in ann), (
+        f"skip not disclosed as a line-start ::error:: annotation; got {ann!r}")
+
+    # A skipped step writes no artifact — it must not leave a half-built payload.
+    assert not (site_dir / "basketdata" / "oracle_turn_desk.json").exists()
+
+
+def test_turn_desk_skip_survives_the_real_caller(tmp_path, capsys):
+    """The main() call site itself must survive a missing panel.
+
+    Tests J above pin the function. This pins the SEAM: it re-executes the real
+    unpack + the real downstream consumers (`if not td_ok` and the Step 17
+    forward of armed/panel_asof/all_dates) against the skip return, so a future
+    arity change on either side is caught rather than shipping to the nightly.
+    """
+    import ast
+
+    from scripts import oracle_nightly
+    from scripts.oracle_nightly import _step_turn_desk
+
+    data_dir, site_dir = _bare_dirs(tmp_path)
+    result = _step_turn_desk(data_dir, site_dir, dry_run=False)
+
+    src = ast.parse(Path(oracle_nightly.__file__).read_text())
+    main_fn = next(n for n in ast.walk(src)
+                   if isinstance(n, ast.FunctionDef) and n.name == "main")
+    unpacks = [
+        n.targets[0] for n in ast.walk(main_fn)
+        if isinstance(n, ast.Assign)
+        and isinstance(n.targets[0], ast.Tuple)
+        and isinstance(n.value, ast.Call)
+        and getattr(n.value.func, "id", None) == "_step_turn_desk"
+    ]
+    assert len(unpacks) == 1, (
+        f"expected exactly one _step_turn_desk unpack in main(), found {len(unpacks)}")
+    arity = len(unpacks[0].elts)
+
+    # The skip return must satisfy the caller's arity — this is the assertion the
+    # nightly needed and did not have.
+    assert isinstance(result, tuple) and len(result) == arity, (
+        f"main() unpacks {arity} names but the skip path returned "
+        f"{type(result).__name__} of length "
+        f"{len(result) if isinstance(result, tuple) else 'n/a'}")
+
+    # Downstream consumers must tolerate the skip values, not just the unpack.
+    td_ok, td_armed, td_panel_asof, td_all_dates = result
+    assert not td_ok
+    for value, expected in ((td_armed, list), (td_panel_asof, str),
+                            (td_all_dates, list)):
+        assert isinstance(value, expected), (
+            f"Step 17 receives {value!r}; expected {expected.__name__}")
+
+
+def test_every_turn_desk_return_matches_the_caller_arity():
+    """STRUCTURAL guard: no branch of _step_turn_desk may return a bare bool.
+
+    Fixture tests can only reach the branches a fixture can provoke — the
+    banned-key sweep's refusal path (the third bare-`False` in the 2026-08-04
+    defect) is not reachable from synthetic data, so a behavioural test alone
+    would leave it unguarded and a re-introduced bare bool would ship green.
+    This walks the AST instead and holds EVERY return in the function (excluding
+    its nested helper closures, which are legitimately bool-typed) to the arity
+    main() unpacks.
+    """
+    import ast
+
+    from scripts import oracle_nightly
+
+    src = ast.parse(Path(oracle_nightly.__file__).read_text())
+
+    main_fn = next(n for n in ast.walk(src)
+                   if isinstance(n, ast.FunctionDef) and n.name == "main")
+    arity = next(
+        len(n.targets[0].elts) for n in ast.walk(main_fn)
+        if isinstance(n, ast.Assign)
+        and isinstance(n.targets[0], ast.Tuple)
+        and isinstance(n.value, ast.Call)
+        and getattr(n.value.func, "id", None) == "_step_turn_desk"
+    )
+
+    fn = next(n for n in ast.walk(src)
+              if isinstance(n, ast.FunctionDef) and n.name == "_step_turn_desk")
+
+    # Returns owned by nested defs/lambdas belong to those closures, not to the step.
+    nested_ids = set()
+    for node in ast.walk(fn):
+        if node is fn and not isinstance(node, ast.Lambda):
+            continue
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            nested_ids.update(id(sub) for sub in ast.walk(node))
+
+    offenders = []
+    seen = 0
+    for node in ast.walk(fn):
+        if not isinstance(node, ast.Return) or id(node) in nested_ids:
+            continue
+        seen += 1
+        value = node.value
+        if not isinstance(value, ast.Tuple) or len(value.elts) != arity:
+            rendered = "None" if value is None else ast.unparse(value)
+            offenders.append(f"line {node.lineno}: return {rendered}")
+
+    assert seen >= 5, (
+        f"only {seen} _step_turn_desk returns found — the walk lost branches, "
+        "so this guard would pass vacuously")
+    assert not offenders, (
+        f"_step_turn_desk must return a {arity}-tuple on EVERY path "
+        f"(main() unpacks {arity} names); offending returns:\n  "
+        + "\n  ".join(offenders))

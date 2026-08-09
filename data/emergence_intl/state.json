@@ -1,32 +1,32 @@
 {
-  "2fecf493557e": {
+  "62047a0c2e48": {
+    "name_en": "Cross-sector cluster \u00b7 Communication + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Real Estate",
+    "score": 53.1
+  },
+  "6d1b3c0c93b2": {
+    "name_en": "Emerging Consumer Staples cluster",
+    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
+    "score": 44.8
+  },
+  "9cf48c142dc5": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Materials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Materials",
-    "score": 56.1
+    "score": 60.6
   },
-  "3e7462242031": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Staples + Communication",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Staples + Communication",
-    "score": 63.1
+  "aeb0eb3df3e7": {
+    "name_en": "Emerging Consumer Discretionary cluster",
+    "name_zh": "\u65b0\u5174 Consumer Discretionary \u96c6\u7fa4",
+    "score": 47.9
   },
-  "5fcb553bd85c": {
-    "name_en": "Cross-sector cluster \u00b7 Communication + Information Technology",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Information Technology",
-    "score": 58.0
+  "b55c430c900a": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Financials",
+    "score": 66.6
   },
-  "5ff792fec3fb": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 52.3
-  },
-  "9cfb0028680d": {
-    "name_en": "Cross-sector cluster \u00b7 Communication + Consumer Discretionary",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Consumer Discretionary",
-    "score": 63.2
-  },
-  "df20df47af73": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 53.9
+  "e340c833aa78": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
+    "score": 61.7
   }
 }

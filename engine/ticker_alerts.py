@@ -393,14 +393,35 @@ def ladder_row(asset: str, ladder: dict | None, asof: str | None) -> dict | None
             "action": ladder.get("action") or "", "label": ladder.get("label") or "",
             "urgency": (ladder.get("entry") or {}).get("urgency") or "",
             "score": int(ladder.get("score") or 0), "dir": ladder.get("dir") or "neutral",
-            "asof": str(asof or "")}
+            "asof": str(asof or ""),
+            # era fence (R-CY5, research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md):
+            # rows logged before the absolute session anchor carry no era (null column);
+            # the batch writer uses the mismatch to suppress pure re-key duplicates at
+            # the one-time cutover. Never backfilled onto pre-era rows.
+            "anchor_era": ladder.get("anchor_era") or ""}
+
+
+#: R-CY5 boundary tolerance: a candidate row whose (asset, state) already has a row
+#: within this many calendar days UNDER A DIFFERENT anchor era is a re-keyed image of
+#: the same standing signal (the walk-back date moved with the grid), not a new
+#: transition. Same-era near-duplicates are genuine whipsaws and always append.
+ERA_REKEY_TOL_DAYS = 4
 
 
 def write_ladder_log_batch(rows: list[dict]) -> int:
     """Idempotently append many ladder rows in ONE read-modify-write so a full
     build touches the shared log once, not per-ticker. Dedup key =
     (asset, signal_date, state). Atomic (temp + os.replace) so a concurrent build
-    never reads a half-written file. Returns the number of new rows added."""
+    never reads a half-written file. Returns the number of new rows added.
+
+    ERA SEAM (R-CY5, research/CYCLES_SESSION_ANCHOR_ADJUDICATION_BY_FABLE.md): when the
+    bucketing era changes, a name's UNCHANGED standing state can re-key — the walk-back
+    `signal_date` moves 1-3 sessions with the grid — and the dedup key would mint a
+    duplicate "Signal: X" card days apart. A row whose (asset, state) already has a row
+    within ERA_REKEY_TOL_DAYS under a DIFFERENT era (null = pre-era) is therefore
+    skipped, counted, and logged — never a silent continue. After the one-time cutover
+    every stored row carries the era and the guard is dormant. Pre-era rows are never
+    edited (the emitter-fix-cannot-heal-logged-rows law)."""
     rows = [r for r in rows if r]
     if not rows:
         return 0
@@ -411,15 +432,37 @@ def write_ladder_log_batch(rows: list[dict]) -> int:
     except Exception:  # noqa: BLE001 — a corrupt log must never break the build
         old = pd.DataFrame()
     seen: set[tuple] = set()
+    near: dict[tuple, list[tuple]] = {}      # (asset, state) -> [(signal_date, era)]
     if not old.empty:
         seen = set(zip(old["asset"], old["signal_date"].astype(str), old["state"]))
-    fresh, batch_seen = [], set()
+        eras = (old["anchor_era"].fillna("").astype(str) if "anchor_era" in old.columns
+                else pd.Series("", index=old.index))
+        for a, d, s, e in zip(old["asset"], old["signal_date"].astype(str),
+                              old["state"], eras):
+            near.setdefault((a, s), []).append((d, e))
+    fresh, batch_seen, era_rekey_skips = [], set(), 0
     for r in rows:
         k = (r["asset"], str(r["signal_date"]), r["state"])
         if k in seen or k in batch_seen:
             continue
+        r_era = str(r.get("anchor_era") or "")
+        r_date = pd.to_datetime(str(r["signal_date"]), errors="coerce")
+        if pd.notna(r_date):
+            rekey = False
+            for d, e in near.get((r["asset"], r["state"]), ()):
+                dd = pd.to_datetime(d, errors="coerce")
+                if (pd.notna(dd) and abs((r_date - dd).days) <= ERA_REKEY_TOL_DAYS
+                        and e != r_era):
+                    rekey = True
+                    break
+            if rekey:
+                era_rekey_skips += 1
+                continue
         batch_seen.add(k)
         fresh.append(r)
+    if era_rekey_skips:
+        log.info("ladder log: %d era re-key duplicate(s) skipped (R-CY5 seam guard, "
+                 "tol %dd)", era_rekey_skips, ERA_REKEY_TOL_DAYS)
     if not fresh:
         return 0
     new = pd.concat([old, pd.DataFrame(fresh)], ignore_index=True)

@@ -348,6 +348,58 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ui.zh_filing_term
+    summary: >
+      申报 must never appear in user-facing Chinese copy. A native reader hears a
+      TAX or CUSTOMS declaration (申报纳税, 海关申报) — a self-report filed under
+      legal compulsion — where the platform means a market DISCLOSURE: an SEC
+      10-K, a 13F, a congressional STOCK Act report is a 披露. Scans templates/
+      line by line plus the string literals of engine/ and scripts/ builders, so
+      a wrong label is caught at its source rather than a nightly render later.
+      Swept by hand twice before the gate existed (PR #4830 Filing Forensics,
+      PR #4855 site-wide).
+    source_ref:
+      - scripts/check_zh_filing_term.py
+      - "PR #4855"
+      - "PR #4830"
+    severity: hard
+    check_script: scripts/check_zh_filing_term.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: zh-filing-term
+        lane: pr_ci
+    selftest: true
+    allowlist: config/zh_filing_term_allowlist.json
+    ratchet:
+      date: "2026-09-07"
+      action: >-
+        Drop the three `pending` entries in config/zh_filing_term_allowlist.json
+        (templates/index.html behind PR #4765; templates/fundamental_forensics.js
+        and .html.j2 behind PR #4830) once those PRs land. The guard prints a
+        ::notice the moment a pending file's count falls below its frozen budget,
+        so the cleanup announces itself; this clock catches the case where the
+        PRs are abandoned and the exemptions quietly become permanent.
+    known_limits:
+      - Python COMMENTS and DOCSTRINGS are skipped by construction — developer
+        documentation is never rendered, and without the skip, writing the law
+        down ("use 披露, never 申报") would break the law wherever it is recorded.
+      - Rendered site/ is NOT scanned. A hit there always originates in templates/
+        or a builder, both of which are; scanning the render output would red main
+        on a stale artifact no PR author can fix by hand.
+      - data/ is NOT scanned. Exchange announcements collected upstream use 申报
+        as an order-entry term of art; the platform does not author that text.
+      - The `pending` ratchet is per-FILE, not per-phrase, so while an in-flight
+        PR owns a file the guard only caps its count — it cannot tell a swapped
+        occurrence from an original one.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Allowlist entries are phrase-scoped AND file-scoped: an occurrence is exempt
+      only inside a licensed phrase's span in a licensed file. The two live
+      exemptions are the genuine other senses — 申报失业金 (filing for unemployment
+      benefits, engine/release_quirks.py) and 买入申报 (SSE/HKEX order-entry term in
+      the hk-connect scraper's title filter). Narrowness is pinned by --selftest and
+      by tests/test_zh_filing_term.py::test_allowlist_is_file_scoped.
+
   - law_id: ui.template_site_sync
     summary: >
       Every plain-copy page asset (a non-.j2 file directly under templates/ that
@@ -1335,6 +1387,80 @@ checks:
       gate prevents the engine lane from persisting fresh-looking canonical
       state off a calendar-stale store — and self-heals the daily lane.
 
+  - law_id: data.ohlc_basis_coherence
+    summary: >
+      The breadth OHLC caches must share ONE yfinance adjustment basis:
+      data/<ns>/_closes_cache, _high_cache and _low_cache are written from the
+      same download, and where all three are present the bar must satisfy
+      low <= close <= high. yfinance auto_adjust back-adjusts ONLY the window it
+      downloads, so a split or large dividend re-bases the fresh 1mo window while
+      the cached history keeps the old basis. Both repair paths
+      (BreadthAdapter._merge_refreshed and scripts/heal_breadth_split_seams.py)
+      run seam_suspects over the CLOSES matrix ALONE and rewrite the extras only
+      as a side effect of a closes-flagged ticker — so a basis split confined to
+      high/low is invisible to every scanner in the tree (2026-08-06 incident:
+      REZI close/high 1.29-1.44 on 773 of 773 bars, 989 bad bars across 37
+      tickers, zero alarms). Close-only consumers are unaffected, which is what
+      makes it silent; ATR's TR = max(H-L, |H-C_prev|, |L-C_prev|) is dominated
+      by the basis gap and blows up for build_pick_lab, calibrate_bottom_radar
+      and residual_momentum_phase0.
+    source_ref:
+      - scripts/check_ohlc_basis_coherence.py
+      - collectors/breadth.py
+      - scripts/heal_breadth_split_seams.py
+      - "2026-08-06 split-basis incident (memory: high-low-panel-can-split-basis-from-the-closes-panel)"
+    severity: warn
+    check_script: scripts/check_ohlc_basis_coherence.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: collect
+        lane: scheduled
+      - workflow: .github/ci/legacy-jobs.yml
+        job: ohlc-basis-coherence
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Two tiers by design. Only a SPLIT is fatal — worst excess >= 10% of the
+        bar's own range, or >= 20% of a ticker's overlapping bars with at least 5
+        of them. Isolated bad bars (yfinance ex-dividend rounding; 17 such bars
+        across the three US panels at 2026-08-06, worst 2.5%) annotate as
+        ::warning and never gate. A basis drift that is BOTH under 10% and
+        confined to fewer than a fifth of a ticker's bars is reported as noise,
+        not caught — the alternative is a guard that reds every night on a
+        permanent data-quality floor.
+      - Coverage is deliberately NOT asserted. The extras stores are
+        forward-accruing (collectors/breadth.py "the store grows forward from
+        first collection"), so high/low legitimately carry a fraction of the
+        closes history — a median 55 bars against 777 at 2026-08-06. A ticker
+        whose high/low are entirely absent is therefore invisible here; that is a
+        coverage question, owned by the extras store's own accrual, not a basis
+        question.
+      - The verdict over live data belongs to the daily lane, not the PR pack.
+        The nightly collection pushes straight to main, so no PR gate can see the
+        commit that introduces a split; the pack lane tests the guard (synthetic
+        frames) plus a reader-level pin over the committed caches, and asserts no
+        verdict on them (they advance nightly — asserting one asserts about today).
+      - continue-on-error in daily.yml by design (a data finding must never
+        discard hours of collected bytes). The teeth are the ::error annotation
+        and data/quality/ohlc_basis_coherence.json, committed by "commit market
+        data" in the same job.
+      - Panel discovery is by filesystem shape (any data/<ns>/ holding all three
+        caches), so a namespace that never ships an extras store is silently out
+        of scope rather than reported missing. Today that is every non-US breadth
+        universe plus russell_breadth.
+    owner_program: breadth-collector
+    notes: >
+      The guard closes a hole exactly the shape of the two repair paths: both
+      scan closes and heal extras only in that scan's shadow. Two concrete ways a
+      split survives them — _merge_refreshed's extras graft is filtered by
+      `t in w.columns` against the FRESH window (a ticker healed in closes but
+      absent from that batch's High keeps poisoned extras, with no warning because
+      the closes half succeeded), and heal_breadth_split_seams.heal reindexes the
+      re-pull onto the EXISTING ex.index, so it can pair a healed closes column
+      with extras it never touched.
+
   - law_id: ops.surface_freshness
     summary: >
       First-class display surfaces (allocation, baskets, oracle_state,
@@ -1377,6 +1503,72 @@ checks:
       unbundled from the alerts try/except (candidate structural cause) and the
       wrapper now annotates failures; this sentinel catches whatever class of
       freeze comes next, on every surface it audits.
+
+  - law_id: ops.tushare_plane_freshness
+    summary: >
+      The token-gated Tushare stores (flow_hist, moneyflow) must not be able to
+      go cold without anyone being told. collectors/tushare_client.py returns
+      None and never raises for every failure mode it has (no token, endpoint
+      error, access denied, credits short, empty response); its callers omit the
+      leg rather than write a fabricated zero; and asia-close's collect step is
+      explicitly "graceful degradation — never fails on one source". The union
+      of those three individually correct decisions is that the entire Tushare
+      plane can die with every signal staying green: the workflow succeeds, the
+      page rebuilds on schedule, and it prints a three-week-old as-of date in
+      exactly the same confident type as a live one (2026-07-24→08-06 incident:
+      data/tushare/flow_hist.parquet and moneyflow.parquet both froze at
+      2026-07-24 and were still rendered on flow_velocity.html on 2026-08-06 —
+      thirteen days — while china_lhb, filled by the SAME adapter list in the
+      SAME run, stayed current). The tripwire compares each store's newest trade
+      date against the exchange calendar's expected last session — deliberately
+      NOT against the store's own newest row or a sibling store, because a
+      frozen feed is perfectly self-consistent and reads "fresh" during a total
+      outage, while the calendar keeps advancing whether or not the collector
+      ever runs again.
+    source_ref:
+      - scripts/check_tushare_freshness.py
+      - collectors/tushare_client.py
+      - lib/hk_calendar.py
+      - tests/test_tushare_freshness_tripwire.py
+      - "PR #4811 (guard shipped)"
+      - "2026-07-24→08-06 freeze (flow_hist/moneyflow stale 13 days behind flow_velocity.html)"
+    severity: warn
+    check_script: scripts/check_tushare_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        There is no mainland A-share calendar in lib/, so HKEX is used as the
+        closest proxy; it shares most holidays but diverges on mainland-only
+        closures — Golden Week (Oct 1-7) most notably, where HKEX trades and
+        Shanghai does not — and can therefore warn benignly for a few days each
+        October. Priced in on purpose, since this emits a warning and never a
+        failure: a benign October warning is a much cheaper error than silently
+        serving stale flow data for a fortnight.
+      - >-
+        Audits only the two token-gated stores it names
+        (tushare/flow_hist.parquet, tushare/moneyflow.parquet); other stores the
+        same adapter list fills (e.g. china_lhb) are not covered by this check.
+      - >-
+        The threshold is 3 sessions behind — sized to absorb a long weekend plus
+        one public holiday and the lane's own once-a-day gate — so a fresh
+        freeze stays silent for its first three sessions by design.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Permanently advisory (the script always exits 0), not ratcheted to hard:
+      one cold gated source must not red an asia-close collection that landed
+      every other store. The teeth are the "::warning title=tushare plane cold"
+      annotation, which names the frozen store AND the collector that fills it,
+      plus the membership/积分 tier hint for the usual cause. Wired AFTER
+      `python -m scripts.collect --group asia` inside the same job so it grades
+      this run's stores rather than the previous night's — that ordering is
+      pinned by tests/test_tushare_freshness_tripwire.py, as is the line-start
+      flushed annotation shape.
 
   - law_id: ops.workflow_yaml_parses
     summary: >
@@ -1451,6 +1643,18 @@ checks:
         scripts/audit_unrun_tests.py owns that class, and wiring every unrun suite
         would blow the ci-pack budget.
       - >-
+        Scope was `tests/` only until 2026-08-06 (#4693), which made this gate and
+        both censuses blind to research/-resident guard suites — the ones most
+        likely to be dark, because a packet fenced to files-only writes its suite
+        next to the instrument. Discovery is now the whole tree via
+        scripts/audit_unrun_tests.discover_suites().
+      - >-
+        A test_-shaped FILENAME is not a suite: three files under research/ are CLI
+        measurement instruments that collect zero tests. Classification reads the
+        AST for what pytest would collect rather than trusting the name, so those
+        are excluded — reporting them would make the census noise, which is the
+        failure mode these guards exist to end.
+      - >-
         Transitive dependency closure (PACKAGE_REQUIRES) is a hand-maintained
         table of hard runtime deps. Under-declaring costs a false red;
         over-declaring costs a missed skip-only suite. It is deliberately
@@ -1461,6 +1665,82 @@ checks:
       same job. Its first run surfaced four pre-existing skip-only suites
       (test_marketing_content, test_marketing_live_verify, test_publish_r2,
       test_research_vault), all repaired in the PR that added the guard.
+
+  - law_id: ops.ci_trigger_closure
+    summary: >
+      A guarded suite's TRIGGER PATHS must reach every module the suite measures.
+      The fourth darkness class, and the reverse direction of every census beside
+      it: audit_unrun_tests.py asks "can ANY edit start this job" — an any() over
+      the closure, satisfied by the test file itself — so a suite stays
+      "triggerable" while the ONE module it exists to guard is matched by no
+      `on.pull_request.paths` entry. An edit to exactly that module then ships
+      without ever running its own guard. The check is static: discover the
+      PR-gated workflows (a workflow with no `paths:` covers everything it runs
+      unconditionally; one WITH `paths:` governs both its own `run:` steps and any
+      job manifest it hands a runner, which is how the packed legacy jobs inherit
+      ci.yml's single filter), resolve each named suite's direct first-party reads
+      (imports, import_module literals, repo-relative path literals, ROOT/"a"/"b.py"
+      joins), and fail when a resolved module is reachable by no gate that runs it.
+    source_ref:
+      - scripts/check_ci_trigger_closure.py
+      - tests/test_ci_trigger_closure.py
+      - "PR #4649 (guard shipped)"
+      - "PR #3488 (a guard whose own edit cannot start the workflow is half wired)"
+      - "PR #4559 (fixture-only heal — same class)"
+      - "PR #4733 (false positive, healed the wrong way — see allowlist)"
+    severity: hard
+    check_script: scripts/check_ci_trigger_closure.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: "inline (`# ci-trigger-closure: data` comment at the fixture site)"
+    ratchet: null
+    known_limits:
+      - >-
+        A path literal is evidence of a read, not proof of one. A suite whose
+        SUBJECT MATTER is path filtering (merge-on-green, ci-trigger, paths-filter)
+        carries file NAMES as fixture data, so the heuristic and the domain collide
+        by construction. #4733 healed one such finding by adding two `research/**`
+        artifacts to ci.yml's paths — encoding a dependency that does not exist and
+        arming the full 4-pack run on every edit to two decision-packet files. The
+        author-declared `# ci-trigger-closure: data` marker is the sanctioned form;
+        it covers the line it sits on when that line carries a path literal, and
+        otherwise the statement it opens or the one directly below. It reaches only
+        literals and joins — an import is a read no comment can excuse — and every
+        suppression is counted in the summary and named by `--report`. Inference was
+        prototyped and rejected: "a literal that never reaches an open/read_text/Path
+        call is data" drops 787 of 3,824 subjects across 132 suites, including
+        PRESS_MUST_RESTART's 15 real ones (reached through @pytest.mark.parametrize).
+      - >-
+        The gate is DIRECT reads only (depth 1). `--depth N` widens the report to
+        transitive reads and is deliberately NOT gated: past depth 1 the
+        path-literal heuristic starts resolving placeholder strings out of
+        docstrings, and a guard that cries wolf gets ignored — which is the exact
+        failure mode this file exists to end.
+      - >-
+        Reachability is decided under GitHub's `paths` glob semantics (exact,
+        fnmatch, `prefix/**` subtree). A path expression GitHub accepts but this
+        resolver models differently would be judged on the model, not the runner.
+      - >-
+        Suites that NO job names are UNRUN, not trigger gaps —
+        scripts/audit_unrun_tests.py owns that class.
+      - >-
+        Scope was tests/ only until 2026-08-06 (#4693) — a suite wired from
+        research/ was invisible to this gate even once wired. Suites now come from
+        audit_unrun_tests.discover_suites() and run-step tokens resolve against
+        that inventory, so a test_-shaped CLI instrument named by a run: step is
+        not gated as a suite.
+    owner_program: null
+    notes: >
+      Registered by the 2026-08-06 base heal. The guard shipped wired in #4649
+      (workflow-yaml, beside its two sibling censuses) but was never added to this
+      registry, so the meta-guard's CENSUS pass hard-failed ci-pack-2 on main and
+      on every open PR head — the same shape as the flow_continuity.statement_tape
+      entry below, which was registered by a post-hoc census fix for the same
+      reason. Belongs to the darkness-census family with ops.no_skip_only_suites
+      and ops.workflow_yaml_parses in the same job.
 
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 

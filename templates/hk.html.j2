@@ -444,6 +444,16 @@
   .pbv-why { flex: 1 1 100%; font-size: 10.5px; line-height: 1.5;
              color: color-mix(in srgb, var(--muted) 70%, var(--text)); }
   .pbv-mk { color: var(--muted); font-variant-numeric: tabular-nums; opacity: .85; flex: none; }
+  /* the population line. It reads BEFORE the rows on purpose: the twelve figures
+     below are the top of a ranked-then-truncated distribution, and a reader who
+     meets them first has already formed the wrong impression by the time any
+     footnote arrives. Muted and small — it frames the rows, it is not a headline. */
+     At --muted it sat 8px under the subtitle at the same weight and colour and read
+     as a fourth clause of it; the ink is the same 70/30 mix .pbv-why uses, which is
+     enough to make it a statement of its own without turning it into a headline. */
+  .pbv-pop { margin: 7px 0 1px; font-size: 10.5px; line-height: 1.55;
+             color: color-mix(in srgb, var(--muted) 70%, var(--text));
+             font-variant-numeric: tabular-nums; }
   /* a row whose stance differs from the section's says so; when every row agrees,
      the constant is printed ONCE in the section line and nowhere else */
   .pbv-st { font-size: 10.5px; font-weight: 700; color: var(--muted); flex: none; }
@@ -1431,6 +1441,14 @@
   [data-theme="light"] body.page-hk .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
   [data-theme="light"] body.page-hk .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-hk .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+  /* The needle itself, which the three rules above cannot reach: `> text` stops at the
+     needle <g>, and `g[stroke]` matches only the tick group (it carries a stroke
+     ATTRIBUTE; the needle group does not). So the pointer kept its dark-mode ink and
+     went white-on-white on the light card — the dial rendered as an arc with no reading
+     on it. Identical twin rule on body.page-macro / .page-china / .page-canada. */
+  [data-theme="light"] body.page-hk #mx5-gauge-needle line{stroke:rgba(10,16,24,.20);}
+  [data-theme="light"] body.page-hk #mx5-gauge-needle polygon{fill:rgba(10,16,24,.82);}
+  [data-theme="light"] body.page-hk #mx5-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
   /* CSS wins over SVG presentation attr → arc + numeral recolour by state (var() resolves here) */
   body.page-hk #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
   /* The big score beside the gauge already states the number; the in-arc numeral +
@@ -3545,6 +3563,12 @@
   {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
   {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
   {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
+  {# Ripening shelf (CN W8-R1 port, 2026-08-07): non-eligible names whose weekly
+     setups are live. Fail-soft — pre-shelf artifacts carry no `ripening` key and
+     render exactly as before. #}
+  {%- set _hk_rip = (setups.get('ripening') or []) if _hsg.any else [] -%}
+  {%- set _hk_rip_ready  = (_hk_rip | selectattr('zone', 'equalto', 'READY')  | list) if _hk_rip else [] -%}
+  {%- set _hk_rip_basing = (_hk_rip | selectattr('zone', 'equalto', 'BASING') | list) if _hk_rip else [] -%}
   {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
   {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
   {# ── STANCE, PRINTED ONCE ──────────────────────────────────────────────────
@@ -3677,6 +3701,10 @@
        of what its own filter reveals would be the defect this counts-from-rendered
        -rows rule exists to prevent. #}
     {%- set _ = _sc.update({'blocked': _sc['blocked'] + (_hk_veto|length)}) -%}
+    {# the ripening shelf lives INSIDE the setting-up bucket, by the same rule: it
+       is the "not there yet — get ready" story, so the Setting up chip counts it
+       and filtering to Setting up reveals the shelf with the setting-up cards. #}
+    {%- set _ = _sc.update({'setting_up': _sc['setting_up'] + (_hk_rip|length)}) -%}
   {%- endif -%}
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
@@ -3714,7 +3742,7 @@
          HK's table-mode toggle hides it with the grid it filters. #}
     {% if _hsg.any %}
     <div class="pbf-bar" id="hk-stage-filter" role="group" aria-label="Filter the board by entry stage">
-      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _hkb|length + _hk_ran|length + _hk_veto|length }}</span></button>
+      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _hkb|length + _hk_ran|length + _hk_veto|length + _hk_rip|length }}</span></button>
       {%- for _sk in _stage_order %}{% if _sc[_sk] %}
       <button type="button" data-stagepick="{{ _sk }}" aria-pressed="false" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span><span class="pbf-n">{{ _sc[_sk] }}</span></button>
       {% endif %}{% endfor %}
@@ -3796,10 +3824,15 @@
       {% if _blm %}{% set _fl.rows = _fl.rows + [(_blm[0], _blm[1])] %}
       {% else %}{% set _fl.rows = _fl.rows + [('An entry check is holding this name out' ~ ((' — ' ~ _blr) if _blr else '') ~ '.', '一项入场检查正把该股挡在外面' ~ ((' —— ' ~ _blr) if _blr else '') ~ '。')] %}{% endif %}
       {% endif %}
-      {% set _ctx_en = ((' — ' ~ n.lead.en) if n.lead else '') ~ ((' · cheap H vs its A twin' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · mainland Connect adding' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
-      {% set _ctx_zh = ((' — ' ~ n.lead.zh) if n.lead else '') ~ ((' · H 较 A 股便宜' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · 南向资金加仓' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
+      {# The verb-chip tooltip is gone (operator 2026-08-03) and is not reintroduced. Its
+         verdict + headline half restated the verb chip and the zone footer, which is the
+         removal the operator asked for. Its context half did not: `cheap H vs its A twin`
+         and `mainland Connect adding` are the two HK-SPECIFIC facts this board exists to
+         show, and neither appears anywhere else on the card. Both are favourable evidence,
+         so neither belongs in the ⚠ "Before you act" popover — they move to the marks row
+         below, alongside the leader-cohort chip that already carries context of this exact
+         kind. `n.lead` is NOT rehomed: like the Canada lead sentence it joins a driver and
+         an entry cue the card already prints in its sector line, verb chip and zone footer. #}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
       {# ── MARKS ROW — three categorically different facts in descending weight:
@@ -3831,15 +3864,36 @@
         {% if _isnew %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
           'tip_en':'This signal fired in the last two sessions — the name was not on the board before that.',
           'tip_zh':'该信号在最近两个交易日内触发 —— 在此之前不在榜上。'}] %}{% endif %}
-        {# The `theme_confirmed` variant of this chip went with the ran lane's (see
-           there): the HK cohort organ ships no per-name turn, so only the plain
-           membership form was ever reachable. This is the form. #}
-        {% if _hth and _hth.get('name') %}{% set _mk.rows = _mk.rows + [{'k':'theme',
-          'en': _hth.name,
-          'zh': (_hth.get('name_zh') or _hth.name),
-          'tip_en':'This name sits in the large-cap leader group we track separately. Context only — membership earns the card no points and changes nothing in the ranking on this board.',
-          'tip_zh':'该股属于我们单独跟踪的大市值龙头组合。仅供参考 —— 归属不为卡片加分，也不改变本榜排名。'}] %}{% endif %}
       {% endif %}
+      {# ── HK-SPECIFIC EVIDENCE — outside the `_hsg.any` gate, and ABOVE the leader-cohort
+         chip, both on purpose (2026-08-05).
+         Outside the gate: the chips above are RANKING facts that only exist on a staged
+         artifact, while these two are market facts stamped on every artifact version. After
+         the verb-chip tooltip was removed they have no other home on the card, and gating a
+         sole surface on an artifact flag is how a fact goes dark.
+         Above the leader chip: the row is capped at three, so the emit order decides what
+         survives on a busy card. These are per-NAME facts about price and flow; the leader
+         chip is cohort MEMBERSHIP, and its own tip says it "earns the card no points and
+         changes nothing in the ranking". When something has to go, membership goes first.
+         The cap itself is unchanged, so no card gets denser than it is today.
+         Plain words on Tier 1 — "Cheap vs A-share" beats the internal "A/H discount", and
+         "Mainland buying" beats "southbound accum_z ≥ 0.6" (doctrine Law 2). The z-score
+         threshold is a receipt and stays on Tier 2. #}
+      {% if n.ah_value and n.ah_value.cheap %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Cheap vs A-share','zh':'较A股便宜',
+        'tip_en':'This Hong Kong line trades at a discount to the same company’s mainland A-share. A valuation gap, not a catalyst — it can stay wide for years and earns the card no points here.',
+        'tip_zh':'该港股相对同一公司的内地A股折价交易。这是估值差，不是催化剂 —— 可以长期存在，也不为本卡加分。'}] %}{% endif %}
+      {% if n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6 %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Mainland buying','zh':'南向资金加仓',
+        'tip_en':'Mainland money has been accumulating this name through the Connect scheme faster than its own recent norm. Flow context for the setup, never a reason on its own.',
+        'tip_zh':'内地资金经港股通渠道买入该股的力度高于其近期常态。仅为资金面背景，本身不构成理由。'}] %}{% endif %}
+      {# The `theme_confirmed` variant of this chip went with the ran lane's (see there): the
+         HK cohort organ ships no per-name turn, so only the plain membership form was ever
+         reachable. This is the form. `_hth` is already None unless `_hsg.any`, so it
+         self-gates and needs no wrapping if-block. #}
+      {% if _hth and _hth.get('name') %}{% set _mk.rows = _mk.rows + [{'k':'theme',
+        'en': _hth.name,
+        'zh': (_hth.get('name_zh') or _hth.name),
+        'tip_en':'This name sits in the large-cap leader group we track separately. Context only — membership earns the card no points and changes nothing in the ranking on this board.',
+        'tip_zh':'该股属于我们单独跟踪的大市值龙头组合。仅供参考 —— 归属不为卡片加分，也不改变本榜排名。'}] %}{% endif %}
       {# Priority in the Edge slot. A row without prophet.score keeps today's
          conviction-percentile "Edge" display exactly as-is — label, value and tooltip
          fall back together, so a mixed artifact never shows a Priority label over an
@@ -3859,7 +3913,7 @@
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
         'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+        'verb': _verb,
         'edge': (('%.0f'|format(_prs)) if _prs is not none
                  else (c.score if (c and c.score is not none) else none)),
         'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
@@ -3877,12 +3931,131 @@
         'date': (n.get('signal') or {}).get('asof') or setups.get('as_of'),
         'flags': _fl.rows,
         'featured': _feat, 'stage_key': (n.get('stage') if _hsg.any else none),
-        'marks': (_mk.rows if _hsg.any else none)
+        'marks': (_mk.rows[:3] if (_hsg.any or _mk.rows) else none)
       }) }}
       {% endif %}{# /not a heading #}
     {% endfor %}
     </div>
     </div>{# /nb-grid-section #}
+    {# ═══ RIPENING SHELF (CN W8-R1 port, 2026-08-07) — the bench between crosses.
+         Measured 2026-08-06: 158 names, THREE cascade-eligible, a two-card board —
+         and no shelf for "the setup is forming; get ready", which is exactly what
+         China Prophet ships as its ripening shelf. Same engine (setup_tier zones),
+         same theme.css card system (.rip-*), same watch-words law: NOT entry
+         signals, no BUY-family language anywhere inside.
+         It lives INSIDE the setting-up bucket (data-stage="setting_up"), so the
+         Setting up chip counts it and filtering reveals it with the setting-up
+         cards — the vetoed-inside-blocked precedent.
+         Fail-soft: no `ripening` array (every pre-shelf artifact) → nothing renders. #}
+    {% macro _hk_rip_card(r, ready) %}
+        {%- set _r_ticker = r.get('ticker','') -%}
+        {%- set _r_hist = r.get('macd_hist_d') -%}
+        {%- set _r_slope = r.get('macd_hist_slope', 0) -%}
+        {%- set _r_stoch = r.get('w2_stoch') -%}
+        {%- set _r_arrow = r.get('w2_stoch_arrow', 0) -%}
+        {%- set _r_bars = r.get('w1_cross_bars_since') -%}
+        {%- set _r_d = r.get('w1_d_at_cross') -%}
+        {%- set _r_diw = r.get('days_in_washout') -%}
+        {%- set _r_rng = r.get('spot_pct_in_range') -%}
+        {%- set _r_ret = r.get('ret_5d') -%}
+        {%- set _r_price = r.get('price') -%}
+        {%- set _r_imm = r.get('imminence') -%}
+        {%- set _r_nm = r.get('name') if (r.get('name') and r.get('name') != _r_ticker) else none -%}
+        <a href="hk_lookup.html#{{ _r_ticker }}" class="rip-card" style="text-decoration:none;color:inherit{% if not ready %};opacity:.88{% endif %}">
+          <div class="rip-card-stripe"></div>
+          <div class="rip-card-body">
+            <div class="rip-card-id">
+              <div>
+                <div class="rip-card-tk">{{ _r_ticker }}</div>
+                {% if _r_nm %}<div class="rip-card-nm">{{ t(_r_nm, r.get('name_zh') or _r_nm) }}</div>{% endif %}
+                {% if r.get('sector') %}<div class="rip-card-sec">{{ t(r.get('sector'), r.get('sector_zh') or r.get('sector')) }}</div>{% endif %}
+              </div>
+              {% if _r_price is not none %}
+              <div style="text-align:right">
+                <div class="rip-card-px">{{ '%.2f'|format(_r_price) }}</div>
+                {% if _r_ret is not none %}<div style="font-size:10px;color:{{ 'var(--up)' if _r_ret >= 0 else 'var(--down)' }}">{{ '%+.1f'|format(_r_ret * 100) }}%</div>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
+            <div class="rip-metrics">
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
+                <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
+                <div class="rip-metric-val {% if ready and _r_stoch is not none and _r_stoch <= 20 %}pos{% else %}mut{% endif %}">
+                  {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
+                  {% if _r_arrow == 1 %}<span class="rip-arrow up">↑</span>{% elif _r_arrow == -1 %}<span class="rip-arrow dn">↓</span>{% else %}<span class="rip-arrow fl">→</span>{% endif %}
+                </div>
+              </div>
+              <div class="rip-metric" data-tip-en="Daily momentum — the daily MACD histogram. Above zero = short-term momentum has turned up; the small arrow is its recent slope." data-tip-zh="日线动能 — 日MACD柱。高于零＝短线动能转正；小箭头为近期斜率。">
+                <div class="rip-metric-lbl"><span class="l-en">Daily momentum</span><span class="l-zh">日线动能</span></div>
+                <div class="rip-metric-val {% if _r_hist is not none and _r_hist >= 0 %}pos{% elif _r_hist is not none %}neg{% endif %}">
+                  {% if _r_hist is not none %}{{ '%+.3f'|format(_r_hist) }}{% else %}—{% endif %}
+                  {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
+                </div>
+              </div>
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
+                <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
+                <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="Where the price sits inside its 2-year range — 0% = at the low, 100% = at the high." data-tip-zh="价格在两年区间中的位置 — 0%＝区间底部，100%＝区间顶部。">
+                <div class="rip-metric-lbl"><span class="l-en">Range position</span><span class="l-zh">区间位置</span></div>
+                <div class="rip-metric-val mut">{% if _r_rng is not none %}{{ '%.0f'|format(_r_rng) }}%{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="How many trading days this name has spent in the washout zone so far." data-tip-zh="该股迄今处于洗盘（超卖）状态的交易日数。">
+                <div class="rip-metric-lbl"><span class="l-en">Days in washout</span><span class="l-zh">超卖天数</span></div>
+                <div class="rip-metric-val mut">{% if _r_diw %}~{{ _r_diw }}d{% else %}—{% endif %}</div>
+              </div>
+              <div class="rip-metric" data-tip-en="Time to turn — estimated weeks until the 2-week MACD crosses upward at its current pace (the ripening clock). An estimate, not a promise." data-tip-zh="距转向 — 按当前速度估算双周MACD上穿还需的周数（成熟时钟）。仅为估算，非承诺。">
+                <div class="rip-metric-lbl"><span class="l-en">Time to turn</span><span class="l-zh">距转向</span></div>
+                <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+            {# Evidence chips — plain words at rest, engine receipt demoted to hover (doctrine Law 2) #}
+            <div class="rip-chips">
+              {% set _evd = r.get('evidence_display') or [] %}
+              {% for ev in _evd %}
+                <span class="rip-chip {{ 'cp-ready' if ready else 'cp-neutral' }}" data-tip-en="Technical: {{ ev.get('receipt','') }}" data-tip-zh="技术依据：{{ ev.get('receipt','') }}"><span class="l-en">{{ ev.get('en','') }}</span><span class="l-zh">{{ ev.get('zh') or ev.get('en','') }}</span></span>
+              {% endfor %}
+              {% if _r_bars is not none and '1W cross' not in ((r.get('evidence') or []) | join(' ')) %}
+                <span class="rip-chip cp-cross"><span class="l-en">weekly gauge crossed up {% if _r_bars == 0 %}this week{% elif _r_bars == 1 %}1 wk ago{% else %}{{ _r_bars }} wks ago{% endif %}</span><span class="l-zh">周线{% if _r_bars == 0 %}本周{% else %}{{ _r_bars }}周前{% endif %}上穿</span></span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+    {% endmacro %}
+    {% if _hsg.any and _hk_rip %}
+    <div class="rip-shelf" data-stage="setting_up" style="margin-top:16px">
+      <div class="rip-shelf-hdr">
+        <span class="rip-shelf-title"><span class="l-en">RIPENING SHELF</span><span class="l-zh">筑底观察区</span></span>
+        <span class="rip-shelf-sub"><span class="l-en">setup forming — NOT an entry signal. Watch, don’t chase.</span><span class="l-zh">形态形成中 — 非入场信号。观察，勿追高。</span></span>
+        {% if setups.get('as_of') %}<span class="rip-shelf-asof"><span class="l-en">as of {{ setups.get('as_of','') }}</span><span class="l-zh">截至 {{ setups.get('as_of','') }}</span></span>{% endif %}
+      </div>
+      {% if _hk_rip_ready %}
+      <div class="rip-zone rz-ready">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">READY</span><span class="l-zh">共振形成中</span></span>
+          <span class="rip-zone-count">{{ _hk_rip_ready|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">confluence forming — nearest to entry</span><span class="l-zh">接近入场条件</span></span>
+        </div>
+        <div class="rip-grid">
+        {% for r in _hk_rip_ready %}{{ _hk_rip_card(r, true) }}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if _hk_rip_basing %}
+      <div class="rip-zone rz-basing">
+        <div class="rip-zone-hdr">
+          <span class="rip-zone-label"><span class="l-en">BASING</span><span class="l-zh">筑底中</span></span>
+          <span class="rip-zone-count">{{ _hk_rip_basing|length }}</span>
+          <span class="rip-zone-defn"><span class="l-en">washout in progress — waiting for a turn</span><span class="l-zh">超卖持续中 — 等待转向信号</span></span>
+        </div>
+        <div class="rip-grid">
+        {% for r in _hk_rip_basing %}{{ _hk_rip_card(r, false) }}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
     {# ═══ RAN LANE — names whose signal fired several sessions ago with the trend
          still intact. Before this a name VANISHED the day its cross went stale, so
          the leader cohort could run for weeks with nothing on the board to show for
@@ -3939,12 +4112,21 @@
           {% if _rnm %}<span class="pbr-nm">{{ t(_rnm, r.get('name_zh') or _rnm) }}</span>{% endif %}
           {% if _rth and _rth.get('name') %}<span class="pv-mk-i pv-mk-theme"{% if _rth.get('state_en') %} data-tip-en="{{ _rth.state_en }} — a display-only read of the mega-cap leader group. Context for why this name moved; it earns no rank on the board above." data-tip-zh="{{ _rth.get('state_zh') or _rth.state_en }} —— 对大市值龙头组合的仅供展示读数。用于解释该股为何异动；不为上方榜单加分。"{% endif %}>{{ t(_rth.name, _rth.get('name_zh') or _rth.name) }}</span>{% endif %}
           <span class="pbr-m"{% if _rapx %} data-tip-en="≈ means the exact date this signal fired was not recorded for this name, so the age is counted back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股信号触发的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
-            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since this signal fired could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自信号触发以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
-            <span class="l-en">since signal{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
+            {#- Same anchor law as the vetoed lane below, and it was the same measured
+                defect: this figure used to start at the signal date, which sits at the
+                low that created the signal and precedes the check's verdict by about
+                eight sessions. It now starts at the close the check finished on, and
+                the label says which. The AGE beside it is still the signal's own. -#}
+            {% set _rmf = r.get('measured_from') or '' %}
+            {#- fail closed on the ANCHOR, exactly as the vetoed lane below does: a
+                pre-2026-08-03 artifact's marker-anchored figure must not render under
+                a label that promises the confirmation close. -#}
+            {%- if r.get('pct_since') is not none and r.get('anchor') == 'confirm' %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move could not be measured for this name — either its price history is incomplete, or the signal is still inside the few days the entry check needs before it can decide." data-tip-zh="该股的涨跌幅无法计算 —— 或是价格历史不完整，或是该信号仍处在入场检查作出判断所需的那几天之内。">—</span> {% endif -%}
+            <span class="l-en" data-tip-en="{% if _rmf %}The signal fired on {{ r.get('cross_date') or '' }}, but the entry check reads the next few days of price before it can decide. It finished on {{ _rmf }}, and the move above is measured from that day's close — so it leaves out the rise that only hindsight could have caught.{% else %}Measured from the close at which the entry check could first reach its verdict, not from the signal date — the signal date sits at the low that created the signal.{% endif %}">since the check finished{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
             {# the figure span is language-agnostic and comes FIRST in the DOM, so the
-               Chinese qualifier trails it. Parenthesised, because a bare 信号后 after
-               a number reads as an unfinished clause. #}
-            <span class="l-zh">（信号后）{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
+               Chinese qualifier trails it. Parenthesised, because a bare 检查完成后
+               after a number reads as an unfinished clause. #}
+            <span class="l-zh" data-tip-zh="{% if _rmf %}信号于 {{ r.get('cross_date') or '' }} 触发，但入场检查需要再读几天的价格才能作出判断，到 {{ _rmf }} 才完成。上面的涨跌幅从当天收盘价起算 —— 因此不包含只有事后回看才能抓到的那段涨幅。{% else %}从入场检查首次能作出判断的收盘价起算，而非从信号日起算 —— 信号日正处在造就该信号的低点上。{% endif %}">（检查完成后）{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
           </span>
         </a>
       {% endfor %}
@@ -3981,6 +4163,24 @@
         <span class="pbr-n">{{ _hk_veto|length }}</span>
       </div>
       <div class="pbr-s">{{ t('A buy signal fired on each of these and the entry check refused it. This is what happened next — the section exists to keep the board honest, not to hand you a list to buy.', '这些个股都曾触发买入信号，但被入场检查拒绝。这里记录门控拒绝后的走势，用于自我审视 —— 不是一份可买清单。') }}{% if _vet_st %} <span class="l-en">Stance: {{ _vet_st[0] }}.</span><span class="l-zh">立场：{{ _vet_st[1] or _vet_st[0] }}。</span>{% endif %}</div>
+      {# ── THE POPULATION BEHIND THE ROWS ──────────────────────────────────────
+           This lane RANKS BY THE MOVE and then truncates, so what survives is the
+           winning tail of the very number it prints. Twelve big green figures with
+           nothing behind them read as a P&L claim the lane never made. The count and
+           the middle move of the WHOLE refused set are the cheapest possible cure,
+           and `population_measured` is the median's own denominator — medianing the
+           measurable rows while printing the full count would quietly drop the
+           disclosed nulls out of the base. Fail-soft: pre-population artifacts carry
+           none of these keys and the line simply does not render. #}
+      {%- set _vpop = _hk_veto[0].get('population') if _hk_veto else none -%}
+      {%- set _vmeas = _hk_veto[0].get('population_measured') if _hk_veto else none -%}
+      {%- set _vmed = _hk_veto[0].get('population_median_pct') if _hk_veto else none -%}
+      {% if _vpop and _vmed is not none %}
+      <div class="pbv-pop">
+        <span class="l-en">{% if _hk_veto|length < _vpop %}Showing the {{ _hk_veto|length }} biggest movers of {{ _vpop }} refused signals. {% else %}{{ _vpop }} refused signals in this window. {% endif %}Across {% if _vmeas and _vmeas < _vpop %}the {{ _vmeas }} we can measure{% else %}all {{ _vpop }}{% endif %}, the middle move is {{ '%+.1f'|format(_vmed) }}%.</span>
+        <span class="l-zh">{% if _hk_veto|length < _vpop %}显示 {{ _vpop }} 个被拒信号中涨幅最大的 {{ _hk_veto|length }} 个。{% else %}本窗口共 {{ _vpop }} 个被拒信号。{% endif %}{% if _vmeas and _vmeas < _vpop %}在可计算的 {{ _vmeas }} 个中{% else %}全部 {{ _vpop }} 个的{% endif %}中位涨跌幅为 {{ '%+.1f'|format(_vmed) }}%。</span>
+      </div>
+      {% endif %}
       <div class="pbr-l">
       {% for r in _hk_veto_o %}
         {% set _vth = r.get('leadership') or r.get('theme') %}
@@ -3988,6 +4188,10 @@
         {% set _vsn = r.get('sessions_since') %}
         {% set _vapx = r.get('anchor') == 'approx' %}
         {% set _vd = r.get('signal_date') or '' %}
+        {# the close the MOVE is measured from — the marker's confirmation day, which
+           is days after the marker itself. Absent on a null-move row, and on every
+           artifact written before the anchor was fixed. #}
+        {% set _vmf = r.get('measured_from') or '' %}
         {% set _vdt = (_VMN.get(_vd[5:7], _vd[5:7]) ~ ' ' ~ (_vd[8:10]|int)) if _vd|length >= 10 else '' %}
         <a class="pbr-r pbr-veto" href="hk_lookup.html#{{ r.get('ticker','') }}">
           <span class="pbr-tk">{{ r.get('ticker','') }}</span>
@@ -4001,8 +4205,21 @@
              all agree the sentence lives once, in the section line above. #}
           {% if not _vet_st and r.get('stance') %}<span class="pbv-st">{{ t(r.stance, r.get('stance_zh') or r.stance) }}</span>{% endif %}
           <span class="pbr-m"{% if _vapx %} data-tip-en="≈ means the exact date of the blocking marker was not recorded for this name, so the count is worked back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股受阻标记的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
-            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since the blocking marker could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自受阻标记以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
-            <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+            {#- The move is measured from the close at which the entry check could
+                first reach its verdict, NOT from the signal date: the signal date sits
+                at the low that created the signal and the check reads several more
+                days of price before it can decide, so measuring from it hands this
+                lane a rise nobody could have caught. The label has to say so, or the
+                figure silently answers a question the reader did not ask. -#}
+            {#- FAIL CLOSED ON THE ANCHOR, not just on the value. Every artifact
+                written before 2026-08-03 carries a marker-anchored `pct_since` and no
+                `anchor: confirm`, and the nightly that regenerates it can be a day
+                behind this template. Rendering those figures under the label below
+                would put the old overstatement inside a sentence promising the new
+                anchor — a worse lie than the one being fixed. A missing number beats
+                a wrong one, which is this lane's own standing rule. -#}
+            {%- if r.get('pct_since') is not none and r.get('anchor') == 'confirm' %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move could not be measured for this name — either its price history is incomplete, or the block is still inside the few days the entry check needs before it can decide." data-tip-zh="该股的涨跌幅无法计算 —— 或是价格历史不完整，或是该受阻信号仍处在入场检查作出判断所需的那几天之内。">—</span> {% endif -%}
+            <span class="l-en" data-tip-en="{% if _vmf %}The signal fired on {{ _vd }}, but the entry check reads the next few days of price before it can decide. It finished on {{ _vmf }}, and the move above is measured from that day's close — so it leaves out the rise that only hindsight could have caught.{% else %}Measured from the close at which the entry check could first reach its verdict, not from the signal date — the signal date sits at the low that created the signal.{% endif %}" data-tip-zh="{% if _vmf %}信号于 {{ _vd }} 触发，但入场检查需要再读几天的价格才能作出判断，到 {{ _vmf }} 才完成。上面的涨跌幅从当天收盘价起算 —— 因此不包含只有事后回看才能抓到的那段涨幅。{% else %}从入场检查首次能作出判断的收盘价起算，而非从信号日起算 —— 信号日正处在造就该信号的低点上。{% endif %}">since the check finished</span><span class="l-zh">（检查完成后）</span>
           </span>
           <span class="pbv-why">
             <span class="l-en">{{ r.get('blocked_reason_en') or 'The entry gate refused this signal' }}{% if _vdt %} · blocked on a {{ _vdt }} marker{% if _vsn is not none %}, {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}{% elif _vsn is not none %} · blocked {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}</span>

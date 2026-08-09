@@ -1,13 +1,16 @@
 """Stooq free daily-close fallback for US names the primary feed (Yahoo) refuses.
 
-Yahoo intermittently 404s a symbol the rest of the site still keys on, because
-the two sides disagree about which symbol is current — observed for Fiserv, whose
-series Yahoo still serves under the pre-2023 FISV rather than FI. A vendor 404 on
-a live large-cap is a RENAME until disproven, not a vendor outage: Marsh McLennan
-404'd here under MMC for 7 months because MMC had been retired (NYSE symbol change
-to MRSH, 2026-01-14) while this repo kept MMC as the key. Names that 404 never
-reach data/yahoo and silently drop out of the searchable stock library. Stooq's
-free daily CSV covers US listings and fills those gaps.
+Yahoo 404s specific *live* large-caps whose vendor symbol has drifted from the one
+this repo stores them under — observed Marsh & McLennan and Fiserv — so they never
+reach data/yahoo and silently drop out of the searchable stock library. Stooq's free
+daily CSV covers US listings and fills those gaps.
+
+Those two names are now handled at the source by lib/ticker_aliases (fetch under the
+vendor symbol, store under the config ticker), which is the deterministic fix; this
+stays as the generic net for the NEXT such drift. Note the two are opposite cases and
+neither is a "garbled" symbol: Fiserv renamed FISV->FI in 2023 and Yahoo still serves
+the OLD symbol, while Marsh McLennan renamed MMC->MRSH on 2026-01-14 (a real NYSE
+symbol change) and Yahoo serves the NEW one.
 
 IP-GATED: Stooq HTML-blocks some IPs (it returns the site page instead of the
 CSV); then this returns None and the caller keeps whatever it had. It is reachable

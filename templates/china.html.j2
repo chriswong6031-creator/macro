@@ -1255,6 +1255,15 @@
   [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
   [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+  /* The needle itself, which the three rules above cannot reach: `> text` stops at the
+     needle <g>, and `g[stroke]` matches only the tick group (it carries a stroke
+     ATTRIBUTE; the needle group does not). So the pointer kept its dark-mode ink and
+     went white-on-white on the light .cnx-card — the dial rendered as an arc with no
+     reading on it. The hub ring / core / tip already paint from --up/--warn/--down and
+     stay as they are. Identical twin rule on body.page-macro. */
+  [data-theme="light"] body.page-china .cnx-gauge-needle line{stroke:rgba(10,16,24,.20);}
+  [data-theme="light"] body.page-china .cnx-gauge-needle polygon{fill:rgba(10,16,24,.82);}
+  [data-theme="light"] body.page-china .cnx-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
   /* Regime pill (sizes to content, never clips) */
   body.page-china .mx5-regime-pill{
     display:inline-flex;align-items:center;gap:6px;
@@ -1499,6 +1508,30 @@
 
 <div class="grid">
 
+  {# ── Delayed-board disclosure ────────────────────────────────────────────────
+     The CN twin of the US board's staleness banner (templates/dashboard.html.j2,
+     `_su.staleness.delayed`). Engine-driven: scripts/build_china_library.py's
+     compute_board_staleness() decides `delayed` from the CSI300 settled-session anchor
+     against lib/cn_calendar, so this never renders on a healthy bake — weekends and
+     mainland holidays included.
+
+     Deliberately OUTSIDE the mode split. china.html (macro) is the surface
+     scripts/freshness_sentinel.py watches, and it renders no setups board; a disclosure
+     nested in the stocks-only block would leave the watched page silent during exactly the
+     freeze it exists to announce. Both pages read the same prices, so both disclose.
+
+     The English "prices as of YYYY-MM-DD" wording is load-bearing, not decorative — it is the
+     string the sentinel parses to measure the board's self-reported lag against the china
+     delay budget. Keep that phrase in the l-en span if this copy is ever revised.
+     Fail-soft: absent key or delayed=False renders nothing. Bilingual via l-en/l-zh spans;
+     no translated text in attributes (check_title_i18n). #}
+  {% set _cn_stale = board_staleness if board_staleness is defined else none %}
+  {% if _cn_stale and _cn_stale.get('delayed') and _cn_stale.get('price_through') %}
+  <div class="panel span12" style="border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel));padding:9px 13px;font-size:12px;line-height:1.55">
+    <span class="l-en"><strong>⚠ BOARD DELAYED</strong> — prices as of {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %} ({{ _cn_stale.get('age_days') }}d behind){% endif %}. Data is stale; {{ 'entry signals' if mode == 'stocks' else 'readings on this page' }} may not reflect latest prices. Check a live quote before acting.</span><span class="l-zh"><strong>⚠ 数据延迟</strong> — 价格截至 {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %}（落后 {{ _cn_stale.get('age_days') }} 天）{% endif %}。当前数据过期，{{ '入场信号' if mode == 'stocks' else '本页读数' }}可能不反映最新价格，操作前请确认最新报价。</span>
+  </div>
+  {% endif %}
+
   {% if mode == 'stocks' %}
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   {# Header geometry is the SHARED stock-board head — identical partial the US
@@ -1507,15 +1540,20 @@
      boards move together. #}
   {% include "_stocks_header_css.html.j2" %}
   <div class="panel span12" id="stocks-header">
-    {# Freshness pill — the CN analogue of the US board's staleness chip. There is
-       no CN exchange calendar in lib/, so this claims NO session-count verdict:
-       the degrade is driven only by facts the board already publishes — a partial
-       collection session (setups.coverage.partial_session) or the W0.7 coverage
-       outage flag (setups.data_outage.flag) — and the stamped date is the board's
-       own settled-session anchor (coverage.data_through = CSI300 last bar). #}
+    {# Freshness pill — the CN analogue of the US board's staleness chip. It now DOES carry a
+       session-count verdict: lib/cn_calendar.py supplies the A-share session calendar this
+       comment used to say was missing, and build_china_library.compute_board_staleness turns
+       it into board_staleness.delayed. Three degrade sources, most severe first: a delayed
+       board (>= 2 sessions behind, or past the calendar-day backstop), a partial collection
+       session (setups.coverage.partial_session), or the W0.7 coverage outage flag
+       (setups.data_outage.flag). The stamped date stays the board's own settled-session
+       anchor (coverage.data_through = CSI300 last bar).
+       The `delayed` leg is what keeps this pill from reading "Fresh" directly above the
+       delayed-board banner at the top of the grid — one page, one verdict. #}
     {% set _cn_cov = setups.coverage if (setups and setups.coverage is defined) else none %}
     {% set _cn_outage = (setups.get('data_outage') or {}) if setups else {} %}
-    {% set _cn_degraded = (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
+    {% set _cn_delayed = _cn_stale.get('delayed') if _cn_stale else false %}
+    {% set _cn_degraded = _cn_delayed or (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
     {% set _cn_through = (_cn_cov.data_through if _cn_cov else none) or (setups.as_of if setups else none) or latest.date %}
     <div class="stk-headline">
       <h1>🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
@@ -1523,7 +1561,7 @@
       <div class="stk-head-meta">
         <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}">
           <span class="stk-fresh-dot" aria-hidden="true"></span>
-          <span class="l-en">{{ 'Partial data' if _cn_degraded else 'Fresh' }}</span><span class="l-zh">{{ '数据不全' if _cn_degraded else '新鲜' }}</span>
+          <span class="l-en">{{ 'Delayed' if _cn_delayed else ('Partial data' if _cn_degraded else 'Fresh') }}</span><span class="l-zh">{{ '数据延迟' if _cn_delayed else ('数据不全' if _cn_degraded else '新鲜') }}</span>
           {% if _cn_through %}<strong>{{ _cn_through }}</strong>{% endif %}
         </span>
       {# Regime + Posture header pills, aligned with the US stock dashboard #}
@@ -3201,7 +3239,13 @@
     {% set _do = setups.get('data_outage') %}
     {% if _do and _do.get('flag') %}
     <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--down)">
-      ⚠ <b><span class="l-en">data coverage degraded — board incomplete today</span><span class="l-zh">数据覆盖下降 — 今日看板不完整</span></b>
+      {# The W0.7 headline is the DEFAULT, not the only one: it describes a board that
+         is genuinely partial (buy-count collapsed past the drop threshold). A path that
+         publishes NO board — the Prophet outage shell — overrides it, because saying
+         "data coverage degraded" there names a data problem that does not exist. That
+         exact sentence sent the 2026-08-06 investigation after the China feed while the
+         real cause was a renderer refusing a complete board. #}
+      ⚠ <b><span class="l-en">{{ _do.get('headline', 'data coverage degraded — board incomplete today') }}</span><span class="l-zh">{{ _do.get('headline_zh', '数据覆盖下降 — 今日看板不完整') }}</span></b>
       <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">{{ _do.get('reason_zh', _do.get('reason','')) }}</span></span>
     </div>
     {% endif %}
@@ -3354,10 +3398,15 @@
          name is here BECAUSE it fell hardest, and that is the same reason it can keep
          falling. Same fact, same 10 score points, honest framing. #}
       {% if _pc.get('reversal_member') %}{% set _fl.rows = _fl.rows + [('Among the deepest 3-month fallers in its sector — that is the setup here, and it is also the risk.', '属于行业内3个月跌幅最深的一批 — 这既是本形态的来源，也是它的风险。')] %}{% endif %}
-      {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
+      {# The verb-chip tooltip that used to carry `verdict · headline · washout/coiled` is
+         GONE (operator, 2026-08-03) and is not coming back — see _prophet_card.html.j2.
+         What the operator killed was the PROSE: the verdict restates the verb chip, the
+         headline restates the zone footer. The context suffix was never prose, though —
+         `washed out (2W)` is a base-shape fact with no other home, so it moves DOWN to the
+         marks row below (chip = plain words, receipt = the chip's own tip). `coiled` is
+         deliberately NOT rehomed: it is banned Tier-1 vocabulary (DESIGN_DOCTRINE §7 row
+         12) and true of 98 of 105 rows on the 2026-07-31 artifact — a constant, not a
+         signal. Only its discriminating form (`star` → "Selling easing") gets a chip. #}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('active' if _verb in ('buy','near') else 'muted') if (_bz and _bz.high is not none) else 'confirm' %}
       {# ── MARKS ROW (G0.2 parity with the US board) ────────────────────────────
@@ -3401,17 +3450,34 @@
         {%- if _dss is number and _dss <= 2 %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
           'tip_en':'The signal fired within the last two sessions — a fresh turn, not an old one still sitting on the board.',
           'tip_zh':'该信号在最近两个交易日内触发 — 属于新转向，而非仍挂在榜上的旧信号。'}] %}{% endif %}
-        {# Base shape. "Coiled" itself is on the doctrine's banned Tier-1 list (§7 row 12)
-           and it is true of 98 of 105 rows anyway — a constant, not a signal. Only the
-           two DISCRIMINATING forms get a chip, in plain words. #}
-        {%- set _cld = n.get('coiled') or {} %}
-        {%- if _cld.get('star') %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Selling easing','zh':'抛压减弱',
-          'tip_en':'The whole sector sold off together and this name\'s decline is losing force — the strongest base shape this board tracks. Context for the setup, never a reason on its own.',
-          'tip_zh':'整个板块同步下跌，而该股跌势正在减弱 — 本榜追踪的最强底部形态。仅为形态背景，本身不构成理由。'}] %}
-        {% elif n.washout_2w %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
-          'tip_en':'Two weeks of heavy selling have already run their course here. Context for the setup, never a reason on its own.',
-          'tip_zh':'过去两周的重挫已基本释放。仅为形态背景，本身不构成理由。'}] %}{% endif %}
       {%- endif %}
+      {# Base shape — OUTSIDE the _cn_v2 gate on purpose (2026-08-05). "Coiled" itself is on
+         the doctrine's banned Tier-1 list (§7 row 12) and is true of 98 of 105 rows anyway —
+         a constant, not a signal. Only the two DISCRIMINATING forms get a chip, in plain
+         words. This block used to sit INSIDE the v2 gate, which was right when the row only
+         duplicated the verb-chip tooltip; now that the tooltip is gone the chip is the
+         washout fact's ONLY home, and washout_2w is stamped on every artifact version, not
+         just v2. Gating a sole surface on an artifact flag is how a fact goes dark.
+         The two branches stay mutually exclusive (the taxonomy slice is the discipline —
+         see the emit-order note above), but "Selling easing" is the STRONGER reading of the
+         same base, so a star row folds the washout receipt into its own tip rather than
+         dropping it. Tier 1 gets the plain words; the "(2W)" window is a receipt and lives
+         on Tier 2, where the doctrine puts precision (Law 3). #}
+      {%- set _cld = n.get('coiled') or {} %}
+      {%- set _wo_en = ' Two weeks of heavy selling have already run their course here — washed out (2W).' if n.washout_2w else '' %}
+      {%- set _wo_zh = '过去两周的重挫已基本释放（2周洗盘）。' if n.washout_2w else '' %}
+      {%- if _cld.get('star') %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Selling easing','zh':'抛压减弱',
+        'tip_en':'The whole sector sold off together and this name\'s decline is losing force — the strongest base shape this board tracks.' ~ _wo_en ~ ' Context for the setup, never a reason on its own.',
+        'tip_zh':'整个板块同步下跌，而该股跌势正在减弱 — 本榜追踪的最强底部形态。' ~ _wo_zh ~ '仅为形态背景，本身不构成理由。'}] %}
+      {% elif n.washout_2w %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
+        'tip_en':'Two weeks of heavy selling have already run their course here — washed out (2W). Context for the setup, never a reason on its own.',
+        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅为形态背景，本身不构成理由。'}] %}{% endif %}
+      {# A v2 artifact always RESERVES the slot (so the tracker and zone rows stay aligned
+         across a grid row — macro law); a pre-v2 artifact renders no row at all UNLESS it
+         earned a base-shape chip, in which case it gets exactly that one. A pre-v2 row with
+         nothing to mark still passes `none`, so its render stays byte-identical to the
+         pre-merge output. #}
+      {%- set _mk_slot = (_mk.rows[:2] if (_cn_v2 or _mk.rows) else none) %}
       {# Priority is shown as a WHOLE number (Law 3 — precision belongs on Tier 2, and the
          US board already formats %.0f). Unrounded, the slot printed "82.37" on every card;
          across 111 of them the column read as noise, and two decimals claim a precision a
@@ -3426,8 +3492,8 @@
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
-        'featured': _is_feat, 'marks': (_mk.rows[:2] if _cn_v2 else none),
+        'verb': _verb,
+        'featured': _is_feat, 'marks': _mk_slot,
         'edge': _edge_txt,
         'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
         'edge_tip_en': 'China Prophet priority 0–100 — signal 35% · entry 25% · runway 20% · bottom quality 10% · reversal-sleeve membership 10%. Transparent readiness rank; not a win probability or return forecast.',
@@ -3458,24 +3524,76 @@
       {# ═══ PROPHET CARD — RAN / LATE shelf (W1-C rule 2 kept: signal live, entry passed;
          honesty display, no BUY-family language — verb is WAIT, zone slot carries the
          "entry passed" note, stage sits at Trend). F6 muted_entry (gauge open but extended)
-         folds into the same WAIT verb with its own tooltip line. #}
+         folds into the same WAIT verb.
+
+         THIS SHELF'S ZONE FOOTER IS A CONSTANT — every card prints "Entry passed — wait for
+         the pullback; do not chase". That is correct (Law 4: a constant belongs in one place)
+         but it means the footer can carry NO per-name information, so when the verb-chip
+         tooltip was removed on 2026-08-03 the per-name entry read lost its only surface: the
+         shelf could no longer tell a name the gauge still rates Hold from one it has stopped
+         rating at all. The read now lands on the marks row (plain stance word on Tier 1, the
+         gauge's own headline as the receipt on Tier 2) and, for the muted case, on the ⚠
+         popover — because "the gauge reads open and we are still saying no" is a warning
+         about acting, which is exactly what "Before you act" is for. #}
       {% set c = n.conviction %}
+      {# Restored (2026-08-05): #4496 dropped this binding as unused once the tooltip went,
+         which was true at that moment and stopped being true one commit later — the entry
+         read this shelf surfaces below is read from `es`. #}
       {% set es = n.entry_signal %}
       {% set _nmp = (n.name or n.ticker).split(' / ') %}
       {% set _fl = namespace(rows=[]) %}
       {% if c %}{% for cau in (c.cautions or []) %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endfor %}{% endif %}
       {% if n.extension and n.extension.extended %}{% set _fl.rows = _fl.rows + [('Already ran a lot — chase risk', '已经大涨 — 追高风险')] %}{% endif %}
-      {% set _hd_en = ('gauge open — but extended; not actionable' if n.get('muted_entry') else (es.headline if es else '')) %}
-      {% set _hd_zh = ('量表打开 — 但已延伸；当前不可操作' if n.get('muted_entry') else (es.headline_zh if es else '')) %}
-      {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and _hd_en) else '') ~ _hd_en) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and _hd_zh) else '') ~ _hd_zh) ~ _ctx_zh %}
+      {# F6 muted_entry — the one state on this shelf that CONTRADICTS another surface the
+         reader may have seen (china_lookup shows the same name's gauge reading open). An
+         unexplained contradiction is the thing a caution row exists to pre-empt, so it is
+         stated here rather than left to be discovered. #}
+      {% if n.get('muted_entry') %}{% set _fl.rows = _fl.rows + [('The entry gauge reads open here, but price has already run past the zone — not actionable today.', '此处入场量表显示已打开，但价格已越过买区 — 今日不可操作。')] %}{% endif %}
+      {# Per-name entry read. Tier 1 is a plain stance word from a fixed map — never the raw
+         engine headline, which is free text and would ellipsize inside a nowrap chip. The
+         headline rides the tip instead, where length is free. "Still rated Hold" is the
+         doctrine's own translation for a hold reco (Law 2 table), not a coinage.
+         NOTE es.action is deliberately NOT surfaced on this shelf: on a muted row it still
+         reads "Buy now", which is the exact BUY-family language rule 2 forbids here. #}
+      {%- set _RAN_MK = {
+        'hold':        ['Still rated Hold', '主评级仍为「持有」'],
+        'topping':     ['Rolling over', '见顶迹象'],
+        'extended':    ['Already ran', '已经拉升'],
+        'blocked':     ['Entry blocked', '入场受阻'],
+        'bounce_wait': ['Turn not confirmed', '转向未确认'],
+        'watch':       ['On watch only', '仅列入观察'],
+        'exit':        ['Exit signalled', '已发出离场'],
+        'avoid':       ['Avoid for now', '暂时回避']
+      } %}
+      {%- set _rmk = namespace(rows=[]) %}
+      {%- set _rst = es.status if es else none %}
+      {%- set _rw = _RAN_MK.get(_rst) %}
+      {%- if n.get('muted_entry') %}
+        {%- set _rmk.rows = _rmk.rows + [{'k':'lane','en':'Not actionable','zh':'不可操作',
+          'tip_en':'The entry gauge is open on this name, but it sits on the RAN / LATE shelf because price has already extended past the zone. Wait for a pullback.',
+          'tip_zh':'该股入场量表已打开，但因价格已越过买区而列入「信号已过」板块。请等待回调。'}] %}
+      {%- elif _rw or (es and es.get('headline')) %}
+        {%- set _rmk.rows = _rmk.rows + [{'k':'lane',
+          'en':(_rw[0] if _rw else 'Entry window passed'), 'zh':(_rw[1] if _rw else '入场窗口已过'),
+          'tip_en':('What the entry gauge says about this name today: ' ~ (es.headline if (es and es.get('headline')) else '—') ~ '. The signal is still live — it is the entry window that has passed, so wait for a pullback rather than chasing.'),
+          'tip_zh':('入场量表今日对该股的判读：' ~ (es.headline_zh if (es and es.get('headline_zh')) else (es.headline if (es and es.get('headline')) else '—')) ~ '。信号仍然有效 — 过去的是入场窗口，因此请等待回调，不要追涨。')}] %}
+      {%- endif %}
+      {# Same base-shape chip as the ENTRY shelf, same reason: washout_2w has no other home
+         now, and a RAN name that is also washed out is exactly the pullback candidate this
+         shelf tells the reader to wait for. #}
+      {%- set _rcld = n.get('coiled') or {} %}
+      {%- if not _rcld.get('star') and n.washout_2w %}{% set _rmk.rows = _rmk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
+        'tip_en':'Two weeks of heavy selling have already run their course here — washed out (2W). Context for the setup, never a reason on its own.',
+        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅为形态背景，本身不构成理由。'}] %}{% endif %}
+      {# `marks` is always a LIST here, never `none`: every card on this shelf earns an
+         entry-read chip, so reserving the slot on the handful that do not keeps the tracker
+         and zone rows aligned across a grid row (macro law). #}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': 'wait', 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+        'verb': 'wait',
+        'marks': _rmk.rows[:2],
         'edge': (c.score if (c and c.score is not none) else none),
         'edge_label_en': 'Readiness', 'edge_label_zh': '就绪度',
         'edge_tip_en': 'Buy-readiness 0–100, muted — this name is on the RAN/LATE shelf: entry timing passed.',
@@ -3914,6 +4032,16 @@
     {% endif %}
   </div>
   {% endif %}
+
+  {#- CN THEME TAPE (W-C) — theme cycle state × member board states × why-not
+      attributions. Sits directly BELOW the board, mirroring the US panel's placement
+      after the operator's 2026-08-04 order ("it's obstructing this entire page"):
+      context that changes no decision reads AFTER the decision it contextualises,
+      and here that is also the honest reading order — you look at the picks, then
+      ask what happened to everything else, which is what this panel answers.
+      Own guard, so the placement survives any re-nesting of the board block above.
+      Renders nothing at all on a dead tape. -#}
+  {% if mode == 'stocks' %}{% include "_cn_theme_tape.html.j2" %}{% endif %}
 
   <!-- ===================== STOCK SCREENER (consolidated · toggle) ===================== -->
   {% if scoreboard and scoreboard.modes %}

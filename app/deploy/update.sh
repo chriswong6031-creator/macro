@@ -226,6 +226,20 @@ fi
 #                          contracts, health, and views; all are pinned in the
 #                          API process for the lifetime of the public ticker
 #                          context route.
+#   seasonality/           app/seasonality.py's single `from engine.seasonality
+#                          import screener` executes the package __init__, which
+#                          eagerly re-exports contracts, event_clock, model,
+#                          multiplicity, prophet_bridge, regime, screener and
+#                          universe. All nine were confirmed against a live
+#                          interpreter's sys.modules, not read off import lines.
+#                          Named, not globbed, and the seven exclusions are
+#                          load-bearing: calendar, calibration, event_study,
+#                          foundation, panel, scanner and state are the
+#                          numpy/pandas research modules that __init__ keeps out
+#                          on purpose (calibration and event_study resolve
+#                          through its PEP 562 __getattr__ only when something
+#                          asks, and no app/ path asks). Globbing would blip /api
+#                          on every research commit in an actively-built program.
 #   context_index/         brain_gateway → packet.build_packet, which top-level
 #                          imports fusion/gitinfo/lexical/structured. Named, not
 #                          globbed: ingest/chunking/health/schema/sources are
@@ -255,7 +269,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/government_revenue_candidate(_queue)?\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/government_revenue_candidate(_queue)?\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
@@ -351,6 +365,84 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 			echo "macro-update: macro-live-prophet.timer could not be enabled" >&2
 	else
 		echo "macro-update: refusing macro-live-prophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# CLOSE-PASS MIRROR lane (W-L1a). Its own block for the same reason the Prophet
+# block is separate: a widened regex would restart unrelated timers whenever this
+# unit changed. Same self-arming contract — go-live for this lane is a REPO COMMIT
+# and nothing else, so a CHANGED-only trigger would install a timer nobody ever
+# enables, and the absent-file clause self-heals a failed verify or an operator
+# removal. The live-fast guard marks the serving VPS and keeps the block inert
+# everywhere else.
+#
+# The .service is NEVER restarted — it is a oneshot, and `systemctl restart` would
+# RUN a mirror pass out of band. Only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-closepass\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-closepass.timer ]; }; then
+	CLOSEPASS_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-closepass.service"
+		"$APP_DIR/app/deploy/macro-live-closepass.timer"
+	)
+	if systemd-analyze verify "${CLOSEPASS_UNIT_SOURCES[@]}"; then
+		CLOSEPASS_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${CLOSEPASS_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				CLOSEPASS_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$CLOSEPASS_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-closepass.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-closepass units updated"
+		fi
+		systemctl enable --now macro-live-closepass.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-closepass.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-closepass unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# FRESHNESS SENTINEL — the dead-man switch that must live OUTSIDE GitHub
+# (masterplan W1). Same self-arming contract as the Prophet block above and for
+# the same reason: go-live is a REPO COMMIT — the unit did not exist when
+# live-setup.sh last ran, so a CHANGED-only trigger would install a timer nobody
+# ever enables. The live-fast guard marks the serving VPS (the box this watch
+# must run on) and keeps the block inert everywhere else. `enable --now` on an
+# already-enabled timer is a systemd no-op; the absent-file clause self-heals an
+# earlier failed verify or an operator removal.
+#
+# The .service is NEVER restarted — it is a oneshot; only the timer is (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-sentinel\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-sentinel.timer ]; }; then
+	SENTINEL_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-sentinel.service"
+		"$APP_DIR/app/deploy/macro-sentinel.timer"
+	)
+	if systemd-analyze verify "${SENTINEL_UNIT_SOURCES[@]}"; then
+		SENTINEL_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${SENTINEL_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				SENTINEL_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$SENTINEL_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-sentinel.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-sentinel units updated"
+		fi
+		systemctl enable --now macro-sentinel.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-sentinel.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-sentinel unit update — systemd-analyze verify failed" >&2
 	fi
 fi
 
@@ -512,9 +604,10 @@ fi
 #                          support_map, orchestrator_log
 #   metabolism/*           metabolism_panel → throttle; server manual-run gate →
 #                          budget_gate
-#   engine/{codex_provider,llm_auth}.py + engine/codex_lane/runner.py
+#   engine/{codex_provider,llm_auth,prophet_integrity}.py + engine/codex_lane/runner.py
 #                          orchestrator_chat Codex fallback + prophet.py
-#                          deliberation-spend panel
+#                          deliberation-spend panel; marketing.py → copywriter imports
+#                          the canonical Prophet correction projection at load time
 #   marketing/             marketing.py's outbox approve/reject/decide endpoints →
 #                          outbox + rejections. marketing.py's Ad Central panel →
 #                          ad_central → ad_allocator, ad_arena, ad_stats. The other
@@ -588,7 +681,7 @@ fi
 # the panel queueing against the OLD rule out of sys.modules — the outbox gap
 # (2026-07-26) again, but on the path where being stale means a wrong-desk or
 # double-owner post rather than a stale reading.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 

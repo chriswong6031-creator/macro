@@ -20,6 +20,27 @@ from scripts.research import freeze_pss_followon_gates as freezer
 
 MODULES = (cr1, cd1, af1)
 
+# The label vocabulary is part of each frozen construction — a lane may never
+# emit a group outside its own tuple, and the state ledger counts each by name.
+LEDGER_GROUPS = {
+    cr1.PROGRAM_ID: (
+        "resilient_leader",
+        "challenged_control",
+        "failed_hold_diagnostic",
+    ),
+    cd1.PROGRAM_ID: (
+        "crowding_hazard",
+        "uncrowded_control",
+        "mixed_diagnostic",
+    ),
+    af1.PROGRAM_ID: (
+        "flow_witness",
+        "leader_flow_control",
+        "low_activity_diagnostic",
+        "missing_flow_diagnostic",
+    ),
+}
+
 
 def _copy_registration(root: Path, module) -> None:
     target = root / "personality_timing"
@@ -68,7 +89,34 @@ def _events(root: Path, module) -> list[dict]:
     )
 
 
-def test_frozen_registrations_and_zero_launch_ledgers():
+def _committed_rows(module) -> list[dict]:
+    return [
+        json.loads(line)
+        for line in module.ledger_path().read_text(encoding="utf-8").splitlines()
+        if line and not line.startswith("#")
+    ]
+
+
+def test_frozen_registrations_and_committed_ledgers_preserve_launch():
+    """Registrations stay frozen; an accrued ledger keeps its launch fences.
+
+    CR1/CD1/AF1 are prospective-only accrual lanes: each charter §2 says "the
+    ledger launches empty", and nightly is the sole advancer. A ledger file
+    therefore APPEARS the first night a lawful post-cutoff source resolves —
+    CD1 accrued 7 rows on 2026-08-06 off 7 eligible RH1 actions, while CR1
+    (awaiting_challenge_window) and AF1 (downstream of CR1 leaders) have not
+    reached their windows yet. Absence of the file was only ever a proxy for
+    the real contract, and it expires on first lawful accrual.
+
+    What must hold forever is the launch record and the fences: zero rows at
+    launch, no backfill on either date, frozen construction and membership
+    hashes, the frozen label vocabulary, and no authority. RH1 — the launched
+    sibling on the same charter shape — made this exact transition in #4031
+    (`test_committed_launch_is_zero_event_and_has_absolute_authority_fences`
+    -> `test_committed_ledger_preserves_launch_and_absolute_authority_fences`);
+    this mirrors it for the three follow-ons and holds in both states, so the
+    guard no longer re-reds as CR1 and AF1 accrue in turn.
+    """
     for module in MODULES:
         registration = module.load_registration()
         assert registration is not None
@@ -79,7 +127,68 @@ def test_frozen_registrations_and_zero_launch_ledgers():
         )
         assert manifest["authority"] == common.AUTHORITY
         assert manifest["not_before_session"] == common.NOT_BEFORE_SESSION
-        assert not module.ledger_path().exists()
+
+        groups = LEDGER_GROUPS[module.PROGRAM_ID]
+        state = json.loads(module.state_path().read_text(encoding="utf-8"))
+        assert state["schema"] == module.STATE_SCHEMA
+        assert state["program_id"] == module.PROGRAM_ID
+        assert state["family"] == module.FAMILY
+        assert state["status"] == "prospective_accrual_only"
+        assert state["not_before_session"] == common.NOT_BEFORE_SESSION
+        assert state["construction_sha256"] == module.EXPECTED_CONSTRUCTION_SHA256
+        assert state["authority"] == common.AUTHORITY
+        assert state["consumers"] == []
+        assert state["decision_read"]["sole_read_executed"] is False
+
+        if not module.ledger_path().exists():
+            # Registered but nothing eligible has resolved yet — still lawful.
+            assert state["ledger"]["events"] == 0
+            continue
+
+        rows = _committed_rows(module)
+        assert rows
+        launch, *events = rows
+        assert launch == {
+            "kind": "registration",
+            "schema": module.LEDGER_SCHEMA,
+            "program_id": module.PROGRAM_ID,
+            "family": module.FAMILY,
+            "manifest_sha256": module.EXPECTED_MANIFEST_SHA256,
+            "membership_sha256": module.EXPECTED_MEMBERSHIP_SHA256,
+            "construction_sha256": module.EXPECTED_CONSTRUCTION_SHA256,
+            "not_before_session": common.NOT_BEFORE_SESSION,
+            "event_rows_at_launch": 0,
+            "authority": dict(common.AUTHORITY),
+        }
+        for event in events:
+            assert event["kind"] == "event"
+            assert event["schema"] == module.LEDGER_SCHEMA
+            assert event["program_id"] == module.PROGRAM_ID
+            assert event["family"] == module.FAMILY
+            assert event["construction_id"] == module.CONSTRUCTION_ID
+            assert event["construction_sha256"] == module.EXPECTED_CONSTRUCTION_SHA256
+            assert event["membership_sha256"] == module.EXPECTED_MEMBERSHIP_SHA256
+            # Prospective firewall on both dates: the RH1 source action that
+            # seeded the row and the lane's own action must clear the cutoff.
+            assert event["source_action_date"] > common.NOT_BEFORE_SESSION
+            assert event["action_date"] > common.NOT_BEFORE_SESSION
+            assert event["group"] in groups
+            assert event["authority"] == common.AUTHORITY
+
+        counts = {group: sum(row["group"] == group for row in events) for group in groups}
+        matured = sum(row.get("grade") is not None for row in events)
+        action_dates = sorted(row["action_date"] for row in events)
+        assert state["registration_ok"] is True
+        assert state["ledger"]["events"] == len(events)
+        assert state["ledger"]["primary_events"] == sum(
+            counts[group] for group in module.PRIMARY_GROUPS
+        )
+        for group, count in counts.items():
+            assert state["ledger"][group] == count
+        assert state["ledger"]["matured"] == matured
+        assert state["ledger"]["ungraded"] == len(events) - matured
+        assert state["ledger"]["earliest_action"] == action_dates[0]
+        assert state["ledger"]["latest_action"] == action_dates[-1]
 
 
 def test_finra_runtime_prefix_matches_freezer_and_frozen_attestation():

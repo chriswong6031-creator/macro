@@ -129,7 +129,7 @@ name-for-name (MSFT cleanest reaction; AAPL sell-the-news; dispersion, not cohor
   realized moves + own-history percentile receipts + a watch stance — no direction, no
   forecast, no rank. (DNR §2: "Mag-7 as plain data display … stays lawful"; "operator
   conviction may seed a display-tier watch item".)
-- Board/plan **membership** is untouched (DNR §1 row 49 byte-identical fence; no
+- Board/plan **membership** is untouched (DNR:KILL-PROPHET-POP-MERGE byte-identical fence; no
   Top-setups data-lane merge into the graded board).
 - MWR S1/S3 constructions are NOT tuned to July (that would be fitting the miss —
   exactly the §0 chart-memory trap MWR itself documents). A shallow-flush arm, if ever

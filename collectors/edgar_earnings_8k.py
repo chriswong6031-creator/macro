@@ -23,10 +23,18 @@ UNIVERSE: tickers/CIKs from data/edgar/eps_quarterly.parquet (~1,317 names). We 
 same company_tickers.json CIK map used by collectors/edgar_eps.py and edgar_8k.py.
 
 OUTPUT STORE: data/edgar/earnings_8k_dates.parquet
-  Columns: ticker (str), cik (int), filing_date (date str yyyy-mm-dd),
-           acceptance_datetime (str, ISO-UTC or empty), items (str, raw comma-sep).
-  Append-deduped per (ticker, filing_date). The "older-files" pagination in the
-  submissions JSON is followed for full history.
+  Columns: ticker (str), cik (int), accession (str, canonical dashed), form (str),
+           filing_date (date str yyyy-mm-dd), acceptance_datetime (str, ISO-UTC or
+           empty), report_date (str, period of report), items (str, raw comma-sep).
+  Append-deduped per the canonical filing key (cik, accession) — see
+  append_and_dedup. The "older-files" pagination in the submissions JSON is
+  followed for full history.
+
+FILING KEY (Wave 1B, contract freeze Q2): accession is captured because without
+  it this store shares only `ticker` with engine/marketing/edgar_earnings_wire.py
+  and the two EDGAR planes cannot be joined at any level. It is already present
+  in the same parallel-array block this collector walks, so capture costs no
+  extra request.
 
 RESUMABILITY: a per-CIK manifest (data/edgar/earnings_8k_dates_manifest.json) tracks
 which CIKs have been fully fetched (key = str(cik), value = ISO timestamp). Run the
@@ -73,8 +81,20 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from lib import config  # noqa: E402
+from engine.earnings_release.filing_key import (  # noqa: E402
+    FilingIdentityError,
+    normalize_accession,
+)
 
 log = logging.getLogger(__name__)
+
+# The store's columns, in order.  ``accession`` and ``report_date`` were added
+# by Wave 1B; ``load_existing`` still reads a parquet written before that and
+# ``append_and_dedup`` keys such rows the old way (see its docstring).
+STORE_COLUMNS = [
+    "ticker", "cik", "accession", "form", "filing_date",
+    "acceptance_datetime", "report_date", "items",
+]
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -221,13 +241,39 @@ def build_cik_map(tickers: list[str]) -> dict[str, int]:
 # Submissions API: parse all 8-K Item-2.02 filings for one CIK
 # ---------------------------------------------------------------------------
 
+def _normalize_accession(raw: object) -> str:
+    """Canonical dashed accession, or "" when the payload omits it.
+
+    Delegates to the one place that decides what a filing key is.  An
+    unparseable value becomes "" rather than raising: a malformed accession on
+    one filing must not abort a CIK's whole history, and a row that carries ""
+    is reported as unjoinable downstream instead of silently mis-joining.
+    """
+    if raw in (None, ""):
+        return ""
+    try:
+        return normalize_accession(raw)
+    except FilingIdentityError:
+        log.warning("edgar_earnings_8k: unparseable accessionNumber %r — stored empty", raw)
+        return ""
+
+
 def _extract_8k_rows(ticker: str, cik: int, rec: dict) -> list[dict]:
-    """Extract Item-2.02 8-K rows from a 'recent' or older-files filing block."""
+    """Extract Item-2.02 8-K rows from a 'recent' or older-files filing block.
+
+    ``accessionNumber`` is captured alongside the fields this collector already
+    read.  It sits in the same parallel-array structure as ``form`` /
+    ``filingDate`` / ``acceptanceDateTime`` / ``items``, so the capture costs no
+    extra request — and without it this store shares only ``ticker`` with
+    ``engine/marketing/edgar_earnings_wire.py`` and the two planes cannot be
+    joined at all (contract freeze Q2).
+    """
     forms = rec.get("form") or []
     filing_dates = rec.get("filingDate") or []
     acceptance_dts = rec.get("acceptanceDateTime") or []
+    accessions = rec.get("accessionNumber") or []
+    report_dates = rec.get("reportDate") or []
     items_list = rec.get("items") or []
-    n = len(forms)
 
     def _safe(lst: list, i: int):
         return lst[i] if i < len(lst) else None
@@ -242,8 +288,13 @@ def _extract_8k_rows(ticker: str, cik: int, rec: dict) -> list[dict]:
         rows.append({
             "ticker": ticker,
             "cik": int(cik),
+            "accession": _normalize_accession(_safe(accessions, i)),
+            "form": str(form),
             "filing_date": _safe(filing_dates, i) or "",
             "acceptance_datetime": _safe(acceptance_dts, i) or "",
+            # The period of report is what re-groups an 8-K/A with the 8-K it
+            # amends; without it a correction mints a second event.
+            "report_date": _safe(report_dates, i) or "",
             "items": raw_items,
         })
     return rows
@@ -338,36 +389,62 @@ def _coverage_json_path() -> Path:
 def load_existing() -> pd.DataFrame:
     p = _store_path()
     if not p.exists():
-        return pd.DataFrame(columns=["ticker", "cik", "filing_date",
-                                     "acceptance_datetime", "items"])
+        return pd.DataFrame(columns=STORE_COLUMNS)
     return pd.read_parquet(p)
 
 
 def append_and_dedup(existing: pd.DataFrame, new_rows: list[dict]) -> pd.DataFrame:
-    """Append new rows to existing and dedup on (ticker, filing_date).
+    """Append new rows and dedup on the canonical filing key ``(cik, accession)``.
 
-    Dedup semantics: for duplicate (ticker, filing_date) pairs, retain the row
-    with the lexicographically earliest acceptance_datetime (i.e. the original
-    filing, not an amendment arriving later the same day). Rows are sorted by
-    (ticker, filing_date, acceptance_datetime) before drop_duplicates so that
-    keep='first' is deterministic regardless of concatenation order.
+    The key changed in Wave 1B and the reason is not cosmetic.  The old key was
+    ``(ticker, filing_date)``, which **destroys amendments**: an 8-K/A filed on
+    the same calendar day as the 8-K it corrects collapsed into it and the
+    correction became invisible.  ``(cik, accession)`` is the frozen canonical
+    filing key (contract freeze Q2) and keeps them two filings; re-grouping them
+    into one *event* is
+    ``engine.earnings_release.binding.collapse_release_events``' job, on the
+    period of report — never on date proximity.
+
+    Legacy rows written before accession capture are keyed the old way and are
+    dropped when a keyed row already covers the same ``(ticker, filing_date)``,
+    so re-running the collector upgrades the store in place rather than
+    doubling it.  Within either key, the earliest non-empty
+    ``acceptance_datetime`` wins.
     """
     if not new_rows:
         return existing
     new_df = pd.DataFrame(new_rows)
     combined = pd.concat([existing, new_df], ignore_index=True)
-    # Sort so that for same (ticker, filing_date), the earliest non-empty
-    # acceptance_datetime comes first — keep='first' then deterministically
-    # retains it.  Empty strings sort before any real ISO timestamp
-    # lexicographically, which would wrongly prefer a row with no precision
-    # over one with a known time; replace "" with a high sentinel so empty
-    # values sort last within the same (ticker, filing_date) bucket.
+    for column in STORE_COLUMNS:
+        if column not in combined.columns:
+            combined[column] = ""
+    combined["accession"] = combined["accession"].fillna("").astype(str)
+
+    # Sort so the earliest non-empty acceptance_datetime is first within any
+    # key — keep='first' is then deterministic regardless of concat order.
+    # Empty strings sort before a real ISO timestamp lexicographically, which
+    # would wrongly prefer a row with no precision over one with a known time,
+    # so "" is mapped to a high sentinel.
     _SENTINEL = "9999-99-99"
-    sort_key = combined["acceptance_datetime"].replace("", _SENTINEL)
+    sort_key = combined["acceptance_datetime"].fillna("").replace("", _SENTINEL)
     combined = combined.iloc[sort_key.argsort(kind="stable")]
-    combined = combined.drop_duplicates(subset=["ticker", "filing_date"], keep="first")
-    combined = combined.sort_values(["ticker", "filing_date"]).reset_index(drop=True)
-    return combined
+
+    keyed = combined[combined["accession"] != ""]
+    legacy = combined[combined["accession"] == ""]
+    keyed = keyed.drop_duplicates(subset=["cik", "accession"], keep="first")
+    if not legacy.empty:
+        legacy = legacy.drop_duplicates(subset=["ticker", "filing_date"], keep="first")
+        if not keyed.empty:
+            covered = set(zip(keyed["ticker"], keyed["filing_date"]))
+            legacy = legacy[[
+                (t, d) not in covered
+                for t, d in zip(legacy["ticker"], legacy["filing_date"])
+            ]]
+    combined = pd.concat([keyed, legacy], ignore_index=True)
+    combined = combined.sort_values(
+        ["ticker", "filing_date", "accession"]
+    ).reset_index(drop=True)
+    return combined[STORE_COLUMNS]
 
 
 # ---------------------------------------------------------------------------
@@ -574,7 +651,7 @@ def _checkpoint(
         final_df = append_and_dedup(existing_df, all_rows)
     else:
         final_df = existing_df.copy() if not existing_df.empty else pd.DataFrame(
-            columns=["ticker", "cik", "filing_date", "acceptance_datetime", "items"]
+            columns=STORE_COLUMNS
         )
     p = _store_path()
     p.parent.mkdir(parents=True, exist_ok=True)

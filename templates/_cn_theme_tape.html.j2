@@ -1,0 +1,454 @@
+{#- ═══════════════════════════════════════════════════════════════════════════════
+    CN THEME TAPE (#cn-theme-tape / .ctt-*) — china.html.j2, mode == 'stocks'.
+    主题周期 — 每个主题在周期中的位置，以及本榜对其成分股的处理。
+
+    WHAT THIS IS.
+    Charter: research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §5 W-C.
+    Data:    engine/cn_theme_tape.py — the whole join is Python; this file lays out a
+             finished dict. No membership logic, no counting, no sorting here.
+
+    It closes the operator incident of 2026-08-04: Gold Miners read as the top sector
+    on several boards and this page said NOTHING about why it carried no picks. The
+    facts were already in nightly artifacts — the basket had turned, its members were
+    held out upstream, each for a stated reason. Answering it took a forensic session;
+    it should have taken a glance. This panel is the standing fix.
+
+    THE THESIS IS THE LAG: A SECTOR TURNS BEFORE ITS NAMES DO. That is the one idea the
+    layout has to carry, and it is why the row set is defined by the CYCLE rather than
+    by heat. The US tape (templates/_theme_tape.html.j2, #4488) is the structural model
+    — one persistent header, fixed count columns, <details> per theme, colour on a
+    single glyph — and none of its copy is reused: it answers "the market is heating
+    this, what are the picks doing with it", and this one answers "the sector turned,
+    where is everybody".
+
+    IT IS AN ACCOUNTING, NOT A LEADERBOARD. Every member of a shown theme lands in
+    exactly one column, so a row adds up to the basket's whole membership, and a theme
+    with zero picks still gets a row that says so. A panel that only spoke when it had
+    a pick would reproduce the silence it exists to fix.
+
+    DESIGN NOTES.
+    · THE CYCLE RAIL is the one new object and the panel's signature: five segments in
+      cycle order (bottoming → early turn → running → late → rolling over) with one
+      marked. It is a POSITION encoding, never a magnitude bar — the vetoed ftr-tape
+      idiom (#2232) is exactly a fake magnitude bar, and this is the sanctioned
+      opposite: the doctrine's canonised "non-verbal encodings that need no vocabulary
+      at all" (§7). It earns its place by making the column SCANNABLE — "which themes
+      are early?" answers without reading a word — which a bare phrase cannot do.
+      It takes NO hue, on purpose. The cycle read is context with no measured edge
+      behind it; colouring it would paint the least-proven thing on the panel as the
+      loudest, which is the construction the 2026-07-23 ruling removed.
+    · COLOUR APPEARS ON EXACTLY ONE GLYPH — a non-zero `live` count, via --ink-up,
+      which flips under 红涨绿跌 at paint. The states are carried by POSITION and by
+      the header's words, never by hue. This holds even though the panel's own subject
+      is a row with NO live names: hue means "there is something to do today", and an
+      early turn that nothing has confirmed is precisely not that. The early-turn story
+      is carried by the rail and by the stance sentence instead.
+    · A ZERO PRINTS AS AN EN-DASH in its slot rather than collapsing. Printed absence
+      is the point of this panel, and a missing cell would break the column scan.
+    · The quiet remainder is a FRACTION ("4/6"), never a bare count — the denominator
+      is what makes it information instead of decoration (Law 3).
+    · Zero animation, zero transition, and no `transform` anywhere. So there is no
+      reduced-motion block to gate, and nothing here can trap the Lens popover in a
+      containing block. Add either and you must handle both.
+
+    WHERE IT SITS. Directly BELOW the board, mirroring the US panel's placement after
+    the operator's 2026-08-04 order ("it's obstructing this entire page"). Context that
+    changes no decision reads AFTER the decision it contextualises. It is also the
+    honest reading order here: you look at the picks, then ask what happened to
+    everything else — which is the question this panel answers.
+
+    TIERS (docs/DESIGN_DOCTRINE.md):
+      1 GLANCE  eyebrow · one grid line per theme · a stance sentence · one footer line
+      2 HOVER   the panel `?` carries the method AND the Law-5 null receipt; per-theme
+                receipts (cycle position, turn strength) ride data-tip-*
+      3 STUDY   the expanded member lists, the per-name reasons, the theme vehicle,
+                and china_sector_desk.html for every theme
+    Every stance sentence is chosen MECHANICALLY from the counts by
+    engine/cn_theme_tape.py `_stance_for` — no free-form text reaches this file, and
+    the verbs come from the doctrine's sanctioned stance vocabulary.
+    No translated text ever enters a title= attribute (CI-guarded); every tip is a
+    hand-written data-tip-* pair, never piped through t()/help(), which emit spans and
+    would break attribute quoting.
+
+    GATING. china_stocks.html is edge-gated by OMISSION: it is absent from the Caddy
+    public allow-list, so an anonymous visitor is redirected by app/regwall.py before
+    any HTML is served, and every signed-in visitor — free or paid — gets the board in
+    full with no client-side tier markup anywhere on the page. So this panel adds no
+    gate of its own: it would be theatre to collapse names here that the board prints
+    in full a few hundred pixels above, for the same visitor. `.ctt-names` is
+    nonetheless the member-roster hook, mirroring the US `.tt-names`, so if this page
+    ever joins the public list the collapse is one selector in tier_preview.js — and
+    tests/test_cn_theme_tape.py pins the class so that stays true.
+
+    CONTEXT IT READS (fail-open; absence renders exactly like a quiet tape):
+      cn_theme_tape  {as_of, board_as_of, rows[], n_themes, overflow, flow_live, ...}
+    ═══════════════════════════════════════════════════════════════════════════════ -#}
+
+{%- macro ct_t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
+
+{%- set _ct = cn_theme_tape if (cn_theme_tape is defined and cn_theme_tape is mapping) else none -%}
+{%- set _ct_rows = (_ct.get('rows') or []) if _ct else [] -%}
+
+{#- Honest-null gate. engine/cn_theme_tape.py returns None when nothing clears the
+    floor, so reaching here with no rows means the tape is dead and this partial emits
+    NOTHING AT ALL — no shell, no <style>, no empty box. -#}
+{%- if _ct_rows -%}
+{%- set _ct_cols = [
+      ('live',    'live',    '可操作'),
+      ('almost',  'almost',  '接近'),
+      ('blocked', 'blocked', '受阻'),
+      ('ran',     'ran',     '已启动')
+    ] -%}
+{%- set _ct_phases = [
+      ('Trough',    'still bottoming', '仍在筑底'),
+      ('Recovery',  'early turn',      '初现拐点'),
+      ('Expansion', 'running',         '上行中'),
+      ('Peak',      'late',            '高位偏晚'),
+      ('Downturn',  'rolling over',    '转弱回落')
+    ] -%}
+  <style id="cn-theme-tape-css">
+  /* ── CN THEME TAPE (W-C) ───────────────────────────────────────────────────
+     Every value resolves from an existing theme.css token. No new hex, theme.css
+     untouched, so light / dark / zh all repaint at color-mix time with nothing to
+     keep in sync. Light is a design target here, not a translation (DOCTRINE
+     §5.8): the two things that would break on white are the rail's inactive
+     segments (a neutral fill vanishes) and the panel-on-canvas depth, so the rail
+     segments carry a mixed INK rather than a tint, and the panel keeps the page's
+     own .panel chrome instead of inventing a surface. */
+
+  /* THE TRACK WIDTHS, DECLARED ONCE. The header row and every theme row are
+     separate grid containers that must agree on their column edges; the only
+     thing making them agree is that these numbers are identical. Sized for the
+     CLAMPED label, not the authored one: these labels are 10px, below the
+     browser's minimum-font-size preference (commonly 12–16px), which raises the
+     rendered text while the track stays where the CSS put it. The US tape shipped
+     that exact defect (#4553) — "watching" overran its 58px track at a 12px
+     clamp. `overflow-wrap` below makes containment a guarantee rather than a
+     margin, whatever the clamp. Reproduce with
+     `.ctt-k{font-size:13px!important}` before changing anything here. */
+  body.page-china-stocks #cn-theme-tape{padding:15px 18px 14px;
+    --ctt-col:70px;--ctt-quiet:74px;--ctt-cyc:150px;--ctt-gk:78px}
+  body.page-china-stocks .ctt-hd{display:flex;align-items:baseline;gap:6px 12px;
+    flex-wrap:wrap;margin:0 0 4px}
+  body.page-china-stocks .ctt-eyebrow{margin:0;font-size:11px;font-weight:800;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
+     call for headings; the eyebrow keeps its rhythm from weight and colour. */
+  html[data-lang="zh"] body.page-china-stocks .ctt-eyebrow{letter-spacing:.06em}
+  body.page-china-stocks .ctt-asof{margin-left:auto;font-family:var(--font-mono,monospace);
+    font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-china-stocks .ctt-sub{font-size:11.5px;line-height:1.5;color:var(--muted);
+    margin:0 0 10px;max-width:74ch}
+
+  /* THE LADDER GRID. One template shared by the header and every row, so the
+     columns cannot drift apart. Fixed numeric widths (not max-content) are what
+     make a column a COLUMN: the header holds WORDS and the rows hold single
+     digits, so max-content would size the two grids from different content and
+     the figures would never line up under their labels. */
+  body.page-china-stocks .ctt-cols,
+  body.page-china-stocks .ctt-row{display:grid;
+    grid-template-columns:minmax(0,1fr) var(--ctt-cyc) repeat(4,var(--ctt-col)) var(--ctt-quiet);
+    gap:0 6px;align-items:baseline}
+  /* end-aligned, not baseline: a label that wraps under a clamp hangs its second
+     line BELOW a first baseline, straight through the rule this row sits on. */
+  body.page-china-stocks .ctt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);
+    margin:0 0 2px;align-items:end}
+  body.page-china-stocks .ctt-k{font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);text-align:right;line-height:1.25;min-width:0;overflow-wrap:break-word}
+  html[data-lang="zh"] body.page-china-stocks .ctt-k{letter-spacing:0}
+  body.page-china-stocks .ctt-k-cyc{text-align:left}
+
+  /* Each theme is one <details>. The summary holds BOTH glance lines, so the whole
+     row is the disclosure control — a large, obvious tap target on a phone, and a
+     native one, so there is no hover dependency and nothing to trap a popover. */
+  body.page-china-stocks .ctt-i{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+  body.page-china-stocks .ctt-i:last-of-type{border-bottom:0}
+  body.page-china-stocks .ctt-s{list-style:none;cursor:pointer;padding:9px 0 8px}
+  body.page-china-stocks .ctt-s::-webkit-details-marker{display:none}
+  body.page-china-stocks .ctt-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:2px;border-radius:3px}
+  body.page-china-stocks .ctt-nm{font-size:13px;font-weight:700;color:var(--text);min-width:0}
+  /* The caret is a pseudo, so it stays out of any copy a vocabulary scan reads and
+     needs no translation. It rotates by being REPLACED, not by a transform, so
+     there is nothing here for reduced-motion to gate and no containing block. */
+  body.page-china-stocks .ctt-s .ctt-nm::before{content:"▸";color:var(--muted);font-size:10px;
+    margin-right:6px;display:inline-block;vertical-align:1px}
+  body.page-china-stocks .ctt-i[open] .ctt-s .ctt-nm::before{content:"▾"}
+
+  /* ── THE CYCLE RAIL — the panel's signature ────────────────────────────────
+     Five segments in cycle order, one marked. Position, not magnitude: the
+     segments are equal and fixed, so nothing here can read as a quantity, which
+     is what separates this from the vetoed fake-magnitude bars (#2232).
+     It is monochrome BY DESIGN — see the header note. The inactive segments take
+     a mixed INK (not an opacity on a tint) because a neutral tint is exactly what
+     vanishes against white in light mode (DOCTRINE §5.8), and the 2px gaps are
+     the same ruling's "add 1px gaps" made a little more generous at this size.
+     The whole rail is aria-hidden: the state word beside it carries the identical
+     fact, so a screen reader gets it once, in words, rather than as five boxes. */
+  body.page-china-stocks .ctt-cyc{display:flex;align-items:center;gap:7px;min-width:0}
+  body.page-china-stocks .ctt-rail{display:inline-flex;gap:2px;flex:0 0 auto}
+  body.page-china-stocks .ctt-rail i{display:block;width:7px;height:4px;border-radius:1px;
+    background:color-mix(in srgb,var(--text) 20%,transparent)}
+  body.page-china-stocks .ctt-rail i.on{background:var(--text);height:8px}
+  body.page-china-stocks .ctt-state{font-size:11px;color:var(--muted);line-height:1.3;
+    min-width:0;overflow-wrap:break-word}
+  /* The flow chip rides the theme NAME, not the cycle column: it is a fact about
+     money moving, not about where the cycle sits, and the two must not read as one
+     reading. Outline, no fill, no hue — same restraint as the rail, and for the
+     same reason (it is context, and it is the least confirmed thing on the row). */
+  body.page-china-stocks .ctt-flow{display:inline-block;vertical-align:1px;margin-left:7px;
+    padding:1px 5px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+    border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);white-space:nowrap}
+  html[data-lang="zh"] body.page-china-stocks .ctt-flow{letter-spacing:0}
+
+  /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple the
+     column, and the house rule is mono for FIGURES, never for words — the header
+     above stays body-face. The right edge is set on the CELL, which is the grid
+     item; setting it on the figure inside would align nothing, because the figure
+     is only as wide as it needs to be. */
+  body.page-china-stocks .ctt-c{text-align:right;min-width:0}
+  body.page-china-stocks .ctt-v{font-family:var(--font-mono,monospace);font-size:13px;
+    font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+  /* The ONLY colour on the panel, and only ever on a non-zero `live` count — the one
+     cell that means "there is something to do today". --ink-up is the text-grade form
+     of the state palette (raw --up is fill-grade and misses the contrast floor as
+     light-theme text); the var() fallback keeps a cache-stale theme.css rendering
+     today's colour rather than an invalid declaration. */
+  body.page-china-stocks .ctt-v.is-live{color:var(--ink-up,var(--up))}
+  /* A printed absence, at the weight of an absence. */
+  body.page-china-stocks .ctt-v.is-zero{color:var(--muted);opacity:.5;font-weight:600}
+  body.page-china-stocks .ctt-quiet{font-family:var(--font-mono,monospace);font-size:12.5px;
+    font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  body.page-china-stocks .ctt-say{font-size:12.5px;line-height:1.5;color:var(--text);
+    padding-left:16px;margin-top:3px}
+  body.page-china-stocks .ctt-stance{font-weight:650}
+
+  /* Tier 3 — the member lists. Indented under the row they belong to, and quiet:
+     this is a reference list, not a second board. */
+  body.page-china-stocks .ctt-det{padding:2px 0 12px 16px}
+  /* The stance for a row that did not earn the glance-tier line — the opening line of
+     an EXPANDED row, so it takes .ctt-det's indent and adds none of its own. */
+  body.page-china-stocks .ctt-heat{display:block;font-size:11.5px;font-weight:400;
+    color:var(--muted);margin:0 0 7px;line-height:1.5}
+  /* The label column GROWS rather than overflows — `minmax(k, max-content)` keeps
+     the alignment in every normal render and lets the track widen in the clamped
+     state that would otherwise paint a label across the names beside it. Bounding
+     it instead (max-width + overflow:hidden) is worse: it clips a two-word label. */
+  body.page-china-stocks .ctt-g{display:grid;
+    grid-template-columns:minmax(var(--ctt-gk),max-content) minmax(0,1fr);gap:0 10px;
+    align-items:baseline;padding:3px 0}
+  body.page-china-stocks .ctt-gk{font-size:10.5px;font-weight:700;color:var(--muted);
+    text-align:right;line-height:1.5}
+  /* FLEX, and this is load-bearing — an inline run here loses members. The .ctt-n
+     spans are emitted adjacent with no whitespace between them and a ticker is
+     nowrap, so as an inline run the whole list is ONE unbreakable word with no
+     break opportunity: on a 390px phone it overruns the viewport and the tail is
+     sheared off — members silently deleted from a shipped surface (the US tape's
+     own #4488 fix-up commit). `overflow-wrap:anywhere` is the WRONG patch: it
+     breaks INSIDE tokens and tears "+4" apart. A flex line box takes its break
+     opportunities between ITEMS, so every member wraps whole. */
+  body.page-china-stocks .ctt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
+    overflow-wrap:break-word}
+  body.page-china-stocks .ctt-n{min-width:0}
+  /* The separator TRAILS its name rather than leading the next one, so a wrapped
+     line never opens with an orphan middot. :not(:last-child) keeps it off the end
+     while still printing before a group-level reason, which is a sibling here. */
+  body.page-china-stocks .ctt-names > .ctt-n:not(:last-child)::after{content:"·";
+    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
+  body.page-china-stocks .ctt-sym{font-family:var(--font-mono,monospace);font-weight:700;
+    letter-spacing:.02em;white-space:nowrap}
+  body.page-china-stocks .ctt-zh{color:var(--muted);font-size:11px;padding-left:5px}
+  /* The reason hangs off the name behind a middot, not a dash: several reasons carry
+     their own em-dash, and two dashes in one phrase read as one muddled clause. A
+     middot needs no translation, so both languages take the same rule, and it is a
+     pseudo so it keeps its spacing however the markup wraps. */
+  body.page-china-stocks .ctt-why{color:var(--muted);font-size:11px}
+  body.page-china-stocks .ctt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
+     separator has already printed and this one would double it. A PER-NAME reason
+     lives inside its .ctt-n, where no separator precedes it, so it keeps its own. */
+  body.page-china-stocks .ctt-names > .ctt-why::before{content:none}
+  body.page-china-stocks .ctt-more{color:var(--muted);font-weight:600;white-space:nowrap}
+
+  /* THE THEME VEHICLE. The panel's one genuinely CN-specific object, and the honest
+     answer to "so what do I do" on a theme whose members are all still waiting: the
+     basket trades as one instrument, and naming it is not the same as recommending
+     it. Reads as a sentence, at the weight of a note — deliberately NOT a chip or a
+     button, because a chip is an affordance and this is a fact. */
+  body.page-china-stocks .ctt-veh{margin:6px 0 0;font-size:11px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-china-stocks .ctt-veh .ctt-sym{color:var(--text)}
+  body.page-china-stocks .ctt-more-link{display:block;margin:7px 0 0;font-size:11px}
+  body.page-china-stocks .ctt-more-link a{color:var(--muted);text-decoration:underline;
+    text-underline-offset:2px}
+
+  body.page-china-stocks .ctt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
+  body.page-china-stocks .ctt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);
+    max-width:74ch}
+  /* The link is one token. Left to break, the zh label split after 主 and stranded
+     "题 →" on its own line, which reads as a fragment rather than a destination; the
+     line breaks BEFORE it instead. Same reason the stance is held whole below. */
+  body.page-china-stocks .ctt-foot a{color:inherit;text-decoration:underline;
+    text-underline-offset:2px;white-space:nowrap}
+  /* The stance is one token, like a count chip is: broken across a line, "— don't
+     chase." reads as a fragment rather than an instruction. */
+  body.page-china-stocks .ctt-nb{white-space:nowrap}
+
+  @media (max-width:900px){
+    body.page-china-stocks #cn-theme-tape .ctt-asof{margin-left:0}
+    body.page-china-stocks #cn-theme-tape{--ctt-cyc:126px;--ctt-col:62px;--ctt-quiet:66px}
+  }
+  /* ── phones (≤680px, the board's own mobile break) ─────────────────────────
+     The seven-column alignment is a desktop luxury: it exists so a reader can scan
+     one column down eight themes. On a phone you read one theme at a time, so the
+     ladder becomes a flowing line of "N label" pairs and the header row — whose
+     only job was to label those columns — is dropped. Each cell then shows its own
+     label, and a ZERO cell is removed entirely: a printed en-dash is honest inside
+     a column, but "0 blocked" in a sentence is just noise. Nothing here scrolls
+     sideways; the row wraps. */
+  @media (max-width:680px){
+    body.page-china-stocks #cn-theme-tape{padding:13px 14px}
+    body.page-china-stocks .ctt-cols{display:none}
+    body.page-china-stocks .ctt-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+    body.page-china-stocks .ctt-nm{flex:1 0 100%}
+    body.page-china-stocks .ctt-cyc{flex:1 0 100%;margin:1px 0 2px}
+    body.page-china-stocks .ctt-c{display:inline-flex;align-items:baseline;gap:4px}
+    body.page-china-stocks .ctt-c.is-zero-cell{display:none}
+    body.page-china-stocks .ctt-c .ctt-ik{font-size:10.5px;font-weight:600;color:var(--muted);
+      font-style:normal}
+    body.page-china-stocks .ctt-v,body.page-china-stocks .ctt-quiet{text-align:left;font-size:12.5px}
+    body.page-china-stocks .ctt-g{grid-template-columns:minmax(0,1fr);gap:0}
+    body.page-china-stocks .ctt-gk{text-align:left}
+  }
+  /* The per-cell label is redundant wherever the header row is visible. */
+  @media (min-width:681px){
+    body.page-china-stocks .ctt-c .ctt-ik{display:none}
+  }
+  </style>
+  <div class="panel span12" id="cn-theme-tape">
+    <div class="ctt-hd">
+      <h2 class="ctt-eyebrow">{{ ct_t('Theme cycles', '主题周期') }}</h2>
+      {#- Tier-2: the method AND the Law-5 receipt live here, together, so the panel
+          carries exactly one `?` and one footnote. -#}
+      <span class="help">?<span class="tip tip-wide"><span class="l-en">Each theme is a curated basket of A-shares with its own turn model, and the rail shows where that basket sits in its cycle. Every member is then placed in exactly one column, so a row adds up to the whole basket; a name counts once, at its most actionable state, and a name can sit in more than one theme. The cycle read is a place to look, not a measured edge — no horizon of it has cleared a significance bar. Nothing on this panel ranks, gates or sizes anything, and the board above is identical with it present or absent.</span><span class="l-zh">每个主题都是一篮精选A股，各自带有转向模型，刻度条显示该篮子在周期中的位置。每只成分股被归入且仅归入一列，因此整行相加等于该篮子全部成分股；同一只股票按其最可操作的状态计入一次，且可能同时属于多个主题。周期研判只用于确定观察方向，并非经检验的优势——尚无周期通过显著性检验。本面板不参与任何排名、筛选或仓位决定，上方看板有无本面板都完全相同。</span></span></span>
+      {%- if _ct.get('as_of') %}
+      <span class="ctt-asof">{{ ct_t('as of ' ~ _ct.as_of, '截至 ' ~ _ct.as_of) }}</span>
+      {%- endif %}
+    </div>
+    {#- 14 words exactly — the Tier-1 subtitle budget (Law 4) is a hard limit, and the
+        first draft ("Where each theme sits in its cycle, and what…") ran one over. -#}
+    <p class="ctt-sub">{{ ct_t('Each theme’s place in its cycle, and what the board does with its names.',
+                                '每个主题在周期中的位置，以及本榜对其成分股的处理。') }}</p>
+
+    {#- The header row is the ONLY label source where it is visible; each cell also
+        carries its own label for the phone layout, and exactly one of the two is in
+        the accessibility tree at any breakpoint (the other is display:none). -#}
+    <div class="ctt-cols">
+      <span></span>
+      <span class="ctt-k ctt-k-cyc">{{ ct_t('cycle', '周期') }}</span>
+      {%- for _k, _en, _zh in _ct_cols %}<span class="ctt-k">{{ ct_t(_en, _zh) }}</span>{% endfor %}
+      <span class="ctt-k">{{ ct_t('quiet', '未触发') }}</span>
+    </div>
+
+    {%- for _r in _ct_rows %}
+    {%- set _c = _r.get('counts') or {} %}
+    <details class="ctt-i">
+      <summary class="ctt-s">
+        <div class="ctt-row"
+             data-tip-en="{{ _r.name }} — this basket's cycle reads {{ _r.state_en }}{% if _r.get('slope') is not none %}, turning {{ 'up' if _r.slope > 0 else 'down' }} at {{ '%.0f'|format(_r.slope|abs) }} on its own oscillator{% endif %}. {{ _r.n_members }} names in the basket: {{ _c.get('live') or 0 }} live, {{ _c.get('almost') or 0 }} close, {{ _c.get('blocked') or 0 }} held out, {{ _c.get('ran') or 0 }} already moved, {{ _c.get('quiet') or 0 }} with no setup. Open the row for the names and the reason each one is where it is. Display context only — this changes no ranking above."
+             data-tip-zh="{{ _r.name }} — 该篮子周期读数为{{ _r.state_zh }}{% if _r.get('slope') is not none %}，其振荡指标{{ '向上' if _r.slope > 0 else '向下' }} {{ '%.0f'|format(_r.slope|abs) }}{% endif %}。篮内共 {{ _r.n_members }} 只：可操作 {{ _c.get('live') or 0 }}、接近 {{ _c.get('almost') or 0 }}、受阻 {{ _c.get('blocked') or 0 }}、已启动 {{ _c.get('ran') or 0 }}、无形态 {{ _c.get('quiet') or 0 }}。展开可查看名单及各自的原因。仅为展示参考，不改变上方任何排序。">
+          <span class="ctt-nm">{{ ct_t(_r.name, _r.name_zh) }}{% if _r.get('flow_en') %}<span class="ctt-flow">{{ ct_t(_r.flow_en, _r.flow_zh) }}</span>{% endif %}</span>
+          {#- The rail and its word are ONE object: the rail makes the column
+              scannable, the word makes it mean something. Neither is a second
+              claim about the row. -#}
+          <span class="ctt-cyc">
+            <span class="ctt-rail" aria-hidden="true">{% for _p, _pe, _pz in _ct_phases %}<i{% if _r.phase == _p %} class="on"{% endif %}></i>{% endfor %}</span>
+            <span class="ctt-state">{{ ct_t(_r.state_en, _r.state_zh) }}</span>
+          </span>
+          {%- for _k, _en, _zh in _ct_cols %}
+          {%- set _n = _c.get(_k) or 0 %}
+          <span class="ctt-c{% if not _n %} is-zero-cell{% endif %}"><b class="ctt-v{% if _n and _k == 'live' %} is-live{% endif %}{% if not _n %} is-zero{% endif %}">{% if _n %}{{ _n }}{% else %}–{% endif %}</b><i class="ctt-ik">{{ ct_t(_en, _zh) }}</i></span>
+          {%- endfor %}
+          <span class="ctt-c"><b class="ctt-quiet">{{ _c.get('quiet') or 0 }}/{{ _r.n_members }}</b><i class="ctt-ik">{{ ct_t('quiet', '未触发') }}</i></span>
+        </div>
+        {#- Law 1 — the stance, but only where it is an INSTRUCTION.
+            This was written to print on every row, on the argument that the panel
+            exists for the row with no live names and the US rule (stance only where
+            `live` is non-zero) would silence exactly that row. Rendering it against
+            the 2026-08-05 artifacts refuted the argument: four of eight rows came back
+            carrying the identical "Watch — don't chase. The sector turned; no name
+            has." sentence, which is the per-row constant Law 4 exists to stop — and a
+            sentence repeated four times is not read the fourth time.
+            So the glance tier keeps the stances that ask for something to be DONE
+            today (act · get ready); they stand visibly taller than the rows around
+            them, and the exception reads as an exception. Every other row carries its
+            stance one layer down, beside the names it applies to, and the panel's own
+            stance sits in the footer unconditionally — so "so what do I do" is
+            answered on the glance tier whatever tonight's data looks like.
+            The incident's row loses nothing by this: it still states, at a glance,
+            that the sector has turned, that one name is held out, one has already
+            moved and four never set up — which is the whole of what the page failed
+            to say on 2026-08-04. -#}
+        {%- if _r.stance in ('act', 'ready') %}
+        <div class="ctt-say"><span class="ctt-stance">{{ ct_t(_r.say_en, _r.say_zh) }}</span></div>
+        {%- endif %}
+      </summary>
+      <div class="ctt-det">
+        {#- The stance for every row that did not earn the glance-tier line above.
+            Opening the row is what asks for it, so this is where it costs nothing. -#}
+        {%- if _r.stance not in ('act', 'ready') %}
+        <p class="ctt-heat"><span class="ctt-stance">{{ ct_t(_r.say_en, _r.say_zh) }}</span></p>
+        {%- endif %}
+        {%- for _k, _en, _zh in _ct_cols %}
+        {%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
+        {%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
+        {%- if _mem %}
+        <div class="ctt-g">
+          <span class="ctt-gk">{{ ct_t(_en, _zh) }}</span>
+          <span class="ctt-names">{% for _m in _mem %}<span class="ctt-n"><span class="ctt-sym">{{ _m.t }}</span><span class="ctt-zh">{{ _m.zh }}</span>{% if _m.get('why_en') %}<span class="ctt-why">{{ ct_t(_m.why_en, _m.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if _shared %}<span class="ctt-why">{{ ct_t(_shared[0], _shared[1]) }}</span>{% endif %}</span>
+        </div>
+        {%- endif %}
+        {%- endfor %}
+        {#- The remainder. ONE shared reason, stated once, never invented per name:
+            the ledger scored no setup for these, so there is no per-name verdict to
+            report and writing one would be a fabricated rejection. -#}
+        {%- if _r.get('quiet_sample') %}
+        <div class="ctt-g">
+          <span class="ctt-gk">{{ ct_t('quiet', '未触发') }}</span>
+          <span class="ctt-names">{% for _q in _r.quiet_sample %}<span class="ctt-n"><span class="ctt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="ctt-n ctt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="ctt-why">{{ ct_t(_r.get('quiet_why') or 'no setup here yet', _r.get('quiet_why_zh') or '此处尚无形态') }}</span></span>
+        </div>
+        {%- endif %}
+        {#- THE THEME VEHICLE — only on a turned theme, and only where the basket
+            actually has one. 6 of the 22 baskets carry no `etf_proxy` (Gold Miners
+            among them), and a fabricated ticker would be a data lie on the one
+            surface built to stop this page from inventing answers, so the line
+            simply does not render and the stance above still answers the question.
+            Phrased as a FACT about the basket, never as an instruction: "trades as"
+            describes the instrument, where "buy" or even "vehicle to use" would be
+            the recommendation this panel has no authority to make. -#}
+        {%- if _r.get('etf_proxy') and _r.get('early') %}
+        <p class="ctt-veh">
+          <span class="l-en">Traded as one, this theme is <span class="ctt-sym">{{ _r.etf_proxy }}</span> — context, not a recommendation. The names above are being watched, not bought.</span>
+          <span class="l-zh">作为整体交易时，本主题对应 <span class="ctt-sym">{{ _r.etf_proxy }}</span> — 仅供参考，非推荐。上列个股处于观察中，并非买入对象。</span>
+        </p>
+        {%- endif %}
+        <span class="ctt-more-link"><a href="basket_china/{{ _r.key }}.html">{{ ct_t('This theme in full →', '查看本主题详情 →') }}</a></span>
+      </div>
+    </details>
+    {%- endfor %}
+
+    {#- ONE footnote (Law 4), one sentence plus the link. It carries the panel's own
+        stance — where to look, not what to buy — which has to survive unconditionally:
+        it is the only place the panel answers "so what do I do" about ITSELF, as
+        opposed to about a row. -#}
+    <hr class="ctt-rule">
+    <p class="ctt-foot">
+      <span class="l-en">Theme cycles point you at where to look, not at what to buy — the picks above are unchanged by this panel. <a href="china_sector_desk.html">All {{ _ct.get('n_themes') or 0 }} themes →</a></span>
+      <span class="l-zh">主题周期指出值得关注的方向，而非买入对象 — 上方选股不受本面板影响。<a href="china_sector_desk.html">查看全部 {{ _ct.get('n_themes') or 0 }} 个主题 →</a></span>
+    </p>
+  </div>
+{%- endif -%}

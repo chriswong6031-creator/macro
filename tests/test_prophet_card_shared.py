@@ -163,6 +163,131 @@ def test_what_to_buy_now_keeps_its_existing_direction_palette():
 
 
 # --------------------------------------------------------------------------- #
+# the ⚠ caution popover must paint above the NEXT card, not just escape its own
+# --------------------------------------------------------------------------- #
+#: Reported 2026-08-03 on us_stocks.html and hk_stocks.html; the partial is shared, so
+#: it was every board. The clip was released long ago (`overflow:visible`), but the
+#: popover still rendered BEHIND the neighbouring card and lost its right-hand text.
+#:
+#: Cause: `.pvcard:hover` sets `transform:translateY(-2px)`, and a non-none transform
+#: creates a stacking context — so `.pv-cau-pop{z-index:30}` is resolved INSIDE the
+#: hovered card instead of against its siblings, and every later `.pvcard` paints over
+#: it. Raising the popover further cannot fix that; the CARD has to be lifted.
+#:
+#: This pins the CAUSAL rule rather than a literal, so it stays honest under edits:
+#: while the hover transform exists, the escape rule must also carry a z-index.
+def _escape_rule() -> tuple[str, str]:
+    """(selector, declarations) for the rule that lets the caution popover out.
+
+    Narrowed to selectors that style the CARD (`.pvcard:has(…)`): the sibling rule
+    `.pv-cau:hover .pv-cau-pop{display:block}` also names `.pv-cau:hover` but merely
+    reveals the popover, and matching it here would make these assertions read the
+    wrong declarations.
+    """
+    hits = [(m.group(1).strip(), m.group(2))
+            for m in re.finditer(r"([^{}]*)\{([^{}]*)\}", CSS)
+            if ".pv-cau:hover" in m.group(1) and ".pvcard" in m.group(1)]
+    assert len(hits) == 1, f"expected exactly one card-level caution rule, got {hits}"
+    return hits[0]
+
+
+def test_the_escape_rule_matcher_fires_on_a_planted_offender():
+    """The extraction must be able to fail, or every assertion below is vacuous."""
+    sel, decls = _escape_rule()
+    assert "overflow" in decls, sel
+    stripped = CSS.replace(f"{sel}{{{decls}}}", "")
+    hits = [m for m in re.finditer(r"([^{}]*)\{([^{}]*)\}", stripped)
+            if ".pv-cau:hover" in m.group(1) and ".pvcard" in m.group(1)]
+    assert not hits, "removing the rule left a second card-level match — matcher too loose"
+
+
+def test_the_hover_transform_that_traps_the_popover_still_exists():
+    """The premise. If the transform ever goes, this whole guard needs re-deriving —
+    fail loudly rather than keep asserting a fix for a cause that moved."""
+    hover = re.search(r"\.pvcard:hover\{([^{}]*)\}", CSS)
+    assert hover, ".pvcard:hover rule not found"
+    assert "transform:" in hover.group(1), (
+        "the hover transform is gone — re-check whether .pvcard still needs z-index "
+        "to lift the caution popover above its siblings"
+    )
+
+
+def test_releasing_the_clip_also_lifts_the_card_above_its_siblings():
+    sel, decls = _escape_rule()
+    assert "overflow:visible" in decls.replace(" ", ""), sel
+    z = re.search(r"z-index:\s*(\d+)", decls)
+    assert z, (
+        "the caution escape rule releases the clip but sets no z-index — the popover "
+        "escapes the card and then paints UNDER the next card in the grid"
+    )
+    assert int(z.group(1)) > 0, "z-index must beat sibling cards (z-index:auto)"
+
+
+def test_the_lift_stays_below_the_modal_and_lens_layers():
+    """A hovered CARD must never outrank a dialog. Page chrome on these boards tops
+    out around z-index 4; the overlay/LENS layers live at 1200+."""
+    _, decls = _escape_rule()
+    z = int(re.search(r"z-index:\s*(\d+)", decls).group(1))
+    assert 4 < z < 1000, f"card lift z-index={z} is outside the safe band"
+
+
+def test_the_focus_within_half_is_lifted_too():
+    """The ⚠ control is a real <button>: keyboard users open the popover via focus,
+    not hover, and that path must not paint underneath the neighbour either."""
+    sel, _ = _escape_rule()
+    assert ".pv-cau:focus-within" in sel, (
+        "the focus-within selector left the escape rule — the keyboard path would "
+        "regain the clipping/stacking bug"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# the verb chip carries NO hover tip (operator removal, 2026-08-03)
+# --------------------------------------------------------------------------- #
+#: It restated what the card already shows — the chip reads "Buy", the tracker shows the
+#: stage, the footer prints the zone. The ⚡ trigger tip and the ⚠N popover stay, so this
+#: asserts the ONE chip, not "no tips on the card".
+MARKUP = _SRC[_SRC.index("{% macro pv_card("):]
+
+
+def test_the_verb_chip_has_no_data_tip():
+    chip = re.search(r'<span class="pv-chip"[^>]*>', MARKUP)
+    assert chip, "verb chip markup not found — this guard has gone vacuous"
+    assert "data-tip" not in chip.group(0), (
+        "the verb chip regained a hover tip: " + chip.group(0)
+    )
+
+
+def test_the_trigger_and_caution_disclosures_survived_the_removal():
+    """Guard the removal's blast radius — which GREW by a second operator order.
+
+    2026-08-03 took the tip off the verb chip only, and this guard pinned
+    .pv-edge as a survivor. 2026-08-05 extended the same call to .pv-edge and to
+    the feat/new marks: all three are badges whose whole job is to be read at a
+    glance, and their explainers were the longest cards on the board.
+
+    So the radius is re-pinned, not relaxed. What must SURVIVE is unchanged and
+    still asserted — the ⚡ trigger tip and the ⚠N caution popover carry facts
+    that appear nowhere else on the card. What went is now asserted GONE, so a
+    tip creeping back onto a badge fails here rather than passing quietly.
+    """
+    trg = re.search(r'<span class="pv-trg[^>]*>', MARKUP)
+    assert trg and "data-tip-en" in trg.group(0), "the ⚡ trigger tip was removed too"
+    assert 'class="pv-cau-pop"' in MARKUP, "the ⚠ caution popover was removed too"
+
+    edge = re.search(r'<span class="pv-edge"[^>]*>', MARKUP)
+    assert edge, "the Edge slot markup is gone — this guard has gone vacuous"
+    assert "data-tip" not in edge.group(0), (
+        "the Edge/Priority badge regained a hover tip (removed 2026-08-05): "
+        + edge.group(0)
+    )
+    assert "_MK_NOTIP" in MARKUP, (
+        "the feat/new mark tip suppression is gone — the 2026-08-05 removal "
+        "covered those badges too"
+    )
+
+
+# --------------------------------------------------------------------------- #
 # the premise of this file
 # --------------------------------------------------------------------------- #
 def test_the_partial_really_is_shared_beyond_the_us_page():

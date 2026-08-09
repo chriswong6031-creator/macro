@@ -190,6 +190,7 @@ def all_adapters() -> dict:
         ("usaspending_awards", "collectors.usaspending_awards", "UsaspendingAwardsAdapter"),  # keyless award/action detail + PIT snapshots -> Government Revenue Foresight
         ("usaspending_subawards", "collectors.usaspending_subawards", "UsaspendingSubawardsAdapter"),  # bounded official count + identity pages; source-only, non-additive subaward context
         ("usaspending_idv_graph", "collectors.usaspending_idv_graph", "UsaspendingIdvGraphAdapter"),  # bounded IDV discovery + exact parent/child activity receipts; identity context only
+        ("sbir_awards", "collectors.sbir_awards", "SbirAwardsAdapter"),  # append-only SBIR.gov Phase I/II observations; exact agency_tracking_number identity, 10-req/10-min paced
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
@@ -204,7 +205,9 @@ def all_adapters() -> dict:
         ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
         ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
         ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
+        ("ibkr_borrow", "collectors.ibkr_borrow", "IbkrBorrowAdapter"),  # keyless IBKR ftp shortable file: borrow FEE + lendable AVAILABILITY, universe + hard-to-borrow tail. NO backfill exists (snapshot-only) so every missed night is unrecoverable -> data/ibkr_borrow/panel.parquet (display/context tier; fee is near-constant in-universe, a rare-event flag not a ranking leg)
         ("finra_ats_transparency", "collectors.finra_ats_transparency", "FinraAtsTransparencyAdapter"),  # keyless FINRA OTC Transparency weekly per-ATS venue breakdown (T2e; 2-4wk lag; partition-aware POST fetch, 2026-07 repair) -> darkpool.html venue table
+        ("finra_otc_nonats", "collectors.finra_ats_transparency", "FinraOtcNonAtsAdapter"),  # same endpoint, OTC_W_SMBL_FIRM: NON-ATS wholesaler internalization (the BIGGER half of off-exchange volume; ATS is only 16-31% per name) -> darkpool ats_frac institutional-vs-retail split
         ("finnhub_transcripts", "collectors.finnhub_transcripts", "FinnhubTranscriptsAdapter"),  # Finnhub transcript LIST metadata (same-day latency; body fetch deferred; GATED: plan-gated 403 -> no-op) -> data/finnhub/transcripts.parquet
         ("stocktwits", "collectors.stocktwits", "StockTwitsAdapter"),  # StockTwits public stream bullish/bearish ratios + watchlist_count (keyless, ~200/hr) -> data/stocktwits/sentiment.parquet
         ("google_trends", "collectors.google_trends", "GoogleTrendsAdapter"),  # SGA-W4: pytrends weekly relative search-interest for brand-name tickers (~20/night rotating) -> data/google_trends/<T>.parquet (display-only fade-risk chip; 'blocked' when pytrends absent)
@@ -385,6 +388,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "usaspending_idv_graph", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
+    "sbir_awards",  # GOVREV W10-R3: paced at 63s/request against a published 10-req/10-min public limit
 }
 
 
@@ -421,7 +425,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
                              audit_fred_groups, audit_massive_store, audit_price_basis,
-                             audit_stocks_freshness)
+                             audit_reused_tickers, audit_stocks_freshness)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -440,6 +444,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # gaps only) and check_price_store_freshness (SPY/yahoo only). Per-name
             # stale-tip tripwire; flags-only, never gates this run.
             ("stocks_freshness", lambda: audit_stocks_freshness.run(cfg=cfg)),
+            # 2026-08-06 ECHO identity swap: a dead name's key (Echo Global Logistics,
+            # taken private 2021) silently filled with EchoStar's full history after
+            # its SATS->ECHO rename — invisible to every gap/freshness check because
+            # the file is fresh, continuous, and internally consistent. Dead-registry
+            # cross-reference + NASDAQ-directory presence tripwire; flags-only.
+            ("reused_tickers", lambda: audit_reused_tickers.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
@@ -830,6 +840,11 @@ def main() -> int:
         try:
             from scripts.build_polygon_gex import accrue as accrue_polygon_gex
             log.info("=== accruing Polygon options OI (GEX foundation) ===")
+            # Passing an INSTANT (not a date) is load-bearing: accrue() reads a datetime
+            # as "snapshot now" and files the result under the SESSION that snapshot
+            # describes (nyse_calendar.expected_last_session), never under the UTC run
+            # date. A 01:24 UTC run therefore stores the prior ET session it actually
+            # holds, and a Friday-evening ET run is no longer refused as "Saturday".
             _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             _polygon_gex_status = {"status": "failed", "error": str(e)}
@@ -930,6 +945,23 @@ def main() -> int:
             check_yahoo_freshness()
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("yahoo freshness tripwire crashed (non-fatal): %s", e)
+
+    # Side-store freshness audit (R4, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md):
+    # check_yahoo_freshness above only covers the 3-name ENGINE_CRITICAL_SERIES tuple;
+    # this audits every ticker the yahoo group is asked to maintain (~740 names) — the
+    # class that let CTRA/TPH/TCNNF/CWEN-A freeze silently for weeks as ordinary side-
+    # store extras. Own try/except with a bare ::warning (not log.warning) so an audit
+    # crash surfaces as a loud annotation instead of dying silently or aborting the run.
+    if "yahoo" in registry:
+        try:
+            from collectors.yahoo import YahooAdapter, audit_store_freshness
+            # maintained_tickers(), NOT all_tickers(): a delisted name is dropped from
+            # the FETCH list but its store still exists and still has to be audited —
+            # that is the only check that would catch a wrong exit row or a reused
+            # ticker refilling under a dead name.
+            audit_store_freshness(YahooAdapter().maintained_tickers(), group="yahoo")
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))

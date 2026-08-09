@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "CLSK-2026-06-30-laggards",
+  "ticker": "CLSK",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "CLSK",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "CLSK",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Information Technology",
+    "excess_spy": 0.008576039856583506,
+    "excess_sector": 0.06560705867578731,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 5.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The supplied labels attribute the outcome to company-specific alpha while separately recording a premature-stop-noise process fault. The positive benchmark-relative result does not erase the timing failure: the position may have been stopped before the labeled alpha could mature.",
+    "root_cause": "The supplied labels attribute the outcome to company-specific alpha while separately recording a premature-stop-noise process fault. The positive benchmark-relative result does not erase the timing failure: the position may have been stopped before the labeled alpha could mature.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The company-alpha book surfaced the opportunity, while the entry-timing and path-risk engines missed or mishandled ordinary post-entry noise.",
+    "engines_credit": "Company-alpha organs are the provisional role models; stop calibration and path-risk books are the laggards, although their underlying telemetry was not supplied.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "A company-specific mechanism reportedly supported benchmark-relative strength.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Without the company-specific alpha, benchmark-relative strength might not have appeared.",
+        "evidence_refs": [
+          "outcome_cause=idio_alpha",
+          "excess_spy positive"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Interim price noise reportedly activated the stop before the thesis could mature.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A path-aware stop treatment might have distinguished thesis impairment from transient noise.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "terminal_state=STOPPED"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The realized path made the initial stop placement or timing incompatible with the opportunity's volatility.",
+        "evidence_status": "claimed",
+        "timing_status": "unknown",
+        "counterfactual": "Different entry timing or volatility-conditioned stop placement might have preserved exposure without changing selection standards.",
+        "evidence_refs": [
+          "process_fault=premature_stop_noise",
+          "board_tenure_days supplied"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "A broad technology rotation could have produced the relative strength instead of company-specific alpha.",
+      "The stop may have reflected genuine thesis deterioration followed by an unrelated rebound.",
+      "A catalyst emerging after entry could explain the favorable relative outcome."
+    ],
+    "missing_evidence": [
+      "Entry, stop, exit, and post-exit price path",
+      "Contemporaneous company-alpha features and thesis notes",
+      "Technology-sector and industry-relative returns",
+      "Realized and expected volatility at entry",
+      "Dated company news and catalyst history"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "stop_noise_recovery",
+        "feature": "Post-stop recovery without contemporaneous thesis impairment",
+        "measurement": "Compare the post-stop path with the original thesis horizon and dated fundamental revisions.",
+        "expected_direction": "More recoveries without thesis impairment would support volatility-conditioned stop handling.",
+        "falsifier": "Most stopped cases continue deteriorating or show contemporaneous thesis impairment.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

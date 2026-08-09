@@ -18,6 +18,8 @@ Covers:
     - PIT: future rows are excluded from the percentile calculation
   * Schema-union: existing 8 opt_* columns preserved byte-identically after stamp pass
   * Writer gracefully handles absent tape_flow store (all-null stamp)
+  * Per-column family commit (2026-08-04): a computable column never freezes a
+    still-null sibling, and a non-null cell is never overwritten
 """
 from __future__ import annotations
 
@@ -469,3 +471,108 @@ def test_writer_graceful_absent_tape_flow_store(tmp_path, monkeypatch):
     # No rows counted as stamped — the retry gate reads STAMP_COVERAGE_COLS, so a row
     # carrying only store-independent columns stays fully retryable when coverage lands.
     assert n_newly == 0
+
+
+# ─── per-column family commit (2026-08-04) ───────────────────────────────────
+# The family used to commit all four columns the moment ANY was non-null, so the
+# always-cheap opt_dte_quality (one store row) locked opt_net_signed_prem_5d_z and
+# opt_crowding_flag (20 prior obs) at null forever.  These pin the per-column rule.
+
+_TF_FIRE = "2026-07-20"
+_SENTINEL_DTE = 0.11          # provably not what _tf_frame's defaults compute (0.75)
+
+
+def _tf_ledger_row(*, as_of: str = _TF_FIRE, ticker: str = "TFPC",
+                   sector: str = "Industrials") -> pd.DataFrame:
+    """One ledger row for the stamp_ledger pass, with the tape-flow columns present
+    and null (mirrors a row the schema-union has already reached)."""
+    df = pd.DataFrame([{
+        "as_of": as_of, "ticker": ticker, "sector": sector,
+        "lane": "buy", "horizon": 21,
+    }])
+    for col in TAPE_FLOW_STAMP_COLS:
+        df[col] = None
+    return df
+
+
+def _silence_options_stores(monkeypatch):
+    """Absent every options-state store so only the tape-flow family can move.
+
+    Both namespaces are patched: stamp_ledger calls _default_chain_dates and the two
+    W-C snapshot readers through the SCRIPT's module globals (bound at import), while
+    stamp_options_state reaches its own module's readers.
+    """
+    import engine.options_stamp as _os
+    import scripts.stamp_options_state as _ss
+    monkeypatch.setattr(_os, "_default_chain_dates", lambda: [])
+    monkeypatch.setattr(_ss, "_default_chain_dates", lambda: [])
+    monkeypatch.setattr(_os, "_default_read_summary", lambda t: None)
+    monkeypatch.setattr(_os, "_default_read_chain", lambda d: None)
+    monkeypatch.setattr(_os, "_default_read_skew_snapshots", lambda: None)
+    monkeypatch.setattr(_os, "_default_read_ivspread_snapshots", lambda: None)
+    monkeypatch.setattr(_ss, "_default_read_skew_snapshots", lambda: None)
+    monkeypatch.setattr(_ss, "_default_read_ivspread_snapshots", lambda: None)
+
+
+def _serve_tape_flow(monkeypatch, frame: pd.DataFrame | None):
+    """Point the writer's default tape-flow reader at one synthetic frame."""
+    import engine.tape_flow_stamp as _tfs
+    monkeypatch.setattr(_tfs, "_default_read_tape_flow", lambda r: frame)
+
+
+def test_shallow_store_fills_dte_and_leaves_row_retryable(monkeypatch):
+    """A shallow store fills opt_dte_quality; the 20-obs columns fill on a LATER pass.
+
+    Pass 1's store carries the fire's own day plus 4 priors — enough for dte_quality,
+    not for the _MIN_HISTORY gate.  Pass 2 runs on pass 1's OUTPUT with a store that
+    now has 20 strictly-prior rows: under the pre-fix family-wide commit pass 1 marked
+    all four columns written, closing the retry gate, and pass 2 could never reach the
+    row.
+    """
+    _silence_options_stores(monkeypatch)
+    shallow_dates = _make_dates(5, end=_TF_FIRE)
+    shallow = _tf_frame(shallow_dates, nsp=list(range(1000, 1000 + len(shallow_dates))))
+    _serve_tape_flow(monkeypatch, shallow)
+
+    out1, n1 = stamp_ledger(_tf_ledger_row())
+
+    assert n1 == 1, "the shallow store fills at least one column, so the row commits"
+    assert out1.at[0, "opt_dte_quality"] == pytest.approx(0.75, abs=1e-6)
+    assert pd.isna(out1.at[0, "opt_net_signed_prem_5d_z"]), "z needs 20 prior obs"
+    assert pd.isna(out1.at[0, "opt_crowding_flag"]), "crowding needs 20 prior obs"
+
+    # coverage arrives: 20 strictly-prior sessions + the fire's own day
+    deep_dates = _make_dates(_MIN_HISTORY + 1, end=_TF_FIRE)
+    deep = _tf_frame(deep_dates, nsp=list(range(1000, 1000 + len(deep_dates))))
+    _serve_tape_flow(monkeypatch, deep)
+
+    out2, n2 = stamp_ledger(out1)
+
+    assert n2 == 1, (
+        "the row must still be retryable after pass 1 — if 0, one computable column "
+        "has frozen its 20-obs-gated siblings at null (the pre-2026-08-04 defect)"
+    )
+    assert out2.at[0, "opt_net_signed_prem_5d_z"] is not None
+    assert not pd.isna(out2.at[0, "opt_net_signed_prem_5d_z"])
+    assert not pd.isna(out2.at[0, "opt_crowding_flag"])
+    # the already-filled column is untouched by the second pass
+    assert out2.at[0, "opt_dte_quality"] == out1.at[0, "opt_dte_quality"]
+
+
+def test_tape_flow_never_overwrites_a_non_null_cell(monkeypatch):
+    """Fill-null-only: a pass that CAN compute a different value leaves the cell alone."""
+    _silence_options_stores(monkeypatch)
+    dates = _make_dates(5, end=_TF_FIRE)
+    _serve_tape_flow(monkeypatch, _tf_frame(dates, nsp=list(range(1000, 1000 + len(dates)))))
+
+    df = _tf_ledger_row()
+    df.at[0, "opt_dte_quality"] = _SENTINEL_DTE   # store would compute 0.75 here
+
+    out, _ = stamp_ledger(df)
+
+    assert out.at[0, "opt_dte_quality"] == _SENTINEL_DTE, "a non-null cell was overwritten"
+    # ...and the pass genuinely RAN — without this the assertion above is vacuous
+    # (a skipped row also "preserves" the sentinel).
+    assert not pd.isna(out.at[0, "opt_flow_breadth_group"]), (
+        "the tape-flow family did not run; the no-overwrite assertion above proves nothing"
+    )

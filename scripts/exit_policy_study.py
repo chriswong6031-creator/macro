@@ -146,6 +146,10 @@ this sample cannot support; the overlap is DISCLOSED instead.
 
 Run:  python -m scripts.exit_policy_study                 # writes reports/exit-policy-horserace.md
       python -m scripts.exit_policy_study --json out.json # also dump the raw result dict
+      python -m scripts.exit_policy_study --live --out /tmp/today.md   # today's caches
+
+The committed report renders from the PINNED VINTAGE, not from the live caches — see
+``VINTAGE_FIXTURE`` and ``main`` below for why the default had to move.
 """
 from __future__ import annotations
 
@@ -181,6 +185,10 @@ from scripts.grade_us_board import (  # noqa: E402
 )
 
 REPORT_PATH = ROOT / "reports" / "exit-policy-horserace.md"
+
+# The frozen input slice the committed report is rendered at. Same slice the calibration
+# is pinned to (see ``calibrate``); built by scripts/build_exit_policy_vintage_fixture.py.
+VINTAGE_FIXTURE = ROOT / "tests" / "fixtures" / "exit_policy_vintage"
 
 # Close panel = engine.equity_factors._closes("broad") — breadth (S&P 500) + smallcap +
 # midcap, first-hit-wins — so the price basis is byte-identical to the grader's. Russell
@@ -771,12 +779,18 @@ def reconcile_round(values: Mapping[str, float], nd: int = DISPLAY_ND) -> dict[s
 def policy_metrics(rows: Sequence[Mapping[str, Any]]) -> dict:
     """Headline block for one policy, computed through ``track_scoring.summarize``.
 
-    One deliberate departure from ``summarize``: ``capture`` is recomputed with rows whose
-    MFE <= 0 DROPPED rather than divided. ``summarize``'s filter is ``abs(mfe) > 1e-9``,
-    which admits a negative MFE — a position that never traded above its entry inside the
-    window — and realised/MFE there is a ratio of two negatives that prints as a healthy
-    positive. The dropped rows are counted (``n_capture_undefined``) and the report prints
-    the count beside the column, so the null is disclosed rather than averaged away.
+    ``capture`` is recomputed here with rows whose MFE <= 0 DROPPED rather than divided:
+    a negative MFE means the position never traded above its entry inside the window, and
+    realised/MFE there is a ratio of two negatives that prints as a healthy positive. The
+    dropped rows are counted (``n_capture_undefined``) and the report prints the count
+    beside the column, so the null is disclosed rather than averaged away.
+
+    This USED to be a deliberate departure from ``summarize``, whose own filter was
+    ``abs(mfe) > 1e-9`` and therefore admitted the negatives. #4684 ported the floor
+    upstream (``track_scoring.MFE_FLOOR``), so the recompute is now a MIRROR, not a
+    departure — the study and the shipped track record have to report the same quantity
+    under one column name. Keep the two floors equal; the agreement is pinned by
+    tests/test_exit_policy_study.py::TestCaptureGuard.
     """
     out = dict(ts.summarize(rows, metric="pnl", horizon=LEDGER_HORIZON))
     ex = [float(r["excess"]) for r in rows
@@ -1124,9 +1138,34 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
     """Re-derive the shipped ledger summary on the FULL (uncoverage-filtered) cohort.
 
     Deliberately NOT the horse-race cohort: the ledger scores every episode with a close
-    path, while the horse race additionally requires a high/low path for ATR. Running the
-    calibration on the ledger's own cohort is what makes a non-zero delta mean "the
-    reconstruction drifted" rather than "the cohorts differ".
+    path, while the horse race additionally requires a high/low path for ATR.
+
+    A ZERO DELTA MEANS "SAME CODE **AND** SAME INPUTS" — NOT "SAME CODE" (2026-08-06).
+    ------------------------------------------------------------------------------------
+    This block compares a LIVE recomputation against a COMMITTED artifact, so it is only
+    ever exact when one nightly run wrote both. Two input movements break it with no code
+    change whatsoever, and the 2026-08-06 failure carried both at once:
+
+      * FRONTIER — `daily` died 08-02..08-06, but its *collect* step still committed
+        prices on 08-06 (caches 07-31 -> 08-05) while the *grading* step never re-ran.
+        The shipped ledger was graded through 07-31. Three extra sessions matured 84 more
+        episodes across 3 more board days: the n_matured / n_board_days deltas.
+      * VINTAGE — that same collect RE-ADJUSTED 240 *historical* closes across 12
+        dividend names (OKE, AMP, SYF, EQT, NRG, C, ...) by 0.56..1.18%, the ordinary
+        total-return re-adjustment that lands on a new ex-date. ~6 marginal verdicts
+        flipped and median_hold moved 9->10: 12 further deltas that SURVIVE any date clip.
+
+    So a date clip cannot restore like-for-like, and neither can any field on the shipped
+    artifact: `as_of` is `boards[-1]["as_of"]` (the last BOARD date, advanced by a
+    different lane than prices), and `meta.continuity.last_session` is deliberately a
+    THIRD lane's clock (SPY) — it read 08-04 while grading had seen 07-31.
+
+    Reconstruction FIDELITY is therefore pinned against a frozen input slice instead:
+    ``tests/fixtures/exit_policy_vintage`` (regenerate with
+    ``scripts/build_exit_policy_vintage_fixture.py``). Against that slice this function
+    returns ``exact_match`` and every delta is 0, so a non-zero delta there — and only
+    there — means the reconstruction drifted. Against LIVE inputs the honest reading is
+    ``coupling``: whether the ledger and the price caches came from the same run.
     """
     scored, n_inflight, skipped = [], 0, []
     ob: dict[str, pd.Series | None] = {}
@@ -1161,9 +1200,10 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
                            n_skipped=len(skipped), horizon=LEDGER_HORIZON)
 
     path = ledger_path if ledger_path is not None else LEDGER_JSON
-    shipped: dict[str, Any] = {}
+    doc: dict[str, Any] = {}
     if Path(path).exists():
-        shipped = (json.loads(Path(path).read_text()) or {}).get("summary") or {}
+        doc = json.loads(Path(path).read_text()) or {}
+    shipped: dict[str, Any] = doc.get("summary") or {}
     deltas = {}
     for k in _CALIB_KEYS:
         a, b = rebuilt.get(k), shipped.get(k)
@@ -1175,14 +1215,80 @@ def calibrate(board_days: Mapping[str, Iterable[str]], closes: pd.DataFrame,
     return {"rebuilt": rebuilt, "shipped": shipped, "deltas": deltas,
             "n_skipped_no_price": len(skipped),
             "tickers_skipped": sorted(set(skipped)),
-            "exact_match": bool(exact and shipped)}
+            "exact_match": bool(exact and shipped),
+            "coupling": _coupling(closes, doc)}
+
+
+def _coupling(closes: pd.DataFrame, ledger_doc: Mapping[str, Any]) -> dict:
+    """Were the shipped ledger and the price panel written by the SAME nightly run?
+
+    The question every non-zero calibration delta has to answer first — see calibrate's
+    docstring. ``priced_through`` is the grader's own disclosure of the last session it
+    graded against (``scripts/grade_us_board.emit_ledger``); it is the ONLY field that
+    answers this, which is why it exists. Artifacts written before 2026-08-06 carry no
+    such stamp, and their vintage is simply not knowable from the file — reported as
+    ``unknown`` rather than guessed, because inferring the frontier from the counts it is
+    supposed to explain would make any real drift refit itself into invisibility.
+    """
+    price_asof = str(closes.index.max().date()) if len(closes.index) else None
+    meta = ledger_doc.get("meta") or {}
+    graded_through = meta.get("priced_through")
+    sessions_ahead = None
+    if graded_through and price_asof and len(closes.index):
+        sessions_ahead = int((closes.index > pd.Timestamp(graded_through)).sum())
+    return {
+        "price_asof": price_asof,
+        "ledger_priced_through": graded_through,
+        "ledger_as_of": ledger_doc.get("as_of"),   # last BOARD date — NOT a price frontier
+        "sessions_ahead": sessions_ahead,
+        "same_run": (graded_through == price_asof) if graded_through else None,
+    }
+
+
+def coupling_warning(cal: Mapping[str, Any]) -> str | None:
+    """A line-start ``::warning`` when the ledger and the caches are from different runs.
+
+    Warn-only display tier, matching ``grade_us_board``'s board-continuity guard: a
+    desynced lane is an OPS condition, not a defect in whatever PR happens to be running,
+    so it is annotated rather than gated. The reconstruction guard that IS fail-closed
+    runs against the frozen fixture instead.
+
+    Repo annotation law: the returned string IS the line — print it BARE with flush=True,
+    never through a logger, or GitHub silently drops it.
+    """
+    c = cal.get("coupling") or {}
+    if not cal.get("shipped"):
+        return None
+    got, want = c.get("price_asof"), c.get("ledger_priced_through")
+    if want is None:
+        return ("::warning title=exit-policy-ledger-coupling::shipped us_track_ledger.json "
+                "discloses no meta.priced_through, so the price vintage it was graded "
+                f"against cannot be checked against the caches (now through {got}); "
+                "calibration deltas here are NOT evidence of reconstruction drift")
+    if want == got:
+        return None
+    n = c.get("sessions_ahead")
+    return ("::warning title=exit-policy-ledger-coupling::shipped us_track_ledger.json was "
+            f"graded through {want} but the price caches now run to {got}"
+            f"{f' ({n} sessions ahead)' if n else ''} — the nightly grader has not re-run "
+            "since collect last advanced prices, so its summary is a different vintage; "
+            "calibration deltas against it measure that gap, not reconstruction drift")
 
 
 # --------------------------------------------------------------------------- #
 # study
 # --------------------------------------------------------------------------- #
-def run_study(root: Path | None = None) -> dict:
-    """Everything, deterministically. Returns the full result dict the report renders."""
+def run_study(root: Path | None = None, *, ledger_path: Path | None = None) -> dict:
+    """Everything, deterministically. Returns the full result dict the report renders.
+
+    ``root`` relocates EVERY input, ledger included: before 2026-08-06 the calibration
+    still read the live ``LEDGER_JSON`` while the panels came from ``root``, so a run
+    against a frozen slice silently compared it to today's artifact — the one leak that
+    would have made the vintage fixture below prove nothing.
+    """
+    if ledger_path is None:
+        ledger_path = (Path(root) / "site" / "factordata" / "us_track_ledger.json"
+                       if root is not None else LEDGER_JSON)
     closes, highs, lows, bench = load_prices(root)
     board_days, invalidation, prov = load_board_days(root)
     cohort, exclusions = build_cohort(board_days, invalidation, closes, highs, lows)
@@ -1256,7 +1362,7 @@ def run_study(root: Path | None = None) -> dict:
             "r_pct_p90": round(float(np.percentile(plan_r, 90)), 2) if plan_r else None,
             "target_pct_median": round(float(np.median(plan_r)) * PLAN_R_MULT, 2) if plan_r else None,
         },
-        "calibration": calibrate(board_days, closes, bench),
+        "calibration": calibrate(board_days, closes, bench, ledger_path=ledger_path),
     }
 
 
@@ -2011,15 +2117,57 @@ def _read_paragraphs(res: Mapping[str, Any]) -> str:
 
 # --------------------------------------------------------------------------- #
 def main(argv: Sequence[str] | None = None) -> int:
+    """Write the report. The COMMITTED one renders at the pinned vintage, not from live.
+
+    The default used to be ``run_study()`` over the live caches, and that is what put main
+    red on 2026-08-06. Two PRs 53 minutes apart defined this one file two incompatible
+    ways: #4827 regenerated it from the caches as they stood that evening, and #4763
+    re-pointed its guard at the frozen slice (sliced at the ledger's own commit, a day
+    earlier). In between, `collect` re-adjusted historical closes on a new ex-date — the
+    routine total-return re-adjustment #4763 measured — and flipped ONE P2 k=2 episode
+    from a stop exit to a `data_end` mark. 536 marks on disk, 535 at the pin.
+
+    Nothing was wrong with either artifact; the writer and the guard simply read different
+    inputs. A committed artifact and its guard have to be rendered from the SAME inputs or
+    the pair is only green while one run wrote both — the same coupling-wearing-fidelity's-
+    name defect #4763 closed on the calibration, still open on the report. So the writer
+    moves to the pin too, and `--live` (the ad-hoc "what do today's caches say" run, and
+    the only mode where the lane-coupling warning means anything) may not overwrite the
+    committed path.
+    """
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--out", default=str(REPORT_PATH), help="markdown report path")
+    ap.add_argument("--out", default=None,
+                    help=f"markdown report path (default: {REPORT_PATH.name} at the pin)")
+    ap.add_argument("--live", action="store_true",
+                    help="run against the LIVE price caches instead of the pinned vintage; "
+                         "requires an explicit --out")
     ap.add_argument("--json", default=None, help="also dump the raw result dict here")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
 
-    res = run_study()
+    out = Path(args.out) if args.out else REPORT_PATH
+    root = None if args.live else VINTAGE_FIXTURE
+    if args.live and out.resolve() == REPORT_PATH.resolve():
+        raise SystemExit(
+            f"refusing to overwrite {REPORT_PATH.relative_to(ROOT)} from the live caches. "
+            "It is a DATED artifact pinned to tests/fixtures/exit_policy_vintage, and its "
+            "guard (tests/test_exit_policy_study.py::TestCommittedReportIsCurrent) renders "
+            "at that pin — a live render re-opens the 2026-08-06 mismatch the moment "
+            "collect re-adjusts a close. Drop --live to refresh it, or pass --out to write "
+            "the live render somewhere else.")
+    if root is not None and not root.exists():
+        raise SystemExit(
+            f"{root.relative_to(ROOT)} is missing — regenerate with "
+            "python3 scripts/build_exit_policy_vintage_fixture.py, or pass --live --out "
+            "<path> to render from the live caches.")
+
+    res = run_study(root)
+    # BARE print, line-start, flush=True — repo annotation law. Routing this through a
+    # logger prefixes the line and GitHub drops the annotation silently.
+    _warn = coupling_warning(res["calibration"])
+    if _warn:
+        print(_warn, flush=True)
     md = render_report(res)
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md)
     if args.json:
@@ -2032,7 +2180,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         Path(args.json).write_text(json.dumps(res, indent=1, default=_plain))
     if not args.quiet:
         coh = res["cohort"]
-        print(f"[exit_policy_study] {coh['n_episodes']} episodes / "
+        print(f"[exit_policy_study] {'LIVE caches' if args.live else 'pinned vintage'} "
+              f"(prices through {res['price_asof']}) · {coh['n_episodes']} episodes / "
               f"{coh['n_board_days']} board days · "
               f"calibration exact={res['calibration']['exact_match']} → {out}")
     return 0
