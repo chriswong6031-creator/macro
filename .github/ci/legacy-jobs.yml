@@ -6574,6 +6574,115 @@ jobs:
           tests/test_group_pulse_episodes.py
           tests/test_group_pulse_tripwire.py -q -rs
 
+  group-read-surface:
+    # GR1 of the Group Reads program: the USER-FACING basket read surfaces —
+    # templates/basket_detail.html.j2's READ band (stance line, four glance tiles, the
+    # arc rail, "what we're watching", the episode and earnings sections) and the
+    # group-pulse column on the Sector Intelligence board.
+    #
+    # The suite EXECUTES the shipped JS under node rather than mirroring it in Python: a
+    # Python re-implementation of the stance matrix would keep passing while the copy
+    # that ships drifted away from it (the mirrored-guard-is-vacuous trap). `setup-node`
+    # is therefore load-bearing, not decoration — the suite skips itself without node on
+    # PATH, and a silent skip reads exactly like a pass.
+    #
+    # What goes red here:
+    #   stance matrix   any (participation x sign x state_change x arc) combination that
+    #                   emits an untranslated slug, an internal state name, "igniting",
+    #                   "validated", refutation vocabulary, a missing or English-echoed
+    #                   ZH string, a read over the Tier-1 word budget, a directional
+    #                   act/buy stance (participation carries no directional authority,
+    #                   DNR:KILL-PSS-SR3-PARTICIPATION), or a "moving together" claim
+    #                   below the movers floor.
+    #   earnings traps  the two group_earnings_pulse.v1 shapes that read plausibly and
+    #                   are wrong: `season.next` is a preview CAPPED at 6, so the count
+    #                   must come from n_upcoming_14d; and n_beat + n_miss can sit far
+    #                   below n_members, so n_no_data is shown rather than divided away
+    #                   into a survivor beat rate.
+    #   null states     all three artifacts land only after the first post-merge nightly.
+    #                   Every panel must render plain-word bilingual copy when its file
+    #                   or key is absent, and every fetch must be fail-silent.
+    #   surface law     the Oracle P8 null is disclosed verbatim in both languages; no
+    #                   score/rank/heat number anywhere (R-TIL-3 / G0-2); the board's
+    #                   alternative ordering is a disclosed rule over the artifact's own
+    #                   named legs, printed on the surface it orders, with the existing
+    #                   default sort untouched; and the desk's re-order resets the
+    #                   show-more row cap it would otherwise leave pointing at the old
+    #                   card positions.
+    #
+    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
+    # one plain-copy JS asset and shells node.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: basket read band + board group-pulse column (GR1)
+        run: python -m pytest tests/test_group_read_surface.py -q -rs
+
+  group-earnings-pulse:
+    # Group Reads W-GR2: engine/group_earnings.py -> site/basketdata/earnings_pulse.json,
+    # the per-basket earnings layer (season clock, beat rollup, guidance band, revision
+    # breadth, post-report drift, earnings sympathy) plus its append-only sympathy ledger.
+    #
+    # Both suites run against a SYNTHETIC data tree in tmp_path, so they are deterministic,
+    # offline, and independent of how full the Nasdaq surprise drip happens to be on the
+    # day. What they pin, in order of what would hurt most if it broke:
+    #
+    #   * the frozen group_earnings_pulse.v1 key set. The validator lives in the test, not
+    #     the engine, and is itself mutation-checked: nine deliberate mutants (unknown key
+    #     at three nesting depths, four dropped `n` fields, a dropped authority, a malformed
+    #     `next` entry) must each make it go red, so a validator that quietly stopped
+    #     validating fails here rather than shipping a silent contract break to the GR1
+    #     surface builder.
+    #   * every floor refusing with a null instead of a survivor-only number. The `thin`
+    #     basket carries three members with perfectly good data — a real surprise, a real
+    #     analyst reading, a real post-report price path — and must publish nothing but
+    #     nulls, because three is below MIN_REPORTED / MIN_COVERED / MIN_DRIFT_N. A
+    #     3-of-3 beat share is exactly the number the floors exist to suppress.
+    #   * the resolution-conditioned-denominator law: n_beat + n_miss + n_inline +
+    #     n_no_data == n_members in every basket, refused or not.
+    #   * engine.guidance_gap's >=2-distinct-filers law surviving the generalization from
+    #     curated themes to arbitrary basket rosters (one filer -> band null), and the
+    #     floor being IMPORTED rather than re-declared so the two can never drift.
+    #   * the sympathy ratio, on a fixture where the answer is arithmetic. That fixture is
+    #     deliberately MAJORITY report days: the median is robust, so a contaminated
+    #     baseline built from a window with only a few report days still reads correct and
+    #     the bug hides. At 24 report days against 16 quiet ones a baseline that forgets to
+    #     exclude them collapses the ratio from 3.0 to 1.0 — verified by mutation.
+    #   * the ledger's immutability: re-advancing identical inputs is a byte-for-byte no-op,
+    #     a restated value for an existing key is refused rather than applied, and the
+    #     nightly lane gate (engine.ledger_lane) is imported, not a local COLLECT_LANE read.
+    #
+    # `requests` is in the install line because engine/group_earnings.py's Item-2.02 check
+    # prefers collectors.edgar_earnings_8k.has_item_202 and falls back to a local copy when
+    # that module (which imports requests at module scope) is unavailable. With requests
+    # installed the equivalence test compares the two definitions for real; without it the
+    # test would skip and the fallback could drift unnoticed.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: group earnings pulse contract, floors and sympathy (W-GR2)
+        run: >-
+          python -m pytest
+          tests/test_group_earnings_contract.py
+          tests/test_group_earnings_sympathy.py -q -rs
+
   group-linked-outsiders:
     # GR3 of the Group Reads program: filing-linked outsiders per US basket.
     #
