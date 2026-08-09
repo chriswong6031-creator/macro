@@ -159,8 +159,43 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    assert pack["runs-on"] == "ubuntu-latest"
+    # Pull requests stay on the hosted pool; main's proof runs on the idle self-hosted
+    # Linux pool. Asserted as a CONTRACT on both branches rather than as a literal,
+    # because the point of the expression is that the two events route differently —
+    # pinning the string would have forbidden the routing outright.
+    #
+    # Why main routes away from `ubuntu-latest` (2026-08-09): main's ci.yml proof sat
+    # `queued` 30+ minutes behind 133 queued runs while `render-linux` idled, and that
+    # one starved run blocks the whole fleet — `merge_on_green.main_proof` answers "is
+    # main green on ci-pack-N" from the newest CONCLUDED ci.yml run on main, so with no
+    # fresh proof the base-inherited-red refresh cannot fire and every pull request that
+    # inherited a since-healed red stays blocked.
+    runs_on = " ".join(str(pack["runs-on"]).split())
+    assert "github.event_name == 'pull_request'" in runs_on
+    assert "'ubuntu-latest'" in runs_on
+    assert '["self-hosted","render-linux"]' in runs_on
+    # The macstudio pool is the render/nightly lane and must never absorb CI packs.
+    assert "macstudio" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
+    # Main's proof may take at most HALF the four-runner `render-linux` pool; pull
+    # requests must stay UNTHROTTLED. `merge-on-green.yml` targets that same pool, and
+    # the sweeper is what merges every armed pull request — so an unthrottled main
+    # baseline (four packs onto exactly four runners) starved the lane that consumes
+    # its own result. Measured 2026-08-09: 60 sweeps queued, 50 of them between 04:00
+    # and 08:00 UTC, oldest 2026-08-07, while the operator merged by hand to drain the
+    # backlog; the sweep job itself takes 37 seconds. Pinned as a contract on BOTH
+    # branches for the same reason `runs-on` is — the point is that the two events
+    # throttle differently, so pinning a literal would forbid the split outright.
+    max_parallel = " ".join(str(pack["strategy"]["max-parallel"]).split())
+    assert "github.event_name == 'pull_request'" in max_parallel
+    caps = [int(n) for n in re.findall(r"\b\d+\b", max_parallel)]
+    assert len(caps) == 2, f"expected one cap per event branch, got {caps}"
+    pr_cap, main_cap = caps
+    # Hosted runners are capped by the account's concurrent-job pool, not by this
+    # matrix; throttling pull requests here would only double their wall-clock.
+    assert pr_cap == len(matrix), "pull request packs must run unthrottled"
+    assert main_cap >= 1
+    assert main_cap * 2 <= len(matrix), "main's proof must leave half the pool free"
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)

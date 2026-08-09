@@ -1,0 +1,152 @@
+name: institutional 13F rolling census
+
+on:
+  schedule:
+    # Fast lane while EDGAR is active: the operational checkpoint makes quiet
+    # polls cheap and prevents repeat acquisition of already retained accessions.
+    - cron: "7,37 12-23 * * 1-5"
+    # Previous US business-day master index backstop.
+    - cron: "17 6 * * 2-6"
+    # Current-quarter full index repair pass for missed/corrected discoveries.
+    - cron: "47 7 * * 0"
+  workflow_dispatch:
+    inputs:
+      discovery_lane:
+        description: Optional SEC index backstop in addition to Latest Filings
+        required: true
+        default: atom
+        type: choice
+        options:
+          - atom
+          - daily
+          - full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: institutional-13f-rolling-census
+  cancel-in-progress: false
+
+jobs:
+  discover_retain_publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.12 (isolated locked runtime)
+        run: |
+          VENV="$RUNNER_TEMP/institutional-13f-venv"
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/pip" install --quiet \
+            -r requirements/institutional-13f-macos-arm64-py312.lock
+
+      - name: Resolve the discovery lane
+        id: lane
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          REQUESTED_LANE: ${{ inputs.discovery_lane || 'atom' }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+
+          if os.environ["EVENT_NAME"] == "workflow_dispatch":
+              lane = os.environ["REQUESTED_LANE"]
+          elif os.environ["EVENT_SCHEDULE"] == "47 7 * * 0":
+              lane = "full"
+          elif os.environ["EVENT_SCHEDULE"] == "17 6 * * 2-6":
+              lane = "daily"
+          else:
+              lane = "atom"
+
+          now_et = datetime.now(ZoneInfo("America/New_York"))
+          master_url = ""
+          if lane == "daily":
+              day = now_et.date() - timedelta(days=1)
+              while day.weekday() >= 5:
+                  day -= timedelta(days=1)
+              quarter = (day.month - 1) // 3 + 1
+              master_url = (
+                  "https://www.sec.gov/Archives/edgar/daily-index/"
+                  f"{day.year}/QTR{quarter}/master.{day:%Y%m%d}.idx"
+              )
+          elif lane == "full":
+              quarter = (now_et.month - 1) // 3 + 1
+              master_url = (
+                  "https://www.sec.gov/Archives/edgar/full-index/"
+                  f"{now_et.year}/QTR{quarter}/master.idx"
+              )
+
+          print(f"lane={lane}")
+          print(f"master_url={master_url}")
+          PY
+
+      - name: Discover, retain raw evidence, and publish catalog generations
+        env:
+          # Explicit bootstrap binding into the existing public-evidence bucket.
+          # Runtime code accepts ONLY the institutional namespace, so these can
+          # be replaced with least-privilege credentials without a code change.
+          INSTITUTIONAL_13F_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          INSTITUTIONAL_13F_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          MASTER_URL: ${{ steps.lane.outputs.master_url }}
+          RECEIPT_PATH: ${{ runner.temp }}/institutional-13f-rolling-receipt.json
+        run: |
+          set -euo pipefail
+          args=(
+            --max-accessions 750
+            --requests-per-second 8
+            --receipt "$RECEIPT_PATH"
+          )
+          if [ -n "$MASTER_URL" ]; then
+            args+=(--master-index "$MASTER_URL")
+          fi
+          python -m scripts.run_institutional_13f_rolling "${args[@]}"
+
+      - name: Assert complete, bounded run receipt
+        env:
+          EXPECTED_LANE: ${{ steps.lane.outputs.lane }}
+          RECEIPT_PATH: ${{ runner.temp }}/institutional-13f-rolling-receipt.json
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RECEIPT_PATH"])
+          raw = path.read_bytes()
+          assert len(raw) <= 256 * 1024, "rolling receipt exceeded its operator bound"
+          receipt = json.loads(raw)
+          assert receipt["schema"] == "institutional_13f.rolling_receipt/v1"
+          assert receipt["status"] in {"ok", "no_changes"}
+          assert receipt["counts"]["failures"] == 0
+          assert receipt["discovery"]["atom"]["complete"] is True
+          assert receipt["discovery"]["backlog_accessions"] == 0
+          if os.environ["EXPECTED_LANE"] != "atom":
+              master = receipt["discovery"]["master_index"]
+              assert master["supplied"] is True
+              assert master["entries"] > 0
+              assert master["sha256"]
+          print(
+              f"status={receipt['status']} "
+              f"published={receipt['counts']['new_filings_published']} "
+              f"requests={receipt['counts']['requests']}"
+          )
+          PY
+
+      - name: Upload the redacted operator receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: institutional-13f-rolling-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/institutional-13f-rolling-receipt.json
+          if-no-files-found: warn
+          retention-days: 30

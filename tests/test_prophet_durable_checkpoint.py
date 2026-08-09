@@ -7,10 +7,11 @@ not rebase the engine's dirty working tree to get there.
 """
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 
 import yaml
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
@@ -51,6 +52,95 @@ def _python_heredocs(run: str) -> list[str]:
             current.append(line)
     assert current is None, "unterminated Python heredoc in workflow"
     return blocks
+
+
+def _git(
+    cwd: Path, *args: str, check: bool = True
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _write(repo: Path, relative: str, content: str) -> None:
+    path = repo / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def _accepted_source_fixture(
+    tmp_path: Path,
+) -> tuple[Path, str, dict[str, str], tuple[str, ...]]:
+    origin = tmp_path / "origin.git"
+    runner = tmp_path / "runner"
+    _git(tmp_path, "init", "--bare", str(origin))
+    _git(tmp_path, "init", str(runner))
+    _git(runner, "checkout", "-b", "main")
+    _git(runner, "config", "user.name", "Prophet restore test")
+    _git(runner, "config", "user.email", "prophet-restore@example.invalid")
+
+    base = {
+        "site/prophet/index.json": '{"generation":"stale"}\n',
+        "data/prophet/ledger.jsonl": '{"id":"existing"}\n',
+        "data/prophet_arena/scoreboard.json": '{"generation":"stale"}\n',
+        "data/prophet_stage_shadow/summary.json": '{"generation":"stale"}\n',
+    }
+    for relative, content in base.items():
+        _write(runner, relative, content)
+    _git(runner, "add", ".")
+    _git(runner, "commit", "-m", "stale engine checkout")
+    stale_sha = _git(runner, "rev-parse", "HEAD").stdout.strip()
+    _git(runner, "remote", "add", "origin", str(origin))
+    _git(runner, "push", "-u", "origin", "main")
+
+    accepted = {
+        "site/prophet/index.json": '{"generation":"accepted"}\n',
+        "site/prophet/plans/NEW-BULL-20260808.json": '{"id":"NEW-BULL-20260808"}\n',
+        "data/prophet/origination_receipts/run-2.json": '{"schema":"receipt/v1"}\n',
+        "data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl": (
+            '{"plan_id":"NEW-BULL-20260808"}\n'
+        ),
+    }
+    for relative, content in accepted.items():
+        _write(runner, relative, content)
+    _git(runner, "add", ".")
+    _git(runner, "commit", "-m", "accepted Prophet checkpoint")
+    accepted_sha = _git(runner, "rev-parse", "HEAD").stdout.strip()
+    _git(runner, "push", "origin", "main")
+
+    _git(runner, "reset", "--hard", stale_sha)
+    local_only = (
+        "site/prophet/plans/LOCAL-ONLY.json",
+        "data/prophet_arena/local-only.json",
+    )
+    _write(runner, "site/prophet/index.json", '{"generation":"dirty-build"}\n')
+    for relative in local_only:
+        _write(runner, relative, "local-only\n")
+    return runner, accepted_sha, accepted, local_only
+
+
+def _run_accepted_source_restore(
+    repo: Path, output: Path
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.update(
+        {
+            "GITHUB_OUTPUT": str(output),
+            "GITHUB_REF": "refs/heads/main",
+        }
+    )
+    return subprocess.run(
+        ["bash", "-c", _step(ACCEPTED_SOURCE_STEP)["run"]],
+        cwd=repo,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
 
 def test_successful_prophet_build_is_checkpointed_immediately_before_the_tail() -> None:
@@ -217,7 +307,13 @@ def test_stage_shadow_reads_only_a_current_main_prophet_projection() -> None:
     assert '[ "$SOURCE_BRANCH" != "main" ]' in run
     assert "refs/remotes/origin/main" in run
     checkout_i = run.index('git checkout "$ACCEPTED_PROPHET_SHA" --')
+    verify_index_i = run.index(
+        'git diff --cached --quiet "$ACCEPTED_PROPHET_SHA" --'
+    )
+    verify_worktree_i = run.index("git diff --quiet --", verify_index_i)
+    reset_i = run.index("git reset -q --", verify_worktree_i)
     ready_i = run.index('echo "ready=true" >> "$GITHUB_OUTPUT"')
+    assert checkout_i < verify_index_i < verify_worktree_i < reset_i < ready_i
     for root in ("site/prophet", "data/prophet", "data/prophet_arena"):
         assert root in run[checkout_i:ready_i]
     clean_block = run.split("git clean -fd --", 1)[1].split("git reset", 1)[0]
@@ -229,9 +325,48 @@ def test_stage_shadow_reads_only_a_current_main_prophet_projection() -> None:
     ):
         assert root in clean_block
     assert "git clean -fd -- data/prophet" not in run
-    assert 'git diff --quiet "$ACCEPTED_PROPHET_SHA" --' in run
     assert "git ls-files --others --exclude-standard -- data/prophet" in run
     assert stage["if"] == "steps.prophet_accepted_source.outputs.ready == 'true'"
+
+
+def test_accepted_source_restore_handles_new_paths_over_a_stale_head(
+    tmp_path: Path,
+) -> None:
+    repo, accepted_sha, accepted, local_only = _accepted_source_fixture(tmp_path)
+    output = tmp_path / "github-output"
+
+    result = _run_accepted_source_restore(repo, output)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    outputs = output.read_text(encoding="utf-8").splitlines()
+    assert "ready=true" in outputs
+    assert f"accepted_sha={accepted_sha}" in outputs
+    for relative, content in accepted.items():
+        assert (repo / relative).read_text(encoding="utf-8") == content
+    for relative in local_only:
+        assert not (repo / relative).exists()
+    # Downstream readers get accepted bytes without staging them against the
+    # engine job's older checkout-time HEAD.
+    assert _git(repo, "diff", "--cached", "--quiet", check=False).returncode == 0
+
+
+def test_accepted_source_restore_withholds_a_true_extra_prophet_file(
+    tmp_path: Path,
+) -> None:
+    repo, _, _, _ = _accepted_source_fixture(tmp_path)
+    output = tmp_path / "github-output"
+    extra = repo / "data/prophet/operator-extra.json"
+    _write(repo, "data/prophet/operator-extra.json", '{"not_in_main":true}\n')
+
+    result = _run_accepted_source_restore(repo, output)
+
+    assert result.returncode == 1
+    assert "Prophet downstream source mismatch" in result.stdout
+    assert not output.exists() or "ready=true" not in output.read_text(encoding="utf-8")
+    assert extra.is_file()
+    # A withheld restore must also leave no accepted-source paths staged for a
+    # later broad commit to pick up accidentally.
+    assert _git(repo, "diff", "--cached", "--quiet", check=False).returncode == 0
 
 
 def test_off_main_or_detached_source_checkout_is_rejected_before_copying() -> None:
@@ -342,11 +477,11 @@ def test_arena_checkpoint_uses_only_the_seven_active_v2_ledgers() -> None:
     policies = (
         "C0_champion_mirror",
         "C1_buy_soon_first",
-        "C2_stage_ran_preferred",
         "C3_door_w_union",
         "C4_dispersion_cap",
         "C5_align2_gate",
         "C6_time_stop_21",
+        "C7_buy_soon_admitted",
     )
     for policy in policies:
         path = f"data/prophet_arena/price_basis_trigger_v2/{policy}.jsonl"
@@ -354,9 +489,16 @@ def test_arena_checkpoint_uses_only_the_seven_active_v2_ledgers() -> None:
         assert path in checkpoint_run
     assert '"data/prophet_arena": "*.jsonl"' not in build_run
     assert "data/prophet_arena/*.jsonl" not in checkpoint_run
+    # A RETIRED key's ledger is sealed: never staged again, in either era. Re-adding it
+    # here would let the nightly advance a file whose policy stopped accruing.
+    retired = ("C2_stage_ran_preferred",)
     # Sealed v1 evidence cannot be selected by a broad top-level ledger pattern.
-    for policy in policies:
+    for policy in (*policies, *retired):
         assert f"data/prophet_arena/{policy}.jsonl" not in checkpoint_run
+    for policy in retired:
+        path = f"data/prophet_arena/price_basis_trigger_v2/{policy}.jsonl"
+        assert path not in build_run
+        assert path not in checkpoint_run
 
 
 def test_checkpoint_stages_each_manifest_path_and_never_a_whole_root() -> None:
