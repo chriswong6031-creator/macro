@@ -717,6 +717,16 @@ _UNIVERSE_GROUP_LABELS = {
     "curated_extras": ("curated extras & ETFs", "精选个股与ETF"),
 }
 
+# WHICH GROUP EACH TICKER'S CLOSE SERIES CAME FROM, for the last universe() call. The
+# aggregate above cannot answer the only question a price consumer actually has —
+# "is THIS name's series adjusted?" — and this universe is genuinely MIXED: the
+# per-name stores are split+dividend adjusted, while the four breadth `_closes_cache`
+# frames accrue raw closes between full rebuilds (engine.price_ladder classifies the
+# same four as UNADJUSTED and measured the gap at 0.649% on CFG, exactly its quarterly
+# dividend). A single "this library is adjusted" label would be false for ~154 board
+# names, so the label is per ticker or it is not worth publishing.
+_UNIVERSE_TICKER_GROUP: "dict[str, str]" = {}
+
 
 def universe_sources() -> dict:
     """Population disclosure for the last :func:`universe` call — artifact-tier.
@@ -733,6 +743,23 @@ def universe_sources() -> dict:
         "missing": missing,
         "groups": groups,
     }
+
+
+def universe_price_adjustment() -> "dict[str, str]":
+    """``{ticker: price-adjustment basis}`` for the last :func:`universe` call.
+
+    The vocabulary is :mod:`engine.prophet_live.interval`'s, which in turn mirrors
+    :mod:`engine.price_ladder`'s ADJUSTED/UNADJUSTED families — three names for one
+    fact is how two surfaces end up disagreeing about what "adjusted" meant.
+
+    Callers that price a live print against one of these series (the Prophet Live pack
+    and its nightly reconciler) stamp the answer on what they publish, so no downstream
+    consumer has to infer which series a number came from.
+    """
+    from engine.prophet_live.interval import ADJUSTED, UNADJUSTED  # noqa: PLC0415
+    cache_groups = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth")
+    return {t: (UNADJUSTED if g in cache_groups else ADJUSTED)
+            for t, g in _UNIVERSE_TICKER_GROUP.items()}
 
 
 def _note_source(group: str, status: str, members: int = 0,
@@ -754,11 +781,14 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable.
 
     Side effect: rebuilds :data:`_UNIVERSE_SOURCES` so :func:`universe_sources` can put
-    the per-group population — and any group that dropped out — into the artifact.
+    the per-group population — and any group that dropped out — into the artifact, and
+    :data:`_UNIVERSE_TICKER_GROUP` so :func:`universe_price_adjustment` can name the
+    adjustment basis of each name's series.
     """
     out: list[tuple] = []
     seen: set[str] = set()
     _UNIVERSE_SOURCES.clear()
+    _UNIVERSE_TICKER_GROUP.clear()
 
     # deep-history holdings stocks (preferred over breadth's 3y window)
     d = config.data_dir() / "stocks"
@@ -795,6 +825,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             nm, sec = names.get(t, (t, ""))
             out.append((t, df["close"], df.get("high"), nm, sec))
             seen.add(t)
+            _UNIVERSE_TICKER_GROUP[t] = "stocks_deep"
     _note_source("stocks_deep", "ok" if d.exists() else "missing", len(seen))
 
     # Index constituents from the breadth close caches (~3y window each). The
@@ -839,6 +870,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             out.append((t, closes[t], None,
                         str(meta.loc[t, "name"]), str(meta.loc[t, "sector"])))
             seen.add(t)
+            _UNIVERSE_TICKER_GROUP[t] = grp
             added += 1
         log.info("stock library universe: +%d from %s", added, grp)
         _note_source(grp, "ok", added)
@@ -880,6 +912,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
         else:    # an ETF / macro proxy
             out.append((t, close, None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
+        _UNIVERSE_TICKER_GROUP[t] = "curated_extras"
     _note_source("curated_extras", "ok", len(seen) - _extras_before)
     return out
 

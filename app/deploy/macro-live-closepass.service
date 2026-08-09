@@ -1,0 +1,46 @@
+# Close-pass board mirror (W-L1a) — R2 → the VPS live plane, nothing else.
+#
+# The evening provisional board is computed on the mac pool (that is where the
+# price store is) and read by a browser from this box, so one small oneshot
+# carries it across: fetch one R2 object, write the full board to
+# live/us_board_provisional.json by atomic rename, and merge the small
+# `board_state` key the dashboard surface consumes into live/prophet_live.json
+# so the page keeps one artifact, one poll, one client. It never computes,
+# ranks, re-admits or reorders — see scripts/close_pass_mirror.py, which also
+# documents why read-modify-writing a key into the Prophet evaluator's artifact
+# is safe (every failure direction is a dark stamp, never a wrong one).
+#
+# It writes no data/ path and runs no git command (LEDGER LAW G0.2). The nightly
+# daily pipeline remains the sole advancer of every forward ledger.
+#
+# RESOURCE CAPS mirror macro-live-prophet.service, whose measured envelope this
+# lane sits strictly inside: that lane's peak was ~95 MB RSS all-in and dominated
+# by 2-4 R2 round trips, and this one does strictly less work — a single GET, a
+# string compare, and on ~one tick a day a ~1 MB write. So the same 256M/512M
+# ceilings are already ~3x and ~5x headroom here. Nice/CPUWeight/IOWeight sit in
+# the same LOWEST tier for the same reason: this lane consumes what other lanes
+# publish, so it must always lose a scheduling contest with them.
+# TimeoutStartSec 120 bounds a wedged R2 call well inside the 300 s timer period,
+# so two passes can never overlap.
+[Unit]
+Description=Mirror the close-pass provisional board from R2 to the live plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.close_pass_mirror
+TimeoutStartSec=120
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=256M
+MemoryMax=512M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

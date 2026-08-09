@@ -244,8 +244,8 @@
               "ticker": {"type": "string"},
               "recipient_search_text": {"type": "string"},
               "recipient_query_terms": {
-                "description": "Every term the discovery rail sends, not only the primary string. Emitted unconditionally by collectors.usaspending_awards.award_event_coverage_manifest since #4951 and pinned there by test_coverage_manifest_records_every_queried_term_not_only_the_primary; NOT required here, because a manifest already published under award_event_coverage_manifest.v1 predates the field and must stay readable by the render, API and projection gates that validate committed bytes.",
-                "type": "array", "minItems": 1, "items": {"type": "string"}
+                "type": "array", "minItems": 1, "items": {"type": "string"},
+                "description": "Terms actually sent to the discovery rail. Producer-required: the collector always emits this (pinned by tests/test_usaspending_awards.py) and its appearance in the manifest triggers the one-time forward-event rebaseline. Schema-optional because canonical vintages committed before the field existed must stay readable; requiredness may return only after the committed store's manifest carries it."
               }
             }
           }

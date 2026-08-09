@@ -73,7 +73,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=79f699db">
+<link rel="stylesheet" href="theme.css?v=70725c26">
 
 <script>
 (function(){
@@ -2616,6 +2616,24 @@
       return {val:valStr, labelEN:'bench', labelZH:'基准', src:null};
     }
 
+    /* MRI-R40 honesty: a benchmark-augmented point is not "ours" alone. */
+    function _usesBenchmarkAugmentedPrimary(item){
+      var comb = item && item.combined;
+      return !!(item
+        && item.primary_forecast_basis === 'combined_v1_benchmark_augmented'
+        && comb
+        && comb.combined_point != null);
+    }
+
+    /* Context chips are valid only when they describe the displayed point's basis. */
+    function _contextMetricsMatchPrimary(item){
+      var primaryBasis = item && item.primary_forecast_basis;
+      var contextBasis = item && item.context_metrics_basis;
+      if (!primaryBasis) return true; /* legacy champion artifact */
+      if (!contextBasis) return primaryBasis !== 'combined_v1_benchmark_augmented';
+      return contextBasis === primaryBasis;
+    }
+
     /* ---- MRI-R39a: compact card (operator directive 1-3) ---- */
     function renderCard(item){
       var rel = item.release || '';
@@ -2653,13 +2671,21 @@
           +'</div>';
       }
 
-      /* --- MRI-R40: resolve display point (combined when available, else champion) --- */
+      /* --- MRI-R40: resolve the explicitly declared primary display basis --- */
       var comb = item.combined || null;
-      var displayPoint = (comb && comb.combined_point != null) ? comb.combined_point : proj.point;
-      var displayP10 = (comb && comb.p10 != null) ? comb.p10 : proj.p10;
-      var displayP90 = (comb && comb.p90 != null) ? comb.p90 : proj.p90;
-      var displayP25 = (comb && comb.p25 != null) ? comb.p25 : proj.p25;
-      var displayP75 = (comb && comb.p75 != null) ? comb.p75 : proj.p75;
+      var usesBenchmarkBlend = _usesBenchmarkAugmentedPrimary(item);
+      var contextMetricsAligned = _contextMetricsMatchPrimary(item);
+      var displayPoint = usesBenchmarkBlend ? comb.combined_point : proj.point;
+      var displayP10 = (usesBenchmarkBlend && comb.p10 != null) ? comb.p10 : proj.p10;
+      var displayP90 = (usesBenchmarkBlend && comb.p90 != null) ? comb.p90 : proj.p90;
+      var displayP25 = (usesBenchmarkBlend && comb.p25 != null) ? comb.p25 : proj.p25;
+      var displayP75 = (usesBenchmarkBlend && comb.p75 != null) ? comb.p75 : proj.p75;
+      var primaryLabel = usesBenchmarkBlend
+        ? '<span class="l-en">Model + benchmark blend</span><span class="l-zh">模型与基准混合</span>'
+        : '<span class="l-en">ours</span><span class="l-zh">本方</span>';
+      var primaryLabelStyle = usesBenchmarkBlend
+        ? ' style="white-space:normal;text-transform:none;font-size:9.5px;letter-spacing:.04em;line-height:1.15;max-width:128px"'
+        : '';
 
       /* --- OURS column --- */
       var oursVal = '—';
@@ -2678,7 +2704,7 @@
       var er = item.expectation_read;
       var sk = item.surprise_skew;
       var chip = '';
-      if (!isBenchmarkOnly){
+      if (!isBenchmarkOnly && contextMetricsAligned){
         if (er && er.tag) chip = expectationChip(er);
         else if (sk && sk.tag) chip = skewChip(sk);
       }
@@ -2720,7 +2746,7 @@
           : '';
         numsRow = '<div class="rr-nums-row">'
           +'<div class="rr-num-col">'
-          +'<div class="rr-num-lbl"><span class="l-en">ours</span><span class="l-zh">本方</span></div>'
+          +'<div class="rr-num-lbl"'+primaryLabelStyle+'>'+primaryLabel+'</div>'
           +(oursVal==='—'
             ? '<div class="rr-num-dash">—</div>'
             : '<div class="rr-num-val">'+esc(oursVal)+'</div>')
@@ -2947,13 +2973,15 @@
       var piRegime = pi ? (pi.regime || 'normal') : null;
       /* MRI-R40: combined block */
       var comb = item.combined || null;
-      var dispPt = (comb && comb.combined_point != null) ? comb.combined_point : proj.point;
-      var dispP10 = (comb && comb.p10 != null) ? comb.p10 : proj.p10;
-      var dispP90 = (comb && comb.p90 != null) ? comb.p90 : proj.p90;
-      var dispP25 = (comb && comb.p25 != null) ? comb.p25 : proj.p25;
-      var dispP75 = (comb && comb.p75 != null) ? comb.p75 : proj.p75;
+      var usesBenchmarkBlend = _usesBenchmarkAugmentedPrimary(item);
+      var contextMetricsAligned = _contextMetricsMatchPrimary(item);
+      var dispPt = usesBenchmarkBlend ? comb.combined_point : proj.point;
+      var dispP10 = (usesBenchmarkBlend && comb.p10 != null) ? comb.p10 : proj.p10;
+      var dispP90 = (usesBenchmarkBlend && comb.p90 != null) ? comb.p90 : proj.p90;
+      var dispP25 = (usesBenchmarkBlend && comb.p25 != null) ? comb.p25 : proj.p25;
+      var dispP75 = (usesBenchmarkBlend && comb.p75 != null) ? comb.p75 : proj.p75;
       /* build a display-proj object for intervalConeSVG */
-      var dispProj = comb ? {
+      var dispProj = usesBenchmarkBlend ? {
         point: dispPt, p10: dispP10, p25: dispP25,
         p50: (comb.p50 != null ? comb.p50 : proj.p50),
         p75: dispP75, p90: dispP90
@@ -2962,27 +2990,32 @@
       /* ---- TAB 0: OVERVIEW ---- */
       var tab0 = '';
       {
-        /* large point — sources combined when available, else champion */
+        /* large point — sources the declared primary basis */
         var ptStr = '—';
         if (!isBenchmarkOnly && !isNoData && dispPt != null)
           ptStr = useK ? fmtK(dispPt) : fmtNum(dispPt,2)+(rt.indexOf('nfp')===-1?'pp':'');
-        /* "Blend of N models" receipt line — plain words per DESIGN_DOCTRINE Tier 1 */
+        /* "Blend of N inputs" receipt line — models and benchmarks are distinct. */
+        var combInputs = (usesBenchmarkBlend && comb && comb.combined_components
+          && Array.isArray(comb.combined_components.inputs_used))
+          ? comb.combined_components.inputs_used : [];
         var combNStr = '';
-        if (comb && comb.combined_components){
-          var combN = (comb.combined_components.inputs_used || []).length;
-          if (combN > 0) combNStr = String(combN);
-        }
+        if (combInputs.length > 0) combNStr = String(combInputs.length);
+        var includesCleveland = combInputs.indexOf('cleveland') !== -1;
         var combSubtitle = combNStr
           ? '<div style="font-size:10px;color:var(--muted);margin-top:1px">'
-            +'<span class="l-en">Blend of '+esc(combNStr)+' models</span>'
-            +'<span class="l-zh">'+combNStr+'模型混合</span>'
+            +'<span class="l-en">Blend of '+esc(combNStr)+' inputs'
+              +(includesCleveland?' · includes Cleveland benchmark':'')+'</span>'
+            +'<span class="l-zh">'+esc(combNStr)+'项输入混合'
+              +(includesCleveland?' · 含克利夫兰基准':'')+'</span>'
             +'</div>'
           : '';
+        var pointLabelEN = usesBenchmarkBlend ? 'Model + benchmark blend' : 'Our projection';
+        var pointLabelZH = usesBenchmarkBlend ? '模型与基准混合' : '本方预测';
         tab0 += '<div class="rr-grp">'
           +'<div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1">'+esc(ptStr)+'</div>'
           +'<div style="font-size:10px;color:var(--muted);margin-top:2px">'
-          +'<span class="l-en">Our projection · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
-          +'<span class="l-zh">本方预测 · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
+          +'<span class="l-en">'+pointLabelEN+' · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
+          +'<span class="l-zh">'+pointLabelZH+' · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
           +'</div>'
           +combSubtitle
           +'</div>';
@@ -2993,8 +3026,10 @@
         /* chips + coverage */
         var chips = '';
         if (!isBenchmarkOnly && !isNoData){
-          chips += expectationChip(er||null);
-          chips += skewChip(sk||null);
+          if (contextMetricsAligned){
+            chips += expectationChip(er||null);
+            chips += skewChip(sk||null);
+          }
           chips += coverageChip(cf||null);
         }
         if (chips) tab0 += '<div class="rr-grp"><div class="rr-chips-row">'+chips+'</div></div>';
@@ -3108,7 +3143,7 @@
         /* market-implied: already rendered inside modelDotPlot() with basis tag — do NOT add again here */
         /* surprise distribution — gated on !isBenchmarkOnly */
         var sd = item.surprise_distribution;
-        if (!isBenchmarkOnly && !isNoData && sd){
+        if (!isBenchmarkOnly && !isNoData && contextMetricsAligned && sd){
           tab1 += '<div class="rr-grp"><div class="rr-grp-label">'
             +'<span class="l-en">Surprise distribution</span><span class="l-zh">惊喜分布</span>'
             +'</div>'
@@ -12086,7 +12121,7 @@ window.__CHART_SWAP__ = {
            "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
 };
 </script>
-<script src="theme.js?v=8df4ebee" defer></script>
+<script src="theme.js?v=f8abb176" defer></script>
 <script src="tier_preview.js?v=2dc35193" defer></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="timemachine.js?v=92798ed7" defer></script>

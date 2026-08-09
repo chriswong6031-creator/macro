@@ -53,7 +53,7 @@ _BUCKET_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
 _HOST_RE = re.compile(
     r"^[a-f0-9]{32}\.(?:(?:eu|fedramp)\.)?r2\.cloudflarestorage\.com$",
 )
-_EXPECTED_REPOSITORY = "chriswong6031-creator/macro"
+_EXPECTED_REPOSITORY = "mastermindx-market-intelligence/macro"
 
 _NO_AUTHORITY = {
     "is_context_only": True,

@@ -6,7 +6,7 @@ set -euo pipefail
 
 OPS_ROOT="${EARNINGS_OPS_ROOT:-/Users/chriswong/earnings-ops-wt}"
 VENV_ROOT="${EARNINGS_VENV_ROOT:-/Users/chriswong/earnings-venv}"
-REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/chriswong6031-creator/macro.git}"
+REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/mastermindx-market-intelligence/macro.git}"
 ENV_FILE="${EARNINGS_ENV_FILE:-/Users/chriswong/hub-ops-wt/.env}"
 DEST_DIR="${EARNINGS_LAUNCHAGENT_DIR:-$HOME/Library/LaunchAgents}"
 LABEL="com.mastermind.earnings-worker"
