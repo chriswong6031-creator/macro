@@ -456,6 +456,42 @@ def _module_scope_bindings(tree: ast.Module) -> list[str]:
     return visitor.names
 
 
+def _emitter_name_is_sealed(
+    tree: ast.Module,
+    emitter_name: str,
+    parents: dict[int, ast.AST],
+) -> bool:
+    """Return whether the approved producer keeps one callable identity.
+
+    Production references to either approved emitter are direct calls. Reject
+    every other use of its name so assignments through ``globals``/``vars``,
+    module attributes, function-object mutation, aliases, and statically named
+    dynamic execution cannot replace the audited producer after its definition.
+    """
+    for node in ast.walk(tree):
+        static_value = _static_string(node)
+        if static_value is not None and emitter_name in static_value:
+            return False
+        if isinstance(node, ast.Name) and node.id == emitter_name:
+            parent = parents.get(id(node))
+            if not (
+                isinstance(node.ctx, ast.Load)
+                and isinstance(parent, ast.Call)
+                and parent.func is node
+            ):
+                return False
+        if isinstance(node, ast.Attribute) and node.attr == emitter_name:
+            return False
+        if isinstance(node, ast.keyword) and node.arg == emitter_name:
+            return False
+        if (
+            isinstance(node, (ast.Global, ast.Nonlocal))
+            and emitter_name in node.names
+        ):
+            return False
+    return True
+
+
 def _permitted_fixed_emission_nodes(
     tree: ast.Module,
     rel_path: str,
@@ -474,14 +510,7 @@ def _permitted_fixed_emission_nodes(
         not emitter_name
         or "*" in bindings
         or bindings.count(emitter_name) != 1
-        or any(
-            isinstance(node, ast.Global) and emitter_name in node.names
-            for node in ast.walk(tree)
-        )
-        or any(
-            _static_string(node) == emitter_name
-            for node in ast.walk(tree)
-        )
+        or not _emitter_name_is_sealed(tree, emitter_name, parents)
     ):
         return set()
     emitters = [
@@ -499,7 +528,11 @@ def _permitted_fixed_emission_nodes(
     for node in ast.walk(emitter):
         if not isinstance(node, ast.Dict):
             continue
-        if any(key is None for key in node.keys):
+        if any(
+            not isinstance(key, ast.Constant)
+            or not isinstance(key.value, str)
+            for key in node.keys
+        ):
             continue
         return_node = parents.get(id(node))
         if not (

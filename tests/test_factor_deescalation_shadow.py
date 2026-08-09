@@ -631,6 +631,18 @@ class TestCheckB:
         }
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
+    def test_redteam_rejects_computed_key_after_fixed_emission(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    key = external_name()\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + ", key: evil}\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
     def test_redteam_rejects_decorated_approved_emitter(self) -> None:
         synthetic = {
             "engine/neuralweb/world_state.py": (
@@ -739,6 +751,33 @@ class TestCheckB:
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert any(v.check == "b" for v in viols)
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "globals().update(_inflation_intelligence_null=evil)\n",
+            "vars().update(_inflation_intelligence_null=evil)\n",
+            (
+                "import sys\n"
+                "sys.modules[__name__]._inflation_intelligence_null = evil\n"
+            ),
+            "_inflation_intelligence_null.__code__ = evil.__code__\n",
+            "exec('_inflation_intelligence_null = evil')\n",
+        ],
+    )
+    def test_redteam_rejects_emitter_object_mutation(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + mutation
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
 
     def test_state_builder_allowlisted(self) -> None:
         synthetic = {
