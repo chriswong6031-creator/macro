@@ -486,15 +486,24 @@ def test_last_good_guard_uses_artifact_generation_freshness_not_latest_call_date
 
 
 def test_r2_history_wins_over_committed_fallback(tmp_path):
-    """The R2-transported history is canonical when both stores exist."""
+    """The R2-transported history is canonical when both stores exist.
+
+    Live dates are RELATIVE for the same reason as the EC-grid test below: a
+    literal ages past ``_meta``'s 14-day ``ready``->``stale`` demotion and reds
+    a suite that has not changed. The claim here is PRECEDENCE (R2 beats the
+    committed fallback), not freshness.
+    """
     _write_backfill(tmp_path, [
         _call("OLD", "Legacy", "Software", "2026-01-15", 20, 0, 20),
     ])
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
+    today = pd.Timestamp.now(tz="UTC").normalize()
     pd.DataFrame([
-        _call("LIVE", "Live", "Hardware", "2026-07-30", 25, 5, 30),
-        _call("LIVE", "Live", "Hardware", "2026-04-30", 20, 2, 22),
+        _call("LIVE", "Live", "Hardware",
+              (today - pd.Timedelta(days=3)).strftime("%Y-%m-%d"), 25, 5, 30),
+        _call("LIVE", "Live", "Hardware",
+              (today - pd.Timedelta(days=94)).strftime("%Y-%m-%d"), 20, 2, 22),
     ]).to_parquet(live, index=False)
     _write_transport_manifest(tmp_path)
 
@@ -800,11 +809,24 @@ def test_ec_grid_fail_open_missing_seed(tmp_path: Path):
 
 
 def test_ec_grid_uses_history_for_usa_when_region_seed_is_absent(tmp_path: Path):
-    """A transported call archive must also unblank the EC industry grid."""
+    """A transported call archive must also unblank the EC industry grid.
+
+    Dates are RELATIVE to today, never literals: ``_meta`` demotes ``ready`` to
+    ``stale`` once the newest call is >14 days old (earnings_qual.py:1993), so
+    the original 2026-07-25 fixture aged into a red on 2026-08-09 with nothing
+    else changed — it asserted ``ready`` about a date that had become stale by
+    the calendar. The claim under test is the TIER (a transported archive
+    unblanks the grid), so the fixture must stay inside that window on every
+    future run.
+    """
+    today = pd.Timestamp.now(tz="UTC").normalize()
+    recent = (today - pd.Timedelta(days=3)).strftime("%Y-%m-%d")
+    recent_prior = (today - pd.Timedelta(days=4)).strftime("%Y-%m-%d")
+    older = (today - pd.Timedelta(days=98)).strftime("%Y-%m-%d")
     calls = [
-        _call("AAA", "Alpha", "Software", "2026-07-25", 24, 4, 28),
-        _call("BBB", "Beta", "Banks", "2026-07-24", 12, -2, 10),
-        _call("AAA", "Alpha", "Software", "2026-04-18", 20, 2, 22),
+        _call("AAA", "Alpha", "Software", recent, 24, 4, 28),
+        _call("BBB", "Beta", "Banks", recent_prior, 12, -2, 10),
+        _call("AAA", "Alpha", "Software", older, 20, 2, 22),
     ]
     p = tmp_path / "data" / "earnings_calls" / "history.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
