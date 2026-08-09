@@ -62,8 +62,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:  # pragma: no cover - import bootstrap
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.marketing import hot_tape as HT  # noqa: E402
 from engine.marketing import hot_tape_llm as HL  # noqa: E402
