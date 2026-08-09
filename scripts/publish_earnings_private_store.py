@@ -10,14 +10,18 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.earnings_narrative.private_publication import (
     EarningsPrivatePublicationError,
     prepare_private_publication,
     publish_private_publication,
-)
-from engine.research_vault.r2_store import build_store
+)  # noqa: E402
+from engine.research_vault.r2_store import build_store  # noqa: E402
 
 
 log = logging.getLogger("publish_earnings_private_store")
