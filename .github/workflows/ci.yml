@@ -3169,6 +3169,9 @@ on:
       # pack that executes it. test_prophet_bridge_order_invariance.py was strictly
       # dark before this: no `run:` step and no path pattern named it.
       - "tests/test_prophet_bridge_order_invariance.py"
+      # Prophet anticipation has its own manifest lane. Keep suite-only isolation
+      # repairs reachable through this workflow's outer path filter.
+      - "tests/test_prophet_anticipation_intake.py"
       # R0-C earnings split-brain fence (2026-08-06). Both suites guard
       # engine/prophet_bridge.py, engine/prophet_stage_shadow.py and the new
       # engine/prophet_stage_inputs.py, all of which the broad "engine/**" entry above
