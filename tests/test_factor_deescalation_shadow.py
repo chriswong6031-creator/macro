@@ -706,6 +706,33 @@ class TestCheckB:
         }
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "globals().update(_inflation_intelligence_null=evil)\n",
+            "vars().update(_inflation_intelligence_null=evil)\n",
+            (
+                "import sys\n"
+                "sys.modules[__name__]._inflation_intelligence_null = evil\n"
+            ),
+            "_inflation_intelligence_null.__code__ = evil.__code__\n",
+            "exec('_inflation_intelligence_null = evil')\n",
+        ],
+    )
+    def test_redteam_rejects_emitter_object_mutation(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + mutation
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
     def test_state_builder_allowlisted(self) -> None:
         synthetic = {
             "scripts/build_factor_intelligence_state.py": (
