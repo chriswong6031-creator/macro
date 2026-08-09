@@ -187,6 +187,14 @@ on:
       - "templates/research_report.html.j2"
       - "templates/research_index.html.j2"
       - "tests/test_research_pages.py"
+      # Authorized competitor-history Wave 0: strict contracts + synthetic replay/R2
+      # inventory tests and an aggregate-only receipt. The private history and targeted
+      # restore plan stay outside the repository; tests/** is deliberately not broad.
+      - "contracts/research/momoedge_oracle_*.schema.json"
+      - "contracts/research/momoedge_theta_remote_inventory_aggregate.v1.schema.json"
+      - "scripts/research/momoedge_oracle_history_replay.py"
+      - "tests/test_momoedge_oracle_history_replay.py"
+      - "research/momoedge/history_replay_wave0_receipt.json"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
