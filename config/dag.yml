@@ -2930,6 +2930,61 @@ lanes:
   # Checks newest parquet mtime ≤ max_age_days (3d default). --strict exits 1 on
   # STALE/DARK. Writes data/quality/options_surface_accrual_audit.json.
   # Should be wired into the nightly CI health check or run from the ops lane.
+
+  # ── close-pass.yml / publish — the evening PROVISIONAL board (W-L1a) ───────
+  - workflow: .github/workflows/close-pass.yml
+    job: publish
+    steps:
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
+        args: [--heal]
+        note: >
+          Best-effort, continue-on-error. At 16:20 ET the daily bar may not be
+          finalized; a name without today's close is SKIPPED and counted by the
+          pass, never carried at yesterday's price, so a partial heal degrades
+          coverage and never truth.
+      - id: close_pass_publish
+        module: scripts.close_pass_publish
+        note: >
+          W-L1a. Recomputes ADMISSION (engine.signal_gate.gate — one close series
+          in, no FINRA/OI/fundamental/SUE/insider/13F anywhere in its call chain)
+          plus the two score legs that are computable from closes alone (signal 30,
+          runway 10 of us_board_rank.SCORE_WEIGHTS). entry/edge/quality are OMITTED
+          AND DISCLOSED, never imputed and never renormalised: ladder_state needs a
+          macro liquidity regime and this name's sector beta, residual alpha is
+          sector-neutralised, and the coiled/star verdict is a sector cohort.
+          Writes NO data/ path and runs no git command (runtime tier, G0.2,
+          DNR:KILL-INTRADAY-CHRONICLE) — the nightly daily pipeline remains the
+          sole advancer of every forward ledger. Publishes one R2 object
+          (live_flow/us_board_provisional.json); the VPS macro-live-closepass
+          timer mirrors it to the GATED live/us_board_provisional.json. Display
+          tier, stamped provisional: true, zero score authority. Deliberately not
+          a step in closing-bell.yml — that lane runs 109 measured minutes behind
+          an 81-minute spine and lands ~17:55 ET against an 18:30 SLA. The VPS
+          mirror also merges the derived `board_state` key into the served
+          live/prophet_live.json, which is the artifact the dashboard surface
+          (#5148) polls; its `board.tickers` list is compared against the cards
+          actually in the grid, so a page showing last night's cards cannot
+          render tonight's stamp.
+
+  # ── close-pass.yml / reconcile — the confirmation delta ───────────────────
+  - workflow: .github/workflows/close-pass.yml
+    job: reconcile
+    steps:
+      - id: close_pass_reconcile
+        module: scripts.close_pass_reconcile
+        note: >
+          Grades the evening board against the nightly board of record and
+          publishes the per-name confirmed/adjusted/dropped delta to
+          live_flow/us_board_confirmation.json. workflow_run on daily.yml
+          completing, so it is off the nightly's critical path by construction
+          (it cannot delay a build that already finished) and off the mac pool
+          entirely — it reads two JSON documents. Reconciles or publishes
+          nothing: n_confirmed + n_adjusted + n_dropped == n_total is checked,
+          and a session mismatch, a duplicate ticker or a non-closing sum emits
+          no receipt rather than a wrong one. Writes no data/ path; grading the
+          record by writing to it would be marking its own homework.
+
 # ---------------------------------------------------------------------------
 # DIVERGENCES — declared lane-difference ledger
 # Two kinds:
