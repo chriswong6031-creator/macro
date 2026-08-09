@@ -43,6 +43,18 @@ _TODAY = "2026-07-29"
 _YESTERDAY = "2026-07-28"
 _FIXED_NOW = datetime(2026, 7, 29, 6, 0, 0, tzinfo=timezone.utc)
 
+#: A signal date the eligibility gate always accepts — NEVER a literal.
+#: ``content_plan`` is called below without ``today=``, so
+#: ``engine/marketing/content_studio.py:484`` measures the plan's signal age
+#: against the REAL clock and drops anything older than
+#: ``_MAX_SIGNAL_AGE_DAYS`` = 21.  A pinned ``2026-07-28`` was a scheduled red:
+#: it hit 21 days on 2026-08-19, the plan stopped being postable, and the
+#: filing-lane claim assertions ("the congress lane was not told which tickers
+#: the plan already claimed") went red with nothing wrong in the lane.
+#: Same idiom as tests/test_marketing_content.py:44.  Deliberately NOT
+#: _TODAY/_YESTERDAY: those are weekday-pinned for the §5 cooldown maths.
+_FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
+
 #: The codex's worked RBKB example, verbatim from
 #: research/marketing_dockets/CODEX_CONTENT_CASE_STUDIES_2026_07_28.md.
 _RBKB = {"shares": 25_000, "price": 11.94, "shares_following": 27_270}

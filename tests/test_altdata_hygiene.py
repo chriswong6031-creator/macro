@@ -28,6 +28,22 @@ def _now_ts() -> pd.Timestamp:
     return pd.Timestamp(datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+def _recent_quarter_end() -> str:
+    """ISO date of the most recently COMPLETED quarter end — never hardcode one.
+
+    ``engine/altdata.py:1016`` filters 13F rows on ``ReportPeriod >= _now() -
+    window_days`` (200 at the call site below), so a literal ReportPeriod is a
+    scheduled red: the pinned ``2026-03-31`` left the 200-day window on
+    2026-10-17 UTC, dropping the NVDA row and emptying adds/trims.  Stepping by
+    QUARTER rather than by a plain day offset is load-bearing — ReportPeriod is
+    a filing quarter-end, and a ``_days_ago(N)`` date would fake a period that
+    no 13F ever carries.  The prior quarter end is 1-92 days old at any clock,
+    so it stays inside the 200-day window with >100 days of margin.
+    """
+    return ((_now_ts().to_period("Q") - 1)
+            .to_timestamp(how="end").normalize().date().isoformat())
+
+
 # ===========================================================================
 # B7: add() guard — upgrade channels + base-fires-twice regression
 # ===========================================================================
@@ -256,9 +272,10 @@ class TestInst13FWindow:
     def _make_df(self):
         now = _now_ts()
         return pd.DataFrame([
-            # Recent report period — 2026-03-31 is within 200 days
+            # Recent report period — the last completed quarter end, always
+            # within the 200-day window (see _recent_quarter_end above)
             {"Ticker": "NVDA", "Fund": "Citadel",
-             "ReportPeriod": "2026-03-31",
+             "ReportPeriod": _recent_quarter_end(),
              "Date": now.strftime("%Y-%m-%d"),   # ingest date is today for all
              "Change": 1_000_000, "Change_Share": 5000},
             # Old report period — 2020-12-31 must be filtered out by ReportPeriod window
