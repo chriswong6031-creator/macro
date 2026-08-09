@@ -199,6 +199,9 @@ data/edgar/company_tickers.json
 data/fundamental_forensics/raw/
 data/fundamental_forensics/archive/
 data/fundamental_forensics/private/
+# Per-run SEC observation log — cron history, deliberately outside the
+# restorable raw/archive source trees (DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY, R6)
+data/fundamental_forensics/observations/
 
 # Special Situations: fetched filing-text cache + LLM summary cache (regenerable)
 data/special_situations/doc_cache/
@@ -386,10 +389,6 @@ data/operator/
 # blanket `git add data/` sweep.  No writer exists in v1 — the rail is
 # pre-built so the path is safe before any data ever lands here.
 data/private/
-
-# Licensed TuShare add-on response partitions are private, non-redistributable
-# pilot data. Never stage them through the nightly blanket `git add data/` sweep.
-data/tushare_addons/
 
 # SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
 # panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.
@@ -637,3 +636,8 @@ data/institutional_13f/*
 # `git status` and tripped the ship-loop guard on work belonging to another session.
 .claude/worktrees/
 .codex-worktrees/
+
+# Private paid-vendor A-share spine. The collector defaults outside the repo;
+# this containment wall prevents an explicitly configured legacy store from
+# being swept into broad data/ staging or public Git history.
+/data/china_tushare_spine/

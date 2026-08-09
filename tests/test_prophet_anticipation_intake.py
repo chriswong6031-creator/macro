@@ -40,6 +40,7 @@ if str(ROOT) not in sys.path:
 
 from engine import prophet_bridge as pb  # noqa: E402
 from engine import us_early_turn as et  # noqa: E402
+from engine import us_leader_pullback as lp  # noqa: E402
 import scripts.build_prophet as bp  # noqa: E402
 
 ASOF = "2026-07-02"           # a Thursday NYSE session
@@ -196,6 +197,28 @@ def _turning_series(n_down: int = 200, n_up: int = 2, seed: int = 17) -> pd.Data
     closes = list(down * _noise(n_down, seed, 0.010))
     low = closes[-1]
     closes += [low * (1.015 ** i) for i in range(1, n_up + 1)]
+    return _bars(closes)
+
+
+def _leader_reset_series(n: int = 320, seed: int = 13) -> pd.DataFrame:
+    """ONE series that is BOTH halves of the leader-pullback admission.
+
+    A high-RS leader that ran to 118, took a controlled ~7% retrace over ten sessions
+    with the 200dMA intact, and turned up on the last two — so ``engine.us_leader_pullback``
+    grades it RESET_TURN (an OPEN episode) while the EARLY-TURN dot signature fires on
+    the daily and 2D grids.  Two fixtures glued together would prove the wiring; one
+    series proves the CASE, which is what §6.9 R4 is about.
+    """
+    pull = (0.985, 0.972, 0.960, 0.950, 0.941, 0.933, 0.928, 0.924, 0.921, 0.919)
+    up = (1.010, 1.014)
+    base = n - len(pull) - len(up)
+    trend = np.array([1.0 * (1.004 ** i) for i in range(base)])
+    closes = list(trend * _noise(base, seed))
+    closes = [c * 118.0 / closes[-1] for c in closes]      # the pullback HIGH is 118
+    top = closes[-1]
+    closes += [top * f for f in pull]
+    low = closes[-1]
+    closes += [low * f for f in up]
     return _bars(closes)
 
 
@@ -457,45 +480,158 @@ class TestWaitResetAcceptance:
 # =========================================================================== #
 # 5. R3 — ADAM reset-band acceptance (the leader-pullback zone law)            #
 # =========================================================================== #
-class _FakeLeaderPullback:
-    """Stand-in for engine.us_leader_pullback (#5007), which has not merged.
+def _organ_row(prices: pd.DataFrame, *, rs: float = 0.95) -> dict:
+    """A REAL ``engine.us_leader_pullback`` row for ``prices`` — never a hand dict.
 
-    It implements the CONTRACT the seam resolves — ``pullback_context(ticker, ...)``
-    returning a state and a pullback high — so the zone law can be exercised against
-    the same interface the real organ will present.
+    The organ needs a PIT CROSS-SECTIONAL ``rs_pct`` it refuses to fetch itself, so the
+    test supplies one; every other field (``state``, ``asof``, ``pullback_high``,
+    ``null_reason``, ``construction_era``) is the organ's own output.  Feeding the seam
+    a hand-written contract is exactly how the pre-#5007 stand-in passed for the wrong
+    reason — this fixture cannot drift from the organ, because it IS the organ.
     """
+    close = prices["close"]
+    return lp.latest(close, rs_pct=pd.Series(rs, index=close.index),
+                     volume=prices["volume"])
 
-    @staticmethod
-    def pullback_context(ticker, price_history=None, asof=None):
-        return {"leader_pullback": True, "state": "Continuation",
-                "pullback_high": 118.0, "reason": "controlled retrace, RS intact"}
+
+def _coverage(**rows: dict) -> dict[str, dict]:
+    """A published leader-pullback coverage map, keyed the way the loader keys it."""
+    return {ticker.upper(): row for ticker, row in rows.items()}
+
+
+class TestLeaderPullbackContextBackend:
+    """§6.9 R4 — the leader-pullback CONTEXT backend (#5007 consumed as-is)."""
+
+    def test_the_context_states_are_the_ORGANS_own_vocabulary(self):
+        """The predicate is "uptrend intact + controlled reset", spelled in the organ's
+        words: an OPEN pullback episode, before the resumption print.
+
+        RESUMED is excluded for the reason CONFIRMED is excluded from the washout half
+        — price already left the top of the entry zone, so the starter window is the
+        thing that already opened.  LEADER is excluded because an intact uptrend with
+        NO pullback in progress is a chase licence, not a starter licence.
+        """
+        assert et.LEADER_PULLBACK_CONTEXT_STATES == {
+            lp.STATE_PULLBACK, lp.STATE_RESET_TURN}
+        assert et.LEADER_PULLBACK_CONTEXT_STATES <= set(lp.STATES)
+        for excluded in (lp.STATE_LEADER, lp.STATE_RESUMED, lp.STATE_NONE):
+            assert excluded not in et.LEADER_PULLBACK_CONTEXT_STATES
+
+    def test_an_open_controlled_pullback_IS_leader_context(self):
+        """The ADAM shape, graded by the organ itself: a leader 6 bars into a ~5%
+        retrace with the 200dMA intact reads PULLBACK, and PULLBACK is context."""
+        row = _organ_row(_reset_series())
+        assert row["state"] == lp.STATE_PULLBACK, (
+            "the fixture no longer produces an open episode — the case is gone")
+        ctx = et.leader_pullback_context("ADAM", states=_coverage(ADAM=row))
+        assert ctx["leader_pullback"] is True
+        assert ctx["state"] == lp.STATE_PULLBACK
+        assert ctx["source"] == "us_leader_pullback"
+        assert ctx["pullback_high"] == pytest.approx(118.0)
+        assert ctx["construction_era"] == lp.CONSTRUCTION_ERA
+
+    def test_a_stretched_leader_with_no_retrace_is_NOT_context(self):
+        """The anti-chase half, graded by the organ: a name running vertically reads
+        LEADER, and LEADER never licenses a starter."""
+        row = _organ_row(_stretched_series())
+        assert row["state"] == lp.STATE_LEADER
+        ctx = et.leader_pullback_context("NVDA", states=_coverage(NVDA=row))
+        assert ctx["leader_pullback"] is False
+        assert ctx["source"] == "us_leader_pullback"      # an honest FALSE, not a null
+        assert "not an open controlled pullback" in ctx["reason"]
+
+    @pytest.mark.parametrize("state", [lp.STATE_RESUMED, lp.STATE_NONE])
+    def test_the_states_after_and_outside_an_episode_never_license(self, state):
+        row = dict(_organ_row(_reset_series()), state=state)
+        ctx = et.leader_pullback_context("ADAM", states=_coverage(ADAM=row))
+        assert ctx["leader_pullback"] is False
+        assert ctx["state"] == state
+
+    def test_the_reset_turn_state_licenses_too(self):
+        """RESET_TURN graded a NULL as a STANDALONE signal and was retained as a
+        CONFLUENCE input — which is this role.  Refusing it here would perversely
+        withhold the licence at the exact bar the organ agrees with the signature."""
+        row = dict(_organ_row(_reset_series()), state=lp.STATE_RESET_TURN)
+        ctx = et.leader_pullback_context("ADAM", states=_coverage(ADAM=row))
+        assert ctx["leader_pullback"] is True
+
+    def test_no_published_coverage_is_a_NAMED_null_and_fails_CLOSED(self):
+        """A licence that cannot be resolved is not granted — and the absence must be
+        VISIBLE, or a monkeypatch of a path nobody walks passes for the wrong reason."""
+        ctx = et.leader_pullback_context("ADAM", states={})
+        assert ctx["leader_pullback"] is False
+        assert ctx["source"] == "unavailable"
+        assert "no coverage" in (ctx["reason"] or "")
+
+    def test_a_name_OUTSIDE_the_organs_universe_is_not_leader_context(self):
+        """Fail closed on absence: coverage for other names is not coverage for this
+        one, and 'the organ never looked' must not read as 'the organ said no'."""
+        ctx = et.leader_pullback_context(
+            "ADAM", states=_coverage(NVDA=_organ_row(_stretched_series())))
+        assert ctx["leader_pullback"] is False
+        assert ctx["source"] == "unavailable"
+        assert "outside the leader-pullback organ's universe" in (ctx["reason"] or "")
+
+    def test_a_row_the_organ_ITSELF_nulled_is_a_named_null(self):
+        """A starved organ read and an honest 'not a leader' must never be the same
+        answer — the #4979 ext_z blackout in miniature."""
+        row = _organ_row(_turning_series())          # 202 bars, under the 260 floor
+        assert row["state"] is None and row["null_reason"]
+        ctx = et.leader_pullback_context("TURNER", states=_coverage(TURNER=row))
+        assert ctx["leader_pullback"] is False
+        assert ctx["source"] == "unavailable"
+        assert "needs 260 daily bars" in (ctx["reason"] or "")
+
+    def test_a_state_dated_AFTER_the_price_basis_is_refused_as_a_lookahead(self):
+        """PIT law: a context computed on bars the plan could not see is a lookahead no
+        downstream test would catch, so the guard lives at the seam."""
+        row = _organ_row(_reset_series())
+        ctx = et.leader_pullback_context("ADAM", asof="2026-07-01",
+                                         states=_coverage(ADAM=row))
+        assert ctx["leader_pullback"] is False
+        assert ctx["source"] == "unavailable"
+        assert "lookahead" in (ctx["reason"] or "")
+        # Same row, evaluated ON its own session, is honoured.
+        assert et.leader_pullback_context(
+            "ADAM", asof=row["asof"], states=_coverage(ADAM=row))["leader_pullback"]
+
+    def test_the_loader_fails_closed_on_absence_and_on_a_foreign_schema(self, tmp_path):
+        assert et.load_leader_pullback_states(site_root=tmp_path) == {}
+        target = tmp_path / "anticipationdata"
+        target.mkdir()
+        artifact = target / "us_leader_pullback.json"
+        artifact.write_text(json.dumps(
+            {"schema": "some_other_organ.v1", "states": {"ADAM": {"state": "PULLBACK"}}}),
+            encoding="utf-8")
+        assert et.load_leader_pullback_states(site_root=tmp_path) == {}
+        artifact.write_text(json.dumps(
+            {"schema": lp.SCHEMA, "states": {"adam": {"state": lp.STATE_PULLBACK}}}),
+            encoding="utf-8")
+        loaded = et.load_leader_pullback_states(site_root=tmp_path)
+        assert loaded == {"ADAM": {"state": lp.STATE_PULLBACK}}
+
+    def test_no_publisher_writes_the_artifact_yet_so_a_live_read_is_empty(self):
+        """The honest state of the wiring: the organ writes no file, nothing publishes
+        the per-run coverage yet, and the loader says so by returning {} rather than
+        pretending.  When a publisher lands this becomes a coverage assertion."""
+        assert et.load_leader_pullback_states() == {}
 
 
 class TestLeaderPullbackZoneLaw:
-    def test_the_seam_reports_a_NAMED_null_while_the_organ_is_absent(self):
-        """Before anything is monkeypatched: the absence must be VISIBLE.
-
-        Without this the next test would pass whether or not the seam is wired — a
-        monkeypatch of a function nobody calls passes for the wrong reason.
-        """
-        ctx = et.leader_pullback_context("ADAM")
-        assert ctx["leader_pullback"] is False
-        assert ctx["source"] == "unavailable"
-        assert "#5007" in (ctx["reason"] or "")
-
-    def test_adam_shape_a_continuation_pullback_zones_at_the_RESET_band(
+    def test_adam_shape_a_controlled_pullback_zones_at_the_RESET_band(
             self, tmp_path, monkeypatch):
-        """ADAM ACCEPTANCE (§6.8(b) zone law, receipt 2026-07-27→08-05): a
-        Continuation/Ready leader-pullback's zone is the RESET BAND with the chase
-        line at the pullback high — NEVER the post-pop range.
+        """ADAM ACCEPTANCE (§6.8(b) zone law, receipt 2026-07-27→08-05): a leader in a
+        controlled pullback zones at the RESET BAND with the chase line at the pullback
+        high — NEVER the post-pop range.
 
         The live defect this pins: the board printed ADAM's zone as 9.61-9.82 while
         price was 9.82, i.e. the zone WAS the top of the pop; the constructive entry
-        was the 8.40-8.70 reset the dot had marked.
+        was the 8.40-8.70 reset the dot had marked.  The state and the pullback high
+        now come from the real organ (#5007), not from a stand-in.
         """
         prices = _reset_series()
-        monkeypatch.setitem(sys.modules, "engine.us_leader_pullback",
-                            _FakeLeaderPullback)
+        monkeypatch.setattr(et, "load_leader_pullback_states",
+                            lambda *a, **k: _coverage(ADAM=_organ_row(prices)))
         monkeypatch.setattr(pb, "_load_price_history", lambda t: prices)
         spot = float(prices["close"].iloc[-1])
 
@@ -511,13 +647,14 @@ class TestLeaderPullbackZoneLaw:
             "the zone is still the post-pop range — the ADAM defect is unfixed")
         assert zone["chase_above"] == 118.0, "the chase line is the pullback high"
         assert "leader pullback" in zone["basis"]
-        assert zone["leader_pullback"]["state"] == "Continuation"
+        assert zone["leader_pullback"]["state"] == lp.STATE_PULLBACK
 
-    def test_without_the_organ_the_same_row_keeps_the_board_zone(
+    def test_without_organ_coverage_the_same_row_keeps_the_board_zone(
             self, tmp_path, monkeypatch):
-        """The mutation half: with the seam unresolved the zone law cannot apply, and
+        """The mutation half: with no published coverage the zone law cannot apply, and
         the plan must say so rather than silently claiming a reset band."""
         prices = _reset_series()
+        monkeypatch.setattr(et, "load_leader_pullback_states", lambda *a, **k: {})
         monkeypatch.setattr(pb, "_load_price_history", lambda t: prices)
         spot = float(prices["close"].iloc[-1])
         rows = [_buy("ADAM", status="buy_now", spot=spot,
@@ -674,9 +811,10 @@ class TestEarlyTurnStarterTier:
         conditional table would.  So the unconditioned variant is not shipped even as
         a display chip."""
         out = et.assess_early_turn("NOBASKET", _turning_series(),
-                                   asof=None, membership={})
+                                   asof=None, membership={}, leader_states={})
         assert out["signature_fired"] is True
         assert out["context_fired"] is False
+        assert out["context_sources"] == []
         assert out["fired"] is False
         assert "no licensing context" in out["reason"]
 
@@ -684,16 +822,18 @@ class TestEarlyTurnStarterTier:
                                                                   monkeypatch):
         membership = {"TURNER": {"state": "TURNING", "basket_id": "b",
                                  "basket_name": "B", "data_session": ASOF}}
-        out = et.assess_early_turn("TURNER", _turning_series(),
-                                   asof=None, membership=membership)
+        out = et.assess_early_turn("TURNER", _turning_series(), asof=None,
+                                   membership=membership, leader_states={})
         assert out["fired"] is True
         assert out["washout"]["washout_mature"] is True
+        assert out["context_sources"] == [et.CONTEXT_WASHOUT]
 
         prices = _turning_series()
         monkeypatch.setattr(pb, "_load_price_history", lambda t: prices)
         monkeypatch.setattr(
             "engine.us_early_turn.load_basket_turn_membership",
             lambda *a, **k: membership)
+        monkeypatch.setattr(et, "load_leader_pullback_states", lambda *a, **k: {})
         spot = float(prices["close"].iloc[-1])
         stats: dict = {}
         plans = _originate(
@@ -717,6 +857,87 @@ class TestEarlyTurnStarterTier:
             "T", {"T": {"state": "CONFIRMED", "basket_id": "b"}})
         assert ctx["washout_mature"] is False
         assert ctx["washout_context"] is True
+
+    def test_leader_pullback_context_licenses_the_starter_class_on_its_own(
+            self, tmp_path, monkeypatch):
+        """§6.9 R4: the admission condition is washout-mature OR leader-pullback.
+
+        THE CASE THIS EXISTS FOR — the NVDA/AVGO/ADAM population never washes out, so a
+        washout-only context made it structurally unadmittable no matter how clean the
+        dot was.  This name is in NO basket; the organ's own state is the whole licence.
+        """
+        prices = _leader_reset_series()
+        coverage = _coverage(LEADR=_organ_row(prices))
+        assert coverage["LEADR"]["state"] == lp.STATE_RESET_TURN
+
+        out = et.assess_early_turn("LEADR", prices, asof=None, membership={},
+                                   leader_states=coverage)
+        assert out["signature_fired"] is True
+        assert out["washout"]["washout_mature"] is False, (
+            "the case is only meaningful on a name the washout lane cannot see")
+        assert out["fired"] is True
+        assert out["context_sources"] == [et.CONTEXT_LEADER_PULLBACK]
+        assert "leader pullback" in out["reason"]
+
+        monkeypatch.setattr(pb, "_load_price_history", lambda t: prices)
+        monkeypatch.setattr(et, "load_basket_turn_membership", lambda *a, **k: {})
+        monkeypatch.setattr(et, "load_leader_pullback_states", lambda *a, **k: coverage)
+        spot = float(prices["close"].iloc[-1])
+        stats: dict = {}
+        plans = _originate(
+            tmp_path,
+            _standouts([_buy("LEADR", status="buy_now", spot=spot)]),
+            stats=stats,
+        )
+        assert plans[0]["admission_class"] == pb.ADMISSION_CLASS_EARLY_TURN
+        assert stats["early_turn_starters"] == ["LEADR"]
+        assert stats["leader_pullback_source"] == ["us_leader_pullback"]
+
+    def test_the_same_name_without_organ_coverage_admits_NOTHING(self):
+        """The mutation half of the case above: strip the coverage and the identical
+        price history stops admitting.  Without this the test passes on the signature
+        alone and the context leg could be deleted unnoticed."""
+        prices = _leader_reset_series()
+        out = et.assess_early_turn("LEADR", prices, asof=None, membership={},
+                                   leader_states={})
+        assert out["signature_fired"] is True
+        assert out["fired"] is False
+        assert out["context_sources"] == []
+
+    def test_the_context_disclosure_is_exhaustive_and_names_BOTH_when_both_fire(self):
+        """The row must say WHICH context licensed it, and both names must survive when
+        both did — "washout" alone would hide the second read, and a row that fired with
+        no source at all would be an unattributable admission."""
+        prices = _leader_reset_series()
+        coverage = _coverage(BOTH=_organ_row(prices))
+        membership = {"BOTH": {"state": "TURNING", "basket_id": "b"}}
+        out = et.assess_early_turn("BOTH", prices, asof=None, membership=membership,
+                                   leader_states=coverage)
+        assert out["fired"] is True
+        assert out["context_sources"] == [et.CONTEXT_WASHOUT,
+                                          et.CONTEXT_LEADER_PULLBACK]
+        assert out["reason"] == "signature + washout-mature basket + leader pullback"
+
+        # Exhaustive: every disclosure any of these rows can carry is drawn from the
+        # published vocabulary, ordered by it, and non-empty exactly when the row fired.
+        assert et.CONTEXT_SOURCES == ("washout", "leader_pullback")
+        cases = [
+            et.assess_early_turn("BOTH", prices, membership=membership,
+                                 leader_states=coverage),
+            et.assess_early_turn("WASH", prices, membership={
+                "WASH": {"state": "BASING", "basket_id": "b"}}, leader_states={}),
+            et.assess_early_turn("LEADR", prices, membership={},
+                                 leader_states=_coverage(LEADR=_organ_row(prices))),
+            et.assess_early_turn("NEITHER", prices, membership={}, leader_states={}),
+        ]
+        for row in cases:
+            sources = row["context_sources"]
+            assert set(sources) <= set(et.CONTEXT_SOURCES), sources
+            assert sources == [s for s in et.CONTEXT_SOURCES if s in sources], (
+                "the disclosure must be ordered by CONTEXT_SOURCES, not by luck")
+            assert bool(sources) is row["context_fired"]
+            assert row["fired"] is (row["signature_fired"] and row["context_fired"])
+        assert [len(r["context_sources"]) for r in cases] == [2, 1, 1, 0]
 
     def test_a_starved_price_store_is_a_NAMED_null_not_a_false(self):
         """The #4979 ext_z blackout in miniature: a read that cannot be made and a
@@ -819,9 +1040,14 @@ def _run_main(tmp_path: Path, buys: list[dict], *, asof: str = ASOF) -> dict:
     """
     standouts_path = _write(tmp_path, _standouts(buys, as_of=asof))
     saved = {name: getattr(bp, name) for name in
-             ("STANDOUTS_PATH", "SITE_PROPHET", "PLANS_DIR", "STATES_DIR",
+             ("_REPO", "STANDOUTS_PATH", "SITE_PROPHET", "PLANS_DIR", "STATES_DIR",
               "INDEX_PATH", "LEDGER_PATH", "LEDGER_DIR", "write_showcase")}
     try:
+        # build_prophet passes _REPO to the independent Prophet Arena hook at
+        # call time.  Redirect that root with the rest of this production-path
+        # harness so its prospective ledgers never touch the repository's real
+        # data/prophet_arena store.
+        bp._REPO = tmp_path
         bp.STANDOUTS_PATH = standouts_path
         bp.SITE_PROPHET = tmp_path / "site" / "prophet"
         bp.PLANS_DIR = bp.SITE_PROPHET / "plans"
@@ -888,6 +1114,7 @@ class TestProductionCallPath:
         store = tmp_path / "data" / "prophet" / "legacy_shadow"
         assert store.exists(), "the nightly lane wrote no shadow part"
         assert list(store.glob("*/*.parquet"))
+        assert (tmp_path / "data" / "prophet_arena" / "scoreboard.json").exists()
         assert index["intake"]["legacy_shadow"]["rows_in_part"] >= 1
         assert index["intake"]["legacy_shadow"]["authority"] == "none"
 

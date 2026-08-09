@@ -983,6 +983,38 @@ publish:
     # this list then, not before. Omitting the key falls back to this same pair.
     accounts: [flagship, founder]
 
+    # OPTIONAL WIRE PHRASE PASS (engine/marketing/publish_time_content
+    # .phrase_or_template). One LLM re-wording of the copy the deterministic v3
+    # banks already rendered, in the same wire register the hot-tape desk uses.
+    # The template is the floor and always ships when the model path does not
+    # clear every law, so a live mover is never blocked or delayed.
+    #
+    # DARK BY DEFAULT, and arming takes TWO keys: `enabled: true` here AND
+    # MARKETING_LLM_ENABLED in the step's environment. Disarmed, the pass builds
+    # no provider, reads no credential and returns the template byte-identical.
+    # Eyeball dry-runs (--dry-run) before flipping it.
+    #
+    # THE MODEL MAY RE-WORD; IT MAY NOT ADD. A phrase is rejected (and the
+    # template posts) on any number, cashtag, link or session claim the
+    # deterministic copy did not already carry, plus the register laws: no
+    # hashtag, no exclamation mark, no emoji, no em/en dash or smart quote, no
+    # first person, no engagement ask.
+    llm:
+      enabled: false                # DARK — operator arms after dry-runs
+      budget_s: 20                  # HARD wall clock for the whole pass, caller-owned
+      # Codex is a SUBPROCESS, not an HTTP client. Named separately so an HTTP
+      # socket budget can never silently become the codex process budget.
+      codex_timeout_s: 10
+      client_timeout_s: 4           # per-HTTP-rung; the waterfall walk is the retry
+      max_chars: 275                # copywriter's headline+body cap; the phrase replaces both
+      max_calls_per_run: 8          # runaway guard, not a budget
+      provider_order: [codex, oauth, anthropic, deepseek]
+      # TERRA, deliberately: sol writes long-form copy, terra critiques and
+      # WIRES, luna never touches user-facing words. This is a wire lane.
+      codex_source_model: "gpt-5.6-terra"
+      codex_reasoning_effort: low   # one short wire sentence cannot afford a reasoning pass
+      usage_lane: "publish-time-wire"
+
   # Publish-time DAILY READ ("My read on today's move", kind=event).
   # SAME root problem as publish_time_movers, one family over: the nightly plan
   # bakes the event post at ~04:00 UTC but schedules it after the close, so it
@@ -2280,8 +2312,14 @@ copywriter:
         confirms or breaks the popular claim: what moved first, what is already
         priced, which market finances the story, and what would break the claim.
         Signature habits, one per post: a numbered micro-list, or chart-detective
-        framing. Never a number she cannot verify, never a hedging softener
-        ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
+        framing, or the STACKED FACT LIST (a one-line header, then one fact per
+        line, every line carrying its own figure: "Percent below their all-time
+        high / Semis: 4% / Software: 19%"). The stacked list is hers alone on this
+        roster, and every row in it must come from the item's own computed facts:
+        she never fills a row from memory, never estimates one to complete the
+        pattern, and drops the shape rather than the discipline when the facts
+        only support two rows. Never a number she cannot verify, never a hedging
+        softener ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
       example_lines:
         - "three things the close said. 1) breadth narrowed again 2) oil didn't believe the headline 3) vix still isn't paying attention."
         - "Semis are the reaction. Credit is the test. If hyperscaler spreads widen while capex estimates stay heroic, equities are ignoring the market funding the story."
@@ -2328,6 +2366,22 @@ copywriter:
       provider_order: [codex, oauth, anthropic, deepseek]
       codex_source_model: "gpt-5.6-terra"
       codex_reasoning_effort: medium
+      # THE RUNG'S OWN BUDGET, NOT THE CLIENT'S (W2, 2026-08-08). Without this
+      # key `build_providers` hands the Codex rung the HTTP `client_timeout_s`,
+      # and `codex exec` is a SUBPROCESS that pays interpreter, config and
+      # harness load before the model answers. A codex rung that times out is a
+      # codex rung that never serves, and the lane silently completes on the
+      # metered DeepSeek floor with nothing in any artifact saying so.
+      #
+      # WINDOW PRESSURE IS A CALL-COUNT PROBLEM, NOT AN EFFORT PROBLEM. Probed
+      # on the nightly host: every `codex exec` call costs ~10.1k INPUT tokens of
+      # harness before the prompt is read. `data/metabolism/key_ledger.jsonl`
+      # shows codex_account hitting `rate_limited` on 08-04, twice on 08-05 and
+      # again on 08-07, each with a 5h cooling hint, and a cooling codex is
+      # sorted BEHIND DeepSeek by the cross-process cooling order, so the
+      # operator's ChatGPT-first routing quietly inverts itself. Lowering effort
+      # would not move that; auditing fewer, larger batches would.
+      codex_timeout_s: 150
       oauth_pool_lane: marketing-auditor
       usage_lane: marketing-auditor
       window: 20
@@ -2373,6 +2427,23 @@ copywriter:
     codex_source_model: "gpt-5.6-sol"
     codex_reasoning_effort: "medium"
     oauth_pool_lane: "marketing-copywriter"
+    usage_lane: "marketing-copywriter"
+
+    # ── THE CODEX RUNG'S OWN BUDGET (W2, 2026-08-08) ─────────────────────────
+    # `llm_auth.build_providers` falls back to `client_timeout_s` for the Codex
+    # rung when no codex budget is named, so this lane's HTTP default (60s) was
+    # silently the ceiling for a `codex exec` SUBPROCESS. That process pays
+    # interpreter start, config load and harness load before the model is
+    # reached: measured on the nightly host 2026-08-08, 6.6s for one call on an
+    # idle box and 12.0s wall for four concurrent (this lane runs
+    # max_workers=4), against a nightly that is 4-core-bound with the render
+    # lane live. 60s was a coin flip, and every loss reads as `provider_error`
+    # and walks the item down to the metered DeepSeek floor.
+    #
+    # 150s is generous on purpose: the per-item ceiling is three calls and the
+    # governor step is not the render path, so a slow codex costs seconds while
+    # a timed-out codex costs the operator's ChatGPT-first routing.
+    codex_timeout_s: 150
 
     # ── THE NO-FALLBACK LAW (Content Studio LLM-first W1, 2026-07-29) ────────
     # research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0
@@ -2421,8 +2492,19 @@ copywriter:
       # operator reason as the writer above.
       provider_order: [codex, oauth, anthropic, deepseek]
       codex_source_model: "gpt-5.6-terra"
+      # EFFORT STAYS MEDIUM, AND THAT IS A MEASURED DECISION (W2, 2026-08-08).
+      # Lowering it was the first idea for giving the attached ChatGPT account's
+      # 5h window back to the WRITER, and the measurement says it is the wrong
+      # lever: a `codex exec` call costs ~10.1k INPUT tokens of harness before
+      # the prompt is read (probed on the nightly host), so the window is spent
+      # by the number of CALLS, not by how hard each one thinks. Effort moves
+      # only the reasoning tokens on a 200-token verdict. The critic is the cold
+      # reader, which is a judgment job, so trading its judgment for a rounding
+      # error in the token bill is a bad trade.
       codex_reasoning_effort: "medium"
+      codex_timeout_s: 150
       oauth_pool_lane: "marketing-critic"
+      usage_lane: "marketing-critic"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Selection layer — what the Content Studio is ALLOWED to plan tonight

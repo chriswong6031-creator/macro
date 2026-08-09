@@ -230,6 +230,20 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
+/* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
+   Same hue as the P1 .pv-live chip's local --plvc, and that is the point: the ◐ strip
+   and the ◐ board stamp name the SAME epistemic tier — settled by the tape, not yet by
+   the record — and a second vocabulary for one idea is a tax on the reader.
+   --prov is the FILL-grade hue (tints, rules, borders); --prov-ink is the TEXT-grade
+   one, following this file's own --ink-* convention. Dark keeps ink ≡ raw so dark
+   renders byte-identical to a single-token version; light deepens toward --text,
+   because the fill-grade blue measured 4.22:1 as type on its own 11% tint over white —
+   under AA, and invisible to anyone who only ever looked at the dark shot (doctrine
+   §5.8: light is a design target, not a translation).
+   Direction-neutral BY CONSTRUCTION so 红涨绿跌 holds: never derive it from --up/--down. */
+:root { --prov: #62a0e8; --prov-ink: var(--prov); }
+html[data-theme="light"] { --prov: #2f6fd0;
+  --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text)); }
 /* ---- Chinese mode: directional GAUGES that paint state from status tokens ----
    The status tokens --ok/--act deliberately DON'T swap (they encode health/danger, see
    above). But a few gauges are genuine market-DIRECTION reads (bullish vs bearish) that

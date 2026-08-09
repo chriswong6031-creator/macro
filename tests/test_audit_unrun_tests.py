@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -302,9 +303,159 @@ def test_the_census_runs_in_a_ci_job() -> None:
     }
     for required in (
         "python scripts/audit_unrun_tests.py --selftest",
+        # The BARE run — the armed gate, not the selftest and not the unit tests.
+        # Matched by content and never by line number: the three steps sit next to
+        # each other and a positional assertion would pass on the wrong one.
+        "python scripts/audit_unrun_tests.py",
         "python -m pytest tests/test_audit_unrun_tests.py -q",
     ):
         assert required in commands, f"no CI step runs `{required}`"
+
+
+# ── 5. the gate: reds the new, grandfathers the backlog, honours the waivers ──
+#
+# Armed 2026-08-09. The census reported for three weeks and the backlog did not move
+# (969 unrun of 2,146), while six PRs each un-darkened ONE suite by hand. These pin
+# the ratchet in both directions: a suite in neither file must RED, and a suite in
+# either file must not — including on the branch that wires or deletes it, which is
+# why every stale row warns instead.
+
+NEW = "research/packet/test_newly_dark.py"
+OLD = "tests/test_grandfathered.py"
+
+
+def _lines(capsys) -> list[str]:
+    out = capsys.readouterr()
+    return (out.out + out.err).splitlines()
+
+
+def _starts(lines: list[str], prefix: str) -> bool:
+    """House law: an annotation with ANYTHING in front of it is silently dropped."""
+    return any(line.startswith(prefix) for line in lines)
+
+
+def test_gate_reds_a_suite_in_neither_file(capsys: pytest.CaptureFixture) -> None:
+    """The whole point: the 970th dark suite cannot ship silently."""
+    assert GUARD.gate([NEW], set(), {}, {NEW}) == 1
+    assert _starts(_lines(capsys), "::error title=unrun-suite::")
+
+
+@pytest.mark.parametrize(
+    "baseline,waivers,why",
+    [
+        ({NEW}, {}, "grandfathered: the backlog is triage input, not a to-do list"),
+        (set(), {NEW: "owner + argument"}, "waived with a reason"),
+    ],
+)
+def test_gate_clears_a_known_unrun_suite(baseline, waivers, why: str) -> None:
+    assert GUARD.gate([NEW], baseline, waivers, {NEW}) == 0, why
+
+
+def test_a_live_waiver_reprints_its_reason(capsys: pytest.CaptureFixture) -> None:
+    """A waiver only stays honest while its argument is in front of the reader."""
+    assert GUARD.gate([NEW], set(), {NEW: "the engine constant is stale"}, {NEW}) == 0
+    assert any("the engine constant is stale" in line for line in _lines(capsys))
+
+
+@pytest.mark.parametrize(
+    "baseline,waivers,prefix",
+    [
+        ({OLD}, {}, "::warning title=stale-unrun-baseline::"),
+        (set(), {OLD: "why"}, "::warning title=stale-unrun-waiver::"),
+    ],
+)
+def test_a_stale_row_warns_and_never_reds(
+    capsys: pytest.CaptureFixture, baseline, waivers, prefix: str
+) -> None:
+    """The suite got WIRED. Reding here would punish the branch that fixed it."""
+    assert GUARD.gate([], baseline, waivers, {OLD}) == 0
+    assert _starts(_lines(capsys), prefix)
+
+
+def test_a_suite_in_both_files_warns_about_the_duplication(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """The waiver carries the reason, so it wins and the baseline row is the dupe."""
+    assert GUARD.gate([NEW], {NEW}, {NEW: "why"}, {NEW}) == 0
+    assert _starts(_lines(capsys), "::warning title=stale-unrun-baseline::")
+
+
+@pytest.mark.parametrize(
+    "waivers,why",
+    [
+        (["not", "a", "mapping"], "a list is not a suite path -> reason mapping"),
+        ({NEW: ""}, "an empty reason is a baseline row wearing a disguise"),
+        ({NEW: 232}, "a non-string reason carries no argument"),
+        ({NEW: "   "}, "nor does whitespace"),
+    ],
+)
+def test_malformed_waivers_are_a_hard_red(
+    capsys: pytest.CaptureFixture, waivers, why: str
+) -> None:
+    """Fail-closed, and fail LOUD: silently ignoring the file would red every waived
+    suite at once and bury the actual complaint under the noise."""
+    assert GUARD.gate([NEW], {NEW}, waivers, {NEW}) == 1, why
+    assert _starts(_lines(capsys), "::error title=unrun-waivers-malformed::")
+
+
+def test_an_unparseable_waivers_file_is_a_hard_red(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    assert GUARD.gate([NEW], {NEW}, GUARD._Unparseable("boom"), {NEW}) == 1
+    assert _starts(_lines(capsys), "::error title=unrun-waivers-malformed::")
+
+
+def test_a_shared_basename_does_not_cover_a_sibling_suite() -> None:
+    """Measured 2026-08-09, and the reason this matcher is path-first.
+
+    `test_price_ladder.py` exists twice — in `tests/` and in
+    `research/prophet_us_audit/`. Both were unrun, so the collision was inert until
+    the research one was wired into signal-contract; the basename fallback then
+    reported the `tests/` one as COVERED with nothing running it, which is this
+    census's own failure mode. An ambiguous basename demands the full path.
+    """
+    blob = "python -m pytest research/prophet_us_audit/test_price_ladder.py -q"
+    ambiguous = frozenset({"test_price_ladder.py"})
+    assert GUARD._named_by_a_run_step(
+        "research/prophet_us_audit/test_price_ladder.py", blob, ambiguous) is True
+    assert GUARD._named_by_a_run_step(
+        "tests/test_price_ladder.py", blob, ambiguous) is False
+    # …and an UNambiguous basename still matches, so a `cd`-then-bare-name step
+    # does not start reporting false darkness.
+    assert GUARD._named_by_a_run_step(
+        "tests/test_solo.py", "pytest test_solo.py", frozenset()) is True
+
+
+# ── 6. both files parse, and mean what the gate reads ────────────────────────
+
+def test_the_baseline_is_a_sorted_unique_list_of_repo_relative_paths() -> None:
+    """Deterministic output is what makes `--write-baseline` reviewable in a diff."""
+    doc = json.loads((ROOT / "config/unrun_test_baseline.json").read_text())
+    rows = doc["grandfathered"]
+    assert isinstance(rows, list) and rows
+    assert all(isinstance(r, str) and "/" in r for r in rows)
+    assert rows == sorted(rows), "regenerate with --write-baseline; do not hand-edit"
+    assert len(set(rows)) == len(rows)
+    assert doc["_frozen"] and doc["_note"], "the shrink-only policy must travel with it"
+
+
+def test_the_waivers_file_maps_paths_to_nonempty_reasons() -> None:
+    """The schema the gate enforces at runtime, pinned as a file-shape too."""
+    raw = yaml.safe_load((ROOT / "config/unrun_test_waivers.yml").read_text()) or {}
+    assert isinstance(raw, dict)
+    normalized, problems = GUARD._validate_waivers(raw)
+    assert not problems, problems
+    assert normalized == raw or all(normalized[k] == v.strip() for k, v in raw.items())
+
+
+def test_the_two_exception_files_do_not_overlap() -> None:
+    """A waived suite is excluded from the baseline by --write-baseline; if both
+    name it, one of them is a leftover and the gate is warning about it."""
+    baseline = set(json.loads(
+        (ROOT / "config/unrun_test_baseline.json").read_text())["grandfathered"])
+    waived = set(yaml.safe_load(
+        (ROOT / "config/unrun_test_waivers.yml").read_text()) or {})
+    assert not (baseline & waived), sorted(baseline & waived)
 
 
 def test_annotations_start_the_line_and_flush() -> None:

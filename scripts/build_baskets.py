@@ -219,6 +219,64 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("group_flow lens failed: %s", e)
 
+    # GR0 — GROUP PULSE (engine.group_pulse, group_pulse.v1). The basket-level
+    # PARTICIPATION / DIRECTION / ARC read plane: how many members are actually
+    # moving, whether they are moving the same way, and where the group sits in a
+    # washout->advance arc. An ASSEMBLER over organs that already exist (group_flow's
+    # cohesion + the sign-agreement leg added beside it, coiled's capitulation read,
+    # weinstein_stage) — NOT a new scorer, and the artifact carries no fused
+    # score/rank/heat number of any kind (tests/test_group_pulse_tripwire.py).
+    #
+    # Placed here, immediately after the flow lens, for the same reason flow sits
+    # here: membership + the member tape are fresh at this point in the DAG band and
+    # fdir already exists. site/basketdata/pulse.json is written in ANY lane (it is a
+    # display snapshot); only the episode LEDGER append is nightly-gated, inside the
+    # engine on engine.ledger_lane.nightly_advance_enabled() — house law, nightly is
+    # the sole advancer of forward ledgers and an intraday lane computes and discards.
+    #
+    # DISPLAY TIER, ZERO AUTHORITY: no lane, rank, gate, or size reads it.
+    # Own try/except — exit-0 always (additive, never fatal).
+    try:
+        from engine.group_pulse import run as _gp_run
+        _gp_res = _gp_run()
+        _gp_led = _gp_res.get("ledger") or {}
+        log.info(
+            "group_pulse: %d basket(s) as_of=%s in %.1fs -> %s; episode ledger %s"
+            " (%s rows, %s closed); history -> %s (%s closed episode(s) published)",
+            _gp_res.get("n_baskets", 0), _gp_res.get("as_of"),
+            float(_gp_res.get("elapsed_s") or 0.0), _gp_res.get("artifact"),
+            "advanced" if _gp_led.get("written") else
+            f"skipped ({_gp_led.get('reason', 'unknown')})",
+            _gp_led.get("rows", 0), _gp_led.get("closed", 0),
+            _gp_res.get("episodes_artifact"), _gp_res.get("n_closed_episodes", 0),
+        )
+    except Exception as _gp_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print at column 0, NOT a logger call: this package's logging format
+        # prefixes every record, and GitHub only parses a "::" that STARTS the line.
+        print(f"::warning title=group-pulse::group_pulse hook failed: {_gp_exc}",
+              flush=True)
+
+    # 📅 GROUP EARNINGS PULSE (Group Reads W-GR2, engine.group_earnings) — the earnings
+    # LAYER of each basket read: season clock, beat/miss rollup, guidance band (the
+    # guidance_gap classifier generalized to basket rosters), revision breadth, post-report
+    # drift, and the earnings SYMPATHY ratio (do this group's members move together around
+    # each other's prints). CONTEXT-ONLY: never ranked, sized, gated, or fused into a
+    # score; every stat carries its n and every floor refusal prints a null.
+    #
+    # Reads committed artifacts only (no network at build time) and caches the member
+    # return series ONCE for the whole 49-basket sweep — ~4s wall clock. The sympathy
+    # ledger append inside is lane-gated by engine.ledger_lane (nightly is the sole
+    # advancer), so the express/intraday lanes compute the JSON and discard the write.
+    # Additive — never breaks the page.
+    try:
+        from engine.group_earnings import compute_group_earnings
+        pulse = compute_group_earnings()
+        if pulse:
+            (fdir / "earnings_pulse.json").write_text(
+                json.dumps(pulse, separators=(",", ":"), default=str))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("group earnings pulse failed: %s", e)
+
     # SECTOR PULSE — compact per-theme rotation data product for Mastermind bot / Terminal.
     # Reads theme_intel (already computed above) and writes basketdata/sector_pulse.json.
     # Also merges per-theme velocity/heat keys into theme_intel so the page JS can render

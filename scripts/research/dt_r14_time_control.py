@@ -27,7 +27,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_REPO_ROOT = Path("/private/tmp/esx-ssq")
+# Derived from __file__, not hardcoded: this pointed at a scratch directory
+# under /private/tmp, so both the pin and _DATA below resolved outside the repo.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
