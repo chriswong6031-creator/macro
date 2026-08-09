@@ -414,13 +414,26 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert any(v.check == "b" and "alert_triage" in v.module for v in viols)
 
-    def test_engine_world_state_not_allowlisted(self) -> None:
-        """engine/neuralweb/world_state.py is NOT in the allowlist."""
+    @pytest.mark.parametrize(
+        "state_builder",
+        [
+            "engine/inflation_intelligence.py",
+            "engine/neuralweb/world_state.py",
+        ],
+    )
+    def test_inflation_state_builders_allowlisted_as_all_false_mirrors(
+        self, state_builder: str
+    ) -> None:
+        """Inflation builders may emit the fixed descriptive authority mirror."""
         synthetic = {
-            "engine/neuralweb/world_state.py": "x = state['allowed_actions']\n",
+            state_builder: (
+                "payload = {'allowed_actions': {\n"
+                "    'may_rank': False, 'may_score': False, 'may_trade': False,\n"
+                "}}\n"
+            ),
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
-        assert any(v.check == "b" for v in viols)
+        assert not any(v.check == "b" for v in viols)
 
     def test_state_builder_allowlisted(self) -> None:
         synthetic = {
