@@ -337,7 +337,25 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
   7. **v0 corrections PR** (post-#4999-merge): header basis → back-adjusted (with L1's
      tick-share evidence), JSON `definitions`/`why_strict_is_primary` prose → the MD's actual
      verdict, tape_crosscheck intersection-blindness note (L0's 9× finding).
-- **W3+:** zt_pool-universe expansion (F3 is the standing threat: the ladder itself must be
+- **W3 (opened early, 2026-08-09):** **W3-A WINDOW-TARGET BATTERY — SPAWNED** (branch
+  `claude/cn-limit-w3-window`), operator-prompted: re-target the outcome from "board
+  tomorrow" to the charter's rerating WINDOW (cumulative/peak ≥ {0.8w, 1.5w, 2.5w} over
+  H ∈ {3,5,10}) and the big-day-short-of-limit class ([0.6w, limit)). Decision question:
+  Waves 1-2 proved the auction prices tomorrow's BOARD — does it price the WINDOW? Boards
+  are a window's unfillable spikes; the 6-8% days are its buyable flesh. Includes the C12
+  near-miss matched comparison. Then: **L1 continuation-side regime merge** (W2-A's largest
+  measured effect), minute-bar intraday battery (post-Codex wiring), F3 full-universe re-run
+  (post-expansion).
+- **Event-taxonomy ruling (operator question, 2026-08-09 — recorded so no session re-litigates
+  it):** on a 10% board the catalog decomposes as: close ≥ ~+9.78% (limit price × 0.998) =
+  LIMIT-UP CLOSE (tolerant primary; the 0.2% is a feed-noise cushion, adjudicated, strict
+  column parallel — a +9.9% pullback close already counts); touched limit intraday but closed
+  below threshold = FAILED SEAL (13,871-event cohort, W2-B's battery, depth-banded — "up 10%
+  at peak, closed 9%" lives here and is the seal-destroys-80%-of-the-edge finding); closed in
+  [+9.5%, +9.78%) without touching = NEAR-LIMIT (2,017 events, rare — the distribution cliffs
+  at the limit; f5 UNSTABLE); big up-day below 0.95w = feature-only until W3-A makes it an
+  outcome class.
+- **W3+/W4:** zt_pool-universe expansion (F3 is the standing threat: the ladder itself must be
   re-measured market-wide — labels exist in the vendor pool even where OHLCV doesn't),
   theme-relay v1 (blocked on THS concept mapping — 涨停原因 is NOT on the pool endpoint),
   cross-market rerate oracle (S5), LHB per-seat history (P3), display-tier site surface
