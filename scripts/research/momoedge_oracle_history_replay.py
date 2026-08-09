@@ -31,6 +31,7 @@ import ast
 import hashlib
 import json
 import os
+import sys
 import tempfile
 import unicodedata
 from collections import Counter
@@ -42,6 +43,7 @@ from zoneinfo import ZoneInfo
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 CONTRACT_DIR = REPO_ROOT / "contracts" / "research"
 
 INPUT_SCHEMA = CONTRACT_DIR / "momoedge_oracle_history_authorized.v1.schema.json"

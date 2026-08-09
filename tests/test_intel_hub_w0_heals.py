@@ -45,6 +45,7 @@ from engine import hub_track_record as H  # noqa: E402
 from engine import intel_hub as IH  # noqa: E402
 from engine import intelligence as I  # noqa: E402
 from engine import signal_governor as G  # noqa: E402
+from engine import trajectory as _trajectory  # noqa: E402
 from scripts import build_intel_hub as BIH  # noqa: E402
 
 _TODAY = date(2026, 6, 20)
@@ -64,6 +65,18 @@ def _annotations(capsys) -> list[str]:
 # =========================================================================== #
 @pytest.fixture
 def _no_velocity(monkeypatch):
+    # Keep every W0 synthetic name away from the live roster, price store, and
+    # entry-gate snapshot.  These tests exercise dossier/hero bookkeeping; the
+    # universe gate has its own dedicated suite.  Reading current repo artifacts
+    # here made the answer depend on whether a fixture ticker (notably DDD) had
+    # accrued a real gate verdict since the test was written.
+    monkeypatch.setattr(
+        IH,
+        "_scope_universe",
+        lambda tickers, _root: (dict(tickers), {"mode": "synthetic"}, lambda _t: True),
+    )
+    monkeypatch.setattr(IH, "_load_gate_index", lambda: {})
+    monkeypatch.setattr(_trajectory, "_yahoo_closes", lambda _ticker, _root: None)
     monkeypatch.setattr(IH, "load_velocity", lambda tickers, today, persist=True: {})
 
 
