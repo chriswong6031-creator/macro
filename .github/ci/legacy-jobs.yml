@@ -743,9 +743,13 @@ jobs:
       - name: install deps
         # jinja2 + pyarrow are for the options-screener suite below: the builder imports
         # jinja2 at module scope and reads its inputs from parquet.
-        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
+      - name: options PIT episodes (causal clocks, durable stage, H+60 labels, R2/checkpoint integrity)
+        run: python -m pytest tests/test_options_signal_episode.py -q
+      - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
+        run: python -m pytest tests/test_live_flow.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
       # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are

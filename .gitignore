@@ -500,6 +500,8 @@ data/marketing/fastlane_heartbeat.txt
 # silently no-ops both and the queue evaporates on the next runner clean).
 # Only the transient advisory lock stays local.
 data/marketing/outbox/.lock
+data/options_signal_episode/checkpoint.json.lock
+data/options_signal_episode/.checkpoint.json.*.tmp
 # XG-W2 daemon spool. The fast lanes (press, earnings) now emit through the
 # canonical outbox path, and they run inside scripts/marketing_fastlane_daemon.py
 # on the VPS — whose checkout is refreshed by a 3-minute `git pull`. Appending to
