@@ -59,7 +59,10 @@ The current store audit found two wider data defects that also precede strategy 
   market-session population;
 - `china_zt_pool` contains weekend rows stamped with the requested Saturday/Sunday date even when
   the vendor returned Friday's pool. Day-of-week and weekend-fermentation tests are forbidden until
-  session identity is validated and those clones are quarantined.
+  session identity is validated and those clones are quarantined. Across the pool's tracked window,
+  only 514 of 1,770 distinct pool tickers overlap the 1,842-name raw-price store (29.04%); 1,256
+  observed limit-up names therefore have no local OHLCV history. Curated-store results cannot be
+  generalized to the full limit-up game until that completion set is collected and era-stamped.
 
 ## 1. The construction space
 
