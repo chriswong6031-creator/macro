@@ -357,6 +357,22 @@ R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, pa
 legacy shadow rows accruing, zones if R3 landed); check `data/us_prophet_rank/grades/`
 advanced (W7 store dark since merge) — if still empty, spawn its heal.
 R7 session-chain handoff: update §6.7/§6.9 execution records + memory with every PR/outcome.
+**RESUME STATE v2 — 2026-08-09 06:30Z (SUPERSEDED-BASE EVENT; the v1 block below is
+historical):** #5071 "lossless US origination and date-safe outage recovery" MERGED 03:37Z —
+a fleet lane REBUILT the US Prophet intake/date/durability path and removed the live cap.
+#4977 (A1) was CLOSED by its audit with the surviving debt named: **status-class/patience
+admission + selection-era stamps + zero-authority legacy shadow ledger** — port these onto
+the #5071 base as a FRESH PR (read #5071's diff first; do not resurrect the old branch).
+#4976 (A2) reds on packs 1/2/3 post-#5071 — re-audit it the same way before any refresh
+(its featured/ext_z/neutral-ladder content may partially survive; its stage-gate finding =
+R2 still stands). The other eight armed PRs (4972 4979 4987 4988 4993 4999 5000 5007 5026)
+need per-PR re-audit vs the new base — assume nothing merged; some may be partially
+superseded like A1. THEN the run order continues: R3 entry mechanics (zones + wait_reset +
+zone-with-expiry-to-starter + EARLY-TURN starter) built directly on the #5071 base in the
+same PR as the patience-admission port (one coherent intake change); R2 stage-gate+cohort
+on whatever us_board_rank looks like post-audit; R5, R6. The CN limit-alpha Fable session
+runs independently (Wave 1 PRs #5059/#5061) — do not collide with its lanes.
+
 **RESUME STATE 2026-08-08 13:05Z (session limit hit, resets 15:20Z):** R4 DONE (#5007 armed —
 RESET_TURN null standalone/confluence-input, ZONE proven 7.26%→2.29% entry-vs-low; NVDA/AVGO/
 ADAM missed under v0 with leg-timing causes + 3 pre-registered v1 candidates; NEW v1 candidate
