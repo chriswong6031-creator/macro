@@ -4,9 +4,9 @@ LANE: §D PR-5, RUL-NW9 / RUL-NW11 (NW_INTEGRATION_ADJUDICATION_BY_FABLE.md)
 
 PURPOSE
 -------
-Literal-scan static guard that enforces three boundary rules for factor-module
-files.  Modelled on check_synapse_reads.py and check_research_factory_authority.py
-conventions; literal-path scan (no AST tracing — dynamic constructions not detected).
+Static guard that enforces three boundary rules for factor-module files.
+Modelled on check_synapse_reads.py and check_research_factory_authority.py
+conventions; checks (a)/(c) and the default check-(b) path are literal scans.
 
 THREE CHECKS
 ------------
@@ -45,9 +45,8 @@ THREE CHECKS
       engine/biocatalyst/sector_packet.py          (facts-only packet state builder)
       docs/research/                                 (research docs; prefix match)
       scripts/check_factor_boundaries.py             (this file — for selftest)
-    Emit-only paths (dict-key/call-keyword writes pass; every read still fails):
-      engine/inflation_intelligence.py
-      engine/neuralweb/world_state.py
+    Two inflation producers have occurrence-only AST warrants for their exact
+    six-key all-False emissions; they are not allowlisted to read the field.
 
 (c) Forbidden field name guard (rank/score/recommendation):
     FAIL if the state builder or shadow script emit fields named
@@ -73,9 +72,11 @@ Usage
 
 Pattern note
 ------------
-This is a LITERAL-SCAN script (string pattern in source text).
-Dynamic path construction without matching literals is NOT detected.
-AST data-flow tracing is deferred to a later wave.
+Checks (a) and (c) are literal scans. Check (b) uses a narrow AST exception for
+fixed all-false authority-mirror emissions in two named inflation producers;
+those paths also detect statically foldable string-literal ``+`` chains. All
+other paths retain the literal scan. Runtime-built names (for example joins,
+formats, decoded bytes, or imported aliases) remain outside this static guard.
 """
 from __future__ import annotations
 
@@ -175,15 +176,32 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "docs/research/",
 ]
 
-# These producers may EMIT a fixed descriptive ``allowed_actions`` mirror, but
-# must never read the field or branch on it.  They intentionally remain outside
-# the whole-file allowlist above.  Check (b) permits only AST-proven mapping-key
-# and keyword-argument writes at these paths, so a future ``payload.get(...)``
-# or ``payload[... ]`` reference still fails closed.
-_ALLOWED_ACTIONS_EMIT_ONLY_PATHS: frozenset[str] = frozenset({
-    "engine/inflation_intelligence.py",
-    "engine/neuralweb/world_state.py",
-})
+# Release Radar inflation state builders (#5153) may each *emit* one exact,
+# descriptive authority mirror from one unique top-level producer. These are
+# deliberately not whole-file allowlist entries: any read, branch, alias,
+# non-fixed emission, or second emission remains a check-b violation.
+_ALLOWED_ACTIONS_FIXED_EMISSION_PATHS = frozenset(
+    {
+        "engine/inflation_intelligence.py",
+        "engine/neuralweb/world_state.py",
+    }
+)
+
+_ALLOWED_ACTIONS_FIXED_KEYS = frozenset(
+    {
+        "may_rank",
+        "may_score",
+        "may_size",
+        "may_gate",
+        "may_escalate",
+        "may_trade",
+    }
+)
+
+_ALLOWED_ACTIONS_FIXED_EMITTERS = {
+    "engine/inflation_intelligence.py": "build_inflation_intelligence",
+    "engine/neuralweb/world_state.py": "_inflation_intelligence_null",
+}
 
 # ---------------------------------------------------------------------------
 # Forbidden field names in state-builder and shadow script (check-c)
@@ -352,56 +370,231 @@ def _is_allowlisted_for_allowed_actions(rel_path: str) -> bool:
     return False
 
 
-def _allowed_actions_emission_spans(
-    source: str,
-) -> dict[int, tuple[tuple[int, int], ...]]:
-    """Return exact source spans that AST-prove an ``allowed_actions`` write.
+def _is_fixed_false_actions_dict(node: ast.AST) -> bool:
+    """Return whether *node* is the exact six-key, all-False authority mirror."""
+    if (
+        not isinstance(node, ast.Dict)
+        or len(node.keys) != len(_ALLOWED_ACTIONS_FIXED_KEYS)
+    ):
+        return False
 
-    Only the key token is exempted.  The value subtree and every other token on
-    the same line remain visible to check (b), so
-    ``{"allowed_actions": source["allowed_actions"]}`` still fails.  Parse
-    failure returns no spans and therefore fails closed.
+    keys: list[str] = []
+    for key, value in zip(node.keys, node.values):
+        if not isinstance(key, ast.Constant) or not isinstance(key.value, str):
+            return False
+        if not isinstance(value, ast.Constant) or value.value is not False:
+            return False
+        keys.append(key.value)
+    return (
+        len(set(keys)) == len(keys)
+        and frozenset(keys) == _ALLOWED_ACTIONS_FIXED_KEYS
+    )
+
+
+def _static_string(node: ast.AST) -> str | None:
+    """Fold literal strings and literal ``+`` chains without executing code."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _static_string(node.left)
+        right = _static_string(node.right)
+        if left is not None and right is not None:
+            return left + right
+    return None
+
+
+class _ModuleBindingVisitor(ast.NodeVisitor):
+    """Collect bindings in module scope without descending into local scopes."""
+
+    def __init__(self) -> None:
+        self.names: list[str] = []
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
+        self.names.append(node.name)
+
+    def visit_AsyncFunctionDef(  # noqa: N802
+        self, node: ast.AsyncFunctionDef
+    ) -> None:
+        self.names.append(node.name)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
+        self.names.append(node.name)
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:  # noqa: N802
+        return
+
+    def visit_Name(self, node: ast.Name) -> None:  # noqa: N802
+        if isinstance(node.ctx, (ast.Store, ast.Del)):
+            self.names.append(node.id)
+
+    def visit_alias(self, node: ast.alias) -> None:
+        self.names.append(node.asname or node.name.split(".", maxsplit=1)[0])
+
+    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:  # noqa: N802
+        if node.name:
+            self.names.append(node.name)
+        self.generic_visit(node)
+
+    def visit_MatchAs(self, node: ast.MatchAs) -> None:  # noqa: N802
+        if node.name:
+            self.names.append(node.name)
+        self.generic_visit(node)
+
+    def visit_MatchStar(self, node: ast.MatchStar) -> None:  # noqa: N802
+        if node.name:
+            self.names.append(node.name)
+
+    def visit_MatchMapping(self, node: ast.MatchMapping) -> None:  # noqa: N802
+        if node.rest:
+            self.names.append(node.rest)
+        self.generic_visit(node)
+
+
+def _module_scope_bindings(tree: ast.Module) -> list[str]:
+    visitor = _ModuleBindingVisitor()
+    visitor.visit(tree)
+    return visitor.names
+
+
+def _emitter_name_is_sealed(
+    tree: ast.Module,
+    emitter_name: str,
+    parents: dict[int, ast.AST],
+) -> bool:
+    """Return whether the approved producer keeps one callable identity.
+
+    Production references to either approved emitter are direct calls. Reject
+    every other use of its name so assignments through ``globals``/``vars``,
+    module attributes, function-object mutation, aliases, and statically named
+    dynamic execution cannot replace the audited producer after its definition.
+    """
+    for node in ast.walk(tree):
+        static_value = _static_string(node)
+        if static_value is not None and emitter_name in static_value:
+            return False
+        if isinstance(node, ast.Name) and node.id == emitter_name:
+            parent = parents.get(id(node))
+            if not (
+                isinstance(node.ctx, ast.Load)
+                and isinstance(parent, ast.Call)
+                and parent.func is node
+            ):
+                return False
+        if isinstance(node, ast.Attribute) and node.attr == emitter_name:
+            return False
+        if isinstance(node, ast.keyword) and node.arg == emitter_name:
+            return False
+        if (
+            isinstance(node, (ast.Global, ast.Nonlocal))
+            and emitter_name in node.names
+        ):
+            return False
+    return True
+
+
+def _permitted_fixed_emission_nodes(
+    tree: ast.Module,
+    rel_path: str,
+    parents: dict[int, ast.AST],
+) -> set[int]:
+    """Return the one structurally exact fixed-emission key, or no warrant.
+
+    The producer must be one unique top-level function. Its fixed six-key map
+    must be the value of ``allowed_actions`` in a Dict returned directly by that
+    function. Nested, duplicated, conditional, copied, and keyword emissions
+    therefore fail closed without line-number or name-only exemptions.
+    """
+    emitter_name = _ALLOWED_ACTIONS_FIXED_EMITTERS.get(rel_path)
+    bindings = _module_scope_bindings(tree)
+    if (
+        not emitter_name
+        or "*" in bindings
+        or bindings.count(emitter_name) != 1
+        or not _emitter_name_is_sealed(tree, emitter_name, parents)
+    ):
+        return set()
+    emitters = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == emitter_name
+    ]
+    if len(emitters) != 1:
+        return set()
+    emitter = emitters[0]
+    if emitter.decorator_list:
+        return set()
+
+    candidates: list[ast.Constant] = []
+    for node in ast.walk(emitter):
+        if not isinstance(node, ast.Dict):
+            continue
+        if any(
+            not isinstance(key, ast.Constant)
+            or not isinstance(key.value, str)
+            for key in node.keys
+        ):
+            continue
+        return_node = parents.get(id(node))
+        if not (
+            isinstance(return_node, ast.Return)
+            and parents.get(id(return_node)) is emitter
+        ):
+            continue
+        for key, value in zip(node.keys, node.values):
+            if (
+                isinstance(key, ast.Constant)
+                and key.value == "allowed_actions"
+                and _is_fixed_false_actions_dict(value)
+            ):
+                candidates.append(key)
+
+    return {id(candidates[0])} if len(candidates) == 1 else set()
+
+
+def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]:
+    """Return semantic allowed_actions references other than fixed emissions.
+
+    Exemptions are AST-node identities, never line numbers. Consequently a
+    legitimate emission and a read on the same source line still fail check-b.
     """
     try:
         tree = ast.parse(source)
-    except SyntaxError:
-        return {}
+    except SyntaxError as exc:
+        # Fail closed for malformed source rather than accidentally granting a
+        # whole-file exemption when the AST cannot prove an emission is inert.
+        return [exc.lineno or 1]
 
-    spans: dict[int, list[tuple[int, int]]] = {}
+    parents = {
+        id(child): parent
+        for parent in ast.walk(tree)
+        for child in ast.iter_child_nodes(parent)
+    }
+    permitted_nodes = _permitted_fixed_emission_nodes(tree, rel_path, parents)
 
-    def add_node_span(node: ast.AST) -> None:
-        if not all(hasattr(node, attr) for attr in ("lineno", "col_offset", "end_lineno", "end_col_offset")):
-            return
-        if node.lineno != node.end_lineno:
-            return
-        spans.setdefault(node.lineno, []).append((node.col_offset, node.end_col_offset))
-
+    lines: set[int] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.Dict):
-            for key in node.keys:
-                if (
-                    isinstance(key, ast.Constant)
-                    and key.value == "allowed_actions"
-                ):
-                    add_node_span(key)
-        elif (
-            isinstance(node, ast.Subscript)
-            and isinstance(node.ctx, ast.Store)
-            and isinstance(node.slice, ast.Constant)
-            and node.slice.value == "allowed_actions"
-        ):
-            add_node_span(node.slice)
-        elif (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr == "update"
-        ):
-            for keyword in node.keywords:
-                if keyword.arg == "allowed_actions" and hasattr(keyword, "lineno"):
-                    spans.setdefault(keyword.lineno, []).append(
-                        (keyword.col_offset, keyword.col_offset + len("allowed_actions"))
-                    )
-    return {line: tuple(ranges) for line, ranges in spans.items()}
+        references_token = (
+            _static_string(node) == "allowed_actions"
+        ) or (
+            isinstance(node, ast.Name)
+            and node.id == "allowed_actions"
+        ) or (
+            isinstance(node, ast.Attribute)
+            and node.attr == "allowed_actions"
+        ) or (
+            isinstance(node, ast.arg)
+            and node.arg == "allowed_actions"
+        ) or (
+            isinstance(node, ast.keyword)
+            and node.arg == "allowed_actions"
+        ) or (
+            isinstance(node, (ast.Global, ast.Nonlocal))
+            and "allowed_actions" in node.names
+        )
+        if references_token and id(node) not in permitted_nodes:
+            lines.add(getattr(node, "lineno", 1))
+
+    return sorted(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -494,42 +687,32 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
                 continue
 
     for rel_path, source in file_iter:
-        if _TOKEN not in source:
+        if rel_path in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS:
+            violation_lines = _non_emission_allowed_actions_lines(rel_path, source)
+        elif _TOKEN not in source:
             continue
-        if _is_allowlisted_for_allowed_actions(rel_path):
+        elif _is_allowlisted_for_allowed_actions(rel_path):
             continue
-        emission_spans = (
-            _allowed_actions_emission_spans(source)
-            if rel_path in _ALLOWED_ACTIONS_EMIT_ONLY_PATHS
-            else {}
-        )
-        # Found the token in a non-allowlisted file — find line numbers
-        lines = source.splitlines()
-        for i, line in enumerate(lines, start=1):
-            if _TOKEN in line:
-                occurrences = tuple(re.finditer(_TOKEN, line))
-                allowed_ranges = emission_spans.get(i, ())
-                if occurrences and all(
-                    any(
-                        start <= occurrence.start() and occurrence.end() <= end
-                        for start, end in allowed_ranges
-                    )
-                    for occurrence in occurrences
-                ):
-                    continue
-                violations.append(Violation(
-                    check="b",
-                    module=rel_path,
-                    line_no=i,
-                    pattern=_TOKEN,
-                    message=(
-                        f"FACTOR BOUNDARY VIOLATION (b): {rel_path}:{i} — "
-                        f"'allowed_actions' is read/referenced outside the allowlist. "
-                        "This field is DESCRIPTIVE ONLY (RUL-NW9): it must never become "
-                        "a behavior wire. Only the state builder, display/admin surfaces, "
-                        "and tests may reference it."
-                    ),
-                ))
+        else:
+            violation_lines = [
+                line_no
+                for line_no, line in enumerate(source.splitlines(), start=1)
+                if _TOKEN in line
+            ]
+        for line_no in violation_lines:
+            violations.append(Violation(
+                check="b",
+                module=rel_path,
+                line_no=line_no,
+                pattern=_TOKEN,
+                message=(
+                    f"FACTOR BOUNDARY VIOLATION (b): {rel_path}:{line_no} — "
+                    f"'allowed_actions' is read/referenced outside the allowlist. "
+                    "This field is DESCRIPTIVE ONLY (RUL-NW9): it must never become "
+                    "a behavior wire. Only the state builder, display/admin surfaces, "
+                    "and tests may reference it."
+                ),
+            ))
 
     return violations
 
@@ -676,6 +859,30 @@ def _run_selftest(root: Path) -> int:
     else:
         print("  [OK] check-b-clean: allowlisted file produces no violation")
 
+    # --- (b fixed emission): same World State line also contains a forbidden read --
+    synthetic_b_fixed_emission = {
+        "engine/neuralweb/world_state.py": (
+            "def _inflation_intelligence_null():\n"
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}; "
+            "observed = state.get('allowed_actions')\n"
+        ),
+    }
+    viols_b_fixed_emission = _check_b(
+        root, extra_files=synthetic_b_fixed_emission
+    )
+    if len(viols_b_fixed_emission) != 1:
+        errors.append(
+            "SELFTEST FAIL (b-fixed-emission): fixed World State emission must be "
+            "ignored while a same-line allowed_actions read is detected"
+        )
+    else:
+        print(
+            "  [OK] check-b-fixed-emission: same-line World State read detected "
+            "without rejecting fixed emission"
+        )
+
     # --- (b enforcement): contract validator may reject, never drive behavior --
     synthetic_b_enforcement = {
         "engine/sector_intelligence/contracts.py": (
@@ -690,11 +897,13 @@ def _run_selftest(root: Path) -> int:
     else:
         print("  [OK] check-b-enforcement: contract validator is enforcement-only")
 
-    # --- (b emit-only): approved producer writes pass, reads on the same line red --
+    # --- (b emit-only): only the producer's exact fixed mirror passes --
     synthetic_b_emit = {
         "engine/neuralweb/world_state.py": (
-            "payload = {'allowed_actions': {'may_rank': False}}\n"
-            "payload.update(allowed_actions={'may_trade': False})\n"
+            "def _inflation_intelligence_null():\n"
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}\n"
         ),
     }
     if _check_b(root, extra_files=synthetic_b_emit):
@@ -704,7 +913,11 @@ def _run_selftest(root: Path) -> int:
 
     synthetic_b_mixed = {
         "engine/neuralweb/world_state.py": (
-            "payload = {'allowed_actions': source['allowed_actions']}\n"
+            "def _inflation_intelligence_null():\n"
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}; "
+            "observed = source['allowed_actions']\n"
         ),
     }
     if not _check_b(root, extra_files=synthetic_b_mixed):
