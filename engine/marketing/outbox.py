@@ -2681,3 +2681,124 @@ def emit_from_content_plan(
     })
 
     return counts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W5 — the dead-session reaper (operator 2026-08-08)
+#
+# APPENDED, NOT WOVEN IN, and deliberately so: two sibling waves are mid-merge
+# on this file, so this wave adds its helpers at the end rather than editing the
+# expiry section above.
+#
+# THE GAP THE TWO REAPERS ABOVE LEAVE. `expire_stale_planned` ages off
+# `scheduled_at` (36h) and `expire_stale_wire` ages off idle time (3h/12h).
+# NEITHER ASKS THE CALENDAR. The operator's Saturday outbox held a Friday-morning
+# theme_list reading "Consumer Goods selling off, -2.4% avg on Thursday" that was
+# 29 hours old (inside the 36h bar), carried a real ladder slot, and could never
+# post on any day: its kind means "the tape right now" and there is no tape on a
+# Saturday. It was visible, it offered an Approve button, and the operator has
+# asked ~10 times for it to stop happening.
+#
+# AND IT ONLY EVER RAN BEHIND THE PUBLISHER. Both reapers above are called from
+# the publish sweep and the nightly emit. With MARKETING_PUBLISH_ENABLED=0 the
+# publish sweep does not run, so no expiry was ever COMMITTED and the queue
+# rotted in plain sight. `scripts/marketing_press_wire.py` calls this function on
+# its ~5-minute tick, which is the lane that commits regardless of the send
+# switch.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _item_slot_is_due(it: dict, now: datetime) -> bool:
+    """Has this item's ladder slot arrived? An unstamped slot is always due.
+
+    "immediate" and a missing or unparseable `scheduled_at` are DUE: the wire
+    lanes write the first, and a malformed stamp must not be the thing that
+    EXEMPTS an item from a gate (the inverse of `_wire_item_born_at`'s rule,
+    which is about not letting a malformed stamp DESTROY one).
+    """
+    raw = str((it or {}).get("scheduled_at") or "").strip()
+    if not raw or raw == "immediate":
+        return True
+    try:
+        sched = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return True
+    if sched.tzinfo is None:
+        sched = sched.replace(tzinfo=timezone.utc)
+    return sched <= now
+
+
+def expire_dead_session_items(
+    root: Path | str | None = None,
+    *,
+    now: datetime | None = None,
+    actor: str = "session_expiry",
+) -> dict[str, Any]:
+    """Retire queued/approved items whose DAY WORDS can no longer be true.
+
+    Two legs, two note prefixes, both greppable in the admin quarantine view:
+
+      ``expired_session: <why>``           a same-day tape kind (mover,
+        theme_list, live-lane breaking) sitting on a non-trading day. Its
+        session has passed and the posting day has no session at all, so there
+        is no hour at which it becomes postable again.
+      ``expired_session_language: <why>``  copy whose day words the clock says
+        are FALSE right now, via `market_clock.clock_violations` — the same
+        battery the publisher runs at dispatch, run here so the verdict lands in
+        the ledger even when no dispatch is coming.
+
+    THE SECOND LEG JUDGES DUE ITEMS ONLY. Every clock violation is monotone
+    except the overnight frame, which is legal again at the next pre-open: an
+    item written Sunday night for a Monday 08:00 slot says "overnight" honestly
+    at its slot and dishonestly at 20:00 Sunday. Waiting for the slot costs
+    nothing (a due item is what the publisher would be looking at anyway) and it
+    is the difference between a reaper and a shredder.
+
+    Idempotent: a retired item is no longer `queued`/`approved`, so the next
+    tick skips it. Never posts, never touches the network, never raises.
+    """
+    out: dict[str, Any] = {"expired": 0, "ids": [], "by_kind": {}, "by_reason": {}}
+    try:
+        from engine.marketing import market_clock as _clock  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.expire_dead_session_items: no clock (%s), skipping", exc)
+        return out
+    try:
+        ts_now = now if now is not None else datetime.now(timezone.utc)
+        state = fold_state(root)
+        for iid, it in (state.get("items") or {}).items():
+            if str(state["status"].get(iid) or "") not in ("queued", "approved"):
+                continue
+            kind = str(it.get("kind") or "")
+            prov = str(it.get("provenance") or "")
+            fact_day = _clock.item_fact_day(it)
+
+            note = ""
+            bucket = ""
+            why = _clock.session_expired_reason(
+                now=ts_now, fact_asof=fact_day, kind=kind, provenance=prov)
+            if why:
+                note = f"expired_session: {why}"
+                bucket = "expired_session"
+            elif _item_slot_is_due(it, ts_now):
+                bad = _clock.clock_violations(
+                    str(it.get("text") or ""), now=ts_now, fact_asof=fact_day,
+                    kind=kind, provenance=prov)
+                if bad:
+                    note = ("expired_session_language: copy's day words are no "
+                            f"longer true: {'; '.join(bad[:3])}")
+                    bucket = "expired_session_language"
+            if not note:
+                continue
+
+            if transition(iid, "quarantined", actor=actor, root=root,
+                          note=note[:500], now=ts_now, _state=state):
+                out["expired"] += 1
+                out["ids"].append(iid)
+                out["by_kind"][kind] = out["by_kind"].get(kind, 0) + 1
+                out["by_reason"][bucket] = out["by_reason"].get(bucket, 0) + 1
+        if out["expired"]:
+            log.info("outbox.expire_dead_session_items: retired %d item(s) %s",
+                     out["expired"], out["by_reason"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.expire_dead_session_items failed: %s", exc)
+    return out

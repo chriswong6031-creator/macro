@@ -487,19 +487,14 @@ def _item_fact_day(it: dict) -> object:
     week, red every weekend, for reasons no one would look for in this file.
     Leading with `as_of` is deterministic, and where the two disagree it errs
     PERMISSIVE — the safe direction, since this gate's quarantine is terminal.
+
+    MOVED TO `market_clock.item_fact_day` (W5, 2026-08-08) and delegated here.
+    The approval desk now asks the same clock battery this function feeds, and
+    two copies of "which day is this item about" is exactly how two gates start
+    disagreeing about which session a post belongs to. The name stays because it
+    is what this file's call sites read.
     """
-    for key in ("as_of", "created_at"):
-        raw = str(it.get(key) or "").strip()
-        if not raw:
-            continue
-        try:
-            if len(raw) > 10:
-                ts = datetime.strptime(raw, _TS_FMT).replace(tzinfo=timezone.utc)
-                return _clock.et_date(ts)
-            return date.fromisoformat(raw[:10])
-        except (ValueError, TypeError):
-            continue
-    return None
+    return _clock.item_fact_day(it)
 
 
 def _clock_violations(it: dict, text: str, now: datetime) -> list[str]:
@@ -522,15 +517,20 @@ def _clock_violations(it: dict, text: str, now: datetime) -> list[str]:
     question at the wrong moment; this function is the last thing between the
     queue and the network. `market_clock.stale_session_violations` owns the law
     itself (and the four boundaries it must not break); this call is the wiring.
+
+    THE FOURTH LEG (operator 2026-08-08): the DAY-WORD law — a weekday name in
+    same-day tape copy, and a "today"/"tonight"/"yesterday" whose calendar
+    arithmetic does not work out. Composed into
+    `market_clock.clock_violations` alongside the three above, so the approval
+    desk's battery and this one ask exactly the same question. The composition
+    dedupes: rule B1 and `temporal_violations` emit the same
+    `today_word_off_session:` slug on purpose.
     """
     try:
-        reasons = _clock.temporal_violations(
-            text, now=now, fact_asof=_item_fact_day(it))
-        reasons += _clock.dead_date_future_tense(text, now=now)
-        reasons += _clock.stale_session_violations(
+        return _clock.clock_violations(
             text, now=now, fact_asof=_item_fact_day(it),
-            kind=str(it.get("kind") or ""))
-        return reasons
+            kind=str(it.get("kind") or ""),
+            provenance=str(it.get("provenance") or ""))
     except Exception as exc:  # noqa: BLE001
         log.warning("clock gate unavailable for %s (%s) — passing",
                     it.get("id"), exc)

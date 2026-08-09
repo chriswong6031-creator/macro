@@ -972,6 +972,29 @@ approval_desk:
   # disarm a desk somebody asked for.
   enabled: true
 
+  # DECISIVE POSTURE. Operator order 2026-08-08: "36 posts in outbox ... i don't
+  # want to review so many posts per day ... need a system that doesn't require
+  # my manual review all the time."
+  #
+  # The desk shipped with a third verdict — UNVERIFIABLE, meaning "I have
+  # nothing to look at", which left the item queued for a human. Measured
+  # against the real queue that verdict bought nothing and cost the program: a
+  # held item is not reviewed, it rots, it holds its fact anchor, and its text
+  # keeps vetoing tonight's copy through the 7-day near-dup corpus.
+  #
+  # true  = audit after, never approve before. An unverifiable item is
+  #         QUARANTINED with the check name and its evidence in the note, so the
+  #         admin outbox still shows every one of them with a reason and nothing
+  #         waits on a person. The safety half is unchanged: the desk still
+  #         never APPROVES what it cannot verify.
+  # false = the original triage, kept as the rollback lever. Unverifiable items
+  #         go back to sitting `queued` for an operator.
+  #
+  # A `hold` verdict survives either way and is NOT a human queue: it means
+  # another machine owns the heal (the media backfill lane resolving an R2 URL)
+  # or that the desk itself crashed. Both are bounded by ttl_hours below.
+  decisive: true
+
   # Per-sweep approval ceiling. A trickle valve, not a quality bound: the
   # measured nightly plan is ~218 items across seven desks, and clearing all of
   # them in one sweep hands the dispatch loop a backlog that the daily caps and

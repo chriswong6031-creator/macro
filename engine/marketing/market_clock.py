@@ -973,6 +973,291 @@ def stale_session_violations(text: str, *, now: datetime, fact_asof: object,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# THE DAY-WORD LAW (operator 2026-08-08, W5)
+#
+# "if we post this on Saturday the comment section is gonna be like 'bro today
+# is saturday wdym today'."
+#
+# TWO SHAPES WERE VISIBLE IN THE OPERATOR'S SATURDAY OUTBOX and neither of the
+# gates above could see them at DESK time — only at dispatch, which never came
+# because the publisher was disarmed:
+#
+#   ob-2026-08-07-3358756700  theme_list  "Consumer Goods selling off, -2.4%
+#                                          avg on Thursday"
+#   ob-2026-08-08-ad8e39cb91  theme_list  "Commodities Metals ripping, +7.2%
+#                                          avg today"
+#
+# The first one is HONEST COPY. "on Thursday" was true when it was written on
+# Friday morning, `temporal_violations` has no opinion about a weekday name at
+# all, and `stale_session_violations` leg 2 exempts it the moment the reader
+# is on a weekend (Friday is still `live_session` all weekend, and Thursday is
+# only ONE session back). It is nonetheless unpostable: a "what moved today"
+# post that names a weekday is a same-day tape claim wearing yesterday's date.
+#
+# THE LAW, in two rules that share one home with the calendar above:
+#
+#   A. A SAME-DAY TAPE KIND MAY NOT NAME A WEEKDAY AT ALL. mover / theme_list
+#      (and a `breaking` item off the live-tape lanes) exist to say "this is
+#      what is moving RIGHT NOW". Their honest vocabulary is "today" plus the
+#      TTL that retires them within hours; a day name in that copy is either
+#      stale on its face or an invitation to read it as stale. Banned outright
+#      rather than resolved-and-compared, because the resolution is exactly
+#      what `_claim_is_cited` has to guess at and every guess it gets wrong
+#      here ships the operator's complaint again.
+#
+#   B. A DAY WORD MUST MATCH THE POSTING CALENDAR DAY, FOR EVERY KIND.
+#      "today"-class words name the session in progress (this restates
+#      `temporal_vocab.allows_today` in calendar-day terms, which is why the
+#      slug below is the SAME `today_word_off_session:` the ledger already
+#      carries); "tonight" names the evening of the posting day; "yesterday"
+#      names exactly one calendar day back from the item's own session.
+#
+# WHAT MUST KEEP PASSING. The weekend_levels watchlist lane writes "$NVDA into
+# the week" — no day name, no day word, a forward frame about a session that
+# has not happened. It carries no violation under either rule and it must not
+# acquire one; that is the fixture this section is tested against.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Abbreviations published copy actually uses ("Fri close", "Thu tape").
+#:
+#: SAT AND SUN ARE DELIBERATELY ABSENT. Matching is case-insensitive — a desk
+#: writes "Fri" and a headline writes "FRI" — and "sat" and "sun" are ordinary
+#: English words ("the stock sat at 40", "sun-belt names"). A false positive
+#: here is a terminal quarantine, so an abbreviation earns its place only when
+#: it is not also a word. "Wed" is the one borderline entry: the English verb
+#: exists but does not appear in tape copy, and the cost if it ever does is one
+#: mover post that the next sweep regenerates from live quotes.
+_WEEKDAY_ABBREVS_EN: tuple[str, ...] = (
+    "Mon", "Tue", "Tues", "Wed", "Weds", "Thu", "Thur", "Thurs", "Fri",
+)
+
+#: Any weekday reference, however it is spelled. Three narrowings, each of
+#: which is a live false positive it would otherwise produce:
+#:   * ``$`` in the negative lookbehind — ``$MON``, ``$FRI`` and ``$WED`` are
+#:     cashtags, not days, and a mover post is ALL cashtags;
+#:   * ``(?:s)?`` before the boundary — "Mondays" is a weekday reference and
+#:     must trip; "Monday's" trips already, because the apostrophe ends the
+#:     word for ``(?![\w])``;
+#:   * ``(?!\.[A-Za-z])`` — "Monday.com" is a COMPANY ($MNDY). Without this the
+#:     one lane that would name it in prose could never post about it, forever.
+#:     A sentence-ending "Thursday." is unaffected (the next char is a space or
+#:     the end of the string, not a letter).
+_DAY_NAME_RE = re.compile(
+    r"(?<![\w'$])("
+    + "|".join(re.escape(w) for w in
+               sorted(_WEEKDAYS_EN + _WEEKDAY_ABBREVS_EN, key=len, reverse=True))
+    + r")(?:s)?(?![\w])(?!\.[A-Za-z])",
+    re.IGNORECASE,
+)
+
+#: Kinds whose whole claim is "this is the tape RIGHT NOW".
+_SAME_DAY_KINDS: frozenset[str] = frozenset({"mover", "theme_list"})
+
+#: `breaking` is a same-day tape kind ONLY off the live-tape lanes. A press-wire
+#: flash ("Fed speaks Friday") is a news item whose subject legitimately carries
+#: a date; a hot-tape or publish-time-mover breaking item is a price read.
+_SAME_DAY_BREAKING_PROVENANCES: frozenset[str] = frozenset(
+    {"hot_tape", "publisher_live_movers"})
+
+
+def is_same_day_kind(kind: str = "", provenance: str = "") -> bool:
+    """True when this item's whole claim is the CURRENT session's tape.
+
+    One predicate, two callers: rule A below and the weekend retirement in
+    :func:`session_expired_reason`. They must agree on what "same-day" means,
+    and a second copy of this list is how they would stop agreeing.
+    """
+    k = str(kind or "").strip().lower()
+    if k in _SAME_DAY_KINDS:
+        return True
+    if k == "breaking":
+        return str(provenance or "").strip().lower() in _SAME_DAY_BREAKING_PROVENANCES
+    return False
+
+
+#: "tonight" is NOT in :data:`_TODAY_WORDS` and must not be added to it: that
+#: tuple feeds `session_claims` and `_stale_claim_in_copy`, where "tonight"
+#: would resolve to a session the copy is not claiming. It is judged here, on
+#: its own clock — see rule B2 in :func:`session_language_violations`.
+_TONIGHT_RE = _word_re(("tonight",))
+_YESTERDAY_RE = _word_re(("yesterday",))
+
+
+def item_fact_day(it: dict) -> date | None:
+    """The ET calendar day this item's facts belong to. None when nothing parses.
+
+    ``as_of`` FIRST — it is the field that says what day the content is FOR, and
+    every consumer here walks it back through :func:`session_of` itself, so a
+    nightly plan stamped "2026-08-01" (the UTC date at 23:51 ET Friday) resolves
+    to FRIDAY's session, which is exactly right.
+
+    ``created_at`` IS THE FALLBACK, NOT THE LEAD. It is the more precise field
+    in production — it would also catch a Thursday-23:45-ET build whose `as_of`
+    reads Friday — but it DEFAULTS TO THE REAL WALL CLOCK in
+    ``outbox.make_item``. Leading with it would make every fixture's verdict
+    depend on which day of the week the suite happened to run, which is the
+    fixture-plus-wall-clock gate bomb: green all week, red every weekend, for
+    reasons no one would look for in this file.
+    """
+    for key in ("as_of", "created_at"):
+        raw = str((it or {}).get(key) or "").strip()
+        if not raw:
+            continue
+        try:
+            if len(raw) > 10:
+                ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                return et_date(ts)
+            return date.fromisoformat(raw[:10])
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
+def session_language_violations(text: str, *, now: datetime, fact_asof: object,
+                                kind: str = "", provenance: str = "",
+                                ) -> list[str]:
+    """Day words in `text` that the posting calendar day says are false. [] = ok.
+
+    Reason slugs, all stable and greppable in a ledger note:
+
+      ``day_name_in_same_day_kind:<hit>``  rule A — a weekday name in copy whose
+                                           kind can only mean the current tape
+      ``today_word_off_session:<hit>``     rule B1 — the SAME slug
+                                           `temporal_violations` emits, because
+                                           it is the same law read off the
+                                           calendar instead of off the vocab
+      ``tonight_word_off_day:<hit>``       rule B2
+      ``yesterday_word_off_session:<hit>`` rule B3
+
+    FAIL DIRECTION IS REFUSAL, as everywhere in this module: an item whose
+    `fact_asof` will not parse cannot prove any day word is honest, so none of
+    them are allowed. That matches `temporal_vocab`, which returns
+    ``allows_today=False`` on the same input.
+    """
+    body = str(text or "")
+    if not body.strip():
+        return []
+
+    out: list[str] = []
+
+    # ── Rule A — a same-day tape kind may not name a weekday ──────────────────
+    if is_same_day_kind(kind, provenance):
+        seen: set[str] = set()
+        for m in _DAY_NAME_RE.finditer(body):
+            hit = m.group(0)
+            key = hit.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(f"day_name_in_same_day_kind:{hit}")
+
+    ref_day = _as_date(fact_asof)
+    sess_day = session_of(ref_day) if ref_day is not None else None
+    post_day = et_date(now)
+
+    # ── Rule B1 — "today" names the session in progress ───────────────────────
+    # Restates `temporal_vocab.allows_today`: on a session day `post_day` IS the
+    # session, and off-session `session_of(post_day)` is a weekday that can
+    # never equal it — which is why a Saturday post can never say "today".
+    if sess_day is None or post_day != sess_day:
+        seen_t: set[str] = set()
+        for m in _TODAY_RE.finditer(body):
+            hit = m.group(1).lower()
+            if hit in seen_t:
+                continue
+            seen_t.add(hit)
+            out.append(f"today_word_off_session:{hit}")
+
+    # ── Rule B2 — "tonight" names the evening of the POSTING day ──────────────
+    # Keyed on the item's own calendar day, not on a session, so a Sunday-night
+    # futures or Asia read written and posted on the same Sunday stays legal
+    # while a Thursday-written "tonight" posted on Saturday does not.
+    if ref_day is None or post_day != ref_day:
+        for m in _TONIGHT_RE.finditer(body):
+            out.append(f"tonight_word_off_day:{m.group(1).lower()}")
+            break
+
+    # ── Rule B3 — "yesterday" is exactly one calendar day back ────────────────
+    # CALENDAR days, not sessions: Friday genuinely was yesterday when read on
+    # Saturday, and it stops being yesterday on Sunday. Session arithmetic would
+    # keep calling Friday "yesterday" until Monday's open.
+    if sess_day is None or (post_day - sess_day).days != 1:
+        for m in _YESTERDAY_RE.finditer(body):
+            out.append(f"yesterday_word_off_session:{m.group(1).lower()}")
+            break
+
+    return out
+
+
+def session_expired_reason(*, now: datetime, fact_asof: object, kind: str = "",
+                           provenance: str = "") -> str:
+    """Why this item can never post on a non-trading day. "" = nothing to retire.
+
+    THE VISIBLE-ROT DEFECT (operator 2026-08-08). A same-day tape kind queued
+    into a weekend has no session to be about: there is no "today" tape on a
+    Saturday, and the item's own session has already passed. Before this it was
+    merely HELD — the copy stayed in the operator's outbox offering an Approve
+    button on a dead tape until some later reaper took it, and with the
+    publisher disarmed no reaper ever ran.
+
+    Scoped to :func:`is_same_day_kind` on purpose. A `chart`, `watchlist` or
+    `education` post planned over a weekend is a normal weekend post; the
+    weekend_levels lane exists precisely to write them. Only the kinds whose
+    whole claim is the current tape are retired.
+    """
+    if not is_same_day_kind(kind, provenance):
+        return ""
+    post_day = et_date(now)
+    if is_session_day(post_day):
+        return ""
+    ref_day = _as_date(fact_asof)
+    sess_day = session_of(ref_day) if ref_day is not None else session_of(post_day)
+    if sess_day >= post_day:
+        # Unreachable off-session (session_of walks BACK), kept so a future
+        # caller that widens the scope cannot get a nonsense reason string.
+        return ""
+    return (f"{weekday_name(sess_day)} tape cannot post on "
+            f"{weekday_name(post_day)}; {post_day.isoformat()} is not a "
+            f"trading day")
+
+
+def clock_violations(text: str, *, now: datetime, fact_asof: object,
+                     kind: str = "", provenance: str = "") -> list[str]:
+    """EVERY clock reason not to post this copy now. The composed law.
+
+    One entry point so the publisher's post-time battery and the approval
+    desk's approval-time battery ask the identical question. Before this the
+    desk asked NOTHING about the clock, which is how an item the publisher
+    would have quarantined at dispatch could be blessed at approval and then
+    sit in the queue forever behind a disarmed publisher.
+
+    ORDER-PRESERVING DEDUPE. Rule B1 and `temporal_violations` deliberately emit
+    the SAME ``today_word_off_session:<hit>`` slug for the same defect — they
+    are one law read two ways — so the collapse here is what keeps a ledger note
+    from saying it twice.
+
+    Every clock violation is MONOTONE: a day cannot un-pass, so nothing this
+    returns heals by waiting. That is what licenses a terminal quarantine on it.
+    The one apparent exception is the overnight frame, which becomes legal again
+    at the next pre-open — callers that judge an item BEFORE its slot is due
+    must account for that themselves (`outbox.expire_dead_session_items` does).
+    """
+    out: list[str] = []
+    for reason in (
+        temporal_violations(text, now=now, fact_asof=fact_asof)
+        + dead_date_future_tense(text, now=now)
+        + stale_session_violations(text, now=now, fact_asof=fact_asof, kind=kind)
+        + session_language_violations(text, now=now, fact_asof=fact_asof,
+                                      kind=kind, provenance=provenance)
+    ):
+        if reason not in out:
+            out.append(reason)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Fact anchors: one source fact wears one post
 # ─────────────────────────────────────────────────────────────────────────────
 
