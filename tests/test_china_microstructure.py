@@ -45,6 +45,7 @@ def _ohlcv(
     opens: list[float] | None = None,
     highs: list[float] | None = None,
     lows: list[float] | None = None,
+    volumes: list[float] | None = None,
     start: str = "2020-01-02",
 ) -> pd.DataFrame:
     """Build a minimal OHLCV DataFrame with a business-day DatetimeIndex."""
@@ -54,8 +55,14 @@ def _ohlcv(
     o = np.array(opens, dtype=float) if opens is not None else c
     h = np.array(highs, dtype=float) if highs is not None else c
     lo = np.array(lows, dtype=float) if lows is not None else c
+    v = np.array(volumes, dtype=float) if volumes is not None else np.ones(n) * 1e6
     return pd.DataFrame({"open": o, "close": c, "high": h, "low": lo,
-                         "volume": np.ones(n) * 1e6}, index=idx)
+                         "volume": v}, index=idx)
+
+
+def _market_positions(dates) -> dict[pd.Timestamp, int]:
+    ordered = sorted({pd.Timestamp(date).normalize() for date in dates})
+    return {date: position for position, date in enumerate(ordered)}
 
 
 # ── board classification ───────────────────────────────────────────────────────
@@ -201,7 +208,13 @@ class TestLianbanCount:
         closes = [10.0, 10.0, 11.0, 12.10]
         highs  = [10.0, 10.0, 11.1, 12.2]
         df     = _ohlcv(closes=closes, highs=highs)
-        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        events, _, _ = _detect_limit_events(
+            "000001.SZ",
+            df,
+            "main",
+            frozenset(),
+            market_session_positions=_market_positions(df.index),
+        )
         su = [e for e in events if e["event"] == "sealed_up"]
         assert len(su) == 2
         counts = [e["lianban_count"] for e in su]
@@ -219,6 +232,33 @@ class TestLianbanCount:
         assert su[0]["lianban_count"] == 1
         if len(su) > 1:
             assert su[1]["lianban_count"] == 1
+
+    def test_streak_resets_across_missing_market_session(self):
+        df = _ohlcv(
+            closes=[10.0, 11.0, 12.10],
+            highs=[10.0, 11.1, 12.20],
+            start="2020-01-02",
+        )
+        df.index = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-07"])
+        market_dates = pd.to_datetime([
+            "2020-01-02", "2020-01-03", "2020-01-06", "2020-01-07",
+        ])
+        events, _, _ = _detect_limit_events(
+            "000001.SZ",
+            df,
+            "main",
+            frozenset(),
+            market_session_positions=_market_positions(market_dates),
+        )
+        assert [event["lianban_count"] for event in events] == [1, 1]
+
+    def test_missing_market_clock_fails_closed_without_bridging(self):
+        df = _ohlcv(
+            closes=[10.0, 11.0, 12.10],
+            highs=[10.0, 11.1, 12.20],
+        )
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        assert [event["lianban_count"] for event in events] == [1, 1]
 
 
 # ── board-aware limit widths in detection ────────────────────────────────────
@@ -248,16 +288,18 @@ class TestStarLimitWidth:
 
 class TestChiNextWidthEra:
     def test_chinext_10pct_before_cutoff(self):
-        # Before 2020-08-24, ChiNext uses 10%.
-        # Need > 5 bars to clear IPO window; then prev_close = 10.0, seal at 11.0
+        # Before 2020-08-24, ChiNext uses 10% and only listing day is no-limit. Day 2 can seal.
         start = "2019-01-02"
-        closes = [10.0] * 5 + [10.0, 11.0]
-        highs  = [10.0] * 5 + [10.0, 11.1]
+        closes = [10.0, 11.0]
+        highs  = [10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
-        events, _, _ = _detect_limit_events("300750.SZ", df, "chinext", frozenset())
+        events, ipo_dates, _ = _detect_limit_events(
+            "300750.SZ", df, "chinext", frozenset(), listing_date=df.index[0]
+        )
         su = [e for e in events if e["event"] == "sealed_up"]
         assert len(su) == 1
         assert su[0]["limit_width"] == 10.0
+        assert ipo_dates == (df.index[0],)
 
     def test_chinext_20pct_after_cutoff(self):
         # After 2020-08-24, ChiNext uses 20%; 11% close should NOT seal
@@ -266,8 +308,11 @@ class TestChiNextWidthEra:
         closes = [10.0] * 5 + [10.0, 11.0]
         highs  = [10.0] * 5 + [10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
-        events, _, _ = _detect_limit_events("300750.SZ", df, "chinext", frozenset())
+        events, ipo_dates, _ = _detect_limit_events(
+            "300750.SZ", df, "chinext", frozenset(), listing_date=df.index[0]
+        )
         assert events == []
+        assert ipo_dates == tuple(df.index[:5])
 
 
 # ── ST flag ───────────────────────────────────────────────────────────────────
@@ -291,10 +336,10 @@ class TestSTFlag:
 
     def test_st_main_gets_10pct_on_and_after_2026_rule_change(self):
         # The ST store begins on the rule boundary; main-board risk-warning names now use 10%.
-        # Six rows keep this synthetic late-start fixture outside the registration-era IPO window.
+        # No listing-date attestation means this truncated synthetic history is not a fresh IPO.
         start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 10.0, 10.0, 10.0, 11.0]
-        highs  = [10.0, 10.0, 10.0, 10.0, 10.0, 11.1]
+        closes = [10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset(["000001.SZ"])
@@ -304,10 +349,10 @@ class TestSTFlag:
         assert su[0]["limit_width"] == 10.0
 
     def test_non_st_ticker_not_in_set(self):
-        # Not in ST set → 10% limit. Six rows clear the synthetic fixture's IPO window.
+        # Not in ST set → 10% limit; truncated history is not inferred to be a new listing.
         start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 10.0, 10.0, 10.0, 11.0]
-        highs  = [10.0, 10.0, 10.0, 10.0, 10.0, 11.1]
+        closes = [10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset()   # not in ST set
@@ -325,8 +370,10 @@ class TestIPOExclusion:
         closes = [10.0] + [10.0] * 4 + [10.0, 10.0, 12.0]  # bar 7 seals
         highs  = [10.0] * 7 + [12.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
-        events, ipo_excl, _ = _detect_limit_events("688981.SS", df, "star", frozenset())
-        assert ipo_excl == 5
+        events, ipo_dates, _ = _detect_limit_events(
+            "688981.SS", df, "star", frozenset(), listing_date=df.index[0]
+        )
+        assert ipo_dates == tuple(df.index[:5])
         # Only one event (the sealed_up on bar 7)
         su = [e for e in events if e["event"] == "sealed_up"]
         assert len(su) == 1
@@ -337,8 +384,31 @@ class TestIPOExclusion:
         closes = [10.0, 10.0, 11.0]
         highs  = [10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
-        events, ipo_excl, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
-        assert ipo_excl == 1
+        events, ipo_dates, _ = _detect_limit_events(
+            "000001.SZ", df, "main", frozenset(), listing_date=df.index[0]
+        )
+        assert ipo_dates == (df.index[0],)
+
+    @pytest.mark.parametrize("listing_date", ["2014-06-13", "2023-04-07"])
+    def test_legacy_main_listing_day_only_uses_special_regime(self, listing_date):
+        # Before main-board registration, listing day did not use the ordinary +/-10% band.
+        # From the second market session onward, the ordinary band applies.
+        df = _ohlcv(
+            closes=[10.0, 11.0],
+            highs=[10.0, 11.1],
+            start=listing_date,
+        )
+        events, ipo_dates, _ = _detect_limit_events(
+            "600001.SS",
+            df,
+            "main",
+            frozenset(),
+            listing_date=df.index[0],
+        )
+        assert ipo_dates == (df.index[0],)
+        assert [(event["date"], event["event"]) for event in events] == [
+            (df.index[1].strftime("%Y-%m-%d"), "sealed_up")
+        ]
 
     def test_registration_era_main_first_5_sessions_excluded(self):
         # Main-board registration rules took effect with the first listings on 2023-04-10:
@@ -347,8 +417,10 @@ class TestIPOExclusion:
         closes = [10.0, 11.0, 12.1, 13.31, 14.64, 16.10]
         highs = closes.copy()
         df = _ohlcv(closes=closes, highs=highs, start=str(MAIN_REGISTRATION_IPO_DATE.date()))
-        events, ipo_excl, _ = _detect_limit_events("001399.SZ", df, "main", frozenset())
-        assert ipo_excl == 5
+        events, ipo_dates, _ = _detect_limit_events(
+            "001399.SZ", df, "main", frozenset(), listing_date=df.index[0]
+        )
+        assert ipo_dates == tuple(df.index[:5])
         assert [(e["date"], e["event"]) for e in events] == [
             (df.index[5].strftime("%Y-%m-%d"), "sealed_up")
         ]
@@ -359,15 +431,83 @@ class TestIPOExclusion:
         # exclusion window.
         closes = [10.0, 11.0, 12.1, 13.31, 14.64, 16.10, 17.71, 19.48]
         df = _ohlcv(closes=closes, highs=closes, start=str(MAIN_REGISTRATION_IPO_DATE.date()))
-        events, ipo_excl, _ = _detect_limit_events(
-            "001399.SZ", df, "main", frozenset(), start_date=df.index[3]
+        events, ipo_dates, _ = _detect_limit_events(
+            "001399.SZ", df, "main", frozenset(), start_date=df.index[3],
+            listing_date=df.index[0],
         )
-        assert ipo_excl == 2
+        assert ipo_dates == tuple(df.index[3:5])
         assert [e["date"] for e in events] == [
             df.index[5].strftime("%Y-%m-%d"),
             df.index[6].strftime("%Y-%m-%d"),
             df.index[7].strftime("%Y-%m-%d"),
         ]
+
+    def test_issue_price_rows_do_not_advance_main_listing_clock(self):
+        dates = pd.to_datetime([
+            "2026-06-29", "2026-06-30", "2026-07-02", "2026-07-03",
+            "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09",
+        ])
+        closes = [10.0, 10.0, 10.0, 11.0, 12.1, 13.31, 14.64, 16.10]
+        df = _ohlcv(closes=closes, highs=closes, volumes=[0, 0, 1, 1, 1, 1, 1, 1])
+        df.index = dates
+        events, ipo_dates, _ = _detect_limit_events(
+            "001248.SZ", df, "main", frozenset(), listing_date=pd.Timestamp("2026-07-02")
+        )
+        assert ipo_dates == tuple(dates[2:7])
+        assert [event["date"] for event in events] == ["2026-07-09"]
+
+    def test_filter_starting_on_session_six_keeps_previous_close_context(self):
+        closes = [10.0, 11.0, 12.1, 13.31, 14.64, 16.10]
+        df = _ohlcv(closes=closes, highs=closes, start="2023-04-10")
+        events, ipo_dates, _ = _detect_limit_events(
+            "001399.SZ",
+            df,
+            "main",
+            frozenset(),
+            start_date=df.index[5],
+            listing_date=df.index[0],
+        )
+        assert ipo_dates == ()
+        assert [(event["date"], event["event"]) for event in events] == [
+            (df.index[5].strftime("%Y-%m-%d"), "sealed_up")
+        ]
+
+
+class TestPositiveVolumeEligibility:
+    def test_zero_volume_current_row_cannot_emit_event(self):
+        df = _ohlcv(
+            closes=[10.0, 10.0, 11.0],
+            highs=[10.0, 10.0, 11.1],
+            volumes=[1.0, 1.0, 0.0],
+        )
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        assert events == []
+
+    def test_zero_volume_intermediate_row_cannot_supply_previous_close(self):
+        df = _ohlcv(
+            closes=[10.0, 20.0, 11.0],
+            highs=[10.0, 20.0, 11.1],
+            volumes=[1.0, 0.0, 1.0],
+        )
+        events, _, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
+        assert [(event["date"], event["event"]) for event in events] == [
+            (df.index[2].strftime("%Y-%m-%d"), "sealed_up")
+        ]
+
+    def test_filtered_lianban_uses_full_positive_volume_history(self):
+        closes = [10.0, 11.0, 12.1, 13.31]
+        df = _ohlcv(closes=closes, highs=closes, start="2020-01-02")
+        events, _, _ = _detect_limit_events(
+            "000001.SZ",
+            df,
+            "main",
+            frozenset(),
+            start_date=df.index[-1],
+            market_session_positions=_market_positions(df.index),
+        )
+        assert len(events) == 1
+        assert events[0]["event"] == "sealed_up"
+        assert events[0]["lianban_count"] == 3
 
 
 # ── ex-div suspect suppression ────────────────────────────────────────────────
@@ -532,7 +672,7 @@ class TestNamePacket:
     def test_insufficient_df_degrades(self):
         df = _ohlcv(closes=[10.0])
         pkt = name_packet("000001.SZ", df, frozenset())
-        assert pkt["limit_state"] is None
+        assert pkt["limit_state"] == "unavailable_insufficient_history"
 
     def test_chase_veto_from_extension_run(self):
         # 6 bars with 20% cumulative run → chase_veto should fire
@@ -556,9 +696,63 @@ class TestNamePacket:
         closes = [10.0, 10.0, 11.0, 12.10]
         highs  = [10.0, 10.0, 11.1, 12.20]
         df     = _ohlcv(closes=closes, highs=highs)
-        pkt = name_packet("000001.SZ", df, frozenset())
+        pkt = name_packet(
+            "000001.SZ",
+            df,
+            frozenset(),
+            market_session_positions=_market_positions(df.index),
+        )
         # latest day is sealed_up (12.10 == round(11.0*1.10,2)); previous was also sealed_up
         assert pkt["t_plus_one_risk"] == "high_lianban"
+
+    def test_lianban_packet_resets_across_market_session_gap(self):
+        df = _ohlcv(
+            closes=[10.0, 11.0, 12.10],
+            highs=[10.0, 11.1, 12.20],
+            start="2020-01-02",
+        )
+        df.index = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-07"])
+        market_dates = pd.to_datetime([
+            "2020-01-02", "2020-01-03", "2020-01-06", "2020-01-07",
+        ])
+        pkt = name_packet(
+            "000001.SZ",
+            df,
+            frozenset(),
+            market_session_positions=_market_positions(market_dates),
+        )
+        assert pkt["limit_state"] == "sealed_up"
+        assert pkt["t_plus_one_risk"] == "high"
+
+    def test_registration_ipo_packet_reports_no_limit_not_locked(self):
+        dates = pd.to_datetime([
+            "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07",
+        ])
+        df = _ohlcv(
+            closes=[10.0, 10.0, 11.0, 12.1, 13.31],
+            highs=[10.0, 10.0, 11.0, 12.1, 13.31],
+            volumes=[0.0, 1.0, 1.0, 1.0, 1.0],
+        )
+        df.index = dates
+        pkt = name_packet(
+            "001232.SZ", df, frozenset(), listing_date=pd.Timestamp("2026-08-04")
+        )
+        assert pkt["limit_state"] == "no_limit_ipo"
+        assert pkt["limit_width"] is None
+        assert pkt["fillable"] is None
+        assert pkt["t_plus_one_risk"] is None
+        assert pkt["chase_veto"] == {"flag": False, "reason": None}
+
+    def test_latest_nontrade_packet_is_explicitly_unavailable(self):
+        df = _ohlcv(
+            closes=[10.0, 11.0, 11.0],
+            highs=[10.0, 11.1, 11.1],
+            volumes=[1.0, 1.0, 0.0],
+        )
+        pkt = name_packet("000001.SZ", df, frozenset())
+        assert pkt["limit_state"] == "unavailable_no_trade"
+        assert pkt["limit_width"] is None
+        assert pkt["fillable"] is None
 
 
 # ── LIMIT_TAPE_START_DATE floor ───────────────────────────────────────────────
@@ -677,7 +871,7 @@ class TestDegrades:
         df = pd.DataFrame()
         events, ipo_excl, exdiv_excl = _detect_limit_events("000001.SZ", df, "main", frozenset())
         assert events == []
-        assert ipo_excl == 0
+        assert ipo_excl == ()
         assert exdiv_excl == 0
 
     def test_detect_events_single_row(self):
