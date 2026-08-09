@@ -157,13 +157,23 @@ def test_session_guard_accepts_settled_board(cn_store, monkeypatch):
 
 
 def test_ledger_append_gated_to_asia_lane(cn_store):
-    """Explicit lane gate: a render lane (lane != 'asia') never persists a board."""
+    """FAIL-CLOSED lane gate: only 'asia' persists a board; every other lane is refused.
+
+    ``lane=None`` used to be honoured as "the legacy asia-build call". That is what let the
+    gate ship dead — the builder resolved its lane as os.environ.get("CN_LANE", "asia"), so
+    no caller ever reached the refusal. An unnamed lane is now refused, not assumed.
+    """
     tmp_path, dates = cn_store
     n = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof=str(dates[0].date()),
                        lane="render")
     assert n == 0 and not t._store_path().exists()
-    # lane=None preserves the legacy (asia-build) call
-    n2 = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof=str(dates[0].date()), lane=None)
+    n_none = t.append_board([{"ticker": "600000.SS", "price": 10.0}],
+                            asof=str(dates[0].date()), lane=None)
+    assert n_none == 0 and not t._store_path().exists()
+    # WITNESS: the same row DOES persist once the lane names itself, so the refusals above
+    # are the gate and not an unwritable fixture.
+    n2 = t.append_board([{"ticker": "600000.SS", "price": 10.0}],
+                        asof=str(dates[0].date()), lane="asia")
     assert n2 == 1
 
 
@@ -183,8 +193,8 @@ def test_append_board_versions_same_day_without_overwriting(cn_store):
                    "bottom_quality": 0.4, "reversal_member": 1.0,
                },
            }}]
-    assert t.append_board(legacy, asof=asof) == 1
-    assert t.append_board(v2, asof=asof) == 2
+    assert t.append_board(legacy, asof=asof, lane="asia") == 1
+    assert t.append_board(v2, asof=asof, lane="asia") == 2
     df = pd.read_parquet(t._store_path())
     assert set(df["board_definition"]) == {"legacy", "cn_prophet_v2"}
     row = df[df["board_definition"] == "cn_prophet_v2"].iloc[0]
@@ -243,7 +253,7 @@ def test_grade_end_to_end_publishes_conventions(cn_store):
         store.upsert("china_stocks", tk, _mk_ohlc(dates, 10.0 * (drift ** np.arange(len(dates)))))
         rows.append({"ticker": tk, "price": 10.0, "signal": {"tier_cascade": "T2"},
                      "setup": "reversal", "extension": {"extended": i >= 10}, "washout_2w": False})
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     g = t.grade()
     assert g["available"] and g["grading"]["benchmark"] == t._BENCH
     assert g["grading"]["relative"] and g["grading"]["marker_dates"] == "forbidden"
@@ -293,7 +303,7 @@ def test_interim_grade_publishes_unrealized_else_accruing(cn_store):
         store.upsert("china_stocks", tk, _mk_ohlc(dates[:6], 10.0 * (drift ** np.arange(6))))  # 6-session stores
         rows.append({"ticker": tk, "price": 10.0, "signal": {"tier_cascade": "T2"},
                      "setup": "reversal", "extension": {"extended": False}, "washout_2w": False})
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     ig = t.interim_grade()
     assert ig["available"] and ig["unrealized"] is True
     assert ig["n"] >= t._MIN_GRADED
@@ -321,7 +331,7 @@ def test_append_board_w02a_new_fields_present(cn_store):
         "hold": {"state": "intact"},
         "entry_signal": {"status": "buy_now"},
     }]
-    n = t.append_board(rows, asof=str(dates[0].date()))
+    n = t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     assert n == 1
     df = pd.read_parquet(t._store_path())
     row = df.iloc[0]
@@ -339,7 +349,7 @@ def test_append_board_hold_state_none_when_absent(cn_store):
     tmp_path, dates = cn_store
     rows = [{"ticker": "600002.SS", "price": 10.0, "signal": {"tier_cascade": "T2"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     df = pd.read_parquet(t._store_path())
     # hold_state must be None / NaN (not a KeyError or crash)
     assert df.iloc[0].get("hold_state") is None or pd.isna(df.iloc[0].get("hold_state", None))
@@ -378,7 +388,7 @@ def test_grade_w02a_stratification_keys_present(cn_store):
             "coiled": {"coiled": i < 5, "star": False, "cohort": 0.5, "fire": False, "fire_ticks": None},
             "entry_signal": {"status": "buy_now" if i < 15 else "extended"},
         })
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     g = t.grade()
     h21 = g.get("by_horizon", {}).get("21d", {})
     assert "by_tier" in h21, "by_tier stratification missing from grade() output"
@@ -565,7 +575,7 @@ def test_append_board_stamps_us_regime_columns(cn_store, monkeypatch):
     monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: fake_stamp)
     rows = [{"ticker": "699020.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     df = pd.read_parquet(t._store_path())
     row = df.iloc[0]
     assert str(row["us_rate_pressure"]) == "neutral"
@@ -581,7 +591,7 @@ def test_grade_backfills_null_stamps_only(cn_store, monkeypatch):
     rows = [{"ticker": "699021.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
     monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: t._regime_stamp_null())
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     # Now patch regime to return a real value for the grade() backfill
     fake_stamp = {
         "us_rate_pressure": "pressure",
@@ -613,7 +623,7 @@ def test_grade_unstamped_count_reported(cn_store, monkeypatch):
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
     # Both append and grade return null stamps → row stays unstamped
     monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: t._regime_stamp_null())
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     closes = 10.0 * (1.01 ** np.arange(len(dates)))
     store.upsert("china_stocks", "699022.SS", _mk_ohlc(dates, closes))
     store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
@@ -636,7 +646,7 @@ def test_stratifier_cols_present_and_nullable(cn_store):
     tmp_path, dates = cn_store
     rows = [{"ticker": "699030.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     df = pd.read_parquet(t._store_path())
     assert "species_id" in df.columns, "species_id column missing"
     assert "archetype" in df.columns, "archetype column missing"
@@ -661,7 +671,7 @@ def test_grade_includes_species_archetype_slice_tables(cn_store):
         rows.append({"ticker": tk, "price": 10.0,
                      "signal": {"tier_cascade": "T1"}, "setup": "reversal",
                      "extension": {"extended": False}, "washout_2w": False})
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     g = t.grade()
     h21 = g.get("by_horizon", {}).get("21d", {})
     assert "by_species_id" in h21, "by_species_id stratifier missing from grade() output"
@@ -677,7 +687,7 @@ def test_own_market_regime_is_null_with_note(cn_store):
     tmp_path, dates = cn_store
     rows = [{"ticker": "699040.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     df = pd.read_parquet(t._store_path())
     row = df.iloc[0]
     val = row.get("own_market_regime")
@@ -705,7 +715,7 @@ def test_fill_basis_is_pending_at_birth_then_the_basis_actually_used(cn_store):
     tmp_path, dates = cn_store
     rows = [{"ticker": "699050.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     df = pd.read_parquet(t._store_path())
     born = df.iloc[0]["fill_basis"]
     assert born is None or pd.isna(born), (
@@ -732,7 +742,7 @@ def test_fill_basis_says_t1_open_when_the_open_is_what_fired(cn_store):
     tmp_path, dates = cn_store
     rows = [{"ticker": "699051.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    t.append_board(rows, asof=str(dates[0].date()))
+    t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     closes = 10.0 * (1.01 ** np.arange(len(dates)))
     df = _mk_ohlc(dates, closes, with_open=True)
     store.upsert("china_stocks", "699051.SS", df)
@@ -804,7 +814,7 @@ def test_schema_union_with_legacy_store(cn_store):
     # Now append a B-d row → schema union should preserve the legacy row + add new cols
     rows = [{"ticker": "699071.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
-    n = t.append_board(rows, asof=str(dates[0].date()))
+    n = t.append_board(rows, asof=str(dates[0].date()), lane="asia")
     assert n == 2, f"Expected 2 total rows after schema-union append, got {n}"
     df = pd.read_parquet(p)
     assert "fill_basis" in df.columns, "fill_basis missing from schema-union result"

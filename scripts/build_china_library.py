@@ -1047,21 +1047,30 @@ def _cn_unknown_era_label(stamp, date_from: str | None,
             f"其他选股口径 · {s} · {zh_span}")
 
 
-def _entry_latch_lane() -> str | None:
+def _collection_lane() -> str | None:
     """The collection lane this process runs in, resolved FAIL-CLOSED from ``CN_LANE``.
 
-    Deliberately NOT `os.environ.get("CN_LANE", "asia")` — the permissive form the board
-    append uses further down. A board row is re-derivable, so a second lane rewriting it
-    changes nothing; the PIT entry latch is keep-FIRST and immutable, so the FIRST lane to
-    write a (date, ticker) owns that published entry price forever. Both
-    .github/workflows/daily.yml (`git add data/`) and weekly.yml (`git add data/ reports/
-    site/`) run scripts.build_china_library, so with an "asia" default whichever of them the
-    scheduler started first would decide a published entry price. Scheduling order deciding a
-    published number is precisely the property the latch exists to remove.
+    THE ONLY permitted read of ``CN_LANE`` in this file. Every CN collection-lane gate
+    resolves through it — the PIT entry latch, the board append (all four board
+    definitions), the ripening append, the Prophet shadow candidates, the Prophet audit,
+    the T2 event-latch recording, the pick-lab snapshot, and the coverage ``lane`` stamps.
+    A second resolver carrying its own default is how these gates shipped dead: the board
+    path's `os.environ.get("CN_LANE", "asia")` made EVERY lane the asia lane, so the
+    refusal it was supposedly guarding could never fire on any run.
 
-    Only asia-close.yml sets `CN_LANE: asia` ("the ONLY lane that may persist the board
-    ledger" — its own comment), so every other lane resolves to None here and
-    china_standout_track.append_entry_latches refuses the write.
+    Resolving with NO default is the whole point. Only .github/workflows/asia-close.yml
+    sets `CN_LANE: asia` ("the ONLY lane that may persist the board ledger" — its own
+    comment), while .github/workflows/daily.yml (`git add data/`) and weekly.yml (`git add
+    data/ reports/ site/`) run scripts.build_china_library with CN_LANE UNSET and commit
+    `data/` regardless. Under an "asia" default those lanes resolved to the asia lane and
+    persisted every store below.
+
+    That matters most where a store is keep-FIRST. The board store keys on (date, ticker,
+    board_definition) and the entry latch on (date, ticker), both keeping the FIRST row —
+    so the first lane to write a date OWNS it: its ranks, its published entry price, and
+    its own_market_regime, which stays null forever if the regime row was not written in
+    that lane. Scheduling order deciding a published number is precisely the property
+    these stores exist to remove.
     """
     return (os.environ.get("CN_LANE") or "").strip() or None
 
@@ -1441,14 +1450,14 @@ def emit_cn_track_ledger(
     collapsing O(rows) parquet reads to O(unique tickers).
 
     `lane` is the collection lane, and it gates ONE thing: whether this run may advance the
-    keep-first PIT entry latch. Omitted, it resolves from `CN_LANE` via _entry_latch_lane()
+    keep-first PIT entry latch. Omitted, it resolves from `CN_LANE` via _collection_lane()
     — fail-closed, so an unset variable latches nothing. The emitted JSON is identical
     either way; only the data/ write differs, which is the house law (nightly is the sole
     advancer of forward ledgers) applied to the entry price.
     Returns True on a successful atomic write.
     """
     # Fail-closed: an omitted lane is resolved from the environment, never assumed to be asia.
-    lane = _entry_latch_lane() if lane is None else lane
+    lane = _collection_lane() if lane is None else lane
     from engine import track_ledger as _tl
     from engine import track_scoring as _ts
     from engine import china_standout_track as _cst
@@ -2130,7 +2139,10 @@ def main(alpha: dict | None = None) -> dict | None:
     # engine, because the absolute-session anchor fixed bin PHASE, not bucket COMPLETION).
     # WRITES are gated to the asia collection lane for the same reason append_board is: the
     # render lanes discard data/ writes, and a mid-session board must never win the date.
-    _latch_lane = os.environ.get("CN_LANE", "asia")
+    # _collection_lane() is FAIL-CLOSED (no CN_LANE default), so an unset variable resolves
+    # to None and records NOTHING — a fired event may never be un-fired, and a render lane
+    # running mid-CN-session would otherwise latch a conjunction computed on a partial bar.
+    _latch_lane = _collection_lane()
     _t2_latch = confluence_latch.EventLatch("CN", record=(_latch_lane == "asia")).load()
     # COILED wave-3 CN ranking bonus: per-name inputs collected in the loop; cohort_fractions
     # computed AFTER the loop (cross-sectional). CN gate: clean15 +7.33pp, stop5 −6.21pp, n=10,784.
@@ -3623,7 +3635,9 @@ def main(alpha: dict | None = None) -> dict | None:
             "panel_collected_hour_utc": None,
             "partial_session": None,
             "session_note": "session coverage unavailable",
-            "lane": os.environ.get("CN_LANE", "asia"),
+            # Truthful provenance, not an assumption: a lane that did not name itself
+            # stamps null rather than claiming to be the asia collection lane.
+            "lane": _collection_lane(),
         }
         wide["track_ledger"] = None
         wide["sleeve_chip"] = {}
@@ -3755,14 +3769,19 @@ def main(alpha: dict | None = None) -> dict | None:
         # (the per-name grader does not observe blend_sorted order). grade() is "accruing" until
         # forward returns mature. This is the honest prerequisite for a hard extension veto.
         # LEDGER-INTEGRITY GATES (CN-1 §W6-CN), replacing the keep-first accident:
-        #   • asia-lane gate: CN_LANE env selects the lane. Only the asia collection lane (which
-        #     commits data/) persists; render lanes pass a non-asia lane and are refused. Default
-        #     'asia' keeps the current call correct (the asia build is the only one that commits).
+        #   • asia-lane gate: _collection_lane() resolves CN_LANE FAIL-CLOSED — no default. Only
+        #     the asia collection lane persists; every other lane resolves to None and is refused
+        #     by the sinks below. This gate USED to read os.environ.get("CN_LANE", "asia"), which
+        #     made every lane the asia lane and so never refused anything: daily.yml and
+        #     weekly.yml both run this builder with CN_LANE unset and `git add data/` anyway. The
+        #     board store is keep-FIRST per (date, ticker, board_definition), so under that
+        #     default whichever lane the scheduler started first OWNED the date — including a
+        #     null own_market_regime when the regime row was not written in that lane.
         #   • partial-session refusal: a board whose price panel was collected before the A-share
         #     close settled (<07:00 UTC on the board date) is refused — no mid-session partial board.
         #   • coverage metadata: stamp the panel collection UTC + partial_session onto the artifact.
         try:
-            _lane = os.environ.get("CN_LANE", "asia")
+            _lane = _collection_lane()
             _sess = china_standout_track.session_status(as_of)
             wide["coverage"] = {
                 "as_of": as_of, "data_through": _data_through(),
@@ -3879,11 +3898,11 @@ def main(alpha: dict | None = None) -> dict | None:
                     wide.get("buy"),
                     board_definition=wide["board_definition"],
                     asof=as_of,
-                    # NOT `_lane` (os.environ.get("CN_LANE", "asia")): that default is
-                    # safe for a re-derivable board row and fatal for a keep-FIRST latch.
-                    # _entry_latch_lane() has no default, so only asia-close.yml's
-                    # CN_LANE=asia may advance a published entry price.
-                    lane=_entry_latch_lane(),
+                    # Same fail-closed resolver every CN collection gate now uses (it has
+                    # no default, so only asia-close.yml's CN_LANE=asia may advance a
+                    # keep-first store) — named explicitly here because THIS store is the
+                    # published entry price, which no later nightly can correct.
+                    lane=_collection_lane(),
                 )
                 # Hand the ledger's own summary to the template so the chip and the
                 # popup table it heads report the SAME numbers. Before 2026-07-26 the
@@ -3907,7 +3926,7 @@ def main(alpha: dict | None = None) -> dict | None:
                     board_definition=_crw_led.BOARD_DEFINITION,
                     asof=as_of,
                     out_name="cn_reversal_ledger.json",
-                    lane=_entry_latch_lane(),
+                    lane=_collection_lane(),
                 )
                 setups["reversal_ledger"] = (
                     _CN_LAST_LEDGER.get("doc") if _rwok else None
@@ -4273,7 +4292,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # Schema-union tolerant: new columns (zone, evidence, sort keys) are written here;
         # the existing parquet reader in append_ripening tolerates the new columns via union.
         try:
-            _rip_lane = os.environ.get("CN_LANE", "asia")
+            _rip_lane = _collection_lane()
             _rn = china_standout_track.append_ripening(
                 _ripening_rows + _ripening_falling, asof=as_of, lane=_rip_lane)
             log.info("W8-R1 ripening ledger: appended %d names this run (total ledger rows=%d)",
@@ -4328,7 +4347,8 @@ def main(alpha: dict | None = None) -> dict | None:
             ),
             "partial_session": bool(_zero_session.get("partial_session")),
             "session_note": _zero_session.get("reason"),
-            "lane": os.environ.get("CN_LANE", "asia"),
+            # Same truthful stamp as the conservative-default coverage dict above.
+            "lane": _collection_lane(),
         }
         try:
             from engine.risk_radar_intl import cn_sleeve_chip  # noqa: PLC0415
@@ -4401,7 +4421,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 [],
                 board_definition=china_board_rank.BOARD_DEFINITION,
                 asof=as_of,
-                lane=_entry_latch_lane(),
+                lane=_collection_lane(),
             )
             wide["track_ledger"] = (
                 _CN_LAST_LEDGER.get("doc") if _zero_ledger_ok else None
@@ -4742,11 +4762,13 @@ def main(alpha: dict | None = None) -> dict | None:
                 _cnpl_df.attrs["asof"] = _cnpl_asof
                 try:
                     # CNPL-R8: snapshot writes advance the forward ledger; only the
-                    # asia-close nightly lane may do so.  Default is "" (no-op) so
-                    # render/daily/weekly invocations that never set CN_LANE are
-                    # honest no-ops — they cannot accidentally persist a snapshot
-                    # with a render-clock asof.
-                    _cnpl_lane = os.environ.get("CN_LANE", "")
+                    # asia-close nightly lane may do so.  _collection_lane() resolves
+                    # with NO default, so render/daily/weekly invocations that never
+                    # set CN_LANE are honest no-ops — they cannot accidentally persist
+                    # a snapshot with a render-clock asof. (This site was already
+                    # fail-closed with its own "" default; it routes through the one
+                    # resolver so a permissive default cannot creep back in beside it.)
+                    _cnpl_lane = _collection_lane()
                     if _cnpl_lane == "asia":
                         _cnpl_n_written = write_snapshot(
                             _cnpl_df, asof=_cnpl_asof, profile=CN_PROFILE)
