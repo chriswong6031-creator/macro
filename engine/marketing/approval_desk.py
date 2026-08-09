@@ -28,14 +28,26 @@ THE THREE VERDICTS, AND WHY THE THIRD ONE EXISTS.
     `approval-desk: <check>: <one-line evidence>`. Terminal, on purpose: the
     named failures are all "this post asserts something the desk cannot stand
     behind", and a post that invents a level does not get better by waiting.
-  * UNVERIFIABLE                      → nothing at all. The item stays `queued`
-    and is counted as held for human review.
+  * UNVERIFIABLE                      → under the DECISIVE posture (default,
+    operator order 2026-08-08) `queued → quarantined` with
+    `approval-desk: <check>: decisive posture (approval_desk.decisive): …`.
+    With `decisive: false` it reverts to the original third verdict: nothing at
+    all, the item stays `queued` and is counted as held for human review.
 
-The third verdict is the whole safety argument. Autonomy that approves what it
-cannot verify is worse than no autonomy: the operator loses both the review and
-the signal that a review was needed. Every check therefore distinguishes "I
-looked and it is wrong" from "I have nothing to look at", and only the first
-one is allowed to be terminal.
+WHY THE THIRD VERDICT WAS RETIRED. It was the original safety argument —
+autonomy that approves what it cannot verify is worse than no autonomy — and
+measured against the operator's real queue it bought nothing and cost the whole
+program: "36 posts in outbox … i don't want to review so many posts per day …
+need a system that doesn't require my manual review all the time." A held item
+is not reviewed; it rots, holds its fact anchor, and vetoes tonight's copy
+through the near-dup corpus. The safety half is unchanged — the desk still never
+APPROVES what it cannot verify — and the audit trail is unchanged, because a
+quarantine carries the check name and the evidence into the admin view. What
+changed is that nothing waits on a human. Audit after, never approve before.
+
+A `hold` still exists and is NOT a human queue: see `MACHINE_DEFERRALS`. It
+means another machine owns the heal (the media backfill lane) or that the desk
+itself crashed, and both are bounded by the 36h liveness bar.
 
 WHAT THE DESK DELIBERATELY DOES NOT TOUCH.
   * `breaking` — it already has a working all-gates-passed path (the press /
@@ -128,6 +140,38 @@ _MAX_TARGET_MOVE_PCT_DEFAULT = 35.0
 #: `check_liveness` for the division of labour between them.
 _TTL_HOURS_DEFAULT = 36.0
 
+#: DECISIVE POSTURE (operator order 2026-08-08): "i don't want to review so many
+#: posts per day ... need a system that doesn't require my manual review all the
+#: time."
+#:
+#: The third verdict — leave it queued for a human — was the safety argument
+#: this desk shipped with, and measured against the operator's actual queue it
+#: is the DEFECT: 36 items sat waiting for a review that is never coming, which
+#: is strictly worse than either deciding them or killing them, because a held
+#: item still rots, still holds its fact anchor, and still vetoes tonight's copy
+#: through the near-dup corpus.
+#:
+#: Decisive flips ONE class, not all three. `UNVERIFIABLE` ("I have nothing to
+#: look at") becomes a quarantine with the check's own evidence in the note; the
+#: desk still never approves what it cannot verify, it just stops parking it on
+#: a human. `HOLD` is untouched, because a hold here is not a request for review
+#: at all: see :data:`MACHINE_DEFERRALS`.
+_DECISIVE_DEFAULT = True
+
+#: The hold classes that survive `decisive`, and WHY each one is not a human
+#: bottleneck. Every other route to `hold` is gone under the decisive posture.
+#:
+#:   ``chart_law``   another MACHINE owns the heal —
+#:                   `scripts/marketing_media_backfill.py` resolves the R2 URL
+#:                   hours later, and `check_liveness` retires the item at 36h
+#:                   if it never does. Quarantining here would destroy a good
+#:                   post the backfill was about to fix, terminally.
+#:   ``audit_error`` the desk's own exception path. A crash proves nothing about
+#:                   the ITEM, so converting our bug into a terminal verdict on
+#:                   somebody's copy is the one conversion that would be worse
+#:                   than the wait. It is bounded by the same 36h liveness bar.
+MACHINE_DEFERRALS: frozenset[str] = frozenset({"chart_law", "audit_error"})
+
 
 def _as_bool(v: Any, default: bool) -> bool:
     """Strict bool parse — a quoted "false" in YAML must not read as enabled."""
@@ -182,6 +226,7 @@ def desk_config(cfg: dict | None) -> dict[str, Any]:
 
     return {
         "enabled": _as_bool(block.get("enabled"), True),
+        "decisive": _as_bool(block.get("decisive"), _DECISIVE_DEFAULT),
         "max_approvals_per_sweep": max(max_approvals, 0),
         "kinds": kinds,
         "ttl_hours": _as_float(block.get("ttl_hours"), _TTL_HOURS_DEFAULT),
@@ -593,6 +638,89 @@ def check_number_sanity(item: dict, ev: dict, *,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Check 2b — session_language / expired_session (the day-word law, W5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def check_session_language(item: dict, *, now: datetime) -> Check:
+    """The copy's day words must be true at the moment of approval. HARD FAIL.
+
+    THE DEFECT (operator 2026-08-08, on a Saturday): "Consumer Goods selling
+    off, -2.4% avg on Thursday" and "Commodities Metals ripping, +7.2% avg
+    today" were both sitting APPROVABLE in the outbox. "if we post this on
+    Saturday the comment section is gonna be like 'bro today is saturday wdym
+    today'."
+
+    THE DESK ASKED THE CLOCK NOTHING. Every one of the six checks around this
+    one screens what a post CLAIMS about a price; not one of them screens what
+    it claims about the DAY. The publisher's dispatch battery does
+    (`_clock_violations`), and that was the whole problem: it is the last gate
+    before the network, so with the send switch off it never runs and its
+    verdict is never written down. An item the publisher would have killed at
+    dispatch could be blessed here and then rot in the queue forever.
+
+    ONE LAW, ONE HOME: `market_clock.clock_violations` is the composed battery
+    both callers ask, so a rule added for the desk is a rule the publisher gets.
+
+    TERMINAL, because a clock violation is monotone: the day cannot un-pass.
+    The one non-monotone frame (an overnight word before its pre-open slot) is
+    handled where it matters — see `outbox.expire_dead_session_items` — and is
+    not a reason to soften the verdict here, where the item is being considered
+    for approval rather than for destruction on a schedule.
+
+    FAIL-SOFT TO PASS on an internal error, matching `_clock_violations`: a
+    broken clock must not wedge the whole queue.
+    """
+    from engine.marketing import market_clock as _clock  # noqa: PLC0415
+    text = str(item.get("text") or "")
+    try:
+        bad = _clock.clock_violations(
+            text, now=now, fact_asof=_clock.item_fact_day(item),
+            kind=str(item.get("kind") or ""),
+            provenance=str(item.get("provenance") or ""),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("approval_desk: clock unavailable for %s (%s) — passing",
+                    item.get("id"), exc)
+        return Check("session_language", PASS, f"clock unavailable ({exc})"[:200])
+    if bad:
+        return Check("session_language", FAIL, "; ".join(bad[:3])[:200])
+    return Check("session_language", PASS,
+                 "day words agree with the posting session")
+
+
+def check_session_expiry(item: dict, *, now: datetime) -> Check:
+    """A same-day tape kind on a non-trading day is dead. HARD FAIL.
+
+    THE OPERATOR'S VISIBLE ROT, retired instead of held. A `mover` or
+    `theme_list` says "this is what is moving RIGHT NOW"; on a Saturday there is
+    nothing moving, its own session has already passed, and no later hour makes
+    it postable. Before this the desk's only opinion was the 36h TTL, so a
+    Friday-morning theme_list stayed queued and approvable all weekend at 29
+    hours old.
+
+    Kept SEPARATE from `check_session_language` even though both are day-word
+    law, because the two answer different questions and the operator reads the
+    check name: this one is "the calendar retired it", the other is "the copy is
+    false". `outbox.expire_dead_session_items` runs the same two predicates off
+    the press-wire tick so the retirement lands even when the desk never runs.
+    """
+    from engine.marketing import market_clock as _clock  # noqa: PLC0415
+    try:
+        why = _clock.session_expired_reason(
+            now=now, fact_asof=_clock.item_fact_day(item),
+            kind=str(item.get("kind") or ""),
+            provenance=str(item.get("provenance") or ""),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("approval_desk: session expiry unavailable for %s (%s)",
+                    item.get("id"), exc)
+        return Check("expired_session", PASS, f"clock unavailable ({exc})"[:200])
+    if why:
+        return Check("expired_session", FAIL, why)
+    return Check("expired_session", PASS, "posting day can carry this kind")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Check 3 — liveness
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -804,15 +932,25 @@ def audit_item(item: dict, *, now: datetime, posted_texts: dict | None = None,
     That is what makes the behavioural matrix test possible: one item per
     verdict class, no fixtures on disk.
 
-    CHECK ORDER is the brief's order (payload, number_sanity, liveness,
-    chart_law, banned_language, dedup) and is part of the contract: the first
-    HARD FAIL in that order is the one whose name lands in the ledger note, so
-    the same item always gets the same reason. Every check still RUNS — the
-    `checks` tuple carries all six — so the operator log can show the full
-    picture even when only one name is recorded.
+    CHECK ORDER is the brief's order (payload, session_language,
+    expired_session, number_sanity, liveness, chart_law, banned_language,
+    dedup) and is part of the contract: the first HARD FAIL in that order is the
+    one whose name lands in the ledger note, so the same item always gets the
+    same reason. Every check still RUNS — the `checks` tuple carries all of them
+    — so the operator log can show the full picture even when only one name is
+    recorded.
 
-    RESOLUTION: any hard fail → quarantine. Else any hold/unverifiable →
-    leave queued. Else → approve.
+    THE TWO DAY-WORD CHECKS SIT SECOND AND THIRD, directly behind `payload`, for
+    the same reason the publisher puts its clock gate ahead of the language and
+    voice gates: FALSITY OUTRANKS STYLE, and the operator reads these names. A
+    Saturday theme_list reading "+7.2% avg today" is also number-heavy and
+    dedup-adjacent; the reason recorded should be the day, because the day is
+    the defect.
+
+    RESOLUTION: any hard fail → quarantine. Else, under the decisive posture,
+    any UNVERIFIABLE → quarantine with the check's evidence. Else any remaining
+    hold → leave queued (only :data:`MACHINE_DEFERRALS` can reach this). Else →
+    approve.
     """
     cfg = desk_cfg or desk_config(None)
     text = str(item.get("text") or "")
@@ -820,6 +958,8 @@ def audit_item(item: dict, *, now: datetime, posted_texts: dict | None = None,
 
     checks: list[Check] = [
         check_payload(text),
+        check_session_language(item, now=now),
+        check_session_expiry(item, now=now),
         check_number_sanity(item, ev,
                             max_target_move_pct=cfg["max_target_move_pct"]),
         check_liveness(item, now=now, ttl_hours=cfg["ttl_hours"],
@@ -834,6 +974,20 @@ def audit_item(item: dict, *, now: datetime, posted_texts: dict | None = None,
             return Verdict("quarantine", c.name, c.evidence,
                            tuple(x.name for x in checks if x.status == PASS),
                            tuple(checks))
+
+    # DECISIVE runs AFTER the hard-fail pass, never folded into it. A genuine
+    # defect must keep out-ranking an unprovable one in the recorded reason:
+    # "banned_language" is a better note than "the desk could not trace your
+    # numbers", and the item is quarantined either way.
+    if cfg.get("decisive", _DECISIVE_DEFAULT):
+        for c in checks:
+            if c.status == UNVERIFIABLE:
+                return Verdict(
+                    "quarantine", c.name,
+                    f"decisive posture (approval_desk.decisive): {c.evidence}",
+                    tuple(x.name for x in checks if x.status == PASS),
+                    tuple(checks))
+
     for c in checks:
         if c.status in (HOLD, UNVERIFIABLE):
             return Verdict("hold", c.name, c.evidence,

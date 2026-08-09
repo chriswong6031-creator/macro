@@ -59,6 +59,10 @@ from engine.government_revenue.idv_dossiers import (  # noqa: E402
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.idv_bridge import (  # noqa: E402
+    build_idv_bridge_payload,
+    is_valid_idv_bridge_payload,
+)
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     is_valid_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -630,6 +634,24 @@ def _validate_idv_dossier_bindings(idv_dossier: dict, dossier: dict) -> None:
             raise ValueError("government revenue IDV dossier incorrectly derives a parent award bridge")
 
 
+def _verify_idv_bridge(idv_dossier: dict, dossier: dict) -> dict:
+    """Prove the published generation still yields a valid exact child bridge.
+
+    The bridge is a pure display-tier projection of two already-validated
+    rails, so it is not a fifth committed artifact: request paths derive it
+    from the same bytes.  Building it here keeps a contract or identity
+    regression from shipping silently, and fails closed if it appears.
+    """
+    bridge = build_idv_bridge_payload(
+        idv_payload=idv_dossier,
+        prime_payload=dossier,
+        as_of=dossier.get("as_of"),
+    )
+    if not is_valid_idv_bridge_payload(bridge):
+        raise ValueError("government revenue IDV bridge returned an invalid schema")
+    return bridge
+
+
 def _read_jsonl_objects(path: Path, *, label: str) -> list[dict]:
     """Read a canonical JSONL source ledger without accepting blank or scalar rows."""
     try:
@@ -957,6 +979,17 @@ def build(
         )
     )
     _validate_idv_dossier_bindings(idv_dossier, dossier)
+    idv_bridge = _verify_idv_bridge(idv_dossier, dossier)
+    log.info(
+        "government revenue IDV bridge %s: %s bridged (%s vehicle seats, %s task orders), "
+        "%s count-only vehicles, %s abstained",
+        idv_bridge["status"],
+        idv_bridge["counts"]["bridged"],
+        idv_bridge["counts"]["vehicle_membership"],
+        idv_bridge["counts"]["task_order"],
+        idv_bridge["counts"]["count_only"],
+        idv_bridge["counts"]["abstained"],
+    )
     budget_graph = _build_budget_program_graph_if_ready(
         root,
         as_of=payload.get("as_of"),
@@ -1082,6 +1115,7 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         optional_idv = _load_optional_canonical_idv_dossier(root, dossier)
         if optional_idv is not None:
             _write_idv_dossier_twins(root, optional_idv[0])
+            _verify_idv_bridge(optional_idv[1], dossier)
         optional_budget_graph = _load_optional_canonical_budget_graph(root, dossier)
         if optional_budget_graph is not None:
             _write_budget_program_graph_twins(root, optional_budget_graph[0])

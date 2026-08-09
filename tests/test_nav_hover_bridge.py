@@ -20,8 +20,8 @@ MACRO_HTML = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
 # The cache-buster the theme.js -> account.js -> nav_market.js chain is pinned
 # to, and a digest of the payload that key is responsible for busting. They MUST
 # move together -- see test_nav_release_key_moves_with_the_payload_it_busts.
-NAV_RELEASE_KEY = "20260807-mm-icons"
-NAV_PAYLOAD_DIGEST = "9a73ab4e"
+NAV_RELEASE_KEY = "20260809-board-copy-guard"
+NAV_PAYLOAD_DIGEST = "3951b937"
 
 
 def _payload_digest() -> str:
@@ -180,6 +180,9 @@ def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
         "20260803-onemenu",
         "20260806-us-confluence",
         "20260807-post-sweep",
+        "20260807-mm-icons",
+        "20260808-zh-natural",
+        "20260809-market-memory",
     ):
         assert stale not in TEMPLATE_THEME_JS
         assert stale not in SITE_THEME_JS

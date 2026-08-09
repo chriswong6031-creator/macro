@@ -1,0 +1,179 @@
+name: institutional 13F bulk reconciliation
+
+on:
+  schedule:
+    # SEC publishes one filing-month ZIP after each quarter's 45-day window.
+    # Retry days 1-5; the compiler hash-checks both packages and no-ops after a
+    # successful immutable revision and public projection already match.
+    - cron: "17 10 1-5 3,6,9,12 *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even when both SEC ZIP hashes already match
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: institutional-13f-bulk-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile_publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python 3.12 (isolated locked runtime)
+        run: |
+          VENV="$RUNNER_TEMP/institutional-13f-venv"
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/pip" install --quiet \
+            -r requirements/institutional-13f-macos-arm64-py312.lock
+          "$VENV/bin/python" -c "import boto3"
+
+      - name: Retain SEC ZIP revisions and build completed-quarter census
+        env:
+          # Explicit bootstrap binding into the existing public-evidence bucket.
+          # Runtime code still accepts ONLY the institutional namespace and can
+          # move to least-privilege credentials without a code or key-layout change.
+          INSTITUTIONAL_13F_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          INSTITUTIONAL_13F_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          # The candidate bench has a distinct private-store capability.  It is
+          # never written to the public-evidence bucket above.
+          INSTITUTIONAL_13F_RESEARCH_R2_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          INSTITUTIONAL_13F_RESEARCH_R2_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_RESEARCH_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_RESEARCH_R2_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+          FORCE_REBUILD: ${{ inputs.force || 'false' }}
+          RESEARCH_BENCH_PATH: ${{ runner.temp }}/institutional-13f-research-bench.json
+        run: |
+          set -euo pipefail
+          extra=()
+          if [ "$FORCE_REBUILD" = "true" ]; then extra+=(--force); fi
+          python -m scripts.build_institutional_13f_census \
+            --publish-bulk-evidence --publish-research-bench \
+            --research-bench-output "$RESEARCH_BENCH_PATH" "${extra[@]}"
+
+      - name: Assert bounded public contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("data/institutional_13f/public/census_latest.json")
+          raw = path.read_bytes()
+          assert len(raw) <= 16 * 1024
+          value = json.loads(raw)
+          assert value["schema"] == "institutional_13f.census_public/v1"
+          assert value["state"] == "complete"
+          assert value["identity_grain"] == "filer"
+          assert len(value["leaders"]["broadening"]) <= 6
+          assert len(value["leaders"]["narrowing"]) <= 6
+          assert len(value["sector_breadth"]) <= 6
+          lowered = raw.lower()
+          assert b'"accession' not in lowered and b'"cik"' not in lowered
+          print(
+              f"completed census {value['periods']['current']}: "
+              f"{value['coverage']['paired_filings']} paired filers"
+          )
+          PY
+
+      - name: Assert private research-bench durability
+        env:
+          INSTITUTIONAL_13F_RESEARCH_R2_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          INSTITUTIONAL_13F_RESEARCH_R2_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_RESEARCH_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_RESEARCH_R2_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from engine.institutional_census.research_bench import (
+              build_institutional_13f_research_store,
+              load_private_research_bench,
+          )
+
+          receipt = json.loads(
+              Path("data/institutional_13f/receipts/census_latest.json").read_text()
+          )
+          published = load_private_research_bench(
+              build_institutional_13f_research_store()
+          )
+          expected = receipt["private_research_bench"]
+          assert expected["sha256"] == receipt["research_bench_sha256"]
+          assert expected["sha256"] == published.pointer.bench_sha256
+          assert expected["byte_length"] == published.pointer.bench_byte_length
+          assert published.payload["status"] == "screened_not_promoted"
+          assert published.payload["point_in_time"] is False
+          print(
+              f"private bench retained: {published.pointer.current_period}; "
+              f"{published.payload['candidate_count']} screened, 0 promoted"
+          )
+          PY
+
+      - name: Remove private research-bench working copy
+        if: always()
+        env:
+          RESEARCH_BENCH_PATH: ${{ runner.temp }}/institutional-13f-research-bench.json
+        run: |
+          set -euo pipefail
+          expected="$RUNNER_TEMP/institutional-13f-research-bench.json"
+          test "$RESEARCH_BENCH_PATH" = "$expected"
+          rm -f -- "$expected"
+
+      - name: Re-render only the Smart Money census surface
+        env:
+          COLLECT_LANE: institutional-13f-bulk
+        run: python -m scripts.build_smart_money --census-render-only
+
+      - name: Assert census reached the rendered page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page = Path("site/smart_money.html").read_text(encoding="utf-8")
+          assert 'id="sec-census"' in page
+          assert "Census refresh pending" not in page
+          assert "Where institutional ownership is broadening" in page
+          PY
+
+      - name: Commit and publish reconciled census
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -- data/institutional_13f/public/census_latest.json \
+            data/institutional_13f/receipts/census_latest.json \
+            site/factordata/institutional_census_summary.json \
+            site/factordata/smartmoney_desk.json site/smart_money.html \
+            site/assets/css
+          if git diff --cached --quiet; then
+            echo "SEC bulk hashes already reconciled; no publication change."
+            exit 0
+          fi
+          git commit -m "smart-money: reconcile institutional 13F census $(date -u +%FT%H:%MZ) [skip ci]"
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_ALARM=300
+          push_retry_init "institutional 13F bulk reconciliation"
+          while push_attempt; do
+            perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+            if perl -e 'alarm 300; exec @ARGV or die' -- \
+                 git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::error::Reconciled SEC 13F census could not be pushed"
+          exit 1

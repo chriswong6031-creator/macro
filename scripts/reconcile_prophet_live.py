@@ -27,6 +27,11 @@ WHAT IT JOINS, per event row:
     FIRST cross is the user-actionable one. Keeping only the last occurrence recorded
     a name that formed at 100 and re-formed at 108 as a 108 entry, which would have
     biased the entry-advantage measurement the program exists to make.
+  * ``cross_basis_close``/``px_adj_factor``/``cross_px_adj``/``pct_basis`` and
+    ``close_adjustment`` — ONE PRICE BASIS (W-L0 gate 3). ``cross_px`` is a RAW vendor
+    print and every close here is an ADJUSTED store close, so the two percentages used
+    to divide one currency by another; the anchor frozen on the cross's own session is
+    what puts them back on one. See the block comment above :data:`PCT_ALIGNED`.
 
 SOLE WRITER (G0.2/RUL-P10). This nightly step is the only writer of
 ``data/prophet_live/``. The intraday lane writes R2 only. Rows are merged
@@ -42,14 +47,14 @@ from __future__ import annotations
 
 import argparse
 import logging
+import math
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:  # pragma: no cover - import bootstrap
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.prophet_live import r2io  # noqa: E402
 
@@ -74,13 +79,62 @@ KEY = ["date", "ticker", "kind"]
 #: base of both derived percentages — takes the later print. That put a 100 entry and a
 #: 108 basis in one row with a sign-flipped ``fill_vs_cross_pct``, and
 #: :func:`maturing_rows` then re-derived from the clobbered value the next night.
-FIRST_WINS = ("confirmed", "confirmed_basis", "first_ts", "first_px", "cross_px")
+#:
+#: ``cross_basis_close`` is the PRICE-BASIS ANCHOR (W-L0 gate 3) and it is frozen for
+#: exactly the same reason it exists: it is only a valid anchor because it was read on
+#: the cross's own session, and a later read of the same close is a different number the
+#: moment a distribution lands.
+FIRST_WINS = ("confirmed", "confirmed_basis", "first_ts", "first_px", "cross_px",
+              "cross_basis_close")
 
 #: Percentages recomputed from the MERGED row after every merge: ``{column: numerator}``,
-#: always over ``cross_px``. Merging them column-wise let a partial re-read leave a
+#: always over ``cross_px_adj``. Merging them column-wise let a partial re-read leave a
 #: percentage derived from a base the merged row no longer carries — the mixed-basis
 #: fabrication the house law forbids, inside a single row.
 _DERIVED = {"close_vs_cross_pct": "close_same_day", "fill_vs_cross_pct": "next_close_fill"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE PRICE BASIS (W-L0 gate 3)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT. ``cross_px`` is a RAW vendor print — what the tape showed at the first
+# cross. ``close_same_day`` and ``next_close_fill`` are closes read from the nightly
+# store, which is SPLIT+DIVIDEND ADJUSTED and is re-adjusted under us every time a name
+# goes ex-distribution. Dividing one by the other is arithmetic across two currencies,
+# and the error is exactly the distribution: ``engine.price_ladder`` measured 0.649% on
+# CFG, precisely its quarterly dividend.
+#
+# It is NOT a dividend-day-only defect, which is why it reads as noise. The store
+# re-scales every close BEFORE an ex-date, so a row for session D drifts whenever the
+# name goes ex at ANY point after D — and ``maturing_rows`` then re-derives that row's
+# percentages from the moved series, silently restating a published number (the same
+# irreproducibility ``price_ladder`` documents, one layer up).
+#
+# THE FIX: an ANCHOR, frozen on the cross's own session. ``cross_basis_close`` is the
+# store's close of the event session as read THAT NIGHT — the one moment the raw tape
+# and the store agree, because no later distribution has been applied to either yet. The
+# ratio of the store's close of that session TODAY to that anchor is the adjustment the
+# store has applied since, so
+#
+#     px_adj_factor = close_same_day / cross_basis_close
+#     cross_px_adj  = cross_px * px_adj_factor
+#
+# puts the raw cross print on the SAME basis as both closes, and every percentage is
+# derived from ``cross_px_adj``. On the event night the factor is 1.0 by construction,
+# so nothing moves the day a row is written; the correction appears only where a real
+# adjustment happened. ``cross_px`` itself is never touched — it is what a user could
+# actually have traded, and rewriting it would destroy the only raw number in the row.
+#
+# NO ANCHOR ⇒ NO CLAIM. A row first written by a replay of an older session (or by any
+# run before this field existed) has no contemporaneous read to anchor to, and taking a
+# LATER close as the anchor would silently assume no distribution in between — which is
+# the assumption this whole block exists to stop making. Those rows keep the percentages
+# they would have had and say so in ``pct_basis``; they are disclosed, never repaired
+# by guess.
+
+#: ``pct_basis`` vocabulary: whether the row's percentages compare like with like.
+PCT_ALIGNED = "aligned_to_close"
+PCT_UNALIGNED = "unaligned_no_anchor"
 
 #: Sessions strictly before this are NEVER accrued. Belt-and-braces for B4: any
 #: pre-merge spool object may have been written by a receipt or a rehearsal rather
@@ -93,6 +147,14 @@ LEDGER_FLOOR_SESSION = "2026-07-30"
 def _iso(now: datetime) -> str:
     t = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
     return t.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def et_session(now: datetime) -> str:
+    """This run's ET session date. ET, never UTC — a 16:10 ET pass lands after the UTC
+    date has rolled, so a UTC date would call the event night's own run "yesterday" and
+    refuse to anchor the very rows it is writing."""
+    from engine.prophet_live.live_states import et_clock  # noqa: PLC0415
+    return et_clock(now).date().isoformat()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -144,15 +206,23 @@ def load_events(keys: list[str], *, s3=None) -> list[dict[str, Any]]:
 # Price joins
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_closes(tickers: set[str]) -> dict[str, Any]:
-    """Close series for the named tickers, from the SAME universe the gate reads.
+def load_closes(tickers: set[str]) -> tuple[dict[str, Any], dict[str, str]]:
+    """``(series_by_ticker, price_adjustment_by_ticker)`` for the named tickers.
 
-    Reusing ``build_stock_library.universe()`` is deliberate: a second loader would
-    be a second definition of the price basis, and a fill graded off a different
-    series than the signal was armed on is the mixed-basis trap.
+    From the SAME universe the gate reads. Reusing ``build_stock_library.universe()``
+    is deliberate: a second loader would be a second definition of the price basis, and
+    a fill graded off a different series than the signal was armed on is the
+    mixed-basis trap.
+
+    THE BASIS COMES BACK WITH THE SERIES (W-L0 gate 3), because that universe is not
+    one basis. The per-name stores are split+dividend adjusted; the four breadth
+    ``_closes_cache`` frames accrue raw closes between full rebuilds, which is why
+    ``engine.price_ladder`` classifies them as UNADJUSTED. A caller that stamps
+    "adjusted" over the whole map would be publishing a false label for the ~154 board
+    names that resolve out of a cache, so the label travels per ticker or not at all.
     """
     from engine.prophet_live.armed_pack import clean_closes  # noqa: PLC0415
-    from scripts.build_stock_library import universe  # noqa: PLC0415
+    from scripts.build_stock_library import universe, universe_price_adjustment  # noqa: PLC0415
     out: dict[str, Any] = {}
     for tkr, close, _high, _name, _sector in universe():
         if tkr not in tickers:
@@ -160,7 +230,8 @@ def load_closes(tickers: set[str]) -> dict[str, Any]:
         s = clean_closes(close)
         if s is not None and len(s):
             out[tkr] = s
-    return out
+    adj = universe_price_adjustment()
+    return out, {t: adj[t] for t in out if t in adj}
 
 
 def close_on(series: Any, day: str) -> float | None:
@@ -195,10 +266,15 @@ def next_close(series: Any, day: str) -> tuple[float | None, str | None]:
 
 
 def _f(v: Any) -> float | None:
+    """A usable float, or None. NaN and inf are None, not numbers: a parquet round-trip
+    turns a missing cell into NaN, and NaN propagates silently through every ratio below
+    — a percentage that reads ``nan`` instead of null is a null that stopped announcing
+    itself."""
     try:
-        return float(v)  # type: ignore[arg-type]
+        f = float(v)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return None
+    return f if math.isfinite(f) else None
 
 
 def _pct(a: float | None, b: float | None) -> float | None:
@@ -209,6 +285,44 @@ def _pct(a: float | None, b: float | None) -> float | None:
         return (float(a) / float(b) - 1.0) * 100.0
     except (TypeError, ValueError, ZeroDivisionError):
         return None
+
+
+def align_basis(row: Any) -> dict[str, Any]:
+    """The row's price-basis fields, derived from the row itself. ONE definition.
+
+    ``{"px_adj_factor", "cross_px_adj", "pct_basis", <both percentages>}``, computed
+    from ``cross_px``, the frozen ``cross_basis_close`` anchor, and the CURRENT
+    ``close_same_day``/``next_close_fill``. Everything it needs is in the row it is
+    handed, so :func:`build_rows`, :func:`maturing_rows` and :func:`merge_ledger` all
+    call it and cannot drift apart on what "same basis" means — the mistake this
+    module already learned once, when merging the percentages column-wise let a row
+    carry a ratio whose base it no longer held.
+
+    With no usable anchor the factor is None, ``cross_px_adj`` falls back to the raw
+    ``cross_px``, and ``pct_basis`` says :data:`PCT_UNALIGNED`. That is deliberately the
+    unchanged arithmetic: the alternative — nulling the percentages of every row written
+    before the anchor existed — would delete accrued evidence to make a labelling
+    problem look solved.
+    """
+    def _get(key: str) -> Any:
+        return row.get(key) if isinstance(row, dict) else getattr(row, key, None)
+
+    cross = _f(_get("cross_px"))
+    anchor = _f(_get("cross_basis_close"))
+    same = _f(_get("close_same_day"))
+    factor: float | None = None
+    if anchor is not None and same is not None and anchor > 0.0:
+        factor = same / anchor
+    base = cross
+    if factor is not None and cross is not None:
+        base = cross * factor
+    return {
+        "px_adj_factor": factor,
+        "cross_px_adj": base,
+        "pct_basis": PCT_ALIGNED if factor is not None else PCT_UNALIGNED,
+        "close_vs_cross_pct": _pct(same, base),
+        "fill_vs_cross_pct": _pct(_f(_get("next_close_fill")), base),
+    }
 
 
 def session_verdicts(session: str, tickers: set[str], *, closes: dict[str, Any],
@@ -250,13 +364,19 @@ def session_verdicts(session: str, tickers: set[str], *, closes: dict[str, Any],
 
 
 def build_rows(events: list[dict[str, Any]], *, verdicts_for: Any,
-               closes: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
+               closes: dict[str, Any], now: datetime,
+               close_adjustment: dict[str, str] | None = None) -> list[dict[str, Any]]:
     """One ledger row per (session, ticker, kind), carrying FIRST and LAST occurrence.
 
     ``verdicts_for(session, tickers)`` returns ``({ticker: bool}, basis)`` for that
     session — see :func:`session_verdicts`. Events are grouped before any verdict is
     resolved so the gate is re-run at most once per session, not once per row.
+
+    ``close_adjustment`` is :func:`load_closes`' per-ticker basis map, stamped on the
+    row so a reader of ``close_same_day``/``next_close_fill`` never has to infer which
+    family of series produced them.
     """
+    et_today = et_session(now)
     groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for ev in events:
         day = str(ev.get("session_et") or "")[:10]
@@ -280,7 +400,13 @@ def build_rows(events: list[dict[str, Any]], *, verdicts_for: Any,
         nxt, nxt_day = next_close(series, day) if series is not None else (None, None)
         first_px = _f(first.get("price"))
         verdict_map, basis = resolved.get(day, ({}, "none"))
-        rows.append({
+        # THE BASIS ANCHOR, and only when this read is contemporaneous with the cross
+        # (the block comment at the head of this module). On the event's own ET session
+        # the store's close and the tape's prints are the same scale; on any later run
+        # they may not be, and taking that later close as the anchor would assert the
+        # very "no distribution in between" the anchor exists to stop assuming.
+        anchor = same if day == et_today else None
+        row = {
             "date": day,
             "ticker": tkr,
             "kind": kind,
@@ -306,13 +432,18 @@ def build_rows(events: list[dict[str, Any]], *, verdicts_for: Any,
             "close_same_day": same,
             "next_close_fill": nxt,
             "next_close_date": nxt_day,
-            "close_vs_cross_pct": _pct(same, first_px),
-            # The measurement the whole program exists to make: the official graded
-            # fill is the NEXT close, so this is what a same-session entry gave up
-            # or gained against the convention the track record uses.
-            "fill_vs_cross_pct": _pct(nxt, first_px),
+            # ONE PRICE BASIS. `cross_px` is a raw vendor print and these two closes are
+            # store closes, so the anchor above pins them together and `align_basis`
+            # derives every percentage — including the measurement the whole program
+            # exists to make: the official graded fill is the NEXT close, so
+            # `fill_vs_cross_pct` is what a same-session entry gave up or gained against
+            # the convention the track record uses.
+            "cross_basis_close": anchor,
+            "close_adjustment": (close_adjustment or {}).get(tkr),
             "reconciled_at": _iso(now),
-        })
+        }
+        row.update(align_basis(row))
+        rows.append(row)
     return rows
 
 
@@ -355,12 +486,15 @@ def merge_ledger(path: Path, rows: list[dict[str, Any]]):
         if col in out.columns and col in firsts.columns:
             out[col] = firsts[col]
     # A derived percentage must be a function of the row it sits in, not of whichever
-    # write last touched that column.
+    # write last touched that column — and under ONE PRICE BASIS that now includes the
+    # basis alignment itself: the anchor is FIRST_WINS while `close_same_day` is the
+    # newest read, so the factor between them can only be computed after the merge.
+    # Re-deriving here also means a legacy row picks up its `pct_basis` disclosure the
+    # first time it is touched, without a migration pass.
     if "cross_px" in out.columns:
-        base = out["cross_px"]
-        for col, num in _DERIVED.items():
-            if col in out.columns and num in out.columns:
-                out[col] = [_pct(a, b) for a, b in zip(out[num], base)]
+        derived = [align_basis(r._asdict()) for r in out.itertuples(index=False)]
+        for col in ("px_adj_factor", "cross_px_adj", "pct_basis", *_DERIVED):
+            out[col] = [d[col] for d in derived]
     return out.sort_values(KEY, kind="stable").reset_index(drop=True)
 
 
@@ -401,13 +535,16 @@ def open_rows(path: Path) -> list[tuple[str, str]]:
     return sorted({(str(r.date), str(r.ticker)) for r in todo.itertuples()})
 
 
-def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime) -> list[dict[str, Any]]:
+def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime,
+                  close_adjustment: dict[str, str] | None = None) -> list[dict[str, Any]]:
     """Fill updates for rows whose next-session close now exists.
 
     Both derived percentages are recomputed here, not just the raw closes: rewriting
     ``close_same_day`` while leaving a ``close_vs_cross_pct`` derived from an earlier
     value of it is exactly the mixed-basis fabrication the house law forbids. The
-    cross price comes from the stored row so the ratio's two legs stay same-row.
+    cross price and the ONE PRICE BASIS anchor both come from the stored row, so the
+    ratio's legs stay same-row and the anchor stays the one frozen on the event night —
+    this read is exactly the moment the store may have moved under it.
     """
     import pandas as pd  # noqa: PLC0415
     if not path.exists():
@@ -416,10 +553,11 @@ def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime) -> list[
         df = pd.read_parquet(path)
     except Exception:  # noqa: BLE001
         return []
-    cross_by_pair: dict[tuple[str, str], float | None] = {}
+    stored: dict[tuple[str, str], tuple[float | None, float | None]] = {}
     for r in df.itertuples():
-        cross_by_pair.setdefault((str(r.date), str(r.ticker)),
-                                 _f(getattr(r, "cross_px", None)))
+        stored.setdefault((str(r.date), str(r.ticker)),
+                          (_f(getattr(r, "cross_px", None)),
+                           _f(getattr(r, "cross_basis_close", None))))
     out: list[dict[str, Any]] = []
     for day, tkr in open_rows(path):
         series = closes.get(tkr)
@@ -428,13 +566,18 @@ def maturing_rows(path: Path, *, closes: dict[str, Any], now: datetime) -> list[
         nxt, nxt_day = next_close(series, day)
         if nxt is None:
             continue
-        same = close_on(series, day)
-        cross = cross_by_pair.get((day, tkr))
-        out.append({"date": day, "ticker": tkr, "next_close_fill": nxt,
-                    "next_close_date": nxt_day, "close_same_day": same,
-                    "close_vs_cross_pct": _pct(same, cross),
-                    "fill_vs_cross_pct": _pct(nxt, cross),
-                    "reconciled_at": _iso(now)})
+        cross, anchor = stored.get((day, tkr), (None, None))
+        upd = {"date": day, "ticker": tkr, "next_close_fill": nxt,
+               "next_close_date": nxt_day, "close_same_day": close_on(series, day),
+               "cross_px": cross, "cross_basis_close": anchor,
+               "close_adjustment": (close_adjustment or {}).get(tkr),
+               "reconciled_at": _iso(now)}
+        upd.update(align_basis(upd))
+        # `cross_px`/`cross_basis_close` were only carried in to derive from; they are
+        # FIRST_WINS columns and re-emitting them would be a no-op at best and a
+        # re-basing at worst if the stored read were ever partial.
+        upd.pop("cross_px"), upd.pop("cross_basis_close")
+        out.append(upd)
     return out
 
 
@@ -530,7 +673,7 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
 
     want = {str(e["ticker"]).upper() for e in events}
     want |= {t for _d, t in open_rows(path)}
-    closes = load_closes(want) if want else {}
+    closes, close_adjustment = load_closes(want) if want else ({}, {})
     missing = sorted(want - set(closes))
     if missing:
         print(f"::warning title=prophet-live-reconcile::{len(missing)} tickers have no "
@@ -553,8 +696,10 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
               f"{len(need)} needed of {len(tickers)} basis={basis}", flush=True)
         return got, basis
 
-    rows = build_rows(events, verdicts_for=_verdicts_for, closes=closes, now=ts)
-    rows.extend(_expand_maturing(path, maturing_rows(path, closes=closes, now=ts)))
+    rows = build_rows(events, verdicts_for=_verdicts_for, closes=closes, now=ts,
+                      close_adjustment=close_adjustment)
+    rows.extend(_expand_maturing(path, maturing_rows(
+        path, closes=closes, now=ts, close_adjustment=close_adjustment)))
     if not rows:
         print("prophet-live reconcile: nothing to accrue tonight", flush=True)
         return 0
@@ -569,6 +714,18 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
     matured = int(frame["next_close_fill"].notna().sum()) if len(frame) else 0
     print(f"prophet-live reconcile: {len(rows)} updates -> {len(frame)} rows "
           f"({matured} with a next-close fill) at {path}", flush=True)
+    # ONE PRICE BASIS, stated every night. `unaligned` is not a failure — it is the
+    # count of rows whose percentages could not be put on one basis (no contemporaneous
+    # anchor), and it must be visible or the ledger's headline numbers look uniformly
+    # sound. `rebased` counts the rows the store has actually moved under since the
+    # cross: a run where that jumps is a distribution calendar, not a bug.
+    if len(frame) and "pct_basis" in frame.columns:
+        unaligned = int((frame["pct_basis"] == PCT_UNALIGNED).sum())
+        rebased = int((frame["px_adj_factor"].notna()
+                       & (frame["px_adj_factor"] - 1.0).abs().gt(1e-9)).sum())
+        print(f"prophet-live reconcile: price basis — {len(frame) - unaligned} rows "
+              f"aligned to the close basis ({rebased} re-based since the cross), "
+              f"{unaligned} with no contemporaneous anchor", flush=True)
     return 0
 
 

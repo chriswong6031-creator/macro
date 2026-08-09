@@ -90,6 +90,11 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # __all__ guard: a listed name the module never binds is a dormant
+      # AttributeError under `from m import *`. Same trigger posture as the
+      # annotation guard above — an edit to the scan runs the scan; it fires
+      # for source changes whenever ci.yml is already triggered.
+      - "tests/test_all_exports_resolve.py"
       # sys.modules leak guard. Its RUNTIME half lives in tests/conftest.py (already
       # listed at the top of this block, which triggers the full suite), so this line
       # covers the STATIC half: an edit to the scan itself must run the scan. Same
@@ -135,6 +140,10 @@ on:
       - "tests/test_optimize_assets.py"
       - "tests/test_asset_stamp_lane_order.py"
       - "tests/test_asset_stamp_refresh.py"
+      # closing-bell duplicate-render dedup contract. The SUBJECT (the guard + stamp
+      # heredocs) already reaches CI via ".github/workflows/**"; this line is the other
+      # direction, so an edit to the test alone still runs the job that executes it.
+      - "tests/test_closingbell_dedup_contract.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
       # data-base shim guard: every builder must write site/**/*.html through
@@ -249,6 +258,11 @@ on:
       #     tests/test_signal_quality_no_leak.py pins one layer up.
       - "research/prophet_us_audit/label_grading_battery.py"
       - "research/prophet_us_audit/test_label_grading_battery.py"
+      #   * earnings-ignition cohort logic: the derived knowability convention, the
+      #     EDGAR-roll-aware announcement window, and the single reaction-session anchor
+      #     both the reaction and the forward cells hang from. Rides the same step.
+      - "research/prophet_us_audit/earnings_ignition_measurement.py"
+      - "research/prophet_us_audit/test_earnings_ignition_measurement.py"
       - "research/signal_engine/buy_filters.py"
       - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
@@ -366,6 +380,18 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      - "engine/live_flow.py"
+      - "tests/test_live_flow.py"
+      # OIP PIT decision/outcome ledger: both the durable R2 source and the
+      # nightly consumer/contracts must trigger the exact adversarial suite.
+      - "engine/options_signal_episode.py"
+      - "scripts/build_options_signal_episode.py"
+      - "scripts/build_polygon_intraday.py"
+      - "contracts/options/options.signal_episode.v1.schema.json"
+      - "contracts/options/options.signal_episode_outcome.v1.schema.json"
+      - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
+      - "tests/test_options_signal_episode.py"
+      - "tests/test_polygon_intraday.py"
       # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
       # the Scanner-mode screener rows export. All three feed the Terminal/Options
       # workspace, so a silent contract change here shows up as a 404 over there.
@@ -525,6 +551,10 @@ on:
       - "scripts/collect.py"
       - "collectors/**"
       - "lib/**"
+      # Canonical Market Memory contract and product-shell trigger halves.
+      - "app/market_memory.py"
+      - "tests/test_market_memory.py"
+      - "tests/test_build_market_memory_page.py"
       - "tests/test_china_news.py"
       # Wave 3B-B2: strict offline XBRL/iXBRL parsing and its receipt-bound
       # immutable extraction artifact.  Test/fixture-only changes must reach the
@@ -602,6 +632,13 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # Full-A TuShare spine (#5116), wired into china-native-collectors. The
+      # collector and its suite are already reachable through collectors/** and
+      # tests/**; the MANIFEST SCHEMA is not, and it is the one subject the suite
+      # actually opens (Draft202012Validator over the emitted manifest). Without
+      # this entry a PR that edits only the schema — the exact edit that can break
+      # the spine's fail-closed contract — never starts the job that would catch it.
+      - "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json"
       # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
       # builder/fence/UI suites and the federal-award collector suites, plus
       # the one subject file no broad glob matches — engine/government_revenue/**
@@ -626,6 +663,15 @@ on:
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.
       - "tests/test_prophet_government_revenue_context.py"
+      # Waves 9E/9F — shadow cross-check packets and the Prophet post-selection
+      # annotation boundary. Both suites are named here because their subjects
+      # reach OUTSIDE engine/government_revenue/**: the 9F import-boundary test
+      # walks every engine/prophet*.py transitively, and the wired seam lives in
+      # engine/prophet_bridge.py, so an edit to a Prophet module must be able to
+      # start the job that proves the boundary still holds.
+      - "tests/test_government_revenue_shadow_context.py"
+      - "tests/test_government_revenue_prophet_annotation.py"
+      - "engine/prophet_bridge.py"
       - "tests/test_sam_gov_opportunities.py"
       # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
       # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
@@ -649,6 +695,7 @@ on:
       - "tests/test_government_revenue_contracts.py"
       - "tests/test_government_revenue_entity_resolution.py"
       - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_bridge.py"
       - "tests/test_government_revenue_idv_dossiers.py"
       - "tests/test_government_revenue_neuralweb.py"
       - "tests/test_government_revenue_opportunities.py"
@@ -669,6 +716,15 @@ on:
       - "scripts/propose_government_revenue_recipient_graph.py"
       - "tests/test_propose_government_revenue_recipient_graph.py"
       - "tests/fixtures/govrev_issuer_evidence/**"
+      # Amount-class conflation gate (job: unrun-government-revenue, wired 2026-08-07).
+      # The suite's subjects are the taxonomy (engine/**), the collector's canonical
+      # number-column declarations it DERIVES coverage from (collectors/**), and the
+      # rendered surfaces (templates/**) — all already reachable.  What is NOT reachable
+      # through any broad glob is the guard script itself: there is no "scripts/**"
+      # entry in this filter, so an edit to the reader would ship without ever running
+      # the suite that measures it.  Both halves are named on purpose.
+      - "scripts/check_government_revenue_amount_semantics.py"
+      - "tests/test_government_revenue_amount_semantics.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
@@ -873,6 +929,10 @@ on:
       # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
       # adjudication by path literal, so an edit to it alone must start the contracts pack.
       - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
+      # The operator ruling tests/test_biocatalyst_fixed_cohort_deployment.py reads by
+      # path literal. Without it a PR touching only the ruling never starts
+      # biocatalyst-contracts, the job that runs the suite (#3488 shape).
+      - "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -911,6 +971,10 @@ on:
       - "scripts/nightly_timings_report.py"
       - "scripts/ci/nightly_timings_finish.sh"
       - "tests/test_nightly_timings.py"
+      # W-L0 daily ET regime gate, run in the same dag-conformance job. The gate's
+      # subject is .github/workflows/daily.yml (already covered above); this entry is
+      # the other half — a PR editing only the gate's test must reach its own guard.
+      - "tests/test_daily_et_gate.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
@@ -1007,6 +1071,14 @@ on:
       # discovery for all THREE darkness guards, so a regression here re-blinds
       # every one of them at once — which is what tests/ scoping did until #4693.
       - "tests/test_audit_unrun_tests.py"
+      # The census's two EXCEPTION files, added 2026-08-09 when the bare run was
+      # armed as a gate. These are not decoration: the whole point of a waiver is
+      # that it is reviewed, and a PR that adds a row to either file while starting
+      # no job would be exactly the "exception nobody checked" this gate exists to
+      # prevent. check_ci_trigger_closure.py reds without them (the suite opens both
+      # by path), which is the guard closing its own loop.
+      - "config/unrun_test_baseline.json"
+      - "config/unrun_test_waivers.yml"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
@@ -1535,6 +1607,11 @@ on:
       - "app/deploy/macro-live-prophet.timer"
       - "app/deploy/live-setup.sh"
       - "tests/test_prophet_live_vps_lane.py"
+      # CLOSE-PASS MIRROR lane (W-L1a, #5154). Same #3488 shape as the prophet
+      # units above: test_close_pass_lane.py parses these two unit files, so a
+      # PR touching only a unit file must retrigger the suite that reads it.
+      - "app/deploy/macro-live-closepass.service"
+      - "app/deploy/macro-live-closepass.timer"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -2751,6 +2828,23 @@ on:
       - "tests/test_release_cpi_bridge.py"
       - "tests/test_release_publications_live_client.py"
       - "tests/test_release_radar_date_selection.py"
+      - "tests/test_inflation_intelligence.py"
+      - "tests/test_inflation_intelligence_nw.py"
+      - "tests/test_inflation_units.py"
+      - "tests/test_release_actuals.py"
+      - "tests/test_release_defects.py"
+      - "tests/test_release_target_truth.py"
+      - "engine/inflation_intelligence.py"
+      - "engine/neuralweb/ask_brain.py"
+      - "engine/neuralweb/cortex.py"
+      - "engine/neuralweb/mastermind_context.py"
+      - "engine/neuralweb/world_state.py"
+      - "engine/release_actuals.py"
+      - "engine/release_defects.py"
+      - "engine/release_target_truth.py"
+      - "scripts/build_inflation_intelligence.py"
+      - "scripts/collect_release_target_vintages.py"
+      - "scripts/reconcile_release_actuals.py"
       # unrun-brain-desks
       - "tests/test_admin_brief_gate.py"
       - "tests/test_ai_desk_panel.py"
@@ -3108,6 +3202,9 @@ on:
       # pack that executes it. test_prophet_bridge_order_invariance.py was strictly
       # dark before this: no `run:` step and no path pattern named it.
       - "tests/test_prophet_bridge_order_invariance.py"
+      # Prophet anticipation has its own manifest lane. Keep suite-only isolation
+      # repairs reachable through this workflow's outer path filter.
+      - "tests/test_prophet_anticipation_intake.py"
       # R0-C earnings split-brain fence (2026-08-06). Both suites guard
       # engine/prophet_bridge.py, engine/prophet_stage_shadow.py and the new
       # engine/prophet_stage_inputs.py, all of which the broad "engine/**" entry above
@@ -3427,7 +3524,9 @@ concurrency:
   # A newer commit on the same PR makes every older result obsolete.  Cancelling
   # it here prevents rapid agent pushes from leaving full packed runs in queue.
   # Manual full-CI dispatches are also deduplicated per ref; several ship-loop
-  # sessions may request the same main proof at once, but only the newest matters.
+  # sessions may request the same main proof at once, but only the newest matters
+  # — how that dedup survives WITHOUT killing a running proof is the 2026-08-09
+  # block below.
   #
   # A MERGED close is fenced into its own group (2026-07-28). The operator and
   # sessions routinely squash-merge 0-8 minutes after opening while a pack run
@@ -3440,7 +3539,41 @@ concurrency:
   # merge keeps the old behaviour — its packs are obsolete and cancelling them
   # is pure savings; only a merge's evidence is worth finishing.
   group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
-  cancel-in-progress: true
+  # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09, after the flat `true`
+  # livelocked main's proof path fleet-wide (12 merge-blocked + 56 cap-deferred
+  # pull requests; sweep run 31311549150 reported "0 main commit(s) classified …
+  # main proof: NO clean name at unknown-sha, undated").
+  #
+  # THE LIVELOCK. This workflow has no `push` trigger, so main is proven ONLY by
+  # a workflow_dispatch. Every main-ref dispatch lands in `ci-refs/heads/main`,
+  # and with a flat `true` each new one KILLED the proof already running: run
+  # 31309720615 (11:00:26Z) was cancelled at 11:44:49Z — 44 minutes in, near the
+  # end of a 30-34 minute-per-pack run — by dispatch 31311537537, which was
+  # itself cancelled four minutes later by 31311693575. No proof ever concludes,
+  # so merge_on_green's base-inherited-red refresh stays closed, so more sessions
+  # pin and re-fire the documented `gh workflow run ci.yml --ref main` lever, so
+  # the next proof dies too. The recovery lever WAS the disease.
+  #
+  # The fix keeps both behaviours because they belong to different events:
+  #   pull_request  -> true.  A newer push obsoletes the older packs; cancelling
+  #                    them is pure savings, and the merged-close fence above
+  #                    (2026-07-28, PR #3867) still decides which close cancels.
+  #   workflow_dispatch -> false.  A dispatch is an ORDER FOR EVIDENCE. Evidence
+  #                    that is 44 minutes old is nearly evidence; discarding it
+  #                    for an identical run that starts from zero is never right.
+  # Dedup is NOT lost: GitHub allows one PENDING run per group and replaces it
+  # regardless of this flag, so N racing dispatches still collapse to "the one
+  # running + the newest queued". Only the kill is gone. Progress is therefore
+  # guaranteed — the same argument that flipped integration-baseline.yml to
+  # `false` on 2026-08-07, and the same shape as the sweeper's own anti-stampede
+  # bound (`MAIN_BASELINE_MIN_INTERVAL_MINUTES`, scripts/merge_on_green.py).
+  #
+  # Note the group expression partitions by event type: a pull_request run always
+  # has `pull_request.number`, a dispatch never does, so `ci-refs/heads/main`
+  # holds dispatches ONLY. Every run in a given group evaluates this expression
+  # to the same value, which is why the fix does not depend on whether GitHub
+  # reads the flag from the arriving run or the in-progress one.
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   ci-pack:
@@ -3462,35 +3595,46 @@ jobs:
     # names are the intended required-checks set (ci-pack-0..3) for branch
     # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
-    # MAIN's proof runs on the idle self-hosted Linux pool; pull requests stay on
-    # ubuntu-latest. This is a CONTROL-PLANE priority fix, not a capacity grab.
+    # EVERY event runs on the hosted pool. The self-hosted detour is retired.
     #
-    # Measured 2026-08-09: main's `ci.yml` proof sat `queued` 30+ minutes behind 133
-    # queued runs and never started, while `pc-render-1..4` (self-hosted, Linux, X64,
-    # `render-linux`) were idle. That single starved run is why ~50 pull requests could
-    # not be re-tested: `merge_on_green.main_proof` answers "is main green on ci-pack-N"
-    # from the newest CONCLUDED ci.yml run on main, so with no fresh proof the
-    # base-inherited-red refresh cannot fire and every armed pull request that inherited
-    # a since-healed red stays blocked. The signal the whole fleet depends on was
-    # queueing behind the fleet — the same priority inversion that put the merge sweeper
-    # 2 hours late until #5095 moved it to this pool.
+    # History, because the reversal is the point: main's proof was moved to
+    # `["self-hosted","render-linux"]` earlier on 2026-08-09 because it sat `queued`
+    # 30+ minutes behind 133 queued runs and never started, while `pc-render-1..4`
+    # idled. That starved run blocked the whole fleet — `merge_on_green.main_proof`
+    # answers "is main green on ci-pack-N" from the newest CONCLUDED ci.yml run on
+    # main, so with no fresh proof the base-inherited-red refresh cannot fire and every
+    # armed pull request that inherited a since-healed red stays blocked.
     #
-    # Scoped to non-`pull_request` events ON PURPOSE. Pull request CI is 4 packs x ~35
-    # minutes x ~40 PRs/day and would swamp a 4-runner pool; more importantly, this pool
-    # has never run the packs before, so the blast radius of a wrong guess is main's
-    # proof alone (one run, immediately visible, one line to revert) rather than every
-    # PR check in the repo. If a dispatched main baseline goes green here, that is the
-    # evidence needed to widen this to pull requests for real added capacity.
+    # That fix was correct for its constraint, and the constraint is now GONE. The
+    # repository moved to the MastermindX enterprise organization on 2026-08-09 and the
+    # hosted concurrency ceiling went from 40 to 180 concurrent jobs. The measured
+    # backlog that caused the starvation was ~195 hosted jobs; at 180 it drains in one
+    # wave, and the observed queue fell from 103 runs to 7 within minutes of the
+    # transfer. Hosted pickup is 2-3 s per job. There is no longer anything to escape.
     #
-    # NOT the macstudio pool: that is the render/nightly lane and is routinely saturated
-    # (CLAUDE.md — render budget is law). `render-linux` is a separate, idle pool.
-    runs-on: >-
-      ${{ github.event_name == 'pull_request'
-          && 'ubuntu-latest'
-          || fromJSON('["self-hosted","render-linux"]') }}
+    # Routing back is strictly better than leaving it:
+    #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
+    #     and `merge-on-green.yml`. Main's four packs took the entire pool, which
+    #     starved the sweeper that merges every armed pull request (60 sweeps queued,
+    #     oldest 2026-08-07). Returning the packs hands all four runners back.
+    #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
+    #     runners the four packs run concurrently again, so main's proof goes back to
+    #     ~26 minutes from the ~50 the throttle cost.
+    #   * One `runs-on` for every event removes the event-dependent routing entirely,
+    #     so main's baseline and a pull request now prove the packs the SAME way.
+    #
+    # NOT the macstudio pool, unchanged: that is the render/nightly lane and is
+    # routinely saturated (CLAUDE.md — render budget is law).
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
+      # NO `max-parallel`. It existed only to stop main's four packs from taking all
+      # four `render-linux` runners and starving `merge-on-green.yml`, which shares
+      # that pool. With every event back on hosted runners there is no shared pool to
+      # protect, and throttling would only make main's proof twice as slow (~26 min
+      # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
+      # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
       matrix:
         pack: [0, 1, 2, 3]
     steps:
@@ -3507,14 +3651,32 @@ jobs:
       # missing source file is the signature of an inherited sparse checkout, not of a
       # broken runner or a bad ref.
       #
+      # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
+      # SPARSE". It does — run 31304933108 shows checkout@v4 running
+      # `git sparse-checkout disable` itself — and the workspace was partial anyway.
+      # `disable` clears the WORKTREE-scoped flag; checkout then unsets
+      # `extensions.worktreeConfig`, and that makes the repo-scoped `core.sparseCheckout`
+      # visible, and effective, again. The config unset is the half that ends the outage.
+      # The `disable` in front of it is what re-materialises the missing paths for a job
+      # whose own checkout is skipped or conditional (render.yml) — keep both.
+      #
       # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
       - name: clear any sparse checkout a sibling job left in this shared workspace
         if: runner.environment != 'github-hosted'
         shell: bash
         run: |
           if [ -d "${{ github.workspace }}/.git" ]; then
-            git -C "${{ github.workspace }}" sparse-checkout disable || true
-            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
           fi
       - uses: actions/checkout@v4
         with:
@@ -3536,13 +3698,33 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
+      # `--changed-from` is passed ONLY on pull requests, so a legacy job that
+      # declares a `paths:` scope runs only when the diff can reach it. Main's
+      # baseline and every workflow_dispatch omit the flag and therefore run all
+      # 173 jobs — that asymmetry is the safety net for the one failure mode
+      # static scoping cannot catch (an implicit import a job's commands never
+      # name), which surfaces as a red main rather than a green PR that shipped
+      # a break. A job with no scope always runs, on every event.
+      #
+      # The scope flag is built in `env`, NOT inline in the folded scalar. A
+      # more-indented continuation line inside `>-` keeps its newline instead of
+      # folding to a space, which put `--execute` on its own line and silently
+      # split one command into two. Same family as the `#`-in-a-folded-scalar
+      # trap: no `#` may appear here either, and every line of the command must
+      # sit at the SAME indent so folding joins them with spaces.
+      #
+      # `$CI_SCOPE_ARG` is intentionally unquoted: it word-splits into
+      # `--changed-from <branch>` on a pull request and disappears entirely on
+      # every other event, which is what keeps main's baseline running all 173.
       - name: validate and run legacy CI pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.base_ref) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
           --pack-count 4
+          $CI_SCOPE_ARG
           --execute

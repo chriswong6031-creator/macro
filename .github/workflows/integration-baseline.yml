@@ -72,9 +72,26 @@ concurrency:
 jobs:
   baseline:
     name: integration-baseline
-    runs-on: ubuntu-latest
+    # Main's circuit-breaker proof must not queue behind the hosted PR packs it
+    # gates, whether the proof was triggered by a push or dispatched manually.
+    # An off-main dispatch must never execute inside the persistent
+    # production-adjacent runner workspace.
+    runs-on: ${{ github.ref == 'refs/heads/main' && fromJSON('["self-hosted","render-linux"]') || 'ubuntu-latest' }}
     timeout-minutes: 12
     steps:
+      # A self-hosted runner reuses its workspace.  A prior sparse checkout in
+      # the same directory can leave core.sparseCheckout enabled, after which
+      # checkout@v4 may materialise only part of this repository even though
+      # this job does not request a sparse tree.  Disable it before checkout;
+      # hosted runners are fresh and must not run this cleanup.
+      - name: clear any sparse checkout left in the shared workspace
+        if: runner.environment == 'self-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || true
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+          fi
       - uses: actions/checkout@v4
         with:
           filter: blob:none
