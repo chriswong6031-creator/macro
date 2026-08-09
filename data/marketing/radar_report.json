@@ -2,14 +2,14 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-08T16:53:13Z",
+  "produced_at": "2026-08-09T02:10:11Z",
   "tier": "display",
   "as_of": "2026-08-08",
   "feeds": [
     {
       "name": "prophet",
       "ok": true,
-      "n_assets": 123,
+      "n_assets": 126,
       "as_of": "2026-06-04"
     },
     {
@@ -38,7 +38,7 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 179,
+    "n_tickers": 159,
     "window_plans": 7
   },
   "surplus": [
@@ -227,28 +227,12 @@
       "opportunity_id": "radar-confluence-VST-2026-08-08"
     },
     {
-      "ticker": "AKAM",
+      "ticker": "DOCS",
       "feed": "movers",
-      "why": "S&P mover -6.8% 1D (Technology)",
+      "why": "S&P mover +32.6% 1D ()",
       "as_of": "2026-08-07",
       "staleness_days": 1,
-      "opportunity_id": "radar-movers-AKAM-2026-08-07"
-    },
-    {
-      "ticker": "BTG",
-      "feed": "movers",
-      "why": "S&P mover +23.0% 1D ()",
-      "as_of": "2026-08-07",
-      "staleness_days": 1,
-      "opportunity_id": "radar-movers-BTG-2026-08-07"
-    },
-    {
-      "ticker": "ESE",
-      "feed": "movers",
-      "why": "S&P mover -6.8% 1D ()",
-      "as_of": "2026-08-07",
-      "staleness_days": 1,
-      "opportunity_id": "radar-movers-ESE-2026-08-07"
+      "opportunity_id": "radar-movers-DOCS-2026-08-07"
     },
     {
       "ticker": "FIGS",
@@ -259,20 +243,20 @@
       "opportunity_id": "radar-movers-FIGS-2026-08-07"
     },
     {
-      "ticker": "FIVN",
-      "feed": "movers",
-      "why": "S&P mover +19.8% 1D ()",
-      "as_of": "2026-08-07",
-      "staleness_days": 1,
-      "opportunity_id": "radar-movers-FIVN-2026-08-07"
-    },
-    {
       "ticker": "HD",
       "feed": "prophet",
       "why": "active Prophet plan HD-BULL-20260807, phase pre_trigger, conviction 52",
       "as_of": "2026-08-07",
       "staleness_days": 1,
       "opportunity_id": "radar-prophet-HD-2026-08-07"
+    },
+    {
+      "ticker": "INHD",
+      "feed": "movers",
+      "why": "S&P mover -42.4% 1D ()",
+      "as_of": "2026-08-07",
+      "staleness_days": 1,
+      "opportunity_id": "radar-movers-INHD-2026-08-07"
     },
     {
       "ticker": "LASR",
@@ -283,20 +267,36 @@
       "opportunity_id": "radar-movers-LASR-2026-08-07"
     },
     {
-      "ticker": "OMDA",
+      "ticker": "OKLL",
       "feed": "movers",
-      "why": "S&P mover +21.1% 1D ()",
+      "why": "S&P mover +29.5% 1D ()",
       "as_of": "2026-08-07",
       "staleness_days": 1,
-      "opportunity_id": "radar-movers-OMDA-2026-08-07"
+      "opportunity_id": "radar-movers-OKLL-2026-08-07"
     },
     {
-      "ticker": "PGNY",
+      "ticker": "POST",
       "feed": "movers",
-      "why": "S&P mover -7.0% 1D ()",
+      "why": "S&P mover -12.8% 1D ()",
       "as_of": "2026-08-07",
       "staleness_days": 1,
-      "opportunity_id": "radar-movers-PGNY-2026-08-07"
+      "opportunity_id": "radar-movers-POST-2026-08-07"
+    },
+    {
+      "ticker": "SNK",
+      "feed": "movers",
+      "why": "S&P mover -31.9% 1D ()",
+      "as_of": "2026-08-07",
+      "staleness_days": 1,
+      "opportunity_id": "radar-movers-SNK-2026-08-07"
+    },
+    {
+      "ticker": "SPCF",
+      "feed": "movers",
+      "why": "S&P mover +31.4% 1D ()",
+      "as_of": "2026-08-07",
+      "staleness_days": 1,
+      "opportunity_id": "radar-movers-SPCF-2026-08-07"
     },
     {
       "ticker": "FUL",
@@ -364,17 +364,17 @@
     }
   ],
   "queue": {
-    "added": 6,
+    "added": 0,
     "expired": 0,
-    "total": 277,
+    "total": 276,
     "open": 162,
     "doa_skipped": 8
   },
   "tiers_summary": {
     "as_of": "2026-08-07",
     "t1": 28,
-    "t2": 1170,
-    "t3": 1475
+    "t2": 1296,
+    "t3": 1356
   },
   "cadence": {
     "available": true,
