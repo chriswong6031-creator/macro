@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -42,6 +43,19 @@ def _mk_parquet(root, ticker, points):
 
 def _stub(reply_obj):
     mb._call_model = lambda system, user, cfg: (json.dumps(reply_obj), None)
+
+
+@pytest.fixture(autouse=True)
+def _restore_call_model():
+    """_stub() rebinds mb._call_model module-globally and has no teardown of its own, so
+    without this the canned lambda outlives the test and leaks into every later test in the
+    same pytest process — it silently disabled master_brain's real _call_model retry tests.
+    """
+    orig = mb._call_model
+    try:
+        yield
+    finally:
+        mb._call_model = orig
 
 
 # --- falsifier derivation (root=None → trust the static map; cache-gate off) ------ #

@@ -43,6 +43,25 @@ if str(_REPO) not in sys.path:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+def _days_ahead(days: int) -> str:
+    """ISO date `days` AFTER today (UTC) — NEVER hardcode a `maturity_date`.
+
+    ``engine/metabolism/generic_fitness.py:157`` marks a sensor "accruing" only
+    while ``maturity_date >= today`` on the REAL clock (:154), and flips it to
+    "ready" the day after.  A literal maturity is therefore a scheduled red: the
+    pinned ``2027-01-01`` matures on 2027-01-02 UTC, at which point the
+    probation lobe's card stops carrying accruing sensors and the test that
+    pins that shape goes red.  A year of headroom keeps the sensor accruing at
+    any clock without touching the maturity contract itself.
+
+    Only the sensors on paths that actually READ maturity need this.  The
+    ``til`` charter's literal stays: til is short-circuited at
+    generic_fitness.py:312 before maturity is ever read, and keeping the literal
+    is what preserves the "til is skipped regardless of maturity" signal.
+    """
+    return (datetime.now(timezone.utc) + timedelta(days=days)).date().isoformat()
+
+
 def _make_minimal_root(tmp_path: Path, extra_charters: dict | None = None) -> Path:
     """Create a minimal repo root with lobe_charters.yml for testing."""
     root = tmp_path / "repo"
@@ -76,9 +95,9 @@ def _make_minimal_root(tmp_path: Path, extra_charters: dict | None = None) -> Pa
                 "lifecycle_state": "probation",
                 "fitness_sensors": [
                     {"id": "liveness_score", "store": "data/test/alpha.jsonl",
-                     "maturity_date": "2027-01-01", "accruing": True},
+                     "maturity_date": _days_ahead(365), "accruing": True},
                     {"id": "freshness_score", "store": "data/test/alpha_fresh.json",
-                     "maturity_date": "2027-01-01", "accruing": True},
+                     "maturity_date": _days_ahead(365), "accruing": True},
                 ],
             },
             # Bare-string sensors — must be skipped

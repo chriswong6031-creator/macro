@@ -14,6 +14,7 @@ from engine import hk_global
 from engine.hk_inputs import (build_features, pair_ratios_snapshot,
                               preference_check, rs_table)
 from engine.hk_regime import classify
+from engine.store_guard import check_coverage_regression
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -41,6 +42,12 @@ def run() -> dict:
     p = config.data_dir() / "hk_regime"
     p.mkdir(parents=True, exist_ok=True)
     store_df = regime[[c for c in regime.columns if not c.startswith("c_")]]
+    # A recompute fed by a degraded transient input (stale runner cache, macro
+    # ffill runout) must not overwrite a good store — nor feed the site
+    # artifacts built below it (2026-08-08: weekly shipped a 9-null
+    # hk_regime_timeline.json contradicting the committed parquet; hub crash).
+    # On refusal build_hk skips the HK pages and last good state keeps serving.
+    check_coverage_regression(store_df, p / "regime_history.parquet", "hk")
     store_df.to_parquet(p / "regime_history.parquet")
 
     asof = regime["quad"].last_valid_index()

@@ -53,6 +53,10 @@ if str(ROOT) not in sys.path:
 
 from engine import signal_gate  # noqa: E402
 from engine.prophet_live import armed_pack as AP  # noqa: E402
+# The stdlib-only contract module, imported directly rather than through armed_pack's
+# re-export: `probe_floor` is read by the pandas-free */5 lane, and a test that could
+# only reach it through the pandas module would not be testing that.
+from engine.prophet_live import interval as IV  # noqa: E402
 from engine.prophet_live.r2io import PACK_KEY as AP_R2_PACK_KEY  # noqa: E402
 
 # A fixed business-day index: no wall-clock date arithmetic anywhere in this file.
@@ -634,6 +638,64 @@ def test_lower_edge_prefers_fade_over_trigger():
     assert AP.lower_edge({"fade_px": 9.0, "trigger_px": 11.0}) == 9.0
     assert AP.lower_edge({"trigger_px": 11.0}) == 11.0
     assert AP.lower_edge({}) is None
+
+
+def test_the_cross_class_probe_measures_nothing_below_the_as_of_close(pack, cfg):
+    """The fact W-L0 gate 5 rests on: a cross-class span STARTS at the as-of close.
+
+    No gate calls — this is the arithmetic of the span and the grid, asserted so that a
+    future change which probes downward reds here and takes :func:`probe_floor` with it,
+    instead of leaving the floor silently overstating what was measured.
+    """
+    cross = [e for e in pack["names"].values()
+             if e.get("probed") and not e.get("center_buyable")]
+    assert cross, "a floor test over no cross-class names proves nothing"
+    for entry in cross:
+        close = float(entry["as_of_close"])
+        span = AP.probe_span(close, False, pack["band_pct"])
+        grid = AP.probe_grid(span, pack["grid_points"])
+        assert min(grid) == pytest.approx(close, rel=1e-9)
+        assert span[1] > close
+
+
+def test_probe_floor_is_the_measured_low_not_the_published_sentinel(pack):
+    """W-L0 gate 5: ``band_lo_px`` is 0 for a cross-class name and that 0 is a sentinel.
+
+    ``in_probed_band`` answers off the PUBLISHED band, so it keeps saying "in band" all
+    the way to zero; ``probe_floor`` answers off what was swept. The two deliberately
+    disagree, and the evaluator has to consult the second one or it reports a verdict
+    over a region the pack never evaluated.
+    """
+    seen_cross = seen_board = False
+    for entry in pack["names"].values():
+        if not entry.get("probed"):
+            continue
+        floor = IV.probe_floor(entry)
+        close = float(entry["as_of_close"])
+        assert floor is not None and floor > 0.0
+        if entry.get("center_buyable"):
+            seen_board = True
+            # A two-sided span: the published floor IS the measured one.
+            assert floor == pytest.approx(float(entry["band_lo_px"]), rel=1e-9)
+            assert floor < close
+        else:
+            seen_cross = True
+            assert float(entry["band_lo_px"]) == 0.0          # the sentinel
+            assert floor == pytest.approx(close, rel=1e-9)
+            # The published band still answers below the floor. That gap is the whole
+            # unprobed down-region, and it is why `unknown` exists.
+            assert IV.in_probed_band(entry, close * 0.9) is True
+    assert seen_cross and seen_board, "both classes must be exercised"
+
+
+def test_probe_floor_refuses_to_invent_one_on_a_pre_band_pack(pack):
+    """No span published ⇒ no floor. Fabricating one would declare a whole universe
+    unmeasured on a schema skew, which is the failure in_probed_band's fallback exists
+    to avoid."""
+    entry = next(dict(e) for e in pack["names"].values() if e.get("probed"))
+    entry.pop("band_lo_px", None)
+    entry.pop("band_hi_px", None)
+    assert IV.probe_floor(entry) is None
 
 
 def test_self_check_catches_a_corrupted_interval(pack):

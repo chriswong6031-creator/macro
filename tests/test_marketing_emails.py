@@ -365,8 +365,19 @@ def test_the_roster_skips_banned_deleted_anonymous_and_addressless(monkeypatch, 
     created = (NOW - timedelta(hours=1)).isoformat()
     api.users = [
         {"id": U1, "email": "ok@example.com", "created_at": created},
+        # A LIVE ban against BOTH clocks. This fixture is read by two different
+        # clocks at once: NOW governs the welcome window, but the ban itself is
+        # judged by base_match on the WALL clock — app/marketing_emails.py:272
+        # calls it with no now= (app/email_segments.py:176 then falls to
+        # datetime.now) and roster_scan/_mailable expose no seam.  The old
+        # "2030-01-01" literal was a scheduled red: on 2030-01-01 the ban
+        # expires, U2 becomes mailable, and the roster returns two ids.
+        # Dating off the LATER of the two clocks is what keeps it live forever
+        # — NOW alone is pinned in 2026, so NOW+365d would just move the fire
+        # date EARLIER, to 2027-07-26.
         {"id": U2, "email": "banned@example.com", "created_at": created,
-         "banned_until": "2030-01-01T00:00:00Z"},
+         "banned_until": (max(NOW, datetime.now(timezone.utc))
+                          + timedelta(days=365)).isoformat()},
         {"id": U3, "email": "gone@example.com", "created_at": created,
          "deleted_at": "2026-01-01T00:00:00Z"},
         {"id": "44444444-4444-4444-8444-444444444444", "email": "", "created_at": created},

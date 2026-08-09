@@ -25,6 +25,7 @@ WHAT THIS MODULE IS:
 Public API (all functions never raise):
   weekly_d_last(daily_close)          -> float | None
   washout_ctx(daily_close)            -> bool | None
+  washout_ctx_detail(daily_close)     -> dict | None   (adds the trough DATE/age)
   bull_div(daily_close, market="US")  -> bool
   cohort_fractions(latest_d, sector_of, d_thresh, min_peers) -> dict[str, float | None]
   assess(washout, cohort_frac, div)   -> dict  (JSON-safe, no NaN)
@@ -164,20 +165,27 @@ def weekly_d_last(daily_close: pd.Series) -> float | None:
         return None
 
 
-def washout_ctx(daily_close: pd.Series) -> bool | None:
-    """H2/H1 washout context — True iff the series just capitulated >=15% from
-    its 126-day pre-capitulation high within the last 91 bars.
+def washout_ctx_detail(daily_close: pd.Series) -> dict | None:
+    """The RICHER form of :func:`washout_ctx` — same arithmetic, but it also hands
+    back WHERE the capitulation trough sat, which the bool alone throws away.
 
-    Algorithm (wave-1 in_washout_ctx definition, causal):
-      c         = daily_close.dropna()
-      need >= _WASH_CTX_A + _WASH_CTX_B = 217 + 91 = 308 bars; else return None
-      capit_pos = argmin of c[-91:]   (absolute position in c)
-      prior_126 = c[capit_pos - 126 : capit_pos]  (strictly before the trough)
-      if fewer than 126 bars exist before capit_pos: return None
-      dd_at_capit = c[capit_pos] / max(prior_126) - 1
-      return dd_at_capit <= -0.15
+    Added additively for the Group Reads plane (engine/group_pulse.py), which needs
+    the trough DATE to age a basket's capitulation ("washed out 3 sessions ago" vs
+    "washed out 40 sessions ago" are different arc states).  :func:`washout_ctx`
+    now delegates here and returns only ``washed_out``, so the two can never drift;
+    its signature and return type are unchanged for every existing caller.
 
-    Returns None when insufficient history, True/False otherwise.  Never raises.
+    Returns ``None`` in exactly the cases ``washout_ctx`` returns ``None``
+    (insufficient history / unusable input), otherwise::
+
+        {"washed_out": bool,              # dd_at_trough <= -0.15
+         "trough_date": pd.Timestamp,     # index label of the capitulation low
+         "trough_pos": int,               # absolute position in the dropna'd series
+         "sessions_since_trough": int,    # 0 == the trough IS the last bar
+         "drawdown_at_trough": float}     # negative fraction vs the prior-126d high
+
+    ``sessions_since_trough`` counts TRADING sessions present in the series, not
+    calendar days.  Never raises.
     """
     try:
         c = daily_close.dropna()
@@ -199,9 +207,37 @@ def washout_ctx(daily_close: pd.Series) -> bool | None:
         if prior_max <= 0:
             return None
         dd = arr[capit_pos] / prior_max - 1.0
-        return bool(dd <= -0.15)
+        return {
+            "washed_out": bool(dd <= -0.15),
+            "trough_date": c.index[capit_pos],
+            "trough_pos": int(capit_pos),
+            "sessions_since_trough": int(n - 1 - capit_pos),
+            "drawdown_at_trough": float(dd),
+        }
     except Exception:
         return None
+
+
+def washout_ctx(daily_close: pd.Series) -> bool | None:
+    """H2/H1 washout context — True iff the series just capitulated >=15% from
+    its 126-day pre-capitulation high within the last 91 bars.
+
+    Algorithm (wave-1 in_washout_ctx definition, causal):
+      c         = daily_close.dropna()
+      need >= _WASH_CTX_A + _WASH_CTX_B = 217 + 91 = 308 bars; else return None
+      capit_pos = argmin of c[-91:]   (absolute position in c)
+      prior_126 = c[capit_pos - 126 : capit_pos]  (strictly before the trough)
+      if fewer than 126 bars exist before capit_pos: return None
+      dd_at_capit = c[capit_pos] / max(prior_126) - 1
+      return dd_at_capit <= -0.15
+
+    Returns None when insufficient history, True/False otherwise.  Never raises.
+    The arithmetic lives in :func:`washout_ctx_detail`; this is the bool projection
+    of it (extraction only — behaviour is byte-identical to the pre-extraction form,
+    pinned by tests/test_group_pulse_contract.py::test_washout_ctx_detail_matches_bool).
+    """
+    d = washout_ctx_detail(daily_close)
+    return None if d is None else d["washed_out"]
 
 
 def bull_div(daily_close: pd.Series, market: str = "US") -> bool:

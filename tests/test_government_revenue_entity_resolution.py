@@ -1,6 +1,8 @@
 """Hermetic precision and coverage tests for the P0 recipient-resolution graph."""
 from __future__ import annotations
 
+from copy import deepcopy
+from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -8,16 +10,21 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 from engine.government_revenue.entity_resolution import (
+    _graph_row_order_canonical,
     build_entity_coverage,
     coverage_invariants,
     dedupe_source_records,
+    load_recipient_entity_graph,
     resolve_recipient,
     resolve_records,
     source_record_key,
 )
+from tests.test_government_revenue_candidates import _graph as _reviewed_graph_fixture
 
 
 CONTRACTS = Path(__file__).parents[1] / "contracts" / "government_revenue"
+#: Analysis clock covering the reviewed-graph fixture's 2026-08-02 claims.
+REVIEWED_AS_OF = "2026-08-03"
 
 
 def _graph(*, edge_known_at: str = "2025-01-01T00:00:00+00:00", edge_valid_from: str = "2020-01-01", overrides=None):
@@ -679,3 +686,200 @@ def test_resolution_schema_rejects_incomplete_attribution_and_issuer_on_unresolv
     unresolved["issuer"] = {"company_id": "central:LMT", "ticker": "LMT"}
     unresolved["economic_share"] = 1.0
     assert list(validator.iter_errors(unresolved))
+
+
+def _multi_row_reviewed_graph() -> dict:
+    """The strict reviewed-graph fixture with two receipts, in canonical order.
+
+    Every collection in the shared fixture holds one row, and permuting a
+    one-row list is the identity -- a row-order regression is only observable
+    against a collection that has more than one row.
+    """
+    graph = _reviewed_graph_fixture()
+    extra = deepcopy(graph["evidence"][0])
+    extra.update(
+        {
+            "evidence_id": "evidence:noc-b",
+            "record_id": "0000000000-26-000002",
+            "url": "https://www.sec.gov/Archives/edgar/data/1/test-b.htm",
+            "content_sha256": "c" * 64,
+            "source_ref": f"recipient-evidence:sha256:{'c' * 64}",
+        }
+    )
+    graph["evidence"].append(extra)
+    return graph
+
+
+def _digest(graph: dict) -> str:
+    loaded = load_recipient_entity_graph(graph, as_of=REVIEWED_AS_OF)
+    assert loaded["status"] == "ready", loaded["error_codes"]
+    return loaded["graph_digest"]
+
+
+def test_reviewed_graph_digest_ignores_row_order_and_still_sees_content():
+    """Row order is serialization; row content is the graph.
+
+    The digest is quoted by every candidate ``observation_id``, so while it
+    moved on a permutation, re-serializing the reviewed graph restated the whole
+    ledger as unseen and the append-only writer refused to publish.
+    """
+    base = _multi_row_reviewed_graph()
+    reordered = deepcopy(base)
+    for key in ("evidence", "companies", "legal_entities", "identifiers", "ownership_edges"):
+        reordered[key].reverse()
+
+    assert json.dumps(reordered, sort_keys=True) != json.dumps(base, sort_keys=True)
+    assert _digest(reordered) == _digest(base)
+
+    # Controls: the digest is order-blind, not content-blind.
+    retickered = deepcopy(base)
+    retickered["identifiers"][0]["value"] = "ZZZDEFGHJKLM"
+    assert _digest(retickered) != _digest(base)
+
+    grown = deepcopy(base)
+    grown["evidence"].append(
+        {**deepcopy(base["evidence"][0]), "evidence_id": "evidence:noc-c"}
+    )
+    assert _digest(grown) != _digest(base)
+
+
+def test_canonically_ordered_reviewed_graph_keeps_its_pre_canonicalization_digest():
+    """Canonicalizing row order must not restate an already-canonical document.
+
+    ``graph_digest`` is stored in the candidate projection state and status, the
+    recipient resolution coverage receipt, the published candidate queue, and
+    every candidate's artifact refs.  Those regenerate nightly, but the render
+    lane re-validates the *committed* ones on every run, so a recipe whose value
+    moved for an unchanged document would red the publish path until a nightly
+    caught up.  Equality with the plain-``sort_keys`` encoding is what makes the
+    change a no-op for every digest already on disk.
+    """
+    graph = _multi_row_reviewed_graph()
+    encoded = json.dumps(graph, sort_keys=True, default=str, separators=(",", ":"))
+
+    assert _graph_row_order_canonical(graph) == json.loads(encoded)
+    assert _digest(graph) == sha256(encoded.encode("utf-8")).hexdigest()
+
+
+# --- Action-rail identity under a named basis ------------------------------
+#
+# The USAspending transactions rail carries no recipient identity of its own
+# (35,140/35,140 null UEIs on the accrued action ledger), so an action can only
+# be exact-linked through the award it belongs to. The collector attaches that
+# award's recipient of record on separate ``award_recipient_*`` columns; the
+# resolver may consume it, but only under a name and only for a namespace the
+# observation itself left empty.
+
+
+def _action_record(**changes):
+    """An action-rail observation: a real action id, and NO recipient identity."""
+    row = {
+        "source_award_key": "award-1",
+        "source_action_id": "action-77",
+        "recipient_name": None,
+        "recipient_uei": None,
+        "effective_at": "2026-06-15",
+        "known_at": "2026-06-16T12:00:00+00:00",
+        "amount": 100.0,
+        "source_url": "https://api.usaspending.gov/api/v2/transactions/",
+    }
+    row.update(changes)
+    return row
+
+
+def test_action_without_any_identity_stays_unresolved():
+    resolved = resolve_recipient(_action_record(), _graph(), as_of="2026-06-30")
+
+    assert resolved["resolution_state"] == "unresolved"
+    assert resolved["reason_codes"] == ["missing_exact_identifier"]
+    # No identifier of any kind means no basis to name -- not a default one.
+    assert resolved["identity_basis"] is None
+
+
+def test_award_level_uei_resolves_an_action_under_its_own_named_basis():
+    resolved = resolve_recipient(
+        _action_record(
+            award_recipient_uei="UEI-LMT-123",
+            award_recipient_name="LOCKHEED MARTIN SERVICES, LLC",
+            award_recipient_identity_basis="award_level_recipient_at_collection",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["resolution_state"] == "confirmed"
+    assert resolved["resolution_rule"] == "exact_uei"
+    assert resolved["issuer"] == {"company_id": "central:LMT", "ticker": "LMT"}
+    # The link is exact, and it is named for what it actually is.
+    assert resolved["identity_basis"] == "award_level_recipient_at_collection"
+    # The identity clock is the award record's retrieval clock -- never the
+    # transaction's effective time. Attaching today's recipient to a January
+    # transaction is the point-in-time hazard this name exists to disclose.
+    assert resolved["identity_basis_known_at"] == "2026-06-16T09:30:00+00:00"
+    assert resolved["identity_basis_known_at"] != resolved["event_effective_at"]
+    assert resolved["event_effective_at"].startswith("2026-06-15")
+    assert {"namespace": "sam_uei", "value": "UEI-LMT-123"} in resolved["source_recipient"]["external_ids"]
+
+
+def test_observations_own_identity_is_never_overruled_or_joined_by_the_awards():
+    """A transaction that names its recipient keeps that identity, alone.
+
+    Unioning the two would make one observation carry two sam_uei values the
+    moment a novation moved the award, and the duplicate-identifier guard would
+    fail the whole row closed -- deleting a link that works today.
+    """
+    resolved = resolve_recipient(
+        _action_record(
+            recipient_uei="UEI-LMT-123",
+            award_recipient_uei="UEI-SOMEONE-ELSE",
+            award_recipient_identity_basis="award_level_recipient_at_collection",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["resolution_state"] == "confirmed"
+    assert resolved["identity_basis"] == "source_record_recipient"
+    values = {item["value"] for item in resolved["source_recipient"]["external_ids"]}
+    assert values == {"UEI-LMT-123"}
+
+
+def test_award_level_basis_is_disclosed_even_when_another_namespace_matched():
+    """Disclosure is one-directional: any award-level identifier names the row."""
+    resolved = resolve_recipient(
+        _action_record(
+            recipient_cage="1abc2",
+            award_recipient_uei="UEI-UNKNOWN-TO-GRAPH",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["issuer"]["company_id"] == "central:BA"
+    assert resolved["identity_basis"] == "award_level_recipient_at_collection"
+
+
+def test_named_basis_fields_satisfy_the_resolution_contract():
+    validator = Draft202012Validator(
+        _schema("government_recipient_resolution.v1.schema.json"),
+        format_checker=FormatChecker(),
+    )
+    validator.validate(
+        resolve_recipient(
+            _action_record(
+                award_recipient_uei="UEI-LMT-123",
+                award_recipient_known_at="2026-06-16T09:30:00+00:00",
+            ),
+            _graph(),
+            as_of="2026-06-30",
+        )
+    )
+    validator.validate(resolve_recipient(_action_record(), _graph(), as_of="2026-06-30"))
+    validator.validate(resolve_recipient(_record(), _graph(), as_of="2026-06-30"))
+
+    invented = resolve_recipient(_record(), _graph(), as_of="2026-06-30")
+    invented["identity_basis"] = "whatever_we_felt_like"
+    assert list(validator.iter_errors(invented))

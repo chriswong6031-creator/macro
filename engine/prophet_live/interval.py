@@ -14,9 +14,15 @@ STDLIB ONLY, deliberately. :mod:`engine.prophet_live.armed_pack` needs pandas to
 probe; the */5 lane installs ``pyyaml boto3`` and no pandas. Putting the contract in
 the heavy module would make ``import live_states`` raise ModuleNotFoundError on the
 lane it exists to serve.
+
+It also owns the PRICE-ADJUSTMENT VOCABULARY (W-L0 gate 3), for the same reason: the
+pack builder, the */5 evaluator and the nightly reconciler all have to name the basis
+of every number they publish, and three copies of that vocabulary is how two of them
+end up disagreeing about what "adjusted" meant.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 #: The probe states, in the order the pack reports them. ``eligible_t4`` means
@@ -28,6 +34,110 @@ from typing import Any
 #: affirmative "nothing here".
 STATES: tuple[str, ...] = ("buyable", "eligible_t4", "near", "dormant", "irregular",
                            "stale")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Price-adjustment basis (W-L0 gate 3 — ONE PRICE BASIS)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT THIS VOCABULARY EXISTS FOR. Armed edges are probed on the nightly store's
+# close series, which is split+dividend adjusted; the live tape prints raw vendor
+# quotes; and the nightly ledger derived ``close_vs_cross_pct``/``fill_vs_cross_pct``
+# by dividing an ADJUSTED close by a RAW cross print. On a name with a distribution
+# between the cross and the read, the error IS the dividend — measured on this repo at
+# 0.649% for CFG (``engine.price_ladder``, the same finding one layer down).
+#
+# NOT ``price_basis``: :mod:`engine.live_quotes` already owns that name for the
+# LIVENESS rung a quote came off (``trade|minute|day|prev|regular``), which is a
+# different axis and rides in the same artifacts under the JSON key ``basis``. Naming
+# this one ``price_basis`` too would put two unrelated meanings on one word in one
+# payload. The values deliberately mirror :mod:`engine.price_ladder`'s
+# ADJUSTED/UNADJUSTED families rather than minting a third vocabulary; that module
+# cannot be imported here (it needs pandas, and the */5 lane installs none), so
+# ``tests/test_prophet_live_basis.py`` pins the two against each other instead.
+
+#: The store family the nightly gate and the armed edges are computed on.
+ADJUSTED = "split_and_dividend_adjusted"
+#: A raw vendor print: what the live tape and the quote feed's ``prevClose`` carry, and
+#: what the breadth close caches accrue between rebuilds (``price_ladder`` calls the
+#: same family ``closes_cache_UNADJUSTED``).
+UNADJUSTED = "unadjusted_vendor_print"
+
+#: What a pack entry's ``as_of_close`` is on when the pack did not stamp the name
+#: itself. The store's DOMINANT family, not a universal claim: a pack that stamps
+#: ``price_adjustment`` per name overrides this, and the breadth-cache names are
+#: exactly the ones that need to.
+DEFAULT_PACK_ADJUSTMENT = ADJUSTED
+
+#: What the live quote plane carries, at every rung. ``engine.live_quotes`` reads
+#: Polygon's snapshot (``lastTrade.p`` / ``prevDay.c``) and Yahoo's spark
+#: (``regularMarketPrice`` / ``previousClose``); neither request carries an adjustment
+#: parameter, because neither endpoint has one — a live quote is the nominal print.
+#: Stated rather than converted, on purpose: converting a live quote to the adjusted
+#: basis would put a number on the tape that no exchange ever printed.
+LIVE_QUOTE_ADJUSTMENT = UNADJUSTED
+
+
+def basis_gap_pct(as_of_close: Any, prev_close: Any) -> float | None:
+    """``as_of_close`` against ``prev_close``, in percent. None when either is unusable.
+
+    Both numbers claim to describe the SAME session's close for the SAME name — the
+    pack's is the adjusted store close it armed on, the quote feed's is the vendor's
+    raw previous-session print — so on a name with no distribution between the two
+    reads they agree to the cent, and a gap is the adjustment itself.
+    """
+    try:
+        a, b = float(as_of_close), float(prev_close)
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(a) and math.isfinite(b)) or a <= 0.0 or b <= 0.0:
+        return None
+    return (a / b - 1.0) * 100.0
+
+
+def basis_audit(names: dict[str, dict[str, Any]], quotes: dict[str, Any], *,
+                tol_pct: float) -> dict[str, Any]:
+    """The pack-vs-feed basis assertion, run ONCE at the head of a pass.
+
+    ``{"tol_pct", "checked_n", "unchecked_n", "gaps", "mismatched"}``. ``gaps`` is EVERY
+    measured gap and is what the state machine consumes; ``mismatched`` is the
+    reporting view — the subset past ``tol_pct``, small enough to publish.
+
+    THE TOLERANCE IS APPLIED IN EXACTLY ONE PLACE — ``live_states._resolve_state``,
+    which is handed a name's raw gap and decides. This function reproduces the
+    comparison only to COUNT it for the artifact and the journal line; if it filtered
+    the gaps it handed on, the state machine's own tolerance would be unreachable and a
+    mutation to it would pass every test.
+
+    UNCHECKED IS NOT PASSED. A quote with no usable ``prev_close`` — the heatmap-derived
+    rows carry ``prev_close: None`` by construction — cannot answer the question, so it
+    is COUNTED rather than waved through: the caller publishes ``unchecked_n`` every
+    pass, and a silent "no mismatches" over a feed that stopped carrying previous closes
+    is then impossible to mistake for a clean audit.
+
+    Only PROBED names are asked. An unprobed entry publishes no ``as_of_close`` the
+    evaluator would act on and is already outside ``states``.
+    """
+    gaps: dict[str, float] = {}
+    mismatched: dict[str, float] = {}
+    unchecked = 0
+    try:
+        tol = abs(float(tol_pct))
+    except (TypeError, ValueError):
+        tol = 0.0
+    for tkr, entry in (names or {}).items():
+        if not isinstance(entry, dict) or not entry.get("probed"):
+            continue
+        q = (quotes or {}).get(tkr) or {}
+        gap = basis_gap_pct(entry.get("as_of_close"),
+                            q.get("prev_close") if isinstance(q, dict) else None)
+        if gap is None:
+            unchecked += 1
+            continue
+        gaps[str(tkr)] = gap
+        if tol and abs(gap) > tol:
+            mismatched[str(tkr)] = round(gap, 4)
+    return {"tol_pct": tol, "checked_n": len(gaps), "unchecked_n": unchecked,
+            "gaps": gaps, "mismatched": dict(sorted(mismatched.items()))}
 
 
 def lower_edge(entry: dict[str, Any]) -> float | None:
@@ -45,21 +155,42 @@ def lower_edge(entry: dict[str, Any]) -> float | None:
 
 
 def in_probed_band(entry: dict[str, Any], px: float) -> bool:
-    """Is ``px`` inside the price range the probe actually swept for this name?
+    """Is ``px`` inside the price range the PUBLISHED band covers for this name?
 
     OUTSIDE THE BAND THE PACK KNOWS NOTHING, and :func:`interval_contains` would
     happily extrapolate: a board name gapping -30% still satisfies "above fade_px is
     absent, below fade_hi_px is absent, therefore buyable", and a runaway 25% past
     the band top reads the same way even though the real gate rejects it there (the
     not-topped veto). Both were reproduced on a real pack entry. The evaluator asks
-    this FIRST and darks the name when the answer is no.
+    this FIRST and refuses to report a verdict when the answer is no.
 
-    ``band_lo_px`` is 0 for a name that was not buyable at the as-of close: its span
-    starts at that close and runs up, and below the close the centre verdict already
-    says "not buyable" for a gate whose product structure is a cross UP — so reading
-    "near"/"dormant" down there is knowledge, not extrapolation, and it keeps those
-    names evaluable on a down day. For a name that IS on the board the floor is the
-    real span low, so a -16% board name goes dark instead of reading forming.
+    ``band_lo_px`` IS 0 FOR A CROSS-CLASS NAME, AND THAT 0 IS A SENTINEL, NOT A FLOOR
+    (W-L0 gate 5, 2026-08-09). Its span starts at the as-of close and runs UP, so the
+    pack has measured nothing at all below that close. The 0 used to be defended as
+    knowledge — "the centre verdict already says not-buyable for a gate whose product
+    structure is a cross UP" — and that argument does not hold:
+
+      * the buyable set this module describes is an INTERVAL, not an up-ray. The pack
+        publishes an upper edge (``fade_hi_px``, the not-topped veto) and an
+        ``irregular`` state for multi-run structure, so "not buyable at the close" is
+        entirely consistent with "buyable below the close" — a name rejected for
+        being extended has its buyable region UNDER its own close, exactly where the
+        cross-class probe never looks;
+      * the centre verdict constrains ONE price. Extending it downward is an
+        inference from an assumed shape, and an inference is not a measurement. A
+        24-fixture sweep of the real gate (9 down-ladder points each, 198 gate calls)
+        found no name buyable below its own close — which makes the inference
+        plausible and unrefuted, i.e. precisely the epistemic status that is not
+        knowledge. House law: "not found yet" is not "does not exist", and a null
+        licenses no affirmative claim.
+
+    So the 0 stays as the published span sentinel — re-probing downward would double
+    the cross-class probe cost inside a budget that already caps coverage — and
+    :func:`probe_floor` names the real floor instead. ``live_states`` labels a read
+    below it ``unknown`` rather than reporting ``dormant``/``near`` there.
+
+    For a name that IS on the board the floor is the real span low, so a -16% board
+    name reports no verdict instead of reading forming.
     """
     lo, hi = entry.get("band_lo_px"), entry.get("band_hi_px")
     if lo is None and hi is None:
@@ -71,6 +202,32 @@ def in_probed_band(entry: dict[str, Any], px: float) -> bool:
     if hi is not None and px > float(hi):
         return False
     return True
+
+
+def probe_floor(entry: dict[str, Any]) -> float | None:
+    """The lowest price the pack actually MEASURED for this name. None = it cannot say.
+
+    The honest twin of :func:`in_probed_band`'s lower half. That function answers off
+    the PUBLISHED band, whose lower bound is the 0 sentinel for a cross-class name;
+    this one answers off what was swept, which for that class starts at the as-of
+    close and runs up. A consumer that wants to know whether a price carries a
+    measured verdict asks here — the two differ by exactly the region gate 5 exists
+    to stop asserting over.
+
+    None for a pack built before the band fields existed: it published no span, so
+    there is no floor to name and no honest way to fabricate one. That path keeps
+    :func:`in_probed_band`'s schema-skew fallback rather than declaring a whole
+    universe unmeasured.
+    """
+    lo, hi = entry.get("band_lo_px"), entry.get("band_hi_px")
+    if lo is None and hi is None:
+        return None
+    if lo is not None and float(lo) > 0.0:
+        return float(lo)
+    # The 0 sentinel — the span started AT the as-of close (see in_probed_band). A
+    # close is on every entry the pack publishes, so this is a read, not a guess.
+    close = entry.get("as_of_close")
+    return float(close) if close is not None else None
 
 
 def interval_contains(entry: dict[str, Any], px: float) -> bool | None:

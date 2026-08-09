@@ -25,13 +25,17 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 
-from engine import opex, opex_risk, options_desk, options_entry_state, vol_regime
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import opex, opex_risk, options_desk, options_entry_state, vol_regime  # noqa: E402
+from lib import config, store  # noqa: E402
 
 log = logging.getLogger(__name__)
 

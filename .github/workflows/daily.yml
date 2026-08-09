@@ -2,18 +2,36 @@ name: daily
 on:
   schedule:
     # Build B — the sole authoritative / ledger-advancing build (two-build design 2026-07).
-    # 22:30 UTC = 18:30 EDT: ~30 min after the ~6pm-ET FINRA CNMSshvol post (the file's
-    # window spans ~5-7pm ET; a 6:00pm-ET trigger races it — safe-earliest is ~18:15 ET).
-    # Was "0 2 * * *" (10pm ET nominal, ~1-3am actual with dispatch lag) — moved 3.5h
-    # earlier so authoritative data + ledger advance land the same evening. The 16:05-ET
-    # closing-bell.yml lane (Build A) ships a full provisional site ~17:55 ET beforehand.
-    # ⚠ DST (November flip): this becomes 17:30 EST which RACES the FINRA file — change
-    # to "30 23 * * *" (18:30 EST) at the flip. Single-cron on purpose: a year-round DST
-    # pair would fire a second full multi-hour nightly every day (too expensive to no-op,
-    # unlike closing-bell's cheap gated skip). 7-day cadence retained (weekend runs do
-    # accrual/self-heals, unchanged behavior from the old 02:00 slot).
-    # China/HK remain split to asia-close.yml (08:30 UTC).
-    - cron: "30 22 * * *"
+    # Anchor: 18:30 ET YEAR-ROUND — ~30 min after the ~6pm-ET FINRA CNMSshvol post (the
+    # file's window spans ~5-7pm ET; a 6:00pm-ET trigger races it — safe-earliest is
+    # ~18:15 ET). Was "0 2 * * *" (10pm ET nominal, ~1-3am actual with dispatch lag) —
+    # moved 3.5h earlier so authoritative data + ledger advance land the same evening.
+    # The 16:05-ET closing-bell.yml lane (Build A) ships a full provisional site ~17:55 ET
+    # beforehand. 7-day cadence retained (weekend runs do accrual/self-heals, unchanged
+    # behavior from the old 02:00 slot). China/HK remain split to asia-close.yml (08:30 UTC).
+    #
+    # DST: GitHub cron has no timezone, so a fixed 18:30-ET anchor needs a DST PAIR (the
+    # closing-bell.yml idiom). Both lines fire every day and the et_gate job below keeps
+    # exactly ONE of them. et_gate derives the America/New_York UTC offset from stdlib
+    # zoneinfo — NO hand-maintained DST table to re-edit twice a year — and proceeds only
+    # when the fired cron (github.event.schedule) matches the regime: EDT (UTC-4) →
+    # "30 22 * * *", EST (UTC-5) → "30 23 * * *". The test is REGIME-match, not a
+    # wall-clock window: a real firing that sat queued behind a long run still proceeds
+    # hours late, where a window check would silently skip the authoritative nightly.
+    # The off-regime firing costs one ~15-second ubuntu job, because every downstream job
+    # takes `needs: [et_gate, ...]` and gates on `needs.et_gate.outputs.run != 'false'`.
+    # That comparison is deliberately fail-OPEN: a broken or errored gate makes BOTH
+    # firings run, the pipeline-daily concurrency group serializes them, and two
+    # simultaneous dailies simply dedup to the latest (see the concurrency block below) —
+    # so a gate outage can double-run a night but can never silently zero-run one.
+    # During EDT the 23:30Z no-op typically sits PENDING behind the real run and skips
+    # when it finally starts; regime (not clock) decides, so that is still correct.
+    # Known accepted edge: a firing whose START is delayed ACROSS the 02:00-ET flip itself
+    # resolves to the NEW regime — worst case one skipped or one doubled run on flip
+    # weekend, backstopped by the next evening's run and by workflow_dispatch.
+    # Filed by research/BREATHING_PLATFORM_MASTERPLAN_BY_FABLE.md §4 W-L0; fixed 2026-08-08.
+    - cron: "30 22 * * *"  # 18:30 ET while America/New_York is on EDT (UTC-4, Mar→Nov)
+    - cron: "30 23 * * *"  # 18:30 ET while America/New_York is on EST (UTC-5, Nov→Mar)
   workflow_dispatch:
 
 permissions:
@@ -33,6 +51,56 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── ET regime gate ────────────────────────────────────────────────────────
+  # Root disambiguator for the DST cron pair above (see the schedule comment).
+  # ubuntu-hosted + checkout-free on purpose: the no-op firing must cost seconds,
+  # and a self-hosted job with timeout-minutes would owe the W2 timings wiring
+  # (tests/test_nightly_timings.py). tests/test_daily_et_gate.py extracts and
+  # EXECUTES this exact inline script against fixed instants around the DST
+  # flips, and pins the cron constants to the schedule block — edit either side
+  # only in lockstep.
+  et_gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - name: ET regime gate (DST pair disambiguator)
+        id: gate
+        env:
+          FIRED_CRON: ${{ github.event.schedule }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import os
+          from zoneinfo import ZoneInfo
+
+          EDT_CRON = "30 22 * * *"  # 18:30 ET while America/New_York is UTC-4 (EDT)
+          EST_CRON = "30 23 * * *"  # 18:30 ET while America/New_York is UTC-5 (EST)
+
+          now_env = os.environ.get("ET_GATE_NOW_UTC")  # test injection only
+          now = (datetime.datetime.fromisoformat(now_env) if now_env
+                 else datetime.datetime.now(datetime.timezone.utc))
+          if now.tzinfo is None:
+              now = now.replace(tzinfo=datetime.timezone.utc)
+          offset = now.astimezone(ZoneInfo("America/New_York")).utcoffset()
+          # Any offset other than EDT's -4h resolves to the EST cron: with broken
+          # tzdata the nightly still runs exactly once (possibly an hour late),
+          # never zero times.
+          intended = EDT_CRON if offset == datetime.timedelta(hours=-4) else EST_CRON
+          fired = os.environ.get("FIRED_CRON", "")
+          event = os.environ.get("EVENT_NAME", "")
+          verdict = "true" if (event != "schedule" or fired == intended) else "false"
+          # Hours, not the raw timedelta: str(timedelta(hours=-4)) renders
+          # "-1 day, 20:00:00", which is the wrong thing to read at 3am.
+          off_h = offset.total_seconds() / 3600
+          print(f"::notice title=daily ET gate::event={event or '-'} fired={fired or '-'} "
+                f"intended={intended} ny_utc_offset={off_h:+.0f}h -> run={verdict}", flush=True)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"run={verdict}\n")
+          PY
+
   # collect (a.k.a. collect-core since the 2026-07-14 split): the main adapter
   # sweep + in-collect graders/audits, committing as early as possible so the
   # engine job (needs: collect) starts ~30-75m sooner. The slow post-adapter
@@ -43,6 +111,11 @@ jobs:
   # display legs, stamp_options_state is PIT-anchored, grade_qledger grades only
   # claims matured ≥5d, TIL lobes carry 2160h freshness SLAs).
   collect:
+    needs: [et_gate]
+    # always() is load-bearing here: it is what makes the ET gate FAIL-OPEN. Without
+    # it an errored et_gate job would skip collect via needs-status and silently kill
+    # the whole nightly; with it, only an explicit run=false stands the pipeline down.
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     # was 100 — the collectors step's real baseline has grown to ~60-67m (the old "~35m"
     # budget), and on 2026-07-11 it spiked to 98.5m (EDGAR 8-K velocity ~18m, OpenFIGI
@@ -314,6 +387,31 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: backfill yahoo price coverage for the hub ledger universe (bounded, non-fatal)
+        # collectors/yahoo.py fetches the CONFIG universe; the Intelligence Hub grades
+        # the SIGNAL LEDGER, and every hub grader prices names from
+        # data/yahoo/<T>.parquet and nothing else (engine/desk_grader.py:31,
+        # engine/trajectory.py:11 — the breadth cache is split-UNADJUSTED and poisons
+        # forward returns). Measured 2026-08-08: 603 of 7,711 ledger tickers had a
+        # parquet, desk_grader's 20d coverage was 6.2%, and 7 of that night's 30
+        # Command names could not be priced at all. This step closes that from the
+        # other side, ~400 names a night (~16 nights for the addressable backlog).
+        #
+        # HERE, in the collect tail, for two reasons: it writes into data/yahoo, so it
+        # must land before the market checkpoint below to be committed at all; and it is
+        # in the COLLECT job, which is a different job from the render — nothing on the
+        # 67-min render path waits on it. Bounded twice (--cap tickers and --budget-s
+        # wall clock, measured 181 ms/symbol => ~102s at cap 400) plus a step timeout,
+        # so a slow vendor night cannot eat the collect job's remaining budget.
+        #
+        # Strictly non-fatal and NOT in the market-checkpoint gate below: the backfill
+        # is purely additive (new parquets for names nobody had), so a night it gets
+        # nothing is a night with no new files, not a torn tree. The script exits 0 by
+        # design; the `||` guard covers an import/interpreter failure it cannot catch.
+        timeout-minutes: 12
+        run: |
+          python -m scripts.backfill_yahoo_universe --cap 400 --budget-s 480 \
+            || echo "::warning::yahoo universe backfill failed (non-fatal) — hub price coverage does not advance tonight"
       - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
         # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
         # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
@@ -472,6 +570,12 @@ jobs:
         #   data/zori/national.parquet -> `collect ZORI`             does NOT gate
         #     Both are self-guarded (`|| echo ::warning::`) and purely additive: a miss
         #     re-commits the previous snapshot, which is a no-op diff, not a torn tree.
+        #   data/yahoo/<T>.parquet (NEW names only) + data/yahoo_backfill_state.json
+        #                              -> `backfill yahoo price coverage`  does NOT gate
+        #     Same reason: bounded, self-guarded and additive — it only ever CREATES a
+        #     parquet for a ledger ticker that had none, so a night it gets nothing
+        #     stages nothing. It must never gate the market plane, which is collected
+        #     by `run collectors` above and has no dependency on it.
         #   data/quality/massive_store_audit.json
         #                              -> `audit massive_stock_day store`  does NOT gate
         #     A tripwire REPORTS on the tree; it does not produce it. Gating on an alarm
@@ -849,6 +953,14 @@ jobs:
   # silent-freeze mode the receipt exists to prevent. No dashboard job is gated
   # on this one at all, so nothing here can fail-dark the site.
   capital_structure:
+    # ET gate (see the schedule comment): reached TRANSITIVELY, not by wiring.
+    # This lane carries no `if:` at all — the implicit success() on `needs: collect`
+    # is the verified-handoff fence, pinned by tests/test_daily_capital_structure_job.py
+    # (DNR:KILL-NIGHTLY-HARD-GATE) — so an off-regime firing, which skips `collect`,
+    # skips this job too by needs-status. Wiring et_gate in directly would both break
+    # that fence and invent a failure mode: a gate ERROR fails OPEN into collect, and
+    # this job would then be the one lane that skipped the night. Do not add an
+    # always() here — it would sever the skip propagation this depends on.
     needs: collect
     runs-on: [self-hosted, macstudio]
     # Measured 2026-08-06 (run 31067383446, `collect`): event spine 3s;
@@ -1194,6 +1306,11 @@ jobs:
     # A GITHUB_TOKEN push intentionally cannot recursively launch a push workflow.
     # Call the serialized owner synchronously instead, so the engine checkout and
     # its Neural Web/Prophet readers cannot race the prior procurement generation.
+    # ET gate (see the schedule comment): reached TRANSITIVELY, like capital_structure.
+    # This `if:` carries no status function, so the implicit success() on `needs: collect`
+    # already skips this lane whenever collect skips — which is exactly what an
+    # off-regime firing does. `needs: collect` stays a SCALAR: tests/test_dag_conformance.py
+    # pins the shape. Do not add always() here — it would sever the skip propagation.
     needs: collect
     if: needs.collect.outputs.government_revenue_projection_needed == 'true'
     permissions:
@@ -1235,8 +1352,8 @@ jobs:
   # stores + registers idempotent claims, and its commit lands hours before the
   # next day's collect.
   collect_tail:
-    needs: collect
-    if: always()
+    needs: [et_gate, collect]
+    if: always() && needs.et_gate.outputs.run != 'false'
     # theta-m1 ⊂ macstudio: custom runner label on mac-builder-1/2/3 only (added
     # via the runners API 2026-07-26). The probe-only health-check below stays
     # as defense in depth — if the label set or the Terminal host ever drifts,
@@ -1654,10 +1771,10 @@ jobs:
         run: bash scripts/ci/nightly_timings_finish.sh 200
 
   engine:
-    needs: [collect, government_revenue_projection]
-    if: always()            # a scraper failure must still produce a dashboard from cached data
+    needs: [et_gate, collect, government_revenue_projection]
+    if: always() && needs.et_gate.outputs.run != 'false'            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 300    # was 240 — the 2026-08-07 night died AT the raised 240 cap too (22:00:48→02:05:48, killed in the final commit/push band ~2 min from done: last step group logged 02:03:28, so the workload is now ~242m and the site commit never landed → THIRD consecutive stale-site night and the frozen /prophet surface found 2026-08-08). 300 = the observed ~242m + ~58m headroom on the same cold-spare law as before. NOT a wedge: step groups tick seconds apart through the tail band, this is workload size. build_site is NO LONGER the creep lever (back to ~24m on 08-07 after the earlier 61.7m peak — do not inherit that label); the next profile must find where the other ~80m vs the 135-160m era went before any further cap raise. Prior: was 200 — the 2026-08-05 AND 08-06 nights were BOTH hard-cancelled at ~205m (cap + grace) on different hosts (mac-builder-5, then mac-builder-1), before the pages artifact landed → publish's "No artifacts named github-pages", two consecutive stale-site nights, and the 6-day Prophet-pick gap found 2026-08-06. Two hosts rules out one sick machine; this is workload creep plus the cold-spare law the collect job's 185→240 bump above already states: the macstudio label can fail over to a cold runner (fresh venv, no warm GHA/R2 caches), so the cap must clear the COLD pace, not the warm one. 240 = the observed ~205m kill point + 35m headroom; the job exits when its steps finish, so a larger cap costs nothing on a healthy night. The real fix is the workload trim — the cap raise buys the nights back while that lands. Prior: was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_site — W3 re-measure 2026-08-06 (never inherit step-cost labels): build_news is NO LONGER the lever; the GDELT circuit breaker (#3442, 2026-07-24) already collapsed it from ~26–29m to a measured 4.3–5.9m/night (07-27 green 5.9m, 08-03 4.3m, 08-05 4.7m, 08-06 5.4m — ~2m of that is the nightly one-time 429 ladder that arms the breaker). The band that IS creeping is build_site: ~33m (07-21 measurement) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06) — +25m in two weeks, the single largest step in the job. Profile build_site's page loop before touching anything else. Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
+    timeout-minutes: 300    # was 240 — the 2026-08-07 night died AT the raised 240 cap too (22:00:48→02:05:48, killed in the final commit/push band ~2 min from done: last step group logged 02:03:28, so the workload is now ~242m and the site commit never landed → THIRD consecutive stale-site night and the frozen /prophet surface found 2026-08-08). 300 = the observed ~242m + ~58m headroom on the same cold-spare law as before. NOT a wedge: step groups tick seconds apart through the tail band, this is workload size. build_site is NO LONGER the creep lever (back to ~24m on 08-07 after the earlier 61.7m peak — do not inherit that label); the next profile must find where the other ~80m vs the 135-160m era went before any further cap raise. W4 PROFILE 2026-08-08 (that directive, executed same-day; evidence = jobs-API steps[] for the five 08-05→08-08 engine executions — read steps[].conclusion, NOT the run log: after a cancel the if:always() cleanup steps keep ticking seconds apart and mimic an almost-done tail): the '~2 min from done / NOT a wedge / workload is now ~242m' reading above is OVERTURNED. The 08-07 cancelled step was 'Prophet nightly' — 23:07:57→02:00:56 = 173m on mac-builder-1, a step the very next execution measured at 24 SECONDS (run 31226002132, same asof 2026-08-07, same first-unfrozen standouts board, mac-builder-2) — and builders-parallel + tail-desks were SKIPPED (~53m of real work at green pace), so the night was killed ~53m short, not 2 min. Its 02:04 partial commit contains ZERO site/prophet|data/prophet|data/prophet_arena writes: build_prophet WEDGED pre-first-write and logged nothing, because the step buffered stdout to RUNNER_TEMP and cat it only on completion — fixed at the step itself (#4980: 15m step timeout + continue-on-error + PYTHONUNBUFFERED streaming, the arming-pass belt-and-braces). TRUE steady-state workload measured green 2026-08-08: 126.3m — BELOW the 135-160m era (build_site back at 23.9m/24.9m after the frozen-slice fix; prophet-us doors/grades/miss-audit moved to us_prophet_ledgers). There is NO unattributed ~80m. The ~205m kills decompose (jobs API, runs 31056495943 mac-builder-5 + 31067383446 mac-builder-1): engine-core 72-73m (the build_site peak) + Intelligence Hub 15.6-17.5m + then-in-engine prophet-us tail modules + commit-band variance (19.4m vs 6.2m green). The ONE band still creeping: 'restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)' — 7.4m → 11.4m → 15.2m → 23.3m → 23.8m across those five successive executions (fixed 12-ticker list; the growth is the run-clock-hashed receipts growing the immutable source store, not the SEC download, which is flat ~128MB) — trim in flight 2026-08-08 as #4986 (acquire/project/sync → filing-forensics-sec.yml 02:30Z off-render lane, engine keeps a constant-cost restore; expect restores-preamble ~26m→~3m in engine.jsonl once merged). AMENDED DOCTRINE: no future raise without (1) the jobs-API step timeline of the killed job and (2) data/ops/nightly_timings/engine.jsonl bands (live since 08-08) — this comment has now carried a wrong workload narrative twice, both times written from the run log alone; with prophet belted and SEC off-render the honest warm floor is ~105m, so 300 is pure cold-spare headroom and the next cap move on a healthy fortnight is DOWN, not up. Prior: was 200 — the 2026-08-05 AND 08-06 nights were BOTH hard-cancelled at ~205m (cap + grace) on different hosts (mac-builder-5, then mac-builder-1), before the pages artifact landed → publish's "No artifacts named github-pages", two consecutive stale-site nights, and the 6-day Prophet-pick gap found 2026-08-06. Two hosts rules out one sick machine; this is workload creep plus the cold-spare law the collect job's 185→240 bump above already states: the macstudio label can fail over to a cold runner (fresh venv, no warm GHA/R2 caches), so the cap must clear the COLD pace, not the warm one. 240 = the observed ~205m kill point + 35m headroom; the job exits when its steps finish, so a larger cap costs nothing on a healthy night. The real fix is the workload trim — the cap raise buys the nights back while that lands. Prior: was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_site — W3 re-measure 2026-08-06 (never inherit step-cost labels): build_news is NO LONGER the lever; the GDELT circuit breaker (#3442, 2026-07-24) already collapsed it from ~26–29m to a measured 4.3–5.9m/night (07-27 green 5.9m, 08-03 4.3m, 08-05 4.7m, 08-06 5.4m — ~2m of that is the nightly one-time 429 ladder that arms the breaker). The band that IS creeping is build_site: ~33m (07-21 measurement) → 35.7m (07-27) → 42.0m (08-03) → 61.7m/57.8m (08-05/08-06) — +25m in two weeks, the single largest step in the job. Profile build_site's page loop before touching anything else. Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
     env:
       COLLECT_LANE: nightly   # job-level sentinel: inherited by every step; ensures all
                               # forward-ledger writers in this job (build_track_record,
@@ -2131,6 +2248,11 @@ jobs:
           # Outputs are covered by the existing `git add data/ site/` commit step.
           # main() swallows all failures and returns 0, so this can NEVER break the render.
           run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab
+          # Options Prophet shadow projection — immediately after Pick Lab so the
+          # artifact can expose only ledger-admitted plab_flow_leader / flow_washout
+          # fires. Reuses Flow Leaders ordering; creates no score, direction, contract,
+          # trajectory, or Macro weight. Missing inputs publish explicit not-ready gates.
+          run_py "options prophet shadow (build_options_prophet)" scripts.build_options_prophet
           # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
           # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
           # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
@@ -2213,6 +2335,34 @@ jobs:
           python -m scripts.build_flip_confirmation > "$RUNNER_TEMP/flip_confirmation.log" 2>&1; rc=$?
           cat "$RUNNER_TEMP/flip_confirmation.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"; fi
+          exit 0
+      - name: Leader-pullback coverage (§6.9 R4 publisher — MUST precede build_prophet)
+        # Publishes site/anticipationdata/us_leader_pullback.json: the engine.us_leader_pullback
+        # organ's per-name state over the graded universe, evaluated on a run-wide PIT
+        # cross-sectional RS percentile (the organ refuses to reach for one itself, so a
+        # single-name call can never leak a cross-section).
+        #
+        # ORDER IS LOAD-BEARING. engine.us_early_turn resolves the EARLY-TURN starter tier's
+        # LEADER licence from this file at ORIGINATION time. #5007 shipped the organ and #5105
+        # shipped the intake, but nothing published the artifact — so the leader half read {}
+        # on every production run and was structurally incapable of admitting anything, while
+        # the washout half (us_basket_turn) worked. Scheduled after build_site (the price
+        # store is settled) and immediately before the Prophet band.
+        #
+        # DISPLAY TIER. Advances NO ledger and writes no data/ path. A degraded input
+        # publishes fewer names with their reasons printed; a RUN-WIDE data failure publishes
+        # nothing and leaves the previous artifact in place, because a board of nulls and a
+        # broken price store look identical from downstream. Measured 2026-08-09: ~39s over
+        # 680 graded names (budget 600s, self-reported and ::warning past it).
+        timeout-minutes: 12
+        continue-on-error: true
+        run: |
+          set +e
+          echo "::group::build_leader_pullback_coverage (EARLY-TURN leader licence)"
+          python -m scripts.build_leader_pullback_coverage > "$RUNNER_TEMP/leader_pullback_coverage.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/leader_pullback_coverage.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_leader_pullback_coverage::rc=$rc (non-fatal — the intake keeps yesterday's coverage until tomorrow's run)"; fi
           exit 0
       - name: timings band — prophet (W2)
         run: python3 scripts/nightly_timings.py mark --band prophet || echo "::warning::timings band mark failed (non-fatal)"
@@ -2341,11 +2491,11 @@ jobs:
               "data/prophet_arena/scoreboard.json",
               "data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl",
-              "data/prophet_arena/price_basis_trigger_v2/C2_stage_ran_preferred.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl",
           }
           globs = {
               "site/prophet/plans": "*.json",
@@ -2553,11 +2703,11 @@ jobs:
               "data/prophet_arena/scoreboard.json",
               "data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl",
-              "data/prophet_arena/price_basis_trigger_v2/C2_stage_ran_preferred.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl",
               "data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl",
+              "data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl",
           }
           globs = {
               "site/prophet/plans": "*.json",
@@ -2711,11 +2861,11 @@ jobs:
               data/prophet/origination_receipts/*.json|\
               data/prophet_arena/price_basis_trigger_v2/C0_champion_mirror.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C1_buy_soon_first.jsonl|\
-              data/prophet_arena/price_basis_trigger_v2/C2_stage_ran_preferred.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C3_door_w_union.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C4_dispersion_cap.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C5_align2_gate.jsonl|\
               data/prophet_arena/price_basis_trigger_v2/C6_time_stop_21.jsonl|\
+              data/prophet_arena/price_basis_trigger_v2/C7_buy_soon_admitted.jsonl|\
               site/prophet/plans/*.json|site/prophet/states/*.json\
               ) ;;
               *)
@@ -3453,6 +3603,36 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
           exit 0
+      - name: TURN WATCH desk (early-surfacing deck — display tier)
+        # ANTICIPATION §6.9 R8. Rebuilds site/turn_watch/turn_watch.json: every name whose
+        # earliest turn evidence fired in the last 5 sessions, with the operator's review
+        # checklist pre-computed. Reads committed stores only (data/yahoo, membership.json,
+        # site/basketdata/us_basket_turn.json); writes ONE site/ artifact and advances NO
+        # ledger, so a re-run is idempotent and a failed run costs a day's refresh — the
+        # deck keeps yesterday's committed artifact and tomorrow's run replaces it.
+        #
+        # PATH IS LOAD-BEARING — site/turn_watch/, never site/prophet/. The "commit engine
+        # outputs" step below restores site/prophet from HEAD (`git checkout HEAD --
+        # site/prophet` + scoped clean/reset, PROPHET_AUTHORITY_PATHS) before staging, so a
+        # deck written under that root is reverted on a SUCCESSFUL night too and the site
+        # would serve the seed forever. site/turn_watch/ rides that step's broad
+        # `git add data/ site/ reports/` and is touched by none of the Prophet restores.
+        #
+        # DISPLAY TIER, ZERO SCORED AUTHORITY — nothing here ranks, gates or sizes a graded
+        # position. Measured 2026-08-08: ~135s over 702 graded names; the cap below is ~4x
+        # that so a slow night annotates rather than silently eating the budget. Runs after
+        # the Prophet steps because the deck's "what the slow tier says now" column is most
+        # useful read beside the board those steps just refreshed.
+        timeout-minutes: 12
+        continue-on-error: true
+        run: |
+          set +e
+          echo "::group::build_turn_watch (early-surfacing deck)"
+          python -m scripts.build_turn_watch > "$RUNNER_TEMP/turn_watch.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/turn_watch.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_turn_watch::rc=$rc (non-fatal — the deck keeps yesterday's artifact until tomorrow's run)"; fi
+          exit 0
       - name: timings band — builders-parallel (W2)
         run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
@@ -3874,6 +4054,7 @@ jobs:
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --radar || echo "::warning::leader radar R2 mirror failed (non-fatal)"
+          python -m scripts.mirror_flow_idx --options-prophet --strict || echo "::warning::options prophet R2 mirror failed (non-fatal)"
           python -m scripts.mirror_terminal_context_r2 || echo "::warning::terminal-context R2 mirror failed (non-fatal)"
       - name: flow-signal ledger harvest + outcome grader (FS-0)
         # FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5): append-only per-event
@@ -4159,10 +4340,12 @@ jobs:
         # by the "commit engine outputs" step's `git add data/` below. Idempotent. Resilient.
         run: python -m scripts.stamp_options_state || true
       - name: Options entry-quality gate (Options Alpha W1.3; pre-registered, scored=false)
-        # Recomputes the S-IVR/S-DOI/S-WALL/S-VOI bucket counts/verdicts from the stamped ledger
-        # into data/options_entry/gate.json (ledger primitives only, A10). Cheap (seconds). No
-        # verdict until n≥30/bucket (doctrine §2.3); verdict flips require the pre-registered
-        # thresholds, never a code edit. Resilient.
+        # Reduces the horizon ledger to canonical buy-lane fires, then recomputes the registered
+        # options-entry diagnostics in data/options_entry/gate.json (ledger primitives only, A10).
+        # Descriptive maturity requires ≥30 fires, ≥30 dates in each bucket, and ≥30 shared
+        # dates. Existing observations cannot earn authority after the methodology amendment:
+        # date-cluster inference plus a frozen sequential-look plan and fresh cohort are still
+        # required. scored=false / weight=0 remain hard-frozen. Cheap and resilient.
         run: python -m scripts.validate_options_entry || true
       - name: Calibration Hub (unified self-improvement observability; display-only)
         # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
@@ -4504,9 +4687,22 @@ jobs:
         # Fail-open: missing source → gaps[] + null block, always exits 0.
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         run: python -m scripts.build_liquidity_plumbing || echo "::warning::build_liquidity_plumbing failed (non-fatal — last committed artifact stands)"
+      - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
+        # Full ALFRED output_type=2 matrices let the target engine select current
+        # and prior levels from ONE release-date vintage.  They are additive to
+        # the broad output_type=4 PIT feature store and never replace it.
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        timeout-minutes: 20
+        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
+      - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
+        # Converts verified BLS/BEA/DOL publication facts from the VPS live
+        # sidecar into keep-first, source-hashed actual receipts.  No forecast is
+        # originated here; the following producer prefers these receipts when grading.
+        run: python -m scripts.reconcile_release_actuals || echo "::warning::official release actual reconciliation failed (non-fatal — same-vintage fallback remains)"
       - name: MRI release forecast producer (display-only, non-fatal)
         # MRI PR-C: nightly projection for CPI (headline + core) and NFP.
-        # Emits data/release_forecast/latest.json (schema release_forecast.v1),
+        # Emits data/release_forecast/latest.json (schema release_forecast.v2),
         # site/macrodata/release_forecast.json (display copy),
         # data/release_forecast/forward_ledger.jsonl (append-only),
         # data/release_forecast/scoreboard.json (forward accrual only).
@@ -4514,6 +4710,13 @@ jobs:
         # display_only=True; all authority booleans False (MRI-R7). Fail-open.
         # Outputs covered by 'git add data/' and 'git add site/' below.
         run: python -m scripts.build_release_forecast || echo "::warning::build_release_forecast failed (non-fatal — last committed artifact stands)"
+      - name: Inflation intelligence lobe (context-only, non-fatal)
+        if: always()
+        # Separates the latest released CPI state, the next BLS-print forecast,
+        # and current-month proxy pressure.  It is a deterministic adapter over
+        # persisted inputs: display_only=true, authority=false, and no Prophet,
+        # ranking, gating, sizing, or trading consumer.
+        run: python -m scripts.build_inflation_intelligence || echo "::warning::build_inflation_intelligence failed (non-fatal — last committed artifact stands)"
       - name: forward path board (RIC W7 P5, display-only, non-fatal)
         if: always()   # deterministic join over committed artifacts — build whatever exists
         # RIC W7 P5: deterministic Forward Path board (rates_command.v1). Deliberately
@@ -5227,8 +5430,8 @@ jobs:
   # chart whose fundamental ranks refresh ~yearly). `publish` needs ONLY engine, so a
   # slow/failed factor_series can never block the dashboard going live.
   factor_series:
-    needs: collect
-    if: always()
+    needs: [et_gate, collect]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     steps:
@@ -5316,8 +5519,8 @@ jobs:
   # `python -m scripts.build_factor_panel --backfill` — NOT in this nightly loop.
   # See §RULING-C in research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md.
   factor_panel:
-    needs: [factor_series]
-    if: always()
+    needs: [et_gate, factor_series]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 20
     steps:
@@ -5429,8 +5632,8 @@ jobs:
   # contract as stock_briefs). Before this job existed the export FAILED (rc=1) every
   # render and the committed feed sat frozen at its last manual rebuild.
   oracle_offrender:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
@@ -5557,8 +5760,8 @@ jobs:
   # Kept off the main render path so it never adds to the ~67min render budget.
   # Needs: engine (data/stocks/ parquets, site/factordata/us_standouts.json).
   tech_lab_offrender:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 120    # was 40 — EVERY nightly 2026-07-19→07-26 was CANCELLED at exactly the 40m cap, mid-way through the first heavy step, so steps 2-5 (incl. the confluence-screener page render AND the commit) were skipped and NOTHING published for 8 days. Cause: #3013 (merged 2026-07-19T01:40, ~4.5h before #3061 added the screener render here) expanded the single-pass build from 64 signals to 195 on a 231-ticker universe — a ~3x workload increase with no re-budget. Measured from the 07-26 job log: 50 tickers/12m28s then 50/11m50s ≈ 14.6s/ticker → 231 tickers ≈ 56m for build_tech_lab_data alone. Whole-job worst case: checkout up to ~15m (the 14k-file tree, see the engine job's note) + 57m lab data + 11m combo miner + ~1m screener page + ~2m m2_profiles + up to ~10m commit/push-retry band ≈ 96m. 120 clears that with headroom. The combo-miner figure is measured end-to-end, not inherited and not extrapolated: this job's own comment claimed "~8 min", and a full 2026-07-27 run on the runner host logged `panel: 323.4s` + `mine_long: 187.7s` + `mine_short: 140.9s` + `artifact: 1.7s` = **654.4s ≈ 11m**. Note mine_short is ~25% CHEAPER than mine_long (58 vs 59 legs but far fewer surviving combos) — an earlier symmetry estimate put the total at ~13m, so even the arithmetic shortcut was wrong. A stale step-cost label is precisely what produced this outage; re-measure, never inherit, and never extrapolate one half from the other. NOTE the per-step `set +e … exit 0` wrappers make a *script* error non-fatal but do NOTHING for a job timeout: the cap hard-cancels the running step, skips every later step, and the `::warning` alarm the step would have printed never fires — the job just reports "cancelled", which reads like this repo's known-benign cancellations. That is why an 8-day publish outage went unnoticed. If the signal count or universe grows again, re-measure and re-budget HERE.
     steps:
@@ -5686,8 +5889,8 @@ jobs:
   # card. Never touches asia-owned paths. Must NOT gate publish.
   # Pattern: oracle_offrender / tech_lab_offrender (needs: engine, if: always()).
   standout_audit_us:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 40
     steps:
@@ -5988,6 +6191,19 @@ jobs:
           # consolidate step above. The host spool (data/marketing/personas_host/)
           # is gitignored and must never appear here.
           git add data/marketing/personas 2>/dev/null || true
+          # THE MARKETING LANES' AI SPEND AND RUNG HEALTH (W2, 2026-08-08).
+          # Every marketing LLM lane already books an ai_costs row per served
+          # call (engine/llm_auth._capture_usage, usage_lane=marketing-*) and
+          # NOTHING IN THIS JOB EVER STAGED THEM: the two jobs whose broad
+          # `git add data/` sweeps usage.jsonl in are `engine:` and asia-close's
+          # `asia:`, so the marketing rows were written to this job's checkout
+          # and then discarded by the next actions/checkout. The committed
+          # ledger consequently held 3,372 rows on 2026-08-08 with ZERO from any
+          # marketing lane, which read as "the copywriter books no usage" and is
+          # in fact "the copywriter's usage is never committed". Same reason for
+          # provider_health.jsonl, the new per-rung ledger: an artifact nobody
+          # commits cannot answer a question a week later.
+          git add data/ai_costs 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           # Fail-closed conflict gate (P0 d29e4dd44d/#4167): the marketing
           # learning push above runs while these paths sit dirty — if its pull
@@ -6040,8 +6256,8 @@ jobs:
   # are UNCHANGED — the curated universe remains the graded population. Nothing
   # written here is read for any decision.
   us_scan_tier:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 60
     steps:
@@ -6172,8 +6388,8 @@ jobs:
   # of --nightly. Without it these three would run green and write NOTHING — pinned by
   # tests/test_prophet_off_engine_lane.py.
   us_prophet_ledgers:
-    needs: [engine, us_scan_tier]
-    if: always()
+    needs: [et_gate, engine, us_scan_tier]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     # Budget: ~5.5m of module time (measured above) + checkout/venv/pip. Checkout of the
     # 14k-file tree has been observed at 3s..14.5m (see the engine job's timeout comment),
@@ -6300,8 +6516,8 @@ jobs:
   # the next run (<=1-run stale is fine) and the LLM never gates the daily deploy.
   # `publish` needs ONLY engine, so a slow/failed briefs job can't block go-live.
   stock_briefs:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     env:
@@ -6405,8 +6621,8 @@ jobs:
   # A slow or failed cortex can never gate the deploy (publish needs: engine, not cortex).
   # Shadow probation: A2 refused today — attention queue and memo are shadow-tier.
   cortex:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 30
     env:
@@ -6616,8 +6832,8 @@ jobs:
   # kernel cells. Entry-quality target family gated on REPLAY_BOARDED_PATH var.
   # ──────────────────────────────────────────────────────────────────────────
   causal:
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     env:
@@ -6815,8 +7031,8 @@ jobs:
   # and recent merges for multi-agent session air-traffic control.
   # ADVISORY ONLY: fail-open, no merge gating, exit 0 even if gh errors.
   active_build_map:
-    needs: collect
-    if: always()
+    needs: [et_gate, collect]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 10
     steps:
@@ -6874,8 +7090,8 @@ jobs:
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
     # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)
-    needs: engine
-    if: always()
+    needs: [et_gate, engine]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -6891,8 +7107,8 @@ jobs:
   # daily.yml also touched by other open lanes today (merge-order conflicts
   # expected — keep this diff minimal and rebased on fresh main).
   ledger_heartbeat:
-    needs: [engine, publish]
-    if: always()
+    needs: [et_gate, engine, publish]
+    if: always() && needs.et_gate.outputs.run != 'false'
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 5
     steps:

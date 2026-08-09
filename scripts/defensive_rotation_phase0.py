@@ -31,15 +31,19 @@ Deterministic (fixed seed).  Run: python -m scripts.defensive_rotation_phase0
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import advanced_indicators as ai
-from engine.forward_dist import forward_paths
-from engine.indicators import expanding_percentile
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import advanced_indicators as ai  # noqa: E402
+from engine.forward_dist import forward_paths  # noqa: E402
+from engine.indicators import expanding_percentile  # noqa: E402
+from lib import config, store  # noqa: E402
 
 SEED = 20260623
 RNG = np.random.default_rng(SEED)

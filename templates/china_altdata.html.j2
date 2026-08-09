@@ -235,7 +235,7 @@
     {% if tape_spark %}
     <div class="cad-spark">
       <div class="cad-spark-lab"><b>{{ t('Trading intensity','成交强度') }}</b>
-        <span data-tip-en="Turnover z-score vs the trailing 20-day normal. Above the waterline = busier than usual; below = quiet — the tape's participation rhythm."
+        <span data-tip-en="Today's turnover against what has been normal over the last 20 days. Above the line = busier than usual; below = quiet."
               data-tip-zh="成交额相对过去20日常态的z值。水位线以上＝比平常活跃；以下＝清淡——盘面参与节奏。">{{ t('vs 20-day normal ›','相对20日常态 ›') }}</span></div>
       {{ tape_spark|safe }}
     </div>
@@ -269,7 +269,7 @@
     <a href="#lab">{{ t('Signal Lab','信号实验室') }}</a>
   </nav>
 
-  <div class="cad-callout warn">{{ t('No validated edge is claimed anywhere on this page. Every panel is a display JOIN of independent free feeds — where they agree, not a backtest. A-share cross-sectional value has a negative Sharpe and sell-side ratings are near-universally "buy". Treat everything here as a watchlist seed and a research candidate, never a sizer or a trade.', '本页任何部分均不声称已验证优势。每个面板都是独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值的夏普为负、卖方评级近乎全为「买入」。请将此处一切视为自选股种子与研究候选，绝非仓位或交易。') }}</div>
+  <div class="cad-callout warn">{{ t('No validated edge is claimed anywhere on this page. Every panel is a display JOIN of independent free feeds — where they agree, not a backtest. A-share cross-sectional value has a negative Sharpe and sell-side ratings are near-universally "buy". Treat everything here as a watchlist seed and a research candidate, never a sizer or a trade.', '本页任何部分均不声称已验证优势。每个面板都是独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值的夏普为负、卖方评级近乎全为“买入”。请将此处一切视为自选股种子与研究候选，绝非仓位或交易。') }}</div>
 
   {# ==================== 1 · CONVERGENCE (core signature) ==================== #}
   <section class="cad-sec" id="convergence">
@@ -306,7 +306,7 @@
           <td>
             <span class="cad-seal" role="img"
               data-tip-en="Feeds agreeing with the {{ r.side }} read: {{ agree|map('first')|join(', ') if agree else 'mixed' }}. Cross-section rank {{ r.rank_pctile }}th pct · {{ r.n_signals }} of 7 feeds present."
-              data-tip-zh="与「{{ r.side }}」方向一致的数据源：{{ agree|map('last')|join('、') if agree else '不一' }}。横截面排名第{{ r.rank_pctile }}分位 · 7源中有{{ r.n_signals }}源。">
+              data-tip-zh="与“{{ r.side }}”方向一致的数据源：{{ agree|map('last')|join('、') if agree else '不一' }}。横截面排名第{{ r.rank_pctile }}分位 · 7源中有{{ r.n_signals }}源。">
               {{ cell(r.analyst) }}{{ cell(r.value) }}{{ cell(r.margin) }}{{ cell(r.flow) }}{{ cell(r.comment) }}{{ cell(r.lhb, True) }}{{ cell(r.block, True) }}
             </span>
           </td>
@@ -581,13 +581,13 @@
       <span class="cad-stance st-context">{{ t('Consensus context — a tally, not a rating',
       '一致预期背景 — 计数而非评级') }}</span>
     </div>
-    <p class="cad-sec-intro">{{ t('Chinese sell-side is near-universally "buy", so the rating is noise. Two things carry signal: which names the most desks put on their monthly gold-stock list, and which companies pre-announce the biggest earnings surprises.', '中国卖方近乎全为「买入」，评级本身是噪音。两处有信号：当月被最多研究所列入金股名单的个股，以及预告业绩变动最大的公司。') }}</p>
+    <p class="cad-sec-intro">{{ t('Chinese sell-side is near-universally "buy", so the rating is noise. Two things carry signal: which names the most desks put on their monthly gold-stock list, and which companies pre-announce the biggest earnings surprises.', '中国卖方近乎全为“买入”，评级本身是噪音。两处有信号：当月被最多研究所列入金股名单的个股，以及预告业绩变动最大的公司。') }}</p>
 
     <div class="cad-grid">
       {% if broker_gold %}
       <div class="cad-card">
         <h3>🏅 {{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
-        <p class="sub">{{ t('Most-picked names this month, as a pick-count tally — a discrete monthly list, distinct from the ~97%-buy ratings.', '当月被推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%「买入」评级。') }}</p>
+        <p class="sub">{{ t('Most-picked names this month, as a pick-count tally — a discrete monthly list, distinct from the ~97%-buy ratings.', '当月被推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%“买入”评级。') }}</p>
         <table class="cad-tbl" style="margin-top:2px">
           <tbody>
           {% for r in broker_gold[:10] %}
@@ -652,6 +652,6 @@
   </section>
   {% endif %}
 
-  <p class="cad-disc">{{ t('Context only — not a signal, score or trade. Convergence and every panel here reuse already-collected free feeds as a display join; none of it feeds any allocation. The scored legs are those already earned inside the China masterminds; the rest are display, confirmer, on-trial or killed as the Signal Lab shows. Point-in-time; may change nightly.', '仅作背景，非信号、评分或交易。共振与本页每个面板都复用已采集的免费数据作展示性合并；无一进入任何配置。已评分项为中国主脑中已获得权重者；其余为展示、确认器、试用或已淘汰，详见信号实验室。数据为特定时点，可能每夜变动。') }}</p>
+  <p class="cad-disc">{{ t('Context only — not a signal, score or trade. Convergence and every panel here reuse already-collected free feeds as a display join; none of it feeds any allocation. The scored legs are those already earned inside the China masterminds; the rest are display, confirmer, on-trial or killed as the Signal Lab shows. Point-in-time; may change nightly.', '仅供参考，非信号、评分或交易。共振与本页每个面板都复用已采集的免费数据作展示性合并；无一进入任何配置。已评分项为中国主脑中已获得权重者；其余为展示、确认器、试用或已淘汰，详见信号实验室。数据为特定时点，可能每夜变动。') }}</p>
 </div>
 {% endblock %}
