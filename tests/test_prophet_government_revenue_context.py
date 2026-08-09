@@ -33,6 +33,11 @@ def _write_standouts(root: Path) -> Path:
     path.write_text(
         json.dumps({
             "as_of": "2026-07-31",
+            "staleness": {
+                "price_through": "2026-07-31", "delayed": False,
+                "unknown": False, "basis": "panel_majority",
+                "inputs": {"panel": {"mixed_vintage": False}},
+            },
             "gate_go": True,
             "buy": [_buy("LMT", 82, 500.0), _buy("NOC", 75, 610.0)],
         }),
