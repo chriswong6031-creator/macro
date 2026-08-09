@@ -4481,6 +4481,31 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                      _n_flagged, len(_buy_rows), len(_walls), len(_ivr))
     except Exception as _oce:  # noqa: BLE001 — additive, never fatal
         log.warning("options context board attach failed (%s)", _oce)
+    # W-L1 board state (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §7). The nightly
+    # build stamps its OWN receipt: how many of last evening's provisional picks came
+    # through the overnight pass unchanged, how many moved, how many left the board.
+    # lib/board_state.py is the only interpreter of the contract and refuses anything it
+    # will not vouch for — an unreconciled count set emits no receipt at all rather than a
+    # wrong one, and the per-card `Adjusted` marks are fenced on the receipt in the
+    # template, so they are published together or not at all.
+    # DISPLAY-ONLY: nothing here reorders, re-ranks or re-admits a card (A7).
+    try:
+        from lib.board_state import board_state_view as _bsv
+        _bs_view = _bsv(doc.get("board_state"))
+        if _bs_view:
+            doc["board_state_view"] = _bs_view
+            log.info("W-L1 board state: note=%s counts=%s/%s adj=%s dropped=%s",
+                     _bs_view.get("note"), _bs_view.get("n_confirmed"),
+                     _bs_view.get("n_total"), _bs_view.get("n_adjusted"),
+                     _bs_view.get("n_dropped"))
+        elif doc.get("board_state"):
+            # A payload that arrived and was REFUSED is worth one line in the Actions
+            # summary: it means the producer and this contract have drifted.
+            print("::warning title=wl1-board-state::board_state payload present but "
+                  "refused by lib.board_state (unknown enum, or counts do not reconcile) "
+                  "— no receipt rendered", flush=True)
+    except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+        log.warning("W-L1 board state attach failed (%s)", _bse)
     return doc
 
 
