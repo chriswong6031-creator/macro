@@ -14,6 +14,24 @@ meta:
 # ---------------------------------------------------------------------------
 lanes:
 
+  # ── tushare-addons-pilot.yml / pilot ─────────────────────────────────────
+  - workflow: .github/workflows/tushare-addons-pilot.yml
+    job: pilot
+    steps:
+      - id: collect_tushare_addons
+        module: scripts.collect_tushare_addons
+        note: >
+          Manual, main-only, separately license-gated lane for exactly one
+          operator-reported TuShare add-on endpoint/session/SSE-or-SZSE ticker
+          pilot. No schedule, repository publication, ticker list, date range,
+          BSE, or backfill surface exists. The collector makes at most two
+          exact-session trade_cal calls plus one HTTPS endpoint call; the clock
+          is re-observed before that final call. Only metadata receipts may be
+          uploaded—never paid Parquet/rows—and the isolated raw directory must
+          be scanned and deleted before upload. Access-at-request-time, schema,
+          source/runtime, clock, and immutable-store receipts remain
+          context-display-only with no commercial/team/product/strategy authority.
+
   # ── daily.yml / collect ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: collect

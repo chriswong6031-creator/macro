@@ -2,7 +2,7 @@
   "schema": "marketing.cashtag_tiers/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-09T02:10:11Z",
+  "produced_at": "2026-08-09T07:56:22Z",
   "tier": "display",
   "as_of": "2026-08-07",
   "universe_n": 2680,
@@ -7996,7 +7996,7 @@
       "reasons": [],
       "proxies": {
         "mcap_weight": 61099088312.69978,
-        "pct_1d": -1.91,
+        "pct_1d": -1.55,
         "pct_1w": 2.13,
         "earnings_in_days": 10,
         "dollar_vol_musd": 450.6383194141388,
@@ -23424,7 +23424,7 @@
       "reasons": [],
       "proxies": {
         "mcap_weight": 25218038388.499664,
-        "pct_1d": 0.48,
+        "pct_1d": 0.64,
         "pct_1w": -1.02,
         "earnings_in_days": 17,
         "dollar_vol_musd": 301.65743303,

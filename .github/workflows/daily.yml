@@ -3038,14 +3038,25 @@ jobs:
             data/prophet/origination_receipts \
             data/prophet_arena \
             data/prophet_stage_shadow
+          RESTORE_MISMATCH=false
+          if ! git diff --cached --quiet "$ACCEPTED_PROPHET_SHA" -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || ! git diff --quiet -- \
+              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
+            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+            RESTORE_MISMATCH=true
+          fi
+          # Keep accepted bytes in the worktree for downstream readers, but do
+          # not leave them staged against this job's older checkout-time HEAD.
+          # This reset must follow verification: a checkpoint can legitimately
+          # add plans/receipts/Arena ledgers that do not exist in HEAD, and an
+          # earlier reset makes those accepted paths look deleted/untracked.
           git reset -q -- \
             site/prophet \
             data/prophet \
             data/prophet_arena \
             data/prophet_stage_shadow
-          if ! git diff --quiet "$ACCEPTED_PROPHET_SHA" -- \
-              site/prophet data/prophet data/prophet_arena data/prophet_stage_shadow \
-            || [ -n "$(git ls-files --others --exclude-standard -- data/prophet)" ]; then
+          if [ "$RESTORE_MISMATCH" = "true" ]; then
             echo "::error title=Prophet downstream source mismatch::engine worktree could not be made byte-equivalent to accepted main; derived ledgers withheld"
             exit 1
           fi
@@ -4936,6 +4947,11 @@ jobs:
           # wholesale — 1,704 pages shipped markers)
           bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
           git add data/ site/ reports/
+          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
+          # matches nothing, and this step runs under `-eo pipefail` — a missing
+          # templates/ would abort the commit and lose the whole render rather than
+          # just the stamp. Staging site/ keeps its hard-fail semantics.
+          git add templates/ 2>/dev/null || true
           # Prophet has an earlier, provenance-checked SOLE git publisher. Never
           # let this broad commit re-stage its local tree: if the checkpoint
           # withheld on an off-main/provenance/same-path race, a later `-X theirs`
@@ -4976,11 +4992,6 @@ jobs:
           # reset above. Remove only this dedicated directory; append-only
           # correction ledgers elsewhere under data/prophet remain untouched.
           git clean -fd -- data/prophet/origination_receipts
-          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
-          # matches nothing, and this step runs under `-eo pipefail` — a missing
-          # templates/ would abort the commit and lose the whole render rather than
-          # just the stamp. Staging site/ keeps its hard-fail semantics.
-          git add templates/ 2>/dev/null || true
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
