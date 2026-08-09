@@ -57,13 +57,17 @@ import json
 import logging
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine import signal_gate
-from engine.group_context import GroupContext, READER_CONTRACT
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import signal_gate  # noqa: E402
+from engine.group_context import GroupContext, READER_CONTRACT  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_stock_board_v2")
 

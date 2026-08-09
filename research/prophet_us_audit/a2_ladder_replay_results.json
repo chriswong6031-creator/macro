@@ -1,0 +1,259 @@
+{
+  "generated_utc": "2026-08-09T16:59:58Z",
+  "base_sha": "fd9751d580db48d03eaaa108a8b5cf21534fad59",
+  "head_sha": "9a126c5ce03ff8ce911f607dbefc61656bbd2025",
+  "head_selection_era": "anticipation-v1-2026-08-08",
+  "head_entry_value": {
+    "bounce_wait": 1.0,
+    "wait_pullback": 1.0,
+    "hold": 1.0,
+    "buy_now": 1.0,
+    "partial": 1.0,
+    "buy_soon": 0.8,
+    "later": 0.55,
+    "await": 0.45,
+    "await_confluence": 0.45,
+    "watch": 0.4,
+    "extended": 0.0,
+    "topping": 0.0,
+    "blocked": 0.0,
+    "exit": 0.0,
+    "avoid": 0.0
+  },
+  "proof_1_ext_z_blackout": {
+    "board_sha": "3cbef39a6ea",
+    "board_asof": "2026-08-06",
+    "buy_rows": 69,
+    "ext_unknown": 69,
+    "featured_before": 0,
+    "featured_after": 8,
+    "ext_unknown_coverage_after": {
+      "unknown": 69,
+      "n": 69,
+      "featured_with_unknown": 8
+    },
+    "featured_cohort_after": [
+      {
+        "ticker": "GPCR",
+        "status": "buy_now"
+      },
+      {
+        "ticker": "SKY",
+        "status": "buy_now"
+      },
+      {
+        "ticker": "NGVT",
+        "status": "partial"
+      },
+      {
+        "ticker": "GE",
+        "status": "partial"
+      },
+      {
+        "ticker": "XPEL",
+        "status": "buy_now"
+      },
+      {
+        "ticker": "WMS",
+        "status": "buy_now"
+      },
+      {
+        "ticker": "FCX",
+        "status": "partial"
+      },
+      {
+        "ticker": "SLB",
+        "status": "partial"
+      }
+    ],
+    "annotation": "::warning title=featured-ext-z-unknown::us_prophet_v1: extension reading unknown on 69/69 scored rows (100%) \u2014 the featured lane is publishing rows whose chase-risk check has no input (ext_unknown: true). Check the extension-anchor warnings and the panel staleness receipt: the coverage- and age-bounded reader may have withheld the panel, or these names may lack resolvable own history.",
+    "committed_featured_count": 0
+  },
+  "proof_2_ladder_reorder": {
+    "board_asof": "2026-08-07",
+    "buy_rows": 79,
+    "featured_before": 11,
+    "featured_after": 11,
+    "rows_whose_rank_moved": 35,
+    "selection_era": "anticipation-v1-2026-08-08",
+    "top10": [
+      {
+        "new_rank": 1,
+        "old_rank": 1,
+        "ticker": "GPCR",
+        "status": "buy_now",
+        "stage": "live",
+        "old_score": 90.6,
+        "new_score": 90.6
+      },
+      {
+        "new_rank": 2,
+        "old_rank": 2,
+        "ticker": "BIDU",
+        "status": "partial",
+        "stage": "live",
+        "old_score": 82.0,
+        "new_score": 84.5
+      },
+      {
+        "new_rank": 3,
+        "old_rank": 3,
+        "ticker": "ROIV",
+        "status": "buy_soon",
+        "stage": "live",
+        "old_score": 82.0,
+        "new_score": 82.0
+      },
+      {
+        "new_rank": 4,
+        "old_rank": 4,
+        "ticker": "VSEC",
+        "status": "buy_soon",
+        "stage": "live",
+        "old_score": 81.7,
+        "new_score": 81.7
+      },
+      {
+        "new_rank": 5,
+        "old_rank": 5,
+        "ticker": "ADAM",
+        "status": "buy_now",
+        "stage": "live",
+        "old_score": 81.3,
+        "new_score": 81.3
+      },
+      {
+        "new_rank": 6,
+        "old_rank": 8,
+        "ticker": "UEC",
+        "status": "partial",
+        "stage": "live",
+        "old_score": 78.1,
+        "new_score": 80.6
+      },
+      {
+        "new_rank": 7,
+        "old_rank": 10,
+        "ticker": "NGVT",
+        "status": "partial",
+        "stage": "live",
+        "old_score": 77.6,
+        "new_score": 80.1
+      },
+      {
+        "new_rank": 8,
+        "old_rank": 11,
+        "ticker": "FCX",
+        "status": "partial",
+        "stage": "live",
+        "old_score": 77.5,
+        "new_score": 80.0
+      },
+      {
+        "new_rank": 9,
+        "old_rank": 6,
+        "ticker": "WT",
+        "status": "buy_now",
+        "stage": "live",
+        "old_score": 79.6,
+        "new_score": 79.6
+      },
+      {
+        "new_rank": 10,
+        "old_rank": 7,
+        "ticker": "XPEL",
+        "status": "buy_now",
+        "stage": "live",
+        "old_score": 79.5,
+        "new_score": 79.5
+      }
+    ]
+  },
+  "proof_3_stage_gate": {
+    "top_live_score": 90.6,
+    "patience_rows": 36,
+    "patience_rows_outscoring_best_live": 2,
+    "by_score_top10": [
+      {
+        "score_rank": 1,
+        "board_rank": 30,
+        "ticker": "AEIS",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 95.7
+      },
+      {
+        "score_rank": 2,
+        "board_rank": 31,
+        "ticker": "BHP",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 90.7
+      },
+      {
+        "score_rank": 3,
+        "board_rank": 1,
+        "ticker": "GPCR",
+        "status": "buy_now",
+        "stage": "live",
+        "score": 90.6
+      },
+      {
+        "score_rank": 4,
+        "board_rank": 32,
+        "ticker": "BC",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 90.2
+      },
+      {
+        "score_rank": 5,
+        "board_rank": 33,
+        "ticker": "UUUU",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 89.1
+      },
+      {
+        "score_rank": 6,
+        "board_rank": 34,
+        "ticker": "WBD",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 89.1
+      },
+      {
+        "score_rank": 7,
+        "board_rank": 35,
+        "ticker": "RIO",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 88.8
+      },
+      {
+        "score_rank": 8,
+        "board_rank": 36,
+        "ticker": "ALB",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 86.7
+      },
+      {
+        "score_rank": 9,
+        "board_rank": 37,
+        "ticker": "FN",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 85.9
+      },
+      {
+        "score_rank": 10,
+        "board_rank": 38,
+        "ticker": "HP",
+        "status": "bounce_wait",
+        "stage": "setting_up",
+        "score": 85.8
+      }
+    ]
+  }
+}

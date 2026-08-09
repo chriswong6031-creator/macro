@@ -127,6 +127,25 @@ ACTION_DIFF_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("end_date", ("end_date", "period_of_performance_current_end_date")),
 )
 
+#: Economic class of each derived before/after delta, published on the amount
+#: fact's ``semantic``.  The class is NOT cosmetic: a snapshot's
+#: ``total_obligated_amount`` is a **cumulative balance**, so its delta is the
+#: movement of a running total, while an action rail's
+#: ``federal_action_obligation`` is a **single transaction**.  Those two
+#: quantities measure different things and may never be added into one figure --
+#: summing a cumulative movement with the transactions that produced it
+#: double-counts the same dollars.  Every delta previously carried the single
+#: label ``derived_from_official_before_after``, which recorded HOW the number
+#: was derived but not WHAT it is, so no consumer could tell the two apart.
+_DELTA_SEMANTICS: dict[str, str] = {
+    "federal_action_obligation": "transaction_delta_derived_from_official_before_after",
+    "total_obligated_amount": "award_cumulative_delta_derived_from_official_before_after",
+    "potential_award_amount": "award_ceiling_delta_derived_from_official_before_after",
+    "current_award_amount": "award_current_value_delta_derived_from_official_before_after",
+}
+#: Fallback for a changed field with no registered economic class (dates, text).
+_DERIVED_DELTA_SEMANTIC = "derived_from_official_before_after"
+
 _RETRACTION_RE = re.compile(r"\b(?:rescind(?:s|ed|ing)?|retract(?:s|ed|ing|ion)?)\b", re.I)
 _OPTION_RE = re.compile(r"\bexercise(?:d|s|ing)?(?:\s+an?)?\s+option\b", re.I)
 _EXTENSION_RE = re.compile(r"\b(?:extend(?:s|ed|ing)?|extension)\b", re.I)
@@ -169,6 +188,19 @@ _EXACT_IDENTIFIER_FIELDS: dict[str, tuple[str, ...]] = {
         "recipient_id",
     ),
 }
+#: Award-level identity attached to an observation by the collector under its
+#: own provenance (``collectors/usaspending_awards.py``).  Read only for a
+#: namespace the observation itself left empty, exactly as the resolver does:
+#: a row that names its own recipient must keep its own identity, and an
+#: award-level value must never join it into a self-contradicting pair.
+_AWARD_LEVEL_IDENTIFIER_FIELDS: dict[str, tuple[str, ...]] = {
+    "sam_uei": ("award_recipient_uei",),
+}
+#: The named bases an exact link may rest on; mirrors
+#: ``engine.government_revenue.entity_resolution``.
+IDENTITY_BASIS_SOURCE_RECORD = "source_record_recipient"
+IDENTITY_BASIS_AWARD_LEVEL = "award_level_recipient_at_collection"
+IDENTITY_BASES = (IDENTITY_BASIS_SOURCE_RECORD, IDENTITY_BASIS_AWARD_LEVEL)
 _EXACT_IDENTIFIER_NAMESPACE_ALIASES = {
     "uei": "sam_uei",
     "recipient_uei": "sam_uei",
@@ -776,13 +808,20 @@ def _snapshot_groups(changed_fields: list[dict[str, Any]], before: Mapping[str, 
     result: list[tuple[str, list[dict[str, Any]], list[str]]] = []
     value_items = [by_name[name] for name in ("current_award_amount", "potential_award_amount") if name in by_name]
     if value_items:
+        secondary: list[str] = []
         if len(value_items) == 2:
+            # A compound move STRICTLY CONTAINS the ceiling move a lone
+            # ``potential_award_amount`` change would have published.  Naming the
+            # contained types keeps that fact machine-readable instead of leaving
+            # a reader to infer it from the changed-field list: nothing about the
+            # ceiling stopped being true because the current value moved too.
             event_type = "award_value_changed"
+            secondary = ["ceiling_changed", "current_value_changed"]
         elif value_items[0]["field"] == "potential_award_amount":
             event_type = "ceiling_changed"
         else:
             event_type = "current_value_changed"
-        result.append((event_type, value_items, []))
+        result.append((event_type, value_items, secondary))
     if "end_date" in by_name:
         prior = timestamp(_snapshot_value(before, "end_date"))
         current = timestamp(_snapshot_value(after, "end_date"))
@@ -901,25 +940,35 @@ def _amount_facts(
                     "source_ref": source_ref,
                 }
             )
+    # Every changed field that has a numeric before AND after gets its own delta
+    # fact, in changed-field order.  Only the FIRST one used to be emitted, which
+    # meant a compound change (both award values moved on one snapshot) published
+    # the current-value delta and silently dropped the ceiling delta -- the
+    # contained semantic disappeared merely because a second field moved with it.
+    # The primary amount and the material amount are still the first computable
+    # delta, so this is strictly additive to the fact list.
+    deltas: list[dict[str, Any]] = []
     delta: float | None = None
     for changed in changed_fields:
         before_value, after_value = _number(changed.get("before")), _number(changed.get("after"))
-        if before_value is not None and after_value is not None:
-            delta = after_value - before_value
-            facts.insert(
-                0,
-                {
-                    "id": f"delta_{changed['field']}",
-                    "label_code": f"delta_{changed['field']}",
-                    "value": delta,
-                    "currency": "USD",
-                    "semantic": "derived_from_official_before_after",
-                    "as_of": _effective_at(after),
-                    "is_lower_bound": False,
-                    "source_ref": source_ref,
-                },
-            )
-            break
+        if before_value is None or after_value is None:
+            continue
+        value = after_value - before_value
+        if delta is None:
+            delta = value
+        deltas.append(
+            {
+                "id": f"delta_{changed['field']}",
+                "label_code": f"delta_{changed['field']}",
+                "value": value,
+                "currency": "USD",
+                "semantic": _DELTA_SEMANTICS.get(changed["field"], _DERIVED_DELTA_SEMANTIC),
+                "as_of": _effective_at(after),
+                "is_lower_bound": False,
+                "source_ref": source_ref,
+            }
+        )
+    facts = deltas + facts
     primary = facts[0]["id"] if facts else None
     primary_value = facts[0]["value"] if facts else None
     return facts, primary, delta if delta is not None else primary_value
@@ -962,19 +1011,36 @@ def _identifier_value(namespace: str, value: Any) -> str | None:
     return rendered.upper()
 
 
+def _namespace_values(
+    row: Mapping[str, Any], namespace: str, fields: Iterable[str]
+) -> set[str]:
+    values: set[str] = set()
+    for field in fields:
+        # A field the source response never carried is not this row's claim,
+        # even when the column exists and holds a carried-forward value.  This
+        # presence check is what makes a populated column with no manifest entry
+        # invisible here -- the exact way an attached identity ships dark.
+        if _field_presence_value(row, field) is False:
+            continue
+        raw = row.get(field)
+        candidates = raw if isinstance(raw, (list, tuple, set, frozenset)) else [raw]
+        for candidate in candidates:
+            normalized = _identifier_value(namespace, candidate)
+            if normalized:
+                values.add(normalized)
+    return values
+
+
 def _row_exact_identifiers(row: Mapping[str, Any]) -> dict[str, set[str]]:
     result: dict[str, set[str]] = {}
     for namespace, fields in _EXACT_IDENTIFIER_FIELDS.items():
-        values: set[str] = set()
-        for field in fields:
-            if _field_presence_value(row, field) is False:
-                continue
-            raw = row.get(field)
-            candidates = raw if isinstance(raw, (list, tuple, set, frozenset)) else [raw]
-            for candidate in candidates:
-                normalized = _identifier_value(namespace, candidate)
-                if normalized:
-                    values.add(normalized)
+        values = _namespace_values(row, namespace, fields)
+        if values:
+            result[namespace] = values
+    for namespace, fields in _AWARD_LEVEL_IDENTIFIER_FIELDS.items():
+        if namespace in result:
+            continue
+        values = _namespace_values(row, namespace, fields)
         if values:
             result[namespace] = values
     return result
@@ -1124,6 +1190,19 @@ def _recipient_resolution(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
     return None
 
 
+def _resolution_identity_basis(resolution: Mapping[str, Any]) -> str | None:
+    """Return the resolution's declared identity basis, or None if unnamed.
+
+    An unnamed basis is not upgraded to a default.  A resolution artifact
+    written before the basis existed says nothing about which identity it used,
+    and inventing ``source_record_recipient`` for it would assert exactly the
+    thing the ruling requires be disclosed rather than assumed.
+    """
+
+    basis = _text(resolution.get("identity_basis"))
+    return basis if basis in IDENTITY_BASES else None
+
+
 def _resolved_issuer_impact(
     row: Mapping[str, Any],
     company_index: Mapping[str, Mapping[str, Any]],
@@ -1222,6 +1301,11 @@ def _impact(
         "company_name": _clean(_first(company, ("company_name", "name", "issuer_name")) or resolution.get("issuer", {}).get("name")),
         "issuer_company_id": _clean(resolution.get("issuer", {}).get("company_id")),
         "resolution_state": resolution_state,
+        # The basis travels with the impact, not only with the resolution: a
+        # consumer that reads listed_company_impacts and nothing else must still
+        # be able to tell an award-level attachment from a transaction-asserted
+        # identity.
+        "identity_basis": _resolution_identity_basis(resolution),
         "relation_semantic": "reviewed",
         "confidence": confidence,
         "stance": "watch_dont_chase",

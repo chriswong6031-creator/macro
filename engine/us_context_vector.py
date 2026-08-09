@@ -64,6 +64,7 @@ from typing import Any
 import pandas as pd
 
 from engine import ledger_lane
+from engine import us_board_rank
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -744,6 +745,18 @@ def build_records(
             "score_rank": _finite(board.get("score_rank")),
             "display_rank": _finite(board.get("display_rank")),
             "featured": _bool(board.get("featured")),
+            # WHAT `featured` MEANT ON THE NIGHT IT WAS WRITTEN.  This is an
+            # append-only forward store, so a column whose MEANING moves without a
+            # stamp silently pools two different quantities under one name — and
+            # `featured` moved twice in three days: #4684 (2026-08-06) made an unknown
+            # extension reading a VETO, and ANTICIPATION v1 (2026-08-08) replaced that
+            # veto with a disclosure AND widened the admissible entry statuses.  Rows
+            # from either side of those edits are not interchangeable, and nothing in
+            # the store said so.  Stamped exactly the way `board_definition` and
+            # `anchor_era` already are: the module constant, read in the same process
+            # that scored the rows this record is built from, so it labels the run that
+            # produced the flag rather than whatever the constants say at read time.
+            "selection_era": us_board_rank.SELECTION_ERA,
             # ── theme ─────────────────────────────────────────────────────
             # A count of 0 is a MEASURED fact ("in no curated basket") only when
             # the membership source actually loaded.  If it did not, every name

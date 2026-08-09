@@ -176,8 +176,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:                       # run as `python3 scripts/...`
-    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np                                       # noqa: E402
 import pandas as pd                                      # noqa: E402

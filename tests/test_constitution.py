@@ -29,7 +29,7 @@ import json
 import random
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -46,6 +46,26 @@ from engine.neuralweb.constitution import (
     wilson_lower,
 )
 from engine.neuralweb.governance import _event_id, append_event, load_events
+
+
+def _days_ago(days: int) -> str:
+    """ISO date `days` before today (UTC) — NEVER hardcode `evidence_asof`.
+
+    Gate 3 of ``engine/neuralweb/constitution.py`` (:370-384) refuses a grant
+    once ``evidence_asof`` is more than ``max_staleness_days`` old (default 120
+    at :265), and a call that passes no ``now=`` falls to the real clock at
+    :310-311.  A literal asof is therefore a scheduled red: the pinned
+    ``2026-06-01`` reached 121 days on 2026-09-30 UTC and would have flipped
+    every granted-path test to ``stale-evidence: 121d > max 120d``.  These tests
+    are hermetic in DATA (pure function, no IO); a relative asof makes them
+    hermetic in TIME without weakening the freshness contract itself — 30 days
+    is comfortably inside the 120-day window at any clock.
+
+    Only calls WITHOUT an explicit ``now=`` need this.  The hermetic pairs that
+    pass their own ``now=`` (the lapsed-evidence and boundary-discrimination
+    tests) are frozen on both sides and must keep their literals.
+    """
+    return (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -181,14 +201,6 @@ class TestNullSimulation:
 
 class TestGrantAuthority:
 
-    BASE_EVIDENCE = {
-        "hits": 6,
-        "n": 10,
-        "base_rate": 0.30,
-        "evidence_asof": "2026-06-01",
-    }
-    BASE_FLOORS = {"min_n": 30, "min_events": 8}
-
     def test_refused_insufficient_n(self):
         res = grant_authority(
             {"hits": 6, "n": 5, "base_rate": 0.30, "evidence_asof": "2026-06-01"},
@@ -218,8 +230,9 @@ class TestGrantAuthority:
 
     def test_granted_when_strong_evidence(self):
         # n=40, hits=35, base=0.30 → high wilson_lb, lift_lb >> 1
+        # No now= here, so Gate 3 reads the real clock — asof must be relative.
         res = grant_authority(
-            {"hits": 35, "n": 40, "base_rate": 0.30, "evidence_asof": "2026-06-01"},
+            {"hits": 35, "n": 40, "base_rate": 0.30, "evidence_asof": _days_ago(30)},
             floors={"min_n": 30, "min_events": 8},
         )
         assert res.granted
@@ -248,8 +261,11 @@ class TestGrantAuthority:
         assert "base" in res.reason.lower()
 
     def test_grant_result_is_dataclass(self):
+        # Reaches Gate 3 on the real clock too: with a literal asof this test
+        # would still PASS after the 120-day lapse, but on the refused branch —
+        # silently stopping covering the GRANTED result shape it is here for.
         res = grant_authority(
-            {"hits": 35, "n": 40, "base_rate": 0.30, "evidence_asof": "2026-06-01"},
+            {"hits": 35, "n": 40, "base_rate": 0.30, "evidence_asof": _days_ago(30)},
             floors={"min_n": 30, "min_events": 8},
         )
         assert isinstance(res, GrantResult)

@@ -10,11 +10,16 @@ radar JSON exists.
 from __future__ import annotations
 
 import logging
+import sys
 
 from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
 
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
 

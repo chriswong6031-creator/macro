@@ -1,6 +1,7 @@
 # Government Revenue candidate grader — pre-registration (GRV-FA1)
 
-**Version 3.0.0. Registered 2026-08-06, amended 2026-08-07, before any observation exists.**
+**Version 4.0.0. Registered 2026-08-06, amended 2026-08-07 and 2026-08-08, before any
+observation exists.**
 
 *Version 2.0.0 amends 1.0.0 on the same day, still before the first issuance row exists (the
 live log is 0 bytes — see §0). The amendments are §7's decision rule and power calculation,
@@ -17,6 +18,19 @@ kill condition are unchanged, and N = 545 still describes the statistic it was d
 (The kill condition is named and stated in §7.3; it is deliberately not repeated above the
 machine-readable declaration, because §9's drift guard reads the prose on both sides of that
 block and a mention here would satisfy it without anyone stating the rule.)*
+
+*Version 4.0.0 (2026-08-08) amends §7 — the **evaluation rule** — in response to an
+adversarial audit of the instrument. It adds two necessary preconditions to every verdict (a
+coverage floor on the paired placebo delta, and a floor on independent draws) and refuses a
+degenerate one-observation interval; the kill condition is renamed accordingly and its new id is
+stated with the rule itself in §7.3 — deliberately not here, for the reason given just above.
+It also amends §1, fencing the family to the ACTION source rail (§7.6.4), because sibling
+PR #5085 admits snapshot-rail balance-change events into the same candidate family and this
+grader would otherwise have pooled two different measurement units into one graded cohort.
+§7.6 states each change, its evidence, and — because this is an amendment to a
+registered evaluation rule — the proof that the amendment window is still open. **No
+threshold value moved.** The pre-registration's §9 amendment law is unchanged and is now
+narrower in practice: the next issuance row closes this window permanently.*
 
 Program: Government Revenue Foresight, Wave 9G
 (`research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md` §"Wave 9G — prospective grader
@@ -61,11 +75,32 @@ A candidate enters the family iff, from issuance-time fields only:
   `award_ceiling_change` is a different economic claim (a ceiling moves no money) and
   abstains as `ceiling_change_out_of_family`; `option_exercise` and `new_award` abstain as
   `family_mismatch`;
+- **`source_event.source_rail` is exactly `usaspending_award_action`** — the family is fenced to the
+  ACTION rail, and the fence is fail-closed: an absent, null, non-string, or differently-cased
+  rail abstains as `family_rail_mismatch`. The candidate contract admits **both** the action
+  rail and `usaspending_award_snapshot` into `award_obligation_change`, and they are not the
+  same number. The action rail emits a `transaction_delta` — money that moved in one recorded
+  action. The snapshot rail emits a delta obtained by **differencing `award_cumulative`
+  balances** between two observations of the same award, in which a restatement, a late-posted
+  correction, and a genuine new obligation are indistinguishable, and whose magnitude is not
+  the size of any event. Pooling the two into one graded cohort is the amount-class conflation,
+  reaching the family through the RAIL rather than through the family name. See §7.6.4. The
+  snapshot rail is not rejected as evidence — it is a **different measurement** and needs its
+  own preregistration, with its own horizons and its own N, before anything grades it;
 - `source_event.event_type != "deobligation"` and `transmission_direction == "possible_positive"`;
 - `coverage.exact_link_status == "exact_linked"` — an exact reviewed issuer path, never a
   discovery-name or fuzzy match;
 - `authority` is the display/context block, byte-identical to the candidate contract's;
-- `known_at` parses; and
+- `known_at` parses;
+- the candidate carries a **`ticker`**. An issuer the recipient graph could not map to a market
+  identity has no price panel and no honest number, so it abstains as `mapping_missing` and is
+  counted like every other refusal. *Version 3.0.0 had no such check: an unmapped issuer was
+  ADMITTED and then raised inside the row builder's own validation, so the first unmapped issuer
+  in a batch killed the whole batch — no rows, no abstention, no printed null, no report. The
+  reviewed recipient graph carries unmapped issuers today (GE and BWXT among them), so this was
+  the live shape and not a hypothetical, and `mapping_missing` was declared in the vocabulary
+  and emitted by nothing.* The abstention row carries an explicit **null** ticker, never an
+  empty string, which every downstream census would read as a symbol; and
 - `source_event.is_late_discovery` is **exactly `false`** — fail-closed. A late-discovered
   action was already public before this pipeline could see it, so grading it from our
   `known_at` would measure stale news. Late discoveries abstain and are counted separately.
@@ -77,6 +112,37 @@ A candidate enters the family iff, from issuance-time fields only:
 Every refusal above is recorded in the same append-only log as an `abstention` row with its
 named reason, so the abstention rate is computable from the log alone and a filter cannot
 be applied silently.
+
+**Identity basis — what `exact_linked` is allowed to rest on (registered 2026-08-08).** The
+`exact_link_status` clause above constrains the link *class* (exact identifier, reviewed
+ownership path — never a discovery name or a fuzzy match). It did not, through 3.0.0,
+constrain the *basis*: whose assertion supplied that exact identifier, and on which clock. It
+now does, because the answer changed. The USAspending action rail — `POST
+/api/v2/transactions/`, the only rail this registered family admits after 4.0.0 — carries no
+recipient identity of its own (35,140 of 35,140 accrued action rows hold a null
+`recipient_uei`), so until now no candidate on the admitted rail could clear the exact-link
+gate. Snapshot-rail candidates remain display-only and refuse here as `family_rail_mismatch`.
+An action is now linkable through the award's recipient of record, attached to the row under a
+named basis with the award's own retrieval clock. Two bases are registered, and a candidate
+carries exactly one:
+
+- `source_record_recipient` — the observation's own recipient fields, asserted by the response
+  that produced the row. This is what every candidate before this amendment rested on.
+- `award_level_recipient_at_collection` — the award's recipient of record, attached to an
+  observation that asserted none of its own. The identifier is exact and the ownership path is
+  reviewed, so the link satisfies `exact_linked` as written; what is *not* claimed is that the
+  transaction named this recipient. The identity's clock is the award record's retrieval
+  clock, never the transaction's `effective_at`, so a recipient recorded after collection is
+  outside the claim. Every such candidate prints the basis in `issuer_resolution_ref` and the
+  limitation in `limitations`.
+
+**Both bases are admitted, and neither is a separate cohort.** A basis split is not registered
+as a stratum here because the family's N (§7) was derived for one pooled statistic and
+splitting it post hoc is exactly the optional-stopping move §7.5 latches against. The basis is
+recorded on every issuance row so a *descriptive* partition is computable later; it is not a
+verdict input. This widens which action-rail records can satisfy an unchanged exact-link rule,
+made before any measurement exists to be flattered by it: `data/government_revenue/candidate_ledger.jsonl`
+is **0 bytes** at the amending commit's parent, and no issuance log exists.
 
 ### Machine-readable declaration (binding)
 
@@ -95,7 +161,7 @@ not registered.
   "family_id": "grv-fa1",
   "title": "exact-issuer receipt-bound positive funded-action acceleration",
   "document": "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md",
-  "version": "3.0.0",
+  "version": "4.1.0",
   "horizons": [
     {"name": "h5", "sessions": 5, "role": "disclosure"},
     {"name": "h21", "sessions": 21, "role": "supporting"},
@@ -135,7 +201,7 @@ not registered.
     "planning_n_required": 545
   },
   "accrual_expiry_date": "2029-08-06",
-  "kill_condition_id": "GRV-FA1-KILL-V2"
+  "kill_condition_id": "GRV-FA1-KILL-V3"
 }
 ```
 
@@ -188,8 +254,29 @@ Two mechanical protections:
 
 - **Entry.** The first session **strictly after** the UTC date of the candidate's `known_at`.
   A row is never filled on the session during which it became knowable. This matches
-  `engine/grading.py`'s next-bar-fill convention.
-- **Exit.** `entry_index + horizon_sessions` on the same calendar.
+  `engine/grading.py`'s next-bar-fill convention. **The calendar must reach back past
+  `known_at`**: one whose first session is later cannot name "the session after `known_at`" —
+  index 0 is merely the earliest bar it carries — so such a row is `entry_session_unavailable`,
+  never filled on that bar.
+- **Exit.** `entry_index + horizon_sessions` on the same calendar, and the exit session must be
+  **strictly before** the report's `as_of` UTC date. `as_of` is an instant and the nightly
+  pipeline runs 00:05–07:00 UTC, so a date-granular comparison consumed the exit session's close
+  roughly twenty hours before the US market produced it. A one-session lag is the conservative
+  reading of an instant against a calendar that carries no close times; this module deliberately
+  holds no session-hours or timezone table (§3) and may not infer one.
+- **The session LIST is frozen, not only the calendar id.** Every issuance row records
+  `entry_rule.calendar_session_count` and `entry_rule.calendar_sessions_sha256` — the content
+  address of the sessions that existed at issuance. A vendor revision of the same calendar (a
+  make-up session added, a holiday reclassified) keeps the same `calendar_id`, and it re-cuts an
+  already-frozen window bit-for-bit differently under a byte-identical price vintage; freezing an
+  id a revision preserves froze nothing. At grade time the calendar's prefix of that length must
+  reproduce the digest, or the row is `ungraded(calendar_revised)` — a refusal rather than an
+  exception, because exchanges do restate session lists and a batch that dies on the first one
+  grades nothing. A PREFIX and not the whole list, because the calendar legitimately GROWS every
+  night; hashing the whole list would refuse every row within a day and prove nothing.
+  `regrade_diff` carries the calendar identity and the window's session digest on both sides, so
+  a moved value is attributable to the calendar rather than to the vintage — and it now reports a
+  grade that **disappeared** between runs, which it previously could not see at all.
 - **Read window.** The closed interval `[entry_session, exit_session]` and nothing else.
   Every price the grader consumes passes through a single accessor, and each grade row
   carries a `read_window_sha256` over the exact `(symbol, session, close)` triples consumed,
@@ -208,10 +295,15 @@ Two mechanical protections:
 - **Placebo / naive baseline.** For every graded row, the same name and the same horizon
   shifted **−252 sessions** — a window lying entirely before issuance, so it cannot borrow
   the future. It answers the question a bare hit rate cannot: does this name drift up
-  anyway? The placebo is reported with its own coverage and is an input to H1. It carries the
-  **same refusals** as the event grade — foreign calendar, mismatched price basis — because a
-  baseline computed on a different calendar or a different adjustment than the cohort it is
-  subtracted from is not a baseline.
+  anyway? The placebo is reported with its own coverage and is an input to H1. It carries
+  **every refusal** the event grade carries — foreign calendar, mismatched price basis, a revised
+  session list, a calendar that does not reach back to `known_at`, **and `as_of`** — because a
+  baseline computed on a different calendar, a different adjustment, or a different **clock** than
+  the cohort it is subtracted from is not a baseline. *Version 3.0.0's placebo took no `as_of` at
+  all: "the window lies before issuance" bounds it against the ROW's clock, not the REPORT's, so a
+  report replayed at a historical `as_of` published a placebo block computed from bars after it.
+  Only the paired delta was protected, and only incidentally, by its intersection with a real side
+  that had already refused.*
 - **The placebo delta is PAIRED, on `candidate_id`, over the intersection.** A candidate
   graded on the event window but not on its placebo window (or the reverse) contributes to
   neither side. A difference between a mean over one row set and a mean over a different row
@@ -236,8 +328,12 @@ repository. They are not stylistic.
 - **An unresolved endpoint is not 0.5.** There is no imputation path anywhere in the
   instrument. A row that cannot be resolved is `ungraded` with a named reason from a closed
   list — `horizon_not_matured`, `entry_session_unavailable`, `price_missing`,
-  `benchmark_missing`, `mapping_missing`, `source_outage`, `retracted`, `calendar_gap` — and
-  is excluded from **both** the numerator and the denominator of the conditional rate.
+  `benchmark_missing`, `mapping_missing`, `source_outage`, `retracted`, `calendar_gap`,
+  `calendar_revised` — and is excluded from **both** the numerator and the denominator of the
+  conditional rate. **A non-finite close (`NaN`, `±inf`) is a MISSING bar, not a number**: it
+  resolves to `price_missing`. `NaN <= 0` is `False`, so a bare positivity guard passed it, and
+  `nan > 0` is `False`, so the row then graded a **miss** — this rule broken in the one direction
+  that reads as a measured loss rather than as an absence.
 - **Bounds accompany every hit rate — and the kill-bearing mean.** Over the fixed issuance
   cohort, the hit-rate lower bound counts every ungraded row as a miss and the upper bound
   counts every one as a hit. The pooled market-relative **mean** now carries the same kind of
@@ -336,10 +432,22 @@ preregistration, and it is the reason the registered N moved.
   instrument as one that only ever kills. If the events do not arrive, the honest answer is
   "we could not measure this", and §7's EXPIRY clause files exactly that.
 
-### 7.3 GRV-FA1-KILL-V2 — three exhaustive regions
+### 7.3 GRV-FA1-KILL-V3 — three exhaustive regions
 
-At the first report where the §6 gate is satisfied *and* the verdict-basis coverage clears
-`min_verdict_outcome_coverage`, evaluate H1 **once**. Let `m` be the pooled h63 market-relative
+At the first report where the §6 gate is satisfied *and* **all three** verdict preconditions
+below hold, evaluate H1 **once**:
+
+1. **Verdict-basis coverage** clears `min_verdict_outcome_coverage` (0.70);
+2. **Paired-placebo coverage** clears the same registered floor — the paired intersection is a
+   different and strictly smaller set than the verdict basis, and it carries half the decision
+   rule (§7.6.1); and
+3. **Independent draws** — `verdict_basis.window_independence.non_overlapping_window_estimate`
+   — reach `planning_n_required` (545), because §7.2's N is a power calculation and a power
+   calculation counts draws, not rows (§7.6.2).
+
+A precondition that fails yields `accruing` with the reason named
+(`paired_placebo_coverage_below_registered_floor`, `independent_draws_below_registered_n`),
+never a softer decided state. Let `m` be the pooled h63 market-relative
 mean over the verdict basis with interval `[m_lo, m_hi]`, `d` the **paired** placebo delta with
 interval `[d_lo, d_hi]`, and `h` the conditional h63 hit rate with lower interval bound `h_lo`.
 
@@ -420,6 +528,165 @@ paired placebo). Everything else in the report is labeled supporting or disclosu
 no verdict power. No threshold in this document may be tuned on the held-forward window; see
 §9.
 
+### 7.6 Amendment 4.0.0 (2026-08-08) — what changed in the evaluation rule, and why
+
+This subsection exists because §9 permits an amendment to a registered rule **only before the
+first observation**, and an amendment to an evaluation rule is exactly the change most likely
+to be a threshold tuned on data. So it is recorded here in full, with its evidence, and with
+the proof that no observation existed when it was made.
+
+**The amendment window, stated as checkable facts (2026-08-08).** All three are asserted
+programmatically by
+`tests/test_government_revenue_candidate_grader.py::test_amendment_window_the_issuance_record_is_still_empty_and_uncalled`,
+which is registered here as a **temporary witness and is to be deleted by the PR that issues
+the first row**:
+
+1. `data/government_revenue/candidate_ledger.jsonl` is **0 bytes** in the committed tree;
+2. no `candidate_issuance_log.jsonl` exists anywhere under `data/`; and
+3. **the grader has no caller.** No module under `engine/`, `scripts/`, `app/`, or `admin/`
+   imports `candidate_grader`; the only references in the repository are this document, the
+   test suite, and the CI job lists.
+
+**Therefore no number has ever been produced by this instrument, no cohort has ever been
+graded, and no threshold below was chosen with knowledge of an outcome.** That is the whole
+warrant for amending rather than minting a new `family_id`, and it expires at the first
+issuance row. The changes below make every verdict region *strictly harder* to reach, which is
+also the safe direction if this reasoning is ever found to be wrong.
+
+**No threshold VALUE moved.** `minimum_interesting_effect`, `hit_rate_floor`,
+`confidence_level`, `min_verdict_outcome_coverage`, `planning_n_required` and every §6 gate
+constant are unchanged. What changed is *which statistics those existing constants are applied
+to*.
+
+#### 7.6.1 The paired placebo delta carries the registered coverage floor
+
+The paired delta `d` is half of both decision regions (`d_hi < δ*` for KILL, `d_lo > δ*` for
+SUPPORTED). §7.4's coverage floor guards `verdict_basis` coverage — the **real** side — and the
+paired intersection is a different, strictly smaller set. `paired_coverage` was computed and
+printed by the instrument and **consulted by nothing**.
+
+*Evidence (audit probe p4/p4b, reproduced as
+`test_one_paired_observation_cannot_decide_a_verdict`).* A cohort of 545 candidates satisfying
+every registered §6 gate on the real side — 545 distinct source events, 545 issuers, 251 entry
+sessions, outcome coverage 1.0 — with the placebo window priced for exactly **one** of them
+produced `paired_n = 1`, a paired coverage of 1/545, and a decided verdict. Flipping that one
+row's placebo window flipped the verdict of all 545; deleting it changed the verdict again. The
+KILL branch behaved identically, and a KILL files a construction-scoped kill row.
+
+**The rule.** The paired delta's own coverage must clear `min_verdict_outcome_coverage` before
+any verdict that reads it fires. Below the floor: `accruing`, reason
+`paired_placebo_coverage_below_registered_floor`.
+
+#### 7.6.2 The verdict is gated on independent draws, not on row count
+
+§7.2 derives N = 545 from `SE ≤ 0.0107` at `σ_paired = 25pp`. That arithmetic is over
+**independent draws**. §6 already said so in prose — "545 rows that are one independent draw"
+is what `min_distinct_entry_sessions` exists to stop — and §6 already required
+`window_independence` to be *printed*. It was printed and never read.
+
+*Evidence (audit probe p8, reproduced as
+`test_a_verdict_is_gated_on_independent_draws_not_on_row_count`).* 552 rows from 12 issuers on
+consecutive entry sessions: `non_overlapping_window_estimate = 12`, every §6 gate satisfied,
+and a bootstrap interval computed at n = 552 that cleared δ\* — an interval the same evidence
+fails at n = 12, because the overlap narrows it by ≈ √(552/12) ≈ 6.8×. Two h63 windows one
+session apart share 62 of 63 sessions of tape; they are two rows and about one draw.
+
+**The rule.** `verdict_basis.window_independence.non_overlapping_window_estimate` must reach
+`planning_n_required` before any verdict fires. Below it: `accruing`, reason
+`independent_draws_below_registered_n`. The estimate is computed over the **verdict basis**
+rather than over tonight's grades, because the supersession ratchet (§8) can place a row in the
+basis that is ungraded tonight, and the basis is the set the interval is computed over.
+
+#### 7.6.3 A one-observation interval is not an interval
+
+`_bootstrap_mean_ci` returned a **degenerate** interval `(v, v)` at `n == 1`, documented as
+"honest, because one observation has no sampling spread". It is honest and it is exactly why the
+value must not be emitted as an interval: §7.1 tests intervals against thresholds *precisely so
+a point comparison cannot decide a verdict*, and a zero-width interval passes every test the
+point passes. 2.0.0's own remedy was reintroduced as its own defect.
+
+**The rule.** `n < 2` has no interval: `(None, None)`, which routes to `accruing` /
+`verdict_inputs_unavailable`. This is a rule about what may be *emitted*, and it applies to
+every statistic in the report, not only to the verdict inputs.
+
+#### 7.6.4 The family is fenced to the action rail (§1)
+
+This is an **admission-rule** amendment, made in the same window and for the same reason: it
+must land before the first issuance row, because after that the cohort would already contain
+the two units it exists to keep apart.
+
+*The admitting event.* Sibling PR #5085 admits snapshot-rail
+`reported_obligation_balance_changed` events into the `award_obligation_change` **candidate**
+family. That is correct at display tier and is not in question here. Its side effect is: §1
+gated GRV-FA1 on the family name with **no rail restriction**, so this grader — registered as
+positive funded-**ACTION** acceleration — would have begun issuing on snapshot-derived
+cumulative-balance deltas. Verified in this repository at this PR's base:
+`engine/government_revenue/candidates.py` admits `source_rail in {"usaspending_award_snapshot",
+"usaspending_award_action"}` into the family, `engine/government_revenue/award_events.py`
+stamps `usaspending_award_snapshot` on snapshot-mode events, and `admit` accepted such a
+candidate.
+
+*Why a fence and not a filter.* `source_rail` says what KIND OF NUMBER produced the candidate.
+`transaction_delta` (action rail) is money that moved in one recorded action.
+`award_cumulative`-differenced delta (snapshot rail) is the change between two observations of
+a running balance: a restatement, a late-posted correction, and a genuine new obligation are
+indistinguishable in it, and its magnitude is not the size of any event. §5 forbids pooling
+amount classes inside one graded cohort; a cohort mixing these two has no single unit, so its
+pooled mean measures nothing and the registered δ\* = +3.0pp does not describe it.
+
+*The rule.* A candidate whose `source_event.source_rail` is not exactly
+`usaspending_award_action` abstains as **`family_rail_mismatch`** — a named abstention row in
+the same append-only log, counted in the abstention rate, with the batch continuing, exactly as
+`mapping_missing` behaves. It is never an exception and never a silent filter. The test is
+`!=` against the ONE registered rail rather than a blocklist of known snapshot rails, because a
+blocklist admits every rail a later ingest adds — which is precisely how the snapshot rail
+reached this family.
+
+*What is explicitly NOT done.* No second registered family is created here for the snapshot
+rail. Registering a family as a side effect of fixing another one is how an unowned measurement
+acquires a horizon nobody chose; the snapshot rail gets its own deliberate preregistration, or
+it gets nothing.
+
+*Amendment window, re-verified for this clause.* Because this clause landed after the rest of
+4.0.0, the §7.6 window test was re-run against the amended tree before it was written:
+`data/government_revenue/candidate_ledger.jsonl` is still **0 bytes**, no
+`candidate_issuance_log.jsonl` exists under `data/`, and the grader still has no caller. No
+candidate has ever been admitted by this instrument, so no admission rule here was narrowed
+against an observed outcome — and #5085's four snapshot obligation candidates, which `admit`
+accepted before this clause, had never been graded.
+
+#### 7.6.5 Non-evaluation repairs shipped in the same change (recorded, not registered)
+
+These fix the instrument's *measurement* rather than its decision rule. They are listed so the
+amendment is a complete account of what moved:
+
+- **A non-finite close is a missing bar.** `NaN <= 0` is `False`, so the panel accessor passed
+  every NaN and infinity through. A NaN on the entry bar produced `nan > 0 == False` and graded
+  the row a **MISS** — a null endpoint scored as a loss, §5's rule broken in its worst
+  direction, and invisible, because the row read as resolved with full coverage. The report also
+  carried a bare `NaN` literal, which RFC 8259 forbids: the record round-tripped inside Python
+  and was unparseable to every conforming reader. Both the accessor and the canonical serializer
+  now refuse non-finite values.
+- **A calendar the row's `known_at` predates cannot place its entry.** `first_index_after`
+  returns index 0 either way, so a trimmed panel plus a backfilled candidate silently filled the
+  row on a POST-issuance session. Now `entry_session_unavailable`.
+- **`as_of` is an instant, and maturity is now strict.** The exit session must be **strictly
+  before** `as_of`'s UTC date. The comparison was date-granular, so a nightly run at 00:05 UTC
+  consumed the exit session's close ~20 hours before the US close produced it. A one-session lag
+  is the conservative reading: §3's anti-`resample` doctrine means this module holds no session
+  hours or timezone table and may not infer one.
+- **The placebo obeys `as_of`.** `grade_placebo_row` took no `as_of` at all. "The window lies
+  before issuance" bounds it against the row's clock, not the report's, so a replayed report
+  computed its published placebo block from bars after `as_of`. Only the paired delta was safe,
+  and only incidentally.
+- **The correction allowlist is enforced on the log** (§8), not only in the constructor.
+- **The session list is frozen, not just the calendar id** (§4).
+- **An unmapped issuer abstains** as `mapping_missing` (§1) instead of raising.
+- Report hygiene: an empty cohort reports coverage `empty` rather than `complete`; monthly
+  buckets cite their own per-month coverage; `verdict.inputs.coverage` cites the verdict basis's
+  coverage — the denominator its numbers actually came from — with the cohort's printed beside
+  it as `cohort_outcome_coverage`; `regrade_diff` reports deletions and names the calendar axis.
+
 ## 8. Corrections and retractions policy (fixed before observation)
 
 - The issuance log is **append-only**. A row, once written, is never edited. A correction is
@@ -440,6 +707,18 @@ no verdict power. No threshold in this document may be tuned on the held-forward
   and quietly ungrade a loser. An allowlist is used rather than a blocklist because a blocklist
   admits every field a later schema adds. A correction that genuinely needs a different ticker,
   event, or `known_at` is a **different candidate**, not a correction.
+- **The allowlist is enforced ON THE LOG, not only in the constructor.** Version 2.0.0 and 3.0.0
+  checked it in `build_correction_row` alone. A superseding row built **by hand** — the same dict,
+  a recomputed `row_id`, no constructor involved — carrying the identical `known_at` rewrite
+  passed `validate_issuance_row`, `parse_issuance_log`, `append_issuance_rows` **and**
+  `cohort_rows`, re-cut the entry session onto a post-outcome bar, and changed the published
+  number and the verdict. A guard living only in the convenience constructor guards only the
+  callers who use the convenience constructor, and the log is the record of authority. Every
+  field outside the allowlist and outside the supersession machinery itself (`row_kind`,
+  `row_id`, `supersedes_row_id`, `correction_reason`, `appended_at`) must now reproduce
+  **byte-for-byte** from the row it supersedes, checked as canonical bytes so a re-ordered nested
+  object cannot pass as unchanged, at all three of those gates — and before the append is
+  written, not after.
 - **`correction_reason` comes from a closed vocabulary**, validated on the row:
   `source_record_corrected`, `source_receipt_binding_failed`, `evidence_artifact_regenerated`.
   A **retraction** takes the narrower pair — `source_record_corrected`,
@@ -518,6 +797,16 @@ originate or escalate a grade here.
 | 2.0.0 §8 | 2026-08-06 | correction field **allowlist**; closed `correction_reason` vocabulary; the **supersession ratchet** | A plain correction could rewrite `known_at` (re-cutting the entry session after the outcome was observable), `ticker`, `horizons`, or `entry_rule`; the reason was unvalidated free text; and ungrading a loser moved a two-row cohort from `kill` to `tested_null`. |
 | 2.0.0 §1 | 2026-08-06 | `is_late_discovery` admission is fail-**closed** | `bool(...)` admitted a payload that omitted the key — the only fail-open admission test in the family. |
 | 2.0.0 §5/§6 | 2026-08-06 | coverage walker covers `*_mean`/`*_summary`/`*_bound`; `window_independence` emitted | The walker was structurally blind to the mean the verdict reads; `issued_n` counted overlapping windows as independent draws with no disclosure. |
+| 4.1.0 §1 | 2026-08-08 | **identity basis registered**: `exact_linked` may rest on `source_record_recipient` or on `award_level_recipient_at_collection`; the basis is printed on every candidate and is descriptive, never a verdict input or a stratum | §1 constrained the link *class* and was silent on *basis*, which was harmless only while the answer could not change: the action rail carries no recipient identity (35,140/35,140 null UEIs), so nothing on the only admitted rail could ever be exact-linked. Attaching the award's recipient of record makes that rail linkable, widening which action records can satisfy the unchanged exact-link rule; the snapshot rail remains display-only under 4.0.0's `family_rail_mismatch` fence. Registered pre-observation (`candidate_ledger.jsonl` still 0 bytes, no issuance log), so §9's post-issuance freeze is not engaged. |
+| 4.0.0 §7.6.1 | 2026-08-08 | the **paired placebo delta** carries `min_verdict_outcome_coverage`; new blocked reason `paired_placebo_coverage_below_registered_floor`; kill condition renamed **GRV-FA1-KILL-V3** | The coverage floor guarded the real side only. A cohort meeting every registered gate at 545 events with the placebo priced for ONE candidate reached a decided verdict on `paired_n = 1`; flipping that single row's placebo window flipped the verdict of all 545, on both the KILL and the SUPPORTED branch. `paired_coverage` was computed, printed, and read by nothing. |
+| 4.0.0 §7.6.2 | 2026-08-08 | the verdict is gated on `non_overlapping_window_estimate ≥ planning_n_required`, computed over the **verdict basis**; new blocked reason `independent_draws_below_registered_n` | §7.2's N is a power calculation and counts independent draws. 552 rows from 12 issuers on consecutive entry sessions gave `non_overlapping_window_estimate = 12`, a satisfied gate, and an interval narrowed ~6.8× by overlap that cleared δ\* — a threshold the same evidence fails at its honest N. §6 already required the number to be printed; nothing read it. |
+| 4.0.0 §7.6.3 | 2026-08-08 | `n < 2` emits **no interval** (`None`), never a degenerate `(v, v)` | §7.1 tests intervals so a point comparison cannot decide a verdict; a zero-width interval passes every test the point passes, so 2.0.0's remedy was reintroduced as its own defect and one observation cleared a threshold derived for N = 545. |
+| 4.0.0 §5 | 2026-08-08 | a **non-finite close is a missing bar**; the canonical serializer refuses `NaN`/`Infinity` | `NaN <= 0` is `False`, so the accessor passed every NaN and inf. A NaN entry bar made `nan > 0 == False` and graded the row a **MISS** — a null endpoint scored as a loss, reading as resolved with full coverage — and the emitted report carried a bare `NaN` literal, which RFC 8259 forbids: it round-tripped in Python and was unparseable to conforming readers. |
+| 4.0.0 §4 | 2026-08-08 | entry requires a calendar covering `known_at`; exit maturity is **strict** against `as_of`; the **session-list prefix digest** is frozen on the row (`calendar_revised` refusal); the placebo takes `as_of`; `regrade_diff` gains calendar and deletion axes | `first_index_after` returns 0 for a day the calendar never covered, so a trimmed panel filled rows on POST-issuance bars. A date-granular `as_of` consumed the exit close ~20h before the US close. A vendor revision keeps the same `calendar_id` and re-cut frozen windows, which the diff attributed to the price vintage. The placebo had no `as_of` at all. A vanished grade produced no drift row. |
+| 4.0.0 §8 | 2026-08-08 | the correction allowlist is enforced in `parse_issuance_log`, `append_issuance_rows`, and `cohort_rows` | A hand-built superseding row rewriting `known_at`/`ticker`/`horizons` passed all four log-side gates; the allowlist lived only in `build_correction_row`. |
+| 4.0.0 §1 | 2026-08-08 | the family is **fenced to the action rail**: `source_event.source_rail` must be exactly `usaspending_award_action`, fail-closed, else `family_rail_mismatch` | Sibling PR #5085 admits snapshot-rail `reported_obligation_balance_changed` events into the `award_obligation_change` **candidate** family — correct at display tier. §1 gated only on the family name, so this grader, registered for funded-**ACTION** acceleration, would have begun issuing on `award_cumulative`-differenced balance deltas: a restatement, a late correction and a genuine obligation are indistinguishable in that number and its magnitude is not the size of any event. Two measurement units in one graded cohort is the amount-class conflation, arriving through the rail rather than the family name. Verified at this PR's base: `candidates.py` admits both rails and `admit` accepted such a candidate. No second family is registered for the snapshot rail — that is a deliberate future preregistration, not a ride-along. |
+| 4.0.0 §1 | 2026-08-08 | an unmapped issuer **abstains** as `mapping_missing` with a null ticker | `admit` had no ticker check, so an unmapped issuer was admitted and then raised inside the row builder: batch-fatal on the first one, with no abstention row and no printed null. The reviewed graph carries unmapped issuers today. |
+| 4.0.0 §5 | 2026-08-08 | empty cohorts report coverage `empty`, monthly buckets carry per-month coverage, `verdict.inputs.coverage` cites the verdict basis | `0 == 0` reported COMPLETE coverage on the lobe's actual zero-candidate state; every monthly bucket repeated the cohort-wide coverage; and the verdict printed the cohort's coverage beside numbers computed over a different denominator. |
 | 3.0.0 §11 | 2026-08-07 | **disclosure-label layer registered**: earnings-window and subsequent-filings labels, their two PIT clamps, and the `unavailable` / `none_in_window` split | Wave 9G's build list asks for "earnings-window and subsequent-filings outcome labels where available" and 1.0.0/2.0.0 shipped neither — the word `earnings` did not appear in the instrument, the registration, or the suite. Registered pre-observation (log still absent, ledger still 0 bytes) and deliberately **outside** the decision rule, so §7's N = 545 continues to describe the statistic it was derived for. |
 
 ## 11. Disclosure labels — earnings windows and subsequent filings (descriptive)

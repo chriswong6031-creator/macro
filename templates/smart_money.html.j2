@@ -569,7 +569,7 @@ a.mem-card:hover { border-color:var(--info); }
 
   {# Left: title + eyebrow #}
   <div>
-    <div class="deck-eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List', '机构 13F · 仅供背景参考 · 非买入清单') }}</div>
+    <div class="deck-eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List', '机构 13F · 仅供参考 · 非买入清单') }}</div>
     <h1>{{ t('Ownership Intelligence Desk', '持仓情报台') }}</h1>
     <div class="deck-sub">{{ t('Who owns what, who just moved, and which managers have earned the right to be followed. Filings arrive ~45 days late — research leads, never buy signals.', '谁持有什么、谁刚动手、哪些基金经理值得跟随。披露滞后约45天——线索用于研究，不是买入信号。') }}</div>
   </div>
@@ -1260,7 +1260,7 @@ research/smart_money_grade_a_q1_2026.md
       <span class="bt">{{ t('Top net sells','净卖出榜') }}</span>
       <span class="chip-fresh t-green"><span class="fdot"></span>{{ t('Form 4 daily · as of','Form 4 日频 · 截至') }} {{ ii_q.get('asof') or '—' }} · {{ ii_q.get('window_days') or 90 }}{{ t('d','天') }}</span>
     </div>
-    <div class="board-note">{{ t('Ranked by most-negative net open-market $. Insider selling is weak evidence — much of it is planned (10b5-1) or diversification; context only.','按公开市场净卖出金额排名。内部人卖出证据较弱——多为预设计划（10b5-1）或分散化操作；仅作背景参考。') }}</div>
+    <div class="board-note">{{ t('Ranked by most-negative net open-market $. Insider selling is weak evidence — much of it is planned (10b5-1) or diversification; context only.','按公开市场净卖出金额排名。内部人卖出证据较弱——多为预设计划（10b5-1）或分散化操作；仅供参考。') }}</div>
     {% set _tns = d_ii.get('top_net_sells') or [] %}
     {% if _tns %}
     <table class="sm-t">

@@ -16,6 +16,20 @@ from engine.influence import graph as IG
 from lib import config
 
 
+def _days_ago(days: int) -> str:
+    """ISO date `days` before today (UTC) — NEVER hardcode a windowed feed date.
+
+    ``engine/altdata_models.py:244`` keeps only rows with
+    ``date >= _now() - window_days``, reading the real clock at :83-84.  A
+    literal grant date is a scheduled red, and pushing ``window_days`` out to
+    3650 to survive it (the prior half-defuse here) has a second cost: the
+    SHIPPING default of 120 (:228) then never runs in any test, so a regression
+    in the product window is invisible.  Three days is inside the real default
+    at any clock, which is what puts that default back under test.
+    """
+    return (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).date().isoformat()
+
+
 # =========================================================================== new feeds
 def test_app_ratings_momentum(monkeypatch):
     df = pd.DataFrame([
@@ -33,11 +47,12 @@ def test_app_ratings_momentum(monkeypatch):
 
 
 def test_patent_velocity(monkeypatch):
+    recent = _days_ago(3)
     df = pd.DataFrame(
-        [{"Ticker": "QCOM", "Date": "2026-06-09", "IPC": f"H04L9/4{i}", "Title": "x"} for i in range(4)]
-        + [{"Ticker": "AAA", "Date": "2026-06-09", "IPC": "G06F", "Title": "y"}])
+        [{"Ticker": "QCOM", "Date": recent, "IPC": f"H04L9/4{i}", "Title": "x"} for i in range(4)]
+        + [{"Ticker": "AAA", "Date": recent, "IPC": "G06F", "Title": "y"}])
     monkeypatch.setattr(M, "_read", lambda ds: df if ds == "patents" else None)
-    rows = M.patent_velocity(window_days=3650)
+    rows = M.patent_velocity()   # the SHIPPING 120d default, no override
     q = next(r for r in rows if r["ticker"] == "QCOM")
     assert q["patents"] == 4 and q["ipc_classes"] >= 1
 

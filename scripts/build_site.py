@@ -1560,11 +1560,11 @@ def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
 
 def nowcast_history(f: "pd.DataFrame") -> dict:
     """Per-metric historical mini-charts for the Macro-nowcast hover popovers.
-    Reuses the SAME transforms the dashboard headline numbers use (raw level for
-    WEI/GDPNow, the annualized-smoothed monthly print for sticky/flexible CPI) so
-    the last charted point matches the displayed value. Returns SVG + key stats
-    keyed by metric; metrics absent from the feature frame are simply omitted."""
-    from engine.conditions import _smooth_annual_rate
+    Reuses the SAME transforms the dashboard headline numbers use: raw level for
+    WEI/GDPNow and exact contiguous raw-month compounding for sticky/flexible CPI.
+    The inflation history never derives monthly observations from the forward-filled
+    feature frame. Returns SVG + key stats keyed by metric; absent inputs are omitted."""
+    from engine.conditions import raw_atlanta_inflation_history
     sm = config.load()["engine"]["conditions"]["inflation_nowcast"]["smooth_months"]
     out: dict[str, dict] = {}
 
@@ -1588,10 +1588,21 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
                 return "cooling", "good"
         return "flat", "flat"
 
-    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps, monthly=False):
+    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps,
+             monthly=False, contiguous=False):
         if raw is None:
             return
-        s = raw.dropna()
+        s = raw
+        if contiguous:
+            # Do not show an older valid print as current or connect a chart across
+            # a missing raw-month window. Keep only the latest uninterrupted run.
+            if s.empty or pd.isna(s.iloc[-1]):
+                return
+            missing = np.flatnonzero(s.isna().to_numpy())
+            if len(missing):
+                s = s.iloc[missing[-1] + 1:]
+        else:
+            s = s.dropna()
         if monthly:                       # collapse ffilled daily rows to monthly prints
             s = s[s.ne(s.shift())]
         s = s.iloc[-keep:]
@@ -1610,14 +1621,13 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     # GDPNow window stops short of the 2020 COVID -32%→+37% whipsaw, which would
     # otherwise squash all post-pandemic detail into a flat line.
     pack("gdpnow", col("gdpnow"), "var(--link)", 0.0, 20, 4, "growth", 1, 0.10, monthly=True)
-    sticky = col("sticky_cpi")
-    flex = col("flex_cpi")
-    if sticky is not None:
-        pack("sticky", _smooth_annual_rate(sticky, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.10, monthly=True)
-    if flex is not None:
-        pack("flexible", _smooth_annual_rate(flex, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.30, monthly=True)
+    inflation = raw_atlanta_inflation_history(
+        sm, as_of=(f.index.max() if len(f.index) else None)
+    )
+    pack("sticky", inflation["sticky"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.10, contiguous=True)
+    pack("flexible", inflation["flexible"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.30, contiguous=True)
     return out
 
 
@@ -4068,7 +4078,12 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     (≈1999→today) are shipped; everything is parallel arrays keyed by day index so
     the browser can rewind the whole regime core to any past date. The six warning
     flags are packed into one bitmask per day (decoded against `flag_order`)."""
-    h = hist[hist["quad"].notna()].copy()
+    # Labeled AND both axes present — a labeled-yet-axis-dark store row (the
+    # 2026-08-08 HK null-inflation-tail shape, commit 901282ec209) must never
+    # ship regardless of which lane wrote the store. Asia mirrors carry the
+    # same filter (build_hk / build_china).
+    h = hist[hist["quad"].notna()
+             & hist["growth_score"].notna() & hist["inflation_score"].notna()].copy()
 
     def r3(col: str) -> list:
         return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
@@ -4471,7 +4486,84 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                      _n_flagged, len(_buy_rows), len(_walls), len(_ivr))
     except Exception as _oce:  # noqa: BLE001 — additive, never fatal
         log.warning("options context board attach failed (%s)", _oce)
+    # W-L1 board state (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §7). The nightly
+    # build stamps its OWN receipt: how many of last evening's provisional picks came
+    # through the overnight pass unchanged, how many moved, how many left the board.
+    # lib/board_state.py is the only interpreter of the contract and refuses anything it
+    # will not vouch for — an unreconciled count set emits no receipt at all rather than a
+    # wrong one, and the per-card `Adjusted` marks are fenced on the receipt in the
+    # template, so they are published together or not at all.
+    # DISPLAY-ONLY: nothing here reorders, re-ranks or re-admits a card (A7).
+    try:
+        from lib.board_state import board_state_view as _bsv
+        _bs_view = _bsv(doc.get("board_state"))
+        if _bs_view:
+            doc["board_state_view"] = _bs_view
+            log.info("W-L1 board state: note=%s counts=%s/%s adj=%s dropped=%s",
+                     _bs_view.get("note"), _bs_view.get("n_confirmed"),
+                     _bs_view.get("n_total"), _bs_view.get("n_adjusted"),
+                     _bs_view.get("n_dropped"))
+        elif doc.get("board_state"):
+            # A payload that arrived and was REFUSED is worth one line in the Actions
+            # summary: it means the producer and this contract have drifted.
+            print("::warning title=wl1-board-state::board_state payload present but "
+                  "refused by lib.board_state (unknown enum, or counts do not reconcile) "
+                  "— no receipt rendered", flush=True)
+    except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+        log.warning("W-L1 board state attach failed (%s)", _bse)
     return doc
+
+
+def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
+    """The "passed on tonight" shelf context — ANTICIPATION §6.9 R5.
+
+    WHY THIS DERIVES FROM `doc` (the us_standouts board) AND NOT FROM
+    site/prophet/index.json's published receipts — the non-obvious part:
+
+    daily.yml runs `build_site` BEFORE `build_prophet`, and render.yml never runs
+    `build_prophet` at all.  So the index.json on disk at this moment is LAST NIGHT'S
+    run.  SSR-ing its receipt list under TONIGHT'S cards would print last night's
+    refusals beside tonight's board and claim a name was passed on when tonight's run
+    planned it — a wrong number wearing the right units, which the doctrine treats
+    exactly like a broken layout.  Deriving the shelf from the SAME board dict the cards
+    above it render from makes the two the same generation by construction: they can
+    disagree only if the board disagrees with itself.
+
+    The one thing that IS read from last night's index is the OPEN-PLAN ticker set, and
+    that is safe for the opposite reason: open plans persist across nights (a plan opened
+    last night is still open now), while every refusal REASON comes from tonight's rows.
+    Its own try/except, so an unreadable index costs at most the "already has a plan
+    running" grouping — never the whole shelf.
+
+    `originated_tickers` is deliberately NOT passed: this call site knows the admission
+    gate but not tonight's origination run, and a receipt it cannot honestly compute is
+    one it must not invent.  build_prophet, which does know, passes the set and gets the
+    `plan_not_built` grouping.  ONE function serves both (engine.prophet_bridge.
+    refusal_receipts) so the shelf and the published receipts can never drift.
+
+    Returns None on any failure — the panel simply renders without the shelf.
+    """
+    if not doc:
+        return None
+    try:
+        from engine.prophet_bridge import refusal_receipts  # noqa: PLC0415
+
+        open_tickers: list[str] = []
+        _pidx = site / "prophet" / "index.json"
+        if _pidx.exists():
+            try:
+                _pdoc = json.loads(_pidx.read_text())
+                open_tickers = [
+                    str(p.get("asset"))
+                    for p in (_pdoc.get("plans") or [])
+                    if isinstance(p, dict) and p.get("asset") and not p.get("closed")
+                ]
+            except Exception as _pe:  # noqa: BLE001 — costs the already-open group only
+                log.warning("prophet index unreadable for receipts (%s)", _pe)
+        return refusal_receipts(doc, open_tickers)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("prophet refusal receipts unavailable (%s)", e)
+        return None
 
 
 def main() -> int:
@@ -4709,6 +4801,10 @@ def main() -> int:
     # into _attach_board_display_chips so the post-build_library re-render (one-build-lag
     # fix, below) reuses the EXACT same enrichment and can never silently diverge.
     us_standouts = _attach_board_display_chips(site, us_standouts)
+    # ANTICIPATION §6.9 R5 — the per-name "why not" shelf under the board. Derived from
+    # the SAME board dict the cards render from; see _us_prophet_refusals for the
+    # build-order reason it cannot read the published prophet index for its reason list.
+    us_prophet_refusals = _us_prophet_refusals(site, us_standouts)
     # W2 outcomes strip — names that left the buy board in the last 21 board dates,
     # with their pct return since first surfaced. Written by grade_us_board --nightly.
     # Absent on first run or when the nightly hasn't run yet → strip degrades silently.
@@ -5488,6 +5584,7 @@ def main() -> int:
         action_board=_ab,
         top_setups=top_setups,
         us_standouts=us_standouts,
+        us_prophet_refusals=us_prophet_refusals,
         theme_tape=theme_tape,
         us_board_outcomes=us_board_outcomes,
         us_track_ledger=us_track_ledger,
@@ -6094,6 +6191,15 @@ def main() -> int:
                     _fresh_su.get("as_of") != _prior_as_of
                     or (_fresh_su.get("staleness") or {}) != _prior_stale):
                 vm["us_standouts"] = _fresh_su
+                # §6.9 R5: the "passed on tonight" shelf is DERIVED from this board, so
+                # it moves with it for the same reason the Theme Tape below does — the
+                # whole point of deriving it from us_standouts (rather than from the
+                # published prophet index) is that the shelf and the cards above it are
+                # always the same generation. Leaving the first-pass receipts here would
+                # re-introduce, inside one page, exactly the cross-generation lie the
+                # derivation exists to prevent. Fail-soft by construction: the helper
+                # returns None on any error, which renders the panel without the shelf.
+                vm["us_prophet_refusals"] = _us_prophet_refusals(site, _fresh_su)
                 # The Theme Tape is a JOIN against this board, so it has to move with
                 # it: leaving the first-pass tape here would print counts that the
                 # rows underneath no longer support — a panel disagreeing with the
@@ -6385,6 +6491,17 @@ def main() -> int:
         log.info("wrote %s", site / "market_structure.html")
     except Exception as _msp_e:  # noqa: BLE001 — additive; never break main build
         log.warning("market_structure.html render failed (%s); page skipped", _msp_e)
+
+    # Market Memory — data-free authenticated shell over existing macro analogue
+    # and Signal Episode Atlas APIs.  The page never republishes analytical data.
+    try:
+        import scripts.build_market_memory_page as _mmp
+        _mmp_html = _mmp.render(config.ROOT)
+        write_page(site / "market_memory.html", _mmp_html)
+        _tmark("market_memory")
+        log.info("wrote %s", site / "market_memory.html")
+    except Exception as _mmp_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("market_memory.html render failed (%s); page skipped", _mmp_e)
 
     # D10 — free daily movers page + og:image card
     # Must run AFTER sp500_heatmap.json and themes_heatmap.json are written above.
