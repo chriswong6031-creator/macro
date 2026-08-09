@@ -35,6 +35,22 @@ and the two intraday collectors that are now cheap.
   reds FIRST (the swarm may have landed and new debt formed — the armed-backlog-reforms
   pattern), then `gh workflow run ci.yml --ref main` after any heal lands to clear pins.
 
+## Wave-2 status (UPDATED 2026-08-09, post-operator-update session continuation)
+
+The commissioning session itself spawned W2's first two lanes after the operator's data/
+dual-lane update (masterplan §9). IN FLIGHT at handoff: **W2-A regime-conditional calibration**
+(branch `claude/cn-limit-w2-regimecal` — R0 regime-ladder benchmark / R1 covariate / R2
+regime-conditioned isotonic / R3 both; the harder bar is R0, the ChiNext 2.58× over-prediction
+is the named defect to fix) and **W2-B weakness-entry battery** (branch
+`claude/cn-limit-w2-weakness` — 回封 on the healed failed-seal cohort + 龙回头; the decision
+question is whether ANY stable cohort clears positive net expectancy where naive gap-chasing
+failed). Both were told: no merge label, vintage-stamp the 1,842-name store, never touch the
+Codex lane's Tushare/universe surface. **If their PRs are open when you start: verify artifacts
+(open the receipts), adjudicate, arm, and fold verdicts into masterplan §6/§8.** Remaining W2
+items after them: onset fillability re-statement, C12/C11/C15 cheap constructions, nightly
+ledger advancer, v0-corrections PR, and GRADE THE LEDGER's 2026-08-10 predictions (Monday's
+bar arrives with the first post-Monday nightly).
+
 ## Wave-2 charter = masterplan §8, verbatim priority order
 
 Spawn shape that worked: Opus `builder` lanes in isolated worktrees, acceptance gates inline

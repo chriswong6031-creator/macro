@@ -279,7 +279,39 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
   (designer lane, glance-tier language, "windows not certainties"), gauntlet promotion only
   when the forward ledger has ≥10 graded sessions.
 
-## §9 Session-chain protocol
+## §9 DUAL-LANE PROTOCOL + DATA HORIZON (operator update, 2026-08-09)
+
+**Two independent lanes now work this mechanism by operator design.** A Codex session runs the
+SAME project in parallel — deliberately, for cross-comparison and reconciliation later ("fresh
+eyes... different conclusions and perhaps different strategies"). Binding consequences for
+every future session in THIS (Claude) lane:
+1. **Independence is the product.** Do NOT read the Codex lane's strategy conclusions,
+   adjudications, or receipts mid-program; do NOT converge designs deliberately. Convergence
+   discovered AT reconciliation is evidence; convergence engineered before it is contamination.
+   (Same logic as the §1.4 blinded brainstorm, now at program scale.)
+2. **Infrastructure is SHARED; conclusions are not.** The Codex lane owns the data-plane
+   build-out (below). Once its stores land on main, this lane consumes them freely — data is
+   common ground; blindness applies to analysis artifacts only.
+3. **Collision boundary:** this lane does not touch Tushare wiring, the universe-expansion
+   surface, or collectors the Codex lane is building. Measurement scripts + receipts under
+   `research/cn_prophet_audit/` with `cn-limit-w*` branches remain this lane's surface.
+4. **Reconciliation is an operator-triggered event**, not a session's own initiative.
+
+**Data horizon (operator purchases, 2026-08-09 — Tushare plan → 10,000-point tier +
+add-ons):** A股历史分钟 (historical minute bars — unlocks first-touch/seal-stability/intraday
+pullback constructions, v0 Stage-4 #3 and L1's top ore item), 盘前股本 (pre-market share
+capital — unlocks the true turnover ratio, v0's f2 NULL, and float-normalized walls),
+集合竞价成交 (auction matched volume — unlocks the 9:25 fill model and collector #2), the
+打板 endpoint family, ST/risk-warning HISTORY (correct 5% band widths for the ST cohort —
+currently excluded wholesale), and ~200k daily calls for modeled chip feeds (筹码分布/胜率 —
+the M2/M4 chip-concentration footprints). The Codex lane is expanding `china_stocks_raw`
+from 1,842 to the full ~5,400-name universe including ST + DELISTED — which directly services
+falsifier F3 (survivorship/curation) and the §8 W3 re-measurement. **Until those land: Wave-2
+receipts must stamp their store vintage (1,842-name era) so post-expansion re-runs are
+comparable. After they land: the W3 priority is re-running the ladder + gap + fillability
+core on the full universe (F3), then the minute-bar/auction constructions.**
+
+## §10 Session-chain protocol
 
 One wave per session; durable state lives HERE and in the continuation handoff
 (`research/CN_LIMIT_ALPHA_CONTINUATION_HANDOFF_<date>.md`). Next session: read handoff →
