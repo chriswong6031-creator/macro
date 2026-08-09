@@ -1,0 +1,563 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/options.contract_eligibility.v1.schema.json",
+  "title": "MSC R2.2-A Light U-CHAIN contract eligibility packet",
+  "description": "A compact descriptive projection from private intraday chain snapshots. It has no rank, gate, size, issue, trade, or Prophet authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "packet_id",
+    "root",
+    "session",
+    "clocks",
+    "source_receipt",
+    "coverage",
+    "profiles",
+    "contracts",
+    "limitations",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.contract_eligibility/v1"},
+    "packet_id": {"type": "string", "pattern": "^packet:uchain:[a-f0-9]{64}$"},
+    "root": {"$ref": "#/$defs/root"},
+    "session": {"$ref": "#/$defs/session"},
+    "clocks": {"$ref": "#/$defs/clocks"},
+    "source_receipt": {"$ref": "#/$defs/sourceReceipt"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "profiles": {"$ref": "#/$defs/profiles"},
+    "contracts": {
+      "type": "array",
+      "maxItems": 20000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/contractReceipt"}
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bid_ask_depth",
+        "capacity_assessed",
+        "underlying_selection",
+        "execution_quote_polling",
+        "issuance"
+      ],
+      "properties": {
+        "bid_ask_depth": {"const": "unavailable"},
+        "capacity_assessed": {"const": false},
+        "underlying_selection": {"const": "not_in_scope"},
+        "execution_quote_polling": {"const": "not_in_scope"},
+        "issuance": {"const": "not_authorized"}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "root": {
+      "type": "string",
+      "pattern": "^[A-Z0-9](?:[A-Z0-9.-]{0,13}[A-Z0-9])?$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    },
+    "nullableNumber": {"type": ["number", "null"]},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank_authority",
+        "gate_authority",
+        "sizing_authority",
+        "issue_authority",
+        "trade_authority",
+        "prophet_authority"
+      ],
+      "properties": {
+        "rank_authority": {"const": false},
+        "gate_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "issue_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "open_at",
+        "close_at",
+        "early_close",
+        "snapshot_bucket",
+        "bucket_at",
+        "cadence_minutes"
+      ],
+      "properties": {
+        "date": {"$ref": "#/$defs/date"},
+        "open_at": {"$ref": "#/$defs/dateTime"},
+        "close_at": {"$ref": "#/$defs/dateTime"},
+        "early_close": {"type": "boolean"},
+        "snapshot_bucket": {"type": "string", "pattern": "^(?:0[9]|1[0-6]):(?:00|15|30|45)$"},
+        "bucket_at": {"$ref": "#/$defs/dateTime"},
+        "cadence_minutes": {"const": 15}
+      }
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vendor_snapshot_ts_min",
+        "vendor_snapshot_ts_max",
+        "vendor_naive_clock_interpretation",
+        "builder_observed_at",
+        "available_at",
+        "browser_freshness_limit_minutes"
+      ],
+      "properties": {
+        "vendor_snapshot_ts_min": {"$ref": "#/$defs/dateTime"},
+        "vendor_snapshot_ts_max": {"$ref": "#/$defs/dateTime"},
+        "vendor_naive_clock_interpretation": {"const": "America/New_York"},
+        "builder_observed_at": {"$ref": "#/$defs/dateTime"},
+        "available_at": {"$ref": "#/$defs/dateTime"},
+        "browser_freshness_limit_minutes": {"const": 20}
+      }
+    },
+    "sourceProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_key", "bucket_sha256", "bucket_row_count"],
+      "properties": {
+        "logical_key": {"type": "string", "pattern": "^chain_snapshots/[A-Z0-9.-]+/\\d{4}-\\d{2}-\\d{2}\\.parquet$"},
+        "bucket_sha256": {"$ref": "#/$defs/sha256"},
+        "bucket_row_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "oiProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "logical_key",
+        "projection_sha256",
+        "row_count",
+        "usable_row_count",
+        "expired_excluded_row_count",
+        "vintage_session",
+        "vintage_derivation"
+      ],
+      "properties": {
+        "logical_key": {"type": "string", "pattern": "^chain_snapshots/[A-Z0-9.-]+/\\d{4}-\\d{2}-\\d{2}_oi\\.parquet$"},
+        "projection_sha256": {"$ref": "#/$defs/sha256"},
+        "row_count": {"type": "integer", "minimum": 0},
+        "usable_row_count": {"type": "integer", "minimum": 0},
+        "expired_excluded_row_count": {"type": "integer", "minimum": 0},
+        "vintage_session": {"$ref": "#/$defs/date"},
+        "vintage_derivation": {"const": "previous_real_nyse_session"}
+      }
+    },
+    "sourceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_family", "private_raw_parquet_published", "chain", "prior_session_open_interest"],
+      "properties": {
+        "source_family": {"const": "chain_snapshot"},
+        "private_raw_parquet_published": {"const": false},
+        "chain": {"$ref": "#/$defs/sourceProjection"},
+        "prior_session_open_interest": {"$ref": "#/$defs/oiProjection"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete_root_bucket",
+        "source_contract_count",
+        "browser_eligible_contract_count",
+        "projected_contract_count",
+        "quote_rejection_counts"
+      ],
+      "properties": {
+        "complete_root_bucket": {"const": true},
+        "source_contract_count": {"type": "integer", "minimum": 1},
+        "browser_eligible_contract_count": {"type": "integer", "minimum": 0},
+        "projected_contract_count": {"type": "integer", "minimum": 0},
+        "quote_rejection_counts": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[A-Z][A-Z0-9_]*$"},
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prophet_delta60_monthly_v1", "convex_otm_30_180_v1"],
+      "properties": {
+        "prophet_delta60_monthly_v1": {"$ref": "#/$defs/prophetProfile"},
+        "convex_otm_30_180_v1": {"$ref": "#/$defs/convexProfile"}
+      }
+    },
+    "prophetDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "law_source",
+        "right",
+        "target_expiry",
+        "primary",
+        "fallback",
+        "legacy_fallback_disclosure",
+        "primary_tie_semantics",
+        "browser_gate_semantics",
+        "quote_browser_eligible_required"
+      ],
+      "properties": {
+        "law_source": {"const": "engine.prophet_bridge.resolve_option"},
+        "right": {"type": "string"},
+        "target_expiry": {"type": "string"},
+        "primary": {"type": "string"},
+        "fallback": {"type": "string"},
+        "legacy_fallback_disclosure": {"type": "string"},
+        "primary_tie_semantics": {"const": "first source row, matching pandas Series.idxmin"},
+        "browser_gate_semantics": {"type": "string"},
+        "quote_browser_eligible_required": {"const": true}
+      }
+    },
+    "prophetRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direction", "clock_date", "horizon_days", "entry", "target_expiry", "right"],
+      "properties": {
+        "direction": {"enum": ["BULL", "BEAR"]},
+        "clock_date": {"$ref": "#/$defs/date"},
+        "horizon_days": {"type": "integer", "minimum": 0, "maximum": 730},
+        "entry": {"type": "number", "exclusiveMinimum": 0},
+        "target_expiry": {"$ref": "#/$defs/date"},
+        "right": {"enum": ["C", "P"]}
+      }
+    },
+    "prophetSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_id", "mode", "target_delta"],
+      "properties": {
+        "contract_id": {"type": "string", "pattern": "^contract:uchain:[a-f0-9]{64}$"},
+        "mode": {"enum": ["primary_delta60", "fallback_closest_otm_deterministic"]},
+        "target_delta": {"type": ["number", "null"], "minimum": -1, "maximum": 1}
+      }
+    },
+    "prophetProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "profile_kind",
+        "definition",
+        "within_profile_order",
+        "eligible_contract_ids",
+        "selection",
+        "authority",
+        "status",
+        "abstention_reason",
+        "request"
+      ],
+      "properties": {
+        "profile_id": {"const": "prophet_delta60_monthly_v1"},
+        "profile_kind": {"const": "legacy_display_resolver"},
+        "definition": {"$ref": "#/$defs/prophetDefinition"},
+        "within_profile_order": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
+        "eligible_contract_ids": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {"type": "string", "pattern": "^contract:uchain:[a-f0-9]{64}$"}
+        },
+        "selection": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/prophetSelection"}]},
+        "authority": {"$ref": "#/$defs/authority"},
+        "status": {"enum": ["context_required", "abstain", "selected"]},
+        "abstention_reason": {"type": ["string", "null"]},
+        "request": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/prophetRequest"}]}
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"}
+      }
+    },
+    "convexDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dte_calendar_days",
+        "otm_pct",
+        "absolute_delta",
+        "spread_pct_maximum",
+        "prior_session_open_interest_minimum",
+        "quote_browser_eligible_required",
+        "research_only_not_reconstructed_competitor_rule",
+        "ranking_inputs"
+      ],
+      "properties": {
+        "dte_calendar_days": {"const": {"minimum": 30, "maximum": 180}},
+        "otm_pct": {"const": {"minimum": 5.0, "maximum": 20.0}},
+        "absolute_delta": {"const": {"minimum": 0.10, "maximum": 0.45}},
+        "spread_pct_maximum": {"const": 15.0},
+        "prior_session_open_interest_minimum": {"const": 100},
+        "quote_browser_eligible_required": {"const": true},
+        "research_only_not_reconstructed_competitor_rule": {"const": true},
+        "ranking_inputs": {"type": "array", "maxItems": 0}
+      }
+    },
+    "convexProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "profile_kind",
+        "status",
+        "abstention_reason",
+        "definition",
+        "within_profile_order",
+        "evaluated_contract_count",
+        "filter_pass_counts",
+        "eligible_contract_ids",
+        "authority"
+      ],
+      "properties": {
+        "profile_id": {"const": "convex_otm_30_180_v1"},
+        "profile_kind": {"const": "research_filter"},
+        "status": {"enum": ["eligible", "abstain"]},
+        "abstention_reason": {"type": ["string", "null"]},
+        "definition": {"$ref": "#/$defs/convexDefinition"},
+        "within_profile_order": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"type": "string"}
+        },
+        "evaluated_contract_count": {"type": "integer", "minimum": 1},
+        "filter_pass_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "browser_quote_fresh_valid",
+            "dte_30_180",
+            "otm_5_20_pct",
+            "absolute_delta_0_10_0_45",
+            "spread_pct_lte_15",
+            "prior_session_oi_gte_100"
+          ],
+          "properties": {
+            "browser_quote_fresh_valid": {"type": "integer", "minimum": 0},
+            "dte_30_180": {"type": "integer", "minimum": 0},
+            "otm_5_20_pct": {"type": "integer", "minimum": 0},
+            "absolute_delta_0_10_0_45": {"type": "integer", "minimum": 0},
+            "spread_pct_lte_15": {"type": "integer", "minimum": 0},
+            "prior_session_oi_gte_100": {"type": "integer", "minimum": 0}
+          }
+        },
+        "eligible_contract_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^contract:uchain:[a-f0-9]{64}$"}
+        },
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "contractTuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "expiration", "right", "strike", "strike_canonical", "occ_symbol"],
+      "properties": {
+        "root": {"$ref": "#/$defs/root"},
+        "expiration": {"$ref": "#/$defs/date"},
+        "right": {"enum": ["C", "P"]},
+        "strike": {"type": "number", "exclusiveMinimum": 0},
+        "strike_canonical": {"type": "string", "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d+)?$"},
+        "occ_symbol": {"type": ["string", "null"], "pattern": "^.{21}$"}
+      }
+    },
+    "moneyness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["underlying_price", "otm_pct", "state"],
+      "properties": {
+        "underlying_price": {"type": "number", "exclusiveMinimum": 0},
+        "otm_pct": {"type": "number"},
+        "state": {"enum": ["otm", "atm_or_itm"]}
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_ts",
+        "age_minutes",
+        "bid",
+        "ask",
+        "mid",
+        "spread_abs",
+        "spread_pct",
+        "browser_eligible",
+        "ineligible_reasons",
+        "bid_size",
+        "ask_size",
+        "depth_available",
+        "capacity_assessed"
+      ],
+      "properties": {
+        "snapshot_ts": {"$ref": "#/$defs/dateTime"},
+        "age_minutes": {"type": "number"},
+        "bid": {"$ref": "#/$defs/nullableNumber"},
+        "ask": {"$ref": "#/$defs/nullableNumber"},
+        "mid": {"$ref": "#/$defs/nullableNumber"},
+        "spread_abs": {"$ref": "#/$defs/nullableNumber"},
+        "spread_pct": {"$ref": "#/$defs/nullableNumber"},
+        "browser_eligible": {"type": "boolean"},
+        "ineligible_reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"}
+        },
+        "bid_size": {"type": "null"},
+        "ask_size": {"type": "null"},
+        "depth_available": {"const": false},
+        "capacity_assessed": {"const": false}
+      }
+    },
+    "greeks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delta", "theta", "vega", "rho", "epsilon", "lambda", "gamma", "vanna", "charm", "vomma", "veta"],
+      "properties": {
+        "delta": {"$ref": "#/$defs/nullableNumber"},
+        "theta": {"$ref": "#/$defs/nullableNumber"},
+        "vega": {"$ref": "#/$defs/nullableNumber"},
+        "rho": {"$ref": "#/$defs/nullableNumber"},
+        "epsilon": {"$ref": "#/$defs/nullableNumber"},
+        "lambda": {"$ref": "#/$defs/nullableNumber"},
+        "gamma": {"$ref": "#/$defs/nullableNumber"},
+        "vanna": {"$ref": "#/$defs/nullableNumber"},
+        "charm": {"$ref": "#/$defs/nullableNumber"},
+        "vomma": {"$ref": "#/$defs/nullableNumber"},
+        "veta": {"$ref": "#/$defs/nullableNumber"}
+      }
+    },
+    "openInterest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "snapshot_ts", "vintage_session", "timing", "vintage_derivation"],
+      "properties": {
+        "value": {"type": ["integer", "null"], "minimum": 0},
+        "snapshot_ts": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/dateTime"}]},
+        "vintage_session": {"$ref": "#/$defs/date"},
+        "timing": {"const": "prior_session_eod_positions"},
+        "vintage_derivation": {"const": "previous_real_nyse_session"}
+      }
+    },
+    "volume": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "available", "source_note"],
+      "properties": {
+        "value": {"type": ["integer", "null"], "minimum": 0},
+        "available": {"type": "boolean"},
+        "source_note": {"enum": ["chain_snapshot", "volume_not_captured_by_chain_snapshot"]}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "value": {"type": "integer", "minimum": 0},
+            "available": {"const": true},
+            "source_note": {"const": "chain_snapshot"}
+          }
+        },
+        {
+          "properties": {
+            "value": {"type": "null"},
+            "available": {"const": false},
+            "source_note": {"const": "volume_not_captured_by_chain_snapshot"}
+          }
+        }
+      ]
+    },
+    "profileEvaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["matched", "passed_filters", "failed_filters"],
+      "properties": {
+        "matched": {"type": "boolean"},
+        "passed_filters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z0-9_]+$"}
+        },
+        "failed_filters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z0-9_]+$"}
+        }
+      }
+    },
+    "profileEvaluations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["convex_otm_30_180_v1"],
+      "properties": {
+        "convex_otm_30_180_v1": {"$ref": "#/$defs/profileEvaluation"}
+      }
+    },
+    "contractReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "contract",
+        "dte_calendar_days",
+        "moneyness",
+        "quote",
+        "greeks",
+        "implied_vol",
+        "iv_error",
+        "volume",
+        "open_interest",
+        "profile_matches",
+        "profile_evaluations",
+        "authority"
+      ],
+      "properties": {
+        "contract_id": {"type": "string", "pattern": "^contract:uchain:[a-f0-9]{64}$"},
+        "contract": {"$ref": "#/$defs/contractTuple"},
+        "dte_calendar_days": {"type": "integer", "minimum": 0},
+        "moneyness": {"$ref": "#/$defs/moneyness"},
+        "quote": {"$ref": "#/$defs/quote"},
+        "greeks": {"$ref": "#/$defs/greeks"},
+        "implied_vol": {"$ref": "#/$defs/nullableNumber"},
+        "iv_error": {"$ref": "#/$defs/nullableNumber"},
+        "volume": {"$ref": "#/$defs/volume"},
+        "open_interest": {"$ref": "#/$defs/openInterest"},
+        "profile_matches": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["prophet_delta60_monthly_v1", "convex_otm_30_180_v1"]}
+        },
+        "profile_evaluations": {"$ref": "#/$defs/profileEvaluations"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}
