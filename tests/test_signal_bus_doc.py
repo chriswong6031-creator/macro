@@ -73,9 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 615, (
-        f"Expected 615 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 616, (
+        f"Expected 616 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Filing Forensics offrender-lane heal, deferred from #4986, registered"
+        " fundamental-forensics-disclosure-bundle — the scheduled SEC lane's published"
+        " render input; current main carried 615 artifacts while this pin still said"
+        " 607, so the reconciled count is 615->616);"
         " (Government Revenue SBIR progression registered five observation,"
         " receipt, projection, status, and heartbeat artifacts; Release Radar"
         " registered target vintages, official actuals, and inflation context"

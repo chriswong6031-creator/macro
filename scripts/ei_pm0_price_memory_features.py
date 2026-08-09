@@ -37,8 +37,7 @@ if __name__ == "__main__":
 # ── sys.path: ensure scripts/ and engine/ importable from repo root or worktree ──
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO = _SCRIPT_DIR.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from scripts.replay_standout_pipeline import split_adjust, SPLIT_LOG_THRESHOLD
 

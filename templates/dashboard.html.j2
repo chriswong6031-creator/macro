@@ -9830,7 +9830,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           }
           if (evwParts.length) {
             tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
-              +'<span class="l-en">Calendar context</span><span class="l-zh">日历背景</span>'
+              +'<span class="l-en">Calendar context</span><span class="l-zh">日历参考</span>'
               +'</div>'
               +evwParts.join('')
               +'<div style="font-size:9px;color:var(--muted);margin-top:3px">'
@@ -11270,7 +11270,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="mx5-deep-chips-lbl"><span class="l-en">More</span><span class="l-zh">更多</span></span>
         <a class="mx5-deep-chip" href="macro_context.html"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
         <a class="mx5-deep-chip" href="aibrief.html"><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
-        <a class="mx5-deep-chip" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span></a>
+        <a class="mx5-deep-chip" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业情报</span></a>
         <a class="mx5-deep-chip" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
         <a class="mx5-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
         <a class="mx5-deep-chip" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
@@ -11568,7 +11568,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _evw_cols = evw_snap.active_collisions %}
         {% if _evw_cols %}
         <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Calendar Context</span><span class="l-zh">日历背景</span></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Calendar Context</span><span class="l-zh">日历参考</span></div>
         <div style="padding:8px 0 4px;display:flex;flex-direction:column;gap:6px">
           {% for _col in _evw_cols %}
           {% if _col == 'cpi_in_opex_week' %}
@@ -11595,7 +11595,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endfor %}
           <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));margin-top:2px">
             <span class="l-en">Calendar context — display only. Not a signal; no return claim.</span>
-            <span class="l-zh">日历背景 — 仅供展示。非信号，不作任何收益主张。</span>
+            <span class="l-zh">日历参考 — 仅供展示。非信号，不作任何收益主张。</span>
           </div>
         </div>
         {% endif %}
@@ -11677,7 +11677,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {% if ix.rsi is not none %}
               {% set _dlgm_rsi_word = 'Overbought' if ix.rsi >= 70 else ('Oversold' if ix.rsi <= 30 else 'Neutral') %}
               {% set _dlgm_rsi_zh = '超买' if ix.rsi >= 70 else ('超卖' if ix.rsi <= 30 else '中性') %}
-              <span class="mx5-dlg-idx-chip {{ 'wn' if ix.rsi >= 70 or ix.rsi <= 30 else 'mt' }}" title="RSI(14) = {{ ix.rsi }}"><span class="l-en">{{ _dlgm_rsi_word }}</span><span class="l-zh">{{ _dlgm_rsi_zh }}</span></span>
+              <span class="mx5-dlg-idx-chip {{ 'wn' if ix.rsi >= 70 or ix.rsi <= 30 else 'mt' }}" title="Momentum reading: {{ ix.rsi }} of 100"><span class="l-en">{{ _dlgm_rsi_word }}</span><span class="l-zh">{{ _dlgm_rsi_zh }}</span></span>
               {% endif %}
             </div>
           </div>
@@ -12318,7 +12318,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
-          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
+          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
           {# as-of merged into the single dialog footer (one stamp per dialog) #}
         </div>
         {# ── plain-word maps reused from intl.html turn cards ── #}
@@ -13300,7 +13300,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="isle-linkouts">
           <a class="isle-lout" href="macro_context.html"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
           <a class="isle-lout" href="aibrief.html"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业情报</span></a>
           <a class="isle-lout" href="news.html"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
           <a class="isle-lout" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
           <a class="isle-lout" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
@@ -14457,7 +14457,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          Doctrine Law 2: z-score / n= / internal workstream tags demoted to the ? help tip;
          the visible rows carry plain words only. #}
       <div class="mx-pcol">
-        <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }} {{ help('Tracks sharp defensive/offensive rotation flips and whether they stick. Flip strength is a z-score — how unusual the move was vs its own recent history (±2 ≈ rare). The fade rate counts how many past flips reversed within days. Display context only — not a trade signal.','跟踪防御／进攻方向的急剧翻转及其是否持续。翻转强度为 z 分数 — 相对自身近期历史的罕见程度（±2 ≈ 罕见）。消退率统计历史翻转中数日内回撤的比例。仅供展示参考 — 非交易信号。') }}</div>
+        <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }} {{ help('Tracks sharp flips between defensive and offensive leadership, and whether they stick. Strength is how unusual the move is against its own recent history. The fade rate is how many past flips reversed within days. Context only — not a trade signal.','跟踪市场在防御和进攻之间的急剧切换，以及这种切换能不能持续。强度指的是这次动作相对它自己近期表现有多反常。消退率是历史上有多少次切换在几天内就反了回去。仅供参考，不是交易信号。') }}</div>
         {% if flip_confirmation and flip_confirmation.last_event %}
         {% set _FC3 = flip_confirmation %}
         {% set _FEV3 = _FC3.last_event %}
@@ -14667,7 +14667,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
       {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
       <section id="fear-greed" class="mx-sent-col">
-        <div class="mx-sent-label">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }} {{ help('Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored.','合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。') }}</div>
+        <div class="mx-sent-label">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }} {{ help('An equal-weight average of several market indicators, each pointed so that higher means greedier. Context only — not a signal, not a call on timing, never scored.','把几项市场指标等权平均，方向都统一成越高越贪婪。仅供参考，不是信号，也不是择时判断，不计入成绩。') }}</div>
         <div class="mx-sent-val" style="color:{{ _fgc }}">{{ FG.dial }}</div>
         <div class="mx-sent-band-label">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} <span class="muted">/100</span></div>
         <div class="mx-grad-track" style="position:relative">
@@ -14837,7 +14837,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <span class="mx-panel-eyebrow">{{ t('Index Health','指数健康度') }}</span>
     </div>
     <h2 style="margin-top:0">{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}
-      {{ help("How the market itself is doing, before the economy. Price, % below the 52-week high (drawdown), trend vs the 50/200-day averages, and RSI(14) for the four major US indexes — alongside the validated macro de-risk read that drives the allocation strategy.", "在看经济之前，先看市场本身。四大美国指数的价格、距52周高点的回撤、相对50/200日均线的趋势、RSI(14) — 以及驱动仓位策略的经验证宏观降险读数。") }}
+      {{ help("How the market itself is doing, before the economy. For the four major US indexes: price, how far below the 52-week high, trend against the 50- and 200-day averages, and whether momentum is stretched — alongside the macro de-risk read that drives the allocation strategy.", "在看经济之前，先看市场本身。四大美国指数的价格、距 52 周高点还有多远、相对 50 日和 200 日均线的趋势，以及动量是不是已经拉得太开 — 旁边是驱动仓位策略的宏观降险读数。") }}
     </h2>
     <div class="idx-grid">
       {% for ix in index_health %}
@@ -15389,7 +15389,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="panel span12 notable" id="us-standouts"
          {%- if _bs and _bs.get('rel') %} data-boardstate="{{ _bs.rel }}"{% endif %}>
       <div class="pb-hdrow" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <h2 style="margin:0">{{ t('Prophet Stock Signals', '先知选股') }}</h2>
+        <h2 style="margin:0">{{ t('Prophet Stock Signals', 'Prophet 选股') }}</h2>
         {#- W-L1 board-state stamp (spec §2 A, §5.1). BOTH variants are SSR-baked and both
             ship their l-en/l-zh pair, because the copy has to exist in the page in both
             languages before the live plane can ever reach it (bilingual from birth), and
@@ -15828,9 +15828,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
             'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
             'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
+          {# THE EXTENSION CLAUSE IS CONDITIONAL, because the check it describes does not
+             always run.  Until 2026-08-08 a row with no extension reading was VETOED
+             out of featured, so "price is not extended" was true of every row that
+             carried this chip.  ANTICIPATION v1 replaced that veto with a disclosure
+             (engine/us_board_rank.py — an outage published a featured lane of 0 of 69),
+             so a featured row may now carry `ext_unknown: true` — and on that row the
+             old sentence is a verification the board never performed, asserted in the
+             one place a reader goes to find out what the gate tested.  Plain-word
+             printed null instead (DESIGN_DOCTRINE Law 5): the absence is stated on the
+             same tier as the claim it replaces, in the reader's own words, no slug.
+
+             NOT CURRENTLY RENDERED, and fixed anyway. `_prophet_card.html.j2` carries
+             `_MK_NOTIP = ('feat', 'new')` (operator 2026-08-05 — the featured explainer
+             covered neighbouring cards), so this tip string is built and then dropped
+             on the floor; the sentence a reader actually gets is the board footnote
+             below, which is fixed too. Left correct rather than deleted because the
+             suppression is a layout decision that can be revisited, and a string that
+             comes back wrong is worse than one that comes back right. Do NOT read this
+             branch as a shipped surface — if the per-row disclosure is wanted on the
+             card, it needs a visible carrier, which is a design call, not a copy edit. #}
+          {% set _xu = n.get('ext_unknown') %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
-            'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor) and price is not extended. Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
-            'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+            'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor)' ~ ('. How far this name has already run is unknown tonight — no extension reading came through for it, so that check was not scored.' if _xu else ' and price is not extended.') ~ ' Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
+            'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）' ~ ('。价格拉伸程度暂无读数 —— 今晚没有取到该股的读数，这一条未参与判定。' if _xu else '、价格未过度拉伸。') ~ '全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
           {% if n.get('new') %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
             'tip_en':'This signal fired in tonight’s run — the name was not on the board yesterday.',
             'tip_zh':'该信号在今晚这一轮才触发 — 昨天不在榜上。'}] %}{% endif %}
@@ -15880,8 +15901,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _trg_kind = ('imminent' if _tsg.get('tier_cascade') == 'T3' else 'fired') if _tsr else none %}
         {% set _trg_prov = ' Provisional: projected off an incomplete bar — about 1 in 10 of these vanish when the bar completes.' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
         {% set _trg_prov_zh = '（暂定：基于未完成的K线推算 — 约十分之一会在K线完成后消失。）' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
-        {% set _trg_tip_en = ('Fresh entry trigger — the 2-day MACD and 3-day StochRSI both crossed up within the last ~6 days and momentum is still constructive. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don\'t chase.') if _trg_kind == 'fired' else ('Entry trigger imminent — the 3-day StochRSI has crossed and the 2-day MACD is about to cross within the next 1-2 bars.' ~ _trg_prov ~ ' The main chip still rules the stance.') %}
-        {% set _trg_tip_zh = ('新入场触发 — 2日MACD与3日StochRSI均已在约近6日内上穿，动量仍具建设性。信念卡片叠加新触发是本板最强组合 — 但主标签仍是最终判断：若卡片显示「等待」，说明价格已越过买区，勿追高。') if _trg_kind == 'fired' else ('入场触发临近 — 3日StochRSI已上穿，2日MACD将在未来1-2根K线内交叉。' ~ _trg_prov_zh ~ '主标签仍是最终判断。') %}
+        {% set _trg_tip_en = ('Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don\'t chase.') if _trg_kind == 'fired' else ('Entry trigger is close — it should fire within the next day or two.' ~ _trg_prov ~ ' The main chip still rules the stance.') %}
+        {% set _trg_tip_zh = ('新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。') if _trg_kind == 'fired' else ('入场触发快到了 — 预计一两天内触发。' ~ _trg_prov_zh ~ '主标签仍然是最终判断。') %}
         {{ pv.pv_card({
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
@@ -15894,7 +15915,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'edge_tip_en': ('US Prophet priority 0–100 — signal 30% · entry 25% · edge 25% · runway 10% · quality 10%. Transparent readiness rank for ordering; not a win probability or return forecast.' ~ _rw_en
                           if _prs is not none
                           else 'Edge — within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality). Higher = stronger relative edge. Not a win-rate.'),
-          'edge_tip_zh': ('美股先知优先级 0–100 — 信号30% · 入场25% · 优势25% · 上行空间10% · 质量10%。透明的就绪度排序；不是胜率，也不是收益预测。' ~ _rw_zh
+          'edge_tip_zh': ('美股 Prophet 优先级 0–100 — 信号30% · 入场25% · 优势25% · 上行空间10% · 质量10%。透明的就绪度排序；不是胜率，也不是收益预测。' ~ _rw_zh
                           if _prs is not none
                           else '优势 — 按多因子信念综合（选股+入场+质量）在全市场内的排名（0–100）。数值越高＝相对优势越强。并非胜率。'),
           'stage': _stage, 'spark': n.get('spark_svg'),
@@ -15947,7 +15968,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {% endif %}
             {# Alt-data convergence (Source 3): multiple independent non-insider channels lit. #}
             {% if n.altdata and (n.altdata.get('convergence_score') or 0) >= 2 %}{% set _ad = n.altdata %}
-              <span class="nb-ev nb-ev-alt" data-tip-en="Alt-data convergence: {{ _ad.get('convergence_score') }} independent channels lit ({{ ((_ad.get('channels') or [])[:4])|join(', ') }}{{ ', …' if (_ad.get('channels') or [])|length > 4 else '' }}). Channels count independent signals — not all are equal strength. Context, display-only; not a standalone buy signal." data-tip-zh="替代数据共振：{{ _ad.get('convergence_score') }} 个独立渠道同时亮起。仅供展示，不作为独立买入信号。"><span class="l-en">Alt ×{{ _ad.get('convergence_score') }}</span><span class="l-zh">替代 ×{{ _ad.get('convergence_score') }}</span></span>
+              <span class="nb-ev nb-ev-alt" data-tip-en="Alt-data convergence: {{ _ad.get('convergence_score') }} independent channels lit ({{ ((_ad.get('channels') or [])[:4])|join(', ') }}{{ ', …' if (_ad.get('channels') or [])|length > 4 else '' }}). Channels count independent signals — not all are equal strength. Context, display-only; not a standalone buy signal." data-tip-zh="另类数据共振：{{ _ad.get('convergence_score') }} 个独立渠道同时亮起。仅供展示，不作为独立买入信号。"><span class="l-en">Alt ×{{ _ad.get('convergence_score') }}</span><span class="l-zh">替代 ×{{ _ad.get('convergence_score') }}</span></span>
             {% endif %}
             {# News burst (Source 5): elevated coverage context (17-ticker coverage today). #}
             {% if n.news_burst and (n.news_burst.get('n_recent') or 0) >= 3 %}{% set _nb = n.news_burst %}
@@ -16044,8 +16065,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          load-bearing: "edge above zero (an absolute floor)" describes the gate the
          engine runs; the older "above the board's midpoint" described a cross-sectional
          rank it never ran, and promised the opposite of the real gate on a weak board.
-         tests/test_us_board_priority_ui.py pins both sentences here. #}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), price not extended, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+         tests/test_us_board_priority_ui.py pins both sentences here.
+
+         AND THE EXTENSION CLAUSE IS NOW CONDITIONAL, for the same reason as the per-card
+         chip above: since ANTICIPATION v1 a featured row may carry no extension reading
+         at all, so "price not extended" can no longer be stated flatly for the shelf.
+         The count is read off the artifact's own receipt (ranking.ext_unknown_coverage,
+         recomputed every build) rather than hard-coded — a board-wide claim about
+         tonight's evidence must be measured on tonight's board. Zero unknown featured
+         rows and the sentence is exactly what it was; this is the common case (the
+         08-06 outage put it at 100%, the live board at 0).
+
+         THIS FOOTNOTE IS THE ONLY RENDERED HOME for that disclosure, so it must not
+         point at another one. The ★ Featured chip's tooltip carries the same split
+         (see the chip above) but `_prophet_card.html.j2` suppresses it — `_MK_NOTIP`
+         holds 'feat' since operator 2026-08-05 — so a sentence here promising that
+         "each says so on its card" would be a contract nothing renders. State the
+         count, claim nothing about where else to look. #}
+      {% set _xuc = ((_su.get('ranking') or {}).get('ext_unknown_coverage') or {}) %}
+      {% set _xfu = _xuc.get('featured_with_unknown') or 0 %}
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
@@ -16121,7 +16160,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;font-size:12.5px">⚡ {{ t('More fresh triggers', '更多新触发') }}</span>
           <span class="muted" style="font-size:11px">{{ t('Buy triggers fired elsewhere in the S&P 1500 — names not already carded above.', '标普1500中其余刚触发买入的个股 — 上方卡片未含。') }}{% if _ts_ov %} {{ t(_ts_ov ~ " of today's " ~ _ts_all|length ~ " triggers already appear as cards above — marked ⚡.", "今日 " ~ _ts_all|length ~ " 个触发中 " ~ _ts_ov ~ " 个已在上方卡片中（⚡标注）。") }}{% endif %}
-            {{ help("Actionable residual setups: names already shown as Prophet cards above are not repeated here — they carry the ⚡ chip on their card instead. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.", "仅显示剩余可操作布局：已在上方以卡片展示的标的不在此重复 — 它们的卡片上带有 ⚡ 标记。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。") }}</span>
+            {{ help("The rest of the actionable names. Anything already shown as a card above is not repeated here — those carry the ⚡ chip on their card instead. A name only reaches this list once its entry signal has actually fired, or is about to within a day or two. That rule is absolute: a strong leader that is rolling over does not appear here, however good its momentum looks. Passing names are then ranked by how much they are outrunning their own sector, so the real leaders come first. The cycle state, trend chip and setup score tell you how much risk to take, and 👤 flags a cluster of insider buying. Click any row for the full breakdown.", "其余可以操作的标的。上面已经用卡片展示过的不会在这里重复 — 它们的卡片上带 ⚡ 标记。只有入场信号已经触发、或者一两天内就要触发的标的才会进入这个列表。这条规则没有例外：一只已经开始回落的强势股，不管动量看起来多好，都不会出现在这里。通过之后，榜单按照它跑赢自己所在行业的幅度排序，真正的领涨股排在前面。周期状态、趋势标签和布局分告诉你该冒多大风险，👤 表示出现了内部人集中买入。点击任意一行看完整拆解。") }}</span>
           <a class="ts-more" href="discovery.html">{{ t('Top Picks', '精选股') }} →</a>
         </div>
         {% if _tsn.resid %}
@@ -16133,7 +16172,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <thead><tr>
             <th class="c-stock">{{ t('Stock', '个股') }}</th><th class="c-sector">{{ t('Sector', '板块') }}</th>
             <th class="r c-edge" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th><th class="r c-rank">{{ t('rank', '排名') }}</th>
-            <th class="c-buy" data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
+            <th class="c-buy" data-tip-en="Where the name sits on the entry signal. Buy zone = it has fired in the last few days and is still building; About to cross = it should fire within a day or two. The board requires this." data-tip-zh="这只股票在入场信号上处于什么位置。买入区＝最近几天刚触发、还在往上走；即将交叉＝预计一两天内触发。榜单以此为准。">{{ t('buy', '买入') }}</th>
             <th class="c-cycle">{{ t('cycle', '周期') }}</th><th class="c-trend">{{ t('trend', '趋势') }}</th>
             <th class="r c-factor" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
             <th class="r c-setup" data-tip-en="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md)." data-tip-zh="入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
@@ -16145,7 +16184,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <td class="muted c-sector">{{ td(r.sector) }}</td>
               <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted c-rank">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
-              <td class="c-buy">{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade == 'T1' %}<span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T2' %}<span class="ts-buy ok" data-tip-en="Confirmed early tier (T2) — completed-bar cross that typically fills nearer the trough than the master signal." data-tip-zh="T2已确认的提前层——基于已完成K线的交叉，成交价通常比主信号更贴近低点。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars){% if sg.provisional %}. PROVISIONAL — projected off the incomplete 2D bucket; a measured 9.4% of US T3 fresh fires repaint when it completes (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22){% endif %}" data-tip-zh="预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）{% if sg.provisional %}。暂定 — 基于未完成的2日K线桶，经N=2修正后实测美股9.4%的T3新信号在桶完成后重绘{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Provisional — may repaint. Measured: 9.4% of US T3 fresh fires vanish within 4 sessions of the 2D bucket completing (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22)." data-tip-zh="暂定 — 可能重绘：经N=2修正后实测美股9.4%的T3新信号在K线桶完成后4个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td class="c-buy">{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade == 'T1' %}<span class="ts-buy ok" data-tip-en="Confirmed: fired within the last few days and still building" data-tip-zh="已确认：最近几天刚触发，还在往上走">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T2' %}<span class="ts-buy ok" data-tip-en="Confirmed on the early tier (T2) — usually gets you in closer to the low than the main signal." data-tip-zh="在提前层（T2）上确认——通常比主信号更早进场，买得更靠近低点。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Expected to fire within the next day or two{% if sg.provisional %}. PROVISIONAL — read off a bar that has not closed yet; measured, 9.4% of these disappear once it does{% endif %}" data-tip-zh="预计未来一两天内触发{% if sg.provisional %}。暂定 — 这是从还没走完的K线上读出来的；实测有 9.4% 会在K线走完后消失{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Provisional — may change. Measured: 9.4% of these disappear within four sessions once the bar closes." data-tip-zh="暂定 — 可能会变。实测有 9.4% 会在K线走完后的四个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
               <td class="c-cycle">{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
               <td class="c-trend">{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
               <td class="r c-factor {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
@@ -16559,10 +16598,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <div class="panel span12" id="sectors">
     <h2>{{ t('Sector buy/sell setups — short-term timing', '板块买卖配置 — 短线择时') }} <span class="help">?<span class="tip">
       <span class="l-en">
-      The primary sector timing engine: a confluence of MACD + StochRSI crossovers on the
-      <b>3-day chart</b> (the daily is the early trigger), gated by the 200-day trend and sorted
-      most-actionable first. Validated 1998-2026 — the base-rate
-      column is the MEASURED forward-63-day excess vs SPY for each state:
+      The house sector-timing read, checked against the 200-day trend and sorted
+      most-actionable first. Measured over 1998-2026 — the base-rate column is what
+      each state actually went on to do over the next 63 days, against SPY:
       <table>
         <tr><th>state</th><th>read it as</th><th>fwd 63d vs SPY*</th></tr>
         <tr><td style="color:var(--up)"><b>BUY</b></td><td>fresh up-turn on daily + 3-day, above trend</td><td>+0.9% (56% up)</td></tr>
@@ -16580,9 +16618,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       institutions distribute into), not a high win-rate. A risk/timing map, not a return forecast.
       </span>
       <span class="l-zh">
-      板块择时主引擎：3 日图上 MACD + StochRSI 交叉的共振（日线作为早期触发），以 200 日趋势把关，
-      按可操作性排序。已用 1998–2026 验证——基础概率列为各状态
-      实测的未来 63 日对 SPY 超额：
+      本系统的板块择时读数，以 200 日趋势把关，按可操作性排序。用 1998–2026 的数据测算过——
+      基础概率一列，是各个状态在随后 63 天里对 SPY 的实际表现：
       <table>
         <tr><th>状态</th><th>解读</th><th>未来63日对SPY*</th></tr>
         <tr><td style="color:var(--up)"><b>买入</b></td><td>日线+3日线同时转上，且在趋势之上</td><td>+0.9%（56%上涨）</td></tr>
@@ -16605,12 +16642,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="tbl-scroll"><table class="act-fold is-collapsed">
       <tr>
         <th class="l">{{ t('sector', '板块') }}</th>
-        <th class="l">{{ t('verdict', '判断') }} {{ help("BUY/SETUP = an entry above the 200-day; EXTENDED/TOPPING/SELL = late or distributing; BELOW TREND = a knife. Dots = conviction (how many of daily / 3-day MACD / 3-day StochRSI agree).", "买入/预备＝200日线上方的入场；过热/见顶/卖出＝偏晚或派发中；趋势下方＝接飞刀。圆点＝信心（日线／3日 MACD／3日 StochRSI 中有几个一致）。") }}</th>
-        <th class="l">{{ t('3-day signal', '3 日信号') }} {{ help("What actually fired on the 3-day chart (the daily is the early trigger): a MACD/StochRSI crossover, a curl approaching a cross (with an ETA in trading days), or a roll-over.", "3 日图上实际触发了什么（日线为早期触发）：MACD/StochRSI 交叉、接近交叉的拐头（含预计交易日数）、或回落。") }}</th>
+        <th class="l">{{ t('verdict', '判断') }} {{ help("BUY/SETUP = an entry above the 200-day; EXTENDED/TOPPING/SELL = late or distributing; BELOW TREND = a knife. Dots = how many of the timeframes we check agree.", "买入/预备＝200 日线上方的入场；过热/见顶/卖出＝偏晚或正在派发；趋势下方＝接飞刀。圆点＝我们查看的几个周期里有多少个一致。") }}</th>
+        <th class="l">{{ t('3-day signal', '3 日信号') }} {{ help("What actually happened on the 3-day chart: a fresh signal, one turning up and about to fire (with how many sessions away), or one rolling over.", "3 日图上实际发生了什么：新信号触发、正在拐头、马上要触发（附还差几个交易日），或者已经开始回落。") }}</th>
         <th>{{ t('trend', '趋势') }} {{ help("Price vs its 200-day (long-term) and 50-day (medium-term) average — the gate that separates a buyable pullback from a falling knife.", "价格相对 200 日（长期）与 50 日（中期）均线——把可买回调与接飞刀分开的闸门。") }}</th>
-        <th>{{ t('RSI / Stoch (3D)', 'RSI / Stoch（3 日）') }} {{ help("The 3-day RSI(14) and StochRSI. Above 70 / 80 = extended (late). StochRSI crossing up over 20 from oversold is the bottoming tell; dropping out of 80 is the topping tell.", "3 日 RSI(14) 与 StochRSI。高于 70／80＝过热（偏晚）。StochRSI 从超卖上穿 20 是见底信号；跌出 80 是见顶信号。") }}</th>
+        <th>{{ t('Momentum (3D)', '动量（3 日）') }} {{ help("Two momentum readings on the 3-day chart. High means the move is stretched and late; turning up from the low end is the bottoming tell, falling out of the high end is the topping tell.", "3 日图上的两个动量读数。数值高说明这波已经拉得很开、偏晚；从低位转上来是见底的迹象，从高位掉下来是见顶的迹象。") }}</th>
         <th>{{ t('3mo vs mkt', '3 月对比市场') }} {{ help("Relative strength vs the S&P 500 over the past ~60 trading days.", "过去约 60 个交易日相对标普 500 的强弱。") }}</th>
-        <th>{{ t('seasonality', '季节性') }} {{ help("This sector's average return in the current calendar month. Hover for the full 12-month picture. Weak evidence — context only, never a signal on its own.", "该板块在当前日历月的平均回报。悬停查看完整 12 个月全貌。弱证据——仅作背景参考，绝不单独作为信号。") }}</th>
+        <th>{{ t('seasonality', '季节性') }} {{ help("This sector's average return in the current calendar month. Hover for the full 12-month picture. Weak evidence — context only, never a signal on its own.", "该板块在当前日历月的平均回报。悬停查看完整 12 个月全貌。弱证据——仅供参考，绝不单独作为信号。") }}</th>
         <th>{{ t('base rate', '基础概率') }} {{ help("The MEASURED forward 63-day excess vs SPY for this state across the 11 sector ETFs 1998-2026 — the signal's honest track record, not a promise.", "该状态实测的未来 63 日对 SPY 超额，跨 11 个板块 ETF、1998–2026——信号的真实历史记录，并非承诺。") }}</th>
       </tr>
       {% for r in sector_setups.sectors %}
@@ -16629,8 +16666,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% if r.get('two_reads_chip') %}{% set _tr = r.two_reads_chip %}
           <div style="margin-top:4px">
             <span class="two-reads-chip"
-              data-tip-en="Two house reads on {{ r.ticker }}: cycle timing = {{ _tr.cycle_label_en }} (slow, cap-weighted, cycle position); setup engine = {{ _tr.setup_label_en }} (3-day tactical, 3D MACD+StochRSI). Different instruments / different horizons — both reads shown, neither overrides the other."
-              data-tip-zh="{{ r.ticker }} 两个本系统读数：周期择时 = {{ _tr.cycle_label_en }}（慢速、市值加权、周期位置）；形态引擎 = {{ _tr.setup_label_en }}（3日战术、3日MACD+StochRSI）。不同工具／不同时间维度——两个读数同时显示，互不覆盖。">
+              data-tip-en="Two house reads on {{ r.ticker }}: cycle timing = {{ _tr.cycle_label_en }} (slow, where it sits in the cycle); setup = {{ _tr.setup_label_en }} (short-term, tactical). Different horizons — both are shown, neither overrides the other."
+              data-tip-zh="{{ r.ticker }} 有两个读数：周期择时 = {{ _tr.cycle_label_en }}（慢，看它在周期里的位置）；形态 = {{ _tr.setup_label_en }}（短线、偏战术）。时间维度不同——两个都给出来，谁也不覆盖谁。">
               <span class="tr-sep">⇔</span>
               <span class="l-en">two reads: cycle <b>{{ _tr.cycle_label_en }}</b> (slow) vs setup <b>{{ _tr.setup_label_en }}</b> (3D tactical)</span>
               <span class="l-zh">两个读数：周期 <b>{{ _tr.cycle_label_en }}</b>（慢速）vs 形态 <b>{{ _tr.setup_label_en }}</b>（3日战术）</span>
@@ -17449,8 +17486,8 @@ function renderMtfTable(mtfUpturn){
     +'<th class="r">'+L('boxes','格数')+'</th>'
     +'<th>'+L('checklist (D / 3D / W / 2W)','检查表 (D / 3D / W / 2W)')
       +' <span class="help" style="vertical-align:middle">?<span class="tip">'
-      +'<span class="l-en">Filled = fired recently (counts toward the box count). Ring = trend still running, no fresh cross (does not count). Empty = negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; the group-level version of this turn tested as no edge (26 past cases). Display context, not a signal.</span>'
-      +'<span class="l-zh">实心=近期触发（计入格数）。空心圆=趋势延续但无新交叉（不计入）。空=为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；篮子级别的此类拐点经回测无优势（历史26次）。展示参考，非信号。</span>'
+      +'<span class="l-en">Filled = fired recently (counts toward the box count). Ring = the trend is still running but nothing fresh has fired (does not count). Empty = negative. The four boxes are the day, 3-day, weekly and two-week views, left to right; a dashed weekly box means it is close. Context only: the group-level version of this read tested as no edge over 26 past cases, so it is not a signal.</span>'
+      +'<span class="l-zh">实心＝最近触发（计入格数）。空心＝趋势还在走，但没有新的触发（不计入）。空＝为负。四个格子从左到右分别是日线、3日、周线、双周；周线格子是虚线表示快要触发了。仅供参考：这个读数在板块层面测过 26 次，没有体现出优势，所以不是信号。</span>'
       +'</span></span></th>'
     +'<th>'+L('monthly phase','月线阶段')+'</th>'
     +'<th>'+L('since','起始')+'</th>'
@@ -18483,7 +18520,7 @@ function initStockTableView(){
     { key:'factor_z', labelEn:'Factor Z', labelZh:'因子Z', default:false, sortable:true, right:true,
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
         '<span class="'+(v>0?'st-pos':v<0?'st-neg':'')+'">'+fn(v,1)+'</span>'; },
-      tip:{en:'Cross-sectional factor composite z-score (value / quality / low-vol)',zh:'横截面因子综合z分（价值/质量/低波）'} },
+      tip:{en:'Combined factor score across the market — value, quality and low volatility',zh:'全市场因子综合得分——价值、质量、低波动'} },
     { key:'sue_z', labelEn:'SUE Z', labelZh:'盈利动量', default:false, sortable:true, right:true,
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
         '<span class="'+(v>0?'st-pos':v<0?'st-neg':'')+'">'+fn(v,1)+'</span>'; },

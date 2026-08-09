@@ -13,13 +13,17 @@ Run:  python3 -m scripts.index_direction_phase0
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import index_direction as idr, validation as V, vol_forecast
-from engine.validation import _norm_cdf
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import index_direction as idr, validation as V, vol_forecast  # noqa: E402
+from engine.validation import _norm_cdf  # noqa: E402
 
 INDEXES = ["SPY", "QQQ", "IWM"]          # DIA deferred: no data/yahoo/DIA.parquet (use _DJI proxy later)
 SECTORS = ["XLK", "XLF", "XLE", "XLU", "XLRE", "XLB", "XLI", "XLY", "XLP", "XLV", "XLC"]

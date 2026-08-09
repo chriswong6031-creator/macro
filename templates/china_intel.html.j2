@@ -319,7 +319,7 @@
       <a href="china_policy_watch.html" style="font-size:11px;color:var(--link);text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
     </div>
     {%- if _pp.cold_start_organs %}
-    <p class="pp-cold">{{ t('Cold-start organs (no prior window yet — cannot detect APPEARED/DROPPED):','冷启动器官（尚无先验窗口——无法检测新增/消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
+    <p class="pp-cold">{{ t('Cold-start feeds (no prior window yet — cannot detect APPEARED/DROPPED):','刚启动的数据源（还没有历史窗口，无法判断新增或消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
     {%- endif %}
     {%- if _pp.recent_events %}
     {%- set _pp_all = _pp.recent_events[:24] %}
@@ -818,9 +818,9 @@
     <div class="suite-group">
       <div class="suite-group-title">{{ t('Themes & Rotation','主题与轮动') }}</div>
       <div class="suite-links">
-        <a class="slink" href="sector_central_china.html#si-explore"><div><div class="sl-name">🧺 {{ t('China Baskets','中国主题篮') }}</div><div class="sl-desc">{{ t('Theme baskets · inside Sector Intelligence','主题篮 · 见行业智慧') }}</div></div></a>
+        <a class="slink" href="sector_central_china.html#si-explore"><div><div class="sl-name">🧺 {{ t('China Baskets','中国主题篮') }}</div><div class="sl-desc">{{ t('Theme baskets · inside Sector Intelligence','主题篮子 · 见行业情报') }}</div></div></a>
         <a class="slink" href="baskets_china_ths.html"><div><div class="sl-name">🧺 {{ t('China Baskets (THS)','中国主题篮 (同花顺)') }}</div><div class="sl-desc">{{ t('THS-derived thematic basket view','同花顺主题篮视图') }}</div></div></a>
-        <a class="slink" href="sector_central_china.html#si-movement"><div><div class="sl-name">🔀 {{ t('Subsector Rotation (China)','子行业轮动 (中国)') }}</div><div class="sl-desc">{{ t('Rotation map · inside Sector Intelligence','轮动图 · 见行业智慧') }}</div></div></a>
+        <a class="slink" href="sector_central_china.html#si-movement"><div><div class="sl-name">🔀 {{ t('Subsector Rotation (China)','子行业轮动 (中国)') }}</div><div class="sl-desc">{{ t('Rotation map · inside Sector Intelligence','轮动图 · 见行业情报') }}</div></div></a>
         <a class="slink" href="subsectors_china.html"><div><div class="sl-name">📌 {{ t('Subsectors (China)','子板块 (中国)') }}</div><div class="sl-desc">{{ t('NDX/RUT subsector confluence · China tab','子板块共振 · 中国标签页') }}</div></div></a>
       </div>
     </div>
