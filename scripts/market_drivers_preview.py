@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import sys
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore")  # silence pandas fragmentation/perf noise
 
-from engine import market_drivers as md
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import market_drivers as md  # noqa: E402
 
 VERDICT_MARK = {"clear": "●", "mixed": "◑", "quiet": "·", "unknown": "?"}
 

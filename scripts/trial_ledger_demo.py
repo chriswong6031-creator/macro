@@ -18,14 +18,18 @@ Run from the repo root:  python3 -m scripts.trial_ledger_demo
 """
 from __future__ import annotations
 
+import sys
 import tempfile
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine.trial_ledger import TrialLedger
-from engine.validation import deflated_sharpe, dsr_verdict, ret_moments
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from engine.validation import deflated_sharpe, dsr_verdict, ret_moments  # noqa: E402
 
 # A realistic search grid: 6 vol-windows x 4 targets x 3 caps = 72 configs tried.
 VOL_WINS = [10, 20, 40, 60, 90, 120]

@@ -146,6 +146,7 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
+from decimal import Decimal, InvalidOperation
 from typing import Iterator
 
 import pandas as pd
@@ -193,14 +194,53 @@ WINDOW_WORKERS = 6
 WINDOW_MAX_RETRIES = 2
 WINDOW_RETRY_BACKOFF = (5, 15)   # seconds before retry 1, retry 2
 
-# bulk_trade_quote output-frame schema version (R0.4, masterplan 2026-07-31).
+# trade_quote / bulk_trade_quote output-frame schema version (R0.4).
 #   v1: date, trade_timestamp, quote_timestamp, sequence, expiration, strike,
 #       right, price, size, exchange, bid, ask, root
 #   v2 (2026-07-31): + condition, ext_condition1-4 (raw OPRA code strings),
 #       bid_size, ask_size (numeric). Additive only — readers must select named
 #       columns and tolerate absence of the v2 columns in pre-v2 frames
 #       (hourly tape archives written before the cutover).
-BULK_TRADE_QUOTE_SCHEMA_VERSION = 2
+#   v3: retain the full paid 23-field source row in both parser paths, including
+#       raw bid/ask exchange + condition provenance. sequence/size/bid_size/
+#       ask_size use nullable Int64 parsed without a float intermediary so values
+#       above 2^53 retain their identity. Legacy columns remain additive-compatible.
+BULK_TRADE_QUOTE_SCHEMA_VERSION = 3
+
+_INT64_MIN = -(1 << 63)
+_INT64_MAX = (1 << 63) - 1
+
+
+def _exact_nullable_int(values: pd.Series, *, signed: bool) -> pd.Series:
+    """Parse integer CSV lexemes into nullable Int64 without floating-point loss.
+
+    Theta's trade sequence can be signed (the live fixture contains negative
+    values), while trade and quote sizes are non-negative integer counts.
+    ``pd.to_numeric`` promotes a mixed valid/blank series to float64, which
+    silently aliases integer identities above 2^53. Parse each lexical value
+    with ``int`` instead, accepting only an optional sign plus ASCII digits.
+    Blank, non-integral, malformed, out-of-Int64, and (for unsigned count fields)
+    negative values become explicit ``pd.NA`` under the collector's inert/coerce
+    doctrine; no rounded substitute is emitted.
+    """
+
+    parsed: list[object] = []
+    lower_bound = _INT64_MIN if signed else 0
+    for value in values:
+        if value is None or value is pd.NA:
+            parsed.append(pd.NA)
+            continue
+        text = str(value).strip()
+        unsigned = text[1:] if text[:1] in ("+", "-") else text
+        if not unsigned or not unsigned.isascii() or not unsigned.isdigit():
+            parsed.append(pd.NA)
+            continue
+        integer = int(text, 10)
+        if integer < lower_bound or integer > _INT64_MAX:
+            parsed.append(pd.NA)
+            continue
+        parsed.append(integer)
+    return pd.Series(pd.array(parsed, dtype="Int64"), index=values.index)
 
 # Greek column name mapping for the order= compatibility shim.
 # v3 returns all greek orders in a single /greeks/all response.
@@ -469,6 +509,31 @@ def _normalize_right_request(right: str) -> str:
     if r in ("P", "PUT"):
         return "put"
     return r.lower()
+
+
+def _normalize_right_response(right: str) -> str | None:
+    """Normalize an exact Theta response right to C/P; reject unknown values."""
+    r = str(right).upper().strip()
+    if r in ("C", "CALL"):
+        return "C"
+    if r in ("P", "PUT"):
+        return "P"
+    return None
+
+
+def _parse_trade_quote_expiration(value: str) -> date:
+    """Parse a full expiry lexeme without accepting a valid-prefix suffix.
+
+    Live Theta responses use dashed ISO. The exact basic-ISO form remains
+    accepted for legacy collector fixtures/callers, but both forms must round
+    trip byte-for-byte; slicing or trailing text is never accepted.
+    """
+    text = str(value).strip()
+    parsed = date.fromisoformat(text)
+    canonical = parsed.isoformat() if "-" in text else parsed.strftime("%Y%m%d")
+    if canonical != text:
+        raise ValueError(f"non-canonical trade_quote expiration: {value!r}")
+    return parsed
 
 
 def _normalize_expiration_param(exp: int | str | date) -> str:
@@ -1209,9 +1274,11 @@ def bulk_trade_quote_day(root: str, target_date: date | str | int) -> pd.DataFra
       • single-day only (multi-day wildcard → HTTP 400)
       • 2 API requests per root-day total
 
-    Returns a DataFrame with columns:
+    Returns the additive full-provenance trade_quote DataFrame (schema v3):
       root, expiration, strike (float, $), right ("C"/"P"), trade_timestamp,
-      date, sequence, price, size, bid, ask, exchange
+      quote_timestamp, date, exact sequence/size/bid_size/ask_size, price, bid,
+      ask, trade exchange, raw trade/ext conditions, and raw bid/ask
+      exchange+condition fields
     or None if the terminal is unreachable or either leg errors.
     """
     if not reachable():
@@ -1298,15 +1365,21 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     This is the gold-standard source for quote-rule signing calibration:
     every trade is stamped with the NBBO at execution, enabling Lee-Ready signing.
 
-    Returns DataFrame: date, trade_timestamp, price, size, bid, ask, right, strike, root, exchange
-    or None if terminal is unreachable.
+    Returns the legacy columns (date, trade_timestamp, quote_timestamp, price,
+    size, bid, ask, exchange, strike, right, root) plus the remaining paid
+    source provenance additively: expiration, exact sequence, condition and
+    ext_condition1..4, bid/ask sizes, exchanges, and conditions.  Source code
+    fields stay raw strings; exact integer fields use nullable Int64.  Returns
+    None if terminal is unreachable.
     """
     if not reachable():
         log.warning("thetadata: terminal not reachable — trade_quote returning None")
         return None
 
+    expected_root = root.strip().upper()
+    expected_right = _normalize_right_response(right)
     params = {
-        "symbol": root.upper(),
+        "symbol": expected_root,
         "expiration": _normalize_expiration_param(exp),
         "strike": f"{float(strike):.3f}",   # v3 expects dollar float e.g., "580.000"
         "right": _normalize_right_request(right),
@@ -1315,6 +1388,9 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     }
     session = _session()
     rows_all: list[dict] = []
+    expected_expiration = None if params["expiration"] == "*" else _parse_date_int(exp)
+    expected_strike = Decimal(params["strike"])
+    identity_rejections = 0
 
     try:
         for raw_line in _stream_lines(session, "/v3/option/history/trade_quote", params):
@@ -1334,6 +1410,29 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
             #         bid_size,bid_exchange,bid,bid_condition,ask_size,ask_exchange,ask,ask_condition
             if len(parts) < 23:
                 continue
+            try:
+                source_root = parts[0].strip().upper()
+                source_expiration = _parse_trade_quote_expiration(parts[1])
+                source_strike = Decimal(parts[2])
+                source_right = _normalize_right_response(parts[3])
+            except (InvalidOperation, TypeError, ValueError):
+                identity_rejections += 1
+                continue
+            if (
+                not source_root
+                or not source_strike.is_finite()
+                or source_strike <= 0
+                or source_right is None
+                or source_root != expected_root
+                or source_right != expected_right
+                or source_strike != expected_strike
+                or (
+                    expected_expiration is not None
+                    and source_expiration != expected_expiration
+                )
+            ):
+                identity_rejections += 1
+                continue
             rows_all.append({
                 "date": parts[4][:10] if parts[4] else None,   # trade_timestamp[:10] = date
                 "trade_timestamp": parts[4],
@@ -1343,6 +1442,22 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
                 "bid": parts[17],
                 "ask": parts[21],
                 "exchange": parts[13],
+                "expiration": source_expiration.isoformat(),
+                "strike": float(source_strike),
+                "right": source_right,
+                "root": source_root,
+                "sequence": parts[6],
+                "condition": parts[11],
+                "ext_condition1": parts[7],
+                "ext_condition2": parts[8],
+                "ext_condition3": parts[9],
+                "ext_condition4": parts[10],
+                "bid_size": parts[15],
+                "ask_size": parts[19],
+                "bid_exchange": parts[16],
+                "bid_condition": parts[18],
+                "ask_exchange": parts[20],
+                "ask_condition": parts[22],
             })
 
     except _StreamTruncated as e:
@@ -1351,19 +1466,36 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
                     root, exp, right, strike, start_date, end_date, e)
         return None
 
+    if identity_rejections:
+        log.warning(
+            "thetadata: trade_quote(%s, exp=%s, %s, strike=%s) rejected %d "
+            "response row(s) with malformed or mismatched contract identity",
+            root, exp, right, strike, identity_rejections,
+        )
+
     if not rows_all:
         return pd.DataFrame()
 
     df = pd.DataFrame(rows_all)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["expiration"] = pd.to_datetime(df["expiration"], errors="coerce")
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
-    df["size"] = pd.to_numeric(df["size"], errors="coerce")
     df["bid"] = pd.to_numeric(df["bid"], errors="coerce")
     df["ask"] = pd.to_numeric(df["ask"], errors="coerce")
-    df["strike"] = float(strike)
-    df["right"] = right.upper()
-    df["root"] = root.upper()
-    return df.reset_index(drop=True)
+    df["sequence"] = _exact_nullable_int(df["sequence"], signed=True)
+    for col in ("size", "bid_size", "ask_size"):
+        df[col] = _exact_nullable_int(df[col], signed=False)
+    legacy = [
+        "date", "trade_timestamp", "quote_timestamp", "price", "size",
+        "bid", "ask", "exchange", "strike", "right", "root",
+    ]
+    provenance = [
+        "expiration", "sequence", "condition", "ext_condition1",
+        "ext_condition2", "ext_condition3", "ext_condition4", "bid_size",
+        "ask_size", "bid_exchange", "bid_condition", "ask_exchange",
+        "ask_condition",
+    ]
+    return df[legacy + provenance].reset_index(drop=True)
 
 
 def _time_to_str(t: str | int | None) -> str | None:
@@ -1424,10 +1556,12 @@ def bulk_trade_quote(root: str, right: str,
     This is the T2a aggregate-then-discard path. Raw rows should be discarded
     by the caller after aggregation.
 
-    Returns a DataFrame with the same schema as trade_quote() EXCEPT that
-    strike is not fixed (it varies per contract in the response). The 'strike'
-    column is parsed from the response CSV (each row has its own strike).
-    The 'sequence' column is included in the output for dedup / watermark use.
+    Returns a DataFrame with the same full paid source provenance as
+    trade_quote() EXCEPT that strike is not fixed (it varies per contract in
+    the response). The 'strike' column is parsed from the response CSV (each
+    row has its own strike). Exact integer fields use nullable Int64; conditions
+    and exchanges remain raw source strings. The 'sequence' column is included
+    for dedup / watermark use.
 
     Optional time-of-day filtering (v3 format "HH:MM:SS.mmm" ET):
       start_time : "HH:MM:SS", "HH:MM:SS.mmm", "HH:MM", or ms-of-day int.
@@ -1462,11 +1596,16 @@ def bulk_trade_quote(root: str, right: str,
         log.warning("thetadata: terminal not reachable — bulk_trade_quote returning None")
         return None
 
+    expected_root = root.strip().upper()
     right_norm = _normalize_right_request(right)   # "call" or "put"
+    expected_right = _normalize_right_response(right_norm)
     exp_param = ("*" if str(expiration) in ("*", "0")
                  else _date_int(expiration))
+    expected_expiration = (
+        None if exp_param == "*" else _parse_date_int(expiration)
+    )
     params: dict = {
-        "symbol": root.upper(),
+        "symbol": expected_root,
         "expiration": exp_param,
         "strike": "*",
         "right": right_norm,
@@ -1482,6 +1621,7 @@ def bulk_trade_quote(root: str, right: str,
 
     session = _session()
     rows_all: list[dict] = []
+    identity_rejections = 0
 
     # CSV header: symbol,expiration,strike,right,trade_timestamp,quote_timestamp,
     #             sequence,ext_condition1-4,condition,size,exchange,price,
@@ -1492,6 +1632,7 @@ def bulk_trade_quote(root: str, right: str,
 
     def _parse_rows(stream_iter) -> list[dict]:
         """Parse a _stream_lines iterator into row dicts. Raises _StreamTruncated on error."""
+        nonlocal identity_rejections
         rows: list[dict] = []
         for raw_line in stream_iter:
             if isinstance(raw_line, bytes):
@@ -1506,18 +1647,40 @@ def bulk_trade_quote(root: str, right: str,
             parts = [v.strip().strip('"') for v in line.split(",")]
             if len(parts) < 23:
                 continue
-            # R0.4 "keep what we pay for" (schema v2): condition, ext_condition1-4,
-            # bid_size and ask_size were previously fetched and dropped here — the
-            # OPRA condition codes are the entire sweep/block/auction vocabulary and
-            # NBBO sizes feed the 5-tier exec-side ladder. Retained since v2.
+            try:
+                source_root = parts[0].strip().upper()
+                source_expiration_date = _parse_trade_quote_expiration(parts[1])
+                source_strike = Decimal(parts[2])
+                source_right = _normalize_right_response(parts[3])
+            except (InvalidOperation, TypeError, ValueError):
+                identity_rejections += 1
+                continue
+            if (
+                not source_root
+                or not source_strike.is_finite()
+                or source_strike <= 0
+                or source_right is None
+                or source_root != expected_root
+                or source_right != expected_right
+                or (
+                    expected_expiration is not None
+                    and source_expiration_date != expected_expiration
+                )
+            ):
+                identity_rejections += 1
+                continue
+            # R0.4 "keep what we pay for": v2 retained trade/ext conditions and
+            # quote sizes; v3 completes the paid row with bid/ask venue+condition
+            # provenance and contract-identity validation.
             rows.append({
                 "date":            parts[4][:10] if parts[4] else None,
                 "trade_timestamp": parts[4],
                 "quote_timestamp": parts[5],
                 "sequence":        parts[6],
-                "expiration":      parts[1],
-                "strike":          parts[2],
-                "right":           parts[3],
+                "expiration":      source_expiration_date.isoformat(),
+                "strike":          float(source_strike),
+                "right":           source_right,
+                "root":            source_root,
                 "price":           parts[14],
                 "size":            parts[12],
                 "exchange":        parts[13],
@@ -1530,29 +1693,46 @@ def bulk_trade_quote(root: str, right: str,
                 "ext_condition4":  parts[10],
                 "bid_size":        parts[15],
                 "ask_size":        parts[19],
+                "bid_exchange":    parts[16],
+                "bid_condition":   parts[18],
+                "ask_exchange":    parts[20],
+                "ask_condition":   parts[22],
             })
         return rows
 
     def _build_df(rows: list[dict]) -> pd.DataFrame:
         """Coerce row dicts to the canonical bulk_trade_quote output DataFrame."""
+        if identity_rejections:
+            log.warning(
+                "thetadata: bulk_trade_quote(%s, %s) rejected %d response row(s) "
+                "with malformed or mismatched contract identity",
+                root, right, identity_rejections,
+            )
         if not rows:
             return pd.DataFrame()
         df = pd.DataFrame(rows)
         df["date"]     = pd.to_datetime(df["date"], errors="coerce")
         df["price"]    = pd.to_numeric(df["price"],    errors="coerce")
-        df["size"]     = pd.to_numeric(df["size"],     errors="coerce")
         df["bid"]      = pd.to_numeric(df["bid"],      errors="coerce")
         df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
         df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
-        df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
-        df["bid_size"] = pd.to_numeric(df["bid_size"], errors="coerce")
-        df["ask_size"] = pd.to_numeric(df["ask_size"], errors="coerce")
+        df["sequence"] = _exact_nullable_int(df["sequence"], signed=True)
+        for col in ("size", "bid_size", "ask_size"):
+            df[col] = _exact_nullable_int(df[col], signed=False)
         # condition / ext_condition1-4 stay raw strings (OPRA code vocabulary —
         # downstream classifiers own the mapping; readers must tolerate absence
-        # in pre-v2 frames).
-        df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
-        df["root"]     = root.upper()
-        return df.reset_index(drop=True)
+        # in pre-v2 frames). Exchange and quote-condition fields likewise remain
+        # untouched source provenance; numeric-looking codes are not normalized.
+        legacy_v2 = [
+            "date", "trade_timestamp", "quote_timestamp", "sequence",
+            "expiration", "strike", "right", "price", "size", "exchange",
+            "bid", "ask", "condition", "ext_condition1", "ext_condition2",
+            "ext_condition3", "ext_condition4", "bid_size", "ask_size", "root",
+        ]
+        provenance_v3 = [
+            "bid_exchange", "bid_condition", "ask_exchange", "ask_condition",
+        ]
+        return df[legacy_v2 + provenance_v3].reset_index(drop=True)
 
     # Windowed-wildcard guard (see docstring): expiration=* + start_time/end_time
     # silently returns zero rows on this terminal build. Route any windowed

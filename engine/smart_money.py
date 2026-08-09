@@ -18,11 +18,15 @@ import yaml
 
 from collectors import edgar
 from lib import config
+from lib.filing_value_units import normalize_13f_snapshot
 
 log = logging.getLogger(__name__)
 
-NOTE = ("13F-HR holdings: quarterly, ~45-day lag, long-only US equity stakes "
-        ">= $100M. No shorts, options detail, or non-US positions. CUSIPs are "
+_RECEIPT_CACHE: tuple[str, int, pd.DataFrame] | None = None
+
+NOTE = ("13F-HR holdings: quarterly, ~45-day lag, reported long positions from "
+        "managers with >= $100M in Section 13(f) securities. No shorts, options "
+        "detail, or non-US positions. CUSIPs are "
         "name-matched to tickers, so some lines are hidden. Context on who holds "
         "a name, not a buy list or a real-time signal.")
 
@@ -571,16 +575,43 @@ def enrich_since_filing(by_ticker: dict[str, dict]) -> None:
 # --------------------------------------------------------------------------- #
 # Orchestration (reads disk; the heavy lifting above is pure/tested).
 # --------------------------------------------------------------------------- #
-def _read_two(slug: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+def _read_period_pair(slug: str,
+                      period_end: str | None = None
+                      ) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Read a target quarter and its immediately preceding snapshot.
+
+    ``period_end=None`` preserves the historical latest-pair behaviour.  An
+    explicit period is the filing-transition safety valve: pending managers are
+    never silently mixed into a newer-quarter aggregate and never interpreted as
+    zero holdings.
+    """
     d = config.data_dir() / "smart_money" / slug
     if not d.exists():
         return None, None
     snaps = sorted(d.glob("*.parquet"))
     if not snaps:
         return None, None
-    latest = pd.read_parquet(snaps[-1])
-    prev = pd.read_parquet(snaps[-2]) if len(snaps) >= 2 else None
+    target_idx = len(snaps) - 1
+    if period_end is not None:
+        matches = [i for i, path in enumerate(snaps) if path.stem == str(period_end)]
+        if not matches:
+            return None, None
+        target_idx = matches[-1]
+    latest_path = snaps[target_idx]
+    latest = _enrich_snapshot_provenance(
+        normalize_13f_snapshot(pd.read_parquet(latest_path)), slug, latest_path.stem)
+    if target_idx >= 1:
+        prev_path = snaps[target_idx - 1]
+        prev = _enrich_snapshot_provenance(
+            normalize_13f_snapshot(pd.read_parquet(prev_path)), slug, prev_path.stem)
+    else:
+        prev = None
     return prev, latest
+
+
+def _read_two(slug: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Backward-compatible latest-pair reader."""
+    return _read_period_pair(slug)
 
 
 def _snapshot_filing_date(df: pd.DataFrame) -> str:
@@ -593,6 +624,80 @@ def _snapshot_filing_date(df: pd.DataFrame) -> str:
     return ""
 
 
+def _snapshot_available_date(df: pd.DataFrame) -> str:
+    """Look-ahead-free trade date, preferring acceptance-aware snapshot metadata."""
+    if "available_date" in df.columns and len(df):
+        value = df["available_date"].iloc[0]
+        if value is not None and str(value) not in ("", "nan", "NaT"):
+            return str(value)[:10]
+    return _snapshot_filing_date(df)
+
+
+def _filing_receipts() -> pd.DataFrame:
+    """Cached accession receipt manifest; empty when unavailable/corrupt."""
+    global _RECEIPT_CACHE
+    path = config.data_dir() / "smart_money" / "filing_receipts.parquet"
+    if not path.exists():
+        return pd.DataFrame()
+    try:
+        stamp = path.stat().st_mtime_ns
+        key = str(path.resolve())
+        if (_RECEIPT_CACHE is not None
+                and _RECEIPT_CACHE[0] == key
+                and _RECEIPT_CACHE[1] == stamp):
+            return _RECEIPT_CACHE[2]
+        frame = pd.read_parquet(path)
+        _RECEIPT_CACHE = (key, stamp, frame)
+        return frame
+    except Exception:  # noqa: BLE001
+        log.debug("13F filing receipt manifest unavailable", exc_info=True)
+        return pd.DataFrame()
+
+
+def _apply_receipt_metadata(df: pd.DataFrame, receipt: dict | None) -> pd.DataFrame:
+    """Pure additive bridge from an accession receipt to a legacy snapshot."""
+    if df.empty or not receipt:
+        return df
+    from collectors.edgar_13f import acceptance_available_date
+
+    out = df.copy()
+    for column in ("accepted_at", "accession", "form", "source_index_url",
+                   "observed_at"):
+        current = out[column].iloc[0] if column in out.columns and len(out) else None
+        if current is None or str(current) in ("", "nan", "NaT"):
+            out[column] = receipt.get(column, "")
+    current_available = (
+        out["available_date"].iloc[0]
+        if "available_date" in out.columns and len(out) else None)
+    if current_available is None or str(current_available) in ("", "nan", "NaT"):
+        out["available_date"] = acceptance_available_date(
+            receipt.get("accepted_at"),
+            receipt.get("filing_date") or _snapshot_filing_date(out),
+        )
+    return out
+
+
+def _enrich_snapshot_provenance(df: pd.DataFrame, slug: str,
+                                period_end: str) -> pd.DataFrame:
+    """Attach receipt metadata to pre-provenance immutable snapshots at read time."""
+    receipts = _filing_receipts()
+    if receipts.empty or not {"slug", "period_end"}.issubset(receipts.columns):
+        return df
+    rows = receipts[
+        (receipts["slug"].astype(str) == str(slug))
+        & (receipts["period_end"].astype(str).str[:10] == str(period_end)[:10])
+    ]
+    if "form" in rows.columns:
+        rows = rows[rows["form"].astype(str) == "13F-HR"]
+    if rows.empty:
+        return df
+    sort_cols = [c for c in ("filing_date", "accepted_at", "accession")
+                 if c in rows.columns]
+    if sort_cols:
+        rows = rows.sort_values(sort_cols)
+    return _apply_receipt_metadata(df, rows.iloc[0].to_dict())
+
+
 def _read_all(slug: str) -> list[tuple[str, str, pd.DataFrame]]:
     """Every retained snapshot for a fund, (period_end, filing_date, frame) ascending
     by period. `filing_date` is when that quarter became PUBLIC (look-ahead-free)."""
@@ -602,7 +707,8 @@ def _read_all(slug: str) -> list[tuple[str, str, pd.DataFrame]]:
     out: list[tuple[str, str, pd.DataFrame]] = []
     for p in sorted(d.glob("*.parquet")):
         try:
-            df = pd.read_parquet(p)
+            df = _enrich_snapshot_provenance(
+                normalize_13f_snapshot(pd.read_parquet(p)), slug, p.stem)
         except Exception:  # noqa: BLE001
             continue
         if not df.empty:
@@ -611,7 +717,9 @@ def _read_all(slug: str) -> list[tuple[str, str, pd.DataFrame]]:
 
 
 def _accumulation(funds: dict, name_map: dict[str, str],
-                  cusip_map: dict[str, str]) -> dict[str, dict]:
+                  cusip_map: dict[str, str],
+                  target_period: str | None = None,
+                  included_slugs: set[str] | None = None) -> dict[str, dict]:
     """{ticker: accumulation_trend(...)} across ALL retained quarters of every
     tracked fund — the multi-quarter "who's been building vs trimming this name"
     rollup. Reads disk; the per-name math is the pure accumulation_trend above.
@@ -622,8 +730,19 @@ def _accumulation(funds: dict, name_map: dict[str, str],
     # ticker -> period -> [holder_count, total_value, max_filing_date]
     agg: dict[str, dict[str, list]] = {}
     periods: set[str] = set()
-    for slug in funds:
+    reporters: dict[str, set[str]] = {}
+    selected = [slug for slug in funds
+                if included_slugs is None or slug in included_slugs]
+    for slug in selected:
         for period_end, filing_date, snap in _read_all(slug):
+            if target_period is not None and period_end > target_period:
+                continue
+            # Snapshot presence establishes cohort reporting even if every line
+            # later fails ticker resolution; resolution quality must not alter the
+            # filing denominator.
+            periods.add(period_end)
+            reporters.setdefault(period_end, set()).add(slug)
+            available_on = _snapshot_available_date(snap) or filing_date
             eq = snap[snap.get("sh_type", "SH") == "SH"]
             if eq.empty:
                 continue
@@ -633,16 +752,20 @@ def _accumulation(funds: dict, name_map: dict[str, str],
             res = res[res["ticker"].notna()]
             if res.empty:
                 continue
-            periods.add(period_end)
             # one fund counted once per ticker (collapse dual-class lots)
             per = res.groupby("ticker", as_index=False).agg(value_usd=("value_usd", "sum"))
             for r in per.itertuples(index=False):
                 slot = agg.setdefault(r.ticker, {}).setdefault(period_end, [0, 0.0, ""])
                 slot[0] += 1
                 slot[1] += float(r.value_usd)
-                if filing_date > slot[2]:        # latest filer = fully-public date
-                    slot[2] = filing_date
-    ordered = sorted(periods)
+                if available_on > slot[2]:       # latest availability = fully-public date
+                    slot[2] = available_on
+    # Only periods filed by the entire selected cohort are comparable.  A manager
+    # who has not filed is missing, not a zero-position holder.  Once a period is
+    # cohort-complete, omission of a ticker is a genuine zero/exit and may enter
+    # the series normally.
+    ordered = [p for p in sorted(periods)
+               if len(reporters.get(p, set())) == len(selected)]
     out: dict[str, dict] = {}
     for tk, pmap in agg.items():
         series = [{"period": p, "n_funds": pmap.get(p, [0, 0.0, ""])[0],
@@ -666,7 +789,10 @@ def _safe_manager_quality(cfg: dict | None) -> dict:
         return {}
 
 
-def compute_smart_money(cfg: dict | None = None) -> dict | None:
+def compute_smart_money(cfg: dict | None = None,
+                        target_period: str | None = None,
+                        included_slugs: list[str] | set[str] | None = None
+                        ) -> dict | None:
     cfg = cfg if cfg is not None else (config.load().get("smart_money", {}) or {})
     funds = cfg.get("funds", {}) or {}
     if not funds:
@@ -675,17 +801,22 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
     cusip_map, _figi_meta = full_cusip_map()      # ARK seed + free OpenFIGI master
     top_n = int(cfg.get("panel_top_n", 12))
 
+    selected_slugs = (set(included_slugs) if included_slugs is not None
+                      else set(funds))
     by_ticker: dict[str, dict] = {}
     fund_rows: list[dict] = []
     overlap: dict[str, dict] = {}
     as_of_dates: list[str] = []
 
     for slug, spec in funds.items():
-        prev, latest = _read_two(slug)
+        if slug not in selected_slugs:
+            continue
+        prev, latest = _read_period_pair(slug, target_period)
         if latest is None or latest.empty:
             continue
         period_end = str(latest["period_end"].iloc[0]) if "period_end" in latest else ""
         fund_filing_date = _snapshot_filing_date(latest)  # PIT anchor for L2/L4 ledgers
+        fund_available_date = _snapshot_available_date(latest) or fund_filing_date
         as_of_dates.append(period_end)
         diff = diff_snapshots(prev, latest)
         if diff.empty:
@@ -727,6 +858,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
                 "action": r.action, "pct_portfolio": round(float(r.pct_portfolio), 2),
                 "value_usd": float(r.value_usd), "period_end": period_end,
                 "filing_date": fund_filing_date,   # PIT anchor; "" for legacy snapshots
+                "available_date": fund_available_date,
                 "shares": (float(r.shares) if hasattr(r, "shares")
                            and r.shares is not None and not pd.isna(r.shares)
                            else None),
@@ -757,7 +889,11 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         return None
 
     # multi-quarter "Historical institutional increase/decrease" trend per name
-    trends = _accumulation(funds, name_map, cusip_map)
+    trends = _accumulation(
+        funds, name_map, cusip_map,
+        target_period=target_period,
+        included_slugs=selected_slugs,
+    )
     # backtested per-fund predictiveness — quality-weights the panel (descriptive
     # CONTEXT, never a scored alpha; see engine/manager_quality.py)
     mq = _safe_manager_quality(cfg)
@@ -840,6 +976,8 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         "built": datetime.now(timezone.utc).isoformat(),
         "note": NOTE,
         "n_funds": len(fund_rows),
+        "cohort_period": target_period or (max(as_of_dates) if as_of_dates else ""),
+        "cohort_slugs": sorted(selected_slugs),
         "n_names": len(by_ticker),
         "funds": sorted(fund_rows, key=lambda r: r["name"]),
         "most_held": most_held,

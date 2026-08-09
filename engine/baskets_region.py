@@ -107,6 +107,10 @@ def compute_region_baskets(closes: pd.DataFrame | None, mem: dict | None,
             ry = float(tc.iloc[-1] / yseg.iloc[0] - 1.0) if len(yseg) > 1 else None
             active.append({"symbol": t, "name": nm[t].get(name_key, t),
                            "added": m["added"], "rationale": m.get("rationale", ""),
+                           # bilingual member blurb: markets that curate a Chinese rationale
+                           # (China today) surface it so zh mode shows Chinese ONLY; markets
+                           # without one fall back to the English string, never to an empty cell.
+                           "rationale_zh": m.get("rationale_zh") or m.get("rationale", ""),
                            "last": round(float(tc.iloc[-1]), 2),
                            **{f"ret_{h}d": round(v, 4) if v is not None else None
                               for h, v in trailing.items()},

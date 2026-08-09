@@ -38,7 +38,8 @@ def build(feed: dict, affiliations: dict | None = None) -> dict:
     qualitative actor→name edge converges with the hard feeds.
     """
     s = (feed or {}).get("signals", {})
-    recs = models.channel_records(s, affiliations=affiliations)
+    drops: dict = {}
+    recs = models.channel_records(s, affiliations=affiliations, drop_stats=drops)
     by: dict[str, dict] = {}
     for tk, r in recs.items():
         chans = r.get("channels", [])
@@ -54,6 +55,10 @@ def build(feed: dict, affiliations: dict | None = None) -> dict:
         "as_of": (feed or {}).get("as_of") or now.date().isoformat(),
         "generated_utc": now.isoformat(),
         "n_tickers": len(by),
+        # Additive hygiene disclosure: non-symbol keys the kernel refused this build, so a
+        # provider that starts emitting prose is auditable from the artifact, not just the log.
+        "n_dropped_invalid": int(drops.get("n_distinct") or 0),
+        "dropped_invalid_examples": list(drops.get("examples") or []),
         "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct "
                 "independent channels (count); weighted_score ranks by channel quality. "
                 "Donors / position-size recorded as context, never a voting channel.",

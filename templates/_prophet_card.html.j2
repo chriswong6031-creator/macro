@@ -233,6 +233,24 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   color:var(--ink-warn,var(--warn));
   background:color-mix(in srgb,var(--warn) 8%,var(--panel));
   border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
+{# 'adj' (W-L1, spec §4.3) — the overnight pass moved something on this name after the
+   evening board. DESATURATED ON PURPOSE, and that is the whole point of the rule: at the
+   marks row's normal formula — color-mix(<hue> 58%, --text) on a 12% tint — it came out
+   the same blue as .pv-mk-new, which sits inches away on the same board and means
+   something completely different ("new to the board" is a signal; "adjusted" is a
+   receipt). Two meanings in one hue is a defect no amount of wording fixes. The fix is
+   WEIGHT, not hue: 'adjusted' resolves toward --muted so it reads as the quietest thing
+   in the row while 'new' keeps the saturated --info. That also matches what the mark is
+   worth to the reader — the honest answer to "so what do I do" here is nothing; the card
+   already shows the updated numbers. Measured on the real board, composited:
+   5.01:1 dark / 5.28:1 light (mockups/refs/breathing-platform/verify_wl1.py).
+   No markup change is needed: the macro renders pv-mk-{{ k }} for whatever `k` the
+   caller passes, and 'adj' is deliberately NOT in _MK_NOTIP, so its tip renders —
+   correct, because unlike feat/new this mark names something the reader cannot infer. #}
+.pv-mk-adj{font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
+  background:color-mix(in srgb,var(--prov) 7%,transparent);
+  border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
 {# a marks chip carrying a data-tip is a hover target, not a link — say so #}
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
