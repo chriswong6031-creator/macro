@@ -4575,7 +4575,9 @@ jobs:
         # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
         # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
         # projection silently collapses to empty (PR #4300 shipped red on exactly that).
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
+        # The endpoint suite imports app.main, whose eagerly mounted Market Memory
+        # router imports requests at module scope.
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml requests
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
