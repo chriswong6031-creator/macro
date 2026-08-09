@@ -2263,38 +2263,38 @@ def _ob_mask(close: pd.Series) -> pd.Series | None:
     the episode's TARGET exit so the track record measures the system's own sell
     discipline instead of an arbitrary calendar date.
 
-    CAUSAL, BUT NOT STABLE — these are different properties and this docstring used to
-    claim only the first.
+    CAUSAL AND — SINCE 2026-08-07 — STABLE. These are different properties and this
+    docstring once claimed only the first.
 
-    * CAUSAL (holds): known-date mapped, so a 3D bucket is only readable once complete
-      and this can never peek. Truncating TRAILING bars leaves every past flag
+    * CAUSAL (always held): known-date mapped, so a 3D bucket is only readable once
+      complete and this can never peek. Truncating TRAILING bars leaves every past flag
       unchanged — pinned by tests/test_ob_mask_start_invariance.py.
-    * NOT STABLE (defect): `_tf_bars` resamples on `3B`, whose bin edges anchor to the
-      SERIES' FIRST TIMESTAMP. `emit_ledger` calls this on the full rolling close cache,
-      and the smallcap/midcap `data/*/_closes_cache.parquet` stores are a ROLLING window
-      (first date moved 2023-06-27 -> 2023-07-03 across three sessions in early Aug 2026).
-      Move the start and every 3D bucket in the WHOLE history re-phases, so overbought
-      flags from weeks ago flip and the exit bar of an episode that closed long ago moves.
+    * STABLE (repaired): `_tf_bars` used to resample on `3B`, whose bin edges anchored to
+      the SERIES' FIRST TIMESTAMP. `emit_ledger` calls this on the full rolling close
+      cache, and the smallcap/midcap `data/*/_closes_cache.parquet` stores are a ROLLING
+      window (first date moved 2023-06-27 -> 2023-07-03 across three sessions in early Aug
+      2026). Moving the start re-phased every 3D bucket in the WHOLE history, so overbought
+      flags from weeks ago flipped and the exit bar of an episode that closed long ago
+      moved. PR #4732 migrated `_tf_bars` to an ABSOLUTE SESSION ANCHOR in place; this
+      function imports it directly, so the repair reached here too.
 
-    Measured (reports/ob_mask_track_record_blast_radius.md, regenerate with
-    scripts/measure_ob_mask_track_record_blast_radius.py). Dropping 4 leading sessions with
-    the end date and every retained price held IDENTICAL moved 126 of 359 already-matured
-    episodes (35.1%), max 28.9 pp, and the PUBLISHED headline expectancy 0.94% -> 1.29% —
-    on zero new information. The phase depends on (leading bars dropped) mod 3, so a
-    re-phase is not even monotone in how much history rolls off.
+    Measured before the repair (reports/ob_mask_track_record_blast_radius.md, regenerate
+    with scripts/measure_ob_mask_track_record_blast_radius.py). Dropping 4 leading sessions
+    with the end date and every retained price held IDENTICAL moved 126 of 359
+    already-matured episodes (35.1%), max 28.9 pp — on zero new information. The phase
+    depended on (leading bars dropped) mod 3, so a re-phase was not even monotone in how
+    much history rolled off. Under the absolute anchor that controlled movement is 0 of 359.
 
-    So `site/factordata/us_track_ledger.json` — the Track-record dialog plus the hero
-    win-rate/expectancy on the Track-record page — is not stable under re-grading.
-
-    THE FIX IS IN FLIGHT, NOT SHIPPED. PR #4732 (era `abs-session-2026-08-06`) migrates
-    `_tf_bars` to an absolute session anchor in place; because this function imports it
-    directly, the repair reaches here for free and drives the controlled movement above to
-    0 of 359 (verified against that branch). That is also the hazard: merging #4732 changes
-    every published historical number here SILENTLY — `scripts/grade_us_board.py` is not in
-    that PR's file list, its blast-radius report never measures this consumer, and R5's era
-    stamp rides `cascade`/`tier_stream`/`signal_gate`, none of which this path touches. That
-    is a graded-population change and needs its own era boundary:
-    research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md.
+    THE ERA BOUNDARY. `site/factordata/us_track_ledger.json` is public — the Track-record
+    dialog, the hero win-rate/expectancy on the Track-record page, and the dashboard chip.
+    #4732 moved every published historical number here without appearing in this file's
+    diff, without a mention in its blast-radius report, and without R5's era stamp (which
+    rides `cascade`/`tier_stream`/`signal_gate` — none of which this path touches). Ruled
+    on 2026-08-07 (research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md §0.1): the
+    `abs-session-2026-08-06` era EXTENDS to this artifact. `emit_ledger` now stamps
+    `meta.anchor_era` and carries the frozen pre-era headline in `meta.pre_era`
+    (engine/track_era.py), and `engine.track_ledger.atomic_write` refuses any future write
+    that moves the headline without a matching stamp.
     """
     try:
         c = close.dropna()
@@ -2334,11 +2334,21 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
 
     Returns the track_ledger/v1 dict (JSON-safe via engine.track_ledger.build_shell).
     """
+    from engine import track_era as _te
     from engine import track_ledger as _tl
     from engine import track_scoring as _ts
 
     bench = {"code": "SPY", "en": "S&P 500", "zh": "标普500"}
     empty_summary = _ts.summarize([], metric="pnl", horizon=LEDGER_HORIZON)
+
+    # ERA STAMP (ruled 2026-08-07 — research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md §0.2).
+    # `_ob_mask` inherits `_tf_bars`' absolute session anchor by direct import, so the
+    # buckets under every already-graded row changed when #4732 landed WITHOUT this path
+    # inheriting the field that would tell a reader they changed. This says which
+    # construction produced the numbers, and carries the pre-era headline it replaced so
+    # nothing is overwritten. Stamped on EVERY return path, including the degenerate one —
+    # a provenance field with holes is a field a reader has to already know to trust.
+    era_meta = _te.us_era_meta()
 
     # The last session this grading run actually saw — see the priced_through block
     # below for why the artifact has to carry it. Stamped on EVERY return path,
@@ -2352,7 +2362,7 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
             "US", str(dt.date.today()), "accruing", bench,
             summary=empty_summary, rows=[], grain="episode",
             survivorship={"n_skipped_no_price": 0},
-            extra_meta={"priced_through": priced_through},
+            extra_meta={"priced_through": priced_through, **era_meta},
         )
 
     current_as_of = boards[-1].get("as_of", "")
@@ -2507,6 +2517,9 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     # summary and reported the 3-session gap as "the reconstruction drifted". With this
     # stamp the gap is legible from the file alone.
     _extra["priced_through"] = priced_through
+
+    # Era boundary + the frozen pre-era headline (see the era_meta comment above).
+    _extra.update(era_meta)
 
     # Outage disclosure: sessions after the newest snapshot on which no board was
     # recorded. Present in the artifact so the dialog can say so in one quiet line

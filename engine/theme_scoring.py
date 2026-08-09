@@ -289,6 +289,80 @@ RECOS = {
 }
 
 
+# --------------------------------------------------------------- bilingual plumbing
+# The desk renders EN and ZH side by side (`<span class="l-en">/<span class="l-zh">`,
+# templates/baskets_desk.js `L()`), so every VALUE this engine composes needs a Chinese
+# twin — a raw English fragment on sector_central_china.html is an untranslated stat,
+# which DESIGN_DOCTRINE bans from the glance tier.
+#
+# Reason fragments are composed in four different legs (_trend_leg / _mtf_reasons /
+# _macro_leg / _crowding_pen) and then concatenated + truncated, so the twin has to
+# travel WITH the fragment: a post-hoc English->Chinese lookup would silently fall back
+# to English the moment a leg reworded itself. `_R` is a `str` subclass carrying `.zh`,
+# so every existing consumer (tests, json.dumps, alerts, the act_now copy) sees the exact
+# same plain English string it always did, while `_reasons_zh()` can recover the parallel
+# Chinese list — same length, same order, by construction.
+class _R(str):
+    """An English reason fragment that carries its Chinese twin on `.zh`.
+
+    Subclasses `str` on purpose: `json.dumps`, `in`/`==`, slicing and every existing
+    reader treat it as the plain English fragment it wraps.
+    """
+
+    def __new__(cls, en: str, zh: str | None = None):
+        obj = super().__new__(cls, en)
+        obj.zh = en if zh is None else zh
+        return obj
+
+
+def _reasons_zh(reasons: list) -> list[str]:
+    """Chinese twins for a reason list — same length and order as the input.
+
+    A plain `str` that never went through `_R` degrades to its English text (visible,
+    never blank) rather than shifting the list and mis-pairing every later fragment.
+    """
+    return [getattr(r, "zh", r) for r in reasons]
+
+
+# Benchmark label -> Chinese, for the "20d +x% vs <bench>" trend reason. The caller
+# passes the region's own `bench_label_zh`; this map only covers the defaults so a
+# direct/unit-test call still reads Chinese.
+_BENCH_ZH = {
+    "S&P": "标普", "S&P 500": "标普500", "CSI 300": "沪深300",
+    "Hang Seng": "恒生指数", "S&P/TSX": "标普/TSX", "Intl ex-US": "国际(除美)",
+}
+
+# Closed-enum display tokens -> Chinese for the macro-backdrop strip. The house glossary
+# (engine.i18n.LEX / research/I18N_GLOSSARY.md) owns the shared vocabulary — quad names,
+# early/mid/late, the dollar-smile regimes — and `_enum_zh` delegates there. The maps
+# below cover only the tokens LEX has no entry for, plus the ones whose Chinese is
+# FIELD-SPECIFIC: "tightening" is 收紧 as a policy stance but 趋紧 as an NFCI trend, so a
+# single global entry cannot serve both.
+_FED_DIR_ZH = {"easing": "宽松", "hiking": "紧缩", "on hold": "按兵不动", "unknown": "未知"}
+_NFCI_STATE_ZH = {"loose": "宽松", "neutral": "中性", "tight": "收紧"}
+_NFCI_TREND_ZH = {"loosening": "趋松", "tightening": "趋紧", "flat": "持平"}
+_BOND_CYCLE_ZH = {"early": "早期", "mid": "中期", "late": "晚期", "recession": "衰退"}
+
+
+def _enum_zh(value, extra: dict | None = None):
+    """Chinese for a closed-enum display token.
+
+    Resolution order: the field-specific `extra` map, then the house glossary
+    (`engine.i18n.tr`), then the raw token. None/blank/em-dash pass straight through, so
+    an absent reading stays the "—" placeholder in both languages. Never raises — a
+    missing glossary degrades to English, it does not blank the strip.
+    """
+    if value is None or not isinstance(value, str) or not value.strip() or value == "—":
+        return value
+    if extra and value in extra:
+        return extra[value]
+    try:
+        from engine.i18n import tr
+        return tr(value)
+    except Exception:  # noqa: BLE001 — display-only; English is an acceptable degrade
+        return value
+
+
 def _tanh(x: float, k: float = 1.0) -> float:
     return float(np.tanh(k * x))
 
@@ -378,21 +452,38 @@ def _macro_context(region: str = "us") -> dict:
     summary_en = (f"{reg.get('quad_name') or quad} · {reg.get('cycle_tag') or '—'}-cycle · "
                   f"Fed {fed_dir} · NFCI {nfci_state or '—'} ({nfci_trend or 'flat'}) · "
                   f"bonds {bonds.get('cycle_phase') or '—'} · USD {fx.get('regime') or '—'}")
-    summary_zh = (f"{reg.get('quad_name') or quad} · {reg.get('cycle_tag') or '—'}周期 · "
-                  f"美联储{ {'easing':'宽松','hiking':'紧缩','on hold':'按兵不动'}.get(fed_dir, fed_dir) } · "
-                  f"NFCI {nfci_state or '—'} · 债券{bonds.get('cycle_phase') or '—'}")
+    summary_zh = (f"{_enum_zh(reg.get('quad_name')) or quad} · "
+                  f"{_enum_zh(reg.get('cycle_tag')) or '—'}周期 · "
+                  f"美联储{_enum_zh(fed_dir, _FED_DIR_ZH)} · "
+                  f"NFCI {_enum_zh(nfci_state, _NFCI_STATE_ZH) or '—'} · "
+                  f"债券{_enum_zh(bonds.get('cycle_phase'), _BOND_CYCLE_ZH) or '—'}")
     # B3 item 7: dollar_regime + stance word from forex latest (display-only for all regions)
     _fx_stance = (_fx_display.get("stance") or {}) if _fx_display else {}
+    _quad_name = reg.get("quad_name")
+    _cycle = reg.get("cycle_tag")
+    _bond_cycle = bonds.get("cycle_phase")
+    _dollar_regime = (_fx_display.get("regime") if _fx_display else None) or fx.get("regime")
+    # Every display VALUE ships with its Chinese twin: the backdrop strip on the China /
+    # HK / Canada desks renders these verbatim, so an English-only value is an
+    # untranslated stat in the glance tier. Absent readings stay None so the renderer's
+    # em-dash placeholder still fires in both languages.
     return {
         "state": state, "sector_rs": sector_rs,
         "display": {
-            "quad": quad, "quad_name": reg.get("quad_name"), "cycle": reg.get("cycle_tag"),
+            "quad": quad, "quad_name": _quad_name, "cycle": _cycle,
+            "quad_name_zh": _enum_zh(_quad_name),
+            "cycle_zh": _enum_zh(_cycle),
             "growth_score": _r(growth, 2), "inflation_score": _r(inflation, 2),
             "fed_dir": fed_dir, "nfci_state": nfci_state, "nfci_trend": nfci_trend,
-            "dollar_regime": (_fx_display.get("regime") if _fx_display else None) or fx.get("regime"),
+            "fed_dir_zh": _enum_zh(fed_dir, _FED_DIR_ZH),
+            "nfci_state_zh": _enum_zh(nfci_state, _NFCI_STATE_ZH),
+            "nfci_trend_zh": _enum_zh(nfci_trend, _NFCI_TREND_ZH),
+            "dollar_regime": _dollar_regime,
+            "dollar_regime_zh": _enum_zh(_dollar_regime),
             "dollar_stance_word_en": _fx_stance.get("word_en") or None,  # B3
             "dollar_stance_word_zh": _fx_stance.get("word_zh") or None,  # B3
-            "bond_cycle": bonds.get("cycle_phase"),
+            "bond_cycle": _bond_cycle,
+            "bond_cycle_zh": _enum_zh(_bond_cycle, _BOND_CYCLE_ZH),
             "recession_band": rec.get("label"), "drawdown_band": dd.get("band"),
             "summary_en": summary_en, "summary_zh": summary_zh,
             "as_of": reg.get("date"),
@@ -430,10 +521,17 @@ def _macro_leg(bid: str, mc: dict) -> tuple[float | None, list[str]]:
         return None, reasons          # leg unavailable → renormalise out (do not score a dead 0)
     d = mc["display"]
     if prior_dot is not None and abs(prior_dot) >= 0.25:
-        reasons.append(("macro tailwind" if prior_dot > 0 else "macro headwind")
-                       + f" ({d.get('fed_dir')}, NFCI {d.get('nfci_state')})")
+        _fed, _nfci = d.get("fed_dir"), d.get("nfci_state")
+        _fed_zh = d.get("fed_dir_zh") or _enum_zh(_fed, _FED_DIR_ZH)
+        _nfci_zh = d.get("nfci_state_zh") or _enum_zh(_nfci, _NFCI_STATE_ZH)
+        reasons.append(_R(
+            ("macro tailwind" if prior_dot > 0 else "macro headwind")
+            + f" ({_fed}, NFCI {_nfci})",
+            ("宏观顺风" if prior_dot > 0 else "宏观逆风")
+            + f"（{_fed_zh}，NFCI {_nfci_zh}）"))
     if rs_sig is not None and abs(rs_sig) >= 0.3:
-        reasons.append(f"home sector {sec} RS {'strong' if rs_sig > 0 else 'weak'}")
+        reasons.append(_R(f"home sector {sec} RS {'strong' if rs_sig > 0 else 'weak'}",
+                          f"所属板块 {sec} 相对强度{'强' if rs_sig > 0 else '弱'}"))
     return float(np.clip(val, -1, 1)), reasons
 
 
@@ -477,8 +575,14 @@ def _impulse_leg(rets: pd.DataFrame, mc_closes: pd.DataFrame, i: int) -> tuple[f
     return float(_tanh(net, 2.0)), {"up3": up3, "down3": down3, "net": up3 - down3, "n": n}
 
 
-def _trend_leg(perf: dict, fp: dict, bench: str = "S&P") -> tuple[float, list[str]]:
-    """Relative-to-benchmark momentum (5/20/60d) + acceleration."""
+def _trend_leg(perf: dict, fp: dict, bench: str = "S&P",
+               bench_zh: str | None = None) -> tuple[float, list[str]]:
+    """Relative-to-benchmark momentum (5/20/60d) + acceleration.
+
+    `bench_zh` is the region's own Chinese benchmark label (`bench_label_zh`); when the
+    caller omits it we fall back to `_BENCH_ZH`, then to the English ticker itself — the
+    ticker is never mangled, only the words around it are translated.
+    """
     def rel(h):
         v = (perf.get(h) or {}).get("rel")
         return float(v) if v is not None else None
@@ -496,9 +600,12 @@ def _trend_leg(perf: dict, fp: dict, bench: str = "S&P") -> tuple[float, list[st
     leg = float(np.clip(np.average(parts, weights=wts), -1, 1)) if parts else 0.0
     reasons = []
     if r20 is not None:
-        reasons.append(f"20d {'+' if r20 >= 0 else ''}{r20 * 100:.1f}% vs {bench}")
+        bz = bench_zh or _BENCH_ZH.get(bench, bench)
+        pct = f"{'+' if r20 >= 0 else ''}{r20 * 100:.1f}%"
+        reasons.append(_R(f"20d {pct} vs {bench}", f"20日 {pct} 相对{bz}"))
     if accel is not None and abs(accel) >= 0.5:
-        reasons.append("accelerating" if accel > 0 else "decelerating")
+        reasons.append(_R("accelerating", "加速中") if accel > 0
+                       else _R("decelerating", "减速中"))
     return leg, reasons
 
 
@@ -513,18 +620,20 @@ def _crowding_pen(fp: dict, lead: dict, crowd: dict | None) -> tuple[float, list
     if ea is not None:                                   # non-US: absolute stretch vs own history
         if ea > EXT_LO:
             pen += 0.5 * min(1.0, (ea - EXT_LO) / max(EXT_HI - EXT_LO, 1e-9))
-            reasons.append(f"stretched above trend ({ea:.1f}σ)")
+            reasons.append(_R(f"stretched above trend ({ea:.1f}σ)",
+                              f"超出趋势拉伸（{ea:.1f}σ）"))
     else:                                                # US / legacy: cross-sectional RS pctile
         rs_p = fp.get("rs_pctile")
         if rs_p is not None and rs_p > 0.8:
             pen += 0.5 * (rs_p - 0.8) / 0.2
-            reasons.append(f"extended (RS {rs_p * 100:.0f}%ile)")
+            reasons.append(_R(f"extended (RS {rs_p * 100:.0f}%ile)",
+                              f"延展（相对强度 {rs_p * 100:.0f} 分位）"))
     if crowd and crowd.get("crowding_z") is not None and crowd["crowding_z"] > 1.0:
         pen += 0.3
-        reasons.append("crowded co-movement")
+        reasons.append(_R("crowded co-movement", "同向波动拥挤"))
     if lead.get("breadth") == "narrow":
         pen += 0.25
-        reasons.append("one name carrying it")
+        reasons.append(_R("one name carrying it", "由单一个股带动"))
     return float(np.clip(pen, 0, 1)), reasons
 
 
@@ -599,17 +708,24 @@ def _mtf_reasons(mtf: dict | None, tape: dict | None) -> list[str]:
     """Short human reasons from the MTF confluence + vol-hole, for the theme card."""
     out: list[str] = []
     grade = ((mtf or {}).get("confluence") or {}).get("grade")
-    _g = {"TREND-FOLLOW": "all timeframes aligned up", "BUY-THE-DIP": "dip within an uptrend",
-          "CAUTION": "unconfirmed turn vs the bigger trend", "AVOID": "downtrend across timeframes"}
+    # The four graded confluence verdicts (WAIT is deliberately silent). The Chinese
+    # follows the confluence engine's own wording (engine/btc_mtf.py `_VERDICT`), so the
+    # desk and the MTF panel do not describe the same state two different ways.
+    _g = {"TREND-FOLLOW": ("all timeframes aligned up", "各周期一致向上"),
+          "BUY-THE-DIP": ("dip within an uptrend", "上升趋势中的回调"),
+          "CAUTION": ("unconfirmed turn vs the bigger trend", "转向未获大趋势确认"),
+          "AVOID": ("downtrend across timeframes", "各周期均处下行")}
     if grade and grade != "WAIT":
-        out.append(_g.get(grade, grade.lower()))
+        en, zh = _g.get(grade, (grade.lower(), grade.lower()))
+        out.append(_R(en, zh))
     st = ((tape or {}).get("volhole") or {}).get("state")
+    # "波动洞" matches engine/basket_tape.py's own label_zh for the same states.
     if st == "EXPANSION_UP":
-        out.append("breaking out of the vol hole")
+        out.append(_R("breaking out of the vol hole", "向上突破波动洞"))
     elif st == "EXPANSION_DOWN":
-        out.append("breaking down out of the vol hole")
+        out.append(_R("breaking down out of the vol hole", "向下跌破波动洞"))
     elif st in ("IN_HOLE", "COILED_UP", "COILED_DOWN"):
-        out.append("coiled in a volatility hole")
+        out.append(_R("coiled in a volatility hole", "在波动洞内蓄势"))
     return out
 
 
@@ -1000,7 +1116,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             except Exception:  # noqa: BLE001 — enrichment only
                 crowd = None
 
-        trend, t_why = _trend_leg(perf, fp, bench_label)
+        trend, t_why = _trend_leg(perf, fp, bench_label, bench_label_zh)
         breadth, breadth_d = _breadth_leg(mc_closes, i, fp)
         impulse, impulse_d = _impulse_leg(rets, mc_closes, i)
         macro, m_why = _macro_leg(bid, mc)
@@ -1046,7 +1162,9 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         regime_demoted = False
         if rg_kill and reco in ("enter", "accumulate"):
             reco, regime_demoted = "hold", True
-        reasons = (t_why + mtf_why + m_why + c_why)[:4] or ["mixed signals"]
+        reasons = (t_why + mtf_why + m_why + c_why)[:4] or [_R("mixed signals", "信号混杂")]
+        # Parallel Chinese list — same length, same order (see `_R` / `_reasons_zh`).
+        reasons_zh = _reasons_zh(reasons)
 
         # advanced display-only textures (bull age / overbought / clean entry / roll-over /
         # intra-basket breadth divergence — mc_closes is additive; None-safe in theme_textures)
@@ -1112,6 +1230,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "regime_demoted": regime_demoted,
             "chase_demoted": chase_demoted,
             "reasons": reasons,
+            "reasons_zh": reasons_zh,
             "signal_strength": _signal_strength(label, cal),
             "flip_distance": flip_dist,
 
@@ -1292,7 +1411,10 @@ def compute_theme_intel(region: str = "us") -> dict | None:
                "action_en": RECOS[action][0], "action_zh": RECOS[action][1],
                "label": th["label"], "entry_quality": ce.get("quality"),
                "clean_entry": bool(ce.get("flag")),
-               "reasons": (th.get("reasons") or [])[:2]}
+               "reasons": (th.get("reasons") or [])[:2],
+               # same slice of the parallel Chinese list — the act-now rows print these
+               # verbatim, so an EN-only list is an untranslated stat on the CN desks
+               "reasons_zh": (th.get("reasons_zh") or [])[:2]}
         # MLC-W5 display chip: "N members report <=5d" — disclosure only, no gate effect.
         # None when earnings store absent/stale; 0 when store present but no members report soon.
         if near_n is not None and near_n > 0:

@@ -39,31 +39,35 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from collectors.fundamental_forensics_acquisition import (
     AcquisitionError,
     DEFAULT_MAX_TICKERS,
     normalize_targets,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.disclosure_bundle import (
     DisclosureBundleError,
     build_disclosure_bundle,
     publish_disclosure_bundle,
     restore_disclosure_bundle,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.disclosure_projection import (
     DisclosureProjectionError,
     disclosure_projection_path,
     read_disclosure_projection,
-)
-from engine.fundamental_forensics.models import parse_utc
+)  # noqa: E402
+from engine.fundamental_forensics.models import parse_utc  # noqa: E402
 from engine.fundamental_forensics.source_sync import (
     SourceSyncError,
     build_private_source_store,
-)
-from lib import config
-from scripts.run_fundamental_forensics_wave2 import OperatorFlowError, load_targets_file
+)  # noqa: E402
+from lib import config  # noqa: E402
+from scripts.run_fundamental_forensics_wave2 import OperatorFlowError, load_targets_file  # noqa: E402
 
 
 log = logging.getLogger("fundamental_forensics_disclosure_bundle")

@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "description": "Curated defect notices for CPI/mf_energy projections. PR-updated static file. Listed notices pass through to scoreboard.json as a top-level annotation — no metric computation is altered.",
-    "updated": "2026-07-14"
+    "description": "Curated Release Radar defects. Notices with evaluation_excluded=true carry machine-readable selectors: immutable rows stay visible, but cannot train ensemble weights, maturity, or promotion decisions.",
+    "updated": "2026-08-09"
   },
   "notices": [
     {
@@ -9,6 +9,13 @@
       "affects": "all CPI and CPI_CORE projection + shadow rows with asof_night 2026-07-07 through 2026-07-13 (periods 2026-06 and 2026-07)",
       "prediction_id_pattern": "CPI",
       "asof_range": ["2026-07-07", "2026-07-13"],
+      "evaluation_excluded": true,
+      "selector": {
+        "row_types": ["scored"],
+        "release_types": ["cpi_headline", "cpi_core"],
+        "models": ["champion", "v3_factor"],
+        "frozen_asof_range": ["2026-07-07", "2026-07-13"]
+      },
       "defect": "sticky/median/flex features double-differenced: _last_n_mom_lags applied pct_change() to STICKCPIM157SFRBATL, FLEXCPIM157SFRBATL, and MEDCPIM158SFRBCLE, which are already published as percent rates. Produced sticky_mom_lag1 = -36.68, median_mom_lag1 = -25.68, flex_mom_lag1 = -18.77 (correct values: sticky +0.24 monthly, median +0.30 monthly-equivalent of the annualized 3.66, flex +1.11 monthly). See engine/release_forecast.py _last_n_mom_lags pre-fix and engine/release_components_cpi.py call sites.",
       "consequence": "Point estimates for CPI_2026-06 computed on corrupted features. June-2026 scored rows are genuine user-facing misses but are not a fair test of the frozen PREREG_V1 feature spec. All V1/V2/V3 backtests run before 2026-07-14 are contaminated by the same bug throughout the full walk-forward history and should not be used for promotion or kill decisions.",
       "fixed": "2026-07-14"
@@ -18,9 +25,42 @@
       "affects": "all mf_energy shadow rows (mf_energy shadow rows begin at asof_night 2026-07-11; none exist earlier)",
       "prediction_id_pattern": "mf_energy",
       "asof_range": ["2026-07-11", "2026-07-13"],
+      "evaluation_excluded": true,
+      "selector": {
+        "row_types": ["scored"],
+        "release_types": ["cpi_headline"],
+        "models": ["mf_energy"],
+        "frozen_asof_range": ["2026-07-11", "2026-07-13"]
+      },
       "defect": "energy_contrib formula applied double-discount: energy_contrib = gas_mom * (GASOLINE_RI_WEIGHT / 100.0) * gamma, but gamma is an OLS slope of cpi_hl_mom on gasoline_mom and already embeds the basket weight (slope approx ri_weight/100 approx 0.029). The extra ri_weight/100 factor shrunk energy_contrib by exactly 1/(2.895/100) = 34.5x. On the 2026-07-13 row (gas_mom -9.592, gamma 0.039165): shipped energy leg -0.0109 pp; corrected -0.3757 pp. Shipped mf_energy point was -0.206 vs actual -0.4 (corrected dry-run: -0.2701). See engine/release_mf_energy.py lines 636 and 1070 pre-fix.",
       "consequence": "mf_energy shadow projections effectively nullified the energy component (34.5x shrinkage) throughout the full walk-forward history; predictions were dominated by the ex-energy AR leg. All mf_energy backtest results run before 2026-07-14 reflect the defective formula and cannot support promotion or kill decisions.",
       "fixed": "2026-07-14"
+    },
+    {
+      "id": "DN-003",
+      "affects": "legacy CPI, core CPI, PPI, PCE, and NFP scored rows whose actual was derived by differencing separately selected output_type=4 levels",
+      "evaluation_excluded": true,
+      "selector": {
+        "row_types": ["scored"],
+        "release_types": ["cpi_headline", "cpi_core", "ppi_finaldemand", "pce_headline", "pce_core", "nfp"],
+        "actual_sources": [null, "alfred_cross_vintage_levels"]
+      },
+      "defect": "The historical target and release-day scoring paths computed changes across independently selected initial-release index levels. The current and prior levels were not selected from one coherent release-date vintage, so annual seasonal revisions can enter the target as a synthetic print.",
+      "consequence": "These rows remain part of the immutable all-forward record, but they cannot support model weighting, maturity, promotion, or accuracy claims. Official parsed release metrics or same-vintage full-ALFRED receipts are required for clean evaluation.",
+      "fixed": "2026-08-09"
+    },
+    {
+      "id": "DN-004",
+      "affects": "forecast models trained on the legacy cross-vintage target epoch",
+      "evaluation_excluded": true,
+      "selector": {
+        "row_types": ["scored"],
+        "release_types": ["cpi_headline", "cpi_core", "ppi_finaldemand", "pce_headline", "pce_core", "nfp"],
+        "target_epochs": ["legacy_cross_vintage_initial_levels_v0", "mixed_legacy_cross_vintage_v0"]
+      },
+      "defect": "The model target sequence was built from changes across first-ever period levels rather than coherent release vintages or archived printed metrics.",
+      "consequence": "Official actual ingestion repairs grading truth going forward, but it does not retroactively validate a model trained on a different target. These model epochs stay experimental and excluded until a separately named coherent-target challenger is refit and forward-tested.",
+      "fixed": null
     }
   ]
 }
