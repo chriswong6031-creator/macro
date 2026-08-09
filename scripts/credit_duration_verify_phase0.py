@@ -23,14 +23,19 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import equity_alloc as ea
-from engine import total_return as tr
-from engine import strategies as S
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine import total_return as tr  # noqa: E402
+from engine import strategies as S  # noqa: E402
 from engine.validation import (
     backtest_core, ret_moments, deflated_sharpe, dsr_verdict,
     block_bootstrap_ci, _sharpe as v_sharpe, _maxdd as v_maxdd,
-)
+)  # noqa: E402
 
 ANN = 252
 

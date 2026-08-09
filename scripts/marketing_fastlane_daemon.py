@@ -102,8 +102,8 @@ ROOT = _repo_root()
 
 # Add repo root to sys.path so engine.marketing imports work when the script is
 # called directly (e.g., python scripts/marketing_fastlane_daemon.py).
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -11,15 +11,20 @@ Run: python -m scripts.build_china_masterminds
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine import china_masterminds as M
-from lib import config
-from lib.pages import write_page
-from scripts import _active_render as AR
-from scripts.build_vector import C
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import china_masterminds as M  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+from scripts import _active_render as AR  # noqa: E402
+from scripts.build_vector import C  # noqa: E402
 
 # detail pages link back to the China Strategies hub (where the flagships are pinned)
 BACK = ("china_strategies.html", "Strategies", "策略")

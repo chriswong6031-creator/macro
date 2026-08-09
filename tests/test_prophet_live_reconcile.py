@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import ast
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -38,6 +38,7 @@ if str(ROOT) not in sys.path:
 import scripts.reconcile_prophet_live as R  # noqa: E402
 from engine.grading import fill_index  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402
+from engine.prophet_live.interval import ADJUSTED, UNADJUSTED  # noqa: E402
 
 #: Every session in this file is at or after R.LEDGER_FLOOR_SESSION — rows before the
 #: floor are never accrued (B4), so pre-floor fixture dates would silently test nothing.
@@ -158,6 +159,196 @@ def test_row_carries_the_measurement_the_program_exists_for():
         (r["close_same_day"] / 105.0 - 1.0) * 100.0)
     assert r["passes"] == 2 and r["from_state"] == "near" and r["quote_age_min"] == 3.0
     assert r["entered"] == "cross"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE PRICE BASIS (W-L0 gate 3)
+#
+# ``cross_px`` is a RAW vendor print; ``close_same_day``/``next_close_fill`` are closes
+# read from the ADJUSTED store, and the store re-scales every close BEFORE an ex-date.
+# So a row written on the event night was correct, and the SAME row re-derived after the
+# name went ex silently restated itself by the dividend. These tests drive that exact
+# sequence: write, re-adjust the series under it, re-read.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The evening of D0 in ET — the run that first writes a D0 row. NOW is the evening of
+#: D1, so it is one day earlier; derived, never a second date literal to drift.
+NIGHT_D0 = NOW - timedelta(days=1)
+
+#: A 1% distribution, large enough to read at a glance and ~1.5x the 0.649% CFG receipt
+#: `engine.price_ladder` measured. The bug's size IS the dividend, so the fixture's
+#: dividend has to be the thing that moves the numbers.
+DIV_FACTOR = 0.99
+
+
+def _ex_dividend_on(series: pd.Series, ex_date: str, factor: float = DIV_FACTOR):
+    """The same series as the store would hold AFTER the name goes ex on ``ex_date``.
+
+    Back-adjustment scales every close STRICTLY BEFORE the ex-date and leaves the
+    ex-date's own close alone — which is why the defect is invisible on the event night
+    and appears only once the ledger row is re-read.
+    """
+    idx = pd.DatetimeIndex(series.index).normalize()
+    scaled = series.copy()
+    scaled[idx < pd.Timestamp(ex_date).normalize()] *= factor
+    return scaled
+
+
+def _through(series: pd.Series, day: str) -> pd.Series:
+    """The series as the store held it on ``day``'s own night — no later bar exists yet.
+
+    Load-bearing, not decoration: with the whole fixture index present the D1 fill is
+    already there on night one, ``maturing_rows`` has nothing open to revisit, and the
+    re-read this defect only appears on never happens.
+    """
+    idx = pd.DatetimeIndex(series.index).normalize()
+    return series[idx <= pd.Timestamp(day).normalize()]
+
+
+def _write(path, rows):
+    frame = R.merge_ledger(path, rows)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_parquet(path, index=False)
+    return frame
+
+
+def test_the_cross_basis_anchor_is_frozen_on_the_crosss_own_session():
+    """The anchor is only an anchor because the raw tape and the store agreed the night
+    it was taken. A later read of the same close is a different number the moment a
+    distribution lands, so a non-contemporaneous run must set NO anchor rather than a
+    convenient one."""
+    closes = {"AAA": _series()}
+    same_night = R.build_rows([_event("AAA", price=105.0)],
+                              verdicts_for=_verdicts({"AAA": True}),
+                              closes=closes, now=NIGHT_D0)
+    assert same_night[0]["cross_basis_close"] == float(closes["AAA"].loc[pd.Timestamp(D0)])
+    assert same_night[0]["pct_basis"] == R.PCT_ALIGNED
+    assert same_night[0]["px_adj_factor"] == pytest.approx(1.0)
+
+    later = R.build_rows([_event("AAA", price=105.0)],
+                         verdicts_for=_verdicts({"AAA": True}), closes=closes, now=NOW)
+    assert later[0]["cross_basis_close"] is None
+    assert later[0]["pct_basis"] == R.PCT_UNALIGNED
+
+
+def test_a_dividend_between_the_cross_and_the_fill_does_not_restate_the_same_day_pct(tmp_path):
+    """THE DEFECT, end to end.
+
+    Session D0's close-vs-cross percentage is a fact about D0 and nothing that happens
+    on D1 may move it. Without the anchor it moves by the whole dividend — the store
+    re-scales D0's close while ``cross_px`` stays a raw print — and ``maturing_rows``
+    writes the restated number over the published one.
+    """
+    path = tmp_path / R.LEDGER_REL
+    raw = _series()
+    night1 = _write(path, R.build_rows([_event("AAA", price=104.0)],
+                                       verdicts_for=_verdicts({"AAA": True}),
+                                       closes={"AAA": _through(raw, D0)}, now=NIGHT_D0))
+    published = float(night1.iloc[0]["close_vs_cross_pct"])
+    assert pd.isna(night1.iloc[0]["next_close_fill"]), "the fill must mature LATER"
+
+    # The name goes ex on D1. Every close BEFORE D1 is now 1% lower in the store.
+    adjusted = _ex_dividend_on(raw, D1)
+    assert float(adjusted.loc[pd.Timestamp(D0)]) < float(raw.loc[pd.Timestamp(D0)])
+    updates = R.maturing_rows(path, closes={"AAA": adjusted}, now=NOW)
+    assert updates, "nothing matured — the re-read this test is about never happened"
+    night2 = _write(path, R._expand_maturing(path, updates))
+    row = night2.iloc[0]
+
+    assert float(row["close_vs_cross_pct"]) == pytest.approx(published, abs=1e-9), (
+        "session D0's own percentage was restated by a distribution that happened on D1")
+    assert float(row["px_adj_factor"]) == pytest.approx(DIV_FACTOR, abs=1e-9)
+    assert float(row["cross_px"]) == 104.0, "the raw print a user could have traded"
+    assert float(row["cross_px_adj"]) == pytest.approx(104.0 * DIV_FACTOR, abs=1e-9)
+    assert row["pct_basis"] == R.PCT_ALIGNED
+
+
+def test_the_fill_percentage_is_derived_from_the_adjusted_cross_not_the_raw_print(tmp_path):
+    """The measurement the program exists to make. The graded fill is an ADJUSTED close,
+    so dividing it by a raw cross print is arithmetic across two currencies — and after
+    a 1% distribution the error is 1%, which is larger than most of the edge this ledger
+    is being accrued to detect.
+    """
+    path = tmp_path / R.LEDGER_REL
+    raw = _series()
+    _write(path, R.build_rows([_event("AAA", price=104.0)],
+                              verdicts_for=_verdicts({"AAA": True}),
+                              closes={"AAA": _through(raw, D0)}, now=NIGHT_D0))
+    adjusted = _ex_dividend_on(raw, D1)
+    frame = _write(path, R._expand_maturing(
+        path, R.maturing_rows(path, closes={"AAA": adjusted}, now=NOW)))
+    row = frame.iloc[0]
+
+    fill = float(row["next_close_fill"])
+    same_basis = (fill / (104.0 * DIV_FACTOR) - 1.0) * 100.0
+    mixed_basis = (fill / 104.0 - 1.0) * 100.0
+    assert float(row["fill_vs_cross_pct"]) == pytest.approx(same_basis, abs=1e-9)
+    # The two answers must be far enough apart that this test cannot pass by rounding.
+    assert abs(same_basis - mixed_basis) > 0.5
+    assert float(row["fill_vs_cross_pct"]) != pytest.approx(mixed_basis, abs=1e-3)
+
+
+def test_the_anchor_is_first_wins_so_a_later_night_cannot_rebase_it(tmp_path):
+    """If a re-read could move the anchor, the correction would move with it and the
+    row would restate again — the anchor's whole value is that it does not move."""
+    path = tmp_path / R.LEDGER_REL
+    raw = _series()
+    _write(path, R.build_rows([_event("AAA", price=104.0)],
+                              verdicts_for=_verdicts({"AAA": True}),
+                              closes={"AAA": _through(raw, D0)}, now=NIGHT_D0))
+    frozen = float(pd.read_parquet(path).iloc[0]["cross_basis_close"])
+
+    adjusted = _ex_dividend_on(raw, D1)
+    # A re-read of the SAME session on a later night, over the re-adjusted store.
+    frame = _write(path, R.build_rows([_event("AAA", price=104.0)],
+                                      verdicts_for=_verdicts({"AAA": True}),
+                                      closes={"AAA": adjusted}, now=NOW))
+    assert float(frame.iloc[0]["cross_basis_close"]) == pytest.approx(frozen, abs=1e-9)
+    assert "cross_basis_close" in R.FIRST_WINS
+
+
+def test_a_row_with_no_anchor_keeps_its_numbers_and_says_it_is_unaligned(tmp_path):
+    """Rows written before the anchor existed cannot be repaired by guess — taking a
+    later close as their anchor would assume the very "no distribution in between" the
+    anchor exists to stop assuming. They keep the arithmetic they had and disclose it.
+    """
+    path = tmp_path / R.LEDGER_REL
+    rows = R.build_rows([_event("AAA", price=105.0)],
+                        verdicts_for=_verdicts({"AAA": True}),
+                        closes={"AAA": _series()}, now=NOW)   # not contemporaneous
+    frame = _write(path, rows)
+    row = frame.iloc[0]
+    assert row["pct_basis"] == R.PCT_UNALIGNED
+    assert pd.isna(row["px_adj_factor"])
+    assert float(row["cross_px_adj"]) == 105.0
+    assert float(row["close_vs_cross_pct"]) == pytest.approx(
+        (float(row["close_same_day"]) / 105.0 - 1.0) * 100.0)
+
+
+def test_every_row_names_the_basis_of_the_closes_it_was_graded_against():
+    """`close_same_day`/`next_close_fill` come from a universe that is genuinely mixed:
+    per-name stores are adjusted, the breadth caches are not. A reader must not have to
+    infer which one produced the number."""
+    rows = R.build_rows([_event("AAA"), _event("BBB")],
+                        verdicts_for=_verdicts({"AAA": True, "BBB": True}),
+                        closes={"AAA": _series(), "BBB": _series()}, now=NIGHT_D0,
+                        close_adjustment={"AAA": ADJUSTED, "BBB": UNADJUSTED})
+    by_tkr = {r["ticker"]: r for r in rows}
+    assert by_tkr["AAA"]["close_adjustment"] == ADJUSTED
+    assert by_tkr["BBB"]["close_adjustment"] == UNADJUSTED
+
+
+def test_the_basis_map_travels_with_the_series_it_describes(monkeypatch):
+    """`load_closes` returns the basis WITH the closes, the same fix `load_verdicts`
+    already carries: a caller that has to look the basis up separately is a caller that
+    can forget to."""
+    import scripts.build_stock_library as BSL
+
+    monkeypatch.setattr(BSL, "universe",
+                        lambda: [("AAA", _series(), None, "A", "Tech")])
+    monkeypatch.setattr(BSL, "universe_price_adjustment", lambda: {"AAA": UNADJUSTED})
+    closes, adj = R.load_closes({"AAA"})
+    assert set(closes) == {"AAA"} and adj == {"AAA": UNADJUSTED}
 
 
 def test_the_ledger_row_carries_the_producers_session_phase():
@@ -388,7 +579,8 @@ def test_an_already_confirmed_session_costs_no_verdict_work(monkeypatch, tmp_pat
     monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw:
                         {"session_et": D0, "events": [_event("AAA")]} if D0 in key
                         else {"as_of": D1, "names": {}})
-    monkeypatch.setattr(R, "load_closes", lambda t: {"AAA": _series()})
+    monkeypatch.setattr(R, "load_closes",
+                        lambda t: ({"AAA": _series()}, {"AAA": ADJUSTED}))
 
     assert R.run(tmp_path, now=NOW, sessions=[D0]) == 0
     assert calls == [], "re-derived a verdict that FIRST_WINS would discard"
@@ -673,7 +865,8 @@ def test_run_writes_the_ledger_end_to_end(monkeypatch, tmp_path):
     monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw:
                         obj if key.endswith(".json") and D0 in key
                         else {"as_of": D0, "names": {"AAA": {"center_buyable": True}}})
-    monkeypatch.setattr(R, "load_closes", lambda t: {"AAA": _series()})
+    monkeypatch.setattr(R, "load_closes",
+                        lambda t: ({"AAA": _series()}, {"AAA": ADJUSTED}))
 
     assert R.run(tmp_path, now=NOW, sessions=[D0]) == 0
     df = pd.read_parquet(tmp_path / R.LEDGER_REL)
@@ -698,7 +891,8 @@ def test_dry_run_writes_no_parquet(monkeypatch, tmp_path):
     monkeypatch.setattr(R.r2io, "list_keys",
                         lambda prefix, **kw: [f"{r2io.EVENTS_PREFIX}/{D0}/140505.json"])
     monkeypatch.setattr(R.r2io, "get_json", lambda key, **kw: obj if D0 in key else {})
-    monkeypatch.setattr(R, "load_closes", lambda t: {"AAA": _series()})
+    monkeypatch.setattr(R, "load_closes",
+                        lambda t: ({"AAA": _series()}, {"AAA": ADJUSTED}))
     assert R.run(tmp_path, now=NOW, sessions=[D0], dry_run=True) == 0
     assert not (tmp_path / R.LEDGER_REL).exists()
 

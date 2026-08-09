@@ -52,8 +52,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parents[2]  # repo root
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 # ---------------------------------------------------------------------------
 # Imports from Phase-0 — FROZEN event detectors and their constants

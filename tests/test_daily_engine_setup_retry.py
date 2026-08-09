@@ -11,7 +11,7 @@ from scripts.ci import retry_daily_engine_setup_cancel as retry
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "daily-engine-setup-retry.yml"
-REPOSITORY = "chriswong6031-creator/macro"
+REPOSITORY = "mastermindx-market-intelligence/macro"
 RUN_ID = 12345
 JOB_ID = 98765
 

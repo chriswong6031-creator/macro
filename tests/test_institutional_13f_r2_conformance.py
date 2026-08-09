@@ -5,6 +5,8 @@ import ast
 from copy import deepcopy
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 import yaml
@@ -16,10 +18,15 @@ from scripts import institutional_13f_r2_conformance as proof
 ROOT = Path(__file__).resolve().parents[1]
 NONCE = "0123456789abcdef0123456789abcdef"
 NOW = "2026-08-08T20:00:00Z"
+# Redaction canary: must never appear raw in a receipt (only its sha256).
+# Deliberately NOT the production bucket name — the org slug
+# mastermindx-market-intelligence/macro sits in provenance by design, so a
+# bare-"mastermindx" probe would collide with legitimate receipt content.
+BUCKET = "mastermindx-redaction-canary"
 PROVENANCE = {
-    "repository": "chriswong6031-creator/macro",
+    "repository": "mastermindx-market-intelligence/macro",
     "workflow_ref": (
-        "chriswong6031-creator/macro/.github/workflows/"
+        "mastermindx-market-intelligence/macro/.github/workflows/"
         "smart-money-13f-r2-conformance.yml@refs/heads/main"
     ),
     "run_id": "123456789",
@@ -36,7 +43,7 @@ def _run(store):
         run_nonce=NONCE,
         observed_at=NOW,
         provenance=PROVENANCE,
-        bucket_name="mastermindx",
+        bucket_name=BUCKET,
     )
 
 
@@ -155,7 +162,7 @@ def test_happy_path_proves_exact_protocol_and_emits_canonical_redacted_receipt(
     assert receipt["manual_only"] is True
     assert receipt["nonclaims"]["not_a_concurrent_linearizability_proof"] is True
     assert receipt["evidence"]["no_list_or_delete_performed"] is True
-    assert "mastermindx" not in encoded.decode("utf-8")
+    assert BUCKET not in encoded.decode("utf-8")
     assert proof.conformance_key(
         run_id=PROVENANCE["run_id"],
         run_attempt=PROVENANCE["run_attempt"],
@@ -234,7 +241,7 @@ def test_receipt_identity_and_provenance_are_fail_closed(tmp_path: Path) -> None
             run_nonce=NONCE,
             observed_at=NOW,
             provenance=bad_ref,
-            bucket_name="mastermindx",
+            bucket_name=BUCKET,
         )
 
 
@@ -259,7 +266,7 @@ def test_cli_uses_dedicated_store_factory_and_writes_one_local_receipt(
         "GITHUB_SHA": PROVENANCE["commit_sha"],
         "GITHUB_EVENT_NAME": PROVENANCE["event_name"],
         "GITHUB_ACTOR": PROVENANCE["actor"],
-        "INSTITUTIONAL_13F_R2_BUCKET": "mastermindx",
+        "INSTITUTIONAL_13F_R2_BUCKET": BUCKET,
     }
     for key, value in environment.items():
         monkeypatch.setenv(key, value)
@@ -305,3 +312,47 @@ def test_script_has_no_r2_list_or_delete_capability() -> None:
     assert attributes.isdisjoint(
         {"delete_object", "delete_objects", "list_objects", "list_objects_v2", "list_prefix"}
     )
+
+
+def test_conformance_import_does_not_load_dataframe_parser_stack() -> None:
+    script = f"""
+import importlib.abc
+import sys
+
+class BlockPandas(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path, target=None):
+        if fullname == "pandas" or fullname.startswith("pandas."):
+            raise RuntimeError("pandas import escaped into the conformance runtime")
+        return None
+
+sys.meta_path.insert(0, BlockPandas())
+sys.path.insert(0, {str(ROOT)!r})
+from scripts import institutional_13f_r2_conformance as proof
+from engine.institutional_census.storage import build_institutional_13f_store
+
+assert proof.RECEIPT_SCHEMA == "institutional_13f.r2_conformance_receipt/v1"
+assert callable(build_institutional_13f_store)
+assert "pandas" not in sys.modules
+assert "engine.institutional_census.sec_sources" not in sys.modules
+"""
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_package_lazy_exports_preserve_the_public_sec_source_surface() -> None:
+    import engine.institutional_census as package
+    from engine.institutional_census import sec_sources
+
+    namespace: dict[str, object] = {}
+    exec("from engine.institutional_census import *", namespace)
+    assert set(package.__all__).issubset(dir(package))
+    assert "sec_sources" in dir(package)
+    assert package.sec_sources is sec_sources
+    for name in package.__all__:
+        assert getattr(package, name) is getattr(sec_sources, name)
+        assert namespace[name] is getattr(sec_sources, name)
