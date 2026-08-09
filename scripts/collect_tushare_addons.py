@@ -4,17 +4,22 @@
 There is deliberately no date-range, ticker-list, or backfill interface.  The
 default mode is a dry plan which performs no network call and no write.  A caller
 must pass both ``--execute`` and an explicit ``--output-root`` for the single
-partition requested on the command line, and execution still fails closed unless
-the separately provisioned written vendor authorization or institutional-contract
-gate is satisfied.
+partition requested on the command line, and execution requires a configured
+``TUSHARE_TOKEN``.  Every other fence is technical and cannot be waived: the
+two-exchange ``trade_cal`` session check, the per-endpoint collection clock, the
+documented row cap, schema validation, and keep-first immutability.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from collectors.tushare_addons import (
     ALLOWED_FREQUENCIES,
@@ -50,10 +55,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute",
         action="store_true",
-        help=(
-            "after the separate license gate, make at most three vendor calls and "
-            "install one context-only partition"
-        ),
+        help=("make at most three vendor calls and install one context-only partition"),
     )
 
 
@@ -92,6 +94,18 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="one repo-canonical .SS or .SZ ticker",
     )
+
+    for endpoint, description in (
+        ("stk_auction_o", "one session's 09:30 opening call-auction bar"),
+        ("stk_auction_c", "one session's 15:00 closing call-auction bar"),
+    ):
+        call_auction = subparsers.add_parser(endpoint, help=description)
+        _add_common_arguments(call_auction)
+        call_auction.add_argument(
+            "--ticker",
+            required=True,
+            help="one repo-canonical .SS or .SZ ticker",
+        )
     return parser
 
 

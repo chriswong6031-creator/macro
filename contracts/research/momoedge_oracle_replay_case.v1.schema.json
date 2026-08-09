@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_oracle_replay_case.v1.schema.json",
+  "title": "Private MomoEdge Oracle forensic replay case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "case_id",
+    "source_record_index",
+    "issue_date",
+    "issue_time",
+    "cohort",
+    "temporal_quality",
+    "decision_layers",
+    "required_feature_families",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "momoedge.oracle_forensic_replay_case/v1"},
+    "case_id": {"type": "string", "pattern": "^momo_case_[a-f0-9]{24}$"},
+    "source_record_index": {"type": "integer", "minimum": 0},
+    "issue_date": {"type": "string", "format": "date"},
+    "issue_time": {"$ref": "#/$defs/issueTime"},
+    "cohort": {"$ref": "#/$defs/cohort"},
+    "temporal_quality": {"$ref": "#/$defs/temporalQuality"},
+    "decision_layers": {"$ref": "#/$defs/decisionLayers"},
+    "required_feature_families": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/featureFamily"}
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "numberOrNull": {"type": ["number", "null"]},
+    "dateOrNull": {
+      "oneOf": [
+        {"type": "string", "format": "date"},
+        {"type": "null"}
+      ]
+    },
+    "featureFamily": {
+      "enum": [
+        "price_technical",
+        "macro_regime",
+        "options_flow_campaign",
+        "gex_vol_oi",
+        "news_alt_data"
+      ]
+    },
+    "cutoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cutoff_id", "candidate_as_of", "timezone", "sensitivity_only"],
+      "properties": {
+        "cutoff_id": {"enum": ["market_open", "mid_session", "market_close_boundary"]},
+        "candidate_as_of": {"type": "string", "format": "date-time"},
+        "timezone": {"const": "America/New_York"},
+        "sensitivity_only": {"const": true}
+      }
+    },
+    "issueTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "exact_timestamp", "timezone", "market_session_state", "cutoff_sensitivity"],
+      "properties": {
+        "state": {"const": "unknown_date_only"},
+        "exact_timestamp": {"type": "null"},
+        "timezone": {"const": "America/New_York"},
+        "market_session_state": {"enum": ["session", "non_session", "calendar_unavailable"]},
+        "cutoff_sensitivity": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/cutoff"}
+        }
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cohort_id", "basis", "inferred", "true_engine_version_claimed"],
+      "properties": {
+        "cohort_id": {"enum": ["pre_option_format", "mixed_format_transition", "post_underlying_format"]},
+        "basis": {"const": "observed_instrument_format_frontiers"},
+        "inferred": {"const": true},
+        "true_engine_version_claimed": {"const": false}
+      }
+    },
+    "temporalQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_source_values",
+        "derived_diagnostics",
+        "quality_flags",
+        "normalization_only",
+        "correction_overlay",
+        "replay_eligibility"
+      ],
+      "properties": {
+        "raw_source_values": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["issued_date", "closed_date", "days_held", "option_expiration"],
+          "properties": {
+            "issued_date": {"type": "string", "minLength": 1, "maxLength": 100},
+            "closed_date": {"type": ["string", "null"], "maxLength": 100},
+            "days_held": {"type": ["integer", "null"], "minimum": 0},
+            "option_expiration": {"type": ["string", "null"], "maxLength": 100}
+          }
+        },
+        "derived_diagnostics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "calendar_days_issue_to_close",
+            "issue_year_shift_candidate",
+            "close_minus_option_expiration_days",
+            "reported_holding_end_minus_option_expiration_days"
+          ],
+          "properties": {
+            "calendar_days_issue_to_close": {"type": ["integer", "null"], "minimum": 0},
+            "issue_year_shift_candidate": {"$ref": "#/$defs/dateOrNull"},
+            "close_minus_option_expiration_days": {"type": ["integer", "null"]},
+            "reported_holding_end_minus_option_expiration_days": {
+              "type": ["integer", "null"]
+            }
+          }
+        },
+        "quality_flags": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "clean",
+              "missing_close_date",
+              "issue_close_days_held_year_conflict",
+              "reported_holding_interval_after_option_expiration"
+            ]
+          }
+        },
+        "normalization_only": {"const": true},
+        "correction_overlay": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "applied", "raw_source_values_retained"],
+          "properties": {
+            "state": {"enum": ["not_required", "required_unresolved"]},
+            "applied": {"const": false},
+            "raw_source_values_retained": {"const": true}
+          }
+        },
+        "replay_eligibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["overlap_allocation", "expiry_return"],
+          "properties": {
+            "overlap_allocation": {"enum": ["eligible", "excluded_temporal_quality"]},
+            "expiry_return": {
+              "enum": ["eligible", "not_applicable", "excluded_temporal_quality"]
+            }
+          }
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "ticker", "direction", "setup_raw", "underlying_entry", "unknown_at_issue"],
+      "properties": {
+        "state": {"const": "observed_retro_record"},
+        "ticker": {"type": "string", "minLength": 1, "maxLength": 40},
+        "direction": {"enum": ["BULL", "BEAR"]},
+        "setup_raw": {"type": "string", "maxLength": 1000},
+        "underlying_entry": {"$ref": "#/$defs/numberOrNull"},
+        "unknown_at_issue": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["issue_timestamp", "selection_rank", "candidate_universe", "suppressed_candidates", "initial_stop", "initial_targets"]
+          }
+        }
+      }
+    },
+    "contractConstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "instrument",
+        "contract",
+        "expiration",
+        "premium_paid",
+        "unknown_at_issue"
+      ],
+      "properties": {
+        "state": {"enum": ["observed_retro_record", "not_applicable"]},
+        "instrument": {"enum": ["underlying", "option"]},
+        "contract": {"type": ["string", "null"], "maxLength": 300},
+        "expiration": {"$ref": "#/$defs/dateOrNull"},
+        "premium_paid": {"$ref": "#/$defs/numberOrNull"},
+        "unknown_at_issue": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["quote_timestamp", "bid", "ask", "spread", "delta", "iv", "open_interest_available_at", "contract_candidate_set", "slippage"]
+          }
+        }
+      }
+    },
+    "management": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "closed_date",
+        "days_held",
+        "table_status",
+        "detail_status",
+        "status_disagreement",
+        "confidence_pct_observed",
+        "confidence_temporal_semantics",
+        "underlying_exit",
+        "underlying_return_pct",
+        "option_premium_exit",
+        "option_return_pct",
+        "option_leverage_x",
+        "contracts_observed",
+        "dollar_pnl_observed",
+        "unobserved_lifecycle"
+      ],
+      "properties": {
+        "state": {"const": "retrospective_outcome"},
+        "closed_date": {"$ref": "#/$defs/dateOrNull"},
+        "days_held": {"type": ["integer", "null"], "minimum": 0},
+        "table_status": {"enum": ["CLOSED EARLY", "INVALIDATED", "T1 HIT", "T2 HIT"]},
+        "detail_status": {"enum": ["CLOSED EARLY", "INVALIDATED", "T1 HIT", "T2 HIT", "EXPIRED"]},
+        "status_disagreement": {"type": "boolean"},
+        "confidence_pct_observed": {"$ref": "#/$defs/numberOrNull"},
+        "confidence_temporal_semantics": {"const": "unknown_retro_display"},
+        "underlying_exit": {"$ref": "#/$defs/numberOrNull"},
+        "underlying_return_pct": {"type": "number"},
+        "option_premium_exit": {"$ref": "#/$defs/numberOrNull"},
+        "option_return_pct": {"$ref": "#/$defs/numberOrNull"},
+        "option_leverage_x": {"$ref": "#/$defs/numberOrNull"},
+        "contracts_observed": {"type": ["string", "null"], "maxLength": 100},
+        "dollar_pnl_observed": {"$ref": "#/$defs/numberOrNull"},
+        "unobserved_lifecycle": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["management_event_timestamps", "partial_exit_sequence", "target_or_stop_first_passage", "alerts_delivered", "realized_execution_costs"]
+          }
+        }
+      }
+    },
+    "decisionLayers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection", "contract_construction", "management"],
+      "properties": {
+        "selection": {"$ref": "#/$defs/selection"},
+        "contract_construction": {"$ref": "#/$defs/contractConstruction"},
+        "management": {"$ref": "#/$defs/management"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "prophet", "neural_web", "signal_origination", "automatic_training"],
+      "properties": {
+        "tier": {"const": "research_only"},
+        "prophet": {"const": "none"},
+        "neural_web": {"const": "none"},
+        "signal_origination": {"const": false},
+        "automatic_training": {"const": false}
+      }
+    }
+  }
+}

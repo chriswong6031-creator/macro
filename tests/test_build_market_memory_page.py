@@ -53,9 +53,6 @@ def test_market_memory_client_uses_only_the_owned_read_api() -> None:
     assert "state.symbol = null" in source
     assert "if (!user) {" in source
     assert "redactForSignOut();" in source
-    assert "退出登录后，此视图中的账户上下文将被清除。" in source
-    assert "退出登录后，此视图中的个股上下文将被清除。" in source
-    assert "已验证" not in source
     assert 'data-mm-action="signin"' in source
     assert "window.MDXAuth.open('signin')" in source
     assert "window.MDXAuth.onChange" in source

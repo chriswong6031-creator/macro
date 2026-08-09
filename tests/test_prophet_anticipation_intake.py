@@ -610,11 +610,33 @@ class TestLeaderPullbackContextBackend:
         loaded = et.load_leader_pullback_states(site_root=tmp_path)
         assert loaded == {"ADAM": {"state": lp.STATE_PULLBACK}}
 
-    def test_no_publisher_writes_the_artifact_yet_so_a_live_read_is_empty(self):
-        """The honest state of the wiring: the organ writes no file, nothing publishes
-        the per-run coverage yet, and the loader says so by returning {} rather than
-        pretending.  When a publisher lands this becomes a coverage assertion."""
-        assert et.load_leader_pullback_states() == {}
+    def test_a_LIVE_read_now_resolves_real_coverage(self):
+        """The promised inversion.  This case used to read
+
+            def test_no_publisher_writes_the_artifact_yet_so_a_live_read_is_empty:
+                assert et.load_leader_pullback_states() == {}
+
+        with the note "when a publisher lands this becomes a coverage assertion".  It has
+        landed: `scripts/build_leader_pullback_coverage.py` runs before build_prophet and
+        writes site/anticipationdata/us_leader_pullback.json, so the leader half of the
+        intake is no longer structurally incapable of admitting.
+
+        This asserts the SHAPE of the live artifact, not a population — coverage counts
+        move with the tape and belong in the publisher's own suite.
+        """
+        states = et.load_leader_pullback_states()
+        assert states, (
+            "site/anticipationdata/us_leader_pullback.json is missing or unreadable — "
+            "the EARLY-TURN leader half is dark again")
+        for ticker, row in states.items():
+            assert ticker == ticker.strip().upper()
+            assert row.get("asof")
+            assert row.get("construction_era") == lp.CONSTRUCTION_ERA
+            # `state` and `null_reason` are complementary on an organ row: a name is
+            # either stated or nulled WITH A REASON, never quietly neither.
+            assert bool(row.get("state")) ^ bool(row.get("null_reason")), (ticker, row)
+            if row.get("state"):
+                assert row["state"] in lp.STATES, (ticker, row["state"])
 
 
 class TestLeaderPullbackZoneLaw:
@@ -646,7 +668,11 @@ class TestLeaderPullbackZoneLaw:
         assert zone["high"] < spot, (
             "the zone is still the post-pop range — the ADAM defect is unfixed")
         assert zone["chase_above"] == 118.0, "the chase line is the pullback high"
-        assert "leader pullback" in zone["basis"]
+        # The basis is plain-word copy in BOTH languages and never carries the organ's
+        # own enum — this branch used to interpolate `state` verbatim.
+        assert "market leader" in zone["basis"] and "pullback" in zone["basis"]
+        assert lp.STATE_PULLBACK not in zone["basis"]
+        assert zone["basis_zh"] and zone["basis_zh"] != zone["basis"]
         assert zone["leader_pullback"]["state"] == lp.STATE_PULLBACK
 
     def test_without_organ_coverage_the_same_row_keeps_the_board_zone(
@@ -769,19 +795,29 @@ class TestZoneExpiryToStarter:
 # =========================================================================== #
 class TestConversionClassConditioning:
     def test_a_bottoming_lane_row_is_washout_class(self):
-        klass, evidence = pb.zone_conversion_class(_buy("T", lane="bottoming"))
+        klass, en, zh = pb.zone_conversion_class(_buy("T", lane="bottoming"))
         assert klass == pb.ZONE_CONVERSION_WASHOUT
-        assert "lane=bottoming" in evidence
+        # The CLASS is the machine-readable half; the evidence is user-visible copy and
+        # must not carry the board's own slug (it used to read "board lane=bottoming").
+        assert "lane=bottoming" not in en and "lane=bottoming" not in zh
+        assert "coming off a low" in en
+        assert zh and zh != en
 
     def test_a_continuation_lane_row_is_pullback_class(self):
-        klass, evidence = pb.zone_conversion_class(_buy("T", lane="continuation"))
+        klass, en, zh = pb.zone_conversion_class(_buy("T", lane="continuation"))
         assert klass == pb.ZONE_CONVERSION_PULLBACK
+        assert en and zh and zh != en
 
     def test_the_organ_state_overrides_the_lane(self):
-        klass, evidence = pb.zone_conversion_class(
+        klass, en, zh = pb.zone_conversion_class(
             _buy("T", lane="continuation"), washout_context=True)
         assert klass == pb.ZONE_CONVERSION_WASHOUT
-        assert "us_basket_turn" in evidence
+        # It used to read "us_basket_turn washout/turning membership" — a module name and
+        # two raw organ states, on a payload the Terminal renders.
+        for banned in ("us_basket_turn", "WASHED_OUT", "TURNING", "washout/turning"):
+            assert banned not in en, en
+            assert banned not in zh, zh
+        assert "group" in en and zh != en
 
     def test_the_near_constant_board_flag_is_NOT_an_input(self):
         """MEASURED: `coiled.washout_ctx` is true on 71 of 79 live buy rows.  Reading
@@ -789,7 +825,7 @@ class TestConversionClassConditioning:
         """
         row = _buy("T", lane="continuation")
         row["coiled"] = {"washout_ctx": True}
-        klass, _ = pb.zone_conversion_class(row)
+        klass, _en, _zh = pb.zone_conversion_class(row)
         assert klass == pb.ZONE_CONVERSION_PULLBACK
 
 

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_theta_remote_inventory_aggregate.v1.schema.json",
+  "title": "Aggregate-only targeted R2 ThetaData inventory for authorized replay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generated_at",
+    "input_schema",
+    "input_sha256",
+    "inventory_method",
+    "prefix",
+    "manifest_last_modified",
+    "record_count",
+    "required_root_count",
+    "required_root_year_pairs",
+    "tiers",
+    "all_tiers_available_root_count",
+    "all_tiers_available_root_year_pairs",
+    "all_tiers_candidate_issue_records",
+    "total_available_objects",
+    "total_available_bytes",
+    "current_prefix_only",
+    "legacy_old_prefix_probed",
+    "objects_downloaded",
+    "keys_or_tickers_included",
+    "full_issue_date_rows_verified"
+  ],
+  "properties": {
+    "schema": {"const": "momoedge.theta_remote_inventory_aggregate/v1"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "input_schema": {"const": "momoedge.oracle_history_authorized/v1"},
+    "input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "inventory_method": {"const": "targeted_head_object_current_keys"},
+    "prefix": {"const": "thetadata_eod"},
+    "manifest_last_modified": {
+      "oneOf": [
+        {"type": "string", "format": "date-time"},
+        {"type": "null"}
+      ]
+    },
+    "record_count": {"$ref": "#/$defs/count"},
+    "required_root_count": {"$ref": "#/$defs/count"},
+    "required_root_year_pairs": {"$ref": "#/$defs/count"},
+    "tiers": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/tier"}
+    },
+    "all_tiers_available_root_count": {"$ref": "#/$defs/count"},
+    "all_tiers_available_root_year_pairs": {"$ref": "#/$defs/count"},
+    "all_tiers_candidate_issue_records": {"$ref": "#/$defs/count"},
+    "total_available_objects": {"$ref": "#/$defs/count"},
+    "total_available_bytes": {"$ref": "#/$defs/count"},
+    "current_prefix_only": {"const": true},
+    "legacy_old_prefix_probed": {"const": false},
+    "objects_downloaded": {"const": false},
+    "keys_or_tickers_included": {"const": false},
+    "full_issue_date_rows_verified": {"const": false}
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0},
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "required_objects",
+        "available_objects",
+        "candidate_issue_records",
+        "available_bytes"
+      ],
+      "properties": {
+        "tier": {"enum": ["eod", "oi", "greeks"]},
+        "required_objects": {"$ref": "#/$defs/count"},
+        "available_objects": {"$ref": "#/$defs/count"},
+        "candidate_issue_records": {"$ref": "#/$defs/count"},
+        "available_bytes": {"$ref": "#/$defs/count"}
+      }
+    }
+  }
+}

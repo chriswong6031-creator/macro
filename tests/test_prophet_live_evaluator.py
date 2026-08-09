@@ -7,8 +7,9 @@ This file pins the four ways it could stop being honest:
   G0.3 DEGRADATION     a stale pack darks the WHOLE artifact; a stale or missing
                        quote darks THAT NAME and leaves the rest live. No path
                        invents a state, and every dark carries a reason.
-  G0.5 DEBOUNCE        one pass above a trigger is never a public state; two are;
-                       a drop through the buffer fades; a re-cross pays two again.
+  G0.5 DEBOUNCE        one pass above a trigger is never a public state; two are; a
+                       breach through the buffer on EITHER edge fades and a marginal
+                       one does not; a re-cross pays two again.
   G0.6 VOCABULARY      fired / confirmed / refuted / validated / 证伪 appear nowhere
                        in the payload or the module.
 
@@ -188,10 +189,20 @@ def test_a_suppressed_fade_is_measurable_and_never_a_public_state():
     ev = [e for e in c["events"] if e["kind"] == LS.FADE_UNCONFIRMED]
     assert len(ev) == 1 and ev[0]["via"] == "drop" and ev[0]["from"] == "forming"
     # One row per marker per name per session: an oscillating price must not drown the
-    # very measurement the marker exists for.
-    d = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.75), c)
-    assert d["states"]["AAA"]["state"] == "forming"
-    assert [e["kind"] for e in d["events"]] == []
+    # very measurement the marker exists for. Gate 2 DEBOUNCES the fade rather than
+    # holding inside the buffer forever, so a second CONSECUTIVE failing pass is a real
+    # fade now and cannot be the dedup probe. The honest probe is the oscillation the
+    # marker was written for: a holding pass (which clears the failing counter) and then
+    # a fresh suppressed one, which must NOT spool the marker a second time.
+    d = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), c)
+    assert d["states"]["AAA"]["state"] == "forming" and d["states"]["AAA"]["fails"] == 0
+    e = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.75), d)
+    assert e["states"]["AAA"]["state"] == "forming"
+    assert e["states"]["AAA"]["internal"] == LS.FADE_UNCONFIRMED
+    assert [ev["kind"] for ev in e["events"]] == []
+    # Two consecutive failing passes ARE persistent, and gate 2 fades on the second.
+    f = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.7), e)
+    assert f["states"]["AAA"]["state"] == "faded" and f["states"]["AAA"]["via"] == "drop"
 
 
 def test_a_re_cross_pays_two_fresh_passes():
@@ -229,16 +240,104 @@ def test_a_formed_name_that_runs_away_fades_via_overrun_not_drop():
     Same public state, but the reason axis matters: P1 display reads a drop as "it
     came back to you" and an overrun as "don't chase", and the ledger cannot separate
     the two populations without it.
+
+    Both breaches here are DECISIVE — over `fade_hi_px * 1.005`, under
+    `trigger * 0.995` — so the axis is read off the pass that actually publishes
+    `faded`. A marginal breach no longer publishes one at all (W-L0 gate 2); that is
+    the next test, and 105.5 against a 105.0 edge used to live in THIS one.
     """
     a = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0))
     b = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0), a)
     assert b["states"]["AAA"]["state"] == "forming"
-    up = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=105.5), b)
+    up = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=106.0), b)   # > 105.525
     assert up["states"]["AAA"]["state"] == "faded" and up["states"]["AAA"]["via"] == "overrun"
     assert up["events"][0]["via"] == "overrun"
-    down = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=98.0), b)
+    down = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=98.0), b)  # < 99.5
     assert down["states"]["AAA"]["state"] == "faded" and down["states"]["AAA"]["via"] == "drop"
     assert down["events"][0]["via"] == "drop"
+
+
+def test_a_marginal_overrun_holds_the_state_and_fades_only_on_a_second_failing_pass():
+    """W-L0 gate 2 (CSP-R2): the hysteresis buffer is TWO-SIDED, not lower-edge only.
+
+    105.5 against a 105.0 upper edge is +0.48% — INSIDE the 0.5% buffer — and it used
+    to publish `faded` on ONE pass, because only the band below the trigger preserved
+    the state. A name the same distance UNDER the trigger held. That asymmetry is the
+    killed 1-tick public flip, on the edge P1 reads as "don't chase", and this test is
+    the one that used to assert the defect.
+    """
+    entry = near(100.0, hi=105.0)
+    a = _run(pack({"AAA": entry}), quotes(AAA=101.0))
+    b = _run(pack({"AAA": entry}), quotes(AAA=101.0), a)
+    assert b["states"]["AAA"]["state"] == "forming" and b["states"]["AAA"]["passes"] == 2
+    # One marginal overrun: the PUBLIC state holds, and the suppression is COUNTABLE —
+    # gate 5's fourth marker, which until now only the drop edge could earn. A
+    # suppression nobody records is a suppression nobody can measure, and the upper edge
+    # was exactly the half of the buffer no spool row could see.
+    c = _run(pack({"AAA": entry}), quotes(AAA=105.5), b)          # +0.48% over the edge
+    st = c["states"]["AAA"]
+    assert st["state"] == "forming", "a sub-buffer overrun published a 1-tick fade"
+    assert st["passes"] == 2 and st["fails"] == 1
+    assert "via" not in st, "nothing faded, so there is no breach side to name"
+    assert st["internal"] == LS.FADE_UNCONFIRMED
+    ev = [e for e in c["events"] if e["kind"] == LS.FADE_UNCONFIRMED]
+    assert len(ev) == 1 and ev[0]["via"] == "overrun" and ev[0]["from"] == "forming"
+    # A SECOND consecutive failing pass is not marginal any more — it is persistent.
+    d = _run(pack({"AAA": entry}), quotes(AAA=105.4), c)
+    assert d["states"]["AAA"]["state"] == "faded" and d["states"]["AAA"]["via"] == "overrun"
+    assert d["states"]["AAA"]["passes"] == 0
+    assert [e["kind"] for e in d["events"]] == ["faded"]
+    # And the episode spools ONE faded row: a later failing pass re-publishes the same
+    # public state, so the ledger is not handed the same fade twice.
+    e = _run(pack({"AAA": entry}), quotes(AAA=105.45), d)
+    assert e["states"]["AAA"]["state"] == "faded"
+    assert e["events"] == []
+
+
+def test_a_cross_name_does_not_flap_on_a_sub_buffer_straddle_of_either_edge():
+    """The cross path's twin of the board path's four-cent straddle (CSP-R2).
+
+    A price oscillating across an edge inside the buffer must publish exactly ONE
+    public state, and that has to be true of the UPPER edge as well as the lower —
+    the upper one was the hole. Neither series may put a second state on the strip.
+    """
+    entry = near(100.0, hi=105.0)
+    for series in ((100.2, 99.8), (104.8, 105.2)):     # straddles lo, then hi
+        a = _run(pack({"AAA": entry}), quotes(AAA=101.0))
+        prev = _run(pack({"AAA": entry}), quotes(AAA=101.0), a)
+        assert prev["states"]["AAA"]["state"] == "forming", series
+        states: list[str] = []
+        kinds: list[str] = []
+        for n in range(6):
+            prev = _run(pack({"AAA": entry}), quotes(AAA=series[n % 2]), prev)
+            states.append(prev["states"]["AAA"]["state"])
+            kinds.extend(ev["kind"] for ev in prev["events"])
+        assert set(states) == {"forming"}, (series, states)
+        # Nothing PUBLIC moved, and the six passes spool exactly ONE row: the first
+        # suppressed pass earns gate 5's marker and the dedup swallows the rest, so an
+        # oscillating price can neither flap the strip nor drown its own measurement.
+        assert kinds == [LS.FADE_UNCONFIRMED], (series, kinds)
+
+
+def test_the_cross_counter_survives_a_marginal_breach_of_either_edge():
+    """The hold preserves `passes`, so a name that dips over an edge and comes back is
+    not made to re-earn a cross it already banked — and the SINCE clock does not
+    restart, because the reader was never told anything new."""
+    entry = near(100.0, hi=105.0)
+    a = _run(pack({"AAA": entry}), quotes(AAA=101.0), now=_at(10, 0))
+    b = _run(pack({"AAA": entry}), quotes(AAA=101.0), a, now=_at(10, 5))
+    assert b["states"]["AAA"]["state"] == "forming" and b["states"]["AAA"]["passes"] == 2
+    since = b["states"]["AAA"]["since_ts"]
+    over = _run(pack({"AAA": entry}), quotes(AAA=105.5), b, now=_at(10, 10))   # above hi
+    under = _run(pack({"AAA": entry}), quotes(AAA=99.8), b, now=_at(10, 10))   # below lo
+    for st in (over["states"]["AAA"], under["states"]["AAA"]):
+        assert st["state"] == "forming" and st["passes"] == 2 and st["fails"] == 1
+        assert st["since_ts"] == since
+    # Back inside the interval: the banked passes carry, so it is still forming.
+    back = _run(pack({"AAA": entry}), quotes(AAA=102.0), over, now=_at(10, 15))
+    st = back["states"]["AAA"]
+    assert st["state"] == "forming" and st["passes"] == 3 and st["fails"] == 0
+    assert st["since_ts"] == since
 
 
 # ─────────────────────────────────────────────────────────────────────────────

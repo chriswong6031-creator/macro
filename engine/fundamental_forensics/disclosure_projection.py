@@ -41,6 +41,7 @@ from .sec_document_spine import (
     FilingManifestError,
     build_filing_manifests,
     canonical_cik,
+    manifest_content_key,
     select_periodic_comparables,
     validate_manifest,
 )
@@ -841,7 +842,17 @@ def build_disclosure_projection(
             "source_periodic_manifests": sum(
                 item["filing"].get("base_form") in _FORMS for item in source_manifests
             ),
-            "cached_primary_manifest_versions": len(archive_versions),
+            # Distinct manifest CONTENT versions retained for this issuer, not
+            # the number of stored manifest objects.  The old count was store
+            # AGE dressed as coverage: it incremented every night for a company
+            # that filed nothing, because a fresh run clock minted a fresh
+            # manifest.  Counting content keys is correct over the historical
+            # run-clock duplicates too — those are never deleted (R4), so they
+            # must collapse here rather than inflate the published field.
+            # See DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY (2026-08-08, R1/Phase 4).
+            "cached_primary_manifest_versions": len(
+                {manifest_content_key(item) for item in archive_versions}
+            ),
             "cached_primary_accessions": len(chosen_by_accession),
             "tracks_ready": ready,
             "tracks_not_evaluable": len(tracks) - ready,

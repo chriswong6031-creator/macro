@@ -28,12 +28,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import equity_alloc as ea
-from engine import strategies as S
-from engine.validation import backtest_core, deflated_sharpe, ret_moments
-from engine.trial_ledger import TrialLedger
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine import strategies as S  # noqa: E402
+from engine.validation import backtest_core, deflated_sharpe, ret_moments  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from lib import config  # noqa: E402
 
 COST_BPS = 3.0
 N_TRIALS_HONEST = 8                  # pre-registered variant configs tried (DSR haircut)
