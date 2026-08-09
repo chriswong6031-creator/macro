@@ -14,7 +14,11 @@ import os
 from pathlib import Path
 import re
 import secrets
+import sys
 from typing import Any, Mapping, Sequence
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from engine.institutional_census.models import (
     EVIDENCE_PREFIX,

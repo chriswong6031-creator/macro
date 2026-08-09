@@ -40,12 +40,16 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sys
 
-from engine import active_alloc as aa
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import active_alloc as aa  # noqa: E402
 from engine.validation import (
     deflated_sharpe, dsr_verdict, ret_moments, block_bootstrap_ci,
     _maxdd, _sharpe,
-)
+)  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"

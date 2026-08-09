@@ -20,8 +20,7 @@ from pathlib import Path
 # Allow running as a standalone script from the repo root.
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 logging.basicConfig(
     level=logging.INFO,

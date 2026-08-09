@@ -173,6 +173,28 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  all-exports-resolve:
+    if: ${{ false }}
+    # A stale __all__ entry — a name the module never binds — is a dormant
+    # AttributeError: `from m import *` raises on the first missing name, and
+    # the traceback lands on the importing PR, not on the module that broke
+    # its promise. Found live in collectors/sec_document_spine.py, which
+    # listed "document_with_retrieval" without ever importing it from the
+    # engine sibling. AST-static like the annotation guard above: importing
+    # every engine/scripts module in CI would execute import-time side effects
+    # for a source-visible property (measured 52.7s dynamic vs 2.3s static,
+    # identical findings). Package __init__ files listing real submodules are
+    # exempt by construction — `from pkg import *` imports those.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: every __all__ name must resolve (bind it or drop the entry)
+        run: python -m pytest tests/test_all_exports_resolve.py -q
+
   no-module-leak:
     if: ${{ false }}
     # A test that evicts a module from sys.modules and does not put it back
@@ -399,11 +421,19 @@ jobs:
       # machinery this job already owns, one layer down — the veto-day label classifier
       # (#4547) and the canonical reclaim/divergence/200-MA filter math the §7 buy filter
       # is built from. No new job, no second venv: the install line above already
-      # satisfies both (numpy + pandas, plus pyyaml for lib.config via engine.technicals),
-      # so neither needs an importorskip and neither uses one. Synthetic only — hand-built
+      # satisfies them (numpy + pandas, plus pyyaml for lib.config via engine.technicals),
+      # so none needs an importorskip and none uses one. Synthetic only — hand-built
       # frames and planted structure, no data/ store and no network — which is why they
       # can ride a job that checks out no caches. Measured in this job's exact install
-      # string on a committed-files-only tree: 22 tests, ~2.0s combined.
+      # string on a committed-files-only tree: 44 tests, ~1.2s combined.
+      #
+      # The THIRD suite (earnings-ignition, added 2026-08-09) was dark the same way for the
+      # same reason, and an adversarial re-read of its instrument found a live anchoring
+      # defect that nothing in CI could have caught. It pins the same buy-side §7 marker
+      # stream one layer out — the derived knowability convention those markers are read
+      # through, the EDGAR-roll-aware announcement window, and the single reaction-session
+      # anchor. Its only engine import is engine.session_anchor, whose US reference index is
+      # rule-computed and touches no disk, so the no-caches property holds.
       #
       # The note that stood here — that the three darkness censuses scan tests/ ONLY,
       # so this wiring was hand-verified rather than census-verified — has been false
@@ -415,7 +445,8 @@ jobs:
         run: >
           python -m pytest
           research/prophet_us_audit/test_label_grading_battery.py
-          research/signal_engine/test_buy_filters.py -q
+          research/signal_engine/test_buy_filters.py
+          research/prophet_us_audit/test_earnings_ignition_measurement.py -q
       # The remaining prophet_us_audit guard suites, wired 2026-08-09 by the census the
       # step above was hand-verified against. All three were UNRUN from birth for the
       # same reason as their two siblings: written beside the instrument under research/
@@ -898,7 +929,7 @@ jobs:
       # builder assertions intentionally require pandas + plotly. Pair the suite
       # with this fat lane so those assertions execute instead of skip everywhere.
       - name: ETF tier-preview builder assertions (full page stack)
-        run: python -m pytest tests/test_etfs_gate.py -q
+        run: python -m pytest tests/test_theme_clinical.py tests/test_etfs_gate.py -q
       # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
       # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
       # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
@@ -3725,6 +3756,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_security.py
           tests/test_biocatalyst_source_registry.py
+          tests/test_biocatalyst_record_history_enablement.py
           tests/test_biocatalyst_storage.py
           tests/test_biocatalyst_protocols.py
           tests/test_biocatalyst_trials.py -q
@@ -3800,6 +3832,7 @@ jobs:
           tests/test_biocatalyst_coverage_epoch.py
           tests/test_biocatalyst_fixed_cohort.py
           tests/test_biocatalyst_fixed_cohort_transport.py
+          tests/test_biocatalyst_fixed_cohort_deployment.py
           tests/test_biocatalyst_f0_delta_and_closed_beta_manifest.py
           tests/test_biocatalyst_packet_producer.py
           tests/test_biocatalyst_packet_reader.py
@@ -3807,6 +3840,7 @@ jobs:
           tests/test_biocatalyst_o1b_forward_store.py
           tests/test_biocatalyst_m0a_outcome_family_policy.py
           tests/test_biocatalyst_sponsor_ticker_map.py
+          tests/test_biocatalyst_theme_rollup_pit.py
           tests/test_biocatalyst_m0a_clock_activation.py
           tests/test_sector_intelligence_ownership.py -q
       - name: BioCatalyst D0a finite reference integrity
@@ -5044,6 +5078,20 @@ jobs:
       # fails CLOSED and every payload reads invalid (the 2026-08-03 staging pass).
       - name: prophet ↔ government-revenue context bridge
         run: python -m pytest tests/test_prophet_government_revenue_context.py -q
+      # Waves 9E + 9F: the shadow cross-check packet and the Prophet
+      # post-selection annotation — the two seams that connect the lobe to the
+      # rest of the platform without giving it signal authority. Both suites
+      # carry byte-identity proofs (the candidate queue's wire bytes across four
+      # shadow states; Prophet's decision projection with the adapter on/off) and
+      # a TRANSITIVE import-boundary walk proving no Prophet module can reach a
+      # govrev candidate SOURCE. They belong in THIS job because both read the
+      # jsonschema-validated candidate contract, and the live probes read the
+      # committed data/{baskets/ohlcv,yahoo,regime,us_prophet_rank} stores plus
+      # data/government_revenue/candidate_queue.json — all tracked, so the probes
+      # exercise real artifacts here rather than degrading to fixtures. Measured
+      # locally under this job's exact dependency set: 103 passed in ~7s.
+      - name: waves 9E/9F — shadow context packets + prophet annotation boundary
+        run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
@@ -5057,10 +5105,12 @@ jobs:
       # so the state machine guarding the event triad was never once executed by
       # CI.  That is how the 2026-08-06 `ledger_write_failed` persistence break
       # reached production: the lobe looked green because its on-point guards
-      # were invisible, not because they passed.  Measured on origin/main under
-      # this job's exact dependency set: 270 passed in 19s.
-      - name: award-event spine, candidate/projection, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+      # were invisible, not because they passed.  Candidate API/projection tests
+      # now run in the dedicated bounded job below: their large deterministic
+      # fixtures grew beyond this legacy lane's original eight-minute budget,
+      # and keeping them here made the entire ownership lane time out.
+      - name: award-event spine, candidates, entity + workspace contracts
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same
@@ -5086,6 +5136,45 @@ jobs:
       # `covered_obligations`.  Stdlib + the job's existing pandas/pyarrow only.
       - name: amount-class conflation gate — obligation vs ceiling vs outlay vs delta
         run: python -m pytest tests/test_government_revenue_amount_semantics.py -q
+      # Unrun backfill 2026-08-09: the SBIR/STTR progression evidence lane
+      # (Wave 10 rail 3, #5012) landed named by no run: step — the unrun-suite
+      # gate reds main on it.  It belongs HERE because the suite drives
+      # collectors/sbir_awards.py and engine/government_revenue/sbir_progression.py,
+      # the same federal-award collector family as the SAM.gov/USAspending steps
+      # above, under the same jsonschema-bearing install line.
+      - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        run: python -m pytest tests/test_sbir_awards.py -q
+      - name: amount-class semantics guard (selftest + live source scan)
+        run: |
+          python3 scripts/check_government_revenue_amount_semantics.py --selftest
+          python3 scripts/check_government_revenue_amount_semantics.py
+      # Unrun backfill 2026-08-09: the SBIR/STTR progression evidence lane
+      # (Wave 10 rail 3, #5012) landed named by no run: step — the unrun-suite
+      # gate reds main on it.  It belongs HERE because the suite drives
+      # collectors/sbir_awards.py and engine/government_revenue/sbir_progression.py,
+      # the same federal-award collector family as the SAM.gov/USAspending steps
+      # above, under the same jsonschema-bearing install line.
+      - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        run: python -m pytest tests/test_sbir_awards.py -q
+
+  unrun-government-revenue-candidate-projection:
+    # The candidate API/projection fixtures exercise the full contract and are
+    # intentionally isolated from the broad ownership lane above.  They were
+    # the long pole in the old eight-minute job; a separate bounded lane keeps
+    # both failure domains visible instead of masking every Government Revenue
+    # suite behind one timeout.
+    if: ${{ false }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install candidate contract dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      - name: candidate API + projection contract fixtures
+        run: python -m pytest tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
@@ -5282,6 +5371,15 @@ jobs:
       - name: tech-lab parity fixtures — structure only (determinism is platform-dependent)
         run: python -m pytest tests/test_tech_parity_fixtures.py -q
           --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
+      # Unrun backfill 2026-08-09: the W-L1a evening close-pass lane (#5154) —
+      # mirror/publish/reconcile builders behind the provisional evening board —
+      # landed named by no run: step; the unrun-suite gate reds main on it.  It
+      # joins this lane because its builders are store/ops lane builders and its
+      # sibling instrument (the freshness sentinel #5154 extended) already runs
+      # in the sweep above.  Static/AST + engine.close_pass/us_board_rank only;
+      # pandas/pyyaml ride the existing install line.
+      - name: evening close-pass provisional board lane (W-L1a, #5154)
+        run: python -m pytest tests/test_close_pass_lane.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
@@ -5332,6 +5430,13 @@ jobs:
       # the #4331 prophet-board suites, whose staging follows that PR's merge.)
       - name: prophet live user-facing surfaces
         run: python -m pytest tests/test_prophet_live_surface.py -q
+      # Unrun backfill 2026-08-09: the W-L1 board-state surface (#5148 — "which
+      # board am I looking at?") landed named by no run: step; the unrun-suite
+      # gate reds main on it.  It joins this lane because it is a shipped
+      # dashboard surface, sibling to the prophet live surfaces #5148 itself
+      # extended in the step directly above.
+      - name: W-L1 board-state surface (#5148)
+        run: python -m pytest tests/test_wl1_board_state_surface.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -5352,6 +5457,15 @@ jobs:
       # selector join the producer lane that owns the release-forecast estate.
       - name: CPI bridge + official-event live client + Release Radar date selection
         run: python -m pytest tests/test_release_cpi_bridge.py tests/test_release_publications_live_client.py tests/test_release_radar_date_selection.py -q
+      # Unrun backfill 2026-08-09: Release Radar canonical inflation truth
+      # (#5153) landed five suites named by no run: step — the unrun-suite gate
+      # reds main on them.  They join the producer lane that owns the
+      # release-forecast estate: the inflation-intelligence engine + its
+      # neural-web registration, the release-actuals reconciler, the defect
+      # ledger, and the target-truth vintage collector.  numpy/pandas ride the
+      # existing install line.
+      - name: Release Radar — inflation truth, actuals, defects, target truth (#5153)
+        run: python -m pytest tests/test_inflation_intelligence.py tests/test_inflation_intelligence_nw.py tests/test_release_actuals.py tests/test_release_defects.py tests/test_release_target_truth.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
@@ -6459,6 +6573,115 @@ jobs:
           tests/test_group_pulse_contract.py
           tests/test_group_pulse_episodes.py
           tests/test_group_pulse_tripwire.py -q -rs
+
+  group-read-surface:
+    # GR1 of the Group Reads program: the USER-FACING basket read surfaces —
+    # templates/basket_detail.html.j2's READ band (stance line, four glance tiles, the
+    # arc rail, "what we're watching", the episode and earnings sections) and the
+    # group-pulse column on the Sector Intelligence board.
+    #
+    # The suite EXECUTES the shipped JS under node rather than mirroring it in Python: a
+    # Python re-implementation of the stance matrix would keep passing while the copy
+    # that ships drifted away from it (the mirrored-guard-is-vacuous trap). `setup-node`
+    # is therefore load-bearing, not decoration — the suite skips itself without node on
+    # PATH, and a silent skip reads exactly like a pass.
+    #
+    # What goes red here:
+    #   stance matrix   any (participation x sign x state_change x arc) combination that
+    #                   emits an untranslated slug, an internal state name, "igniting",
+    #                   "validated", refutation vocabulary, a missing or English-echoed
+    #                   ZH string, a read over the Tier-1 word budget, a directional
+    #                   act/buy stance (participation carries no directional authority,
+    #                   DNR:KILL-PSS-SR3-PARTICIPATION), or a "moving together" claim
+    #                   below the movers floor.
+    #   earnings traps  the two group_earnings_pulse.v1 shapes that read plausibly and
+    #                   are wrong: `season.next` is a preview CAPPED at 6, so the count
+    #                   must come from n_upcoming_14d; and n_beat + n_miss can sit far
+    #                   below n_members, so n_no_data is shown rather than divided away
+    #                   into a survivor beat rate.
+    #   null states     all three artifacts land only after the first post-merge nightly.
+    #                   Every panel must render plain-word bilingual copy when its file
+    #                   or key is absent, and every fetch must be fail-silent.
+    #   surface law     the Oracle P8 null is disclosed verbatim in both languages; no
+    #                   score/rank/heat number anywhere (R-TIL-3 / G0-2); the board's
+    #                   alternative ordering is a disclosed rule over the artifact's own
+    #                   named legs, printed on the surface it orders, with the existing
+    #                   default sort untouched; and the desk's re-order resets the
+    #                   show-more row cap it would otherwise leave pointing at the old
+    #                   card positions.
+    #
+    # Template-only suite: no pandas, no pyarrow, no network — it reads two templates and
+    # one plain-copy JS asset and shells node.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: basket read band + board group-pulse column (GR1)
+        run: python -m pytest tests/test_group_read_surface.py -q -rs
+
+  group-earnings-pulse:
+    # Group Reads W-GR2: engine/group_earnings.py -> site/basketdata/earnings_pulse.json,
+    # the per-basket earnings layer (season clock, beat rollup, guidance band, revision
+    # breadth, post-report drift, earnings sympathy) plus its append-only sympathy ledger.
+    #
+    # Both suites run against a SYNTHETIC data tree in tmp_path, so they are deterministic,
+    # offline, and independent of how full the Nasdaq surprise drip happens to be on the
+    # day. What they pin, in order of what would hurt most if it broke:
+    #
+    #   * the frozen group_earnings_pulse.v1 key set. The validator lives in the test, not
+    #     the engine, and is itself mutation-checked: nine deliberate mutants (unknown key
+    #     at three nesting depths, four dropped `n` fields, a dropped authority, a malformed
+    #     `next` entry) must each make it go red, so a validator that quietly stopped
+    #     validating fails here rather than shipping a silent contract break to the GR1
+    #     surface builder.
+    #   * every floor refusing with a null instead of a survivor-only number. The `thin`
+    #     basket carries three members with perfectly good data — a real surprise, a real
+    #     analyst reading, a real post-report price path — and must publish nothing but
+    #     nulls, because three is below MIN_REPORTED / MIN_COVERED / MIN_DRIFT_N. A
+    #     3-of-3 beat share is exactly the number the floors exist to suppress.
+    #   * the resolution-conditioned-denominator law: n_beat + n_miss + n_inline +
+    #     n_no_data == n_members in every basket, refused or not.
+    #   * engine.guidance_gap's >=2-distinct-filers law surviving the generalization from
+    #     curated themes to arbitrary basket rosters (one filer -> band null), and the
+    #     floor being IMPORTED rather than re-declared so the two can never drift.
+    #   * the sympathy ratio, on a fixture where the answer is arithmetic. That fixture is
+    #     deliberately MAJORITY report days: the median is robust, so a contaminated
+    #     baseline built from a window with only a few report days still reads correct and
+    #     the bug hides. At 24 report days against 16 quiet ones a baseline that forgets to
+    #     exclude them collapses the ratio from 3.0 to 1.0 — verified by mutation.
+    #   * the ledger's immutability: re-advancing identical inputs is a byte-for-byte no-op,
+    #     a restated value for an existing key is refused rather than applied, and the
+    #     nightly lane gate (engine.ledger_lane) is imported, not a local COLLECT_LANE read.
+    #
+    # `requests` is in the install line because engine/group_earnings.py's Item-2.02 check
+    # prefers collectors.edgar_earnings_8k.has_item_202 and falls back to a local copy when
+    # that module (which imports requests at module scope) is unavailable. With requests
+    # installed the equivalence test compares the two definitions for real; without it the
+    # test would skip and the fallback could drift unnoticed.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: group earnings pulse contract, floors and sympathy (W-GR2)
+        run: >-
+          python -m pytest
+          tests/test_group_earnings_contract.py
+          tests/test_group_earnings_sympathy.py -q -rs
 
   group-linked-outsiders:
     # GR3 of the Group Reads program: filing-linked outsiders per US basket.

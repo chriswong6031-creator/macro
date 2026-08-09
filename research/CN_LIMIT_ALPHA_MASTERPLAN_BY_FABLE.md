@@ -457,6 +457,20 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
 
 ## §9 DUAL-LANE PROTOCOL + DATA HORIZON (operator update, 2026-08-09)
 
+**AMENDED BY OPERATOR ORDER, 2026-08-09 (second session), TWICE — FINAL STATE: the Codex
+lane is ENDED ENTIRELY and this (Claude) lane is the MASTER SESSION for everything
+limit-move.** First order: the Tushare wiring transferred here (Codex wiring failed) —
+authority + plane architecture in `research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md`. Second
+order: integrate the full Codex handoff — the dual-lane protocol, including clause 1's
+analytic blindness, is DISSOLVED; the reconciliation clause 4 reserved for the operator has
+now HAPPENED. The reconciliation event, preservation receipts (five Codex branches pushed,
+dirty range-shard campaign wip-committed), construction-by-construction verdicts
+(convergent kills on daily riders + onset books across two independent stacks), the
+two-tapes ruling, the universe-truth upgrade of F3, the exact-cent taxonomy adoption, the
+two-ledger Monday grading, and the re-ranked master queue all live in
+**`research/CN_LIMIT_ALPHA_RECONCILIATION_LEDGER_2026-08-09.md`** — read it with this
+section; on conflict the reconciliation ledger wins over the paragraphs below.
+
 **Two independent lanes now work this mechanism by operator design.** A Codex session runs the
 SAME project in parallel — deliberately, for cross-comparison and reconciliation later ("fresh
 eyes... different conclusions and perhaps different strategies"). Binding consequences for
