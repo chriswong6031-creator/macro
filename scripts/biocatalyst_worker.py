@@ -21,17 +21,21 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
+import sys
 from typing import Any, Callable, Iterator, Mapping, Protocol
 import uuid
 
 import yaml
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.biocatalyst.activation import (
     ActivationError,
     activation_target_binding_sha256,
     validate_activation_gate,
     validate_activation_heartbeat,
-)
+)  # noqa: E402
 from engine.biocatalyst.publication import (
     CommittedGeneration,
     HistoryPublicationEvidence,
@@ -48,7 +52,7 @@ from engine.biocatalyst.publication import (
     success_health,
     validate_candidate_run,
     write_private_incident,
-)
+)  # noqa: E402
 from engine.biocatalyst.prospective import (
     ProspectiveError,
     SourceEvidence as ProspectiveSourceEvidence,
@@ -58,20 +62,20 @@ from engine.biocatalyst.prospective import (
     build_public_model as build_prospective_public_model,
     build_public_event as build_prospective_public_event,
     validate_public_model as validate_prospective_public_model,
-)
+)  # noqa: E402
 from engine.biocatalyst.history import (
     build_history_exact_diff,
     build_history_read_model,
     build_unavailable_history_read_model,
     derive_history_change_facts,
-)
+)  # noqa: E402
 from engine.biocatalyst.storage import (
     BinaryObjectStore,
     DedicatedR2Config,
     DedicatedR2Store,
     StorageError,
     mirror_tree_verified,
-)
+)  # noqa: E402
 from engine.sector_intelligence import (
     build_ctgov_publication_context,
     canonical_json_bytes,
@@ -84,7 +88,7 @@ from engine.sector_intelligence import (
     validate_trial_registry_change_fact_against_diff,
     validate_trial_history_snapshot_against_evidence,
     validate_trial_observation_against_source_evidence,
-)
+)  # noqa: E402
 
 
 EXIT_SUCCESS = 0
