@@ -39,6 +39,11 @@ from engine.government_revenue.idv_dossiers import (
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.idv_bridge import (
+    award_bridge_view,
+    build_idv_bridge_payload,
+    unavailable_award_bridge_view,
+)
 from engine.government_revenue.candidates import (
     CONTRACT as CANDIDATE_CONTRACT,
     QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
@@ -98,6 +103,7 @@ _DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _BUDGET_PROGRAM_CACHE: dict = {"state": None, "payload": None}
 _IDV_DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_IDV_BRIDGE_CACHE: dict = {"state": None, "payload": None}
 _CANDIDATE_CACHE: dict = {"state": None, "payload": None}
 _DOD_BUDGET_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 _SENSITIVE_KEY = re.compile(
@@ -488,6 +494,36 @@ def _load_idv_dossiers() -> dict:
         return payload
 
 
+def _award_idv_bridge(prime_payload: dict, idv_payload: dict, award_key: str) -> dict:
+    """Project one award's exact IDV bridge from two already-validated rails.
+
+    The bridge is a deterministic display-tier join over content-addressed
+    bytes, so it is cached on the joint identity of its two inputs rather than
+    stored as a separate artifact.  This is an optional context rail on top of
+    the receipt-bound relationship route: a projection that cannot be built
+    returns an explicit unavailable state so the proven relationships keep
+    serving, and so a reader never mistakes "not checked" for "no link".
+    """
+    state = (prime_payload.get("content_id"), idv_payload.get("content_id"))
+    with _LOCK:
+        payload = _IDV_BRIDGE_CACHE["payload"] if _IDV_BRIDGE_CACHE["state"] == state else None
+        if payload is None:
+            try:
+                payload = build_idv_bridge_payload(
+                    idv_payload=idv_payload,
+                    prime_payload=prime_payload,
+                    as_of=prime_payload.get("as_of"),
+                )
+            except (ValueError, TypeError, KeyError):
+                return unavailable_award_bridge_view(
+                    award_key,
+                    "The exact vehicle bridge could not be projected from this generation, so no link was "
+                    "checked. That is not an observation that no link exists.",
+                )
+            _IDV_BRIDGE_CACHE.update(state=state, payload=payload)
+        return award_bridge_view(payload, award_key)
+
+
 def _candidate_authority_is_display_only(value: object) -> bool:
     return value == {
         "tier": "display",
@@ -554,6 +590,7 @@ def _candidate_ledger_rows(raw: bytes) -> list[dict]:
         )
     rows: list[dict] = []
     observation_ids: set[str] = set()
+    observation_keys: set[tuple] = set()
     for line in lines:
         try:
             row = json.loads(line.decode("utf-8"))
@@ -590,6 +627,16 @@ def _candidate_ledger_rows(raw: bytes) -> list[dict]:
                 detail="government revenue candidate ledger contains duplicate observations",
             )
         observation_ids.add(observation_id)
+        # One row per hypothesis per moment it was knowable.  `observation_id`
+        # additionally folds in the reviewed-graph digest, so it moves on every
+        # curation edit; this pair is what the writer treats as already recorded.
+        observation_key = (row.get("candidate_id"), row.get("known_at"))
+        if observation_key in observation_keys:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger contains duplicate observations",
+            )
+        observation_keys.add(observation_key)
         rows.append(row)
     return rows
 
@@ -670,6 +717,9 @@ def _load_candidate_projection() -> dict:
             or ledger_binding.get("sha256") != ledger_sha256
             or ledger_binding.get("byte_count") != len(ledger_raw)
             or ledger_binding.get("line_count") != len(rows)
+            or not isinstance(ledger_binding.get("prior_line_count"), int)
+            or isinstance(ledger_binding.get("prior_line_count"), bool)
+            or not 0 <= ledger_binding["prior_line_count"] <= len(rows)
             or projection_state.get("queue_content_id") != queue.get("content_id")
         ):
             raise HTTPException(
@@ -740,7 +790,19 @@ def _load_candidate_projection() -> dict:
                 detail="government revenue candidate source generation mismatch",
             )
 
-        ledger_observations = {row["observation_id"]: row for row in rows}
+        # The ledger is keyed on graph-independent observation identity.  A
+        # reviewed-graph edit mints a new `observation_id` for a candidate that is
+        # already recorded, so keying the served rows on it would unbind the whole
+        # queue after any curation increment.  Rows the last generation did not
+        # append keep the graph generation they were recorded under; everything
+        # newer is bound to today's.
+        ledger_observations = {
+            (row.get("candidate_id"), row.get("known_at")): row for row in rows
+        }
+        issued_earlier = {
+            row.get("observation_id")
+            for row in rows[: ledger_binding["prior_line_count"]]
+        }
         projected = list(queue.get("candidates") or []) + list(queue.get("recently_matured") or [])
         required_source_content_ids = {
             f"latest-sha256:{latest_sha256}",
@@ -748,18 +810,24 @@ def _load_candidate_projection() -> dict:
             workspace.get("bundle_id"),
         }
         if any(
-            row.get("observation_id") not in ledger_observations
+            (row.get("candidate_id"), row.get("known_at")) not in ledger_observations
             or json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
             != json.dumps(
-                ledger_observations[row.get("observation_id")],
+                ledger_observations[(row.get("candidate_id"), row.get("known_at"))],
                 sort_keys=True,
                 separators=(",", ":"),
                 ensure_ascii=False,
             )
             or not isinstance(row.get("issuer_resolution_ref"), dict)
-            or row["issuer_resolution_ref"].get("graph_id") != loaded_graph.get("graph_id")
-            or row["issuer_resolution_ref"].get("graph_digest") != loaded_graph.get("graph_digest")
-            or f"graph-sha256:{loaded_graph.get('graph_digest')}" not in (row.get("artifact_content_ids") or [])
+            or f"graph-sha256:{row['issuer_resolution_ref'].get('graph_digest')}"
+            not in (row.get("artifact_content_ids") or [])
+            or (
+                row.get("observation_id") not in issued_earlier
+                and (
+                    row["issuer_resolution_ref"].get("graph_id") != loaded_graph.get("graph_id")
+                    or row["issuer_resolution_ref"].get("graph_digest") != loaded_graph.get("graph_digest")
+                )
+            )
             for row in projected
         ):
             raise HTTPException(
@@ -1897,6 +1965,7 @@ def award_idv_relationships(award_key: str) -> dict:
     if award_key not in _dossier_award_map(prime_payload):
         raise HTTPException(status_code=404, detail="award not covered")
     payload = _load_idv_dossiers()
+    bridge = _award_idv_bridge(prime_payload, payload, award_key)
     relationships = [
         _public_idv_relationship(row)
         for row in payload.get("relationships") or []
@@ -1941,6 +2010,7 @@ def award_idv_relationships(award_key: str) -> dict:
         "freshness": payload.get("freshness"),
         "selection_provenance": payload.get("selection_provenance"),
         "award_coverage": award_coverage,
+        "bridge": bridge,
         "limitations": payload.get("limitations"),
         "award_key": award_key,
         "relationships": relationships,

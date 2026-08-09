@@ -121,7 +121,7 @@ DEPENDENCY_LOCK_RELATIVE_PATH = Path(
     "requirements/attested-history-macos-arm64-py312.lock"
 )
 MAX_DEPENDENCY_LOCK_BYTES = 64 * 1024
-EXPECTED_GITHUB_REPOSITORY = "chriswong6031-creator/macro"
+EXPECTED_GITHUB_REPOSITORY = "mastermindx-market-intelligence/macro"
 EXPECTED_GITHUB_REF = "refs/heads/main"
 EXPECTED_GITHUB_ENVIRONMENT = "attested-history-seed"
 EXPECTED_GITHUB_WORKFLOW = "attested-history-aapl-seed"

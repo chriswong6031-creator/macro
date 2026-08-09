@@ -459,11 +459,37 @@ sentinel:
     # in the gate report so a wide cap is always traceable to a decision.
     #
     # Operator 2026-07-28: flagship posts every 30 minutes, up to 20/day.
+    #
+    # ── OPERATOR ORDER 2026-08-08: 20-30 posts/day/account ────────────────────
+    # Every one of the seven live desks now carries its own override row at 30/day
+    # with a 20-minute floor. The rows are IDENTICAL on purpose: the age ramp is
+    # the platform-risk throttle and these desks have all cleared it in practice,
+    # so a per-desk difference here would be an invented distinction, not a
+    # decision. Written as seven explicit rows rather than a wildcard because the
+    # override table is the audit trail — a wide cap must always be traceable to a
+    # named desk (see the paragraph above), and a wildcard would silently widen
+    # the next desk somebody enables.
+    #
+    # WHAT 30 IS BOUNDED BY, and it is NOT this number. The publisher sweeps on
+    # the `0,30 0,1,11-23` grid = 30 sweeps per UTC day, and a desk takes at most
+    # one post per sweep, so 30/day is the physical ceiling of the shipped grid.
+    # This override reaches it exactly; asking for more here would be config that
+    # cannot be spent. The operator's 20-30 band therefore reads as "the ramp
+    # stops being the binding constraint" — what actually paces a day from here is
+    # supply (how many planned rungs survive the cooldowns and the writer) and the
+    # 20-minute per-account spacing floor in each persona spec.
+    #
+    # min_minutes_between_posts: 20 is DOCUMENTATION HERE, NOT ENFORCEMENT — the
+    # STILL OPEN note above still holds: no post-time consumer reads the ramp's
+    # spacing knob (outbox.sentinel_contract is base-only). The floor that binds
+    # is `cadence.min_spacing_min` in config/personas/<id>.yml, which is already
+    # 20 for all seven. This row states the same number in the gate report so the
+    # two cannot be read as disagreeing.
     account_overrides:
       flagship:
-        max_posts_per_account_per_day: 20
-        max_media_posts_per_account_per_day: 20
-        min_minutes_between_posts: 30
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
         # Operator 2026-07-28 ("when semiconductors are all down big we should
         # already be posting lists"): flagship is the warmed desk, and the
         # sector/theme lists the publish-time lane generates every 30 minutes
@@ -473,6 +499,30 @@ sentinel:
         # against) does not describe flagship; it stays in force for every
         # other desk.
         theme_list_allowed: true
+      founder:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
+      meagan:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
+      sophia:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
+      kelly:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
+      cici:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
+      mastermind_news:
+        max_posts_per_account_per_day: 30   # operator order 2026-08-08: 20-30 posts/day/account
+        min_minutes_between_posts: 20
+        max_media_posts_per_account_per_day: 30
     # TIER 1 — days 0-4 (was days 0-13).
     weeks_1_2:
       # Operator re-spec 2026-07-28: 10 posts/account/day (was 2). The desks were
@@ -650,6 +700,48 @@ publish:
   # lead. One is framing. Two or more is a recital with a fresh headline, and
   # the post is refused. Set negative for unbounded (turns the bound off).
   fact_ride_along_max: 1
+
+  # ── HOW MANY ACCOUNTS MAY LEAD ON ONE FACT (W3, operator order 2026-08-08) ──
+  # The fan-out gate above is binary: the first item to claim a LEAD fact key owns
+  # it and every sibling is quarantined. That is exactly right for the defect it
+  # was built for (the "4 of 11 sectors green" family, six dressings of one stale
+  # breadth read) and exactly wrong for the operator's 2026-08-08 order, which
+  # says a tickerless macro event MAY be written up by several desks when each
+  # one is genuinely a different format. A binary owner makes that unexpressible:
+  # the second desk is refused before any gate can judge whether its post is a
+  # different read or a reskin.
+  #
+  # So the owner becomes a BUDGET, keyed by fact-key FAMILY, exactly like
+  # fact_cooldown_days above (`macro:` / `ratio:` / `pct:` prefixes, `default`
+  # for the rest — engine/marketing/market_clock.py owns the key grammar).
+  #
+  #   macro   4 — a CPI/NFP/FOMC print is a public number with several honest
+  #               reads. 4 is the operator's number and is bounded from above by
+  #               wire_routing.fanout.max_accounts (3) in the lane that actually
+  #               produces siblings, so this is headroom, not a target.
+  #   pct     2 — a ticker-anchored percentage. Two desks may hold one name in a
+  #               day (selection.max_accounts_per_ticker_day is also 2); more
+  #               reads as a fleet.
+  #   default 1 — UNCHANGED BEHAVIOUR for everything else, and deliberately so:
+  #               `ratio:` (the breadth reads this gate was built for) and every
+  #               directional signal keep one owner, one post.
+  #
+  # RAISING THIS DOES NOT WIDEN THE NEAR-DUP GATES and it must never be read as
+  # permission to repeat. sentinel.near_dup_jaccard (0.50, cross-account), the
+  # same-account Jaccard, the 3-gram plan gate and frame_similarity all still run
+  # on every sibling and are unchanged. This only stops the FACT-level gate from
+  # deleting a second read before those gates get to judge it.
+  #
+  # WIRED WHERE (state it honestly): engine/marketing/outbox.py enforces this at
+  # enqueue. The publisher's own copy of the gate (scripts/marketing_publisher.py,
+  # the `_fact_owners` map) is owned by another lane and still enforces one owner
+  # per key at post time, so today a macro sibling can be QUEUED and then held
+  # there. Until that seam reads this key the budget is only half in force; do not
+  # write a comment here claiming otherwise.
+  fact_fanout_max_accounts:
+    macro: 4
+    pct: 2
+    default: 1
   # Operator decision 2026-07-24 ("auto-approve flagship signals"): the runner
   # auto-advances queued→approved for EVERY item clearing all publish gates
   # (validate_postable, a channel id configured for its account, under the daily
@@ -890,6 +982,38 @@ publish:
     # UNLOCK: charter §6 XG-W2 (cadence resolver) + XG-W3 (desk feeds). Widen
     # this list then, not before. Omitting the key falls back to this same pair.
     accounts: [flagship, founder]
+
+    # OPTIONAL WIRE PHRASE PASS (engine/marketing/publish_time_content
+    # .phrase_or_template). One LLM re-wording of the copy the deterministic v3
+    # banks already rendered, in the same wire register the hot-tape desk uses.
+    # The template is the floor and always ships when the model path does not
+    # clear every law, so a live mover is never blocked or delayed.
+    #
+    # DARK BY DEFAULT, and arming takes TWO keys: `enabled: true` here AND
+    # MARKETING_LLM_ENABLED in the step's environment. Disarmed, the pass builds
+    # no provider, reads no credential and returns the template byte-identical.
+    # Eyeball dry-runs (--dry-run) before flipping it.
+    #
+    # THE MODEL MAY RE-WORD; IT MAY NOT ADD. A phrase is rejected (and the
+    # template posts) on any number, cashtag, link or session claim the
+    # deterministic copy did not already carry, plus the register laws: no
+    # hashtag, no exclamation mark, no emoji, no em/en dash or smart quote, no
+    # first person, no engagement ask.
+    llm:
+      enabled: false                # DARK — operator arms after dry-runs
+      budget_s: 20                  # HARD wall clock for the whole pass, caller-owned
+      # Codex is a SUBPROCESS, not an HTTP client. Named separately so an HTTP
+      # socket budget can never silently become the codex process budget.
+      codex_timeout_s: 10
+      client_timeout_s: 4           # per-HTTP-rung; the waterfall walk is the retry
+      max_chars: 275                # copywriter's headline+body cap; the phrase replaces both
+      max_calls_per_run: 8          # runaway guard, not a budget
+      provider_order: [codex, oauth, anthropic, deepseek]
+      # TERRA, deliberately: sol writes long-form copy, terra critiques and
+      # WIRES, luna never touches user-facing words. This is a wire lane.
+      codex_source_model: "gpt-5.6-terra"
+      codex_reasoning_effort: low   # one short wire sentence cannot afford a reasoning pass
+      usage_lane: "publish-time-wire"
 
   # Publish-time DAILY READ ("My read on today's move", kind=event).
   # SAME root problem as publish_time_movers, one family over: the nightly plan
@@ -1332,6 +1456,93 @@ wire_routing:
     # desk_feed's beat-fit filter (desk_feed.py reads `default` as owning "none")
     # and every UNMAPPED class still falls back to it.
     none: mastermind_news
+
+  # ── MACRO FAN-OUT (W3, operator order 2026-08-08) ──────────────────────────
+  # "Tickerless macro events (CPI/NFP prints, FOMC, White House / policy) MAY go
+  # to multiple accounts when genuinely reworded in different formats."
+  #
+  # WHAT THIS IS NOT, because the distinction is the whole safety argument.
+  # `classes:` above answers "whose item is this" and its answer stays ONE desk;
+  # `spill_pool` answers "who may take overflow" and stays persona-free. Neither
+  # moves. This block is a THIRD question — "may one public fact be written up
+  # from more than one angle" — and it is the only one whose answer can include a
+  # persona desk, because what a persona receives here is NOT a relay. A relay in
+  # an authored voice is the charter §4 violation the paragraph above refuses.
+  # An `angle` is an assignment: mastermind_news relays the print, flagship says
+  # what it does to the house path, founder says how it trades. The copywriter
+  # reads `angle` and writes each one from scratch.
+  #
+  # THE REWORDING IS NOT TAKEN ON TRUST. Every fan-out sibling goes through the
+  # SAME gates a single item does, all unchanged by this block: the cross-account
+  # near-dup radar (sentinel.near_dup_jaccard 0.50), the same-account Jaccard, the
+  # plan-time 3-gram gate and the frame-similarity gate. A sibling that is only a
+  # reskin trips one of them and dies, which is the intended outcome — this block
+  # buys an OPPORTUNITY to write three posts, never a licence to ship three
+  # dressings of one.
+  #
+  # THE BAR. Fan-out is for the handful of events a reader would want three reads
+  # of, so it requires BOTH halves and both are cheap to verify:
+  #   * the item is MAJOR — `breaking_relevance.macro_routing_refinement` returns
+  #     "" for it, i.e. a tier-1 US release (the ratified CPI/PCE/payrolls/FOMC/
+  #     GDP/retail-sales/ISM/PPI/claims list). A `macro_print.minor` — Swiss CPI,
+  #     JOLTS, a Canadian trade balance — fans out to nobody and keeps its single
+  #     `macro_print.minor: mastermind_news` owner. That is the same split the
+  #     operator asked for on 2026-08-05 ("these aren't the ones people care
+  #     about"), reused rather than re-litigated;
+  #   * its salience clears `min_salience` below.
+  # `policy` carries no tier dimension (macro_print_tier is scoped to macro_print
+  # by construction), so for policy the salience floor is the whole bar.
+  #
+  # ORDER IS MEANING. The first row is the OWNER — it is the desk `classes:`
+  # already names, it is written first, and if the writer produces only one usable
+  # post it is that one. Later rows are additive reads that may individually fail.
+  fanout:
+    enabled: true
+    # 0-100 event salience (breaking_relevance.score_item). breaking.salience_
+    # threshold is 60 for admission AT ALL; this sits above it so clearing the
+    # bar to exist is not the same as clearing the bar to be written three ways.
+    #
+    # MEASURED, against the 113 kind=breaking items in
+    # data/marketing/outbox/items.jsonl that carry a salience (of 267 breaking
+    # items total):  min 31.2 · p50 37.8 · max 78.0.  Cumulative counts:
+    #     >= 60: 17/113   >= 65: 9   >= 70: 6   >= 72: 5   >= 75: 2   >= 80: 0
+    # So 72 admits the top ~4% and nothing has ever scored 80. It is set near the
+    # top of the OBSERVED range on purpose: CPI + payrolls + FOMC is roughly three
+    # to five events a month, and a fan-out bar that fires weekly is not a bar.
+    #
+    # WHAT THIS MEASUREMENT CANNOT SEE, said plainly. Every one of those 113 items
+    # predates the 2026-08-05 tier stamping, so `macro_tier`/`macro_economy` are
+    # null on all of them and none can be confirmed as a tier-1 US release from
+    # the ledger alone. The tier half of the bar is computed live at routing time
+    # (breaking_relevance.macro_routing_refinement), so it works going forward;
+    # what is NOT yet measurable is how many items clear BOTH halves per month.
+    # Re-read this number off a month of stamped items before trusting it.
+    min_salience: 72
+    # Hard ceiling on siblings per event, independent of the rows below — a
+    # miscounted table must not be able to address the whole network.
+    max_accounts: 3
+    # ROW ORDER MATTERS AND IT IS NOT COSMETIC. The first row must be the desk
+    # `classes:` above already names, because `fanout_desks` takes seat 0 from
+    # `route()` and prints a `::warning title=wire-fanout-owner-mismatch` once per
+    # process when the table disagrees. The first draft of this block led
+    # macro_print with `mastermind_news` while `classes.macro_print` is `flagship`,
+    # which made that warning fire on EVERY major print — a nightly warning nobody
+    # would read, over a disagreement that changed no membership. Ordered to match.
+    classes:
+      macro_print:
+        - account: flagship
+          angle: house_view     # what it does to the path we already published
+        - account: mastermind_news
+          angle: relay          # the print and its source, no stance (charter §4)
+        - account: founder
+          angle: trader_read    # how a trader sizes it, in the first person
+      policy:
+        - account: flagship
+          angle: house_view
+        - account: mastermind_news
+          angle: relay
+        - account: founder
+          angle: trader_read
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Desk feeds + franchises + persona memory (XG-W3)
@@ -2124,8 +2335,14 @@ copywriter:
         confirms or breaks the popular claim: what moved first, what is already
         priced, which market finances the story, and what would break the claim.
         Signature habits, one per post: a numbered micro-list, or chart-detective
-        framing. Never a number she cannot verify, never a hedging softener
-        ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
+        framing, or the STACKED FACT LIST (a one-line header, then one fact per
+        line, every line carrying its own figure: "Percent below their all-time
+        high / Semis: 4% / Software: 19%"). The stacked list is hers alone on this
+        roster, and every row in it must come from the item's own computed facts:
+        she never fills a row from memory, never estimates one to complete the
+        pattern, and drops the shape rather than the discipline when the facts
+        only support two rows. Never a number she cannot verify, never a hedging
+        softener ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
       example_lines:
         - "three things the close said. 1) breadth narrowed again 2) oil didn't believe the headline 3) vix still isn't paying attention."
         - "Semis are the reaction. Credit is the test. If hyperscaler spreads widen while capex estimates stay heroic, equities are ignoring the market funding the story."
@@ -2172,6 +2389,22 @@ copywriter:
       provider_order: [codex, oauth, anthropic, deepseek]
       codex_source_model: "gpt-5.6-terra"
       codex_reasoning_effort: medium
+      # THE RUNG'S OWN BUDGET, NOT THE CLIENT'S (W2, 2026-08-08). Without this
+      # key `build_providers` hands the Codex rung the HTTP `client_timeout_s`,
+      # and `codex exec` is a SUBPROCESS that pays interpreter, config and
+      # harness load before the model answers. A codex rung that times out is a
+      # codex rung that never serves, and the lane silently completes on the
+      # metered DeepSeek floor with nothing in any artifact saying so.
+      #
+      # WINDOW PRESSURE IS A CALL-COUNT PROBLEM, NOT AN EFFORT PROBLEM. Probed
+      # on the nightly host: every `codex exec` call costs ~10.1k INPUT tokens of
+      # harness before the prompt is read. `data/metabolism/key_ledger.jsonl`
+      # shows codex_account hitting `rate_limited` on 08-04, twice on 08-05 and
+      # again on 08-07, each with a 5h cooling hint, and a cooling codex is
+      # sorted BEHIND DeepSeek by the cross-process cooling order, so the
+      # operator's ChatGPT-first routing quietly inverts itself. Lowering effort
+      # would not move that; auditing fewer, larger batches would.
+      codex_timeout_s: 150
       oauth_pool_lane: marketing-auditor
       usage_lane: marketing-auditor
       window: 20
@@ -2217,6 +2450,23 @@ copywriter:
     codex_source_model: "gpt-5.6-sol"
     codex_reasoning_effort: "medium"
     oauth_pool_lane: "marketing-copywriter"
+    usage_lane: "marketing-copywriter"
+
+    # ── THE CODEX RUNG'S OWN BUDGET (W2, 2026-08-08) ─────────────────────────
+    # `llm_auth.build_providers` falls back to `client_timeout_s` for the Codex
+    # rung when no codex budget is named, so this lane's HTTP default (60s) was
+    # silently the ceiling for a `codex exec` SUBPROCESS. That process pays
+    # interpreter start, config load and harness load before the model is
+    # reached: measured on the nightly host 2026-08-08, 6.6s for one call on an
+    # idle box and 12.0s wall for four concurrent (this lane runs
+    # max_workers=4), against a nightly that is 4-core-bound with the render
+    # lane live. 60s was a coin flip, and every loss reads as `provider_error`
+    # and walks the item down to the metered DeepSeek floor.
+    #
+    # 150s is generous on purpose: the per-item ceiling is three calls and the
+    # governor step is not the render path, so a slow codex costs seconds while
+    # a timed-out codex costs the operator's ChatGPT-first routing.
+    codex_timeout_s: 150
 
     # ── THE NO-FALLBACK LAW (Content Studio LLM-first W1, 2026-07-29) ────────
     # research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0
@@ -2265,8 +2515,19 @@ copywriter:
       # operator reason as the writer above.
       provider_order: [codex, oauth, anthropic, deepseek]
       codex_source_model: "gpt-5.6-terra"
+      # EFFORT STAYS MEDIUM, AND THAT IS A MEASURED DECISION (W2, 2026-08-08).
+      # Lowering it was the first idea for giving the attached ChatGPT account's
+      # 5h window back to the WRITER, and the measurement says it is the wrong
+      # lever: a `codex exec` call costs ~10.1k INPUT tokens of harness before
+      # the prompt is read (probed on the nightly host), so the window is spent
+      # by the number of CALLS, not by how hard each one thinks. Effort moves
+      # only the reasoning tokens on a 200-token verdict. The critic is the cold
+      # reader, which is a judgment job, so trading its judgment for a rounding
+      # error in the token bill is a bad trade.
       codex_reasoning_effort: "medium"
+      codex_timeout_s: 150
       oauth_pool_lane: "marketing-critic"
+      usage_lane: "marketing-critic"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Selection layer — what the Content Studio is ALLOWED to plan tonight
@@ -2374,13 +2635,65 @@ congress_lane:
   max_per_day: 2
   # Materiality floor on the disclosed RANGE MIDPOINT. 73,206 of the parquet's
   # 99,585 rows sit in the $1,001–$15,000 bucket — that bucket IS the noise.
-  min_amount_usd: 50000
+  #
+  # 50000 -> 15000 (W3, 2026-08-08). THIS LANE HAS NEVER POSTED ONCE. It went live
+  # 2026-07-29 and `kind=congress` is 0 of the 570 rows in the outbox, ever, while
+  # its twin `insider_lane` has posted 6 times off the same plumbing. The lane was
+  # never broken: the fetch runs nightly, the kind is registered everywhere it has
+  # to be (outbox KINDS, PLANNED_KINDS, the approval-desk decider list), and
+  # tonight's plan ran the filing block successfully and produced 2 insider items.
+  # It was STARVED, by this number.
+  #
+  # MEASURED on the live parquet (99,661 rows), rows first seen 2026-07-01..08-08,
+  # after every other lane filter (ticker shape, no options/other, no dividend
+  # reinvestment / automatic / exchange, report lag <= 90d):
+  #
+  #     floor      qualifying rows in 39 days
+  #     $50,000     3       (one on 07-02, one on 07-17, one on 07-23)
+  #     $15,000    51       (10 on 07-02, 12 on 07-17, 15 on 08-06, ...)
+  #
+  # Three rows in five and a half weeks against a `max_per_day: 2` lane is not a
+  # materiality floor, it is an off switch. And the sentence above argues for
+  # 15,000, not 50,000: the noise bucket it names is $1,001-$15,000, whose RANGE
+  # MIDPOINT is $8,000.50, so a >= 15,000 floor already excludes every row in it.
+  # 50,000 additionally threw away the $15,001-$50,000 bucket, which was never
+  # claimed to be noise. This restores the floor the comment describes.
+  #
+  # NOT A QUALITY CHANGE ANYWHERE ELSE. The purchase-over-sale ranking, the
+  # option/dividend-reinvestment exclusions, the report-lag window, the fleet-wide
+  # `max_per_day: 2`, the outbox approval gate and the fact-locked writer path are
+  # all untouched.
+  min_amount_usd: 15000
   # Sales stay eligible but always rank below purchases: a sale has a dozen
   # innocent explanations, a purchase spends money.
   include_sales: true
   # 0 = strictly rows first seen today; 1 also admits yesterday's crawl, for the
   # nights the collector lands the far side of the UTC boundary.
-  first_seen_lookback_days: 1
+  #
+  # 1 -> 3 (W3, 2026-08-08), and it is the OTHER half of the starvation above.
+  # This lane's collector is INTERMITTENT, not daily: over 2026-07-01..08-08 it
+  # landed rows on 16 of 39 calendar days, in lumps (367 rows on 07-23, 67 on
+  # 08-06, then nothing for four days). A 1-day window means the lane has no
+  # at-bat at all on a day the crawler did not run, however much material sits in
+  # the file. Measured coverage over 2026-07-10..08-08, counting a day as an
+  # at-bat when >= 1 qualifying row is visible:
+  #
+  #     floor $50,000 : 1d 4/30 (13%)   3d 8/30 (27%)   5d 12/30 (40%)
+  #     floor $15,000 : 1d 14/30 (47%)  3d 24/30 (80%)  5d 27/30 (90%)
+  #
+  # 3 with the new floor is 80% of days, which is a lane. 5 buys 10 points more
+  # and is not taken, because the wider the window the more a "new disclosure" is
+  # really an old one: this is a NEWNESS gate, and the honest name for a 5-day
+  # window is a backlog.
+  #
+  # WIDENING THIS CANNOT WALK ONE NAME AROUND THE LADDER. content_studio passes
+  # `cooled=_cooled_watch` into candidates(), i.e. the 3-trading-day watchlist
+  # ticker cooldown, plus `exclude=_claimed` for names taken earlier the same
+  # night, and new_disclosures() dedupes to one candidate per ticker per batch. A
+  # row visible for four nights therefore gets at most one post; what the wider
+  # window actually buys is that a LUMPY crawl is spent over a few nights instead
+  # of being dropped on the floor.
+  first_seen_lookback_days: 3
   # A trade disclosed later than this is a filing-compliance story, not a market
   # one. The STOCK Act window is 45 days; 90 keeps late filers in scope.
   max_report_lag_days: 90
@@ -2499,6 +2812,66 @@ house_picks:
   special_max_age_days: 3
   min_impulse_score: 80
   us_only: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TICKER ALLOCATOR (W3, 2026-08-08) — engine/marketing/ticker_allocator.py
+#
+# WHAT IT FIXES. The night's chart-post SUBJECTS were drawn from a very narrow
+# set: `house_picks` yields at most 7 names (max_impulse 3 + max_tech_lab 2 +
+# max_special 2, before dedup and cooldowns) and the attention pools it sits
+# beside are ranked lists that move slowly. Seven accounts at 20-30 posts a day
+# cannot be fed from seven names, and the failure mode is not "we run out" — it
+# is that the same handful of tickers appears everywhere, which is the fleet
+# signal the near-dup gates exist to deny.
+#
+# The allocator ranks the LIQUID US UNIVERSE through the marketing lane's own
+# reader, engine/marketing/attention_source.top_by_dollar_volume — ~2,673 names
+# carrying a 20-day dollar-volume figure and a dense liquidity rank, derived from
+# the same data/baskets/ohlcv store the charts render from, and already
+# staleness-gated so it cannot serve a ranking that is a lie about today. The
+# allocator then partitions the day's chart subjects ACROSS accounts with no
+# overlap. (The pack file itself is named in engine/marketing/ticker_allocator.py,
+# not here: config/marketing.yml is read-only to the intraday tape program and
+# tests/test_marketing_supply_feeds.py refuses the token in this file.)
+#
+# THIS IS A SUPPLY KNOB, NOT A QUALITY GATE. Everything downstream still runs
+# unchanged: the 3-day cross-day ticker cooldown and the 5-day signal cooldown,
+# the fact-reuse budget, the near-dup radar, the sentinel caps, and the writer's
+# own validators. A subject the allocator offers is a CANDIDATE; nothing here
+# decides that a post is good enough to ship.
+# ─────────────────────────────────────────────────────────────────────────────
+ticker_allocator:
+  enabled: true
+  # How deep into the adv_rank the allocator may draw. 1200 is roughly the point
+  # where 20-day dollar volume stops supporting a readable daily candle for a
+  # general audience; below it a chart is mostly gaps. Raise it when the desks
+  # genuinely exhaust the top 1200, not before.
+  universe_depth: 1200
+  # Chart-post subjects offered per account per day. Deliberately BELOW the
+  # 30/day post cap: not every post is a chart post (macro, event, theme_list and
+  # the wire lanes all draw from the same day), and offering more subjects than
+  # an account can spend just widens the pool the cooldowns then have to walk.
+  per_account_per_day: 12
+  # Of those, how many are the LONGER VIEW (weekly/monthly resample). 3 is the
+  # operator's 2-4 band. These carry their own copy-shape tag so the writer
+  # frames them as a multi-year read rather than a daily one; a weekly chart
+  # written in daily language is the tell that the tag was ignored.
+  htf_per_account_per_day: 3
+  htf_timeframes: ["WEEKLY", "MONTHLY"]
+  # Refuse an HTF variant with fewer resampled bars than this rather than drawing
+  # a stub. A 20-bar weekly chart is not a longer view, it is the same year with
+  # fewer points.
+  min_htf_bars: 60
+  # THE MEGA-CAP QUOTA. Ranking purely by liquidity would still be a rotation
+  # through the same top names; ranking purely by novelty would post nothing a
+  # reader recognises. So each account is guaranteed this many subjects from the
+  # top `megacap_quota_rank` by dollar volume, ROTATED by day so the same name
+  # does not sit on the same desk every night, and fills the rest from the tail.
+  megacap_quota_rank: 100
+  megacap_per_account_per_day: 3
+  # Per-account, per-ticker. Matches selection.ticker_cooldown_days so the
+  # allocator and the plan-level cooldown cannot disagree about what is cooled.
+  cooldown_days: 3
 
 # ─────────────────────────────────────────────────────────────────────────────
 # WIRE VOLUME (W5, 2026-08-03) — engine/marketing/wire_routing.py
@@ -2624,15 +2997,24 @@ breaking:
   # event-driven lane that never goes stale, while the nightly ladder carried the
   # network at a 23% post rate, is the inversion masterplan §8.2 exists to end.
   #
-  # WHY 10 AND NOT MORE. Bounded from above by flagship's own ramp cap
-  # (`sentinel.ramp.account_overrides.flagship.max_posts_per_account_per_day: 20`):
-  # the wire must not be able to eat a desk's entire day, because the nightly
-  # ladder and the publish-time lanes draw from that same 20. Half is the
-  # operator-legible split. It also sits UNDER the cold tier's
-  # `weeks_1_2.max_posts_per_account_per_day` (14 since the 2026-08-03 ramp
-  # relaxation; it was exactly 10 before), so on the newly-armed
-  # mastermind_news desk the wire alone can never exceed the tier this arming
-  # deliberately chose — press items ship `scheduled_at: immediate` and an
+  # WHY 20 AND NOT MORE (10 -> 20, operator order 2026-08-08: 20-30 posts/day
+  # per account). The rule is unchanged and so is the split: bounded from above
+  # by the desk's own ramp cap
+  # (`sentinel.ramp.account_overrides.<id>.max_posts_per_account_per_day`, now 30
+  # for all seven live desks), because the wire must not be able to eat a desk's
+  # entire day — the nightly ladder and the publish-time lanes draw from that same
+  # number. Two thirds is the operator-legible split at 30, and it leaves 10 rungs
+  # a day that the wire can never take.
+  #
+  # WHAT IS NO LONGER TRUE, said plainly rather than left in the sentence below.
+  # At 10 this key also sat UNDER the cold tier's
+  # `weeks_1_2.max_posts_per_account_per_day` (14), so a brand-new wire desk was
+  # bounded by its tier and by this key at once. At 20 it is NOT: a desk in its
+  # first five days is allowed 14/day by the ramp and this key would let the wire
+  # alone reach 20. That gap is real, and today it is inert only because every
+  # live desk carries a 30/day override — a NEW wire desk armed tomorrow would
+  # sit in it. The reason it is acceptable rather than a hole is the sentence that
+  # follows: press items ship `scheduled_at: immediate` and an
   # immediate item is EXEMPT from the per-account daily cap downstream (standing
   # operator ruling 2026-07-27, "breaking has no limits"), so the ramp reaches
   # them ONLY where press_lane applies it as a per-desk ceiling.
@@ -2650,7 +3032,7 @@ breaking:
   # step: tests/test_marketing_news_arming.py refuses a marketing.yml value BELOW
   # the press_sources one, because the higher-precedence home silently throttling
   # the lane it was added to widen is the only way this split can hurt.
-  flagship_top_k_per_day: 10
+  flagship_top_k_per_day: 20
 
   # ── WHY THIS NUMBER DID NOT HOLD, AND WHAT DOES NOW (W5) ────────────────────
   # It is a PER-LANE, PER-HOST, CALENDAR-DAY counter kept in press_lane's daemon

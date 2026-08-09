@@ -65,11 +65,23 @@ def _tiny_white_png(width: int = 4, height: int = 4) -> bytes:
 
 
 def _write_logo_cache(root: pathlib.Path, ticker: str, png_bytes: bytes) -> pathlib.Path:
-    """Write a synthetic whitened logo to the cache location."""
+    """Seed BOTH logo cache files (whitened + color) under a tmp root.
+
+    render_earnings_card resolves its hero icon through resolve_color_logo
+    (chart_render.py:3579), which reads <TICKER>_color.png — NOT the whitened
+    file this helper used to be alone in writing. Seeding only the white cache
+    left every caller a cache MISS, and the pre-2026-08-08 resolvers answered a
+    miss by fetching the nvstly CDN: test_logo_embeds_from_cache passed on a
+    live network download of Apple's real icon rather than on the bytes it
+    seeded, and would have failed on any offline runner. Seed both so the
+    cache-only resolvers (tests/conftest.py::_hermetic_logo_resolvers_cache_only)
+    find what the renderer actually asks for. Returns the white path.
+    """
     cache_dir = root / "data" / "marketing" / "logos"
     cache_dir.mkdir(parents=True, exist_ok=True)
     p = cache_dir / f"{ticker.upper()}_white.png"
     p.write_bytes(png_bytes)
+    (cache_dir / f"{ticker.upper()}_color.png").write_bytes(png_bytes)
     return p
 
 

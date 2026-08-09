@@ -15,17 +15,21 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from engine import demand_chain as dc
-from engine import demand_ledger as dl
-from engine.i18n import td, tr
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import demand_chain as dc  # noqa: E402
+from engine import demand_ledger as dl  # noqa: E402
+from engine.i18n import td, tr  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_demand")
 

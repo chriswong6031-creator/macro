@@ -920,8 +920,15 @@ class TestM1EnqueueGateWiring:
         the same post led by that print does not."""
         from engine.marketing.outbox import _rejection_reason
 
+        # `fanout_budgets` pins the LEAD gate at one claimant, the pre-W3
+        # number. W3 (2026-08-08) turned that gate into a per-family budget and
+        # shipped `macro: 4`, so an unpinned single anchor no longer refuses
+        # anything and this test would pass without testing. The subject here is
+        # WHICH KEYS the gate reads (lead only, not the whole body); the budget's
+        # size is pinned in tests/test_marketing_wire_fanout.py.
         ctx = {
             "ids": set(), "day_counts": {}, "recent_texts_by_account": {},
+            "fanout_budgets": {"macro": 1},
             "fact_anchors": {("2026-08-06", "macro:claims:203k"): "ob-older"},
         }
         assert _rejection_reason(
@@ -964,7 +971,11 @@ class TestM1EnqueueGateWiring:
 
         ctx = outbox._enqueue_ctx(tmp_path, "2026-08-06", None)
         anchors = ctx["fact_anchors"]
-        assert anchors.get(("2026-08-06", "macro:gdpnow:5.9pct")) == item["id"]
+        # A LIST of claimants since W3 (the gate spends a per-family budget, and
+        # a scalar owner can only ever answer "taken"). One item in the corpus,
+        # so one claimant — the assertion still says "this item claimed its lead
+        # fact and nothing else".
+        assert anchors.get(("2026-08-06", "macro:gdpnow:5.9pct")) == [item["id"]]
         assert ("2026-08-06", "macro:claims:203k") not in anchors, anchors
 
     def test_a_recital_in_this_batch_does_not_claim_the_anchor(self, tmp_path):
@@ -984,6 +995,12 @@ class TestM1EnqueueGateWiring:
 
         now = datetime(2026, 8, 6, 12, 0, tzinfo=timezone.utc)
         ctx = outbox._enqueue_ctx(tmp_path, "2026-08-06", None)
+        # Pin the LEAD budget at the pre-W3 one claimant. W3 ships `macro: 4`,
+        # under which the third post below queues legitimately and this test
+        # would assert nothing about site 3. What site 3 owns is whether the
+        # in-batch claim is RECORDED at all; the budget's size is somebody
+        # else's test (tests/test_marketing_wire_fanout.py).
+        ctx["fanout_budgets"] = {"macro": 1}
 
         first = outbox.make_item(
             account="sophia", kind="macro", text=NEW_PRINT_MACRO,

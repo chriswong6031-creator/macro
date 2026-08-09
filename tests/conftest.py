@@ -150,6 +150,29 @@ def _redirect_breadth_divergence_stamp(tmp_path_factory):
     mp.undo()
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _redirect_provider_health_ledger(tmp_path_factory):
+    """engine.llm_auth.make_call records one provider_health row per rung
+    ATTEMPT (W2, 2026-08-08), which means every test anywhere in the suite that
+    drives a mocked waterfall appends the repo's real
+    data/ai_costs/provider_health.jsonl as a call-time side effect. Six suites
+    do (test_marketing_copy_v2, test_llm_auth, the copy critic/auditor lanes,
+    the publish-time wire lane), and the repo's own data guard fails the run for
+    it — correctly: a test must never write a production ledger.
+
+    Redirected here rather than by teaching the writer to recognise pytest: the
+    module under test should not carry test-detection, and an env redirect is
+    structurally stronger anyway (it holds for a subprocess a test spawns, which
+    an in-process monkeypatch would not). tests/test_provider_health.py sets its
+    own PROVIDER_HEALTH_PATH per test and is unaffected.
+    """
+    target = tmp_path_factory.mktemp("provider_health") / "provider_health.jsonl"
+    mp = pytest.MonkeyPatch()
+    mp.setenv("PROVIDER_HEALTH_PATH", str(target))
+    yield
+    mp.undo()
+
+
 @pytest.fixture(autouse=True)
 def _neutralize_implicit_account_overrides(monkeypatch):
     """engine.marketing.accounts.load_overrides() reads the repo's REAL
@@ -525,4 +548,54 @@ def _hermetic_marketing_account_overrides(monkeypatch):
         return _real_load_overrides(root)
 
     monkeypatch.setattr(_accounts, "load_overrides", _no_live_operator_state)
+    yield
+
+
+# --------------------------------------------------------------------------- #
+# Card-path logo resolvers are CACHE-ONLY under pytest — no CDN, no repo litter.
+#
+# chart_render.resolve_logo / resolve_color_logo hardcode ``fetch=True`` into
+# logo_cache (chart_render.py:1732,1745), so ANY test that composes a card with
+# a logo_root whose ticker misses the cache fetches the nvstly CDN AT TEST TIME
+# and writes <root>/data/marketing/logos/<TICKER>_{white,color}.png
+# (logo_cache.py:172-173,224-225).
+#
+# 2026-08-08: tests/test_marketing_filing_lanes.py::
+# test_filing_items_take_a_real_d1_ladder_slot deliberately composes a real
+# content plan against the REPO root (it reads the repo's tracked filing /
+# house-pick supply and skips if empty), so every run littered 24 untracked
+# *_color.png into the real tree. That tree is one the nightly lane COMMITS —
+# regime-update commits carry data/marketing/logos/ — so test litter could ride
+# straight into a production data commit. MM_DATA_GUARD catches it only on a
+# FRESH baseline: a warm checkout that already holds the litter is silent by the
+# guard's documented known limitation, which is how this survived. And the
+# litter set is data-dependent (whatever tickers today's tracked supply names),
+# so CI was never stably red on it either.
+#
+# Downgrade both resolvers to cache-only for every test. Seeded tmp-root caches
+# and the tracked repo set still resolve; a miss is None — no network, no write,
+# any root. Tests that exercise the FETCH path call engine.marketing.logo_cache
+# directly with a stubbed ``requests`` (tests/test_watchlist_card.py:448) and
+# never cross this seam, so no opt-out is needed. Per-suite stubs that pin their
+# own resolver return value still win: conftest autouse fixtures instantiate
+# BEFORE module-level ones, and monkeypatch teardown is LIFO.
+#
+# One test was relying on the fetch: test_earnings_card's _write_logo_cache
+# seeded only <TICKER>_white.png while render_earnings_card resolves through
+# resolve_color_logo, so "test_logo_embeds_from_cache" was in fact asserting on
+# a live download of Apple's real icon. Fixed at the seam it belonged to — that
+# helper now seeds both cache files.
+# --------------------------------------------------------------------------- #
+@pytest.fixture(autouse=True)
+def _hermetic_logo_resolvers_cache_only(monkeypatch):
+    try:
+        import engine.marketing.chart_render as _cr
+        from engine.marketing import logo_cache as _lc
+    except Exception:  # noqa: BLE001 — minimal-deps job without engine deps
+        yield
+        return
+    monkeypatch.setattr(_cr, "resolve_logo",
+                        lambda ticker, root: _lc.cached_only(ticker, root))
+    monkeypatch.setattr(_cr, "resolve_color_logo",
+                        lambda ticker, root: _lc.cached_only_color(ticker, root))
     yield
