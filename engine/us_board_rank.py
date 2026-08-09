@@ -202,6 +202,13 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 #     The patience thesis's claim is "these names need time"; the horizons that would
 #     test it carry no US observations at all (the W7 horizon map charters basing at
 #     H=63).
+#   * WINDOW CONFOUND (found 2026-08-09 by the per-cell vintage fields #4988 added):
+#     the buy-lane ``bounce_wait`` cohort spans only 8 board dates, all from
+#     2026-07-17 on, while ``buy_now`` spans all 18 dates from 2026-06-18 — different
+#     tape, not just different maturity.  The Wilson intervals stay disjoint
+#     ([0.470, 0.626] vs [0.298, 0.490]) so the gap survives on its own terms, but the
+#     headline is weaker evidence than its point estimates read.  An ordering the
+#     record cannot cleanly test is a STRONGER case for the flat leg, not a weaker one.
 #
 # So the short ruler refutes the CN ordering in this window, and the RIGHT ruler is
 # unmeasured.  Neither patience-first nor chase-first is defensible as a ranking claim
