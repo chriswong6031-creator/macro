@@ -187,7 +187,7 @@
 ] %}
 {% include "_site_nav.html.j2" %}
 
-<a class="back" href="{{ back_href | default('../sector_central.html#actnow-section') }}">← {{ t(back_label_en | default('Sector Intelligence'), back_label_zh | default('行业智慧')) }}</a>
+<a class="back" href="{{ back_href | default('../sector_central.html#actnow-section') }}">← {{ t(back_label_en | default('Sector Intelligence'), back_label_zh | default('行业情报')) }}</a>
 
 <!-- ── Shock de-escalation banner (FTR W1 / PS-R3, de-escalation only) ── -->
 <!-- Fetched from ../live/shock_state.json (basket detail pages live under site/basket/). -->
@@ -391,7 +391,7 @@ function mtfTapeHtml(th){
     if(cov.coverage_pct!=null) h+=`<div class="muted sm" style="margin-top:7px">${L('Flow coverage','资金流覆盖')}: ${cov.n_with_volume||0}/${cov.n_live||0} ${L('members with volume','成分股有成交量')} (${Math.round(cov.coverage_pct*100)}%)</div>`;
     if(t.danny_caveat) h+=`<div class="disc" style="margin-top:4px">${L(esc(t.danny_caveat.en||''),esc(t.danny_caveat.zh||''))}</div>`;
   }
-  h+=`<div class="disc">${closeOnly?L('MTF uses the region’s equal-weight close series; no synthetic volume, whale or flow signal is created.','多周期采用该地区的等权收盘价序列；不会合成成交量、巨鲸或资金流信号。'):L('MTF gates against the long-term trend; whale and flow are context only.','多周期用于约束长期趋势；巨鲸与资金流仅作背景。')}</div></div>`;
+  h+=`<div class="disc">${closeOnly?L('MTF uses the region’s equal-weight close series; no synthetic volume, whale or flow signal is created.','多周期采用该地区的等权收盘价序列；不会合成成交量、巨鲸或资金流信号。'):L('MTF gates against the long-term trend; whale and flow are context only.','多周期用于约束长期趋势；巨鲸与资金流仅供参考。')}</div></div>`;
   return h;
 }
 
@@ -503,7 +503,7 @@ function render(){
   let h=`<div class="panel hero">
     <div class="lhs">
       <h1>${L(esc(b.name),esc(b.name_zh))}</h1>
-      <div style="margin:6px 0">${b.parent?`<span class="chip">${esc(b.parent)}</span>`:''}${b.category?`<span class="chip">${esc(b.category)}</span>`:''}${tags}</div>
+      <div style="margin:6px 0">${b.parent?`<span class="chip">${L(esc(b.parent),esc(b.parent_zh||b.parent))}</span>`:''}${b.category?`<span class="chip">${L(esc(b.category),esc(b.category_zh||b.category))}</span>`:''}${tags}</div>
       <div class="thesis">${L(esc(briefText(b.thesis)),esc(briefText(b.thesis)))}</div>
     </div>
     <div>
@@ -549,7 +549,7 @@ function render(){
   if(fastWatch.length){
     h+=`<div class="fast-watch">
       <div class="fast-watch-title">${L('Fast-turn watch — not a buy','快速转折观察 — 不是买入')}</div>
-      <div class="muted sm" style="margin-bottom:7px">${L('Fresh T1/T2 confluence is visible here instead of being silently lost. The blocker column explains why the slow cycle or entry gate still withholds a buy.','新的 T1/T2 共振会在此显示，不再被静默隐藏。“阻断原因”说明慢周期或入场门槛为何仍未给出买入。')}</div>
+      <div class="muted sm" style="margin-bottom:7px">${L('A fresh T1/T2 signal shows up here instead of being quietly dropped. The blocker column says why it is still not a buy.','新出现的 T1/T2 信号会显示在这里，不会被悄悄丢掉。“阻断原因”一列说明它为什么还算不上买点。')}</div>
       <div class="ts"><table class="watch-table"><thead><tr>
         <th>${L('Stock','个股')}</th><th>${L('Turn','转折')}</th><th class="num">${L('Potential','潜力')}</th>
         <th class="watch-blocker">${L('Why blocked','阻断原因')}</th><th class="num">${L('5d','5日')}</th><th class="num watch-20d">${L('20d','20日')}</th>
@@ -641,14 +641,14 @@ function render(){
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
     // stage-name vocabulary v2 (W8-R4 #2099); wording mirrors _sig_badge.html.j2, popover via theme.js.
-    const tipEn={T1:'T1 CONFIRMED: master 3D confluence confirmed — 3D MACD-RSI × 3D StochRSI cross, buy-filter endorsed.',
+    const tipEn={T1:'T1 CONFIRMED: the main entry signal has fired and passed our buy filter.',
       T2:'T2 PRIME: 2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise).',
-      T3:'T3 APPROACHING: 3D StochRSI already crossed and the 2D MACD-RSI cross is projected within ~1–2 days — an early prediction, not yet confirmed (provisional, may repaint).',
-      T4:'T4 FIRST SPARK: earliest read — 2D StochRSI crossed + 2D MACD projected, above the 200-day MA. Lowest confidence.'}[s.tier]||'';
-    const tipZh={T1:'T1 CONFIRMED（确认）：主层3日共振已确认——3日MACD-RSI×3日StochRSI交叉，买入过滤器已背书。',
+      T3:'T3 APPROACHING: expected to fire within a day or two — an early call, not yet confirmed (provisional, may change).',
+      T4:'T4 FIRST SPARK: the earliest read we publish, and the least certain.'}[s.tier]||'';
+    const tipZh={T1:'T1 CONFIRMED（已确认）：主入场信号已经触发，并通过了买入过滤。',
       T2:'T2 PRIME（最佳入场）：2日交叉叠加3日支撑——历史上于20日低点以上中位溢价低于CONFIRMED成交（实测数据，非前瞻承诺）。',
-      T3:'T3 APPROACHING（临近）：3日StochRSI已上穿，2日MACD-RSI预计在约1–2日内交叉——提前预判，尚未确认（暂定，可能重绘）。',
-      T4:'T4 FIRST SPARK（初现）：最早读数——2日StochRSI已上穿、2日MACD预投影且在200日均线上方。置信度最低。'}[s.tier]||'';
+      T3:'T3 APPROACHING（临近）：预计一两天内触发——属于提前判断，还没确认（暂定，可能会变）。',
+      T4:'T4 FIRST SPARK（初现）：我们会公布的最早读数，也是最不确定的一个。'}[s.tier]||'';
     return ` <span class="tier ${s.tier}" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
   const sortMembers=(items)=>{
     // default 'recommend' order: fresh-confluence names first (T1>T2>T3>T4), then the
@@ -732,7 +732,7 @@ function render(){
       <td class="num hold-20d ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
     </tr>`;}).join('');
   const nBoard=mem.filter(m=>m.on_board).length;
-  h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US Prophet buy board">★ ${nBoard} ${L('on Prophet board','在先知榜')}</span>`:''}</h2>
+  h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US Prophet buy board">★ ${nBoard} ${L('on Prophet board','在 Prophet 榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
     <colgroup><col class="hold-stock"><col class="hold-potential"><col class="hold-verdict"><col class="hold-entry"><col class="hold-20d"></colgroup>
     <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Potential is buy-readiness, not signal speed: slow-cycle state, room to run, survivability and entry timing. A fresh T1/T2 can coexist with a low score.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>

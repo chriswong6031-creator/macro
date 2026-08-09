@@ -15,7 +15,13 @@ FENCES (enforced, not aspirational):
 
 SCHEMA (binding, from masterplan §5):
   events.jsonl fields:
-    ts, source, kind, title, url, sectors, phrase_diff_ref, _hash
+    ts, source, kind, title, title_zh, url, sectors, phrase_diff_ref, _hash
+
+  ``title_zh`` is the Chinese twin of ``title`` (the page renders the pair as
+  l-en/l-zh spans).  It is NOT part of the dedup key — ``_hash`` still hashes
+  (ts|source|kind|title) only, so adding it re-appends nothing to the
+  append-only ledger and pre-existing rows without it stay valid: the UI falls
+  back to ``title`` when ``title_zh`` is absent.
 
   policy_transmission.json fields:
     policy_impulse, transmission_channel, recent_events,
@@ -304,11 +310,13 @@ def _seed_rrr_events() -> list[dict]:
             ts = str(idx.date()) if hasattr(idx, "date") else str(idx)[:10]
             cut = val < 0
             title = f"RRR {'cut' if cut else 'hike'} {abs(val):.2f}pp"
+            title_zh = f"{'降准' if cut else '上调存准率'} {abs(val):.2f}个百分点"
             events.append({
                 "ts": ts,
                 "source": "pboc",
                 "kind": "rrr",
                 "title": title,
+                "title_zh": title_zh,
                 "url": None,
                 "sectors": [],
                 "phrase_diff_ref": None,
@@ -335,11 +343,13 @@ def _seed_lpr_events() -> list[dict]:
             cut = val < 0
             bp = int(round(abs(val) * 100))
             title = f"1Y LPR {'cut' if cut else 'hike'} {bp}bp"
+            title_zh = f"1年期LPR{'下调' if cut else '上调'} {bp}个基点"
             events.append({
                 "ts": ts,
                 "source": "pboc",
                 "kind": "lpr",
                 "title": title,
+                "title_zh": title_zh,
                 "url": None,
                 "sectors": [],
                 "phrase_diff_ref": None,
@@ -381,12 +391,17 @@ def _seed_omo_mlf_events(z_threshold: float = 1.5) -> list[dict]:
             prev_date = d
             ts = str(d)
             direction = "injection" if zval < 0 else "drain"
+            # Indicator code and z-score are language-neutral and stay verbatim;
+            # only the direction word is translated (投放 = injection, 回笼 = drain).
+            direction_zh = "投放" if zval < 0 else "回笼"
             title = f"FR007 z={zval:.2f} ({direction})"
+            title_zh = f"FR007 z={zval:.2f}（{direction_zh}）"
             events.append({
                 "ts": ts,
                 "source": "pboc",
                 "kind": "omo_mlf",
                 "title": title,
+                "title_zh": title_zh,
                 "url": None,
                 "sectors": [],
                 "phrase_diff_ref": None,
@@ -421,11 +436,16 @@ def _seed_communique_events() -> list[dict]:
             doc_id = str(getattr(row, "doc_id", ""))
             body = str(getattr(row, "body", ""))
             sectors = _tag_sectors(body + " " + title)
+            # Communiqué headlines are the official Chinese wording as published
+            # (中共中央政治局召开会议…), so the source title IS the zh title. Carry
+            # it into title_zh anyway so every seeded row has the field and the
+            # UI never has to branch on which seeder produced the row.
             events.append({
                 "ts": ts,
                 "source": source,
                 "kind": "rhetoric",
                 "title": title,
+                "title_zh": title,
                 "url": str(getattr(row, "url", "") or ""),
                 "sectors": sectors,
                 "phrase_diff_ref": doc_id or None,

@@ -14,13 +14,17 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
-from scripts import build_government_revenue
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts import build_government_revenue  # noqa: E402
 
 
-_ROOT = Path(__file__).resolve().parents[1]
 _RAW_HTML_BUDGET_BYTES = build_government_revenue.RAW_HTML_BUDGET_BYTES
 _BUNDLE_RE = re.compile(r"grw2-[a-f0-9]{24}")
 _SHELL_RE = re.compile(
