@@ -6,7 +6,7 @@ Coverage:
   3.  Geometry (BEAR): T1 below entry, T2 further below.
   4.  Geometry: R=0 guard (invalidation == entry → None values).
   5.  Geometry: ATR fallback when no price history available.
-  6.  ID stability: same ticker/direction/signal_date always produces same ID.
+  6.  ID stability: same ticker/direction/formation_date always produces same ID.
   7.  Duplicate suppression: plan already in existing_ids is not re-originated.
   8.  Candidate selection gate_go=True: requires act_level >= 2.
   9.  Candidate selection gate_go=False: OR logic (act_level>=2 OR score>=60).
@@ -28,7 +28,7 @@ Coverage:
   25. Index.json schema has required top-level keys.
   26. Index note does NOT contain the word "validated".
   27. build_prophet main: runs end-to-end on synthetic data without crash.
-  28. originate_plans: ≤ N_CANDIDATES plans produced.
+  28. originate_plans: every admitted survivor is produced (no positional cap).
   29. _third_friday: always returns a Friday.
   30. _next_monthly_expiry: always >= min_date.
   31. R0.7 _load_macro_stance: verdict→stance mapping, PIT + staleness guards.
@@ -58,6 +58,7 @@ from engine.prophet_bridge import (
     N_CANDIDATES,
     compute_geometry,
     originate_plans,
+    plan_clock_date,
     resolve_option,
     select_candidates,
     _make_id,
@@ -119,6 +120,13 @@ def _make_standouts(
         buys = [_make_buy("AAPL", score=70, act_level=3, spot=150.0)]
     return {
         "as_of": "2026-07-02",
+        "staleness": {
+            "price_through": "2026-07-02",
+            "delayed": False,
+            "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
         "gate_go": gate_go,
         "buy": buys,
     }
@@ -271,7 +279,7 @@ def test_geometry_atr_only_fallback():
 # ---------------------------------------------------------------------------
 
 def test_id_stability():
-    """Same ticker/direction/signal_date always produces the same ID."""
+    """Same ticker/direction/formation_date always produces the same ID."""
     id1 = _make_id("BA", "BULL", "2026-07-02")
     id2 = _make_id("BA", "BULL", "2026-07-02")
     assert id1 == id2
@@ -279,7 +287,7 @@ def test_id_stability():
 
 
 def test_id_differs_by_date():
-    """Different signal dates produce different IDs."""
+    """Different formation dates produce different IDs."""
     id1 = _make_id("BA", "BULL", "2026-07-01")
     id2 = _make_id("BA", "BULL", "2026-07-02")
     assert id1 != id2
@@ -300,6 +308,330 @@ def test_duplicate_suppression(tmp_path):
         thetadata_store=None,
     )
     assert plans == []
+
+
+def test_weekend_recovery_keeps_publication_and_price_clocks_separate(tmp_path):
+    """Saturday is a valid run date, never a valid substitute for Friday's close."""
+    standouts = _make_standouts(
+        gate_go=False,
+        buys=[_make_buy(
+            "AAPL", score=70, act_level=3, spot=150.0, anchor="2026-06-15"
+        )],
+    )
+    standouts["as_of"] = "2026-08-07"  # Friday NYSE session
+    standouts["staleness"]["price_through"] = "2026-08-07"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+
+    plans = originate_plans(
+        standouts_path=path,
+        asof="2026-08-08",  # Saturday recovery/publication run
+        existing_ids=set(),
+        thetadata_store=None,
+    )
+
+    assert len(plans) == 1
+    plan = plans[0]
+    assert plan["id"] == "AAPL-BULL-20260615"  # no key migration
+    assert plan["formation_date"] == plan["signal_date"] == "2026-06-15"
+    assert plan["price_basis_date"] == plan["entry_date"] == "2026-08-07"
+    assert plan["asof"] == plan["recorded_at"] == "2026-08-08"
+    assert plan_clock_date(plan) == "2026-08-07"
+
+
+def test_tier_native_signal_dates_do_not_rekey_plan_identity(tmp_path):
+    """T2 uses its own event close while the immutable ID keeps the formation anchor."""
+    buy = _make_buy(
+        "NVDA", score=80, act_level=3, spot=223.96, anchor="2026-08-05"
+    )
+    buy["signal"] = {
+        "tier_cascade": "T2",
+        "tier_event_date": "2026-08-05",
+        "tier_observed_date": "2026-08-07",
+        "tier_observation_provisional": False,
+        # This unrelated blocked marker must never become T2 confirmation.
+        "last": {
+            "date": "2026-08-05",
+            "signal_date": "2026-08-07",
+            "confirmed_date": "2026-08-07",
+            "type": "buy",
+            "quality": "block",
+        },
+    }
+    standouts = _make_standouts(gate_go=False, buys=[buy])
+    standouts["as_of"] = "2026-08-07"
+    standouts["staleness"]["price_through"] = "2026-08-07"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+
+    [plan] = originate_plans(path, "2026-08-08", set(), None)
+
+    assert plan["id"] == "NVDA-BULL-20260805"
+    assert plan["formation_date"] == "2026-08-05"
+    assert plan["signal_tier"] == "T2"
+    assert plan["signal_date"] == "2026-08-05"
+    assert plan["confirmed_date"] is None
+    assert plan["observed_date"] == "2026-08-07"
+    assert plan["price_basis_date"] == plan["entry_date"] == "2026-08-07"
+    assert plan["recorded_at"] == "2026-08-08"
+    assert plan["signal_date_basis"] == "tier_event_date"
+    assert plan["source_marker_date"] == "2026-08-05"
+
+
+def test_pre_date_contract_tier_row_uses_disclosed_legacy_alias(tmp_path):
+    """Rolling deploys can consume the prior compact board without guessing tier dates."""
+    buy = _make_buy("OLD", score=80, act_level=3, anchor="2026-07-02")
+    buy["signal"]["tier_cascade"] = "T2"  # old shape: no tier_* date keys
+    buy["signal"]["last"] = {"date": "2026-07-02"}
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(_make_standouts(buys=[buy])), encoding="utf-8")
+
+    [plan] = originate_plans(path, "2026-07-02", set(), None)
+
+    assert plan["signal_date"] == plan["formation_date"] == "2026-07-02"
+    assert plan["signal_date_basis"] == "legacy_formation_alias"
+    assert plan["signal_tier"] == "T2"
+    assert plan["source_marker_date"] == "2026-07-02"
+
+
+def test_projected_t3_records_observation_without_inventing_event(
+    tmp_path, monkeypatch
+):
+    import engine.prophet_bridge as pb
+
+    tilt_clock = {}
+    monkeypatch.setattr(pb, "_load_stage_tilt_inputs", lambda: {"fixture": True})
+
+    def fake_tilt(*, ticker, entry_date, tilt_inputs):
+        tilt_clock.update(ticker=ticker, entry_date=entry_date)
+        return pb.HORIZON_DAYS_DEFAULT, {"leash": 1.0, "eligible": False}
+
+    monkeypatch.setattr(pb, "_compute_stage_tilt", fake_tilt)
+    buy = _make_buy("FORM", score=80, act_level=3, anchor="2026-07-20")
+    buy["signal"] = {
+        "tier_cascade": "T3",
+        "tier_event_date": None,
+        "tier_observed_date": "2026-08-07",
+        "tier_observation_provisional": True,
+        "last": None,
+    }
+    standouts = _make_standouts(gate_go=False, buys=[buy])
+    standouts["as_of"] = "2026-08-07"
+    standouts["staleness"]["price_through"] = "2026-08-07"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+
+    [plan] = originate_plans(path, "2026-08-08", set(), None)
+
+    assert plan["id"] == "FORM-BULL-20260720"
+    assert plan["signal_tier"] == "T3"
+    assert plan["signal_date"] is None
+    assert plan["confirmed_date"] is None
+    assert plan["observed_date"] == "2026-08-07"
+    assert plan["signal_provisional"] is True
+    assert plan["signal_date_basis"] == "tier_observation"
+    # Stage/earnings PIT context is measured at the entry-price session. T3 has no
+    # fired signal_date, and neither its formation nor observation is a fill clock.
+    assert tilt_clock == {"ticker": "FORM", "entry_date": "2026-08-07"}
+
+
+def test_t1_confirmation_is_copied_only_from_same_marker_event(tmp_path):
+    buy = _make_buy("TAKE", score=80, act_level=3, anchor="2026-08-03")
+    buy["signal"] = {
+        "tier_cascade": "T1",
+        "tier_event_date": "2026-08-03",
+        "tier_observed_date": "2026-08-07",
+        "tier_observation_provisional": False,
+        "last": {
+            "date": "2026-08-03",
+            "signal_date": "2026-08-03",
+            "confirmed_date": "2026-08-05",
+            "type": "buy",
+            "quality": "take",
+        },
+    }
+    standouts = _make_standouts(gate_go=False, buys=[buy])
+    standouts["as_of"] = "2026-08-07"
+    standouts["staleness"]["price_through"] = "2026-08-07"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+
+    [plan] = originate_plans(path, "2026-08-08", set(), None)
+
+    assert plan["signal_date"] == "2026-08-03"
+    assert plan["confirmed_date"] == "2026-08-05"
+    assert plan["signal_provisional"] is False
+
+
+def test_explicit_price_basis_precedes_legacy_clock_fields():
+    """Future consumers cannot regress to a weekend entry_date/asof when basis exists."""
+    assert plan_clock_date({
+        "price_basis_date": "2026-08-07",
+        "entry_date": "2026-08-08",
+        "asof": "2026-08-08",
+        "signal_date": "2026-06-15",
+    }) == "2026-08-07"
+
+
+@pytest.mark.parametrize("bad_basis", [
+    "2026-08-08",  # Saturday
+    "2026-07-03",  # observed Independence Day closure
+])
+def test_non_session_price_basis_fails_closed_and_is_disclosed(tmp_path, bad_basis):
+    standouts = _make_standouts(
+        gate_go=False,
+        buys=[_make_buy("AAPL", score=70, act_level=3, spot=150.0)],
+    )
+    standouts["as_of"] = bad_basis
+    standouts["staleness"]["price_through"] = bad_basis
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    plans = originate_plans(
+        standouts_path=path,
+        asof="2026-08-08",
+        existing_ids=set(),
+        thetadata_store=None,
+        intake_stats=stats,
+    )
+
+    assert plans == []
+    assert stats["eligible_after_skips"] == 1
+    assert stats["validation_failed"] == 1
+    assert stats["originated"] == 0
+    assert stats["truncated"] == 0
+    assert stats["lossless"] is True  # no silent disappearance; failure is itemised
+    failure = stats["validation_failures"][0]
+    assert failure["ticker"] == "AAPL"
+    assert failure["stage"] == "clock_provenance"
+    assert any("not an NYSE session" in error for error in failure["errors"])
+
+
+def test_future_price_basis_is_never_backdated_or_published(tmp_path):
+    standouts = _make_standouts(
+        gate_go=False,
+        buys=[_make_buy("AAPL", score=70, act_level=3, spot=150.0)],
+    )
+    standouts["as_of"] = "2026-08-10"
+    standouts["staleness"]["price_through"] = "2026-08-10"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    assert originate_plans(
+        path, "2026-08-08", set(), None, intake_stats=stats
+    ) == []
+    assert any(
+        "postdates recorded_at" in error
+        for error in stats["validation_failures"][0]["errors"]
+    )
+
+
+def test_stale_or_mixed_board_is_refused_instead_of_restamped(tmp_path):
+    standouts = _make_standouts(
+        gate_go=False,
+        buys=[_make_buy("AAPL", score=70, act_level=3, spot=150.0)],
+    )
+    # The wrapper advances, but the ranked cross-section is uniformly frozen.  A
+    # mixed-vintage-only guard would miss this exact outage shape.
+    standouts["as_of"] = "2026-08-03"
+    standouts["staleness"]["price_through"] = "2026-07-31"
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    assert originate_plans(
+        path, "2026-08-03", set(), None, intake_stats=stats
+    ) == []
+    assert any(
+        "stale boards cannot originate plans" in error
+        for error in stats["validation_failures"][0]["errors"]
+    )
+
+    standouts["staleness"] = {
+        "price_through": "2026-08-03",
+        "delayed": False,
+        "unknown": False,
+        "basis": "panel_majority",
+        "inputs": {"panel": {"mixed_vintage": True}},
+    }
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats = {}
+    assert originate_plans(
+        path, "2026-08-03", set(), None, intake_stats=stats
+    ) == []
+    assert any(
+        "mixed-vintage boards cannot originate plans" in error
+        for error in stats["validation_failures"][0]["errors"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("delayed", "unknown", "needle"),
+    [
+        (True, False, "staleness.delayed"),
+        (False, True, "staleness.unknown"),
+        (None, None, "staleness.unknown"),
+    ],
+)
+def test_ranked_price_staleness_metadata_fails_closed(
+    tmp_path, delayed, unknown, needle
+):
+    standouts = _make_standouts()
+    standouts["staleness"]["delayed"] = delayed
+    standouts["staleness"]["unknown"] = unknown
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    assert originate_plans(
+        path, "2026-07-02", set(), None, intake_stats=stats
+    ) == []
+    assert any(
+        needle in error for error in stats["validation_failures"][0]["errors"]
+    )
+
+
+@pytest.mark.parametrize("basis", [None, "board_asof", "unknown"])
+def test_wrapper_only_price_authority_cannot_originate(tmp_path, basis):
+    standouts = _make_standouts()
+    if basis is None:
+        standouts["staleness"].pop("basis")
+    else:
+        standouts["staleness"]["basis"] = basis
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    assert originate_plans(
+        path, "2026-07-02", set(), None, intake_stats=stats
+    ) == []
+    assert any(
+        "staleness.basis must be 'panel_majority'" in error
+        for error in stats["validation_failures"][0]["errors"]
+    )
+
+
+def test_invalid_candidate_is_itemised_while_every_valid_survivor_originates(tmp_path):
+    bad = _make_buy("BAD", score=70, act_level=3, spot=150.0)
+    bad["entry_signal"]["spot"] = None
+    good = _make_buy("GOOD", score=69, act_level=3, spot=120.0)
+    standouts = _make_standouts(gate_go=False, buys=[bad, good])
+    path = tmp_path / "us_standouts.json"
+    path.write_text(json.dumps(standouts), encoding="utf-8")
+    stats: dict[str, Any] = {}
+
+    plans = originate_plans(
+        path, "2026-07-02", set(), None, intake_stats=stats
+    )
+
+    assert [plan["asset"] for plan in plans] == ["GOOD"]
+    assert stats["eligible_after_skips"] == 2
+    assert stats["validation_failed"] == 1
+    assert stats["originated"] == 1
+    assert stats["unaccounted"] == 0
+    assert stats["all_survivors_originated"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -371,6 +703,20 @@ def test_selection_bear_direction_excluded():
     tickers = [b["ticker"] for b in result]
     assert "BEARSTOCK" not in tickers
     assert "BULLSTOCK" in tickers
+
+
+def test_selection_t4_remains_visible_but_is_not_actionable():
+    """A high-score T4 cannot bypass the canonical T1-T3 buyable-tier fence."""
+    t4 = _make_buy("TOO_EARLY", score=99, act_level=3)
+    t4["signal"]["tier_cascade"] = "T4"
+    t3 = _make_buy("FORMING", score=70, act_level=3)
+    t3["signal"]["tier_cascade"] = "T3"
+    result = select_candidates({
+        "gate_go": True,
+        "buy": [t4, t3],
+        "as_of": "2026-07-02",
+    })
+    assert [row["ticker"] for row in result] == ["FORMING"]
 
 
 def test_selection_sorted_score_desc():
@@ -728,6 +1074,12 @@ def test_index_json_has_required_keys(tmp_path):
         idx = json.loads(bp.INDEX_PATH.read_text())
         for key in ["schema", "asof", "cadence", "authority_tier", "plan_count", "plans"]:
             assert key in idx, f"Missing key in index.json: {key}"
+        assert idx["source_asof"] == "2026-07-02"
+        assert idx["source_board_asof"] == "2026-07-02"
+        assert idx["source_delayed"] is False
+        assert idx["source_unknown"] is False
+        assert idx["source_basis"] == "panel_majority"
+        assert idx["source_mixed_vintage"] is False
     finally:
         bp.STANDOUTS_PATH = orig_standouts
         bp.SITE_PROPHET = orig_site
@@ -737,6 +1089,93 @@ def test_index_json_has_required_keys(tmp_path):
         bp.LEDGER_PATH = orig_ledger_path
         bp.LEDGER_DIR = orig_ledger_dir
         bp.write_showcase = orig_write_showcase
+
+
+def test_effective_index_excludes_both_plan_and_ledger_quarantines():
+    """A late terminal quarantine cannot persist through the prebuilt index list."""
+    import scripts.build_prophet as bp  # noqa: PLC0415
+
+    rows = [{"id": "PLAN-Q"}, {"id": "LEDGER-Q"}, {"id": "SAFE"}]
+    assert bp._effective_index_entries(rows, {"PLAN-Q", "LEDGER-Q"}) == [
+        {"id": "SAFE"}
+    ]
+
+
+def test_originated_plan_without_history_stays_discoverable(tmp_path, monkeypatch):
+    """Lossless intake includes a degraded row when management history is absent."""
+    import scripts.build_prophet as bp  # noqa: PLC0415
+
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(_make_standouts(
+        gate_go=False,
+        buys=[_make_buy("NODATA", score=75, act_level=3, spot=42.0)],
+    )), encoding="utf-8")
+    site_prophet = tmp_path / "site" / "prophet"
+    ledger_dir = tmp_path / "data" / "prophet"
+    monkeypatch.setattr(bp, "STANDOUTS_PATH", standouts_path)
+    monkeypatch.setattr(bp, "SITE_PROPHET", site_prophet)
+    monkeypatch.setattr(bp, "PLANS_DIR", site_prophet / "plans")
+    monkeypatch.setattr(bp, "STATES_DIR", site_prophet / "states")
+    monkeypatch.setattr(bp, "INDEX_PATH", site_prophet / "index.json")
+    monkeypatch.setattr(bp, "LEDGER_DIR", ledger_dir)
+    monkeypatch.setattr(bp, "LEDGER_PATH", ledger_dir / "ledger.jsonl")
+    monkeypatch.setattr(bp, "QUARANTINE_PATH", ledger_dir / "ledger_quarantine.json")
+    monkeypatch.setattr(bp, "write_showcase", lambda: None)
+    monkeypatch.setattr(bp, "_load_price_history_for_management", lambda _ticker: None)
+
+    with patch("engine.prophet_arena.run_arena", return_value={
+        "policies": [], "harness_validity": {"harness_ok": True},
+    }):
+        with patch.object(sys, "argv", ["build_prophet", "--date", "2026-07-02"]):
+            bp.main()
+
+    index = json.loads((site_prophet / "index.json").read_text(encoding="utf-8"))
+    assert index["intake"]["originated"] == 1
+    assert index["intake"]["lossless"] is True
+    assert index["active_count"] == 1
+    [row] = index["plans"]
+    assert row["id"] == "NODATA-BULL-20260702"
+    assert row["management_status"] == "unavailable"
+    assert row["management_error"] == "price_history_unavailable"
+    assert (site_prophet / "plans" / f"{row['id']}.json").exists()
+
+
+@pytest.mark.parametrize("failure_point", ["advance_ledger", "write_quarantine"])
+def test_authoritative_ledger_failure_withholds_index(
+    tmp_path, monkeypatch, failure_point
+):
+    """Neither a split ledger nor a missing exclusion receipt may be published."""
+    import scripts.build_prophet as bp  # noqa: PLC0415
+
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(_make_standouts(
+        gate_go=False,
+        buys=[_make_buy("FAIL", score=75, act_level=3, spot=42.0)],
+    )), encoding="utf-8")
+    site_prophet = tmp_path / "site" / "prophet"
+    ledger_dir = tmp_path / "data" / "prophet"
+    monkeypatch.setattr(bp, "STANDOUTS_PATH", standouts_path)
+    monkeypatch.setattr(bp, "SITE_PROPHET", site_prophet)
+    monkeypatch.setattr(bp, "PLANS_DIR", site_prophet / "plans")
+    monkeypatch.setattr(bp, "STATES_DIR", site_prophet / "states")
+    monkeypatch.setattr(bp, "INDEX_PATH", site_prophet / "index.json")
+    monkeypatch.setattr(bp, "LEDGER_DIR", ledger_dir)
+    monkeypatch.setattr(bp, "LEDGER_PATH", ledger_dir / "ledger.jsonl")
+    monkeypatch.setattr(bp, "write_showcase", lambda: None)
+    monkeypatch.setattr(bp, "_load_price_history_for_management", lambda _ticker: None)
+
+    def fail(*_args, **_kwargs):
+        raise RuntimeError(f"forced {failure_point} failure")
+
+    monkeypatch.setattr(bp, failure_point, fail)
+    with patch("engine.prophet_arena.run_arena", return_value={
+        "policies": [], "harness_validity": {"harness_ok": True},
+    }):
+        with patch.object(sys, "argv", ["build_prophet", "--date", "2026-07-02"]):
+            with pytest.raises(RuntimeError, match=failure_point):
+                bp.main()
+
+    assert not (site_prophet / "index.json").exists()
 
 
 def test_index_note_no_validated_word(tmp_path):
@@ -825,24 +1264,43 @@ def test_end_to_end_smoke(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 28. N_CANDIDATES cap
+# 28. Lossless live origination (the direct-selection helper may still be sliced)
 # ---------------------------------------------------------------------------
 
-def test_originate_plans_respects_n_candidates(tmp_path):
-    """originate_plans produces at most N_CANDIDATES plans."""
+def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
+    """The legacy 12-row helper slice is not an opportunity gate on live plans."""
     buys = [_make_buy(f"TICK{i}", score=80 - i, act_level=3, spot=100.0 + i)
             for i in range(N_CANDIDATES + 4)]
     standouts = _make_standouts(gate_go=True, buys=buys)
     standouts_path = tmp_path / "us_standouts.json"
     standouts_path.write_text(json.dumps(standouts))
 
+    stats: dict[str, Any] = {}
     plans = originate_plans(
         standouts_path=standouts_path,
         asof="2026-07-02",
         existing_ids=set(),
         thetadata_store=None,
+        intake_stats=stats,
     )
-    assert len(plans) <= N_CANDIDATES
+    assert len(plans) == len(buys) == N_CANDIDATES + 4
+    assert stats == {
+        "mode": "lossless",
+        "reorigination_blocked": 0,
+        "reorigination_blocked_keys": [],
+        "admitted": len(buys),
+        "duplicate_id_blocked": 0,
+        "eligible_after_skips": len(buys),
+        "cap": None,
+        "cap_applied": False,
+        "truncated": 0,
+        "validation_failed": 0,
+        "validation_failures": [],
+        "originated": len(buys),
+        "unaccounted": 0,
+        "lossless": True,
+        "all_survivors_originated": True,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -974,7 +1432,7 @@ def test_originate_plans_includes_content_blocks(tmp_path):
 
     plans = originate_plans(
         standouts_path=standouts_path,
-        asof="2026-07-07",
+        asof="2026-07-02",
         existing_ids=set(),
         thetadata_store=None,
     )
@@ -1181,6 +1639,33 @@ class TestLedgerAdvancement:
         assert rows[0]["outcome"] == "INVALIDATED"
         assert rows[0]["stock_result_pct"] is not None
         assert rows[0]["stock_result_pct"] < 0  # loss
+
+    def test_new_close_row_carries_explicit_plan_clocks_without_rekeying(self, tmp_path):
+        plan = _make_plan(
+            plan_id="AAPL-BULL-20260615",
+            signal_date="2026-06-15",
+            entry=100.0,
+            invalidation=90.0,
+        )
+        plan.update({
+            "formation_date": "2026-06-15",
+            "price_basis_date": "2026-08-07",
+            "entry_date": "2026-08-07",
+            "recorded_at": "2026-08-08",
+            "asof": "2026-08-08",
+        })
+        ph = _price_history_from_closes([88.0], start="2026-08-10")
+
+        rows = self._run_advance(
+            tmp_path, {plan["id"]: plan}, {"AAPL": ph}, "2026-09-01"
+        )
+
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["id"] == "AAPL-BULL-20260615"
+        assert row["formation_date"] == row["signal_date"] == "2026-06-15"
+        assert row["price_basis_date"] == row["entry_date"] == "2026-08-07"
+        assert row["recorded_at"] == "2026-08-08"
 
     def test_t1_hit(self, tmp_path):
         """Plan closes T1_HIT when price reaches T1 before invalidation or horizon."""
@@ -1422,3 +1907,20 @@ def test_index_entries_carry_last_price_and_state(tmp_path):
         bp.LEDGER_PATH = orig_ledger_path
         bp.LEDGER_DIR = orig_ledger_dir
         bp.write_showcase = orig_write_showcase
+
+
+def test_direct_builder_publish_is_disabled_before_any_r2_call(monkeypatch):
+    """Only an accepted Git checkpoint may advance the canonical R2 object."""
+    import scripts.build_prophet as bp  # noqa: PLC0415
+    import sys as _sys  # noqa: PLC0415
+
+    touched = {"r2": False}
+    monkeypatch.setattr(
+        bp, "_r2_client",
+        lambda: touched.__setitem__("r2", True),
+    )
+    with patch.object(_sys, "argv", ["build_prophet", "--publish"]):
+        with pytest.raises(SystemExit) as exc:
+            bp.main()
+    assert exc.value.code == 2
+    assert touched["r2"] is False

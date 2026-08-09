@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-08-08",
+  "as_of": "2026-08-09",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -1691,13 +1691,13 @@
   "pipeline": {
     "opportunities": {
       "open": 162,
-      "scored": 276,
+      "scored": 265,
       "newest": [
         {
           "id": "radar-earnings-AAON-2026-08-08",
           "problem_or_desire": "$AAON: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.307012,
+          "score": 0.234814,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-earnings-ABSI-2026-08-08",
           "problem_or_desire": "$ABSI: earnings 2026-08-11 after hours",
           "expected_value": 0.5,
-          "score": 0.307012,
+          "score": 0.234814,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-earnings-ACHR-2026-08-08",
           "problem_or_desire": "$ACHR: earnings 2026-08-10 after hours",
           "expected_value": 0.5,
-          "score": 0.307012,
+          "score": 0.234814,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 16,
+    "total_posts": 14,
     "signal_posts": 2,
-    "charts": 105,
+    "charts": 97,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-08-08"
+    "as_of": "2026-08-09"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-08T16:53:14Z",
-  "inputs_hash": "sha256:80bb702d58e55e405f66bfdcf92e8199f7fa14a1112ee76b6d2b21f2fe3ee61d",
+  "produced_at": "2026-08-09T02:10:12Z",
+  "inputs_hash": "sha256:3b756caa54fe8c13e3f8f80fa4929a89a5998c04a1b8e44caffe50712a993345",
   "tier": "display"
 }

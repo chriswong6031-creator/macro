@@ -1,9 +1,9 @@
 # Prophet Arena — policy registration
 
 **Status:** registered, accruing. **Tier:** display / shadow. **Authority:** none.
-**Engine:** `engine/prophet_arena.py` · **Tests:** `tests/test_prophet_arena.py`
-**Ledgers:** `data/prophet_arena/<policy>.jsonl` · **Scoreboard:** `data/prophet_arena/scoreboard.json`, `site/stockdata/prophet_arena.json`
-**Registered:** 2026-08-06 (ledgers start empty on this date; there is no backfill).
+**Engine:** `engine/prophet_arena.py` · **Tests:** `tests/test_prophet_arena*.py`
+**Active ledgers:** `data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl` · **Scoreboard:** `data/prophet_arena/scoreboard.json`, `site/stockdata/prophet_arena.json`
+**Registered:** 2026-08-06. **Temporal v2 boundary:** 2026-08-08; v2 starts empty and has no backfill. The top-level v1 ledgers are sealed audit evidence and are excluded from every active grade and summary.
 
 ---
 
@@ -60,17 +60,17 @@ with the line each one mirrors:
 | # | Convention | Champion line |
 |---|---|---|
 | 1 | **Close-based, never touch-based.** An intraday spike through T1 that closes below it does not close the plan. | L519 ("conservative (may miss intraday crosses)") |
-| 2 | **Strictly after `signal_date`** — the signal day's own close is excluded. | L541 |
+| 2 | **Strictly after `price_basis_date`** — the close whose price became `entry` is excluded. `signal_date` remains causal event provenance, not the grading clock. | live `plan_clock_date` |
 | 3 | **Same-day precedence is worst-case-first**: invalidation → T2 → T1. A bar both below invalidation and above T2 records INVALIDATED. | L566-581 |
 | 4 | **First-trigger-closes.** T1 then later T2 is recorded T1_HIT forever. | L502-506 |
-| 5 | **Expiry checked last within the bar, on CALENDAR days**: `(ts - sig_ts).days >= horizon_days`. Not sessions. | L599 |
-| 6 | `stock_result_pct = (close_price / entry - 1) * 100`, rounded to 4. | L611-612 |
-| 7 | `days_held = close_date - signal_date`, calendar days. | L621 |
-| 8 | A frame ending before `signal_date + horizon` leaves the plan **open**. Correct behaviour, not a missed expiry. | L509-511 |
+| 5 | **No position before entry trigger confirmation.** If the horizon arrives without confirmation, the outcome is `NO_ENTRY` with null P&L. | live P2 contract |
+| 6 | **Expiry checked last within the bar, on CALENDAR days**: `(ts - clock_ts).days >= horizon_days`. Not sessions. | live P1 contract |
+| 7 | `stock_result_pct = (close_price / entry - 1) * 100`, rounded to 4. | live ruler |
+| 8 | `days_held = close_date - price_basis_date`, calendar days. A frame ending before that clock plus the horizon remains **open**. | live P1 contract |
 
 **Pin 9 is the one convention with no champion line to mirror** (C6 only): the 21-session
 time stop is evaluated **after** the three price triggers and **before** the calendar
-expiry check. "21st session" counts post-signal **bars** in the frame the replay walks
+expiry check. "21st session" counts post-entry-clock **bars** in the frame the replay walks
 (1-based), not calendar days — the rule is about how long dead money is held, and sessions
 are the unit a holder experiences. On a bar that is both the 21st session and past the
 calendar horizon, `time_stopped` records; by construction that collision is rare (21
@@ -89,7 +89,7 @@ in one record.
 
 Every policy inherits the champion's admission filter, sort key, geometry, and plan id by
 **calling `engine.prophet_bridge` with modified inputs** (`select_candidates(standouts,
-n=len(buy))` yields the admitted population in champion order with the cap made a no-op).
+n=None)` yields the complete admitted population in champion order).
 Nothing is re-implemented.
 
 **Frozen keys.** These strings are the ledger filenames and the scoreboard's policy ids.
@@ -109,7 +109,8 @@ new key.
 ### C0 `champion_mirror` — CONTROL and validity pin
 
 Exactly the live `select_candidates` on the night's artifact, with the same duplicate-id
-and open-plan suppression the live path applies.
+and open-plan suppression the live path applies. C0 and C6 consume the full lossless
+population; they have no positional or sector cap.
 
 **Also the harness-validity pin.** C0's plan ids must match the live origination's ids
 exactly. A mismatch means the harness is reading a different world than the champion did;
@@ -210,10 +211,11 @@ with no invalidation is a ticker, not a plan.
 
 ### C4 `dispersion_cap`
 
-Champion selection and champion order; the nightly cap is **12** when
+Champion selection and champion order, re-sliced into C4's frozen challenger book: the
+challenger cap is **12** when
 `data/dispersion/regime.json` reads state `lean_in`, else **6** (the pre-2026-07-28 cap).
 
-**Fail-open to the champion cap** when the artifact is absent, unreadable, undatable,
+**Fail-open to C4's registered 12-row cap** when the artifact is absent, unreadable, undatable,
 null-stated, or **staler than 5 sessions**; the mode that fired is always recorded, so "the
 cap was 12" is never ambiguous between "lean_in fired" and "the dial was missing".
 
@@ -239,8 +241,8 @@ can see how often the arm was actually live.
 ### C5 `align2_gate`
 
 Champion selection restricted to names whose event-atlas weekly alignment reads **fully
-aligned**, then champion sort, then cap. Because a restriction frees cap slots, C5 can also
-reach rows the champion's cap cut.
+aligned**, then champion sort, then C5's registered challenger cap. The gate is measured
+inside the full lossless champion population; C0 itself is not capped.
 
 **The two alignment measures are not interchangeable, and the gate must not treat them as
 one.** `event_atlas.live_state` returns:
@@ -275,7 +277,7 @@ misalignment a negative marker against a pooled washout edge of **+0.23pp (13w e
 ### C6 `time_stop_21` — CLOSURE grain
 
 The **same plan set as C0 by construction**, with one added closure rule: a shadow plan
-still **below its entry** at the close of its **21st post-signal session** closes there with
+still **below its entry** at the close of its **21st post-entry-clock session** closes there with
 outcome `time_stopped`. Everything else — T1, T2, invalidation, expiry — is identical to the
 champion (Pin 9 governs ordering).
 
@@ -301,7 +303,8 @@ selection difference is a harness bug.
 
 ## §4 Ledgers
 
-`data/prophet_arena/<policy>.jsonl` — one file per policy, **append-only, keep-first**,
+`data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl` — one file per policy,
+schema `prophet_arena.ledger/v2`, **append-only, keep-first**,
 **nightly is the sole advancer** (`engine.ledger_lane.nightly_advance_enabled()`,
 `COLLECT_LANE=nightly`). A non-nightly run computes everything and writes nothing.
 
@@ -310,13 +313,21 @@ origination stamp and at most one closure row per shadow plan per policy. Keying
 `(policy, plan_id)` alone would make a closure unrecordable, since the origination row
 already holds that key; within each kind the dedup is exactly `(policy, plan_id)`.
 
-**NO BACKFILL.** The ledgers start empty on the registration date and fill one night at a
-time, exactly as the champion's did. A small `n` means *young*, not *weak*, and the
-scoreboard says so.
+**NO BACKFILL.** The v2 ledgers start empty at the temporal-contract boundary and fill one
+night at a time. Each open stamp persists formation/event/confirmation/observation dates,
+`price_basis_date`, `entry_date`, `recorded_at`, and `trigger`. The 125 top-level v1 opens
+and their 30 closes lack that evidence; those files remain byte-for-byte audit-visible but
+are sealed and never advanced, graded, or summarized. A small active `n` means *young*,
+not *weak*, and the scoreboard discloses both eras.
+
+`price_basis_date` is accepted only from `staleness.price_through` when
+`staleness.basis == "panel_majority"`, `delayed == false`, `unknown == false`, and the
+panel is not mixed-vintage. A current wrapper `as_of` or `basis == "board_asof"` cannot
+launder an older or unproven ranked-price source; all policies fail closed together.
 
 Shadow plans carry **no option contract and no thesis prose**. The live forward ledger's
 `option_result_pct` is null on all 16 closed rows — options are not part of the ruler — and
-thesis strings cannot change an outcome. Resolving either for 7 policies × 12 plans would
+thesis strings cannot change an outcome. Resolving either for every policy plan would
 spend render budget on fields the measurement never reads.
 
 ---

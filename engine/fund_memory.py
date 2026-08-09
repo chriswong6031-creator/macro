@@ -13,12 +13,9 @@ Methodology (mirrors the Grade-A script exactly):
       add → pct_portfolio × shares_change_pct / (100 + shares_change_pct)
   * decision-weighted 60-calendar-day return vs SPY (entry = anchor, exit = anchor+60)
   * horizon = 60 calendar days (rolled forward to next trading close present in panel)
-  * anchor = period_end + 45 calendar days, snapped forward to next date in close panel
-    CAVEAT: the common deadline anchor is optimistic for late/delinquent filers and
-    after-close acceptances (their filing became public after the anchor). The Grade-A
-    script bounded this with an acceptanceDateTime sensitivity; this engine does not —
-    per SM4-R2 the deadline-cluster anchor is the ruling, so the bias is disclosed
-    here and in the JSON note rather than corrected.
+  * anchor = the snapshot's acceptance-aware available_date when present, otherwise
+    its public filing_date; legacy data without either falls back to period_end+45d.
+    After-close acceptances are rolled forward by the collector before pricing.
   * unsettled: exit date > price_thru → all that quarter's fields null
 
 NEVER-BREAK: compute_memory() never raises; returns {} on any error.
@@ -404,6 +401,17 @@ def _compute_memory_inner(
             else:
                 prev_df = None
 
+            # Prefer the fund's actual public-availability clock.  The common
+            # deadline anchor remains only as a legacy fallback and as the
+            # top-level settlement calendar for selecting completed quarters.
+            try:
+                from engine.smart_money import _snapshot_available_date
+                available = _snapshot_available_date(cur_df)
+                if available:
+                    anchor = pd.Timestamp(available)
+            except Exception:  # noqa: BLE001
+                pass
+
             qr = _quarter_result(
                 slug=slug,
                 period_end=pe,
@@ -538,8 +546,8 @@ def _compute_memory_inner(
         "unranked": unranked_slugs,
         "note": (
             "Decision-weighted (incremental-book-pct) 60-calendar-day excess vs SPY, "
-            "anchor = period_end+45d snapped to next trading close (optimistic for "
-            "late or after-close filers — anchor may precede public availability). "
+            "anchor = acceptance-aware public availability when present, otherwise "
+            "filing date (legacy fallback: period_end+45d), snapped to the next close. "
             "Display-tier only — no calibrated key, no gauntlet promotion."
         ),
     }
