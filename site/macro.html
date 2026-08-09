@@ -483,7 +483,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -497,6 +497,15 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
                   
                   
                   
@@ -3937,16 +3946,16 @@
             <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <path d="M0,32.0 L30,29.7 L60,21.3 L90,9.1 L120,0.0 L120,36 L0,36 Z" fill="url(#rcSpkGrad)"/>
-        <polyline points="0,32.0 30,29.7 60,21.3 90,9.1 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M0,32.0 L30,29.8 L60,20.8 L90,8.9 L120,0.0 L120,36 L0,36 Z" fill="url(#rcSpkGrad)"/>
+        <polyline points="0,32.0 30,29.8 60,20.8 90,8.9 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
     </div>
     
     
     
     <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
-      <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.05%)</span>
-      <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.05%）</span>
+      <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.06%)</span>
+      <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.06%）</span>
     </div>
     
     
@@ -4437,7 +4446,7 @@
         
         <span class="mx5-ai-ticker-pill">META</span>
         
-        <span class="mx5-ai-ticker-pill">QQQ</span>
+        <span class="mx5-ai-ticker-pill">XLK</span>
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
@@ -4531,7 +4540,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Earnings scorecard: 9 out of 10 Communication Services companies deliver EPS win…</span>
-              <span class="l-zh">Earnings scorecard: 9 out of 10 Communication Services compa…</span>
+              <span class="l-zh">财报评分：本周10家通信服务公司中有9家实现每股收益超预期</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4547,8 +4556,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5160,9 +5169,9 @@
       </div>
       
       <div class="fbm-bench-arrow neg"
-           data-tip-en="Odds moved -2.3 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 -2.3 个百分点。">
-        ▼ -2.3
+           data-tip-en="Odds moved -2.0 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -2.0 个百分点。">
+        ▼ -2.0
       </div>
       
     </div>
@@ -7552,7 +7561,7 @@
             </div>
           </div>
           <div class="plx-jaw-count-box">
-            <div class="plx-jaw-count-num">26</div>
+            <div class="plx-jaw-count-num">24</div>
             <div class="plx-jaw-count-lbl">
               <span class="l-en">speeches 30d</span><span class="l-zh">30日发声</span>
             </div>
@@ -7562,7 +7571,7 @@
         
         
         
-        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:42%"></div></div>
+        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:46%"></div></div>
         
         <div class="plx-jaw-ts">
           <span class="l-en">Last event: 2026-08-07</span>
@@ -7755,11 +7764,11 @@
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>Economic regime</b>: Recovery with inflation, but growth cooling — moving toward the edge.</span><span class="l-zh"><b>经济格局</b>：复苏伴随通胀，但增长降温——正走向临界点。</span></li><li><span class="l-en"><b>Drop in inflation-adjusted bond yields</b>: falling yields give gold and long-term bonds a boost while stocks absorb the news.</span><span class="l-zh"><b>实际债券收益率下降</b>：收益率下行利好黄金和长期债券，而股市则消化这一消息。</span></li><li><span class="l-en"><b>Gap</b>: corporate bond markets are nervous and the US dollar is strong, but stocks haven&#39;t reacted strongly.</span><span class="l-zh"><b>Gap</b>：公司债市场紧张，美元走强，但股市反应不大。</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Still Reflation</b>: Growth cooling, liquidity tightening, confidence is very low.</span><span class="l-zh"><b>仍在再通胀</b>：增长降温、流动性收紧、信心极低。</span></li><li><span class="l-en"><b>AI/semis narrow lead</b>: Chip stocks are driving the tape but bonds and the dollar are uneasy.</span><span class="l-zh"><b>AI/半导体小幅领先</b>：芯片股推动大盘，但债券和美元走势令人不安。</span></li><li><span class="l-en"><b>Dollar firm</b>: Strength is a headwind for gold, emerging markets, and Bitcoin.</span><span class="l-zh"><b>美元坚挺</b>：强势对黄金、新兴市场和比特币构成逆风。</span></li><li><span class="l-en"><b>China stagflation, HK outflow</b>: Money is leaving Hong Kong even as the local market reads calm.</span><span class="l-zh"><b>中国滞胀，香港资金外流</b>：尽管本地市场看似平静，资金仍在离开香港。</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
         <span class="l-en"><b>What to do</b>: Watch — don&#39;t chase.</span>
-        <span class="l-zh"><b>怎么做</b>：观望——不要追涨。</span>
+        <span class="l-zh"><b>该如何操作</b>：观望，不要追高。</span>
       </span>
     </div>
   </div>
@@ -7781,7 +7790,7 @@
       <span class="aib2-kf-v"><span class="l-en">Tight, but widening</span><span class="l-zh">偏紧但在走宽</span></span>
     </span><span class="aib2-kf aib2-kf--info">
       <span class="aib2-kf-k"><span class="l-en">What&#39;s moving markets</span><span class="l-zh">当前主导</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Real-rate shock</span><span class="l-zh">Real-rate shock</span></span>
+      <span class="aib2-kf-v"><span class="l-en">AI / semis</span><span class="l-zh">AI / semis</span></span>
     </span></div><div class="aib2-conf">
     <div class="aib2-conf-bar" role="img"
          data-tip-en="Confidence Low — how firmly the read holds, from the AI synthesis."
@@ -7793,54 +7802,60 @@
     <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-08-07</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">The US economy is still in a recovery-with-inflation territory — growth is above-average and inflation remains stubborn. But confidence is low and the regime is shifting: growth has cooled from a month ago, and a few more weak economic reports could tip us toward a third-quarter environment of high inflation and slow growth. The map says recovery, but we are drifting closer to the edge.
+    <span class="l-en">We&#39;re still in Reflation on the map, but it&#39;s a very uncertain stay. Growth has cooled from a month ago, inflation signals are mixed, and financial liquidity is draining. The regime is transitioning with no clear flip yet — the map says we&#39;re drifting deeper into Reflation, but the warning lamps are on.
 
-Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest rates, giving a boost to gold and long-term bonds. That eases borrowing conditions even though the central bank is holding rates steady. However, the corporate bond market is flashing caution — junk bond yield premiums are widening — and the dollar is strengthening, which usually pressures stocks. For now, stocks are absorbing this without much stress, but the gap is worth watching.</span>
-    <span class="l-zh">美国经济仍处于复苏伴随通胀的区间——增长高于平均水平，通胀依然顽固。但信心低迷，格局正在转变：增长较一个月前有所降温，若再出现几份疲弱的经济报告，可能将我们推向第三季度高通胀低增长的环境。地图显示复苏，但我们正逐渐逼近边缘。
+The dominant driver is AI and semiconductor leadership — a skinny tech tape. Yet the bond desk and the dollar are telling a more careful story: high-yield credit has begun to widen and the long-dollar trade is crowded. That friction makes the equity-regime read fragile.</span>
+    <span class="l-zh">我们在图表上仍处于再通胀区间，但这次停留非常不确定。增长较一个月前有所降温，通胀信号混杂，金融流动性正在流失。市场状态正在转换，但尚未明确翻转——图表显示我们在向再通胀深处漂移，但警示灯已亮起。
 
-今日的主要驱动因素是经通胀调整的长期利率大幅下降，提振了黄金和长期债券。尽管央行维持利率不变，这仍缓解了借贷条件。然而，公司债市场正在发出谨慎信号——垃圾债券收益率溢价走阔——同时美元走强，这通常会给股市带来压力。目前股市尚能消化这些压力，但这一差距值得关注。</span>
+主导驱动力是AI和半导体的领涨——科技股盘面很窄。然而债券交易台和美元却在讲述一个更谨慎的故事：高收益信用利差开始走阔，做多美元的交易过于拥挤。这种摩擦使得股市状态解读显得脆弱。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Stocks vs corporate bonds</b>: Stock index is showing appetite for risk, but junk bond yield premiums are widening — a classic sign that the economic expansion may be nearing its end.</span><span class="l-zh"><b>股票与公司债</b>：股票指数显示出风险偏好，但垃圾债券收益率溢价正在走阔——这是经济扩张可能接近尾声的典型信号。</span></li><li><span class="l-en"><b>Dollar headwind</b>: A strong dollar is normally bad for US stocks and emerging markets, but stocks haven&#39;t responded yet.</span><span class="l-zh"><b>美元逆风</b>：强势美元通常不利于美股和新兴市场，但股市尚未对此作出反应。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Stocks vs. bonds/dollar</b>: The equity tape says Reflation, but credit spreads are edging wider and the dollar is firm — the canary is chirping.</span><span class="l-zh"><b>股票与债券/美元</b>：股市行情显示再通胀，但信用利差正温和走阔，美元坚挺——金丝雀在鸣叫。</span></li><li><span class="l-en"><b>China vs. Hong Kong</b>: China is in stagflation, Hong Kong is in Goldilocks, yet money is leaving Hong Kong — that contradiction needs watching.</span><span class="l-zh"><b>中国与香港</b>：中国处于滞胀，香港处于金发女孩状态，但资金却在离开香港——这一矛盾值得关注。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If inflation-adjusted yields keep falling → gold and long-term bonds may rally further, making borrowing conditions even looser.</span><span class="l-zh">如果实际收益率持续下降→黄金和长期债券可能进一步上涨，使借贷条件更加宽松。</span></li><li><span class="l-en">If corporate bond risk premiums keep widening → stock markets eventually catch down, raising the risk of a market decline.</span><span class="l-zh">如果公司债券风险溢价持续扩大→股市最终会跟跌，加大市场下跌的风险。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en">If the dollar stays firm while real yields remain restrictive, pressure on gold, emerging markets, and Bitcoin continues.</span><span class="l-zh">如果美元保持坚挺，实际收益率仍具限制性，黄金、新兴市场和比特币将继续承压。</span></li><li><span class="l-en">If high-yield spreads keep widening, even a narrow AI-led equity tape will face a tougher sentiment backdrop.</span><span class="l-zh">如果高收益利差继续走阔，即使以AI为首的窄幅股市行情也将面临更艰难的情绪背景。</span></li></ul>
     </div></div>
   <div class="aib2-card aib2-card--full aib2-card--playbook">
     <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
     <div class="aib2-prose">
-      <span class="l-en">The sequence of the market playbook is visible: leadership is shifting away from semiconductor and memory-company stocks into software and industrial stocks, which fits the economic slowdown phase.</span>
-      <span class="l-zh">市场剧本的顺序清晰可见：领涨板块正从半导体和存储芯片股转向软件和工业股，这与经济放缓阶段相符。</span>
+      <span class="l-en">The rotation sequence is stuck: semis still lead but the next legs — software, ex-US, crypto — show no follow-through. Contracting liquidity is an active headwind for everything beyond the first stage.</span>
+      <span class="l-zh">轮动序列陷入停滞：半导体仍领涨，但后续板块——软件、美国以外、加密货币——均未见跟进。流动性收缩对第一阶段以外的所有领域都是实实在在的逆风。</span>
     </div>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Consumer prices report next Wednesday</b>: a lower-than-expected number would support the falling-yield demand; a higher-than-expected number could reverse it.</span>
-          <span class="l-zh"><b>下周三的消费者价格报告</b>：若数据低于预期，将支持收益率下行的需求；若高于预期，则可能逆转这一趋势。</span>
+          <span class="l-en"><b>CPI Aug 12</b>: A hot print would reinforce the hawkish Fed and firm dollar.</span>
+          <span class="l-zh"><b>8月12日CPI</b>：若数据火热，将强化美联储的鹰派立场和美元走强。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Junk bond yield premiums</b>: a breakout higher would signal broader stress.</span>
-          <span class="l-zh"><b>垃圾债券收益率溢价</b>：若向上突破，将预示更广泛的压力。</span>
+          <span class="l-en"><b>High-yield credit spreads</b>: Further widening would upgrade the caution flag.</span>
+          <span class="l-zh"><b>高收益信用利差</b>：进一步走阔将升级警示信号。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Dollar</b>: further strengthening would increase pressure on emerging markets and commodity-related stocks.</span>
-          <span class="l-zh"><b>美元</b>：进一步走强将加大新兴市场和大宗商品相关股票的压力。</span>
+          <span class="l-en"><b>Semis relative strength</b>: A break in chip leadership would signal the narrow tape is crumbling.</span>
+          <span class="l-zh"><b>半导体板块相对强势</b>：芯片股领涨地位若被打破，将意味着窄幅行情正在瓦解。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en"><b>Hong Kong peg pressure</b>: Intensified outflow could spill into broader risk-off.</span>
+          <span class="l-zh"><b>香港联系汇率压力</b>：资金外流加剧可能引发更广泛的风险规避。</span>
         </span>
       </li></ul>
   </div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></span></div>
   <div class="aib2-card aib2-card--full">
-    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> Consumer prices report</span><span class="aib2-cat"><span class="aib2-cat-d num">08-13</span> Producer prices report</span></div>
+    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI (consumer prices)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-13</span> PPI (producer prices)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-13</span> claims</span></div>
     <div class="aib2-cat-read">
-      <span class="l-en">Next week&#39;s consumer prices report on Wednesday is the main event: the model strongly leans toward a lower-than-expected reading, which would support the expectation of easier financial conditions. The producer prices report the day after leans higher, but investors typically focus more on consumer prices.</span>
-      <span class="l-zh">Next week&#39;s consumer prices report on Wednesday is the main event: the model strongly leans toward a lower-than-expected reading, which would support the expectation of easier financial conditions. The producer prices report the day after leans higher, but investors typically focus more on consumer prices.</span>
+      <span class="l-en">Next week&#39;s CPI and PPI could split the picture: a likely cool CPI (-0.045% estimate) may offer temporary relief, but a hot PPI (0.417% estimate) would keep real-yield pressure on. Claims remain firm around 199k.</span>
+      <span class="l-zh">Next week&#39;s CPI and PPI could split the picture: a likely cool CPI (-0.045% estimate) may offer temporary relief, but a hot PPI (0.417% estimate) would keep real-yield pressure on. Claims remain firm around 199k.</span>
     </div></div>
         <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full brief page (China &amp; Bitcoin lenses) →</span><span class="l-zh">完整简报页（中国与比特币视角）→</span></a></div>
         
@@ -7893,6 +7908,25 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;intl_universe&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;intl_universe&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -7907,7 +7941,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           <a class="nbx-item" href="https://seekingalpha.com/news/4629482-earnings-scorecard-9-out-of-10-communication-services-companies-deliver-eps-wins-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Earnings scorecard: 9 out of 10 Communication Services companies deliver EPS wins this week</span><span class="l-zh">Earnings scorecard: 9 out of 10 Communication Services companies deliver EPS wins this week</span></span>
+              <span class="nbx-title"><span class="l-en">Earnings scorecard: 9 out of 10 Communication Services companies deliver EPS wins this week</span><span class="l-zh">财报评分：本周10家通信服务公司中有9家实现每股收益超预期</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7925,7 +7959,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           <a class="nbx-item" href="https://seekingalpha.com/news/4629212-consumer-staples-earnings-scorecard-profit-holds-up-despite-mixed-revenue?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Consumer Staples Earnings Scorecard: Profit holds up despite mixed revenue</span><span class="l-zh">Consumer Staples Earnings Scorecard: Profit holds up despite mixed revenue</span></span>
+              <span class="nbx-title"><span class="l-en">Consumer Staples Earnings Scorecard: Profit holds up despite mixed revenue</span><span class="l-zh">必需消费品财报评分：收入好坏参半，利润仍保持稳健</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7943,48 +7977,12 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           <a class="nbx-item" href="https://seekingalpha.com/news/4628903-earnings-scoreboard-86-of-sp-500-reporting-firms-top-eps-estimates-as-79-post-yy-profit-growth?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Earnings Scoreboard: 86% of S&amp;P 500 reporting firms top EPS estimates as 79% post Y/Y profit growth</span><span class="l-zh">Earnings Scoreboard: 86% of S&amp;P 500 reporting firms top EPS estimates as 79% post Y/Y profit growth</span></span>
+              <span class="nbx-title"><span class="l-en">Earnings Scoreboard: 86% of S&amp;P 500 reporting firms top EPS estimates as 79% post Y/Y profit growth</span><span class="l-zh">财报记分牌：标普500已公布财报的公司中86%每股收益超预期，79%实现同比利润增长</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Aug 8</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4629566-insider-trades-microsoft-meta-pfizer-among-notable-names?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Insider trades: Microsoft, Meta, Pfizer among notable names</span><span class="l-zh">Insider trades: Microsoft, Meta, Pfizer among notable names</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 8</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/08/07/chesky-airbnb-ai-earnings.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Chesky says Airbnb will spend ‘a lot more’ on AI as earnings beat and stock surges 15%</span><span class="l-zh">Chesky称Airbnb将在AI上投入“更多”资金，盈利超预期后股价飙升15%</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 7</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8030,28 +8028,10 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4629648-nvidia-to-fund-3b-in-blackstone-backed-power-firm?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4629566-insider-trades-microsoft-meta-pfizer-among-notable-names?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Nvidia eyeing up to $3B investment in Blackstone-backed power firm: The Information</span><span class="l-zh">英伟达考虑向Blackstone支持的电力公司投资高达30亿美元：《The Information》</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 8</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://finance.yahoo.com/real-estate/articles/everyones-chasing-ai-data-center-142000779.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">Everyone&#39;s Chasing AI Data Center Stocks. This 5%-Yielding Dividend Stock Already Owns a Piece of the Boom.</span><span class="l-zh">人人都在追逐AI数据中心股票。这只股息率5%的股息股已分得一杯羹。</span></span>
+              <span class="nbx-title"><span class="l-en">Insider trades: Microsoft, Meta, Pfizer among notable names</span><span class="l-zh">内部交易：微软、Meta、辉瑞等知名公司上榜</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8084,10 +8064,28 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           
           
           
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/palantir-pltr-posted-record-93-113953926.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nbx-title"><span class="l-en">Palantir (PLTR) Posted Record 93% Growth, Here’s Why Analysts Think It Won’t Last</span><span class="l-zh">Palantir（PLTR）录得创纪录的93%增长，以下是分析师认为其难以持续的原因</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 8</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/analyst-wall-street-thinks-cpu-125533234.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nbx-title"><span class="l-en">This Analyst On Wall Street Thinks The CPU Trade Is Overdone, Should You Sell ARM (ARM) Stock?</span><span class="l-zh">This Analyst On Wall Street Thinks The CPU Trade Is Overdone, Should You Sell ARM (ARM) Stock?</span></span>
+              <span class="nbx-title"><span class="l-en">This Analyst On Wall Street Thinks The CPU Trade Is Overdone, Should You Sell ARM (ARM) Stock?</span><span class="l-zh">这位华尔街分析师认为CPU交易已过热，你应该卖出ARM（ARM）股票吗？</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8105,7 +8103,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
           <a class="nbx-item" href="https://www.investors.com/news/berkshire-hathaway-earnings-buybacks-cash-hoard-warren-buffett/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Berkshire Hathaway Beats Earnings Views, Ends 14 Quarters Of Selling Equities</span><span class="l-zh">Berkshire Hathaway Beats Earnings Views, Ends 14 Quarters Of Selling Equities</span></span>
+              <span class="nbx-title"><span class="l-en">Berkshire Hathaway Beats Earnings Views, Ends 14 Quarters Of Selling Equities</span><span class="l-zh">伯克希尔·哈撒韦盈利超预期，结束连续14个季度抛售股票</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8212,8 +8210,8 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
                 
                 
                 <span class="fbm-leg hawk "
-                      data-tip-en="12-month rate futures moved +7.5bp over 20 trading days (threshold: +15bp)."
-                      data-tip-zh="20个交易日内12个月利率期货变动+7.5个基点（阈值：+15bp）。">
+                      data-tip-en="12-month rate futures moved +8.0bp over 20 trading days (threshold: +15bp)."
+                      data-tip-zh="20个交易日内12个月利率期货变动+8.0个基点（阈值：+15bp）。">
                   <span class="fbm-dot"></span><span class="l-en">Rate futures</span><span class="l-zh">利率期货</span>
                 </span>
                 
@@ -8338,37 +8336,37 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
             </linearGradient>
           </defs>
           
-          <path class="fbm-chart-area" d="M54,117.6 L187.0,113.0 L320.0,96.1 L453.0,71.5 L586,53.1 L586,176 L54,176 Z" fill="url(#fbmChartGrad)"/>
+          <path class="fbm-chart-area" d="M54,118.2 L187.0,113.6 L320.0,95.4 L453.0,71.1 L586,52.8 L586,176 L54,176 Z" fill="url(#fbmChartGrad)"/>
           
-          <line x1="54" y1="117.6" x2="586" y2="117.6" stroke="rgba(255,255,255,.15)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="54" y1="118.2" x2="586" y2="118.2" stroke="rgba(255,255,255,.15)" stroke-width="1" stroke-dasharray="4,4"/>
           
-          <polyline class="fbm-chart-line" style="--dash:900" points="54,117.6 187.0,113.0 320.0,96.1 453.0,71.5 586,53.1" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          
-          
-          
-          <circle class="fbm-chart-node" cx="54" cy="117.6" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="54" y="107.6" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.63%</text>
-          
-          
-          <circle class="fbm-chart-node" cx="187.0" cy="113.0" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="187.0" y="103.0" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.66%</text>
-          
-          
-          <circle class="fbm-chart-node" cx="320.0" cy="96.1" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="320.0" y="86.1" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.77%</text>
-          
-          
-          <circle class="fbm-chart-node" cx="453.0" cy="71.5" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="453.0" y="61.5" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.93%</text>
-          
-          
-          <circle class="fbm-chart-node" cx="586" cy="53.1" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
-          <text class="fbm-chart-node" x="586" y="43.1" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">4.05%</text>
+          <polyline class="fbm-chart-line" style="--dash:900" points="54,118.2 187.0,113.6 320.0,95.4 453.0,71.1 586,52.8" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
           
           
           
+          <circle class="fbm-chart-node" cx="54" cy="118.2" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="54" y="108.2" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.63%</text>
           
-          <polygon class="fbm-chart-diamond" points="586,84.5 593,91.5 586,98.5 579,91.5" fill="var(--warn,#f59e0b)" fill-opacity=".9" stroke="rgba(13,17,24,.7)" stroke-width="1"/>
+          
+          <circle class="fbm-chart-node" cx="187.0" cy="113.6" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="187.0" y="103.6" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.66%</text>
+          
+          
+          <circle class="fbm-chart-node" cx="320.0" cy="95.4" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="320.0" y="85.4" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.78%</text>
+          
+          
+          <circle class="fbm-chart-node" cx="453.0" cy="71.1" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="453.0" y="61.099999999999994" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">3.94%</text>
+          
+          
+          <circle class="fbm-chart-node" cx="586" cy="52.8" r="4.5" fill="var(--isle-policy)" stroke="rgba(13,17,24,.85)" stroke-width="1.5"/>
+          <text class="fbm-chart-node" x="586" y="42.8" text-anchor="middle" font-size="11" font-weight="700" fill="var(--isle-policy)" font-family="Inter,-apple-system,sans-serif" font-variant-numeric="tabular-nums">4.06%</text>
+          
+          
+          
+          
+          <polygon class="fbm-chart-diamond" points="586,85.4 593,92.4 586,99.4 579,92.4" fill="var(--warn,#f59e0b)" fill-opacity=".9" stroke="rgba(13,17,24,.7)" stroke-width="1"/>
           
           
           
@@ -8624,47 +8622,41 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         <div class="fbm-bench-label"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
       </div>
       
-      <div class="fbm-bench-arrow pos"
-           data-tip-en="Odds moved +8.0 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 +8.0 个百分点。">
-        ▲ +8.0
-      </div>
-      
     </div>
     
     
     <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">86<small>%</small></div>
+      <div class="fbm-bench-odds">85<small>%</small></div>
       <div class="fbm-bench-body">
         <div class="fbm-bench-outcome"><span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span></div>
         <div class="fbm-bench-label"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
       </div>
       
       <div class="fbm-bench-arrow neg"
-           data-tip-en="Odds moved -1.5 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 -1.5 个百分点。">
-        ▼ -1.5
+           data-tip-en="Odds moved -0.7 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -0.7 个百分点。">
+        ▼ -0.7
       </div>
       
     </div>
     
     
     <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">50<small>%</small></div>
+      <div class="fbm-bench-odds">48<small>%</small></div>
       <div class="fbm-bench-body">
         <div class="fbm-bench-outcome"><span class="l-en">0.2%</span><span class="l-zh">0.2%</span></div>
         <div class="fbm-bench-label"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
       </div>
       
       <div class="fbm-bench-arrow neg"
-           data-tip-en="Odds moved -4.5 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 -4.5 个百分点。">
-        ▼ -4.5
+           data-tip-en="Odds moved -2.3 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -2.3 个百分点。">
+        ▼ -2.3
       </div>
       
     </div>
     
-    <div class="fbm-bench-src"><span class="l-en">Source: Polymarket (as of 2026-08-07)</span><span class="l-zh">来源：Polymarket（截至 2026-08-07）</span></div>
+    <div class="fbm-bench-src"><span class="l-en">Source: Polymarket (as of 2026-08-08)</span><span class="l-zh">来源：Polymarket（截至 2026-08-08）</span></div>
   </div>
   
       
@@ -8684,8 +8676,8 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
         
         <span style="font-size:11px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:4px;padding:3px 7px;color:var(--down,#ef4444)">
-          <span class="l-en">Easing pressure building but futures imply +42bp over 12m — market still priced for tightening.</span>
-          <span class="l-zh">宽松压力积聚但期货12个月隐含+42个基点——市场仍定价紧缩。</span>
+          <span class="l-en">Easing pressure building but futures imply +43bp over 12m — market still priced for tightening.</span>
+          <span class="l-zh">宽松压力积聚但期货12个月隐含+43个基点——市场仍定价紧缩。</span>
         </span>
         
       </div>
@@ -10339,7 +10331,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>12</td><td>2026-08-07</td>
+        <td>10</td><td>2026-08-07</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10789,7 +10781,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>20</td><td>2026-08-08</td>
+        <td>19</td><td>2026-08-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10797,9 +10789,9 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         <td class="l">coingecko</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">HTTPError: 403 Client Error: Forbidden for url: https://api.coingecko.com/api/v3/global</td>
+        <td class="l muted">circuit open (8 consecutive failures)</td>
       </tr>
       
       <tr>
@@ -10852,7 +10844,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-08-08</td>
+        <td>5</td><td>2026-08-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11023,7 +11015,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>674779</td><td>2028-01-01</td>
+        <td>674781</td><td>2028-01-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11365,7 +11357,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>455</td><td>2026-08-08</td>
+        <td>6330</td><td>2026-08-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11661,9 +11653,9 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         <td class="l">quiver_sec13f</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-08</td>
-        <td class="l muted"></td>
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td>0</td><td>—</td>
+        <td class="l muted">ReadTimeout: HTTPSConnectionPool(host=&#39;api.quiverquant.com&#39;, port=443): Read timed out. (r</td>
       </tr>
       
       <tr>
@@ -11805,7 +11797,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         <td class="l">sentiment_naaim</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
         <td>0</td><td>—</td>
         <td class="l muted">circuit open (6 consecutive failures)</td>
       </tr>
@@ -11869,7 +11861,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-empty"><span class="l-en">empty</span><span class="l-zh">empty</span></span></td>
-        <td>0</td><td>2026-08-07</td>
+        <td>0</td><td>2026-08-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11878,7 +11870,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>0</td><td>2025-09-22</td>
+        <td>0</td><td>2026-01-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11886,7 +11878,7 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         <td class="l">tape_flow_forward</td>
         
         
-        <td class="l"><span class="pill pill-empty"><span class="l-en">empty</span><span class="l-zh">empty</span></span></td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
         <td>0</td><td>2026-08-07</td>
         <td class="l muted"></td>
       </tr>
@@ -11995,15 +11987,15 @@ Today&#39;s main driver is a sharp drop in inflation-adjusted long-term interest
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>259692</td><td>2026-08-08</td>
+        <td>32703</td><td>2026-08-08</td>
         <td class="l muted"></td>
       </tr>
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-08 15:11 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-08 20:46 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-08 15:11 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-08 20:46 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -12256,6 +12248,5 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>
