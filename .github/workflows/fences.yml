@@ -69,9 +69,10 @@ jobs:
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     # Same-repository PRs and main are trusted inputs and this fast static proof must
-    # not queue behind multi-hour hosted CI packs. Keep it on the dedicated light Mac;
-    # fork PRs still take the hosted fallback jobs below.
-    runs-on: [self-hosted, macstudio-light]
+    # not queue behind multi-hour hosted CI packs. The CI matrix deliberately leaves
+    # half of render-linux free for short control-plane work like this; fork PRs still
+    # take the hosted fallback jobs below.
+    runs-on: [self-hosted, render-linux]
     steps:
       - uses: actions/checkout@v4
         with:

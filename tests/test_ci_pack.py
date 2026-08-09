@@ -435,7 +435,7 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     assert workflow["permissions"]["checks"] == "write"
     jobs = workflow["jobs"]
     pack = jobs["fence-pack"]
-    assert pack["runs-on"] == ["self-hosted", "macstudio-light"]
+    assert pack["runs-on"] == ["self-hosted", "render-linux"]
     checkout = next(
         step
         for step in pack["steps"]
