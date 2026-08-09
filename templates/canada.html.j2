@@ -1988,7 +1988,7 @@
       {% endif %}
       {% endfor %}
       {% endif %}
-      <div class="cax-receipt">{{ t('Cross-asset overlay: oil/gold/copper/CAD + US risk (SPY/VIX/DXY). Context only.','跨资产叠加：油/金/铜/加元 + 美股风险（SPY/VIX/DXY）。仅作背景。') }}</div>
+      <div class="cax-receipt">{{ t('Cross-asset overlay: oil/gold/copper/CAD + US risk (SPY/VIX/DXY). Context only.','跨资产叠加：油/金/铜/加元 + 美股风险（SPY/VIX/DXY）。仅供参考。') }}</div>
     </div>
   </div>
 </div>
@@ -2243,7 +2243,7 @@
 </div>
 {% endif %}
 <div class="panel" id="standouts">
-  <h2>{{ t('⚡ Prophet Stock Signals — TSX ripe list', '⚡ 先知选股 — TSX 成熟清单') }}
+  <h2>{{ t('⚡ Prophet Stock Signals — TSX ripe list', '⚡ Prophet 选股 — TSX 成熟清单') }}
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
     {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
     {# W8-G: grid/table view toggle #}
@@ -2398,7 +2398,7 @@
        tier_cascade T3 = the cross is still forming, anything else = it fired. Tips are plain
        strings (attribute-safe — no t() inside an attribute, CI-guarded). #}
     {% set _trg_kind = ('imminent' if (_sig.tier_cascade if _sig else none) == 'T3' else 'fired') if (_sig and _sig.tier) else none %}
-    {% set _trg_tip_en = 'A fresh multi-timeframe buy cross fired on this name today — ' ~ (_sig.tier if _sig else '') ~ ' fresh cross on the entry gate. The verb chip still rules the stance: if it says Wait, price has already run past the zone, so do not chase.' if _trg_kind else '' %}
+    {% set _trg_tip_en = 'A fresh buy signal fired on this name today — ' ~ (_sig.tier if _sig else '') ~ ' fresh cross. The verb chip still rules the stance: if it says Wait, price has already run past the zone, so do not chase.' if _trg_kind else '' %}
     {% set _trg_tip_zh = '该股今日出现新鲜的多周期买入金叉 — 入场门槛为 ' ~ (_sig.tier if _sig else '') ~ ' 新鲜金叉。主标签仍是最终判断：若显示「等待」，说明价格已越过买区，请勿追高。' if _trg_kind else '' %}
     {# Marks row — favourable per-name evidence, in descending specificity: a filing event
        about THIS company first, the market backdrop it sits in second. Both are plain muted
@@ -2409,7 +2409,7 @@
     {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}
     {% set _mk.rows = _mk.rows + [{'k':'theme','en':'Insider buying','zh':'内部人买入',
       'tip_en':'Company insiders bought this name ' ~ s.insider.n_buys ~ (' time' if s.insider.n_buys == 1 else ' times') ~ ' in the last ' ~ (s.insider.window_days or 180) ~ ' days, with no sells on record. Treat insider buying as context for the setup, never a reason on its own.',
-      'tip_zh':'过去 ' ~ (s.insider.window_days or 180) ~ ' 天内，公司内部人买入该股 ' ~ s.insider.n_buys ~ ' 次，且无卖出记录。仅为背景参考，本身不构成理由。'}] %}
+      'tip_zh':'过去 ' ~ (s.insider.window_days or 180) ~ ' 天内，公司内部人买入该股 ' ~ s.insider.n_buys ~ ' 次，且无卖出记录。仅供参考，本身不构成理由。'}] %}
     {% endif %}
     {% if s.oil_tailwind %}
     {% set _mk.rows = _mk.rows + [{'k':'theme','en':'Oil tailwind','zh':'油价顺风',

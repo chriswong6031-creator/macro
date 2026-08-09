@@ -239,7 +239,11 @@ def china_regime_timeline(hist: pd.DataFrame) -> dict:
     mirroring build_site.regime_timeline() over the China regime history. The China
     engine doesn't track transition_state / recession / shock / warning flags, so
     those keys carry safe defaults — timemachine.js degrades to 'no warnings'."""
-    h = hist[hist["quad"].notna()].copy()
+    # Labeled AND both axes present — mirror of build_hk.hk_regime_timeline():
+    # a labeled-yet-axis-dark store row (the 2026-08-08 HK null-inflation-tail
+    # shape) must never ship, no matter which lane wrote the store.
+    h = hist[hist["quad"].notna()
+             & hist["growth_score"].notna() & hist["inflation_score"].notna()].copy()
     n = len(h)
 
     def r3(col: str) -> list:

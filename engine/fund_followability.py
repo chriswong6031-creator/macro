@@ -35,6 +35,8 @@ from typing import Callable
 
 import pandas as pd
 
+from lib.filing_value_units import normalize_13f_snapshot
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -160,7 +162,14 @@ def load_books(
             if "amendments" in str(p):
                 continue
             try:
-                df = pd.read_parquet(p)
+                df = normalize_13f_snapshot(pd.read_parquet(p))
+                # Accession receipts add acceptance-aware availability to legacy
+                # immutable snapshots without rewriting their evidence files.
+                try:
+                    from engine.smart_money import _enrich_snapshot_provenance
+                    df = _enrich_snapshot_provenance(df, slug, p.stem)
+                except Exception:  # noqa: BLE001
+                    pass
                 if not df.empty:
                     by_period[p.stem] = df
             except Exception:  # noqa: BLE001

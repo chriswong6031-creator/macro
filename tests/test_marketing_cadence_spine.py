@@ -545,7 +545,16 @@ def test_cici_spec_exercises_the_session_field():
     prof = CR.load_profile("cici", specs=specs)
     assert prof is not None and prof.has_session
     assert prof.tz == "Asia/Hong_Kong"
-    assert prof.outside_window_posts_per_day == 1
+    # 1 -> 8 (2026-08-08, the 20-30/day order). The publisher's sweep grid is 30
+    # rungs a UTC day and 22 of them fall inside her two HK windows, so at a
+    # 30/day cap the remaining 8 have to be spendable or the fence IS her cap.
+    # The LAW is the pair of inequalities below (a positive allowance that is
+    # still strictly less than her day); the literal is pinned so a change stays
+    # deliberate. Derivation + the guard: tests/test_marketing_cadence_ramp_coherence.py.
+    assert prof.outside_window_posts_per_day == 8
+    assert 0 < prof.outside_window_posts_per_day < prof.posts_per_day, (
+        "the allowance must not swallow her day — that makes the windows decorative"
+    )
 
     # 12:00 and 20:00 Hong Kong are in session; 02:00 is not.
     assert CR.in_session(prof, _WED_HK_CASH)
@@ -554,35 +563,48 @@ def test_cici_spec_exercises_the_session_field():
 
 
 def test_cici_out_of_session_allowance_is_spent_then_refused():
-    """The weighting is real: one slot may fall outside the Asia windows, the
-    next one is refused for being out of session.
+    """The weighting is real: a bounded number of slots may fall outside the Asia
+    windows, and the one after that is refused for being out of session.
 
     Every timestamp below is chosen to land on the SAME Hong Kong calendar day
     (Thu 2026-07-23) and outside both of her windows, and to clear her spacing
     floor — otherwise an earlier gate would fire and the session branch would
     never be reached. Her out-of-window hours are 05:00-08:00 and 17:00-20:00 HK
     since the evening leg was widened to cover the US cash session (2026-07-28).
+
+    THE ALLOWANCE IS READ, NOT WRITTEN DOWN (2026-08-08). It was 1, so one
+    `earlier` stamp spent it; the 20-30/day order raised it to 8 and a
+    single-stamp history stopped reaching the branch, which is a test going quiet
+    rather than a test failing. The fill is now sized from the profile, so this
+    exercises "spent, then refused" at whatever the allowance is.
     """
     from engine.marketing import cadence_resolver as CR
     from engine.marketing import personas as P
 
     prof = CR.load_profile("cici", specs=P.load_all(ROOT))
     assert prof is not None
+    allowance = int(prof.outside_window_posts_per_day)
+    assert allowance >= 1, "vacuous: a zero allowance never reaches the spent branch"
 
     now = datetime(2026, 7, 22, 23, 30, tzinfo=timezone.utc)      # 07:30 Thu HK
-    earlier = datetime(2026, 7, 22, 21, 30, tzinfo=timezone.utc)  # 05:30 Thu HK
-    assert not CR.in_session(prof, now) and not CR.in_session(prof, earlier)
+    # 05:00 Thu HK onwards, 10 minutes apart, so the whole fill sits inside her
+    # 05:00-08:00 HK out-of-window block and the most recent stamp is still far
+    # enough back to clear min_spacing_min + jitter.
+    first = datetime(2026, 7, 22, 21, 0, tzinfo=timezone.utc)     # 05:00 Thu HK
+    spent = [(first + timedelta(minutes=10 * i), "macro") for i in range(allowance)]
+    assert not CR.in_session(prof, now)
+    for when, _kind in spent:
+        assert not CR.in_session(prof, when), f"{when} is in session — bad fixture"
 
-    # Nothing posted yet → the single out-of-window allowance is available.
+    # Nothing posted yet → the out-of-window allowance is available.
     d0 = CR.resolve("cici", "macro", now=now, profile=prof, history=[])
     assert d0.allow and d0.reason == CR.REASON_OK
 
-    # One post already made out of window on the same HK day → allowance spent.
-    spent = [(earlier, "macro")]
+    # The allowance fully spent out of window on the same HK day → refused.
     d1 = CR.resolve("cici", "macro", now=now, profile=prof, history=spent)
-    assert not d1.allow
+    assert not d1.allow, d1.detail
     assert d1.reason == CR.REASON_OUTSIDE_SESSION
-    assert d1.detail["outside_window_posted_today"] == 1
+    assert d1.detail["outside_window_posted_today"] == allowance
 
     # The SAME history is fine once she is IN session — the windows are the point.
     in_session_now = datetime(2026, 7, 23, 2, 0, tzinfo=timezone.utc)  # 10:00 Thu HK
@@ -1388,12 +1410,23 @@ def test_shadow_mode_still_computes_the_verdict_it_would_have_returned():
     prof = CR.load_profile("flagship", specs=P.load_all(ROOT))
     assert prof is not None
     dark = {"cadence_resolver": {"enabled": False}}
-    # weekend_shape `medium` -> round(20 * 0.67) = 13 on a Saturday. Fill it, then
-    # the next item is over the daily cap; the budget gate runs before spacing, so
-    # the spread of these stamps does not matter.
-    history = [(_SAT_UTC - timedelta(minutes=30 * (i + 1)), "signal") for i in range(13)]
+    # THE BUDGET IS DERIVED, NOT WRITTEN DOWN (2026-08-08). This used to fill 13
+    # stamps, because weekend_shape `medium` resolved 20 x 0.67 -> 13. The
+    # 20-30/day order moved posts_per_day to 30, so the Saturday budget moved to
+    # 20 and a 13-stamp history stopped reaching the cap at all — the test went
+    # red on `would_refuse` being absent, i.e. it silently stopped exercising the
+    # branch it names. Read the budget from the resolver so this asserts the
+    # SHADOW MECHANISM (a would-be refusal is still computed while dark) and not
+    # a number that belongs to the persona spec.
+    budget = CR.daily_budget(prof, _SAT_UTC,
+                             weekend_factors=CR.resolver_config({})["weekend_factors"])
+    assert budget >= 1, "vacuous: a zero budget would make the fill below empty"
+    history = [(_SAT_UTC - timedelta(minutes=30 * (i + 1)), "signal")
+               for i in range(budget)]
     d = CR.resolve("flagship", "signal", now=_SAT_UTC, profile=prof,
                    history=history, cfg=dark)
     assert d.allow, "shadow mode must not bind"
     assert d.detail["would_refuse"] == CR.REASON_DAILY_CAP
-    assert d.detail["daily_budget"] == 13, "flagship weekend_shape medium -> 13/day"
+    assert d.detail["daily_budget"] == budget
+    # The shipped number, pinned once so a spec change is still a deliberate edit.
+    assert budget == 20, "flagship posts_per_day 30 x weekend_shape medium -> 20/day"
