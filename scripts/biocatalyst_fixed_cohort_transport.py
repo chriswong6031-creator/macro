@@ -35,8 +35,8 @@ import re
 import sys
 from typing import Any
 
-if __package__ in (None, ""):  # pragma: no cover - direct-script execution guard
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_ROOT))
 
 from collectors.biocatalyst.clinicaltrials_fixed_cohort import (  # noqa: E402
     DEFAULT_USER_AGENT,
