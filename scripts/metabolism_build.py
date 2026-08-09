@@ -168,7 +168,7 @@ def _load_park_expiry_days(root: Path | None = None) -> int:
 
 
 def _park_row_is_expired(row: dict, expiry_days: int) -> bool:
-    """Return True if a parked_construction row is older than expiry_days.
+    """Return True if a parked_construction row is at least expiry_days old.
 
     A row without a parseable 'ts' is treated as NOT expired (fail-closed: if
     we cannot read when the park was written, we keep the block active).

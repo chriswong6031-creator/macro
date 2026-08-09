@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -27,7 +27,49 @@ from engine.marketing import exemplar_store as xs  # noqa: E402
 from engine.marketing import labels as lb  # noqa: E402
 from engine.marketing import x_intel as xi  # noqa: E402
 
-NOW = datetime(2026, 7, 29, 22, 0, tzinfo=timezone.utc)
+#: The lane's injected clock.  Real, not pinned: every ``now=NOW`` call site is
+#: hermetic against it, and the fixtures below are derived FROM it, so the whole
+#: file moves as one coherent clock instead of drifting apart from the real one.
+NOW = datetime.now(timezone.utc)
+
+#: Spend-state month key — derived, never the literal "2026-07".  ``month_bucket``
+#: (engine/marketing/x_intel.py:773-775) keys the budget state by
+#: ``now.strftime("%Y-%m")``, so a literal key stops matching the moment the
+#: month rolls over and every cap test silently reads a fresh, empty bucket.
+_MONTH_KEY = NOW.strftime("%Y-%m")
+
+
+def _month_step(dt: datetime, months: int) -> datetime:
+    """Step `dt` by whole CALENDAR months — never a fixed 30-day offset.
+
+    A "fresh month resets the counter" test has to land in a DIFFERENT
+    ``%Y-%m`` bucket than NOW.  A +30-day offset does not guarantee that (it
+    lands in the same month whenever NOW is early enough in a 31-day month),
+    which would make the test assert its own premise.  Day is pinned to 1 so
+    the step is always a valid date.
+    """
+    total = dt.year * 12 + (dt.month - 1) + months
+    return dt.replace(year=total // 12, month=total % 12 + 1, day=1)
+
+
+def _days_ago(days: int) -> str:
+    """ISO day `days` before now (UTC) — NEVER hardcode a corpus `created_day`.
+
+    ``xi.analyze`` drops every row whose ``created_day`` is before
+    ``now - analysis_window_days`` (engine/marketing/x_intel.py:1095-1099; the
+    live ``config/marketing.yml`` binds 90 through the ``cfg`` fixture).  A
+    literal corpus day is therefore a scheduled red: the pinned ``2026-07-28``
+    aged out on 2026-10-27 UTC, and the run-churn tests read the REAL clock
+    (``scripts/x_intel_harvest.py:175``) rather than ``NOW``, so the corpus went
+    empty and ``n_posts`` collapsed to 0.  Its sibling
+    ``test_a_dark_run_leaves_NO_diff`` stayed GREEN on the same date, comparing
+    two empty reports — the silent half of the same bomb.
+
+    Evaluated at CALL time on purpose: a default argument (or a module
+    constant) freezes at import, which is a different clock from the one the
+    producer reads inside the test.
+    """
+    return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
 
 
 @pytest.fixture(scope="module")
@@ -239,7 +281,7 @@ class TestHarvestParsesTheRealShape:
 # ===========================================================================
 class TestBudgetCap:
     def test_the_cap_refuses_the_next_call(self):
-        state = {"months": {"2026-07": {"calls": 600, "tweets": 12000, "usd": 1.8}}}
+        state = {"months": {_MONTH_KEY: {"calls": 600, "tweets": 12000, "usd": 1.8}}}
         ok, reason, meta = xi.budget_check(state, {"intel": {"monthly_call_cap": 600}},
                                            now=NOW)
         assert ok is False
@@ -249,22 +291,22 @@ class TestBudgetCap:
     def test_the_usd_cap_is_an_independent_second_stop(self):
         """Defence in depth: if a page ever returns far more than the ~20 tweets
         the call-cap arithmetic assumes, the dollar counter still binds."""
-        state = {"months": {"2026-07": {"calls": 3, "tweets": 900_000, "usd": 9.9}}}
+        state = {"months": {_MONTH_KEY: {"calls": 3, "tweets": 900_000, "usd": 9.9}}}
         ok, reason, _ = xi.budget_check(
             state, {"intel": {"monthly_call_cap": 600, "monthly_usd_cap": 5.0}}, now=NOW)
         assert ok is False and reason == "monthly_usd_cap"
 
     def test_a_fresh_month_resets_the_counter(self):
-        state = {"months": {"2026-07": {"calls": 600, "tweets": 1, "usd": 1.8}}}
+        state = {"months": {_MONTH_KEY: {"calls": 600, "tweets": 1, "usd": 1.8}}}
         ok, _reason, _meta = xi.budget_check(
             state, {"intel": {"monthly_call_cap": 600}},
-            now=datetime(2026, 8, 1, tzinfo=timezone.utc))
+            now=_month_step(NOW, 1))     # a real calendar month on, never +30d
         assert ok is True
 
     def test_refusal_annotation_starts_the_line_and_flushes(self, capsys):
         """GitHub silently DROPS an annotation that does not start the line —
         the CI-guarded house law. A logger here would emit `WARNING ::warning`."""
-        state = {"months": {"2026-07": {"calls": 600, "tweets": 0, "usd": 1.8}}}
+        state = {"months": {_MONTH_KEY: {"calls": 600, "tweets": 0, "usd": 1.8}}}
         _ok, reason, meta = xi.budget_check(state, {"intel": {"monthly_call_cap": 600}},
                                             now=NOW)
         xi.announce_budget_stop(reason, meta)
@@ -435,7 +477,10 @@ class TestCorpusLedger:
 # GATE E3.5 — the ANALYSIS pass (deterministic; LLM never scores)
 # ===========================================================================
 def _corpus_row(tid, text, *, author="DeItaone", register="wire", views=50_000,
-                likes=100, rts=10, replies=5, day="2026-07-28", media=False):
+                likes=100, rts=10, replies=5, day: str | None = None, media=False):
+    # `day=None` -> resolved at CALL time (see _days_ago): a literal default
+    # would be bound once at import, on a different clock from the producer's.
+    day = day or _days_ago(1)
     return {
         "schema": xi.SCHEMA, "id": str(tid), "author": author,
         "author_register": register, "text": text, "created_day": day,
