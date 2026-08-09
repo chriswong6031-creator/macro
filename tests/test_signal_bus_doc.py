@@ -73,9 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 607, (
-        f"Expected 607 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 615, (
+        f"Expected 615 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Government Revenue SBIR progression registered five observation,"
+        " receipt, projection, status, and heartbeat artifacts; Release Radar"
+        " registered target vintages, official actuals, and inflation context"
+        " = 607->615);"
         " (Options Prophet shadow registered its display-only projection,"
         " signing-quality context gate, and dislocation research gate = 604->607);"
         " (Polygon intraday price cache registered the receipt-bound H+60 input"

@@ -62,6 +62,15 @@ _NEGATED_GATE_TERM = re.compile(
     r"steps\.([A-Za-z0-9_-]+)\.(outcome|conclusion)\s*!=\s*'([a-z]+)'"
 )
 
+# Match the collector entrypoint as a module token, not every sibling whose
+# name merely starts with ``scripts.collect``.  Release Radar legitimately runs
+# ``scripts.collect_release_target_vintages`` inside the engine job; treating
+# that as the qledger-producing collector makes this guard inspect an unrelated
+# Prophet checkpoint and report a staging defect that does not exist.
+_COLLECT_ENTRYPOINT = re.compile(
+    r"\bpython(?:3(?:\.\d+)?)?\s+-m\s+scripts\.collect(?=\s|$)"
+)
+
 
 def _uncommented(body: str) -> str:
     """Drop whole-line shell comments from a `run` body.
@@ -153,7 +162,9 @@ def _collect_commit_jobs(wf_path: Path) -> dict[str, list[dict]]:
     jobs: dict[str, list[dict]] = {}
     for name, job in (doc.get("jobs") or {}).items():
         steps = [s for s in (job.get("steps") or []) if s.get("run")]
-        if not any("scripts.collect" in s["run"] for s in steps):
+        if not any(
+            _COLLECT_ENTRYPOINT.search(_uncommented(s["run"])) for s in steps
+        ):
             continue
         commits = [
             s for s in steps if "git add" in s["run"] and "git commit" in s["run"]
@@ -174,6 +185,15 @@ def test_collect_jobs_have_commit_steps():
             f"{name}: no commit step found in the scripts.collect job — "
             "test needs updating if the lane was restructured"
         )
+
+
+def test_collect_entrypoint_matcher_rejects_sibling_modules_and_comments():
+    assert _COLLECT_ENTRYPOINT.search("python -m scripts.collect --group asia")
+    assert _COLLECT_ENTRYPOINT.search("python3.12 -m scripts.collect --exclude-group asia")
+    assert not _COLLECT_ENTRYPOINT.search("python -m scripts.collect_release_target_vintages")
+    assert not _COLLECT_ENTRYPOINT.search(
+        _uncommented("# python -m scripts.collect\npython -m scripts.other")
+    )
 
 
 def test_collect_commit_steps_stage_qledger():
