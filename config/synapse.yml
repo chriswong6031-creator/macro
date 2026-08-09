@@ -6132,22 +6132,80 @@ artifacts:
     storage: git
     asof_field: generated_at
     freshness_sla_hours: 30
-    schema: options_entry.gate.v1
+    schema: options_entry.gate.v3
     tier: shadow
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/mastermind_context.py
+      - scripts/build_options_prophet.py
     external_consumers:
       - mastermind:context
     notes: >
-      Pre-registered options-entry quality gate (W1.3 machinery). Currently:
-      scored=false, status=building_history (n << 30 per bucket; all gates building).
-      Buckets: S-VOI, S-WALL, S-TOP_RISK (pre-registered; verdicts at n>=30 ~Q4-26).
-      Gate logic: conditioned-vs-unconditioned delta with bootstrap CI on A10 primitives
-      (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_5/21, fwd_ret_5) from
-      us_board_ledger/retro_grades.parquet. Tier=shadow until validation_gate.validated==true.
+      Pre-registered options-entry quality gate. v3 first collapses the horizon
+      ledger to canonical (as_of,lane,ticker) fires and declares the buy lane before
+      masks or terciles. A descriptive cell requires its own conditioned/base
+      outcomes to reach n>=30 fires, >=30 dates per side, and >=30 overlapping dates;
+      family-level or repeated-horizon counts cannot mature it. The 36-cell family
+      reports two-sided permutation diagnostics, 95% IID bootstrap intervals and
+      BH-FDR at alpha=0.10, but those statistics have no promotion authority. A
+      frozen date-cluster/block estimator, sequential-look plan/alpha budget and
+      fresh post-amendment cohort are still required. scored=false and weight=0 are
+      hard-frozen, so this artifact grants no rank/gate/size/Macro authority.
+
+  options-flow-signing-gate:
+    path: data/options_flow/signing_gate.json
+    format: json
+    producer: scripts/calibrate_flow_signing.py
+    known_extra_writers:
+      - "scripts/calibrate_thetadata_tape_sessions.py — updates only the thetadata_tape sub-key"
+    owner_program: options-flow
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: null
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_flow.py
+      - scripts/build_options_prophet.py
+    external_consumers: []
+    notes: >
+      Source-specific trade-signing calibration. Root direction_reliable governs
+      bar/minute sources and remains false; the thetadata_tape sub-gate requires its
+      own direction_reliable_tape plus production_ready decision. Magnitude and
+      assumption-free positioning are not disabled by a failed direction gate. This
+      gate measures signing quality only and creates no directional-alpha authority.
+
+  options-dislocation-gate:
+    path: data/options_dislocation/validation_gate.json
+    format: json
+    producer: scripts/validate_options_dislocation.py
+    known_extra_writers: []
+    owner_program: options-dislocation
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: null
+    schema: options_dislocation.gate.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_dislocation.py
+      - scripts/build_options_prophet.py
+    external_consumers: []
+    notes: >
+      Pre-registered cross-sectional options-dislocation research gate. The current
+      artifact is scored=false with no scored_primitives and insufficient date
+      history; individual in-sample/FDR-looking cells inside the short single regime
+      do not confer authority. Options Prophet relays this status as positioning
+      context only, with enforced weight=0.
 
   options-skew-snapshots:
     path: data/options_skew/snapshots.parquet
@@ -8241,7 +8299,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       NEXT3 W-OC (PR-β) — options entry feature coverage audit (RUL-U5).
@@ -12737,6 +12796,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/pick_lab/render.py
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       Pick Lab entry-books site artifact (horizon_role=tactical_entry — the entry
@@ -12745,8 +12805,46 @@ artifacts:
       (on_the_run_stocks / take_profits_stocks), and regime summary scalar.
       All rows carry authority='display_only' (PL-R1/PL-R10). Status ACCRUING
       until n≥25 fires / ≥3 months / ≥6 distinct fire dates (PL-R4 floor).
-      plab_random_ctrl pinned as yardstick row. Consumed only by render.py →
-      site/us_stocks_lab.html. Fully firewalled from hold_thesis surfaces (PL-R6).
+      plab_random_ctrl pinned as yardstick row. Consumed by render.py →
+      site/us_stocks_lab.html and by the display-only Options Prophet projection.
+      Fully firewalled from hold_thesis surfaces (PL-R6).
+
+  options-prophet-shadow:
+    path: site/options_prophet/index.json
+    format: json
+    producer: scripts/build_options_prophet.py
+    known_extra_writers: []
+    owner_program: options-prophet-shadow
+    cadence: daily-engine
+    storage: git+r2
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: options.prophet_shadow/v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/mirror_flow_idx.py
+    external_consumers:
+      - terminal:options-prophet
+    notes: >
+      Honest display-only projection over existing Flow Leaders and Pick Lab
+      outputs. `opportunities` contains only actual same-session fires from the
+      plab_flow_leader/plab_flow_washout books; `watchlist` preserves Board A then
+      Board B source order and creates no composite. Information readiness fails
+      closed with the source-specific signing gate. Positioning distinguishes
+      available context from promotion readiness and relays the options-entry and
+      dislocation gates at zero rank/gate/size/Macro authority. Execution is
+      explicitly not ready because no executable contract/quote/fill/lifecycle/mark
+      ledger exists. Trajectory is withheld; macro_feedback.enabled=false and
+      weight=0 until a paired incremental-attribution gate earns authority. Mirrored
+      non-fatally to R2 key options_prophet/index.json. Additive v1 receipts pin
+      nullable exact decision_at plus exact available_at, separate immutable-event
+      accrual from 1h/EOD/1d/3d/5d/10d/expiry outcome accrual, and reserve an optional
+      konseki.market_memory/v1 consumer seam at context_only/weight=0. A research fire
+      is explicitly not an issued model-portfolio position; portfolio construction is
+      a separate future artifact and ledger.
 
   pick-lab-longhold-ledger:
     path: site/labdata/pick_lab_longhold.json
@@ -14638,6 +14736,7 @@ artifacts:
     consumers:
       - templates/options.html.j2
       - engine/pick_lab/candidates.py
+      - scripts/build_options_prophet.py
     external_consumers: []
     notes: >
       FL W2. Flow Leaders nightly artifact: Board A (recurring net-impact leadership),

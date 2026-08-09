@@ -619,6 +619,15 @@ lanes:
       - id: build_pick_lab
         module: scripts.build_pick_lab
         note: Pick Lab nightly runner — enriches snapshot, fires 27 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
+      - id: build_options_prophet
+        module: scripts.build_options_prophet
+        note: >-
+          Display-only Options Prophet shadow projection. Runs immediately after
+          build_pick_lab; preserves Flow Leaders source order, exposes only
+          ledger-admitted plab_flow_leader/plab_flow_washout fires, and carries
+          signing/positioning/forward-sample gates without creating a composite,
+          direction, trajectory, execution claim, or Macro Prophet weight.
+          outputs: [site/options_prophet/index.json]
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
@@ -922,6 +931,10 @@ lanes:
           outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
+        note: >-
+          Non-fatal single-artifact R2 mirrors for flow index, Flow Leaders,
+          Leader Radar, and the Options Prophet shadow projection. The latter
+          publishes site/options_prophet/index.json at options_prophet/index.json.
       - id: mirror_terminal_context_r2
         module: scripts.mirror_terminal_context_r2
         note: >-

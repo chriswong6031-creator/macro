@@ -2131,6 +2131,11 @@ jobs:
           # Outputs are covered by the existing `git add data/ site/` commit step.
           # main() swallows all failures and returns 0, so this can NEVER break the render.
           run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab
+          # Options Prophet shadow projection — immediately after Pick Lab so the
+          # artifact can expose only ledger-admitted plab_flow_leader / flow_washout
+          # fires. Reuses Flow Leaders ordering; creates no score, direction, contract,
+          # trajectory, or Macro weight. Missing inputs publish explicit not-ready gates.
+          run_py "options prophet shadow (build_options_prophet)" scripts.build_options_prophet
           # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
           # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
           # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
@@ -3904,6 +3909,7 @@ jobs:
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --radar || echo "::warning::leader radar R2 mirror failed (non-fatal)"
+          python -m scripts.mirror_flow_idx --options-prophet --strict || echo "::warning::options prophet R2 mirror failed (non-fatal)"
           python -m scripts.mirror_terminal_context_r2 || echo "::warning::terminal-context R2 mirror failed (non-fatal)"
       - name: flow-signal ledger harvest + outcome grader (FS-0)
         # FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5): append-only per-event
@@ -4189,10 +4195,12 @@ jobs:
         # by the "commit engine outputs" step's `git add data/` below. Idempotent. Resilient.
         run: python -m scripts.stamp_options_state || true
       - name: Options entry-quality gate (Options Alpha W1.3; pre-registered, scored=false)
-        # Recomputes the S-IVR/S-DOI/S-WALL/S-VOI bucket counts/verdicts from the stamped ledger
-        # into data/options_entry/gate.json (ledger primitives only, A10). Cheap (seconds). No
-        # verdict until n≥30/bucket (doctrine §2.3); verdict flips require the pre-registered
-        # thresholds, never a code edit. Resilient.
+        # Reduces the horizon ledger to canonical buy-lane fires, then recomputes the registered
+        # options-entry diagnostics in data/options_entry/gate.json (ledger primitives only, A10).
+        # Descriptive maturity requires ≥30 fires, ≥30 dates in each bucket, and ≥30 shared
+        # dates. Existing observations cannot earn authority after the methodology amendment:
+        # date-cluster inference plus a frozen sequential-look plan and fresh cohort are still
+        # required. scored=false / weight=0 remain hard-frozen. Cheap and resilient.
         run: python -m scripts.validate_options_entry || true
       - name: Calibration Hub (unified self-improvement observability; display-only)
         # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
