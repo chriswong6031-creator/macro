@@ -1,26 +1,14 @@
 {
-  "ts": "2026-08-08T23:11:41+00:00",
-  "main_sha": "8279f15efd96eafbaa1a7bcb31410f08b8e7aafc",
+  "ts": "2026-08-09T06:56:40+00:00",
+  "main_sha": "4223cec3e803aa14a547a0921742f854717a9d02",
   "red_required": [
-    {
-      "name": "publish",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31283102620/job/93167452371"
-    },
-    {
-      "name": "refresh",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31283075339/job/93167382130"
-    },
     {
       "name": "Supabase Preview",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/93167152902"
+      "url": "https://github.com/chriswong6031-creator/macro/runs/93210486865"
     }
   ],
   "green": false,
-  "consecutive_failures": 3
+  "consecutive_failures": 1
 }

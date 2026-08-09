@@ -37,8 +37,8 @@
     "status": "locked_minimums"
   },
   "family": "pss_rh1_relief_hazard_prospective",
-  "gate_open": false,
-  "generated_utc": "2026-08-08T15:11:21.086668+00:00",
+  "gate_open": true,
+  "generated_utc": "2026-08-08T20:35:53.063193+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,
@@ -59,7 +59,19 @@
   "note": "Exact PSS-SR3 construction accruing prospectively as an adverse relief-rally hypothesis. Historical SR3 rows count as zero. Operator research only; no entry, rank, size, gate, alert, user-display, or auto-promotion authority.",
   "program_id": "PSS-RH1",
   "registration_ok": true,
-  "scan_census": {},
+  "scan_census": {
+    "anchors": 9261,
+    "detected_post_cutoff_paths": 11,
+    "frozen_members": 799,
+    "loaded_members": 799,
+    "missing_members": 0,
+    "prospective_candidate_anchors": 58,
+    "reasons": {
+      "missing_ohlcv": 0,
+      "no_subject_recovery": 27,
+      "pre_cutoff_action": 20
+    }
+  },
   "schema": "personality_relief_hazard.state/v1",
   "status": "prospective_accrual_only"
 }

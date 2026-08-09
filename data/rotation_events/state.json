@@ -6,7 +6,7 @@
    "from_leg": "memory",
    "to_leg": "semicap",
    "started": "2026-08-04",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -34,7 +34,7 @@
    "from_leg": "memory",
    "to_leg": "legacy_tech",
    "started": "2026-08-04",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
