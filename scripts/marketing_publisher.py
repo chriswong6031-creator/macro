@@ -57,8 +57,7 @@ _TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 # failure mode). Path bootstrap first so `python scripts/marketing_publisher.py`
 # from any cwd resolves `engine.` the same as `python -m scripts...` does.
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.media_publish import (  # noqa: E402
     card_ticker_mismatch as _card_ticker_mismatch,
@@ -91,8 +90,6 @@ def _data_root(root_arg: str | None) -> Path:
 
 def _ensure_importable() -> None:
     cr = _code_root()
-    if str(cr) not in sys.path:
-        sys.path.insert(0, str(cr))
 
 
 def _load_marketing_cfg(root: Path) -> dict:

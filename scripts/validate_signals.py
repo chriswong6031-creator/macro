@@ -8,7 +8,9 @@ with the charting web-app so the two workstreams can never drift.
 This is a SAFETY GATE, not signal logic: it asserts every emitted file matches the schema AND
 three cross-field rules the schema can't express as cleanly:
   1. markers within a file are strictly date-sorted ascending;
-  2. `quality` appears ONLY on buy/rebuy markers (never sell/cut);
+  2. the buy-filter verdict fields — `quality`, `reason`, `reasons` and `confirmed_date`
+     — appear ONLY on buy/rebuy markers. `signal_date` and `recorded_at` are exempt:
+     every marker type has a bucket close and a first-publication run;
   3. `reasons[0]` — the exhaustive buy-filter account — IS the marker's `reason`, so the
      account can never open on a different leg than the first-match label it explains.
 It writes data/quality/signals_audit.json {asof, files_checked, n_markers, errors:[...]} and
@@ -72,9 +74,9 @@ def check_markers(markers: list, where: str) -> list[str]:
         if not isinstance(m, dict):
             continue  # schema already flagged it
         mtype = m.get("type")
-        # Rule 2: `quality`/`reason`/`reasons` are buy-filter verdict fields — present on
-        # buy/rebuy ONLY, and `quality` is REQUIRED there (the chart reads it to render
-        # solid/hollow/provisional).
+        # Rule 2: these are buy-filter verdict fields — present on buy/rebuy ONLY, and
+        # `quality` is REQUIRED there. `signal_date`/`recorded_at` are deliberately not
+        # included: every marker type has a bucket close and a first-publication run.
         if mtype in _QUALITY_TYPES:
             if "quality" not in m:
                 out.append(f"{where}: markers[{i}]: `quality` missing on type '{mtype}' "
@@ -83,7 +85,7 @@ def check_markers(markers: list, where: str) -> list[str]:
             if "quality" in m:
                 out.append(f"{where}: markers[{i}]: `quality` present on type '{mtype}' "
                            f"(allowed only on buy/rebuy)")
-            for field in ("reason", "reasons"):
+            for field in ("reason", "reasons", "confirmed_date"):
                 if field in m:
                     out.append(f"{where}: markers[{i}]: `{field}` present on type '{mtype}' "
                                f"(allowed only on buy/rebuy)")

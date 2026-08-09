@@ -31,6 +31,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from engine.prophet_integrity import effective_public_plan_date
+
 log = logging.getLogger(__name__)
 
 
@@ -109,7 +111,9 @@ def _feed_prophet(root: Path) -> list[dict]:
             ticker = plan.get("asset", "")
             if not ticker:
                 continue
-            as_of = (plan.get("_signal_date") or data.get("asof") or _today_str())[:10]
+            as_of = effective_public_plan_date(plan)
+            if not as_of:
+                continue
             pid = plan.get("id", "")
             conviction = plan.get("_conviction_score", "")
             why = f"active Prophet plan {pid}, phase {phase}, conviction {conviction}"

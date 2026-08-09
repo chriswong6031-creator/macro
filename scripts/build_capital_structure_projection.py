@@ -19,19 +19,23 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
 import tempfile
 from typing import Any
 
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from engine.capital_structure.projection import (
     build_projection_bundle,
     validate_projection_bundle,
-)
+)  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     read_source_ledger,
     source_ledger_path,
-)
+)  # noqa: E402
 from scripts.compile_capital_structure_events import (
     EDGE_COLUMNS,
     REVIEW_COLUMNS,
@@ -40,7 +44,7 @@ from scripts.compile_capital_structure_events import (
     _load_existing_events,
     _validate_committed_generation,
     dataframe_records,
-)
+)  # noqa: E402
 
 
 def _repo_root() -> Path:

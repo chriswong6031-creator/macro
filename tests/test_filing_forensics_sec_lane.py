@@ -134,6 +134,33 @@ def test_sec_lane_keeps_the_fixed_restore_acquire_project_sync_order(lane: dict)
     assert body.count(f"python -m {WAVE2_MODULE}") == 2
 
 
+def test_sec_lane_reuses_the_warm_archive_only_on_the_acquire_invocation(lane: dict) -> None:
+    """Reuse belongs to the acquire leg, and the runner refuses it anywhere else.
+
+    The lane re-downloaded a flat ~128MB of already-retained primary documents every
+    night (127.96MB -> 127.93MB across 08-05..08-08, zero new filings).  Arming the
+    flag on the projection/sync call would fail that call outright.
+    """
+    body = next(
+        str(step.get("run", ""))
+        for step in _steps(lane, "acquire_project_sync")
+        if WAVE2_MODULE in str(step.get("run", ""))
+    )
+    first, second = body.split(f"python -m {WAVE2_MODULE}")[1:3]
+
+    assert "--acquire" in first
+    assert "--reuse-local-archive" in first
+    assert "--reuse-local-archive" not in second
+    # Count argument lines only: the step's comment block names the flag too, and a
+    # raw substring count would read the rationale as a second arming.
+    armed = [
+        line
+        for line in body.splitlines()
+        if "--reuse-local-archive" in line and not line.strip().startswith("#")
+    ]
+    assert len(armed) == 1
+
+
 def test_sec_lane_publishes_the_bundle_and_proves_it_restores(lane: dict) -> None:
     names = [step.get("name", "") for step in _steps(lane, "acquire_project_sync")]
     publish = next(index for index, name in enumerate(names) if "publish disclosure-projection bundle" in name)

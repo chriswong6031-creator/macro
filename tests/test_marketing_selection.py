@@ -260,6 +260,8 @@ def test_cooled_ticker_is_not_planned_but_an_override_brings_it_back(tmp_path):
         "entry": 60.0, "targets": [70.0], "phase": "triggered_pre_t1",
         "recommended_action": "hold", "management_confidence": 70.0,
         "_signal_date": _YESTERDAY,
+        "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+        "signal_date": _YESTERDAY,
     }]
 
     cooled = plan_account(account, plans, n_days=1, per_day=6,
@@ -740,11 +742,15 @@ _STUB_PLANS = [
     {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
      "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 66.0, "_signal_date": _YESTERDAY},
+     "management_confidence": 66.0, "_signal_date": _YESTERDAY,
+     "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+     "signal_date": _YESTERDAY},
     {"id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL", "entry": 82.0,
      "invalidation": 75.0, "targets": [95.0], "trigger": 84.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 61.0, "_signal_date": _YESTERDAY},
+     "management_confidence": 61.0, "_signal_date": _YESTERDAY,
+     "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+     "signal_date": _YESTERDAY},
 ]
 
 

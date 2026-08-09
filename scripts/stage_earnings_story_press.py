@@ -24,8 +24,7 @@ from typing import Any, Mapping
 
 
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.earnings_narrative.admission import (  # noqa: E402
     build_press_admission,
