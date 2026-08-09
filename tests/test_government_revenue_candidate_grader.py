@@ -233,7 +233,7 @@ def test_preregistration_document_is_committed_and_binds_the_code():
     family, digest = grader.load_family_declaration(PREREG_PATH)
     assert family is GRV_FA1
     assert len(digest) == 64
-    assert family.version == "3.0.0"
+    assert family.version == "3.1.0"
 
 
 def test_preregistration_declares_kill_expiry_and_thresholds():
@@ -2149,7 +2149,7 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
     for reason in grader.DISCLOSURE_UNAVAILABLE_REASONS:
         assert f"`{reason}`" in text
     family, _digest = grader.load_family_declaration(PREREG_PATH)
-    assert family.version == "3.0.0"
+    assert family.version == "3.1.0"
     # Still pre-observation, which is what makes this amendment legal at all.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0

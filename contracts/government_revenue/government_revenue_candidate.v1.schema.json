@@ -68,6 +68,10 @@
         "contract": {"const": "government_recipient_resolution.v1"},
         "resolution_state": {"enum": ["confirmed", "reviewed"]},
         "relation_semantic": {"const": "reviewed"},
+        "identity_basis": {
+          "description": "Named basis for the exact recipient identity behind this candidate's issuer link. 'source_record_recipient' is the observation's own recipient fields; 'award_level_recipient_at_collection' is the award's recipient of record attached to an observation that asserted none of its own, on the award's retrieval clock. A candidate on the award-level basis also prints it in limitations. Null when the resolution artifact predates the named bases.",
+          "enum": ["source_record_recipient", "award_level_recipient_at_collection", null]
+        },
         "graph_id": {"type": "string", "minLength": 1}, "graph_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
         "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
       }

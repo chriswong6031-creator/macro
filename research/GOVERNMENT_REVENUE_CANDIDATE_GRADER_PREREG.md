@@ -78,6 +78,36 @@ Every refusal above is recorded in the same append-only log as an `abstention` r
 named reason, so the abstention rate is computable from the log alone and a filter cannot
 be applied silently.
 
+**Identity basis — what `exact_linked` is allowed to rest on (registered 2026-08-08).** The
+`exact_link_status` clause above constrains the link *class* (exact identifier, reviewed
+ownership path — never a discovery name or a fuzzy match). It did not, through 3.0.0,
+constrain the *basis*: whose assertion supplied that exact identifier, and on which clock. It
+now does, because the answer changed. The USAspending action rail — `POST
+/api/v2/transactions/`, the rail that produces every admitted candidate in this family —
+carries no recipient identity of its own (35,140 of 35,140 accrued action rows hold a null
+`recipient_uei`), so until now no action could ever be exact-linked and the family's
+admissions came from the award-detail rail alone. An action is now linkable through the
+award's recipient of record, attached to the row under a named basis with the award's own
+retrieval clock. Two bases are registered, and a candidate carries exactly one:
+
+- `source_record_recipient` — the observation's own recipient fields, asserted by the response
+  that produced the row. This is what every candidate before this amendment rested on.
+- `award_level_recipient_at_collection` — the award's recipient of record, attached to an
+  observation that asserted none of its own. The identifier is exact and the ownership path is
+  reviewed, so the link satisfies `exact_linked` as written; what is *not* claimed is that the
+  transaction named this recipient. The identity's clock is the award record's retrieval
+  clock, never the transaction's `effective_at`, so a recipient recorded after collection is
+  outside the claim. Every such candidate prints the basis in `issuer_resolution_ref` and the
+  limitation in `limitations`.
+
+**Both bases are admitted, and neither is a separate cohort.** A basis split is not registered
+as a stratum here because the family's N (§7) was derived for one pooled statistic and
+splitting it post hoc is exactly the optional-stopping move §7.5 latches against. The basis is
+recorded on every issuance row so a *descriptive* partition is computable later; it is not a
+verdict input. This is a widening of which rail can satisfy an unchanged admission rule, made
+before any measurement exists to be flattered by it: `data/government_revenue/candidate_ledger.jsonl`
+is **0 bytes** at the amending commit's parent, and no issuance log exists.
+
 ### Machine-readable declaration (binding)
 
 `engine/government_revenue/candidate_grader.py:load_family_declaration` reads this block
@@ -95,7 +125,7 @@ not registered.
   "family_id": "grv-fa1",
   "title": "exact-issuer receipt-bound positive funded-action acceleration",
   "document": "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "horizons": [
     {"name": "h5", "sessions": 5, "role": "disclosure"},
     {"name": "h21", "sessions": 21, "role": "supporting"},
@@ -518,6 +548,7 @@ originate or escalate a grade here.
 | 2.0.0 §8 | 2026-08-06 | correction field **allowlist**; closed `correction_reason` vocabulary; the **supersession ratchet** | A plain correction could rewrite `known_at` (re-cutting the entry session after the outcome was observable), `ticker`, `horizons`, or `entry_rule`; the reason was unvalidated free text; and ungrading a loser moved a two-row cohort from `kill` to `tested_null`. |
 | 2.0.0 §1 | 2026-08-06 | `is_late_discovery` admission is fail-**closed** | `bool(...)` admitted a payload that omitted the key — the only fail-open admission test in the family. |
 | 2.0.0 §5/§6 | 2026-08-06 | coverage walker covers `*_mean`/`*_summary`/`*_bound`; `window_independence` emitted | The walker was structurally blind to the mean the verdict reads; `issued_n` counted overlapping windows as independent draws with no disclosure. |
+| 3.1.0 §1 | 2026-08-08 | **identity basis registered**: `exact_linked` may rest on `source_record_recipient` or on `award_level_recipient_at_collection`; the basis is printed on every candidate and is descriptive, never a verdict input or a stratum | §1 constrained the link *class* and was silent on *basis*, which was harmless only while the answer could not change: the action rail carries no recipient identity (35,140/35,140 null UEIs), so nothing on it could ever be exact-linked. Attaching the award's recipient of record makes the rail linkable, which widens which rail can satisfy an unchanged admission rule — a widening that must be registered rather than discovered in the data. Registered pre-observation (`candidate_ledger.jsonl` still 0 bytes, no issuance log), so §9's post-issuance freeze is not engaged. |
 | 3.0.0 §11 | 2026-08-07 | **disclosure-label layer registered**: earnings-window and subsequent-filings labels, their two PIT clamps, and the `unavailable` / `none_in_window` split | Wave 9G's build list asks for "earnings-window and subsequent-filings outcome labels where available" and 1.0.0/2.0.0 shipped neither — the word `earnings` did not appear in the instrument, the registration, or the suite. Registered pre-observation (log still absent, ledger still 0 bytes) and deliberately **outside** the decision rule, so §7's N = 545 continues to describe the statistic it was derived for. |
 
 ## 11. Disclosure labels — earnings windows and subsequent filings (descriptive)

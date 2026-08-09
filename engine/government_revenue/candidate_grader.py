@@ -514,7 +514,7 @@ GRV_FA1 = PreregisteredFamily(
     family_id="grv-fa1",
     title="exact-issuer receipt-bound positive funded-action acceleration",
     document=PREREG_DOCUMENT,
-    version="3.0.0",
+    version="3.1.0",
     horizons=(
         Horizon(name="h5", sessions=5, role="disclosure"),
         Horizon(name="h21", sessions=21, role="supporting"),

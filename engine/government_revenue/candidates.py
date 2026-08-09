@@ -39,6 +39,18 @@ _SUPPORTED_FAMILIES = {
     "option_exercised": "option_exercise",
     "new_award": "new_award",
 }
+IDENTITY_BASIS_SOURCE_RECORD = entity_resolution.IDENTITY_BASIS_SOURCE_RECORD
+IDENTITY_BASIS_AWARD_LEVEL = entity_resolution.IDENTITY_BASIS_AWARD_LEVEL
+IDENTITY_BASES = (IDENTITY_BASIS_SOURCE_RECORD, IDENTITY_BASIS_AWARD_LEVEL)
+#: Printed on any candidate whose exact link rests on the award's recipient of
+#: record rather than on an identity the observation itself asserted.  The
+#: limitation is the user-facing half of the ruling: the link is exact, and it
+#: is a claim about the award as collected, not about what the transaction said.
+AWARD_LEVEL_IDENTITY_LIMITATION = (
+    "Issuer identity comes from the award's recipient of record as collected, not from the "
+    "transaction record itself; a recipient change recorded after collection would not be "
+    "reflected in this link."
+)
 
 
 def _authority() -> dict[str, Any]:
@@ -561,6 +573,11 @@ def _reviewed_impact(
     issuer_company_id = _text(impact.get("issuer_company_id"))
     company_name = _text(impact.get("company_name"))
     resolution_state = _text(impact.get("resolution_state"))
+    identity_basis = _text(impact.get("identity_basis"))
+    if identity_basis is not None and identity_basis not in IDENTITY_BASES:
+        # An unrecognized basis is an unreadable provenance claim, not a
+        # permission to publish the link without one.
+        return None
     if not (
         ticker and _TICKER.fullmatch(ticker)
         and issuer_company_id and company_name
@@ -646,6 +663,7 @@ def _reviewed_impact(
         "ownership_path": edges,
         "economic_share": economic_share,
         "resolution_state": resolution_state,
+        "identity_basis": identity_basis,
         "evidence_refs": sorted(set(impact_evidence + company_evidence + [ref for edge in edges for ref in edge["evidence_refs"]])),
         "resolution_known_at": resolution_known_at,
     }, company)
@@ -741,6 +759,7 @@ def _candidate_from_event(
                 "contract": "government_recipient_resolution.v1",
                 "resolution_state": impact["resolution_state"],
                 "relation_semantic": "reviewed",
+                "identity_basis": impact["identity_basis"],
                 "graph_id": loaded["graph_id"],
                 "graph_digest": loaded["graph_digest"],
                 "evidence_refs": evidence_refs,
@@ -816,6 +835,11 @@ def _candidate_from_event(
                 "This is Government Revenue research context, not a trade or sizing signal.",
                 "Materiality ratio remains unavailable until an exact issuer-attributed denominator has its own receipt and clock.",
                 "Observed award amounts do not establish revenue timing, margin impact, or earnings impact.",
+                *(
+                    [AWARD_LEVEL_IDENTITY_LIMITATION]
+                    if impact["identity_basis"] == IDENTITY_BASIS_AWARD_LEVEL
+                    else []
+                ),
             ],
         })
     return result
