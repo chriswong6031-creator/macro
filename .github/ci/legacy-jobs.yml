@@ -862,6 +862,8 @@ jobs:
         run: python -m pytest tests/test_flow_surface.py -q
       - name: options PIT episodes (causal clocks, durable stage, H+60 labels, R2/checkpoint integrity)
         run: python -m pytest tests/test_options_signal_episode.py -q
+      - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
+        run: python -m pytest tests/test_options_structure_intraday.py tests/test_build_options_structure_intraday.py -q
       - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
         run: python -m pytest tests/test_live_flow.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
@@ -872,6 +874,10 @@ jobs:
         run: python -m pytest tests/test_mirror_terminal_context.py -q
       - name: options screener (IV-rank percentile + Scanner-mode rows export shape)
         run: python -m pytest tests/test_build_options_screener.py -q
+      # Authorized Oracle history replay is synthetic/aggregate-only in CI: it never
+      # reads the private JV source. This lane already owns the parquet adapter closure.
+      - name: Oracle replay (PIT cutoffs, R2 plan, privacy and no-signal authority)
+        run: python -m pytest tests/test_momoedge_oracle_history_replay.py -q
       # The governed Prophet shadow foundation (#5067), named by NO run: step when it
       # merged. It belongs in THIS job rather than a new one: its subject pair is
       # scripts/build_options_prophet.py plus the R2 key map in scripts/mirror_flow_idx
@@ -1638,6 +1644,8 @@ jobs:
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
       - name: CN entry-price integrity (corrupt-bar gate, PIT latch, fail-closed lane — PR 5000)
         run: python -m pytest tests/test_cn_entry_price_integrity.py -q
+      - name: CN board-append lane gate (fail-closed CN_LANE — board/ripening/audit/event-latch)
+        run: python -m pytest tests/test_cn_board_lane_gate.py -q
 
   workflow-yaml:
     if: ${{ false }}

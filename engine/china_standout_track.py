@@ -628,18 +628,25 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
     (date, ticker). Returns the ledger row count after the merge. Best-effort — never raises.
 
     LEDGER-INTEGRITY GATES (CN-1 §W6-CN), replacing the keep-first accident:
-      • asia-lane gate: appends only from the asia collection lane (``lane == 'asia'``). The nightly
-        render lanes must NOT persist a board (they discard data/ writes anyway); passing lane=None
-        preserves the legacy call for the asia build, which is the only one that commits data/.
+      • asia-lane gate, FAIL-CLOSED: ``lane == 'asia'`` appends and EVERYTHING else — an
+        unrecognised lane, or a caller that never named one — refuses. It used to allow
+        ``lane=None`` as a "legacy asia-build call", which made the gate unreachable in
+        production: scripts/build_china_library resolved its lane as
+        ``os.environ.get("CN_LANE", "asia")``, so every lane WAS the asia lane. Only
+        asia-close.yml sets ``CN_LANE=asia``, yet daily.yml and weekly.yml run the same
+        builder and ``git add data/`` too — and this store is keep-FIRST per
+        (date, ticker, board_definition), so the first lane to write a date owns its ranks
+        and its own_market_regime for good. Mirrors append_entry_latches; see
+        scripts/build_china_library._collection_lane for the resolver.
       • partial-session refusal: if the board's price panel was collected before the A-share close
         settled (session_status().partial_session), REFUSE the append — a mid-session board must
         never win the date in the ledger."""
     if not rows or not asof:
         return 0
-    # explicit asia-lane gate: a lane was passed and it is NOT asia → refuse (render lanes never
-    # persist). lane=None keeps the historical (asia-build) call working unchanged.
-    if lane is not None and lane != "asia":
-        log.info("china standout board-track: append gated (lane=%s, not asia)", lane)
+    # FAIL-CLOSED asia-lane gate: only 'asia' persists. An unnamed lane is refused, not assumed.
+    if lane != "asia":
+        log.info("china standout board-track: append REFUSED (lane=%r, not 'asia') — "
+                 "%d row(s) not persisted; the asia nightly is the sole advancer", lane, len(rows))
         return 0
     sess = session_status(asof)
     if sess.get("partial_session"):
@@ -1035,7 +1042,7 @@ def append_entry_latches(records: list[dict], *, lane: str | None = None,
     scripts.build_china_library and both commit ``data/``, so under the permissive form
     whichever lane the scheduler started first would decide a published number — which is
     the exact property this latch exists to remove. Only asia-close.yml sets
-    ``CN_LANE=asia``; see scripts/build_china_library._entry_latch_lane for the resolver.
+    ``CN_LANE=asia``; see scripts/build_china_library._collection_lane for the resolver.
     Returns the latch row count after the merge (0 when nothing was written).
     """
     if not records:
@@ -1609,8 +1616,9 @@ def append_ripening(rows: list[dict], asof: str | None = None,
     history). Separate parquet from the main board so consumers of buy are unaffected.
 
     Row schema: date, ticker, reasons (comma-joined str), imminence (macd_bars_to_cross or None),
-    w2_stoch, setup_live. Keep-FIRST per (date, ticker). Same asia-lane gate as append_board.
-    Best-effort — never raises.
+    w2_stoch, setup_live. Keep-FIRST per (date, ticker). Same FAIL-CLOSED asia-lane gate as
+    append_board: ``lane == 'asia'`` appends and everything else — an unrecognised lane, or a
+    caller that never named one — refuses. Best-effort — never raises.
 
     W8-R1 schema additions (schema-union tolerant — old rows without these cols = NaN):
       zone          : str FALLING | READY | BASING
@@ -1622,7 +1630,10 @@ def append_ripening(rows: list[dict], asof: str | None = None,
     """
     if not rows or not asof:
         return 0
-    if lane is not None and lane != "asia":
+    # FAIL-CLOSED asia-lane gate (same discipline as append_board — one rule, not two).
+    if lane != "asia":
+        log.info("china ripening ledger: append REFUSED (lane=%r, not 'asia') — "
+                 "%d row(s) not persisted; the asia nightly is the sole advancer", lane, len(rows))
         return 0
     out = []
     for r in rows:

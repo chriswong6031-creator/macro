@@ -444,7 +444,7 @@ def _emit_nightly(monkeypatch, tmp_path, df, *, cn_lane: str | None,
 
     Nothing about the lane is hand-fed: `cn_lane` sets the ONE environment variable the
     workflows set (asia-close.yml is the only one that sets `CN_LANE: asia`), and
-    ``thread_lane`` picks between main()'s explicit `lane=_entry_latch_lane()` and a bare
+    ``thread_lane`` picks between main()'s explicit `lane=_collection_lane()` and a bare
     call. The two must agree — the parameter is documentation at the call site, not the gate.
     """
     store = tmp_path / "china_standout_track"
@@ -460,7 +460,7 @@ def _emit_nightly(monkeypatch, tmp_path, df, *, cn_lane: str | None,
         monkeypatch.setenv("CN_LANE", cn_lane)
     site = tmp_path / "site"
     (site / "factordata").mkdir(parents=True, exist_ok=True)
-    kw = {"lane": bcl._entry_latch_lane()} if thread_lane else {}
+    kw = {"lane": bcl._collection_lane()} if thread_lane else {}
     assert bcl.emit_cn_track_ledger(site, None, [],
                                     board_definition=china_board_rank.BOARD_DEFINITION,
                                     asof="2026-08-20", **kw) is True
