@@ -639,6 +639,68 @@ class TestCheckB:
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
     @pytest.mark.parametrize(
+        "mutation",
+        [
+            (
+                "from builtins import globals as g\n"
+                "g()['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "import builtins as b\n"
+                "getattr(b, 'glob' + 'als')()"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "from builtins import setattr as s\n"
+                "self_module = __import__(__name__)\n"
+                "s(self_module, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "import inspect\n"
+                "inspect.currentframe().f_globals"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "_inflation_intelligence_null.__globals__"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "import engine.neuralweb.world_state as m\n"
+                "m._inflation_intelligence_null = evil\n"
+            ),
+        ],
+    )
+    def test_redteam_rejects_aliased_reflective_emitter_rebinding(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + mutation
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    def test_redteam_rejects_cross_module_fixed_emitter_rebinding(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+            ),
+            "engine/backdoor.py": (
+                "import engine.neuralweb.world_state as ws\n"
+                "ws._inflation_intelligence_null = evil\n"
+            ),
+        }
+        violations = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.module == "engine/backdoor.py" for v in violations)
+
+    @pytest.mark.parametrize(
         "forbidden_reference",
         [
             "observed = state['allowed_actions']",

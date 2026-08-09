@@ -219,7 +219,24 @@ _REFLECTIVE_EMITTER_NAMES = frozenset(
     {"globals", "locals", "vars", "exec", "eval", "setattr", "delattr"}
 )
 _REFLECTIVE_EMITTER_ATTRIBUTES = frozenset(
-    {"modules", "__code__", "__dict__", "__defaults__", "__kwdefaults__"}
+    {
+        "modules",
+        "__code__",
+        "__dict__",
+        "__defaults__",
+        "__kwdefaults__",
+        "__globals__",
+        "f_globals",
+        "f_locals",
+    }
+)
+_REFLECTIVE_EMITTER_IMPORTS = (
+    _REFLECTIVE_EMITTER_NAMES | {"builtins", "getattr", "__import__"}
+)
+_REFLECTIVE_EMITTER_LOOKUPS = (
+    _REFLECTIVE_EMITTER_NAMES
+    | _REFLECTIVE_EMITTER_ATTRIBUTES
+    | {"getattr", "__import__"}
 )
 
 # ---------------------------------------------------------------------------
@@ -454,8 +471,12 @@ def _enclosing_function(
     return None
 
 
-def _has_reflective_emitter_mutation(tree: ast.Module) -> bool:
+def _has_reflective_emitter_mutation(
+    tree: ast.Module,
+    expected_emitters: frozenset[str],
+) -> bool:
     """Return whether source can replace a validated producer indirectly."""
+    sensitive_lookups = _REFLECTIVE_EMITTER_LOOKUPS | expected_emitters
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.Name)
@@ -464,7 +485,30 @@ def _has_reflective_emitter_mutation(tree: ast.Module) -> bool:
             return True
         if (
             isinstance(node, ast.Attribute)
-            and node.attr in _REFLECTIVE_EMITTER_ATTRIBUTES
+            and node.attr in _REFLECTIVE_EMITTER_LOOKUPS
+        ):
+            return True
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+            and node.attr in expected_emitters
+        ):
+            return True
+        if isinstance(node, ast.alias):
+            bound_name = node.asname or node.name.split(".", maxsplit=1)[0]
+            if (
+                node.name.split(".", maxsplit=1)[0]
+                in _REFLECTIVE_EMITTER_IMPORTS
+                or bound_name in _REFLECTIVE_EMITTER_IMPORTS
+            ):
+                return True
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "getattr"
+            and len(node.args) >= 2
+            and _constant_string_value(node.args[1])
+            in sensitive_lookups
         ):
             return True
     return False
@@ -477,7 +521,7 @@ def _approved_direct_return_emitters(
 ) -> frozenset[int]:
     """Return identities of sealed, named module-level producer functions."""
     expected = _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.get(rel_path, frozenset())
-    if not expected or _has_reflective_emitter_mutation(tree):
+    if not expected or _has_reflective_emitter_mutation(tree, expected):
         return frozenset()
 
     approved: set[int] = set()
@@ -568,6 +612,60 @@ def _constant_string_value(node: ast.AST) -> str | None:
             pieces.append(piece)
         return "".join(pieces)
     return None
+
+
+def _protected_emitter_mutation_lines(source: str) -> list[int]:
+    """Return repository-wide writes that can replace a fixed emitter.
+
+    The fixed-emission proof is local to its producer, but Python modules are
+    mutable objects.  A sibling module must not be able to replace a producer
+    through attribute, mapping, or aliased ``setattr``/``delattr`` writes while
+    keeping the producer file itself byte-clean.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+
+    protected = frozenset().union(
+        *_ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.values()
+    )
+    setter_aliases = {"setattr", "delattr"}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.alias):
+            continue
+        if node.name.rsplit(".", maxsplit=1)[-1] in setter_aliases:
+            setter_aliases.add(node.asname or node.name.split(".", maxsplit=1)[0])
+
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+            and node.attr in protected
+        ):
+            lines.add(node.lineno)
+        if (
+            isinstance(node, ast.Subscript)
+            and isinstance(node.ctx, (ast.Store, ast.Del))
+            and _constant_string_value(node.slice) in protected
+        ):
+            lines.add(node.lineno)
+        if not isinstance(node, ast.Call) or len(node.args) < 2:
+            continue
+        function_name = (
+            node.func.id
+            if isinstance(node.func, ast.Name)
+            else node.func.attr
+            if isinstance(node.func, ast.Attribute)
+            else None
+        )
+        if (
+            function_name in setter_aliases
+            and _constant_string_value(node.args[1]) in protected
+        ):
+            lines.add(node.lineno)
+    return sorted(lines)
 
 
 def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]:
@@ -743,6 +841,19 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
                 continue
 
     for rel_path, source in file_iter:
+        for line_no in _protected_emitter_mutation_lines(source):
+            violations.append(Violation(
+                check="b",
+                module=rel_path,
+                line_no=line_no,
+                pattern="fixed-emitter mutation",
+                message=(
+                    f"FACTOR BOUNDARY VIOLATION (b): {rel_path}:{line_no} — "
+                    "module mutates a fixed all-false authority emitter. "
+                    "Fixed-emission producers are repository-wide sealed and "
+                    "may only be invoked, never replaced. RUL-NW9."
+                ),
+            ))
         if rel_path in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS:
             violation_lines = _non_emission_allowed_actions_lines(rel_path, source)
         elif _TOKEN not in source:
