@@ -1742,6 +1742,65 @@ checks:
       reason. Belongs to the darkness-census family with ops.no_skip_only_suites
       and ops.workflow_yaml_parses in the same job.
 
+  - law_id: ops.ci_pack_paths_cover_closure
+    summary: >
+      A legacy job that DECLARES `paths:` in .github/ci/legacy-jobs.yml may be
+      skipped by scripts/run_ci_pack.py on a pull request touching none of them,
+      so the declaration must COVER everything that job runs: every pytest suite
+      and first-party script its `run:` steps invoke, plus their resolved
+      read-closure. A declaration narrower than the job's reach is a silent
+      wrong-skip — the job publishes no failure and no evidence it was ever
+      considered, which is indistinguishable from a job that never existed. The
+      direction is the whole design: this reuses check_ci_trigger_closure's
+      resolver, which UNDER-reports by construction, so the only correction it can
+      ever demand is "declare more patterns", never "you may skip more". A job
+      with NO `paths:` key always runs and is not audited — that default, not this
+      gate, is the primary safety property.
+    source_ref:
+      - scripts/check_ci_pack_paths.py
+      - scripts/run_ci_pack.py
+      - .github/ci/legacy-jobs.yml
+      - tests/test_ci_pack.py
+    severity: hard
+    check_script: scripts/check_ci_pack_paths.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        It inherits every blind spot of check_ci_trigger_closure's resolver
+        (direct reads only, path literals are evidence not proof, `#
+        ci-trigger-closure: data` suppressions), so it demands a SUBSET of what a
+        job truly reads. The declaration is expected to be deliberately wider than
+        what this gate can prove; the gate is a floor, never a specification.
+      - >-
+        An inline `python -c "..."` body is not parsed, so a job whose real work
+        happens inside one resolves no subjects from it and is audited against
+        nothing. Same direction: under-demand, never over-permit.
+      - >-
+        The load-bearing half of most declarations is invisible to any resolver by
+        construction. `python3 scripts/check_inline_js.py site templates` names its
+        two trees as CLI ARGUMENTS, so `site/**` and `templates/**` are hand-written
+        and this gate can neither confirm nor contradict them. Reviewing a new
+        `paths:` block is a human act; a green run here is not a second opinion on
+        whether the author widened enough.
+      - >-
+        Selection is only reachable under CI_SELECTIVE=1, which ci.yml sets for
+        `pull_request` events alone. A declaration that is wrong is therefore
+        invisible on main, on pushes, on dispatches and in the nightly — the very
+        lanes whose green a stale-base refresh reads.
+    owner_program: null
+    notes: >
+      Shipped with the optional per-job `paths:` key and the CI_SELECTIVE selector
+      (scripts/run_ci_pack.py §PATH SELECTION). It caught a live under-declaration
+      on its first run: `template-site-sync` had quietly grown five more suites
+      (asset stamps, externalize_css, optimize_assets, site_shim) reaching the whole
+      asset pipeline, which the hand-written declaration missed.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry

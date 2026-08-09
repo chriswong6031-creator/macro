@@ -1,9 +1,29 @@
 # Legacy CI job manifest executed by scripts/run_ci_pack.py.
 # This file is deliberately outside .github/workflows so GitHub does not
 # publish one skipped check run for every logical job on every PR.
+#
+# OPTIONAL `paths:` PER JOB — read scripts/run_ci_pack.py's module docstring
+# before adding one. Short version: a job that declares `paths:` may be SKIPPED
+# on a pull request touching none of them; a job with NO `paths:` key always
+# runs, and that default is the safety property. Declarations are hand-written
+# and deliberately WIDER than the resolver can prove; scripts/check_ci_pack_paths.py
+# fails the build when a declaration does not cover the job's resolved read
+# closure, so the only correction it can ever demand is "declare more".
+# Selection is on for `pull_request` only (ci.yml sets CI_SELECTIVE); main,
+# pushes, dispatches and schedules always run every job.
 jobs:
   inline-js:
     if: ${{ false }}
+    # SELECTION SCOPE: both guards read committed `site/` HTML+JS and the
+    # `templates/` sources (.j2 gets the curly-quote scan). Those two trees are
+    # CLI ARGUMENTS, not path literals inside the scripts, so no static resolver
+    # can see them — they are declared by hand, whole-tree, on purpose. A change
+    # anywhere else cannot alter what `node --check` says about these files.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_inline_js.py"
+      - "scripts/check_site_js.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +49,13 @@ jobs:
 
   nav-gap:
     if: ${{ false }}
+    # SELECTION SCOPE: scans committed `site/` HTML. `templates/**` is included
+    # because every page in site/ is rendered from there, so a template edit is
+    # the upstream half of the same regression.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_nav_gap.py"
     # The shared nav menu (.site-nav / vector-family .topbar) has no built-in top
     # gap — it relies on each page's body top padding. A new page that zeroes its
     # body padding jams the menu against the viewport top ("menu with no padding").
@@ -41,6 +68,12 @@ jobs:
 
   nav-mega:
     if: ${{ false }}
+    # SELECTION SCOPE: as nav-gap — committed site/ pages plus the templates that
+    # render them.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_nav_mega.py"
     # The Research nav is a shared partial (_navlinks.html.j2) whose Research entry is
     # the grouped 'nav-mega' panel. A page built OUTSIDE the routine render loop (an
     # out-of-loop page builder, or a hand-static page) can render the shared nav but
@@ -53,6 +86,12 @@ jobs:
 
   crypto-shelves:
     if: ${{ false }}
+    # SELECTION SCOPE: the Tier-1 shelf markers live in the vector/crypto
+    # templates and their rendered site/ copies.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_crypto_shelves.py"
     # W0 lands the governor unarmed against the legacy templates. The first
     # data-shelf marker on each surface arms exact-set enforcement for that page.
     runs-on: ubuntu-latest
@@ -108,6 +147,13 @@ jobs:
 
   ms-board-coherence:
     if: ${{ false }}
+    # SELECTION SCOPE: parses the rendered Market State boards in site/ plus the
+    # templates they come from; the pytest twin exercises the guard itself.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_ms_board_coherence.py"
+      - "tests/test_check_ms_board_coherence.py"
     # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board
     # (score 56 / "Mixed" verdict beside a "Risk Radar forces Risk-off." note + Risk-off
     # thesis) — stitched by the render lane's `git pull --rebase -X theirs` racing the
@@ -184,6 +230,14 @@ jobs:
 
   admin-js-no-undef:
     if: ${{ false }}
+    # SELECTION SCOPE: eslint runs over admin/static/*.js only. `admin/**` is the
+    # whole console tree (index.html injects the globals the rule resolves
+    # against), widened past the two files the scripts name.
+    paths:
+      - "admin/**"
+      - "scripts/check_admin_js.py"
+      - "tests/test_admin_js_no_undef.py"
+      - "tests/test_admin_inline_handler_attrs.py"
     # admin/static/app.js is a flat top-level browser script and NOTHING in CI
     # read its scopes, so a reference to a name declared in another function
     # parsed clean and threw only on click. PR #3693 shipped exactly that
@@ -288,6 +342,12 @@ jobs:
 
   title-i18n:
     if: ${{ false }}
+    # SELECTION SCOPE: scans templates/ source and rendered site/ pages for
+    # translated text inside title attributes / <title> RCDATA.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_title_i18n.py"
     # The i18n rule: translated text NEVER goes in HTML attributes — the dual-span
     # l-en/l-zh mechanism cannot operate there, so a bilingual title= shows both
     # languages mashed together. This scans template SOURCE for CJK, t() calls, or
@@ -615,6 +675,15 @@ jobs:
 
   cycle-ontology-js:
     if: ${{ false }}
+    # SELECTION SCOPE: byte-compares the committed site/cycle_ontology.js against
+    # what the generator produces from engine/cycle_ontology.py. Widened to every
+    # top-level engine module because the generator's own imports are what decide
+    # the output.
+    paths:
+      - "site/**"
+      - "engine/*.py"
+      - "lib/**"
+      - "scripts/gen_ontology_js.py"
     # W1.5 (A10/A12 ruling): the generated site/cycle_ontology.js must exactly match what
     # engine/cycle_ontology.py produces at HEAD.  A PR that edits the engine but forgets to
     # regenerate the JS — or hand-edits the committed JS — fails RED here.  The flag-day
@@ -1532,6 +1601,18 @@ jobs:
         run: python scripts/check_ci_trigger_closure.py
       - name: trigger-closure guard unit tests
         run: python -m pytest tests/test_ci_trigger_closure.py -q
+      # PATH-SELECTION COVERAGE: the same resolver, pointed the other way round.
+      # check_ci_trigger_closure asks "can an edit to this module START the job";
+      # this asks "does the job's own `paths:` declaration COVER everything it
+      # runs" — because a declaration is what lets run_ci_pack SKIP the job, and
+      # a declaration narrower than the job's reach is a silent wrong-skip. The
+      # resolver under-reports, which is why it may only ever demand MORE
+      # patterns here; it is never allowed to decide that a file can be ignored.
+      # Selftest first, same reason as the three above.
+      - name: check_ci_pack_paths selftest
+        run: python scripts/check_ci_pack_paths.py --selftest
+      - name: a declared paths list must cover the job's read closure
+        run: python scripts/check_ci_pack_paths.py
       # render.yml's per-scope publish wiring. #3718 fixed the international
       # dashboard never publishing because `intl` was missing from the render
       # lane's scope list, and shipped this suite as the guard — but no `run:`
@@ -2177,6 +2258,19 @@ jobs:
 
   validated-claims:
     if: ${{ false }}
+    # SELECTION SCOPE: the scanner's own surfaces are templates/ and site/
+    # (site/*.js and generated *_data.js included); it imports two top-level
+    # engine modules for ledger names, widened here to every top-level engine
+    # module — never into engine/<package>/, which it does not reach — and the
+    # allowlist artifact is named explicitly because data/ is outside the
+    # resolver's subject universe entirely.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "engine/*.py"
+      - "lib/**"
+      - "scripts/check_validated_claims.py"
+      - "data/regime/validated_claims_allowlist.json"
     # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
     # backed claim. This is the PR-time companion to the nightly calibration run
     # (cycle-calibration.yml/calibrate). A sibling builder is fixing the current
@@ -2192,6 +2286,21 @@ jobs:
 
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    # SELECTION SCOPE: this job compares templates/<name> against site/<name>,
+    # renders _site_nav.html.j2 for the chat-nav half, and bakes theme.js through
+    # lib.site_assets (which reads config.yml — already an unconditional
+    # always-run trigger for every job). `scripts/**` and `tests/**` are here
+    # because check_ci_pack_paths.py refused the narrow version: this job has
+    # quietly grown five more suites (asset stamps, externalize_css,
+    # optimize_assets, site_shim) that reach the whole asset pipeline. Naming
+    # those five scripts would have been the guess; taking both trees is the
+    # answer, and it costs only that this job rarely skips.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "lib/**"
+      - "scripts/**"
+      - "tests/**"
     # (Which pack runs it is weight-balanced and shifts as jobs are added, so it is
     # deliberately not named here; resolve it with run_ci_pack.py --validate-only.)
     # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
@@ -2553,6 +2662,13 @@ jobs:
 
   hub-a11y:
     if: ${{ false }}
+    # SELECTION SCOPE: static checks over committed site/ pages and the shared JS
+    # assets they load, plus the templates those pages render from.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_hub_a11y.py"
+      - "tests/test_check_hub_a11y.py"
     # Hub UX program (W5 — a11y regression guard): six static checks — (a)-(d) on
     # every committed page that embeds the globe deck (gd-stage presence), (e)-(f)
     # on the shared JS assets those pages load:
@@ -2584,6 +2700,14 @@ jobs:
 
   font-ui-defined:
     if: ${{ false }}
+    # SELECTION SCOPE: scans templates/ only (the template is the sole drift
+    # vector — render lanes regenerate site/ from it), with site/ declared anyway
+    # so a hand-edited rendered page cannot slip past.
+    paths:
+      - "site/**"
+      - "templates/**"
+      - "scripts/check_font_ui_defined.py"
+      - "tests/test_check_font_ui_defined.py"
     # Font-UI definition guard (PR #2647 recurrence tripwire): any template whose
     # body-level CSS sets the page font via var(--font-ui) must either link
     # theme.css (<link rel="stylesheet"> href attribute — never the bare string,

@@ -509,3 +509,372 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
         "deeper, inside the engine module the test imports. Fix by adding "
         '- "contracts/government_revenue/**" to that paths list.'
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATH SELECTION (CI_SELECTIVE=1).  scripts/run_ci_pack.py §PATH SELECTION.
+#
+# Every test below pins a direction, not a behaviour: the mechanism is allowed to
+# run a job it could have skipped, and is never allowed to skip a job it should
+# have run.  A test that only asserted "skipping works" would pass just as
+# happily on a selector that skips everything.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SELECTION_MANIFEST = """
+jobs:
+  unannotated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unannotated
+  site-only:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    paths:
+      - "site/**"
+      - "scripts/check_site_js.py"
+    steps:
+      - run: echo site
+  engine-flat:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    paths:
+      - "engine/*.py"
+    steps:
+      - run: echo flat
+  engine-deep:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    paths:
+      - "engine/**"
+    steps:
+      - run: echo deep
+"""
+
+
+def _selection_jobs(tmp_path: Path) -> list:
+    manifest = tmp_path / "legacy-jobs.yml"
+    manifest.write_text(SELECTION_MANIFEST)
+    return PACK.load_legacy_jobs(manifest)
+
+
+def _ids(jobs) -> list[str]:
+    return sorted(job.job_id for job in jobs)
+
+
+def test_an_unannotated_job_runs_for_every_diff_including_an_empty_one(
+    tmp_path: Path,
+) -> None:
+    """The core safety property: no `paths:` key means unskippable, always.
+
+    This is what makes the whole mechanism inert until someone deliberately opts
+    a job in, so it is asserted against the widest set of diffs available: an
+    unrelated file, the empty diff, and a diff naming the job itself.
+    """
+    jobs = _selection_jobs(tmp_path)
+    for changed in ([], ["docs/UNRELATED.md"], ["engine/x.py"], ["site/a.html"]):
+        selected, skipped = PACK.select_jobs(jobs, changed)
+        assert "unannotated" in _ids(selected), (
+            f"a job with no `paths:` was skipped for diff {changed!r} — the "
+            "default is unskippable, and every other safety property here rests "
+            "on it"
+        )
+        assert "unannotated" not in _ids(skipped)
+
+
+def test_a_declared_job_runs_on_a_match_and_skips_only_without_one(
+    tmp_path: Path,
+) -> None:
+    jobs = _selection_jobs(tmp_path)
+
+    selected, skipped = PACK.select_jobs(jobs, ["site/markets.html"])
+    assert "site-only" in _ids(selected)
+    assert "site-only" not in _ids(skipped)
+
+    selected, skipped = PACK.select_jobs(jobs, ["scripts/check_site_js.py"])
+    assert "site-only" in _ids(selected), "an exact-file entry must match itself"
+
+    selected, skipped = PACK.select_jobs(jobs, ["docs/UNRELATED.md"])
+    assert "site-only" in _ids(skipped)
+    assert "site-only" not in _ids(selected)
+
+    # One matching file in a diff of many is enough — selection is an OR over the
+    # changed set, never a majority vote.
+    selected, _ = PACK.select_jobs(
+        jobs, ["docs/a.md", "docs/b.md", "site/markets.html", "docs/c.md"]
+    )
+    assert "site-only" in _ids(selected)
+
+
+def test_an_unusable_diff_runs_everything(monkeypatch: pytest.MonkeyPatch) -> None:
+    """git failure, empty output and an unresolvable ref all mean "no answer"."""
+    monkeypatch.setenv(PACK.SELECTION_ENV, "1")
+
+    monkeypatch.setattr(PACK, "_git_stdout", lambda args: None)
+    assert PACK.changed_files("main", "topic") is None, "git failure must be None"
+
+    # Refs resolve, diff is empty: indistinguishable from a base that is simply
+    # wrong (a shallow clone whose merge-base is HEAD), and the wrong reading
+    # skips the entire pack.
+    monkeypatch.setattr(
+        PACK, "_git_stdout", lambda args: "abc\n" if args[0] == "rev-parse" else ""
+    )
+    assert PACK.changed_files("main", "topic") is None, "empty diff must be None"
+
+    # Base ref does not resolve under any spelling.
+    monkeypatch.setattr(
+        PACK, "_git_stdout", lambda args: None if args[0] == "rev-parse" else "a.py\n"
+    )
+    assert PACK.changed_files("main", "topic") is None
+
+
+def test_an_unusable_diff_keeps_every_job_in_the_pack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jobs = _selection_jobs(tmp_path)
+    monkeypatch.setenv(PACK.SELECTION_ENV, "1")
+    monkeypatch.setattr(PACK, "changed_files", lambda base, head: None)
+    assert _ids(PACK.apply_selection(jobs)) == _ids(jobs)
+
+
+@pytest.mark.parametrize(
+    "trigger",
+    [
+        "tests/conftest.py",
+        "config.yml",
+        ".github/ci/legacy-jobs.yml",
+        "scripts/run_ci_pack.py",
+        "scripts/gh_path_filter.py",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+    ],
+)
+def test_each_always_run_trigger_disarms_selection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, trigger: str
+) -> None:
+    """A change to the machinery invalidates the selection, not just a job."""
+    jobs = _selection_jobs(tmp_path)
+    assert PACK.always_run_reason([trigger]) is not None, (
+        f"{trigger} no longer disarms selection"
+    )
+
+    monkeypatch.setenv(PACK.SELECTION_ENV, "1")
+    monkeypatch.setattr(
+        PACK, "changed_files", lambda base, head: [trigger, "docs/UNRELATED.md"]
+    )
+    assert _ids(PACK.apply_selection(jobs)) == _ids(jobs)
+
+    # ...and the same diff WITHOUT the trigger does skip, so the assertion above
+    # is not passing for some unrelated reason.
+    monkeypatch.setattr(PACK, "changed_files", lambda base, head: ["docs/UNRELATED.md"])
+    assert _ids(PACK.apply_selection(jobs)) != _ids(jobs)
+
+
+def test_an_ordinary_file_does_not_disarm_selection() -> None:
+    assert PACK.always_run_reason(["engine/market_state.py", "site/a.html"]) is None
+
+
+@pytest.mark.parametrize("value", [None, "", "0", "true", "yes", "2"])
+def test_selection_is_off_unless_the_env_var_is_exactly_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, value: str | None
+) -> None:
+    jobs = _selection_jobs(tmp_path)
+    if value is None:
+        monkeypatch.delenv(PACK.SELECTION_ENV, raising=False)
+    else:
+        monkeypatch.setenv(PACK.SELECTION_ENV, value)
+    assert PACK.selection_enabled() is False
+    monkeypatch.setattr(
+        PACK,
+        "changed_files",
+        lambda base, head: pytest.fail("the diff must not be read when selection is off"),
+    )
+    assert _ids(PACK.apply_selection(jobs)) == _ids(jobs)
+
+
+def test_selection_is_on_when_the_env_var_is_exactly_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(PACK.SELECTION_ENV, "1")
+    assert PACK.selection_enabled() is True
+
+
+def test_glob_semantics_are_githubs_not_fnmatchs(tmp_path: Path) -> None:
+    """A single `*` must NOT cross `/`; `**` must.
+
+    `fnmatch` lets one `*` cross a directory separator, which would make
+    `engine/*.py` silently claim every nested module — the declaration would then
+    mean something wider than its author wrote, and jobs would be skipped on the
+    strength of coverage that does not exist.
+    """
+    jobs = _selection_jobs(tmp_path)
+
+    selected, skipped = PACK.select_jobs(jobs, ["engine/sub/x.py"])
+    assert "engine-flat" in _ids(skipped), (
+        "`engine/*.py` matched a NESTED file — that is fnmatch semantics, not "
+        "GitHub's, and it widens every declaration past what its author wrote"
+    )
+    assert "engine-deep" in _ids(selected), "`engine/**` must cross directories"
+
+    selected, _ = PACK.select_jobs(jobs, ["engine/x.py"])
+    assert {"engine-flat", "engine-deep"} <= set(_ids(selected))
+
+
+def test_a_paths_key_that_is_not_a_usable_pattern_list_fails_closed(
+    tmp_path: Path,
+) -> None:
+    for bad, expected in (
+        ("paths: []", "non-empty list"),
+        ("paths: engine/**", "non-empty list"),
+        ('paths:\n      - ""', "non-empty string"),
+        ('paths:\n      - "!engine/**"', "negation"),
+    ):
+        manifest = tmp_path / "bad.yml"
+        manifest.write_text(
+            "jobs:\n"
+            "  broken:\n"
+            "    if: ${{ false }}\n"
+            "    runs-on: ubuntu-latest\n"
+            f"    {bad}\n"
+            "    steps:\n"
+            "      - run: echo hi\n"
+        )
+        with pytest.raises(PACK.ManifestError, match=expected):
+            PACK.load_legacy_jobs(manifest)
+
+
+def test_every_skip_is_announced_where_github_can_see_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """A silent skip is indistinguishable from a job that never existed.
+
+    The annotation must START the line: every builder here logs with a prefixing
+    format, so a logged `::notice` emits `INFO ::notice` and GitHub drops it —
+    the call reviews as an announcement and produces nothing (CLAUDE.md).
+    """
+    jobs = _selection_jobs(tmp_path)
+    monkeypatch.setenv(PACK.SELECTION_ENV, "1")
+    monkeypatch.setattr(PACK, "changed_files", lambda base, head: ["docs/UNRELATED.md"])
+
+    selected = PACK.apply_selection(jobs)
+    out = capsys.readouterr().out
+    notices = [line for line in out.splitlines() if line.startswith("::notice")]
+    assert notices, "no ::notice reached stdout at column 0"
+
+    skipped = sorted(set(_ids(jobs)) - set(_ids(selected)))
+    assert skipped, "the fixture must skip something for this test to mean anything"
+    blob = "\n".join(notices)
+    for job_id in skipped:
+        assert job_id in blob, f"{job_id} was skipped without being named"
+    assert f"skipping {len(skipped)}" in blob, "the skip COUNT is not reported"
+    weight = sum(job.weight for job in jobs if job.job_id in skipped)
+    assert f"weight saved {weight}" in blob, "the estimated weight saved is not reported"
+
+
+def test_a_full_run_says_so_rather_than_staying_silent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    jobs = _selection_jobs(tmp_path)
+    monkeypatch.delenv(PACK.SELECTION_ENV, raising=False)
+    PACK.apply_selection(jobs)
+    out = capsys.readouterr().out
+    assert any(
+        line.startswith("::notice") and "selection OFF" in line
+        for line in out.splitlines()
+    ), "a full run must announce WHY it is full, not just produce no skip notice"
+
+
+def test_declared_paths_in_the_live_manifest_cover_their_read_closure() -> None:
+    """The guard, run over the real manifest — the same call CI makes.
+
+    Registered in config/house_law_checks.yml as ops.ci_pack_paths_cover_closure
+    and wired into the workflow-yaml job; this keeps a red visible in the pack
+    that owns run_ci_pack.py rather than only in the guard step.
+    """
+    paths_guard = importlib.util.spec_from_file_location(
+        "check_ci_pack_paths", ROOT / "scripts" / "check_ci_pack_paths.py"
+    )
+    assert paths_guard and paths_guard.loader
+    module = importlib.util.module_from_spec(paths_guard)
+    sys.modules[paths_guard.name] = module
+    paths_guard.loader.exec_module(module)
+
+    rows = module.audit(MANIFEST)
+    assert rows, "no job declares `paths:` — the guard would be vacuous"
+    gaps = {
+        row["job"]: [rel for rel, _ in row["gaps"]] for row in rows if row["gaps"]
+    }
+    assert not gaps, (
+        "a declared `paths:` list does not cover what its job reads:\n  "
+        + "\n  ".join(f"{job}: {rels}" for job, rels in gaps.items())
+        + "\n\nA pull request touching only those files would SKIP the job. Widen "
+        "the declaration (prefer the directory); never narrow the subject."
+    )
+
+
+def test_the_coverage_guard_fires_on_an_omission_and_passes_on_a_superset() -> None:
+    """Round-trip the detector itself, so a blind guard cannot read green."""
+    paths_guard = importlib.util.spec_from_file_location(
+        "check_ci_pack_paths_probe", ROOT / "scripts" / "check_ci_pack_paths.py"
+    )
+    assert paths_guard and paths_guard.loader
+    module = importlib.util.module_from_spec(paths_guard)
+    sys.modules[paths_guard.name] = module
+    paths_guard.loader.exec_module(module)
+
+    found = {
+        "engine/marketing/press_lane.py": "import",
+        "site/markets.html": "path literal",
+        "scripts/build_x.py": "import",
+    }
+    omitted = module.uncovered(["engine/**", "site/**"], found)
+    assert [rel for rel, _ in omitted] == ["scripts/build_x.py"], (
+        "the guard did not report the one subject the declaration omits"
+    )
+    assert module.uncovered(["engine/**", "site/**", "scripts/**"], found) == []
+    assert module.uncovered(["**"], found) == []
+    assert len(module.uncovered([], found)) == len(found)
+
+    # And the direction that matters: a declaration wider than the closure is
+    # never a finding. Over-declaring costs a needless run; under-declaring ships
+    # a regression, so only one of the two may ever be reported.
+    assert module.uncovered(["engine/**", "site/**", "scripts/**", "app/**"], found) == []
+
+
+def test_selection_never_repartitions_a_pull_requests_packs() -> None:
+    """PR pack N must stay a strict SUBSET of main's pack N.
+
+    `merge_on_green`'s base-inherited-red refresh compares checks BY NAME: it
+    excuses a pull request's `ci-pack-2` red when main's own proof is red on
+    `ci-pack-2`. Rebalancing the survivors would put different jobs under that
+    name on the two sides, and the fail-open direction of that mistake is a real
+    red excused as inherited (CLAUDE.md, #5037).
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    packs = PACK.partition_jobs(jobs, 4)
+    for index, pack in enumerate(packs):
+        selected, skipped = PACK.select_jobs(pack, ["site/markets.html"])
+        assert set(_ids(selected)) <= set(_ids(pack)), (
+            f"pack {index} gained a job under selection"
+        )
+        assert set(_ids(selected)) | set(_ids(skipped)) == set(_ids(pack)), (
+            f"pack {index} lost a job that was neither run nor reported skipped"
+        )
+
+
+def test_ci_yml_arms_selection_for_pull_requests_only() -> None:
+    """main / push / dispatch / schedule must keep proving the whole manifest."""
+    workflow = _yaml(WORKFLOW)
+    step = next(
+        step
+        for step in workflow["jobs"]["ci-pack"]["steps"]
+        if "run_ci_pack.py" in str(step.get("run", ""))
+    )
+    expression = str(step["env"][PACK.SELECTION_ENV])
+    assert "github.event_name == 'pull_request'" in expression, (
+        "CI_SELECTIVE is no longer scoped to pull requests. main's ci.yml run is "
+        "what merge_on_green.main_proof reads to decide whether a pull request's "
+        "red is base-side; a partial main proof narrows that signal silently."
+    )
+    assert re.search(r"&&\s*'1'", expression), "the armed value must be exactly '1'"
+    assert re.search(r"\|\|\s*'0'", expression), "every other event must get '0'"

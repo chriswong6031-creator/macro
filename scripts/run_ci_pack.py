@@ -20,6 +20,33 @@ teach this runner how to preserve that behavior before the workflow can pass.
 
 Execution is refused outside GitHub Actions because workspace cleanup is
 destructive by design.  Local callers can safely use ``--validate-only``.
+
+PATH SELECTION (``CI_SELECTIVE=1``) is deliberately built the SAFE way round.
+A job may DECLARE the paths it measures; the only thing a declaration can do is
+let that job be skipped when a pull request touches none of them.  Every safety
+property falls out of one rule: **a job with no ``paths:`` key always runs.**
+
+  * An unannotated job can never be skipped, so adding the mechanism changes
+    nothing until someone deliberately annotates a job.
+  * ``scripts/check_ci_pack_paths.py`` demands that a declaration COVER the
+    resolved read-closure of everything the job runs.  That resolver
+    under-reports by construction, so it can only ever ask for MORE entries —
+    the failure direction is "you must declare more", never "you may skip more".
+  * A diff we cannot compute (unresolvable ref, git failure, empty output) runs
+    everything, and so does any change to the manifest, the selector, the shared
+    matcher, ``tests/conftest.py``, ``config.yml`` or ``.github/workflows/**``:
+    a change to the machinery invalidates the selection itself.
+  * Selection is scoped to ``pull_request`` by ci.yml.  main / push / dispatch /
+    schedule always run everything, because ``merge_on_green.main_proof`` reads
+    main's ci.yml run to decide whether a pull request's red is base-side and a
+    partial main proof would silently narrow that.
+
+Selection happens AFTER the partition, never before.  Repartitioning the
+surviving jobs would balance better, but it would also mean a pull request's
+``ci-pack-2`` no longer holds the same jobs as main's ``ci-pack-2`` — and the
+base-inherited-red refresh compares those checks BY NAME.  Skipping inside a
+stable partition keeps every pull-request pack a strict SUBSET of main's pack of
+the same name, so that comparison stays exactly as sound as it is today.
 """
 
 from __future__ import annotations
@@ -36,10 +63,15 @@ from typing import Any, Iterable
 
 import yaml
 
+try:  # imported as `scripts.run_ci_pack` (the test pack, and any other caller)
+    from scripts.gh_path_filter import NEGATION_PREFIX, matched
+except ImportError:  # run as `python3 scripts/run_ci_pack.py` (the workflow step)
+    from gh_path_filter import NEGATION_PREFIX, matched  # type: ignore[no-redef]
+
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "runs-on", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "steps", "timeout-minutes"}
 ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 PROVIDED_ACTION_PREFIXES = (
     "actions/checkout@",
@@ -65,6 +97,22 @@ OBSERVED_COMMAND_SECONDS = {
     "hub-a11y": 37,
 }
 
+# A change to any of these invalidates the SELECTION, not just a job: the
+# manifest carries every declaration, the selector and the shared matcher decide
+# what a declaration means, conftest is imported by every pytest job in the tree,
+# and config.yml is read by most engines. `.github/workflows/**` is here because
+# ci.yml carries both the pack step and its own `on.pull_request.paths` gate — a
+# pull request that rewrites how CI starts must be measured by all of it.
+ALWAYS_RUN_TRIGGERS = (
+    "tests/conftest.py",
+    "config.yml",
+    ".github/ci/legacy-jobs.yml",
+    "scripts/run_ci_pack.py",
+    "scripts/gh_path_filter.py",
+    ".github/workflows/**",
+)
+SELECTION_ENV = "CI_SELECTIVE"
+
 
 class ManifestError(ValueError):
     """The legacy manifest cannot be executed without losing semantics."""
@@ -78,6 +126,16 @@ class LegacyJob:
     definition: dict[str, Any]
     ordinal: int
     weight: int
+
+    @property
+    def declared_paths(self) -> list[str]:
+        """The job's own `paths:` entries, or ``[]`` when it declares none.
+
+        Empty means UNANNOTATED, which means unskippable.  That is the whole
+        safety property, so it is spelled here rather than at every call site.
+        """
+        declared = self.definition.get("paths")
+        return [str(entry) for entry in declared] if declared else []
 
 
 def _workflow_jobs(path: Path) -> dict[str, dict[str, Any]]:
@@ -135,6 +193,28 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
             )
         if raw_definition.get("runs-on") != "ubuntu-latest":
             findings.append(f"{prefix} must use ubuntu-latest")
+
+        if "paths" in raw_definition:
+            declared = raw_definition["paths"]
+            if not isinstance(declared, list) or not declared:
+                findings.append(
+                    f"{prefix} paths must be a non-empty list of patterns; omit "
+                    "the key entirely to keep the job unskippable"
+                )
+            else:
+                for entry in declared:
+                    if not isinstance(entry, str) or not entry.strip():
+                        findings.append(
+                            f"{prefix} paths entry {entry!r} must be a non-empty string"
+                        )
+                    elif entry.startswith(NEGATION_PREFIX):
+                        # gh_path_filter does not model `!` exclusions, and a
+                        # mis-evaluated negation is exactly the silent-skip this
+                        # design exists to prevent.  Refuse rather than guess.
+                        findings.append(
+                            f"{prefix} paths entry {entry!r} uses a `!` negation, "
+                            "which the shared matcher does not model"
+                        )
 
         steps = raw_definition.get("steps")
         if not isinstance(steps, list) or not steps:
@@ -204,6 +284,157 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
     for pack in packs:
         pack.sort(key=lambda item: item.ordinal)
     return packs
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# path selection — fail-closed in every direction
+# ─────────────────────────────────────────────────────────────────────────────
+
+def selection_enabled(environ: dict[str, str] | None = None) -> bool:
+    """Selection is OFF unless a caller explicitly turns it on.
+
+    ci.yml sets ``CI_SELECTIVE=1`` for `pull_request` events only.  Unset, empty
+    or `0` — every push, dispatch and schedule, and every local invocation —
+    runs the full pack.
+    """
+    env = os.environ if environ is None else environ
+    return env.get(SELECTION_ENV, "") == "1"
+
+
+def _git_stdout(args: list[str]) -> str | None:
+    """``None`` on ANY git failure, so every caller degrades to "run it all"."""
+    try:
+        result = subprocess.run(
+            ["git", *args], capture_output=True, text=True, timeout=120
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode:
+        return None
+    return result.stdout
+
+
+def _resolve_ref(candidates: Iterable[str]) -> str | None:
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if _git_stdout(["rev-parse", "--verify", "--quiet", f"{candidate}^{{commit}}"]):
+            return candidate
+    return None
+
+
+def changed_files(base_ref: str, head_ref: str) -> list[str] | None:
+    """Files this pull request changes, or ``None`` when that is UNKNOWABLE.
+
+    ``None`` is not "nothing changed" — it is "no honest answer", and every
+    caller must then run the full pack.  Both refs are tried under their remote
+    spelling first: a `pull_request` checkout is a detached HEAD at the merge
+    ref, so `origin/main` resolves where a bare `main` often does not, and the
+    head branch may exist under no local name at all (hence the `HEAD` fallback,
+    which on that checkout IS the head under test).
+    """
+    base = _resolve_ref([f"origin/{base_ref}", base_ref])
+    head = _resolve_ref([head_ref, f"origin/{head_ref}", "HEAD"])
+    if base is None or head is None:
+        return None
+    out = _git_stdout(["diff", "--name-only", f"{base}...{head}"])
+    if out is None:
+        return None
+    files = [line.strip() for line in out.splitlines() if line.strip()]
+    # An empty diff against a resolvable base is indistinguishable here from a
+    # base that is simply wrong (a shallow clone whose merge-base is HEAD), and
+    # the wrong reading skips everything.  Refuse it.
+    return files or None
+
+
+def always_run_reason(changed: Iterable[str]) -> str | None:
+    """The first changed file that invalidates selection itself, if any."""
+    for rel in changed:
+        for trigger in ALWAYS_RUN_TRIGGERS:
+            if matched(rel, [trigger]):
+                return f"{rel} (matches {trigger})"
+    return None
+
+
+def select_jobs(
+    jobs: Iterable[LegacyJob], changed: Iterable[str]
+) -> tuple[list[LegacyJob], list[LegacyJob]]:
+    """Split ``jobs`` into (run, skipped) for this changed-file set.
+
+    A job is skipped ONLY when it declares a non-empty `paths:` list and no
+    changed file matches any entry.  Everything else runs.
+    """
+    changed = list(changed)
+    run: list[LegacyJob] = []
+    skipped: list[LegacyJob] = []
+    for job in jobs:
+        declared = job.declared_paths
+        if declared and not any(matched(rel, declared) for rel in changed):
+            skipped.append(job)
+        else:
+            run.append(job)
+    return run, skipped
+
+
+def announce_selection(
+    selected: list[LegacyJob], skipped: list[LegacyJob], *, total_weight: int
+) -> None:
+    """Print the skip decision where GitHub can actually see it.
+
+    Bare `print` at column 0 with `flush`, never a logger: every builder here
+    logs with a prefixing format, so a logged `::notice` emits `INFO ::notice`
+    and GitHub silently drops it (CLAUDE.md).  A silent skip is indistinguishable
+    from a job that never existed, which is precisely the darkness this whole
+    mechanism must not create.
+    """
+    saved = sum(job.weight for job in skipped)
+    share = f"{saved * 100 / total_weight:.1f}%" if total_weight else "0.0%"
+    print(
+        f"::notice title=ci-pack-selection::path selection ON: running "
+        f"{len(selected)} job(s), skipping {len(skipped)}; estimated weight "
+        f"saved {saved} of {total_weight} ({share}) in this pack",
+        flush=True,
+    )
+    if skipped:
+        names = ", ".join(f"{job.job_id}({job.weight})" for job in skipped)
+        print(f"::notice title=ci-pack-skipped::{names}", flush=True)
+
+
+def apply_selection(pack: list[LegacyJob]) -> list[LegacyJob]:
+    """Return the jobs this pack should actually run, announcing every skip."""
+    total_weight = sum(job.weight for job in pack)
+    if not selection_enabled():
+        print(
+            "::notice title=ci-pack-selection::path selection OFF "
+            f"({SELECTION_ENV} is not 1) — running every job in this pack",
+            flush=True,
+        )
+        return pack
+
+    base_ref = os.environ.get("CI_BASE_REF", "main")
+    head_ref = os.environ.get("CI_HEAD_REF", "")
+    changed = changed_files(base_ref, head_ref)
+    if changed is None:
+        print(
+            "::notice title=ci-pack-selection::path selection ON but the diff "
+            f"{base_ref}...{head_ref or 'HEAD'} is unavailable — running every "
+            "job in this pack",
+            flush=True,
+        )
+        return pack
+
+    reason = always_run_reason(changed)
+    if reason is not None:
+        print(
+            "::notice title=ci-pack-selection::path selection ON but this pull "
+            f"request changes {reason} — running every job in this pack",
+            flush=True,
+        )
+        return pack
+
+    selected, skipped = select_jobs(pack, changed)
+    announce_selection(selected, skipped, total_weight=total_weight)
+    return selected
 
 
 def render_command(command: str, *, base_ref: str, head_ref: str) -> str:
@@ -400,7 +631,11 @@ def main(argv: list[str] | None = None) -> int:
         print("Selected jobs: " + ", ".join(job.job_id for job in selected))
         if args.validate_only or not args.execute:
             return 0
-        return execute_pack(selected)
+        # Selection runs on the PARTITIONED pack, never before the partition —
+        # see the module docstring: pull-request pack N must stay a subset of
+        # main's pack N or the base-inherited-red refresh compares two different
+        # job sets under one check name.
+        return execute_pack(apply_selection(selected))
     except (ManifestError, RuntimeError, subprocess.CalledProcessError) as exc:
         print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
         return 2

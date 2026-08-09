@@ -3552,6 +3552,15 @@ jobs:
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          # PULL REQUESTS ONLY. A job that declares `paths:` in the legacy
+          # manifest may be skipped when this pull request touches none of them
+          # (scripts/run_ci_pack.py, §PATH SELECTION). main / push / dispatch /
+          # schedule deliberately keep running EVERY job: `merge_on_green`'s
+          # base-inherited-red refresh resolves "is main green on ci-pack-N" from
+          # the newest concluded ci.yml run on main, and a partial main proof
+          # would silently narrow the one signal the whole armed backlog drains
+          # through (CLAUDE.md, #5037).
+          CI_SELECTIVE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
