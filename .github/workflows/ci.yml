@@ -3494,6 +3494,28 @@ jobs:
       matrix:
         pack: [0, 1, 2, 3]
     steps:
+      # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
+      # checked out sparsely leaves `core.sparseCheckout=true` behind in the SAME
+      # directory. `actions/checkout@v4` does not clear that when its own
+      # `sparse-checkout` input is absent, so the next job silently gets a partial tree.
+      #
+      # Measured 2026-08-09, the first main baseline on this pool: checkout, setup-python
+      # and setup-node all reported SUCCESS and the pack died 2-3 minutes later on
+      # `scripts/run_ci_pack.py: [Errno 2] No such file or directory`. The sweeper
+      # (#5095) had moved to these same runners and checks out exactly three paths for
+      # speed, so `scripts/` was simply not materialised. A green "Set up job" plus a
+      # missing source file is the signature of an inherited sparse checkout, not of a
+      # broken runner or a bad ref.
+      #
+      # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || true
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+          fi
       - uses: actions/checkout@v4
         with:
           # Keep the complete current working tree because legacy suites inspect
