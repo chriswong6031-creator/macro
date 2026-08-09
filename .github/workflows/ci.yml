@@ -398,6 +398,14 @@ on:
       - "scripts/live_flow_poller.py"
       - "engine/live_flow.py"
       - "tests/test_live_flow.py"
+      # W0a-B chain-snapshot producer authority: strict per-bucket receipts,
+      # source installer, governed schema, adversarial suite, and ops contract.
+      - "engine/chain_snapshot_completion.py"
+      - "scripts/chain_snapshot_poller.py"
+      - "contracts/options/chain_snapshots.bucket_completion.v1.schema.json"
+      - "tests/test_chain_snapshot_poller.py"
+      - "ops/CHAIN_SNAPSHOTS_RUNBOOK.md"
+      - "ops/launchd/com.mastermind.chainsnapshots.plist"
       # OIP PIT decision/outcome ledger: both the durable R2 source and the
       # nightly consumer/contracts must trigger the exact adversarial suite.
       - "engine/options_signal_episode.py"

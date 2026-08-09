@@ -864,6 +864,8 @@ jobs:
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
         run: python -m pytest tests/test_options_structure_intraday.py tests/test_build_options_structure_intraday.py -q
+      - name: W0a-B chain-snapshot durable bucket receipts and source-install proofs
+        run: python -m pytest tests/test_chain_snapshot_poller.py -q
       - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
         run: python -m pytest tests/test_live_flow.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)

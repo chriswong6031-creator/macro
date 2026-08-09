@@ -5,8 +5,8 @@
   com.mastermind.chainsnapshots.plist — launchd agent for the U-CHAIN
   chain-snapshot poller (scripts/chain_snapshot_poller.py).
 
-  Autostart on weekdays at 09:30 ET. The poller runs --rth-only: it waits for
-  the 09:35 ET window start, sweeps every cadence_min (default 15) minutes,
+  Autostart on weekdays at 09:30 ET. The poller runs in RTH-only mode: it waits
+  for actual NYSE open + 5m, sweeps every cadence_min (default 15) minutes,
   and self-exits after 16:00 ET.  launchd fires it again the next weekday.
 
   INSTALL (as the mac user who runs Theta Terminal — not root):
@@ -54,10 +54,8 @@
       DEPLOY-WORKTREE DOCTRINE (M1 relight, 2026-07-31): these paths point at
       the SHARED M1 ops worktree /Users/chriswong/flow-ops-wt — the same
       TCC-safe deploy worktree the chain-heat, flowenrich and r2sync lanes run
-      from — with the plane conda env's python. The originally-planned
-      dedicated ~/chainsnap-ops-wt was never created on any machine (the lane
-      sat dark from authoring until this re-point). If flow-ops-wt is ever
-      retired, re-point these paths and PYTHONPATH together.
+      from — with the plane conda env's python. If flow-ops-wt is ever retired,
+      re-point these paths and PYTHONPATH together.
     -->
     <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/flow-ops-wt/.env</string>
@@ -84,7 +82,7 @@
     Mac is on Pacific time; 06:30 PT = 09:30 ET year-round (the 9:30 ET open).
     ET and PT share DST transitions so the offset (PT = ET - 3h) is constant
     year-round.  If the Mac's timezone changes, update these entries.
-    The poller itself waits for the 09:35 ET window start (--rth-only).
+    The poller itself waits for actual NYSE open + 5m in RTH-only mode.
   -->
   <key>StartCalendarInterval</key>
   <array>
@@ -132,10 +130,14 @@
   <key>StandardErrorPath</key>
   <string>/tmp/chainsnapshots.stderr.log</string>
 
-  <!-- Do NOT set KeepAlive: the poller self-exits via --rth-only; launchd
-       respawns at the next StartCalendarInterval. -->
+  <!-- Restart crash/nonzero exits after ThrottleInterval so a durable
+       intent/decision can recover in-session. A clean RTH-only exit (0)
+       stays down until the next StartCalendarInterval. -->
   <key>KeepAlive</key>
-  <false/>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
 
   <!-- Throttle: if the job exits in under 10s (crash), wait 60s before retrying. -->
   <key>ThrottleInterval</key>
