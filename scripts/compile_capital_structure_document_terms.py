@@ -20,11 +20,15 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 from typing import Any
 
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.capital_structure.document_terms import (
     DOCUMENT_TERM_SCHEMA,
@@ -33,16 +37,16 @@ from engine.capital_structure.document_terms import (
     observation_id_for,
     validate_observation_source_binding,
     validate_document_term_history,
-)
+)  # noqa: E402
 from engine.capital_structure.source_identity import (
     validate_manifest_content_binding,
     validate_manifest_ledger,
-)
+)  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     read_source_ledger,
     source_ledger_path,
-)
-from engine.capital_structure.source_store import build_source_stores
+)  # noqa: E402
+from engine.capital_structure.source_store import build_source_stores  # noqa: E402
 
 
 DOCUMENT_TERM_COLUMNS = [

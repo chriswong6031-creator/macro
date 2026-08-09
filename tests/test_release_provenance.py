@@ -285,6 +285,52 @@ class TestComputeCoverageFlags:
         result = compute_coverage_flags(proj, ledger_path=ledger)
         assert result["model_maturity"] == 2
 
+    def test_model_maturity_counts_superseded_score_once(self, tmp_path):
+        from engine.release_provenance import compute_coverage_flags
+
+        ledger = tmp_path / "ledger.jsonl"
+        legacy = {
+            "row_type": "scored",
+            "release": "nfp",
+            "period": "2026-07",
+            "model": None,
+            "frozen_asof_night": "2026-08-06",
+            "actual": -126.0,
+        }
+        official = {
+            **legacy,
+            "actual": 57.0,
+            "actual_basis": "official_published_metric",
+            "actual_receipt_id": "official_actual:nfp-july",
+            "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
+        }
+        _write_ledger(ledger, [legacy, official])
+
+        result = compute_coverage_flags(
+            _make_projection(release="nfp"),
+            ledger_path=ledger,
+        )
+
+        assert result["model_maturity"] == 1
+
+    def test_model_maturity_fails_closed_when_present_registry_is_empty(self, tmp_path):
+        from engine.release_provenance import compute_coverage_flags
+
+        ledger = tmp_path / "forward_ledger.jsonl"
+        ledger.write_text(
+            json.dumps({"row_type": "scored", "release": "cpi_headline"}) + "\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "defect_notices.json").write_text(
+            json.dumps({"notices": []}),
+            encoding="utf-8",
+        )
+        result = compute_coverage_flags(
+            _make_projection(release="cpi_headline"),
+            ledger_path=ledger,
+        )
+        assert result["model_maturity"] == 0
+
     def test_model_maturity_only_matching_release(self, tmp_path):
         from engine.release_provenance import compute_coverage_flags
         ledger = tmp_path / "ledger.jsonl"
