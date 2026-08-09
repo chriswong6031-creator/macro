@@ -2,7 +2,7 @@
 
 **Receipt date:** 2026-08-08
 **Authority:** `none_research_display_only`
-**Model/definition:** `sol_w1_daily_tolerant_common_calendar_fixed_strata_2026-08-08`
+**Model/definition:** `sol_w1_complete_clock_positive_volume_self_financing_2026-08-08`
 
 > Curated-slice warning: this receipt does not describe the full 打板 universe. The vendor pool has 1,770 distinct tickers, but only 514 (29.04%) overlap the local nominal OHLCV slice.
 
@@ -12,15 +12,23 @@
 - `C-AUCTION`: features stop at D close. The candidate fill is D+1 official open; an open within the tolerant upper-limit cushion is an unfilled queue. The realised D+1 gap is not a selection filter.
 - `C-POSTGAP`: realised auction gap conditions next-board probability only. There is deliberately no daily-OHLCV return claim because 09:30/first-five-minute execution is absent.
 - T+1 exits begin no earlier than D+2 for a D+1-open entry. Every exit resolves on exact market sessions; a missing bar is unresolved, and lower-limit carry advances one market session at a time.
+- Positive finite ticker volume is mandatory for signal, next-session tradability, fill, every fixed exit, every seal-state check, and every lower-limit carry step. Zero volume is halt/no-trade, never fill.
+- Main-board listings on/after 2023-04-10, plus STAR and ChiNext, quarantine their first five observed listing sessions as no-limit IPO sessions; earlier main listings quarantine the first session.
 - Main board is primary; ChiNext band eras are separate secondary cohorts; STAR is descriptive; BSE/ST are untested.
 
 ## Data and event inventory
 
-- Raw files: 1,841 read / 1,842 discovered; 0 errors; 1 current-ST intersections excluded.
-- Raw rows: 6,760,225; sessions 1990-12-19 to 2026-08-07.
-- Tolerant boards: 55,603; strict boards: 29,333; marginal tolerance rows: 26,270.
-- Measured after boundary purge: 55,112 signals, 3,698 date clusters, 44,158 board-run clusters.
+- Raw files: 1,842 scanned for clock/volume support; 1,841 measured; 0 errors; 1 current-ST intersections excluded from measurement.
+- Measured raw rows: 6,760,225; all-file support rows: 6,767,465; sessions 1990-12-19 to 2026-08-07.
+- Common clock: 3,786 sessions; >=50-name raw consensus 3,786; set-identical=True; 2014-12-24 successor=2014-12-25.
+- 2014-12-25 raw support: 983 names, 894 with positive volume. The clock anchor has 3,780 positive-volume sessions and 6 nonpositive placeholders; its index, not volume, defines the clock.
+- Zero/missing-volume census: 277,152 raw rows total, 133,854 in-window; 133,107 otherwise price-eligible rows and 1 tolerant board-price rows were reclassified.
+- Zero-volume downstream states: 456 next sessions; exact-exit unresolved counts {"seal_state_next_open": 342, "tplus1_legal_close": 268, "tplus1_legal_open": 265, "tplus2_close": 370, "tplus4_close": 524}. Off-calendar positive-volume otherwise-eligible rows: 0.
+- Registration-era main IPO quarantine: 41 files and 205 first-five rows; boundary 2023-04-10.
+- Tolerant boards: 55,631; strict boards: 29,351; marginal tolerance rows: 26,280.
+- Measured after boundary purge: 55,140 signals, 3,699 date clusters, 44,177 board-run clusters.
 - `china_zt_pool` vendor strata use valid observed sessions only: 11 clone dates are excluded, missing sessions are not imputed, and retrospective rows are explicitly stamped non-PIT.
+- Content-addressed input/config fingerprint: `fc96e25406d29a8473221defd973323449335e87f3a77b793ef0d506c1ee3136`. The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated.
 
 ## Construction verdicts
 
@@ -34,17 +42,25 @@
 
 ### C_AUCTION
 
-- Verdict: **NEGATIVE_SPECIFIC_CONSTRUCTION**
-- Headline: n=9,762; mean=-0.81%; date-cluster 95% CI=[-1.16%, -0.46%]
-- Kill scope: Only the unconditioned curated-main candidate book (all signals; nonfills cash=0), tolerant-board D-close decision / D+1 official-open rider with seal-state-next-open exit at 60bp in historical replay is killed.
-- Measured: official-open candidate fill after a D-close decision, upper-limit queue rejected, T+1-valid exits, 0/30/60/100bp, and all-signal cash-book expectancy
+- Verdict: **NEGATIVE_EVENT_LEVEL_N1_N2_EXPECTANCY_SPECIFIC_ONLY**
+- Headline: n=8,994; mean=-0.75%; date-cluster 95% CI=[-1.10%, -0.39%]
+- Kill scope: Only the N=1/2 main-board event-level candidate-row expectancy with nonfills cash=0, seal-state-next-open exit at 60bp in historical replay is negative; it is not a portfolio-return verdict.
+- Measured: N=1/2 primary event-level candidate-row expectancy after a D-close decision, plus separately labelled all-N reference and N>=3 exploratory books
 - Not measured: realised gap as a selection feature
+
+### C_AUCTION_PRIMARY_N1_N2_PORTFOLIO
+
+- Verdict: **NEGATIVE_SELF_FINANCING_PROXY_SPECIFIC_ONLY**
+- Headline: n=590; mean=-0.20%; date-cluster 95% CI=[-0.28%, -0.12%]
+- Kill scope: Only the frozen N=1/2 main-board equal-available-cash, no-duplicate-ticker, realised-exit-cost-basis paper book with seal-state exit at 60bp in historical replay.
+- Measured: self-financing equal-available-cash paper book with same-ticker dedupe, exact cash reservation, all five exits, four costs, and daily realised-exit metrics
+- Not measured: daily mark-to-market NAV, theme/sector constraints, auction capacity, or partial fills
 
 ### C_AUCTION_N
 
-- Verdict: **MIXED_OR_INCONCLUSIVE_PRIMARY_ENDPOINT_STRATA_NO_GLOBAL_KILL**
+- Verdict: **NEGATIVE_ALL_PRIMARY_ENDPOINT_STRATA_SPECIFIC_ONLY**
 - Headline: n/a
-- Kill scope: At locked-replay seal-state/60bp only, negative cells: 1, 2, 3, 5_plus. Other exits/costs and unlisted cells are not killed.
+- Kill scope: At locked-replay seal-state/60bp only, negative cells: 1, 2. Other exits/costs and unlisted cells are not killed.
 - Measured: main-board all-signal candidate books by fixed board-count bucket, all five exits and four costs
 - Not measured: crossed board-count/geometry/ecology search or post-auction gap selection
 
@@ -120,123 +136,135 @@
 - Measured: seal_fund_yi, failed_seals, and turnover probability strata on valid observed vendor sessions
 - Not measured: pre-coverage zeros; clone dates; executable returns; normalized seal-fund intensity
 
-## Main historical-replay fill funnel
+## Main N=1/2 historical-replay fill funnel
 
-| Signals | Exact next bar | Halt/missing | Upper-limit queue | Candidate fills | Fill / all signals |
-|---:|---:|---:|---:|---:|---:|
-| 9,762 | 9,762 | 0 | 1,233 | 8,529 | 87.37% |
+| Signals | Exact tradable next bar | Halt/missing bar | Zero-volume no-trade | Upper-limit queue | Candidate fills | Fill / all signals |
+|---:|---:|---:|---:|---:|---:|---:|
+| 9,006 | 8,996 | 0 | 10 | 998 | 7,998 | 88.81% |
 
-The strategy-level return is the joint candidate-book mean with nonfills held at cash=0. Filled-conditional distributions remain diagnostics, not expectancy.
+The event-level candidate-row expectancy keeps mature nonfills at cash=0 and explicitly equals P(fill) × E(net | resolved fill). It is not a portfolio return. Filled-conditional distributions remain diagnostics. The separately printed self-financing proxy reserves cash until exact exits.
+
+## N=1/2 overlap and cash-accounting replay — 60bp
+
+The no-duplicate row/date-equal columns are sequential-trade/cohort expectancy only. The cash-accounted columns invest available cash equally on each entry date and reserve it through exact exits. They remain a cost-basis, no-theme/no-capacity proxy—not a capital/theme-complete portfolio.
+
+| Exit | Accepted resolved | Same-ticker overlap cash | Row-weighted event | Date-equal cohort | Capital unavailable | Final NAV | Cumulative realised | Daily realised mean | Mean invested |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| tplus1_legal_open | 7,127 | 863 | -0.62% | -0.78% | 579 | 0.0311 | -96.89% | -0.57% | 50.40% |
+| tplus1_legal_close | 7,127 | 863 | -0.37% | -0.51% | 85 | 0.2821 | -71.79% | -0.21% | 80.59% |
+| tplus2_close | 6,911 | 1,082 | -0.32% | -0.46% | 597 | 0.5259 | -47.41% | -0.10% | 85.49% |
+| tplus4_close | 6,380 | 1,609 | -0.18% | -0.37% | 301 | 0.3561 | -64.39% | -0.16% | 80.85% |
+| seal_state_next_open | 7,079 | 909 | -0.65% | -0.86% | 22 | 0.2975 | -70.25% | -0.20% | 88.95% |
 
 ## Fixed pre-auction rider books — locked replay primary comparison, seal-state exit, 60bp
 
 These are separate one-dimensional predeclared strata. The JSON includes every fixed exit and 0/30/60/100bp; this compact table is the seal-state/60bp primary comparison only. No crossed combination or best-cell tuning was run.
 
-| Construction | Fixed stratum | Candidates | Mature book | Fill / mature | Joint cash-book mean | Date-cluster 95% CI | Cell verdict |
-|---|---|---:|---:|---:|---:|---:|---|
-| C_AUCTION_N | 1 | 7,637 | 7,637 | 90.28% | -0.66% | [-1.02%, -0.30%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_N | 2 | 1,369 | 1,369 | 81.30% | -1.25% | [-2.07%, -0.43%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_N | 3 | 406 | 406 | 68.72% | -1.23% | [-2.30%, -0.16%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_N | 4 | 182 | 182 | 73.08% | -0.83% | [-2.47%, 0.81%] | INCONCLUSIVE_DATE_CLUSTER_CI |
-| C_AUCTION_N | 5_plus | 168 | 168 | 64.88% | -2.95% | [-4.76%, -1.14%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_ONE_PRICE_D_CLOSE | no | 9,128 | 9,128 | 90.50% | -0.82% | [-1.19%, -0.45%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_ONE_PRICE_D_CLOSE | yes | 634 | 634 | 42.27% | -0.63% | [-1.30%, 0.05%] | INCONCLUSIVE_DATE_CLUSTER_CI |
-| C_AUCTION_INTRADAY_RANGE_D_CLOSE | 0_10_to_0_35 | 343 | 343 | 82.51% | -0.50% | [-1.33%, 0.32%] | INCONCLUSIVE_DATE_CLUSTER_CI |
-| C_AUCTION_INTRADAY_RANGE_D_CLOSE | 0_35_to_0_70 | 1,692 | 1,692 | 78.37% | -0.93% | [-1.53%, -0.34%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_INTRADAY_RANGE_D_CLOSE | gt_0_70 | 7,056 | 7,056 | 93.86% | -0.82% | [-1.22%, -0.42%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_INTRADAY_RANGE_D_CLOSE | le_0_10 | 671 | 671 | 44.26% | -0.53% | [-1.18%, 0.13%] | INCONCLUSIVE_DATE_CLUSTER_CI |
-| C_AUCTION_ECOLOGY_D_CLOSE | cold | 2,465 | 2,465 | 92.17% | -0.69% | [-1.08%, -0.30%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_ECOLOGY_D_CLOSE | hot | 3,041 | 3,041 | 78.10% | -1.01% | [-1.80%, -0.23%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
-| C_AUCTION_ECOLOGY_D_CLOSE | neutral | 4,256 | 4,256 | 91.21% | -0.73% | [-1.27%, -0.20%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| Construction | Population | Fixed stratum | Candidates | Mature book | Fill / mature | Event-level cash-zero mean | Date-cluster 95% CI | Cell verdict |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| C_AUCTION_N | primary_n1_n2 | 1 | 7,637 | 7,627 | 90.14% | -0.66% | [-1.02%, -0.30%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_N | primary_n1_n2 | 2 | 1,369 | 1,367 | 81.27% | -1.26% | [-2.08%, -0.44%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_N | exploratory_n3plus | 3 | 406 | 405 | 68.64% | -1.26% | [-2.33%, -0.18%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_N | exploratory_n3plus | 4 | 182 | 181 | 72.93% | -0.86% | [-2.51%, 0.79%] | INCONCLUSIVE_DATE_CLUSTER_CI |
+| C_AUCTION_N | exploratory_n3plus | 5_plus | 168 | 168 | 64.88% | -2.95% | [-4.76%, -1.14%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_ONE_PRICE_D_CLOSE | primary_n1_n2_population | no | 8,585 | 8,573 | 90.96% | -0.75% | [-1.12%, -0.39%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_ONE_PRICE_D_CLOSE | primary_n1_n2_population | yes | 421 | 421 | 44.66% | -0.64% | [-1.37%, 0.10%] | INCONCLUSIVE_DATE_CLUSTER_CI |
+| C_AUCTION_INTRADAY_RANGE_D_CLOSE | primary_n1_n2_population | 0_10_to_0_35 | 285 | 285 | 85.96% | -0.78% | [-1.61%, 0.06%] | INCONCLUSIVE_DATE_CLUSTER_CI |
+| C_AUCTION_INTRADAY_RANGE_D_CLOSE | primary_n1_n2_population | 0_35_to_0_70 | 1,505 | 1,504 | 78.59% | -0.80% | [-1.41%, -0.18%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_INTRADAY_RANGE_D_CLOSE | primary_n1_n2_population | gt_0_70 | 6,763 | 6,752 | 93.99% | -0.75% | [-1.16%, -0.35%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_INTRADAY_RANGE_D_CLOSE | primary_n1_n2_population | le_0_10 | 453 | 453 | 47.02% | -0.54% | [-1.24%, 0.15%] | INCONCLUSIVE_DATE_CLUSTER_CI |
+| C_AUCTION_ECOLOGY_D_CLOSE | primary_n1_n2_population | cold | 2,299 | 2,299 | 93.52% | -0.64% | [-1.03%, -0.25%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_ECOLOGY_D_CLOSE | primary_n1_n2_population | hot | 2,767 | 2,763 | 79.15% | -0.82% | [-1.59%, -0.05%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
+| C_AUCTION_ECOLOGY_D_CLOSE | primary_n1_n2_population | neutral | 3,940 | 3,932 | 92.80% | -0.76% | [-1.32%, -0.20%] | NEGATIVE_DATE_CLUSTER_CI_SPECIFIC_CELL |
 
 ## Frozen crowd clock
 
-| Split | Board | Friday | Holiday gap | Signals | Mature book | Inclusive continuation | Fill / all | Joint seal-state 60bp |
-|---|---:|---|---|---:|---:|---:|---:|---:|
-| calibration_2020_2023 | 1 | friday | holiday_gap_ge_4_calendar_days | 220 | 220 | 25.45% | 95.45% | 0.46% |
-| calibration_2020_2023 | 1 | friday | not_holiday_gap | 1,968 | 1,968 | 18.39% | 94.41% | -0.65% |
-| calibration_2020_2023 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 125 | 125 | 16.80% | 93.60% | -0.65% |
-| calibration_2020_2023 | 1 | not_friday | not_holiday_gap | 9,503 | 9,503 | 12.68% | 96.34% | -0.82% |
-| calibration_2020_2023 | 2 | friday | holiday_gap_ge_4_calendar_days | 17 | 17 | 23.53% | 82.35% | -3.38% |
-| calibration_2020_2023 | 2 | friday | not_holiday_gap | 262 | 262 | 37.79% | 79.77% | -1.49% |
-| calibration_2020_2023 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 20 | 20 | 45.00% | 60.00% | -0.16% |
-| calibration_2020_2023 | 2 | not_friday | not_holiday_gap | 1,347 | 1,347 | 27.39% | 86.79% | -1.13% |
-| calibration_2020_2023 | 3 | friday | holiday_gap_ge_4_calendar_days | 5 | 5 | 20.00% | 80.00% | -1.45% |
-| calibration_2020_2023 | 3 | friday | not_holiday_gap | 85 | 85 | 38.82% | 78.82% | -2.03% |
-| calibration_2020_2023 | 3 | not_friday | holiday_gap_ge_4_calendar_days | 4 | 4 | 75.00% | 50.00% | 0.42% |
-| calibration_2020_2023 | 3 | not_friday | not_holiday_gap | 387 | 387 | 41.09% | 78.29% | -1.26% |
-| calibration_2020_2023 | 4 | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 50.00% | 100.00% | 12.99% |
-| calibration_2020_2023 | 4 | friday | not_holiday_gap | 31 | 31 | 58.06% | 70.97% | 1.76% |
-| calibration_2020_2023 | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 0.00% | 0.00% |
-| calibration_2020_2023 | 4 | not_friday | not_holiday_gap | 162 | 162 | 48.77% | 70.37% | -0.65% |
-| calibration_2020_2023 | 5_plus | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 50.00% | 100.00% | -14.11% |
-| calibration_2020_2023 | 5_plus | friday | not_holiday_gap | 44 | 44 | 47.73% | 63.64% | -3.30% |
-| calibration_2020_2023 | 5_plus | not_friday | not_holiday_gap | 159 | 159 | 52.83% | 69.81% | -1.87% |
-| historical_replay_after_common_prior | 1 | friday | holiday_gap_ge_4_calendar_days | 25 | 25 | 20.00% | 96.00% | 1.31% |
-| historical_replay_after_common_prior | 1 | friday | not_holiday_gap | 1,346 | 1,346 | 21.69% | 93.24% | -0.71% |
-| historical_replay_after_common_prior | 1 | not_friday | holiday_gap_ge_4_calendar_days | 505 | 505 | 36.44% | 31.49% | -0.29% |
-| historical_replay_after_common_prior | 1 | not_friday | not_holiday_gap | 5,761 | 5,761 | 15.48% | 94.72% | -0.69% |
-| historical_replay_after_common_prior | 2 | friday | holiday_gap_ge_4_calendar_days | 5 | 5 | 60.00% | 80.00% | 0.96% |
-| historical_replay_after_common_prior | 2 | friday | not_holiday_gap | 214 | 214 | 37.38% | 77.10% | -1.33% |
-| historical_replay_after_common_prior | 2 | not_friday | holiday_gap_ge_4_calendar_days | 53 | 53 | 60.38% | 30.19% | -0.82% |
-| historical_replay_after_common_prior | 2 | not_friday | not_holiday_gap | 1,097 | 1,097 | 26.53% | 84.59% | -1.27% |
-| historical_replay_after_common_prior | 3 | friday | holiday_gap_ge_4_calendar_days | 3 | 3 | 66.67% | 66.67% | 2.23% |
-| historical_replay_after_common_prior | 3 | friday | not_holiday_gap | 63 | 63 | 46.03% | 65.08% | 0.06% |
-| historical_replay_after_common_prior | 3 | not_friday | holiday_gap_ge_4_calendar_days | 31 | 31 | 32.26% | 35.48% | -0.58% |
-| historical_replay_after_common_prior | 3 | not_friday | not_holiday_gap | 309 | 309 | 45.31% | 72.82% | -1.59% |
-| historical_replay_after_common_prior | 4 | friday | not_holiday_gap | 33 | 33 | 57.58% | 63.64% | -0.11% |
-| historical_replay_after_common_prior | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 0.00% | 100.00% | -1.63% |
-| historical_replay_after_common_prior | 4 | not_friday | not_holiday_gap | 148 | 148 | 41.22% | 75.00% | -0.98% |
-| historical_replay_after_common_prior | 5_plus | friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 0.00% | 100.00% | -13.49% |
-| historical_replay_after_common_prior | 5_plus | friday | not_holiday_gap | 33 | 33 | 39.39% | 63.64% | -3.60% |
-| historical_replay_after_common_prior | 5_plus | not_friday | holiday_gap_ge_4_calendar_days | 4 | 4 | 75.00% | 25.00% | -2.16% |
-| historical_replay_after_common_prior | 5_plus | not_friday | not_holiday_gap | 130 | 130 | 55.38% | 66.15% | -2.73% |
-| train_2011_2019 | 1 | friday | holiday_gap_ge_4_calendar_days | 152 | 152 | 11.18% | 96.05% | -0.23% |
-| train_2011_2019 | 1 | friday | not_holiday_gap | 2,767 | 2,767 | 17.38% | 94.18% | -0.61% |
-| train_2011_2019 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 155 | 155 | 20.00% | 89.68% | -1.08% |
-| train_2011_2019 | 1 | not_friday | not_holiday_gap | 13,831 | 13,831 | 15.82% | 93.53% | -0.91% |
-| train_2011_2019 | 2 | friday | holiday_gap_ge_4_calendar_days | 18 | 18 | 50.00% | 72.22% | 2.63% |
-| train_2011_2019 | 2 | friday | not_holiday_gap | 800 | 800 | 59.75% | 79.88% | -0.81% |
-| train_2011_2019 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 19 | 19 | 31.58% | 73.68% | -0.01% |
-| train_2011_2019 | 2 | not_friday | not_holiday_gap | 1,878 | 1,878 | 29.71% | 77.48% | -1.46% |
-| train_2011_2019 | 3 | friday | holiday_gap_ge_4_calendar_days | 9 | 9 | 33.33% | 77.78% | 3.05% |
-| train_2011_2019 | 3 | friday | not_holiday_gap | 115 | 115 | 43.48% | 73.04% | -1.57% |
-| train_2011_2019 | 3 | not_friday | holiday_gap_ge_4_calendar_days | 11 | 11 | 45.45% | 72.73% | 2.39% |
-| train_2011_2019 | 3 | not_friday | not_holiday_gap | 914 | 914 | 35.67% | 75.71% | -2.63% |
-| train_2011_2019 | 4 | friday | holiday_gap_ge_4_calendar_days | 6 | 6 | 50.00% | 50.00% | -0.53% |
-| train_2011_2019 | 4 | friday | not_holiday_gap | 59 | 59 | 55.93% | 50.85% | -0.76% |
-| train_2011_2019 | 4 | not_friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 100.00% | 0.00% | 0.00% |
-| train_2011_2019 | 4 | not_friday | not_holiday_gap | 314 | 314 | 40.76% | 70.70% | -3.16% |
-| train_2011_2019 | 5_plus | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 100.00% | 0.00% | 0.00% |
-| train_2011_2019 | 5_plus | friday | not_holiday_gap | 96 | 96 | 61.46% | 46.88% | 0.49% |
-| train_2011_2019 | 5_plus | not_friday | holiday_gap_ge_4_calendar_days | 7 | 7 | 71.43% | 14.29% | -2.24% |
-| train_2011_2019 | 5_plus | not_friday | not_holiday_gap | 346 | 346 | 63.58% | 41.33% | -0.42% |
-| vendor_tail_audit | 1 | friday | not_holiday_gap | 140 | 114 | 14.04% | 77.14% | -1.67% |
-| vendor_tail_audit | 1 | not_friday | holiday_gap_ge_4_calendar_days | 26 | 26 | 19.23% | 96.15% | -0.98% |
-| vendor_tail_audit | 1 | not_friday | not_holiday_gap | 797 | 773 | 15.06% | 97.74% | -0.83% |
-| vendor_tail_audit | 2 | friday | not_holiday_gap | 16 | 12 | 8.33% | 75.00% | -1.25% |
-| vendor_tail_audit | 2 | not_friday | holiday_gap_ge_4_calendar_days | 3 | 3 | 33.33% | 100.00% | 0.16% |
-| vendor_tail_audit | 2 | not_friday | not_holiday_gap | 126 | 119 | 23.81% | 92.86% | 0.23% |
-| vendor_tail_audit | 3 | friday | not_holiday_gap | 3 | 2 | 50.00% | 33.33% | -1.75% |
-| vendor_tail_audit | 3 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 100.00% | 16.01% |
-| vendor_tail_audit | 3 | not_friday | not_holiday_gap | 30 | 25 | 33.33% | 96.67% | 0.73% |
-| vendor_tail_audit | 4 | friday | not_holiday_gap | 4 | 1 | 0.00% | 25.00% | -4.12% |
-| vendor_tail_audit | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 0.00% | 0.00% |
-| vendor_tail_audit | 4 | not_friday | not_holiday_gap | 7 | 7 | 57.14% | 42.86% | -1.20% |
-| vendor_tail_audit | 5_plus | friday | not_holiday_gap | 1 | 1 | 100.00% | 100.00% | -11.64% |
-| vendor_tail_audit | 5_plus | not_friday | not_holiday_gap | 6 | 6 | 16.67% | 83.33% | 0.69% |
+| Split | Population | Board | Friday | Holiday gap | Signals | Mature book | Inclusive continuation | Fill / all | Event-level seal-state 60bp |
+|---|---|---:|---|---|---:|---:|---:|---:|---:|
+| calibration_2020_2023 | primary_n1_n2 | 1 | friday | holiday_gap_ge_4_calendar_days | 220 | 220 | 25.45% | 95.00% | 0.46% |
+| calibration_2020_2023 | primary_n1_n2 | 1 | friday | not_holiday_gap | 1,968 | 1,968 | 18.39% | 94.31% | -0.65% |
+| calibration_2020_2023 | primary_n1_n2 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 125 | 125 | 16.80% | 93.60% | -0.65% |
+| calibration_2020_2023 | primary_n1_n2 | 1 | not_friday | not_holiday_gap | 9,503 | 9,498 | 12.68% | 96.22% | -0.83% |
+| calibration_2020_2023 | primary_n1_n2 | 2 | friday | holiday_gap_ge_4_calendar_days | 17 | 17 | 23.53% | 82.35% | -3.38% |
+| calibration_2020_2023 | primary_n1_n2 | 2 | friday | not_holiday_gap | 262 | 262 | 37.79% | 79.77% | -1.49% |
+| calibration_2020_2023 | primary_n1_n2 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 20 | 20 | 45.00% | 60.00% | -0.16% |
+| calibration_2020_2023 | primary_n1_n2 | 2 | not_friday | not_holiday_gap | 1,347 | 1,344 | 27.39% | 86.71% | -1.23% |
+| calibration_2020_2023 | exploratory_n3plus | 3 | friday | holiday_gap_ge_4_calendar_days | 5 | 5 | 20.00% | 80.00% | -1.45% |
+| calibration_2020_2023 | exploratory_n3plus | 3 | friday | not_holiday_gap | 85 | 84 | 38.82% | 78.82% | -2.07% |
+| calibration_2020_2023 | exploratory_n3plus | 3 | not_friday | holiday_gap_ge_4_calendar_days | 4 | 4 | 75.00% | 50.00% | 0.42% |
+| calibration_2020_2023 | exploratory_n3plus | 3 | not_friday | not_holiday_gap | 387 | 386 | 41.09% | 78.04% | -1.46% |
+| calibration_2020_2023 | exploratory_n3plus | 4 | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 50.00% | 100.00% | 12.99% |
+| calibration_2020_2023 | exploratory_n3plus | 4 | friday | not_holiday_gap | 31 | 30 | 58.06% | 70.97% | -0.20% |
+| calibration_2020_2023 | exploratory_n3plus | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 0.00% | 0.00% |
+| calibration_2020_2023 | exploratory_n3plus | 4 | not_friday | not_holiday_gap | 162 | 162 | 48.77% | 69.75% | -0.65% |
+| calibration_2020_2023 | exploratory_n3plus | 5_plus | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 50.00% | 100.00% | -14.11% |
+| calibration_2020_2023 | exploratory_n3plus | 5_plus | friday | not_holiday_gap | 44 | 43 | 47.73% | 63.64% | -3.35% |
+| calibration_2020_2023 | exploratory_n3plus | 5_plus | not_friday | not_holiday_gap | 159 | 157 | 52.83% | 69.81% | -2.16% |
+| historical_replay_after_common_prior | primary_n1_n2 | 1 | friday | holiday_gap_ge_4_calendar_days | 25 | 25 | 20.00% | 96.00% | 1.31% |
+| historical_replay_after_common_prior | primary_n1_n2 | 1 | friday | not_holiday_gap | 1,346 | 1,346 | 21.69% | 93.02% | -0.71% |
+| historical_replay_after_common_prior | primary_n1_n2 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 505 | 505 | 36.44% | 31.49% | -0.29% |
+| historical_replay_after_common_prior | primary_n1_n2 | 1 | not_friday | not_holiday_gap | 5,761 | 5,751 | 15.48% | 94.60% | -0.69% |
+| historical_replay_after_common_prior | primary_n1_n2 | 2 | friday | holiday_gap_ge_4_calendar_days | 5 | 5 | 60.00% | 80.00% | 0.96% |
+| historical_replay_after_common_prior | primary_n1_n2 | 2 | friday | not_holiday_gap | 214 | 214 | 37.38% | 77.10% | -1.33% |
+| historical_replay_after_common_prior | primary_n1_n2 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 53 | 53 | 60.38% | 30.19% | -0.82% |
+| historical_replay_after_common_prior | primary_n1_n2 | 2 | not_friday | not_holiday_gap | 1,097 | 1,095 | 26.53% | 84.59% | -1.27% |
+| historical_replay_after_common_prior | exploratory_n3plus | 3 | friday | holiday_gap_ge_4_calendar_days | 3 | 3 | 66.67% | 66.67% | 2.23% |
+| historical_replay_after_common_prior | exploratory_n3plus | 3 | friday | not_holiday_gap | 63 | 63 | 46.03% | 65.08% | 0.06% |
+| historical_replay_after_common_prior | exploratory_n3plus | 3 | not_friday | holiday_gap_ge_4_calendar_days | 31 | 31 | 32.26% | 35.48% | -0.58% |
+| historical_replay_after_common_prior | exploratory_n3plus | 3 | not_friday | not_holiday_gap | 309 | 308 | 45.31% | 72.82% | -1.63% |
+| historical_replay_after_common_prior | exploratory_n3plus | 4 | friday | not_holiday_gap | 33 | 33 | 57.58% | 63.64% | -0.11% |
+| historical_replay_after_common_prior | exploratory_n3plus | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 0.00% | 100.00% | -1.63% |
+| historical_replay_after_common_prior | exploratory_n3plus | 4 | not_friday | not_holiday_gap | 148 | 147 | 41.22% | 75.00% | -1.02% |
+| historical_replay_after_common_prior | exploratory_n3plus | 5_plus | friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 0.00% | 100.00% | -13.49% |
+| historical_replay_after_common_prior | exploratory_n3plus | 5_plus | friday | not_holiday_gap | 33 | 33 | 39.39% | 63.64% | -3.60% |
+| historical_replay_after_common_prior | exploratory_n3plus | 5_plus | not_friday | holiday_gap_ge_4_calendar_days | 4 | 4 | 75.00% | 25.00% | -2.16% |
+| historical_replay_after_common_prior | exploratory_n3plus | 5_plus | not_friday | not_holiday_gap | 130 | 130 | 55.38% | 66.15% | -2.73% |
+| train_2011_2019 | primary_n1_n2 | 1 | friday | holiday_gap_ge_4_calendar_days | 152 | 151 | 11.18% | 91.45% | -0.28% |
+| train_2011_2019 | primary_n1_n2 | 1 | friday | not_holiday_gap | 2,761 | 2,734 | 17.28% | 91.81% | -0.76% |
+| train_2011_2019 | primary_n1_n2 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 155 | 155 | 20.00% | 83.23% | -1.08% |
+| train_2011_2019 | primary_n1_n2 | 1 | not_friday | not_holiday_gap | 13,855 | 13,696 | 15.82% | 92.32% | -0.99% |
+| train_2011_2019 | primary_n1_n2 | 2 | friday | holiday_gap_ge_4_calendar_days | 18 | 17 | 50.00% | 72.22% | 1.90% |
+| train_2011_2019 | primary_n1_n2 | 2 | friday | not_holiday_gap | 804 | 796 | 59.70% | 77.86% | -0.84% |
+| train_2011_2019 | primary_n1_n2 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 19 | 19 | 31.58% | 57.89% | -0.16% |
+| train_2011_2019 | primary_n1_n2 | 2 | not_friday | not_holiday_gap | 1,874 | 1,838 | 29.72% | 75.13% | -1.62% |
+| train_2011_2019 | exploratory_n3plus | 3 | friday | holiday_gap_ge_4_calendar_days | 9 | 9 | 33.33% | 55.56% | 2.07% |
+| train_2011_2019 | exploratory_n3plus | 3 | friday | not_holiday_gap | 115 | 113 | 43.48% | 71.30% | -2.44% |
+| train_2011_2019 | exploratory_n3plus | 3 | not_friday | holiday_gap_ge_4_calendar_days | 11 | 11 | 45.45% | 45.45% | 0.37% |
+| train_2011_2019 | exploratory_n3plus | 3 | not_friday | not_holiday_gap | 916 | 911 | 35.81% | 73.69% | -2.65% |
+| train_2011_2019 | exploratory_n3plus | 4 | friday | holiday_gap_ge_4_calendar_days | 6 | 6 | 50.00% | 50.00% | -0.53% |
+| train_2011_2019 | exploratory_n3plus | 4 | friday | not_holiday_gap | 60 | 59 | 56.67% | 51.67% | -1.10% |
+| train_2011_2019 | exploratory_n3plus | 4 | not_friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 100.00% | 0.00% | 0.00% |
+| train_2011_2019 | exploratory_n3plus | 4 | not_friday | not_holiday_gap | 316 | 308 | 40.82% | 69.30% | -3.47% |
+| train_2011_2019 | exploratory_n3plus | 5_plus | friday | holiday_gap_ge_4_calendar_days | 2 | 2 | 100.00% | 0.00% | 0.00% |
+| train_2011_2019 | exploratory_n3plus | 5_plus | friday | not_holiday_gap | 97 | 95 | 61.86% | 41.24% | 0.53% |
+| train_2011_2019 | exploratory_n3plus | 5_plus | not_friday | holiday_gap_ge_4_calendar_days | 7 | 7 | 71.43% | 14.29% | -2.24% |
+| train_2011_2019 | exploratory_n3plus | 5_plus | not_friday | not_holiday_gap | 349 | 344 | 63.32% | 35.53% | -0.44% |
+| vendor_tail_audit | primary_n1_n2 | 1 | friday | not_holiday_gap | 140 | 114 | 14.04% | 76.43% | -1.66% |
+| vendor_tail_audit | primary_n1_n2 | 1 | not_friday | holiday_gap_ge_4_calendar_days | 26 | 26 | 19.23% | 96.15% | -0.98% |
+| vendor_tail_audit | primary_n1_n2 | 1 | not_friday | not_holiday_gap | 797 | 772 | 15.06% | 97.74% | -0.84% |
+| vendor_tail_audit | primary_n1_n2 | 2 | friday | not_holiday_gap | 16 | 12 | 8.33% | 75.00% | -1.25% |
+| vendor_tail_audit | primary_n1_n2 | 2 | not_friday | holiday_gap_ge_4_calendar_days | 3 | 3 | 33.33% | 100.00% | 0.16% |
+| vendor_tail_audit | primary_n1_n2 | 2 | not_friday | not_holiday_gap | 126 | 118 | 23.81% | 92.86% | 0.27% |
+| vendor_tail_audit | exploratory_n3plus | 3 | friday | not_holiday_gap | 3 | 2 | 50.00% | 33.33% | -1.75% |
+| vendor_tail_audit | exploratory_n3plus | 3 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 100.00% | 16.01% |
+| vendor_tail_audit | exploratory_n3plus | 3 | not_friday | not_holiday_gap | 30 | 25 | 33.33% | 96.67% | 0.73% |
+| vendor_tail_audit | exploratory_n3plus | 4 | friday | not_holiday_gap | 4 | 1 | 0.00% | 25.00% | -4.12% |
+| vendor_tail_audit | exploratory_n3plus | 4 | not_friday | holiday_gap_ge_4_calendar_days | 1 | 1 | 100.00% | 0.00% | 0.00% |
+| vendor_tail_audit | exploratory_n3plus | 4 | not_friday | not_holiday_gap | 7 | 7 | 57.14% | 42.86% | -1.20% |
+| vendor_tail_audit | exploratory_n3plus | 5_plus | friday | not_holiday_gap | 1 | 1 | 100.00% | 100.00% | -11.64% |
+| vendor_tail_audit | exploratory_n3plus | 5_plus | not_friday | not_holiday_gap | 6 | 6 | 16.67% | 83.33% | 0.69% |
 
 ## Predeclared 2015 standalone stress era
 
 This table is printed separately so the pooled 2011–2019 train average cannot hide crisis behaviour.
 
-| Board | Signals | Inclusive continuation | Observed-bar sensitivity | Fill / all | Joint state 0bp | Joint state 60bp |
-|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 6,128 | 23.22% | 23.22% | 91.53% | 0.21% | -0.34% |
-| 2 | 1,426 | 47.05% | 47.05% | 76.44% | -0.98% | -1.44% |
-| 3 | 671 | 32.49% | 32.49% | 77.79% | -2.72% | -3.19% |
-| 4 | 217 | 36.87% | 36.87% | 69.12% | -3.64% | -4.05% |
-| 5_plus | 263 | 69.96% | 69.96% | 35.36% | 0.57% | 0.36% |
+| Population | Board | Signals | Inclusive continuation | Observed-bar sensitivity | Fill / all | Event-level state 0bp | Event-level state 60bp |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| primary_n1_n2 | 1 | 6,127 | 23.23% | 23.56% | 90.09% | 0.16% | -0.38% |
+| primary_n1_n2 | 2 | 1,426 | 47.05% | 47.76% | 74.96% | -1.05% | -1.50% |
+| exploratory_n3plus | 3 | 671 | 32.49% | 32.93% | 76.45% | -2.77% | -3.23% |
+| exploratory_n3plus | 4 | 217 | 36.87% | 37.04% | 68.66% | -3.69% | -4.10% |
+| exploratory_n3plus | 5_plus | 263 | 69.96% | 71.60% | 33.08% | 0.60% | 0.40% |
 
 ## Vendor descriptive stratum
 
@@ -244,9 +272,21 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 - Retrospectively fetched/not-proven-PIT rows: 1,205; joined curated event rows: 933.
 - Absolute seal fund is unnormalised; all vendor-field verdicts remain descriptive.
 
+## ORE coverage ledger
+
+| Required construction family | Status | Exact scope |
+|---|---|---|
+| Five-axis continuation | UNTESTED_NOT_SILENTLY_KILLED | vol_z20, runup_5, gap_pct, dist_52w_low, consec_up_days |
+| Strict board definition | MEASURED_SEALED_CLOSE_SENSITIVITY | true-next-session probability and event-level cash-zero book |
+| Ecology extensions | UNTESTED_NOT_SILENTLY_KILLED | active ceiling, 3-session acceleration, leader-failure shock |
+| N>=3 riders | EXPLORATORY_ONLY_NO_PRIMARY_VERDICT | board-count cells remain visible but cannot drive Packet B |
+| Portfolio constraints | UNTESTED_BEYOND_FROZEN_CASH_RESERVATION_PROXY | mark-to-market, theme/sector caps, capacity, partial fills |
+
 ## Honesty notes
 
 - `historical_replay_after_common_prior` is labelled replay, never unseen test.
+- `EVENT_LEVEL_CANDIDATE_ROW_EXPECTANCY_NOT_A_PORTFOLIO_RETURN` is the exact label for cash-zero signal rows; the no-duplicate date-equal series is cohort expectancy, and only the separate cash-reservation proxy is self-financing.
+- The self-financing proxy values open positions at cost until realised exits; interim drawdown, theme concentration, capacity, and mark-to-market risk remain unmeasured.
 - The 0/30/60/100 bp grid is a round-trip friction sensitivity, not a live fill model.
 - Date- and board-run-cluster intervals accompany pooled means; clustered names on one board-festival date are not treated as independent evidence.
 - No construction receives ranking, sizing, gating, or trading authority.
@@ -268,3 +308,8 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 - cross-name portfolio dependence, theme caps, and crowded-factor drawdown
 - tree, boosting, hazard, and nested-validation models
 - corporate-action truth beyond the inherited nominal-price open-gap suppression heuristic
+- complete five-axis continuation strata: vol_z20, runup_5, gap_pct, dist_52w_low, and consec_up_days
+- strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity
+- active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions
+- N>=3 continuation riders beyond explicitly exploratory descriptive cells
+- capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy
