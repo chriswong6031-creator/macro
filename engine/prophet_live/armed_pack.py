@@ -2,23 +2,54 @@
 
 WHAT IT DOES. For every name in the scored universe it re-runs the SAME close-only
 admission gate (:func:`engine.signal_gate.gate`) with candidate provisional closes
-substituted for the as-of bar, and records the price interval over which
+appended as tonight's new session bar, and records the price interval over which
 :func:`engine.signal_gate.is_buyable` is true. The */5 intraday lane then only has
 to compare a delayed live price to those two numbers — it never re-derives a signal
 (masterplan §4.1/§4.2). The pack is an OPTIMIZATION; the gate is the truth.
 
-THE CANDIDATE REPLACES THE AS-OF BAR — it is never appended as an extra bar. A
-probe series is ``close[:-1] + [candidate]`` on the same DatetimeIndex, so feeding
-the actual as-of close back in reproduces the nightly series EXACTLY and therefore
-the nightly ``is_buyable`` verdict. That boolean is what the gate decides and all the
-intraday states turn on; ``tier``/``tier_cascade`` ride along as as-of-close context
-for display and are not part of the parity assertion.
+THE CANDIDATE IS APPENDED AS THE NEXT SESSION'S BAR — it never overwrites the as-of
+close. A probe series is ``close + [candidate]`` indexed at the next NYSE session
+after the store's last bar, because the question this pack exists to answer is "will
+TONIGHT's admission gate pass at price X", and tonight's nightly APPENDS a new
+session bar to the store — it does not restate the last one. The two constructions
+are NOT interchangeable, and the difference is not cosmetic: they differ in length,
+in the bucket positions ``engine.session_anchor`` assigns every 2D/3D leg, in the
+freshness tick counts ``engine.signal_gate`` compares against ``FRESH_TICKS``, and in
+whether signal_quality's reclaim-and-hold has a NEXT bar to resolve on at all — a
+replace-series never supplies one, so a ``sub:"pending"`` name read buyable at prices
+tonight's gate rejects. RE-MEASURED on the 2026-08-08 store, same universe, same probe
+set, only the construction changed: 45 of 180 probed names answer differently at their
+own close (42 of 72 board names, 3 of 108 cross candidates) and the armed count moved
+98 -> 68. Nothing about the tape changed between those two numbers — the pack was
+answering the wrong question for 30 of them. (The pre-fix audit measured the same gap
+as 8.0% of ±3% grid points disagreeing.)
+
+SO THE ANCHOR IS MEASURED, NOT ASSUMED. Under the old semantics
+``candidate == close.iloc[-1]`` returned the input series value-for-value, which made
+the pack's centre verdict and its interval anchor the same number by construction. An
+appended bar breaks that identity on purpose, so the two readings are now separate,
+both published, and neither stands in for the other:
+
+  ``center_buyable``        tonight's board verdict on the store AS IT STANDS. This is
+                            what the boards were built from, what the reconciler grades
+                            against, and what tells the evaluator whether a row entered
+                            from the board or from a cross. UNCHANGED.
+  ``probe_center_buyable``  the gate's answer at today's own close WITH the probe's
+                            appended bar — one real gate call, not an inherited one. It
+                            is the verdict the published interval reproduces at the
+                            as-of close, so it is what the membership check compares
+                            against (:func:`engine.prophet_live.interval.self_check`).
+                            ``meta.probe_center_flips`` counts where the two disagree.
+
+``tier``/``tier_cascade`` ride along as as-of-close context for display and are not
+part of any parity assertion.
 
 Parity is proven by :func:`edge_checks` + :func:`verify_edges`, which re-run the REAL
-gate at every PUBLISHED price before anything ships — see the block comment above
-them for why :func:`self_check` alone was not evidence. Any mismatch refuses to
-publish, because a missing pack makes the evaluator go dark (honest) while a wrong
-pack lies, and a level that could not be verified is withheld rather than shipped.
+gate at every PUBLISHED price — on the SAME appended construction the edge was
+measured on — before anything ships; see the block comment above them for why
+:func:`self_check` alone was not evidence. Any mismatch refuses to publish, because a
+missing pack makes the evaluator go dark (honest) while a wrong pack lies, and a level
+that could not be verified is withheld rather than shipped.
 
 PROBE SCOPE (disclosed in ``meta.probe_scope``, not silently assumed). The band is
 swept only where a product state exists:
@@ -63,7 +94,8 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Any, Callable, Iterable, Sequence
 
 import pandas as pd
@@ -72,7 +104,8 @@ from engine import signal_gate
 # The interval contract lives in a stdlib-only sibling so the pandas-free */5 lane
 # can read it too; re-exported here because this is where callers expect it.
 from engine.prophet_live.interval import (  # noqa: F401
-    STATES, in_probed_band, interval_contains, lower_edge, membership_mismatches,
+    ADJUSTED, DEFAULT_PACK_ADJUSTMENT, STATES, UNADJUSTED, in_probed_band,
+    interval_contains, lower_edge, membership_anchor, membership_mismatches,
     self_check,
 )
 
@@ -161,16 +194,53 @@ def clean_closes(close: Any) -> pd.Series | None:
     return s
 
 
-def probe_series(close: pd.Series, candidate: float) -> pd.Series:
-    """``close`` with its LAST bar replaced by ``candidate`` (same index).
+@lru_cache(maxsize=8192)
+def _next_session_after(day: date) -> date:
+    """The first NYSE session STRICTLY after ``day``, off the repo's own calendar.
 
-    The provisional close IS today's close, not an extra bar — see the module
-    docstring. ``candidate == close.iloc[-1]`` returns the original series
-    value-for-value, which is what makes the parity assertion exact.
+    Never weekday arithmetic: a hand-rolled business day puts the appended bar on a
+    market holiday, and every 2D/3D bucket the gate reads is a position in the session
+    calendar (:mod:`engine.session_anchor`), so one fabricated session re-phases the
+    whole cascade. Cached because the probe asks this ~25 times per probed name and
+    the answer is a function of one date.
     """
-    out = close.copy()
-    out.iloc[-1] = float(candidate)
-    return out
+    from lib.nyse_calendar import sessions_between  # noqa: PLC0415
+    ahead = sessions_between(day + timedelta(days=1), day + timedelta(days=14))
+    if not ahead:  # pragma: no cover - the longest NYSE closure is a few days
+        raise ValueError(f"no NYSE session within 14 days of {day} — calendar rules broken")
+    return ahead[0]
+
+
+def next_session_stamp(last: Any) -> pd.Timestamp:
+    """The index label the probe's appended bar takes: the next session after ``last``.
+
+    ``last`` need not itself be a session — a store whose tip is a holiday still has a
+    well-defined next session, and refusing there would silently unprobe the name.
+    """
+    ts = pd.Timestamp(last)
+    nxt = pd.Timestamp(_next_session_after(ts.date()))
+    return nxt.tz_localize(ts.tz) if ts.tz is not None else nxt
+
+
+def probe_series(close: pd.Series, candidate: float) -> pd.Series:
+    """``close`` with ``candidate`` APPENDED as the NEXT session's bar.
+
+    The provisional close is TOMORROW's bar, not a restatement of today's — see the
+    module docstring. Tonight's nightly appends a new session to the store, so a probe
+    that replaced the last bar was answering a question no gate is ever asked: it kept
+    the series length, the session-anchor bucket positions and the freshness tick
+    counts frozen at yesterday's, and it never supplied the NEXT bar that
+    signal_quality's reclaim-and-hold resolves a ``pending`` buy on.
+
+    The appended label comes from :func:`next_session_stamp` (the repo NYSE calendar),
+    so the new bar lands where tonight's nightly would put it. ``candidate ==
+    close.iloc[-1]`` therefore does NOT return the input series — that identity is
+    gone by design, and :func:`probe_name` measures the anchor verdict instead of
+    inheriting it.
+    """
+    idx = pd.DatetimeIndex([next_session_stamp(close.index[-1])])
+    tail = pd.Series([float(candidate)], index=idx, dtype="float64", name=close.name)
+    return pd.concat([close, tail])
 
 
 def _buyable_at(ticker: str, close: pd.Series, px: float,
@@ -295,8 +365,13 @@ def centre_record(ticker: str, close: pd.Series, *, cfg: dict[str, Any],
         rec["skip"] = "insufficient_history"
         return rec
 
+    # NO ``known`` SEED. The census verdict used to be handed to the probe as a free
+    # data point at the as-of close, which was sound only while probe_series REPLACED
+    # the last bar (the two calls were byte-identical). With the candidate appended the
+    # centre census answers a different question from the probe, so seeding it would
+    # plant the board verdict inside the interval; probe_name pays one gate call and
+    # measures the anchor for real.
     rec["span"] = probe_span(as_of_close, rec["center_buyable"], cfg["band_pct"])
-    rec["known"] = {as_of_close: rec["center_buyable"]}
     rec["wants_probe"] = True
     return rec
 
@@ -306,20 +381,33 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
                gate_fn: Callable[[str, Any], dict] | None = None) -> dict[str, Any]:
     """Structure grid + edge bisection over ``rec["span"]``.
 
-    Returns ``{lower_edge, upper_edge, irregular, buyable_in_band, gate_calls}``.
-    ``irregular`` is set when the grid shows more than one run of buyable prices —
-    the gate is not single-interval over the band and no threshold can honestly
-    stand in for it.
+    Returns ``{lower_edge, upper_edge, lower_false, upper_false, irregular,
+    buyable_in_band, probe_center_buyable, gate_calls}``. ``irregular`` is set when the
+    grid shows more than one run of buyable prices — the gate is not single-interval
+    over the band and no threshold can honestly stand in for it.
+
+    ``probe_center_buyable`` is the gate's verdict at the name's OWN as-of close under
+    the probe's appended bar. It is measured here with a real gate call rather than
+    inherited from the centre census: the census asks "is this name on tonight's
+    board", the probe asks "does tonight's gate still admit it at this price", and
+    under append semantics those are different questions with different answers for a
+    large share of the board (module docstring).
     """
     g = gate_fn or signal_gate.gate
     grid = probe_grid(rec["span"], cfg["grid_points"])
-    known = dict(rec.get("known") or {})
+    as_of = rec.get("as_of_close")
+    as_of = float(as_of) if as_of is not None else float(close.iloc[-1])
+    center = _buyable_at(ticker, close, as_of, g)
+    known = {as_of: center}
 
-    # Snap grid points onto prices whose verdict is already known (the as-of close
-    # from the centre census). An odd grid puts it exactly at the centre of the
-    # two-sided span, but only to float precision, and paying a second gate call
-    # for the same price is waste this pass cannot afford hundreds of times.
-    calls = 0
+    # Snap grid points onto the anchor price, whose verdict was just measured. The
+    # as-of close is always ON the grid — it is the centre of the two-sided span and
+    # the low end of the up-only one — but only to float precision, and paying a
+    # second gate call for the same price is waste this pass cannot afford hundreds of
+    # times. On an even ``grid_points`` (config-reachable) the centre is not a grid
+    # point and the anchor call is simply an extra one; that is the correct trade,
+    # because the membership check has nothing to stand on without it.
+    calls = 1
     flags: list[bool] = []
     for i, px in enumerate(grid):
         hit = next((k for k in known if abs(k - px) <= abs(px) * 1e-9), None)
@@ -333,6 +421,7 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
     out: dict[str, Any] = {"lower_edge": None, "upper_edge": None,
                            "lower_false": None, "upper_false": None,
                            "irregular": False, "buyable_in_band": any(flags),
+                           "probe_center_buyable": bool(center),
                            "gate_calls": calls}
     runs = _true_runs(flags)
     if not runs:
@@ -362,11 +451,22 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
 
     Field contract (schema ``prophet_live.armed/v1``):
       ``state``          one of :data:`STATES`.
-      ``center_buyable`` the gate verdict at the as-of close — the parity anchor.
+      ``center_buyable`` the gate verdict at the as-of close on the store AS IT
+                         STANDS — tonight's board membership. NOT the interval's
+                         anchor; see the next field and the module docstring.
+      ``probe_center_buyable``
+                         the gate verdict at that same close with the probe's
+                         APPENDED next-session bar — the reading every published edge
+                         was measured on, and therefore the one the interval
+                         reproduces at the as-of close. Probed names only.
       ``trigger_px``     lowest provisional close that is buyable, for a name that
                          is NOT buyable now. Null when none was found in band.
       ``fade_px``        the same lower edge for a name that IS buyable now: below
-                         it tonight's verdict flips false.
+                         it tonight's verdict flips false. Under append semantics this
+                         edge can sit ABOVE the as-of close — that is not a
+                         representation bug, it is the honest reading that tonight's
+                         gate no longer admits the name at today's price
+                         (``probe_center_buyable`` False on a ``center_buyable`` name).
       ``fade_hi_px``     upper edge of the buyable interval; null = unbounded in band.
       ``buyable_in_band`` False = no probed price in the band is buyable.
       ``band_lo_px`` /   the price range actually SWEPT. Outside it the pack knows
@@ -408,6 +508,12 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
     if probe is None:
         return entry
 
+    # The interval's anchor verdict, published beside the board one because they are
+    # different readings and a consumer must not have to guess which it is holding.
+    # Set BEFORE the irregular returns: it is a measurement the probe really made, and
+    # a name whose structure could not be resolved still learned it.
+    entry["probe_center_buyable"] = bool(probe.get("probe_center_buyable"))
+
     lo_span, hi_span = float(rec["span"][0]), float(rec["span"][1])
     # Outward, and outward of BOTH readings of the span. The probe swept the band
     # around the raw close; a consumer recomputing it from the published (4-dp)
@@ -419,9 +525,23 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
     # Non-buyable names get a floor of 0 — their span starts at the as-of close and
     # runs up, and below that close the centre verdict already answers the question
     # for a cross-up gate (see interval.in_probed_band).
-    entry["band_lo_px"] = (
-        _round_edge(min(lo_span, as_of_close * (1.0 - band)), up=False)
-        if entry["center_buyable"] else 0.0)
+    #
+    # ...UNLESS THE ANCHOR ITSELF CAME BACK BUYABLE. That floor rests on "the gate says
+    # no at the bottom of this span", which the REPLACE probe guaranteed for the whole
+    # cross class (its centre call WAS the census call). With the bar appended it is
+    # measurable and sometimes false — 3 of 108 cross-class names on the 2026-08-08
+    # store are admitted at their own close once tonight's bar exists — and such a name
+    # has no lower edge inside its span, so a 0 floor made ``interval_contains`` answer
+    # True at every price down to zero, none of which was ever probed. Fail closed: the
+    # floor becomes the span low and the evaluator darks below it, exactly as it does
+    # for a board name that gapped out of its band.
+    if entry["center_buyable"]:
+        entry["band_lo_px"] = _round_edge(min(lo_span, as_of_close * (1.0 - band)),
+                                          up=False)
+    elif probe.get("probe_center_buyable"):
+        entry["band_lo_px"] = _round_edge(min(lo_span, as_of_close), up=False)
+    else:
+        entry["band_lo_px"] = 0.0
 
     if probe.get("irregular"):
         entry["state"] = "irregular"
@@ -435,6 +555,9 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
     # cross the close is simply not taken: the full-precision bisected value is
     # published (it is a price the gate really accepted) and the event is counted in
     # meta.unrounded_edges, where a reviewer can see it.
+    # The as-of close is STILL the right pivot under append semantics: it is the price
+    # the membership check asks about, so a 1/100-cent step across it is exactly the
+    # step that would make the published interval contradict the measured anchor.
     lower, unrounded_lo = _side_safe_round(probe.get("lower_edge"), as_of_close, up=True)
     upper, unrounded_hi = _side_safe_round(probe.get("upper_edge"), as_of_close, up=False)
     if unrounded_lo or unrounded_hi:
@@ -446,6 +569,13 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
         entry["buyable_in_band"] = None
         return entry
 
+    # WHICH KEY the lower edge ships under still follows tonight's BOARD membership,
+    # not the probe anchor. The two keys are a story about the row — "you hold this and
+    # it could fade" vs "you don't and it could cross" — and that story is decided by
+    # whether the name is on tonight's published board, which is what ``center_buyable``
+    # says and what the evaluator reads for its own ``entered`` label
+    # (engine.prophet_live.live_states). Re-keying it off the append anchor would relabel
+    # 42 of 72 board rows as crosses on a night when nothing about the board changed.
     if entry["center_buyable"]:
         entry["fade_px"] = lower
         entry["fade_hi_px"] = upper
@@ -471,6 +601,16 @@ def name_entry(rec: dict[str, Any], probe: dict[str, Any] | None) -> dict[str, A
 # (must be buyable) and at the false-side bound the bisection actually measured
 # (must not be). Rounding, side-safety and derivation are all downstream of the
 # probe, so a bug in any of them shows up here as a live engine disagreement.
+#
+# WHAT THE APPEND CHANGE DID TO THIS GATE. It did not weaken it — the check was
+# never "feed the close back and get the same series", it is "feed the PUBLISHED
+# PRICE back through the SAME construction the edge was measured on and get the
+# same verdict", and probe_series is that construction on both sides. What DID
+# change is that the gate is no longer tautological on the semantics axis: under
+# replace, feeding the as-of close back reproduced the input series by definition,
+# so every check at the anchor passed no matter which question the pack meant to
+# answer. It now measures the anchor (probe_name's ``probe_center_buyable``), so a
+# semantics regression here shows up as a live disagreement like any other.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def edge_checks(entry: dict[str, Any], probe: dict[str, Any] | None) -> list[tuple[float, bool]]:
@@ -571,17 +711,33 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
              universe_n: int, wanted_n: int, gate_calls: int,
              build_seconds: float, skipped: dict[str, int],
              edges_checked: int = 0, probe_seconds: dict[str, float] | None = None,
+             price_adjustment: dict[str, str] | None = None,
              now: datetime | None = None) -> dict[str, Any]:
-    """The published ``prophet_live.armed/v1`` payload."""
+    """The published ``prophet_live.armed/v1`` payload.
+
+    ``price_adjustment`` is ``{ticker: basis}`` from
+    :func:`scripts.build_stock_library.universe_price_adjustment` — the adjustment
+    family of the close series each name's edges were probed on (W-L0 gate 3). Every
+    edge in this pack is a price ON that series, and the */5 evaluator compares it to a
+    RAW vendor print, so the pack has to say which one it is rather than leave the
+    consumer to infer it. The payload states the DOMINANT family once and marks only
+    the names that differ, because the exceptions — the breadth-cache names, which
+    accrue raw closes between rebuilds — are the minority and a per-name string on
+    every one of ~2,900 entries would say the same thing 2,700 times.
+    """
     ts = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     states: dict[str, int] = {}
     for e in names.values():
         states[e.get("state", "dormant")] = states.get(e.get("state", "dormant"), 0) + 1
     probed_n = sum(1 for e in names.values() if e.get("probed"))
     armed_n = sum(1 for e in names.values() if _is_armed(e))
+    adj_counts = _stamp_price_adjustment(names, price_adjustment)
     return {
         "schema": SCHEMA,
         "as_of": as_of,
+        # The basis the edges below are prices on. A name whose series is on a
+        # DIFFERENT basis carries its own `price_adjustment`; absent means this one.
+        "price_adjustment": DEFAULT_PACK_ADJUSTMENT,
         "built_at": ts.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "band_pct": float(cfg["band_pct"]),
         "grid_points": int(cfg["grid_points"]),
@@ -608,6 +764,16 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
             "build_seconds": round(float(build_seconds), 1),
             "states": states,
             "unrounded_edges": sum(1 for e in names.values() if e.get("unrounded_edge")),
+            # Probed names whose APPEND anchor disagrees with tonight's board verdict:
+            # the gate admits the name at last night's close but not with tonight's bar
+            # appended at that same price, or the reverse. Stated per pack because it is
+            # the size of the gap the replace-probe used to hide — a run reporting 0 of
+            # a large probed_n is the tell that the probe went back to restating the
+            # last bar rather than adding one.
+            "probe_center_flips": sum(
+                1 for e in names.values()
+                if e.get("probe_center_buyable") is not None
+                and bool(e["probe_center_buyable"]) != bool(e.get("center_buyable"))),
             # The band is swept UP ONLY for names that are not buyable tonight; a
             # cross down into buyable is not an intraday state, so it is not paid
             # for. Said out loud because a consumer must not read the interval as
@@ -615,8 +781,35 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
             "probe_scope": "two_sided_for_buyable__up_only_for_rest",
             "probe_order": "buyable__eligible__bars_to_cross__hist_d2__ticker",
             "skipped": {k: int(v) for k, v in sorted(skipped.items()) if v},
+            # Population per price basis, so a consumer can size the exception rather
+            # than discover it name by name. `unknown` counts names the universe map
+            # did not carry — the honest answer when a group failed to load, and NOT
+            # folded into the adjusted count.
+            "price_adjustment_counts": adj_counts,
         },
     }
+
+
+def _stamp_price_adjustment(names: dict[str, dict[str, Any]],
+                            by_ticker: dict[str, str] | None) -> dict[str, int]:
+    """Mark the off-default names in place; return the per-basis population.
+
+    Called by :func:`assemble` only. With no map (an ad-hoc build, a test) every name
+    is counted ``unknown`` and NOTHING is stamped: a pack that cannot see its own
+    provenance must not claim the default basis per name — the top-level field already
+    states the store's dominant family, and inventing per-name agreement with it would
+    turn a missing map into a positive assertion.
+    """
+    counts: dict[str, int] = {}
+    for tkr, entry in names.items():
+        basis = (by_ticker or {}).get(tkr)
+        if not basis:
+            counts["unknown"] = counts.get("unknown", 0) + 1
+            continue
+        counts[basis] = counts.get(basis, 0) + 1
+        if basis != DEFAULT_PACK_ADJUSTMENT:
+            entry["price_adjustment"] = basis
+    return dict(sorted(counts.items()))
 
 
 def as_of_date(closes: Iterable[pd.Series]) -> str | None:

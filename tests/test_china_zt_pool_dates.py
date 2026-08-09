@@ -235,4 +235,3 @@ def test_heal_recovers_a_session_that_was_only_ever_stored_run_dated(tmp_path, z
     heal_mod.heal(p, zt.session_calendar(), write=True)
     out = pd.read_parquet(p)
     assert "2026-08-07" in set(out["date"])                         # relabelled, not dropped
-

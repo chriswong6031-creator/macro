@@ -34,6 +34,7 @@ logging.basicConfig(
 log = logging.getLogger("build_china_market_state")
 
 _ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 _DATA_OUT = _ROOT / "data" / "china_state" / "market_state.json"
 _SITE_OUT = _ROOT / "site" / "chinastatedata" / "market_state.json"
 

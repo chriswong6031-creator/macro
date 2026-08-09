@@ -17,13 +17,18 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
-from collectors import databento_tbbo as dbt
-from engine import flow_signing
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors import databento_tbbo as dbt  # noqa: E402
+from engine import flow_signing  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 

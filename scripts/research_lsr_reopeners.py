@@ -36,8 +36,7 @@ import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from lib import config  # noqa: E402
 from scripts.research_liquidity_shock_reversal import (  # noqa: E402

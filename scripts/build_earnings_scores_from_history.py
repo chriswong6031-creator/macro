@@ -19,19 +19,23 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 
 import pandas as pd
 
-from scripts.publish_earnings_r2 import _synth_manifest
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.publish_earnings_r2 import _synth_manifest  # noqa: E402
 from scripts.import_equitydesk_backfill import (
     _derive_tone_word,
     _norm_confidence,
     _norm_performance,
     _norm_sentiment,
     _parse_level_tags,
-)
+)  # noqa: E402
 
 
 def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:

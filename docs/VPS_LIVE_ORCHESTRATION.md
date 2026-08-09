@@ -137,11 +137,43 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   `templates/dashboard.html.j2` ONLY when the engine reports the board lags —
   the check that catches a render that keeps re-baking while the boards freeze,
   which is what Jul-31→Aug-6 actually did; a page-wide "as of" scrape cannot
-  see it because per-panel annotations stay fresh throughout), HEADs the R2
+  see it because per-panel annotations stay fresh throughout), reads the China
+  board's equivalent disclosure, HEADs the R2
   `massive_stock_day/_manifest.json` publish time, and compares all of it
-  against per-surface budgets (26h bakes; 4 calendar days on the board's
-  self-reported lag). china.html emits no board stamp yet — its only `as of`
-  is an FX widget — so china runs bake-only until the template grows one.
+  against per-surface budgets (26h bakes; 4 calendar days on the US board's
+  self-reported lag; 12 days on China to clear Golden Week and Spring Festival).
+  A fifth surface, `prophet_us`, catches the same
+  re-stamp trap one layer down: the 2026-08-08 audit found
+  `data/us_prophet_rank/candidates/2026-08.parquet` frozen at stamp_date
+  2026-08-05 while us_stocks.html re-baked fresh daily, so every check above
+  stayed green through it (the delayed-board marker reports the PRICE lag, not
+  whether the ranker ran). It reads the `source_asof` field of the SERVED
+  `prophet/index.json`; that field is specifically copied from
+  `us_standouts.staleness.price_through`, the ranked-price watermark, **not**
+  the board wrapper's top-level `as_of`. It also requires `source_basis` to be
+  exactly `panel_majority` and `source_delayed`, `source_unknown`, and
+  `source_mixed_vintage` all to be false. A freshly rebuilt wrapper therefore
+  cannot launder a stale, unknown, mixed-vintage, or non-authoritative price
+  cross-section. The sentinel reads the artifact off disk from the Caddy static root
+  (`/opt/macro/site.served`, override `--served-dir`/`SENTINEL_SERVED_DIR`),
+  because that path sits behind the registration wall and an anonymous GET
+  answers `HTTP 401` + `x-regwall: deny` — and budgets it at **1 completed NYSE
+  session** of lag via `lib/nyse_calendar`, so the second missed session pages.
+  The anchor is the exchange calendar, not the wall clock: a weekend or market
+  holiday adds zero, which is what lets this budget be far tighter than the page
+  budgets without flapping. A missing/unreadable file or a non-JSON body is
+  INDETERMINATE (blind), never a breach; well-formed JSON with no `asof` IS a
+  breach — a store that cannot vouch for its ranked-price date and source health
+  must not read as fresh.
+  The nightly publisher is ordered the same way: `build_prophet` generates with
+  no R2 credentials, a closed hash-manifest checkpoint must land on `main`, and
+  only then may a dedicated step reconstruct `prophet/index.json` from that
+  accepted Git commit and upload it. The publisher rechecks the commit and all
+  Prophet/correction paths against current `origin/main` immediately before the
+  write, then uses an R2 conditional `If-Match`/`If-None-Match` put carrying the
+  Git checkpoint and SHA-256 as object metadata. A rejected or superseded
+  checkpoint therefore cannot advance R2, and a concurrent R2 writer wins
+  instead of being overwritten.
   On breach it alerts the operator —
   Telegram (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`), Discord
   (`DISCORD_WEBHOOK_URL`), and email via `app.mailer` (`MAIL_SENTINEL_TO` or

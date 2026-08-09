@@ -15,7 +15,19 @@ pass's artifact, each name gets one PUBLIC state:
     at_risk   a name that IS on tonight's board has traded to where tonight's
               verdict would flip — down through its fade level, or up past the
               point the not-topped veto bites
+    unknown   the tape is readable and the name is fine — the PACK never measured
+              the gate at this price, so there is no verdict to report
     dark      nothing honest can be said (no quote, stale quote, irregular gate)
+
+UNKNOWN IS NOT DARK, and the difference is a user-facing one (W-L0 gate 5). ``dark``
+means the LANE failed for this name; the strip spends that count twice, in the footer
+("N of them could not be read this pass") and in the rule that flips the whole panel to
+"prices aren't updating" once half the names are dark. A name trading below the region
+its pack swept is read perfectly — the quote is fresh, the name is fine, the PACK is
+simply silent down there — so filing it under dark would make both of those disclosures
+a confidently wrong cause on any broadly-red day. It gets its own state and its own
+``meta.unknown_counts`` bucket instead. Like dark it publishes no level and no
+``since_ts``: a non-verdict has nothing to time.
 
 Names the pack never probed are not in ``states`` at all: the budget or the data
 stopped us, the tape cannot settle it, and ~1.2k identical dark rows would say
@@ -28,9 +40,23 @@ that is the strongest honest moment the lane has.
 DEBOUNCE (G0.5, CSP-R2 — a 1-tick state flip is a killed class), on BOTH paths.
 A cross needs ``debounce_passes`` CONSECUTIVE passes inside the interval. One pass
 is ``crossing_unconfirmed``: an INTERNAL marker, carried in ``internal`` and in the
-event spool for measurement, never the public ``state``. Falling through
-``trigger * (1 - fade_buffer_pct/100)`` fades the name and resets the counter, so a
-re-cross pays the full two passes again.
+event spool for measurement, never the public ``state``.
+
+LEAVING the interval is debounced the same way and on BOTH EDGES (W-L0 gate 2). A
+breach that clears the hysteresis buffer — under ``lo * (1 - fade_buffer_pct/100)``
+or over ``hi * (1 + fade_buffer_pct/100)`` — is decisive and fades the name on the
+pass it happens. A MARGINAL one pays ``debounce_passes`` consecutive failing passes
+first, and until then the published ``forming`` holds with its cross counter intact.
+The buffer used to be honoured only BELOW the trigger, so a name a tenth of a percent
+over ``fade_hi_px`` published ``faded`` on ONE pass while a name the same distance
+under the trigger held — the killed 1-tick flip, on the edge where "don't chase" is
+the loudest thing the strip says. A holding pass clears the failing counter, and
+fading resets the cross counter, so a re-cross pays the full two passes again.
+A pass that stopped holding but was SUPPRESSED by the buffer carries
+``fade_unconfirmed``, the fourth marker: every other debounced transition already had
+one, and a suppressed pass nobody records is a suppression nobody can measure — which
+is the whole charter of the marker set. Gate 2 widens it to both edges, so a marginal
+OVERRUN is now as countable as a marginal drop.
 
 The BOARD path is debounced the same way, symmetrically. It was not, and a board
 name whose price straddled its fade level by four cents (90.02 / 89.98 on a 90.00
@@ -53,11 +79,12 @@ evaluation rather than from a cross, so the arithmetic prints a duration the lan
 cannot stand behind. A new session resets it for free — ``prev_states`` resolves only
 when the predecessor's ``meta.session_et`` is this pass's.
 
-A DARK row publishes NO ``since_ts``: there is no public state to time, and inventing
-one is exactly the guess G0.3 forbids. It instead carries its predecessor's pair
-forward under ``prior_public``/``prior_since_ts`` (a dark row re-carries a dark row's,
-so a gap of any length chains), so a name whose quote goes missing for a pass or two
-and comes back to the SAME public state keeps the time it actually entered that state
+A DARK OR UNKNOWN row publishes NO ``since_ts``: there is no verdict to time, and
+inventing one is exactly the guess G0.3 forbids. It instead carries its predecessor's
+pair forward under ``prior_public``/``prior_since_ts`` (such a row re-carries such a
+row's, so a gap of any length chains), so a name whose quote goes missing for a pass or
+two — or which dips under the region its pack swept — and comes back to the SAME public
+state keeps the time it actually entered that state
 instead of restarting the clock. That is the per-name twin of ``dark_artifact``'s
 whole-artifact ``carry``: a quote hiccup must not cost the session its history, and
 without it a per-name dark would be more destructive than a whole-artifact one.
@@ -106,6 +133,25 @@ gate genuinely accepted. Rounding again here could only move a level the wrong w
 print one the gate would reject, so the number travels exactly as armed. ``price`` is
 still rounded for display: that is a quote, not a threshold.
 
+ONE PRICE BASIS (W-L0 gate 3). The armed levels are prices on the nightly store's
+SPLIT+DIVIDEND ADJUSTED close series; ``price`` on every row is a RAW vendor print off
+the live plane. Both facts are stated on every payload under
+``meta.price_adjustment`` (``levels`` and ``quote``) instead of being left for a
+consumer to infer, and the live quote is deliberately NOT converted — an adjusted
+"quote" is a number no exchange ever printed.
+
+The two are only comparable while they describe the same scale, so every pass runs the
+assertion :func:`engine.prophet_live.interval.basis_audit`: the pack's ``as_of_close``
+against the feed's ``prev_close``, per name, for the same session. Past
+``basis_tolerance_pct`` that name goes ``dark`` with reason ``basis_mismatch`` and
+carries the measured ``basis_gap_pct`` — per NAME, because a distribution is a per-name
+event and a whole-artifact dark would additionally cost every healthy name the debounce
+it has banked today. ``meta.price_adjustment`` publishes ``checked_n``/``unchecked_n``
+alongside, so a feed that quietly stops carrying previous closes reads as unchecked
+rather than as clean. A row whose levels are on a basis OTHER than
+``meta.price_adjustment.levels`` — the breadth-cache names, which accrue raw between
+rebuilds — carries ``levels_adjustment``; absent means the artifact-level basis.
+
 VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
 confirmed, refuted or validated. The nightly build is the only thing that confirms,
 and falsifier language is never front-facing.
@@ -116,20 +162,42 @@ import logging
 from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
-from engine.prophet_live.interval import in_probed_band, interval_contains, lower_edge
+from engine.prophet_live.interval import (
+    DEFAULT_PACK_ADJUSTMENT,
+    LIVE_QUOTE_ADJUSTMENT,
+    basis_audit,
+    in_probed_band,
+    interval_contains,
+    lower_edge,
+    probe_floor,
+)
 
 log = logging.getLogger(__name__)
 
 SCHEMA = "prophet_live.states/v1"
 
 #: The only states a payload may carry. No "fired"/"confirmed"/"refuted" anywhere.
-PUBLIC_STATES: tuple[str, ...] = ("dormant", "near", "forming", "faded", "at_risk", "dark")
+#: ``unknown`` is the non-verdict (module docstring: UNKNOWN IS NOT DARK) — it renders
+#: nowhere today, and the day a surface DOES render it, it needs EN+ZH glance-tier copy
+#: like every other state, in plain words and never the machine token.
+PUBLIC_STATES: tuple[str, ...] = ("dormant", "near", "forming", "faded", "at_risk",
+                                  "unknown", "dark")
+
+#: The two states that report no verdict. They behave identically for the SINCE clock
+#: and for levels; they differ only in whose limit they name — the lane's, or the pack's.
+NO_VERDICT_STATES: tuple[str, ...] = ("dark", "unknown")
 
 #: Internal markers for a single un-debounced pass. NONE of these is a state; they
 #: ride in ``internal`` and in the spool so the debounce itself is measurable.
 CROSSING_UNCONFIRMED = "crossing_unconfirmed"
 AT_RISK_UNCONFIRMED = "at_risk_unconfirmed"
 RECOVERY_UNCONFIRMED = "recovery_unconfirmed"
+FADE_UNCONFIRMED = "fade_unconfirmed"
+
+#: ONE list, read by :data:`EVENT_KINDS` and by :func:`transitions`. Two copies is how
+#: the fade marker's three siblings got spooled for a year while it did not exist.
+INTERNAL_MARKERS: tuple[str, ...] = (CROSSING_UNCONFIRMED, AT_RISK_UNCONFIRMED,
+                                     RECOVERY_UNCONFIRMED, FADE_UNCONFIRMED)
 
 #: Which side of the buyable range a breach happened on. A drop means the name came
 #: back toward the entry; an overrun means it ran past where the gate still admits it.
@@ -156,13 +224,14 @@ def _inward_clear(px: float, lo: float | None, hi: float | None, buf: float) -> 
         return False
     return True
 
-#: Transitions worth spooling. dormant/near/dark churn is not an event — it would
-#: bury the product transitions under ~1.7k rows on the first pass of every day.
-#: The three internal markers ride here too: measuring whether the debounce earns
-#: its keep is a P0 goal, and that needs the passes it suppressed.
-EVENT_KINDS: tuple[str, ...] = ("crossing_unconfirmed", "at_risk_unconfirmed",
-                                "recovery_unconfirmed", "forming", "faded", "at_risk",
-                                "confirming_into_close")
+#: Transitions worth spooling. dormant/near/unknown/dark churn is not an event — it
+#: would bury the product transitions under ~1.7k rows on the first pass of every day.
+#: The internal markers ride here too: measuring whether the debounce earns its keep is
+#: a P0 goal, and that needs the passes it suppressed. The reconciler keys on
+#: ``(date, ticker, kind)`` and reads the kind as data, so a new marker needs no change
+#: there — it lands as its own ledger rows the night it first fires.
+EVENT_KINDS: tuple[str, ...] = INTERNAL_MARKERS + ("forming", "faded", "at_risk",
+                                                   "confirming_into_close")
 
 try:
     from zoneinfo import ZoneInfo  # noqa: PLC0415
@@ -192,6 +261,24 @@ _DEFAULTS: dict[str, Any] = {
     # contractual delay — one polling gap (5 min) plus jitter. See the derivation of
     # `quote_max_age_min` below; this is the only half of that budget we control.
     "quote_slack_min": 10,
+    # ONE PRICE BASIS (W-L0 gate 3). How far the pack's `as_of_close` may sit from the
+    # quote feed's `prev_close` for the SAME session before that name is unevaluable.
+    #
+    # WHY 0.25%, between two measured anchors rather than picked:
+    #   FLOOR — what must NOT trip. Two vendors quoting the same close agree to the
+    #   cent: `engine.price_ladder` measured JPM and KO agreeing across all four price
+    #   sources, and a cent is <=0.05% on anything over $20. Tick noise cannot reach
+    #   25 bp for a name this lane can trade; a sub-$4 name's half-cent rounding can,
+    #   which is the one population this gate is deliberately loose about (it costs a
+    #   spurious dark, never a wrong state).
+    #   CEILING — what MUST trip. A distribution. The same module's receipt is CFG at
+    #   0.649%, "exactly CFG's quarterly dividend"; a US quarterly payer typically
+    #   lands 0.3-1.5%, and any split is orders of magnitude larger. All of those clear
+    #   25 bp with room.
+    # A very low-yield payer (AAPL, ~0.11% a quarter) sits UNDER the tolerance and is
+    # deliberately let through: 11 bp of basis error is inside the pack's own 4-dp edge
+    # rounding, so darkening the name would destroy more information than it protects.
+    "basis_tolerance_pct": 0.25,
 }
 
 #: The feed delay assumed when the caller hands us no ``live`` block at all (tests,
@@ -366,14 +453,26 @@ def _dark(reason: str, **extra: Any) -> dict[str, Any]:
     return out
 
 
-def _prior_public(prev: dict[str, Any]) -> tuple[str, str | None]:
-    """The last PUBLIC state this name held today, and the ts it was entered at.
+def _unknown(reason: str, **extra: Any) -> dict[str, Any]:
+    """A read the PACK cannot answer — the tape is fine (module docstring: UNKNOWN).
 
-    Reads straight THROUGH a dark row: dark is not a public state, so a dark row keeps
-    its predecessor's pair under ``prior_public``/``prior_since_ts`` rather than a
-    ``since_ts`` of its own, and consecutive dark rows chain it.
+    Same shape as :func:`_dark` so the two are interchangeable at every exit; the state
+    is what separates them, and it is what keeps the lane's own failures countable
+    apart from the pack's coverage limits.
     """
-    if str(prev.get("state") or "") == "dark":
+    out: dict[str, Any] = {"state": "unknown", "reason": reason}
+    out.update({k: v for k, v in extra.items() if v is not None})
+    return out
+
+
+def _prior_public(prev: dict[str, Any]) -> tuple[str, str | None]:
+    """The last state-with-a-verdict this name held today, and the ts it was entered at.
+
+    Reads straight THROUGH a dark or unknown row: neither reports a verdict, so such a
+    row keeps its predecessor's pair under ``prior_public``/``prior_since_ts`` rather
+    than a ``since_ts`` of its own, and consecutive ones chain it.
+    """
+    if str(prev.get("state") or "") in NO_VERDICT_STATES:
         return str(prev.get("prior_public") or ""), (prev.get("prior_since_ts") or None)
     return str(prev.get("state") or ""), (prev.get("since_ts") or None)
 
@@ -386,7 +485,7 @@ def _stamp_since(out: dict[str, Any], prev: dict[str, Any], now: datetime) -> di
     """
     try:
         prior, since = _prior_public(prev)
-        if out.get("state") == "dark":
+        if out.get("state") in NO_VERDICT_STATES:
             if prior and since:
                 out["prior_public"] = prior
                 out["prior_since_ts"] = since
@@ -398,19 +497,27 @@ def _stamp_since(out: dict[str, Any], prev: dict[str, Any], now: datetime) -> di
 
 
 def name_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
-               prev: dict[str, Any] | None, now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
+               prev: dict[str, Any] | None, now: datetime, cfg: dict[str, Any],
+               basis_gap_pct: float | None = None) -> dict[str, Any]:
     """One name's state this pass. Never raises; unknowns become ``dark`` with a reason.
 
     Two steps: :func:`_resolve_state` decides the state off this pass's price and the
     previous pass's counters, then :func:`_stamp_since` puts the SINCE clock on it.
+
+    ``basis_gap_pct`` is this name's pack-close-vs-feed-previous-close gap, measured
+    ONCE per pass by :func:`evaluate` (see :func:`engine.prophet_live.interval.basis_audit`)
+    and passed in rather than re-derived here. None means "not measured" — the default,
+    and what every caller that has no previous close to compare against gets.
     """
     prev = prev or {}
     return _stamp_since(_resolve_state(entry, price=price, quote_age_min=quote_age_min,
-                                       prev=prev, now=now, cfg=cfg), prev, now)
+                                       prev=prev, now=now, cfg=cfg,
+                                       basis_gap_pct=basis_gap_pct), prev, now)
 
 
 def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
-                   prev: dict[str, Any], now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
+                   prev: dict[str, Any], now: datetime, cfg: dict[str, Any],
+                   basis_gap_pct: float | None = None) -> dict[str, Any]:
     """The state machine itself — everything except the SINCE clock."""
     try:
         if not entry.get("probed"):
@@ -423,26 +530,60 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
         if quote_age_min is None or float(quote_age_min) > max_age:
             return _dark("stale_quote", quote_age_min=(round(float(quote_age_min), 1)
                                                        if quote_age_min is not None else None))
+        # ONE PRICE BASIS (W-L0 gate 3). The armed levels are prices on the STORE's
+        # adjusted close series; this pass's `px` is a raw vendor print. They are
+        # comparable only while the two describe the same scale, and the pack's
+        # `as_of_close` against the feed's `prev_close` for that same session is the
+        # measurement of exactly that. Past the tolerance the levels and the tape are
+        # on different scales and every branch below would be arithmetic on two
+        # different currencies — so the NAME goes dark and says why.
+        #
+        # PER NAME, NOT THE WHOLE PACK, deliberately — the same trade
+        # `interval.membership_mismatches` makes one layer up. A distribution is a
+        # per-name event: darkening ~1,700 names because one went ex-dividend costs
+        # the session for every unaffected name, and a whole-artifact dark is strictly
+        # worse than a per-name one here because `dark_artifact` publishes no states at
+        # all, so the healthy names would also lose the debounce counters they have
+        # already banked today. The evaluator still prints the aggregate loudly, so a
+        # basis-WIDE break (a re-based store, a vendor switch) is never mistaken for a
+        # handful of dividends.
+        if basis_gap_pct is not None:
+            tol = abs(float(cfg.get("basis_tolerance_pct",
+                                    _DEFAULTS["basis_tolerance_pct"])))
+            if tol and abs(float(basis_gap_pct)) > tol:
+                return _dark("basis_mismatch", basis_gap_pct=round(float(basis_gap_pct), 4),
+                             quote_age_min=round(float(quote_age_min), 1))
 
         px = float(price)
         # OUTSIDE THE PROBED BAND THE PACK KNOWS NOTHING. Asked before membership,
         # because interval_contains extrapolates happily: a board name gapping -30%
-        # satisfied "no fade breach, no fade_hi breach" and read forming.
+        # satisfied "no fade breach, no fade_hi breach" and read forming. UNKNOWN, not
+        # dark: the quote is fresh and the name is fine — it is the PACK that is silent
+        # out here, and calling that "could not be read" is a wrong cause on the two
+        # surfaces that spend the dark counts (module docstring: UNKNOWN IS NOT DARK).
         if not in_probed_band(entry, px):
-            return _dark("out_of_band", price=round(px, 4),
-                         quote_age_min=round(float(quote_age_min), 1))
+            return _unknown("out_of_band", price=round(px, 4),
+                            quote_age_min=round(float(quote_age_min), 1))
         holds = interval_contains(entry, px)
         if holds is None:
             return _dark("no_interval")
 
         lo = lower_edge(entry)
         hi = entry.get("fade_hi_px")
+        # The lowest price the pack MEASURED — not the published band's lower bound,
+        # which is a 0 sentinel for the cross class (interval.probe_floor).
+        floor = probe_floor(entry)
         on_board = bool(entry.get("center_buyable"))
         need = max(1, int(cfg.get("debounce_passes", 2)))
         buf = float(cfg.get("fade_buffer_pct", 0.5)) / 100.0
         prev_state = str(prev.get("state") or "")
         prev_passes = int(prev.get("passes") or 0)
         prev_fails = int(prev.get("fails") or 0)
+        # The last state that REPORTED A VERDICT today, read through dark/unknown rows.
+        # Distinct from prev_state on purpose: the debounce counters are per-pass and
+        # must keep reading the immediate predecessor, while the two questions "has this
+        # name held today" and "what was it last telling the reader" are about the day.
+        prior_pub = _prior_public(prev)[0]
 
         def _clears_outward() -> bool:
             """The breach is decisive — past the hysteresis buffer, either side."""
@@ -495,9 +636,47 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
                     out["state"] = "at_risk"
                     out["via"] = _breach_side(px, lo, hi)
                 else:
-                    out["state"] = prev_state if prev_state in ("forming", "at_risk") else "forming"
-                    out["internal"] = AT_RISK_UNCONFIRMED
-        elif not entry.get("buyable_in_band") or lo is None:
+                    # NO FREE `forming` ON FIRST SIGHT (audit F2). The debounce exists
+                    # to stop a PUBLISHED state flapping, so it can only ever hold a
+                    # state the reader already has. On the day's first pass — or after
+                    # a dark gap, which is why this reads `prior_pub` and not
+                    # `prev_state` — there is none, and defaulting to `forming` printed
+                    # the opposite of the one thing this pass measured: the gate does
+                    # not hold at this price. A name with nothing banked publishes
+                    # `at_risk` (with the side, or the card chip would call an overrun
+                    # a fall-back); recovery then pays the same debounce coming back,
+                    # so the four-cent straddle still cannot flap.
+                    carried = prior_pub if prior_pub in ("forming", "at_risk") else ""
+                    if carried:
+                        out["state"] = carried
+                        out["internal"] = AT_RISK_UNCONFIRMED
+                    else:
+                        out["state"] = "at_risk"
+                        out["via"] = _breach_side(px, lo, hi)
+        elif floor is not None and px < floor and prior_pub not in ("forming", "faded"):
+            # BELOW THE PROBE FLOOR THE PACK MEASURED NOTHING (W-L0 gate 5). A
+            # cross-class span starts at the as-of close and runs UP, so down here
+            # `dormant` ("nothing in the band is buyable") and `near` ("below the
+            # trigger") are both verdicts nobody took — and with an append-semantics
+            # pack, whose interval can have no lower edge at all, `holds` would even
+            # extrapolate a `forming` from a region the probe never touched. So it is
+            # asked BEFORE every membership branch below, and reports no verdict.
+            #
+            # EXEMPT: a name that has already been observed holding TODAY. `faded` is a
+            # statement about the cross this lane published and the level it published
+            # with it — arithmetic over measured facts — not a claim about the gate at
+            # today's price. Dropping it here would delete the "Fell back" row for any
+            # name whose trigger sits fractionally above its close, which is the common
+            # case, not the rare one.
+            return _unknown("below_probe_floor", price=round(px, 4),
+                            quote_age_min=round(float(quote_age_min), 1))
+        elif not entry.get("buyable_in_band"):
+            # `dormant` IS `not buyable_in_band` AND NOTHING ELSE. It used to also fire
+            # on `lo is None` — no lower edge — which is a name whose buyable region has
+            # no bound inside the band, i.e. one that is buyable from the floor up. On an
+            # append-semantics pack that is an ordinary cross-class name whose anchor is
+            # buyable, and it rendered "nothing forming" while its interval HELD at the
+            # live price: the one shape of lie this lane exists to prevent.
             out["state"] = "dormant"
             out["passes"] = 0
         elif holds:
@@ -507,6 +686,9 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
             # alone promoted a runaway to forming on its second pass.
             passes = prev_passes + 1
             out["passes"] = passes
+            # A holding pass clears the failing counter: the fade debounce counts
+            # CONSECUTIVE failures, exactly as the board path's does.
+            out["fails"] = 0
             out["entered"] = "cross"
             if passes >= need:
                 out["state"] = "forming"
@@ -514,22 +696,42 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
                 # One pass inside the interval is NOT a public state (G0.5).
                 out["state"] = "near"
                 out["internal"] = CROSSING_UNCONFIRMED
-        elif prev_state == "forming" and float(lo) * (1.0 - buf) <= px < float(lo):
-            # Inside the hysteresis band just below the trigger: still forming,
-            # counter preserved, so a price sitting on the threshold cannot flap.
-            out["state"] = "forming"
-            out["passes"] = prev_passes
-            out["entered"] = prev.get("entered") or "cross"
         elif prev_state in ("forming", "faded"):
-            out["state"] = "faded"
-            out["passes"] = 0
+            # IT HELD TODAY AND NOW IT DOES NOT — debounced on BOTH EDGES (W-L0 gate
+            # 2), the same shape the board path uses for at_risk. The buffer used to
+            # be honoured only BELOW the trigger: `_clears_outward` buffers both edges,
+            # but the branch that consulted it was the board's, so a cross name a tenth
+            # of a percent over `fade_hi_px` skipped straight to a public `faded` on ONE
+            # pass while a name the same distance under the trigger held. That is the
+            # 1-tick public flip CSP-R2 kills, on the axis P1 reads as "don't chase".
+            out["fails"] = prev_fails + 1
             out["entered"] = prev.get("entered") or "cross"
-            # WHY it stopped holding. "faded" alone said "fallen through the buffer",
-            # which is false for a name that ran up THROUGH the top of its buyable
-            # range — the opposite trade, and it was polluting the kind axis the
-            # ledger measures. P1 display must treat the two differently: a drop is
-            # "it came back to you", an overrun is "don't chase".
-            out["via"] = _breach_side(px, lo, hi)
+            if prev_state == "faded" or _clears_outward() or out["fails"] >= need:
+                out["state"] = "faded"
+                out["passes"] = 0
+                # WHY it stopped holding. "faded" alone said "fallen through the buffer",
+                # which is false for a name that ran up THROUGH the top of its buyable
+                # range — the opposite trade, and it was polluting the kind axis the
+                # ledger measures. P1 display must treat the two differently: a drop is
+                # "it came back to you", an overrun is "don't chase".
+                out["via"] = _breach_side(px, lo, hi)
+            else:
+                # Inside the hysteresis buffer on EITHER edge: the published state
+                # holds and the cross counter is preserved, so a price sitting on a
+                # boundary cannot flap it. `via` is deliberately absent — nothing has
+                # faded yet, and a kind axis on a non-event is a fabricated reason.
+                out["state"] = "forming"
+                out["passes"] = prev_passes
+                # THE SUPPRESSED PASS, MADE COUNTABLE — and gate 2 widens it from the
+                # drop edge to BOTH. It stopped holding and the buffer held the public
+                # state anyway: the same shape as the other three markers, and the only
+                # debounced transition that had none. Internal: never a public state,
+                # never in PUBLIC_STATES. The side rides the SPOOL row under its own
+                # key, never the display field `via` — on a row still reading `forming`
+                # a `via` is a breach reason for a breach that has not happened, and P1
+                # reads that field to choose between "Fell back" and "Ran past".
+                out["internal"] = FADE_UNCONFIRMED
+                out["internal_via"] = _breach_side(px, lo, hi)
         else:
             out["state"] = "near"
             out["passes"] = 0
@@ -582,9 +784,17 @@ def transitions(ticker: str, new: dict[str, Any], prev: dict[str, Any] | None, *
     if new.get("state") != prev.get("state") and new.get("state") in EVENT_KINDS:
         rows.append({**base, "kind": new["state"]})
     seen_before = set(prev.get("internal_seen") or [])
-    for marker in (CROSSING_UNCONFIRMED, AT_RISK_UNCONFIRMED, RECOVERY_UNCONFIRMED):
+    for marker in INTERNAL_MARKERS:
         if new.get("internal") == marker and marker not in seen_before:
-            rows.append({**base, "kind": marker})
+            row = {**base, "kind": marker}
+            # The marker's own breach side, which the public row deliberately does not
+            # carry (see FADE_UNCONFIRMED in _resolve_state). The ledger's `via` column
+            # is the axis "was it a fall-back or an overrun", and a suppressed pass has
+            # one; leaving it null would make the suppressions the one population that
+            # cannot be split by side.
+            if new.get("internal_via"):
+                row.setdefault("via", new["internal_via"])
+            rows.append(row)
     if new.get("confirming_into_close") and not prev.get("confirming_into_close"):
         rows.append({**base, "kind": "confirming_into_close"})
     return rows
@@ -623,6 +833,9 @@ def dark_artifact(reason: str, *, now: datetime, cfg: dict[str, Any],
             "quote_asof": quote_asof,
             "delay_min": delay_min,
             "dark_counts": {reason: 1},
+            # Always present, so a consumer never has to tell "no unknowns" from "this
+            # payload predates the bucket". A whole-artifact dark evaluated no name.
+            "unknown_counts": {},
         },
     }
     if detail:
@@ -663,9 +876,26 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
             "stale_pack", now=now, cfg=cfg, pack_as_of=pack_as_of, **dark_kw,
             detail=f"pack as_of={pack_as_of or 'none'} != last completed session {expected}")
 
+    # THE STARTUP ASSERTION (W-L0 gate 3), run once at the head of the pass over the
+    # whole pack rather than per name inside the walk: it is one question about the two
+    # PLANES — is the pack's idea of last session's close the same scale as the feed's? —
+    # and the per-name answers are just its rows. `_resolve_state` consumes the gap and
+    # darks the names that fail it.
+    audit = basis_audit(pack.get("names") or {}, quotes,
+                        tol_pct=cfg.get("basis_tolerance_pct",
+                                        _DEFAULTS["basis_tolerance_pct"]))
+    gaps = audit["gaps"]
+    # What the ARMED LEVELS are on. The pack states it; a pack built before the field
+    # existed falls back to the store's dominant family rather than publishing null,
+    # because "we do not know the basis" and "adjusted" are different claims and only
+    # one of them is true of this store.
+    raw_adj = pack.get("price_adjustment")
+    pack_adjustment = raw_adj if isinstance(raw_adj, str) and raw_adj else DEFAULT_PACK_ADJUSTMENT
+
     states: dict[str, Any] = {}
     events: list[dict[str, Any]] = []
     dark_counts: dict[str, int] = {}
+    unknown_counts: dict[str, int] = {}
     counts: dict[str, int] = {}
     unprobed: dict[str, int] = {}
     for tkr, entry in (pack.get("names") or {}).items():
@@ -683,12 +913,30 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
         px = q.get("price")
         age = quote_age_of(q) if (quote_age_of and q) else None
         st = name_state(entry, price=px, quote_age_min=age,
-                        prev=prev_states.get(tkr), now=now, cfg=cfg)
+                        prev=prev_states.get(tkr), now=now, cfg=cfg,
+                        basis_gap_pct=gaps.get(tkr))
+        # A name whose levels are NOT on the artifact's stated basis says so on its own
+        # row. Only the exceptions carry the key — the rule is written down in
+        # `meta.price_adjustment` and in the module docstring, so a reader derives
+        # nothing: key present ⇒ this row's levels are on THAT basis, key absent ⇒ on
+        # `meta.price_adjustment.levels`. Stamping all ~1,700 rows with the same string
+        # would add ~45 KB to a payload republished every five minutes to say what the
+        # header already says.
+        ent_adj = entry.get("price_adjustment")
+        if (st.get("state") != "dark" and isinstance(ent_adj, str) and ent_adj
+                and ent_adj != pack_adjustment):
+            st["levels_adjustment"] = ent_adj
         states[tkr] = st
         counts[st["state"]] = counts.get(st["state"], 0) + 1
         if st["state"] == "dark":
             r = str(st.get("reason") or "unknown")
             dark_counts[r] = dark_counts.get(r, 0) + 1
+        elif st["state"] == "unknown":
+            # A SEPARATE BUCKET, not a dark reason: the strip spends dark_counts on
+            # "N could not be read this pass" and on the half-the-names cliff, and a
+            # name whose quote is fine was read (module docstring: UNKNOWN IS NOT DARK).
+            r = str(st.get("reason") or "unspecified")
+            unknown_counts[r] = unknown_counts.get(r, 0) + 1
         events.extend(transitions(tkr, st, prev_states.get(tkr), now=now))
 
     return {
@@ -711,10 +959,30 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
             "evaluated_n": len(states),
             "states": counts,
             "dark_counts": dark_counts,
+            # Printed, never hidden: the coverage the PACK does not have, by reason,
+            # beside the coverage the LANE does not have.
+            "unknown_counts": unknown_counts,
             # Coverage, per pass and per reason: what the pack never armed. A consumer
             # that reads evaluated_n as the universe is claiming coverage it has not got.
             "unprobed": unprobed,
             "unprobed_n": sum(unprobed.values()),
             "events_n": len(events),
+            # ONE PRICE BASIS (W-L0 gate 3), stated on every payload. `levels` is what
+            # the armed thresholds are on, `quote` is what `price` on each row is on,
+            # and they are DIFFERENT on purpose — a live print is nominal and
+            # converting it would publish a price no exchange made. The audit block is
+            # the evidence that the two are nonetheless describing the same scale:
+            # `checked_n` names compared, `unchecked_n` that carried no previous close
+            # to compare against, `mismatched` the ones past `tol_pct` (each of which
+            # is a `basis_mismatch` dark row above, never a silently re-based state).
+            "price_adjustment": {
+                "levels": pack_adjustment,
+                "quote": LIVE_QUOTE_ADJUSTMENT,
+                "tol_pct": audit["tol_pct"],
+                "checked_n": audit["checked_n"],
+                "unchecked_n": audit["unchecked_n"],
+                "mismatched_n": len(audit["mismatched"]),
+                "mismatched": audit["mismatched"],
+            },
         },
     }

@@ -350,6 +350,45 @@ fires per condition bucket._
 > uniqueness-weight scheme, deflated-stats trial budget, calibration criteria, n floors, and kill
 > criteria are in the amendment §4–§8.
 
+### Entry-gate implementation safety amendment (2026-08-08 — post-observation, no authority)
+
+> **Epistemic status:** this amendment was written after partial 2026 live-ledger data had
+> already been observed.  It is an implementation repair and future-method placeholder, **not**
+> a retroactive preregistration.  No observation dated on or before this amendment, and no IID
+> statistic currently emitted by `scripts/validate_options_entry.py`, may support signal,
+> ranking, sizing, or gating authority.  A later dated amendment must freeze the clustered
+> estimator, sequential-look schedule/alpha budget, first eligible cohort date, and first look
+> *before* a fresh authority cohort begins.
+>
+> **Declared population and sampling unit:** entry-gate diagnostics use `lane == 'buy'` only.
+> The canonical fire is one `(as_of, lane, ticker)` event.  Ledger horizon rows are projections
+> of that event, not independent samples.  Before any bucket mask or cross-sectional tercile is
+> computed, the validator collapses horizons and maps `fwd_ret_5 = ret` from `horizon=5`,
+> `fwd_mfe_5` from `horizon=5`, and `fwd_mfe_21` from `horizon=21`; clean/breach and every
+> `opt_*` field are the sole non-null repeated event value.  Duplicate event+horizon rows or
+> conflicting repeated event values hard-fail rather than being selected or averaged.
+>
+> **Descriptive maturity only:** an exact metric cell is descriptively mature only with
+> ≥30 outcome-bearing fires per bucket, ≥30 distinct `as_of` dates per bucket, and ≥30 dates
+> on which both buckets have an outcome.  Fire counts and all three date counts are printed.
+> The existing IID percentile bootstrap and IID permutation p-value are diagnostics only; their
+> BH results may produce `candidate_signal_blocked`, `inconclusive_fdr`, `opposite_direction`,
+> or the preregistered all-CIs-include-zero `no_effect`, but never `signal`.  The top-level gate
+> remains `building_history`, `scored=false`, and `weight=0` while the authority fence is open.
+>
+> **Family-specific fences:** S-DOI additionally requires the registered joined cross-sectional
+> rank-IC/HAC receipt; a call-OI bucket delta is not a substitute.  S-FRONT-CHARM additionally
+> requires the mandatory root-class stratification because the ETF sign was era-unstable.
+> S-TOP_RISK includes a fire only when both logical legs (`opt_skew_5d_chg` and
+> `opt_ivspread_rel`) are observed; missing is never coerced to False for the `neither` bucket.
+>
+> **Future sequential plan requirement:** the later authority amendment must declare an
+> observation-free cohort start, date-cluster/block resampling unit, handling of repeated
+> tickers and overlapping forward windows, fixed look dates or an explicit alpha-spending/e-value
+> rule, and the single governed merger that re-ranks all 36 family cells when FS-3 posts results.
+> Until that amendment exists, nightly recomputation is accrual/monitoring only and repeated
+> peeking cannot change authority.
+
 ### Shadow-stamp cross-registration (FS-4 flow-score, 2026-07-14 — DRAFT, date-gated)
 
 > **Registered here, NOT yet written anywhere.** Per FS-R8/RO-12 (all fire-ledger stamp columns

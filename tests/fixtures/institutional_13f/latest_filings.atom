@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Latest Filings</title>
+  <entry>
+    <title>13F-HR - Meeder Advisory Services, Inc. (0001792167) (Filer)</title>
+    <link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1792167/000139834426013841/0001398344-26-013841-index.htm"/>
+    <summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-07 &lt;b&gt;AccNo:&lt;/b&gt; 0001398344-26-013841 &lt;b&gt;Size:&lt;/b&gt; 343 KB</summary>
+    <updated>2026-08-07T17:25:16-04:00</updated>
+    <category term="13F-HR"/>
+    <id>urn:tag:sec.gov,2008:accession-number=0001398344-26-013841</id>
+  </entry>
+  <entry>
+    <title>13F-NT - CIM Global, L.L.C. (0001555793) (Filer)</title>
+    <link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1555793/000089843226000605/0000898432-26-000605-index.htm"/>
+    <summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-07 &lt;b&gt;AccNo:&lt;/b&gt; 0000898432-26-000605</summary>
+    <updated>2026-08-07T17:15:50-04:00</updated>
+    <category term="13F-NT"/>
+    <id>urn:tag:sec.gov,2008:accession-number=0000898432-26-000605</id>
+  </entry>
+</feed>
