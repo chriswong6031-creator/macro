@@ -44,6 +44,15 @@ armed** — R2 failed (dial ordering inverts in the short calibration slice), R0
 positive W2 skill on main + fixes ChiNext over-quote; dial is LEVEL-not-RANKER and strongest
 at N=1 ⇒ **the L1 continuation-side regime merge is now W3's top measurement item**. Both
 scripts fail loudly (by design) until #5055/#5059/#5078 land on main, then self-heal.
+**W3-A (window-target battery, operator-prompted) — MEASUREMENT DONE, PR HELD pending its
+commissioned adversarial review** (branch `claude/cn-limit-w3-window` @ 1c4065c1e86, three
+deliverables committed, tree clean). Builder's preview, unadjudicated: the T+1 auction prices
+the WINDOW, not just the board — 99 pre-registered book cells, 11 clear the bar, ZERO survive
+the drift control; and the big-day class ([0.6w, limit)) is essentially UNCONDITIONAL (~7%,
+flat across ladder N, regime, and all six eras, while P(board) swings 1.9×) — the board is a
+forecastable event, the near-board big day is background. If the PR is open when you read
+this: verify the receipt (review reconciliation included), adjudicate, arm, fold into
+masterplan §6.3. If still held: resume the builder (its report says it waits for the review).
 Remaining W2/W3 queue (evidence-ranked in §6.2 synthesis): continuation-side regime merge
 (+ the broken-board T+1-open lead, +0.15pp, clustering-demoted not zero), intraday minute-bar
 battery (data purchased, arrives via Codex wiring), F3 full-universe re-run (post-expansion),
