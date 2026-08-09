@@ -203,7 +203,7 @@ body.crypto-page::before{opacity:.34}
   <section class="crypto-shelf" data-shelf="H3">
     <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H3</span><h2 class="shelf-title">{{ t('Money Flows','资金流') }}</h2><span class="shelf-sub">{{ t('three class-level receipts','三项资产类别收据') }}</span></div>
       <div class="triptych">
-        <div class="sensor {{ tone(market.flows.etf.tone) }}"><div class="eyebrow">{{ t('US spot-BTC ETFs · 5D','美国现货比特币 ETF · 5日') }}</div><div class="reading">{% if market.flows.etf.value is not none %}{{ "${:+,.0f}M".format(market.flows.etf.value) }}{% else %}—{% endif %}</div><div class="read-label"><span class="state">{{ t(market.flows.etf.state,market.flows.etf.state_zh) }}</span></div><div class="receipt">{{ t('Farside fund-level net flows; class liquidity context, not a trade signal.','Farside 基金级净流量；仅作全市场流动性背景。') }}</div></div>
+        <div class="sensor {{ tone(market.flows.etf.tone) }}"><div class="eyebrow">{{ t('US spot-BTC ETFs · 5D','美国现货比特币 ETF · 5日') }}</div><div class="reading">{% if market.flows.etf.value is not none %}{{ "${:+,.0f}M".format(market.flows.etf.value) }}{% else %}—{% endif %}</div><div class="read-label"><span class="state">{{ t(market.flows.etf.state,market.flows.etf.state_zh) }}</span></div><div class="receipt">{{ t('Farside fund-level net flows; class liquidity context, not a trade signal.','Farside 基金级净流量；仅作全市场流动性情况。') }}</div></div>
         <div class="sensor {{ tone(market.flows.stablecoins.tone) }}"><div class="eyebrow">{{ t('Stablecoin tide · 30D','稳定币潮汐 · 30日') }}</div><div class="reading">{{ fmt_money(market.flows.stablecoins.change_30d_usd, compact=True) }}</div><div class="read-label"><span class="state">{{ t(market.flows.stablecoins.state,market.flows.stablecoins.state_zh) }} · {{ fmt_pct(market.flows.stablecoins.change_30d_pct) }}</span></div><div class="receipt">{{ t('Aggregate circulating supply from DefiLlama.','DefiLlama 汇总流通供应量。') }}</div></div>
         <div class="sensor {{ tone(market.flows.volume.tone) }}"><div class="eyebrow">{{ t('Spot participation proxy','现货参与度代理') }}</div><div class="reading">{% if market.flows.volume.percentile is not none %}P{{ market.flows.volume.percentile }}{% else %}—{% endif %}</div><div class="read-label"><span class="state">{{ t(market.flows.volume.state,market.flows.volume.state_zh) }}</span></div><div class="receipt">{{ t('BTC spot-volume percentile is an honest proxy until full class volume accrues.','在全市场成交量积累完成前，以 BTC 现货成交量百分位作为明确标注的代理。') }}</div></div>
       </div>
@@ -262,7 +262,7 @@ body.crypto-page::before{opacity:.34}
   </section>
 
   <section class="crypto-shelf" data-shelf="H8">
-    <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H8</span><h2 class="shelf-title">{{ t('Catalyst Calendar','催化日历') }}</h2><span class="shelf-sub">{{ t('scheduled only · context only','仅限已排期 · 仅作背景') }}</span></div>
+    <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H8</span><h2 class="shelf-title">{{ t('Catalyst Calendar','催化日历') }}</h2><span class="shelf-sub">{{ t('scheduled only · context only','仅限已排期 · 仅供参考') }}</span></div>
       <div class="calendar-grid">{% for event in calendar %}<article class="event"><div class="event-date"><span>{{ event.date }}</span><b>{{ event.type }}</b></div><h3>{{ t(event.label,event.label_zh) }}</h3><p>{{ t(event.note,event.note_zh) }}</p></article>{% endfor %}</div>
     </div>
   </section>

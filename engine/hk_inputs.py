@@ -29,6 +29,12 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
+# Monthly-macro step-fill budget in business days. Must bridge China's
+# publication lag — a print stamped on its reference month is the freshest
+# available for up to ~2 months (June's CPI, stamped 06-01, publishes ~07-09;
+# July's arrives ~08-09). See the call site in build_features().
+MACRO_FFILL_LIMIT_BDAYS = 90
+
 
 def hk_closes() -> pd.DataFrame:
     """Index + ETF-proxy + FX closes from the `hk` store group."""
@@ -140,9 +146,20 @@ def build_features() -> pd.DataFrame:
         f["hibor_on"] = np.nan
 
     # --- China macro (monthly; step-fill across the month) ---------------------
+    # ffill_limit must bridge the PUBLICATION LAG, not just one month (mirror of
+    # engine/china_inputs.py, which took this fix first): the print is stamped on
+    # its reference month (June -> 2026-06-01) but the daily frame runs ~2 months
+    # past that stamp before the NEXT print publishes. At limit=40 the carry ran
+    # out on 2026-07-28 — cpi_yoy/ppi_yoy dropped out together, and with the
+    # (cache-fed) inflation basket dark on the weekly runner the whole inflation
+    # axis went NaN for 9 sessions; the shipped timeline contradicted the
+    # committed store and crashed the landing hub (2026-08-08, 901282ec209).
+    # 90 bdays covers the normal lag + a delayed release, NaN-ing out only on a
+    # real multi-month outage.
     m = _macro_frame()
     for col in ["pmi_mfg", "pmi_nonmfg", "cpi_yoy", "ppi_yoy", "m2_yoy", "m1_yoy"]:
-        put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=40)
+        put(col, m[col] if (not m.empty and col in m.columns) else None,
+            ffill_limit=MACRO_FFILL_LIMIT_BDAYS)
 
     # --- breadth ---------------------------------------------------------------
     br = store.read("hk_breadth", "breadth")

@@ -34,8 +34,7 @@ import pandas as pd
 # Path setup: allow running as script or as module
 # ---------------------------------------------------------------------------
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.flow_regime import (
     ROW_BASKET, EM_FX_PAIRS,

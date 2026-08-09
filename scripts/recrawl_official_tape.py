@@ -52,8 +52,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # W4 ITEM 4: sys.path shim so `python scripts/recrawl_official_tape.py` can
 # import lib.config and engine.* without a "No module named 'engine'" error.
 # Identical to the shim used by scripts/build_whitehouse.py and siblings.
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 LOG = logging.getLogger("recrawl_official_tape")
 
