@@ -62,6 +62,11 @@ _NEGATED_GATE_TERM = re.compile(
     r"steps\.([A-Za-z0-9_-]+)\.(outcome|conclusion)\s*!=\s*'([a-z]+)'"
 )
 
+# Match the qledger-running module itself, not sibling collectors whose names
+# merely begin with it (for example ``scripts.collect_release_target_vintages``).
+# ``_uncommented`` keeps prose about the command from classifying a job too.
+_COLLECT_CORE_COMMAND = re.compile(r"\bscripts\.collect\b")
+
 
 def _uncommented(body: str) -> str:
     """Drop whole-line shell comments from a `run` body.
@@ -90,6 +95,13 @@ def _gate_terms(step: dict) -> set[tuple[str, str, str]]:
 def _negated_gate_terms(step: dict) -> set[tuple[str, str, str]]:
     """The (step_id, field, value) conditions this step's `if:` requires to be FALSE."""
     return set(_NEGATED_GATE_TERM.findall(str(step.get("if", "") or "")))
+
+
+def _invokes_collect_core(step: dict) -> bool:
+    """Whether this step invokes the exact ``scripts.collect`` module."""
+    return bool(
+        _COLLECT_CORE_COMMAND.search(_uncommented(str(step.get("run", "") or "")))
+    )
 
 
 def _outruns_the_qledger_checkpoint(required: set, step: dict) -> str | None:
@@ -153,7 +165,7 @@ def _collect_commit_jobs(wf_path: Path) -> dict[str, list[dict]]:
     jobs: dict[str, list[dict]] = {}
     for name, job in (doc.get("jobs") or {}).items():
         steps = [s for s in (job.get("steps") or []) if s.get("run")]
-        if not any("scripts.collect" in s["run"] for s in steps):
+        if not any(_invokes_collect_core(step) for step in steps):
             continue
         commits = [
             s for s in steps if "git add" in s["run"] and "git commit" in s["run"]
@@ -174,6 +186,22 @@ def test_collect_jobs_have_commit_steps():
             f"{name}: no commit step found in the scripts.collect job — "
             "test needs updating if the lane was restructured"
         )
+
+
+def test_collect_core_match_rejects_named_sibling_modules_and_comments():
+    assert _invokes_collect_core({"run": "python -m scripts.collect --group asia"})
+    assert _invokes_collect_core({"run": 'run_py "weekly" scripts.collect --only cot'})
+    assert not _invokes_collect_core(
+        {"run": "python -m scripts.collect_release_target_vintages"}
+    )
+    assert not _invokes_collect_core(
+        {
+            "run": (
+                "# python -m scripts.collect runs in the other job\n"
+                "python -m scripts.collect_release_target_vintages"
+            )
+        }
+    )
 
 
 def test_collect_commit_steps_stage_qledger():
