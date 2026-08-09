@@ -114,3 +114,19 @@ def test_unreadable_store_passes(tmp_path):
     path.write_bytes(b"not a parquet")
     new = pd.DataFrame({"growth_score": 0.1}, index=IDX)
     check_coverage_regression(new, path, "hk")
+
+
+def test_every_regime_engine_wires_the_guard():
+    # All four regimes recompute-in-place, and intraday lanes (engine-render,
+    # weekly pre-#5047) ship site/ from the recompute while discarding data/ —
+    # an unguarded engine re-opens the 2026-08-08 self-contradicting-commit
+    # class for its region. Pin the wiring so a refactor can't drop one
+    # silently (the HK gap survived exactly because only China took the
+    # sibling fix).
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "engine"
+    for mod in ("run.py", "canada_run.py", "china_run.py", "hk_run.py"):
+        src = (root / mod).read_text()
+        write = src.index('to_parquet(p / "regime_history.parquet")')
+        guard = src.find("check_coverage_regression(store_df,")
+        assert 0 <= guard < write, f"engine/{mod} writes regime_history.parquet unguarded"
