@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-08-08T16:31:29+00:00",
+  "as_of": "2026-08-09T01:47:39+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -178,21 +178,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 16.5,
+          "age_hours": 25.8,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 16.5,
+          "age_hours": 25.8,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
-          "status": "ok",
-          "age_hours": 40.5,
+          "status": "stale",
+          "age_hours": 49.8,
           "sla_hours": 48
         }
       ],
@@ -206,7 +206,7 @@
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
           "status": "ok",
-          "age_hours": 16.5,
+          "age_hours": 25.8,
           "sla_hours": 30.0
         }
       ],
@@ -220,7 +220,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 5.0,
+          "age_hours": 15.8,
           "sla_hours": 48
         }
       ],
@@ -234,7 +234,7 @@
           "artifact": "ca-board-ledger",
           "path": "data/board_ledger/ca_board.parquet",
           "status": "ok",
-          "age_hours": 0.0,
+          "age_hours": 8.9,
           "sla_hours": 48
         }
       ],
@@ -248,7 +248,7 @@
           "artifact": "intl-setups",
           "path": "site/factordata/intl_setups.json",
           "status": "ok",
-          "age_hours": 10.6,
+          "age_hours": 8.9,
           "sla_hours": 48
         }
       ],
@@ -273,7 +273,7 @@
     },
     "index": {
       "as_of": null,
-      "plan_count": 128
+      "plan_count": 131
     }
   },
   "pick_lab": {

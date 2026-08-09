@@ -1,16 +1,16 @@
 {
   "schema": "special_sits_context.v1",
   "asof": "2026-08-08",
-  "built": "2026-08-08T15:41:27Z",
+  "built": "2026-08-08T21:37:00Z",
   "is_context_only": true,
   "disclaimer": "Context only — event tracking + display-tier setup ranking, never a signal or sizing input.",
   "counts": {
-    "total": 1352,
-    "new_today": 135,
+    "total": 1361,
+    "new_today": 144,
     "grade_a": 1,
     "grade_b": 3,
     "with_arb": 20,
-    "cross_border": 571
+    "cross_border": 575
   },
   "top_setups": [
     {
@@ -157,6 +157,25 @@
       ]
     },
     {
+      "ticker": "APH",
+      "company": "AMPHENOL CORP /DE/",
+      "category": "Capital Returns",
+      "stage": "announced",
+      "grade": "C",
+      "score": 50.0,
+      "tier": "T2",
+      "mc_musd": 207516.17901611328,
+      "date_filed": "2026-08-06",
+      "why": [
+        "Buy setup live",
+        "EDGAR filing confirmed"
+      ],
+      "why_zh": [
+        "买点设置已触发",
+        "EDGAR披露已确认"
+      ]
+    },
+    {
       "ticker": "SWKS",
       "company": "SKYWORKS SOLUTIONS, INC.",
       "category": "Capital Returns",
@@ -191,27 +210,6 @@
       ],
       "why_zh": [
         "买点设置已触发",
-        "EDGAR披露已确认"
-      ]
-    },
-    {
-      "ticker": "UUUU",
-      "company": "ENERGY FUELS INC",
-      "category": "Acquisitions",
-      "stage": "announced",
-      "grade": "C",
-      "score": 49.0,
-      "tier": "T2",
-      "mc_musd": null,
-      "date_filed": "2026-07-28",
-      "why": [
-        "Buy setup live",
-        "Deeply oversold (weeks)",
-        "EDGAR filing confirmed"
-      ],
-      "why_zh": [
-        "买点设置已触发",
-        "周线深度超卖",
         "EDGAR披露已确认"
       ]
     }
@@ -717,13 +715,6 @@
       },
       {
         "kind": "new",
-        "ticker": "PBMLF",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "initiated"
-      },
-      {
-        "kind": "new",
         "ticker": "TCPC",
         "category": "Strategic Reviews",
         "from": null,
@@ -742,13 +733,6 @@
         "category": "Strategic Reviews",
         "from": null,
         "to": "initiated"
-      },
-      {
-        "kind": "new",
-        "ticker": "STVN",
-        "category": "Spin-Offs",
-        "from": null,
-        "to": "announced"
       },
       {
         "kind": "new",
@@ -773,13 +757,6 @@
       },
       {
         "kind": "new",
-        "ticker": "FJDIU",
-        "category": "SPACs",
-        "from": null,
-        "to": "de-SPAC"
-      },
-      {
-        "kind": "new",
         "ticker": "GHXIU",
         "category": "SPACs",
         "from": null,
@@ -791,6 +768,13 @@
         "category": "SPACs",
         "from": null,
         "to": "de-SPAC"
+      },
+      {
+        "kind": "new",
+        "ticker": "WYHG",
+        "category": "Rights Offerings",
+        "from": null,
+        "to": "live"
       },
       {
         "kind": "new",
@@ -829,6 +813,62 @@
       },
       {
         "kind": "new",
+        "ticker": "MBAI",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "GCLWW",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "MSGY",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "NYAX",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "THH",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ZBAO",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ACR-PD",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HBCYF",
+        "category": "Issuer Tenders",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
         "ticker": "HCAT",
         "category": "Divestitures",
         "from": null,
@@ -836,24 +876,31 @@
       },
       {
         "kind": "new",
-        "ticker": "EFXT",
+        "ticker": "ELPC",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "HIMX",
+        "ticker": "ORXCF",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "AIG",
+        "ticker": "YPF",
         "category": "Divestitures",
         "from": null,
         "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "AHT-PI",
+        "category": "Divestitures",
+        "from": null,
+        "to": "closed"
       },
       {
         "kind": "new",
@@ -934,6 +981,13 @@
       },
       {
         "kind": "new",
+        "ticker": "SD",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
         "ticker": "LTC",
         "category": "Capital Returns",
         "from": null,
@@ -962,35 +1016,7 @@
       },
       {
         "kind": "new",
-        "ticker": "FSM",
-        "category": "Capital Returns",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "MLCMF",
-        "category": "Capital Returns",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "MSOGF",
-        "category": "Capital Returns",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "OGC",
-        "category": "Capital Returns",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "VTEX",
+        "ticker": "APH",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
@@ -1067,7 +1093,42 @@
       },
       {
         "kind": "new",
-        "ticker": "MBAI",
+        "ticker": "GGB",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HKIT",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "MWC",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ZENA",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ARKO",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "APC",
         "category": "Acquisitions",
         "from": null,
         "to": "announced"
@@ -1318,7 +1379,7 @@
         "to": "C"
       }
     ],
-    "n": 157
+    "n": 166
   },
   "prev_state": {
     "asof": "2026-08-06",
@@ -6794,10 +6855,6 @@
       "stage": "announced",
       "grade": null
     },
-    "PBMLF|Strategic Reviews": {
-      "stage": "initiated",
-      "grade": null
-    },
     "TCPC|Strategic Reviews": {
       "stage": "initiated",
       "grade": null
@@ -6808,10 +6865,6 @@
     },
     "VTRS|Strategic Reviews": {
       "stage": "initiated",
-      "grade": null
-    },
-    "STVN|Spin-Offs": {
-      "stage": "announced",
       "grade": null
     },
     "CTVA|Spin-Offs": {
@@ -6826,10 +6879,6 @@
       "stage": "announced",
       "grade": null
     },
-    "FJDIU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
     "GHXIU|SPACs": {
       "stage": "de-SPAC",
       "grade": null
@@ -6840,6 +6889,10 @@
     },
     "BBCQW|SPACs": {
       "stage": "de-SPAC",
+      "grade": null
+    },
+    "WYHG|Rights Offerings": {
+      "stage": "live",
       "grade": null
     },
     "EOSEW|Rights Offerings": {
@@ -6862,20 +6915,56 @@
       "stage": "announced",
       "grade": null
     },
+    "MBAI|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "GCLWW|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "MSGY|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "NYAX|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "THH|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ZBAO|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ACR-PD|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "HBCYF|Issuer Tenders": {
+      "stage": "live",
+      "grade": null
+    },
     "HCAT|Divestitures": {
       "stage": "announced",
       "grade": null
     },
-    "EFXT|Divestitures": {
+    "ELPC|Divestitures": {
       "stage": "announced",
       "grade": null
     },
-    "HIMX|Divestitures": {
+    "ORXCF|Divestitures": {
       "stage": "announced",
       "grade": null
     },
-    "AIG|Divestitures": {
+    "YPF|Divestitures": {
       "stage": "announced",
+      "grade": null
+    },
+    "AHT-PI|Divestitures": {
+      "stage": "closed",
       "grade": null
     },
     "BLCO|Divestitures": {
@@ -6930,6 +7019,10 @@
       "stage": "announced",
       "grade": null
     },
+    "SD|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "LTC|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -6946,25 +7039,9 @@
       "stage": "announced",
       "grade": null
     },
-    "FSM|Capital Returns": {
+    "APH|Capital Returns": {
       "stage": "announced",
-      "grade": null
-    },
-    "MLCMF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "MSOGF|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "OGC|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
-    "VTEX|Capital Returns": {
-      "stage": "announced",
-      "grade": null
+      "grade": "C"
     },
     "ATNI|Capital Returns": {
       "stage": "announced",
@@ -7006,7 +7083,27 @@
       "stage": "announced",
       "grade": null
     },
-    "MBAI|Acquisitions": {
+    "GGB|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "HKIT|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "MWC|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ZENA|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ARKO|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "APC|Acquisitions": {
       "stage": "announced",
       "grade": null
     },

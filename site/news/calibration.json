@@ -2,7 +2,7 @@
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
   "asof": "2026-08-08",
-  "n_events_logged": 320,
+  "n_events_logged": 326,
   "n_events_graded": 165,
   "classes": [
     {
@@ -21,7 +21,7 @@
     {
       "event_type": "buyback",
       "direction": "bullish",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 65,
+      "n": 70,
       "n_graded": 28,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 613,
+    "n_sampled": 625,
     "n_graded": 0,
     "classes": []
   }
