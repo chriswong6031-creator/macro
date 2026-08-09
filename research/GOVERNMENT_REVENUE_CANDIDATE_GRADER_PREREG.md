@@ -113,6 +113,37 @@ Every refusal above is recorded in the same append-only log as an `abstention` r
 named reason, so the abstention rate is computable from the log alone and a filter cannot
 be applied silently.
 
+**Identity basis — what `exact_linked` is allowed to rest on (registered 2026-08-08).** The
+`exact_link_status` clause above constrains the link *class* (exact identifier, reviewed
+ownership path — never a discovery name or a fuzzy match). It did not, through 3.0.0,
+constrain the *basis*: whose assertion supplied that exact identifier, and on which clock. It
+now does, because the answer changed. The USAspending action rail — `POST
+/api/v2/transactions/`, the only rail this registered family admits after 4.0.0 — carries no
+recipient identity of its own (35,140 of 35,140 accrued action rows hold a null
+`recipient_uei`), so until now no candidate on the admitted rail could clear the exact-link
+gate. Snapshot-rail candidates remain display-only and refuse here as `family_rail_mismatch`.
+An action is now linkable through the award's recipient of record, attached to the row under a
+named basis with the award's own retrieval clock. Two bases are registered, and a candidate
+carries exactly one:
+
+- `source_record_recipient` — the observation's own recipient fields, asserted by the response
+  that produced the row. This is what every candidate before this amendment rested on.
+- `award_level_recipient_at_collection` — the award's recipient of record, attached to an
+  observation that asserted none of its own. The identifier is exact and the ownership path is
+  reviewed, so the link satisfies `exact_linked` as written; what is *not* claimed is that the
+  transaction named this recipient. The identity's clock is the award record's retrieval
+  clock, never the transaction's `effective_at`, so a recipient recorded after collection is
+  outside the claim. Every such candidate prints the basis in `issuer_resolution_ref` and the
+  limitation in `limitations`.
+
+**Both bases are admitted, and neither is a separate cohort.** A basis split is not registered
+as a stratum here because the family's N (§7) was derived for one pooled statistic and
+splitting it post hoc is exactly the optional-stopping move §7.5 latches against. The basis is
+recorded on every issuance row so a *descriptive* partition is computable later; it is not a
+verdict input. This widens which action-rail records can satisfy an unchanged exact-link rule,
+made before any measurement exists to be flattered by it: `data/government_revenue/candidate_ledger.jsonl`
+is **0 bytes** at the amending commit's parent, and no issuance log exists.
+
 ### Machine-readable declaration (binding)
 
 `engine/government_revenue/candidate_grader.py:load_family_declaration` reads this block
@@ -130,7 +161,7 @@ not registered.
   "family_id": "grv-fa1",
   "title": "exact-issuer receipt-bound positive funded-action acceleration",
   "document": "research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "horizons": [
     {"name": "h5", "sessions": 5, "role": "disclosure"},
     {"name": "h21", "sessions": 21, "role": "supporting"},
@@ -766,6 +797,7 @@ originate or escalate a grade here.
 | 2.0.0 §8 | 2026-08-06 | correction field **allowlist**; closed `correction_reason` vocabulary; the **supersession ratchet** | A plain correction could rewrite `known_at` (re-cutting the entry session after the outcome was observable), `ticker`, `horizons`, or `entry_rule`; the reason was unvalidated free text; and ungrading a loser moved a two-row cohort from `kill` to `tested_null`. |
 | 2.0.0 §1 | 2026-08-06 | `is_late_discovery` admission is fail-**closed** | `bool(...)` admitted a payload that omitted the key — the only fail-open admission test in the family. |
 | 2.0.0 §5/§6 | 2026-08-06 | coverage walker covers `*_mean`/`*_summary`/`*_bound`; `window_independence` emitted | The walker was structurally blind to the mean the verdict reads; `issued_n` counted overlapping windows as independent draws with no disclosure. |
+| 4.1.0 §1 | 2026-08-08 | **identity basis registered**: `exact_linked` may rest on `source_record_recipient` or on `award_level_recipient_at_collection`; the basis is printed on every candidate and is descriptive, never a verdict input or a stratum | §1 constrained the link *class* and was silent on *basis*, which was harmless only while the answer could not change: the action rail carries no recipient identity (35,140/35,140 null UEIs), so nothing on the only admitted rail could ever be exact-linked. Attaching the award's recipient of record makes that rail linkable, widening which action records can satisfy the unchanged exact-link rule; the snapshot rail remains display-only under 4.0.0's `family_rail_mismatch` fence. Registered pre-observation (`candidate_ledger.jsonl` still 0 bytes, no issuance log), so §9's post-issuance freeze is not engaged. |
 | 4.0.0 §7.6.1 | 2026-08-08 | the **paired placebo delta** carries `min_verdict_outcome_coverage`; new blocked reason `paired_placebo_coverage_below_registered_floor`; kill condition renamed **GRV-FA1-KILL-V3** | The coverage floor guarded the real side only. A cohort meeting every registered gate at 545 events with the placebo priced for ONE candidate reached a decided verdict on `paired_n = 1`; flipping that single row's placebo window flipped the verdict of all 545, on both the KILL and the SUPPORTED branch. `paired_coverage` was computed, printed, and read by nothing. |
 | 4.0.0 §7.6.2 | 2026-08-08 | the verdict is gated on `non_overlapping_window_estimate ≥ planning_n_required`, computed over the **verdict basis**; new blocked reason `independent_draws_below_registered_n` | §7.2's N is a power calculation and counts independent draws. 552 rows from 12 issuers on consecutive entry sessions gave `non_overlapping_window_estimate = 12`, a satisfied gate, and an interval narrowed ~6.8× by overlap that cleared δ\* — a threshold the same evidence fails at its honest N. §6 already required the number to be printed; nothing read it. |
 | 4.0.0 §7.6.3 | 2026-08-08 | `n < 2` emits **no interval** (`None`), never a degenerate `(v, v)` | §7.1 tests intervals so a point comparison cannot decide a verdict; a zero-width interval passes every test the point passes, so 2.0.0's remedy was reintroduced as its own defect and one observation cleared a threshold derived for N = 545. |
