@@ -2678,7 +2678,7 @@ jobs:
         # writes to was dark too, which is how _capture_usage could bill free
         # Ollama calls to the Claude subscription lane unnoticed.  It guards the
         # same waterfall as the files beside it — keep it in this step.
-        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py -q
+        run: python -m pytest tests/test_codex_provider.py tests/test_llm_auth.py tests/test_key_pool.py tests/test_ollama_provider.py tests/test_ai_costs.py tests/test_provider_health.py -q
       - name: V10 key economy suite (enabled-set, header capture, usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: cortex provider routing + tool loop suite
@@ -2886,6 +2886,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: hk robustness w5 tests
         run: python -m pytest tests/test_hk_robustness_w5.py tests/test_hk_freshness.py -q
+      - name: HK macro fill budget + degraded-store preservation
+        run: python -m pytest tests/test_hk_macro_ffill_budget.py tests/test_store_guard.py -q
 
   hk-integration-seams:
     if: ${{ false }}
@@ -3942,6 +3944,8 @@ jobs:
         # narrows. Unrun, that would have been a silent rot. Same deps as the
         # rest of this lane, verified green.
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_publish_time_read.py tests/test_marketing_outbox_garbage.py tests/test_marketing_metrics_poll.py tests/test_marketing_weekend_levels.py -q
+      - name: stale backlog quarantine + optional publish-time phrase fallback
+        run: python -m pytest tests/test_marketing_stale_purge.py tests/test_publish_time_llm_phrase.py -q
 
   marketing-media-pipeline:
     if: ${{ false }}
@@ -3989,6 +3993,8 @@ jobs:
         # jinja2 here those two importorskip away and the suite is skip-only —
         # scripts/check_skip_only_suites.py fails the build on exactly that.
         run: pip install pytest pyyaml jinja2
+      - name: W3 receipt supply + ticker allocation + volume caps + wire fan-out
+        run: python -m pytest tests/test_marketing_receipt_supply.py tests/test_marketing_ticker_allocator.py tests/test_marketing_w3_volume_caps.py tests/test_marketing_wire_fanout.py -q
       - name: marketing engine unit tests
         # test_marketing_sentinel is co-run (2026-07-23): the Sentinel W1 gate suite
         # was never whitelisted and rotted red on main via a local-vs-UTC clock
@@ -5493,6 +5499,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts
         run: python -m pytest tests/test_admin_brief_gate.py tests/test_ai_desk_panel.py tests/test_altdata_intel.py tests/test_altdata_price_truth.py tests/test_china_intel_hub.py tests/test_master_brain.py tests/test_master_brain_policy.py tests/test_master_brain_producer.py tests/test_master_brain_scorer.py tests/test_risk_brain.py tests/test_risk_radar_review.py tests/test_shock_deescalation.py tests/test_w7_llm_determinism.py -q
+      - name: Intelligence Hub PIT scope + W0 measurement heals + ticker-shape gate
+        run: python -m pytest tests/test_intel_hub_universe_scope.py tests/test_intel_hub_w0_heals.py tests/test_ticker_shape.py -q
 
   unrun-register-honesty:
     # The user-facing honesty register: falsifier/refutation vocabulary stays
@@ -5515,7 +5523,7 @@ jobs:
       - name: falsifier-register bans + chat plain-word projection
         run: python -m pytest tests/test_front_facing_register.py tests/test_policy_watch_register.py tests/test_chat_plain_words.py -q
       - name: regime-label honesty + sizing-pill null parity + forward cycle framing
-        run: python -m pytest tests/test_regime_label_honesty.py tests/test_regime_sizing_disclosure_parity.py tests/test_cycle_forward_framing.py -q
+        run: python -m pytest tests/test_regime_label_honesty.py tests/test_regime_sizing_disclosure_parity.py tests/test_cycle_forward_framing.py tests/test_quad_dark_day_disclosure.py -q
 
   unrun-neuralweb-cortex:
     # neural-web cortex world-state consumers + the factor-contradiction plane.
@@ -5672,7 +5680,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: macro desk surface, typography, glance + action-board hover cards
-        run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py -q
+        run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py tests/test_board_copy_and_controls_guard.py -q
       - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays
         run: python -m pytest tests/test_dashboard_cold_load_budget.py tests/test_stocktable_load_order.py tests/test_stock_logo_system.py tests/test_globe_tooltip_behavior.py -q
       - name: radar page boot + reports timeline + bilingual span-leak scan
@@ -5718,6 +5726,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
         run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_china_board_rank.py tests/test_china_continuation_watch.py tests/test_china_prophet_shadow.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_fail_closed_freshness.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py tests/test_us_context_vector.py -q
+      - name: US track-ledger era boundary and frozen pre-era evidence
+        run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
       # (forward-ledger audit 2026-08-05).  test_stage_analysis.py and
       # test_weinstein_stage.py were both enumerated in NO workflow
@@ -5747,6 +5757,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: US context vector + full-population grades + miss-audit scorecards
         run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py -q
+      - name: US entry-status full-population remeasurement
+        run: python -m pytest tests/test_us_entry_status_remeasure.py -q
       # The candidates store this job guards is TRACKED IN A PUBLIC REPO, and
       # context_api.context_frame flattens each dimension's whole `value` dict
       # with no allowlist — so a dimension that grows a paid body ships it to
@@ -5829,6 +5841,8 @@ jobs:
       # venv for all twenty-one unrun-* jobs.
       - name: collector never-silent disclosure — yahoo reconciliation + breadth stale columns
         run: python -m pytest tests/test_collector_freshness_disclosure.py -q
+      - name: off-render Yahoo universe backfill contract
+        run: python -m pytest tests/test_yahoo_universe_backfill.py -q
 
   unrun-brain-gateway:
     # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
@@ -6060,6 +6074,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: import-time logging.disable + warnings-filter ratchet over engine, lib, scripts, research
         run: python -m pytest tests/test_no_module_level_logging_disable.py -q
+      - name: file-path entry scripts pin this repository before importing it
+        run: python -m pytest tests/test_check_script_import_pinning.py -q
 
   price-basis-census:
     # PRICE-BASIS guard: no production grader may difference an UNADJUSTED name leg against
