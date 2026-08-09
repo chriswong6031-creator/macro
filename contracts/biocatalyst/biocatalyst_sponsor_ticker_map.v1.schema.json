@@ -22,7 +22,7 @@
     "rows",
     "unmapped_universe_tickers"
   ],
-  "$comment": "An admitted row must carry an operator attestation (named reviewer, timestamp, and the ruling document bound by content digest). A model cannot manufacture attributed human authority, so admission stays a human act even though the map now resolves.",
+  "$comment": "An admitted row must carry an operator attestation (named reviewer, timestamp, and the ruling document bound by content digest) and an issuer_relationship declaring whether the ticker is the sponsor itself or the sponsor's parent. A model cannot manufacture attributed human authority, so admission stays a human act even though the map now resolves.",
   "properties": {
     "contract_id": {"const": "biocatalyst_sponsor_ticker_map.v1"},
     "schema": {"const": "biocatalyst_sponsor_ticker_map.v1"},
@@ -183,6 +183,10 @@
             "unlisted_or_private_entity",
             "foreign_listing_or_adr_ambiguity"
           ]
+        },
+        "issuer_relationship": {
+          "description": "Required for reviewed_admitted rows and forbidden otherwise. Says whether the claimed ticker is the sponsor itself or the sponsor's parent, so a downstream reader can tell 'this trial's sponsor IS the issuer' from 'this trial's sponsor is a SUBSIDIARY of the issuer' without re-deriving it from the name. parent_of_subsidiary_sponsor is a declared modelling choice with a visible consequence: the subsidiary's trials surface under the parent's ticker.",
+          "enum": ["direct_issuer", "parent_of_subsidiary_sponsor"]
         },
         "confidence_class": {
           "description": "A review-triage label only. It is deliberately a word class and never a probability, weight, or score, and nothing downstream may read it as one.",
