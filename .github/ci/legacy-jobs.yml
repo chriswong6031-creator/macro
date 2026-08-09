@@ -6151,3 +6151,32 @@ jobs:
           tests/test_earnings_release_binding.py
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
+
+  group-linked-outsiders:
+    # GR3 of the Group Reads program: filing-linked outsiders per US basket.
+    #
+    # These assertions are the whole guard on an artifact that publishes a named
+    # relationship between two public companies.  The resolver is deliberately
+    # strict — unique near-verbatim registrant match only, no substring, no edit
+    # distance — and the admissibility matrix here is what stops a later "just
+    # loosen it a little" from shipping a wrong edge between two real tickers.
+    # The contract tests pin the frozen v1 key set (an unknown key is a
+    # violation, not a warning), the closed relationship vocabulary (no
+    # customer/supplier/partner/competitor role label the filing cannot ground),
+    # the append-only ledger's immutability, and the honest-null paths that keep
+    # a missing pulse.json or a missing tape from either crashing the nightly or
+    # printing a state it cannot support.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: group linked outsiders — contract, resolver, states, ledger (GR3)
+        run: >-
+          python -m pytest
+          tests/test_group_linked_outsiders.py -q -rs
