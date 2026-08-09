@@ -44,15 +44,22 @@ armed** — R2 failed (dial ordering inverts in the short calibration slice), R0
 positive W2 skill on main + fixes ChiNext over-quote; dial is LEVEL-not-RANKER and strongest
 at N=1 ⇒ **the L1 continuation-side regime merge is now W3's top measurement item**. Both
 scripts fail loudly (by design) until #5055/#5059/#5078 land on main, then self-heal.
-**W3-A (window-target battery, operator-prompted) — MEASUREMENT DONE, PR HELD pending its
-commissioned adversarial review** (branch `claude/cn-limit-w3-window` @ 1c4065c1e86, three
-deliverables committed, tree clean). Builder's preview, unadjudicated: the T+1 auction prices
-the WINDOW, not just the board — 99 pre-registered book cells, 11 clear the bar, ZERO survive
-the drift control; and the big-day class ([0.6w, limit)) is essentially UNCONDITIONAL (~7%,
-flat across ladder N, regime, and all six eras, while P(board) swings 1.9×) — the board is a
-forecastable event, the near-board big day is background. If the PR is open when you read
-this: verify the receipt (review reconciliation included), adjudicate, arm, fold into
-masterplan §6.3. If still held: resume the builder (its report says it waits for the review).
+**W3-A (window-target battery, operator-prompted) — AMENDMENTS IN FLIGHT.** Measurement done
+(branch `claude/cn-limit-w3-window` @ 1c4065c1e86); its commissioned adversarial review landed
+with 3 BLOCKERS + 9 should-fixes (core machinery verified sound; ~45 numbers reproduce), and
+the commissioning session dispatched the full amendment brief back to the builder. The three
+blockers, so no session mis-reads the preview: (B1) the priced book kept TRUNCATED forward
+windows exited at the last close — the flagship cell (S3 chinext H=10, reported +1.299%/t
++3.32) is partly store-edge mark-to-market, though on complete windows it STILL prints
++0.733%/deq t 2.62 (fit t 2.65) — post-fix matched-censoring excess decides whether it is the
+program's first real daily-resolution positive; root cause = the 10-day pair rule reused as
+the forward-chain rule, so CNY/National-Day closures truncate market-wide; (B2) "0 of 11
+survive the drift control" conflated not-testable with failed — the control was only ever
+built for fixedH cells, 9/11 clears are peak-variant and UNTESTED (peak-control being built);
+(B3) STAR near-miss arm silently voided (161 real rows reported as 0). Also: the "big-day is
+unconditional" headline cites fit only — holdout regime_hot prints 9.11% vs 7.14/6.51, so the
+claim must be softened to what both windows support. When the builder's PR opens: verify the
+amended receipt against this list, adjudicate, arm, fold into masterplan §6.3.
 Remaining W2/W3 queue (evidence-ranked in §6.2 synthesis): continuation-side regime merge
 (+ the broken-board T+1-open lead, +0.15pp, clustering-demoted not zero), intraday minute-bar
 battery (data purchased, arrives via Codex wiring), F3 full-universe re-run (post-expansion),
