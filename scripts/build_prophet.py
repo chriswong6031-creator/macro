@@ -22,20 +22,17 @@ runs the management confidence engine for every active plan, and writes:
     data/prophet/ledger.jsonl        — forward outcome ledger (INITIALIZED here;
                                        nightly is the SOLE future advancer)
 
-With --publish, also uploads site/prophet/index.json to R2 key
-"prophet/index.json" (mirrors build_options_matrix.py upload pattern).
+R2 publication is deliberately unavailable from this builder.  The daily workflow
+first commits the exact build-owned delta under Git authority, then conditionally
+publishes that accepted checkpoint with provenance metadata.
 
 Usage
 -----
-    python -m scripts.build_prophet [--date YYYY-MM-DD] [--publish]
+    python -m scripts.build_prophet [--date YYYY-MM-DD]
 
 Environment variables
 ---------------------
     THETADATA_STORE        Path to ThetaData EOD store root (optional)
-    R2_ENDPOINT            Cloudflare R2 endpoint URL
-    R2_ACCESS_KEY_ID       R2 access key
-    R2_SECRET_ACCESS_KEY   R2 secret
-    R2_BUCKET              R2 bucket name
 
 SCHEDULING NOTE
 ---------------
@@ -78,6 +75,14 @@ from engine.prophet_bridge import (
     plan_key,
 )
 from engine.prophet_management import compute_management_state
+from engine.prophet_integrity import (
+    LEDGER_CORRECTIONS_FILENAME,
+    PLAN_CORRECTIONS_FILENAME,
+    apply_ledger_corrections,
+    apply_plan_corrections,
+    load_ledger_corrections,
+    load_plan_corrections,
+)
 from engine.options_structure import validate_trade_plan
 
 log = logging.getLogger(__name__)
@@ -426,7 +431,10 @@ def write_showcase(grades_path: Path = GRADES_PATH,
 
 LEDGER_SCHEMA_COMMENT = (
     "# prophet ledger row schema — see research/PROPHET_LEDGER_SCHEMA.md\n"
-    "# Fields: schema, id, asset, direction, signal_date, entry_date, close_date,\n"
+    "# Fields: schema, id, asset, direction, formation_date, signal_date,\n"
+    "#         confirmed_date, observed_date, signal_tier, signal_date_basis,\n"
+    "#         signal_provisional, source_marker_date,\n"
+    "#         price_basis_date, entry_date, recorded_at, close_date,\n"
     "#         outcome (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY|NO_ENTRY),\n"
     "#         stock_result_pct, option_result_pct (null when no rec),\n"
     "#         days_held, plan_adherence, asof\n"
@@ -554,7 +562,11 @@ def derive_quarantine(ledger_rows: list[dict], plans: dict[str, dict]) -> list[d
     return out
 
 
-def write_quarantine(ledger_rows: list[dict], plans: dict[str, dict]) -> dict:
+def write_quarantine(
+    ledger_rows: list[dict],
+    plans: dict[str, dict],
+    correction_quarantines: dict[str, str] | None = None,
+) -> dict:
     """Derive + persist ``data/prophet/ledger_quarantine.json``; return the payload.
 
     The ledger itself is NEVER touched — it is append-only, and a record you can edit
@@ -563,6 +575,26 @@ def write_quarantine(ledger_rows: list[dict], plans: dict[str, dict]) -> dict:
     read it: those plans really did close; it is only the NUMBER that is unusable.
     """
     rows = derive_quarantine(ledger_rows, plans)
+    by_id = {str(row["id"]): row for row in rows}
+    for plan_id, reason in sorted((correction_quarantines or {}).items()):
+        if plan_id in by_id:
+            by_id[plan_id]["sources"] = ["derived_chronology", "ledger_correction"]
+            by_id[plan_id]["correction_reason"] = reason
+            continue
+        ledger_row = next(
+            (row for row in ledger_rows if str(row.get("id") or "") == plan_id), {}
+        )
+        plan = plans.get(plan_id, {})
+        row = {
+            "id": plan_id,
+            "reason": reason,
+            "quarantined": QUARANTINE_DATE,
+            "close_date": ledger_row.get("close_date"),
+            "origination_date": plan.get("asof"),
+            "sources": ["ledger_correction"],
+        }
+        rows.append(row)
+        by_id[plan_id] = row
     payload = {
         "schema": QUARANTINE_SCHEMA,
         "quarantined_on": QUARANTINE_DATE,
@@ -616,6 +648,16 @@ def record_summary(ledger_rows: list[dict], quarantined: set[str]) -> dict:
     }
 
 
+def _effective_index_entries(
+    entries: list[dict], quarantined_ids: set[str]
+) -> list[dict]:
+    """Public/Brain/marketing projection; raw plan/state evidence stays untouched."""
+    return [
+        row for row in entries
+        if str(row.get("id") or "") not in quarantined_ids
+    ]
+
+
 def _append_ledger_row(row: dict) -> None:
     """Append one JSON row to ledger.jsonl (non-atomic; nightly-only caller)."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
@@ -635,13 +677,14 @@ def _determine_outcome(
 
     THE CLOCK IS ``entry_date``, NOT ``signal_date`` (P1, 2026-08-06)
     ----------------------------------------------------------------
-    ``signal_date`` is the base-FORMATION anchor and can precede the plan's own
-    origination by months.  Scanning from it graded plans on bars that PREDATED
-    them: every EXPIRED row in the shipped ledger and both winners closed before
-    their plan existed, and 14 plans were born already past horizon.  The scan
-    start AND the horizon expiry now both read :func:`plan_clock_date` — the day
-    whose close is ``entry``.  ``signal_date`` still names the plan; it no longer
-    times it.
+    Legacy ``signal_date`` values were formation anchors and could precede the plan's
+    publication by months; tier-aware values are causal T1/T2 event closes. Neither is
+    the entry-price/grading clock. Scanning from the legacy alias graded plans on bars
+    that PREDATED them: every EXPIRED row in the shipped ledger and both winners closed
+    before their plan existed, and 14 plans were born already past horizon. The scan
+    start AND horizon expiry now both read :func:`plan_clock_date` — the evidenced
+    ``price_basis_date``/``entry_date`` whose close supplied ``entry``. Plan identity is
+    separately frozen by ``formation_date``.
 
     THE TRIGGER IS READ (P2, 2026-08-06)
     ------------------------------------
@@ -853,8 +896,9 @@ def advance_ledger(
             continue  # plan still open
 
         # close_date = the CLOCK start + days_held.  `days_held` is measured from the
-        # clock inside _determine_outcome, so adding it to signal_date (the formation
-        # anchor, up to 152 days earlier) produced close dates that predated the plan.
+        # price-basis clock inside _determine_outcome. The old implementation added it
+        # to the legacy signal/formation alias (up to 152 days earlier), producing close
+        # dates that predated the plan; a tier-native signal event is also not a fill.
         signal_date_str = plan.get("signal_date") or plan.get("_signal_date")
         clock_date_str = plan_clock_date(plan) or signal_date_str
         close_date_str: str | None = None
@@ -872,10 +916,21 @@ def advance_ledger(
             "id": plan_id,
             "asset": plan.get("asset"),
             "direction": plan.get("direction"),
+            # Additive temporal provenance for newly closed rows.  Existing ledger
+            # rows are append-only and are never rewritten to manufacture these fields.
+            "formation_date": plan.get("formation_date"),
             "signal_date": signal_date_str,
+            "confirmed_date": plan.get("confirmed_date"),
+            "observed_date": plan.get("observed_date"),
+            "signal_tier": plan.get("signal_tier"),
+            "signal_date_basis": plan.get("signal_date_basis"),
+            "signal_provisional": plan.get("signal_provisional"),
+            "source_marker_date": plan.get("source_marker_date"),
+            "price_basis_date": plan.get("price_basis_date"),
             # The date the horizon/outcome scan actually ran from — kept on the row so a
             # reader can tell a formation anchor from an entry without opening the plan.
             "entry_date": clock_date_str,
+            "recorded_at": plan.get("recorded_at"),
             "close_date": close_date_str,
             "outcome": outcome,
             "stock_result_pct": stock_result_pct,
@@ -1065,6 +1120,89 @@ def _age_bucket(age_days: int | None) -> str:
     return "gt_21d"
 
 
+def _degraded_index_entry(
+    plan_id: str,
+    plan: dict[str, Any],
+    *,
+    asof: str,
+    reason: str,
+    closed: bool,
+    outcome: str | None,
+) -> dict[str, Any]:
+    """Discoverable long-tail row when management cannot state a plan tonight.
+
+    Lossless origination is meaningless if an admitted plan is written to disk and then
+    vanishes from the only ranked index because a price or management enrichment failed.
+    This row carries the immutable plan facts and an explicit unavailable state.  It does
+    not invent a price, phase transition, recommendation, or confidence value.
+    """
+    formation = plan.get("formation_date") or plan.get("signal_date")
+    signal = plan.get("signal_date")
+    age = _age_days(signal or plan.get("observed_date") or formation, asof)
+    phase = plan.get("phase") or "pre_trigger"
+    pulse_en, pulse_zh = _plan_pulse(
+        age, phase, None, closed=closed, outcome=outcome
+    )
+    if closed:
+        now_en, now_zh = _closed_state_lines(outcome)
+    else:
+        now_en = plan.get("what_to_do_now") or []
+        now_zh = plan.get("what_to_do_now_zh") or []
+    return {
+        "id": plan_id,
+        "asset": plan.get("asset"),
+        "direction": plan.get("direction"),
+        "entry": plan.get("entry"),
+        "invalidation": plan.get("invalidation"),
+        "targets": plan.get("targets", []),
+        "trigger": plan.get("trigger"),
+        "option_contract": plan.get("option_contract"),
+        "_r_unit": plan.get("_r_unit"),
+        "_conviction_score": plan.get("_conviction_score"),
+        "_priority_score": plan.get("_priority_score"),
+        "_signal_date": signal,
+        "formation_date": formation,
+        "signal_date": signal,
+        "confirmed_date": plan.get("confirmed_date"),
+        "observed_date": plan.get("observed_date"),
+        "price_basis_date": plan.get("price_basis_date"),
+        "recorded_at": plan.get("recorded_at") or plan.get("asof"),
+        "plan_asof": plan.get("asof"),
+        "entry_date": plan_clock_date(plan),
+        "signal_tier": plan.get("signal_tier"),
+        "signal_date_basis": plan.get("signal_date_basis"),
+        "signal_provisional": plan.get("signal_provisional"),
+        "source_marker_date": plan.get("source_marker_date"),
+        "integrity_status": plan.get("integrity_status"),
+        "integrity_reason": plan.get("integrity_reason"),
+        "phase": phase,
+        "age_days": age,
+        "closed": closed,
+        "pulse": pulse_en,
+        "pulse_zh": pulse_zh,
+        "management_status": "unavailable",
+        "management_error": reason,
+        "management_confidence": None,
+        "recommended_action": None,
+        "last_price": None,
+        "state": {
+            "phase": phase,
+            "management_confidence": None,
+            "recommended_action": None,
+            "components": None,
+            "geometry": None,
+            "change_reason": reason,
+        },
+        "what_to_do_now": now_en,
+        "what_to_do_now_zh": now_zh,
+        "profit_plan": plan.get("profit_plan") or [],
+        "thesis": plan.get("thesis") or "",
+        "thesis_zh": plan.get("thesis_zh") or "",
+        "horizon_days": plan.get("horizon_days"),
+        "stage_tilt": plan.get("stage_tilt"),
+    }
+
+
 def _plan_pulse(
     age_days: int | None,
     phase: str | None,
@@ -1239,12 +1377,15 @@ def main() -> None:
     parser.add_argument(
         "--date",
         default=date.today().isoformat(),
-        help="ISO-8601 asof date (sole time anchor; no wall-clock reads beyond this).",
+        help=(
+            "ISO-8601 run/publication date; entry price basis comes from "
+            "us_standouts.staleness.price_through."
+        ),
     )
     parser.add_argument(
         "--publish",
         action="store_true",
-        help="Also upload site/prophet/index.json to R2.",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--showcase-only",
@@ -1255,19 +1396,60 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.publish:
+        parser.error(
+            "--publish is disabled: R2 publication requires the accepted Git "
+            "checkpoint and conditional workflow publisher"
+        )
+
     if args.showcase_only:
         write_showcase()
         return None
 
     asof: str = args.date
     log.info("build_prophet: starting — asof=%s publish=%s", asof, args.publish)
+    _standouts_doc = _read_json(STANDOUTS_PATH) or {}
+    _source_staleness = (
+        _standouts_doc.get("staleness")
+        if isinstance(_standouts_doc.get("staleness"), dict) else {}
+    )
+    # The freshness authority is the ranked-price watermark.  A board wrapper can be
+    # rebuilt tonight while its cross-section still ends days earlier, so top-level
+    # `as_of` remains a separate publication/source-board disclosure only.
+    source_asof = str(_source_staleness.get("price_through") or "")[:10] or None
+    source_board_asof = str(_standouts_doc.get("as_of") or "")[:10] or None
+    source_delayed = _source_staleness.get("delayed")
+    source_unknown = _source_staleness.get("unknown")
+    source_basis = _source_staleness.get("basis")
+    _source_inputs = (
+        _source_staleness.get("inputs")
+        if isinstance(_source_staleness.get("inputs"), dict) else {}
+    )
+    _source_panel = (
+        _source_inputs.get("panel")
+        if isinstance(_source_inputs.get("panel"), dict) else {}
+    )
+    source_mixed_vintage = bool(
+        _source_panel.get("mixed_vintage")
+    )
 
     # ── 0. Initialize ledger ──────────────────────────────────────────────────
     _initialize_ledger()
 
     # ── 1. Load existing plans (duplicate suppression) ────────────────────────
-    existing_plans = _load_existing_plans()
-    existing_ids: set[str] = set(existing_plans.keys())
+    # Plan JSONs are immutable publication records.  Audited date corrections are an
+    # append-only overlay; every downstream clock reads the effective projection, while
+    # the raw files are never rewritten to make history look cleaner than it was.
+    raw_existing_plans = _load_existing_plans()
+    correction_rows = load_plan_corrections(
+        LEDGER_DIR / PLAN_CORRECTIONS_FILENAME
+    )
+    correction_projection = apply_plan_corrections(
+        raw_existing_plans, correction_rows
+    )
+    existing_plans = correction_projection.plans
+    plan_quarantined_ids = set(correction_projection.quarantined_ids)
+    existing_ids: set[str] = set(raw_existing_plans.keys())
     # W1: same-id suppression is not enough — the id carries signal_date, so a fresh
     # signal on a live name used to originate a SECOND plan for it and burn a slot.
     # The ticker+direction keys of still-OPEN plans block that; closure frees the key.
@@ -1275,11 +1457,23 @@ def main() -> None:
     # needs the outcome word for each closed plan's `closed` flag and pulse.
     closed_outcomes = _load_closed_outcomes()
     closed_ids = set(closed_outcomes)
-    active_keys = open_plan_keys(existing_plans, closed_ids)
+    # An audit-quarantined plan is not actionable and must not monopolise the ticker's
+    # future opportunity slot.  Same-ID suppression remains, so identity never forks.
+    actionable_existing = {
+        plan_id: plan for plan_id, plan in existing_plans.items()
+        if plan_id not in plan_quarantined_ids
+    }
+    active_keys = open_plan_keys(actionable_existing, closed_ids)
     log.info(
         "build_prophet: %d existing plans loaded (%d closed in the ledger; "
         "%d open ticker+direction keys blocking re-origination)",
         len(existing_ids), len(existing_ids & closed_ids), len(active_keys),
+    )
+    log.info(
+        "build_prophet: correction overlay — %d row(s), %d corrected plan(s), "
+        "%d quarantined plan(s)",
+        len(correction_rows), len(correction_projection.applied_by_plan),
+        len(plan_quarantined_ids),
     )
 
     # ── 2. Originate new plans ────────────────────────────────────────────────
@@ -1357,10 +1551,16 @@ def main() -> None:
         print(f"::warning::prophet_arena hook failed: {e}", flush=True)
         log.warning("build_prophet: prophet_arena hook failed", exc_info=True)
 
-    # Merge all plans
+    # Merge the effective projection with tonight's raw new publications.  Existing
+    # plan files stay immutable; only IDs in ``new_plan_ids`` may be written below.
     all_plans = {**existing_plans}
     for p in new_plans:
         all_plans[p["id"]] = p
+    new_plan_ids = {str(plan["id"]) for plan in new_plans}
+    actionable_plans = {
+        plan_id: plan for plan_id, plan in all_plans.items()
+        if plan_id not in plan_quarantined_ids
+    }
 
     # ── 3. Run management engine for every active plan ────────────────────────
     # R0.7: market overlay inputs — one load per run, passed to every plan so
@@ -1375,16 +1575,24 @@ def main() -> None:
     active_entries: list[dict] = []
     import pandas as pd  # noqa: PLC0415
 
-    for plan_id, plan in all_plans.items():
+    for plan_id, plan in actionable_plans.items():
         ticker = plan.get("asset", "")
+        _closed = plan_id in closed_ids
         ph = _load_price_history_for_management(ticker)
 
         if ph is None:
             log.warning(
                 "build_prophet: no price history for %s; skipping management", ticker
             )
-            # Write plan only
-            _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            # A new publication must persist even when management has no tape.  An
+            # existing publication is immutable and therefore is not rewritten.
+            if plan_id in new_plan_ids:
+                _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            active_entries.append(_degraded_index_entry(
+                plan_id, plan, asof=asof,
+                reason="price_history_unavailable",
+                closed=_closed, outcome=closed_outcomes.get(plan_id),
+            ))
             continue
 
         # PIT: filter price_history to <= asof
@@ -1395,7 +1603,13 @@ def main() -> None:
             log.warning(
                 "build_prophet: empty price history for %s up to %s", ticker, asof
             )
-            _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            if plan_id in new_plan_ids:
+                _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            active_entries.append(_degraded_index_entry(
+                plan_id, plan, asof=asof,
+                reason="price_history_empty_through_publication_date",
+                closed=_closed, outcome=closed_outcomes.get(plan_id),
+            ))
             continue
 
         prev_state = _load_existing_state(plan_id)
@@ -1413,11 +1627,18 @@ def main() -> None:
             log.warning(
                 "build_prophet: management engine failed for %s: %s", plan_id, e
             )
-            _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            if plan_id in new_plan_ids:
+                _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+            active_entries.append(_degraded_index_entry(
+                plan_id, plan, asof=asof,
+                reason=f"management_engine_error:{type(e).__name__}",
+                closed=_closed, outcome=closed_outcomes.get(plan_id),
+            ))
             continue
 
         # Write artifacts
-        _write_json(PLANS_DIR / f"{plan_id}.json", plan)
+        if plan_id in new_plan_ids:
+            _write_json(PLANS_DIR / f"{plan_id}.json", plan)
         _write_json(STATES_DIR / f"{plan_id}.json", state)
 
         # Rebuild what_to_do_now and profit_plan with the phase resolved by the
@@ -1436,7 +1657,6 @@ def main() -> None:
         # states it (it is still in all_plans), so without this flag the row is
         # indistinguishable from a live one and its pulse would narrate a dead thesis.
         # closed_ids is the same set the re-origination block uses — one ledger read.
-        _closed = plan_id in closed_ids
         if _closed:
             # P5: a closed plan must not ship live instructions. It kept shipping
             # "buy above <trigger>, stop at <invalidation>" for a position that was
@@ -1476,7 +1696,13 @@ def main() -> None:
         # age_days is computed from signal_date against THIS run's asof rather than
         # read off state.days_elapsed, so it exists for the same reason the row does
         # and cannot go missing when a state field is absent.
-        _age = _age_days(plan.get("signal_date") or plan.get("_signal_date"), asof)
+        _age = _age_days(
+            plan.get("signal_date")
+            or plan.get("observed_date")
+            or plan.get("_signal_date")
+            or plan.get("formation_date"),
+            asof,
+        )
         _pulse_en, _pulse_zh = _plan_pulse(
             _age, resolved_phase, state.get("human_state"),
             closed=_closed, outcome=closed_outcomes.get(plan_id),
@@ -1497,7 +1723,22 @@ def main() -> None:
             # than take the artifact's word for it. None on pre-P6 plans.
             "_priority_score": plan.get("_priority_score"),
             "_signal_date": plan.get("_signal_date"),
-            # The clock every horizon/outcome/τ read resolves to — see plan_clock_date.
+            # Explicit temporal clocks for new plans.  Legacy plans retain nulls rather
+            # than receiving a backfill inference in this publishing pass.
+            "formation_date": plan.get("formation_date"),
+            "signal_date": plan.get("signal_date"),
+            "confirmed_date": plan.get("confirmed_date"),
+            "observed_date": plan.get("observed_date"),
+            "price_basis_date": plan.get("price_basis_date"),
+            "recorded_at": plan.get("recorded_at"),
+            "plan_asof": plan.get("asof"),
+            "signal_tier": plan.get("signal_tier"),
+            "signal_date_basis": plan.get("signal_date_basis"),
+            "signal_provisional": plan.get("signal_provisional"),
+            "source_marker_date": plan.get("source_marker_date"),
+            "integrity_status": plan.get("integrity_status"),
+            "integrity_reason": plan.get("integrity_reason"),
+            # The compatibility clock every horizon/outcome/τ read resolves to.
             "entry_date": plan_clock_date(plan),
             "phase": resolved_phase,
             # W1 index hygiene — how old this thesis is, whether it is finished, and
@@ -1509,6 +1750,8 @@ def main() -> None:
             "pulse_zh": _pulse_zh,
             "management_confidence": state.get("management_confidence"),
             "recommended_action": state.get("recommended_action"),
+            "management_status": "available",
+            "management_error": None,
             # R0.7 — last close the management engine saw (same PIT frame).
             # The Terminal's GAINERS sort and T1-progress/P&L bars render only
             # when last_price is present.
@@ -1544,22 +1787,48 @@ def main() -> None:
     # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
     # Must run AFTER all plans + price histories have been processed so we have
     # a complete all_plans dict.  Nightly is the SOLE caller of advance_ledger().
-    try:
-        advance_ledger(all_plans, asof)
-    except Exception as e:
-        log.warning("build_prophet: ledger advancement failed (non-fatal): %s", e)
+    # This is part of the accepted Prophet state, not optional enrichment.  Publishing
+    # plans/index after a partial or failed ledger advance would split the system's
+    # clocks; let the build fail so the guarded checkpoint withholds the whole delta.
+    advance_ledger(actionable_plans, asof)
 
     # ── 3c. Forward-ledger quarantine (derived, then disclosed) ──────────────────
     # Runs AFTER advance_ledger so tonight's closes are judged by the same rule as
     # every earlier row, and the file the surfaces read is never a run behind.
-    _ledger_rows = _load_ledger_rows()
-    try:
-        quarantine = write_quarantine(_ledger_rows, all_plans)
-    except Exception as e:  # noqa: BLE001 — a disclosure file must not fail the nightly
-        log.warning("build_prophet: quarantine write failed (non-fatal): %s", e)
-        quarantine = {"count": 0, "quarantined": [],
-                      "note": "quarantine list unavailable this run"}
-    _quarantined_ids = {str(r.get("id")) for r in (quarantine.get("quarantined") or [])}
+    _raw_ledger_rows = _load_ledger_rows()
+    ledger_correction_rows = load_ledger_corrections(
+        LEDGER_DIR / LEDGER_CORRECTIONS_FILENAME
+    )
+    ledger_projection = apply_ledger_corrections(
+        _raw_ledger_rows, ledger_correction_rows
+    )
+    _ledger_rows = list(ledger_projection.rows)
+    _ledger_correction_reasons = {
+        str(row.get("id")): str(row.get("integrity_reason") or "ledger correction")
+        for row in _ledger_rows
+        if row.get("integrity_status") == "quarantined" and row.get("id")
+    }
+    # The exclusion receipt changes the published record denominator and is therefore
+    # authoritative.  Failure must withhold the checkpoint, never substitute an empty
+    # set that silently rehabilitates poisoned outcomes.
+    quarantine = write_quarantine(
+        _ledger_rows, all_plans,
+        correction_quarantines=_ledger_correction_reasons,
+    )
+    _derived_ledger_quarantined_ids = {
+        str(r.get("id")) for r in (quarantine.get("quarantined") or [])
+    }
+    _ledger_quarantined_ids = (
+        _derived_ledger_quarantined_ids
+        | set(ledger_projection.quarantined_ids)
+    )
+    _quarantined_ids = _ledger_quarantined_ids | plan_quarantined_ids
+    # ``active_entries`` is also the sole public/index supply for Brain and the
+    # marketing desks. A terminal row quarantined after management ran must not stay
+    # alive there merely because this run built the index row before deriving the
+    # ledger exclusion receipt. Raw plans/states remain immutable evidence; only the
+    # effective publication is filtered.
+    active_entries = _effective_index_entries(active_entries, _quarantined_ids)
     _record = record_summary(_ledger_rows, _quarantined_ids)
     log.info("build_prophet: honest record over %d non-quarantined scored row(s) — "
              "win_rate=%s avg=%s%%", _record["n_scored"],
@@ -1593,7 +1862,16 @@ def main() -> None:
 
     index: dict[str, Any] = {
         "schema": "prophet.index/v1",
+        # Compatibility run clock.  Freshness sentinels MUST use source_asof below:
+        # a successful rerun can refresh this publication stamp while its input freezes.
         "asof": asof,
+        "recorded_at": asof,
+        "source_asof": source_asof,
+        "source_board_asof": source_board_asof,
+        "source_delayed": source_delayed,
+        "source_unknown": source_unknown,
+        "source_basis": source_basis,
+        "source_mixed_vintage": source_mixed_vintage,
         "cadence": "nightly-EOD",
         "authority_tier": "display",
         "gate_go": _read_standouts_gate_go(),
@@ -1615,39 +1893,73 @@ def main() -> None:
             " numeric priority score sorts below every scored plan and, among those,"
             " by the legacy conviction score"
         ),
-        # W1 — intake disclosure. How the candidate order was decided this run, and how
-        # many candidates the active-plan block kept from burning a second slot.
+        # Lossless intake disclosure.  Every admitted row has a terminal disposition:
+        # duplicate, open-plan blocked, explicit validation failure, or originated.
         "intake": {
             "sort_key": "us_prophet_v1 priority score desc, act_level desc, ticker asc",
+            "mode": intake_stats.get("mode", "lossless"),
             "reorigination_blocked": intake_stats.get("reorigination_blocked", 0),
             "reorigination_blocked_keys": intake_stats.get(
                 "reorigination_blocked_keys", []
             ),
             "open_plan_keys": len(active_keys),
-            # P4 — the cap now bites SURVIVORS of the skips, so both numbers ship.
             "admitted": intake_stats.get("admitted"),
             "duplicate_id_blocked": intake_stats.get("duplicate_id_blocked"),
             "eligible_after_skips": intake_stats.get("eligible_after_skips"),
             "cap": intake_stats.get("cap"),
-            "originated": len(new_plans),
+            "cap_applied": intake_stats.get("cap_applied", False),
+            "truncated": intake_stats.get("truncated", 0),
+            "validation_failed": intake_stats.get("validation_failed", 0),
+            "validation_failures": intake_stats.get("validation_failures", []),
+            "originated": intake_stats.get("originated", len(new_plans)),
+            "unaccounted": intake_stats.get("unaccounted", 0),
+            "lossless": intake_stats.get("lossless", False),
+            "all_survivors_originated": intake_stats.get(
+                "all_survivors_originated", False
+            ),
             "basis": (
-                "Ordering only — admission filters and the band gate are unchanged, and"
-                " candidates are ranked by the same us_prophet_v1 priority score the"
-                " board is ranked by. An open plan on the same ticker+direction blocks"
-                " re-origination until it closes in the forward ledger. The"
-                " 12-candidate cap is applied AFTER those skips (P4 2026-08-06), so a"
-                " night whose top-12 are all already-live names still originates from"
-                " the eligible names below them."
+                "Admission filters and ranking are unchanged. Every admitted candidate"
+                " that is neither a duplicate ID nor blocked by an open plan is attempted;"
+                " there is no positional plan-origination cap. Any candidate that cannot"
+                " produce a plan is listed under validation_failures. Featured-board,"
+                " sector, alert and portfolio-risk controls are separate and unchanged."
+            ),
+        },
+        # Append-only plan correction projection.  Raw plan JSON files are publication
+        # records and never change; corrected dates/dispositions exist only in memory
+        # and on this index.  Quarantined plans are excluded from management, action
+        # copy and future ledger advancement, but remain fully enumerated here.
+        "plan_integrity": {
+            "correction_count": len(correction_rows),
+            "corrected_plan_count": len(correction_projection.applied_by_plan),
+            "corrected_ids": sorted(correction_projection.applied_by_plan),
+            "quarantined_count": len(plan_quarantined_ids),
+            "quarantined_ids": sorted(plan_quarantined_ids),
+            "file": f"data/prophet/{PLAN_CORRECTIONS_FILENAME}",
+            "effect": (
+                "raw plan publications stay immutable; corrections form the effective "
+                "clock view; quarantined plans cannot emit live instructions or ledger rows"
+            ),
+        },
+        "ledger_corrections": {
+            "correction_count": len(ledger_correction_rows),
+            "corrected_row_count": len(ledger_projection.applied_by_id),
+            "corrected_ids": sorted(ledger_projection.applied_by_id),
+            "quarantined_ids": sorted(ledger_projection.quarantined_ids),
+            "file": f"data/prophet/{LEDGER_CORRECTIONS_FILENAME}",
+            "effect": (
+                "ledger.jsonl stays append-only; date corrections are projected for "
+                "readers and never rehabilitate a quarantined outcome"
             ),
         },
         # ── Forward-ledger quarantine (2026-08-06) ────────────────────────────
         # Rows graded on a clock that predated their own plan. They STAY in
         # ledger.jsonl — it is append-only — and are excluded from every summary.
         "ledger_quarantine": {
-            "count": quarantine.get("count", 0),
+            "count": len(_ledger_quarantined_ids),
             "quarantined_on": QUARANTINE_DATE,
             "reason": QUARANTINE_REASON,
-            "ids": sorted(_quarantined_ids),
+            "ids": sorted(_ledger_quarantined_ids),
             "note": quarantine.get("note"),
             "note_zh": quarantine.get("note_zh"),
             "file": f"data/prophet/{QUARANTINE_FILENAME}",
@@ -1671,16 +1983,7 @@ def main() -> None:
     except Exception as e:  # noqa: BLE001
         log.warning("build_prophet: showcase write failed (non-fatal): %s", e)
 
-    # ── 5. R2 publish ─────────────────────────────────────────────────────────
-    if args.publish:
-        s3 = _r2_client()
-        if s3:
-            bucket = os.environ.get("R2_BUCKET", "mastermindx")
-            _upload_r2(s3, bucket, INDEX_PATH, R2_INDEX_KEY)
-        else:
-            log.warning("build_prophet: --publish set but R2 creds unavailable; skipping")
-
-    # ── 6. Report ─────────────────────────────────────────────────────────────
+    # ── 5. Report ─────────────────────────────────────────────────────────────
     log.info("build_prophet: done — %d plans total, %d active", len(all_plans), len(active_entries))
     for e in active_entries:
         log.info(
