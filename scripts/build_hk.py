@@ -485,7 +485,12 @@ def hk_regime_timeline(hist: pd.DataFrame) -> dict:
     mirroring build_site.regime_timeline() over the HK regime history. HK doesn't
     track transition_state / recession / shock / warning flags, so those carry safe
     defaults — timemachine.js degrades to 'no warnings'."""
-    h = hist[hist["quad"].notna()].copy()
+    # Ship only days whose label AND both axis scores exist. The engine no longer
+    # labels axis-dark days, but the store is written by more than one lane — this
+    # keeps a labeled-yet-dark row (the 2026-08-08 null-inflation-tail shape,
+    # commit 901282ec209) out of the artifact no matter which writer produced it.
+    h = hist[hist["quad"].notna()
+             & hist["growth_score"].notna() & hist["inflation_score"].notna()].copy()
     n = len(h)
 
     def r3(col: str) -> list:

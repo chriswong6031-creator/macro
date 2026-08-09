@@ -353,7 +353,8 @@
       "required": ["available_before_cap", "visible"],
       "properties": {
         "available_before_cap": {"type": "integer", "minimum": 0},
-        "visible": {"type": "integer", "minimum": 0}
+        "visible": {"type": "integer", "minimum": 0},
+        "truncated_by_cap": {"type": "integer", "minimum": 0}
       }
     },
     "kindCoverage": {
@@ -392,7 +393,8 @@
         "conflicted_ids": {"type": "integer", "minimum": 0}, "conflicted_rows": {"type": "integer", "minimum": 0},
         "dropped_by_global_identity_conflict": {"type": "integer", "minimum": 0},
         "available_before_cap": {"type": "integer", "minimum": 0},
-        "visible": {"type": "integer", "minimum": 0}, "truncated": {"type": "integer", "minimum": 0}
+        "visible": {"type": "integer", "minimum": 0}, "truncated": {"type": "integer", "minimum": 0},
+        "first_rejection_reason": {"type": ["string", "null"], "maxLength": 200}
       }
     },
     "exactIdDedupe": {

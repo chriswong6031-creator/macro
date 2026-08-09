@@ -21,19 +21,24 @@ Run: python -m scripts.build_strategies
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from engine import equity_alloc as ea
-from engine import strategies as S
-from engine.validation import backtest_core, deflated_sharpe, ret_moments
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine import strategies as S  # noqa: E402
+from engine.validation import backtest_core, deflated_sharpe, ret_moments  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 # Reuse the size-disciplined Plotly helpers + the (now label-parametrized) chart builders.
-from scripts.build_spvector import _chart_strategy, _chart_growth, _chart_dd
-from scripts.build_vector import C
+from scripts.build_spvector import _chart_strategy, _chart_growth, _chart_dd  # noqa: E402
+from scripts.build_vector import C  # noqa: E402
 
 COST_DEFAULT = 3.0
 
