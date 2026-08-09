@@ -24,6 +24,7 @@ under node, which the CI packs do install (actions/setup-node@v4, node 20).
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -214,7 +215,19 @@ console.log(JSON.stringify(out));
 def _qualify(cases: list) -> list:
     node = shutil.which("node")
     if node is None:
-        pytest.skip("node not available to execute the client contract")
+        # A skip here is only ever a local-dev convenience. In CI it would take the
+        # ONE gate that stops this surface lying to a reader (§0-2: a board showing
+        # last night's cards must never render tonight's stamp) and make it silently
+        # dark — the pack would go green having executed nothing. ci.yml installs
+        # node 20 (`actions/setup-node@v4`), so if it is missing under CI the right
+        # answer is a red pack telling someone the step moved, not a quiet pass.
+        if os.environ.get("CI"):
+            raise AssertionError(
+                "node is required to execute the _bsQualify client contract, and CI "
+                "installs it via actions/setup-node@v4 — its absence means the setup "
+                "step was moved or removed, which would leave spec gate §0-2 unproven."
+            )
+        pytest.skip("node not available to execute the client contract (local only)")
     src = _JS_HARNESS % {"contract": _js_contract()}
     with tempfile.TemporaryDirectory() as td:
         path = Path(td) / "wl1_contract.mjs"
