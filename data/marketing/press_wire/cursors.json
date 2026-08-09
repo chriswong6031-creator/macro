@@ -1239,6 +1239,55 @@
     "alpaca:60990773": "2026-08-09T17:12:41.255959+00:00",
     "alpaca:60990786": "2026-08-09T17:12:41.255959+00:00",
     "alpaca:60990804": "2026-08-09T17:12:41.255959+00:00",
+    "alpaca:60990819": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60990858": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60990868": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60990878": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60990901": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991018": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991041": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991065": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991150": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991178": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991179": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991202": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991213": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991229": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991240": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991246": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991264": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991281": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991292": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991299": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991316": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991331": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991352": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991361": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991365": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991383": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991385": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991392": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991408": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991415": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991446": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991456": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991458": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991490": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991604": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991616": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991624": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991640": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991641": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991642": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991645": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991660": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991680": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991704": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991748": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991759": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991761": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991780": "2026-08-09T17:35:54.150636+00:00",
+    "alpaca:60991802": "2026-08-09T17:35:54.150636+00:00",
     "b0ba30bbb0881bfe1ce23311fec6ea356b6a9f76": "2026-08-09T12:37:31.461961+00:00",
     "b1d53f85fa6c51101deeae57885a50615b95f194": "2026-08-09T02:49:25.348159+00:00",
     "b27cdb6382f1c9d53ad68a3adcf513332d1d576b": "2026-08-09T02:49:25.348159+00:00",
@@ -1356,8 +1405,26 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:sec:energy": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:sec:financials": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "claim:none:sec:healthcare": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "claim:none:sec:industrials": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1380,8 +1447,44 @@
         "host:benzinga.com"
       ]
     },
+    "head:aemetis q2 eps 013 beats 028 estimate sales 62700m miss 69498m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:aligos therapeutics q2 eps 014 beats 107 estimate sales 0000 miss 18243m estimat": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:argenx commences 77shr cash tender offer through subsidiary avena merger sub to ": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:avalo therapeutics q2 eps 083 misses 058 estimate": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:burford capital q2 eps 001 misses 010 estimate sales 110683m beat 108950m estima": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:chegg sees q3 sales 43000m44000m vs 48277m est": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:cion invt q2 eps 029 beats 027 estimate sales 49793m beat 49780m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1410,14 +1513,62 @@
         "host:benzinga.com"
       ]
     },
+    "head:delcath systems q2 eps 007 beats 009 estimate sales 29133m beat 26259m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:delcath systems sees fy2026 sales 104000m108000m vs 103242m est": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:establishment labs hldgs q2 eps 039 misses 033 estimate sales 67542m beat 65769m": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:eurodry q2 adj eps 244 beats 123 estimate sales 17700m miss 17855m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:fiserv slashes outlook stock sinks": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:foghorn therapeutics q2 eps 010 beats 023 estimate sales 16072m beat 5995m estim": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
+    "head:fox q4 adj eps 179 beats 142 estimate sales 4212b beat 3643b estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:hertz global holdings q2 adj eps 011 beats 024 estimate sales 2396b beat 2280b e": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:ingles markets q3 eps 136 down from 138 yoy sales 1368b up from 1346b yoy": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:insight enterprises q2 adj eps 386 beats 293 estimate sales 2399b beat 2176b est": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1430,6 +1581,24 @@
     },
     "head:kelly services sees q3 sales 916300m935000m vs 929333m est": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:koppers hldgs q2 adj eps 137 beats 112 estimate sales 521100m beat 506100m estim": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:koppers holdings narrows fy2026 adj eps guidance from 380460 to 380420 vs 413 es": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:mbx biosciences q2 eps 078 misses 063 estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1458,8 +1627,38 @@
         "host:benzinga.com"
       ]
     },
+    "head:pepgen q2 eps 026 beats 029 estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:petrotal q2 eps 001 misses 015 estimate sales 64811m miss 746000m estimate": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:praxis precision medicine q2 eps 287 beats 365 estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:prime medicine q2 eps 024 beats 026 estimate sales 1154m miss 1295m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:ralph lauren q1 adj eps 459 beats 432 estimate sales 1960b beat 1867b estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:rogers sugar q3 adj eps 013 beats 012 estimate sales 293695m miss 298933m estima": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1482,6 +1681,12 @@
         "host:benzinga.com"
       ]
     },
+    "head:sempra sees fy2027 adj eps 510570 vs 552 est": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:spacex bulls pile into 111 calls ahead of 911 millionshare unlock heres what to ": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
       "sources": [
@@ -1490,6 +1695,24 @@
     },
     "head:sunstone hotel invts q2 ffo 032 beats 029 estimate sales 277100m beat 268283m es": {
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:tejon ranch q2 eps 010 beats 002 estimate sales 14259m beat 8641m estimate": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:theriva biologics doses first patient in virage2 phase 2a clinical trial small p": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:these analysts revise their forecasts on ebay after q2 results": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1510,6 +1733,12 @@
       "first_ts": "2026-08-09T17:12:41.255959+00:00",
       "sources": [
         "host:investing.com"
+      ]
+    },
+    "head:western digital applovin zillow group and other big stocks moving lower in thurs": {
+      "first_ts": "2026-08-09T17:35:54.150636+00:00",
+      "sources": [
+        "host:benzinga.com"
       ]
     },
     "truth:117033875954997766": {
@@ -2671,9 +2900,9 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-09T17:12:41.255959+00:00",
+      "last_poll": "2026-08-09T17:35:54.150636+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-06T11:57:45+00:00"
+      "since": "2026-08-06T12:08:17+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"d0ce5076bbda6423276952b5be272196-3\"",
@@ -2683,7 +2912,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1786295563.3734255
+      "last_poll_ts": 1786296957.53016
     },
     "twitterapiio": {
       "cursors": {
@@ -2754,65 +2983,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-09T17:12:41Z",
+  "updated_at": "2026-08-09T17:35:54Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1786295562.007186
+      "last_poll_ts": 1786296955.48476
     },
     "bls_news": {
       "etag": "\"804b7fc96826dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 07 Aug 2026 12:32:19 GMT",
-      "last_poll_ts": 1786295561.9466424
+      "last_poll_ts": 1786296955.1230593
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1786295562.0960963
+      "last_poll_ts": 1786296955.9511323
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1786295563.070691
+      "last_poll_ts": 1786296957.1959069
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Sun, 09 Aug 2026 17:11:48 GMT",
-      "last_poll_ts": 1786295563.2275383
+      "last_modified": "Sun, 09 Aug 2026 17:33:34 GMT",
+      "last_poll_ts": 1786296957.386656
     },
     "fed_press": {
       "etag": "W/\"2fb36105024dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 20:30:17 GMT",
-      "last_poll_ts": 1786295561.8697312
+      "last_poll_ts": 1786296954.9778001
     },
     "forexlive_news": {
-      "etag": "W/\"9z9DZr8fVpbxMkaQftXg-Gr8G1Q\"",
+      "etag": "W/\"Bswlea3Jtq9wxQV95ru99HU6cuk\"",
       "fail_count": 0,
-      "last_poll_ts": 1786295562.708952
+      "last_poll_ts": 1786296956.7323484
     },
     "investing_news": {
-      "etag": "W/\"1234-658a049a4d9ee\"",
+      "etag": "W/\"1239-658a0894c8b1e\"",
       "fail_count": 0,
-      "last_modified": "Sun, 09 Aug 2026 17:08:33 GMT",
-      "last_poll_ts": 1786295563.0019717
+      "last_modified": "Sun, 09 Aug 2026 17:26:21 GMT",
+      "last_poll_ts": 1786296957.0338962
     },
     "marketwatch_top": {
-      "etag": "W/\"2120-Di6iXshj+phuNNHClFeGZyig1Ew\"",
+      "etag": "W/\"2120-8Uq3Z7DxoUzk/9Gzup2RdICbquo\"",
       "fail_count": 0,
-      "last_poll_ts": 1786295562.189948
+      "last_poll_ts": 1786296956.2108223
     },
     "whitehouse_actions": {
       "etag": "\"e9ea9158661cc9f9b6bfa0caa8b87961\"",
       "fail_count": 0,
       "last_modified": "Fri, 07 Aug 2026 23:32:28 GMT",
-      "last_poll_ts": 1786295562.0453076
+      "last_poll_ts": 1786296955.7378724
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Sun, 9 Aug 2026 15:59:41 GMT",
-      "last_poll_ts": 1786295562.4438531
+      "last_poll_ts": 1786296956.4599998
     }
   },
   "wire_day_counts": {
