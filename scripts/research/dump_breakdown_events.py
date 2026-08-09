@@ -66,8 +66,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parents[2]  # WORKTREE_ROOT
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from engine.grading import (  # noqa: E402
     fill_index,

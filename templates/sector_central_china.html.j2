@@ -833,7 +833,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   {% set _hero_cls = 'strain' if _tc_st == 'strain' else ('steady' if _tc_st == 'steady' else '') %}
   <section id="theme-context-hero" class="rvx-hero rvx-reveal {{ _hero_cls }}">
     <div class="rvx-eyebrow">
-      <h1>{{ t('China Sector Intelligence 🇨🇳', '中国行业智慧 🇨🇳') }}</h1>
+      <h1>{{ t('China Sector Intelligence 🇨🇳', '中国行业情报 🇨🇳') }}</h1>
       <span class="rvx-mut" id="hero-count"></span>
       <span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span>
     </div>
@@ -846,7 +846,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
         </div>
         <p class="rvx-vsub">{% if theme_context.migration is defined and theme_context.migration.note_en %}{{ t(theme_context.migration.note_en, theme_context.migration.note_zh) }}{% else %}{{ t(
           'One desk for China sectors and themes — the gated board, the cycle map, whole-market rotation, every basket in depth.',
-          '中国行业与主题的统一看板 — 门控研判、周期图谱、全市场轮动、每个篮子的深读。') }}{% endif %}</p>
+          '中国行业与主题的统一看板 — 研判、周期图谱、全市场轮动，以及每个篮子的深读。') }}{% endif %}</p>
         <span class="rvx-stance">⚑ {{ t(_tc_lead.stance_en, _tc_lead.stance_zh) }}{% if _tc_lead.days_in_state is not none and _tc_lead.days_in_state %}<span class="rvx-stance-days"> · {{ t(_tc_lead.days_in_state|string + (' day in' if _tc_lead.days_in_state == 1 else ' days in'), '已持续 ' + _tc_lead.days_in_state|string + ' 天') }}</span>{% endif %}</span>
       </div>
       {# ── The signature: this week's handoff. Who is losing the lead, who is taking
@@ -929,7 +929,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   {# ── Plain header fallback when theme_context absent or lite variant ── #}
   <section id="theme-context-hero" class="rvx-hero rvx-reveal">
     <div class="rvx-eyebrow">
-      <h1>{{ t('China Sector Intelligence 🇨🇳', '中国行业智慧 🇨🇳') }}{% if lite %} · {{ t('同花顺 themes', '同花顺主题') }}{% endif %}</h1>
+      <h1>{{ t('China Sector Intelligence 🇨🇳', '中国行业情报 🇨🇳') }}{% if lite %} · {{ t('同花顺 themes', '同花顺主题') }}{% endif %}</h1>
       <span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span>
     </div>
     <div class="rvx-vword">{{ t('China sectors', '中国行业') }} <span class="ac">{{ t('and themes', '与主题') }}</span></div>
@@ -1023,7 +1023,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   <section class="scc-cycle cyc-page sc-page sc-china" id="sc-cyclemap">
     <div class="scc-section-h">
       <h2><span class="l-en">Cycle map — every sector & theme on one clock</span><span class="l-zh">周期图谱 — 各板块与主题同框</span></h2>
-      <span class="scc-section-sub"><span class="l-en">Real price (rebased / log) or a 0–100 cycle-position oscillator · auto-detected turns · tap a line to read its legs</span><span class="l-zh">真实价格（再基准化／对数）或 0–100 周期位置振荡器 · 自动识别拐点 · 点击曲线查看区段</span></span>
+      <span class="scc-section-sub"><span class="l-en">Price, or how far along the move is · big turns marked · tap a line to read one leg</span><span class="l-zh">看价格，或看这波走到哪一步了 · 大的拐点已经标出 · 点曲线可以看其中一段</span></span>
     </div>
     <section class="cyc-stage">
       <div class="cyc-hero">
@@ -1086,7 +1086,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   <section class="si-sec" id="si-movement">
     <div class="si-sec-h">
       <h2><span class="l-en">What&#39;s moving — the whole A-share market</span><span class="l-zh">正在轮动 — 全市场视角</span></h2>
-      <span class="si-sec-sub"><span class="l-en">The rotation map over 233 concept boards and 22 curated themes, plus leadership-handoff events. A heads-up layer — the Overview board stays the only calls.</span><span class="l-zh">覆盖 233 个概念板块与 22 个精选主题的轮动图，以及领导权交接事件。此为提示层 — 操作判断仅见「总览」中的研判。</span></span>
+      <span class="si-sec-sub"><span class="l-en">The rotation map over 233 concept boards and 22 curated themes, plus leadership-handoff events. A heads-up layer — the Overview board stays the only calls.</span><span class="l-zh">覆盖 233 个概念板块与 22 个精选主题的轮动图，以及领导权交接事件。这里只是提示 — 真正的操作判断只看“总览”。</span></span>
     </div>
   <!-- ── RC-R14: China Rotation Events rail ─────────────────────────────────────── -->
   <!-- Fetched from marketdata/rotation_events_china.json. Absent file = graceful note. -->
@@ -1124,7 +1124,7 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
        still printed once, on the caveat line under the cards. #}
     <p class="rc-sub-cn">{{ t(
       'When one theme tops out as a peer turns up off a low — and the pair confirms it. Context, not a buy list.',
-      '一个主题冲顶回落、同类主题自低位转强，且两者比值确认时记录。仅为背景，不是买入清单。') }}</p>
+      '一个主题冲顶回落、同类主题自低位转强，且两者比值确认时记录。仅供参考，不是买入清单。') }}</p>
     <div id="rc-events-cn-content"><p class="rc-quiet-cn">
       <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
 <script>
@@ -1269,8 +1269,8 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Filter by category. Click a basket to see members.",
-        '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。可按类别筛选。点击篮子查看成分。') }}</p>
+        "Every basket, sortable. Switch between plain return, return against the CSI 300, and how unusual the move is for that basket. Filter by category, or click one to see what is in it.",
+        '所有篮子都在这里，可以排序。可以在原始涨跌、相对沪深300、以及这波对它自己来说算不算反常之间切换。可以按类别筛选，点开就能看成分股。') }}</p>
       <div class="cat-filter-bar" id="tbl-cat-filter"></div>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
@@ -1280,8 +1280,8 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
-        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
+        'Every line starts at 0% so they can be compared directly. Use the legend to show or hide a basket.',
+        '所有曲线都从 0% 起画，方便直接比较。用图例可以显示或隐藏某个篮子。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-scope" role="group"></span>
         <span class="tabs" id="chart-modes" role="group"></span>
@@ -1354,7 +1354,10 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
       <h1>💫 {{ t('Subsector Confluence · China', '子行业汇聚 · 中国') }} <span style="color:var(--muted);font-size:14px;font-weight:600">同花顺概念</span></h1>
       <div class="asof" id="sc-asof"></div>
     </div>
-    <div class="sc-sub"><span class="l-en">Each 同花顺 (Tonghuashun) CONCEPT board as an equal-weight synthetic A-share index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated regime state machine (the rotation CONTEXT), benchmarked to CSI 300 (沪深300). <b>ENTRY-NOW</b> = a concept that just fired, or is about to. The <b>double-gate</b> funnels A-shares whose own cascade fires AND whose concept has a tailwind — and flags strong names whose concept is distributing. THS concepts overlap (a stock sits in many), so this is a thematic read, not a sector partition. A risk / rotation-timing map — one door, confirm before acting; not alpha.</span><span class="l-zh">将每个同花顺概念板块视作等权合成A股指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的状态机（轮动背景）解读，基准为沪深300。<b>现可入场</b>=刚触发或即将触发的概念。<b>双重闸门</b>筛出自身级联触发且所在概念顺风的A股，并标记所在概念正在派发的强势股。同花顺概念相互重叠（一只股属于多个概念），故为主题式解读而非行业划分。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。</span></div>
+    {# Copy rule (operator 2026-08-06): tiers may be NAMED, never explained. No indicator
+       names, no cross mechanics, no thresholds, no ranking formula. Kept byte-identical
+       to the standalone page's blurb in subsectors_china.html.j2. #}
+    <div class="sc-sub"><span class="l-en">Every 同花顺 concept read as one basket, measured against the CSI 300. <b>Entry-now</b> means a buy signal just fired, or is about to. Below that: A-shares that are a buy on their own <i>and</i> sit in a concept that is working. One stock can sit in several concepts, so read this as themes rather than sectors — and confirm before you act.</span><span class="l-zh">把每个同花顺概念当成一个篮子来看，对标沪深300。<b>现可入场</b>指买入信号刚出现、或者马上就要出现。下面是本身就是买点、所在概念也在走强的A股。一只股票可以同时属于好几个概念，所以这里看的是题材，不是行业划分——动手前请自己再确认一遍。</span></div>
 
     <div id="sc-app"><div class="empty"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></div></div>
 
@@ -1364,7 +1367,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
   <footer>
     <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the validated credit/vol/margin regime and the
       pathway conditional odds lead and gate; momentum, flow and crowding are capped context. Forward odds are conditional probabilities with confidence
-      intervals, not forecasts. The grader measures realized accuracy as it accrues.</span><span class="l-zh">只读分析 — 非投资建议。信念为门控共振研判：经验证的信用/波动率/融资体制与路径条件概率主导并门控；
+      intervals, not forecasts. The grader measures realized accuracy as it accrues.</span><span class="l-zh">只读分析 — 不构成投资建议。信念读数由信用、波动率和融资环境，以及走势的条件概率共同决定；
       动量、资金流与拥挤度为受限背景。前瞻概率为带置信区间的条件概率，而非预测。评分器随数据累积衡量已实现准确度。</span>
   </footer>
   {# The page footer rides INSIDE the stage on purpose. The rail is sticky within
@@ -1415,7 +1418,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
   var STATEDESK_ZH={'BOTTOM WATCH':'筑底观察','DECLINE':'下行','RALLY ON':'上行','ROLLING OVER':'回落',
                     'Washed out':'超跌','Beaten down':'超跌','Euphoric':'过热','Overheated':'过热','Recovering':'复苏'};
   // reasoning layers are emitted Title-case multi-word
-  var LAYER_ZH={'Cycle state':'周期状态','Forward odds':'前瞻概率','Regime gate':'体制门控','Momentum':'动量','Fragility':'脆弱度','Crowding':'拥挤度','Flow':'资金流','Heat':'热度','Trend':'趋势'};
+  var LAYER_ZH={'Cycle state':'周期状态','Forward odds':'前瞻概率','Regime gate':'市况把关','Momentum':'动量','Fragility':'脆弱度','Crowding':'拥挤度','Flow':'资金流','Heat':'热度','Trend':'趋势'};
 
   /* ---- regime banner ---- */
   function regimeBanner(){
@@ -1448,7 +1451,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
       var staleDesc = staleList.map(function(k){ return esc(k)+'('+ls[k]+'d)'; }).join(', ');
       staleHtml = '<div class="rg-stale-notice"><span class="rg-stale-ic">⛔</span><span>' +
         L('Stale regime input detected: ' + staleDesc + '. A frozen upstream collector may be silently pinning the gate. Check the collector logs.',
-          '检测到陈旧体制输入：' + esc(staleDesc) + '。上游收集器可能已停止更新，导致门控被固定。请检查收集器日志。') +
+          '市况数据已经陈旧：' + esc(staleDesc) + '。上游采集可能已经停更，导致判断被卡住。请检查采集日志。') +
         '</span></div>';
     }
 
@@ -1587,6 +1590,10 @@ const sigChipHtml = (tier, fresh) => {
 const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
 const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
 const bth = b => (LANG()==='zh' && b && b.thesis_zh) ? b.thesis_zh : (b?b.thesis:'');
+// member blurb (成分 table 说明 column): zh mode shows the curated Chinese ONLY — never the
+// English alongside it (operator 2026-08-04). Falls back to English when a member has no
+// rationale_zh so the column is never blank.
+const mrat = m => (LANG()==='zh' && m && m.rationale_zh) ? m.rationale_zh : (m ? (m.rationale||'') : '');
 const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'沪深300') : (BASKETS.benchmark_label||'CSI 300');
 const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
 const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
@@ -1937,7 +1944,7 @@ function memRows(b){
   });
   return members.map(m=>`<tr>
     <td><a href="china_lookup.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span>${sigChipHtml(m.sig_tier, m.sig_fresh)}</td>
-    <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
+    <td class="why">${esc(mrat(m))}</td><td class="num muted sm">${esc(m.added)}</td>
     <td class="num ${cls(m.ret_5d)}">${fmtPct(m.ret_5d)}</td>
     <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join('');
 }
@@ -1997,19 +2004,19 @@ function renderEntryRadar(){
   // Count members with sig_tier in each basket.
   const sigCount = b => (b.members||[]).filter(m=>m.sig_tier!=null).length;
   const title=zh?'入场雷达':'Entry Radar';
-  const subEn='Baskets in the washout-to-confirmed lifecycle. Ranked by lifecycle stage then score. Entry aids, not proof.';
-  const subZh='处于超跌到确认生命周期中的篮子。按生命周期阶段再按得分排序。仅为入场辅助，非证明。';
+  const subEn='Baskets that have sold off hard and are starting to turn. The earliest ones come first. A place to look, not a reason to buy.';
+  const subZh='已经跌透、正在转向的篮子。越早期的排在越前面。这是让你留意的地方，不是买入的理由。';
   if(!candidates.length){
     host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}</div>
       <div class="er-empty">${zh?'目前无满足条件的篮子 — 大多数时候确实如此。':'None right now — most days none.'}</div>
-      <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明。':'Lifecycle from the washout state machine; entry aids, not proof.'}</div></div>`;
+      <div class="er-note">${zh?'这是让你留意的地方，不是买入的理由。':'A place to look, not a reason to buy.'}</div></div>`;
     return;
   }
   const items=candidates.map(b=>{
     const sc=sigCount(b);
-    const scNote=sc>0?` · <span class="muted">${sc} ${zh?'只成分有信号':`member${sc>1?'s':''} gated`}</span>`:'';
+    const scNote=sc>0?` · <span class="muted">${sc} ${zh?'只成分有信号':`member${sc>1?'s':''} flagged`}</span>`:'';
     const recoWord=zh?(b.reco_zh||b.reco||''):(b.reco||'');
-    const ceChip=(b.clean_entry_q!=null&&b.clean_entry_q>=0.7)?`<span class="chip" data-tip="${zh?'清洁入场读数（0-1）— 回调结构质量':'clean-entry reading (0-1) — pullback structure quality'}">${zh?'清洁入场':'clean entry'} ${b.clean_entry_q.toFixed(1)}</span>`:'';
+    const ceChip=(b.clean_entry_q!=null&&b.clean_entry_q>=0.7)?`<span class="chip" data-tip="${zh?'回调走得干不干净':'how clean the pullback looks'}">${zh?'清洁入场':'clean entry'} ${b.clean_entry_q.toFixed(1)}</span>`:'';
     return `<div class="er-item">
       <a class="blink" href="${esc(detailHref(b))}" data-nav="detail">${esc(bn(b))}</a>
       ${turnChipHtml(b.turn_state)}${scoreBadgeHtml(b.score)}${ceChip}${scNote}
@@ -2019,7 +2026,7 @@ function renderEntryRadar(){
   host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}<span class="chip">${candidates.length}</span></div>
     <div class="er-sub">${zh?subZh:subEn}</div>
     <div class="er-items">${items}</div>
-    <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明（显示层，无验证前瞻优势）。':'Lifecycle from the washout state machine; entry aids, not proof (display-tier, no validated forward edge).'}</div>
+    <div class="er-note">${zh?'这是让你留意的地方，不是买入的理由——这个读数目前还没有历史成绩支撑。':'A place to look, not a reason to buy — this read has no track record behind it yet.'}</div>
   </div>`;
 }
 

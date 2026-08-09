@@ -915,3 +915,224 @@ class TestVelocityRead:
         read, band = _velocity_read(-15.0)
         assert read == "decelerating"
         assert band == "moderate"
+
+
+# ---------------------------------------------------------------------------
+# BioCatalyst point-in-time plane seam (Move 2)
+#
+# This engine's CI lane installs pandas but not jsonschema, so the tests that
+# need a real contract-checked rollup document skip rather than pretend. The
+# tests pinning the DEFAULT behaviour — legacy plane, honest zero disclosure,
+# unchanged authority — need no extra dependency and always run.
+# ---------------------------------------------------------------------------
+
+class TestPitPlaneSeam:
+
+    def _legacy_frame(self, n: int = 6):
+        from collectors.clinicaltrials_themes import STORE_COLS
+
+        rows = [
+            {
+                "modality_id": "glp1_named_agents",
+                "theme_id": "glp1_obesity",
+                "nct_id": f"NCT9000000{index}",
+                "study_first_post_date": f"2025-0{index + 1}-05",
+                "year_month": f"2025-0{index + 1}",
+                "phases_raw": "PHASE2",
+                "phase1": False,
+                "phase2": True,
+                "phase3": False,
+                "enrollment_target": 120,
+                "sponsor_class": "INDUSTRY",
+                "ingest_date": "2026-08-01",
+                "vocabulary_version": "v1",
+            }
+            for index in range(n)
+        ]
+        return pd.DataFrame(rows, columns=STORE_COLS)
+
+    def _rollup_document(self, root: Path) -> dict:
+        """Build one contract-checked rollup; skip where jsonschema is absent."""
+        pytest.importorskip("jsonschema")
+        from engine.biocatalyst.theme_rollup_pit import (
+            BINDING_REVIEW_STATE,
+            build_theme_rollup_pit,
+            load_modality_theme_map,
+        )
+        from engine.biocatalyst.trials import build_trial_snapshot
+        from engine.sector_intelligence import canonical_json_sha256, validate_contract
+
+        fixture = (
+            root / "data" / "biocatalyst" / "fixtures" / "clinicaltrials"
+            / "trial_source_snapshot.after.v1.valid.json"
+        )
+        source = json.loads(fixture.read_text(encoding="utf-8"))
+        protocol = source["canonical_study"]["protocolSection"]
+        protocol["designModule"]["phases"] = ["PHASE2"]
+        protocol["sponsorCollaboratorsModule"] = {
+            "leadSponsor": {"name": "Northstar Biopharma", "class": "INDUSTRY"}
+        }
+        digest = canonical_json_sha256(source["canonical_study"])
+        nct_id = source["nct_id"]
+        source["canonical_content_sha256"] = digest
+        source["source_record_ref"] = f"src:ctgov:{nct_id}:sha256:{digest}"
+        source["raw_object_key"] = (
+            f"biocatalyst/raw/clinicaltrials/v2/{nct_id}/{digest}.json"
+        )
+        validate_contract(source, repo_root=root)
+        snapshot = build_trial_snapshot(source)
+
+        modality_theme, _ = load_modality_theme_map(root)
+        return build_theme_rollup_pit(
+            [snapshot],
+            membership_bindings=[
+                {
+                    "nct_id": snapshot["nct_id"],
+                    "modality_id": "glp1_named_agents",
+                    "study_first_post_date": "2025-02-11",
+                    "source_record_ref": snapshot["source_record_ref"],
+                    "binding_review_state": BINDING_REVIEW_STATE,
+                }
+            ],
+            as_of="2026-08-07T00:00:00Z",
+            legacy_modality_counts={mid: 0 for mid in modality_theme},
+            repo_root=root,
+        )
+
+    def test_default_plane_is_legacy_and_the_zero_share_is_printed(self, tmp_path):
+        from engine import theme_clinical as tc
+
+        with (
+            mock.patch.object(tc, "_load_parquet", return_value=self._legacy_frame()),
+            mock.patch.object(tc, "_DEFAULT_PIT_ROLLUP", tmp_path / "absent.json"),
+        ):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        coverage = result["pit_coverage"]
+        assert coverage["rollup_plane_mode"] == "legacy"
+        assert coverage["pit_plane_available"] is False
+        assert coverage["pit_rows_consumed"] == 0
+        theme = coverage["themes"]["glp1_obesity"]
+        assert theme["n_studies_pit"] == 0
+        assert theme["n_studies_legacy"] == 6
+        assert theme["pit_backed_fraction"] == 0.0
+        assert theme["provenance"] == "legacy_theme_store"
+        assert result["themes"]["glp1_obesity"]["provenance"] == "legacy_theme_store"
+
+    def test_honest_null_path_is_unchanged_and_still_discloses(self, tmp_path):
+        from engine import theme_clinical as tc
+
+        with (
+            mock.patch.object(tc, "_load_parquet", return_value=None),
+            mock.patch.object(tc, "_DEFAULT_PIT_ROLLUP", tmp_path / "absent.json"),
+        ):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        assert result["coverage_stats"]["parquet_absent"] is True
+        assert result["coverage_stats"]["total_studies_stored"] == 0
+        for theme in result["themes"].values():
+            assert theme["n_modalities_with_data"] == 0
+            assert theme["n_studies_pit"] == 0
+            assert theme["provenance"] == "none"
+        assert result["pit_coverage"]["pit_plane_available"] is False
+
+    def test_unknown_plane_mode_degrades_to_legacy(self, tmp_path, monkeypatch):
+        from engine import theme_clinical as tc
+
+        monkeypatch.setenv("THEME_CLINICAL_ROLLUP_PLANE", "promote_everything")
+        with (
+            mock.patch.object(tc, "_load_parquet", return_value=self._legacy_frame()),
+            mock.patch.object(tc, "_DEFAULT_PIT_ROLLUP", tmp_path / "absent.json"),
+        ):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        assert result["pit_coverage"]["rollup_plane_mode"] == "legacy"
+
+    def test_site_projection_carries_the_disclosure(self, tmp_path):
+        from engine import theme_clinical as tc
+
+        site_out = tmp_path / "clinical_pipeline.json"
+        with (
+            mock.patch.object(tc, "_load_parquet", return_value=self._legacy_frame()),
+            mock.patch.object(tc, "_DEFAULT_PIT_ROLLUP", tmp_path / "absent.json"),
+            mock.patch.object(tc, "_NW_OUT", tmp_path / "nw.json"),
+            mock.patch.object(tc, "_SITE_OUT", site_out),
+        ):
+            tc.compute_theme_clinical(write_nw=True, write_site=True)
+
+        site = json.loads(site_out.read_text(encoding="utf-8"))
+        theme = site["pit_coverage"]["themes"]["glp1_obesity"]
+        assert theme["pit_backed_fraction"] == 0.0
+        assert site["pit_coverage"]["disclosure"]
+        assert site["pit_coverage"]["disclosure_zh"]
+        assert site["themes"]["glp1_obesity"]["provenance"] == "legacy_theme_store"
+
+    def test_pit_adapter_column_shape_matches_the_legacy_store_exactly(self):
+        pytest.importorskip("jsonschema")
+        from collectors.clinicaltrials_themes import STORE_COLS
+        from engine.biocatalyst.theme_rollup_pit import STORE_COLUMNS
+
+        # The whole point of the seam: the point-in-time adapter emits the same
+        # columns this engine already reads, so the swap is configuration.
+        assert tuple(STORE_COLS) == STORE_COLUMNS
+
+    def test_authority_block_is_untouched_by_this_seam(self):
+        from engine.theme_clinical import AUTHORITY
+
+        assert AUTHORITY["is_context_only"] is True
+        assert AUTHORITY["may_rank"] is False
+        assert AUTHORITY["may_gate"] is False
+        assert AUTHORITY["may_size"] is False
+        assert AUTHORITY["may_escalate"] is False
+        assert AUTHORITY["fused_obs_z_fence"] == (
+            "SEPARATE_DISPLAY_LEG — never fold into fused_obs_z"
+        )
+
+    def test_pit_union_consumes_the_plane_and_labels_the_values(
+        self, tmp_path, monkeypatch
+    ):
+        from engine import theme_clinical as tc
+
+        root = Path(__file__).resolve().parent.parent
+        document = self._rollup_document(root)
+        rollup_path = tmp_path / "theme_rollup_pit.json"
+        rollup_path.write_text(json.dumps(document), encoding="utf-8")
+
+        monkeypatch.setenv("THEME_CLINICAL_PIT_ROLLUP", str(rollup_path))
+        monkeypatch.setenv("THEME_CLINICAL_ROLLUP_PLANE", "pit_union")
+        with mock.patch.object(tc, "_load_parquet", return_value=self._legacy_frame()):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        coverage = result["pit_coverage"]
+        assert coverage["rollup_plane_mode"] == "pit_union"
+        assert coverage["pit_plane_available"] is True
+        assert coverage["pit_rollup_id"] == document["rollup_id"]
+        assert coverage["pit_rows_consumed"] == 1
+        theme = coverage["themes"]["glp1_obesity"]
+        assert theme["n_studies_pit"] == 1
+        assert theme["n_studies_legacy"] == 6
+        assert theme["pit_backed_fraction"] == 142857 / 1_000_000
+        assert theme["provenance"] == "mixed"
+        modality = result["themes"]["glp1_obesity"]["modalities"]["glp1_named_agents"]
+        assert modality["n_studies_pit"] == 1
+        assert modality["provenance"] == "mixed"
+
+    def test_a_plane_that_fails_its_contract_falls_back_to_legacy(
+        self, tmp_path, monkeypatch
+    ):
+        from engine import theme_clinical as tc
+
+        root = Path(__file__).resolve().parent.parent
+        document = json.loads(json.dumps(self._rollup_document(root)))
+        document["rows"][0]["knowledge_cutoff"] = "2026-12-31T00:00:00Z"
+        rollup_path = tmp_path / "tampered.json"
+        rollup_path.write_text(json.dumps(document), encoding="utf-8")
+
+        monkeypatch.setenv("THEME_CLINICAL_PIT_ROLLUP", str(rollup_path))
+        monkeypatch.setenv("THEME_CLINICAL_ROLLUP_PLANE", "pit_union")
+        with mock.patch.object(tc, "_load_parquet", return_value=self._legacy_frame()):
+            result = tc.compute_theme_clinical(write_nw=False, write_site=False)
+
+        assert result["pit_coverage"]["pit_plane_available"] is False
+        assert result["pit_coverage"]["pit_rows_consumed"] == 0
+        assert result["themes"]["glp1_obesity"]["n_studies_total"] == 6
