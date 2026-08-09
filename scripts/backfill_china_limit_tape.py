@@ -46,11 +46,13 @@ import os
 import subprocess
 import sys
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyarrow
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -63,13 +65,20 @@ OUT_DIR     = ROOT / "data" / "china_microstructure"
 TAPE_PATH   = OUT_DIR / "limit_tape.parquet"
 EVENTS_PATH = OUT_DIR / "limit_events.parquet"
 MANIFEST_PATH = OUT_DIR / "completeness_manifest.json"
-MANIFEST_SCHEMA_VERSION = "china_microstructure.completeness.v1"
-REBUILD_IMPLEMENTATION_VERSION = "full-rebuild-v2"
+MANIFEST_SCHEMA_VERSION = "china_microstructure.completeness.v2"
+REBUILD_IMPLEMENTATION_VERSION = "full-rebuild-v3"
+PINNED_PYTHON = "/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ORIGINAL_RAW_UNIVERSE_COUNT = 1_587
 REFERENCE_TICKER = "600519.SS"
 ORIGINAL_UNIVERSE_GIT_REF = "aa3a75128f49a0a3725ecdfa56902295ca648a70"
 PRE_REBUILD_COMPARISON_REF = "e1fea822972e359a73dedfa34b6c4e03a192b255"
+REGISTRATION_ONLY_COMPARISON_REF = "8979887ec7dd63f610efcaa4e5f491ef1c827ca8"
 GAP_CENSUS_CUTOFF = pd.Timestamp("2026-06-30")
+MARKET_CLOCK_SUPPORT_MIN = 50
+MARKET_CLOCK_PIN_MAX_DATE = pd.Timestamp("2026-08-07")
+MARKET_CLOCK_PIN_SESSION_COUNT = 3_786
+MARKET_CLOCK_PIN_DATE = pd.Timestamp("2014-12-25")
+MARKET_CLOCK_PIN_DATE_SUPPORT = 894
 
 
 def _sha256_file(path: Path) -> str:
@@ -107,6 +116,197 @@ def raw_universe_inventory(
     return files, inventory
 
 
+def _observed_market_session_clock(
+    raw_files: list[Path],
+    *,
+    floor: pd.Timestamp,
+) -> tuple[dict[pd.Timestamp, int], dict[str, Any]]:
+    """Build a consensus calendar and validate it against an unfiltered reference index."""
+    support: Counter[pd.Timestamp] = Counter()
+    contributing_files = 0
+    for path in raw_files:
+        try:
+            volume_frame = pd.read_parquet(path, columns=["volume"])
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                f"market-session clock incomplete: cannot read {path.name}: {exc}"
+            ) from exc
+        index = pd.DatetimeIndex(pd.to_datetime(volume_frame.index, errors="coerce"))
+        volume = pd.to_numeric(volume_frame["volume"], errors="coerce").to_numpy()
+        eligible = [
+            pd.Timestamp(ts).normalize()
+            for ts, value in zip(index, volume, strict=True)
+            if not pd.isna(ts)
+            and pd.Timestamp(ts).normalize() >= floor
+            and pd.notna(value)
+            and float(value) > 0
+        ]
+        if eligible:
+            contributing_files += 1
+            support.update(set(eligible))
+
+    consensus_dates = {
+        date for date, count in support.items() if count >= MARKET_CLOCK_SUPPORT_MIN
+    }
+    reference_path = RAW_DIR / f"{REFERENCE_TICKER}.parquet"
+    try:
+        reference = pd.read_parquet(reference_path, columns=["volume"])
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(
+            f"market-session clock reference unreadable: {reference_path.name}: {exc}"
+        ) from exc
+    reference_index = pd.DatetimeIndex(pd.to_datetime(reference.index, errors="coerce"))
+    reference_dates = {
+        pd.Timestamp(ts).normalize()
+        for ts in reference_index
+        if not pd.isna(ts) and pd.Timestamp(ts).normalize() >= floor
+    }
+    if consensus_dates != reference_dates:
+        consensus_only = sorted(consensus_dates - reference_dates)
+        reference_only = sorted(reference_dates - consensus_dates)
+        raise RuntimeError(
+            "market-session clock consensus/reference mismatch: "
+            f"consensus_only={len(consensus_only)} {consensus_only[:10]!r}; "
+            f"reference_only={len(reference_only)} {reference_only[:10]!r}"
+        )
+
+    ordered = sorted(consensus_dates)
+    current_pin_applies = bool(ordered and ordered[-1] == MARKET_CLOCK_PIN_MAX_DATE)
+    pin_support = int(support[MARKET_CLOCK_PIN_DATE])
+    if current_pin_applies and (
+        len(ordered) != MARKET_CLOCK_PIN_SESSION_COUNT
+        or pin_support != MARKET_CLOCK_PIN_DATE_SUPPORT
+    ):
+        raise RuntimeError(
+            "market-session clock current-generation pin drift: "
+            f"sessions={len(ordered)} expected={MARKET_CLOCK_PIN_SESSION_COUNT}; "
+            f"{MARKET_CLOCK_PIN_DATE.date()} support={pin_support} "
+            f"expected={MARKET_CLOCK_PIN_DATE_SUPPORT}"
+        )
+    payload = "".join(f"{date.strftime('%Y-%m-%d')}\n" for date in ordered).encode("utf-8")
+    positions = {date: position for position, date in enumerate(ordered)}
+    receipt = {
+        "method": (
+            "dates_with_at_least_50_positive_volume_names_validated_equal_to_"
+            "unfiltered_600519.SS_index"
+        ),
+        "floor": floor.strftime("%Y-%m-%d"),
+        "sessions": len(ordered),
+        "min_date": ordered[0].strftime("%Y-%m-%d") if ordered else None,
+        "max_date": ordered[-1].strftime("%Y-%m-%d") if ordered else None,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "files_scanned": len(raw_files),
+        "files_contributing": contributing_files,
+        "support_minimum_names": MARKET_CLOCK_SUPPORT_MIN,
+        "reference_ticker": REFERENCE_TICKER,
+        "reference_volume_filter_applied": False,
+        "consensus_reference_exact_set_match": True,
+        "generation_pin": {
+            "applied": current_pin_applies,
+            "max_date": MARKET_CLOCK_PIN_MAX_DATE.strftime("%Y-%m-%d"),
+            "sessions": MARKET_CLOCK_PIN_SESSION_COUNT,
+            "support_date": MARKET_CLOCK_PIN_DATE.strftime("%Y-%m-%d"),
+            "support_names": pin_support,
+            "expected_support_names": MARKET_CLOCK_PIN_DATE_SUPPORT,
+        },
+        "lianban_requires_adjacent_clock_positions": True,
+        "missing_or_unattested_clock_behavior": "fail_closed_reset_streak",
+    }
+    return positions, receipt
+
+
+def _lianban_session_clock_audit(
+    events: pd.DataFrame,
+    market_session_positions: dict[pd.Timestamp, int],
+) -> dict[str, Any]:
+    """Recompute every sealed-up streak from event dates and the market clock."""
+    sealed = events.loc[events["event"].eq("sealed_up")].copy()
+    if sealed.empty:
+        return {
+            "sealed_up_rows": 0,
+            "reported_lianban_2plus": 0,
+            "recomputed_lianban_2plus": 0,
+            "attribute_mismatches": 0,
+            "false_gap_bridges": 0,
+            "mismatch_examples": [],
+        }
+    sealed["date"] = pd.to_datetime(sealed["date"]).dt.normalize()
+    sealed = sealed.sort_values(["ticker", "date"])
+    mismatches: list[dict[str, Any]] = []
+    mismatch_count = 0
+    recomputed_2plus = 0
+    false_gap_bridges = 0
+    for ticker, rows in sealed.groupby("ticker", sort=False):
+        previous_date: pd.Timestamp | None = None
+        streak = 0
+        for row in rows.itertuples(index=False):
+            trade_date = pd.Timestamp(row.date).normalize()
+            previous_position = market_session_positions.get(previous_date)
+            current_position = market_session_positions.get(trade_date)
+            adjacent = (
+                previous_position is not None
+                and current_position is not None
+                and current_position == previous_position + 1
+            )
+            streak = streak + 1 if adjacent else 1
+            reported = int(row.lianban_count)
+            if streak >= 2:
+                recomputed_2plus += 1
+            if reported != streak:
+                mismatch_count += 1
+                if reported >= 2 and streak == 1:
+                    false_gap_bridges += 1
+                if len(mismatches) < 25:
+                    mismatches.append({
+                        "ticker": str(ticker),
+                        "date": trade_date.strftime("%Y-%m-%d"),
+                        "previous_sealed_up_date": (
+                            previous_date.strftime("%Y-%m-%d")
+                            if previous_date is not None
+                            else None
+                        ),
+                        "reported": reported,
+                        "recomputed": streak,
+                    })
+            previous_date = trade_date
+    return {
+        "sealed_up_rows": len(sealed),
+        "reported_lianban_2plus": int(sealed["lianban_count"].ge(2).sum()),
+        "recomputed_lianban_2plus": recomputed_2plus,
+        "attribute_mismatches": mismatch_count,
+        "false_gap_bridges": false_gap_bridges,
+        "mismatch_examples": mismatches,
+    }
+
+
+def _build_identity_payload(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Return the canonical provenance payload bound by ``build_identity``."""
+    return {
+        "schema_version": manifest["schema_version"],
+        "implementation_version": manifest["implementation_version"],
+        "producer_sources": manifest["producer"]["source_sha256"],
+        "raw_universe": manifest["raw_universe"],
+        "rule_era": manifest["rule_era"],
+        "market_session_clock": manifest["market_session_clock"],
+        "st_membership": manifest["st_membership"],
+        "prior_vs_rebuilt_reconciliation": manifest["prior_vs_rebuilt_reconciliation"],
+        "rule_fix_vs_registration_only_generation": manifest[
+            "rule_fix_vs_registration_only_generation"
+        ],
+        "artifacts": manifest["artifacts"],
+    }
+
+
+def _build_identity_value(manifest: dict[str, Any]) -> str:
+    canonical = json.dumps(
+        _build_identity_payload(manifest),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def validate_completeness_manifest(
     manifest_path: Path = MANIFEST_PATH,
     raw_dir: Path = RAW_DIR,
@@ -128,9 +328,9 @@ def validate_completeness_manifest(
     if manifest.get("complete") is not True:
         defects.append("manifest does not attest complete=true")
 
-    _, current = raw_universe_inventory(raw_dir)
+    _, current = raw_universe_inventory(raw_dir, include_content_hash=True)
     recorded = manifest.get("raw_universe", {})
-    for key in ("file_count", "membership_sha256"):
+    for key in ("file_count", "membership_sha256", "content_sha256"):
         if recorded.get(key) != current[key]:
             defects.append(
                 f"raw universe {key} drift: manifest={recorded.get(key)!r} "
@@ -141,6 +341,47 @@ def validate_completeness_manifest(
         defects.append("manifest reports unreadable raw files")
     if scan.get("files_scanned") != recorded.get("file_count"):
         defects.append("manifest scanned-file count does not cover the recorded universe")
+
+    manifest_root = ROOT if manifest_path.resolve() == MANIFEST_PATH.resolve() else manifest_path.parent
+    artifacts = manifest.get("artifacts", {})
+    for name in ("limit_events", "limit_tape"):
+        receipt = artifacts.get(name, {})
+        receipt_path = receipt.get("path")
+        expected = receipt.get("sha256")
+        if not receipt_path or not expected:
+            defects.append(f"manifest artifact receipt missing: {name}")
+            continue
+        path = Path(receipt_path)
+        if not path.is_absolute():
+            path = manifest_root / path
+        if not path.exists():
+            defects.append(f"manifest artifact missing: {path}")
+        elif _sha256_file(path) != expected:
+            defects.append(f"manifest artifact sha256 drift: {name}")
+
+    producer_sources = manifest.get("producer", {}).get("source_sha256", {})
+    for relative_path, expected in producer_sources.items():
+        path = Path(relative_path)
+        if not path.is_absolute():
+            path = manifest_root / path
+        if not path.exists():
+            defects.append(f"manifest producer source missing: {relative_path}")
+        elif _sha256_file(path) != expected:
+            defects.append(f"manifest producer source sha256 drift: {relative_path}")
+    if not producer_sources:
+        defects.append("manifest producer source hashes missing")
+
+    identity = manifest.get("build_identity", {})
+    if not identity.get("value"):
+        defects.append("manifest build identity missing")
+    else:
+        try:
+            actual_identity = _build_identity_value(manifest)
+        except (KeyError, TypeError, ValueError) as exc:
+            defects.append(f"manifest build identity inputs incomplete: {exc}")
+        else:
+            if identity["value"] != actual_identity:
+                defects.append("manifest build identity drift")
     return defects
 
 
@@ -304,10 +545,16 @@ def _event_reconciliation_receipt(
     raw_delta_added = added[added["ticker"].isin(raw_delta_tickers)]
     raw_delta_removed = removed[removed["ticker"].isin(raw_delta_tickers)]
 
-    # Main-board registration-era IPOs have no daily price limit for their first five sessions.
-    # The earlier detector treated those rows as ordinary ±10% sessions.  Resolve the removed
-    # keys from each ticker's immutable raw listing-relative index instead of hard-coding names.
-    from engine.china_microstructure import MAIN_REGISTRATION_IPO_DATE
+    # Derive rule-heal reasons from the immutable positive-volume listing clock rather than a
+    # hard-coded ticker census. This keeps the receipt independently recomputable as raw files grow.
+    from engine.china_microstructure import (
+        CHINEXT_STAR_IPO_WINDOW,
+        CHINEXT_WIDE_DATE,
+        LIMIT_TAPE_START_DATE,
+        _infer_listing_date,
+        _ipo_no_limit_dates,
+        _positive_volume_rows,
+    )
 
     registration_ipo_keys: set[tuple[Any, ...]] = set()
     for ticker in sorted(set(removed["ticker"].astype(str))):
@@ -316,11 +563,11 @@ def _event_reconciliation_receipt(
         raw_path = RAW_DIR / f"{ticker}.parquet"
         if not raw_path.exists():
             continue
-        raw_index = pd.to_datetime(pd.read_parquet(raw_path, columns=["close"]).index)
-        raw_index = raw_index[~raw_index.isna()].sort_values().unique()
-        if len(raw_index) == 0 or pd.Timestamp(raw_index[0]) < MAIN_REGISTRATION_IPO_DATE:
-            continue
-        no_limit_dates = {pd.Timestamp(ts) for ts in raw_index[:5]}
+        raw = pd.read_parquet(raw_path, columns=["close", "volume"])
+        traded = _positive_volume_rows(raw)
+        no_limit_dates = set(
+            _ipo_no_limit_dates(traded, "main", _infer_listing_date(raw))
+        )
         ticker_rows = removed[
             (removed["ticker"] == ticker) & removed["date"].isin(no_limit_dates)
         ]
@@ -331,23 +578,232 @@ def _event_reconciliation_receipt(
         removed[keys].apply(tuple, axis=1).isin(registration_ipo_keys)
     ]
 
+    pre_reform_chinext_keys: set[tuple[Any, ...]] = set()
+    for ticker in sorted(set(added["ticker"].astype(str))):
+        if _board_from_ticker(ticker) != "chinext":
+            continue
+        raw_path = RAW_DIR / f"{ticker}.parquet"
+        if not raw_path.exists():
+            continue
+        raw = pd.read_parquet(raw_path, columns=["close", "volume"])
+        traded = _positive_volume_rows(raw)
+        listing_date = _infer_listing_date(raw)
+        if listing_date is None or listing_date >= CHINEXT_WIDE_DATE:
+            continue
+        legacy_false_window = {
+            pd.Timestamp(ts).normalize() for ts in traded.index[:CHINEXT_STAR_IPO_WINDOW]
+        }
+        ticker_rows = added[
+            (added["ticker"] == ticker) & added["date"].isin(legacy_false_window)
+        ]
+        pre_reform_chinext_keys.update(
+            map(tuple, ticker_rows[keys].itertuples(index=False, name=None))
+        )
+    pre_reform_chinext_restored = added[
+        added[keys].apply(tuple, axis=1).isin(pre_reform_chinext_keys)
+    ]
+    pre_reform_chinext_original = pre_reform_chinext_restored[
+        ~pre_reform_chinext_restored["ticker"].isin(later_tickers)
+    ]
+
+    volume_affected_dates: dict[str, set[pd.Timestamp]] = {}
+    floor_context_date: dict[str, pd.Timestamp] = {}
+    changed_tickers = set(added["ticker"].astype(str)) | set(removed["ticker"].astype(str))
+    for ticker in sorted(changed_tickers):
+        raw_path = RAW_DIR / f"{ticker}.parquet"
+        if not raw_path.exists():
+            continue
+        raw = pd.read_parquet(raw_path, columns=["volume"])
+        raw.index = pd.to_datetime(raw.index)
+        raw = raw[~raw.index.isna()].sort_index()
+        normalised_index = raw.index.normalize()
+        volume = pd.to_numeric(raw["volume"], errors="coerce")
+        positive = volume.gt(0)
+        affected = set(normalised_index[~positive])
+        seen_positive = False
+        gap_since_positive = False
+        for trade_date, is_positive in zip(normalised_index, positive, strict=True):
+            if not is_positive:
+                if seen_positive:
+                    gap_since_positive = True
+                continue
+            if gap_since_positive:
+                affected.add(pd.Timestamp(trade_date))
+            seen_positive = True
+            gap_since_positive = False
+        volume_affected_dates[ticker] = affected
+
+        positive_dates = normalised_index[positive]
+        eligible = positive_dates[positive_dates >= LIMIT_TAPE_START_DATE]
+        if len(eligible) and (positive_dates < eligible[0]).any():
+            floor_context_date[ticker] = pd.Timestamp(eligible[0])
+
+    def _rows_on_context_dates(
+        frame: pd.DataFrame,
+        date_map: dict[str, set[pd.Timestamp]],
+    ) -> pd.DataFrame:
+        mask = [
+            row.date in date_map.get(str(row.ticker), set())
+            for row in frame[["date", "ticker"]].itertuples(index=False)
+        ]
+        return frame[pd.Series(mask, index=frame.index)]
+
+    volume_eligibility_added = _rows_on_context_dates(added, volume_affected_dates)
+    volume_eligibility_removed = _rows_on_context_dates(removed, volume_affected_dates)
+    floor_context_restored = added[
+        [
+            row.date == floor_context_date.get(str(row.ticker))
+            for row in added[["date", "ticker"]].itertuples(index=False)
+        ]
+    ]
+
+    def _key_set(frame: pd.DataFrame) -> set[tuple[Any, ...]]:
+        return set(map(tuple, frame[keys].itertuples(index=False, name=None)))
+
+    pre_reform_keys = _key_set(pre_reform_chinext_restored)
+    floor_keys = _key_set(floor_context_restored)
+    floor_pre_reform_overlap_keys = floor_keys & pre_reform_keys
+    floor_broad_gap_overlap_keys = floor_keys & broad_gap_keys
+    floor_context_terminal_keys = floor_keys - pre_reform_keys - broad_gap_keys
+    floor_context_terminal = floor_context_restored[
+        floor_context_restored[keys].apply(tuple, axis=1).isin(
+            floor_context_terminal_keys
+        )
+    ]
+    base_added_reason_keys = _key_set(classifier_added) | _key_set(raw_delta_added)
+    base_removed_reason_keys = (
+        _key_set(classifier_removed)
+        | _key_set(raw_delta_removed)
+        | _key_set(registration_ipo_removed)
+    )
+    positive_volume_original_added = volume_eligibility_added[
+        ~volume_eligibility_added["ticker"].isin(later_tickers)
+        & ~volume_eligibility_added[keys].apply(tuple, axis=1).isin(
+            pre_reform_keys | floor_keys | base_added_reason_keys
+        )
+    ]
+    positive_volume_original_removed = volume_eligibility_removed[
+        ~volume_eligibility_removed["ticker"].isin(later_tickers)
+        & ~volume_eligibility_removed[keys].apply(tuple, axis=1).isin(
+            base_removed_reason_keys
+        )
+    ]
+
+    # Reasons are descriptive and can legitimately overlap. In this generation, one 300806.SZ
+    # event is both a raw-refresh addition and a pre-reform ChiNext restoration; three floor-date
+    # events are already present in the broad-gap baseline. Preserve every raw receipt, but assign
+    # each key to one arithmetic reason in deterministic precedence order so the terminal ledger
+    # is a set union, not a sum of overlapping narratives.
+    added_reason_frames = {
+        "later_file_events_after_2026_06_30": later_post_gap_added,
+        "current_raw_refresh_added": raw_delta_added,
+        "classifier_302_chinext_added": classifier_added,
+        "pre_reform_chinext_false_ipo_exclusions_restored_original_universe": (
+            pre_reform_chinext_original
+        ),
+        "positive_volume_previous_close_rows_added_original_universe": (
+            positive_volume_original_added
+        ),
+        "start_floor_previous_close_context_rows_restored": floor_context_terminal,
+    }
+    removed_reason_frames = {
+        "stale_prior_rows_removed_after_raw_refresh": raw_delta_removed,
+        "old_main_width_rows_removed_by_302_chinext_classifier": classifier_removed,
+        "registration_era_main_ipo_no_limit_rows_removed": registration_ipo_removed,
+        "positive_volume_ineligible_rows_removed_original_universe": (
+            positive_volume_original_removed
+        ),
+    }
+
+    def _reason_set_receipt(
+        reason_frames: dict[str, pd.DataFrame],
+        source_frame: pd.DataFrame,
+    ) -> tuple[dict[str, int], dict[str, Any]]:
+        reason_sets = {name: _key_set(frame) for name, frame in reason_frames.items()}
+        assigned: set[tuple[Any, ...]] = set()
+        deduplicated_counts: dict[str, int] = {}
+        pairwise: dict[str, Any] = {}
+        names = list(reason_sets)
+        for index, left_name in enumerate(names):
+            left = reason_sets[left_name]
+            unique = left - assigned
+            deduplicated_counts[left_name] = len(unique)
+            assigned.update(left)
+            for right_name in names[index + 1:]:
+                overlap = left & reason_sets[right_name]
+                if not overlap:
+                    continue
+                overlap_rows = source_frame[
+                    source_frame[keys].apply(tuple, axis=1).isin(overlap)
+                ]
+                pairwise[f"{left_name}__AND__{right_name}"] = _event_slice_summary(
+                    overlap_rows
+                )
+        raw_counts = {name: len(reason_set) for name, reason_set in reason_sets.items()}
+        return deduplicated_counts, {
+            "precedence": names,
+            "raw_reason_event_keys": raw_counts,
+            "raw_reason_memberships_sum": sum(raw_counts.values()),
+            "deduplicated_reason_event_keys": deduplicated_counts,
+            "terminal_union_event_keys": len(assigned),
+            "duplicate_reason_memberships": sum(raw_counts.values()) - len(assigned),
+            "nonzero_pairwise_intersections": pairwise,
+        }
+
+    added_deduplicated, added_reason_overlap = _reason_set_receipt(
+        added_reason_frames,
+        rebuilt,
+    )
+    removed_deduplicated, removed_reason_overlap = _reason_set_receipt(
+        removed_reason_frames,
+        prior,
+    )
+
     explained_added_keys = set(map(tuple, pd.concat([
         broad_gap, later_post_gap_added, classifier_added, raw_delta_added,
+        pre_reform_chinext_restored, floor_context_restored, volume_eligibility_added,
     ])[keys].itertuples(index=False, name=None)))
     explained_removed_keys = set(map(tuple, pd.concat([
         classifier_removed, raw_delta_removed, registration_ipo_removed,
+        volume_eligibility_removed,
     ])[keys].itertuples(index=False, name=None)))
     unexplained_added = len(added_keys - explained_added_keys)
     unexplained_removed = len(removed_keys - explained_removed_keys)
 
     arithmetic_components = {
         "broad_gap_overlap_already_in_prior": -gap_overlap,
-        "later_file_events_after_2026_06_30": len(later_post_gap_added),
-        "current_raw_refresh_added": len(raw_delta_added),
-        "classifier_302_chinext_added": len(classifier_added),
-        "stale_prior_rows_removed_after_raw_refresh": -len(raw_delta_removed),
-        "old_main_width_rows_removed_by_302_chinext_classifier": -len(classifier_removed),
-        "registration_era_main_ipo_no_limit_rows_removed": -len(registration_ipo_removed),
+        "later_file_events_after_2026_06_30": added_deduplicated[
+            "later_file_events_after_2026_06_30"
+        ],
+        "current_raw_refresh_added": added_deduplicated["current_raw_refresh_added"],
+        "classifier_302_chinext_added": added_deduplicated[
+            "classifier_302_chinext_added"
+        ],
+        "stale_prior_rows_removed_after_raw_refresh": -removed_deduplicated[
+            "stale_prior_rows_removed_after_raw_refresh"
+        ],
+        "old_main_width_rows_removed_by_302_chinext_classifier": -removed_deduplicated[
+            "old_main_width_rows_removed_by_302_chinext_classifier"
+        ],
+        "registration_era_main_ipo_no_limit_rows_removed": -removed_deduplicated[
+            "registration_era_main_ipo_no_limit_rows_removed"
+        ],
+        "pre_reform_chinext_false_ipo_exclusions_restored_original_universe": (
+            added_deduplicated[
+                "pre_reform_chinext_false_ipo_exclusions_restored_original_universe"
+            ]
+        ),
+        "positive_volume_previous_close_rows_added_original_universe": (
+            added_deduplicated[
+                "positive_volume_previous_close_rows_added_original_universe"
+            ]
+        ),
+        "positive_volume_ineligible_rows_removed_original_universe": -removed_deduplicated[
+            "positive_volume_ineligible_rows_removed_original_universe"
+        ],
+        "start_floor_previous_close_context_rows_restored": added_deduplicated[
+            "start_floor_previous_close_context_rows_restored"
+        ],
         "unexplained_added": unexplained_added,
         "unexplained_removed": -unexplained_removed,
     }
@@ -393,6 +849,42 @@ def _event_reconciliation_receipt(
         "naive_prior_plus_broad_gap_rows": naive_rows,
         "rebuilt_minus_naive_rows": len(rebuilt) - naive_rows,
         "arithmetic_components": arithmetic_components,
+        "reason_overlap_receipt": {
+            "added": added_reason_overlap,
+            "removed": removed_reason_overlap,
+            "floor_context_cross_reason_deduplication": {
+                "raw_floor_context_event_keys": len(floor_keys),
+                "overlap_with_all_pre_reform_chinext_event_keys": len(
+                    floor_pre_reform_overlap_keys
+                ),
+                "overlap_with_broad_gap_baseline_event_keys": len(
+                    floor_broad_gap_overlap_keys
+                ),
+                "overlap_union_event_keys": len(
+                    floor_pre_reform_overlap_keys | floor_broad_gap_overlap_keys
+                ),
+                "terminal_floor_context_event_keys": len(floor_context_terminal_keys),
+                "pre_reform_overlap_detail": _event_slice_summary(
+                    rebuilt[
+                        rebuilt[keys].apply(tuple, axis=1).isin(
+                            floor_pre_reform_overlap_keys
+                        )
+                    ]
+                ),
+                "broad_gap_overlap_detail": _event_slice_summary(
+                    rebuilt[
+                        rebuilt[keys].apply(tuple, axis=1).isin(
+                            floor_broad_gap_overlap_keys
+                        )
+                    ]
+                ),
+                "precedence": (
+                    "broad-gap baseline and pre-reform ChiNext own overlaps before "
+                    "floor-context arithmetic"
+                ),
+            },
+            "arithmetic_uses_deduplicated_reason_event_keys": True,
+        },
         "added_detail": _event_slice_summary(added),
         "removed_detail": _event_slice_summary(removed),
         "reason_detail": {
@@ -405,6 +897,18 @@ def _event_reconciliation_receipt(
             "registration_era_main_ipo_no_limit_removed": _event_slice_summary(
                 registration_ipo_removed
             ),
+            "pre_reform_chinext_false_ipo_exclusions_restored": _event_slice_summary(
+                pre_reform_chinext_restored
+            ),
+            "positive_volume_previous_close_rows_added": _event_slice_summary(
+                positive_volume_original_added
+            ),
+            "positive_volume_ineligible_rows_removed": _event_slice_summary(
+                positive_volume_original_removed
+            ),
+            "start_floor_previous_close_context_rows_restored": _event_slice_summary(
+                floor_context_restored
+            ),
         },
         "raw_revision_evidence_vs_original_generation": _raw_revision_evidence(
             raw_delta_tickers
@@ -413,8 +917,89 @@ def _event_reconciliation_receipt(
             "Reconciliation closes exactly with no duplicate keys or residual delta: "
             f"{len(added_keys):,} event keys were added, {len(removed_keys):,} removed, "
             f"including {len(registration_ipo_removed):,} false registration-era main IPO "
-            "no-limit rows removed."
+            f"no-limit rows removed, {len(pre_reform_chinext_restored):,} pre-reform "
+            f"ChiNext rows restored, {len(floor_context_restored):,} floor-boundary rows "
+            "restored, and positive-volume eligibility applied."
         ),
+    }
+
+
+def _rule_fix_delta_receipt(
+    rebuilt_events: pd.DataFrame,
+    rebuilt_tape: pd.DataFrame,
+) -> dict[str, Any]:
+    """Receipt the bounded rule repair against the registration-only generation exactly."""
+    events_path = "data/china_microstructure/limit_events.parquet"
+    tape_path = "data/china_microstructure/limit_tape.parquet"
+    before_events = pd.read_parquet(
+        io.BytesIO(_git_bytes(REGISTRATION_ONLY_COMPARISON_REF, events_path))
+    )
+    before_tape = pd.read_parquet(
+        io.BytesIO(_git_bytes(REGISTRATION_ONLY_COMPARISON_REF, tape_path))
+    )
+    before_events["date"] = pd.to_datetime(before_events["date"])
+    after_events = rebuilt_events.copy()
+    after_events["date"] = pd.to_datetime(after_events["date"])
+    before_tape["date"] = pd.to_datetime(before_tape["date"])
+    after_tape = rebuilt_tape.copy()
+    after_tape["date"] = pd.to_datetime(after_tape["date"])
+
+    keys = ["date", "ticker", "event"]
+    before_keys = set(map(tuple, before_events[keys].itertuples(index=False, name=None)))
+    after_keys = set(map(tuple, after_events[keys].itertuples(index=False, name=None)))
+    added_keys = after_keys - before_keys
+    removed_keys = before_keys - after_keys
+    added = after_events[after_events[keys].apply(tuple, axis=1).isin(added_keys)]
+    removed = before_events[before_events[keys].apply(tuple, axis=1).isin(removed_keys)]
+
+    shared = before_events.merge(after_events, on=keys, suffixes=("_before", "_after"))
+    attribute_changes: dict[str, int] = {}
+    for column in ("board", "limit_width", "lianban_count", "close_off_limit_pct"):
+        left = shared[f"{column}_before"]
+        right = shared[f"{column}_after"]
+        equal = left.eq(right) | (left.isna() & right.isna())
+        attribute_changes[column] = int((~equal).sum())
+
+    def _aggregate_sums(frame: pd.DataFrame) -> dict[str, int]:
+        return {
+            column: int(frame[column].sum())
+            for column in (
+                "limit_up_count",
+                "limit_down_count",
+                "sealed_up_close",
+                "failed_up_seal_count",
+                "lianban_2plus",
+            )
+        }
+
+    zero_columns = ["limit_up_count", "limit_down_count"]
+    before_zero = set(
+        before_tape.loc[before_tape[zero_columns].sum(axis=1).eq(0), "date"]
+    )
+    after_zero = set(after_tape.loc[after_tape[zero_columns].sum(axis=1).eq(0), "date"])
+    return {
+        "comparison_source": {
+            "kind": "git_ref",
+            "ref": REGISTRATION_ONLY_COMPARISON_REF,
+            "event_blob": _git_blob(REGISTRATION_ONLY_COMPARISON_REF, events_path),
+            "tape_blob": _git_blob(REGISTRATION_ONLY_COMPARISON_REF, tape_path),
+        },
+        "event_key": keys,
+        "before_rows": len(before_events),
+        "after_rows": len(after_events),
+        "added_event_keys": len(added_keys),
+        "removed_event_keys": len(removed_keys),
+        "net_event_keys": len(added_keys) - len(removed_keys),
+        "added_detail": _event_slice_summary(added),
+        "removed_detail": _event_slice_summary(removed),
+        "shared_event_attribute_changes": attribute_changes,
+        "tape_sessions_before": len(before_tape),
+        "tape_sessions_after": len(after_tape),
+        "aggregate_sums_before": _aggregate_sums(before_tape),
+        "aggregate_sums_after": _aggregate_sums(after_tape),
+        "zero_event_session_count_before": len(before_zero),
+        "zero_event_session_count_after": len(after_zero),
+        "zero_event_session_date_set_changed": before_zero != after_zero,
     }
 
 
@@ -578,22 +1163,9 @@ def _publish_generation(
             },
         }
         manifest["artifacts"] = artifacts
-        identity_payload = {
-            "schema_version": manifest["schema_version"],
-            "implementation_version": manifest["implementation_version"],
-            "producer_sources": manifest["producer"]["source_sha256"],
-            "raw_universe": manifest["raw_universe"],
-            "rule_era": manifest["rule_era"],
-            "st_membership": manifest["st_membership"],
-            "prior_vs_rebuilt_reconciliation": manifest["prior_vs_rebuilt_reconciliation"],
-            "artifacts": artifacts,
-        }
-        canonical = json.dumps(
-            identity_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-        ).encode("utf-8")
         manifest["build_identity"] = {
             "algorithm": "sha256",
-            "value": hashlib.sha256(canonical).hexdigest(),
+            "value": _build_identity_value(manifest),
             "reproducible_command": manifest["reproducible_command"],
         }
         tmp_manifest.write_text(
@@ -630,8 +1202,10 @@ def run_backfill(
     """Run the full backfill and return (tape_df, events_df).  Write to disk unless dry_run."""
     from engine.china_microstructure import (
         LIMIT_TAPE_START_DATE,
-        _load_st_set,
         _detect_limit_events,
+        _infer_listing_date,
+        _load_st_set,
+        _positive_volume_rows,
     )
 
     # Hard floor: §5 contract mandates 2011→; pre-1997 data lacks the 10% limit regime entirely
@@ -660,6 +1234,16 @@ def run_backfill(
     prior_events, previous_tape_dates, comparison_source = _load_comparison_artifacts(
         comparison_ref
     )
+    market_session_positions, market_session_clock = _observed_market_session_clock(
+        raw_files,
+        floor=floor,
+    )
+    log.info(
+        "Observed market-session clock: %d sessions (%s to %s)",
+        market_session_clock["sessions"],
+        market_session_clock["min_date"],
+        market_session_clock["max_date"],
+    )
 
     all_events: list[dict] = []
     universe_n_by_date: dict[str, int] = {}   # date → names with ≥1 bar on that date
@@ -685,36 +1269,35 @@ def run_backfill(
             continue
 
         df.index = pd.to_datetime(df.index)
-
+        listing_date = _infer_listing_date(df)
+        df_scan = _positive_volume_rows(df)
         if start_date is not None:
-            df_scan = df[df.index >= start_date]
-        else:
-            df_scan = df
+            df_scan = df_scan[df_scan.index >= start_date]
 
         if df_scan.empty:
             continue
         files_with_eligible_rows += 1
 
-        events, ipo_excl, _ = _detect_limit_events(
+        events, ipo_excluded_dates, _ = _detect_limit_events(
             ticker=ticker,
             df=df,
             board=board,
             st_set=st_set,
             start_date=start_date,
+            listing_date=listing_date,
+            market_session_positions=market_session_positions,
         )
         all_events.extend(events)
 
-        # Track universe presence: all dates in df_scan where name has data
+        # Track executable universe presence: positive-volume observations only.
         for ts in df_scan.index:
             d = ts.strftime("%Y-%m-%d")
             universe_n_by_date[d] = universe_n_by_date.get(d, 0) + 1
 
-        # Track IPO exclusions
-        if ipo_excl > 0:
-            # distribute exclusion count across first bars (approximate)
-            first_dates = [ts.strftime("%Y-%m-%d") for ts in df.index[:ipo_excl]]
-            for d in first_dates:
-                ipo_excluded_by_date[d] = ipo_excluded_by_date.get(d, 0) + 1
+        # Track the exact excluded listing-session dates returned by the detector.
+        for ts in ipo_excluded_dates:
+            d = ts.strftime("%Y-%m-%d")
+            ipo_excluded_by_date[d] = ipo_excluded_by_date.get(d, 0) + 1
 
         if (i + 1) % 200 == 0:
             log.info("  processed %d / %d tickers (%d events so far)",
@@ -734,6 +1317,25 @@ def run_backfill(
     if not events_df.empty:
         events_df["date"] = pd.to_datetime(events_df["date"])
         events_df = events_df.sort_values(["date", "ticker"]).reset_index(drop=True)
+
+    registration_only_events = pd.read_parquet(io.BytesIO(_git_bytes(
+        REGISTRATION_ONLY_COMPARISON_REF,
+        "data/china_microstructure/limit_events.parquet",
+    )))
+    market_session_clock["registration_only_generation_audit"] = (
+        _lianban_session_clock_audit(
+            registration_only_events,
+            market_session_positions,
+        )
+    )
+    market_session_clock["rebuilt_generation_audit"] = _lianban_session_clock_audit(
+        events_df,
+        market_session_positions,
+    )
+    if market_session_clock["rebuilt_generation_audit"]["attribute_mismatches"]:
+        raise RuntimeError(
+            "rebuilt lianban attributes do not reconcile to the market-session clock"
+        )
 
     # --- compute aggregate tape ---
     from engine.china_microstructure import aggregate_daily
@@ -768,6 +1370,7 @@ def run_backfill(
         comparison_source,
         raw_files,
     )
+    rule_fix_delta = _rule_fix_delta_receipt(events_df, tape_df)
     event_counts = {
         str(key): int(value)
         for key, value in events_df["event"].value_counts().sort_index().items()
@@ -777,12 +1380,17 @@ def run_backfill(
         "implementation_version": REBUILD_IMPLEMENTATION_VERSION,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "complete": files_scanned == len(raw_files) and not unreadable_files,
-        "completeness_scope": "current_1842_file_nominal_OHLCV_scan_and_session_calendar_only",
+        "completeness_scope": (
+            "current_1842_file_positive_volume_nominal_OHLCV_scan_and_"
+            "observed_session_calendar_only"
+        ),
         "not_complete_for": [
             "historical PIT ST/risk-warning membership",
             "official all-A-share listing-universe or breadth denominator coverage",
+            "exchange-official per-security listing dates; first positive-volume raw row is the listing proxy",
+            "recovery of missing or zero-volume observations as executed trades",
             "ZT-pool tickers without local nominal OHLCV history",
-            "exchange-official session identity beyond the observed 600519.SS calendar anchor",
+            "exchange-official session identity beyond the >=50-name consensus calendar validated against 600519.SS",
         ],
         "authority": "context_only",
         "producer": {
@@ -794,6 +1402,8 @@ def run_backfill(
             },
             "python": sys.version.split()[0],
             "pandas": pd.__version__,
+            "pyarrow": pyarrow.__version__,
+            "executable": sys.executable,
         },
         "raw_universe": {
             **raw_inventory,
@@ -818,15 +1428,30 @@ def run_backfill(
         "rule_era": {
             "main_normal": {
                 "width_pct": 10.0,
+                "legacy_ipo_listing_day_special": {
+                    "applies_to_listings_before": "2023-04-10",
+                    "excluded_sessions_from_listing": 1,
+                    "classification": (
+                        "listing day had no ordinary +/-10% band; legacy exchange-specific "
+                        "issue-price and intraday controls applied"
+                    ),
+                    "sse_2014_rule_source": (
+                        "https://www.sse.com.cn/aboutus/mediacenter/hotandd/"
+                        "c/c_20150912_3988761.shtml"
+                    ),
+                    "szse_2014_rule_source": (
+                        "https://www.szse.cn/aboutus/trends/news/t20140613_518480.html"
+                    ),
+                },
                 "registration_era_ipo_no_limit": {
                     "effective_first_listing_date": "2023-04-10",
                     "excluded_sessions_from_listing": 5,
                     "sse_rule_source": (
-                        "https://www.sse.com.cn/aboutus/mediacenter/hotandd/"
-                        "c/c_20230201_5715605.shtml"
+                        "https://www.sse.com.cn/lawandrules/sselawsrules2025/repeal/"
+                        "rules/c/c_20250612_10824490.shtml"
                     ),
                     "szse_rule_source": (
-                        "https://docs.static.szse.cn/www/lawrules/index/rule/"
+                        "https://docs.static.szse.cn/www/lawrules/rule/allrules/bussiness/"
                         "W020230217564423808793.pdf"
                     ),
                     "effective_date_source": (
@@ -852,13 +1477,34 @@ def run_backfill(
                     "exact attested asof; unknown dates use ordinary board width with an alarm"
                 ),
             },
-            "star": {"width_pct": 20.0},
+            "star": {
+                "width_pct": 20.0,
+                "first_listing_date": "2019-07-22",
+                "ipo_no_limit_sessions": 5,
+                "sse_source": (
+                    "https://star.sse.com.cn/star/media/news/c/c_20190719_4866789.shtml"
+                ),
+            },
             "chinext": {
                 "before_2020-08-24_width_pct": 10.0,
                 "on_or_after_2020-08-24_width_pct": 20.0,
+                "registration_reform_first_listing_date": "2020-08-24",
+                "pre_reform_ipo_no_limit_sessions": 1,
+                "registration_era_ipo_no_limit_sessions": 5,
+                "pre_reform_rule_source": (
+                    "https://docs.static.szse.cn/www/aboutus/trends/news/"
+                    "W020180328462965472234.pdf"
+                ),
+                "reform_source": (
+                    "https://www.szse.cn/www/investor/index/update/t20200807_580310.html"
+                ),
+                "effective_date_source": (
+                    "https://www.szse.cn/aboutus/trends/news/t20200821_580924.html"
+                ),
             },
             "bse": {"width_pct": 30.0, "launch_date": "2021-11-15"},
         },
+        "market_session_clock": market_session_clock,
         "st_membership": _st_membership_receipt(source_dates[-1] if source_dates else None),
         "event_counts": event_counts,
         "aggregate_session_coverage": session_receipt,
@@ -867,8 +1513,9 @@ def run_backfill(
         },
         "historical_gap_census": reconciliation["broad_gap_census"],
         "prior_vs_rebuilt_reconciliation": reconciliation,
+        "rule_fix_vs_registration_only_generation": rule_fix_delta,
         "reproducible_command": (
-            "python3 scripts/backfill_china_limit_tape.py"
+            f"{PINNED_PYTHON} scripts/backfill_china_limit_tape.py"
             + (f" --comparison-ref {comparison_ref}" if comparison_ref else "")
         ),
         "publication": {

@@ -16,9 +16,16 @@ Board-aware limit widths (CN-SYS-R12)
 
 IPO exclusion windows (CN-SYS-R12)
 ------------------------------------
-  STAR/ChiNext names: first 5 sessions excluded from limit detection (44% cap regime)
-  Main-board registration-era IPOs (listing on/after 2023-04-10): first 5 sessions excluded
-  All pre-2014 listings (first bar before 2014-01-01): first session excluded (44% cap regime)
+  STAR listings from 2019-07-22: first 5 trading sessions excluded (no limit)
+  ChiNext listings from 2020-08-24: first 5 trading sessions excluded (no limit)
+  Main-board registration-era IPOs (listing on/after 2023-04-10): first 5 trading sessions excluded
+  Earlier main/ChiNext listings: listing day excluded (legacy first-day special regime)
+
+The listing clock advances only on positive-volume observations. Some raw files carry issue-price
+placeholder rows before exchange listing; treating those timestamps as sessions fabricates limit
+events inside the true no-limit window. Callers with complete raw history pass the inferred first
+positive-volume date explicitly as ``listing_date``. A truncated frame without that attestation is
+not silently treated as a fresh IPO.
 
 Ex-div caveat
 --------------
@@ -59,13 +66,13 @@ limit_events.parquet (event rows):
     down-side: (close   - lim_down) / lim_down for sealed_down / failed_down_seal
   0.0 = closed exactly at the limit; positive = closed inside (away from the limit).
 
-Lianban undercount caveat (nightly increments only)
------------------------------------------------------
-The nightly build_increment uses a ~20-session lookback window.  A lianban streak that began
-before the window will be undercounted in the appended rows (e.g. a genuine 3rd consecutive
-board is reported as lianban_count=1).  Backfill rows are unaffected.  Downstream aggregates
-lianban_2plus / lianban_max for those specific dates may be mildly understated.  Risk is
-bounded by NIGHTLY_LOOKBACK; widening that constant reduces (but does not eliminate) the gap.
+Lianban session-clock contract
+-------------------------------
+Consecutive boards mean consecutive *market* sessions, not consecutive observations for one
+ticker. Backfill/nightly callers pass a >=50-name consensus clock validated against an unfiltered
+long-history reference index; a suspension or missing observation resets the streak while the
+resumed day's price limit still uses the last positive-volume close. Without an attested clock,
+lianban classification fails closed at one rather than bridging an unknown gap.
 
 microstructure.json (site/chinastatedata/):
   latest aggregates + per-name packet for standout tickers:
@@ -77,6 +84,7 @@ import logging
 import os
 from datetime import date, datetime
 from pathlib import Path
+from collections.abc import Mapping
 from typing import Optional
 
 import numpy as np
@@ -89,11 +97,11 @@ log = logging.getLogger(__name__)
 CHINEXT_WIDE_DATE = pd.Timestamp("2020-08-24")   # ChiNext switched to ±20% on this date
 BSE_LAUNCH_DATE   = pd.Timestamp("2021-11-15")   # BSE launched
 STAR_LAUNCH_DATE  = pd.Timestamp("2019-07-22")   # STAR market launched
-IPO_PRE2014_DATE  = pd.Timestamp("2014-01-01")   # pre-2014 = 44% cap on day 1
+IPO_PRE2014_DATE  = pd.Timestamp("2014-01-01")   # non-main fallback legacy boundary
 MAIN_REGISTRATION_IPO_DATE = pd.Timestamp("2023-04-10")  # first main registration listings
-CHINEXT_STAR_IPO_WINDOW = 5                       # first N sessions excluded for STAR/ChiNext
+CHINEXT_STAR_IPO_WINDOW = 5                       # first N traded sessions in applicable eras
 MAIN_REGISTRATION_IPO_WINDOW = 5                  # first 5 sessions have no daily price limit
-PRE2014_IPO_WINDOW      = 1                       # first session excluded for pre-2014 listings
+PRE2014_IPO_WINDOW      = 1                       # legacy first-day special/no-ordinary-band state
 
 # Earliest date for which this module produces valid limit data.  The A-share ±10% daily price
 # limit was introduced 1996-12; before that date, applying a 10% rule generates fabricated
@@ -237,6 +245,83 @@ def _st_membership_attested(
     )
 
 
+def _positive_volume_rows(df: pd.DataFrame | None) -> pd.DataFrame:
+    """Return sorted positive-volume OHLCV observations.
+
+    Zero/missing-volume rows are non-trades. They neither advance an IPO listing-session clock
+    nor supply a previous close for limit reconstruction. Missing volume therefore fails closed
+    instead of turning an unverified price row into executable market history.
+    """
+    if df is None or df.empty:
+        return pd.DataFrame(columns=df.columns if df is not None else None)
+    work = df.copy()
+    work.index = pd.to_datetime(work.index)
+    work = work[~work.index.isna()].sort_index()
+    if "volume" not in work.columns:
+        return work.iloc[0:0].copy()
+    volume = pd.to_numeric(work["volume"], errors="coerce")
+    return work[volume.gt(0)].copy()
+
+
+def _infer_listing_date(df: pd.DataFrame | None) -> pd.Timestamp | None:
+    """Infer the listing anchor from a caller-attested complete raw history."""
+    traded = _positive_volume_rows(df)
+    if traded.empty:
+        return None
+    return pd.Timestamp(traded.index[0]).normalize()
+
+
+def _ipo_no_limit_dates(
+    traded_df: pd.DataFrame,
+    board: str,
+    listing_date: pd.Timestamp | str | None,
+) -> tuple[pd.Timestamp, ...]:
+    """Return exchange-era IPO no-limit dates from positive-volume sessions."""
+    if traded_df.empty or listing_date is None:
+        return ()
+    listing = pd.Timestamp(listing_date).normalize()
+    window = 0
+    if board == "star" and listing >= STAR_LAUNCH_DATE:
+        window = CHINEXT_STAR_IPO_WINDOW
+    elif board == "chinext" and listing >= CHINEXT_WIDE_DATE:
+        window = CHINEXT_STAR_IPO_WINDOW
+    elif board == "chinext":
+        window = PRE2014_IPO_WINDOW
+    elif board == "main" and listing >= MAIN_REGISTRATION_IPO_DATE:
+        window = MAIN_REGISTRATION_IPO_WINDOW
+    elif board == "main":
+        window = PRE2014_IPO_WINDOW
+    elif listing < IPO_PRE2014_DATE:
+        window = PRE2014_IPO_WINDOW
+    if window == 0:
+        return ()
+    sessions = traded_df[traded_df.index.normalize() >= listing].index[:window]
+    return tuple(pd.Timestamp(ts).normalize() for ts in sessions)
+
+
+def _consecutive_market_sessions(
+    previous_date: pd.Timestamp | None,
+    current_date: pd.Timestamp,
+    market_session_positions: Mapping[pd.Timestamp, int] | None,
+) -> bool:
+    """Return whether two dates are adjacent on an attested market-session clock.
+
+    Absence from the clock, including an entirely missing clock, fails closed. A ticker's own
+    sparse traded-row index is not evidence that two observations are adjacent market sessions.
+    """
+    if previous_date is None or market_session_positions is None:
+        return False
+    previous = pd.Timestamp(previous_date).normalize()
+    current = pd.Timestamp(current_date).normalize()
+    previous_position = market_session_positions.get(previous)
+    current_position = market_session_positions.get(current)
+    return (
+        previous_position is not None
+        and current_position is not None
+        and current_position == previous_position + 1
+    )
+
+
 # ── per-ticker event detection ─────────────────────────────────────────────────
 
 def _detect_limit_events(
@@ -246,61 +331,54 @@ def _detect_limit_events(
     st_set: frozenset[str],
     start_date: Optional[pd.Timestamp] = None,
     end_date: Optional[pd.Timestamp] = None,
-) -> tuple[list[dict], int, int]:
+    listing_date: Optional[pd.Timestamp] = None,
+    market_session_positions: Mapping[pd.Timestamp, int] | None = None,
+) -> tuple[list[dict], tuple[pd.Timestamp, ...], int]:
     """Scan one ticker's OHLCV for limit-state events.
 
     Returns:
-        (event_rows, ipo_excluded_count, exdiv_excluded_count)
+        (event_rows, ipo_excluded_dates, exdiv_excluded_count)
 
     Each event row is a dict matching the limit_events schema.
     """
-    if df.empty or len(df) < 2:
-        return [], 0, 0
+    traded = _positive_volume_rows(df)
+    if traded.empty:
+        return [], (), 0
 
-    # Normalise index to date.  Freeze the listing-relative exclusion dates BEFORE applying a
-    # caller's backfill/nightly date filter.  Otherwise every incremental lookback silently treats
-    # its first five rows as a fresh IPO window, while a post-2023 main-board IPO can lose its real
-    # no-limit sessions when the filtered slice starts after the first row.
-    df = df.copy()
-    df.index = pd.to_datetime(df.index)
-    df = df.sort_index()
+    # Freeze the listing clock and all stateful context on complete positive-volume history.
+    # Date filters control only emitted receipts; they must not create a fresh IPO window, erase
+    # session-6 previous-close context, or reset a lianban streak at an arbitrary slice boundary.
+    ipo_exclusion_dates = frozenset(_ipo_no_limit_dates(traded, board, listing_date))
+    start = pd.Timestamp(start_date).normalize() if start_date is not None else None
+    end = pd.Timestamp(end_date).normalize() if end_date is not None else None
 
-    first_bar_global = pd.to_datetime(df.index.min())
-    ipo_window = 0
-    if board in ("star", "chinext"):
-        ipo_window = CHINEXT_STAR_IPO_WINDOW
-    elif board == "main" and first_bar_global >= MAIN_REGISTRATION_IPO_DATE:
-        ipo_window = MAIN_REGISTRATION_IPO_WINDOW
-    elif first_bar_global < IPO_PRE2014_DATE:
-        ipo_window = PRE2014_IPO_WINDOW
-    ipo_exclusion_dates = frozenset(pd.Timestamp(ts) for ts in df.index[:ipo_window])
-
-    # Apply date filter if requested
-    if start_date is not None:
-        df = df[df.index >= start_date]
-    if end_date is not None:
-        df = df[df.index <= end_date]
-    if df.empty:
-        return [], 0, 0
-
-    # Build prev_close shifted series
-    closes     = df["close"].astype(float)
-    highs      = df["high"].astype(float)
-    lows       = df["low"].astype(float)
-    opens_     = df["open"].astype(float)
+    closes     = traded["close"].astype(float)
+    highs      = traded["high"].astype(float)
+    lows       = traded["low"].astype(float)
+    opens_     = traded["open"].astype(float)
     prev_close = closes.shift(1)
 
     events: list[dict] = []
-    ipo_excluded    = 0
+    ipo_excluded_dates: list[pd.Timestamp] = []
     exdiv_excluded  = 0
     lianban_streak  = 0  # consecutive sealed_up days for lianban count
+    previous_trade_date: pd.Timestamp | None = None
 
-    for i, (ts, row) in enumerate(df.iterrows()):
-        trade_date = pd.Timestamp(ts)
+    for i, (ts, row) in enumerate(traded.iterrows()):
+        trade_date = pd.Timestamp(ts).normalize()
+        if not _consecutive_market_sessions(
+            previous_trade_date, trade_date, market_session_positions
+        ):
+            lianban_streak = 0
+        previous_trade_date = trade_date
+        in_output_range = (start is None or trade_date >= start) and (
+            end is None or trade_date <= end
+        )
 
         # --- IPO window exclusion ---
         if trade_date in ipo_exclusion_dates:
-            ipo_excluded += 1
+            if in_output_range:
+                ipo_excluded_dates.append(trade_date)
             lianban_streak = 0
             continue
 
@@ -323,7 +401,8 @@ def _detect_limit_events(
         # If open gaps more than 1.5x width vs prev_close → suspected ex-div/ex-rights day
         open_move = abs(float(opens_.iloc[i]) - pc) / pc
         if open_move > width * 1.5:
-            exdiv_excluded += 1
+            if in_output_range:
+                exdiv_excluded += 1
             lianban_streak = 0
             continue
 
@@ -345,6 +424,9 @@ def _detect_limit_events(
             lianban_streak += 1
         else:
             lianban_streak = 0
+
+        if not in_output_range:
+            continue
 
         # close_off_limit_pct: stored as a FRACTION (not percent), matching the §5 contract:
         #   up-side:   (lim_up - close) / lim_up   — 0.0 when sealed exactly, positive when below
@@ -401,7 +483,7 @@ def _detect_limit_events(
                 "close_off_limit_pct": close_off_down,
             })
 
-    return events, ipo_excluded, exdiv_excluded
+    return events, tuple(ipo_excluded_dates), exdiv_excluded
 
 
 # ── aggregate computation ─────────────────────────────────────────────────────
@@ -480,6 +562,9 @@ def name_packet(
     ticker: str,
     df: pd.DataFrame,
     st_set: frozenset[str],
+    *,
+    listing_date: Optional[pd.Timestamp] = None,
+    market_session_positions: Mapping[pd.Timestamp, int] | None = None,
 ) -> dict:
     """Compute the per-name microstructure packet for the latest session.
 
@@ -500,20 +585,46 @@ def name_packet(
     board = _board_from_ticker(ticker)
     result["board"] = board
 
-    if df is None or df.empty or len(df) < 2:
+    if df is None or df.empty:
         return result
 
-    df = df.copy()
-    df.index = pd.to_datetime(df.index)
-    latest = df.index[-1]
+    raw = df.copy()
+    raw.index = pd.to_datetime(raw.index)
+    raw = raw[~raw.index.isna()].sort_index()
+    if raw.empty or "volume" not in raw.columns:
+        result["limit_state"] = "unavailable_no_volume"
+        return result
+    latest = pd.Timestamp(raw.index[-1]).normalize()
+    latest_volume = pd.to_numeric(
+        pd.Series([raw["volume"].iloc[-1]]), errors="coerce"
+    ).iloc[0]
+    if pd.isna(latest_volume) or float(latest_volume) <= 0:
+        result["limit_state"] = "unavailable_no_trade"
+        return result
 
-    is_st = board == "main" and _st_membership_attested(st_set, ticker, latest)
+    traded = _positive_volume_rows(raw)
+    if traded.empty:
+        result["limit_state"] = "unavailable_no_trade"
+        return result
+    ipo_dates = frozenset(_ipo_no_limit_dates(traded, board, listing_date))
+    if latest in ipo_dates:
+        result["limit_state"] = "no_limit_ipo"
+        return result
+    if len(traded) < 2:
+        result["limit_state"] = "unavailable_insufficient_history"
+        return result
+
+    is_st = (
+        board == "main"
+        and latest >= ST_STORE_COVERAGE_DATE
+        and _st_membership_attested(st_set, ticker, latest)
+    )
     width = limit_width_for_date(board, latest, is_st=is_st)
     result["limit_width"] = round(width * 100, 1)
 
-    closes = df["close"].astype(float)
-    highs  = df["high"].astype(float)
-    lows   = df["low"].astype(float)
+    closes = traded["close"].astype(float)
+    highs  = traded["high"].astype(float)
+    lows   = traded["low"].astype(float)
     prev_close = float(closes.iloc[-2])
     close_val  = float(closes.iloc[-1])
     high_val   = float(highs.iloc[-1])
@@ -551,8 +662,21 @@ def name_packet(
     lianban = False
     if len(closes) >= 3:
         prev2_close = float(closes.iloc[-3])
-        if prev2_close > 0:
-            lim_up_prev = round(prev2_close * (1 + width), 2)
+        prev_date = pd.Timestamp(traded.index[-2]).normalize()
+        prev_is_st = (
+            board == "main"
+            and prev_date >= ST_STORE_COVERAGE_DATE
+            and _st_membership_attested(st_set, ticker, prev_date)
+        )
+        prev_width = limit_width_for_date(board, prev_date, is_st=prev_is_st)
+        if (
+            prev2_close > 0
+            and prev_date not in ipo_dates
+            and _consecutive_market_sessions(
+                prev_date, latest, market_session_positions
+            )
+        ):
+            lim_up_prev = round(prev2_close * (1 + prev_width), 2)
             lianban = (prev_close >= lim_up_prev)  # yesterday was a sealed_up day
 
     if sealed_up and lianban:
