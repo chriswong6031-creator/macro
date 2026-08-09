@@ -93,6 +93,35 @@ def test_hash_survives_engine_item_snapshot_and_ledger(tmp_root: Path, monkeypat
     assert rows[0]["inputs_hash"] == expected_hash
 
 
+def test_shadow_item_receipts_are_public_provenance(tmp_root: Path, monkeypatch) -> None:
+    import scripts.build_release_forecast as producer
+
+    monkeypatch.setattr(
+        producer,
+        "_run_shadow_v3",
+        lambda *args, **kwargs: {
+            "point": 0.2,
+            "inputs_hash": "b" * 64,
+        },
+    )
+    item = {
+        "release_type": "cpi_core",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "code_receipt": "sha256:producer-receipt",
+    }
+
+    producer._attach_shadows_to_items(
+        [item], tmp_root, date(2026, 8, 9)
+    )
+
+    shadow = item["shadows"]["v3_factor"]
+    assert shadow["inputs_hash"] == "b" * 64
+    assert shadow["model_epoch"] == "v3_factor_legacy_target_v1"
+    assert shadow["target_epoch"] == "legacy_cross_vintage_initial_levels_v0"
+    assert shadow["code_receipt"] == "sha256:producer-receipt"
+
+
 def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
     from engine.release_actuals import normalize_publication
 

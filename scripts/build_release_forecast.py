@@ -947,6 +947,7 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
             continue
 
         period_str = item.get("period")
+        code_receipt = item.get("code_receipt") or _code_receipt(root)
         release_date_str = item.get("release_date")
         release_date_obj: date | None = None
         if release_date_str:
@@ -968,6 +969,9 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                 entry: dict = {
                     "display_only": True,
                     "inputs_hash": v3_result.get("inputs_hash"),
+                    "model_epoch": _MODEL_EPOCHS["v3_factor"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": v3_result.get("point"),
                     "p10": v3_result.get("p10"),
                     "p25": v3_result.get("p25"),
@@ -1007,6 +1011,9 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                 shadows["cpi_bridge"] = {
                     "display_only": True,
                     "inputs_hash": bridge_hash,
+                    "model_epoch": _MODEL_EPOCHS["cpi_bridge"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": bridge_result.get("point"),
                     "components": bridge_result.get("components"),
                     "prior_driven_share": bridge_result.get("prior_driven_share"),
@@ -1033,6 +1040,9 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                 shadows["mf_energy"] = {
                     "display_only": True,
                     "inputs_hash": mfe_result.get("inputs_hash"),
+                    "model_epoch": _MODEL_EPOCHS["mf_energy"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": mfe_result.get("point"),
                     "p10": mfe_result.get("p10"),
                     "p25": mfe_result.get("p25"),
@@ -1179,6 +1189,7 @@ def _attach_combined_to_items(
                 "inputs_hash": combined_hash,
                 "model_epoch": _MODEL_EPOCHS["combined_v1"],
                 "target_epoch": _target_epoch(rt, "combined_v1"),
+                "code_receipt": item.get("code_receipt") or _code_receipt(root),
                 "display_only": True,
                 "authority": False,
             }
