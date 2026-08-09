@@ -15,6 +15,7 @@ import pandas as pd
 from engine.inputs import build_features
 from engine.regime import QUAD_NAMES, classify, flip_condition
 from engine.sectors import pair_ratios_snapshot, preference_check, rs_table
+from engine.store_guard import check_coverage_regression
 from engine.transition import compute_flags, state_machine_detail
 from lib import config, store
 
@@ -138,6 +139,12 @@ def run(force: bool = False) -> dict:
     store_df = regime[hist_cols]
     p = config.data_dir() / "regime"
     p.mkdir(parents=True, exist_ok=True)
+    # Coverage-axis sibling of the asof no-regress guard above: that one stops
+    # recomputing BEHIND the committed session; this one stops a same-date
+    # recompute whose inputs went dark from nulling previously-computed cells
+    # and feeding site/regime_timeline.json a history the store contradicts
+    # (the 2026-08-08 HK incident class — see engine/store_guard.py).
+    check_coverage_regression(store_df, p / "regime_history.parquet", "us")
     store_df.to_parquet(p / "regime_history.parquet")
 
     asof = regime["quad"].last_valid_index()

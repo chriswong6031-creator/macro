@@ -41,8 +41,7 @@ from typing import Any
 # Repo root bootstrap
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from lib import config  # noqa: E402
 from lib.procutil import hard_exit  # noqa: E402
