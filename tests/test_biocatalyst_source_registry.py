@@ -80,7 +80,11 @@ def test_only_clinicaltrials_is_enabled_for_bounded_beta() -> None:
         if source["production_ingest_allowed"]
     }
 
-    assert enabled == {"clinicaltrials_gov_v2"}
+    # RIGHTS-enabled, which is not the same as collecting. Record history was
+    # rights-cleared by the named operator ruling of 2026-08-07 (Ruling 1) and
+    # remains dark: no runtime enable, an empty allowlist, and no worker or
+    # timer. tests/test_biocatalyst_record_history_enablement.py holds that line.
+    assert enabled == {"clinicaltrials_gov_v2", "clinicaltrials_gov_record_history"}
     clinical = registry["sources"]["clinicaltrials_gov_v2"]
     assert clinical["owner"] == "biocatalyst"
     assert clinical["license_class"] == "us_government_source_facts"
@@ -265,7 +269,13 @@ def test_record_history_canary_is_separate_bounded_and_dark_by_default() -> None
     source = registry["sources"]["clinicaltrials_gov_record_history"]
     canary = registry["b2_history_canary"]
 
-    assert source["production_ingest_allowed"] is False
+    # The RIGHTS gate was cleared by the named operator ruling of 2026-08-07
+    # (research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md, Ruling 1). That is one
+    # of three gates; this test's subject -- that the canary stays separate,
+    # bounded, and DARK BY DEFAULT -- is unchanged and is asserted below on the
+    # runtime and universe gates, which the ruling deliberately did not touch.
+    # tests/test_biocatalyst_record_history_enablement.py is the dedicated guard.
+    assert source["production_ingest_allowed"] is True
     assert source["raw_archive"] == "private_only"
     assert source["interface_stability"] == "undocumented_ui_backing_route"
     assert source["source_shape_canary_required"] is True

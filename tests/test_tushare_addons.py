@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pyarrow.parquet as pq
 import pytest
-import yaml
 
 from collectors import tushare_addons as addons
 from scripts import collect_tushare_addons as cli
@@ -17,21 +16,25 @@ from scripts import collect_tushare_addons as cli
 ROOT = Path(__file__).resolve().parents[1]
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 HISTORICAL_NOW = datetime(2026, 8, 9, 12, tzinfo=timezone.utc)
-LICENSE_REFERENCE = "ab" * 32
+# Each entry states something the data itself cannot support, regardless of who
+# ordered the collection.
+EPISTEMIC_NONCLAIMS = [
+    "context_only_not_signal_authority",
+    "no_fillability_or_execution_claim",
+    "no_complete_historical_backfill_claim",
+    "post_close_rows_are_unclassified_not_a_completeness_claim",
+    "no_level2_order_book_or_queue_position",
+]
+ACCESS_NONCLAIMS = [
+    "not_proof_of_future_access",
+    "not_a_completeness_claim_for_the_session",
+]
 
 
 @pytest.fixture(autouse=True)
-def provision_synthetic_license_gate(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(
-        addons.LICENSE_AUTHORITY_ENV,
-        addons.LICENSE_AUTHORITY_GATE_VALUE,
-    )
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
-    monkeypatch.setattr(
-        addons,
-        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
-        frozenset({LICENSE_REFERENCE}),
-    )
+def configured_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A configured TUSHARE_TOKEN is the only execution prerequisite."""
+    monkeypatch.setenv("TUSHARE_TOKEN", "synthetic-test-token")
 
 
 def minute_frame(*, high: float = 10.2, trade_date: str = "2026-08-07") -> pd.DataFrame:
@@ -101,6 +104,24 @@ def auction_frame() -> pd.DataFrame:
     )
 
 
+def auction_oc_frame(*, trade_date: str = "20260807") -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "ts_code": "000001.SZ",
+                "trade_date": trade_date,
+                "close": 10.1,
+                "open": 10.0,
+                "high": 10.15,
+                "low": 9.95,
+                "vol": 10_000,
+                "amount": 100_500,
+                "vwap": 10.05,
+            }
+        ]
+    )
+
+
 class FakeQuery:
     def __init__(
         self,
@@ -118,13 +139,15 @@ class FakeQuery:
         self.calls.append((api_name, dict(kwargs)))
         if api_name == "trade_cal":
             exchange = str(kwargs["exchange"])
+            requested = str(kwargs["start_date"])
+            prior = pd.Timestamp(requested) - pd.Timedelta(days=1)
             return pd.DataFrame(
                 [
                     {
                         "exchange": exchange,
-                        "cal_date": str(kwargs["start_date"]),
+                        "cal_date": requested,
                         "is_open": self.open_by_exchange[exchange],
-                        "pretrade_date": "20260806",
+                        "pretrade_date": prior.strftime("%Y%m%d"),
                     }
                 ]
             )
@@ -149,7 +172,7 @@ def minute_request() -> addons.PilotRequest:
     )
 
 
-def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
+def test_plan_is_no_network_no_write_and_names_the_operative_authority(
     tmp_path: Path,
 ) -> None:
     output = tmp_path / "store"
@@ -158,26 +181,71 @@ def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
     assert plan["maximum_vendor_calls"] == 3
     assert plan["range_or_bulk_mode"] is False
     assert plan["request"]["ticker"] == "600519.SS"
-    assert plan["license_authority_gate"] == {
-        "required_for_execute": True,
-        "state": "not_evaluated_plan_only",
-        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
+    assert plan["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
     }
+    assert plan["execute_requirements"]["tushare_token_configured"] is True
+    assert plan["execute_requirements"]["technical_fences"] == [
+        "two_exchange_trade_cal_session_agreement",
+        "per_endpoint_collection_clock",
+        "documented_row_cap",
+        "exact_session_and_ticker_containment",
+        "schema_and_domain_validation",
+        "keep_first_immutability",
+    ]
     assert not output.exists()
 
+
+def test_no_endpoint_is_blocked_unconfirmed_after_the_auction_oc_admission(
+    tmp_path: Path,
+) -> None:
+    """The o/c hold is released; the receipt key stays so readers see the state."""
+    assert dict(addons.BLOCKED_UNCONFIRMED_ENDPOINTS) == {}
+    output = tmp_path / "store"
     for endpoint in ("stk_auction_o", "stk_auction_c"):
-        with pytest.raises(addons.CollectionHeld) as held:
-            addons.pilot_plan(
-                addons.PilotRequest(endpoint=endpoint, trade_date="2026-08-07"),
-                output_root=output,
-            )
-        assert held.value.reason_code.endswith("written_entitlement_confirmation")
+        plan = addons.pilot_plan(
+            addons.PilotRequest(
+                endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+            ),
+            output_root=output,
+        )
+        assert plan["blocked_unconfirmed_endpoints"] == {}
+        assert plan["declared_access_context"] == (
+            "operator_attested_2026-08-09_takeover_doc"
+        )
     assert not output.exists()
 
 
-def test_licensed_default_output_root_is_gitignored() -> None:
+def test_admitted_auction_oc_contracts_pin_their_official_documents() -> None:
+    documents = {"stk_auction_o": 353, "stk_auction_c": 354}
+    for endpoint, document_id in documents.items():
+        contract = addons.ENDPOINTS[endpoint]
+        assert contract.document_id == document_id
+        assert contract.document_url.endswith(f"doc_id={document_id}")
+        assert contract.contract_source == "official_doc_page"
+        # Docs 353/354 publish this exact output field list, in this order.
+        assert contract.vendor_fields == (
+            "ts_code",
+            "trade_date",
+            "close",
+            "open",
+            "high",
+            "low",
+            "vol",
+            "amount",
+            "vwap",
+        )
+        assert contract.max_rows == 10_000
+        units = {field.name: field.unit for field in contract.output_schema}
+        # Neither doc states a unit for 成交量/成交额, so the schema must disclose
+        # the gap rather than assert shares/CNY the minute contract can assert.
+        assert "no unit" in str(units["volume"])
+        assert "no unit" in str(units["amount"])
+        assert units["close"] == "CNY/share"
+
+
+def test_default_output_root_is_gitignored() -> None:
     expected = ROOT / "data/tushare_addons"
     assert Path(addons.DEFAULT_OUTPUT_ROOT).resolve() == expected.resolve()
     ignored = subprocess.run(
@@ -223,26 +291,12 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
     assert (
         access["observation_basis"] == "valid_nonempty_rows_returned_for_this_request"
     )
-    assert access["nonclaims"] == [
-        "not_proof_of_purchase",
-        "not_proof_of_payment",
-        "not_proof_of_license_or_commercial_use_rights",
-        "not_proof_of_future_access",
-        "not_proof_of_trial_absence",
-    ]
-    assert receipt["license_authority_gate"] == {
-        "gate_state": "satisfied_for_bounded_metadata_only_pilot",
-        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
-        "authority_reference_sha256": LICENSE_REFERENCE,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
-        "scope_nonclaims": [
-            "no_commercial_use_authority",
-            "no_product_publication_authority",
-            "no_team_sharing_or_redistribution_authority",
-            "no_signal_or_strategy_authority",
-        ],
+    assert access["nonclaims"] == ACCESS_NONCLAIMS
+    assert receipt["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
     }
+    assert receipt["nonclaims"] == EPISTEMIC_NONCLAIMS
     assert receipt["request"]["maximum_vendor_calls"] == 3
     assert receipt["request"]["range_or_bulk_mode"] is False
     assert receipt["request"]["vendor_request_without_token"]["transport"] == "HTTPS"
@@ -340,39 +394,207 @@ def test_rehashed_authority_tamper_is_still_rejected(tmp_path: Path) -> None:
         )
 
 
-def test_license_gate_fails_before_vendor_call_or_partition(
+def test_execution_requires_a_configured_token_and_makes_no_call_without_one(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv(addons.LICENSE_AUTHORITY_ENV)
-    monkeypatch.delenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV)
-    query = FakeQuery("stk_mins", minute_frame())
+    """Token presence is the only execution prerequisite -- and it fails closed."""
+    monkeypatch.delenv("TUSHARE_TOKEN", raising=False)
 
-    with pytest.raises(addons.CollectionHeld, match="written_vendor_authorization"):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
+    with pytest.raises(addons.CollectionHeld, match="TUSHARE_TOKEN_absent"):
+        addons.collect_pilot(minute_request(), output_root=tmp_path, now=HISTORICAL_NOW)
 
-    assert query.calls == []
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
 
 
-def test_operator_controlled_license_sha_cannot_self_attest(
+def test_no_authorization_env_var_gates_execution(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(
-        addons,
-        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
-        frozenset(),
+    """No env var may gate this collector: only the technical fences bind.
+
+    The pilot foundation once carried a separate authorization gate. It was
+    removed by operator ruling (2026-08-09), so a run with a configured token and
+    a hostile environment must still collect normally.
+    """
+    for stale in (
+        "TUSHARE_VENDOR_LICENSE_AUTHORITY",
+        "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256",
+    ):
+        monkeypatch.setenv(stale, "definitely-not-a-valid-value")
+
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
     )
-    query = FakeQuery("stk_mins", minute_frame())
 
-    with pytest.raises(addons.CollectionHeld, match="out_of_band_allowlisted"):
+    assert result.status == "written"
+    source = (ROOT / "collectors/tushare_addons.py").read_text(encoding="utf-8")
+    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" not in source
+    assert "allowlist" not in source.lower()
+
+
+def test_receipt_records_plain_provenance_and_epistemic_nonclaims_only(
+    tmp_path: Path,
+) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
+    )
+    receipt = json.loads(
+        (Path(result.partition_path) / "receipt.json").read_text(encoding="utf-8")
+    )
+
+    assert receipt["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
+    }
+    assert receipt["nonclaims"] == EPISTEMIC_NONCLAIMS
+    access = receipt["access_observation_receipt"]
+    assert access["observation"] == "access_observed_at_request_time"
+    assert access["nonclaims"] == ACCESS_NONCLAIMS
+    # No licensing conclusion is asserted in either direction.
+    blob = json.dumps(receipt, ensure_ascii=False).lower()
+    assert "license" not in blob
+    assert "attestation" not in blob
+
+
+def test_altered_provenance_is_a_keep_first_contradiction(tmp_path: Path) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
+    )
+    receipt_path = Path(result.partition_path) / "receipt.json"
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["collection_provenance"] = {"basis": "self_authorized", "reference": "x"}
+    receipt.pop("receipt_sha256")
+    receipt["receipt_sha256"] = addons.canonical_hash(receipt)
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True), encoding="utf-8")
+
+    with pytest.raises(addons.CollectorIntegrityError, match="provenance"):
         addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+            minute_request(),
+            output_root=tmp_path,
+            query_fn=FakeQuery("stk_mins", minute_frame()),
+            now=HISTORICAL_NOW,
         )
 
-    assert query.calls == []
+
+@pytest.mark.parametrize(
+    ("endpoint", "frequency"),
+    [
+        ("stk_auction_o", "opening_call_auction"),
+        ("stk_auction_c", "closing_call_auction"),
+    ],
+)
+def test_auction_oc_pilots_write_partitions_and_preserve_a_no_trade_auction(
+    tmp_path: Path, endpoint: str, frequency: str
+) -> None:
+    query = FakeQuery(endpoint, auction_oc_frame())
+    result = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+        ),
+        output_root=tmp_path / endpoint,
+        query_fn=query,
+        now=HISTORICAL_NOW,
+    )
+
+    assert result.status == "written"
+    assert f"by_frequency={frequency}" in result.partition_path
+    assert [call[0] for call in query.calls] == ["trade_cal", "trade_cal", endpoint]
+    endpoint_params = query.calls[-1][1]
+    assert endpoint_params["trade_date"] == "20260807"
+    assert endpoint_params["ts_code"] == "000001.SZ"
+    # ts_type is a stk_auction (doc 369) parameter and must not leak to o/c.
+    assert "ts_type" not in endpoint_params
+
+    table = pq.read_table(Path(result.partition_path) / "part.parquet")
+    assert table.schema.metadata[b"endpoint"] == endpoint.encode()
+    assert table.column("vwap").to_pylist() == [10.05]
+    assert table.column("volume").to_pylist() == [10_000.0]
+
+    # A session that draws no matched order is preserved as null prices, never
+    # fabricated and never rejected as an integrity failure.
+    empty = auction_oc_frame()
+    for column in ("open", "high", "low", "close", "vwap"):
+        empty.loc[:, column] = float("nan")
+    empty.loc[:, "vol"] = 0
+    empty.loc[:, "amount"] = 0
+    quiet = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+        ),
+        output_root=tmp_path / f"{endpoint}-quiet",
+        query_fn=FakeQuery(endpoint, empty),
+        now=HISTORICAL_NOW,
+    )
+    quiet_table = pq.read_table(Path(quiet.partition_path) / "part.parquet")
+    assert quiet_table.column("close").to_pylist() == [None]
+    assert quiet_table.column("volume").to_pylist() == [0.0]
+
+
+@pytest.mark.parametrize("endpoint", ["stk_auction_o", "stk_auction_c"])
+def test_auction_oc_rejects_incoherent_ohlc_without_writing(
+    tmp_path: Path, endpoint: str
+) -> None:
+    frame = auction_oc_frame()
+    frame.loc[:, "low"] = 99.0
+    query = FakeQuery(endpoint, frame)
+
+    with pytest.raises(addons.CollectorIntegrityError, match="OHLC"):
+        addons.collect_pilot(
+            addons.PilotRequest(
+                endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+            ),
+            output_root=tmp_path,
+            query_fn=query,
+            now=HISTORICAL_NOW,
+        )
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("endpoint", ["stk_auction_o", "stk_auction_c"])
+def test_auction_oc_has_no_hold_on_history_but_holds_an_unpublished_session(
+    tmp_path: Path, endpoint: str
+) -> None:
+    """Docs 353/354 say 每天盘后更新, so only the CURRENT session is held."""
+    request = addons.PilotRequest(
+        endpoint=endpoint, trade_date="2026-08-10", ticker="000001.SZ"
+    )
+    query = FakeQuery(endpoint, auction_oc_frame(trade_date="20260810"))
+
+    with pytest.raises(addons.CollectionHeld, match="not_yet_published"):
+        addons.collect_pilot(
+            request,
+            output_root=tmp_path,
+            query_fn=query,
+            now=datetime(2026, 8, 10, 16, 29, tzinfo=SHANGHAI),
+        )
+    assert query.calls == []
+
+    published = addons.collect_pilot(
+        request,
+        output_root=tmp_path,
+        query_fn=FakeQuery(endpoint, auction_oc_frame(trade_date="20260810")),
+        now=datetime(2026, 8, 10, 16, 30, tzinfo=SHANGHAI),
+    )
+    assert published.status == "written"
+
+    # A deep-history session is admitted with no clock objection at all.
+    historical = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2023-03-01", ticker="000001.SZ"
+        ),
+        output_root=tmp_path,
+        query_fn=FakeQuery(endpoint, auction_oc_frame(trade_date="20230301")),
+        now=datetime(2026, 8, 10, 0, 1, tzinfo=SHANGHAI),
+    )
+    assert "by_trade_date=2023-03-01" in historical.partition_path
 
 
 def test_bse_pilots_fail_before_vendor_call_or_partition(tmp_path: Path) -> None:
@@ -582,7 +804,7 @@ def test_premarket_and_auction_single_ticker_partitions(tmp_path: Path) -> None:
     assert pq.read_table(Path(auction.partition_path) / "part.parquet").num_rows == 1
 
 
-@pytest.mark.parametrize("endpoint", ["stk_mins", "stk_premarket", "stk_auction"])
+@pytest.mark.parametrize("endpoint", sorted(addons.ENDPOINTS))
 def test_all_library_pilots_require_one_ticker_before_vendor_call(
     tmp_path: Path, endpoint: str
 ) -> None:
@@ -700,6 +922,9 @@ def test_cli_defaults_to_plan_and_has_no_range_or_backfill_surface(
     endpoint_parsers = next(
         action.choices for action in parser._actions if getattr(action, "choices", None)
     )
+    # Every admitted library contract must be reachable from the CLI, and the CLI
+    # must not offer an endpoint the library has no contract for.
+    assert set(endpoint_parsers) == set(addons.ENDPOINTS)
     for endpoint_parser in endpoint_parsers.values():
         ticker_action = next(
             action for action in endpoint_parser._actions if action.dest == "ticker"
@@ -788,63 +1013,13 @@ def test_cli_failure_receipt_does_not_echo_exception_or_secret(
     }
 
 
-def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> None:
+def test_reverted_manual_pilot_infrastructure_stays_retired() -> None:
+    """The recovered collector must not resurrect #5098's retired runner lane."""
     workflow_path = ROOT / ".github/workflows/tushare-addons-pilot.yml"
-    workflow_text = workflow_path.read_text(encoding="utf-8")
-    workflow = yaml.safe_load(workflow_text)
-    job = workflow["jobs"]["pilot"]
-    assert "schedule:" not in workflow_text
-    assert "push:" not in workflow_text
-    assert "refs/heads/main" in job["if"]
-    assert "confirm_execute" in job["if"]
-    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" in job["if"]
-    assert addons.LICENSE_AUTHORITY_GATE_VALUE in job["if"]
-    assert job["permissions"] if "permissions" in job else workflow["permissions"]
-    assert "persist-credentials: false" in workflow_text
-    assert "actions/upload-artifact@ea165f" in workflow_text
-    assert "--execute" in workflow_text
-    assert "--start-date" not in workflow_text
-    assert "--end-date" not in workflow_text
-    assert "stk_auction_o" not in workflow_text
-    assert "stk_auction_c" not in workflow_text
-    assert "part.parquet" not in workflow_text
-    assert 'raw_paid_rows_included"] = False' in workflow_text
-    assert 'raw_parquet_included"] = False' in workflow_text
-    assert ".strip().encode()" in workflow_text
+    lock_path = ROOT / "requirements/tushare-addons-pilot-macos-arm64-py312.lock"
+    dag_text = (ROOT / "config/dag.yml").read_text(encoding="utf-8")
 
-    steps = {step["name"]: step for step in job["steps"] if "name" in step}
-    token_scan = steps["prove review artifact contains no token"]
-    raw_cleanup = steps["remove isolated paid-data directory before upload"]
-    upload = steps["upload metadata-only pilot receipt"]
-    cleanup = steps["remove remaining isolated run directories"]
-    assert token_scan["id"] == "token_scan"
-    assert "raw_token" in token_scan["run"]
-    assert "transport_token" in token_scan["run"]
-    assert raw_cleanup["id"] == "raw_cleanup"
-    assert raw_cleanup["if"] == "${{ always() }}"
-    assert '/bin/rm -rf -- "$raw"' in raw_cleanup["run"]
-    assert 'test ! -e "$raw"' in raw_cleanup["run"]
-    assert "steps.token_scan.outcome == 'success'" in upload["if"]
-    assert "steps.token_scan.outputs.passed == 'true'" in upload["if"]
-    assert "steps.raw_cleanup.outcome == 'success'" in upload["if"]
-    assert "steps.raw_cleanup.outputs.passed == 'true'" in upload["if"]
-    assert str(upload["with"]["path"]).endswith("-review")
-    step_names = [step.get("name") for step in job["steps"]]
-    assert step_names.index("remove isolated paid-data directory before upload") < (
-        step_names.index("upload metadata-only pilot receipt")
-    )
-    assert cleanup["if"] == "${{ always() }}"
-    assert '"$raw"' in cleanup["run"]
-    assert '"$review"' in cleanup["run"]
-
-    dag = yaml.safe_load((ROOT / "config/dag.yml").read_text(encoding="utf-8"))
-    lanes = [
-        lane
-        for lane in dag["lanes"]
-        if lane["workflow"] == ".github/workflows/tushare-addons-pilot.yml"
-    ]
-    assert len(lanes) == 1
-    assert lanes[0]["job"] == "pilot"
-    assert [step["module"] for step in lanes[0]["steps"]] == [
-        "scripts.collect_tushare_addons"
-    ]
+    assert not workflow_path.exists()
+    assert not lock_path.exists()
+    assert "tushare-addons-pilot.yml" not in dag_text
+    assert "scripts.collect_tushare_addons" not in dag_text

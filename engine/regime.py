@@ -41,7 +41,18 @@ def _quad_signs(q: str) -> tuple[int, int]:
 def apply_hysteresis(g: pd.Series, i: pd.Series, hysteresis_days: int,
                      shock_z: float) -> pd.DataFrame:
     """Iterate the daily raw quads through the confirmation state machine.
-    Returns confirmed quad, the pending candidate and its countdown."""
+    Returns confirmed quad, the pending candidate and its countdown.
+
+    A day whose raw quad is undefined (either axis score NaN) gets NO confirmed
+    label — the machine's memory (current quad, pending countdown) is held
+    frozen so a short data gap resumes without re-confirmation, but the label
+    itself is None: a quad is a claim about that day's growth×inflation mix,
+    and with an axis dark there is no input the claim could rest on. Carrying
+    the last label instead is how the 2026-08-08 HK incident shipped 9 sessions
+    of "Q3 Stagflation" on a null inflation axis while the full-input recompute
+    of the same dates read Q1 (commit 901282ec209). Downstream already treats
+    None as "no claim": latest snapshots anchor to quad.last_valid_index() and
+    the timeline exporters ship only labeled days."""
     confirmed: list[str | None] = []
     pending: list[str | None] = []
     pending_days: list[int] = []
@@ -52,7 +63,7 @@ def apply_hysteresis(g: pd.Series, i: pd.Series, hysteresis_days: int,
     for gs, is_ in zip(g.to_numpy(), i.to_numpy()):
         rq = raw_quad(gs, is_)
         if rq is None:
-            confirmed.append(cur); pending.append(cand); pending_days.append(cand_n)
+            confirmed.append(None); pending.append(cand); pending_days.append(cand_n)
             continue
         if cur is None:
             cur, cand, cand_n = rq, None, 0

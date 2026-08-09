@@ -110,8 +110,26 @@ sources:
     source_shape_canary_required: true
     etag_semantics: retained_as_transport_metadata_never_content_identity_or_freshness
     license_class: us_government_source_facts
-    rights_state: operator_review_required_before_enable
-    production_ingest_allowed: false
+    # Rights gate CLEARED by the named operator ruling of 2026-08-07 (Ruling 1).
+    # This clears exactly ONE of three gates. The runtime gate
+    # (b2_history_canary.production_enable_env / default_enabled) and the
+    # universe gate (allowlist_config_env / default_allowlist) are untouched and
+    # still closed, there is no installed worker or timer for record history, and
+    # NO outcome-family clock is opened by this. `source_shape_canary_required`
+    # stays true: this is an undocumented UI-backing route that can change
+    # without notice, and the canary is the tripwire.
+    rights_state: official_terms_operator_reviewed_for_bounded_beta
+    rights_reviewed_at: "2026-08-07T00:00:00Z"
+    rights_review_basis: official_terms_conditions_not_legal_opinion
+    rights_review_ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
+    # RE-BOUND 2026-08-08.  The ruling document gained Ruling 3 (the four
+    # subsidiary sponsor rows), which moved its digest.  Ruling 1 — the rights
+    # decision this block records — is UNCHANGED in that document; only the
+    # bytes surrounding it moved.  Nothing else in this block was touched: the
+    # runtime gate, the universe gate, the canary requirement, and every clock
+    # remain exactly as the operator left them on 2026-08-07.
+    rights_review_ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
+    production_ingest_allowed: true
     raw_archive: private_only
     public_projection: blocked_until_enable
     distribution_obligations:

@@ -7,6 +7,11 @@ CONTEXT-ONLY · never raises. See research/CHINA_INTEL_POWERHOUSE.md §1.2.
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 
 def build():

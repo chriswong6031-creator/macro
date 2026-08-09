@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import copy
 import gzip
 import hashlib
 
@@ -18,6 +19,7 @@ from collectors.sec_document_spine import (
     SecFilingArchiveCollector,
     archive_receipt_from_json_bytes,
     find_reusable_primary_retrieval,
+    manifest_storage_key,
     missing_document_receipt,
     missing_receipt_from_json_bytes,
     missing_receipt_json_bytes,
@@ -31,20 +33,26 @@ from collectors.sec_document_spine import (
     read_missing_document_receipt,
     read_primary_document,
     receipt_storage_key,
+    retain_filing_manifest,
+    stored_manifest_content_index,
 )
 from engine.fundamental_forensics.sec_document_spine import (
     FilingManifestError,
     HARD_MAX_FILING_MANIFEST_BYTES,
     HARD_MAX_ARCHIVE_INDEX_MEMBERS,
+    MANIFEST_CONTENT_KEY_PREFIX,
+    MANIFEST_ID_PREFIX,
     archive_directory_url,
     archive_document_url,
     archive_index_document,
     build_filing_manifests,
     canonical_cik,
     documents_from_archive_index,
+    manifest_content_key,
     manifest_from_json_bytes,
     manifest_json_bytes,
     select_periodic_comparables,
+    validate_manifest,
     with_archive_documents,
     with_document_retrievals,
 )
@@ -197,6 +205,153 @@ def test_manifest_round_trip_and_source_array_order_are_deterministic(tmp_path):
 
     with pytest.raises(FilingManifestError, match="not UTF-8 JSON"):
         manifest_from_json_bytes(b'{"oversized_integer":' + b"9" * 5_000 + b"}")
+
+
+def _materialized(
+    tmp_path,
+    *,
+    recorded_at: str = RECORDED_AT,
+    retrieved_at: str = "2026-08-01T12:00:05Z",
+    content: bytes = b"primary-document-bytes",
+    submissions: dict | None = None,
+):
+    """Build the stored (post-fetch) manifest version for the first fixture filing."""
+    manifest = build_filing_manifests(
+        submissions or _submissions(), recorded_at=recorded_at
+    )[0]
+    primary = manifest["documents"][0]
+    receipt = persist_archive_document(
+        tmp_path, primary, content, retrieved_at=retrieved_at
+    )
+    return with_document_retrievals(manifest, {primary["document_id"]: receipt.to_dict()})
+
+
+def test_manifest_content_key_ignores_run_clocks_but_never_the_bytes(tmp_path):
+    """Two nights of an unchanged filing are one content version.
+
+    ``manifest_id`` still commits to the run clocks (R5), so the two manifests
+    below have different ids and would have minted two objects; the content key
+    is what lets the store keep one.
+    """
+    first = _materialized(
+        tmp_path, recorded_at="2026-08-01T12:00:00Z", retrieved_at="2026-08-01T12:00:05Z"
+    )
+    second = _materialized(
+        tmp_path, recorded_at="2026-08-02T12:00:00Z", retrieved_at="2026-08-02T12:00:05Z"
+    )
+    first_receipt = first["documents"][0]["retrieval"]
+    second_receipt = second["documents"][0]["retrieval"]
+
+    assert first["manifest_id"] != second["manifest_id"]
+    assert first["clocks"]["recorded_at"] != second["clocks"]["recorded_at"]
+    assert first_receipt["retrieved_at"] != second_receipt["retrieved_at"]
+    assert first_receipt["receipt_id"] != second_receipt["receipt_id"]
+    assert manifest_content_key(first) == manifest_content_key(second)
+    assert manifest_content_key(first).startswith(MANIFEST_CONTENT_KEY_PREFIX)
+    assert not manifest_content_key(first).startswith(MANIFEST_ID_PREFIX)
+
+    # Byte identity stays inside the key: different bytes are a new version.
+    other_bytes = _materialized(tmp_path, content=b"different-primary-document-bytes")
+    assert other_bytes["documents"][0]["content_sha256"] != first["documents"][0]["content_sha256"]
+    assert manifest_content_key(other_bytes) != manifest_content_key(first)
+
+
+def test_manifest_content_key_separates_every_real_content_difference():
+    base = build_filing_manifests(_submissions(), recorded_at=RECORDED_AT)[0]
+    accession = base["filing"]["accession"]
+
+    other_form = _submissions()
+    index = other_form["filings"]["recent"]["accessionNumber"].index(accession)
+    other_form["filings"]["recent"]["form"][index] = "10-Q"
+    changed_form = next(
+        item
+        for item in build_filing_manifests(other_form, recorded_at=RECORDED_AT)
+        if item["filing"]["accession"] == accession
+    )
+    assert changed_form["filing"]["form"] != base["filing"]["form"]
+    assert manifest_content_key(changed_form) != manifest_content_key(base)
+
+    # Lineage alone: only the amendment relationship moves, no other field.
+    amended_accession = "0000000001-26-000005"
+    inferred = next(
+        item
+        for item in build_filing_manifests(_submissions(), recorded_at=RECORDED_AT)
+        if item["filing"]["accession"] == amended_accession
+    )
+    explicit_parent = _submissions()
+    explicit_parent["filings"]["recent"]["amendsAccessionNumber"] = [
+        None, None, None, None, "0000000001-26-000003"
+    ]
+    observed = next(
+        item
+        for item in build_filing_manifests(explicit_parent, recorded_at=RECORDED_AT)
+        if item["filing"]["accession"] == amended_accession
+    )
+    assert inferred["lineage"] != observed["lineage"]
+    assert inferred["filing"] == observed["filing"]
+    assert manifest_content_key(inferred) != manifest_content_key(observed)
+
+    expanded = with_archive_documents(
+        base,
+        documents_from_archive_index(base, {"directory": {"item": [{"name": "exhibit-99.htm"}]}}),
+    )
+    assert len(expanded["documents"]) > len(base["documents"])
+    assert manifest_content_key(expanded) != manifest_content_key(base)
+
+
+def test_manifest_content_key_never_mutates_its_input(tmp_path):
+    manifest = _materialized(tmp_path)
+    before = copy.deepcopy(manifest)
+
+    manifest_content_key(manifest)
+
+    assert manifest == before
+    # The excluded clocks are excluded from the KEY, never dropped from the
+    # manifest: §8 does not license removing them.
+    assert manifest["clocks"]["recorded_at"] == RECORDED_AT.replace("Z", ".000000Z")
+    assert manifest["documents"][0]["retrieval"]["retrieved_at"]
+    assert manifest["documents"][0]["retrieval"]["receipt_id"]
+    validate_manifest(manifest)
+
+
+def test_retain_filing_manifest_reuses_stored_content_and_mints_only_new_content(tmp_path):
+    first = _materialized(
+        tmp_path, recorded_at="2026-08-01T12:00:00Z", retrieved_at="2026-08-01T12:00:05Z"
+    )
+    key, retained, minted = retain_filing_manifest(tmp_path, first)
+    assert minted is True
+    assert retained == first
+    assert key == manifest_storage_key(first)
+
+    later = _materialized(
+        tmp_path, recorded_at="2026-08-02T12:00:00Z", retrieved_at="2026-08-02T12:00:05Z"
+    )
+    later_key, later_retained, later_minted = retain_filing_manifest(tmp_path, later)
+    assert later_minted is False
+    # The STORED manifest comes back verbatim, so first retention (R2) and the
+    # original retrieval receipt survive; nothing new is written.
+    assert later_retained == first
+    assert later_key == key
+    assert not (tmp_path / manifest_storage_key(later)).exists()
+
+    changed = _materialized(
+        tmp_path,
+        recorded_at="2026-08-03T12:00:00Z",
+        retrieved_at="2026-08-03T12:00:05Z",
+        content=b"a genuinely different primary document",
+    )
+    changed_key, _, changed_minted = retain_filing_manifest(tmp_path, changed)
+    assert changed_minted is True
+    assert changed_key != key
+    # Forward-only: the earlier object is neither deleted nor rewritten (R4).
+    assert read_filing_manifest(tmp_path, key) == first
+
+    index = stored_manifest_content_index(
+        tmp_path, cik=first["issuer"]["cik"], accession=first["filing"]["accession"]
+    )
+    assert set(index) == {manifest_content_key(first), manifest_content_key(changed)}
+    with pytest.raises(ArchiveStoreError, match="invalid filing manifest CIK namespace"):
+        stored_manifest_content_index(tmp_path, cik="../..", accession=first["filing"]["accession"])
 
 
 def test_manifest_reads_reject_traversal_oversize_and_identity_mismatched_keys(tmp_path):

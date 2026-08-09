@@ -5,6 +5,7 @@
   'use strict';
   var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
   var DATA = null;
+  var collapseSeq = 0;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function num(x, d) { return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
@@ -32,8 +33,8 @@
   function statePill(state, side) { var s = shortState(state, state); return '<span class="pill ' + (side || 'neutral') + '">' + L(esc(s.en), esc(s.zh)) + '</span>'; }
   function freshTxt(e) {
     if (!e) return '';
-    if (e.tier === 'T3' || e.tier === 'T4') { var b = e.bars_to_cross; return b != null ? L('~' + b + ' bars to cross', '约' + b + ' 根后交叉') : L('about to cross', '即将交叉'); }
-    if (e.ticks != null) return e.ticks === 0 ? L('crossed this bar', '本根交叉') : L(e.ticks + ' tick' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 格前');
+    if (e.tier === 'T3' || e.tier === 'T4') return L('about to fire', '即将触发');
+    if (e.ticks != null) return e.ticks === 0 ? L('just fired', '刚刚触发') : L('fired ' + e.ticks + ' bar' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 根K线前触发');
     return '';
   }
   function nameCell(label, labelZh) { return L(esc(label), esc(labelZh || label)); }
@@ -48,7 +49,7 @@
   function relTier(g) { return (g && g.reliability) || relTierN(g && (g.n_priced != null ? g.n_priced : g.n_members)); }
   function isThinG(g) { return relTier(g) === 'low'; }
   function isThinRow(r) { return (r.subsector_reliability || relTierN(r.subsector_n_priced)) === 'low'; }
-  function thinBadge(n) { return '<span class="relb rel-low" title="' + esc(n) + ' priced members — an equal-weight index this thin is driven by 1–2 names; high-variance">⚠ ' + L('thin', '偏薄') + '</span>'; }
+  function thinBadge(n) { return '<span class="relb rel-low" title="' + esc(n) + ' stocks — too few for a steady read">⚠ ' + L('thin', '偏薄') + '</span>'; }
   function relBadge(g) { return isThinG(g) ? ' ' + thinBadge(g.n_priced != null ? g.n_priced : g.n_members) : ''; }
 
   function cardHTML(g) {
@@ -57,14 +58,15 @@
     return '<a class="card" style="border-left-color:' + col + '" href="' + (g.chart_key ? detailHref(g) : '#') + '">'
       + '<div class="top"><div><div class="nm">' + nameCell(g.label, g.label_zh) + '</div><div class="sct">' + nameCell(g.sector, g.sector_zh) + ' · ' + (g.n_priced || g.n_members) + ' ' + L('names', '只') + relBadge(g) + '</div></div>' + tierBadge(e.tier) + '</div>'
       + '<div class="row2">' + regimePill(r) + (e.tier ? '<span class="pill buy">' + L('ENTRY', '入场') + '</span>' : '') + '<span style="color:var(--muted);font-size:11px">' + freshTxt(e) + '</span></div>'
-      + '<div class="meta">' + (r.rsi_3d != null ? '3D RSI ' + num(r.rsi_3d) + ' · StochRSI ' + num(r.stoch_3d) : '') + (r.rs_60d != null ? ' · ' + L('RS60 vs CSI300', 'RS60 对沪深300') + ' ' + signed(r.rs_60d) : '') + '</div>'
+      + '<div class="meta">' + (r.rs_60d != null ? L('vs CSI 300, 60d', '近60日 对沪深300') + ' ' + signed(r.rs_60d) : '') + '</div>'
       + '</a>';
   }
   function cardDeck(items) {
     if (items.length <= 10) return '<div class="cards">' + items.map(cardHTML).join('') + '</div>';
+    var regionId = 'sc-card-region-' + (++collapseSeq);
     return '<div class="sc-card-collapse sc-card-collapsed" data-mobile-limit="10" data-desktop-rows="3" data-total="' + items.length + '">'
-      + '<div class="cards">' + items.map(cardHTML).join('') + '</div>'
-      + '<button class="sc-more sc-card-more" type="button"></button></div>';
+      + '<div class="cards" id="' + regionId + '">' + items.map(cardHTML).join('') + '</div>'
+      + '<button class="sc-more sc-card-more" type="button" aria-expanded="false" aria-controls="' + regionId + '"></button></div>';
   }
   function gridCols(grid) {
     if (!grid) return 1;
@@ -81,6 +83,7 @@
     var open = !box.classList.contains('sc-card-collapsed');
     cards.forEach(function (card, i) { card.classList.toggle('sc-card-hidden', !open && i >= limit); });
     btn.style.display = cards.length > limit ? '' : 'none';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.innerHTML = open
       ? '<span class="l-en">See fewer ▴</span><span class="l-zh">收起 ▴</span>'
       : '<span class="l-en">See more (' + (cards.length - limit) + ') ▾</span><span class="l-zh">展开更多 (' + (cards.length - limit) + ') ▾</span>';
@@ -88,7 +91,51 @@
   function updateCardCollapses(root) {
     Array.prototype.forEach.call((root || document).querySelectorAll('.sc-card-collapse'), updateCardCollapse);
   }
+  /* Long TABLES collapse the same way the card decks do. Before this the funnel
+     capped its list at DB_CAP and printed a dead "+ N more" line, so the rows past
+     the cap were not hidden — they were never rendered, and the reader was told
+     about names they had no way to reach. */
+  function rowCollapse(tableHTML, total, cap) {
+    if (total <= cap) return tableHTML;
+    var regionId = 'sc-row-region-' + (++collapseSeq);
+    var controlledTable = tableHTML.replace('<table ', '<table id="' + regionId + '" ');
+    return '<div class="sc-row-collapse sc-rows-collapsed" data-cap="' + cap + '">' + controlledTable
+      + '<button class="sc-more sc-row-more" type="button" aria-expanded="false" aria-controls="' + regionId + '"></button></div>';
+  }
+  function updateRowCollapse(box) {
+    var rows = Array.prototype.slice.call(box.querySelectorAll('tbody tr'));
+    var btn = box.querySelector('.sc-row-more');
+    if (!btn) return;
+    var cap = Number(box.getAttribute('data-cap') || 30);
+    var open = !box.classList.contains('sc-rows-collapsed');
+    // Only DATA rows count toward the cap and the button's total. The all-concepts
+    // table interleaves category header rows, so counting every <tr> would put 254
+    // on a button whose section heading says 237 — and could leave a collapsed
+    // table ending on a bare category heading with nothing under it.
+    var shown = 0, total = 0, cats = [];
+    rows.forEach(function (tr) {
+      if (tr.querySelector('td.cat-row')) { cats.push({ tr: tr, n: 0 }); return; }
+      total++;
+      var hide = !open && shown >= cap;
+      if (!hide) { shown++; if (cats.length) cats[cats.length - 1].n++; }
+      tr.classList.toggle('sc-card-hidden', hide);
+    });
+    cats.forEach(function (g) { g.tr.classList.toggle('sc-card-hidden', g.n === 0); });
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.innerHTML = open
+      ? '<span class="l-en">See fewer ▴</span><span class="l-zh">收起 ▴</span>'
+      : '<span class="l-en">See all ' + total + ' ▾</span><span class="l-zh">展开全部 ' + total + ' ▾</span>';
+  }
+  function updateRowCollapses(root) {
+    Array.prototype.forEach.call((root || document).querySelectorAll('.sc-row-collapse'), updateRowCollapse);
+  }
   function onMoreClick(e) {
+    var rowBtn = e.target.closest ? e.target.closest('.sc-row-more') : null;
+    if (rowBtn) {
+      var rbox = rowBtn.closest('.sc-row-collapse');
+      if (rbox) { rbox.classList.toggle('sc-rows-collapsed'); updateRowCollapse(rbox); }
+      return;
+    }
     var btn = e.target.closest ? e.target.closest('.sc-card-more') : null;
     if (!btn) return;
     var box = btn.closest('.sc-card-collapse');
@@ -113,20 +160,20 @@
     // kept, but collapsed out of the headline so a 3-stock "index" never sits beside a 25-name one.
     var thinAct = all.filter(function (g) { return (g['class'] === 'entry_now' || g['class'] === 'forming') && isThinG(g); });
     var h = '<div class="sec"><h2>🟢 ' + L('Entry-now concepts', '现可入场概念') + ' <span style="color:var(--muted);font-weight:500">' + entry.length + '</span></h2>'
-      + '<div class="desc">' + L('Fresh T1/T2 confluence cross (just fired) or T3 (3D StochRSI crossed &amp; 2D MACD about to cross), backed by a broad enough concept (&ge;6 priced members) to be a meaningful index. Buy-ready now; the detail page shows the index chart &amp; which members are firing.',
-        'T1/T2 汇聚刚触发，或 T3（3D StochRSI 已穿且 2D MACD 即将上穿），且概念成分足够宽（≥6 只有价成分）方为有效指数。当前可买；详情页含指数图与触发成分。') + '</div>';
-    h += entry.length ? cardDeck(entry) : '<div class="empty">' + L('No broad concept is firing a fresh entry tier right now.', '当前没有足够宽的概念触发新的入场层级。') + '</div>';
+      + '<div class="desc">' + L('Themes where a buy signal just fired, or is one step away. Open one to see its chart and which of its stocks are moving.',
+        '刚出现买入信号、或只差一步的概念。点开可以看走势图，以及概念里哪些股票在动。') + '</div>';
+    h += entry.length ? cardDeck(entry) : '<div class="empty">' + L('No theme is firing a fresh buy signal right now.', '目前没有概念出现新的买入信号。') + '</div>';
     if (forming.length) h += '<h2 style="margin-top:18px">🔵 ' + L('Forming (T4 — earliest)', '构筑中（T4 — 最早）') + ' <span style="color:var(--muted);font-weight:500">' + forming.length + '</span></h2><div class="cards">' + forming.map(cardHTML).join('') + '</div>';
     if (thinAct.length) {
       h += '<details class="thin"><summary>⚠ ' + L('Low-confidence · thin concepts', '低可信 · 过薄概念') + ' <span style="color:var(--muted);font-weight:500">' + thinAct.length + '</span></summary>'
-        + '<div class="desc">' + L('Same fresh entry tier, but the concept has fewer than 6 priced members — an equal-weight index this thin is driven by 1–2 stocks, so the tier &amp; regime read is high-variance. Shown for completeness; treat the signal as weak.',
-          '同为新入场层级，但概念有价成分少于6只——如此薄的等权指数由1-2只个股主导，层级与状态读数高波动。仅为完整性展示；信号视为偏弱。') + '</div>'
+        + '<div class="desc">' + L('Same signal, but the theme holds too few stocks for the read to be steady — one or two names can swing the whole thing. Listed for completeness; treat it as weak.',
+          '信号一样，但这个概念里的股票太少，读数不稳——一两只股就能带偏整体。列在这里只为完整，当作偏弱看待。') + '</div>'
         + '<div class="cards">' + thinAct.map(cardHTML).join('') + '</div></details>';
     }
     return h + '</div>';
   }
 
-  var DB_CAP = 30;
+  var DB_CAP = 30, ALL_CAP = 25;
   function conceptCell(r) {
     var np = r.subsector_n_priced;
     return '<a href="' + detailHrefKey(r.subsector_key) + '">' + nameCell(r.subsector, r.subsector_zh) + '</a>'
@@ -151,7 +198,6 @@
     // split by concept breadth: reliable picks headline; thin-concept picks collapse (kept, flagged)
     var dbRel = dbAll.filter(function (r) { return !isThinRow(r); });
     var dbThin = dbAll.filter(isThinRow);
-    var db = dbRel.slice(0, DB_CAP);
     var maxs = Math.max.apply(null, [0.01].concat(dbAll.map(function (r) { return r.combined_score || 0; })));
     var warn = hw.map(function (r) {
       return '<tr><td class="tk col-stock"><a href="' + stockHref(r.ticker) + '">' + esc(r.ticker) + '</a>' + (r.name_zh ? ' <span class="stock-name" style="color:var(--muted);font-weight:400;font-size:.9em">' + esc(r.name_zh) + '</span>' : '') + '</td>'
@@ -159,21 +205,21 @@
         + '<td class="col-concept">' + conceptCell(r) + '</td>'
         + '<td class="col-regime">' + statePill(r.subsector_state, 'avoid') + '</td></tr>';
     }).join('');
-    var h = '<div class="sec"><h2>🎯 ' + L('Double-confluence buys', '双重汇聚买入') + ' <span style="color:var(--muted);font-weight:500">' + dbRel.length + '</span></h2>'
-      + '<div class="desc">' + L('A-shares whose OWN T1-T4 cascade is buyable AND whose concept (&ge;6 priced members) has a tailwind. Ranked by combined conviction = stock weight × concept buyability factor (T1×T1 = 1.0); ties broken by concept breadth.',
-        '自身 T1-T4 级联可买且所在概念（≥6 只有价成分）顺风的A股。按综合把握度排序 = 个股权重 × 概念可买系数（T1×T1 = 1.0）；同分按概念宽度排序。') + '</div>';
-    h += db.length ? dbTable(db, maxs) : '<div class="empty">' + L('No double-confluence buys in a broad concept right now.', '当前宽概念中无双重汇聚买入。') + '</div>';
-    if (dbRel.length > DB_CAP) h += '<div style="color:var(--muted);font-size:11px;padding:6px 2px">' + L('+ ' + (dbRel.length - DB_CAP) + ' more, showing top ' + DB_CAP + ' by conviction', '另有 ' + (dbRel.length - DB_CAP) + ' 个，按把握度显示前 ' + DB_CAP) + '</div>';
+    var h = '<div class="sec"><h2>🎯 ' + L('Buys with the theme behind them', '概念顺风的买入') + ' <span style="color:var(--muted);font-weight:500">' + dbRel.length + '</span></h2>'
+      + '<div class="desc">' + L('A-shares that are a buy on their own, and whose theme is working too. The strongest agreement sits at the top.',
+        '本身就是买点、所在概念也在走强的A股。两边一致程度最高的排在最前面。') + '</div>';
+    h += dbRel.length ? rowCollapse(dbTable(dbRel, maxs), dbRel.length, DB_CAP)
+      : '<div class="empty">' + L('Nothing right now has both the stock and its theme working.', '目前没有个股和概念同时走强的标的。') + '</div>';
     if (dbThin.length) {
-      h += '<details class="thin"><summary>⚠ ' + L('Double-buys in thin concepts', '过薄概念中的双买') + ' <span style="color:var(--muted);font-weight:500">' + dbThin.length + '</span></summary>'
-        + '<div class="desc">' + L('The stock cascade fires, but its only tailwind concept has fewer than 6 priced members — the concept context is unreliable. Judge these on the stock alone.',
-          '个股级联触发，但其唯一顺风概念有价成分少于6只——概念背景不可靠。请仅凭个股判断。') + '</div>'
-        + dbTable(dbThin.slice(0, DB_CAP), maxs) + '</details>';
+      h += '<details class="thin"><summary>⚠ ' + L('Theme too small to lean on', '概念太小，不足为凭') + ' <span style="color:var(--muted);font-weight:500">' + dbThin.length + '</span></summary>'
+        + '<div class="desc">' + L('The stock is a buy, but the only theme supporting it holds too few names to trust. Judge these on the stock alone.',
+          '个股是买点，但唯一支持它的概念里股票太少，不足为凭。这些只看个股本身来判断。') + '</div>'
+        + rowCollapse(dbTable(dbThin, maxs), dbThin.length, DB_CAP) + '</details>';
     }
-    if (warn) h += '<details class="thin" style="margin-top:20px"><summary>⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></summary>'
-      + '<div class="desc">' + L('A strong-looking A-share (its own cascade fires) but its concept is TOPPING / SELLING — the "don\'t chase the leadership being distributed" flag. Not a buy.',
-        '个股看似强势（自身级联触发），但所在概念正见顶/派发——“别去追正在派发的领涨股”信号。非买入。') + '</div>'
-      + '<table class="tbl hw-table"><thead><tr><th class="col-stock">' + L('Stock', '个股') + '</th><th class="col-tier">' + L('Stock tier', '个股层级') + '</th><th class="col-concept">' + L('Concept', '概念') + '</th><th class="col-regime">' + L('Concept regime', '概念状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table></details>';
+    if (warn) h += '<details class="thin" style="margin-top:20px"><summary>⚠️ ' + L('Strong stock, weak theme', '个股强、概念弱') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></summary>'
+      + '<div class="desc">' + L('The stock looks strong, but its theme is topping out — the classic case of chasing something that is being sold into. Not a buy.',
+        '个股看着强，但所在概念已经在见顶——典型的追在出货方向上。不是买点。') + '</div>'
+      + rowCollapse('<table class="tbl hw-table"><thead><tr><th class="col-stock">' + L('Stock', '个股') + '</th><th class="col-tier">' + L('Stock tier', '个股层级') + '</th><th class="col-concept">' + L('Theme', '概念') + '</th><th class="col-regime">' + L('Theme state', '概念状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table>', hw.length, DB_CAP) + '</details>';
     return h + '</div>';
   }
 
@@ -211,7 +257,7 @@
       body += gs.map(conceptRow).join('');
     });
     return '<div class="sec"><h2>📋 ' + L('All concepts · by category', '全部概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
-      + '<table class="tbl all-table"><thead><tr><th class="col-concept">' + L('Concept', '概念') + '</th><th class="col-entry">' + L('Entry', '入场') + '</th><th class="col-regime">' + L('Regime', '状态') + '</th><th class="col-fresh">' + L('Freshness', '新鲜度') + '</th><th class="col-rs">RS60</th><th class="col-n">' + L('N', '数') + '</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+      + rowCollapse('<table class="tbl all-table"><thead><tr><th class="col-concept">' + L('Concept', '概念') + '</th><th class="col-entry">' + L('Entry', '入场') + '</th><th class="col-regime">' + L('State', '状态') + '</th><th class="col-fresh">' + L('How fresh', '新鲜度') + '</th><th class="col-rs">' + L('vs CSI 300', '对沪深300') + '</th><th class="col-n">' + L('Stocks', '只数') + '</th></tr></thead><tbody>' + body + '</tbody></table>', bs.length, ALL_CAP) + '</div>';
   }
 
   function render() {
@@ -226,6 +272,7 @@
     app.innerHTML = entryNowSection(DATA) + funnelSection(DATA) + allSection(DATA);
     wrapTbls(app);
     updateCardCollapses(app);
+    updateRowCollapses(app);
   }
 
   function boot() {
