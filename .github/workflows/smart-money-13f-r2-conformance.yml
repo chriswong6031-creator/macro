@@ -1,0 +1,100 @@
+name: smart-money-13f-r2-conformance
+
+# One-time, review-only provider proof. It has no schedule, push trigger,
+# repository write, catalog publication, or cleanup/delete step.
+on:
+  workflow_dispatch:
+    inputs:
+      run_conformance:
+        description: "Explicitly run the institutional 13F R2 CAS witness"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smart-money-13f-r2-conformance
+  cancel-in-progress: false
+
+jobs:
+  provider-proof:
+    if: ${{ inputs.run_conformance == true && github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 5
+    steps:
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: create isolated Python 3.12 runtime
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="$RUNNER_TEMP/institutional-13f-r2-conformance-${suffix}-venv"
+          test ! -e "$venv"
+          /opt/homebrew/bin/python3.12 -m venv "$venv"
+          echo "$venv/bin" >> "$GITHUB_PATH"
+
+      - name: install exact reviewed R2 dependency lock
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="$RUNNER_TEMP/institutional-13f-r2-conformance-${suffix}-venv"
+          lock="$RUNNER_TEMP/institutional-13f-r2-conformance-${suffix}.lock"
+          test ! -e "$lock"
+          git show "$GITHUB_SHA:requirements/capital-share-r2-conformance-macos-arm64-py312.lock" > "$lock"
+          "$venv/bin/python" -m pip --isolated install \
+            --no-input \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            --retries 2 \
+            --timeout 15 \
+            -r "$lock"
+          "$venv/bin/python" -c "import boto3"
+
+      - name: verify reviewed source and strict-store capability surface
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          python -E -s - <<'PY'
+          from scripts import institutional_13f_r2_conformance as proof
+          from engine.institutional_census.storage import build_institutional_13f_store
+          from engine.research_vault.r2_store import StrictConditionalWriteStore
+
+          assert proof.RECEIPT_SCHEMA == "institutional_13f.r2_conformance_receipt/v1"
+          assert callable(build_institutional_13f_store)
+          assert callable(getattr(StrictConditionalWriteStore, "put_bytes_strict_conditional"))
+          PY
+
+      - name: run retained-object conditional provider proof
+        env:
+          # Explicit compatibility bridge from the repository's existing SEC
+          # evidence-store secrets into the no-fallback institutional namespace.
+          INSTITUTIONAL_13F_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          INSTITUTIONAL_13F_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          INSTITUTIONAL_13F_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          INSTITUTIONAL_13F_R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          output="$RUNNER_TEMP/institutional-13f-r2-conformance-${suffix}/institutional_13f_r2_conformance_receipt.json"
+          test ! -e "$output"
+          python -E -s -m scripts.institutional_13f_r2_conformance --output "$output"
+
+      - name: upload canonical review receipt
+        if: ${{ always() }}
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: institutional-13f-r2-conformance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/institutional-13f-r2-conformance-${{ github.run_id }}-${{ github.run_attempt }}/institutional_13f_r2_conformance_receipt.json
+          if-no-files-found: error
+          retention-days: 90

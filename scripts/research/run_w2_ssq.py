@@ -155,8 +155,7 @@ def _save_ticker_cache(cache_dir: Path, ticker: str, rows: list[dict]) -> None:
 # Path bootstrap
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 log = logging.getLogger(__name__)
 
@@ -465,8 +464,6 @@ def _assess_one_ticker(args: tuple) -> list[dict]:
 
     # Lazy import per-worker — avoids cross-process module state issues
     _repo_root = Path(__file__).resolve().parents[2]
-    if str(_repo_root) not in sys.path:
-        sys.path.insert(0, str(_repo_root))
     from engine.vol_squeeze import assess_series  # noqa: PLC0415
 
     close  = df["close"]

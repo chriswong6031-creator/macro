@@ -9,6 +9,10 @@
 #   macro-live-prophet  every ~5m in the ET session: Prophet Live provisional states
 #                       (reads the two lanes above off disk, publishes R2 + the GATED
 #                       live/prophet_live.json). Needs R2_* in /etc/macro-live.env.
+#   macro-live-closepass every ~5m 20:00-23:59Z: mirrors the evening close-pass
+#                       provisional board from R2 to the GATED
+#                       live/us_board_provisional.json. Pure transport — it never
+#                       computes. Needs R2_* in /etc/macro-live.env.
 #
 # All browser artifacts are atomically published to /var/lib/macro-live/public,
 # outside /opt/macro and /opt/macro/site.served. Canonical history, forward ledgers,
@@ -95,7 +99,8 @@ for unit in \
   macro-live-fast.service macro-live-fast.timer \
   macro-live-snapshot.service macro-live-snapshot.timer \
   macro-live-bars.service macro-live-bars.timer \
-  macro-live-prophet.service macro-live-prophet.timer
+  macro-live-prophet.service macro-live-prophet.timer \
+  macro-live-closepass.service macro-live-closepass.timer
 do
   unit_sources+=("$APP_DIR/app/deploy/$unit")
 done
@@ -127,14 +132,16 @@ test -s "$LIVE_DIR/quotes.json"
   "$LIVE_DIR/quotes.json"
 
 log "[5/6] enable replacement timers"
-# macro-live-prophet is armed here too, but it is NOT part of the fail-safe smoke
-# transaction above: it consumes what the three lanes publish and writes only its own
-# runtime artifact, so a Prophet-side fault can never take the served site down.
+# macro-live-prophet and macro-live-closepass are armed here too, but neither is part
+# of the fail-safe smoke transaction above: they consume what the three lanes publish
+# and write only their own runtime artifacts, so a fault in either can never take the
+# served site down.
 systemctl enable --now \
   macro-live-fast.timer \
   macro-live-snapshot.timer \
   macro-live-bars.timer \
-  macro-live-prophet.timer >/dev/null
+  macro-live-prophet.timer \
+  macro-live-closepass.timer >/dev/null
 
 log "[6/6] retire legacy cron writer"
 tmp_cron=$(mktemp)
@@ -148,6 +155,6 @@ trap - EXIT
 log "DONE — live plane installed"
 systemctl list-timers \
   macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer \
-  macro-live-prophet.timer \
+  macro-live-prophet.timer macro-live-closepass.timer \
   --no-pager
 log "After production freshness is verified, set GitHub repository variable VPS_LIVE_PRIMARY=true."

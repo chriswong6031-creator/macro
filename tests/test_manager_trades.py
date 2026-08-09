@@ -158,3 +158,16 @@ def test_compute_tracker_smoke():
     assert meds == sorted(meds, reverse=True)
     # the bilingual note survives as an {en, zh} pair
     assert set(trk["note"]) == {"en", "zh"} and trk["note"]["zh"]
+    from lib import config
+    funds = (config.load().get("smart_money", {}) or {}).get("funds", {}) or {}
+    counts = {}
+    for slug, row in trk["by_fund"].items():
+        if str((funds.get(slug) or {}).get("status", "")).lower() == "closed":
+            continue
+        period = str(row.get("period_end") or "")
+        if period:
+            counts[period] = counts.get(period, 0) + 1
+    expected = max(counts, key=lambda p: (counts[p], p))
+    assert trk["as_of"] == expected
+    assert trk["latest_manager_period"] == max(counts)
+    assert trk["period_counts"] == counts

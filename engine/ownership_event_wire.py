@@ -35,6 +35,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from lib import config
 
@@ -90,6 +91,25 @@ def _latest_completed_quarter(today: date) -> date:
     return date(today.year - 1, 12, 31)
 
 
+def _filing_deadline(quarter_end: date) -> date:
+    """45-day deadline rolled to the next federal business day.
+
+    SEC due dates falling on a Saturday, Sunday, or federal holiday move to the
+    next business day.  Keeping this in one pure helper prevents every future
+    filing-season clock from silently going stale on a weekend deadline.
+    """
+    candidate = quarter_end + timedelta(days=45)
+    calendar = USFederalHolidayCalendar()
+    holiday_index = calendar.holidays(
+        start=pd.Timestamp(candidate) - pd.Timedelta(days=7),
+        end=pd.Timestamp(candidate) + pd.Timedelta(days=7),
+    )
+    holidays = {stamp.date() for stamp in holiday_index}
+    while candidate.weekday() >= 5 or candidate in holidays:
+        candidate += timedelta(days=1)
+    return candidate
+
+
 def filing_season_clock(funds: dict[str, dict],
                         fund_filings: dict[str, dict] | None = None,
                         today: date | None = None) -> dict:
@@ -98,20 +118,22 @@ def filing_season_clock(funds: dict[str, dict],
     Parameters
     ----------
     funds : {slug: spec} from config — the active roster.
-    fund_filings : {slug: {period_end: str, filing_date: str}} — each fund's most-recent
-        on-disk snapshot metadata. None → every fund is 'pending'.
+    fund_filings : {slug: {period_end: str, filing_date: str,
+        notice_period_end?: str, notice_filing_date?: str}} — each fund's
+        most-recent holdings snapshot plus any 13F-NT receipt. None → every fund
+        is 'pending'.
     today : date override for unit tests; defaults to date.today().
 
     Returns
     -------
     {
-        next_deadline : "YYYY-MM-DD"  (quarter_end + 45 calendar days),
+        next_deadline : "YYYY-MM-DD"  (45 days, rolled to next business day),
         days_to_deadline : int        (negative = window already closed),
         quarter_state : "window_open" | "window_closed" | "between",
         quarter_end : "YYYY-MM-DD"    (the completed quarter period-end),
         filed_pending : [
             {slug, name, period_end, filing_date, status}
-            # status: "filed" | "pending" | "lapsed"
+            # status: "filed" | "notice" | "pending" | "lapsed"
         ],
     }
 
@@ -125,7 +147,7 @@ def filing_season_clock(funds: dict[str, dict],
     """
     today = today or date.today()
     qend = _latest_completed_quarter(today)
-    deadline = qend + timedelta(days=45)
+    deadline = _filing_deadline(qend)
     days_to_dl = (deadline - today).days
 
     # Determine quarter_state
@@ -142,6 +164,8 @@ def filing_season_clock(funds: dict[str, dict],
         meta = fund_filings.get(slug, {})
         period_end = meta.get("period_end", "") or ""
         filing_date = meta.get("filing_date", "") or ""
+        notice_period_end = meta.get("notice_period_end", "") or ""
+        notice_filing_date = meta.get("notice_filing_date", "") or ""
         # Closed funds (status: closed in config) do not file; skip them in the
         # filed/pending counts but include them in the grid as a muted indicator.
         if str(spec.get("status", "")).lower() == "closed":
@@ -152,6 +176,8 @@ def filing_season_clock(funds: dict[str, dict],
             expected_pe = str(qend)
             if period_end == expected_pe:
                 status = "filed"
+            elif notice_period_end == expected_pe:
+                status = "notice"
             elif quarter_state == "window_open":
                 status = "pending"
             else:
@@ -161,6 +187,10 @@ def filing_season_clock(funds: dict[str, dict],
             "name": spec.get("name", slug),
             "period_end": period_end,
             "filing_date": filing_date,
+            "notice_period_end": notice_period_end,
+            "notice_filing_date": notice_filing_date,
+            "notice_form": meta.get("notice_form", "") or "",
+            "notice_accession": meta.get("notice_accession", "") or "",
             "status": status,
         })
 
@@ -171,6 +201,49 @@ def filing_season_clock(funds: dict[str, dict],
         "quarter_end": str(qend),
         "filed_pending": grid,
     }
+
+
+def latest_fund_filings(funds: dict[str, dict]) -> dict[str, dict]:
+    """On-disk latest holdings and notice metadata for the configured roster."""
+    out: dict[str, dict] = {}
+    try:
+        from engine.smart_money import _read_all
+        for slug in funds:
+            snaps = _read_all(slug)
+            if snaps:
+                period_end, filing_date, _frame = snaps[-1]
+                out[slug] = {
+                    "period_end": period_end,
+                    "filing_date": filing_date,
+                }
+        receipt_path = config.data_dir() / "smart_money" / "filing_receipts.parquet"
+        if receipt_path.exists():
+            receipts = pd.read_parquet(receipt_path)
+            if {"slug", "form", "period_end"}.issubset(receipts.columns):
+                notices = receipts[
+                    receipts["slug"].astype(str).isin({str(s) for s in funds})
+                    & receipts["form"].astype(str).str.startswith("13F-NT")
+                ].copy()
+                if not notices.empty:
+                    order = [c for c in ("period_end", "filing_date", "accepted_at")
+                             if c in notices.columns]
+                    if order:
+                        notices = notices.sort_values(order)
+                    for slug, rows in notices.groupby("slug", sort=False):
+                        row = rows.iloc[-1]
+                        def _receipt_text(column: str) -> str:
+                            value = row.get(column)
+                            return "" if value is None or pd.isna(value) else str(value)
+                        meta = out.setdefault(str(slug), {})
+                        meta.update({
+                            "notice_period_end": _receipt_text("period_end")[:10],
+                            "notice_filing_date": _receipt_text("filing_date")[:10],
+                            "notice_form": _receipt_text("form"),
+                            "notice_accession": _receipt_text("accession"),
+                        })
+    except Exception:  # noqa: BLE001
+        log.debug("latest_fund_filings failed", exc_info=True)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -729,17 +802,7 @@ def build_wire(funds: dict[str, dict],
              n_before[1], len(wire_13dg), n_before[2], len(wire_insider))
 
     # Build fund_filings for the clock (latest period_end / filing_date per slug)
-    fund_filings: dict[str, dict] = {}
-    try:
-        from engine.smart_money import _read_all, _snapshot_filing_date
-        for slug in funds:
-            snaps = _read_all(slug)
-            if snaps:
-                pe, fd, _ = snaps[-1]
-                fund_filings[slug] = {"period_end": pe, "filing_date": fd}
-    except Exception:  # noqa: BLE001
-        log.debug("fund_filings build failed", exc_info=True)
-
+    fund_filings = latest_fund_filings(funds)
     clock = filing_season_clock(funds, fund_filings=fund_filings, today=today)
 
     return all_rows, clock
@@ -782,13 +845,22 @@ def freshness_axes(wire_rows: list[dict], clock: dict) -> list[dict]:
     # measured from that period_end (data age), and the note carries the bulk filing
     # date plus how many funds have already filed a newer quarter.
     axes_map: dict[str, dict] = {}
-    fp = clock.get("filed_pending", [])
+    fp = [r for r in clock.get("filed_pending", []) if r.get("status") != "closed"]
     pe_counts: dict[str, int] = {}
     for r in fp:
         pe = r.get("period_end") or ""
         if pe:
             pe_counts[pe] = pe_counts.get(pe, 0) + 1
-    majority_pe = max(pe_counts, key=lambda k: (pe_counts[k], k)) if pe_counts else None
+    expected_pe = str(clock.get("quarter_end") or "")
+    n_expected = sum(1 for r in fp if r.get("period_end") == expected_pe)
+    prior_counts = {pe: n for pe, n in pe_counts.items() if pe != expected_pe}
+    if expected_pe and n_expected > len(fp) / 2:
+        majority_pe = expected_pe
+    else:
+        majority_pe = (max(prior_counts, key=lambda k: (prior_counts[k], k))
+                       if prior_counts else
+                       (max(pe_counts, key=lambda k: (pe_counts[k], k))
+                        if pe_counts else None))
     maj_filings = [r["filing_date"] for r in fp
                    if r.get("filing_date") and r.get("period_end") == majority_pe]
     bulk_filed = max(maj_filings) if maj_filings else None
@@ -797,7 +869,7 @@ def freshness_axes(wire_rows: list[dict], clock: dict) -> list[dict]:
     lag_13f = _lag_days(majority_pe)
     note = f"quarter-end data; bulk filed by {bulk_filed or 'unknown'} (~45-day lag)"
     if n_ahead:
-        note += f"; {n_ahead}/{len(fp)} funds already filed a newer quarter"
+        note += f"; {n_ahead}/{len(fp)} funds already filed a newer quarter (active roster)"
     axes_map["13f"] = {
         "key": "13f",
         "label": "13F Holdings",

@@ -2,50 +2,106 @@
 
 # Active Build Map
 
-Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window): 500  |  base: `6c9e8262b8694f39e54637fcffe1098e7c9e4321`
+Generated: 2026-08-09T06:30:56.715388+00:00  |  Open PRs: 100  |  Merged (window): 500  |  base: `3e8ec0ada0c79202b6a838a533cd09bb9846ff45`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #5016 | feat(intel_hub): scope the US hub universe to US-listed ∪ US-priced names (exclude-with-count) | `claude/trusting-hertz-0b5fb3` | 2026-08-08 | — |
+| #5093 | cn-limit W2: regime-conditional calibration v2 (display tier) | `claude/cn-limit-w2-regimecal` | 2026-08-09 | — |
+| #5092 | research(china): independent SOL limit-alpha Wave 1 | `claude/cn-limit-alpha-sol-independent-20260808` | 2026-08-09 | ⚠ protected:2 |
+| #5091 | cn-limit W2: weakness-entry battery v1 — 回封 + 龙回头 (display tier) | `claude/cn-limit-w2-weakness` | 2026-08-09 | — |
+| #5090 | feat(govrev): action-rail identity under a named basis — award-level recipient with provenance, never silent widening | `claude/govrev-actionid-8fb51e` | 2026-08-09 | — |
+| #5089 | feat(prophet-live): ONE PRICE BASIS — name the adjustment at every seam, assert pack vs feed, align the ledger's percentages (W-L0 gate 3) | `claude/wl0-f3-one-price-basis` | 2026-08-09 | — |
+| #5088 | prophet-live: dormant honesty — no state asserts a verdict the pack never measured (W-L0 gate 5) | `claude/wl0-f5-dormant-honesty` | 2026-08-09 | — |
+| #5087 | fix(main-heal): #5071 debts — admin restart regex, marketing honest-dating fixtures, daily.yml staging pair | `claude/heal-pack2-prophet-regex-marketing` | 2026-08-09 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #5086 | fix(govrev): admit the curator's terminal edge — the event schema rejected every issuer impact since #4255 | `claude/govrev-enum-heal-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5085 | feat(govrev): admit snapshot-rail obligation + contained-ceiling families — the identifier-bearing rail can finally emit | `claude/govrev-families-8fb51e` | 2026-08-09 | — |
+| #5084 | research: add authorized Oracle history replay harness | `claude/momoedge-history-replay-20260808` | 2026-08-09 | ⚠ protected:2 / files-truncated |
+| #5080 | docs(research): script import-pin burn-down — continuation handoff | `claude/script-pin-handoff` | 2026-08-09 | — |
+| #5079 | fix(signal-lab): build_scorecard must not resolve into the module registry | `claude/signal-lab-registry-mutation-b92283` | 2026-08-09 | — |
+| #5078 | cn-limit W1: board ecology regime instruments v1 (display tier; salvaged + M5 re-validated vs healed zt_pool) | `claude/cn-limit-w1-regime-salvage` | 2026-08-09 | — |
+| #5077 | cn-limit: Wave-1 adjudication, program ore ledger, W2 charter, continuation handoff | `claude/cn-limit-w1-adjudication` | 2026-08-09 | — |
+| #5076 | test(spvector): make check() gate under pytest; re-pin 4 stale split markers | `claude/charming-sutherland-1583bc` | 2026-08-09 | — |
+| #5075 | guard(scripts): pin the entry script #5071 added mid-burn-down (1 file) | `claude/script-pin-w8` | 2026-08-09 | — |
+| #5074 | fix(tests): re-pin us_standouts schema 1.8.0 — stale tripwire from the #4965 bump (unpins armed heads) | `claude/cn-limit-heal-w4pin` | 2026-08-09 | — |
+| #5073 | tests: un-dark test_earnings_w4_feed + retire the equality pin that rotted in it | `claude/register-dark-w4-feed-suite` | 2026-08-09 | — |
+| #5072 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 7/7, judgment set (34 files) | `claude/script-pin-w7` | 2026-08-09 | — |
+| #5070 | Market Memory W0: clean-room context product and PIT contract | `codex/konseki-context` | 2026-08-09 | ⚠ protected:2 |
+| #5068 | marketing W1b: the console shows the count the cap actually spends — effective attempts lead, raw kept for forensics | `claude/marketing-w1b-effective-attempts-display` | 2026-08-09 | DRAFT / ⚠ CONFLICTING |
+| #5067 | feat(options): add governed Prophet shadow foundation | `claude/options-prophet-foundation-20260808` | 2026-08-09 | ⚠ protected:3 |
+| #5063 | test(boards): fence china/canada/hk hover-card marks against an emoji revert | `claude/act-now-icon-fences-intl` | 2026-08-09 | — |
+| #5062 | test(spvector): decorative check() tallies -> real pytest assertions; re-pin four markers the pages outgrew | `claude/great-euclid-9673b9` | 2026-08-09 | — |
+| #5061 | cn-limit W1: continuation rider v1 — open-gap conditioned, fillability-honest (display tier) | `claude/cn-limit-w1-rider` | 2026-08-09 | — |
+| #5060 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 6/6 (65 files) | `claude/script-pin-w6` | 2026-08-09 | — |
+| #5059 | cn-limit W1: data-plane heals — limit_events backfill hole + zt_pool date semantics (display tier) | `claude/cn-limit-w1-dataheal` | 2026-08-09 | — |
+| #5058 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 5/6 (65 files) | `claude/script-pin-w5` | 2026-08-09 | — |
+| #5057 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 4/6 (65 files) | `claude/script-pin-w4` | 2026-08-09 | — |
+| #5056 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 3/6 (65 files) | `claude/script-pin-w3` | 2026-08-09 | — |
+| #5055 | cn-limit W1: calibrated onset model v1 + forward-ledger seed (display tier) | `claude/cn-limit-w1-onset` | 2026-08-09 | — |
+| #5054 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 2/6 (66 files) | `claude/script-pin-w2` | 2026-08-09 | — |
+| #5053 | guard(scripts): pin entry scripts to their own repo root — burn-down wave 1/6 (66 files) | `claude/script-pin-w1` | 2026-08-09 | — |
+| #5052 | marketing(W5): day-word law + decisive desk + a reap that persists without the publisher | `claude/marketing-w5-decisive-desk-session-language` | 2026-08-09 | — |
+| #5050 | fix(regime): axis-dark days get no quad label — disclose, never classify on a null input | `claude/angry-meninsky-12fc20` | 2026-08-09 | — |
+| #5049 | test(spvector): un-vacuous check() — pytest now gates; retarget four drifted split markers | `claude/bold-bell-67889c` | 2026-08-09 | — |
+| #5047 | fix(hk-regime): degraded transient recompute can no longer ship a timeline contradicting its committed store | `claude/nostalgic-mendeleev-5eb643` | 2026-08-09 | ⚠ protected:1 |
+| #5046 | guard(scripts): pin check/ci entry scripts to their own repo root + regression teeth | `claude/sharp-hawking-bd4fd8` | 2026-08-09 | ⚠ protected:12 |
+| #5045 | feat(W3 telemetry): phase-level timing ledger for build_stock_library | `claude/stock-library-phase-telemetry` | 2026-08-09 | — |
+| #5044 | fix(forensics): dedupe the SEC source store to one manifest per (accession, content) | `claude/sharp-benz-061439` | 2026-08-09 | ⚠ protected:1 |
+| #5043 | fix(collectors): drop stale document_with_retrieval __all__ export; add repo-wide __all__ resolution guard | `claude/reverent-gould-e42ad5` | 2026-08-09 | ⚠ protected:1 |
+| #5041 | fix(signal-lab): build_scorecard stamps a per-call registry copy — module REGISTRY stays as authored | `claude/amazing-turing-f08da5` | 2026-08-09 | — |
+| #5040 | fix(govrev): candidate-ledger identity survives reviewed-graph edits — dedupe on candidate_id, order-stable graph digest | `claude/govrev-ledger-identity-8fb51e` | 2026-08-09 | — |
+| #5039 | test(admin-marketing): pin the clock in the two-approval byte-identity test | `claude/nervous-hellman-79401a` | 2026-08-09 | — |
+| #5038 | fix(govrev): grader integrity — null endpoints abstain, verdicts need real N, the log enforces its own immutability | `claude/govrev-grader-heals-8fb51e` | 2026-08-09 | — |
+| #5036 | fix(tests): harden the pack-2/3 heals + carry the pack-0 earnings-seasons date bomb | `claude/heal-pack23-2026-08-08` | 2026-08-09 | ⚠ CONFLICTING |
+| #5035 | fix(daily): DST-proof the 18:30-ET nightly anchor — cron pair + fail-open et_gate (Nov 2026 FINRA race) | `claude/optimistic-pasteur-afc2a8` | 2026-08-09 | ⚠ protected:2 |
+| #5034 | test(factor): crypto leadership by \|t\|-rank — measured replacement for the #5032 band | `claude/heal-datafed-packs-8fb51e` | 2026-08-09 | — |
+| #5033 | fix(main): heal spvector NoneType card + factor-exposure ranking fragility — unpin the armed fleet | `claude/main-heal-spvector-factor` | 2026-08-09 | ⚠ CONFLICTING |
+| #5031 | fix(ci): heal ci-pack-2/3 — nightly data moved four pinned test families fleet-wide | `claude/heal-nightly-pinned-packs` | 2026-08-09 | ⚠ CONFLICTING |
+| #5030 | design(boards): china/canada/hk hover-card marks — 🏛 → monoline icons (doctrine §5.8) | `claude/act-now-icon-sweep-intl-boards` | 2026-08-09 | — |
+| #5029 | fix(deploy): restart macro-api on its lru_cache-pinned government_revenue schemas | `claude/competent-shannon-879643` | 2026-08-09 | — |
+| #5028 | tests: de-flake capital-structure lease deadline tests with deterministic operation clocks | `claude/sleepy-moore-cf6928` | 2026-08-08 | — |
+| #5026 | feat(prophet-us): TURN WATCH desk data plane — early-surfacing deck + first-deck receipt (§6.9 R8) | `claude/anticipation-turn-watch-desk` | 2026-08-09 | DRAFT / ⚠ protected:2 |
+| #5022 | perf(ffsec): reuse the warm local archive for already-retrieved SEC filings — verbatim receipts, flag-gated | `claude/infallible-shaw-598197` | 2026-08-08 | ⚠ protected:1 |
+| #5021 | feat(government-revenue): Waves 9E + 9F — shadow cross-check packets and Prophet post-selection annotation | `claude/govrev-9ef-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5020 | GR3b: unlock 8-K counterparty extraction (0 -> 1,916 names; 0 -> 1,793 amounts) | `claude/gr3b-counterparty-unlock` | 2026-08-08 | — |
+| #5019 | research(forensics): rule the SEC store's nightly re-manifest non-evidence — dedupe to one manifest per (accession, content) | `claude/beautiful-lamport-126af0` | 2026-08-08 | — |
+| #5018 | fix(synapse): nightly-sec cadence + register the disclosure bundle — the #4986 offrender-lane registry heal | `claude/loving-torvalds-7d3820` | 2026-08-08 | ⚠ protected:3 |
+| #5016 | feat(intel_hub): scope the US hub universe to US-listed ∪ US-priced names (exclude-with-count) | `claude/trusting-hertz-0b5fb3` | 2026-08-09 | — |
 | #5015 | fix(tests): hermetic card-path logo resolvers — stop CDN fetch + data/marketing/logos litter under pytest | `claude/objective-rosalind-d7dc87` | 2026-08-08 | — |
-| #5014 | govrev: Wave 10 rail 1 — exact IDV child bridge into prime dossiers | `claude/govrev-idv-bridge-8fb51e` | 2026-08-08 | ⚠ protected:1 |
-| #5013 | fix(govrev): Prophet must DISCLOSE a dead award-event rail, not only act on it | `claude/govrev-audit-8fb51e` | 2026-08-08 | — |
-| #5012 | govrev: Wave 10 rail 3 — SBIR progression evidence lane | `claude/govrev-sbir-8fb51e` | 2026-08-08 | ⚠ protected:2 |
+| #5014 | govrev: Wave 10 rail 1 — exact IDV child bridge into prime dossiers | `claude/govrev-idv-bridge-8fb51e` | 2026-08-09 | ⚠ protected:1 |
+| #5013 | fix(govrev): Prophet must DISCLOSE a dead award-event rail, not only act on it | `claude/govrev-audit-8fb51e` | 2026-08-09 | — |
+| #5012 | govrev: Wave 10 rail 3 — SBIR progression evidence lane | `claude/govrev-sbir-8fb51e` | 2026-08-09 | ⚠ protected:2 |
 | #5011 | design(baskets): the group read — participation, direction, arc and earnings in plain words (GR1) | `claude/gr1-basket-read` | 2026-08-08 | — |
 | #5010 | fix(hygiene): non-symbol ticker keys — shared gate, counted exclusions, hub snapshot tripwire | `claude/mystifying-napier-581cd6` | 2026-08-08 | — |
-| #5009 | govrev: publish the reviewed defense19 recipient graph (Wave 9D goes live) | `claude/govrev-9d-publish-8fb51e` | 2026-08-08 | — |
+| #5009 | govrev: publish the reviewed defense19 recipient graph (Wave 9D goes live) | `claude/govrev-9d-publish-8fb51e` | 2026-08-09 | — |
 | #5008 | feat(group-reads): GR3 filing-linked outsiders per basket — honest outside confirmation | `claude/gr3-linked-outsiders` | 2026-08-08 | — |
-| #5007 | feat(prophet-us): leader-pullback organ + 2-year replay — the above-200 early-entry lane (§6.9 R4) | `claude/anticipation-leader-pullback` | 2026-08-08 | — |
-| #5006 | feat(marketing): FOMC statement-diff desk (XG-W4b), dark-but-armed | `claude/marketing-w4b-fomc-desk` | 2026-08-08 | ⚠ protected:1 |
-| #5005 | research(massive): Advanced-tier integration masterplan + verified entitlement probe (TP-0) | `claude/massive-advanced-integration-b92283` | 2026-08-08 | — |
+| #5007 | feat(prophet-us): leader-pullback organ + 2-year replay — the above-200 early-entry lane (§6.9 R4) | `claude/anticipation-leader-pullback` | 2026-08-09 | — |
+| #5006 | feat(marketing): FOMC statement-diff desk (XG-W4b), dark-but-armed | `claude/marketing-w4b-fomc-desk` | 2026-08-09 | ⚠ protected:1 |
+| #5005 | research(massive): Advanced-tier integration masterplan + verified entitlement probe (TP-0) | `claude/massive-advanced-integration-b92283` | 2026-08-09 | — |
 | #5002 | ruling(biocatalyst): Ruling 3 admits the four subsidiary sponsor rows to their listed parents | `claude/bio-group-b-subsidiary-admission` | 2026-08-08 | — |
-| #5001 | feat(collectors): ledger-universe yahoo backfill (off-render, incremental) | `claude/intel-hub-w1pre-yahoo-backfill` | 2026-08-08 | ⚠ protected:2 |
-| #5000 | fix(cn-prophet): entry-price integrity — corrupt-bar gate, PIT-latched published entry, truthful basis provenance | `claude/cn-entry-price-integrity` | 2026-08-08 | — |
-| #4999 | research(cn-prophet): limit-move footprint v0 — event catalog, base rates, pre-registered features (§6.8f) | `claude/cn-limit-footprint-v0` | 2026-08-08 | — |
+| #5001 | feat(collectors): ledger-universe yahoo backfill (off-render, incremental) | `claude/intel-hub-w1pre-yahoo-backfill` | 2026-08-09 | ⚠ protected:2 |
+| #5000 | fix(cn-prophet): entry-price integrity — corrupt-bar gate, PIT-latched published entry, truthful basis provenance | `claude/cn-entry-price-integrity` | 2026-08-09 | — |
+| #4999 | research(cn-prophet): limit-move footprint v0 — event catalog, base rates, pre-registered features (§6.8f) | `claude/cn-limit-footprint-v0` | 2026-08-09 | — |
 | #4998 | docs(daily): W4 profile findings — append the corrected 242m-night attribution to the engine cap ledger | `claude/engine-cap-w4-append` | 2026-08-08 | ⚠ protected:1 |
-| #4997 | marketing W3: 30/day caps, wide ticker supply, revive receipt + congress lanes, macro fan-out primitive | `claude/marketing-w3-volume-supply` | 2026-08-08 | — |
+| #4997 | marketing W3: 30/day caps, wide ticker supply, revive receipt + congress lanes, macro fan-out primitive | `claude/marketing-w3-volume-supply` | 2026-08-09 | — |
 | #4996 | Group Reads W-GR2: per-basket earnings pulse + sympathy ledger | `claude/gr2-group-earnings` | 2026-08-08 | — |
 | #4995 | GR0 — Group Pulse: basket participation/direction/arc read plane | `claude/gr0-group-pulse` | 2026-08-08 | — |
-| #4994 | marketing W2: codex rung observability + copy-quality engine (voice pack v4) | `claude/marketing-w2-codex-copy-engine` | 2026-08-08 | ⚠ protected:1 |
-| #4993 | research(prophet-us): earnings-ignition measurement — pre-earnings confluence footprint (§6.8e) | `claude/anticipation-earnings-ignition` | 2026-08-08 | — |
-| #4992 | marketing W1: classify the Buffer plan lock, bound the rate-limit requeue, purge the outage backlog | `claude/marketing-w1-publisher-hardening` | 2026-08-08 | ⚠ CONFLICTING |
-| #4988 | feat(prophet-us): §6.6 nightly entry-status re-measurement — the ladder's evidence loop | `claude/anticipation-status-remeasure` | 2026-08-08 | ⚠ protected:1 |
-| #4987 | fix(signals): signal_date/confirmed_date/recorded_at split + outage-window stamp audit (ANTICIPATION) | `claude/anticipation-signal-date-integrity` | 2026-08-08 | — |
-| #4985 | fix(intel_hub): W0 measurement-integrity heals + policy-vote A7 heal | `claude/intel-hub-w0-heals` | 2026-08-08 | — |
-| #4982 | prophet-live: the armed probe APPENDS tonight's bar instead of replacing today's (W-L0 gate 1) | `claude/prophet-live-append-semantics` | 2026-08-08 | — |
-| #4981 | observability: Prophet freshness sentinel surface + engine timings row that survives a cap-cancel (W-L0 gate 4) | `claude/prophet-sentinel-and-engine-timings` | 2026-08-08 | ⚠ protected:1 |
-| #4979 | fix(extension): coverage-floor anchor for the extension read — a 6/3034-member last row must not blank ext_z board-wide | `claude/anticipation-ext-z-sparse-row` | 2026-08-08 | — |
-| #4978 | prophet-live: two-sided fade hysteresis on the cross path (W-L0 gate 2) | `claude/prophet-live-fade-hysteresis` | 2026-08-08 | — |
-| #4977 | feat(prophet-us): A1 patience-status admission + legacy shadow ledger (ANTICIPATION §6.2) | `claude/anticipation-a1-patience-admission` | 2026-08-08 | — |
-| #4976 | feat(prophet-us): A2 patience-first entry map + featured-lane unblock (ANTICIPATION §6.2) | `claude/anticipation-a2-patience-rank` | 2026-08-08 | — |
-| #4972 | research(prophet-us): ANTICIPATION program — lateness forensic, CN/US parity anatomy, gate counterfactual, §6 ruling | `claude/rklb-prophet-missing-3d6c35` | 2026-08-08 | — |
+| #4994 | marketing W2: codex rung observability + copy-quality engine (voice pack v4) | `claude/marketing-w2-codex-copy-engine` | 2026-08-09 | ⚠ protected:1 |
+| #4993 | research(prophet-us): earnings-ignition measurement — pre-earnings confluence footprint (§6.8e) | `claude/anticipation-earnings-ignition` | 2026-08-09 | — |
+| #4992 | marketing W1: classify the Buffer plan lock, bound the rate-limit requeue, purge the outage backlog | `claude/marketing-w1-publisher-hardening` | 2026-08-09 | — |
+| #4988 | feat(prophet-us): §6.6 nightly entry-status re-measurement — the ladder's evidence loop | `claude/anticipation-status-remeasure` | 2026-08-09 | ⚠ protected:1 |
+| #4985 | fix(intel_hub): W0 measurement-integrity heals + policy-vote A7 heal | `claude/intel-hub-w0-heals` | 2026-08-09 | — |
+| #4982 | prophet-live: the armed probe APPENDS tonight's bar instead of replacing today's (W-L0 gate 1) | `claude/prophet-live-append-semantics` | 2026-08-09 | — |
+| #4979 | fix(extension): coverage-floor anchor for the extension read — a 6/3034-member last row must not blank ext_z board-wide | `claude/anticipation-ext-z-sparse-row` | 2026-08-09 | — |
+| #4978 | prophet-live: two-sided fade hysteresis on the cross path (W-L0 gate 2) | `claude/prophet-live-fade-hysteresis` | 2026-08-09 | — |
+| #4976 | feat(prophet-us): A2 patience-first entry map + featured-lane unblock (ANTICIPATION §6.2) | `claude/anticipation-a2-patience-rank` | 2026-08-09 | — |
+| #4972 | research(prophet-us): ANTICIPATION program — lateness forensic, CN/US parity anatomy, gate counterfactual, §6 ruling | `claude/rklb-prophet-missing-3d6c35` | 2026-08-09 | — |
 | #4971 | i18n(zh): native Chinese across the site — #4765 rebuilt on current main | `claude/zh-natural-rebuilt` | 2026-08-08 | ⚠ CONFLICTING / files-truncated |
 | #4958 | biocatalyst: execute the operator ruling of 2026-08-07 — Record History rights enable + 29 sponsor admissions under attestation | `claude/bio-execute-operator-ruling` | 2026-08-08 | ⚠ CONFLICTING |
 | #4957 | biocatalyst: B1S2b privileged fixed-cohort deployment lane (installable, inert) | `claude/bio-b1s2b-collection-path` | 2026-08-08 | ⚠ protected:1 |
-| #4951 | govrev: query the alias list, repair BWXT, flag zero-row queries, page at 100 | `claude/govrev-coverage-8fb51e` | 2026-08-08 | — |
-| #4950 | guard(govrev): amount classes are never conflated — and now it can go red | `claude/govrev-nonadd-8fb51e` | 2026-08-08 | ⚠ protected:2 |
+| #4951 | govrev: query the alias list, repair BWXT, flag zero-row queries, page at 100 | `claude/govrev-coverage-8fb51e` | 2026-08-09 | — |
+| #4950 | guard(govrev): amount classes are never conflated — and now it can go red | `claude/govrev-nonadd-8fb51e` | 2026-08-09 | ⚠ protected:2 |
 | #4945 | biocatalyst: point-in-time theme rollup adapter + honest coverage disclosure for theme_clinical | `claude/bio-theme-clinical-pit-feed` | 2026-08-08 | — |
 | #4944 | biocatalyst: BC-O1b forward ledger + M0a clock activation (opens nothing, and says why) | `claude/bio-o1b-forward-clock` | 2026-08-08 | — |
 | #4942 | feat(track-record): execute the ruled US era break — re-measure, stamp, disclose, guard | `claude/w1f-track-era-break` | 2026-08-08 | ⚠ CONFLICTING |
@@ -59,13 +115,67 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
+| #5063 | #5030 | 29 | `mockups/act-now-icon-sweep-intl/canada_sector_dark_en_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_en_mark.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_zh_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_dark_zh_mark.png`, `mockups/act-now-icon-sweep-intl/canada_sector_light_en_card.png`, `mockups/act-now-icon-sweep-intl/canada_sector_light_en_mark.png`, `mockups/act-now-icon-sweep-intl/china_sector_dark_en_card.png`, `mockups/act-now-icon-sweep-intl/china_sector_dark_en_mark.png` +21 more |
 | #4971 | #4765 | 19 | `site/about.html`, `site/account.js`, `site/blog/compound-growth-for-traders.html`, `site/blog/congress-trades-are-not-realtime-signals.html`, `site/blog/how-to-keep-a-trading-journal.html`, `site/blog/index.html`, `site/blog/the-math-of-losing-streaks.html`, `site/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html` +11 more |
 | #4971 | #4512 | 12 | `site/nav_market.js`, `site/si_workspace.js`, `site/theme.js`, `templates/basket_detail.html.j2`, `templates/baskets_china_factorwatch.html.j2`, `templates/china.html.j2`, `templates/china_intel.html.j2`, `templates/china_mechanics.html.j2` +4 more |
+| #5068 | #4992 | 10 | `admin/marketing_floor.py`, `app/deploy/update.sh`, `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `engine/marketing/social_publisher.py`, `scripts/marketing_publisher.py`, `scripts/marketing_stale_purge.py`, `tests/test_deploy_update_self_heal.py` +2 more |
+| #5070 | #4971 | 8 | `site/account.js`, `site/chat.html`, `site/nav_market.js`, `site/theme.js`, `templates/_navlinks.html.j2`, `templates/account.js`, `templates/chat.html`, `templates/nav_market.js` |
+| #5044 | #5022 | 6 ⚠ | `.github/workflows/filing-forensics-sec.yml`, `collectors/fundamental_forensics_acquisition.py`, `collectors/sec_document_spine.py`, `scripts/run_fundamental_forensics_wave2.py`, `tests/test_fundamental_forensics_acquisition.py`, `tests/test_sec_document_spine.py` |
+| #5033 | #5031 | 6 | `scripts/build_vector.py`, `tests/test_factor_exposure.py`, `tests/test_government_revenue_candidate_projection.py`, `tests/test_government_revenue_candidates.py`, `tests/test_signal_lab_vector_display.py`, `tests/test_spvector_page.py` |
 | #5002 | #4958 | 6 | `config/biocatalyst_sources.yml`, `config/biocatalyst_sponsor_ticker_map.yml`, `contracts/biocatalyst/biocatalyst_sponsor_ticker_map.v1.schema.json`, `engine/biocatalyst/sponsor_identity.py`, `tests/test_biocatalyst_record_history_enablement.py`, `tests/test_biocatalyst_sponsor_ticker_map.py` |
+| #5092 | #5059 | 5 | `collectors/china_zt_pool.py`, `data/china_microstructure/limit_events.parquet`, `data/china_microstructure/limit_tape.parquet`, `data/china_zt_pool/pool.parquet`, `scripts/build_china_microstructure.py` |
+| #5090 | #5085 | 5 | `contracts/government_revenue/government_revenue_candidate.v1.schema.json`, `engine/government_revenue/award_events.py`, `engine/government_revenue/candidates.py`, `tests/test_government_revenue_award_events.py`, `tests/test_government_revenue_candidates.py` |
+| #5089 | #5088 | 5 | `engine/prophet_live/interval.py`, `engine/prophet_live/live_states.py`, `scripts/prophet_live_evaluator.py`, `tests/test_prophet_live_evaluator.py`, `tests/test_prophet_live_reconcile.py` |
+| #5070 | #4512 | 5 | `site/nav_market.js`, `site/theme.js`, `templates/nav_market.js`, `templates/theme.js`, `tests/test_nav_hover_bridge.py` |
 | #5011 | #4512 | 4 | `site/baskets_desk.js`, `templates/basket_detail.html.j2`, `templates/baskets_desk.js`, `templates/sector_central.html.j2` |
+| #5090 | #5038 | 3 | `engine/government_revenue/candidate_grader.py`, `research/GOVERNMENT_REVENUE_CANDIDATE_GRADER_PREREG.md`, `tests/test_government_revenue_candidate_grader.py` |
+| #5089 | #4982 | 3 | `engine/prophet_live/armed_pack.py`, `engine/prophet_live/interval.py`, `scripts/build_prophet_live_pack.py` |
+| #5084 | #5035 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `.github/workflows/daily.yml` |
+| #5084 | #5014 | 3 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml`, `app/deploy/update.sh` |
+| #5070 | #4765 | 3 | `site/account.js`, `site/chat.html`, `site/nav_market.js` |
+| #5068 | #5052 | 3 | `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `scripts/marketing_publisher.py` |
+| #5052 | #4997 | 3 | `config/marketing.yml`, `engine/marketing/market_clock.py`, `engine/marketing/outbox.py` |
+| #5052 | #4992 | 3 | `data/marketing/outbox/status_ledger.jsonl`, `engine/marketing/outbox.py`, `scripts/marketing_publisher.py` |
+| #5036 | #5033 | 3 | `scripts/build_vector.py`, `tests/test_earnings_seasons.py`, `tests/test_factor_exposure.py` |
+| #5090 | #5040 | 2 | `engine/government_revenue/entity_resolution.py`, `tests/test_government_revenue_entity_resolution.py` |
+| #5090 | #4951 | 2 | `collectors/usaspending_awards.py`, `tests/test_usaspending_awards.py` |
+| #5089 | #5058 | 2 | `scripts/prophet_live_evaluator.py`, `scripts/reconcile_prophet_live.py` |
+| #5089 | #4978 | 2 | `engine/prophet_live/live_states.py`, `tests/test_prophet_live_evaluator.py` |
+| #5088 | #4982 | 2 | `engine/prophet_live/interval.py`, `tests/test_prophet_live_pack.py` |
+| #5088 | #4978 | 2 | `engine/prophet_live/live_states.py`, `tests/test_prophet_live_evaluator.py` |
+| #5087 | #5084 | 2 ⚠ | `.github/workflows/daily.yml`, `app/deploy/update.sh` |
+| #5087 | #4997 | 2 | `tests/test_marketing_chart_coverage.py`, `tests/test_marketing_content.py` |
+| #5087 | #4994 | 2 ⚠ | `.github/workflows/daily.yml`, `tests/test_marketing_filing_lanes.py` |
+| #5084 | #5043 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5084 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5079 | #5041 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5079 | #5033 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5068 | #5029 | 2 | `app/deploy/update.sh`, `tests/test_deploy_update_self_heal.py` |
+| #5067 | #5026 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5067 | #5012 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
+| #5067 | #5001 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5063 | #4971 | 2 | `templates/canada.html.j2`, `templates/hk.html.j2` |
+| #5043 | #5035 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5043 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5041 | #5033 | 2 | `engine/signal_lab.py`, `tests/test_signal_lab_vector_display.py` |
+| #5036 | #5031 | 2 | `scripts/build_vector.py`, `tests/test_factor_exposure.py` |
+| #5035 | #5021 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5035 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5030 | #4971 | 2 | `templates/canada.html.j2`, `templates/hk.html.j2` |
+| #5029 | #4992 | 2 | `app/deploy/update.sh`, `tests/test_deploy_update_self_heal.py` |
+| #5026 | #5001 | 2 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml` |
+| #5021 | #5014 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5021 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #5021 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #5014 | #4957 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #5014 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #5013 | #4977 | 2 | `engine/prophet_bridge.py`, `tests/test_prophet_government_revenue_context.py` |
 | #5011 | #4971 | 2 | `templates/basket_detail.html.j2`, `templates/sector_central.html.j2` |
 | #5008 | #4996 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
 | #5008 | #4995 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
@@ -73,6 +183,231 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 | #4996 | #4995 | 2 | `.github/ci/legacy-jobs.yml`, `scripts/build_baskets.py` |
 | #4957 | #4950 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4765 | #4512 | 2 | `site/nav_market.js`, `site/si_workspace.js` |
+| #5092 | #5067 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5026 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5012 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #5001 | 1 ⚠ | `config/dag.yml` |
+| #5092 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5090 | #5086 | 1 | `contracts/government_revenue/government_procurement_event.v2.schema.json` |
+| #5090 | #5033 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #5031 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5090 | #4950 | 1 | `collectors/usaspending_awards.py` |
+| #5089 | #5084 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5073 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5072 | 1 | `scripts/build_prophet_live_pack.py` |
+| #5089 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5045 | 1 | `scripts/build_stock_library.py` |
+| #5089 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5089 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5088 | #5058 | 1 | `scripts/prophet_live_evaluator.py` |
+| #5087 | #5070 | 1 | `app/deploy/update.sh` |
+| #5087 | #5068 | 1 | `app/deploy/update.sh` |
+| #5087 | #5067 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5035 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5029 | 1 | `app/deploy/update.sh` |
+| #5087 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #5015 | 1 | `tests/test_marketing_content.py` |
+| #5087 | #5014 | 1 | `app/deploy/update.sh` |
+| #5087 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5087 | #4992 | 1 | `app/deploy/update.sh` |
+| #5086 | #5046 | 1 ⚠ | `scripts/check_government_revenue_projection.py` |
+| #5086 | #4951 | 1 | `contracts/government_revenue/government_procurement_workspace.v2.schema.json` |
+| #5085 | #5033 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5085 | #5031 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5085 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5084 | #5073 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5070 | 1 | `app/deploy/update.sh` |
+| #5084 | #5068 | 1 | `app/deploy/update.sh` |
+| #5084 | #5067 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5029 | 1 | `app/deploy/update.sh` |
+| #5084 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5084 | #4992 | 1 | `app/deploy/update.sh` |
+| #5084 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5084 | #4622 | 1 | `data/baskets/extras.parquet` |
+| #5079 | #5031 | 1 | `tests/test_signal_lab_vector_display.py` |
+| #5076 | #5062 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5049 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5076 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5074 | #5073 | 1 | `tests/test_earnings_w4_feed.py` |
+| #5073 | #5063 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5073 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5072 | #5068 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #5052 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #5044 | 1 | `scripts/run_fundamental_forensics_wave2.py` |
+| #5072 | #5040 | 1 | `scripts/build_government_revenue_candidates.py` |
+| #5072 | #5022 | 1 | `scripts/run_fundamental_forensics_wave2.py` |
+| #5072 | #4992 | 1 | `scripts/marketing_publisher.py` |
+| #5072 | #4982 | 1 | `scripts/build_prophet_live_pack.py` |
+| #5072 | #4942 | 1 | `scripts/build_track_record_page.py` |
+| #5070 | #5068 | 1 | `app/deploy/update.sh` |
+| #5070 | #5050 | 1 | `scripts/build_site.py` |
+| #5070 | #5029 | 1 | `app/deploy/update.sh` |
+| #5070 | #5014 | 1 | `app/deploy/update.sh` |
+| #5070 | #4992 | 1 | `app/deploy/update.sh` |
+| #5068 | #5039 | 1 | `tests/test_admin_marketing.py` |
+| #5068 | #5014 | 1 | `app/deploy/update.sh` |
+| #5068 | #4997 | 1 | `engine/marketing/outbox.py` |
+| #5067 | #5060 | 1 | `scripts/validate_options_entry.py` |
+| #5067 | #5035 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #5018 | 1 ⚠ | `config/synapse.yml` |
+| #5067 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5067 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5063 | #5059 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5063 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5062 | #5049 | 1 | `tests/test_spvector_page.py` |
+| #5062 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5062 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5059 | #5043 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5059 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5058 | #5052 | 1 | `scripts/marketing_press_wire.py` |
+| #5052 | #5006 | 1 | `config/marketing.yml` |
+| #5052 | #4994 | 1 | `config/marketing.yml` |
+| #5049 | #5033 | 1 | `tests/test_spvector_page.py` |
+| #5049 | #5031 | 1 | `tests/test_spvector_page.py` |
+| #5044 | #5043 | 1 | `collectors/sec_document_spine.py` |
+| #5044 | #5020 | 1 | `.gitignore` |
+| #5043 | #5036 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5022 | 1 | `collectors/sec_document_spine.py` |
+| #5043 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5043 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5041 | #5031 | 1 | `tests/test_signal_lab_vector_display.py` |
+| #5040 | #5033 | 1 | `tests/test_government_revenue_candidate_projection.py` |
+| #5040 | #5031 | 1 | `tests/test_government_revenue_candidate_projection.py` |
+| #5040 | #5014 | 1 | `app/government_revenue.py` |
+| #5036 | #5035 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5034 | 1 | `tests/test_factor_exposure.py` |
+| #5036 | #5021 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5036 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5026 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #5001 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5035 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5035 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5034 | #5033 | 1 | `tests/test_factor_exposure.py` |
+| #5034 | #5031 | 1 | `tests/test_factor_exposure.py` |
+| #5033 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5031 | #5009 | 1 | `tests/test_government_revenue_candidates.py` |
+| #5029 | #5014 | 1 | `app/deploy/update.sh` |
+| #5026 | #5012 | 1 ⚠ | `config/dag.yml` |
+| #5026 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5026 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
+| #5026 | #4988 | 1 ⚠ | `config/dag.yml` |
+| #5021 | #5020 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #5013 | 1 | `engine/prophet_bridge.py` |
+| #5021 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5021 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5014 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5011 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5020 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5018 | #5012 | 1 ⚠ | `config/synapse.yml` |
 | #5016 | #4985 | 1 | `engine/intel_hub.py` |
 | #5015 | #4997 | 1 | `tests/test_marketing_content.py` |
 | #5015 | #4994 | 1 | `tests/conftest.py` |
@@ -80,6 +415,7 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 | #5014 | #5008 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5014 | #4996 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5014 | #4995 | 1 | `.github/ci/legacy-jobs.yml` |
+| #5014 | #4992 | 1 | `app/deploy/update.sh` |
 | #5014 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5014 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
 | #5014 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -105,10 +441,8 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 | #5001 | #4998 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #5001 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #5001 | #4988 | 1 ⚠ | `config/dag.yml` |
-| #5001 | #4981 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #5000 | #4942 | 1 | `engine/track_ledger.py` |
 | #4998 | #4994 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4998 | #4981 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #4997 | #4992 | 1 | `engine/marketing/outbox.py` |
 | #4996 | #4958 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4996 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -120,7 +454,6 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 | #4995 | #4950 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4995 | #4945 | 1 | `.github/ci/legacy-jobs.yml` |
 | #4995 | #4944 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4994 | #4981 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #4985 | #4622 | 1 | `engine/ai_desk.py` |
 | #4971 | #4942 | 1 | `templates/dashboard.html.j2` |
 | #4958 | #4957 | 1 | `.github/ci/legacy-jobs.yml` |
@@ -138,6 +471,17 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #5082 | fix(prophet): heal date-family CI and deploy contracts | 2026-08-09 |
+| #5081 | legal: expand privacy and commercial-use policies | 2026-08-09 |
+| #5071 | fix(prophet): lossless US origination and date-safe outage recovery | 2026-08-09 |
+| #5069 | Smart Money: autonomous rolling 13F transitions | 2026-08-09 |
+| #5066 | Fix GEX artifacts to use the settled exchange session | 2026-08-09 |
+| #5065 | tests: make earnings-season fixtures hermetic in time, not just data (unblock ci-pack-0) | 2026-08-09 |
+| #5051 | cn-limit: program masterplan + wave-1 orchestration (Fable) | 2026-08-09 |
+| #5042 | fix(merge-on-green): resolve main's proof from the workflow run — the daily merge-blocked backlog | 2026-08-09 |
+| #5032 | fix(main-heal): the four base-side reds pinning the armed backlog — vector null gap, pack-order mutation, rolling-beta band, govrev rail activation | 2026-08-08 |
+| #5027 | design(wl1): provisional close-pass board — pinned spec + mockups | 2026-08-08 |
+| #5024 | docs(nightly W3): production-verify the build_site trim + void the stale stock_library profile | 2026-08-08 |
 | #5017 | fix(govrev): award-event bundle validator was dead on arrival — arg order + sys.path, wiring-pinned | 2026-08-08 |
 | #5004 | fix(hub): keep one regime label per market card | 2026-08-08 |
 | #5003 | research(live): Breathing Platform session-1 continuation handoff | 2026-08-08 |
@@ -627,17 +971,6 @@ Generated: 2026-08-08T20:26:07.062244+00:00  |  Open PRs: 44  |  Merged (window)
 | #4446 | fix(seo): close the etfs anonymous leak — revert public flip until the shell bakes | 2026-08-03 |
 | #4445 | fix: isolate attested history R2 credentials | 2026-08-03 |
 | #4444 | test(marketing): align publisher runner contract | 2026-08-03 |
-| #4443 | feat(mag7): event lens + Mega-cap tape strip — why Prophet was silent through the MSFT week, and the lawful fix | 2026-08-03 |
-| #4442 | feat(biocatalyst): add atomic transcript context bundle | 2026-08-03 |
-| #4441 | fix(name_score): frozen-feed gate + echo quarantine for us_calls; ORCL flatline adjudicated not-a-defect | 2026-08-03 |
-| #4440 | fix(etfs): bilingual backdrop tile + pulse-dated rotation footer (post-#4426) | 2026-08-03 |
-| #4439 | outbox: audit the first clustered wire batch — 6 keep, 4 quarantined | 2026-08-03 |
-| #4438 | metrics poll: telemetry may not outbid posting — the cause of the silent days | 2026-08-03 |
-| #4437 | outbox: fable audits the held batch — 3 approved, 2 quarantined | 2026-08-03 |
-| #4436 | publish: move the sweep onto the idle self-hosted light lane | 2026-08-03 |
-| #4435 | desk: bounded confirmed group — keep the developing tail visible at the new floors | 2026-08-03 |
-| #4434 | feat(biocatalyst): publish replay-verified change tape | 2026-08-03 |
-| #4433 | wire: one story = one post, no line restates another, dark-desk traffic stops hitting the brand account | 2026-08-03 |
 
 ---
 

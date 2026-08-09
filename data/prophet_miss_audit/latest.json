@@ -29,8 +29,8 @@
   },
   "top21_n": 50,
   "top21_eligible_today_n": 2,
-  "conversion_rate": 0.0348,
-  "conversion_n": "4/115",
+  "conversion_rate": 0.0435,
+  "conversion_n": "5/115",
   "basket_misses_n": 3,
   "basket_scored_n": 49
  },
@@ -89,12 +89,13 @@
  },
  "conversion": {
   "sighted_n": 115,
-  "converted_n": 4,
-  "rate": 0.0348,
+  "converted_n": 5,
+  "rate": 0.0435,
   "converted": [
    "CCS",
    "KSS",
    "PATH",
+   "RH",
    "UAL"
   ],
   "never_sighted_n": 35,
@@ -125,7 +126,7 @@
    "GSHD",
    "EFOR"
   ],
-  "plan_universe_n": 120
+  "plan_universe_n": 123
  },
  "themes": {
   "basis": "subsector_rotation.emerging_score",
@@ -1131,9 +1132,10 @@
     "n_members": 80,
     "n_members_live": 80,
     "n_members_read": 80,
-    "n_members_on_board": 6,
+    "n_members_on_board": 7,
     "members_on_board": [
      "EXPD",
+     "FIX",
      "GEV",
      "GWW",
      "JBHT",
@@ -1142,7 +1144,7 @@
     ],
     "present_counts": {
      "buy": 1,
-     "watch": 5,
+     "watch": 6,
      "leaders": 0,
      "ran": 0
     },
@@ -1285,14 +1287,15 @@
     "n_members": 24,
     "n_members_live": 24,
     "n_members_read": 24,
-    "n_members_on_board": 2,
+    "n_members_on_board": 3,
     "members_on_board": [
+     "FIX",
      "GEV",
      "OKLO"
     ],
     "present_counts": {
      "buy": 1,
-     "watch": 1,
+     "watch": 2,
      "leaders": 0,
      "ran": 0
     },
