@@ -119,6 +119,122 @@ def _f(x):
 
 
 # --------------------------------------------------------------------------- #
+# US UNIVERSE SCOPE — membership decided ONCE, at ingestion.
+#
+# The hub inherits whatever the intelligence bundle carries, and the altdata feeder
+# (special_situations especially) delivers FOREIGN listings symbol-shaped: ANANTRAJ
+# (NSE), BULTEN (Stockholm), CEMARGOS (feed ticker CEMARGOS.BO, suffix stripped at
+# keying), German/Korean/SIX/LSE codes, unpriced OTC ordinaries (AKZOF) and warrants
+# (ACHR.WS). Nothing downstream can ever grade those: the forward track record is
+# SPY-relative off the US price layer, so such a name accrues a ledger row every
+# night that can never mature. Measured 2026-08-08, pre-gate: 1,045 of 3,083 names
+# (34%) were neither US-listed nor US-priceable, and they were 78,105 of 170,676
+# ledger rows (46%) — permanently ungradeable volume.
+#
+# MEMBERSHIP = the US-exchange roster (latest data/symbol_directory snapshot, test
+# issues dropped) UNION the hub's OWN US price spine (a per-ticker data/yahoo parquet
+# or a data/breadth close-cache column). Everything else is excluded WITH A COUNT —
+# annotated in hub.json and one log line, never silently. Normalization is the ./-
+# swap ONLY (BRK.B ↔ BRK-B); an exchange prefix/suffix is NEVER stripped or mapped,
+# because aliasing a foreign issuer onto a US key is the exact corruption this
+# prevents. The China parquet fallback inside ai_desk._close_series confers NO
+# membership — this spine is US-only. FAIL-OPEN: an unreadable roster, an empty glob, a
+# roster below the sanity floor, or a verdict that would exclude the WHOLE universe (a
+# broken roster/universe pairing, not a scoping result) stamps applied:false with a reason
+# and leaves the universe untouched — a broken store degrades to the pre-gate behaviour
+# rather than emptying the hub.
+# --------------------------------------------------------------------------- #
+_ROSTER_SANITY_FLOOR = 8_000      # real roster ≈ 13.1k; under this the snapshot is broken
+
+
+def _dot_dash(t: str) -> set[str]:
+    """{ticker, ./- swapped both ways} — the ONLY normalization (BRK.B ↔ BRK-B)."""
+    t = (t or "").strip()
+    return {t, t.replace("-", "."), t.replace(".", "-")}
+
+
+def _load_us_roster(root) -> tuple[set | None, dict]:
+    """(US-listed symbols, meta) from the LATEST symbol_directory snapshot.
+    (None, {"reason": ...}) whenever the roster cannot be trusted — the fail-open path."""
+    try:
+        from pathlib import Path
+        import pandas as pd
+        snaps = sorted((Path(root) / "data" / "symbol_directory" / "snapshots").glob("*.parquet"),
+                       key=lambda p: p.name)
+        if not snaps:
+            return None, {"reason": "no symbol_directory snapshot found"}
+        latest = snaps[-1]
+        df = pd.read_parquet(latest)
+        if "test_issue" in df.columns:
+            df = df[~df["test_issue"].fillna(False).astype(bool)]
+        syms = {str(s).strip().upper() for s in df["symbol"].dropna()}
+        syms.discard("")
+        if len(syms) < _ROSTER_SANITY_FLOOR:
+            return None, {"reason": f"roster {latest.stem} has {len(syms)} symbols, "
+                                    f"below the sanity floor of {_ROSTER_SANITY_FLOOR}"}
+        return syms, {"roster_date": latest.stem, "roster_n": len(syms)}
+    except Exception as e:  # noqa: BLE001 — a broken roster must fail open, never raise
+        return None, {"reason": f"roster read failed ({e})"}
+
+
+def _spine_covered(t: str, root) -> bool:
+    """True when the hub's own US price layer can resolve the name — a per-ticker
+    data/yahoo parquet (./- variants) or a data/breadth close-cache column. The China
+    parquet fallback inside ai_desk._close_series is deliberately NOT consulted."""
+    from pathlib import Path
+    ydir = Path(root) / "data" / "yahoo"
+    for v in _dot_dash(t):
+        if v and (ydir / f"{v}.parquet").exists():
+            return True
+    try:
+        from engine import ai_desk
+        bf = ai_desk._breadth_frame(root)      # memoized per root in ai_desk — cheap after #1
+        return bool(bf is not None and t in getattr(bf, "columns", []))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _scope_universe(tickers: dict, root) -> tuple[dict, dict, callable]:
+    """(kept_tickers, scope_annotation, member_fn) — the US membership gate. Never raises."""
+    def _off(reason: str):
+        log.warning("hub universe scope OFF (fail-open): %s", reason)
+        return tickers, {"applied": False, "reason": reason,
+                         "n_in": len(tickers), "n_excluded": 0}, (lambda t: True)
+
+    roster, meta = _load_us_roster(root)
+    if roster is None:
+        return _off(meta.get("reason") or "roster unavailable")
+
+    def _member(t: str) -> bool:
+        t = (t or "").strip().upper()
+        if not t:
+            return False
+        return bool(_dot_dash(t) & roster) or _spine_covered(t, root)
+
+    kept = {t: v for t, v in tickers.items() if _member(t)}     # insertion order preserved
+    if tickers and not kept:
+        # LAST RUNG of the fail-open ladder: a gate that empties the universe is reporting a
+        # broken PAIRING, not a scoping result — a changed roster keying convention (every
+        # symbol prefixed), the wrong store, or a caller whose universe simply is not the
+        # ingested nightly bundle. An empty hub is strictly worse than the pre-gate behaviour,
+        # so pass the universe through and say so.
+        return _off(f"gate would exclude all {len(tickers)} names against roster "
+                    f"{meta.get('roster_date')} (n={meta.get('roster_n')})")
+    excluded = sorted(t for t in tickers if t not in kept)
+    log.info("hub universe scope: %d US names kept, %d excluded (roster %s, n=%d); e.g. %s",
+             len(kept), len(excluded), meta.get("roster_date"), meta.get("roster_n") or 0,
+             ", ".join(excluded[:4]) or "none")
+    return kept, {
+        "applied": True,
+        "policy": ("Members are US-exchange-listed or resolvable by the hub's own US price "
+                   "spine; excluded names are counted here, never silently dropped."),
+        "n_in": len(kept), "n_excluded": len(excluded),
+        "excluded_sample": excluded[:12],
+        "roster_date": meta.get("roster_date"), "roster_n": meta.get("roster_n"),
+    }, _member
+
+
+# --------------------------------------------------------------------------- #
 # Policy facet — per-ticker tailwind from the Policy Watch theses (subject ticker
 # direct, else theme/proxy → sector → member). The 5th desk.
 # --------------------------------------------------------------------------- #
@@ -790,6 +906,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     touches a ledger). Never raises."""
     today = today or date.today()
     tickers = (bundle or {}).get("tickers") or {}
+    tickers, universe_scope, _member = _scope_universe(tickers, config.ROOT)   # US membership gate
     pidx = build_policy_index(policy)
     vel = load_velocity(tickers, today)
     cidx = _catalyst_index(special, today)
@@ -821,7 +938,10 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # confirmer feed (e.g. insider clusters) can't flood the ranked command list; the rest still
     # live in the Discovery section via the candidate feed.
     off = [c for c in ((discovery or {}).get("off_desk") or [])
-           if (c.get("ticker") or "").upper() not in tickers][:_OFF_DESK_INJECT]
+           if (c.get("ticker") or "").upper() not in tickers]
+    _off_us = [c for c in off if _member((c.get("ticker") or "").upper())]  # scope BEFORE the cap
+    universe_scope["n_excluded_off_desk"] = len(off) - len(_off_us)
+    off = _off_us[:_OFF_DESK_INJECT]
     # Extend _pr with off-desk tickers so the discovery dossier gets trajectory + entry_gate.
     for c in off:
         ot = (c.get("ticker") or "").upper()
@@ -862,9 +982,13 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # command-injection cap; only the command LIST is bounded (above), never this section.
     _dossier_by_t = {d["ticker"]: d for d in dossiers}
     discovery_cands = (discovery or {}).get("candidates") or []
+    _disc_us = [c for c in discovery_cands
+                if c.get("ticker") and _member(str(c.get("ticker")).upper())]
+    universe_scope["n_excluded_discovery"] = sum(
+        1 for c in discovery_cands if c.get("ticker")) - len(_disc_us)
     discovery_list = [{"ticker": c.get("ticker"), "discovery": c,
                        "stage": (_dossier_by_t.get(c.get("ticker"), {}).get("stage") or "discovery")}
-                      for c in discovery_cands if c.get("ticker")]
+                      for c in _disc_us]
     n_discovery_total = (discovery or {}).get("n", len(discovery_list))
     early = [d for d in dossiers if {"early_edge", "stealth_accumulation"} & set(d["flags"])]
     crowded = [d for d in dossiers if "crowded_top" in d["flags"]]
@@ -934,6 +1058,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
         "n_discovery": n_discovery_total,
         "coverage": _coverage,
+        "universe_scope": universe_scope,
         "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
                    "catalyst": len(catalysts), "discovery": n_discovery_total,
                    "discovery_off_desk": (discovery or {}).get("n_off_desk", 0),
