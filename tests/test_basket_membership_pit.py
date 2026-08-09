@@ -16,8 +16,12 @@ So these pin the four properties that make the store worth trusting —
      concept dump vs seeded membership), so ``source_shape`` rides along and a
      cross-boundary read says what it is measuring.
 
-Plus the lane gate: a render lane writes nothing (house law — nightly/asia is the
-sole advancer of data/).
+Plus the lane gate, which is FAIL-CLOSED: ``lane == "asia"`` writes and everything
+else — an unrecognised lane, or no lane at all — writes nothing (house law —
+nightly/asia is the sole advancer of data/).  That is why every writer call below
+names ``lane="asia"``: they used to rely on the permissive ``lane is None`` default,
+and relying on it is what let the gate ship dead.  The production call path is pinned
+separately in tests/test_cn_membership_pit_lane_gate.py — these are unit pins.
 """
 from __future__ import annotations
 
@@ -70,10 +74,10 @@ def data_root(tmp_path, monkeypatch):
 
 def test_same_day_rerun_never_duplicates(data_root):
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("300474.SZ"), _m("688981.SS")]}))
-    first = pit.append_snapshot(THS, asof="2026-07-08")
+    first = pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     assert first["written"] and first["rows_added"] == 2
 
-    again = pit.append_snapshot(THS, asof="2026-07-08")
+    again = pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     assert again["written"] is False
     assert again["reason"] == "date already stamped"
     df = pit.read_history(THS)
@@ -91,7 +95,7 @@ def test_keep_first_wins_over_a_later_write_on_a_stamped_row(data_root):
     underneath it, so the guarantee does not depend on that one guard.
     """
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("300474.SZ", removed=None)]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     # Force the append path directly (bypassing the date guard) with a MUTATED
     # version of the very same row.
     pit._append_rows(THS, pit._rows_from_doc(  # noqa: SLF001 — pinning the merge rule
@@ -106,8 +110,8 @@ def test_unchanged_membership_is_content_deduped(data_root):
     """A calendar day that adds nothing is not stamped — and the PIT read is
     unaffected, because 'newest snapshot ≤ D' already covers a quiet stretch."""
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("300474.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
-    later = pit.append_snapshot(THS, asof="2026-07-20")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
+    later = pit.append_snapshot(THS, asof="2026-07-20", lane="asia")
     assert later["written"] is False
     assert "unchanged" in (later["reason"] or "")
     assert set(pit.read_history(THS)["snapshot_date"]) == {"2026-07-08"}
@@ -119,17 +123,17 @@ def test_unchanged_membership_is_content_deduped(data_root):
 def test_a_reordered_membership_file_is_not_a_new_snapshot(data_root):
     """members_sha describes the MEMBERSHIP, not the file's byte layout."""
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ"), _m("B.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("B.SZ"), _m("A.SZ")]}))
-    res = pit.append_snapshot(THS, asof="2026-07-09")
+    res = pit.append_snapshot(THS, asof="2026-07-09", lane="asia")
     assert res["written"] is False and "unchanged" in (res["reason"] or "")
 
 
 def test_a_real_membership_change_is_stamped(data_root):
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ"), _m("B.SZ", added="2026-07-09")]}))
-    res = pit.append_snapshot(THS, asof="2026-07-09")
+    res = pit.append_snapshot(THS, asof="2026-07-09", lane="asia")
     assert res["written"] and res["rows_added"] == 2
     assert sorted(set(pit.read_history(THS)["snapshot_date"])) == ["2026-07-08", "2026-07-09"]
 
@@ -140,9 +144,9 @@ def test_a_real_membership_change_is_stamped(data_root):
 
 def test_asof_resolves_to_the_newest_snapshot_at_or_before_the_date(data_root):
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-01")
+    pit.append_snapshot(THS, asof="2026-07-01", lane="asia")
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ"), _m("B.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
 
     early = pit.members_asof("ths_ai", "2026-07-07", suite=THS)
     assert early["pit"] is True
@@ -165,7 +169,7 @@ def test_added_and_removed_dates_apply_within_the_resolved_snapshot(data_root):
         _m("300474.SZ", added="2026-07-20"),                    # joins later
         _m("000001.SZ", added="2021-06-15", removed="2026-07-05"),  # already gone
     ]}))
-    pit.append_snapshot(CURATED, asof="2026-07-01")
+    pit.append_snapshot(CURATED, asof="2026-07-01", lane="asia")
 
     got = pit.members_asof("cn_semis", "2026-07-10", suite=CURATED)
     assert got["pit"] is True
@@ -191,7 +195,7 @@ def test_both_suites_share_one_reader_contract(data_root):
 
 def test_a_date_before_coverage_falls_back_and_says_so(data_root):
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ"), _m("B.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
 
     got = pit.members_asof("ths_ai", "2025-01-01", suite=THS)
     assert got["pit"] is False, "an uncovered date is NEVER reported as point-in-time"
@@ -213,7 +217,7 @@ def test_unknown_basket_is_not_reported_as_an_authoritative_empty(data_root):
     """An empty member list with pit=True would read as 'this basket was empty
     that day'. A typo must not be able to say that."""
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     got = pit.members_asof("ths_nonexistent", "2026-07-08", suite=THS)
     assert got["members"] == []
     assert got["pit"] is False
@@ -222,7 +226,7 @@ def test_unknown_basket_is_not_reported_as_an_authoritative_empty(data_root):
 
 def test_a_basket_that_postdates_the_snapshot_is_pit_and_explains_itself(data_root):
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")],
                                             "ths_new": [_m("C.SZ")]}))
     got = pit.members_asof("ths_new", "2026-07-08", suite=THS)
@@ -252,17 +256,17 @@ def test_backfill_seeds_from_the_dated_json_side_cars_and_is_idempotent(data_roo
     (snaps / "2026-07-08.json").write_text(
         json.dumps(_doc({"ths_ai": [_m("A.SZ"), _m("B.SZ")]})), encoding="utf-8")
 
-    res = pit.backfill_from_json_snapshots(THS)
+    res = pit.backfill_from_json_snapshots(THS, lane="asia")
     assert res["dates"] == ["2026-06-30", "2026-07-08"]
     assert res["rows_added"] == 3
     assert pit.members_asof("ths_ai", "2026-07-01", suite=THS)["members"] == ["A.SZ"]
 
-    again = pit.backfill_from_json_snapshots(THS)
+    again = pit.backfill_from_json_snapshots(THS, lane="asia")
     assert again["rows_added"] == 0 and again["reason"] == "already covered"
 
 
 def test_a_missing_membership_file_is_a_skip_not_a_crash(data_root):
-    res = pit.append_snapshot(THS, asof="2026-07-08")
+    res = pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     assert res["written"] is False
     assert "missing" in (res["reason"] or "")
     assert pit.coverage(THS)["snapshots"] == 0
@@ -272,7 +276,7 @@ def test_parquet_nan_round_trip_does_not_fake_a_removal(data_root):
     """str(nan) is the truthy string 'nan'. If the null check came after the
     stringify, every never-removed member would read as removed."""
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ", removed=None)]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     row = pit.read_history(THS).iloc[0]
     assert pit._text(row["removed"]) is None      # noqa: SLF001 — the exact defect
     assert pit.members_asof("ths_ai", "2026-07-08", suite=THS)["members"] == ["A.SZ"]
@@ -315,7 +319,7 @@ def test_the_raw_concept_dump_side_car_is_read_not_silently_dropped(data_root):
     (snaps / "2026-07-08.json").write_text(
         json.dumps(_ths_membership({"ths_ai": ("人工智能", ["A.SZ"])})), encoding="utf-8")
 
-    res = pit.backfill_from_json_snapshots(THS)
+    res = pit.backfill_from_json_snapshots(THS, lane="asia")
     assert res["dates"] == ["2026-06-30", "2026-07-08"]
     assert res["unparsed"] == []
     df = pit.read_history(THS)
@@ -336,7 +340,7 @@ def test_reading_across_the_shape_boundary_says_so(data_root):
         encoding="utf-8")
     (snaps / "2026-07-08.json").write_text(
         json.dumps(_ths_membership({"ths_ai": ("人工智能", ["A.SZ"])})), encoding="utf-8")
-    pit.backfill_from_json_snapshots(THS)
+    pit.backfill_from_json_snapshots(THS, lane="asia")
 
     old = pit.members_asof("ths_ai", "2026-07-01", suite=THS)
     assert old["pit"] is True and old["snapshot_date"] == "2026-06-30"
@@ -360,7 +364,7 @@ def test_an_unreadable_dated_side_car_is_reported_never_silently_skipped(data_ro
     (snaps / "2026-07-08.json").write_text(
         json.dumps(_ths_membership({"ths_ai": ("人工智能", ["A.SZ"])})), encoding="utf-8")
 
-    res = pit.backfill_from_json_snapshots(THS)
+    res = pit.backfill_from_json_snapshots(THS, lane="asia")
     assert res["unparsed"] == ["2026-06-30.json"]
     assert res["dates"] == ["2026-07-08"]
     assert set(pit.read_history(THS)["snapshot_date"]) == {"2026-07-08"}
@@ -370,9 +374,9 @@ def test_a_company_rename_is_not_a_membership_change(data_root):
     """members_sha excludes name_zh: the vendor renaming a company must not
     stamp a snapshot that has no membership news in it."""
     _write_membership(data_root, THS, _doc({"ths_ai": [_m("A.SZ")]}))
-    pit.append_snapshot(THS, asof="2026-07-08")
+    pit.append_snapshot(THS, asof="2026-07-08", lane="asia")
     doc = _doc({"ths_ai": [_m("A.SZ")]})
     doc["baskets"]["ths_ai"]["members"][0]["name_zh"] = "改名了"
     _write_membership(data_root, THS, doc)
-    res = pit.append_snapshot(THS, asof="2026-07-09")
+    res = pit.append_snapshot(THS, asof="2026-07-09", lane="asia")
     assert res["written"] is False and "unchanged" in (res["reason"] or "")
