@@ -610,6 +610,17 @@ data/mastermind/*.json.tmp
 # load-bearing: cumulative ledgers must never become Git objects or public site data.
 data/capital_structure/share_counts/
 
+# Universal 13F evidence is an immutable R2/warehouse data plane, not a Git data
+# plane.  Keep only bounded public summaries and small provenance receipts under
+# data/institutional_13f/public and data/institutional_13f/receipts.  Raw SEC
+# packages, accession documents, SQLite work files, and Parquet generations can
+# reach tens of millions of rows and must never be swept up by broad `git add data`.
+data/institutional_13f/*
+!data/institutional_13f/public/
+!data/institutional_13f/public/*.json
+!data/institutional_13f/receipts/
+!data/institutional_13f/receipts/*.json
+
 # Earnings Wire member continuations and exact-evidence context belong to the
 # private Research Vault object store.  The builder now refuses repository-local
 # private output, and this exact legacy path is ignored as a second containment
