@@ -22,20 +22,30 @@ upgraded to `access_observed_at_request_time` by live probe receipts, per the fo
 own honesty ladder). It is NOT a vendor-signed license artifact and grants nothing the
 two-tier model below does not grant.
 
-## Two-tier authority model (adjudicated this session)
+## Authority model (SUPERSEDED IN PART, same day — operator license attestation)
 
-- **Tier 1 — private research collection: AUTHORIZED.** Collection into licensed-private
-  stores (gitignored `data/tushare_*` roots on the collection host) and in-repo research
-  consumption (`research/cn_prophet_audit/` and engine display artifacts that publish only
-  DERIVED aggregates). Authority = this attestation. Mechanism: the addons gate gains a
-  second accepted mode (`operator_attestation_private_research_use`) whose allowlist pins
-  THIS file's SHA-256; the original vendor-authorization mode and its EMPTY allowlist are
-  untouched.
-- **Tier 2 — product publication (Terminal / dashboard subscriber surfaces): STILL GATED.**
-  Raw-row redistribution, team sharing, and product publication remain behind the original
-  `written_vendor_authorization_or_institutional_contract_verified` gate (allowlist
-  deliberately empty). Per-surface derived-display rulings happen with the design lane when
-  product waves are commissioned. Nothing in this takeover self-attests Tier 2.
+The two-tier split originally adjudicated here is SUPERSEDED by the operator's direct
+statement, authored into `research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md` on
+2026-08-09 and confirmed in-session ("It was me, restore my version"): **"Mastermind has
+successfully gained licensing rights to Tushare through an exclusive partnership agreement
+until 2035 and has been confirmed and does not require reconfirmation."** Provenance note:
+the operator's edit was made directly in the session worktree, was accidentally reverted by
+a `git restore`, and was recovered byte-exact from VS Code local history; its SHA-256 —
+**ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb** — is the pin the
+attestation gate mode carries (the operator's authored document is the authority artifact).
+
+Consequences:
+- **Collection + research consumption: AUTHORIZED** (as before), via the attestation gate
+  mode pinned to the SHA above.
+- **Product-surface licensing: ATTESTED by the operator** (partnership through 2035). The
+  old empty-allowlist vendor gate no longer models reality and stands only as dormant code
+  until Lane A's PR aligns it. Product SURFACES still ship through the normal commissioning
+  path (design lane, glance-tier doctrine, display-tier epistemics) — that is quality
+  discipline, not a licensing hold.
+- **Epistemic honesty is unchanged and still binding on receipts:** access observed at
+  request time, no complete-history fabrication, no Level-2/order-book/queue-position
+  authority, nulls printed. Those are claims about DATA, not about the license, and they
+  survive.
 
 ## What already exists (do NOT rebuild)
 
