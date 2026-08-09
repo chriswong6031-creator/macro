@@ -105,6 +105,13 @@ jobs:
         # times a day. Without the file it falls back to its static universe, no
         # pandas import, no cost. Adding a read path to this lane means adding it
         # HERE too.
+        # `data/marketing` also carries the FOMC statement-diff desk's store
+        # (data/marketing/fomc, XG-W4b): the previous statement it diffs against
+        # and the ledger that makes "one firing per meeting" true. That is WHY the
+        # store lives there and not under data/fomc — see the note on
+        # engine/marketing/fomc_statements.STORE_ROOT. The matching WRITE half is
+        # the `git add data/marketing/fomc` in the commit step below; a read path
+        # without its write path is a lane that silently cannot work.
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -237,6 +244,17 @@ jobs:
           # Stage ONLY this lane's paths (ledger law).
           git add data/marketing/outbox 2>/dev/null || true
           git add data/marketing/press_wire 2>/dev/null || true
+          # The FOMC statement-diff desk's store (XG-W4b). MUST be staged or the
+          # desk cannot work at all: this runner is a fresh sparse checkout every
+          # 5 minutes, so the previous statement it diffs against and the ledger
+          # that makes "one firing per meeting" true both have to arrive from
+          # main. Unstaged, the collected statement is discarded at job end and
+          # every tick on a decision day re-fetches federalreserve.gov, refuses
+          # for no_prior_statement, posts nothing, and leaves the NEXT meeting
+          # without a baseline too. Read path: `data/marketing` is already in the
+          # sparse cone above. Both halves are pinned by
+          # tests/test_marketing_fomc_desk.py::test_press_wire_workflow_covers_the_store.
+          git add data/marketing/fomc 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "marketing-press-wire: no state to commit"
