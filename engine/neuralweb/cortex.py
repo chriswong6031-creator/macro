@@ -112,6 +112,8 @@ _READ_TOOLS = frozenset({
     "explain_factor_context",
     # CPI P6 wave 1: read-only cycle-pattern turn-hazard state tool
     "read_cycle_pattern_state",
+    # Release Radar: released/current/next-print CPI context (display-only)
+    "read_inflation_intelligence",
     # Seasonality W5: read-only biopharma calendar-clock shadow lobe
     "read_seasonality_state",
     # W3 MPC consumer: read-only mechanism pathway artifact
@@ -850,6 +852,98 @@ def _tool_read_cycle_pattern_state(root: Path, _params: dict) -> dict:
             "display_only": True,
             "gaps": [f"data/neuralweb/cycle_pattern_state.json: unreadable — {exc}"],
         }
+
+
+_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS: dict[str, bool] = {
+    "may_rank": False,
+    "may_score": False,
+    "may_size": False,
+    "may_gate": False,
+    "may_escalate": False,
+    "may_trade": False,
+}
+
+_INFLATION_INTELLIGENCE_AUTHORITY_NOTE = (
+    "DISPLAY/CONTEXT ONLY. released_state is latest-local official CPI index "
+    "history, next_release_forecast is a Release Radar forecast, and "
+    "current_month_proxy_pressure is an in-progress proxy rather than an "
+    "official CPI observation. This artifact may never originate, score, rank, "
+    "gate, size, escalate, or execute a signal or trade."
+)
+
+
+def _inflation_intelligence_tool_null(gap: str) -> dict:
+    return {
+        "schema": "inflation_intelligence.v1",
+        "asof": None,
+        "display_only": True,
+        "authority": False,
+        "is_context_only": True,
+        "allowed_actions": dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS),
+        "authority_note": _INFLATION_INTELLIGENCE_AUTHORITY_NOTE,
+        "gaps": [gap],
+    }
+
+
+def _force_inflation_authority_false(value: Any) -> Any:
+    """Recursively remove contradictory authority flags from a JSON payload."""
+    if isinstance(value, list):
+        return [_force_inflation_authority_false(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    out = {
+        key: _force_inflation_authority_false(item)
+        for key, item in value.items()
+    }
+    if "display_only" in out:
+        out["display_only"] = True
+    if "authority" in out:
+        out["authority"] = False
+    if "is_context_only" in out:
+        out["is_context_only"] = True
+    for action in _INFLATION_INTELLIGENCE_ALLOWED_ACTIONS:
+        if action in out:
+            out[action] = False
+    if "allowed_actions" in out:
+        out["allowed_actions"] = dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)
+    return out
+
+
+def _tool_read_inflation_intelligence(root: Path, _params: dict) -> dict:
+    """Read Release Radar's inert released/current/next-print CPI artifact.
+
+    Fails open with a structured null. Authority fields are overwritten rather
+    than defaulted so an older or malformed producer can never promote this read
+    path into scoring, ranking, gating, sizing, escalation, or trade authority.
+    """
+    p = _data(root, "release_forecast", "inflation_intelligence.json")
+    if not p.exists():
+        return _inflation_intelligence_tool_null(
+            "data/release_forecast/inflation_intelligence.json: absent — "
+            "build_inflation_intelligence has not run yet"
+        )
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return _inflation_intelligence_tool_null(
+            f"data/release_forecast/inflation_intelligence.json: unreadable — {exc}"
+        )
+    if not isinstance(state, dict):
+        return _inflation_intelligence_tool_null(
+            "data/release_forecast/inflation_intelligence.json: not_object"
+        )
+
+    out = _force_inflation_authority_false(state)
+    out.update(
+        display_only=True,
+        authority=False,
+        is_context_only=True,
+        allowed_actions=dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS),
+        authority_note=_INFLATION_INTELLIGENCE_AUTHORITY_NOTE,
+    )
+    if not isinstance(out.get("gaps"), list):
+        out["gaps"] = ["inflation_intelligence: invalid gaps field"]
+    return out
 
 
 _SEASONALITY_ROW_CAP = 40
@@ -1781,6 +1875,8 @@ def dispatch_tool(
         return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "read_cycle_pattern_state":
         return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_inflation_intelligence":
+        return _tool_read_inflation_intelligence(root, tool_params)
     elif tool_name == "read_seasonality_state":
         # `now_str` is the run's own as-of: the seasonality states carry a 48h
         # TTL and one run must judge every one of them against one clock.
@@ -2018,6 +2114,22 @@ def _tool_schemas() -> list[dict]:
                 "not validated model output — always report the cell verdict next "
                 "to any probability. is_context_only: true. Fails open with "
                 "structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- Release Radar inflation intelligence: display/context only ---
+        {
+            "name": "read_inflation_intelligence",
+            "description": (
+                "Read data/release_forecast/inflation_intelligence.json: three "
+                "strictly separate clocks — released_state (latest-local official CPI "
+                "index history, not original-release vintage), next_release_forecast "
+                "(Release Radar distribution and forecast path), and "
+                "current_month_proxy_pressure (in-progress model/proxy, NEVER an "
+                "official CPI observation). DISPLAY/CONTEXT ONLY; authority is "
+                "always false. It may NEVER originate, score, rank, gate, size, "
+                "escalate, or execute a signal or trade. Fails open with structured "
+                "gaps when absent. is_context_only: true."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
@@ -2588,7 +2700,8 @@ READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_grap
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
-           read_cycle_pattern_state, read_mechanism_pathways, read_seasonality_state,
+           read_cycle_pattern_state, read_inflation_intelligence,
+           read_mechanism_pathways, read_seasonality_state,
            read_context_candidates, read_causal_candidates,
            read_liquidity_plumbing, read_china_decision_packet, read_china_flows,
            read_theme_state, read_theme_thesis, read_theme_pathways,
@@ -2608,6 +2721,12 @@ Forbidden: treating cards as signals, escalations, or confidence-ranked items.
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
 probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).
 It may de-escalate a calibrated key; it may never originate, score, or escalate.
+
+INFLATION-INTELLIGENCE CEILING: read_inflation_intelligence is display/context only and
+has no scoring, ranking, gating, sizing, escalation, or trade authority. Keep its three
+clocks distinct: released_state is latest-local official index history (not original-
+release vintage), next_release_forecast is a forecast, and current_month_proxy_pressure
+is an in-progress proxy — never describe that proxy as an official CPI observation.
 
 SEASONALITY CEILING: read_seasonality_state is display/context only, authority all-false.
 Its 'p' is the HISTORICAL share of complete years that window finished up — never a

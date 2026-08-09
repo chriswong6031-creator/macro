@@ -32,17 +32,22 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import validation as V
-from engine import vol_regime
-from engine.trial_ledger import TrialLedger
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import validation as V  # noqa: E402
+from engine import vol_regime  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from lib import config, store  # noqa: E402
 from scripts.calibrate_baskets import (SZ_CRISES, _ann_sharpe, _daily_bill,
-                                       _dd_reduction_ci, _maxdd_ret)
+                                       _dd_reduction_ci, _maxdd_ret)  # noqa: E402
 
 log = logging.getLogger(__name__)
 FAMILY = "vol_overlay_book"

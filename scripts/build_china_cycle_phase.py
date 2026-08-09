@@ -51,6 +51,7 @@ logging.basicConfig(
 log = logging.getLogger("build_china_cycle_phase")
 
 _ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 _PHASE_TAPE_PATH = _ROOT / "data" / "china_cycle_phase" / "phase_tape.parquet"
 _LEDGER_PATH     = _ROOT / "data" / "china_cycle_phase" / "falsifier_ledger.parquet"
 _JSON_PATH       = _ROOT / "site" / "chinastatedata" / "cycle_phase.json"

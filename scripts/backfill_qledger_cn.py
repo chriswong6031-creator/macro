@@ -40,8 +40,7 @@ import pandas as pd
 # Ensure project root is on sys.path when run directly.
 _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from engine.qledger import make_claim, register  # noqa: E402
 

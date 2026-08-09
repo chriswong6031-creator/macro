@@ -174,7 +174,7 @@ dropdown.
 
 ### Q6 — a span's byte range is VERIFIED; its locator attributes are CLAIMED
 
-*Added 2026-08-07, raised by Wave 1A ([#4910](https://github.com/chriswong6031-creator/macro/pull/4910))
+*Added 2026-08-07, raised by Wave 1A ([#4910](https://github.com/mastermindx-market-intelligence/macro/pull/4910))
 while implementing against the corpus. This answer was not in the original five.*
 
 **Frozen: `source_span.v1` must distinguish what it verified from what it copied.**
@@ -223,13 +223,13 @@ the byte range's.
 
 | Lane | PR | State |
 |---|---|---|
-| base — heal both `ci-pack-2` reds pinning the fleet | [#4774](https://github.com/chriswong6031-creator/macro/pull/4774) | open; proof run dispatched |
-| R0-A — Qwen model alignment, preflight, fallback disclosure | [#4778](https://github.com/chriswong6031-creator/macro/pull/4778) | open, armed |
-| R0-A2 — per-rung prompt bound for the 4096-token local window | [#4784](https://github.com/chriswong6031-creator/macro/pull/4784) | open, armed |
-| R0-B — EDGAR sparse-checkout cone + attributable zero-emission | [#4780](https://github.com/chriswong6031-creator/macro/pull/4780) | open, armed |
-| R0-C — sever the Prophet earnings split-brain, disclose the starved arm | [#4781](https://github.com/chriswong6031-creator/macro/pull/4781) | open, armed |
-| R0-D — golden corpus (130 issuers / 234 difficult events / 17 classes) | [#4783](https://github.com/chriswong6031-creator/macro/pull/4783) | open, armed |
-| ruling — freeze the PSQ hold-tilt promotion clock | [#4785](https://github.com/chriswong6031-creator/macro/pull/4785) | open, armed |
+| base — heal both `ci-pack-2` reds pinning the fleet | [#4774](https://github.com/mastermindx-market-intelligence/macro/pull/4774) | open; proof run dispatched |
+| R0-A — Qwen model alignment, preflight, fallback disclosure | [#4778](https://github.com/mastermindx-market-intelligence/macro/pull/4778) | open, armed |
+| R0-A2 — per-rung prompt bound for the 4096-token local window | [#4784](https://github.com/mastermindx-market-intelligence/macro/pull/4784) | open, armed |
+| R0-B — EDGAR sparse-checkout cone + attributable zero-emission | [#4780](https://github.com/mastermindx-market-intelligence/macro/pull/4780) | open, armed |
+| R0-C — sever the Prophet earnings split-brain, disclose the starved arm | [#4781](https://github.com/mastermindx-market-intelligence/macro/pull/4781) | open, armed |
+| R0-D — golden corpus (130 issuers / 234 difficult events / 17 classes) | [#4783](https://github.com/mastermindx-market-intelligence/macro/pull/4783) | open, armed |
+| ruling — freeze the PSQ hold-tilt promotion clock | [#4785](https://github.com/mastermindx-market-intelligence/macro/pull/4785) | open, armed |
 
 ### Findings Wave 0 produced that no handoff predicted
 
