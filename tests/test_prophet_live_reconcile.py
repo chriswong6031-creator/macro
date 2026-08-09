@@ -191,6 +191,37 @@ def test_the_ledger_row_carries_the_producers_session_phase():
         assert led[0]["session_phase"] == expect
 
 
+def test_a_newly_minted_marker_kind_lands_in_the_ledger_with_no_reconciler_change():
+    """The FADE_UNCONFIRMED ruling: this module's kind axis is DATA, not an enum.
+
+    ``build_rows`` groups on ``(date, ticker, kind)`` and never consults a list of kinds,
+    so a marker minted in ``live_states`` becomes its own ledger rows the first night it
+    fires — no migration, no allowlist to forget. Driven through the REAL producer, so a
+    fixture cannot supply a field production omits.
+    """
+    from engine.prophet_live import live_states as LS
+
+    entry = {"state": "near", "center_buyable": False, "as_of_close": 95.0,
+             "probed": True, "buyable_in_band": True, "trigger_px": 100.0,
+             "band_lo_px": 0.0, "band_hi_px": 109.25}
+    now = datetime(2026, 8, 3, 15, 0, tzinfo=timezone.utc)
+    prev = {"state": "forming", "passes": 2, "entered": "cross"}
+    # 99.8 is inside the 0.5% buffer under a 100.0 trigger: it stopped holding and the
+    # hysteresis suppressed the fade.
+    st = LS.name_state(entry, price=99.8, quote_age_min=1.0, prev=prev,
+                       now=now, cfg=LS.live_cfg(None))
+    assert st["state"] == "forming" and st["internal"] == LS.FADE_UNCONFIRMED
+    rows = LS.transitions("AAA", st, prev, now=now)
+    assert [r["kind"] for r in rows] == [LS.FADE_UNCONFIRMED], rows
+    led = R.build_rows([{**rows[0], "session_et": D0, "pack_as_of": DPREV}],
+                       verdicts_for=_verdicts({"AAA": True}),
+                       closes={"AAA": _series()}, now=NOW)
+    assert len(led) == 1 and led[0]["kind"] == LS.FADE_UNCONFIRMED
+    assert led[0]["ticker"] == "AAA" and led[0]["date"] == D0
+    # The breach side reaches the LEDGER while staying off the public payload.
+    assert led[0]["via"] == "drop" and "via" not in st
+
+
 def test_the_first_cross_is_the_actionable_one_and_the_last_is_also_kept():
     """M6: keeping only the LAST occurrence recorded a 100 entry as a 108 entry.
 
