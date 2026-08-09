@@ -47,8 +47,11 @@ _REJECT_40101 = {"code": 40101, "msg": "您的token不对，请确认。"}
 class _Resp:
     """requests.Response stand-in — the vendor answers HTTP 200 even when it rejects you."""
 
-    def __init__(self, body: dict) -> None:
+    def __init__(self, body: dict, *, status_code: int = 200) -> None:
         self._body = body
+        self.status_code = status_code
+        self.is_redirect = 300 <= status_code < 400
+        self.is_permanent_redirect = status_code in {301, 308}
 
     def raise_for_status(self) -> None:
         return None
@@ -66,6 +69,48 @@ def vendor(monkeypatch):
     box = {"body": dict(_REJECT_40101)}
     monkeypatch.setattr(tc.requests, "post", lambda *a, **k: _Resp(box["body"]))
     return box
+
+
+def test_paid_token_transport_is_https_and_redirects_are_disabled(vendor, monkeypatch):
+    observed = {}
+
+    def _post(url, **kwargs):
+        observed["url"] = url
+        observed["kwargs"] = kwargs
+        return _Resp({"code": 0, "data": {"fields": ["ts_code"], "items": [["600519.SH"]]}})
+
+    monkeypatch.setattr(tc.requests, "post", _post)
+    assert tc.query("daily", trade_date="20260807") is not None
+    assert observed["url"] == "https://api.tushare.pro"
+    assert observed["kwargs"]["allow_redirects"] is False
+    assert observed["kwargs"]["json"]["token"] == "not-a-real-credential"
+
+
+def test_redirect_and_vendor_message_fail_closed_without_credential_echo(vendor, monkeypatch, caplog):
+    token_text = "not-a-real-credential"
+    monkeypatch.setattr(
+        tc.requests,
+        "post",
+        lambda *a, **k: _Resp({"code": 0}, status_code=307),
+    )
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
+
+    caplog.clear()
+    vendor["body"] = {"code": 40101, "msg": f"rejected token={token_text}"}
+    monkeypatch.setattr(tc.requests, "post", lambda *a, **k: _Resp(vendor["body"]))
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
+    assert token_text not in str(tc.last_auth_error())
+
+    caplog.clear()
+
+    def _raise_with_credential(*args, **kwargs):
+        raise RuntimeError(f"request payload contained token={token_text}")
+
+    monkeypatch.setattr(tc.requests, "post", _raise_with_credential)
+    assert tc.query("daily") is None
+    assert token_text not in caplog.text
 
 
 def _adapter_with(monkeypatch, counts: dict[str, int]):
@@ -117,7 +162,8 @@ def test_auth_latch_clears_on_the_next_success(vendor):
     """query()'s return contract is unchanged; the latch records the cause and self-heals."""
     assert tc.query("daily_basic", trade_date="20260806") is None    # still None — no caller changes
     err = tc.last_auth_error()
-    assert err["code"] == 40101 and err["api_name"] == "daily_basic" and "token" in err["msg"]
+    assert err["code"] == 40101 and err["api_name"] == "daily_basic"
+    assert err["msg"] == "credential rejected by vendor"
     assert err is not tc._auth_error, "last_auth_error() must hand back a copy, not the latch"
     # the credential is restored (re-copied or the account healed) → the very next authenticated
     # round-trip clears the latch, no restart. Deliberately not "regenerates": the 07-27 outage
