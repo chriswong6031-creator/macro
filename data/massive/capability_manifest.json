@@ -1,0 +1,337 @@
+{
+  "base_url": "https://api.polygon.io",
+  "derived": {
+    "indices_entitled": false,
+    "notes": [
+      "tick_history_depth ladder: 2005 probe -> 20y+, 2015 probe -> 10y, recent-only -> 5y, /v3/trades refused -> shallow."
+    ],
+    "options_entitled": true,
+    "options_realtime": false,
+    "plan_guess": "stocks: advanced_or_higher (real-time trades + NBBO quotes); tick_history: 20y+; second_aggs: entitled; options: entitled; indices: not_entitled",
+    "realtime_quotes": true,
+    "realtime_trades": true,
+    "second_aggs": true,
+    "tick_history_depth": "20y+"
+  },
+  "key_source": "POLYGON_API_KEY",
+  "probed_at_utc": "2026-08-08T11:47:39Z",
+  "rest": {
+    "aggs_grouped_daily": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 12414
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "aggs_minute": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 836
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "aggs_second": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 50
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "benzinga_earnings": {
+      "evidence": {
+        "body_status": "ERROR",
+        "non_empty": false,
+        "results_count": null
+      },
+      "http_status": 403,
+      "verdict": "not_entitled"
+    },
+    "benzinga_ratings": {
+      "evidence": {
+        "body_status": "ERROR",
+        "non_empty": false,
+        "results_count": null
+      },
+      "http_status": 403,
+      "verdict": "not_entitled"
+    },
+    "crypto_prev": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "fx_prev": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "indices_snapshot": {
+      "evidence": {
+        "body_status": "NOT_AUTHORIZED",
+        "non_empty": false,
+        "results_count": null
+      },
+      "http_status": 403,
+      "verdict": "not_entitled"
+    },
+    "last_nbbo": {
+      "evidence": {
+        "ask_present": true,
+        "bid_present": true,
+        "has_result": true,
+        "timestamp_utc": "2026-08-07T23:59:55.715754Z"
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "last_trade": {
+      "evidence": {
+        "has_result": true,
+        "price_present": true,
+        "timestamp_ns_present": true,
+        "timestamp_utc": "2026-08-07T23:59:59.599470Z"
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "market_holidays": {
+      "evidence": {
+        "count": 24
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "market_status": {
+      "evidence": {
+        "after_hours": false,
+        "early_hours": false,
+        "market": "closed",
+        "server_time_present": true
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "news": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "options_chain_snapshot": {
+      "evidence": {
+        "has_delta": true,
+        "has_greeks": true,
+        "has_implied_volatility": true,
+        "has_last_quote": false,
+        "has_last_trade": false,
+        "has_open_interest": true,
+        "results_count": 5
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "options_contracts": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "options_trades": {
+      "evidence": {
+        "body_status": "NOT_AUTHORIZED",
+        "contract_source": "reference",
+        "non_empty": false,
+        "results_count": null
+      },
+      "http_status": 403,
+      "verdict": "not_entitled"
+    },
+    "quotes_recent": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "ref_conditions": {
+      "evidence": {
+        "count": 94
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "ref_dividends": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "ref_exchanges": {
+      "evidence": {
+        "count": 27,
+        "exchange_id_4_name": "FINRA Alternative Display Facility",
+        "exchange_id_4_present": true
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "ref_financials": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "ref_splits": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "short_interest_legacy": {
+      "evidence": {},
+      "http_status": 404,
+      "verdict": "ambiguous"
+    },
+    "short_interest_stocks_v1": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "short_volume": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "snapshot_gainers": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 21
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "snapshot_ticker": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "snapshot_unified": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "trades_2005": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "trades_2015": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "trades_recent": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    },
+    "treasury_yields": {
+      "evidence": {
+        "non_empty": true,
+        "results_count": 1
+      },
+      "http_status": 200,
+      "verdict": "entitled"
+    }
+  },
+  "schema": "massive_capability_manifest.v1",
+  "ws": {
+    "ws_indices": {
+      "evidence": {
+        "auth_status": "auth_failed",
+        "connected": true,
+        "data_frames": 0,
+        "lib": "websockets",
+        "subscribe_status": null
+      },
+      "http_status": null,
+      "verdict": "not_entitled"
+    },
+    "ws_options": {
+      "evidence": {
+        "auth_status": "auth_success",
+        "connected": true,
+        "data_frames": 0,
+        "lib": "websockets",
+        "subscribe_status": "error"
+      },
+      "http_status": null,
+      "verdict": "not_entitled"
+    },
+    "ws_stocks_delayed": {
+      "evidence": {
+        "auth_status": "auth_success",
+        "close_code": 1008,
+        "connected": true,
+        "data_frames": 0,
+        "error": "ConnectionClosedError: received 1008 (policy violation); then sent 1008 (policy violation)",
+        "lib": "websockets",
+        "subscribe_status": "max_connections"
+      },
+      "http_status": null,
+      "verdict": "ambiguous"
+    },
+    "ws_stocks_realtime": {
+      "evidence": {
+        "auth_status": "auth_success",
+        "connected": true,
+        "data_frames": 0,
+        "lib": "websockets",
+        "subscribe_status": "success"
+      },
+      "http_status": null,
+      "verdict": "entitled"
+    }
+  }
+}
