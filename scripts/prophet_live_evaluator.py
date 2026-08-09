@@ -416,7 +416,10 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
         print(f"prophet-live pass={m['pass_ts']} pack_as_of={m['pack_as_of']} "
               f"quotes={m['quotes_n']}@{m['quote_asof']} src={live.get('source')}"
               f"{'(' + '+'.join(live['local_files']) + ')' if live.get('local_files') else ''} "
-              f"states={m['states']} dark={m['dark_counts']} events={m['events_n']}",
+              f"states={m['states']} dark={m['dark_counts']} "
+              # The pack's coverage limit, printed beside the lane's. They are two
+              # different failures and a single "unreadable" number hides that.
+              f"unknown={m.get('unknown_counts')} events={m['events_n']}",
               flush=True)
         for ev in art.get("events") or []:
             print(f"prophet-live EVENT {ev['kind']} {ev['ticker']} px={ev.get('price')} "

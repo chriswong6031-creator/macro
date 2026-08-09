@@ -36,11 +36,17 @@ that option stops before projection or source sync when any target is partial.
 (``fundamental_forensics.wave2_targets/v1``) so a lane cannot drift from the
 universe its consumer expects; ``--target`` entries are merged after the file.
 
-Two opt-in incremental modes exist for a scheduled lane with a warm local
-store; both default OFF so an operator recovery run keeps proving every byte:
+Three opt-in incremental modes exist for a scheduled lane with a warm local
+store; all default OFF so an operator recovery run keeps proving every byte:
 
 * ``--verify-local-restore`` verifies a hash-equal local file instead of
-  re-downloading it (same manifest-bound hash check, local byte source); and
+  re-downloading it (same manifest-bound hash check, local byte source);
+* ``--reuse-local-archive`` (requires ``--acquire``) satisfies an
+  already-retrieved primary document from sha256-verified local bytes instead
+  of re-downloading identical bytes from SEC.  The manifest keeps the ORIGINAL
+  retrieval receipt, so a cache hit never claims a retrieval that did not
+  happen; Submissions are still fetched fresh, which is how new filings are
+  discovered; and
 * ``--incremental-sync`` (requires ``--sync``) skips uploading objects already
   bound by the latest immutable manifest.  The new manifest still enumerates
   every file.
@@ -149,6 +155,7 @@ def run_operator_flow(
     sync: bool = False,
     require_complete_acquisition: bool = False,
     verify_local_restore: bool = False,
+    reuse_local_archive: bool = False,
     incremental_sync: bool = False,
     raw_root: Path | None = None,
     archive_root: Path | None = None,
@@ -166,6 +173,8 @@ def run_operator_flow(
     """Execute selected Wave-2 actions in safe fixed order, never rendering UI/state."""
     if not any((restore, acquire, build_projections, sync)):
         raise OperatorFlowError("select at least one action: --restore, --acquire, --build-projections, or --sync")
+    if reuse_local_archive and not acquire:
+        raise OperatorFlowError("--reuse-local-archive requires --acquire in the same invocation")
     if incremental_sync and not sync:
         raise OperatorFlowError("--incremental-sync requires --sync in the same invocation")
     resolved_root = Path(root).resolve()
@@ -189,6 +198,7 @@ def run_operator_flow(
             "sync": bool(sync),
             "require_complete_acquisition": bool(require_complete_acquisition),
             "verify_local_restore": bool(verify_local_restore),
+            "reuse_local_archive": bool(reuse_local_archive),
             "incremental_sync": bool(incremental_sync),
         },
         "clocks": {
@@ -233,6 +243,7 @@ def run_operator_flow(
             max_ticker_bytes=max_ticker_bytes,
             max_total_bytes=max_total_bytes,
             min_interval_seconds=min_interval_seconds,
+            reuse_local_archive=bool(reuse_local_archive),
         )
         result["results"]["acquire"] = acquired
         timings["acquire"] = round(time.monotonic() - started, 1)
@@ -293,6 +304,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Verify hash-equal local files instead of re-downloading them (warm-store lanes only)",
     )
     parser.add_argument(
+        "--reuse-local-archive",
+        action="store_true",
+        help="Reuse sha256-verified already-retrieved primary documents from the local archive instead of re-downloading them; receipts keep the original retrieval clock (SEC fair-access courtesy); requires --acquire",
+    )
+    parser.add_argument(
         "--incremental-sync",
         action="store_true",
         help="Skip uploading objects already bound by the latest immutable manifest; requires --sync",
@@ -327,6 +343,7 @@ def main(argv: list[str] | None = None) -> int:
             sync=args.sync,
             require_complete_acquisition=args.require_complete_acquisition,
             verify_local_restore=args.verify_local_restore,
+            reuse_local_archive=args.reuse_local_archive,
             incremental_sync=args.incremental_sync,
             raw_root=args.raw_root,
             archive_root=args.archive_root,
