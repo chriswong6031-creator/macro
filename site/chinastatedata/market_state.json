@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-08-08",
-  "generated_utc": "2026-08-08T09:58:24Z",
+  "generated_utc": "2026-08-09T06:57:50Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -82,9 +82,9 @@
       "limit_down_breadth_pct": 0.0
     },
     "name_summary": {
-      "n_packets": 208,
+      "n_packets": 209,
       "chase_veto_count": 30,
-      "fillable_count": 207
+      "fillable_count": 208
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
@@ -138,7 +138,7 @@
     }
   },
   "rotation": {
-    "as_of": "2026-08-08",
+    "as_of": "2026-08-09",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -162,7 +162,7 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-08-08",
+      "as_of": "2026-08-09",
       "basket_count": 237,
       "above_200d_pct": 67.9,
       "hot_baskets": [
@@ -233,10 +233,10 @@
     ],
     "conditions": {
       "roro": {
-        "roro": 0.121,
-        "roro_raw": 0.122,
+        "roro": 0.138,
+        "roro_raw": 0.139,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 1.527,
+        "china_roro_copper_gold": 1.662,
         "china_roro_breadth": 1.141,
         "china_roro_southbound": -0.468,
         "china_roro_m1_m2": -0.73,
@@ -250,7 +250,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 1.527,
+            "value": 1.662,
             "lean": "risk-on"
           },
           {
@@ -410,9 +410,9 @@
       "slope_10y_3m": 0.5378
     },
     "usdcnh": {
-      "quote": 6.7275,
+      "quote": 6.728,
       "chg_pct": -0.6,
-      "as_of": "Aug 07, 2026"
+      "as_of": "Aug 08, 2026"
     },
     "dxy": {
       "quote": 99.6,
