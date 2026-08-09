@@ -147,6 +147,130 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     assert "pull_request.number" in fences["concurrency"]["group"]
 
 
+def test_scope_glob_separator_semantics() -> None:
+    """`*` must not cross `/`, or a one-directory scope silently covers a subtree."""
+    match = lambda pattern, path: bool(  # noqa: E731
+        PACK._glob_to_regex(pattern).match(path)
+    )
+    assert match("engine/*", "engine/a.py")
+    assert not match("engine/*", "engine/a/b.py")
+    assert match("engine/**", "engine/a/b.py")
+    assert match("engine/", "engine/a/b.py")
+    assert match("tests/test_x*.py", "tests/test_xy.py")
+    assert not match("tests/test_x*.py", "tests/test_y.py")
+    assert match("**/conftest.py", "tests/conftest.py")
+    assert match("**/conftest.py", "conftest.py")
+
+
+def test_selection_fails_safe_toward_running_everything() -> None:
+    """Every unknown must widen the run, never narrow it.
+
+    A wasted runner-minute is cheap; a false green is not. These four are the
+    only ways scoping can be wrong, and all four must resolve to the full suite.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    scoped = [job for job in jobs if job.paths]
+
+    # 1. changed set unknowable (git failed, or main's baseline passes no ref)
+    assert len(PACK.select_jobs(jobs, None)[0]) == len(jobs)
+    # 2. a global invalidator can change what ANY job means
+    for invalidator in ("scripts/run_ci_pack.py", "tests/conftest.py",
+                        "requirements.txt", ".github/ci/legacy-jobs.yml"):
+        selected, reason = PACK.select_jobs(jobs, [invalidator])
+        assert len(selected) == len(jobs), f"{invalidator} must force a full run"
+        assert "full suite" in reason
+    # 3. an unscoped job is always-on, so an unrelated diff still runs them all
+    selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
+    assert len(selected) == len(jobs) - len(scoped)
+    assert all(not job.paths for job in selected)
+    # 4. a scoped job runs whenever its own scope matches
+    for job in scoped:
+        probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
+        hit, _ = PACK.select_jobs(jobs, [probe])
+        assert job in hit, f"{job.job_id} must run when {probe} changes"
+
+
+def test_declared_scope_must_cover_paths_the_job_itself_reads() -> None:
+    """A scope narrower than the job's own commands is a hard manifest error.
+
+    This is what makes scoping reviewable instead of trusted: a job that runs
+    `pytest tests/test_x.py` but scopes itself elsewhere would never re-run when
+    that test changed, and would report green forever.
+    """
+    findings = PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("engine/nowhere/**",),
+    )
+    assert findings and "tests/test_ci_pack.py" in findings[0]
+    # Widening to cover it clears the finding.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("tests/**",),
+    )
+    # A path that no longer exists must not be able to fail the build.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_deleted_long_ago.py"}]},
+        ("engine/nowhere/**",),
+    )
+
+
+def test_every_declared_scope_in_the_real_manifest_is_covered() -> None:
+    """The production manifest itself must satisfy the coverage rule."""
+    PACK.load_legacy_jobs(MANIFEST)  # raises ManifestError on any gap
+
+
+def test_packs_stay_balanced_over_the_selected_subset() -> None:
+    """Balance must be computed on the SELECTION, not the full manifest.
+
+    Otherwise a scoped run leaves whole packs empty while one pack carries the
+    work, and time-to-green gets worse instead of better.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    subset = sorted(jobs, key=lambda job: -job.weight)[:40]
+    packs = PACK.partition_jobs(subset, 4)
+    weights = [sum(job.weight for job in pack) for pack in packs]
+    assert sum(len(pack) for pack in packs) == len(subset)
+    assert max(weights) - min(weights) <= max(job.weight for job in subset)
+
+
+def test_workflow_scopes_only_pull_requests() -> None:
+    """Main's baseline must never pass --changed-from: it proves the full 173."""
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    step = next(
+        s for s in pack["steps"]
+        if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
+    )
+    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert "--changed-from" in scope_arg
+    assert "$CI_SCOPE_ARG" in str(step["run"])
+
+
+def test_pack_command_folds_to_exactly_one_shell_command() -> None:
+    """A newline in the folded scalar splits one command into two, silently.
+
+    Putting the scope expression inline across continuation lines did exactly
+    that: YAML preserves newlines for MORE-indented lines inside `>-`, so
+    `--execute` landed on its own line and the pack ran without it. Same family
+    as the `#`-in-a-folded-scalar trap, and invisible in review.
+    """
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    for step in pack["steps"]:
+        if not isinstance(step, dict) or "run" not in step:
+            continue
+        if not str(step["run"]).lstrip().startswith('"$RUNNER_TEMP'):
+            continue
+        command = str(step["run"])
+        assert "\n" not in command, (
+            "the pack command must fold to ONE line; a newline here silently "
+            f"drops every argument after it: {command!r}"
+        )
+        assert command.rstrip().endswith("--execute")
+
+
 def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
@@ -159,43 +283,34 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    # Pull requests stay on the hosted pool; main's proof runs on the idle self-hosted
-    # Linux pool. Asserted as a CONTRACT on both branches rather than as a literal,
-    # because the point of the expression is that the two events route differently —
-    # pinning the string would have forbidden the routing outright.
+    # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
+    # so main's baseline and a pull request prove the packs the SAME way.
     #
-    # Why main routes away from `ubuntu-latest` (2026-08-09): main's ci.yml proof sat
-    # `queued` 30+ minutes behind 133 queued runs while `render-linux` idled, and that
-    # one starved run blocks the whole fleet — `merge_on_green.main_proof` answers "is
-    # main green on ci-pack-N" from the newest CONCLUDED ci.yml run on main, so with no
-    # fresh proof the base-inherited-red refresh cannot fire and every pull request that
-    # inherited a since-healed red stays blocked.
+    # This replaces the 2026-08-09 self-hosted detour. Main's proof was briefly routed
+    # to `["self-hosted","render-linux"]` because it sat `queued` 30+ minutes behind 133
+    # queued runs while that pool idled, and a starved main proof blocks the whole fleet
+    # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
+    # without one the base-inherited-red refresh cannot fire). The repository then moved
+    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
+    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
+    # than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
+    # pool and starved the sweeper that merges every armed pull request.
+    assert pack["runs-on"] == "ubuntu-latest"
+    # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
     runs_on = " ".join(str(pack["runs-on"]).split())
-    assert "github.event_name == 'pull_request'" in runs_on
-    assert "'ubuntu-latest'" in runs_on
-    assert '["self-hosted","render-linux"]' in runs_on
-    # The macstudio pool is the render/nightly lane and must never absorb CI packs.
     assert "macstudio" not in runs_on
+    assert "render-linux" not in runs_on
+    assert "self-hosted" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
-    # Main's proof may take at most HALF the four-runner `render-linux` pool; pull
-    # requests must stay UNTHROTTLED. `merge-on-green.yml` targets that same pool, and
-    # the sweeper is what merges every armed pull request — so an unthrottled main
-    # baseline (four packs onto exactly four runners) starved the lane that consumes
-    # its own result. Measured 2026-08-09: 60 sweeps queued, 50 of them between 04:00
-    # and 08:00 UTC, oldest 2026-08-07, while the operator merged by hand to drain the
-    # backlog; the sweep job itself takes 37 seconds. Pinned as a contract on BOTH
-    # branches for the same reason `runs-on` is — the point is that the two events
-    # throttle differently, so pinning a literal would forbid the split outright.
-    max_parallel = " ".join(str(pack["strategy"]["max-parallel"]).split())
-    assert "github.event_name == 'pull_request'" in max_parallel
-    caps = [int(n) for n in re.findall(r"\b\d+\b", max_parallel)]
-    assert len(caps) == 2, f"expected one cap per event branch, got {caps}"
-    pr_cap, main_cap = caps
-    # Hosted runners are capped by the account's concurrent-job pool, not by this
-    # matrix; throttling pull requests here would only double their wall-clock.
-    assert pr_cap == len(matrix), "pull request packs must run unthrottled"
-    assert main_cap >= 1
-    assert main_cap * 2 <= len(matrix), "main's proof must leave half the pool free"
+    # No `max-parallel`: it existed only to stop main's packs from taking all four
+    # `render-linux` runners. With no shared pool to protect, throttling would only
+    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
+    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
+    assert "max-parallel" not in pack["strategy"], (
+        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
+        "ceiling is account-wide and this key cannot raise it"
+    )
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
