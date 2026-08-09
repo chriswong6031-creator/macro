@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -213,12 +214,37 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["total"] == 0
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
-    assert queue["coverage"]["reviewed_issuer_company_count"] == 1
-    assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
-    assert next(
-        row for row in queue["mapping_backlog"] if row["ticker"] == "PLTR"
-    )["mapping_state"] == "partial_identifier_coverage"
+    # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
+    # after days of reporting unavailable, and Wave 9D published the reviewed
+    # defense19 graph the same day. Current truth, re-verified empirically at this
+    # merge (2026-08-09): the rail is read (award_events_status ok), ~500
+    # award-change events are visible, all 19 defense19 issuers are reviewed --
+    # and still no event meets exact candidate eligibility, which the engine
+    # emits as not_observed. Zero candidates now has its THIRD distinct reason in
+    # this probe's history: rail unreadable -> rail read with zero award-change
+    # events -> events visible but none exact-eligible. This pin is deliberately
+    # a snapshot tripwire (per the 2026-08-08 heal): it must fire again, and be
+    # re-read by a human, the next time this state moves.
+    assert queue["freshness"]["award_events_status"] == "ok"
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    assert queue["freshness"]["recipient_graph_status"] == "ready"
+    assert queue["coverage"]["reviewed_issuer_company_count"] == 19
+    assert queue["coverage"]["reviewed_issuer_tickers"] == [
+        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
+        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
+    ]
+    # The coverage frontier: every reviewed issuer is identifier-linked but its
+    # discovery scope is incomplete, and exactly two requested issuers carry no
+    # reviewed mapping at all -- GE (no_exact_match) and BWXT
+    # (no_collected_recipients), both finished answers rather than open tasks.
+    assert Counter(row["mapping_state"] for row in queue["mapping_backlog"]) == {
+        "partial_identifier_coverage": 19,
+        "mapping_needed": 2,
+    }
+    assert sorted(
+        row["ticker"] for row in queue["mapping_backlog"]
+        if row["mapping_state"] == "mapping_needed"
+    ) == ["BWXT", "GE"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
 

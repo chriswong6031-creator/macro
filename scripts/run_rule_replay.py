@@ -47,8 +47,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 # ---------------------------------------------------------------------------
 # Canonical data path — same as replay_standout_pipeline.CANONICAL_DATA

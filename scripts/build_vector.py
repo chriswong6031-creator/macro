@@ -2824,11 +2824,28 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
-    if len(g) < 30 or len(i) < 30:
+    # A null TIP is not a gap to compact — it is a MISSING CURRENT READING, and the two
+    # must not be conflated. Compaction alone anchors `pairs[-1]` on the last CLEAN day,
+    # so HK (whose `i` has been null since 2026-07-28) would publish an 11-day-stale
+    # endpoint AS today's direction, with nothing on the card saying so — the same lie as
+    # coercing the gap to 0.0, which renders a confident rdir="stable". No current
+    # reading, no verdict: disclose null, exactly like a market with no timeline at all
+    # (JP/KR/TW/GB/EZ already render that way). Writers route through `pd.isna`, so a gap
+    # always arrives as None, never NaN.
+    if not (g and i and g[-1] is not None and i[-1] is not None):
         return empty
-    N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    # Collection gaps commit as nulls in the timeline series; a null endpoint
+    # would TypeError here and a null-holed window would misstate the drift.
+    # The trajectory math needs ALIGNED g/i readings, so keep only paired
+    # non-null days — dropping gap days just widens the calendar span of the
+    # ~1-month window, and the 30-reading coverage floor now counts clean pairs.
+    pairs = [(gv, iv) for gv, iv in zip(g, i) if gv is not None and iv is not None]
+    if len(pairs) < 30:
+        return empty
+    N = min(20, len(pairs) - 1)                   # ~1 month of trading days
+    g_now, i_now = pairs[-1]
+    g_then, i_then = pairs[-1 - N]
+    dg, di = g_now - g_then, i_now - i_then
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()

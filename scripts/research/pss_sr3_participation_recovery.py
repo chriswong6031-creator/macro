@@ -18,14 +18,18 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from scripts.research import pss_f4_semivar as f4
-from scripts.research import pss_sr2_peer_diffusion as sr2
-from scripts.research import pss_sr3_participation_feasibility as feasibility
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
+
+from scripts.research import pss_f4_semivar as f4  # noqa: E402
+from scripts.research import pss_sr2_peer_diffusion as sr2  # noqa: E402
+from scripts.research import pss_sr3_participation_feasibility as feasibility  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]

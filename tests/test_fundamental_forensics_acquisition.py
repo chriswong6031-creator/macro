@@ -11,6 +11,7 @@ from collectors.edgar_forensics import (
     endpoint_url,
     persist_response,
 )
+from collectors import fundamental_forensics_acquisition as acquisition
 from collectors.fundamental_forensics_acquisition import (
     ACQUISITION_RELATIVE_ROOT,
     AcquisitionError,
@@ -22,6 +23,7 @@ from collectors.sec_document_spine import (
     ArchiveResponseTooLarge,
     SecFilingArchiveCollector,
     persist_archive_document,
+    read_filing_manifest,
 )
 from engine.fundamental_forensics.sec_document_spine import (
     build_filing_manifests,
@@ -31,6 +33,9 @@ from engine.fundamental_forensics.sec_document_spine import (
 
 RECORDED_AT = "2026-08-02T00:05:00Z"
 AS_OF = "2026-08-01T23:59:59Z"
+# A second nightly run over the SAME as_of universe: new recorded_at, therefore
+# new manifest ids, but the identical four already-retained primary documents.
+SECOND_NIGHT = "2026-08-03T00:05:00Z"
 
 
 def _submissions(cik: int) -> dict:
@@ -110,7 +115,7 @@ class _ArchiveCollector:
         return with_document_retrievals(manifest, {primary["document_id"]: receipt.to_dict()})
 
 
-def _run(tmp_path: Path, *, targets=("FXT=1",), **kwargs):
+def _run(tmp_path: Path, *, targets=("FXT=1",), recorded_at: str = RECORDED_AT, **kwargs):
     _SubmissionsCollector.calls = []
     _SubmissionsCollector.fail_ciks = set()
     _ArchiveCollector.calls = []
@@ -121,12 +126,20 @@ def _run(tmp_path: Path, *, targets=("FXT=1",), **kwargs):
         archive_root=tmp_path / "archive",
         user_agent="MastermindX research@example.com",
         as_of=AS_OF,
-        recorded_at=RECORDED_AT,
+        recorded_at=recorded_at,
         min_interval_seconds=0.1,
         submissions_collector_factory=_SubmissionsCollector,
         archive_collector_factory=_ArchiveCollector,
         **kwargs,
     )
+
+
+def _stored_names(archive_root: Path, subdirectory: str, suffix: str) -> list[str]:
+    return sorted(item.name for item in (archive_root / subdirectory).rglob(f"*{suffix}"))
+
+
+def _primary(manifest) -> dict:
+    return next(item for item in manifest["documents"] if item["role"] == "primary")
 
 
 def test_acquisition_only_fetches_submissions_and_latest_two_10k_and_10q(tmp_path: Path):
@@ -271,3 +284,129 @@ def test_network_collectors_refuse_declared_oversize_before_any_source_persisten
         archive.fetch_primary_document(manifest, retrieved_at=RECORDED_AT)
     assert archive_session.calls == 1
     assert not list((tmp_path / "archive").rglob("*.gz"))
+
+
+# --- warm-archive reuse ---------------------------------------------------------
+# The nightly lane re-downloaded a flat ~128MB of already-retained 10-K/10-Q
+# primary documents (127.96MB -> 127.93MB across 08-05..08-08, zero new filings).
+# Reuse is opt-in, and a hit must carry the ORIGINAL receipt: a cache hit that
+# minted a fresh retrieved_at would be a retrieval no server ever served.
+
+
+def test_reuse_flag_defaults_off_and_receipts_carry_zeroed_reuse_accounting(tmp_path: Path):
+    run = _run(tmp_path)
+
+    # Flag off: every accession is still fetched, in the same order as before.
+    assert [accession for accession, _ in _ArchiveCollector.calls] == [
+        "0000000001-26-000004", "0000000001-25-000005",
+        "0000000001-26-000001", "0000000001-26-000002",
+    ]
+    assert run["reuse_local_archive"] is False
+    assert run["bytes_reused"] == 0
+    ticker = run["ticker_receipts"][0]
+    assert ticker["bytes_reused"] == 0
+    assert ticker["bytes_retained"] > 0
+    assert [form["reused_documents"] for form in ticker["forms"]] == [0, 0]
+
+
+def test_reuse_serves_warm_primary_documents_without_any_archive_fetch(tmp_path: Path):
+    archive = tmp_path / "archive"
+    first = _run(tmp_path)
+    assert first["status"] == "complete"
+    receipts_before = _stored_names(archive, "receipts", ".json")
+    objects_before = _stored_names(archive, "objects", ".gz")
+    assert receipts_before and objects_before
+
+    second = _run(tmp_path, recorded_at=SECOND_NIGHT, reuse_local_archive=True)
+
+    assert _ArchiveCollector.calls == []
+    assert second["status"] == "complete"
+    assert second["reuse_local_archive"] is True
+    # Submissions are ALWAYS fetched fresh; that is how a new filing is found.
+    assert [(cik, endpoint) for cik, endpoint, _ in _SubmissionsCollector.calls] == [
+        ("0000000001", "submissions")
+    ]
+
+    warm, cold = second["ticker_receipts"][0], first["ticker_receipts"][0]
+    document_bytes = cold["bytes_retained"] - warm["bytes_retained"]
+    assert document_bytes > 0
+    # bytes_retained keeps meaning bytes pulled over the network THIS run, so the
+    # documents leave it and are accounted in bytes_reused instead.
+    assert warm["bytes_retained"] == int(warm["submissions"]["bytes"])
+    assert warm["bytes_reused"] == document_bytes == second["bytes_reused"]
+    assert cold["bytes_reused"] == 0
+    assert [form["reused_documents"] for form in warm["forms"]] == [2, 2]
+    assert [form["stored_documents"] for form in warm["forms"]] == [
+        form["stored_documents"] for form in cold["forms"]
+    ]
+
+    # No object and no receipt is minted: the evidence is the same stored bytes.
+    assert _stored_names(archive, "receipts", ".json") == receipts_before
+    assert _stored_names(archive, "objects", ".gz") == objects_before
+
+    # Tonight's manifest, last night's receipt, verbatim.
+    manifest = read_filing_manifest(archive, warm["forms"][0]["manifest_keys"][0])
+    assert manifest["clocks"]["recorded_at"] == "2026-08-03T00:05:00.000000Z"
+    primary = _primary(manifest)
+    assert primary["availability"] == "stored"
+    assert primary["retrieval"]["retrieved_at"] == "2026-08-02T00:05:00.000000Z"
+    prior = read_filing_manifest(archive, cold["forms"][0]["manifest_keys"][0])
+    assert primary["retrieval"] == _primary(prior)["retrieval"]
+
+
+def test_reuse_on_a_cold_archive_is_byte_identical_to_the_fetch_path(tmp_path: Path):
+    off = _run(tmp_path / "off")
+    off_calls = list(_ArchiveCollector.calls)
+
+    on = _run(tmp_path / "on", reuse_local_archive=True)
+
+    assert list(_ArchiveCollector.calls) == off_calls
+    assert on["bytes_reused"] == 0
+    # Apart from the disclosed flag itself, an armed-but-cold run is the run the
+    # lane does today, receipt for receipt.
+    assert on.pop("reuse_local_archive") is True
+    assert off.pop("reuse_local_archive") is False
+    assert on == off
+
+
+def test_reuse_falls_back_to_fetch_for_a_corrupted_local_object(tmp_path: Path):
+    archive = tmp_path / "archive"
+    first = _run(tmp_path)
+    annual = read_filing_manifest(archive, first["ticker_receipts"][0]["forms"][0]["manifest_keys"][0])
+    (archive / _primary(annual)["storage_key"]).write_bytes(b"truncated")
+
+    run = _run(tmp_path, recorded_at=SECOND_NIGHT, reuse_local_archive=True)
+
+    # Only the unverifiable document goes back to SEC, and the fetch repairs it.
+    assert [accession for accession, _ in _ArchiveCollector.calls] == ["0000000001-26-000004"]
+    assert run["status"] == "complete"
+    ticker = run["ticker_receipts"][0]
+    assert [form["reused_documents"] for form in ticker["forms"]] == [1, 2]
+    assert [form["stored_documents"] for form in ticker["forms"]] == [2, 2]
+
+
+def test_reuse_persist_failure_is_recorded_and_keeps_the_hard_gate_closed(monkeypatch, tmp_path: Path):
+    _run(tmp_path)
+    real = acquisition.persist_filing_manifest
+
+    def flaky(cache_root, manifest):
+        # Fail only the MATERIALIZED write; the declared-selection record still
+        # lands exactly as it does on the fetch leg.
+        if _primary(manifest)["availability"] == "stored":
+            raise OSError("fixture materialized manifest persist failure")
+        return real(cache_root, manifest)
+
+    monkeypatch.setattr(acquisition, "persist_filing_manifest", flaky)
+    run = _run(tmp_path, recorded_at=SECOND_NIGHT, reuse_local_archive=True)
+
+    # A committed hit never silently falls back to the network: a persist-side
+    # failure would kill the fetch leg identically, so the gate must see it.
+    assert _ArchiveCollector.calls == []
+    ticker = run["ticker_receipts"][0]
+    assert ticker["status"] == "partial"
+    assert run["status"] == "partial"  # --require-complete-acquisition refuses this
+    assert [failure["stage"] for form in ticker["forms"] for failure in form["failures"]] == [
+        "reuse_10-K", "reuse_10-K", "reuse_10-Q", "reuse_10-Q"
+    ]
+    assert [form["reused_documents"] for form in ticker["forms"]] == [0, 0]
+    assert ticker["bytes_reused"] == 0

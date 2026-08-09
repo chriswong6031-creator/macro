@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.ownership_event_wire import (
     filing_season_clock,
+    _filing_deadline,
     _latest_completed_quarter,
     _13dg_rows,
     _insider_rows_quiver,
@@ -127,6 +128,22 @@ class TestFilingSeasonClock:
         assert grid["alphaone"]["status"] == "filed"
         assert grid["betatwo"]["status"] == "pending"
 
+    def test_notice_status_does_not_masquerade_as_holdings(self):
+        today = date(2026, 7, 10)
+        filings = _fund_filings(
+            "2026-03-31", "2026-05-15", "2026-03-31", "2026-05-15")
+        filings["alphaone"].update({
+            "notice_period_end": "2026-06-30",
+            "notice_filing_date": "2026-07-08",
+            "notice_form": "13F-NT",
+            "notice_accession": "0000000000-26-000001",
+        })
+        clock = filing_season_clock(_funds(), fund_filings=filings, today=today)
+        grid = {r["slug"]: r for r in clock["filed_pending"]}
+        assert grid["alphaone"]["status"] == "notice"
+        assert grid["alphaone"]["period_end"] == "2026-03-31"
+        assert grid["alphaone"]["notice_period_end"] == "2026-06-30"
+
     def test_filed_status_lapsed(self):
         # Window closed, betatwo period_end != expected quarter → lapsed
         today = date(2026, 9, 1)  # window_closed
@@ -159,6 +176,12 @@ class TestFilingSeasonClock:
         today = date(2026, 9, 1)
         clock = filing_season_clock(_funds(), today=today)
         assert clock["days_to_deadline"] < 0
+
+    def test_weekend_deadline_rolls_to_next_business_day(self):
+        # Q3 2026 +45 lands Sat Nov 14; SEC deadline rolls to Mon Nov 16.
+        assert _filing_deadline(date(2026, 9, 30)) == date(2026, 11, 16)
+        clock = filing_season_clock(_funds(), today=date(2026, 10, 1))
+        assert clock["next_deadline"] == "2026-11-16"
 
 
 # --------------------------------------------------------------------------- #
@@ -504,15 +527,18 @@ class TestWireCapAndDedup:
         from engine.ownership_event_wire import _13dg_rows
         import engine.beneficial_ownership as bo
 
-        # Inject two rows for the same (filer, ticker, form), different dates
+        # Inject two current rows for the same (filer, ticker, form), different dates.
+        older = str(date.today() - timedelta(days=4))
+        newer = str(date.today() - timedelta(days=1))
+        other = str(date.today() - timedelta(days=2))
         df = pd.DataFrame([
-            {"ticker": "AAPL", "date_filed": "2026-07-05",
+            {"ticker": "AAPL", "date_filed": older,
              "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
              "company": "Apple Inc"},
-            {"ticker": "AAPL", "date_filed": "2026-07-09",  # newer
+            {"ticker": "AAPL", "date_filed": newer,
              "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
              "company": "Apple Inc"},
-            {"ticker": "MSFT", "date_filed": "2026-07-08",  # different ticker, not a dupe
+            {"ticker": "MSFT", "date_filed": other,  # different ticker, not a dupe
              "form_type": "SC 13G/A", "filer": "Vanguard", "filer_type": "passive_giant",
              "company": "Microsoft Corp"},
         ])
@@ -527,7 +553,7 @@ class TestWireCapAndDedup:
         assert tickers.count("MSFT") == 1
         # The kept AAPL row should be the newer one
         aapl_row = next(r for r in rows if r["ticker"] == "AAPL")
-        assert aapl_row["date"] == "2026-07-09"
+        assert aapl_row["date"] == newer
 
     def test_13dg_lookback_constant_is_14(self):
         """The main wire 13D/G lookback constant must be 14 days (E2.5 spec)."""

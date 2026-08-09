@@ -18,12 +18,16 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib import config, site_assets
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, site_assets  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
 

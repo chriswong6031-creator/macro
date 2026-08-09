@@ -42,6 +42,7 @@ import pandas as pd
 # ── paths ──────────────────────────────────────────────────────────────────────
 _HERE = Path(__file__).resolve()
 _REPO = _HERE.parents[2]
+sys.path.insert(0, str(_REPO))
 _DATA = _REPO / "data"
 _OUT_JSON = _DATA / "execution" / "net_replay_v1_summary.json"
 _MAIN_CHECKOUT = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard")

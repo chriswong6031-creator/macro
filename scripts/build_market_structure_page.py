@@ -29,6 +29,7 @@ from jinja2 import Environment, FileSystemLoader, Undefined
 log = logging.getLogger("build_market_structure_page")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 # Relative path inside the data dir where the engine writes the artifact.
 _ARTIFACT_REL = Path("market_structure") / "latest.json"
