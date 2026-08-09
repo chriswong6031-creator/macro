@@ -173,11 +173,12 @@ def write_gex_state(site: Path, root: str, *, vintage: str, flip: float = 750.43
                     spot: float = 735.05, asof: str | None = None) -> None:
     """gex_state payload with a REALISTIC post-midnight-UTC `asof` (B1 fixture law).
 
-    `build_gex_board` stamps `datetime.now(UTC)` and the nightly engine band runs 03:11–03:54
-    UTC, i.e. 23:xx ET on the session day BEFORE.  Stamping the fixture at `{vintage}T21:00Z`
-    (17:00 ET, same calendar date either way) hid the whole UTC-vs-ET vintage class, so the
-    default here is 03:27 UTC on the day AFTER the session — the shape production actually
-    writes.  Any test that passes if this is wrong is not testing the vintage logic.
+    Historical `build_gex_board` receipts used the nightly engine band's 03:11–03:54 UTC wall
+    clock, i.e. 23:xx ET on the session day BEFORE. Stamping the fixture at
+    `{vintage}T21:00Z` (17:00 ET, same calendar date either way) hid the whole UTC-vs-ET
+    vintage class, so the default remains 03:27 UTC on the day AFTER the session. Current board
+    receipts are settled-session anchored, but the reader must remain compatible with this
+    historical/external timestamp shape.
     """
     if asof is None:
         nxt = date.fromisoformat(vintage) + timedelta(days=1)
@@ -1625,9 +1626,10 @@ class TestBuilderEndToEnd:
     def test_gex_state_vintage_maps_utc_stamp_to_its_et_session(self, repo):
         """`asof[:10]` was D+1 on every real nightly and killed the same-session check.
 
-        `build_gex_board` stamps `datetime.now(UTC)`; the engine band commits 03:11–03:54 UTC,
-        which is 23:xx ET the evening BEFORE.  The whole EOD-fallback path depended on getting
-        this right, and the bilingual note asserted a false date when it was wrong.
+        Historical board receipts used the engine band's 03:11–03:54 UTC wall clock, which is
+        23:xx ET the evening BEFORE. The whole EOD-fallback path depended on getting this right,
+        and the bilingual note asserted a false date when it was wrong. The reader keeps this
+        compatibility even though current board receipts are settled-session anchored.
         """
         assert bsd.levels_vintage("2026-07-30T03:27:41+00:00") == "2026-07-29"
         assert bsd.levels_vintage("2026-07-29T21:00:00+00:00") == "2026-07-29"

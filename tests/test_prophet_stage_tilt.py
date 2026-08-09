@@ -207,6 +207,11 @@ def test_corrupt_regime_degrades_leash_to_1(tmp_path):
 def _standouts():
     return {
         "as_of": "2026-07-02",
+        "staleness": {
+            "price_through": "2026-07-02", "delayed": False, "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
         "gate_go": False,
         "buy": [
             {"ticker": "AAA", "dir": "up", "conviction": {"score": 80, "band": "high"},

@@ -331,7 +331,8 @@ def test_gex_board_constructs_the_object_with_a_session_asof():
     """build_gex_board's coverage dict is assembled inline in main(), which needs ~700 live
     chain fetches. Exercise the CONSTRUCTION with the builder's own arguments instead of
     skipping: the load-bearing properties are the schema, the group-key safety and the
-    session-date stamp (MINOR 5 — a wall clock inside an honesty schema)."""
+    settled-session stamp (a wall clock or in-progress session inside an honesty schema
+    would be false)."""
     import scripts.build_gex_board as bgb
     src = (ROOT / "scripts" / "build_gex_board.py").read_text()
     block = src.split('coverage["coverage_v1"] = ', 1)[1][:900]
@@ -339,17 +340,18 @@ def test_gex_board_constructs_the_object_with_a_session_asof():
     # otherwise fail the very check it documents — the same prose-satisfies-a-check trap
     # that let a YAML comment convince audit_unrun_tests.py a dark suite was covered.
     code = "\n".join(ln.split("#", 1)[0] for ln in block.splitlines())
-    assert "nyse_calendar.session_date()" in code, (
-        "the board's coverage asof must be the SESSION date, never the wall clock"
+    assert code.count("asof=session_str") == 2, (
+        "the envelope and source must reuse the board's one settled-session stamp"
     )
     assert "date.today()" not in code
+    session_str = bgb._resolve_session().isoformat()
     o = options_coverage.coverage_object(
         universe_name_en="Symbols with liquid options",
         universe_name_zh="有活跃期权的标的",
         universe_n=646, covered_n=646,
-        asof=str(nyse_calendar.session_date()),
+        asof=session_str,
         sources=[options_coverage.source("cboe_chains", "Option chains", "期权链",
-                                         asof=str(nyse_calendar.session_date()), n=646)])
+                                         asof=session_str, n=646)])
     assert o["schema"] == "options_coverage.v1"
     assert nyse_calendar.is_session(pd.Timestamp(o["asof"]).date()), (
         "the published asof must be a real trading session"

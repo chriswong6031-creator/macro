@@ -29,6 +29,8 @@ import threading
 from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
+from engine.prophet_integrity import effective_public_plan_date
+
 # This module had NO logger while carrying a `log.warning(...)` call in
 # write_posts_llm's armed-but-mute branch (the credential-missing path). That
 # name resolved to nothing, so the call raised NameError inside the function's
@@ -343,7 +345,7 @@ def verify_signal_live(
         return False, f"ran away +{pct:.1f}% — no longer actionable (last={last_close:.2f}, entry={entry:.2f})"
 
     today_date = _parse_date(today) if today else datetime.now(timezone.utc).date()
-    age = _signal_age_days(plan.get("_signal_date"), today_date=today_date)
+    age = _signal_age_days(effective_public_plan_date(plan), today_date=today_date)
     if age is None:
         return False, "no signal_date — cannot verify age"
     if age > _MAX_SIGNAL_AGE_DAYS:
@@ -909,7 +911,9 @@ def build_context(
         "numbers_whitelist": whitelist,
         # Slot / plan meta
         "direction": plan.get("direction") or item.get("direction", ""),
-        "signal_date": str(plan.get("_signal_date") or item.get("_signal_date") or "")[:10],
+        # Preserve the family-native public clock only. Item-level legacy aliases
+        # are not provenance and may not revive an unknown plan family.
+        "signal_date": effective_public_plan_date(plan) or "",
         # Theme/mover extras
         "theme_name": theme_data.get("theme", ""),
         "theme_direction": theme_data.get("direction", ""),

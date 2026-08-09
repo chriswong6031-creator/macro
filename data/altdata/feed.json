@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-08T16:18:14.194319+00:00",
+  "generated_utc": "2026-08-08T20:36:07.073178+00:00",
   "as_of": "2026-08-08",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -9,27 +9,37 @@
       "emoji": "\ud83d\udfe5",
       "label_en": "Donald Trump trades",
       "label_zh": "\u7279\u6717\u666e\u4ea4\u6613",
-      "rows": 674,
+      "rows": 675,
       "last_seen": "2026-07-01",
       "recent": [
         {
-          "Ticker": "JCI",
-          "Company": "JOHNSON CONTROLS INTERNATIONAL PLC",
+          "Ticker": "QNST",
+          "Company": "QUINSTREET INC",
           "Transaction": "Sale",
-          "Amount": "$50,001 - $100,000",
+          "Amount": "$15,001 - $50,000",
+          "Filed": "2026-07-01",
+          "Traded": "2026-05-15 00:00:00",
+          "ExcessReturn": "82.26750302740365",
+          "_first_seen": "2026-08-08T19:24:37.203890+00:00"
+        },
+        {
+          "Ticker": "IR",
+          "Company": "INGERSOLL RAND INC",
+          "Transaction": "Purchase",
+          "Amount": "$15,001 - $50,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-11 00:00:00",
-          "ExcessReturn": "3.384206488136568",
+          "ExcessReturn": "8.69492035503029",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
-          "Ticker": "MA",
-          "Company": "MASTERCARD INCORPORATED",
-          "Transaction": "Sale",
-          "Amount": "$1,001 - $15,000",
+          "Ticker": "MRSH",
+          "Company": "MARSH COMMON STOCK",
+          "Transaction": "Purchase",
+          "Amount": "$50,001 - $100,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-11 00:00:00",
-          "ExcessReturn": "4.746739693209424",
+          "ExcessReturn": "5.619320517879968",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
@@ -113,13 +123,13 @@
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
-          "Ticker": "KR",
-          "Company": "KROGER CO (THE)",
-          "Transaction": "Purchase",
-          "Amount": "$100,001 - $250,000",
+          "Ticker": "JCI",
+          "Company": "JOHNSON CONTROLS INTERNATIONAL PLC",
+          "Transaction": "Sale",
+          "Amount": "$50,001 - $100,000",
           "Filed": "2026-07-01",
           "Traded": "2026-05-11 00:00:00",
-          "ExcessReturn": "-16.57820920022777",
+          "ExcessReturn": "3.384206488136568",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
@@ -153,16 +163,6 @@
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         },
         {
-          "Ticker": "IR",
-          "Company": "INGERSOLL RAND INC",
-          "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
-          "Filed": "2026-07-01",
-          "Traded": "2026-05-11 00:00:00",
-          "ExcessReturn": "8.69492035503029",
-          "_first_seen": "2026-07-02T06:15:26.390936+00:00"
-        },
-        {
           "Ticker": "ITW",
           "Company": "ILLINOIS TOOL WORKS INC",
           "Transaction": "Sale",
@@ -171,6 +171,16 @@
           "Traded": "2026-05-11 00:00:00",
           "ExcessReturn": "6.327401009529762",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
+        },
+        {
+          "Ticker": "SPGI",
+          "Company": "S&P GLOBAL INC",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-07-01",
+          "Traded": "2026-05-11 00:00:00",
+          "ExcessReturn": "0.1396647595963571",
+          "_first_seen": "2026-07-13T06:06:56.128652+00:00"
         },
         {
           "Ticker": "IDXX",
@@ -250,16 +260,6 @@
           "Filed": "2026-07-01",
           "Traded": "2026-05-11 00:00:00",
           "ExcessReturn": "4.20932806691511",
-          "_first_seen": "2026-07-02T06:15:26.390936+00:00"
-        },
-        {
-          "Ticker": "GRMN",
-          "Company": "GARMIN LTD",
-          "Transaction": "Sale",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-07-01",
-          "Traded": "2026-05-11 00:00:00",
-          "ExcessReturn": "-2.757893126803633",
           "_first_seen": "2026-07-02T06:15:26.390936+00:00"
         }
       ]
@@ -4126,50 +4126,22 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 2710,
+      "rows": 2718,
       "last_seen": "2026-08-02",
       "recent": [
         {
-          "BioGuideID": null,
-          "CandidateName": null,
+          "BioGuideID": "H001085",
+          "CandidateName": "HOULAHAN, CHRISSY",
           "CompanyCMTENM": "GOOGLE LLC NETPAC",
           "TransactionDate": "2026-06-26",
-          "TransactionAmount": "2500",
+          "TransactionAmount": "1000",
           "Ticker": "GOOGL",
-          "CommitteeName": "MAINSTREAM PAC",
+          "CommitteeName": "CHRISSY HOULAHAN FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00428623",
           "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-08T12:51:02.929092+00:00"
-        },
-        {
-          "BioGuideID": "B001277",
-          "CandidateName": "BLUMENTHAL, RICHARD",
-          "CompanyCMTENM": "IHEARTMEDIA, INC. PAC",
-          "TransactionDate": "2026-06-29",
-          "TransactionAmount": "5000",
-          "Ticker": "IHRT",
-          "CommitteeName": "BLUMENTHAL FOR CONNECTICUT",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00279216",
-          "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
-        },
-        {
-          "BioGuideID": "T000478",
-          "CandidateName": "TENNEY, CLAUDIA",
-          "CompanyCMTENM": "MARSH & MCLENNAN COMPANIES, INC. POLITICAL ACTION COMMITTEE (MARSH PAC)",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "1000",
-          "Ticker": "MRSH",
-          "CommitteeName": "CLAUDIA TENNEY FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00457234",
-          "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+          "_first_seen": "2026-08-08T19:24:38.059750+00:00"
         },
         {
           "BioGuideID": "S001190",
@@ -4182,20 +4154,6 @@
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00342394",
-          "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
-        },
-        {
-          "BioGuideID": "G000597",
-          "CandidateName": "GARBARINO, ANDREW",
-          "CompanyCMTENM": "MARSH & MCLENNAN COMPANIES, INC. POLITICAL ACTION COMMITTEE (MARSH PAC)",
-          "TransactionDate": "2026-06-30",
-          "TransactionAmount": "2500",
-          "Ticker": "MRSH",
-          "CommitteeName": "GARBARINO FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00457234",
           "Uploaded": "2026-08-02 23:34:15.631812",
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
@@ -4410,6 +4368,20 @@
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
         {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "DTE ENERGY COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-06-29",
+          "TransactionAmount": "5000",
+          "Ticker": "DTE",
+          "CommitteeName": "UPLIFT PAC",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00081547",
+          "Uploaded": "2026-08-02 23:34:15.631812",
+          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+        },
+        {
           "BioGuideID": "M001224",
           "CandidateName": "MORAN, NATHANIEL QUENTIN",
           "CompanyCMTENM": "GLOBAL MEDICAL RESPONSE, INC. POLITICAL ACTION COMMITTEE",
@@ -4452,20 +4424,6 @@
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         },
         {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "CAPITAL ONE FINANCIAL CORP. ASSOC. POLITICAL FUND",
-          "TransactionDate": "2026-06-29",
-          "TransactionAmount": "5000",
-          "Ticker": "COF",
-          "CommitteeName": "AFFORDABLE HOUSING TAX CREDIT COALITION PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00326595",
-          "Uploaded": "2026-08-02 23:34:15.631812",
-          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
-        },
-        {
           "BioGuideID": "D000617",
           "CandidateName": "DELBENE, SUZAN K",
           "CompanyCMTENM": "DEERE & COMPANY PAC (AKA JOHN DEERE PAC)",
@@ -4478,6 +4436,48 @@
           "CompanyCMTEID": "C00204099",
           "Uploaded": "2026-08-02 23:34:15.631812",
           "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+        },
+        {
+          "BioGuideID": "C001126",
+          "CandidateName": "CAREY, MIKE",
+          "CompanyCMTENM": "NORFOLK SOUTHERN CORPORATION GOOD GOVERNMENT FUND",
+          "TransactionDate": "2026-06-29",
+          "TransactionAmount": "1000",
+          "Ticker": "NSC",
+          "CommitteeName": "CAREY FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00009282",
+          "Uploaded": "2026-08-02 23:34:15.631812",
+          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+        },
+        {
+          "BioGuideID": "B001277",
+          "CandidateName": "BLUMENTHAL, RICHARD",
+          "CompanyCMTENM": "IHEARTMEDIA, INC. PAC",
+          "TransactionDate": "2026-06-29",
+          "TransactionAmount": "5000",
+          "Ticker": "IHRT",
+          "CommitteeName": "BLUMENTHAL FOR CONNECTICUT",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00279216",
+          "Uploaded": "2026-08-02 23:34:15.631812",
+          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
+        },
+        {
+          "BioGuideID": "J000307",
+          "CandidateName": "JOHNSON, JAMES MICHAEL",
+          "CompanyCMTENM": "DEERE & COMPANY PAC (AKA JOHN DEERE PAC)",
+          "TransactionDate": "2026-06-29",
+          "TransactionAmount": "5000",
+          "Ticker": "DE",
+          "CommitteeName": "MIKE JOHNSON FOR LOUISIANA",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00204099",
+          "Uploaded": "2026-08-02 23:34:15.631812",
+          "_first_seen": "2026-08-06T08:23:43.287488+00:00"
         }
       ]
     },
@@ -4485,233 +4485,233 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 1567,
+      "rows": 1597,
       "last_seen": "2026-08-08",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Krishnamoorthi%2C+Raskin+and+Garcia+Urge+House+Vote+on+Ghislaine+Maxwell+Clemency+Resolution",
-          "time": "2026-08-08 00:22:12",
-          "headline": "Press Release: Krishnamoorthi, Raskin and Garcia Urge House Vote on Ghislaine Maxwell Clemency Resolution",
-          "category": "legislation_automated",
-          "summary": "<p>Democratic lawmakers urged a House vote opposing any presidential clemency for convicted sex trafficker Ghislaine Maxwell.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/K000391_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Ciscomani+Announces+Nearly+%247+Million+for+Eloy+Infrastructure+Improvements",
-          "time": "2026-08-08 00:22:12",
-          "headline": "Press Release: Juan Ciscomani Announces Nearly $7 Million for Eloy Infrastructure Improvements",
-          "category": "legislation_automated",
-          "summary": "<p>Ciscomani says he secured nearly $7 million for Eloy road upgrades aimed at easing congestion and improving safety.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">F\u2026",
-          "image": "https://www.quiverquant.com/images/C001133_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Bonnie+Watson+Coleman+Calls+for+Action+After+Death+and+Medical+Neglect+Allegations+at+Delaney+Hall",
-          "time": "2026-08-08 00:22:12",
-          "headline": "Press Release: Bonnie Watson Coleman Calls for Action After Death and Medical Neglect Allegations at Delaney Hall",
-          "category": "legislation_automated",
-          "summary": "<p>Watson Coleman urges federal action over alleged medical neglect and a death at Delaney Hall detention center.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Watson\u2026",
-          "image": "https://www.quiverquant.com/images/W000822_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+of+%24ROKU+Sells+10%2C719+Shares",
-          "time": "2026-08-08 00:07:15",
-          "headline": "Insider Sale: President of $ROKU Sells 10,719 Shares",
+          "url": "https://www.quiverquant.com/news/Insider+Stock+Purchases%3A+August+08%2C+2026",
+          "time": "2026-08-08 18:45:06",
+          "headline": "Insider Stock Purchases: August 08, 2026",
           "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1937263/Gilbert-Fuchsberg\">Gilbert Fuchsberg</a>, the President of <a href=\"https://www.quiverquant.com/stock/ROKU/\">$ROKU</a>, sold 10,719 shares of the company on 08-\u2026",
-          "image": "https://www.quiverquant.com/images/roku_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>We have seen 55 open market insider transactions reported today, August 08, 2026. You can track them all on the <a href=\"https://www.quiverquant.com/insiders/\">Quiver Quantitative Insider Trading dashboard</a>. Her\u2026",
+          "image": "https://www.quiverquant.com/images/atto_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24CCB+Buys+5%2C000+Shares",
-          "time": "2026-08-07 23:49:00",
-          "headline": "Insider Purchase: Director at $CCB Buys 5,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1019966/Steven-D-Hovde\">STEVEN D HOVDE</a>, a director at <a href=\"https://www.quiverquant.com/stock/CCB/\">$CCB</a>, bought 5,000 shares of the company on 08-05-2026 fo\u2026",
-          "image": "https://www.quiverquant.com/images/ccb_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Michael+Cloud+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Michael Cloud has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Michael Cloud has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><\u2026",
+          "image": "https://www.quiverquant.com/images/C001115_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24AXSM+Sells+45%2C004+Shares",
-          "time": "2026-08-07 23:21:33",
-          "headline": "Insider Sale: Chief Executive Officer of $AXSM Sells 45,004 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1219927/Herriot-Tabuteau\">HERRIOT TABUTEAU</a>, the Chief Executive Officer of <a href=\"https://www.quiverquant.com/stock/AXSM/\">$AXSM</a>, sold 45,004 shares of the co\u2026",
-          "image": "https://www.quiverquant.com/images/axsm_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Riley+Moore+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Riley Moore has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Riley Moore has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><ul\u2026",
+          "image": "https://www.quiverquant.com/images/M001235_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/NEWMARK+GROUP%2C+INC.+%28%24NMRK%29+CEO+2025+Pay+Revealed",
-          "time": "2026-08-07 22:25:18",
-          "headline": "NEWMARK GROUP, INC. ($NMRK) CEO 2025 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO of NEWMARK GROUP, INC. ($NMRK), Barry M. Gosin, received a compensation of <strong>$2,668,848</strong> in 2025. This is a decrease of -936.39% from an estimated <strong>$27,659,664</strong>\u2026",
-          "image": "https://www.quiverquant.com/images/nmrk_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Young+Kim+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Young Kim has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Young Kim has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><ul><\u2026",
+          "image": "https://www.quiverquant.com/images/K000397_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/SCHOLASTIC+CORP+%28%24SCHL%29+CEO+2026+Pay+Revealed",
-          "time": "2026-08-07 22:25:18",
-          "headline": "SCHOLASTIC CORP ($SCHL) CEO 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO of SCHOLASTIC CORP ($SCHL), Peter Warwick, received a compensation of <strong>$3,742,972</strong> in 2026. This is an increase of 11.82% from an estimated <strong>$3,300,513</strong> in 202\u2026",
-          "image": "https://www.quiverquant.com/images/schl_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Wesley+Hunt+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Wesley Hunt has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Wesley Hunt has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><ul\u2026",
+          "image": "https://www.quiverquant.com/images/H001095_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Don+Beyer+and+House+Democrats+Call+on+AHRQ+to+Reverse+Health+Research+Grant+Cancellations",
-          "time": "2026-08-07 22:20:36",
-          "headline": "Press Release: Don Beyer and House Democrats Call on AHRQ to Reverse Health Research Grant Cancellations",
-          "category": "legislation_automated",
-          "summary": "<p>House Democrats urge AHRQ to restore canceled health research grants, warning of legal and procedural concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">House\u2026",
-          "image": "https://www.quiverquant.com/images/B001292_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Andrew+R.+Garbarino+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Andrew R. Garbarino has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Andrew R. Garbarino has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include\u2026",
+          "image": "https://www.quiverquant.com/images/G000597_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Andy+Biggs+Says+Arizona+to+Host+New+Sterile+Fly+Facility+for+Screwworm+Prevention",
-          "time": "2026-08-07 22:20:36",
-          "headline": "Press Release: Andy Biggs Says Arizona to Host New Sterile Fly Facility for Screwworm Prevention",
-          "category": "legislation_automated",
-          "summary": "<p>Press release on federal efforts to build an Arizona facility combating screwworms and protecting livestock.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Biggs sa\u2026",
-          "image": "https://www.quiverquant.com/images/B001302_congress.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Robert+Onder+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Robert Onder has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Robert Onder has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><u\u2026",
+          "image": "https://www.quiverquant.com/images/O000177_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/El+Pollo+Loco+Holdings+%28LOCO%29+Releases+Q2+2026+Earnings%3A+Revenue+Growth+but+Below+Estimates",
-          "time": "2026-08-07 21:53:07",
-          "headline": "El Pollo Loco Holdings (LOCO) Releases Q2 2026 Earnings: Revenue Growth but Below Estimates",
-          "category": "earnings_automated",
-          "summary": "<p>El Pollo Loco Holdings, Inc. (<strong>$LOCO</strong>) posted a solid second quarter for 2026, with revenue rising to <strong>$129.6 million</strong>, up 2.97% from a year earlier. Gross profit climbed to <strong>$4\u2026",
-          "image": "https://www.quiverquant.com/images/loco_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Christopher+R.+Deluzio+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Christopher R. Deluzio has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Christopher R. Deluzio has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed incl\u2026",
+          "image": "https://www.quiverquant.com/images/D000530_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Lyft+shares+rise+as+record+riders%2C+accelerating+bookings+growth%2C+and+upbeat+outlook+support+the+stock",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Lyft shares rise as record riders, accelerating bookings growth, and upbeat outlook support the stock",
+          "url": "https://www.quiverquant.com/news/Representative+H.+Morgan+Griffith+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative H. Morgan Griffith has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative H. Morgan Griffith has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:\u2026",
+          "image": "https://www.quiverquant.com/images/G000568_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Julia+Brownley+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Julia Brownley has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Julia Brownley has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p>\u2026",
+          "image": "https://www.quiverquant.com/images/B001285_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Mike+Collins+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-08-08 18:10:18",
+          "headline": "Representative Mike Collins has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Mike Collins has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><u\u2026",
+          "image": "https://www.quiverquant.com/images/C001129_congress.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/SoFi+Technologies+Stock+%28SOFI%29+Opinions+on+Q2+Earnings+Report",
+          "time": "2026-08-08 17:35:25",
+          "headline": "SoFi Technologies Stock (SOFI) Opinions on Q2 Earnings Report",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Reaction:</strong> Recent quarterly results showed robust member growth and revenue expansion even in a tough banking environment. The stock dipped after the report, \u2026",
+          "image": "https://www.quiverquant.com/images/sofi_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Cerebras+Stock+%28CBRS%29+Opinions+on+Upcoming+Earnings",
+          "time": "2026-08-08 17:35:25",
+          "headline": "Cerebras Stock (CBRS) Opinions on Upcoming Earnings",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Focus:</strong> Social media chatter centers on Cerebras ahead of its first earnings report since going public in May. Traders highlight the upcoming Wednesday releas\u2026",
+          "image": "https://www.quiverquant.com/images/cbrs_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Butterfly+Network+Stock+%28BFLY%29+Opinions+on+Major+Institutional+Investment",
+          "time": "2026-08-08 17:35:25",
+          "headline": "Butterfly Network Stock (BFLY) Opinions on Major Institutional Investment",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Institutional Surge:</strong> Recent social media chatter has centered on a substantial increase in holdings by FMR LLC in Butterfly Network. Observers noted the move elevated\u2026",
+          "image": "https://www.quiverquant.com/images/bfly_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Oracle+Stock+%28ORCL%29+Opinions+on+AI+Cloud+Backlog+and+Financing+Challenges",
+          "time": "2026-08-08 17:35:25",
+          "headline": "Oracle Stock (ORCL) Opinions on AI Cloud Backlog and Financing Challenges",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Momentum Persists:</strong> Oracle posted robust cloud revenue gains of 47 percent year over year alongside a massive remaining performance obligation backlog reachin\u2026",
+          "image": "https://www.quiverquant.com/images/orcl_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/NXT+Stock+%28NXT%29+Opinions+on+electrification+trends",
+          "time": "2026-08-08 17:35:25",
+          "headline": "NXT Stock (NXT) Opinions on electrification trends",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Energy innovation spotlight:</strong> Recent social media conversations emphasize NXT's positioning within the expanding electrification sector. Observers point to its potenti\u2026",
+          "image": "https://www.quiverquant.com/images/nxt_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Accenture+Stock+%28ACN%29+Opinions+on+AI+Impact+and+Valuation",
+          "time": "2026-08-08 17:35:25",
+          "headline": "Accenture Stock (ACN) Opinions on AI Impact and Valuation",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI disruption concerns:</strong> Discussions on social media highlight ongoing worries about artificial intelligence potentially disrupting traditional consulting models at Ac\u2026",
+          "image": "https://www.quiverquant.com/images/acn_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Microvast+Holdings+Stock+%28MVST%29+Opinions+on+Upcoming+Earnings+Report",
+          "time": "2026-08-08 17:35:25",
+          "headline": "Microvast Holdings Stock (MVST) Opinions on Upcoming Earnings Report",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings anticipation builds:</strong> Investors on social media have been highlighting Microvast's upcoming quarterly results as a potential catalyst for the battery maker. S\u2026",
+          "image": "https://www.quiverquant.com/images/mvst_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24NEE+stock+fell+3%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:51",
+          "headline": "$NEE stock fell 3% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Lyft (LYFT) is up 6.9% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver is Lyft\u2019s second-quarter report, which showed faster growth\u2026",
-          "image": "https://www.quiverquant.com/images/lyft_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$NEE stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 3%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/nee_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Curtiss-Wright+Slides+as+Investors+Weigh+Strong+Q2+Against+Rich+Expectations",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Curtiss-Wright Slides as Investors Weigh Strong Q2 Against Rich Expectations",
+          "url": "https://www.quiverquant.com/news/%24F+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:51",
+          "headline": "$F stock fell 5% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Curtiss-Wright (CW) is down 3.2% today. Here is some analysis on what might have caused this price movement. ([curtisswright.com](https://curtisswright.com/investor-relations/financials/quarterly-results))</p><p><s\u2026",
-          "image": "https://www.quiverquant.com/images/cw_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$F stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has been\u2026",
+          "image": "https://www.quiverquant.com/images/f_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Dow+Inc.+shares+fall+as+investors+question+how+durable+its+recent+earnings+rebound+is",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Dow Inc. shares fall as investors question how durable its recent earnings rebound is",
+          "url": "https://www.quiverquant.com/news/%24MPC+stock+fell+6%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:51",
+          "headline": "$MPC stock fell 6% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Dow Inc. (DOW) is down 3.3% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver is lingering skepticism after Dow\u2019s late-July results:\u2026",
-          "image": "https://www.quiverquant.com/images/dow_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$MPC stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 6%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/mpc_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Riot+Platforms+Slides+as+Delayed+Q2+Earnings+Call+Adds+Uncertainty",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Riot Platforms Slides as Delayed Q2 Earnings Call Adds Uncertainty",
+          "url": "https://www.quiverquant.com/news/%24CVX+stock+fell+6%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:51",
+          "headline": "$CVX stock fell 6% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Riot Platforms (RIOT) is down 3.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely catalyst is investor unease after Riot said on August \u2026",
-          "image": "https://www.quiverquant.com/images/riot_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$CVX stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 6%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/cvx_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/F5+slips+3.1%25+as+investors+appear+to+digest+recent+earnings-driven+gains",
-          "time": "2026-08-07 21:26:13",
-          "headline": "F5 slips 3.1% as investors appear to digest recent earnings-driven gains",
+          "url": "https://www.quiverquant.com/news/%24PSX+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:51",
+          "headline": "$PSX stock fell 4% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>F5, Inc. (FFIV) is down 3.1% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> There does not appear to be a clear new company-specific negative catalyst t\u2026",
-          "image": "https://www.quiverquant.com/images/ffiv_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$PSX stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/psx_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Coeur+Mining+Rallies+as+Investors+Weigh+Earnings+Timing+and+Precious-Metals+Tailwinds",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Coeur Mining Rallies as Investors Weigh Earnings Timing and Precious-Metals Tailwinds",
+          "url": "https://www.quiverquant.com/news/%24GD+stock+rose+2%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:37",
+          "headline": "$GD stock rose 2% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>Coeur Mining (CDE) is up 11.1% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a combination of earnings-related mom\u2026",
-          "image": "https://www.quiverquant.com/images/cde_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$GD stock <strong style=\"color: rgb(87,215,186); background-color: rgba(87,215,186,0.15); padding: 2px 4px; border-radius: 4px;\">rose 2%</strong> this week, according to our price data from Polygon.</p><p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/gd_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/10x+Genomics+Jumps+as+Investors+Appear+to+Cheer+a+Better-Than-Expected+Q2+Report",
-          "time": "2026-08-07 21:26:13",
-          "headline": "10x Genomics Jumps as Investors Appear to Cheer a Better-Than-Expected Q2 Report",
+          "url": "https://www.quiverquant.com/news/%24MU+stock+rose+6%25+this+week.+Here%27s+what+we+see+in+our+data.",
+          "time": "2026-08-08 16:39:37",
+          "headline": "$MU stock rose 6% this week. Here's what we see in our data.",
           "category": "prices_automated",
-          "summary": "<p>10x Genomics (TXG) is up 11.8% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears to be tied mainly to 10x Genomics\u2019 second-quarter 2026 ea\u2026",
-          "image": "https://www.quiverquant.com/images/txg_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Targa+Resources+Slips+as+Revenue+Miss+and+Second-Half+Caution+Overshadow+Record+Q2",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Targa Resources Slips as Revenue Miss and Second-Half Caution Overshadow Record Q2",
-          "category": "prices_automated",
-          "summary": "<p>Targa Resources (TRGP) is down 4.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The selloff appears tied to a mixed market reaction to second-quarter\u2026",
-          "image": "https://www.quiverquant.com/images/trgp_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/IREN+climbs+as+AI+cloud+contract+momentum+meets+a+broader+risk-on+rally",
-          "time": "2026-08-07 21:26:13",
-          "headline": "IREN climbs as AI cloud contract momentum meets a broader risk-on rally",
-          "category": "prices_automated",
-          "summary": "<p>IREN Limited (IREN) is up 9.2% today. Here is some analysis on what might have caused this price movement. </p><p><strong>Analysis:</strong> The move appears tied to continuing enthusiasm around IREN\u2019s AI infrastru\u2026",
-          "image": "https://www.quiverquant.com/images/iren_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Moderna+jumps+as+FDA+flu-shot+approval+reinforces+recent+business+momentum",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Moderna jumps as FDA flu-shot approval reinforces recent business momentum",
-          "category": "prices_automated",
-          "summary": "<p>Moderna (MRNA) is up 10.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely catalyst is the FDA approval of Moderna\u2019s mFLUSIVA seasonal in\u2026",
-          "image": "https://www.quiverquant.com/images/mrna_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Construction+Partners+Surges+After+Strong+Q3+Results+and+Higher+2026+Outlook",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Construction Partners Surges After Strong Q3 Results and Higher 2026 Outlook",
-          "category": "prices_automated",
-          "summary": "<p>Construction Partners (ROAD) is up 18.9% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The rally appears tied to a strong fiscal third-quarter report t\u2026",
-          "image": "https://www.quiverquant.com/images/road_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Charter+Communications+Falls+as+Broadband+Losses%2C+Debt+Work%2C+and+Merger+Timing+Stay+in+Focus",
-          "time": "2026-08-07 21:26:13",
-          "headline": "Charter Communications Falls as Broadband Losses, Debt Work, and Merger Timing Stay in Focus",
-          "category": "prices_automated",
-          "summary": "<p>Charter Communications (CHTR) is down 3.1% today. Here is some analysis on what might have caused this price movement. ([ir.charter.com](https://ir.charter.com/news-releases/news-release-details/charter-announces-s\u2026",
-          "image": "https://www.quiverquant.com/images/chtr_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/AIxCrypto+posts+%244.2+million+Q2+loss+as+RoboShare+becomes+top+priority",
-          "time": "2026-08-07 21:25:45",
-          "headline": "AIxCrypto posts $4.2 million Q2 loss as RoboShare becomes top priority",
-          "category": "earnings_automated",
-          "summary": "<p><strong>AIxCrypto Holdings (AIXC)</strong> reported second-quarter 2026 results, including a net loss of $4.2 million and net loss per share of $0.21. The company said RoboShare, its on-demand robot sharing marketp\u2026",
-          "image": "https://www.quiverquant.com/images/qlgn_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Fund+Update%3A+New+%24510K+%24NBIS+stock+position+opened+by+Carlyle+Group+Inc.",
-          "time": "2026-08-07 21:21:36",
-          "headline": "Fund Update: New $510K $NBIS stock position opened by Carlyle Group Inc.",
-          "category": "funds_automated",
-          "summary": "<p><strong>Carlyle Group Inc.</strong> has opened a new <strong>$510K</strong> position in <a href=\"https://www.quiverquant.com/stock/NBIS/\">$NBIS</a>, per a new SEC 13F filing. This disclosure reflects the funds' hol\u2026",
-          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
-          "_first_seen": "2026-08-08T04:53:04.014005+00:00"
+          "summary": "<p>$MU stock <strong style=\"color: rgb(87,215,186); background-color: rgba(87,215,186,0.15); padding: 2px 4px; border-radius: 4px;\">rose 6%</strong> this week, according to our price data from Polygon.</p><p>It has be\u2026",
+          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
+          "_first_seen": "2026-08-08T19:24:38.818735+00:00"
         }
       ]
     },
@@ -5237,38 +5237,28 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 102338,
-      "last_seen": "2026-08-07",
+      "rows": 104169,
+      "last_seen": "2026-08-08",
       "recent": [
         {
-          "Ticker": "CDNS",
-          "App": "Cadence Events",
-          "Created": "2026-03-18",
-          "Publisher": "cadence design systems, inc",
+          "Ticker": "TSQ",
+          "App": "MIX 108 - Today's Best Mix",
+          "Created": "2017-03-07",
+          "Publisher": "Townsquare Media, LLC",
+          "Rating": "4.76923",
+          "Count": "26",
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
+        },
+        {
+          "Ticker": "GILT",
+          "App": "SkyManage",
+          "Created": "2018-08-18",
+          "Publisher": "Gilat Satellite Networks Ltd.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
-        },
-        {
-          "Ticker": "GIS",
-          "App": "Box Tops for Education\u2122",
-          "Created": "2016-09-07",
-          "Publisher": "General Mills Inc.",
-          "Rating": "4.68313",
-          "Count": "147497",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "HIV Answers",
-          "Created": "2014-04-23",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "4.33333",
-          "Count": "3",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GILD",
@@ -5277,8 +5267,8 @@
           "Publisher": "Gilead Sciences, Inc.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GIL",
@@ -5287,8 +5277,8 @@
           "Publisher": "Gildan Activewear Inc",
           "Rating": "4.72727",
           "Count": "33",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GIGM",
@@ -5297,8 +5287,8 @@
           "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
           "Rating": "3.5",
           "Count": "8",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GIGM",
@@ -5307,8 +5297,8 @@
           "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
           "Rating": "4.06667",
           "Count": "60",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GH",
@@ -5317,8 +5307,8 @@
           "Publisher": "Guardant Health, Inc",
           "Rating": "2.8",
           "Count": "5",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5327,8 +5317,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.33333",
           "Count": "6",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5337,8 +5327,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "3.66667",
           "Count": "3",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5347,8 +5337,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.7",
           "Count": "10",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GE",
@@ -5357,8 +5347,8 @@
           "Publisher": "Portland General Electric Company",
           "Rating": "4.18389",
           "Count": "571",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GE",
@@ -5367,8 +5357,8 @@
           "Publisher": "General Electric Credit Union",
           "Rating": "4.7808",
           "Count": "7281",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5377,8 +5367,8 @@
           "Publisher": "Green Dot Corporation",
           "Rating": "4.20596",
           "Count": "6710",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5387,8 +5377,8 @@
           "Publisher": "Green Dot Corporation",
           "Rating": "4.72002",
           "Count": "11115",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GDOT",
@@ -5397,8 +5387,8 @@
           "Publisher": "Green Dot Corporation",
           "Rating": "3.42775",
           "Count": "11937",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GDDY",
@@ -5407,8 +5397,8 @@
           "Publisher": "GoDaddy Mobile LLC",
           "Rating": "4.82848",
           "Count": "106584",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCP",
@@ -5417,8 +5407,8 @@
           "Publisher": "GCP Applied Technologies Inc.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCO",
@@ -5427,8 +5417,8 @@
           "Publisher": "Genesco Inc.",
           "Rating": "2.25",
           "Count": "8",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5437,8 +5427,8 @@
           "Publisher": "Gannett",
           "Rating": "4.53852",
           "Count": "4063",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5447,8 +5437,8 @@
           "Publisher": "Gannett",
           "Rating": "4.54563",
           "Count": "7221",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5457,8 +5447,8 @@
           "Publisher": "Gannett",
           "Rating": "4.34509",
           "Count": "5758",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5467,8 +5457,8 @@
           "Publisher": "Gannett",
           "Rating": "4.34698",
           "Count": "6597",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5477,8 +5467,8 @@
           "Publisher": "Gannett",
           "Rating": "4.57278",
           "Count": "12654",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5487,8 +5477,18 @@
           "Publisher": "Gaia Interactive Inc.",
           "Rating": "1.66391",
           "Count": "363",
-          "Time": "2026-08-07",
-          "_first_seen": "2026-08-07T20:37:32.399987+00:00"
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
+        },
+        {
+          "Ticker": "GAIA",
+          "App": "Gaia: Streaming Consciousness",
+          "Created": "2014-02-27",
+          "Publisher": "Gaia, Inc",
+          "Rating": "4.83025",
+          "Count": "139594",
+          "Time": "2026-08-08",
+          "_first_seen": "2026-08-08T19:24:45.134045+00:00"
         }
       ]
     },
@@ -25462,26 +25462,26 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 18031,
-        "wow_pct": 1.06,
+        "stars": 18042,
+        "wow_pct": 1.12,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 15133,
-        "wow_pct": 0.57,
+        "stars": 15135,
+        "wow_pct": 0.58,
         "hot": true
       },
       {
         "ticker": "AMD",
-        "stars": 6756,
-        "wow_pct": 0.33,
+        "stars": 6758,
+        "wow_pct": 0.36,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7686,
-        "wow_pct": 0.29,
+        "stars": 7687,
+        "wow_pct": 0.3,
         "hot": true
       },
       {
@@ -25498,19 +25498,19 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 188510,
+        "stars": 188514,
         "wow_pct": 0.22,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 196928,
-        "wow_pct": 0.14,
+        "stars": 196933,
+        "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 247124,
+        "stars": 247131,
         "wow_pct": 0.12,
         "hot": false
       },
@@ -25522,8 +25522,8 @@
       },
       {
         "ticker": "PLTR",
-        "stars": 21979,
-        "wow_pct": 0.07,
+        "stars": 21980,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
@@ -25534,7 +25534,7 @@
       },
       {
         "ticker": "GTLB",
-        "stars": 24527,
+        "stars": 24528,
         "wow_pct": 0.06,
         "hot": false
       },
@@ -25546,7 +25546,7 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28480,
+        "stars": 28481,
         "wow_pct": 0.04,
         "hot": false
       },
@@ -26248,26 +26248,37 @@
     },
     "trump": [
       {
-        "ticker": "JCI",
-        "company": "JOHNSON CONTROLS INTERNATIONAL PLC",
+        "ticker": "QNST",
+        "company": "QUINSTREET INC",
         "side": "sell",
         "transaction": "Sale",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-15 00:00:00",
+        "excess_return": 82.26750302740365
+      },
+      {
+        "ticker": "IR",
+        "company": "INGERSOLL RAND INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-11 00:00:00",
+        "excess_return": 8.69492035503029
+      },
+      {
+        "ticker": "MRSH",
+        "company": "MARSH COMMON STOCK",
+        "side": "buy",
+        "transaction": "Purchase",
         "est_usd": 75000.0,
         "amount": "$50,001 - $100,000",
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
-        "excess_return": 3.384206488136568
-      },
-      {
-        "ticker": "MA",
-        "company": "MASTERCARD INCORPORATED",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": 4.746739693209424
+        "excess_return": 5.619320517879968
       },
       {
         "ticker": "MTB",
@@ -26358,15 +26369,15 @@
         "excess_return": -4.041738202467446
       },
       {
-        "ticker": "KR",
-        "company": "KROGER CO (THE)",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
+        "ticker": "JCI",
+        "company": "JOHNSON CONTROLS INTERNATIONAL PLC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
-        "excess_return": -16.57820920022777
+        "excess_return": 3.384206488136568
       },
       {
         "ticker": "JNJ",
@@ -26402,17 +26413,6 @@
         "excess_return": 2.0737308350455868
       },
       {
-        "ticker": "IR",
-        "company": "INGERSOLL RAND INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": 8.69492035503029
-      },
-      {
         "ticker": "ITW",
         "company": "ILLINOIS TOOL WORKS INC",
         "side": "sell",
@@ -26422,6 +26422,17 @@
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
         "excess_return": 6.327401009529762
+      },
+      {
+        "ticker": "SPGI",
+        "company": "S&P GLOBAL INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-11 00:00:00",
+        "excess_return": 0.1396647595963571
       },
       {
         "ticker": "IDXX",
@@ -26567,15 +26578,15 @@
         "excess_return": 4.611861662862508
       },
       {
-        "ticker": "MRSH",
-        "company": "MARSH COMMON STOCK",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 75000.0,
-        "amount": "$50,001 - $100,000",
+        "ticker": "MA",
+        "company": "MASTERCARD INCORPORATED",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
-        "excess_return": 5.619320517879968
+        "excess_return": 4.746739693209424
       },
       {
         "ticker": "MCD",
@@ -26589,17 +26600,6 @@
         "excess_return": -2.66518869003563
       },
       {
-        "ticker": "XOM",
-        "company": "EXXON MOBIL CORP",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": -9.983556245116961
-      },
-      {
         "ticker": "AIG",
         "company": "AMERICAN INTERNATIONAL GROUP INC",
         "side": "buy",
@@ -26609,6 +26609,17 @@
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
         "excess_return": 3.636880819704971
+      },
+      {
+        "ticker": "MCK",
+        "company": "MCKESSON CORP",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-11 00:00:00",
+        "excess_return": 7.688505792345063
       },
       {
         "ticker": "HOOD",
@@ -26798,6 +26809,17 @@
         "excess_return": -1.9034038772981032
       },
       {
+        "ticker": "OMC",
+        "company": "OMNICOM GROUP INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-07-01",
+        "traded": "2026-05-11 00:00:00",
+        "excess_return": 3.876190087924601
+      },
+      {
         "ticker": "ODFL",
         "company": "OLD DOMINION FREIGHT LINES INC",
         "side": "sell",
@@ -26884,28 +26906,6 @@
         "filed": "2026-07-01",
         "traded": "2026-05-11 00:00:00",
         "excess_return": -3.4063053360156195
-      },
-      {
-        "ticker": "MDT",
-        "company": "MEDTRONIC PLC",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": 10.863265931765039
-      },
-      {
-        "ticker": "MCK",
-        "company": "MCKESSON CORP",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-07-01",
-        "traded": "2026-05-11 00:00:00",
-        "excess_return": 7.688505792345063
       }
     ],
     "corporate_donors": [
@@ -27334,7 +27334,7 @@
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 29886456,
+        "reviews": 29895326,
         "apps": 6,
         "top_app": "Uber - Request a ride",
         "review_velocity": 0.0003,
@@ -27343,34 +27343,34 @@
       {
         "ticker": "GOOGL",
         "rating": 4.71,
-        "reviews": 26081553,
+        "reviews": 26090119,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
         "ticker": "MSFT",
         "rating": 4.77,
-        "reviews": 19906743,
+        "reviews": 19909855,
         "apps": 8,
         "top_app": "Microsoft Outlook",
-        "review_velocity": 0.0003,
+        "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
         "ticker": "WMT",
         "rating": 4.82,
-        "reviews": 18883065,
+        "reviews": 18883071,
         "apps": 5,
         "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 0.0006,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "LYFT",
         "rating": 4.91,
-        "reviews": 17840754,
+        "reviews": 17846288,
         "apps": 3,
         "top_app": "Lyft",
         "review_velocity": 0.0003,
@@ -27382,7 +27382,7 @@
         "reviews": 8150679,
         "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27391,7 +27391,7 @@
         "reviews": 7273901,
         "apps": 2,
         "top_app": "Etsy: Shop Home, Style & More",
-        "review_velocity": 0.0002,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27409,7 +27409,7 @@
         "reviews": 7144487,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 0.0002,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27418,7 +27418,7 @@
         "reviews": 7123705,
         "apps": 4,
         "top_app": "Shop: All your favorite brands",
-        "review_velocity": 0.0003,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27427,7 +27427,7 @@
         "reviews": 7005457,
         "apps": 3,
         "top_app": "Fly Delta",
-        "review_velocity": -0.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27436,7 +27436,7 @@
         "reviews": 7032418,
         "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27445,7 +27445,7 @@
         "reviews": 5949796,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27454,7 +27454,7 @@
         "reviews": 5734802,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 0.0002,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -27463,7 +27463,7 @@
         "reviews": 5900761,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 0.0001,
+        "review_velocity": 0.0,
         "lean": "strong"
       }
     ],
@@ -29152,7 +29152,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: Ascentis Wealth Management, LLC +$1,847,058,202 \u00b7 analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 darkpool_accum: DPI 0.333 \u00b7 github_momentum: +1.06% stars \u00b7 patent_cluster: 132 grants, 18 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: Ascentis Wealth Management, LLC +$1,847,058,202 \u00b7 analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 darkpool_accum: DPI 0.333 \u00b7 github_momentum: +1.12% stars \u00b7 patent_cluster: 132 grants, 18 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -29165,7 +29165,7 @@
           "hf_model_momentum",
           "lobbying"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 app_demand: 4.71\u2605 \u00d7 26,081,553 reviews \u00b7 github_momentum: +0.14% stars \u00b7 hf_model_momentum: +3.6% model downloads \u00b7 lobbying: $4,810,000 lobbied"
+        "why": "analyst_upgrade_cluster: net upgrades +21 revision delta \u00b7 app_demand: 4.71\u2605 \u00d7 26,090,119 reviews \u00b7 github_momentum: +0.15% stars \u00b7 hf_model_momentum: +3.6% model downloads \u00b7 lobbying: $4,810,000 lobbied"
       },
       {
         "ticker": "MSFT",
@@ -29178,7 +29178,7 @@
           "lobbying",
           "patent_cluster"
         ],
-        "why": "app_demand: 4.77\u2605 \u00d7 19,906,743 reviews \u00b7 cnbc_pick: Jason Snipe \u00b7 github_momentum: +0.22% stars \u00b7 lobbying: $3,650,000 lobbied \u00b7 patent_cluster: 250 grants, 37 IPC classes"
+        "why": "app_demand: 4.77\u2605 \u00d7 19,909,855 reviews \u00b7 cnbc_pick: Jason Snipe \u00b7 github_momentum: +0.22% stars \u00b7 lobbying: $3,650,000 lobbied \u00b7 patent_cluster: 250 grants, 37 IPC classes"
       },
       {
         "ticker": "BA",
@@ -29324,7 +29324,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "github_momentum: +0.29% stars \u00b7 gov_contract: $15,509,202 awarded \u00b7 patent_cluster: 418 grants, 48 IPC classes"
+        "why": "github_momentum: +0.3% stars \u00b7 gov_contract: $15,509,202 awarded \u00b7 patent_cluster: 418 grants, 48 IPC classes"
       },
       {
         "ticker": "AAPL",
@@ -29401,16 +29401,6 @@
         "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01) \u00b7 trump: PROCTER & GAMBLE CO"
       },
       {
-        "ticker": "LITE",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "insider_mspr",
-          "trump"
-        ],
-        "why": "insider_mspr: MSPR 100.0 \u00b7 trump: LUMENTUM HOLDINGS INC"
-      },
-      {
         "ticker": "IR",
         "score": 2,
         "weighted_score": 1.05,
@@ -29419,6 +29409,16 @@
           "trump"
         ],
         "why": "insider_mspr: MSPR 100.0 \u00b7 trump: INGERSOLL RAND INC"
+      },
+      {
+        "ticker": "LITE",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "insider_mspr",
+          "trump"
+        ],
+        "why": "insider_mspr: MSPR 100.0 \u00b7 trump: LUMENTUM HOLDINGS INC"
       }
     ]
   }

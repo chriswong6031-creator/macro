@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time
 from pathlib import Path
 
 import numpy as np
@@ -97,6 +97,27 @@ THEME_MIN_STRIKES = 8
 THEME_MAX_OI_SHARE = 0.55
 
 
+def _resolve_session(as_of: datetime | None = None) -> date:
+    """Return the most recent settled US-equity session for this board build.
+
+    Cboe's delayed chain is an end-of-day options surface. Its artifact date must
+    therefore follow the last session whose close has settled, not the host's
+    calendar date and not the current/in-progress exchange day. This intentionally
+    mirrors the instant path in ``scripts.build_polygon_gex._resolve_session``.
+    """
+    return nyse_calendar.expected_last_session(as_of)
+
+
+def _session_close_asof(session: date) -> str:
+    """Return a timezone-bearing receipt stamp that resolves to ``session``.
+
+    ``options_structure.gex_state/v1`` requires an ISO timestamp, while every other
+    GEX artifact uses a session date. Anchoring the receipt at the regular NYSE close
+    preserves that schema without reintroducing a second wall-clock date source.
+    """
+    return datetime.combine(session, time(16, 0), tzinfo=nyse_calendar.ET).isoformat()
+
+
 def _history(key: str) -> list[dict]:
     """Last HISTORY_DAYS of stored daily {date, net_gex_bn, regime, iv30} for the
     sparkline + the short-window IV rank. Reads the cboe summary parquet the daily
@@ -137,7 +158,7 @@ def _fetch_chain(adapter, sym: str):
             raise
 
 
-def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
+def _build_one(adapter, row: dict, session: date) -> tuple[dict, dict] | None:
     """Fetch + model one underlying -> (full payload, manifest row). None on failure or
     when a derived name fails the honesty gate (too thin / too concentrated to trust)."""
     from engine.gex_model import build_model
@@ -150,8 +171,9 @@ def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
     gcfg = adapter.cfg.get("gex", {})
     cfg = {"q": DIV_Q.get(key, 0.0), "r": 0.043,
            "max_expiry_days": gcfg.get("max_expiry_days", 365)}
+    session_str = session.isoformat()
     meta = {"key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
-            "src": src, "asof": str(date.today())}
+            "src": src, "asof": session_str}
     model = build_model(chain, spot, cfg, meta=meta, history=_history(key))
     if model is None:
         return None
@@ -178,7 +200,7 @@ def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
         "vh_state": vh.get("state"), "vh_bias": vh.get("bias"),
         "tilt_read": tilt.get("read"), "skew_tone": skew.get("tone"),
         "iv_rank_band": ivr.get("band"),
-        "asof": str(date.today()),
+        "asof": session_str,
     }
     return model, manifest
 
@@ -252,7 +274,7 @@ def _market_context(data_dir: Path) -> dict:
     return ctx
 
 
-def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
+def _write_archive_snapshot(manifest: list[dict], data_dir: Path, session: date) -> None:
     """Write data/gex/latest.json — the index/ETF GEX summary + market context — for
     scripts.archive_signals to fold into the signal_archive corpus. Best-effort: a
     failure here never affects the page build (callers do not depend on it)."""
@@ -262,7 +284,7 @@ def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
                    for k in ARCHIVE_KEYS if k in by_key}
         if not indices:
             return
-        snap = {"asof": str(date.today()), "source": "cboe_delayed",
+        snap = {"asof": session.isoformat(), "source": "cboe_delayed",
                 "indices": indices, "market": _market_context(data_dir)}
         out = data_dir / "gex"
         out.mkdir(parents=True, exist_ok=True)
@@ -272,7 +294,12 @@ def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
         log.warning("gex: archive snapshot skipped: %s", e)
 
 
-def _compute_and_write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> dict | None:
+def _compute_and_write_gex_state(
+    model: dict,
+    key: str,
+    gex_state_dir: "Path",
+    session: date,
+) -> dict | None:
     """Derive, validate, and write options_structure.gex_state/<KEY>.json; return
     the computed (already-validated) state dict, or None on any failure.
 
@@ -299,8 +326,7 @@ def _compute_and_write_gex_state(model: dict, key: str, gex_state_dir: "Path") -
     from engine.options_structure import validate_gex_state
 
     try:
-        asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-        state = compute_gex_state(model, key, asof=asof)
+        state = compute_gex_state(model, key, asof=_session_close_asof(session))
         if state is None:
             log.debug("gex_state: %s skipped (thin/no options)", key)
             return None
@@ -348,10 +374,12 @@ def _merge_gex_state_fields(model: dict, state: dict | None) -> dict:
     return model
 
 
-def main() -> int:
+def main(as_of: datetime | None = None) -> int:
     from concurrent.futures import ThreadPoolExecutor
     from collectors.cboe import GexAdapter
     adapter = GexAdapter()
+    session = _resolve_session(as_of)
+    session_str = session.isoformat()
     site = config.ROOT / config.load()["storage"]["site_dir"]
     out_dir = site / "gex"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -373,7 +401,7 @@ def main() -> int:
         # (fetch error, OS write failure, or a stray NaN that allow_nan=False rejects) is
         # skipped, never aborting the board or crashing main() — partial coverage is fine.
         try:
-            res = _build_one(adapter, row)
+            res = _build_one(adapter, row, session)
             if not res:
                 return None
             model, mrow = res
@@ -387,7 +415,7 @@ def main() -> int:
             # that itself omits wall_persistence/net_gex_pctile — both fields
             # are the source's own additive/coverage-gated omission, PR #3976)
             # means model is written completely unchanged: no key is ever faked.
-            state = _compute_and_write_gex_state(model, mrow["key"], gex_state_dir)
+            state = _compute_and_write_gex_state(model, mrow["key"], gex_state_dir, session)
             _merge_gex_state_fields(model, state)
             (out_dir / f"{mrow['key']}.json").write_text(
                 json.dumps(model, default=float, allow_nan=False, separators=(",", ":")))
@@ -422,20 +450,17 @@ def main() -> int:
         universe_name_zh="有活跃期权的标的",
         universe_n=len(rows),
         covered_n=len(manifest),
-        # minor 5 (review): the SESSION date, never date.today(). A wall-clock stamp
-        # inside an honesty schema is how a Saturday run publishes "as of Saturday" for
-        # Friday's chains — the same class the session filters above exist to stop.
-        asof=str(nyse_calendar.session_date()),
+        asof=session_str,
         sources=[
             options_coverage.source(
                 "cboe_chains", "Option chains", "期权链",
-                asof=str(nyse_calendar.session_date()), n=len(manifest),
+                asof=session_str, n=len(manifest),
             ),
         ],
     )
 
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
-    _write_archive_snapshot(manifest, config.data_dir())
+    _write_archive_snapshot(manifest, config.data_dir(), session)
 
     # MSC R3.2/R3.3 — the cross-root positioning aggregate. Globs the gex_state dir
     # (the exact file set the launchd R2 mirror serves per-root) into _index.json,
