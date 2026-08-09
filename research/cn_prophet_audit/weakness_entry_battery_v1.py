@@ -170,6 +170,14 @@ EXIT_RULES = OrderedDict([
                         "unconditionally (L1's E3, same bar for both entry anchors)"),
 ])
 
+HOLD_SESSIONS_NOTE = (
+    "hold_sessions here is (exit_bar - first_held + 1) — an INCLUSIVE count of bars held. "
+    "L1 reports (exit_bar - entry_bar), which is one lower for the same trade. Returns, win "
+    "rates and every expectancy column are unaffected (the exit BAR and both prices are "
+    "identical), but a hold-length figure from this file is not directly comparable with "
+    "L1's without adding one."
+)
+
 LOCKED_EXIT_NOTE = (
     "LOCKED-EXIT HONESTY (L1's, copied verbatim). A scheduled exit bar whose OPEN is at or "
     "below that bar's limit-down price (open <= lim_dn * (1 + 0.002)) cannot be sold at the "
@@ -194,6 +202,52 @@ PRE_REGISTRATION = {
     "split": f"{SPLIT_DATE:%Y-%m-%d} — v0's computed 70/30 date, reused as a frozen constant. "
              "ONE holdout pass. Every conditioner, band edge, exit rule, cost bar and cell "
              "floor below was fixed by the lane brief before the first run.",
+    "deviations_after_first_run": [
+        {"change": "date-clustered standard errors added beside every per-trade figure",
+         "why": "the per-trade t on the leading cohort was counting 4.4 same-day trades as "
+                "4.4 independent observations",
+         "kind": "a stricter reading of the same pre-registered bar, applied uniformly to "
+                 "every cohort and reported alongside, not instead of, the per-trade figure",
+         "moved_a_number": False},
+        {"change": "volume-z tercile cut points fit per (basis, board) instead of pooled "
+                   "across bases",
+         "why": "the pooled fit double-counted the 15,629 rows the two bases share and let "
+                "the tolerant population set the strict population's band edges — a "
+                "violation of this instrument's own basis-discipline rule",
+         "kind": "DEFECT FIX. Pre-registered before the re-run: the only cohorts that can "
+                 "move are the six HF volz=* slices per basis/board; every other cohort, "
+                 "rate table and book cell must be byte-identical, and that invariance is "
+                 "the check on the fix",
+         "moved_a_number": True},
+        {"change": "thin-cell collapse now emits a disjoint partition plus separate "
+                   "parent/pointer blocks",
+         "why": "the previous form printed a thin cell under its own label carrying its "
+                "PARENT's numbers, so two thin regime cells produced byte-identical rows and "
+                "a parent appeared alongside siblings it contained — the three-way cell "
+                "count and its positive count were both inflated",
+         "kind": "DEFECT FIX, labelling and counting only; no trade, return or rate changes",
+         "moved_a_number": True},
+        {"change": "episode-level rates printed beside every 龙回头 row-level rate",
+         "why": "row denominators were being reported next to episode counts, which reads as "
+                "an episode probability and understates the interval by ~2.6x",
+         "kind": "ADDITION. Row rates are unchanged; the episode rate is a new, wider, "
+                 "honest companion",
+         "moved_a_number": False},
+        {"change": "paired-population overnight gap computed and published",
+         "why": "the gap had been averaged over all usable break days including unfillable "
+                "opens, whose gaps are ~+10% by construction, leaving the paired delta "
+                "unexplained by ~0.12 pp",
+         "kind": "DEFECT FIX in a reported causal number; the delta itself never changed",
+         "moved_a_number": True},
+        {"change": "census inference restated per family; reg_na / vz_na marked as "
+                   "data-availability slices and excluded from best-cell reporting",
+         "why": "pooling three families with different drifts manufactured a "
+                "'below chance' artifact, and a missing-data slice was being advertised as "
+                "the best cell",
+         "kind": "DEFECT FIX in framing and in which cohorts may be advertised; no cohort "
+                 "statistic recomputed",
+         "moved_a_number": True},
+    ],
     "decision_bar": ("A cohort CLEARS only if its mean per-trade return is positive AFTER a "
                      f"{ROUND_TRIP_COST * 1e4:.0f} bp round trip in BOTH the fit and the "
                      f"holdout window, with n >= {CENSUS_MIN_N} in each. Anything else is a "
@@ -434,8 +488,23 @@ def load_regime_dial() -> tuple[pd.DataFrame | None, dict]:
                     "on), so i5[T] is computed from pairs whose second leg IS T; ma5 is a "
                     "trailing 5-session mean ending at T."),
             "mechanical": checks,
-            "verdict": "PASS — reproduces the TRAILING window to float precision and "
-                       "disagrees with a forward window.",
+            "what_the_mechanical_check_DOES_prove": (
+                "that ma5 is a TRAILING mean of the i5 column as stored in this file — it "
+                "reproduces the trailing window to float precision and disagrees with a "
+                "forward window."),
+            "what_it_does_NOT_prove": (
+                "that the i5 column itself is indexed by the target date. The check is "
+                "internal to the file and cannot see how the producer built that column; if "
+                "i5 were source-indexed by the ORIGIN date, a trailing ma5 of it would still "
+                "reproduce trailingly and this check would still pass. Calling it 'decisive' "
+                "on its own overstated it."),
+            "source_indexing_verified_separately": (
+                "board_ecology_regime_v1.py groups the pair frame by `next_bar_date` and "
+                "renames that level to `date`, so i5[D] counts pairs whose SECOND leg is D. "
+                "That is target-date indexing and it holds — confirmed by adversarial review "
+                "of the producer, not by the mechanical check above."),
+            "verdict": "PASS on both legs: trailing window (mechanical, here) and target-date "
+                       "source indexing (producer read, reviewed).",
         },
         "terciles": "cut points computed on the FIT window only, per board, then applied to "
                     "the holdout — so the bucketing itself carries no holdout information.",
@@ -889,7 +958,13 @@ def build(verbose: bool = True):
         reg_meta = {"applied": True, "fit_cut_points_by_board": {k: [_r(v[0], 4), _r(v[1], 4)]
                                                                  for k, v in cuts.items()},
                     "labels": ["reg0_cold", "reg1_mid", "reg2_hot"],
-                    "null_label": "reg_na"}
+                    "null_label": "reg_na",
+                    "data_availability_slice": (
+                        "reg_na is NOT a regime level and must never be advertised as a "
+                        "conditioner cell. It marks rows where the dial is unavailable — "
+                        "STAR (too few fit rows to cut) and the dial's own warm-up. A cohort "
+                        "keyed on reg_na describes MISSING DATA, not hot/cold tape, and is "
+                        "excluded from best-cell reporting.")}
 
         def attach(d_):
             if not len(d_):
@@ -913,16 +988,21 @@ def build(verbose: bool = True):
             d_["i5_ma5"] = np.nan
             d_["reg"] = "reg_na"
 
-    # volume-z terciles for 回封, fit-window cut points per board (same discipline)
+    # volume-z terciles for 回封 — fit-window cut points per (BASIS, board).
+    # Pooling the two bases would double-count their 15,629 overlapping rows and let the
+    # tolerant population's shape set the strict population's band edges, which is exactly
+    # the basis mixing this instrument's discipline section forbids.
     vz_cuts = {}
-    for board, g in hf[hf["split"] == "fit"].groupby("board", sort=True):
+    for (basis, board), g in hf[hf["split"] == "fit"].groupby(["basis", "board"], sort=True):
         v = g["volz"].replace([np.inf, -np.inf], np.nan).dropna()
         if len(v) >= 100:
-            vz_cuts[str(board)] = [float(v.quantile(1 / 3)), float(v.quantile(2 / 3))]
+            vz_cuts[f"{basis}|{board}"] = [float(v.quantile(1 / 3)),
+                                           float(v.quantile(2 / 3))]
     vlab = np.full(len(hf), "vz_na", dtype=object)
     vv = hf["volz"].to_numpy()
+    bkey = (hf["basis"].astype(str) + "|" + hf["board"].astype(str)).to_numpy()
     for b, (q1, q2) in vz_cuts.items():
-        sel = (hf["board"] == b).to_numpy() & np.isfinite(vv)
+        sel = (bkey == b) & np.isfinite(vv)
         vlab[sel & (vv <= q1)] = "vz0_low"
         vlab[sel & (vv > q1) & (vv <= q2)] = "vz1_mid"
         vlab[sel & (vv > q2)] = "vz2_high"
@@ -948,8 +1028,20 @@ def build(verbose: bool = True):
         "window": [WINDOW_START.strftime("%Y-%m-%d"), WINDOW_END.strftime("%Y-%m-%d")],
         "excluded_bars": agg,
         "tape": tape_meta, "regime_dial": dial_meta, "regime_terciles": reg_meta,
-        "volz_terciles": {"fit_cut_points_by_board": {k: [_r(v[0], 3), _r(v[1], 3)]
-                                                      for k, v in vz_cuts.items()}},
+        "volz_terciles": {
+            "fit_cut_points_by_basis_and_board": {k: [_r(v[0], 3), _r(v[1], 3)]
+                                                  for k, v in vz_cuts.items()},
+            "note": ("Cut points are fit on each (basis, board) SEPARATELY. An earlier build "
+                     "pooled the two bases, which double-counted their 15,629 overlapping "
+                     "rows and let the tolerant population's shape set the strict "
+                     "population's band edges — a basis-discipline violation that moved the "
+                     "strict/main edges by roughly 5%."),
+            "data_availability_slice": ("vz_na is NOT a tercile. It marks rows where the "
+                                        "trailing 20-session volume window is unavailable "
+                                        "(early history) or degenerate. It is a "
+                                        "data-availability slice and is excluded from "
+                                        "best-cell reporting."),
+        },
         "longhuitou_walk_stats": lht_stats,
         "vintage": vintage_receipt(len(files), kept),
     }
@@ -1023,11 +1115,18 @@ def population_receipt(hf: pd.DataFrame, tape_key: set, panel_strict: set,
                              "v0 DROPS the ST name entirely, so the two universes differ by "
                              "construction."),
             "share_that_are_tolerant_SEALS_pct": _r(100.0 * float((co <= LIMIT_CLOSE_TOL).mean())),
+            "tolerant_seals_as_share_of_SHALLOW_BAND_pct": _r(
+                100.0 * float((co <= LIMIT_CLOSE_TOL).sum()) / max(1, int((co <= 0.01).sum()))),
             "tolerant_seal_note": ("close_off <= 0.002 means the close is inside v0's "
                                    "tolerance: the strict tape calls these BREAKS, the "
-                                   "tolerant basis calls them SEALS. They are the 4.5% of "
-                                   "the strict population that is not a weakness cohort at "
-                                   "all, and they sit entirely in the shallow depth band."),
+                                   "tolerant basis calls them SEALS. They are ~4.5% of the "
+                                   "strict population overall — but they sit ENTIRELY inside "
+                                   "the shallow depth band, where they are a much larger "
+                                   "share (see the field above). That concentration is the "
+                                   "number that matters, because the strict shallow band is "
+                                   "one of the cohorts the census surfaces: a meaningful "
+                                   "slice of it is not a weakness cohort at all but boards "
+                                   "that v0's adjudicated rule counts as held."),
         },
         "tape_vs_panel_strict_agreement": {
             "note": ("The strict population is taken FROM THE TAPE, but the panel detects it "
@@ -1198,10 +1297,49 @@ def _book_cell(g: pd.DataFrame) -> dict:
     return out
 
 
-def huifeng_book(tr: pd.DataFrame) -> dict:
+def paired_gap_block(hf: pd.DataFrame) -> dict:
+    """Mean overnight gap on the PAIRED population — the number that explains the delta.
+
+    Computing this over all usable break days is wrong and inflates nothing by accident: the
+    unfillable opens are BY DEFINITION the ones that gapped to the limit (mean gap ~ +10%),
+    and they are precisely the rows the paired comparison excludes. The delta between the
+    two anchors is an identity on the paired set — ret_close = (1+ret_open)(1+gap) - 1 — so
+    only the paired-set gap can close the arithmetic.
+    """
+    out = {
+        "definition": ("mean of gap = open[T+1]/close[T] - 1 over break days with a usable "
+                       "successor AND a FILLABLE T+1 open — i.e. exactly the rows the paired "
+                       "book trades."),
+        "why_not_all_usable_rows": ("unfillable opens gap to the limit by construction; "
+                                    "including them mixes a ~+10% cohort into the mean and "
+                                    "leaves the paired delta unexplained."),
+        "by_basis_board_window": {},
+    }
+    for basis in ("strict", "tolerant"):
+        b0 = hf[(hf["basis"] == basis) & hf["y_ok"]]
+        out["by_basis_board_window"][basis] = {}
+        for bd, g in b0.groupby("board", sort=True):
+            cell = {}
+            for sp in ("fit", "holdout"):
+                gg = g[g["split"] == sp]
+                pair = gg[~gg["unfillable_open"]]
+                for tag, frame in (("paired_fillable_only", pair), ("all_usable", gg),
+                                   ("unfillable_only", gg[gg["unfillable_open"]])):
+                    v = frame["gap"].to_numpy(dtype="float64")
+                    v = v[np.isfinite(v)]
+                    cell[f"{sp}|{tag}"] = {"n": int(v.size),
+                                           "mean_gap_pct": _r(100.0 * float(v.mean()), 4)
+                                           if v.size else None}
+            out["by_basis_board_window"][basis][str(bd)] = cell
+    return out
+
+
+def huifeng_book(tr: pd.DataFrame, hf: pd.DataFrame) -> dict:
     """(b) T+1-open entries vs (c) T-close entries — the comparison L1 could not make."""
     res = {
+        "paired_population_gap": paired_gap_block(hf),
         "exit_rules": dict(EXIT_RULES), "locked_exit": LOCKED_EXIT_NOTE,
+        "hold_sessions_convention": HOLD_SESSIONS_NOTE,
         "buy_fillability": BUY_FILLABILITY_NOTE,
         "anchors": {
             "T_close": "buy at the CLOSE of the break day T. Fillable by construction — a "
@@ -1253,15 +1391,26 @@ def huifeng_book(tr: pd.DataFrame) -> dict:
                 gg = g[g["split"] == sp]
                 cells = {f"{a}|{r}": _book_cell(h)
                          for (a, r), h in gg.groupby(["anchor", "rule"], sort=True)}
+                pg = (res["paired_population_gap"]["by_basis_board_window"]
+                      .get(basis, {}).get(str(bd), {})
+                      .get(f"{sp}|paired_fillable_only", {}).get("mean_gap_pct"))
                 for rule in EXIT_RULES:
                     a, b = cells.get(f"T_close|{rule}"), cells.get(f"T1_open|{rule}")
                     if a and b and a.get("n") and b.get("n"):
+                        d = _r((a["mean_pct"] or 0) - (b["mean_pct"] or 0), 3)
                         cells[f"DELTA_close_minus_open|{rule}"] = {
                             "n_close": a["n"], "n_open": b["n"],
-                            "d_mean_pp": _r((a["mean_pct"] or 0) - (b["mean_pct"] or 0), 3),
+                            "d_mean_pp": d,
                             "d_mean_net_pp": _r((a["mean_net_pct"] or 0)
                                                 - (b["mean_net_pct"] or 0), 3),
                             "d_win_pp": _r((a["win_rate_pct"] or 0) - (b["win_rate_pct"] or 0)),
+                            "paired_mean_gap_pct": pg,
+                            "residual_vs_gap_pp": _r(d - pg, 4) if (d is not None
+                                                                    and pg is not None)
+                            else None,
+                            "reading": ("the delta IS the overnight gap; residual_vs_gap_pp "
+                                        "is what the gap does not explain, and it is "
+                                        "sub-basis-point on this population."),
                         }
                 res["paired"][basis][str(bd)][sp] = cells
         # the UNPAIRED remainder — break days whose T+1 open was unbuyable. These are the
@@ -1278,9 +1427,17 @@ def huifeng_book(tr: pd.DataFrame) -> dict:
 
 
 def _collapse_ladder(df: pd.DataFrame, levels: list[list[str]], stat) -> dict:
-    """Emit the most specific cell that clears THIN_CELL_N; print every collapse."""
-    out, log = {}, []
+    """Emit the most specific cell that clears THIN_CELL_N; print every collapse.
+
+    `cells` is a DISJOINT partition and is the only thing that may be counted. A thin cell
+    is NOT given its parent's numbers under its own name — doing that emitted duplicate rows
+    (two thin regime cells resolving to one parent printed byte-identical statistics under
+    two labels, and that parent also appeared as a sibling containing them). Thin cells are
+    listed separately in `collapsed_cells` as POINTERS to the parent that carries them.
+    """
+    out, log, pointers = {}, [], {}
     full = levels[0]
+    thin_by_parent: dict[str, list] = {}
     for keys, g in df.groupby(full, sort=True):
         keys = keys if isinstance(keys, tuple) else (keys,)
         label = "|".join(str(k) for k in keys)
@@ -1290,29 +1447,48 @@ def _collapse_ladder(df: pd.DataFrame, levels: list[list[str]], stat) -> dict:
         placed = False
         for lv in levels[1:]:
             sub = df
+            plab = []
             for c, v in zip(full, keys):
                 if c in lv:
                     sub = sub[sub[c] == v]
+                    plab.append(str(v))
             if len(sub) >= THIN_CELL_N:
-                out[label] = {"level": "|".join(lv), "n_rows": int(len(sub)),
-                              "COLLAPSED_FROM": "|".join(full), "cell_own_n": int(len(g)),
-                              **stat(sub)}
+                parent = "|".join(plab)
+                thin_by_parent.setdefault(parent, []).append((label, int(len(g)), lv, sub))
+                pointers[label] = {"own_n": int(len(g)), "carried_by_parent": parent,
+                                   "parent_level": "|".join(lv)}
                 log.append({"cell": label, "own_n": int(len(g)),
-                            "collapsed_to": "|".join(lv), "parent_n": int(len(sub))})
+                            "collapsed_to": "|".join(lv), "parent_label": parent,
+                            "parent_n": int(len(sub))})
                 placed = True
                 break
         if not placed:
             out[label] = {"level": "|".join(full), "n_rows": int(len(g)), "thin": True,
                           "UNCOLLAPSIBLE": True, **stat(g)}
-            log.append({"cell": label, "own_n": int(len(g)),
-                        "collapsed_to": None, "parent_n": None})
-    return {"cells": out, "collapse_log": log,
-            "collapse_rule": (f"a cell with n < {THIN_CELL_N} is replaced by the most "
-                              "specific parent that clears the floor, dropping the regime "
-                              "dimension first and then the days dimension. Every "
-                              "substitution is listed in collapse_log with both n's; a cell "
-                              "whose parents are all thin is left in place and flagged "
-                              "UNCOLLAPSIBLE.")}
+            log.append({"cell": label, "own_n": int(len(g)), "collapsed_to": None,
+                        "parent_label": None, "parent_n": None})
+    # one entry per PARENT that absorbed thin children, emitted once
+    parents = {}
+    for parent, kids in sorted(thin_by_parent.items()):
+        _lab, _n, lv, sub = kids[0]
+        parents[parent] = {"level": "|".join(lv), "n_rows": int(len(sub)),
+                           "absorbs": sorted(k[0] for k in kids),
+                           "absorbed_own_n": {k[0]: k[1] for k in kids}, **stat(sub)}
+    return {
+        "cells": out, "collapsed_into_parents": parents, "collapsed_cell_pointers": pointers,
+        "collapse_log": log,
+        "counting_rule": (
+            f"`cells` is the DISJOINT partition — count THAT, and only that. It holds every "
+            f"full three-way cell clearing n >= {THIN_CELL_N} plus any UNCOLLAPSIBLE thin "
+            "cell. Thin cells that were absorbed appear ONLY as pointers in "
+            "collapsed_cell_pointers; their carrying parents appear ONCE each in "
+            "collapsed_into_parents. A parent's rows may overlap a printed sibling's, so "
+            "cells and collapsed_into_parents must never be summed together."),
+        "collapse_rule": (f"a cell with n < {THIN_CELL_N} is carried by the most specific "
+                          "parent that clears the floor, dropping the regime dimension first "
+                          "and then the days dimension. Every substitution is in "
+                          "collapse_log with both n's."),
+    }
 
 
 def longhuitou(lht: pd.DataFrame, tr: pd.DataFrame) -> dict:
@@ -1345,13 +1521,33 @@ def longhuitou(lht: pd.DataFrame, tr: pd.DataFrame) -> dict:
     }
 
     def rcell(g: pd.DataFrame) -> dict:
+        """Row-level rate AND episode-level rate. They answer different questions.
+
+        The row rate is P(a randomly chosen PULLBACK DAY is followed by a board within 5
+        sessions) — its denominator is window-days, and one episode contributes up to ten of
+        them, so its Wilson interval is far too narrow to read as an episode probability.
+        The episode rate (one row per episode, taken at day 1) is P(THE EPISODE re-boards),
+        which is what a sentence like "a quarter of ended ladders come back" actually means.
+        Both are printed; neither is allowed to stand in for the other.
+        """
         out = rate_block(int(g["y_new_board_5d"].sum()), len(g))
+        out["denominator"] = "ROWS (window-days), not episodes"
         out["n_episodes"] = int(g["episode_id"].nunique())
         out["n_names"] = int(g["ticker"].nunique())
         out["unresolved_n"] = int((~g["resolved_5d"]).sum())
         res_only = g[g["resolved_5d"]]
         out["rate_excl_unresolved_pct"] = (
             _r(100.0 * float(res_only["y_new_board_5d"].mean())) if len(res_only) else None)
+        # episode level: one row per episode, the FIRST window day present in this slice
+        ep = g.sort_values("day_k").drop_duplicates("episode_id", keep="first")
+        out["episode_level"] = {
+            **rate_block(int(ep["y_new_board_5d"].sum()), len(ep)),
+            "denominator": "EPISODES (one row each, at the earliest window day in this slice)",
+            "note": ("this is P(the episode re-boards within 5 sessions of that day). Its "
+                     "Wilson interval is the honest one — roughly 2.6x wider than the row "
+                     "interval, because the row denominator counts the same episode up to "
+                     f"{LHT_WINDOW} times."),
+        }
         return out
 
     for bd, g in lht.groupby("board", sort=True):
@@ -1375,6 +1571,50 @@ def longhuitou(lht: pd.DataFrame, tr: pd.DataFrame) -> dict:
                                    ("close_ge_half_retrace", "close_ge_half"))}
             for sp, gg in (("fit", g[g["split"] == "fit"]),
                            ("holdout", g[g["split"] == "holdout"]))}
+        # D3 — the binary conditioners are confounded by WHERE IN THE WINDOW the row sits.
+        # A declining-volume row is on average much later in the window than a
+        # non-declining one, and the re-board hazard falls with day_k, so the raw contrast
+        # is partly the day effect wearing a volume label. Controlled table + the exposure
+        # imbalance that motivates it.
+        res.setdefault("binary_conditioners_controlled", {})[str(bd)] = {}
+        for name, col in (("vol_declining", "vol_declining"),
+                          ("no_limit_down_since_run_end", "no_ld_since_end"),
+                          ("close_ge_half_retrace", "close_ge_half")):
+            blk = {}
+            for sp in ("fit", "holdout"):
+                gg = g[g["split"] == sp]
+                if not len(gg):
+                    continue
+                expo = {str(bool(v)): _r(float(len(h)) / max(1, h["episode_id"].nunique()), 2)
+                        for v, h in gg.groupby(col, sort=True)}
+                cells, spreads = {}, []
+                for db, hb in gg.groupby("days_band", sort=True):
+                    sub = {str(bool(v)): rcell(h) for v, h in hb.groupby(col, sort=True)}
+                    cells[str(db)] = sub
+                    if len(sub) == 2:
+                        vals = [sub[k]["rate_pct"] for k in sorted(sub)
+                                if sub[k]["rate_pct"] is not None]
+                        if len(vals) == 2:
+                            spreads.append(abs(vals[1] - vals[0]))
+                raw = {str(bool(v)): _r(100.0 * float(h["y_new_board_5d"].mean()))
+                       for v, h in gg.groupby(col, sort=True)}
+                blk[sp] = {
+                    "rows_per_episode_by_arm": expo,
+                    "uncontrolled_rate_pct": raw,
+                    "within_days_band": cells,
+                    "mean_abs_within_band_spread_pp": _r(float(np.mean(spreads)), 2)
+                    if spreads else None,
+                }
+            f_s = blk.get("fit", {}).get("mean_abs_within_band_spread_pp")
+            h_s = blk.get("holdout", {}).get("mean_abs_within_band_spread_pp")
+            blk["stability_verdict"] = (
+                "UNSTABLE / CONFOUNDED — the within-days-band spread does not reproduce "
+                f"across windows (fit {f_s} pp vs holdout {h_s} pp). Do not report the "
+                "uncontrolled contrast as a finding."
+                if (f_s is not None and h_s is not None
+                    and (max(f_s, h_s) > 2 * min(f_s, h_s) + 0.5))
+                else f"within-band spread fit {f_s} pp vs holdout {h_s} pp.")
+            res["binary_conditioners_controlled"][str(bd)][name] = blk
 
     for bd, g in tr.groupby("board", sort=True):
         res["book"][str(bd)] = {}
@@ -1463,13 +1703,64 @@ def survivor_census(tr_hf: pd.DataFrame, tr_lht: pd.DataFrame) -> dict:
             "fit_date_clustered_t": cf.get("date_clustered_t"),
             "clears_net_both": bool(nf.mean() > 0 and nh.mean() > 0),
             "clears_gross_both": bool(f.mean() > 0 and h.mean() > 0),
+            # `or -99` would read a date-eq net of exactly 0.0 as missing and fail it for
+            # the wrong reason. No cohort currently rounds to 0.0; the guard is explicit so
+            # a future one is not silently mis-scored.
             "clears_date_clustered_both": bool(
-                (cf.get("date_eq_weight_net_pct") or -99) > 0
-                and (ch.get("date_eq_weight_net_pct") or -99) > 0),
+                cf.get("date_eq_weight_net_pct") is not None
+                and ch.get("date_eq_weight_net_pct") is not None
+                and cf["date_eq_weight_net_pct"] > 0 and ch["date_eq_weight_net_pct"] > 0),
             "strong_n": bool(f.size >= CENSUS_STRONG_N and h.size >= CENSUS_STRONG_N),
         })
+    # family + data-availability tagging (D1 / D8)
+    for r in rows:
+        coh = r["cohort"]
+        r["family"] = ("LHT" if coh.startswith("LHT") else
+                       "HF_T_close" if "|T_close|" in coh else "HF_T1_open")
+        r["is_data_availability_slice"] = bool("=reg_na" in coh or "=vz_na" in coh)
     rows.sort(key=lambda r: (-(r["holdout_net_pct"] or -99)))
     clears = [r for r in rows if r["clears_net_both"]]
+    real = [r for r in clears if not r["is_data_availability_slice"]]
+
+    # per-family drift, because the coin-flip benchmark is only meaningful for a family
+    # centred on zero. A family running -1.2%/trade cannot throw survivors by chance.
+    fam = {}
+    for name in ("HF_T1_open", "HF_T_close", "LHT"):
+        sub = [r for r in rows if r["family"] == name]
+        if not sub:
+            continue
+        src = tr_lht if name == "LHT" else tr_hf[tr_hf["anchor"] ==
+                                                 ("T_close" if name == "HF_T_close"
+                                                  else "T1_open")]
+        x = src["ret"].to_numpy(dtype="float64")
+        x = x[np.isfinite(x)]
+        drift = 100.0 * float(((1.0 + x) * (1.0 - ROUND_TRIP_COST) - 1.0).mean()) if x.size \
+            else None
+        # "Near zero" is judged at a quarter point per trade — wide enough to catch a family
+        # whose cohorts genuinely coin-flip, tight enough to exclude the two that run at
+        # about -1%/trade. A tighter cut reported a 0.0 benchmark for the one family the
+        # benchmark actually describes, which is the same pooling error in miniature.
+        centred = drift is not None and abs(drift) < 0.25
+        n_clear = int(sum(1 for r in sub if r["clears_net_both"]))
+        exp = round(0.25 * len(sub), 1)
+        fam[name] = {
+            "cohorts_tested": len(sub),
+            "cohorts_clearing_net_both": n_clear,
+            "family_pooled_net_pct": _r(drift, 3),
+            "coin_flip_expectation_if_centred": exp,
+            "benchmark_applies": bool(centred),
+            "expectation_basis": (
+                f"family drift is {_r(drift, 3)}%/trade — within a quarter point of zero, so "
+                f"a two-window sign test passes on ~25% of cohorts by chance. Observed "
+                f"{n_clear} against an expectation of {exp}: this family is AT its own null, "
+                "not below it." if centred else
+                f"family drift is {_r(drift, 3)}%/trade — a coin-flip benchmark does NOT "
+                "apply. A family this far from zero throws essentially no chance survivors, "
+                f"so its count of {n_clear} is informative at face value rather than against "
+                f"{exp}."),
+        }
+    tvals = [r["holdout_date_clustered_t"] for r in rows
+             if r["holdout_date_clustered_t"] is not None]
     return {
         "bar": PRE_REGISTRATION["decision_bar"],
         "cohorts_tested": len(rows),
@@ -1478,17 +1769,34 @@ def survivor_census(tr_hf: pd.DataFrame, tr_lht: pd.DataFrame) -> dict:
                                                        if r["clears_gross_both"])),
         "cohorts_clearing_date_clustered_both": int(sum(1 for r in rows
                                                         if r["clears_date_clustered_both"])),
+        "by_family": fam,
+        "THE_VERDICT_STATISTIC": {
+            "max_holdout_date_clustered_t_across_all_cohorts": _r(max(tvals), 2) if tvals
+            else None,
+            "cohorts_with_holdout_date_clustered_t_ge_2": int(sum(1 for t in tvals if t >= 2)),
+            "why_this_and_not_the_survivor_count": (
+                "The survivor COUNT cannot carry the verdict: it is only interpretable "
+                "against a per-family chance benchmark, and two of the three families are so "
+                "far from zero drift that no benchmark applies. The t-census is the honest "
+                "summary — across every cohort tested, the largest holdout date-clustered t "
+                "is the number above, and the count reaching conventional significance is "
+                "zero. That statement needs no multiplicity correction to be damning."),
+        },
         "clearing_cohorts": clears,
+        "clearing_cohorts_excluding_data_availability_slices": real,
         "clearing_cohorts_strong_n": [r for r in clears if r["strong_n"]],
         "clearing_cohorts_strong_n_and_date_clustered": [
-            r for r in clears if r["strong_n"] and r["clears_date_clustered_both"]],
+            r for r in clears if r["strong_n"] and r["clears_date_clustered_both"]
+            and not r["is_data_availability_slice"]],
         "multiplicity_note": (
-            f"{len(rows)} cohorts were tested at the n >= {CENSUS_MIN_N} floor. Under a pure "
-            "coin-flip null roughly a quarter of them would print positive in BOTH windows "
-            "by chance — about 52 — so a count BELOW that is evidence of a negative drift, "
-            "not of edge. The cohorts are also heavily overlapping slices of the same trades "
-            "and are not independent tests. Read the count against 52, then read the "
-            "surviving cells' DATE-CLUSTERED t, not their per-trade t."),
+            f"{len(rows)} cohorts were tested at the n >= {CENSUS_MIN_N} floor, but they must "
+            "be read PER FAMILY (see by_family) and never pooled. Pooling manufactures a "
+            "false result: the two close-anchored families run at roughly -1.2%/trade, so "
+            "their chance expectation is ~0 rather than a quarter of their count, and "
+            "putting them in one denominator with the near-zero-drift T+1-open family makes "
+            "the total look 'below chance' when the open family is in fact AT its own "
+            "benchmark. Cohorts are also heavily overlapping slices of the same trades and "
+            "are not independent tests. Read by_family, then read THE_VERDICT_STATISTIC."),
         "clustering_note": (
             "holdout_net_t_PER_TRADE_OVERSTATED is named for what it is. Every regime cell "
             "is a market-wide daily state, so its trades arrive in same-day clumps; the "
@@ -1589,7 +1897,7 @@ def main() -> int:
     print("[B-回封] re-seal rates + trapdoor ...", flush=True)
     hf_rates = huifeng_rates(hf)
     print("[B-回封] entry books — T close vs T+1 open ...", flush=True)
-    hf_book = huifeng_book(tr_hf)
+    hf_book = huifeng_book(tr_hf, hf)
     print("[B-龙回头] pullback window + close-entry book ...", flush=True)
     lht_res = longhuitou(lht, tr_lht)
     print("[census] net-expectancy decision table ...", flush=True)

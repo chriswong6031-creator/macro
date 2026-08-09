@@ -19,41 +19,72 @@ This instrument tests the two weakness families the daily basis can see. Both fa
 
 ## DECISION SUMMARY
 
-**1. THE ANSWER TO THE LANE'S QUESTION IS NO. No stable cohort in either battery clears
-positive expectancy net of a 15 bp round trip in fit *and* holdout.** 210 pre-registered
-cohorts were censused at an n ≥ 100 floor in both windows. 23 print positive net in both —
-against roughly **52** expected from coin flips alone, because a quarter of pure-noise
-cohorts pass a two-window sign test. A count *below* the null expectation is evidence of a
-negative drift, not of edge.
+**1. THE ANSWER TO THE LANE'S QUESTION IS NO — and the statistic that carries that verdict is
+the t-census, not the survivor count.** Across all 210 pre-registered cohorts (n ≥ 100 in both
+windows), the **largest holdout date-clustered t is 1.86, and the number reaching t ≥ 2 is
+zero.** That needs no multiplicity correction to be damning, and it is the sentence to quote.
 
-**2. Both weakness anchors are clean nulls, and the census is unambiguous about it.**
+The survivor count cannot carry the verdict, because it is only interpretable against a
+**per-family** chance benchmark — and pooling the families manufactures a false result:
 
-| Family | Anchor | Cohorts tested | Clearing net, both windows | Best holdout net |
+| Family | Cohorts | Clearing net, both | Family drift (net/trade) | Coin-flip benchmark |
 |---|---|---|---|---|
-| B-回封 | **T close** (break day, 低吸) | 84 | **0** | −0.013% |
-| B-龙回头 | **q close** (pullback day) | 42 | **0** | +0.677% (fails fit) |
-| B-回封 | T+1 open (L1's anchor, carried as control) | 84 | 23 | +1.43% |
+| HF **T+1 open** (L1's anchor, control) | 84 | 23 | **+0.124%** | applies — expectation **21.0**; observed 23 is **at its own null** |
+| HF **T close** (break day, 低吸) | 84 | **1** | **−0.959%** | does not apply — a family this far from zero throws essentially no chance survivors |
+| **龙回头** q close (pullback day) | 42 | **0** | **−1.104%** | does not apply, same reason |
 
-**Every positive cell in the entire study is a next-open entry — which is not a weakness
-entry at all.** The two constructions this lane exists to test produced zero survivors
-between them, out of 126 cohorts.
+An earlier draft pooled all three and read 23 survivors against "~52 expected", concluding the
+population was *below* chance. **That was an artifact of pooling.** All 23 survivors sit in the
+one family whose drift is near zero, where the honest expectation is 21 — so that family is
+*at* its benchmark, not under it — while the 126 close-anchored cohorts contribute a chance
+expectation of ~0 rather than ~31, which is what dragged the pooled comparison down. The
+corrected reading is narrower and less flattering to the null: the weakness anchors fail on
+their own numbers, and the control family is indistinguishable from chance.
+
+**2. Both weakness anchors fail; one close cohort survives the raw bar and not the inspection.**
+
+| Family | Anchor | Tested | Clearing net, both | Best holdout net (excl. missing-data slices) |
+|---|---|---|---|---|
+| B-回封 | **T close** (break day, 低吸) | 84 | **1** | +0.345% |
+| B-龙回头 | **q close** (pullback day) | 42 | **0** | +0.677% (fails fit) |
+| B-回封 | T+1 open (control) | 84 | 23 | +0.868% |
+
+The lone close-anchored survivor is `HF|tolerant|chinext|T_close|E3|volz=vz1_mid`: holdout net
+**+0.345%** on n = 222, against a fit mean of **+0.023%** — indistinguishable from zero in the
+window that selected it. It fails date-equal weighting (fit date-eq **−0.009%**), fails the
+n ≥ 500 floor, and its holdout date-clustered t is **1.17**. A marginal cell on the smallest
+board, not a finding. **125 of 126 close-anchored cohorts print negative and the 126th is zero
+in fit.**
 
 **3. THE CENTRAL FINDING — the break-day close is not a discount, it is a premium.** On
 *identical* break days with *identical* exit bars, buying the T close instead of the T+1 open
-costs **−1.22 pp per trade in fit and −1.07 pp in holdout** (E3; win rate −6.8 / −5.1 pp).
-The cause is fully accounted for and not a residual: the break cohort's mean overnight gap on
-main is **−0.95%**. The market re-prices a broken board *downward* overnight, so the
-"guaranteed fill" is bought about one percent above where you could have bought it the next
-morning. Date-clustered t on the close book is **−3.92** (E3) and **−8.13** (E1) — this is not
-a marginal loss, it is a structural one.
+costs **−1.229 pp per trade in fit and −1.069 pp in holdout** (E3; win rate −6.8 / −5.1 pp).
+The cause is not a residual — it is an identity, and it closes to under a basis point once the
+gap is measured on the right population. The **paired-population** mean overnight gap (main,
+strict, fillable opens only) is **−1.2217% in fit and −1.0745% in holdout**, leaving
+unexplained residuals of **−0.0073 pp and +0.0055 pp**. The market re-prices a broken board
+downward overnight, so the "guaranteed fill" is bought about one percent above where you could
+have bought it the next morning. Date-clustered t on the close book is **−3.92** (E3) and
+**−8.13** (E1) — structural, not marginal.
+
+*(The gap must be measured on the paired population. Averaged over all usable break days it
+reads −1.2077% / −0.9525%, because that pool includes the unfillable opens — whose mean gap is
+**+9.98%** by construction — and those are exactly the rows the paired comparison excludes. An
+earlier draft quoted the all-rows holdout figure and left ~0.12 pp of the delta unexplained.)*
 
 **4. The access the weakness entry was supposed to buy does not exist.** The premise was that
 a close entry owns the names that gap away to an unbuyable open. On the 回封 cohort the T+1
 open is unfillable **0.48%** of the time (n = 55 holdout, 11 fit) — because a name that just
-*failed* to hold its board almost never gaps to a locked open. Those rare trades do pay
-(+5.9% net, holdout E1), but at 1% frequency they cannot come close to offsetting −1.07 pp on
-the other 99%. **The fillability tax that made L1's ladder unbuyable is simply absent here,
-and with it the whole reason to prefer the close.**
+*failed* to hold its board almost never gaps to a locked open. On the **same exit rule** as the
+−1.069 pp figure above (E3), those rare trades return **+0.181% net** on the holdout — at 1%
+frequency, nowhere near enough to offset −1.069 pp on the other 99%. **The fillability tax that
+made L1's ladder unbuyable is simply absent here, and with it the whole reason to prefer the
+close.**
+
+*(An earlier draft advertised **+5.9%** here. That is the E1 figure, set against an E3 delta —
+mixing two exit rules in one comparison. E1's holdout remainder is indeed +5.906% on the same
+55 trades, but the honest same-rule number is E3's +0.181%, and the two differ by enough to
+change how the sentence reads.)*
 
 **5. 回封 rates are real but small, and breaking the seal destroys most of the ladder's edge.**
 Main board, next-day limit-up close: **3.27% strict** (n = 13,810) / **5.74% tolerant**
@@ -76,20 +107,46 @@ rate, and buys its extra re-seal probability at nearly 1:1 in downside.
 The mid band carries the best asymmetry in both windows; the deep band the worst. Every
 limit-down figure here is **survivors-only and therefore a lower bound** on the true hazard.
 
-**7. 龙回头 is the study's cleanest null: strong, stable probability structure that converts to
-nothing.** P(new limit-up close within 5 sessions) on main is **24.57%** (2,205 episodes),
-and it is sharply conditioned — days-elapsed **33.96% → 21.84% → 16.32%** (holdout, monotone
-in *both* windows), close ≥ half-retrace **31.66% vs 16.16%**, no limit-down since the run
-ended **32.01% vs 17.38%**. And the book that trades it loses **−1.37% (E3) / −1.45% (E1) net
-per trade** on the holdout, date-clustered t **−6.87 / −9.51**. This is L1's central null
+**7. 龙回头 is the study's cleanest null: strong probability structure that converts to nothing.**
+Two different rates are reported here and they must not be confused — an earlier draft printed
+the row rate next to an episode count, which reads as an episode probability and is not one.
+
+| Question | Denominator | Main, fit | Main, holdout | All |
+|---|---|---|---|---|
+| P(a pullback DAY is followed by a board ≤5 sessions) | rows (window-days) | 24.47% (n=11,127) | 24.85% (n=4,206) | 24.57% (n=15,333) |
+| **P(the EPISODE re-boards ≤5 sessions of day 1)** | **episodes** | **32.37%** (n=1,560) | **40.31%** (n=645) | **34.69%** (n=2,205) |
+
+The episode rate is the one that answers "how often does an ended ladder come back", and its
+Wilson interval is **~2.6× wider** than the row interval because one episode contributes up to
+ten window-days. The row rate is *not wrong* — it is the correct denominator for "should I
+enter on this particular day" — but it is not a statement about episodes.
+
+The structure is sharply conditioned (days-elapsed **33.96% → 21.84% → 16.32%** holdout,
+monotone in *both* windows; close ≥ half-retrace **31.66% vs 16.16%**; no limit-down since the
+run ended **32.01% vs 17.38%**). And the book that trades it loses **−1.37% (E3) / −1.45% (E1)
+net per trade** on the holdout, date-clustered t **−6.87 / −9.51**. This is L1's central null
 reproduced in a family that was supposed to escape it: *the information is real and the price
 already contains it.*
 
-**8. Two pieces of practitioner lore are contradicted outright.** (a) The "3–6 day sweet spot"
-for 龙回头 does not exist — the re-board hazard declines **monotonically from day 1** in both
-windows, so day 1–3 is strictly the best window and day 7–10 the worst. (b) *Declining* volume
-into the pullback is supposed to signal healthy chip lockup; measured, it goes the other way —
-**22.64% vs 29.88%** re-board rate for declining vs non-declining volume.
+**8. One piece of practitioner lore is contradicted; a second apparent contradiction was my
+own confound and is withdrawn.** (a) **Stands** — the "3–6 day sweet spot" for 龙回头 does not
+exist: the re-board hazard declines **monotonically from day 1** in both windows, so day 1–3 is
+strictly the best window and day 7–10 the worst. (b) **Withdrawn.** I reported that *declining*
+pullback volume is worse (holdout **22.64% vs 29.88%**). That contrast is confounded by
+position in the window: the declining arm averages **5.31 rows per episode** against **2.18**
+for the non-declining arm, so it is loaded with late-window days — and the hazard falls with
+day. Controlling for days-band shrinks the gap, and the residual does not reproduce:
+
+| Days band (main) | Holdout: not-declining / declining | Fit: not-declining / declining |
+|---|---|---|
+| 1–3 | 41.40% / 30.17% | 32.10% / 27.60% |
+| 4–6 | 27.50% / 20.13% | 24.45% / 22.84% |
+| 7–10 | 16.89% / 16.04% | 19.38% / 19.79% |
+| **mean absolute within-band spread** | **6.48 pp** | **2.17 pp** |
+
+A conditioner whose controlled effect is 3× larger in holdout than in fit fails this receipt's
+own stability standard — the same standard that demoted break depth in §6. **Volume decline is
+recorded as unstable/confounded, not as a finding.**
 
 **9. DATE CLUSTERING IS LOAD-BEARING, AND IT IS WHAT KILLS THE LAST SURVIVOR.** These books
 trade in same-day clumps: a regime cell is a market-wide daily state, and one 龙回头 episode
@@ -98,14 +155,19 @@ error — counting *sessions*, not trades — changes the verdict on every candi
 
 | Cohort (main, T+1 open, E3) | n fit / holdout | dates | net fit / holdout | per-trade t | **date-clustered t** |
 |---|---|---|---|---|---|
+| regime = mid tercile, **tolerant** | 7,207 / 5,033 | 543 | +0.52% / +0.55% | **4.36** | **0.46** |
 | regime = mid tercile, strict | 3,368 / 2,265 | 512 | +0.60% / +0.66% | 3.45 | **1.02** |
-| regime = mid tercile, tolerant | 7,207 / 5,033 | 543 | +0.52% / +0.55% | 4.36 | **0.46** |
-| volume-z = low tercile, strict | 2,682 / 1,223 | 620 | +0.69% / +0.52% | 1.89 | **0.85** |
+| volume-z = low tercile, strict | 2,888 / 1,323 | 652 | +0.66% / +0.61% | 2.27 | **0.73** |
 | depth = shallow, strict | 1,599 / 630 | 374 | +0.23% / +0.34% | 0.92 | **1.36** |
 
 Nine cohorts clear the net bar with n ≥ 500 in both windows *and* under date-equal weighting.
-**Not one reaches a date-clustered holdout t of 1.4.** The single most impressive per-trade
-statistic in the study — t = 3.45 — is t = 1.02 once the denominator counts sessions.
+**Not one reaches a date-clustered holdout t of 1.4**, and across all 210 cohorts the maximum
+is **1.86** with **zero** at t ≥ 2. The most impressive per-trade statistic in the study —
+**t = 4.36**, the tolerant mid-regime cell in the first row — collapses to **0.46** once the
+denominator counts sessions instead of same-day trades.
+
+*(An earlier draft quoted "t = 3.45" as the study's largest per-trade t two lines under a table
+whose first row printed 4.36. 3.45 is the strict cell's; 4.36 is the maximum.)*
 
 The sharpest illustration is a 龙回头 cell: deep retrace × days 1–3 × hot regime, fit,
 n = 1,247. Trade-weighted it returns **+4.83% net**. Date-weighted it returns **−1.22%**
@@ -145,6 +207,7 @@ everything above.
 |---|---|
 | Base SHA (this branch's point off main) | `ec81107b3167e35db497accddfc617a1e5c9361d` |
 | Input-store SHA (last commit touching the data dirs) | `035914cd3dafe1c0c7fd25bbc5f51d8a0290d64e` |
+| Build-time HEAD (provenance only; moves after commit) | see `meta.vintage.build_head_sha` |
 | Raw OHLCV store | `data/china_stocks_raw`, **1,842** names; **1,836** kept after ST exclusion |
 | Universe vintage | **PRE-EXPANSION.** A sibling Codex lane is expanding toward ~5,400 names; that is not in this checkout |
 | Limit-event tape | **71,463 rows — HEALED vintage confirmed** (pre-heal is 60,428; 314 names' history would be missing) |
@@ -174,8 +237,10 @@ Two consequences worth stating before the tables, because both bite:
   at T−1, on the population's own basis).
 - **4.48% of strict failed seals are tolerant SEALS** — they closed within 0.2% of the limit.
   The strict tape calls them breaks; v0's adjudicated rule calls them boards. They sit
-  entirely inside the shallow depth band, so the strict shallow band is partly *not a weakness
-  cohort at all*.
+  entirely inside the shallow depth band, and the concentration is what matters: they are
+  **27.49% of that band**. More than a quarter of the strict shallow cohort — one of the cells
+  the census surfaces in §9 — is *not a weakness cohort at all*, but boards v0's primary rule
+  counts as held. Read that cell accordingly.
 
 ### Population receipt — both definitions, counted
 
@@ -196,16 +261,35 @@ a near-touch the strict tape does not record as a break at all.
 it independently from the same bars. Agreement is **99.963%**: 16,355 in both, **zero
 tape-only**, 6 panel-only. The instrument is standing on the store it says it is.
 
-### Lookahead check on the regime dial — mechanical, not asserted
+### Lookahead check on the regime dial — two legs, only one of them mechanical
 
-`i5_realized_continuation` is indexed by the **target** date (the session the continuation
-printed on), so `i5[T]` is computed from pairs whose second leg *is* T, and `ma5` is a trailing
-5-session mean ending at T. Re-deriving it: max |Δ| vs a **trailing** window is **0.0** on all
-three boards; vs a **forward** window it is 0.47–0.80. **PASS — the dial at T is known at T's
-close.** Terciles use **fit-window cut points only** (main 0.1648 / 0.2883; chinext 0.1667 /
-0.3671), so the bucketing itself carries no holdout information. STAR has too few fit rows to
-cut and is `reg_na` throughout. The dial is a **tolerant-basis** conditioner applied to both
-populations, and is labelled as such wherever it appears.
+The claim is that the dial at T is known at T's close. It rests on two separate facts, and an
+earlier draft called the mechanical check "decisive" when it only establishes the second:
+
+1. **`i5[D]` is indexed by the TARGET date** — the session the continuation printed on — so it
+   counts pairs whose *second* leg is D. Verified by reading the producer
+   (`board_ecology_regime_v1.py` groups the pair frame by `next_bar_date` and renames that
+   level to `date`), and independently confirmed in adversarial review. **This leg is a source
+   read, not something this instrument can test.**
+2. **`ma5` is a TRAILING mean** of that column. This one *is* mechanical: re-deriving it, max
+   |Δ| vs a trailing window is **0.0** on all three boards, vs a forward window **0.47–0.80**.
+
+The distinction matters because leg 2 cannot rescue leg 1 — if `i5` were source-indexed by the
+*origin* date, a trailing `ma5` of it would still reproduce trailingly and the mechanical check
+would still pass. **PASS on both legs**, for different reasons.
+
+Terciles use **fit-window cut points only** (main 0.1648 / 0.2883; chinext 0.1667 / 0.3671), so
+the bucketing carries no holdout information. STAR has too few fit rows to cut and is `reg_na`
+throughout — `reg_na` is a **data-availability slice, not a regime level**, and is excluded
+from best-cell reporting (see §2). The dial is a **tolerant-basis** conditioner applied to both
+populations and is labelled as such wherever it appears.
+
+**Volume-z terciles are fit per (basis, board), not pooled.** An earlier build fit them on the
+two bases pooled, which double-counted the 15,629 rows they share and let the tolerant
+population set the strict population's band edges — the same basis mixing this section forbids.
+Correcting it moved the strict/main edges ~5% and shifted 36 volz cohorts; no other cohort,
+rate or book cell changed. `vz_na` is likewise a data-availability slice (no trailing 20-session
+volume window), not a tercile.
 
 ---
 
@@ -230,6 +314,24 @@ starts at T+1, so an open entry and a close entry differ *only* in entry price a
 **Locked-exit honesty.** A scheduled exit bar opening at or below its limit-down price cannot
 be sold; the exit rolls up to 10 sessions, then closes at the last available close and is
 flagged. Roll rates and the extra loss they cost are reported per cell.
+
+**One convention differs from L1 and it is not a return.** `hold_sessions` here is
+`exit_bar − first_held + 1` — an *inclusive* count of bars held. L1 reports
+`exit_bar − entry_bar`, one lower for the same trade. Exit bars and both prices are identical,
+so every return, win rate and expectancy column is unaffected; but a hold-length figure from
+this file needs +1 before it is compared with L1's.
+
+### DEVIATIONS from the pre-registration
+
+Four changes were made after the first run. Two are defect fixes that moved numbers; all are
+listed here rather than folded silently into the tables.
+
+| Change | Why | Moved a number? |
+|---|---|---|
+| Date-clustered SEs added beside every per-trade figure | the per-trade t was counting same-day trades as independent | No — added beside, never instead of |
+| **Volume-z terciles fit per (basis, board)** instead of pooled across bases | the pooled fit double-counted the 15,629 shared rows and let the tolerant population set the strict population's edges | **Yes** — 36 volz cohorts; pre-registered invariance held (every non-volz cohort byte-identical) |
+| **Paired-population gap** computed and published | the gap had been averaged over all usable rows including unfillable opens (mean +9.98%) | **Yes** — §3's causal number; the delta itself never moved |
+| **Three-way collapse emits a disjoint partition**; `reg_na`/`vz_na` relabelled as data-availability slices; census inference restated per family | duplicate/non-disjoint cells inflated the cell count; a missing-data slice was being advertised as the best cell; pooled families manufactured a "below chance" artifact | **Yes** — §2, §8, §9 and the three-way counts; no cohort statistic recomputed |
 
 **Buy-side fillability is not the mirror of sell-side fillability**, and this lane depends on
 the difference. A close entry is unfillable only when the bar closes *at the limit-up*. A
@@ -286,8 +388,17 @@ often — and its trapdoor rises with it (N1 4.86%, N2 8.89%). The two right-han
 | | E3 | −1.069 pp | −1.067 pp | −5.07 pp |
 
 **The unpaired remainder** — break days whose T+1 open was unbuyable, the only trades the close
-entry can take and the open entry cannot — is **11 trades in fit and 55 in holdout**. They
-return +11.2% / +5.9% net (E1). Real, and far too rare to matter.
+entry can take and the open entry cannot — is **11 trades in fit and 55 in holdout**.
+
+| Rule | Fit (n=11) | Holdout (n=55) |
+|---|---|---|
+| E1 | +11.209% net | +5.906% net |
+| **E3** (the rule the −1.069 pp delta above uses) | +10.960% net | **+0.181% net** |
+
+Read the **E3** row against an E3 delta. The two rules differ by 5.7 pp on the same 55 holdout
+trades, so quoting E1's +5.9% beside an E3 comparison — as an earlier draft did — makes the
+remainder look far more like a counterweight than it is. Either way it is ~1% of the population
+and cannot offset −1.069 pp on the other 99%.
 
 ### Rolls
 
@@ -311,19 +422,25 @@ names. One episode emits up to ten rows, so **read the episode count, not the ro
 
 ### P(new limit-up close within 5 sessions) — main
 
+**All rates in this table use ROW denominators** (window-days). They answer "should I enter on
+*this day*", not "does *this episode* come back" — the episode-denominator companions are in §7
+and are materially higher (34.69% overall vs 24.57%). Do not read a row rate as an episode
+probability.
+
 | Conditioner | Fit | Holdout |
 |---|---|---|
-| overall | 24.47% (1,560 ep) | 24.85% (645 ep) |
+| overall | 24.47% (n=11,127 rows / 1,560 ep) | 24.85% (n=4,206 rows / 645 ep) |
 | days 1–3 / 4–6 / 7–10 | 29.38 / 23.53 / **19.59%** | 33.96 / 21.84 / **16.32%** |
 | retrace <15 / 15–30 / >30% | 25.75 / 25.21 / 23.57% | 41.83 / 34.69 / 19.88% |
 | close ≥ half-retrace: yes / no | — | **31.66% / 16.16%** |
 | no limit-down since run end: yes / no | — | **32.01% / 17.38%** |
-| volume declining: yes / no | — | **22.64% / 29.88%** |
+| volume declining: yes / no *(confounded — see §8)* | 23.84% / 25.30% | 22.64% / 29.88% |
 | regime cold / mid / hot | 25.53 / 27.17 / 22.97% | 25.72 / 25.02 / 23.47% |
 
 Days-elapsed is monotone in both windows. Retrace depth is **not** — flat in fit, strong in
 holdout — so its holdout spread is an era effect, not a stable conditioner. Run length does
-nothing (holdout N=3 25.33% → N=6 22.52%).
+nothing (holdout N=3 25.33% → N=6 22.52%). The volume-declining row is retained for the record
+but is confounded by position in the window and is **withdrawn as a finding** (§8).
 
 ### The book — every cell negative
 
@@ -339,9 +456,16 @@ The fit's strongest three-way cell is **deep retrace × days 1–3 × hot regime
 trade-weighted **+4.833% net**. Date-weighted it is **−1.22%** (t = −2.06) across 273 sessions:
 the headline came from a few explosive days, not from an edge. In the holdout the same cell
 prints **−3.384% trade-weighted / −3.077% date-weighted** (t = −3.60). The holdout's own top
-cells are n = 26 and n = 29. **Only 5 of 27 holdout three-way cells are positive**, and three
-cells required collapsing to a parent level to clear the n ≥ 20 floor (every substitution is
-listed in `collapse_log` with both counts).
+cells are n = 26 and n = 29.
+
+**Counting the three-way table.** The holdout partition holds **24 disjoint cells, of which 5
+are positive** (fit: 27 cells, 6 positive). Three thin holdout cells were absorbed by **2**
+parents. An earlier build reported "27 cells, 5 positive" for the holdout by printing each thin
+cell under its own label *carrying its parent's numbers* — which emitted byte-identical rows for
+two different regime cells and listed a parent alongside siblings it contained. The partition is
+now disjoint and is the only thing counted; absorbed cells appear as pointers, and their
+carrying parents once each, in `collapsed_into_parents`. Cells and parents must never be summed
+together — a parent's rows overlap its printed siblings'.
 
 ---
 
@@ -350,20 +474,27 @@ listed in `collapse_log` with both counts).
 | | Count |
 |---|---|
 | Cohorts tested (n ≥ 100 in both windows) | 210 |
-| Positive **gross** in both windows | 29 |
-| Positive **net** in both windows | **23** |
-| …expected from coin flips alone | ~52 |
-| Positive net in both under **date-equal weighting** | 43 |
-| …of the 23, with n ≥ 500 in both | 15 |
-| …also clearing date-equal weighting | **9** |
-| …reaching a date-clustered holdout t ≥ 2 | **0** |
-| 回封 **T-close** cohorts clearing | **0 of 84** |
+| Positive **gross** in both windows | 30 |
+| Positive **net** in both windows | **24** |
+| …excluding missing-data slices (`reg_na` / `vz_na`) | **23** |
+| Positive net in both under **date-equal weighting** | 42 |
+| …of the 24, with n ≥ 500 in both | 15 |
+| …also clearing date-equal weighting, excl. missing-data slices | **9** |
+| **…reaching a date-clustered holdout t ≥ 2** | **0** |
+| **Max date-clustered holdout t, all 210 cohorts** | **1.86** |
+| 回封 **T-close** cohorts clearing | **1 of 84** (fit mean +0.023%) |
 | 龙回头 cohorts clearing | **0 of 42** |
 
-The cohorts are heavily overlapping slices of the same trades and are not independent tests.
-The count clearing sits *below* the coin-flip expectation, which is the cleanest single
-statement of the result: this is a population with negative drift, and the survivors are its
-right tail.
+**Read this per family, never pooled** (§1). The three families have drifts of +0.124%,
+−0.959% and −1.104% per trade, so a single coin-flip benchmark does not describe them: only the
+T+1-open family is near enough to zero for the ~25% two-window sign-test expectation to mean
+anything, and there it predicts 21 against 23 observed — *at* the null, not below it. The
+close-anchored families are far enough from zero that they throw essentially no chance
+survivors, so their counts read at face value. The cohorts are also heavily overlapping slices
+of the same trades and are not independent tests.
+
+**The verdict rests on the last two rows, not on the counts above them.** Zero cohorts of 210
+reach a date-clustered holdout t of 2, and the maximum anywhere is 1.86.
 
 ---
 
