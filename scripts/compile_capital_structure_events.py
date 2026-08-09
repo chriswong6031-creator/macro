@@ -20,28 +20,32 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
 import tempfile
 from typing import Any
 
 import pandas as pd
 
-from collectors.sec_capital_structure import FORM_POLICY, file_number_provenance_errors
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.sec_capital_structure import FORM_POLICY, file_number_provenance_errors  # noqa: E402
 from engine.capital_structure import (
     append_event_versions_strict,
     build_event_version,
     build_review_queue,
     link_registration_graph,
     route_form,
-)
+)  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     SOURCE_LEDGER_FILENAME,
     read_source_ledger,
     source_ledger_path,
-)
+)  # noqa: E402
 from engine.capital_structure.source_identity import (
     source_ledger_prefix_hash,
     validate_manifest_ledger,
-)
+)  # noqa: E402
 
 EVENT_COLUMNS = [
     "event_id", "logical_event_id", "accession", "cik", "ticker", "form",

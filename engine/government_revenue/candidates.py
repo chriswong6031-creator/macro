@@ -32,13 +32,67 @@ QUEUE_CONTRACT = "government_revenue_candidate_queue.v1"
 SCHEMA_VERSION = "1.0.0"
 _HEX_SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
+#: Award-change event types this gate turns into a candidate family.
+#:
+#: The first five are the action rail's.  The last two are their SNAPSHOT-rail
+#: analogues, admitted because excluding them was an accident of which rail was
+#: built first, not a protective decision:
+#:
+#: * ``reported_obligation_balance_changed`` is a move in the snapshot's
+#:   ``total_obligated_amount`` -- the same economic fact the action rail
+#:   publishes as ``obligation``/``deobligation``, read off the award's reported
+#:   balance instead of off one transaction.  Its direction therefore comes from
+#:   the SIGN of the move (see :data:`_SIGN_DIRECTED`), not from the event name,
+#:   because one snapshot type carries both directions.
+#: * ``award_value_changed`` is a compound snapshot move in which BOTH
+#:   ``current_award_amount`` and ``potential_award_amount`` changed.  It
+#:   strictly contains the admitted ``ceiling_changed``, so admitting the narrow
+#:   event while dropping the compound one deleted a ceiling change purely
+#:   because a second field moved with it.  The candidate carries ONLY the
+#:   ceiling component (see :data:`_FAMILY_AMOUNT_ID`).
+#:
+#: ``award_discovered_late`` is deliberately NOT here.  Late discovery is a
+#: disclosure state about when this pipeline first saw an award -- not a
+#: catalyst family -- and it already has its own fail-closed treatment on
+#: ``new_award`` below.
 _SUPPORTED_FAMILIES = {
     "obligation": "award_obligation_change",
     "deobligation": "award_obligation_change",
     "ceiling_changed": "award_ceiling_change",
     "option_exercised": "option_exercise",
     "new_award": "new_award",
+    "reported_obligation_balance_changed": "award_obligation_change",
+    "award_value_changed": "award_ceiling_change",
 }
+IDENTITY_BASIS_SOURCE_RECORD = entity_resolution.IDENTITY_BASIS_SOURCE_RECORD
+IDENTITY_BASIS_AWARD_LEVEL = entity_resolution.IDENTITY_BASIS_AWARD_LEVEL
+IDENTITY_BASES = (IDENTITY_BASIS_SOURCE_RECORD, IDENTITY_BASIS_AWARD_LEVEL)
+#: Printed on any candidate whose exact link rests on the award's recipient of
+#: record rather than on an identity the observation itself asserted.  The
+#: limitation is the user-facing half of the ruling: the link is exact, and it
+#: is a claim about the award as collected, not about what the transaction said.
+AWARD_LEVEL_IDENTITY_LIMITATION = (
+    "Issuer identity comes from the award's recipient of record as collected, not from the "
+    "transaction record itself; a recipient change recorded after collection would not be "
+    "reflected in this link."
+)
+
+#: Event types whose candidate amount is NOT the event's own primary amount.
+#:
+#: A compound ``award_value_changed`` event leads with the current-value delta,
+#: which is a different economic claim from the ceiling change this gate admits
+#: it for.  The candidate therefore names the ceiling component explicitly; the
+#: current-value component stays visible on the event, under its own semantic
+#: label, and never enters the candidate's amount or materiality.  A compound
+#: event that does not carry the ceiling delta produces no candidate at all.
+_FAMILY_AMOUNT_ID = {"award_value_changed": "delta_potential_award_amount"}
+
+#: Event types whose transmission direction is read from the sign of the
+#: admitted amount rather than from the event type alone.  The action rail
+#: splits direction into two type names (``obligation``/``deobligation``); the
+#: snapshot rail publishes one type for both, so the sign is the only honest
+#: source of direction for it.
+_SIGN_DIRECTED = {"reported_obligation_balance_changed"}
 
 
 def _authority() -> dict[str, Any]:
@@ -357,8 +411,18 @@ def _receipt_bound_event(event: Mapping[str, Any], *, analysis_as_of: datetime) 
     ) if _text(event.get("event_id")) and _text(event.get("record_id")) else None
 
 
-def _event_amount(event: Mapping[str, Any], *, effective_at: datetime) -> dict[str, Any] | None:
-    primary_amount_id = _text(event.get("primary_amount_id"))
+def _event_amount(
+    event: Mapping[str, Any], *, effective_at: datetime, amount_id: str | None = None
+) -> dict[str, Any] | None:
+    """Return the one amount fact this candidate is allowed to carry.
+
+    ``amount_id`` names a fact other than the event's own primary amount, for a
+    compound event whose lead amount is not the semantic being admitted.  A
+    named fact that the event does not carry is a refusal, never a fallback to
+    the primary: silently substituting a different economic quantity is exactly
+    the failure the override exists to prevent.
+    """
+    primary_amount_id = amount_id or _text(event.get("primary_amount_id"))
     if not primary_amount_id:
         return None
     amount = next((row for row in _as_rows(event.get("amounts")) if _text(row.get("id")) == primary_amount_id), None)
@@ -377,6 +441,25 @@ def _event_amount(event: Mapping[str, Any], *, effective_at: datetime) -> dict[s
         "as_of": _iso(amount.get("as_of")) or effective_at.isoformat(),
         "source_ref": _text(amount.get("source_ref")),
     }
+
+
+def _transmission_direction(event_type: str, *, amount_value: float) -> str:
+    """Return the candidate's direction from the event type and, where the type
+    carries both directions, the sign of the admitted amount.
+
+    ``deobligation`` is negative by name.  A snapshot-rail obligation-balance
+    move is ONE type covering both directions, so its sign is read instead; a
+    move of exactly zero is reported as ``unknown`` rather than being rounded
+    into a positive read.  Every other admitted type keeps the family's existing
+    reading, so this changes no already-published direction.
+    """
+    if event_type == "deobligation":
+        return "possible_negative"
+    if event_type in _SIGN_DIRECTED:
+        if amount_value < 0:
+            return "possible_negative"
+        return "possible_positive" if amount_value > 0 else "unknown"
+    return "possible_positive"
 
 
 def _graph_evidence_clocks(
@@ -561,6 +644,11 @@ def _reviewed_impact(
     issuer_company_id = _text(impact.get("issuer_company_id"))
     company_name = _text(impact.get("company_name"))
     resolution_state = _text(impact.get("resolution_state"))
+    identity_basis = _text(impact.get("identity_basis"))
+    if identity_basis is not None and identity_basis not in IDENTITY_BASES:
+        # An unrecognized basis is an unreadable provenance claim, not a
+        # permission to publish the link without one.
+        return None
     if not (
         ticker and _TICKER.fullmatch(ticker)
         and issuer_company_id and company_name
@@ -646,6 +734,7 @@ def _reviewed_impact(
         "ownership_path": edges,
         "economic_share": economic_share,
         "resolution_state": resolution_state,
+        "identity_basis": identity_basis,
         "evidence_refs": sorted(set(impact_evidence + company_evidence + [ref for edge in edges for ref in edge["evidence_refs"]])),
         "resolution_known_at": resolution_known_at,
     }, company)
@@ -662,7 +751,11 @@ def _candidate_from_event(
     if eligible_event is None or loaded.get("status") != "ready":
         return []
     source_event, receipts = eligible_event
-    amount = _event_amount(event, effective_at=source_event["effective_at"])
+    amount = _event_amount(
+        event,
+        effective_at=source_event["effective_at"],
+        amount_id=_FAMILY_AMOUNT_ID.get(source_event["event_type"]),
+    )
     if amount is None:
         return []
     receipt_urls = {receipt["_source_url"] for receipt in receipts}
@@ -720,7 +813,9 @@ def _candidate_from_event(
             "artifact_content_ids": artifact_content_ids,
             "issuer_resolution_fingerprint": resolution_fingerprint,
         })
-        direction = "possible_negative" if source_event["event_type"] == "deobligation" else "possible_positive"
+        direction = _transmission_direction(
+            source_event["event_type"], amount_value=amount["value"]
+        )
         evidence_refs = sorted(set(impact["evidence_refs"] + [receipt["ref_id"] for receipt in receipts]))
         result.append({
             "contract": CONTRACT,
@@ -741,6 +836,7 @@ def _candidate_from_event(
                 "contract": "government_recipient_resolution.v1",
                 "resolution_state": impact["resolution_state"],
                 "relation_semantic": "reviewed",
+                "identity_basis": impact["identity_basis"],
                 "graph_id": loaded["graph_id"],
                 "graph_digest": loaded["graph_digest"],
                 "evidence_refs": evidence_refs,
@@ -816,6 +912,11 @@ def _candidate_from_event(
                 "This is Government Revenue research context, not a trade or sizing signal.",
                 "Materiality ratio remains unavailable until an exact issuer-attributed denominator has its own receipt and clock.",
                 "Observed award amounts do not establish revenue timing, margin impact, or earnings impact.",
+                *(
+                    [AWARD_LEVEL_IDENTITY_LIMITATION]
+                    if impact["identity_basis"] == IDENTITY_BASIS_AWARD_LEVEL
+                    else []
+                ),
             ],
         })
     return result

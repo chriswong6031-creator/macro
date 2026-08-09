@@ -368,6 +368,13 @@ def _providers(critic_cfg: dict) -> list:
                     "client_max_retries", DEFAULT_CLIENT_MAX_RETRIES),
                 "client_timeout_s": critic_cfg.get(
                     "client_timeout_s", DEFAULT_CLIENT_TIMEOUT_S),
+                # AN HTTP BUDGET IS NOT A PROCESS BUDGET (W2, 2026-08-08).
+                # Without this key `build_providers` hands the Codex rung the
+                # HTTP timeout above, and `codex exec` is a SUBPROCESS that pays
+                # interpreter + config + harness load before the model answers.
+                # A codex rung that times out is a codex rung that never serves,
+                # and the lane silently completes on the metered floor instead.
+                "codex_timeout_s": critic_cfg.get("codex_timeout_s", 150.0),
             },
             opus_model=key[1],
         )

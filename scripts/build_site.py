@@ -4078,7 +4078,12 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     (≈1999→today) are shipped; everything is parallel arrays keyed by day index so
     the browser can rewind the whole regime core to any past date. The six warning
     flags are packed into one bitmask per day (decoded against `flag_order`)."""
-    h = hist[hist["quad"].notna()].copy()
+    # Labeled AND both axes present — a labeled-yet-axis-dark store row (the
+    # 2026-08-08 HK null-inflation-tail shape, commit 901282ec209) must never
+    # ship regardless of which lane wrote the store. Asia mirrors carry the
+    # same filter (build_hk / build_china).
+    h = hist[hist["quad"].notna()
+             & hist["growth_score"].notna() & hist["inflation_score"].notna()].copy()
 
     def r3(col: str) -> list:
         return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]
@@ -4509,6 +4514,58 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
     return doc
 
 
+def _us_prophet_refusals(site: Path, doc: "dict | None") -> "dict | None":
+    """The "passed on tonight" shelf context — ANTICIPATION §6.9 R5.
+
+    WHY THIS DERIVES FROM `doc` (the us_standouts board) AND NOT FROM
+    site/prophet/index.json's published receipts — the non-obvious part:
+
+    daily.yml runs `build_site` BEFORE `build_prophet`, and render.yml never runs
+    `build_prophet` at all.  So the index.json on disk at this moment is LAST NIGHT'S
+    run.  SSR-ing its receipt list under TONIGHT'S cards would print last night's
+    refusals beside tonight's board and claim a name was passed on when tonight's run
+    planned it — a wrong number wearing the right units, which the doctrine treats
+    exactly like a broken layout.  Deriving the shelf from the SAME board dict the cards
+    above it render from makes the two the same generation by construction: they can
+    disagree only if the board disagrees with itself.
+
+    The one thing that IS read from last night's index is the OPEN-PLAN ticker set, and
+    that is safe for the opposite reason: open plans persist across nights (a plan opened
+    last night is still open now), while every refusal REASON comes from tonight's rows.
+    Its own try/except, so an unreadable index costs at most the "already has a plan
+    running" grouping — never the whole shelf.
+
+    `originated_tickers` is deliberately NOT passed: this call site knows the admission
+    gate but not tonight's origination run, and a receipt it cannot honestly compute is
+    one it must not invent.  build_prophet, which does know, passes the set and gets the
+    `plan_not_built` grouping.  ONE function serves both (engine.prophet_bridge.
+    refusal_receipts) so the shelf and the published receipts can never drift.
+
+    Returns None on any failure — the panel simply renders without the shelf.
+    """
+    if not doc:
+        return None
+    try:
+        from engine.prophet_bridge import refusal_receipts  # noqa: PLC0415
+
+        open_tickers: list[str] = []
+        _pidx = site / "prophet" / "index.json"
+        if _pidx.exists():
+            try:
+                _pdoc = json.loads(_pidx.read_text())
+                open_tickers = [
+                    str(p.get("asset"))
+                    for p in (_pdoc.get("plans") or [])
+                    if isinstance(p, dict) and p.get("asset") and not p.get("closed")
+                ]
+            except Exception as _pe:  # noqa: BLE001 — costs the already-open group only
+                log.warning("prophet index unreadable for receipts (%s)", _pe)
+        return refusal_receipts(doc, open_tickers)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("prophet refusal receipts unavailable (%s)", e)
+        return None
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -4744,6 +4801,10 @@ def main() -> int:
     # into _attach_board_display_chips so the post-build_library re-render (one-build-lag
     # fix, below) reuses the EXACT same enrichment and can never silently diverge.
     us_standouts = _attach_board_display_chips(site, us_standouts)
+    # ANTICIPATION §6.9 R5 — the per-name "why not" shelf under the board. Derived from
+    # the SAME board dict the cards render from; see _us_prophet_refusals for the
+    # build-order reason it cannot read the published prophet index for its reason list.
+    us_prophet_refusals = _us_prophet_refusals(site, us_standouts)
     # W2 outcomes strip — names that left the buy board in the last 21 board dates,
     # with their pct return since first surfaced. Written by grade_us_board --nightly.
     # Absent on first run or when the nightly hasn't run yet → strip degrades silently.
@@ -5523,6 +5584,7 @@ def main() -> int:
         action_board=_ab,
         top_setups=top_setups,
         us_standouts=us_standouts,
+        us_prophet_refusals=us_prophet_refusals,
         theme_tape=theme_tape,
         us_board_outcomes=us_board_outcomes,
         us_track_ledger=us_track_ledger,
@@ -6129,6 +6191,15 @@ def main() -> int:
                     _fresh_su.get("as_of") != _prior_as_of
                     or (_fresh_su.get("staleness") or {}) != _prior_stale):
                 vm["us_standouts"] = _fresh_su
+                # §6.9 R5: the "passed on tonight" shelf is DERIVED from this board, so
+                # it moves with it for the same reason the Theme Tape below does — the
+                # whole point of deriving it from us_standouts (rather than from the
+                # published prophet index) is that the shelf and the cards above it are
+                # always the same generation. Leaving the first-pass receipts here would
+                # re-introduce, inside one page, exactly the cross-generation lie the
+                # derivation exists to prevent. Fail-soft by construction: the helper
+                # returns None on any error, which renders the panel without the shelf.
+                vm["us_prophet_refusals"] = _us_prophet_refusals(site, _fresh_su)
                 # The Theme Tape is a JOIN against this board, so it has to move with
                 # it: leaving the first-pass tape here would print counts that the
                 # rows underneath no longer support — a panel disagreeing with the

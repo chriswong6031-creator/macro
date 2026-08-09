@@ -24,6 +24,7 @@ the original blind spot exactly.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -238,13 +239,23 @@ def _filing_plan(monkeypatch, tmp_path):
                         root=tmp_path)
 
 
+#: A signal date the eligibility gate always accepts — NEVER a literal.
+#: These plans drive the REAL ``content_plan``, which is called with no
+#: ``today=``, so ``engine/marketing/content_studio.py:484`` ages the signal
+#: against the wall clock and drops anything past ``_MAX_SIGNAL_AGE_DAYS`` = 21.
+#: The pinned ``2026-07-28`` was a scheduled red: it hit 21 days on 2026-08-19
+#: and no demoted tape card was produced at all, so the fallback-seal assertion
+#: below failed with nothing wrong in the card renderer.
+#: Same idiom as tests/test_marketing_content.py:44.
+_FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
+
 _STUB_PLANS = [
     {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
      "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 66.0, "_signal_date": "2026-07-28",
+     "management_confidence": 66.0, "_signal_date": _FRESH,
      "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-     "signal_date": "2026-07-28"},
+     "signal_date": _FRESH},
 ]
 
 

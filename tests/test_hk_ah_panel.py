@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 
-from scripts.build_ah_panel import PREMIUM_LO, PREMIUM_HI, FX_MAX_STALE_DAYS, _tripwire, _build_pair
+from scripts.build_ah_panel import PREMIUM_LO, PREMIUM_HI, _tripwire, _build_pair
 
 
 def _idx(n=300, start="2024-01-01"):
@@ -103,11 +103,28 @@ def test_panel_shape():
 
 @pytest.mark.skipif(not PANEL_DIR.exists(), reason="panel not built")
 def test_panel_today_has_data():
+    """LIVENESS TRIPWIRE — the nightly must keep advancing the committed panel.
+
+    The staleness bound is derived from the panel's OWN recent spacing, never a
+    flat 5 days.  These are HK + mainland sessions, so the index carries market
+    closures far longer than a week: 72 gaps in the committed history exceed 5
+    days (max 216d), including 11 days at Chinese New Year 2026-02-24 and 9 days
+    at Golden Week 2025-10-09.  A flat 5-day window therefore reddens every
+    February and every October with the nightly perfectly healthy — a seasonal
+    false alarm, not a stale panel.  Bounding by the widest gap actually seen in
+    the last 60 sessions keeps the tripwire armed (a genuinely dead nightly still
+    walks past it) while letting the calendar's own holidays through.
+    """
     panel = pd.read_parquet(PANEL_DIR / "premium.parquet")
     panel.index = pd.to_datetime(panel.index)
     today = pd.Timestamp.today().normalize()
     last_date = panel.index.max()
-    assert (today - last_date).days <= 5, f"Panel stale: last date {last_date.date()}"
+    recent_gap = panel.index.to_series().diff().dt.days.tail(60).max()
+    limit = int(max(5, 0 if pd.isna(recent_gap) else recent_gap))
+    assert (today - last_date).days <= limit, (
+        f"Panel stale: last date {last_date.date()}, {(today - last_date).days}d ago "
+        f"(bound {limit}d, derived from the widest gap in the last 60 sessions so "
+        f"CNY/Golden-Week closures do not read as a dead nightly)")
     last_row = panel.iloc[-1].dropna()
     assert len(last_row) >= 20, f"Too few pairs with data today: {len(last_row)}"
 

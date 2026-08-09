@@ -34,14 +34,18 @@ import json
 import logging
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from engine import cn_reversal_sleeve as sleeve
-from engine import cn_reversal_sleeve_ledger as ledger
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import cn_reversal_sleeve as sleeve  # noqa: E402
+from engine import cn_reversal_sleeve_ledger as ledger  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_cn_reversal_sleeve")
 

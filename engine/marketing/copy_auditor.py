@@ -162,6 +162,11 @@ def _providers(acfg: dict) -> list:
                     "client_max_retries", DEFAULT_CLIENT_MAX_RETRIES),
                 "client_timeout_s": acfg.get(
                     "client_timeout_s", DEFAULT_CLIENT_TIMEOUT_S),
+                # An HTTP budget is not a process budget: `codex exec` is a
+                # subprocess and inherits this rung's own ceiling, not the
+                # client's (W2, 2026-08-08 — see engine/marketing/copywriter.py
+                # write_posts_llm_v2 for the measurements).
+                "codex_timeout_s": acfg.get("codex_timeout_s", 150.0),
             },
             opus_model=str(acfg.get("model") or "claude-opus-4-1"),
         )

@@ -245,6 +245,15 @@ AWARD_ACTION_VERSION_COLUMNS = [
     "piid",
     "recipient_name",
     "recipient_uei",
+    # Award-level recipient identity, attached under its own provenance and its
+    # own clock.  See ``AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS`` and
+    # ``_award_recipient_identity`` below: these are deliberately NOT the
+    # transaction's own ``recipient_*`` fields, and nothing may widen one into
+    # the other.
+    "award_recipient_uei",
+    "award_recipient_name",
+    "award_recipient_identity_basis",
+    "award_recipient_known_at",
     "action_id",
     "source_action_id",
     "action_date",
@@ -309,6 +318,21 @@ AWARD_EVENT_SNAPSHOT_STATE_FIELDS = tuple(
         "coverage_scope",
     }
 )
+#: The named basis under which an action row may carry the award's recipient of
+#: record.  The transactions rail never asserts a recipient identity of its own
+#: (35,140/35,140 null UEIs on the accrued ledger), so an action can only be
+#: exact-linked through the award it belongs to.  Attaching that identity is
+#: legitimate ONLY as a distinct, provenance-named claim on its own clock: "the
+#: award's recipient of record as collected", never "the transaction said so".
+AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS = "award_level_recipient_at_collection"
+#: The four action columns that carry it.  They are deliberately excluded from
+#: the state fields below.
+AWARD_RECIPIENT_IDENTITY_COLUMNS: tuple[str, ...] = (
+    "award_recipient_uei",
+    "award_recipient_name",
+    "award_recipient_identity_basis",
+    "award_recipient_known_at",
+)
 AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
     column
     for column in AWARD_ACTION_VERSION_COLUMNS
@@ -325,8 +349,32 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
         "receipt_verified",
         "event_eligible",
         "coverage_scope",
+        # The award-level identity is attached from a DIFFERENT rail on a
+        # DIFFERENT clock; the transaction never asserted it.  Letting it into
+        # the state hash would (a) make an award-level novation manufacture a
+        # fake revision of an action the source never re-issued, and (b) rewrite
+        # every accrued row's ``event_state_sha256`` the moment the column
+        # joined the canonical list -- a rewrite of history for a schema
+        # addition.  Excluded on both counts.
+        *AWARD_RECIPIENT_IDENTITY_COLUMNS,
     }
 )
+
+#: Canonical event-ledger columns that joined their list AFTER the projection
+#: generation binding was already written to a committed store.  The binding
+#: hashes the column list along with the rows, so an accrued store that predates
+#: an addition cannot reproduce the current-schema digest even when not one byte
+#: of it has changed.  ``award_event_projection_generation_matches`` consults
+#: this registry to tell that schema addition apart from a torn or tampered
+#: pair; see its docstring for exactly how narrow the allowance is.
+#:
+#: Append here whenever a column joins one of the two canonical lists.  Entries
+#: may be retired only once no committed store predates them, which in practice
+#: means after a full receipt-bound baseline has rewritten the ledger.
+AWARD_EVENT_PROJECTION_SCHEMA_ADDITIONS: dict[str, tuple[str, ...]] = {
+    "award_event_snapshots": (),
+    "award_action_versions": AWARD_RECIPIENT_IDENTITY_COLUMNS,
+}
 
 # Columns of the three legacy ledgers that carry numbers.  Everything else in
 # AWARD_COLUMNS/ACTION_COLUMNS/SNAPSHOT_COLUMNS carries strings but is nullable:
@@ -901,6 +949,40 @@ def _award_event_ledger_generation(
     return len(records), hasher.hexdigest()
 
 
+def _award_event_projection_binding(
+    *,
+    snapshot_columns: list[str],
+    snapshot_count: int,
+    snapshot_digest: str,
+    action_columns: list[str],
+    action_count: int,
+    action_digest: str,
+) -> dict[str, str | int]:
+    """Combine two ledger generations into the one immutable pair binding."""
+    combined_payload = {
+        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
+        "award_event_snapshots": {
+            "columns": snapshot_columns,
+            "row_count": snapshot_count,
+            "semantic_sha256": snapshot_digest,
+        },
+        "award_action_versions": {
+            "columns": action_columns,
+            "row_count": action_count,
+            "semantic_sha256": action_digest,
+        },
+    }
+    combined_digest = _sha256_json(combined_payload)
+    return {
+        "projection_generation_id": f"award-event-{combined_digest[:24]}",
+        "award_event_snapshots_semantic_sha256": snapshot_digest,
+        "award_event_snapshots_row_count": snapshot_count,
+        "award_action_versions_semantic_sha256": action_digest,
+        "award_action_versions_row_count": action_count,
+        "projection_semantic_sha256": combined_digest,
+    }
+
+
 def award_event_projection_generation(
     award_event_snapshots: pd.DataFrame,
     award_action_versions: pd.DataFrame,
@@ -923,28 +1005,61 @@ def award_event_projection_generation(
         ledger="award_action_versions",
         columns=AWARD_ACTION_VERSION_COLUMNS,
     )
-    combined_payload = {
-        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
-        "award_event_snapshots": {
-            "columns": AWARD_EVENT_SNAPSHOT_COLUMNS,
-            "row_count": snapshot_count,
-            "semantic_sha256": snapshot_digest,
-        },
-        "award_action_versions": {
-            "columns": AWARD_ACTION_VERSION_COLUMNS,
-            "row_count": action_count,
-            "semantic_sha256": action_digest,
-        },
-    }
-    combined_digest = _sha256_json(combined_payload)
-    return {
-        "projection_generation_id": f"award-event-{combined_digest[:24]}",
-        "award_event_snapshots_semantic_sha256": snapshot_digest,
-        "award_event_snapshots_row_count": snapshot_count,
-        "award_action_versions_semantic_sha256": action_digest,
-        "award_action_versions_row_count": action_count,
-        "projection_semantic_sha256": combined_digest,
-    }
+    return _award_event_projection_binding(
+        snapshot_columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        snapshot_count=snapshot_count,
+        snapshot_digest=snapshot_digest,
+        action_columns=AWARD_ACTION_VERSION_COLUMNS,
+        action_count=action_count,
+        action_digest=action_digest,
+    )
+
+
+def _pre_addition_columns(
+    frame: pd.DataFrame,
+    *,
+    ledger: str,
+    columns: list[str],
+) -> list[str] | None:
+    """Return the ledger's column list as it stood before the newest additions.
+
+    ``None`` when the frame is not a pre-addition store: either the ledger has
+    no registered additions, or the frame actually carries a value in one of
+    them.  A column with data in it is never dropped from a verification.
+    """
+    additions = AWARD_EVENT_PROJECTION_SCHEMA_ADDITIONS.get(ledger) or ()
+    if not additions:
+        return None
+    for column in additions:
+        if column in frame.columns and bool(frame[column].notna().any()):
+            return None
+    return [column for column in columns if column not in set(additions)]
+
+
+def _ledger_generation_matches(
+    state: dict,
+    frame: pd.DataFrame,
+    *,
+    ledger: str,
+    columns: list[str],
+    count_field: str,
+    digest_field: str,
+) -> list[str] | None:
+    """Return the column list under which this ledger reproduces its binding."""
+    candidates = [columns]
+    pre_addition = _pre_addition_columns(frame, ledger=ledger, columns=columns)
+    if pre_addition is not None:
+        candidates.append(pre_addition)
+    for candidate in candidates:
+        try:
+            count, digest = _award_event_ledger_generation(
+                frame, ledger=ledger, columns=candidate
+            )
+        except (TypeError, ValueError):
+            continue
+        if state.get(count_field) == count and state.get(digest_field) == digest:
+            return candidate
+    return None
 
 
 def award_event_projection_generation_matches(
@@ -952,7 +1067,24 @@ def award_event_projection_generation_matches(
     award_event_snapshots: pd.DataFrame,
     award_action_versions: pd.DataFrame,
 ) -> bool:
-    """Return whether a loaded ledger pair exactly matches its state binding."""
+    """Return whether a loaded ledger pair matches its state binding.
+
+    The binding hashes each ledger's *column list* along with its rows, so a
+    canonical column added after the binding was written makes the exact
+    recomputation disagree with a store that is otherwise untouched.  That is a
+    schema addition, not a torn pair, and it must not read as tampering: the
+    live publish lane refuses to serve a mismatched bundle and ``persist()``
+    refuses to replace a mismatched generation, so treating an addition as a
+    mismatch would brick both the moment a column joined the canonical list.
+
+    The fallback is deliberately narrow.  It only accepts a store whose rows
+    reproduce the binding **exactly** under the column list that existed when
+    the binding was written, and only while every newly added column is still
+    empty in that store.  A row that changed, a row that vanished, a partial
+    write, or a store that already carries values in the new columns all still
+    fail: the fallback proves the stored bytes ARE the bound bytes, which is the
+    property the refusal exists to check.
+    """
     if not isinstance(state, dict):
         return False
     try:
@@ -961,8 +1093,48 @@ def award_event_projection_generation_matches(
             award_action_versions,
         )
     except (TypeError, ValueError):
+        generation = None
+    if generation is not None and all(
+        state.get(field) == generation[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    ):
+        return True
+
+    snapshot_columns = _ledger_generation_matches(
+        state,
+        award_event_snapshots,
+        ledger="award_event_snapshots",
+        columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        count_field="award_event_snapshots_row_count",
+        digest_field="award_event_snapshots_semantic_sha256",
+    )
+    action_columns = _ledger_generation_matches(
+        state,
+        award_action_versions,
+        ledger="award_action_versions",
+        columns=AWARD_ACTION_VERSION_COLUMNS,
+        count_field="award_action_versions_row_count",
+        digest_field="award_action_versions_semantic_sha256",
+    )
+    if snapshot_columns is None or action_columns is None:
         return False
-    return all(state.get(field) == generation[field] for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS)
+    if snapshot_columns == AWARD_EVENT_SNAPSHOT_COLUMNS and action_columns == AWARD_ACTION_VERSION_COLUMNS:
+        # Both ledgers matched under the current schema, so the exact branch
+        # above already ruled; anything reaching here disagreed on the combined
+        # digest and is not a schema-addition case.
+        return False
+    binding = _award_event_projection_binding(
+        snapshot_columns=snapshot_columns,
+        snapshot_count=int(state["award_event_snapshots_row_count"]),
+        snapshot_digest=str(state["award_event_snapshots_semantic_sha256"]),
+        action_columns=action_columns,
+        action_count=int(state["award_action_versions_row_count"]),
+        action_digest=str(state["award_action_versions_semantic_sha256"]),
+    )
+    return all(
+        state.get(field) == binding[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    )
 
 
 def _receipt_binding(receipt: dict | None, *, rail: str) -> tuple[str, str, str]:
@@ -984,7 +1156,20 @@ def _receipt_binding(receipt: dict | None, *, rail: str) -> tuple[str, str, str]
 
 
 def _event_identity_from_award(award: dict) -> dict[str, Any]:
-    """Keep procedure-bound award identity without importing fuzzy recipient data."""
+    """Keep procedure-bound award identity; recipient identity is never widened here.
+
+    The row's own ``recipient_name``/``recipient_uei`` mean exactly one thing:
+    what THIS source response asserted about THIS observation.  Nothing in this
+    function may populate them from the award record, because an award-level
+    value copied onto a transaction would silently answer "who did this
+    transaction pay?" with today's recipient of record.
+
+    The rule since the action-rail identity ruling is *attach, never widen*: the
+    award's recipient of record is carried on separate, provenance-named columns
+    (:func:`_award_recipient_identity`) that declare their own basis and their
+    own retrieval clock, so a reader can always tell a transaction-asserted
+    identity from an award-level one attached at collection time.
+    """
     generated = _text(award.get("generated_award_id"))
     award_id = _text(award.get("award_id"))
     award_key = _text(award.get("award_key")) or _award_key(generated, award_id)
@@ -996,6 +1181,45 @@ def _event_identity_from_award(award: dict) -> dict[str, Any]:
         "award_id": award_id,
         "piid": award_id,
     }
+
+
+def _award_recipient_identity(award: dict, observed_at: str) -> dict[str, Any]:
+    """Attach the award's recipient of record as a distinct, named identity.
+
+    ``award`` is the enriched award record in scope at the action call site: its
+    ``recipient_uei``/``recipient_name`` come from the award-detail response
+    (:func:`enrich_award`) or, when detail was unavailable, from the award-search
+    result (:func:`normalize_award`).  Either way it is an *award-level* fact
+    retrieved on the award's own clock.
+
+    Two things make the claim honest rather than a widening:
+
+    * ``award_recipient_identity_basis`` names the basis
+      (``award_level_recipient_at_collection``), so no downstream consumer can
+      mistake it for something the transaction asserted; and
+    * ``award_recipient_known_at`` is the award record's retrieval clock, NOT the
+      transaction's effective time.  Stamping today's recipient with a January
+      action date is the point-in-time hazard the old boundary guarded against;
+      carrying the retrieval clock keeps the claim "the award's recipient of
+      record as collected", which is a true statement about today.
+
+    An award with neither a name nor a UEI attaches nothing at all -- a basis
+    label with no identity behind it would be provenance for a fact that does
+    not exist.
+    """
+    uei = _text(award.get("recipient_uei"))
+    name = _text(award.get("recipient_name"))
+    if not uei and not name:
+        return {}
+    identity: dict[str, Any] = {
+        "award_recipient_identity_basis": AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS,
+        "award_recipient_known_at": _text(award.get("known_at")) or _text(observed_at),
+    }
+    if uei:
+        identity["award_recipient_uei"] = uei
+    if name:
+        identity["award_recipient_name"] = name
+    return identity
 
 
 def normalize_award_event_snapshot(
@@ -1106,6 +1330,15 @@ def normalize_award_event_action(
 
     Rows without a source-issued action/transaction ID remain available to the
     legacy context table but are intentionally excluded from the event spine.
+
+    The ``recipient_*`` probes below read only ``raw`` -- the transactions
+    payload -- and USAspending does not put a recipient identity there, so they
+    almost never fire.  The award's recipient of record is attached separately
+    by :func:`_award_recipient_identity` under its own basis and clock, and both
+    the column and its ``source_field_presence`` entry are written: a populated
+    column with no manifest entry is skipped by the award-event reader
+    (``engine/government_revenue/award_events.py``), which is exactly how this
+    identity would ship dark.
     """
     if not isinstance(raw, dict):
         return None
@@ -1116,6 +1349,9 @@ def normalize_award_event_action(
     row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
     row.update(_event_identity_from_award(award))
     present: set[str] = {"action_id", "source_action_id"}
+    award_identity = _award_recipient_identity(award, observed_at)
+    row.update(award_identity)
+    present.update(award_identity)
     row["action_id"] = action_id
     row["source_action_id"] = action_id
     recipient = raw.get("recipient")
