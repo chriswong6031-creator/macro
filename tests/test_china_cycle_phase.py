@@ -30,13 +30,13 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
-import pytest
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 PASS_COUNT = 0
 FAIL_COUNT = 0
+FAILURES: list[str] = []
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -47,7 +47,24 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     else:
         FAIL_COUNT += 1
         print(f"  FAIL  {name}  {detail}")
-    assert cond, f"{name} {detail}"
+        FAILURES.append(f"{name}  {detail}".rstrip())
+
+
+try:
+    import pytest
+except ImportError:  # script mode is promised to work without pytest installed
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _gate_checks():
+        # check() is a soft assert (it used to `assert cond` inline, which aborted
+        # the test function on the FIRST miss) so one run reports EVERY miss;
+        # this flush is what makes a miss fail the test under pytest.
+        before = len(FAILURES)
+        yield
+        fresh = FAILURES[before:]
+        assert not fresh, "check() failures:\n  " + "\n  ".join(fresh)
 
 
 # ---------------------------------------------------------------------------
