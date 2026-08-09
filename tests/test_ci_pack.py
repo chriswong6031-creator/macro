@@ -628,6 +628,28 @@ def test_an_unusable_diff_runs_everything(monkeypatch: pytest.MonkeyPatch) -> No
     assert PACK.changed_files("main", "topic") is None
 
 
+def test_a_failed_git_call_is_discarded_even_when_it_printed_something(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Non-zero exit wins over stdout — partial output is not a diff.
+
+    `git diff` can print several names and THEN fail, and every falsy-check
+    downstream reads that truncated list as the complete answer: the missing
+    names are exactly the jobs that would then be skipped. Asserted here rather
+    than through `changed_files`, which the sibling tests reach by patching this
+    function and so cannot see inside it.
+    """
+    class _Result:
+        returncode = 128
+        stdout = "site/markets.html\nengine/market_state.py\n"
+
+    monkeypatch.setattr(PACK.subprocess, "run", lambda *a, **k: _Result())
+    assert PACK._git_stdout(["diff", "--name-only", "main...HEAD"]) is None, (
+        "a git call that exited non-zero was trusted because it had printed "
+        "something first — truncated output is the wrong-skip case"
+    )
+
+
 def test_an_unusable_diff_keeps_every_job_in_the_pack(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
