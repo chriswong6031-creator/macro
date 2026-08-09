@@ -1,7 +1,9 @@
 """Strict reviewed recipient-graph admission and coverage tests."""
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 
@@ -445,7 +447,7 @@ def test_new_graph_and_coverage_contracts_validate_with_existing_entity_coverage
     ).validate(coverage)
 
 
-def test_canonical_first_reviewed_graph_is_strict_and_keeps_absent_event_coverage_empty():
+def test_canonical_reviewed_graph_is_strict_and_keeps_absent_event_coverage_empty():
     graph = json.loads(
         (
             ROOT
@@ -458,32 +460,46 @@ def test_canonical_first_reviewed_graph_is_strict_and_keeps_absent_event_coverag
         _schema("government_recipient_entity_graph.v1.schema.json"),
         format_checker=FormatChecker(),
     ).validate(graph)
-    assert len(graph["evidence"]) == 4
-    assert len(graph["companies"]) == 1
-    assert len(graph["legal_entities"]) == 2
-    assert len(graph["identifiers"]) == 2
-    assert len(graph["ownership_edges"]) == 2
-    assert [edge["relationship"] for edge in graph["ownership_edges"]] == [
-        "issuer_legal_entity",
-        "wholly_owned",
+    assert graph["graph_id"] == "recipient-graph:reviewed:2026-08-08:defense19-v1"
+    assert len(graph["evidence"]) == 241
+    assert len(graph["companies"]) == 19
+    assert len(graph["legal_entities"]) == 101
+    assert len(graph["identifiers"]) == 203
+    assert len(graph["ownership_edges"]) == 101
+    assert sorted(company["ticker"] for company in graph["companies"]) == [
+        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
+        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
     ]
+    assert Counter(edge["relationship"] for edge in graph["ownership_edges"]) == {
+        "issuer_legal_entity": 19,
+        "wholly_owned": 82,
+    }
     assert graph["blocks"] == graph["conflicts"] == graph["overrides"] == []
-    loaded = load_recipient_entity_graph(graph, as_of="2026-08-03")
+    # The graph is analysed at its own knowledge instant: a curated artifact is
+    # replaced in place, so pinning a literal as-of here would be a scheduled
+    # failure on the next publication. The future-stamp tripwire is kept alive
+    # by asserting the header clock is not ahead of real time.
+    as_of = graph["graph_known_at"]
+    assert datetime.fromisoformat(as_of) <= datetime.now(timezone.utc)
+    assert graph["graph_effective_at"] == as_of
+    loaded = load_recipient_entity_graph(graph, as_of=as_of)
     assert loaded["status"] == "ready"
-    assert resolve_recipient(
-        _record(
-            recipient_uei="HNN4F9JZWDY8",
-            effective_at="2026-08-03T13:19:22+00:00",
-            known_at="2026-08-03T13:19:22+00:00",
-        ),
-        loaded,
-        as_of="2026-08-03",
-    )["issuer"] == {"company_id": "central:PLTR", "ticker": "PLTR"}
+    # PLTR was the sole issuer of the previous canonical graph; the Wave 9D
+    # republish must not drop it. AVAV proves the defense19 expansion is live.
+    for recipient_uei, expected in (
+        ("HNN4F9JZWDY8", {"company_id": "central:PLTR", "ticker": "PLTR"}),
+        ("MWKWXVSSC518", {"company_id": "central:AVAV", "ticker": "AVAV"}),
+    ):
+        assert resolve_recipient(
+            _record(recipient_uei=recipient_uei, effective_at=as_of, known_at=as_of),
+            loaded,
+            as_of=as_of,
+        )["issuer"] == expected
     coverage = build_recipient_resolution_coverage(
         [],
         [],
         loaded,
-        as_of="2026-08-03",
+        as_of=as_of,
         snapshot_amount_field="total_obligation",
         action_amount_field="federal_action_obligation",
     )

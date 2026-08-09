@@ -1,4 +1,4 @@
-"""International SEARCH universe — the pooled top-N names per market behind the
+r"""International SEARCH universe — the pooled top-N names per market behind the
 International Stock dashboard (site/intlstockdata/) and the per-market residual-
 alpha cross-section.
 

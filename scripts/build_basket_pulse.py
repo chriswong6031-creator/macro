@@ -63,6 +63,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger("basket_pulse_build")
 
 # ── constants ─────────────────────────────────────────────────────────────────

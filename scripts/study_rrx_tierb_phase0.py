@@ -37,12 +37,11 @@ PCT_WIN = 504               # causal trailing window (matches risk_radar convent
 PERM_N = 500                # permutation samples
 
 _HERE = Path(__file__).resolve().parent.parent   # repo root
+sys.path.insert(0, str(_HERE))
 
 
 def _repo_imports():
     """Add repo root to path so the script is runnable standalone."""
-    if str(_HERE) not in sys.path:
-        sys.path.insert(0, str(_HERE))
 
 
 _repo_imports()

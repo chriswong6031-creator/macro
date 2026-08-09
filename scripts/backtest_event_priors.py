@@ -46,20 +46,25 @@ from __future__ import annotations
 
 import json
 import pathlib
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.validation import (
     newey_west_tstat,
     benjamini_hochberg,
     deflated_sharpe,
     ret_moments,
-)
-from engine.trial_ledger import TrialLedger
-from lib import config
+)  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from lib import config  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # DSR / trial-ledger pre-declaration (m4 fix: pre-declare before any compute)

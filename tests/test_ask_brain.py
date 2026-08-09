@@ -205,6 +205,8 @@ def test_read_tool_schemas_no_write_tools():
     assert "list_options_contradictions" in names
     # Cycle-pattern tool (CPI P6 wave 1) must also be present
     assert "read_cycle_pattern_state" in names
+    # Release Radar inflation-intelligence tool must also be present
+    assert "read_inflation_intelligence" in names
     # W3 MPC consumer tool must also be present
     assert "read_mechanism_pathways" in names
     # TIL W5 NW citizenship thematic state tool must also be present
@@ -222,8 +224,8 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_earnings_evidence" in names
     # China flows tool (committed Tushare plane) must also be present
     assert "read_china_flows" in names
-    # Existing 29 read tools + 1 exact earnings-evidence reader.
-    assert len(names) == 30
+    # Existing 30 read tools + 1 inflation-intelligence reader.
+    assert len(names) == 31
 
 
 def test_dispatch_refuses_write_tools():
@@ -1471,7 +1473,7 @@ def test_classify_question_factor_jargon_only_does_not_seed_explain_factor_conte
 # --- 15d. Schema count ---
 
 def test_read_tool_schemas_count_and_options_tools_present():
-    """_read_tool_schemas() returns exactly 25 tools (7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 4 TIL page-wiring)."""
+    """Read schema inventory stays complete as inert context tools are added."""
     schemas = ab._read_tool_schemas()
     names = {s["name"] for s in schemas}
     # All four options tools present
@@ -1484,6 +1486,8 @@ def test_read_tool_schemas_count_and_options_tools_present():
         assert tool in names, f"{tool} missing from _read_tool_schemas()"
     # Cycle-pattern read tool (CPI P6 wave 1) present
     assert "read_cycle_pattern_state" in names
+    # Release Radar inflation-intelligence read tool present
+    assert "read_inflation_intelligence" in names
     # W3 MPC consumer tool present
     assert "read_mechanism_pathways" in names
     # TIL W5 NW citizenship thematic-state read tool present
@@ -1499,9 +1503,9 @@ def test_read_tool_schemas_count_and_options_tools_present():
     assert "read_earnings_evidence" in names
     # China flows read tool present (committed Tushare plane)
     assert "read_china_flows" in names
-    # Existing 29 read tools + 1 exact earnings-evidence reader.
-    assert len(schemas) == 30, (
-        f"Expected 30 read tools, got {len(schemas)}: {sorted(names)}"
+    # Existing 30 read tools + 1 inflation-intelligence reader.
+    assert len(schemas) == 31, (
+        f"Expected 31 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):

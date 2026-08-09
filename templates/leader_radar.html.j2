@@ -666,7 +666,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 {% set n_lead = ns.cnt_breakaway + ns.cnt_leadership %}
 <section class="lr-hero glass">
   <div class="lr-hero-read">
-    <div class="lr-eyebrow">{{ t('Leader Radar', '领袖雷达') }} · {{ t('Early-entry desk', '早入场台') }}</div>
+    <div class="lr-eyebrow">{{ t('Leader Radar', '龙头雷达') }} · {{ t('Early-entry desk', '早期入场') }}</div>
     <div class="lr-verdict-row">
       <span class="lr-verdict {% if _rl == 'broad_thrust' %}r-broad{% elif _rl == 'narrow_leadership' %}r-narrow{% else %}r-mixed{% endif %}">
         {% if _rl == 'broad_thrust' %}{{ t('Broad advance', '普涨行情') }}
@@ -1703,7 +1703,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW', 'Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW') }}</div>
         {{ t('Ignition trigger within 10 sessions: gap ≥+5% on ≥2× 20-day volume (gap_ignition), breakaway watch emerging (bw_emerging), or RS-line making 126-day new high while price has not (rs_line_nh — RS leads price). The Stage-2 foundation is a necessary precondition — ignition without a base almost always reverts.', '10个交易日内出现点火触发：跳空≥+5%且成交量≥20日均量的2倍（gap_ignition），突破观察新兴（bw_emerging），或RS线创126日新高而价格未创（rs_line_nh — RS领先价格）。阶段2基础是必要前提 — 无基础的点火几乎总是反转。') }}
         <div style="margin-top:8px;"><em>{{ t('Strongest leading observable:', '最强领先可观测指标：') }}</em> <span class="l-en"><code>rs_line_nh</code></span><span class="l-zh">相对强度先于股价创新高</span></div>
-        <div><em>{{ t('Confirm:', '确认：') }}</em> <span class="l-en"><code>gap_ignition</code>, <code>bw_emerging</code>, 2D MACD cross</span><span class="l-zh">放量跳空上行、突破酝酿中、2日MACD上穿</span></div>
+        <div><em>{{ t('Confirm:', '确认：') }}</em> <span class="l-en">a volume gap up, a breakout building, momentum turning up</span><span class="l-zh">放量跳空上行、突破酝酿中、2日MACD上穿</span></div>
       </div>
     </div>
 
@@ -1745,7 +1745,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <div class="pb-bd">
         <p>{{ t('A fire badge means the engine logged the event — not that an outcome is expected. Fires are logged and graded automatically after 21 sessions; sample too small for a track record yet.', '触发标记意味着引擎记录了该事件，而非预期某种结果。触发自动记录，21个交易日后自动评分；样本尚少，未成往绩。') }}</p>
         <div style="margin-top:8px;"><strong>{{ t('Lead signals (appear before price):', '领先信号（先于价格出现）：') }}</strong> <span class="l-en"><code>rs_line_nh</code>, <code>revision_positive</code>, <code>obv_divergence</code>, <code>insider_cluster</code></span><span class="l-zh">相对强度先于股价创新高、盈利预期转正、底部买盘悄然积累、内部人增持</span></div>
-        <div><strong>{{ t('Confirm signals (coincide with price):', '确认信号（与价格同步）：') }}</strong> <span class="l-en"><code>gap_ignition</code>, <code>bw_emerging</code>, <code>accum_evidence</code>, 2D MACD cross</span><span class="l-zh">放量跳空上行、突破酝酿中、成交量温和吸筹、2日MACD上穿</span></div>
+        <div><strong>{{ t('Confirm signals (coincide with price):', '确认信号（与价格同步）：') }}</strong> <span class="l-en">a volume gap up, a breakout building, quiet accumulation, momentum turning up</span><span class="l-zh">放量跳空上行、突破酝酿中、成交量温和吸筹、2日MACD上穿</span></div>
         <div><strong>{{ t('Lag signals (appear after price):', '滞后信号（价格后出现）：') }}</strong> <span class="l-en"><code>analyst_saturated</code>, <code>call_skew_rich</code></span><span class="l-zh">分析师一致看多、看涨期权被追捧</span></div>
         <div style="margin-top:8px;"><em>{{ t('Value-trap question:', '价值陷阱问题：') }}</em> {{ t('Is the multiple compression cyclical or structural? The chip prints the observable; the answer is yours to supply.', '估值倍数压缩是周期性还是结构性？信号指标呈现可观测指标；答案需要你自己判断。') }}</div>
       </div>

@@ -18,10 +18,15 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import cross_asset_trend as cat
-from engine.validation import backtest_core, block_bootstrap_ci, deflated_sharpe, ret_moments
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import cross_asset_trend as cat  # noqa: E402
+from engine.validation import backtest_core, block_bootstrap_ci, deflated_sharpe, ret_moments  # noqa: E402
+from lib import config  # noqa: E402
 
 TY = 252
 COST_BPS = float((config.load().get("cross_asset", {}).get("calibration", {}) or {}).get("cost_bps", 8))
