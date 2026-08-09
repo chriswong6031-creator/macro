@@ -655,6 +655,8 @@ on:
       # this entry a PR that edits only the schema — the exact edit that can break
       # the spine's fail-closed contract — never starts the job that would catch it.
       - "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json"
+      - "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md"
+      - "contracts/cn_tushare_minutes_manifest.v1.schema.json"
       # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
       # builder/fence/UI suites and the federal-award collector suites, plus
       # the one subject file no broad glob matches — engine/government_revenue/**
