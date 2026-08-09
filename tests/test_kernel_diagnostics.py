@@ -69,6 +69,25 @@ _REG = {
 _NOW = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
 
 
+def _days_ago(days: int) -> str:
+    """ISO date `days` before today (UTC) — NEVER hardcode a spine `as_of`.
+
+    ``build_lagging`` reads the REAL clock (``engine/neuralweb/lagging.py:271``)
+    and drops every entity row older than ``FIRE_LOOKBACK_DAYS`` = 63 (:109,
+    filter at :288-290).  When nothing survives it returns early at :295-301
+    with an empty ``by_family``.  A literal ``as_of`` is therefore a scheduled
+    red on two clocks: the repeat-fire fixture aged out of the 63-day lookback
+    on 2026-08-17, and the fail-open fixtures aged out on 2026-09-03 — where the
+    early return fires BEFORE the gap strings those tests assert on, and the
+    envelope/determinism siblings go silently vacuous over an empty payload.
+    Relative dates keep every fire inside both the 63-day lookback and the
+    21-day repeat window (``REPEAT_FIRE_WINDOW_DAYS``, :112, applied at :340) at
+    any clock.  Tests that inject their own clock (``_window_stats``'s explicit
+    ``today=``) are hermetic already and keep their literals.
+    """
+    return (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).date().isoformat()
+
+
 # ---------------------------------------------------------------------------
 # Test root fixture builder
 # ---------------------------------------------------------------------------
@@ -730,10 +749,10 @@ class TestLaggingBreadthUnconfirmed:
 class TestLaggingRepeatFire:
     def test_repeat_fire_flag_set_when_enough_prior_fires(self, tmp_path):
         """repeat_fire flag appears when (engine, symbol) fired >=3 times in 21d."""
-        today_str = "2026-07-04"
-        # 3 prior fires for (test_eng, AAPL) in 21d + the current fire
-        prior_dates = ["2026-06-14", "2026-06-18", "2026-06-22"]
-        current_date = "2026-07-01"
+        # 3 prior fires for (test_eng, AAPL) in 21d + the current fire.
+        # 4-day spacing, all inside the 21d repeat window AND the 63d lookback.
+        prior_dates = [_days_ago(17), _days_ago(13), _days_ago(9)]
+        current_date = _days_ago(3)
         spine_rows = []
         cols_default = {c: None for c in [
             "signal_id", "engine", "family", "ledger", "as_of", "symbol",
@@ -770,8 +789,8 @@ class TestLaggingRepeatFire:
 
     def test_repeat_fire_not_set_with_insufficient_priors(self, tmp_path):
         """repeat_fire flag NOT set when only 2 prior fires in 21d (< 3 threshold)."""
-        prior_dates = ["2026-06-18", "2026-06-22"]  # only 2
-        current_date = "2026-07-01"
+        prior_dates = [_days_ago(13), _days_ago(9)]  # only 2
+        current_date = _days_ago(3)
         cols_default = {c: None for c in [
             "signal_id", "engine", "family", "ledger", "as_of", "symbol",
             "scope_type", "universe", "horizon", "direction", "size_binding",
@@ -807,7 +826,9 @@ class TestLaggingRepeatFire:
 class TestLaggingFailOpen:
     def test_missing_regime_store_no_error(self, tmp_path):
         """Missing regime_history.parquet: no exception, gaps logged, hostile False."""
-        spine_rows = _minimal_spine(as_of="2026-07-01")
+        # Relative: a stale as_of empties the 63d window and lagging.py:295-301
+        # returns BEFORE the regime/breadth gaps this test asserts on exist.
+        spine_rows = _minimal_spine(as_of=_days_ago(7))
         root = _make_root(tmp_path, spine_rows=spine_rows)
         # No regime file written
         result = build_lagging(root)
@@ -818,7 +839,8 @@ class TestLaggingFailOpen:
 
     def test_missing_breadth_store_no_error(self, tmp_path):
         """Missing breadth.parquet: no exception, gaps logged, unconfirmed False."""
-        spine_rows = _minimal_spine(as_of="2026-07-01")
+        # Relative for the same reason as the regime sibling above.
+        spine_rows = _minimal_spine(as_of=_days_ago(7))
         root = _make_root(tmp_path, spine_rows=spine_rows)
         # No breadth file written
         result = build_lagging(root)
@@ -835,7 +857,9 @@ class TestLaggingFailOpen:
 class TestLaggingEnvelope:
     def test_envelope_keys_present_after_write(self, tmp_path, monkeypatch):
         """write_lagging stamps all five envelope keys as siblings."""
-        spine_rows = _minimal_spine(as_of="2026-07-01")
+        # Relative: with a stale as_of the payload is empty and the by_family
+        # sibling assertion below stops proving anything.
+        spine_rows = _minimal_spine(as_of=_days_ago(7))
         root = _make_root(tmp_path, spine_rows=spine_rows)
         # Inject synthetic registry so tests do not depend on synapse.yml state
         import engine.neuralweb.envelope as _env_mod
@@ -852,11 +876,16 @@ class TestLaggingEnvelope:
 
     def test_determinism(self, tmp_path):
         """Same spine/regime/breadth input produces same by_family output."""
-        spine_rows = _minimal_spine(as_of="2026-07-01")
+        # Relative: determinism over an EMPTY payload is trivially true, so a
+        # stale as_of would make this test pass for the wrong reason.  The
+        # regime row shares the date so the hostile join still has something to
+        # match.
+        as_of = _days_ago(7)
+        spine_rows = _minimal_spine(as_of=as_of)
         root = _make_root(
             tmp_path, spine_rows=spine_rows,
             regime_rows=[
-                {"date": "2026-07-01", "quad": "Q1",
+                {"date": as_of, "quad": "Q1",
                  "recession": False, "inflation_shock": False}
             ],
         )

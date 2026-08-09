@@ -33,6 +33,9 @@ from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from collectors import tushare_minutes_plane as plane
 
 _UNIVERSE_CHOICES = ("event-catalog", "spine", "file")

@@ -288,13 +288,21 @@ def test_base_adds_mailability_on_top_of_active():
 
 
 def test_base_match_is_the_python_half_of_base_sql():
+    from datetime import datetime, timedelta, timezone
+
     ok = {"email": "ada@example.com"}
     assert seg.base_match(ok) is True
     assert seg.base_match({"email": ""}) is False
     assert seg.base_match({"email": "  "}) is False
     assert seg.base_match({**ok, "deleted_at": "2026-01-01T00:00:00Z"}) is False
     assert seg.base_match({**ok, "is_anonymous": True}) is False
-    assert seg.base_match({**ok, "banned_until": "2030-01-01T00:00:00Z"}) is False
+    # A LIVE ban, stated as a hermetic pair like the sibling above: a bare
+    # base_match falls to the wall clock (app/email_segments.py:176), so the
+    # old literal "2030-01-01" was a scheduled red — on 2030-01-01 the ban
+    # expires and the row becomes mailable.  Pin both halves of the comparison.
+    now = datetime(2026, 7, 26, 12, 0, tzinfo=timezone.utc)
+    live_ban = (now + timedelta(days=1)).isoformat()
+    assert seg.base_match({**ok, "banned_until": live_ban}, now=now) is False
 
 
 def test_options_is_the_picker_and_carries_every_key():
