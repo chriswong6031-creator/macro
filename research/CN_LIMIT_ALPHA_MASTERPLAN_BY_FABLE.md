@@ -305,6 +305,40 @@ depth via P2/B2-class models graded by the forward ledger. A kill this wave clos
 constructions named above; the ore ledgers in #5091/#5093 carry 24 untested variants between
 them.
 
+### §6.3 W3-A ADJUDICATION (Fable, 2026-08-09) — the daily-resolution chapter closes
+
+**W3-A #5099 APPROVED** (full review cycle: 3 blockers + 9 fixes reconciled; peak-control
+built so nothing remains untested; reviewer's predictions reproduced exactly). **Verdict: the
+T+1 auction prices the WINDOW, not just the board.** 99 pre-registered cells, 10 clear the
+bar, **2 survive the drift control and both are `peak_best` — the foresight upper bound**; no
+implementable signal×horizon survives. The flagship cell (S3 big-day · ChiNext-20% · H=10)
+clears the pre-registered bar in both windows (deq t 2.65/2.62) and **dies at the
+matched-censoring, matched-date excess (t 1.75/1.98, median negative both windows) — "the
+cell is not a finding," its own receipt's words.** Structural findings: **the big-day class
+is ANTI-board** — the 连板 ladder multiplies P(board) 3.9× monotone while ranking P(big day)
+DOWN (7.47→3.62%), and board-predicting features carry ~nothing for big days (f6 3.96× vs
+0.73×) — a big up-day short of the limit is a different physical object from a board, so
+soft-label onset modeling at daily resolution is closed; **the near-miss is BEARISH relative
+to a matched seal** (C12: 0.38×/0.31× on next-day board, ~0.5× on windows) — sealing is
+load-bearing, almost-sealing is not attention-positive; **half to 60% of threshold-touching
+windows give the touch back before any scheduled exit** (O3−O2). **The foresight premium is
+the program's bridge number: peak_best excess +2.03%/t 3.55 (H=10 holdout) is the measured
+size of what lives inside the window that daily-scheduled exits cannot collect — the
+intraday battery's target once minute bars land.** Defect archaeology worth keeping: v0's
+10-day pair rule reused as a forward-chain rule truncated windows market-wide across
+CNY/National-Day closures (the truncated tail averaged +11.03% net, 100% force-closed — the
+whole first-draft flagship illusion); frozen quantile cuts are not their nominal quantiles
+out of sample (0.000% ties — distribution shift, not ties); a `None`-coerced check predicate
+could not fail (S7 class: verify checks can SEE failure).
+
+**FOUR families now measured and priced at daily resolution on this universe** (next-open
+strength · break-day weakness · pullback weakness · window targets), all through full
+adversarial review cycles, all with the probability structure REAL and well-ordered
+throughout. What stands per the ore law: the intraday battery (the foresight premium is its
+sized target), the L1 continuation-side regime merge, the F3 full-universe re-run, the
+forward ledger's live grading, and the collectors. Nothing in the exploration space is
+closed beyond the constructions named in the four receipts' ore ledgers.
+
 ## §7 Forward-ledger law (from Wave 1, standing)
 
 Every probability the system emits is stamped (feature_date, predict_date, model_version, era
