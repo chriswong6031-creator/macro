@@ -14,6 +14,24 @@ meta:
 # ---------------------------------------------------------------------------
 lanes:
 
+  # ── tushare-addons-pilot.yml / pilot ─────────────────────────────────────
+  - workflow: .github/workflows/tushare-addons-pilot.yml
+    job: pilot
+    steps:
+      - id: collect_tushare_addons
+        module: scripts.collect_tushare_addons
+        note: >
+          Manual, main-only, separately license-gated lane for exactly one
+          operator-reported TuShare add-on endpoint/session/SSE-or-SZSE ticker
+          pilot. No schedule, repository publication, ticker list, date range,
+          BSE, or backfill surface exists. The collector makes at most two
+          exact-session trade_cal calls plus one HTTPS endpoint call; the clock
+          is re-observed before that final call. Only metadata receipts may be
+          uploaded—never paid Parquet/rows—and the isolated raw directory must
+          be scanned and deleted before upload. Access-at-request-time, schema,
+          source/runtime, clock, and immutable-store receipts remain
+          context-display-only with no commercial/team/product/strategy authority.
+
   # ── daily.yml / collect ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: collect
@@ -620,6 +638,15 @@ lanes:
       - id: build_pick_lab
         module: scripts.build_pick_lab
         note: Pick Lab nightly runner — enriches snapshot, fires 27 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
+      - id: build_options_prophet
+        module: scripts.build_options_prophet
+        note: >-
+          Display-only Options Prophet shadow projection. Runs immediately after
+          build_pick_lab; preserves Flow Leaders source order, exposes only
+          ledger-admitted plab_flow_leader/plab_flow_washout fires, and carries
+          signing/positioning/forward-sample gates without creating a composite,
+          direction, trajectory, execution claim, or Macro Prophet weight.
+          outputs: [site/options_prophet/index.json]
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
@@ -674,6 +701,23 @@ lanes:
           on (date, ticker, kind) so a rebake or double run only ever ADDS information.
           MEASURE-DARK: nothing reads this ledger — it accrues the evidence the §6 promotion
           gauntlet must be pre-registered on. Non-fatal; runs after the arming pass.
+      - id: build_turn_watch
+        module: scripts.build_turn_watch
+        note: >
+          TURN WATCH desk (ANTICIPATION §6.9 R8) — nightly early-surfacing deck of names whose
+          earliest turn evidence fired in the last 5 sessions, with the operator's review
+          checklist pre-computed. Reads data/yahoo/*.parquet, data/baskets/membership.json and
+          site/basketdata/us_basket_turn.json; writes site/turn_watch/turn_watch.json ONLY —
+          its OWN site root, never site/prophet, which the engine job restores from HEAD
+          before staging (a deck written there is lost on a SUCCESSFUL night).
+          Advances NO ledger and writes no data/ path. DISPLAY TIER, ZERO SCORED AUTHORITY —
+          its context_score orders the deck for reading and nothing else. Optimised for RECALL,
+          not precision: the operator is the second-stage filter, so beyond-cap names publish
+          {ticker, triggers_fired, basket} — never a bare ticker with its reason stripped.
+          Leg (d) runs the engine.us_leader_pullback organ on the run-wide PIT RS
+          cross-section; every row stamps leader_pullback_source. Never-raise; non-fatal.
+          Measured 2026-08-08: ~135s over 702 graded names (budget 600s, self-reported as
+          runtime_seconds and ::warning past it).
       # parallel band
       - id: band
         cluster:
@@ -832,6 +876,16 @@ lanes:
           no direction claims, no fused scores. Non-fatal (always exits 0).
           Artifacts: data/options_session/{DATE}/{ROOT}.json,
           site/session/{ROOT}.json, data/options_session/ledger.parquet.
+      - id: build_options_signal_episode
+        module: scripts.build_options_signal_episode
+        note: >
+          OIP point-in-time learning seam. Consumes only the append-only, date-keyed
+          live_flow event stage (never capped feed_current), validates the monotonic
+          checkpoint, freezes exact decision episodes, and accrues explicitly labeled
+          aligned-bar H+60 proxies from the existing intraday cache. All decision and
+          training authority is false; coarse/delayed measurements are
+          training_eligible=false. Runs serially after build_session_digest and advances
+          committed ledgers only in COLLECT_LANE=nightly. Non-fatal.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
@@ -896,6 +950,10 @@ lanes:
           outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
+        note: >-
+          Non-fatal single-artifact R2 mirrors for flow index, Flow Leaders,
+          Leader Radar, and the Options Prophet shadow projection. The latter
+          publishes site/options_prophet/index.json at options_prophet/index.json.
       - id: mirror_terminal_context_r2
         module: scripts.mirror_terminal_context_r2
         note: >-

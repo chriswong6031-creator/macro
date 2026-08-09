@@ -111,12 +111,15 @@ def _throttle(api_name: str) -> None:
     _last_call[api_name] = time.monotonic()
 
 
-def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "pd.DataFrame | None":
+def query(api_name: str, fields: str = "", *, _retries: int = 2,
+          _return_empty: bool = False, **params) -> "pd.DataFrame | None":
     """Call one Tushare endpoint → DataFrame (ts_code normalised to .SS), or None.
 
     Returns None — never raises — when: no token (gate closed), the endpoint errors, access is
-    denied / credits are short, or the response is empty. A code-40203 rate-limit message is
-    retried once after a pause; other non-zero codes degrade to None.
+    denied / credits are short, or the response is empty. Callers that must distinguish a
+    successful zero-row response from an unavailable endpoint can opt into an empty DataFrame
+    with ``_return_empty=True``; the legacy default remains unchanged. A code-40203 rate-limit
+    message is retried once after a pause; other non-zero codes degrade to None.
 
     The return contract is unchanged, but an auth-class rejection (see ``_AUTH_CODES``) is now
     also LATCHED into module state readable via ``last_auth_error()`` — every caller that only
@@ -150,21 +153,41 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             # Log only the exception class so credential-bearing payload state cannot escape.
             log.warning("tushare %s request failed (%s)", api_name, type(e).__name__)
             return None
+        if not isinstance(d, dict):
+            return None
         code = d.get("code")
         if code == 0:
             # Authenticated round-trip: whatever was wrong with the credential is over.
             # Cleared on code==0 regardless of row count — an empty snapshot is a DATA
             # answer, and treating it as "still broken" would leave a healed token latched.
             _auth_error = None
-            data = d.get("data") or {}
-            cols = data.get("fields") or []
-            items = data.get("items") or []
-            if not cols:
+            data = d.get("data")
+            # A successful empty is attested only by the vendor's real schema plus
+            # an explicit items=[] payload.  Never synthesize caller-requested
+            # columns from malformed code-0 responses: doing so can checkpoint a
+            # permanently false empty source unit.
+            if not isinstance(data, dict):
                 return None
-            df = pd.DataFrame(items, columns=cols)
+            cols = data.get("fields")
+            items = data.get("items")
+            if (
+                not isinstance(cols, list)
+                or not cols
+                or not all(isinstance(column, str) and column for column in cols)
+                or not isinstance(items, list)
+                or not all(
+                    isinstance(item, (list, tuple)) and len(item) == len(cols)
+                    for item in items
+                )
+            ):
+                return None
+            try:
+                df = pd.DataFrame(items, columns=cols)
+            except (AssertionError, TypeError, ValueError):
+                return None
             if "ts_code" in df.columns:
                 df["ts_code"] = df["ts_code"].map(norm_ticker)
-            return df if len(df) else None
+            return df if len(df) or _return_empty else None
         msg = str(d.get("msg") or "")
         # 频率超限 (rate-limited): pause and retry once; everything else is a hard miss. Regular
         # endpoints (500/min) clear in ~1s; only report_rc (in _THROTTLE) needs its long backoff.

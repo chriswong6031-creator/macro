@@ -43,13 +43,17 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from lib import config, store
-from scripts import audit_common as ac
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, store  # noqa: E402
+from scripts import audit_common as ac  # noqa: E402
 
 log = logging.getLogger("audit_price_basis")
 

@@ -165,7 +165,12 @@ LOBE_DESCRIPTIONS = {
     "darkpool-context-latest": {
         "short": "",
         "full": "",
-        "src_fp": "c5aa57d102a33e84",
+        "src_fp": "88537194829c14ab",
+    },
+    "data-neuralweb-biopharma-seasonality-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "c7f9600b3b0cfd7f",
     },
     "dt-contra-state": {
         "short": "Per-ticker momentum-contra chip states aggregated from stock data into a governed Neural Web artifact — display only.",
@@ -211,6 +216,11 @@ LOBE_DESCRIPTIONS = {
         "short": "Append-only log of every significant change to what each part of the system is allowed to do.",
         "full": "This ledger records consequential authority changes: when a component gains or loses permission to act, when a tier changes, when an operator overrides, and when the AI reviewer proposes or applies a change. Each event type has exactly one designated writer to avoid conflicts. The ledger itself has no authority — reading it for display or a quarterly audit never changes any engine behavior. It grows slowly, an estimated five to twenty events per quarter.",
         "src_fp": "3ad9f7601532403f",
+    },
+    "government-revenue-latest": {
+        "short": "",
+        "full": "",
+        "src_fp": "827d325b428e0d2a",
     },
     "hypothesis-inbox": {
         "short": "Inbox where the AI reviewer deposits candidate research hypotheses for human review and registration.",
@@ -363,9 +373,9 @@ LOBE_DESCRIPTIONS = {
         "src_fp": "5ec2cae86867bdc0",
     },
     "options-entry-gate": {
-        "short": "Pre-registered options entry quality gate — currently building history, not yet scoring.",
-        "full": "This gate will eventually measure whether options market conditions at entry time improve trade outcomes across three pre-registered signal buckets. The gate is currently in a history-building phase with far fewer observations than the minimum needed to reach a verdict. All scoring is suspended until each bucket reaches at least 30 observations, expected around late 2026. The gate remains in shadow mode until the validation threshold is crossed.",
-        "src_fp": "3ffd8e6fa48b19c2",
+        "short": "Options-entry research gate over one canonical buy fire per symbol and date — descriptive only, with scoring frozen.",
+        "full": "This gate collapses repeated horizon rows to one buy fire per symbol and date before comparing conditioned and baseline outcomes. A comparison remains immature until both sides each have at least 30 fires across 30 dates and share at least 30 dates. Its bootstrap, permutation, and multiple-testing results are descriptive only: scoring and weight remain zero, and it cannot affect ranking, gates, sizing, or Macro. Promotion stays blocked until date-cluster inference, a frozen sequential-look budget, and a fresh post-amendment cohort are separately established.",
+        "src_fp": "20886055401dfe3d",
     },
     "options-entry-state": {
         "short": "A daily fusion of raw options-market fields per stock — shown for context only, no composite scores allowed.",
@@ -645,7 +655,7 @@ LOBE_DESCRIPTIONS = {
     "transmission-chains-state": {
         "short": "",
         "full": "",
-        "src_fp": "ee1aa8fabce4d2fc",
+        "src_fp": "537e2cfbd51aad02",
     },
     "treasury-watch": {
         "short": "Intraday TGA cash-flow detector with episode state — written each time the TGA moves, display only.",
