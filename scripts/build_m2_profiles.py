@@ -37,8 +37,7 @@ from typing import Any
 # Path bootstrap — allow running from any cwd
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 os.chdir(_REPO_ROOT)  # engine modules that do relative data/ reads need this
 
 logging.basicConfig(

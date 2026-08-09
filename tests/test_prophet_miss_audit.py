@@ -440,6 +440,9 @@ _ARTIFACT_KEYS = {
     "conversion", "themes", "basket_misses", "name_score_scorecard",
     "scan_tier",
     "priority_score_scorecard",
+    # ANTICIPATION §6.6 — entry status -> forward outcome, the evidence loop that revises
+    # the patience-first entry-value constants. Additive, display-tier, zero authority.
+    "entry_status_scorecard",
     "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
 _SUMMARY_KEYS = {
@@ -1234,7 +1237,13 @@ def test_no_module_outside_the_runner_imports_the_audit():
                # walk straight through the fence. So the fix for a naming-but-not-
                # importing file is this allowlist, not an `ast`-import narrowing, and not
                # a blanket tests/* exemption — a widened fence stops being a fence.
-               "tests/test_price_basis_graders.py"}
+               "tests/test_price_basis_graders.py",
+               # ANTICIPATION §6.6: the entry_status_scorecard block's suite. It imports the
+               # audit to pin the WIRING (that the block reaches the document and the
+               # forward-log row) — a block computed and then dropped is invisible, and only
+               # the audit can prove it is not. Same scoping as the entries above: one named
+               # test file, no authority path, no tests/* widening.
+               "tests/test_us_entry_status_remeasure.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):

@@ -30,8 +30,7 @@ import pandas as pd
 from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 from engine.opex import expiration_days, tag as opex_tag
 

@@ -121,7 +121,7 @@ import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 import pandas as pd
 
@@ -161,6 +161,96 @@ STAGE_TILT_DEMOTE_MIN_MATURED = 30   # §4 floor: n_matured_126 needed before di
 # stage_tilt block now states which it is. Fail-closed default: with no source record we
 # never claim a source exists. This is disclosure only — it never moves the leash.
 STAGE_TILT_EC_SOURCE_UNAVAILABLE = "unavailable"
+
+# ── ANTICIPATION §6.2 A1 — status-class admission (ported to the #5071 base) ──
+# The admission gate used to be an ACT-LEVEL threshold (``act_level >= 2``, with a
+# conviction escape in caution mode).  act_level is derived from the ladder's urgency
+# word (engine/entry_signal.py:_ACT_LEVEL), and every PATIENCE status maps to 0 or 1 —
+# so the US board was mathematically incapable of originating a plan before
+# confirmation, while the CN board (identical indicator engine, identical not_topped
+# veto) has featured the patience statuses since 2026-08-04.  Measured receipts:
+# research/prophet_us_audit/CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md (US admitted set
+# 27/27 buy_now/partial/buy_soon while the SAME board carried 23 bounce_wait rows) and
+# ENTRY_LATENESS_FORENSIC_2026-08-07.md (median +6.34% pre-signal run-up; entry placed
+# +2.72% above the signal close).
+#
+# The new admission is a STATUS CLASS, not a threshold:
+#   patience     — the turn is not confirmed yet; this is the pre-move bench.
+#   confirmation — the window is open now (the only class the old gate could see).
+# ``extended`` stays OUT (it is the anti-chase guard — a stretched leader is exactly
+# what this change exists to stop buying) and ``buy_soon`` stays OUT (it graded WORST
+# of the CN entry statuses; admitting it imports the chase without the evidence).
+ADMISSION_CLASS_PATIENCE = "patience"
+ADMISSION_CLASS_CONFIRMATION = "confirmation"
+#: §6.9 R3 — the EARLY-TURN starter tier.  Not a status class: a row already admitted
+#: by :data:`PATIENCE_STATUSES` is RE-classed to this when the mechanical turn
+#: signature fires under washout/leader-pullback context (engine/us_early_turn.py).
+#: It never widens admission on its own — see :func:`select_candidates`.
+ADMISSION_CLASS_EARLY_TURN = "early_turn_starter"
+PATIENCE_STATUSES = frozenset({"bounce_wait", "wait_pullback", "hold"})
+CONFIRMATION_STATUSES = frozenset({"buy_now", "partial"})
+ADMITTED_STATUSES = PATIENCE_STATUSES | CONFIRMATION_STATUSES
+
+#: The board ``dir`` values a candidate may carry.
+#:
+#: MEASURED, 2026-08-08: ``dir`` is a SIGNAL TONE, not a price arrow — the ladder-state
+#: map says so in as many words (``engine/cycles.py``: "``dir`` here drives the
+#: alert-feed colour ... it is a signal-tone, not a price arrow, which is why
+#: COUNTERTREND BOUNCE also uses 'caution'").  COUNTERTREND BOUNCE is the state that
+#: emits ``bounce_wait`` — "daily bottoming setup INSIDE a bearish higher-timeframe
+#: regime" — i.e. the patience cohort this whole change exists to admit.  On the
+#: 2026-08-07 board ALL 28 bounce_wait rows carry ``dir="caution"``; a literal
+#: ``dir == "up"`` filter admits ZERO of them and the inversion is inert.
+#:
+#: The tone bucket is shared with TOP WATCH (``extended``/``topping`` — the chase-risk
+#: cohort), so ``caution`` alone would be too wide.  It is the STATUS gate that makes
+#: this safe: ``extended`` and ``topping`` are refused by ADMITTED_STATUSES no matter
+#: what tone they carry, and only COUNTERTREND BOUNCE survives both tests.
+ADMITTED_DIRECTIONS = frozenset({"up", "caution"})
+
+#: ``down`` stays REFUSED **by recorded ruling** (§6.7, A1 2026-08-08).  It covers
+#: DECLINE and ROLLING OVER (genuinely bearish) and also BOTTOM WATCH ("NEARING A LOW ·
+#: GET READY"), which is arguably the earliest patience state of all — admitting it is
+#: a real widening that belongs to a ruling, not to this change.  The refusal is
+#: DISCLOSED (``intake_stats["refused_direction"]``), never silent: one row on the
+#: 2026-08-07 board is affected.
+REFUSED_DIRECTIONS = frozenset({"down"})
+
+#: The rest of the ladder's status vocabulary (engine/entry_signal.py:_HEADLINE).
+#: Refusing one of these is the RULE working; refusing anything else is vocabulary
+#: drift and is counted + named by the caller's stats dict instead of vanishing.
+_KNOWN_REFUSED_STATUSES = frozenset({
+    "await_confluence", "buy_soon", "watch", "extended",
+    "topping", "exit", "avoid", "blocked",
+})
+
+#: The selection rule this run's plans were originated under.  Stamped on every plan
+#: and on index.json so a later side-by-side can separate eras without guessing from
+#: dates (the #4942 era-stamp pattern).  CHARTERED LITERAL — §6.2 fixed this string and
+#: the §6.6 measurement lane filters on it; it is never re-dated to the build date.
+SELECTION_ERA = "anticipation-v1-2026-08-08"
+
+#: Publication-lag tolerance: how many SESSIONS the entry basis may trail the run's
+#: price basis before a plan is refused.  The forensic measured a median 5d and max
+#: 57d lag between the basis a plan's ``entry`` was taken from and the day the plan was
+#: actually served — ASTS was served 16.1% stale.
+#:
+#: STRUCTURAL NOTE (measured on the #5071 base, 2026-08-09): the 57d class is already
+#: IMPOSSIBLE here.  ``_resolve_origination_clocks`` refuses the whole run unless
+#: ``staleness.price_through`` is exactly ``last_session_on_or_before(recorded_at)``
+#: and the board declares ``delayed=false``/``unknown=false``/``basis=panel_majority``,
+#: so ``price_basis_date`` can never trail the run by even one session.  This guard is
+#: therefore a SECOND fence over that one rather than duplicate machinery: it measures
+#: the lag it was chartered to measure, discloses it on every plan, and fails closed if
+#: the clock contract is ever loosened.  Pinned by the lag-guard property test.
+STALE_BASIS_MAX_SESSIONS = 3
+
+#: Legacy shadow ledger (§6.5).  The OLD gate keeps running every night with ZERO
+#: authority so the two selections can be compared later on the same tape.
+LEGACY_N_CANDIDATES = 12          # FROZEN — the pre-ANTICIPATION cap, shadow only
+LEGACY_SHADOW_DIR = "prophet/legacy_shadow"
+LEGACY_SHADOW_SCHEMA = "prophet.legacy_shadow/v1"
+LEGACY_SHADOW_KEY = ("date", "ticker")
 
 # Monthly expiry calendar helper: US options use 3rd Friday of month.
 # We find the first monthly expiry >= min_expiry_date.
@@ -662,43 +752,96 @@ def load_quarantined_ids(path: "str | Path | None" = None) -> set[str]:
     return out
 
 
+def entry_status(row: Mapping[str, Any]) -> str:
+    """The board row's entry STATUS word, lowercased; ``""`` when unreadable.
+
+    ONE reader, so admission, the ``admission_class`` stamp and the shadow ledger can
+    never disagree about what a row's status is.
+    """
+    es = row.get("entry_signal")
+    if not isinstance(es, Mapping):
+        return ""
+    return str(es.get("status") or "").strip().lower()
+
+
+def admission_class(status: str) -> str | None:
+    """``"patience"`` / ``"confirmation"`` / ``None`` for a status outside the gate."""
+    key = str(status or "").strip().lower()
+    if key in PATIENCE_STATUSES:
+        return ADMISSION_CLASS_PATIENCE
+    if key in CONFIRMATION_STATUSES:
+        return ADMISSION_CLASS_CONFIRMATION
+    return None
+
+
 def select_candidates(
     standouts: dict,
     n: int | None = N_CANDIDATES,
+    stats: dict | None = None,
 ) -> list[dict]:
     """
-    Apply the pre-registered pick rule to us_standouts.json and return
-    a filtered, sorted list of at most n buy entries (``n=None`` → uncapped).
+    Apply the pick rule to us_standouts.json and return a filtered, sorted list of at
+    most n buy entries (``n=None`` → uncapped).
 
-    OURS (pre-registered pick rule — ADMISSION, unchanged by W1):
-      gate_go=True  → act_level >= 2 AND band != 'low'
-      gate_go=False → (act_level >= 2 OR score >= 60) AND band != 'low'
+    ADMISSION (ANTICIPATION §6.2 A1, ported 2026-08-09 — operator-ruled ship-live):
+      ``entry_signal`` present
+      AND ``dir`` in :data:`ADMITTED_DIRECTIONS`   (a TONE test, not a price arrow)
+      AND ``conviction.band != 'low'``
+      AND ``signal.tier_cascade`` in {T1,T2,T3} when present
+      AND ``entry_signal.status`` in :data:`ADMITTED_STATUSES`
 
-    ORDER (W1 2026-08-03, scored + operator-signed): the us_prophet_v1 priority score,
-    then act_level, then ticker — see the sort block below for the ruling citation and
-    the legacy fallback.  ``n`` remains for research/backward-compatible direct callers;
-    live plan origination always passes ``n=None`` and applies no positional slice.
+    The pre-2026-08-08 rule was an act-level threshold — ``act_level >= 2`` (gate_go),
+    or ``act_level >= 2 OR conviction.score >= 60`` (caution mode) — and it is
+    preserved verbatim, with zero authority, in :func:`legacy_admitted` so the shadow
+    ledger can keep grading it.  See the ADMISSION CLASS note in the constants block
+    for the measured reason it moved.
+
+    A row whose status is not in the vocabulary is REFUSED, not defaulted: the plan
+    must be able to state which class admitted it, and a row with no class has no
+    honest answer.  Refusals are counted into ``stats`` (``unknown_status`` /
+    ``unknown_status_values`` / ``refused_status`` / ``refused_direction``) rather than
+    dropped silently — a board that renamed a status word would otherwise empty the
+    intake with no alarm.
+
+    ORDER (W1 2026-08-03, scored + operator-signed) is UNCHANGED: the us_prophet_v1
+    priority score, then act_level, then ticker — see the sort block below.  ``n``
+    remains for research/backward-compatible direct callers; live plan origination
+    always passes ``n=None`` and applies no positional slice.
+
+    ``stats`` is an optional out-dict; never read, only written.
     """
-    gate_go: bool = standouts.get("gate_go", False)
     # buy[] ONLY. standouts["leaders"] (2026-07-28 leaders strip) is deliberately
     # excluded: those rows have no fresh entry signal, hence no plan geometry.
     buys: list[dict] = standouts.get("buy", [])
 
     selected: list[dict] = []
+    by_class: dict[str, int] = {
+        ADMISSION_CLASS_PATIENCE: 0, ADMISSION_CLASS_CONFIRMATION: 0}
+    unknown_status: list[str] = []
+    refused_status: dict[str, int] = {}
+    refused_direction: dict[str, int] = {}
+    refused_no_entry_signal = 0
+    refused_band_low = 0
+    refused_tier: dict[str, int] = {}
     for b in buys:
         # entry_signal null => skip
         es = b.get("entry_signal")
         if not es:
+            refused_no_entry_signal += 1
             continue
-        # direction filter — only BULL universe
-        if b.get("dir", "up") != "up":
+        # Tone filter — `dir` is the ladder's alert TONE, not a long/short arrow.
+        # `down` (DECLINE / ROLLING OVER / BOTTOM WATCH) is refused BY RULING and the
+        # refusal is disclosed; `caution` (COUNTERTREND BOUNCE, and TOP WATCH which the
+        # status gate refuses anyway) is admitted.  See ADMITTED_DIRECTIONS.
+        tone = str(b.get("dir", "up") or "up").strip().lower()
+        if tone not in ADMITTED_DIRECTIONS:
+            refused_direction[tone] = refused_direction.get(tone, 0) + 1
             continue
         conv = b.get("conviction") or {}
         band = conv.get("band", "")
-        score = conv.get("score", 0) or 0
-        act_level = es.get("act_level", 0) or 0
 
         if band == "low":
+            refused_band_low += 1
             continue
 
         # The wide board may display the earliest projected T4 lane, but Prophet's
@@ -709,17 +852,33 @@ def select_candidates(
         if isinstance(signal, Mapping):
             signal_tier = signal.get("tier_cascade")
             if signal_tier is not None and signal_tier not in ("T1", "T2", "T3"):
+                refused_tier[str(signal_tier)] = refused_tier.get(str(signal_tier), 0) + 1
                 continue
 
-        if gate_go:
-            if not (act_level >= 2):
-                continue
-        else:
-            # caution mode: OR logic
-            if not (act_level >= 2 or score >= 60):
-                continue
+        status = entry_status(b)
+        klass = admission_class(status)
+        if klass is None:
+            # Refused. `extended`/`buy_soon`/`topping`/... are deliberate exclusions;
+            # anything else is a vocabulary drift the caller must be able to see.
+            if status:
+                refused_status[status] = refused_status.get(status, 0) + 1
+            if status and status not in _KNOWN_REFUSED_STATUSES:
+                unknown_status.append(status)
+            continue
 
+        by_class[klass] += 1
         selected.append(b)
+
+    if stats is not None:
+        stats["admitted_by_class"] = dict(by_class)
+        stats["unknown_status"] = len(unknown_status)
+        stats["unknown_status_values"] = sorted(set(unknown_status))
+        stats["refused_status"] = dict(sorted(refused_status.items()))
+        stats["refused_direction"] = dict(sorted(refused_direction.items()))
+        stats["refused_no_entry_signal"] = refused_no_entry_signal
+        stats["refused_band_low"] = refused_band_low
+        stats["refused_tier"] = dict(sorted(refused_tier.items()))
+        stats["buy_rows"] = len(buys)
 
     # Sort: us_prophet_v1 priority score desc, act_level desc, ticker asc.
     #
@@ -732,22 +891,721 @@ def select_candidates(
     # "order by residual alpha (or an alpha+timing blend at the very top)"; the priority
     # score IS that ratified blend, so intake and board now share ONE ranking system.
     #
-    # ORDERING ONLY.  The admission block above is untouched, so for any given artifact
-    # the full ADMITTED SET is byte-identical to the pre-W1 rule.  A caller that elects
-    # to pass a finite ``n`` may still re-slice its own research sample, but the live
-    # originator consumes the entire order.  DNR:KILL-PROPHET-POP-MERGE is not re-opened:
-    # no new blend is constructed here and the graded buy population is unchanged.
-    # Pinned by tests/test_prophet_w1_intake_repair.py.
+    # ORDERING IS UNCHANGED BY ANTICIPATION A1: the sort key is the same function it
+    # was on 2026-08-03, so this change moves WHICH ROWS are admitted and never how the
+    # admitted rows are ranked.  A caller that elects to pass a finite ``n`` may still
+    # re-slice its own research sample, but the live originator consumes the entire
+    # order.  DNR:KILL-PROPHET-POP-MERGE is not re-opened: no new blend is constructed
+    # here, and the graded buy POPULATION (the board's own buy[] lane) is untouched —
+    # only which of that population the intake is allowed to plan.
+    # Pinned by tests/test_prophet_w1_intake_repair.py and
+    # tests/test_prophet_bridge_order_invariance.py.
     #
     # Legacy self-heal: a row with no numeric prophet.score sorts BELOW every scored row
     # and, among its own kind, by the OLD key — so a pre-v1 artifact selects exactly what
     # it selects today.  Key legs and the load-bearing ticker leg: _selection_sort_key.
     #
     # ``n=None`` returns the FULL admitted ordering.  The live caller applies duplicate-id
-    # and open-plan skips and originates every remaining candidate.  Admission and order
-    # are untouched; there is no positional opportunity gate in the plan lane.
+    # and open-plan skips and originates every remaining candidate.  There is no
+    # positional opportunity gate in the plan lane (#5071 lossless origination), and A1
+    # imports no cap: the "12→16 with sector cap 4" half of the §6.2 spec is SUPERSEDED
+    # by lossless origination and is deliberately not ported.
     selected.sort(key=_selection_sort_key)
     return selected if n is None else selected[:n]
+
+
+def legacy_admitted(standouts: dict) -> list[dict]:
+    """The PRE-ANTICIPATION gate, frozen verbatim — shadow ledger only, ZERO authority.
+
+    This is the rule :func:`select_candidates` ran until this change:
+
+      gate_go=True  → act_level >= 2 AND band != 'low'
+      gate_go=False → (act_level >= 2 OR conviction.score >= 60) AND band != 'low'
+
+    plus the same entry-signal-present, ``dir == 'up'`` and T1–T3 ``tier_cascade``
+    filters and the same sort.  It exists so §6.5's comparison contract is real: the
+    old selection keeps accruing on the same nightly tape, so "was the inversion an
+    improvement?" is answerable from two ledgers rather than from memory.  FROZEN — a
+    later change to the live admission must not touch this function, and the cap it
+    reports is :data:`LEGACY_N_CANDIDATES`, not the live population.
+
+    Returns the admitted rows UNCAPPED, in legacy (== current) sort order.
+    """
+    gate_go: bool = standouts.get("gate_go", False)
+    buys: list[dict] = standouts.get("buy", [])
+    selected: list[dict] = []
+    for b in buys:
+        es = b.get("entry_signal")
+        if not es:
+            continue
+        if b.get("dir", "up") != "up":
+            continue
+        conv = b.get("conviction") or {}
+        band = conv.get("band", "")
+        score = conv.get("score", 0) or 0
+        act_level = es.get("act_level", 0) or 0
+        if band == "low":
+            continue
+        signal = b.get("signal")
+        if isinstance(signal, Mapping):
+            signal_tier = signal.get("tier_cascade")
+            if signal_tier is not None and signal_tier not in ("T1", "T2", "T3"):
+                continue
+        if gate_go:
+            if not (act_level >= 2):
+                continue
+        else:
+            if not (act_level >= 2 or score >= 60):
+                continue
+        selected.append(b)
+    selected.sort(key=_selection_sort_key)
+    return selected
+
+
+# ---------------------------------------------------------------------------
+# Legacy shadow ledger (ANTICIPATION §6.5) — the OLD gate keeps accruing
+# ---------------------------------------------------------------------------
+# STORAGE: month-grouped DAY parts, ``data/prophet/legacy_shadow/YYYY-MM/
+# YYYY-MM-DD.parquet`` — the W7 storage law.  A nightly writes a NEW file and rewrites
+# nothing, so git stores one blob per night instead of re-storing a whole month.
+#
+# AUTHORITY: none.  Nothing in the live pick chain reads this store.  It is written so
+# that the operator's "check later" is answerable from data instead of memory.
+#
+# LANE: nightly is the sole advancer of forward stores.  The gate is TWO-SIDED by
+# construction (see :func:`append_legacy_shadow`) because a one-sided gate is how a
+# lane guard goes dead: a writer that only consults its own default branch writes in
+# every lane the moment a caller forgets the argument (the #5000 shape), and a writer
+# that only trusts its caller writes whatever the caller claims.
+
+def _legacy_shadow_dir(root: Any = None, store_dir: Any = None) -> Path:
+    """The store directory.
+
+    ``store_dir`` wins when supplied and is the form the BUILDER uses: it hands the
+    directory outright (``LEDGER_DIR / "legacy_shadow"``) so the store is always
+    co-located with the forward ledger and any caller that redirects one redirects the
+    other.  Deriving it from a repo root instead would fail OPEN — a harness that
+    points ``LEDGER_DIR`` somewhere unexpected would silently write the real data tree.
+    """
+    if store_dir is not None:
+        return Path(store_dir)
+    if root is None:
+        try:
+            from lib import config  # noqa: PLC0415
+            base = Path(config.data_dir())
+        except Exception:  # noqa: BLE001
+            base = Path(__file__).resolve().parent.parent / "data"
+    else:
+        base = Path(root) / "data"
+    return base / LEGACY_SHADOW_DIR
+
+
+def _legacy_shadow_part_path(asof: str, root: Any = None, store_dir: Any = None) -> Path:
+    """``legacy_shadow/YYYY-MM/YYYY-MM-DD.parquet`` — keyed by the RUN's asof."""
+    day = str(asof)[:10]
+    return _legacy_shadow_dir(root, store_dir) / day[:7] / f"{day}.parquet"
+
+
+def legacy_shadow_rows(
+    standouts: dict,
+    asof: str,
+    existing_ids: set[str] | None = None,
+    active_keys: set[str] | None = None,
+) -> list[dict]:
+    """One row per legacy-admitted candidate for ``asof`` (§6.5 schema).
+
+    ``would_have_planned`` replays the FULL legacy path, not just the gate: the same
+    duplicate-id and open-plan skips ``originate_plans`` applies, then the legacy
+    12-slot cap over the survivors (the P4 filters-then-cap order).  Without the skips
+    the flag would over-count every night on which the old gate's top rows were names
+    it had already planned — which is precisely the failure P4 was built to fix, and it
+    would make the legacy arm look busier than it ever was.
+
+    ``skip_reason`` names why a row that cleared the gate still would not have been
+    planned: ``duplicate_id`` / ``open_plan`` / ``below_cap`` / ``None``.
+    """
+    admitted = legacy_admitted(standouts)
+    standouts_asof = standouts.get("as_of", asof)
+    existing = set(existing_ids or ())
+    active = set(active_keys or ())
+
+    rows: list[dict] = []
+    seen_ids: set[str] = set()
+    planned = 0
+    for index, b in enumerate(admitted, start=1):
+        ticker = str(b.get("ticker") or "")
+        if not ticker:
+            continue
+        es = b.get("entry_signal") or {}
+        anchor = (b.get("hold") or {}).get("anchor")
+        plan_id = _make_id(ticker, "BULL", anchor if anchor else standouts_asof)
+
+        skip_reason: str | None = None
+        if plan_id in existing or plan_id in seen_ids:
+            skip_reason = "duplicate_id"
+        elif active and plan_key(ticker, "BULL") in active:
+            skip_reason = "open_plan"
+        else:
+            seen_ids.add(plan_id)
+
+        would_plan = False
+        if skip_reason is None:
+            if planned < LEGACY_N_CANDIDATES:
+                would_plan = True
+                planned += 1
+            else:
+                skip_reason = "below_cap"
+
+        act_level = es.get("act_level")
+        rows.append({
+            "schema": LEGACY_SHADOW_SCHEMA,
+            "date": str(asof)[:10],
+            "ticker": ticker,
+            "entry_signal": entry_status(b) or None,
+            "act_level": int(act_level) if isinstance(act_level, (int, float))
+            and not isinstance(act_level, bool) else None,
+            # `score` is the RANKING key (us_prophet_v1 priority) — the number `rank` is
+            # derived from.  `conviction_score` is the number the legacy caution-mode
+            # escape actually gated on.  Both ship: one column named `score` could only
+            # ever be read as the wrong one of the two.
+            "score": _priority_score(b),
+            "conviction_score": _conviction_score(b),
+            "rank": index,
+            "would_have_planned": would_plan,
+            "skip_reason": skip_reason,
+            "gate_go": bool(standouts.get("gate_go", False)),
+            "board_asof": str(standouts_asof)[:10],
+            "cap": LEGACY_N_CANDIDATES,
+            "selection_era": SELECTION_ERA,
+            "authority": "none",
+        })
+    return rows
+
+
+def append_legacy_shadow(
+    rows: list[dict],
+    asof: str,
+    root: Any = None,
+    store_dir: Any = None,
+    *,
+    lane_nightly: bool,
+) -> int:
+    """Append shadow rows to the run day's part.  Returns that part's row count, or 0.
+
+    ``lane_nightly`` is KEYWORD-ONLY and has NO DEFAULT: omitting it is a ``TypeError``,
+    not a permissive branch.  That is deliberate.  A lane guard whose production caller
+    passes nothing and whose default branch is "allow" is a guard that only the test
+    suite ever exercises (#5000); a guard with no default cannot be reached at all
+    without the caller stating its lane.
+
+    The gate is then TWO-SIDED: the caller's declared lane AND this process's own
+    ``ledger_lane.nightly_advance_enabled()`` must both be true.  The caller's half
+    makes the gate visible at the production call site; the module's half means a
+    caller that claims nightly in a render/intraday process still writes nothing.
+
+    Keep-FIRST on ``(date, ticker)``: a second run on the same night rewrites nothing
+    and adds nothing, so idempotence does not depend on the caller being careful.
+    """
+    from engine import ledger_lane  # noqa: PLC0415
+
+    if not lane_nightly:
+        log.info("prophet_bridge: legacy shadow append gated — caller is not the "
+                 "US nightly lane")
+        return 0
+    if not ledger_lane.nightly_advance_enabled():
+        log.info("prophet_bridge: legacy shadow append gated — COLLECT_LANE is not "
+                 "the US nightly lane")
+        return 0
+    if not rows or not asof:
+        return 0
+    try:
+        new = pd.DataFrame(rows)
+        path = _legacy_shadow_part_path(asof, root, store_dir)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            prior = pd.read_parquet(path)
+            columns = list(dict.fromkeys([*prior.columns, *new.columns]))
+            combined = pd.concat(
+                [prior.reindex(columns=columns), new.reindex(columns=columns)],
+                ignore_index=True)
+        else:
+            combined = new
+        combined = combined.drop_duplicates(subset=list(LEGACY_SHADOW_KEY), keep="first")
+        combined.to_parquet(path, index=False)
+        return int(len(combined))
+    except Exception as exc:  # noqa: BLE001 — a shadow ledger never breaks the nightly
+        # Bare print at line start (house law): a logger prefix makes GitHub drop it.
+        print(f"::warning title=prophet-legacy-shadow::legacy shadow append failed: {exc}",
+              flush=True)
+        log.warning("prophet_bridge: legacy shadow append failed: %s", exc)
+        return 0
+
+
+def load_legacy_shadow(root: Any = None, *, days: Iterable[str] | None = None,
+                       store_dir: Any = None) -> pd.DataFrame:
+    """Read the shadow store as ONE frame (studies / tests).  Empty frame when absent."""
+    store = _legacy_shadow_dir(root, store_dir)
+    if not store.exists():
+        return pd.DataFrame()
+    wanted = {str(d)[:10] for d in days} if days is not None else None
+    frames: list[pd.DataFrame] = []
+    for part in sorted(store.glob("*/*.parquet")):
+        if wanted is not None and part.stem not in wanted:
+            continue
+        try:
+            frames.append(pd.read_parquet(part))
+        except Exception as exc:  # noqa: BLE001 — one bad part must not blind the rest
+            log.warning("prophet_bridge: shadow part %s unreadable (%s)", part.name, exc)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+# ---------------------------------------------------------------------------
+# Publication-lag guard (ANTICIPATION §6.2 A1)
+# ---------------------------------------------------------------------------
+# MEASURED DEFECT (ENTRY_LATENESS_FORENSIC_2026-08-07 §1c): the date whose close a
+# plan's `entry` was taken from trailed the day the plan was actually SERVED by a
+# median of 5 days (p75 11, max 57), and price moved a median +3.03% over that lag.
+# ASTS was served 16.1% above the close its entry was priced at.
+#
+# WHAT THE #5071 BASE ALREADY DOES (verified 2026-08-09, not assumed):
+# `_resolve_origination_clocks` refuses the entire run unless
+# `staleness.price_through == last_session_on_or_before(recorded_at)` and the board
+# declares `delayed=false`, `unknown=false`, `basis="panel_majority"`.  So the price
+# basis cannot trail the run by even one session, and the 57d class is structurally
+# impossible rather than merely unlikely.  Re-deriving an entry from "the current
+# close" therefore has NOTHING to re-derive from — the entry ALREADY is that close.
+#
+# WHAT IS LEFT, and what this guard does: measure the lag anyway, DISCLOSE it on every
+# plan (`entry_basis`), and REFUSE any candidate whose measured lag exceeds the
+# tolerance.  It is a second fence over a stronger first fence, so in production it
+# fires never — which is exactly the property the test pins.  If the clock contract is
+# ever loosened, this fence still fails closed instead of publishing a stale price.
+
+def entry_basis_date(row: Mapping[str, Any], price_basis_date: str | None) -> tuple[str, str]:
+    """``(basis_date, source)`` — the date whose close ``entry_signal.spot`` came from.
+
+    ``price_basis_date`` is the run's PROVEN ranked-price vintage (#5071's six-clock
+    contract), and it is the honest answer: the board's `price`/`entry_signal.spot`
+    pair is written at that watermark.  The row's own ``signal_asof`` is the SIGNAL's
+    vintage, not the price's — on the 2026-08-07 board every row reads
+    ``signal_asof=2026-08-05`` while ``price``/``spot`` are the 08-07 closes — so
+    reading it here would manufacture a two-session price lag that does not exist.
+    It is disclosed separately as ``signal_basis_date``.
+    """
+    if price_basis_date:
+        text = str(price_basis_date).strip()[:10]
+        if text:
+            return text, "staleness_price_through"
+    value = row.get("signal_asof")
+    if value:
+        text = str(value).strip()[:10]
+        if text:
+            return text, "board_signal_asof"
+    return "", "unresolved"
+
+
+def _business_days_between(start: str, end: str) -> int | None:
+    """Business days after ``start`` through ``end``; ``None`` when unusable.
+
+    OVERSTATES the lag on a week containing a market holiday (it counts calendar
+    business days, not sessions).  That direction is deliberate: erring toward "stale"
+    refuses a plan, and erring toward "fresh" publishes at a price the tape has left
+    behind.
+    """
+    try:
+        start_ts = pd.Timestamp(start)
+        end_ts = pd.Timestamp(end)
+    except Exception:  # noqa: BLE001
+        return None
+    if pd.isna(start_ts) or pd.isna(end_ts) or end_ts < start_ts:
+        return None
+    return int(len(pd.bdate_range(start_ts + pd.Timedelta(days=1), end_ts)))
+
+
+def _sessions_between(price_history: "pd.DataFrame | None", start: str, end: str) -> int | None:
+    """Sessions strictly after ``start`` and up to ``end``, counted on the NAME's tape.
+
+    The ticker's own index is the honest calendar: it already excludes weekends, market
+    holidays and any day the name did not trade.  ``None`` when the dates are unusable;
+    the caller falls back to a business-day count and says so.
+    """
+    if price_history is None or getattr(price_history, "empty", True):
+        return None
+    try:
+        start_ts = pd.Timestamp(start)
+        end_ts = pd.Timestamp(end)
+    except Exception:  # noqa: BLE001
+        return None
+    if pd.isna(start_ts) or pd.isna(end_ts):
+        return None
+    try:
+        index = price_history.index
+        return int(((index > start_ts) & (index <= end_ts)).sum())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def resolve_entry_basis(
+    row: Mapping[str, Any],
+    *,
+    price_basis_date: str | None,
+    asof: str,
+    price_history: "pd.DataFrame | None" = None,
+) -> dict[str, Any]:
+    """The publication-lag disclosure block stamped on every plan.
+
+    ``state`` is ``"current"`` when the measured lag is within
+    :data:`STALE_BASIS_MAX_SESSIONS`, and ``"stale"`` when it is not — the caller
+    refuses a stale candidate with a printed reason.  ``signal_lag_sessions`` is the
+    SEPARATE, non-blocking disclosure of how old the row's SIGNAL is relative to the
+    price it is priced at; that lateness is answered by the entry ZONE (§6.9 R3), not
+    by refusing the plan.
+    """
+    basis_date, basis_source = entry_basis_date(row, price_basis_date)
+    lag = _sessions_between(price_history, basis_date, asof) if basis_date else None
+    lag_basis = "sessions"
+    if lag is None:
+        lag = _business_days_between(basis_date, asof) if basis_date else None
+        lag_basis = "business_days"
+    signal_basis = str(row.get("signal_asof") or "").strip()[:10] or None
+    signal_lag = None
+    if signal_basis and basis_date:
+        signal_lag = _sessions_between(price_history, signal_basis, basis_date)
+        if signal_lag is None:
+            signal_lag = _business_days_between(signal_basis, basis_date)
+    stale = lag is not None and lag > STALE_BASIS_MAX_SESSIONS
+    return {
+        "basis_date": basis_date or None,
+        "basis_source": basis_source,
+        "run_asof": asof,
+        "lag": lag,
+        "lag_basis": lag_basis if lag is not None else "unresolved",
+        "max_lag": STALE_BASIS_MAX_SESSIONS,
+        "state": "stale" if stale else "current",
+        # The SIGNAL's own vintage — disclosed, never a refusal reason.  A late signal
+        # stops implying a late PRICE because the plan waits at its zone.
+        "signal_basis_date": signal_basis,
+        "signal_lag_sessions": signal_lag,
+        "era": SELECTION_ERA,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Structure-anchored entry zones (ANTICIPATION §6.9 R3)
+# ---------------------------------------------------------------------------
+# THE DEFECT (§6.9, operator-verified): even the patience picks were up hard over the
+# prior two sessions at admission, because the plan's entry has always been the asof
+# CLOSE.  A signal that arrives late therefore implies a late PRICE, and the two are
+# not the same thing: the structure the name is turning at does not move just because
+# our state machine took another two sessions to label it.
+#
+# THE ANSWER: every plan carries the structure-anchored band it is willing to buy at,
+# and the plan's stance names the band.  The disclosed `entry` stays the point-in-time
+# price_basis close — a plan never fabricates a fill it did not get — but the reader is
+# told to WAIT at the zone instead of paying the print.  The R4 receipt (#5007, 933
+# fires / 504 sessions) measured exactly this mechanic: median entry-vs-low 7.26% →
+# 2.29%, half-stable ±0.75pp.  The ZONE is what reproduced there; the RESET_TURN signal
+# standalone did not, and is not promoted here either.
+#
+# Three zone classes, in precedence order:
+#   wait_reset  — the name is stretched on the daily AND the 3D stochastic (the NVDA
+#                 acceptance).  Reset band only, and the plan may never ask the reader
+#                 to pay above the last print.
+#   reset_band  — a patience-status row.  The board's own MA10/MA20 reset band; this is
+#                 the ADAM acceptance shape (a Continuation/Ready leader-pullback's zone
+#                 is the RESET band with chase-above at the pullback high, never the
+#                 post-pop range).
+#   accumulate  — a confirmation-status row: the cycle-low-anchored accumulate band the
+#                 entry ladder already computes, with its chase line above spot.
+
+ZONE_SCHEMA = "prophet.entry_zone/v1"
+ZONE_CLASS_ACCUMULATE = "accumulate"
+ZONE_CLASS_RESET_BAND = "reset_band"
+ZONE_CLASS_WAIT_RESET = "wait_reset"
+
+ZONE_STANCE_ACCUMULATE = "accumulate"
+ZONE_STANCE_WAIT = "wait"
+ZONE_STANCE_STARTER = "starter"
+
+#: How long a zone stays live before its expiry rule applies.  Floor, in sessions — the
+#: board's own ``entry_signal.timing.opens_in_days_hi`` raises it when the ladder says
+#: the window opens later than that.  10 sessions ≈ two trading weeks, the span over
+#: which a daily-cycle reset either happens or the premise has moved on.
+ZONE_EXPIRY_SESSIONS_MIN = 10
+
+#: Expiry classes.  A washout-class name is V-RISK: a washed-out recovery frequently
+#: never revisits its band (the BABA 90→128 and NVDA V-bottom receipts), so letting the
+#: zone simply die would mean the plan misses the whole move it correctly anticipated.
+#: A pullback-class name in an intact uptrend has no such asymmetry — if the reset never
+#: comes, the premise was that the reset was coming, and the plan expires honestly.
+ZONE_CONVERSION_WASHOUT = "washout"
+ZONE_CONVERSION_PULLBACK = "pullback"
+
+
+def _zone_expiry_sessions(row: Mapping[str, Any]) -> int:
+    """Sessions the zone stays live: the ladder's own window, floored."""
+    es = row.get("entry_signal")
+    hi = None
+    if isinstance(es, Mapping):
+        timing = es.get("timing")
+        if isinstance(timing, Mapping):
+            hi = timing.get("opens_in_days_hi")
+    try:
+        window = int(hi) if hi is not None else 0
+    except (TypeError, ValueError):
+        window = 0
+    return max(ZONE_EXPIRY_SESSIONS_MIN, window)
+
+
+def _add_business_days(start: str, n: int) -> str | None:
+    try:
+        stamp = pd.Timestamp(start)
+    except Exception:  # noqa: BLE001
+        return None
+    if pd.isna(stamp) or n <= 0:
+        return None
+    span = pd.bdate_range(stamp + pd.Timedelta(days=1), periods=n)
+    return str(span[-1].date()) if len(span) else None
+
+
+def zone_conversion_class(row: Mapping[str, Any],
+                          washout_context: bool = False) -> tuple[str, str]:
+    """``(conversion_class, evidence)`` — is this name V-risk or a plain pullback?
+
+    Washout evidence, in the order it is trusted: the ``us_basket_turn`` organ's own
+    state for a basket this ticker is an active member of (passed in by the caller as
+    ``washout_context``), then the board's own bottoming-vs-continuation lane.  Either
+    is enough — this decides whether an unfilled zone CONVERTS or EXPIRES, and the
+    asymmetric cost is missing a V-shaped recovery entirely.
+
+    MEASURED EXCLUSION (2026-08-09, on the committed 2026-08-07 board): the row's
+    ``coiled.washout_ctx`` flag is NOT used, despite reading like the obvious input.
+    It is true on 71 of 79 buy rows — a near-constant, not a discriminator — and
+    conditioning on it would have made 46 of 47 plans convert, which is a conversion
+    rule with no class in it.  The organ state (8/79) and the board lane (34/79
+    bottoming vs 35 continuation) are the reads that actually split the population.
+    """
+    if washout_context:
+        return ZONE_CONVERSION_WASHOUT, "us_basket_turn washout/turning membership"
+    if str(row.get("lane") or "").strip().lower() == "bottoming":
+        return ZONE_CONVERSION_WASHOUT, "board lane=bottoming"
+    return ZONE_CONVERSION_PULLBACK, "no washout evidence on this row"
+
+
+def build_entry_zone(
+    row: Mapping[str, Any],
+    *,
+    entry: float,
+    klass: str | None,
+    price_basis_date: str,
+    price_history: "pd.DataFrame | None" = None,
+    extension: Mapping[str, Any] | None = None,
+    washout_context: bool = False,
+    early_turn: bool = False,
+    leader_pullback: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """The structure-anchored band this plan waits at.
+
+    ``entry`` remains the PIT close and is NOT moved by anything here — the zone is a
+    separate, additive disclosure.  ``trigger`` is adjusted by the CALLER for a
+    wait_reset plan (never above the last print); this function only reports what the
+    zone is and which stance goes with it.
+    """
+    es = row.get("entry_signal") if isinstance(row.get("entry_signal"), Mapping) else {}
+    board_zone = es.get("buy_zone") if isinstance(es.get("buy_zone"), Mapping) else {}
+    low = board_zone.get("low")
+    high = board_zone.get("high")
+    chase_above = es.get("chase_above")
+    both_extended = bool((extension or {}).get("both_extended"))
+    is_leader_pullback = bool((leader_pullback or {}).get("leader_pullback"))
+
+    def _reset_band_or_board(current_low: Any, current_high: Any) -> tuple[Any, Any, str]:
+        """The MA10/MA20 reset band, falling back to whatever the board carried.
+
+        A CONFIRMATION row carries the ACCUMULATE band (anchored at the cycle low and
+        topped at spot), which is not a reset band at all — that is precisely the ADAM
+        defect: the board printed 9.61-9.82 AT THE TOP of the pop while the constructive
+        entry was the 8.40-8.70 reset.  A patience row whose band already sits below the
+        last print is kept as-is.
+        """
+        if klass == ADMISSION_CLASS_PATIENCE and current_high is not None and entry \
+                and float(current_high) < float(entry):
+            return current_low, current_high, "entry ladder reset band"
+        try:
+            from engine.us_early_turn import reset_band  # noqa: PLC0415
+            band = reset_band(price_history, price_basis_date, atr_pct=es.get("atr_pct"))
+            if band.get("high") is not None:
+                return band.get("low"), band.get("high"), str(band.get("basis"))
+        except Exception as exc:  # noqa: BLE001 — a zone never breaks origination
+            log.info("prophet_bridge: reset band unavailable (%s)", exc)
+        return current_low, current_high, "board band (reset band unresolved)"
+
+    if both_extended:
+        zone_class = ZONE_CLASS_WAIT_RESET
+        stance = ZONE_STANCE_WAIT
+        low, high, band_basis = _reset_band_or_board(low, high)
+        basis = (
+            "daily and 3-day reads both stretched — reset band only, no entry at the "
+            f"last print ({band_basis})")
+        chase_above = entry
+    elif is_leader_pullback:
+        # §6.8(b) ZONE LAW, ADAM acceptance case #2: a Continuation/Ready leader
+        # pullback's zone is the RESET BAND and the chase line is the PULLBACK HIGH —
+        # never the post-pop range.  The pullback high comes from the organ that owns
+        # the state (#5007); without it the reset band's own top is the honest ceiling,
+        # and it is never allowed to sit above the last print.
+        zone_class = ZONE_CLASS_RESET_BAND
+        stance = ZONE_STANCE_WAIT
+        low, high, band_basis = _reset_band_or_board(low, high)
+        pullback_high = (leader_pullback or {}).get("pullback_high")
+        try:
+            chase_above = float(pullback_high) if pullback_high is not None else None
+        except (TypeError, ValueError):
+            chase_above = None
+        if chase_above is None:
+            chase_above = high if high is not None else entry
+        basis = (
+            f"leader pullback ({(leader_pullback or {}).get('state') or 'reset'}) — "
+            f"reset band, chase line at the pullback high ({band_basis})")
+    elif klass == ADMISSION_CLASS_PATIENCE:
+        zone_class = ZONE_CLASS_RESET_BAND
+        stance = ZONE_STANCE_WAIT
+        basis = "MA10/MA20 reset band below the last print (entry ladder)"
+    else:
+        zone_class = ZONE_CLASS_ACCUMULATE
+        stance = ZONE_STANCE_ACCUMULATE
+        basis = "cycle-low anchored accumulate band (entry ladder)"
+
+    if early_turn:
+        stance = ZONE_STANCE_STARTER
+
+    conversion_class, conversion_evidence = zone_conversion_class(row, washout_context)
+    sessions = _zone_expiry_sessions(row)
+
+    def _px(value: Any) -> float | None:
+        try:
+            out = float(value)
+        except (TypeError, ValueError):
+            return None
+        return round(out, 4) if math.isfinite(out) and out > 0 else None
+
+    low_px, high_px = _px(low), _px(high)
+    pct_from_entry = None
+    if high_px is not None and entry:
+        mid = (high_px + (low_px if low_px is not None else high_px)) / 2.0
+        pct_from_entry = round(100.0 * (mid / float(entry) - 1.0), 2)
+
+    return {
+        "schema": ZONE_SCHEMA,
+        "low": low_px,
+        "high": high_px,
+        "chase_above": _px(chase_above),
+        "pct_from_entry": pct_from_entry,
+        "zone_class": zone_class,
+        "stance": stance,
+        "basis": basis,
+        "price_basis_date": price_basis_date,
+        "expiry_sessions": sessions,
+        "expiry_date": _add_business_days(price_basis_date, sessions),
+        "conversion_class": conversion_class,
+        "conversion_evidence": conversion_evidence,
+        "converts_on_expiry": conversion_class == ZONE_CONVERSION_WASHOUT,
+        # Nullable and NAMED: a starved extension read and an honest "not stretched"
+        # must never be indistinguishable.  A name whose price store cannot support the
+        # read keeps its board zone — inventing a stance for an unmeasurable name would
+        # be worse than saying the read is missing, and the count ships in intake_stats.
+        "extension": dict(extension) if extension else None,
+        "leader_pullback": dict(leader_pullback) if leader_pullback else None,
+        "era": SELECTION_ERA,
+    }
+
+
+def evaluate_entry_zone(
+    plan: Mapping[str, Any],
+    price_history: "pd.DataFrame | None",
+    asof: str,
+) -> dict[str, Any]:
+    """Nightly re-evaluation of a plan's zone: filled, still live, expired, converted.
+
+    THE CONVERSION (§6.9 R3, operator chart review 2026-08-08): a washout-class zone
+    that was never filled by its expiry does NOT die — it converts to a STARTER stance.
+    V-shaped washout recoveries frequently never revisit the band, and a plan that
+    correctly anticipated the turn should not miss the entire move on a technicality.
+    A pullback-class zone in an intact uptrend expires instead: there, "the reset never
+    came" falsifies the premise rather than confirming it.
+
+    PURE FUNCTION over the plan + its PIT tape.  It writes nothing: plan JSONs are
+    immutable publication records and corrections are an append-only overlay, so the
+    converted stance is DERIVED every night and rendered, never back-written into the
+    originating artifact.
+    """
+    zone = plan.get("entry_zone")
+    out: dict[str, Any] = {
+        "state": "none", "filled": False, "filled_date": None,
+        "expired": False, "converted": False, "stance": None,
+        "sessions_remaining": None, "reason": None,
+    }
+    if not isinstance(zone, Mapping) or zone.get("high") is None:
+        out["reason"] = "plan carries no entry zone (pre-R3 plan)"
+        return out
+
+    high = float(zone["high"])
+    start = str(zone.get("price_basis_date") or plan.get("price_basis_date") or "")[:10]
+    expiry = str(zone.get("expiry_date") or "")[:10]
+    out["stance"] = zone.get("stance")
+
+    # FILLED := the tape traded INTO the band (intraday low at or below the band top)
+    # at any point from the plan's price basis onward.  `low` is the honest column;
+    # a close-only store would systematically under-report fills, so it falls back with
+    # the substitution named rather than pretending precision it does not have.
+    filled_date = None
+    basis_col = "low"
+    if price_history is not None and not getattr(price_history, "empty", True):
+        try:
+            frame = price_history[price_history.index >= pd.Timestamp(start)] if start \
+                else price_history
+            frame = frame[frame.index <= pd.Timestamp(asof)]
+            if "low" not in frame.columns:
+                basis_col = "close"
+            series = frame[basis_col].dropna() if basis_col in frame.columns else None
+            if series is not None and not series.empty:
+                hits = series[series <= high]
+                if not hits.empty:
+                    filled_date = str(pd.Timestamp(hits.index[0]).date())
+        except Exception as exc:  # noqa: BLE001
+            out["reason"] = f"zone fill unreadable: {exc}"
+    out["fill_basis"] = basis_col
+
+    if filled_date is not None:
+        out.update({"state": "filled", "filled": True, "filled_date": filled_date})
+        return out
+
+    remaining = _business_days_between(asof, expiry) if expiry else None
+    out["sessions_remaining"] = remaining
+    expired = bool(expiry) and expiry < str(asof)[:10]
+    if not expired:
+        out["state"] = "live"
+        return out
+
+    out["expired"] = True
+    if zone.get("converts_on_expiry"):
+        out.update({
+            "state": "converted",
+            "converted": True,
+            "stance": ZONE_STANCE_STARTER,
+            "reason": (
+                "washout-class zone unfilled at expiry — a V-shaped recovery does not "
+                "revisit its band; the plan converts to a starter stance"),
+        })
+    else:
+        out.update({
+            "state": "expired",
+            "stance": ZONE_STANCE_WAIT,
+            "reason": (
+                "pullback-class zone unfilled at expiry — the reset the plan was "
+                "waiting for did not arrive"),
+        })
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -806,10 +1664,25 @@ _GOVERNMENT_REVENUE_METRICS = (
 def _government_revenue_freshness(
     payload: dict,
     reference: Any | None = None,
-) -> tuple[str, str]:
-    """Read elapsed-time-aware governed health rails."""
+) -> tuple[str, str, str]:
+    """Read elapsed-time-aware governed health rails.
+
+    The award-event rail is returned alongside the aggregate because
+    ``effective_freshness`` deliberately EXCLUDES it from the aggregate
+    (``engine/government_revenue/freshness.py`` line 171): a dead award-event
+    spine leaves ``status == "ok"``.  ``reviewed_award_change_context`` then
+    gates on that rail on its own, so dropping it here would publish an empty
+    ``award_change_events`` list with no stated cause — indistinguishable from
+    a ticker that genuinely had no award changes.  Mastermind already discloses
+    it (``engine/neuralweb/mastermind_context.py`` line 2101); this rail must
+    not be the silent sibling.
+    """
     evaluated = effective_freshness(payload, reference=reference)
-    return str(evaluated["status"]), str(evaluated["opportunities"])
+    return (
+        str(evaluated["status"]),
+        str(evaluated["opportunities"]),
+        str(evaluated.get("award_events") or "unknown"),
+    )
 
 
 def _load_government_revenue_context(
@@ -883,7 +1756,7 @@ def _load_government_revenue_context(
         if payload_known > cutoff or payload_day > cutoff:
             return {}
 
-    overall_status, opportunity_status = _government_revenue_freshness(
+    overall_status, opportunity_status, award_event_status = _government_revenue_freshness(
         payload,
         reference=cutoff,
     )
@@ -912,6 +1785,7 @@ def _load_government_revenue_context(
             "freshness": {
                 "status": overall_status,
                 "opportunities": opportunity_status,
+                "award_events": award_event_status,
             },
             "metrics": metrics,
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
@@ -1271,6 +2145,131 @@ def _fmt_price(price: float | None) -> str:
     return f"${price:.2f}"
 
 
+def _zone_lines_en(
+    entry_zone: Mapping[str, Any] | None,
+    zone_state: Mapping[str, Any] | None,
+    entry: float | None,
+    invalidation: float | None,
+    t1: float | None,
+) -> list[str] | None:
+    """The pre-entry lines for a plan that carries a structure-anchored zone (§6.9 R3).
+
+    ``None`` when the plan has no zone (every pre-R3 plan), so the caller falls through
+    to the original trigger-based copy and nothing that shipped before this change
+    reads differently.
+
+    VOICE: window vocabulary, not certainty; no study names, no raw status slugs, no
+    refutation language — a zone that does not fill is a window that closed, and the
+    copy says so in those words.
+    """
+    if not isinstance(entry_zone, Mapping) or entry_zone.get("high") is None:
+        return None
+    low = _fmt_price(entry_zone.get("low"))
+    high = _fmt_price(entry_zone.get("high"))
+    chase = _fmt_price(entry_zone.get("chase_above"))
+    inval_str = _fmt_price(invalidation)
+    t1_str = _fmt_price(t1)
+    band = f"{low}–{high}" if entry_zone.get("low") is not None else high
+    state = (zone_state or {}).get("state")
+
+    if state == "converted":
+        return [
+            f"The {band} zone never filled and the move ran without it. Treat this as a"
+            f" starter-size window, not a full entry.",
+            f"Keep the first piece small and let any pullback do the adding. Exit on a"
+            f" close below {inval_str}.",
+        ]
+    if state == "expired":
+        return [
+            f"The {band} pullback window has closed without filling. No entry here —"
+            f" wait for the next setup rather than paying up.",
+            f"If you are already long from earlier, {inval_str} is still the exit level.",
+        ]
+
+    zone_class = entry_zone.get("zone_class")
+    if zone_class == ZONE_CLASS_ACCUMULATE:
+        lines = [
+            f"Accumulate into the {band} zone. Do not pay above {chase} — above that"
+            f" you are chasing the bar, not entering it.",
+        ]
+    elif zone_class == ZONE_CLASS_WAIT_RESET:
+        lines = [
+            f"Wait for a pullback into the {band} zone before starting. The daily and"
+            f" 3-day reads are both stretched, so there is no entry at {chase} or above.",
+        ]
+    else:
+        lines = [
+            f"Wait for a pullback into the {band} zone before starting. No entry above"
+            f" {chase}; the plan waits at the band rather than paying the last print.",
+        ]
+    if entry_zone.get("stance") == ZONE_STANCE_STARTER:
+        lines.append(
+            f"Starter size only — this is a window, not a certainty. Exit on a close"
+            f" below {inval_str}.")
+    else:
+        lines.append(
+            f"Keep the first tranche small; there is no need to rush. Exit on a close"
+            f" below {inval_str}.")
+    if t1 is not None:
+        lines.append(
+            f"If the zone fills, scale in gradually toward T1 ({t1_str}).")
+    return lines[:3]
+
+
+def _zone_lines_zh(
+    entry_zone: Mapping[str, Any] | None,
+    zone_state: Mapping[str, Any] | None,
+    entry: float | None,
+    invalidation: float | None,
+    t1: float | None,
+) -> list[str] | None:
+    """ZH counterpart of :func:`_zone_lines_en` — same data, translated templates."""
+    if not isinstance(entry_zone, Mapping) or entry_zone.get("high") is None:
+        return None
+    low = _fmt_price(entry_zone.get("low"))
+    high = _fmt_price(entry_zone.get("high"))
+    chase = _fmt_price(entry_zone.get("chase_above"))
+    inval_str = _fmt_price(invalidation)
+    t1_str = _fmt_price(t1)
+    band = f"{low}–{high}" if entry_zone.get("low") is not None else high
+    state = (zone_state or {}).get("state")
+
+    if state == "converted":
+        return [
+            f"{band} 区间未被回踩，行情已自行走出。此处按试探性小仓位窗口对待，不是完整建仓。",
+            f"首笔保持小仓位，后续回调再加。收盘跌破 {inval_str} 即离场。",
+        ]
+    if state == "expired":
+        return [
+            f"{band} 回调窗口已过期且未被触及。此处不入场——等待下一个形态，不要追价。",
+            f"若此前已持有，{inval_str} 仍是离场位。",
+        ]
+
+    zone_class = entry_zone.get("zone_class")
+    if zone_class == ZONE_CLASS_ACCUMULATE:
+        lines = [
+            f"在 {band} 区间内分批建仓。不要在 {chase} 之上买入——高于该位属于追价，而非入场。",
+        ]
+    elif zone_class == ZONE_CLASS_WAIT_RESET:
+        lines = [
+            f"等待价格回落至 {band} 区间再建仓。日线与三日读数均已拉伸，{chase} 及以上不入场。",
+        ]
+    else:
+        lines = [
+            f"等待价格回落至 {band} 区间再建仓。不要在 {chase} 之上买入；计划在区间等待，"
+            f"而非按最新价追入。",
+        ]
+    if entry_zone.get("stance") == ZONE_STANCE_STARTER:
+        lines.append(
+            f"仅试探性小仓位——这是一个观察窗口，而非确定性结论。收盘跌破 {inval_str} 即离场。")
+    else:
+        lines.append(
+            f"首笔保持小仓位，无需急于入场。收盘跌破 {inval_str} 即离场。")
+    if t1 is not None:
+        lines.append(f"若区间被触及，可逐步加仓至 T1（{t1_str}）。")
+    return lines[:3]
+
+
 def _build_what_to_do_now(
     phase: str,
     entry: float | None,
@@ -1279,11 +2278,18 @@ def _build_what_to_do_now(
     t1: float | None,
     t2: float | None,
     tranche: int = 1,
+    *,
+    entry_zone: Mapping[str, Any] | None = None,
+    zone_state: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """
     OURS: Build 2-3 numbered actionable lines keyed to lifecycle phase.
     Phase-dependent templates with price levels interpolated from plan fields.
     Display-only — no predictive claims.
+
+    ``entry_zone``/``zone_state`` (§6.9 R3) replace the pre-entry lines with the
+    structure-anchored band the plan waits at.  Both default to ``None``, so every
+    caller and every pre-R3 plan keeps the exact copy it had.
 
     Returns a list of strings (one per numbered bullet).
     """
@@ -1293,6 +2299,9 @@ def _build_what_to_do_now(
     inval_str = _fmt_price(invalidation)
 
     if phase == "pre_trigger":
+        zone_lines = _zone_lines_en(entry_zone, zone_state, entry, invalidation, t1)
+        if zone_lines:
+            return zone_lines
         lines = [
             f"Watch for price to reach the trigger level ({trigger_str}) before"
             f" entering. No position until trigger is confirmed.",
@@ -1388,6 +2397,9 @@ def _build_what_to_do_now_zh(
     t1: float | None,
     t2: float | None,
     tranche: int = 1,
+    *,
+    entry_zone: Mapping[str, Any] | None = None,
+    zone_state: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """ZH counterpart of _build_what_to_do_now — translated template strings,
     identical data interpolation. No LLM at runtime."""
@@ -1397,6 +2409,9 @@ def _build_what_to_do_now_zh(
     inval_str = _fmt_price(invalidation)
 
     if phase == "pre_trigger":
+        zone_lines = _zone_lines_zh(entry_zone, zone_state, entry, invalidation, t1)
+        if zone_lines:
+            return zone_lines
         lines = [
             f"等待价格触及触发点（{trigger_str}）后再入场，触发确认前不建仓。",
             f"初始建仓保持小仓位；买入区间从触发点延伸至 {t1_str}（T1），无需急于入场。",
@@ -2189,7 +3204,18 @@ def originate_plans(
     )
 
     # ── Pass 1: full admitted ordering → apply the two policy skips ──
-    admitted = select_candidates(standouts, n=None)
+    admission_stats: dict[str, Any] = {}
+    admitted = select_candidates(standouts, n=None, stats=admission_stats)
+    if admission_stats.get("unknown_status"):
+        # Bare print at line start (house law): a logger prefix makes GitHub drop it.
+        print(
+            "::warning title=prophet-unknown-entry-status::"
+            f"{admission_stats['unknown_status']} buy row(s) carry an entry status "
+            f"outside the admission vocabulary "
+            f"({', '.join(admission_stats.get('unknown_status_values') or [])}) — "
+            "refused, not defaulted",
+            flush=True,
+        )
     candidates: list[tuple[dict, str, str, str]] = []
     blocked_keys: list[str] = []
     duplicate_id_blocked = 0
@@ -2308,7 +3334,23 @@ def originate_plans(
                  "plans render without it", e)
         _government_revenue_map = {}
 
+    # ── §6.9 R3: EARLY-TURN + washout context, loaded ONCE and strictly AFTER
+    # select_candidates.  Like every other context map above, it can re-CLASS an
+    # already-selected plan and shape its zone; it can never broaden the candidate set
+    # or move the order.  Empty map on any absence — a starter class is a licence, and
+    # a licence that cannot be resolved is not granted.
+    try:
+        from engine.us_early_turn import load_basket_turn_membership  # noqa: PLC0415
+        _turn_membership = load_basket_turn_membership()
+    except Exception as e:  # noqa: BLE001
+        log.info("prophet_bridge: basket-turn context unavailable (%s); "
+                 "EARLY-TURN admits nothing this run", e)
+        _turn_membership = {}
+
     plans: list[dict] = []
+    stale_basis_skipped: list[str] = []
+    early_turn_plans: list[str] = []
+    wait_reset_plans: list[str] = []
     for b, ticker, formation_date, plan_id in candidates:
         direction = "BULL"  # all dir="up" entries
         government_revenue_ctx = _government_revenue_map.get(ticker.upper())
@@ -2394,6 +3436,73 @@ def originate_plans(
         # ATR from entry_signal.atr_pct
         atr_pct = es.get("atr_pct")
 
+        # ── Publication-lag guard (ANTICIPATION §6.2 A1) ────────────────────────
+        # The lag is measured, DISCLOSED on the plan, and — beyond the tolerance —
+        # fatal.  See STALE_BASIS_MAX_SESSIONS: on this base the clock contract makes
+        # a stale basis impossible, so this branch is a second fence that must never
+        # fire in production.  It is here so the property survives a loosened clock.
+        entry_basis = resolve_entry_basis(
+            b, price_basis_date=price_basis_date, asof=asof, price_history=ph)
+        if entry_basis["state"] == "stale":
+            print(
+                "::warning title=prophet-stale-entry-basis::"
+                f"skipping {ticker} — entry basis {entry_basis['basis_date']} is "
+                f"{entry_basis['lag']} {entry_basis['lag_basis']} behind the run asof "
+                f"{asof} (tolerance {STALE_BASIS_MAX_SESSIONS}); a plan is never "
+                "published at a stale price",
+                flush=True,
+            )
+            stale_basis_skipped.append(f"{ticker}:{entry_basis['lag']}")
+            _record_failure(
+                ticker=ticker,
+                plan_id=plan_id,
+                stage="stale_entry_basis",
+                errors=[
+                    f"entry basis {entry_basis['basis_date']} trails the run asof "
+                    f"{asof} by {entry_basis['lag']} {entry_basis['lag_basis']}"
+                ],
+            )
+            continue
+
+        # ── §6.9 R3: extension read, EARLY-TURN class, structure-anchored zone ──
+        candidate_class = admission_class(entry_status(b))
+        try:
+            from engine import us_early_turn  # noqa: PLC0415
+            extension = us_early_turn.extension_state(ph, price_basis_date)
+            early = us_early_turn.assess_early_turn(
+                ticker, ph, asof=price_basis_date,
+                membership=_turn_membership, board_row=b)
+        except Exception as e:  # noqa: BLE001 — display context never breaks a plan
+            log.info("prophet_bridge: early-turn read unavailable for %s (%s)", ticker, e)
+            extension = None
+            early = {"fired": False, "reason": f"early-turn read failed: {e}"}
+        # ORGAN state only.  The board's own lane is applied inside
+        # zone_conversion_class; the board's `coiled.washout_ctx` flag is deliberately
+        # NOT an input (measured near-constant — see zone_conversion_class).
+        washout_ctx = bool((early.get("washout") or {}).get("washout_context"))
+        if early.get("fired"):
+            candidate_class = ADMISSION_CLASS_EARLY_TURN
+            early_turn_plans.append(ticker)
+
+        entry_zone = build_entry_zone(
+            b,
+            entry=entry,
+            klass=admission_class(entry_status(b)),
+            price_basis_date=price_basis_date,
+            price_history=ph,
+            extension=extension,
+            washout_context=washout_ctx,
+            early_turn=bool(early.get("fired")),
+            leader_pullback=early.get("leader_pullback"),
+        )
+        if entry_zone["zone_class"] == ZONE_CLASS_WAIT_RESET:
+            wait_reset_plans.append(ticker)
+            # A wait_reset plan may NEVER ask the reader to pay above the last print.
+            # `trigger` keeps its management-engine meaning (BULL fires at price >=
+            # trigger), so it is clamped to the entry rather than moved below it: a
+            # trigger under spot would read as "already triggered" on night one.
+            trigger = min(trigger, entry)
+
         # ── PSQ-TILT W1: hold-leash for this pick (Stage-2 ∩ EC-positive) ──────
         # Runs here — after selection, before geometry/option resolution. The
         # scaled horizon flows into resolve_option (later expiry) and the plan
@@ -2467,6 +3576,7 @@ def originate_plans(
             t1=t1_price,
             t2=t2_price,
             tranche=1,
+            entry_zone=entry_zone,
         )
         what_to_do_now_zh = _build_what_to_do_now_zh(
             phase=init_phase,
@@ -2476,6 +3586,7 @@ def originate_plans(
             t1=t1_price,
             t2=t2_price,
             tranche=1,
+            entry_zone=entry_zone,
         )
         profit_plan = _build_profit_plan(
             phase=init_phase,
@@ -2570,6 +3681,30 @@ def originate_plans(
             "_act_level": es.get("act_level"),
             "_r_unit": geo["r_unit"],
             "_gate_go": standouts.get("gate_go"),
+            # ── ANTICIPATION §6.2 A1 provenance (ADDITIVE — nothing was renamed) ──
+            # Which class of entry status admitted this plan, and under which selection
+            # rule.  Both ship on every plan so a later side-by-side never has to infer
+            # the era from a date, and so a patience plan is distinguishable from a
+            # confirmation plan at the row level rather than only in aggregate.
+            "admission_class": candidate_class,
+            "entry_status": entry_status(b) or None,
+            "selection_era": SELECTION_ERA,
+            # Publication-lag disclosure: which day's close `entry` is, how far behind
+            # the run that is, and how old the SIGNAL is relative to that price.
+            "entry_basis": entry_basis,
+            # ── §6.9 R3: the structure-anchored band this plan waits at ───────────
+            # `entry` above remains the point-in-time close — a plan never fabricates a
+            # fill.  The ZONE is what the plan acts on, and its stance is what the copy
+            # says out loud.
+            "entry_zone": entry_zone,
+            "early_turn": {
+                "fired": bool(early.get("fired")),
+                "reason": early.get("reason"),
+                "timeframes": early.get("signature_timeframes") or [],
+                "washout_state": (early.get("washout") or {}).get("state"),
+                "leader_pullback_source": (
+                    early.get("leader_pullback") or {}).get("source"),
+            },
         }
 
         if government_revenue_ctx:
@@ -2624,11 +3759,22 @@ def originate_plans(
         f" ({', '.join(sorted(set(blocked_keys)))})" if blocked_keys else "",
     )
     log.info(
-        "prophet_bridge: intake — %d admitted, %d duplicate-id, %d open-plan blocked, "
-        "%d eligible after skips, %d validation failed, %d originated, "
-        "%d truncated, lossless=%s",
-        len(admitted), duplicate_id_blocked, len(blocked_keys),
+        "prophet_bridge: intake — %d admitted (%d patience / %d confirmation), "
+        "%d duplicate-id, %d open-plan blocked, %d eligible after skips, "
+        "%d validation failed, %d originated, %d truncated, lossless=%s",
+        len(admitted),
+        (admission_stats.get("admitted_by_class") or {}).get(ADMISSION_CLASS_PATIENCE, 0),
+        (admission_stats.get("admitted_by_class") or {}).get(
+            ADMISSION_CLASS_CONFIRMATION, 0),
+        duplicate_id_blocked, len(blocked_keys),
         eligible_after_skips, validation_failed, len(plans), 0, lossless,
+    )
+    log.info(
+        "prophet_bridge: §6.9 R3 — %d wait_reset zone(s) (%s), %d early-turn starter(s) "
+        "(%s), %d stale-basis refusal(s) (%s)",
+        len(wait_reset_plans), ", ".join(sorted(wait_reset_plans)) or "none",
+        len(early_turn_plans), ", ".join(sorted(early_turn_plans)) or "none",
+        len(stale_basis_skipped), ", ".join(sorted(stale_basis_skipped)) or "none",
     )
     if validation_failures:
         print(
@@ -2663,5 +3809,89 @@ def originate_plans(
         intake_stats["all_survivors_originated"] = (
             validation_failed == 0 and len(plans) == eligible_after_skips
         )
+        # ── A1 disclosure: the new admission, every refusal, and both guards ──
+        intake_stats["selection_era"] = SELECTION_ERA
+        intake_stats["admitted_statuses"] = sorted(ADMITTED_STATUSES)
+        intake_stats["admitted_directions"] = sorted(ADMITTED_DIRECTIONS)
+        intake_stats["buy_rows"] = admission_stats.get("buy_rows", 0)
+        intake_stats["admitted_by_class"] = admission_stats.get("admitted_by_class", {})
+        intake_stats["unknown_status"] = admission_stats.get("unknown_status", 0)
+        intake_stats["unknown_status_values"] = admission_stats.get(
+            "unknown_status_values", [])
+        intake_stats["refused_status"] = admission_stats.get("refused_status", {})
+        intake_stats["refused_direction"] = admission_stats.get("refused_direction", {})
+        intake_stats["refused_no_entry_signal"] = admission_stats.get(
+            "refused_no_entry_signal", 0)
+        intake_stats["refused_band_low"] = admission_stats.get("refused_band_low", 0)
+        intake_stats["refused_tier"] = admission_stats.get("refused_tier", {})
+        intake_stats["stale_basis_max"] = STALE_BASIS_MAX_SESSIONS
+        intake_stats["stale_basis_skipped"] = sorted(stale_basis_skipped)
+        intake_stats["originated_by_class"] = {
+            klass: sum(1 for p in plans if p.get("admission_class") == klass)
+            for klass in (ADMISSION_CLASS_PATIENCE, ADMISSION_CLASS_CONFIRMATION,
+                          ADMISSION_CLASS_EARLY_TURN)
+        }
+        # §6.9 R3 disclosure
+        intake_stats["zone_class_counts"] = {
+            klass: sum(1 for p in plans
+                       if (p.get("entry_zone") or {}).get("zone_class") == klass)
+            for klass in (ZONE_CLASS_ACCUMULATE, ZONE_CLASS_RESET_BAND,
+                          ZONE_CLASS_WAIT_RESET)
+        }
+        intake_stats["zone_conversion_classes"] = {
+            klass: sum(1 for p in plans
+                       if (p.get("entry_zone") or {}).get("conversion_class") == klass)
+            for klass in (ZONE_CONVERSION_WASHOUT, ZONE_CONVERSION_PULLBACK)
+        }
+        intake_stats["wait_reset"] = sorted(wait_reset_plans)
+        intake_stats["early_turn_starters"] = sorted(early_turn_plans)
+        # A starved extension read fails OPEN for the anti-chase guard (a name we could
+        # not measure keeps its board zone), so the count is printed rather than left to
+        # be inferred from a silent zero — the #4979 ext_z blackout in miniature.
+        intake_stats["zone_extension_unavailable"] = sum(
+            1 for p in plans
+            if ((p.get("entry_zone") or {}).get("extension") or {}).get("source")
+            != "price_store_stoch_rsi"
+        )
+        intake_stats["leader_pullback_source"] = sorted({
+            str((p.get("early_turn") or {}).get("leader_pullback_source"))
+            for p in plans
+        })
 
-    return plans
+    # ── W9F: Government Revenue post-selection annotation (display/context) ────
+    # Runs HERE and nowhere earlier: selection, ordering, sizing, and gating are
+    # complete and `plans` is final, so the adapter's only possible effect is to
+    # hang evidence off a plan that already exists. It derives its universe FROM
+    # this list, so there is no path by which procurement evidence influences
+    # WHICH names are in it, and it fingerprints the decision projection before
+    # and after its own work — a pass that moved any decision field discards
+    # itself. Fail-open at every layer; a raise here would cost the nightly its
+    # plans for an annotation, which is never the right trade.
+    return _annotate_with_government_revenue(plans, asof)
+
+
+def _annotate_with_government_revenue(plans: list[dict], asof: str) -> list[dict]:
+    """Attach Government Revenue annotation to plans Prophet ALREADY selected.
+
+    Separate function so the post-selection boundary is visible in a stack trace
+    and monkeypatchable in the byte-identity suite.  Today's candidate radar is
+    legitimately empty (Wave 9C: it stays empty until a real post-baseline
+    eligible event exists), so this is provably inert in production until the
+    first exact candidate lands — and `tests/test_government_revenue_prophet_
+    annotation.py` pins that inertness against the committed artifact.
+    """
+    if not plans:
+        return plans
+    try:
+        from engine.government_revenue.prophet_annotation import (  # noqa: PLC0415
+            annotate_plans_from_repo,
+        )
+
+        return annotate_plans_from_repo(
+            plans,
+            repo_root=Path(__file__).resolve().parents[1],
+            generated_at=f"{asof}T00:00:00+00:00",
+        )
+    except Exception as exc:  # noqa: BLE001 — annotation never costs Prophet its plans
+        log.warning("prophet_bridge: government-revenue annotation skipped (%s)", exc)
+        return plans

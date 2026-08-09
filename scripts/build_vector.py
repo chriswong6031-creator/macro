@@ -2824,6 +2824,16 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
+    # A null TIP is not a gap to compact — it is a MISSING CURRENT READING, and the two
+    # must not be conflated. Compaction alone anchors `pairs[-1]` on the last CLEAN day,
+    # so HK (whose `i` has been null since 2026-07-28) would publish an 11-day-stale
+    # endpoint AS today's direction, with nothing on the card saying so — the same lie as
+    # coercing the gap to 0.0, which renders a confident rdir="stable". No current
+    # reading, no verdict: disclose null, exactly like a market with no timeline at all
+    # (JP/KR/TW/GB/EZ already render that way). Writers route through `pd.isna`, so a gap
+    # always arrives as None, never NaN.
+    if not (g and i and g[-1] is not None and i[-1] is not None):
+        return empty
     # Collection gaps commit as nulls in the timeline series; a null endpoint
     # would TypeError here and a null-holed window would misstate the drift.
     # The trajectory math needs ALIGNED g/i readings, so keep only paired

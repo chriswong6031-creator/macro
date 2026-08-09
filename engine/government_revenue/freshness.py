@@ -72,7 +72,6 @@ def _aged_status(
 
 
 def _award_event_contract_status(
-    payload: dict[str, Any],
     rail: dict[str, Any],
     status: str,
 ) -> str:
@@ -156,7 +155,7 @@ def effective_freshness(payload: dict[str, Any], *, reference: Any | None = None
             unit_seconds=unit_seconds,
         )
         rails[name] = (
-            _award_event_contract_status(payload, rail, status)
+            _award_event_contract_status(rail, status)
             if name == "award_events"
             else status
         )

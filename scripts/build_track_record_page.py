@@ -30,8 +30,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
@@ -413,6 +412,35 @@ def build() -> int:
     hero_board_days = ledger_summary.get("n_board_days")
     hero_horizon = ledger_summary.get("horizon")
     hero_inflight = ledger_summary.get("n_inflight")
+    # The average-trade interval governs the stance, exactly as the Track-record dialog
+    # already does. A win rate above 55 does not earn "more winners than losers" while the
+    # honest range for what a trade returns still spans a loss — the 2026-08-07
+    # re-measurement put exp_lo_pct at -0.1, which is precisely that case.
+    hero_exp_lo = ledger_summary.get("exp_lo_pct")
+    hero_exp_hi = ledger_summary.get("exp_hi_pct")
+
+    # PRIOR-MEASUREMENT COMPARISON (era break ruled 2026-08-07,
+    # research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md §0.3). The artifact carries the frozen
+    # pre-era headline in meta.pre_era; the page shows it beside the current one with the
+    # reason, so a reader who saw the old numbers can reconcile them instead of finding
+    # them quietly replaced. Data only here — the sentences live in the template.
+    ledger_meta = (ledger_json or {}).get("meta") or {}
+    _pre = ledger_meta.get("pre_era")
+    prior_era = None
+    if isinstance(_pre, dict) and isinstance(_pre.get("summary"), dict):
+        _ps = _pre["summary"]
+        prior_era = {
+            "as_of": _pre.get("as_of"),
+            "win_pct": _ps.get("win_pct"),
+            "expectancy_pct": _ps.get("expectancy_pct"),
+            "n_matured": _ps.get("n_matured"),
+        }
+        # A comparison needs both sides. If any pre-era number is missing the block is
+        # dropped rather than rendered half-empty.
+        if any(prior_era[k] is None for k in ("as_of", "win_pct", "expectancy_pct", "n_matured")):
+            prior_era = None
+    era_from = ledger_meta.get("era_from")
+
     if (ledger_json or {}).get("state") != "scored":
         # Not enough sample to headline — fall through to the page's accruing block
         # rather than printing a number the ledger itself declines to publish.
@@ -480,6 +508,11 @@ def build() -> int:
         "hero_board_days": hero_board_days,
         "hero_horizon": hero_horizon,
         "hero_inflight": hero_inflight,
+        "hero_exp_lo": hero_exp_lo,
+        "hero_exp_hi": hero_exp_hi,
+        # Prior-measurement comparison (era break, 2026-08-07)
+        "prior_era": prior_era,
+        "era_from": era_from,
         # Horizon ladder
         "horizon_ladder": horizon_ladder,
         # Chart series (inline JSON for JS)

@@ -718,6 +718,306 @@ def _compose_cycle_pattern(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Release Radar inflation intelligence — current/next-print context lobe
+# ─────────────────────────────────────────────────────────────────────────────
+
+_INFLATION_INTELLIGENCE_NOTE = (
+    "DISPLAY/CONTEXT ONLY. released_state is latest-local official CPI index "
+    "history, next_release_forecast is a Release Radar forecast, and "
+    "current_month_proxy_pressure is an in-progress model/proxy rather than an "
+    "official CPI observation. Nothing here may originate, score, rank, gate, "
+    "size, escalate, or execute a signal or trade."
+)
+
+_INFLATION_SCOPE_MISMATCH_CAP = 8
+
+
+def _inflation_intelligence_null(gap: str | None = None) -> dict:
+    """Return a fresh, authority-fenced null inflation lobe."""
+    return {
+        "schema": "inflation_intelligence.v1",
+        "as_of": None,
+        "available": False,
+        "released_state": None,
+        "next_release_forecast": None,
+        "current_month_proxy_pressure": None,
+        "freshness": None,
+        "source_status": None,
+        "gaps": [gap] if gap else [],
+        "display_only": True,
+        "authority": False,
+        "is_context_only": True,
+        "allowed_actions": {
+            "may_rank": False,
+            "may_score": False,
+            "may_size": False,
+            "may_gate": False,
+            "may_escalate": False,
+            "may_trade": False,
+        },
+        "authority_note": _INFLATION_INTELLIGENCE_NOTE,
+    }
+
+
+def _compact_inflation_metrics(value: Any) -> dict | None:
+    """Project a bounded released/proxy metric row from the adapter artifact."""
+    if not isinstance(value, dict):
+        return None
+    keys = (
+        "available", "series_id", "label", "observation_period",
+        "observation_age_months", "index_level", "mom_pct", "yoy_pct",
+        "monthly_pct", "annualized_3m_pct", "annualized_6m_pct",
+        "acceleration_3m_minus_6m_pp", "revision_basis", "freshness_status",
+    )
+    return {key: _clean(value.get(key)) for key in keys if key in value}
+
+
+def _compact_inflation_coverage(value: Any) -> dict | None:
+    """Keep coverage and honesty caveats while bounding variable-length lists."""
+    if not isinstance(value, dict):
+        return None
+    coverage_lists = {
+        key: value.get(key) if isinstance(value.get(key), list) else []
+        for key in ("absent_legs", "revision_optimistic_legs", "range_violation_legs")
+    }
+    mismatch_rows = (
+        value.get("bridge_known_scope_mismatches")
+        if isinstance(value.get("bridge_known_scope_mismatches"), list) else []
+    )
+    mismatch_rows = [
+        {
+            key: _clean(item.get(key))
+            for key in ("block", "series", "official_label", "warning")
+            if key in item
+        }
+        for item in mismatch_rows[:_INFLATION_SCOPE_MISMATCH_CAP]
+        if isinstance(item, dict)
+    ]
+    coverage = {
+        key: _clean(value.get(key))
+        for key in (
+            "input_completeness", "radar_weight_coverage",
+            "radar_fresh_proxy_coverage", "radar_non_vintaged_share",
+            "model_maturity_n", "bridge_modelled_weight_coverage",
+            "bridge_prior_driven_share", "bridge_weight_basis",
+            "bridge_weight_basis_warning",
+        )
+    } | {
+        key: [str(item) for item in coverage_lists[key][:12]]
+        for key in ("absent_legs", "revision_optimistic_legs", "range_violation_legs")
+    }
+    coverage["bridge_known_scope_mismatches"] = mismatch_rows
+    return coverage
+
+
+def _compact_inflation_target(value: Any) -> dict | None:
+    """Project one CPI target without copying the unbounded evolution points."""
+    if not isinstance(value, dict):
+        return None
+
+    projection = value.get("release_radar_projection")
+    if isinstance(projection, dict):
+        projection = {
+            key: _clean(projection.get(key))
+            for key in ("point", "p10", "p25", "p50", "p75", "p90", "confidence")
+        }
+    else:
+        projection = None
+
+    combined = value.get("combined_display_estimate")
+    if isinstance(combined, dict):
+        combined_inputs = (
+            combined.get("inputs_used")
+            if isinstance(combined.get("inputs_used"), list) else []
+        )
+        combined_input_hashes = (
+            combined.get("input_hashes")
+            if isinstance(combined.get("input_hashes"), dict) else {}
+        )
+        combined = {
+            key: _clean(combined.get(key))
+            for key in (
+                "point", "p10", "p25", "p50", "p75", "p90",
+                "includes_external_benchmark", "n_scored_basis",
+                "model_epoch", "target_epoch", "code_receipt", "inputs_hash",
+            )
+        }
+        combined["inputs_used"] = [str(item) for item in combined_inputs[:12]]
+        combined["input_hashes"] = {
+            str(key): _clean(item)
+            for key, item in list(combined_input_hashes.items())[:12]
+        }
+        combined.update(display_only=True, authority=False)
+    else:
+        combined = None
+
+    coverage = _compact_inflation_coverage(value.get("coverage"))
+
+    evolution = value.get("forecast_evolution")
+    if isinstance(evolution, dict):
+        evolution = {
+            key: _clean(evolution.get(key))
+            for key in (
+                "basis", "cutoff_asof", "cutoff_policy",
+                "excluded_after_cutoff", "excluded_unparseable_asof",
+                "n_points", "first_asof", "last_asof",
+            )
+        }
+    else:
+        evolution = None
+
+    return {
+        "available": bool(value.get("available")),
+        "release_type": _clean(value.get("release_type")),
+        "period": _clean(value.get("period")),
+        "release_date": _clean(value.get("release_date")),
+        "days_to_release": _clean(value.get("days_to_release")),
+        "target": _clean(value.get("target")),
+        "forecast_asof": _clean(value.get("forecast_asof")),
+        "model_epoch": _clean(value.get("model_epoch")),
+        "target_epoch": _clean(value.get("target_epoch")),
+        "code_receipt": _clean(value.get("code_receipt")),
+        "inputs_hash": _clean(value.get("inputs_hash")),
+        "primary_forecast_basis": _clean(value.get("primary_forecast_basis")),
+        "context_metrics_basis": _clean(value.get("context_metrics_basis")),
+        "basis_warning": _clean(value.get("basis_warning")),
+        "release_radar_projection": projection,
+        "combined_display_estimate": combined,
+        "coverage": coverage,
+        "input_snapshot_ref": _clean(value.get("input_snapshot_ref")),
+        "forecast_evolution": evolution,
+    }
+
+
+def _compose_inflation_intelligence(root: "Path | str | None" = None) -> dict:
+    """Read the compact Release Radar inflation artifact as inert NW context.
+
+    Only ``data/release_forecast/inflation_intelligence.json`` is consumed.
+    The long forecast-evolution rows and component rows remain in that artifact,
+    reachable through ``read_inflation_intelligence``; World State carries only
+    a bounded digest. Authority fields are constants here and never trusted from
+    the source artifact.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "release_forecast" / "inflation_intelligence.json"
+    if not path.exists():
+        return _inflation_intelligence_null(
+            "data/release_forecast/inflation_intelligence.json: absent"
+        )
+
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("inflation_intelligence: compose failed — %s", exc)
+        return _inflation_intelligence_null(
+            "data/release_forecast/inflation_intelligence.json: unreadable"
+        )
+    if not isinstance(state, dict):
+        return _inflation_intelligence_null(
+            "data/release_forecast/inflation_intelligence.json: not_object"
+        )
+
+    released = state.get("released_state") if isinstance(state.get("released_state"), dict) else {}
+    next_release = (
+        state.get("next_release_forecast")
+        if isinstance(state.get("next_release_forecast"), dict) else {}
+    )
+    pressure = (
+        state.get("current_month_proxy_pressure")
+        if isinstance(state.get("current_month_proxy_pressure"), dict) else {}
+    )
+    proxy_mix = (
+        pressure.get("underlying_proxy_mix")
+        if isinstance(pressure.get("underlying_proxy_mix"), dict) else {}
+    )
+    source_gaps = state.get("gaps") if isinstance(state.get("gaps"), list) else []
+    raw_freshness = state.get("freshness") if isinstance(state.get("freshness"), dict) else {}
+    freshness_reasons = (
+        raw_freshness.get("degraded_reasons")
+        if isinstance(raw_freshness.get("degraded_reasons"), list)
+        else []
+    )
+
+    out = _inflation_intelligence_null()
+    out.update({
+        "schema": _clean(state.get("schema")),
+        "as_of": _clean(state.get("asof")),
+        "available": bool(
+            released.get("available")
+            or next_release.get("available")
+            or pressure.get("available")
+        ),
+        "released_state": {
+            "available": bool(released.get("available")),
+            "basis": _clean(released.get("basis")),
+            "headline": _compact_inflation_metrics(released.get("headline")),
+            "core": _compact_inflation_metrics(released.get("core")),
+            "underlying_proxies": {
+                "sticky": _compact_inflation_metrics(
+                    (released.get("underlying_proxies") or {}).get("sticky")
+                    if isinstance(released.get("underlying_proxies"), dict) else None
+                ),
+                "flexible": _compact_inflation_metrics(
+                    (released.get("underlying_proxies") or {}).get("flexible")
+                    if isinstance(released.get("underlying_proxies"), dict) else None
+                ),
+            },
+        },
+        "next_release_forecast": {
+            "available": bool(next_release.get("available")),
+            "release_date": _clean(next_release.get("release_date")),
+            "period": _clean(next_release.get("period")),
+            "headline": _compact_inflation_target(next_release.get("headline")),
+            "core": _compact_inflation_target(next_release.get("core")),
+        },
+        "current_month_proxy_pressure": {
+            "available": bool(pressure.get("available")),
+            "period": _clean(pressure.get("period")),
+            "definition": _clean(pressure.get("definition")),
+            "pressure_direction": _clean(pressure.get("pressure_direction")),
+            "headline_model_pressure": _compact_inflation_target(
+                pressure.get("headline_model_pressure")
+            ),
+            "core_model_pressure": _compact_inflation_target(
+                pressure.get("core_model_pressure")
+            ),
+            "coverage": _compact_inflation_coverage(pressure.get("coverage")),
+            "underlying_proxy_mix": {
+                "read": _clean(proxy_mix.get("read")),
+                "sticky": _compact_inflation_metrics(proxy_mix.get("sticky")),
+                "flexible": _compact_inflation_metrics(proxy_mix.get("flexible")),
+            },
+        },
+        "freshness": {
+            "status": _clean(raw_freshness.get("status")),
+            "policy": _clean(raw_freshness.get("policy")),
+            "monthly_source_max_age_months": _clean(
+                raw_freshness.get("monthly_source_max_age_months")
+            ),
+            "release_radar_artifact_max_age_days": _clean(
+                raw_freshness.get("release_radar_artifact_max_age_days")
+            ),
+            "release_radar_artifact_age_days": _clean(
+                raw_freshness.get("release_radar_artifact_age_days")
+            ),
+            "degraded_reasons": [
+                str(reason) for reason in freshness_reasons[:25]
+            ],
+        },
+        "source_status": state.get("source_status") if isinstance(state.get("source_status"), dict) else None,
+        "gaps": [str(gap) for gap in source_gaps[:25]],
+    })
+    # Authority is ALWAYS all-false regardless of artifact content/version.
+    out.update(
+        display_only=True,
+        authority=False,
+        is_context_only=True,
+        authority_note=_INFLATION_INTELLIGENCE_NOTE,
+    )
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Rotation Command — rotation_events lobe (RC deep-integration)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -4070,6 +4370,16 @@ def build_world_state(
         gaps.append(f"cycle_pattern: {exc}")
         cycle_pattern_block = dict(_CYCLE_PATTERN_NULL)
 
+    # ── 6c-ii. Release Radar inflation intelligence — display/context only ──
+    try:
+        inflation_intelligence_block: dict = _compose_inflation_intelligence(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: inflation_intelligence lobe failed — %s", exc)
+        gaps.append(f"inflation_intelligence: {exc}")
+        inflation_intelligence_block = _inflation_intelligence_null(
+            f"inflation_intelligence: {type(exc).__name__}"
+        )
+
     # ── 6c-re. rotation_events lobe (RC deep-integration) — one wiring line ──
     # Reads site/marketdata/rotation_events.json (nightly, RC-R1/R2).
     # Display/context only: active rotation events, no ranking/gating/sizing.
@@ -4545,6 +4855,7 @@ def build_world_state(
         "macro_deltas": macro_deltas_block,
         "cross_asset_flows": cross_asset_flows_block,  # R6 NW Cross-Asset Depth (display-only)
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
+        "inflation_intelligence": inflation_intelligence_block,  # Release Radar current/next CPI context
         "rotation_events": rotation_events_block,  # RC deep-integration wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line

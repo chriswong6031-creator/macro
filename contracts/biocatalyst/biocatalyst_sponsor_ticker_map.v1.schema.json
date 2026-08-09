@@ -22,6 +22,7 @@
     "rows",
     "unmapped_universe_tickers"
   ],
+  "$comment": "An admitted row must carry an operator attestation (named reviewer, timestamp, and the ruling document bound by content digest) and an issuer_relationship declaring whether the ticker is the sponsor itself or the sponsor's parent. A model cannot manufacture attributed human authority, so admission stays a human act even though the map now resolves.",
   "properties": {
     "contract_id": {"const": "biocatalyst_sponsor_ticker_map.v1"},
     "schema": {"const": "biocatalyst_sponsor_ticker_map.v1"},
@@ -30,8 +31,22 @@
     "effective_at": {"type": "string", "format": "date-time"},
     "owner": {"const": "biocatalyst"},
     "state": {
-      "description": "candidate_map_no_admitted_rows means no row has ever passed human review, so the map resolves nothing at all. Only a named human reviewer may move this document to reviewed_map_contains_admitted_rows.",
+      "description": "candidate_map_no_admitted_rows means no row has ever passed human review, so the map resolves nothing at all. Only a named human reviewer may move this document to reviewed_map_contains_admitted_rows, and every admitted row must then carry that reviewer's attestation.",
       "enum": ["candidate_map_no_admitted_rows", "reviewed_map_contains_admitted_rows"]
+    },
+    "operator_ruling": {
+      "description": "The named human authorization the admitted rows attest to. sha256 binds the exact bytes of the ruling document, so a later edit to that document invalidates every admission that cites it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "sha256", "ruled_at", "authorizing_operator", "instruction", "scope"],
+      "properties": {
+        "reference": {"$ref": "#/$defs/repo_path"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "ruled_at": {"type": "string", "format": "date-time"},
+        "authorizing_operator": {"$ref": "#/$defs/prose"},
+        "instruction": {"$ref": "#/$defs/prose"},
+        "scope": {"$ref": "#/$defs/prose"}
+      }
     },
     "authority": {"const": "facts_and_context_only"},
     "authority_ceiling": {"const": "A1_EXPLAIN"},
@@ -111,6 +126,8 @@
   "$defs": {
     "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.\\-]{0,15}$"},
     "prose": {"type": "string", "minLength": 1, "maxLength": 400},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "repo_path": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9._/-]+$"},
     "date": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
     "row": {
       "type": "object",
@@ -167,6 +184,10 @@
             "foreign_listing_or_adr_ambiguity"
           ]
         },
+        "issuer_relationship": {
+          "description": "Required for reviewed_admitted rows and forbidden otherwise. Says whether the claimed ticker is the sponsor itself or the sponsor's parent, so a downstream reader can tell 'this trial's sponsor IS the issuer' from 'this trial's sponsor is a SUBSIDIARY of the issuer' without re-deriving it from the name. parent_of_subsidiary_sponsor is a declared modelling choice with a visible consequence: the subsidiary's trials surface under the parent's ticker.",
+          "enum": ["direct_issuer", "parent_of_subsidiary_sponsor"]
+        },
         "confidence_class": {
           "description": "A review-triage label only. It is deliberately a word class and never a probability, weight, or score, and nothing downstream may read it as one.",
           "enum": ["strong_candidate", "weak_candidate", "unresolved"]
@@ -190,7 +211,7 @@
           }
         },
         "review": {
-          "description": "Populated only by a named human reviewer. Every field is null while the row is unreviewed or queued.",
+          "description": "The operator attestation. Populated only by a named human reviewer; every field is null or absent while the row is unreviewed or queued. An admitted row must carry all five: reviewer, timestamp, review reference, and the authorizing ruling bound by path and content digest.",
           "type": "object",
           "additionalProperties": false,
           "required": ["reviewed_by", "reviewed_at", "review_reference"],
@@ -202,7 +223,9 @@
                 {"type": "null"}
               ]
             },
-            "review_reference": {"oneOf": [{"$ref": "#/$defs/prose"}, {"type": "null"}]}
+            "review_reference": {"oneOf": [{"$ref": "#/$defs/prose"}, {"type": "null"}]},
+            "ruling_ref": {"oneOf": [{"$ref": "#/$defs/repo_path"}, {"type": "null"}]},
+            "ruling_sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
           }
         },
         "note": {"$ref": "#/$defs/prose"}

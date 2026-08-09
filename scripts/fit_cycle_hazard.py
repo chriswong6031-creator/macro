@@ -49,8 +49,7 @@ import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.validation import isotonic_calibration, apply_calibration  # noqa: E402
 

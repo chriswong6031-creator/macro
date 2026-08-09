@@ -1,0 +1,298 @@
+# CN TuShare full-A spine contract — 2026-08-08
+
+Status: foundation-only; synthetic verification complete, no live vendor request or bulk backfill.
+Authority: `context_only` — data/universe infrastructure, never a signal or promotion.
+Collector: `collectors/china_tushare_spine.py`
+Manifest schema: `contracts/cn_tushare_a_share_spine_manifest.v1.schema.json`
+
+## Purpose and stop-ship boundary
+
+The existing A-share cache is a curated, split-adjusted subset. It cannot support
+a survivorship-honest full-market verdict or an exact historical legal-ceiling
+claim. This collector is the replacement substrate: point-in-time SH/SZ/BJ
+identity and lifecycle, exact sessions, unadjusted nominal daily quotes, vendor
+daily price limits, suspensions, daily indicators, ST state, and effective names.
+
+It does not authorize TuShare use. TuShare's current
+[service agreement](https://tushare.pro/document/2?doc_id=405) describes the
+ordinary personal authorization as private/noncommercial. Before any network or
+store mutation, the collector requires a separately issued written vendor or
+institutional grant covering API access, bulk local retention, quantitative
+strategy research, commercial use, and private internal derivatives. Until that
+real receipt exists and a scalable cap plan is reviewed, this lane is
+`foundation_only_no_live_entitlement_or_scalable_backfill`.
+
+The Wave-0 Yahoo-derived 71,692-event artifact remains incompatible with exact
+legal-limit strategy claims: its nominally “raw” prices are split-adjusted and its
+reconstructed limits used binary/ties-to-even rounding. Do not merge its verdicts
+with this plane or promote them as exact-limit evidence.
+
+## Official contracts pinned
+
+All links are primary TuShare or exchange documentation checked 2026-08-08/09.
+
+| Endpoint/rule | Contract used | Collector consequence |
+|---|---|---|
+| Service agreement | <https://tushare.pro/document/2?doc_id=405> | Written commercial/institutional authorization gate; a token or boolean is not permission. |
+| `stock_basic` | <https://tushare.pro/document/2?doc_id=25> | SSE/SZSE/BSE × L/D/P/G; exact exchange/status, CNY, A-market, symbol/code checks; 6,000 cap. |
+| `fund_basic` | <https://tushare.pro/document/2?doc_id=19> | Exchange-fund identities are independent `known_out_of_scope` witnesses, not silently discarded rows. |
+| `bse_mapping` | <https://tushare.pro/document/2?doc_id=375> | Old BJ aliases must map to a canonical `920xxx.BJ` code; 1,000 cap. |
+| `trade_cal` | <https://tushare.pro/document/2?doc_id=26> | Exact exchange/range/day response; SSE and SZSE must have identical open-session sets. |
+| `bak_basic` | <https://tushare.pro/document/2?doc_id=262> | Exact-date historical stock-list witness from 2016; 7,000 cap. Pre-2016 stays an explicit gap. |
+| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request; orphans block. |
+| `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; the deterministic date×ticker fallback is correctness-tested but not operationally scalable. |
+| `daily_basic` | <https://tushare.pro/document/2?doc_id=32> | Exact date/ticker; 6,000 cap; `limit_status` domain 0–6 and close/limit semantics are audited. |
+| `stk_limit` | <https://tushare.pro/document/2?doc_id=183> | Exact source pre-close/up/down limits; 5,800 cap; non-A rows require independent exclusion or quarantine. |
+| `suspend_d` | <https://tushare.pro/document/2?doc_id=214> | Successful empty days are checkpointed; only a full-day `S` with no timing explains a missing daily row. |
+| `stock_st` | <https://tushare.pro/document/2?doc_id=397> | Exact daily ST membership from 2016-01-01; pre-2016 name inference remains partial. |
+| SZSE 2026 Trading Rules | <https://docs.static.szse.cn/www/lawrules/rule/trade/current/W020260424690713155663.pdf> | CNY 0.01 tick and 四舍五入; one-tick separation/floor in the validator. |
+| SSE 2026 Trading Rules | <https://www.sse.com.cn/lawandrules/sselawsrules2025/stocks/exchange/c/c_20260424_10816482.shtml> | Current exchange rule provenance pinned alongside SZSE. |
+
+`pro_bar` is not used. A calculated band is never substituted for `stk_limit`.
+
+## Authorization receipt gate
+
+`--authorization-receipt` points to a private JSON receipt with exact fields, and
+`--authorization-trust-allowlist` points to a separately controlled hash-pin file:
+
+- authorization ID, vendor, grantee, grantor, and whether the grant came from the
+  vendor or the institution;
+- issued/expiry dates;
+- an absolute path and SHA-256 for the independently stored written grant; and
+- the seven explicit scope booleans.
+
+The allowlist pins the exact receipt hash, grant-document hash, grant class, any
+chain hashes, and a canonical claim hash over issued/expiry dates plus every scope
+boolean. A store-local actor therefore cannot reuse a legitimate hash pin while
+forging broader scope or a later expiry. A direct vendor grant has no institutional chain. An
+institutional grant is accepted only with separately hashed vendor entitlement
+and vendor delegation documents, all pinned by the out-of-band allowlist. The
+allowlist file itself is trusted only when its SHA-256 appears in the immutable,
+code-reviewed hash set; that set is intentionally empty in this foundation commit.
+Runtime arguments and environment variables cannot add a trust root.
+
+The collector validates the receipt and referenced grant before acquiring the
+writer lock, creating the store, or invoking even an injected query. The grant
+must be effective on collection day and every required scope must be true. The
+private store also retains a sanitized hashes-only copy of the exact pinned
+allowlist so manifest-time verification can re-prove unique membership. The
+manifest copies only receipt/grant/trust/chain hashes, dates, grant class, and
+scope; names and private paths do not propagate. A self-authored receipt
+and local document do not match an independently controlled pin and cannot unlock
+collection.
+
+## Identity, lifecycle, and point-in-time universe
+
+- Repository tickers are `600519.SS`, `000001.SZ`, and `920163.BJ`.
+- Vendor-observed codes remain in `source_ts_code`; stable IDs are
+  `CN-XSHG-600519`, `CN-XSHE-000001`, and `CN-XBSE-920163`.
+- Old BJ codes remain aliases. Every canonical BSE mapping target must be `920xxx`.
+- SH 688/689 is STAR; the official SZ `300000–309999` allocation is ChiNext
+  (including the 309800–309999 CDR range); BJ is BSE; other admitted A code
+  families are main board.
+- `list_date` is inclusive; `delist_date` is the inclusive effective end. BSE
+  eligibility cannot precede 2021-11-15.
+- `bak_basic` is the exact-day PIT eligibility witness from 2016 onward. Before
+  2016, stock lifecycle is the best available construction and the manifest
+  explicitly refuses to call that an independent daily-universe witness.
+- `bak_basic` corroborates rather than replaces lifecycle eligibility. The shard
+  and coverage universe is the frozen `lifecycle ∪ PIT` set. Any post-2016
+  lifecycle/PIT difference is receipted with samples and blocks completeness.
+
+Reference refresh is generation-atomic. Raw `stock_basic`, `fund_basic`, and BSE
+mapping units land under an immutable staging generation; derived master/alias/
+classification artifacts compile inside that same generation; only then does one
+atomic pointer promotion expose it. The reader recomputes the promoted generation's
+semantic hash against the pointer once per collector/manifest operation, then pins
+that immutable generation ID through hot-path lookups. An interrupted refresh
+leaves the previous generation readable and cannot mix source vintages.
+
+## Exact request and source-row accounting law
+
+Every request persists a receipt containing its endpoint, exact fields, parameters,
+unit, contract hash, observed time, actual returned columns, row count, response
+status, and semantic response hash. A code-0 response is an attested empty only
+when the vendor supplied a real nonempty `fields` array and a real `items=[]`;
+malformed code-0 shells fail closed.
+
+Responses must bind exactly to the request:
+
+- `stock_basic`: requested exchange/status plus CNY/A-market/symbol/code;
+- `trade_cal`: returned exchange and every requested calendar day;
+- `namechange`: announcement anchor within the requested range;
+- daily/PIT endpoints: exact trade date, and exact ticker for a shard; and
+- all endpoints: returned column order exactly equals requested fields.
+
+Every source unit records and exposes this equation:
+
+```text
+source_rows = landed_A_rows + known_excluded_rows + quarantined_unknown_rows
+```
+
+Known fund exclusions come from the independent `fund_basic` identity table. The
+other documented `stk_limit` contaminant is B shares: official exchange code
+contracts independently identify SSE `900xxx` and SZSE `200xxx` as out of A-share
+scope ([SSE code guide](https://www.sse.com.cn/lawandrules/guide/stock/jyglywznylc/zn/c/c_20260713_10825354.shtml),
+[SZSE code table](https://www.szse.cn/marketServices/technicalservice/doc/P020241212550140892927.pdf)).
+Unknown rows are retained under `source_row_classification/quarantined_unknown`
+with their decoded raw payload and block completion. Name-history orphans use the
+same quarantine/equation and do not land in the A-share name partition. No row may
+disappear merely because it was absent from the A-share master.
+
+Terminal state is not trusted by assertion. Each unit stores semantic receipts for
+its exact landed-A subset, independently known-excluded ledger, and quarantine
+ledger, then recomputes all three on resume and manifest build. Its decoded request
+receipt must occupy the canonical store-contained path and re-derive the exact
+endpoint, unit, fields, and parameters. Missing, moved, swapped, or tampered source,
+classification, request, or reference-generation artifacts reopen the unit.
+
+## Sessions, prices, and event equality
+
+The canonical market clock is not a union of stock prints. It begins at the fixed
+1991-01-01 calendar anchor, requires exact SSE/SZSE calendar-day and open-session
+equality, validates `pretrade_date` adjacency, and assigns one immutable
+`market_session_position`. TuShare does not publish BSE in the documented
+`trade_cal` venue list, so BSE explicitly inherits that consensus from launch.
+
+`daily.vol` is stored in lots and `positive_volume` is exactly `volume_lots > 0`.
+Zero-volume source rows remain in the substrate. Any traded/listing-session claim
+must filter the flag; other endpoints must join daily before making such a claim.
+
+All non-null prices are exact CNY-cent ticks. Positive-volume `daily` rows require
+finite nonnegative volume/amount, positive complete OHLC/pre-close, and coherent
+OHLC ordering. `stk_limit` requires both bounds or neither, with upper strictly
+above positive pre-close and lower at or below pre-close (equality is legal only
+at the one-cent floor). `event_daily` then enforces:
+
+- one-to-one daily, daily-basic, and limit keys;
+- daily/stk-limit previous-close equality;
+- daily/daily-basic close equality;
+- bounded OHLC inside the exact source interval;
+- `daily_basic.limit_status` domain/direction/one-price semantics; and
+- touch/seal flags only by integer-cent equality for positive-volume bounded rows.
+
+`a_share_limit_price_bounds()` uses Decimal `ROUND_HALF_UP`, enforces a one-tick
+move and one-tick floor, and rejects off-tick inputs. It is validator-only because
+effective-dated IPO/ST/board/no-limit state must not be guessed from one ratio.
+
+## Cap fallback, scheduling, and resumability
+
+Whole-market responses at the documented limit are potentially truncated. For
+`daily`/`daily_basic` (6,000) and `stk_limit` (5,800), the collector freezes the
+exact lifecycle-eligible union PIT ticker set and switches to per-ticker shards.
+Each shard must return zero or one exact ticker/date row. The union is normalized,
+deduplicated, and cannot close until the completed-ticker count and ticker-set hash
+equal the frozen expectation. Only a small shard slice is attempted per unit per
+pass, so one dense day cannot monopolize a bounded run.
+
+The capped whole-market response is atomically relabeled
+`non_authoritative_cap_probe`; its observed rows are exposed as discarded probe
+rows and never enter the authoritative source equation. The parent source count
+must equal the sum of request-bound terminal child rows. This exact-date×ticker
+fallback is nevertheless combinatorially unsuitable for a 2011-present full-A
+backfill. `BULK_HISTORICAL_BACKFILL_READY` therefore remains code-reviewed `False`,
+network and injected collection fail before store mutation, and manifest
+completeness cannot close. Promotion requires a bounded ticker×date-range
+shard/transposition design (with time splitting at a per-ticker cap) and throughput
+evidence.
+
+Unattempted source units precede retries; retries are deterministic. Active-year
+name history uses an end-date-qualified unit so a partial-year success cannot
+masquerade as a completed year. State and monthly partitions use same-directory
+temporary files plus `os.replace`; exact source days replace prior rows, including
+empty tombstones. One nonblocking advisory lock permits a single writer per local
+store. There is no distributed multi-host lease.
+
+The default store is outside Git:
+
+```text
+~/.local/share/macro-dashboard/china_tushare_spine/
+  authorization_scope_receipt.json
+  authorization_trust_allowlist.json  # sanitized hashes-only pinned copy
+  reference/current_generation.json
+  reference/generations/<generation-id>/
+    source_bse_mapping.parquet
+    source_stock_basic/{SSE,SZSE,BSE}_{L,D,P,G}.parquet
+    source_fund_basic/E_{L,D,I}.parquet
+    security_master.parquet
+    identity_aliases.parquet
+    instrument_classification.parquet
+  reference/trade_calendar/year=YYYY.parquet
+  reference/market_sessions.parquet
+  bak_basic/year=YYYY/month=MM/part.parquet
+  name_history/year=YYYY.parquet
+  {daily,daily_basic,stk_limit,suspend_d,stock_st}/year=YYYY/month=MM/part.parquet
+  source_row_classification/{known_excluded,quarantined_unknown}/...
+  source_shards/{daily,daily_basic,stk_limit}/...
+  receipts/requests/<endpoint>/<unit>/<request-hash>.json
+  event_daily/year=YYYY/month=MM/part.parquet
+  coverage/daily_security_coverage.parquet
+  collection_state.json
+  completeness_manifest.json
+```
+
+The legacy in-repo `data/china_tushare_spine/` containment subtree is ignored.
+Every other repository-local store path is rejected so paid raw data cannot become
+stageable through a renamed directory. HTTPS-only transport with redirects disabled comes from the shared reviewed
+client. Vendor bodies, payloads, and exceptions are never logged. Logical decoded
+values—including DataFrame attrs/metadata, columns, unused category values, and
+index levels—are scanned before writes and after Parquet reads. A temporary Parquet
+file is byte-scanned and decoded/roundtripped before atomic promotion; raw receipt
+bytes are scanned before hashing.
+
+## Completeness manifest
+
+`completeness_manifest.json` closes only when all of the following are true:
+
+1. the written authorization hash/scope/expiry and out-of-band trust/chain pins are
+   valid at collection time;
+2. the immutable operational-backfill code gate has been separately promoted;
+3. the current reference generation, exact calendar, active-year name unit, and
+   every required source unit are request-bound and complete;
+4. all per-unit source equations hold, unknown count is zero, name orphan count is
+   zero, and any shard ticker-set receipt closes;
+5. every requested post-2016 session has a `bak_basic` witness, lifecycle and PIT
+   sets reconcile exactly, and every requested daily endpoint unit is complete
+   (pre-start endpoints are explicitly N/A);
+6. duplicate-key, dense-key, lifecycle, exact-session, suspension, and daily
+   security coverage checks close;
+7. the canonical exact-price event join closes; and
+8. authorization, source, semantic, schema/query-contract, request-count, coverage,
+   lifecycle, data-gap, and ore receipts are present.
+
+`generated_at` is excluded from `manifest_identity_sha256`, so the same content
+retains a stable identity. Request observations and collection-state changes remain
+part of content identity. Artifacts are private and must not be committed.
+
+## Remaining licensing/data gaps
+
+- No real authorization receipt/trust pin, token, endpoint entitlement, throughput,
+  or live sample was exercised in this wave. This is intentionally `NO LIVE`.
+- Exact-date×ticker cap recovery is not a viable long-horizon backfill plan. A
+  ticker×date-range implementation and measured request/retry budget are required
+  before the immutable operational gate may change.
+- `bak_basic` and exact daily `stock_st` begin in 2016; pre-2016 PIT universe and
+  exact ST membership remain named gaps.
+- Direct BSE calendar provenance is absent from the documented endpoint.
+- Same-key vendor corrections replace local materialization; there is no bitemporal
+  raw-response revision ledger.
+- No minute, auction, order-book, first-seal, fillability, pre-open float, or chip
+  history is collected.
+- Calculated historical bounds have not been reconciled against `stk_limit` across
+  every rule era; calculations remain validator-only.
+
+## Ore ledger
+
+Constructed: authorization gate; atomic lifecycle/reference generations; BSE 920
+aliases; PIT 2016+ universe; exact session positions; lossless source classification;
+request-bound schemas/receipts; deterministic but operationally gated cap shards;
+multi-artifact terminal binding; discarded cap-probe accounting; nominal OHLCV and
+positive-volume state; daily-basic/limit/suspension/ST/name provenance; lifecycle
+and coverage reconciliation; integer-cent exact-source event rows; half-up
+validator; exact equality and vendor-bound checks.
+
+Not tested: live vendor access, adjusted `pro_bar`, pre-2016 exact universe/ST,
+direct BSE calendar, scalable ticker-range cap recovery and vendor retry throughput,
+historical calculated-band parity across rule eras, minute/
+auction/order-book/seal-time/fillability histories, and actual bulk throughput.
+Any future null must name which of those construction spaces was not measured.

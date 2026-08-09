@@ -1,0 +1,11 @@
+{
+  "directory": {
+    "name": "/Archives/edgar/data/1792167/000139834426013841",
+    "item": [
+      {"last-modified": "2026-08-07 17:25:16", "name": "0001398344-26-013841-index-headers.html", "size": "330"},
+      {"last-modified": "2026-08-07 17:25:16", "name": "0001398344-26-013841.txt", "size": "231"},
+      {"last-modified": "2026-08-07 17:25:16", "name": "primary_doc.xml", "size": "2851"},
+      {"last-modified": "2026-08-07 17:25:16", "name": "information_table.xml", "size": "1073"}
+    ]
+  }
+}

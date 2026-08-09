@@ -18,6 +18,9 @@ from typing import Any, Mapping, Sequence
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from engine.biocatalyst.activation import (
     ActivationError,
     CloudflareControlPlane,
@@ -29,9 +32,9 @@ from engine.biocatalyst.activation import (
     heartbeat_activation,
     seal_activation,
     validate_local_activation,
-)
-from engine.biocatalyst.storage import DedicatedR2Config, DedicatedR2Store, StorageError
-from engine.sector_intelligence import canonical_json_bytes
+)  # noqa: E402
+from engine.biocatalyst.storage import DedicatedR2Config, DedicatedR2Store, StorageError  # noqa: E402
+from engine.sector_intelligence import canonical_json_bytes  # noqa: E402
 
 
 class UrllibTransport:

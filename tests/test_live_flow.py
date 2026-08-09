@@ -6,8 +6,8 @@ Exercises:
   2.  Signing softness — side never a bare "buy" or "sell" (always "~buy"/"~sell")
   3.  Coalescing — multiple prints per contract aggregate correctly
   4.  Floor gate — premium < floor is not notable
-  5.  Z gate — premium_z >= 3 is notable even below floor; baseline_source="z252"
-  6.  Floor fallback — no baseline → floor gate, baseline_source="floor", premium_z=None
+  5.  Per-contract PIT gate never misuses the root/day baseline as a contract z-score
+  6.  Floor gate → baseline_source="floor", premium_z=None
   7.  vol_gt_oi with OI present — True/False correctly assigned
   8.  vol_gt_oi without OI — None
   9.  repeated flag — same contract notable in >=2 distinct cycles
@@ -26,7 +26,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import stat
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
@@ -43,6 +45,25 @@ SESSION_DATE = "2026-07-02"
 BATCH_TS     = "2026-07-02T14:30:00Z"
 
 # ── fixture helpers ────────────────────────────────────────────────────────────
+
+
+def test_coalesce_uses_contract_weighted_average_price():
+    prints = pd.DataFrame([
+        {
+            "root": "SPY", "expiration": "2026-07-17", "strike": 550.0,
+            "right": "C", "price": 1.0, "size": 1, "sign": 1,
+            "trade_timestamp": BATCH_TS, "sequence": 1,
+        },
+        {
+            "root": "SPY", "expiration": "2026-07-17", "strike": 550.0,
+            "right": "C", "price": 10.0, "size": 100, "sign": 1,
+            "trade_timestamp": BATCH_TS, "sequence": 2,
+        },
+    ])
+    row = lf._coalesce_batch(prints, SESSION_DATE).iloc[0]
+    assert row["size"] == 101
+    assert row["premium"] == 100_100
+    assert row["avg_price"] == pytest.approx(100_100 / (101 * 100))
 
 def _make_trade(
     root="SPY", right="C", expiration="2026-07-05", strike=550.0,
@@ -76,7 +97,7 @@ def _puts(*trades) -> pd.DataFrame:
 
 def _run(calls_df, puts_df=None, prior=None, oi_prev=None, baselines=None,
          etf_floor=1_000_000, name_floor=250_000,
-         etf_anchors=None, root="SPY") -> dict:
+         etf_anchors=None, root="SPY", oi_vintage=None) -> dict:
     """Convenience wrapper around lf.process_batch."""
     return lf.process_batch(
         calls_df=calls_df,
@@ -89,6 +110,7 @@ def _run(calls_df, puts_df=None, prior=None, oi_prev=None, baselines=None,
         etf_floor=etf_floor,
         name_floor=name_floor,
         etf_anchors=etf_anchors or ["SPY", "QQQ"],
+        oi_vintage=oi_vintage,
     )
 
 
@@ -164,6 +186,16 @@ class TestCoalescing:
         ev = result["events"][0]
         assert ev["n_prints"] == 2
 
+    def test_event_freezes_first_availability_and_exact_oi_vintage(self):
+        result = _run(
+            _calls(), etf_floor=0, name_floor=0, oi_vintage="2026-07-01",
+        )
+        ev = result["events"][0]
+        assert ev["observed_at"] == BATCH_TS
+        assert "available_at" not in ev
+        assert "decision_at" not in ev
+        assert ev["oi_vintage"] == "2026-07-01"
+
     def test_total_size_sum(self):
         calls = _calls(
             {"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 10},
@@ -223,8 +255,8 @@ class TestNotabilityGate:
                       etf_anchors=["SPY"])
         assert result["events"] == []
 
-    def test_z_gate_passes_at_3sigma(self):
-        """premium_z = 4 → notable; baseline_source='z252'."""
+    def test_root_day_z_never_gates_a_contract_below_floor(self):
+        """A root/day denominator cannot create a per-contract event."""
         # mean=100000, std=20000; premium=180000 → z=4.0
         baselines = {"SPY": {"mean": 100_000.0, "std": 20_000.0, "n_obs": 200,
                              "computed_asof": "2026-07-01"}}
@@ -232,11 +264,7 @@ class TestNotabilityGate:
         calls = _calls({"price": 6.00, "bid": 5.90, "ask": 6.10, "size": 300})
         result = _run(calls, baselines=baselines, etf_floor=1_000_000, name_floor=250_000,
                       etf_anchors=["SPY"])
-        assert len(result["events"]) == 1
-        ev = result["events"][0]
-        assert ev["baseline_source"] == "z252"
-        assert ev["premium_z"] is not None
-        assert float(ev["premium_z"]) >= 3.0
+        assert result["events"] == []
 
     def test_no_baseline_floor_source(self):
         """No baselines → baseline_source='floor' and premium_z=None."""
@@ -248,6 +276,28 @@ class TestNotabilityGate:
         ev = result["events"][0]
         assert ev["baseline_source"] == "floor"
         assert ev["premium_z"] is None
+
+    def test_contract_event_is_invariant_to_display_baseline(self):
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000})
+        absent = _run(
+            calls, baselines=None, etf_floor=1_000_000, name_floor=250_000,
+            etf_anchors=["SPY"],
+        )
+        future = _run(
+            calls,
+            baselines={"SPY": {
+                "mean": 1.0, "std": 1.0, "n_obs": 200,
+                "computed_asof": "2099-01-01",
+            }},
+            etf_floor=1_000_000, name_floor=250_000, etf_anchors=["SPY"],
+        )
+        malformed = _run(
+            calls,
+            baselines={"SPY": {"mean": 0, "std": 1, "n_obs": "bad"}},
+            etf_floor=1_000_000, name_floor=250_000, etf_anchors=["SPY"],
+        )
+        assert absent["events"] == future["events"] == malformed["events"]
+        assert absent["state"] == future["state"] == malformed["state"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -313,6 +363,215 @@ class TestRepeatedFlag:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestEventIdIdempotency:
+    def test_integral_sequence_dtype_does_not_change_event_identity(self):
+        assert lf._event_id(
+            SESSION_DATE, "SPY", "2026-07-05", 550.0, "C", 1000,
+        ) == lf._event_id(
+            SESSION_DATE, "SPY", "2026-07-05", 550.0, "C", 1000.0,
+        )
+
+    @pytest.mark.parametrize("invalid", [np.nan, 1000.5, True, -1, 2**53])
+    def test_invalid_unrelated_sequence_cannot_perturb_valid_event(self, invalid):
+        valid = _calls({
+            "price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000,
+            "sequence": 1000,
+        })
+        baseline = _run(valid, etf_floor=0, name_floor=0)
+        poison = _calls({
+            "strike": 551.0, "price": 1.0, "bid": 0.9, "ask": 1.0,
+            "size": 1, "sequence": invalid,
+        })
+        # Keep the two source legs separate. This proves validation happens
+        # before pandas can coerce a bool-typed leg into integer ``1`` while
+        # concatenating it with an integer-typed leg.
+        mixed = _run(valid, puts_df=poison, etf_floor=0, name_floor=0)
+        assert [event["id"] for event in mixed["events"]] == [
+            baseline["events"][0]["id"]
+        ]
+        assert any(
+            note.startswith("invalid_source_rows_dropped=")
+            for note in mixed["meta_notes"]
+        )
+
+    def test_all_invalid_sequences_are_dropped_before_state_mutation(self):
+        calls = _calls({
+            "price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000,
+            "sequence": np.nan,
+        })
+        result = _run(calls, etf_floor=0, name_floor=0)
+        assert result["events"] == []
+        assert result["state"]["contract_vol"] == {}
+        assert result["state"]["root_gross_today"] == {}
+
+    def test_premarket_print_cannot_tip_rth_contract_over_floor(self):
+        preopen = _calls({
+            "price": 2.0, "bid": 1.9, "ask": 2.0, "size": 3000,
+            "trade_ts": "2026-07-02T09:29:59", "sequence": 999,
+        })
+        at_open = _calls({
+            "price": 2.0, "bid": 1.9, "ask": 2.0, "size": 3000,
+            "trade_ts": "2026-07-02T09:30:00", "sequence": 1000,
+        })
+        mixed = _run(
+            pd.concat([preopen, at_open], ignore_index=True),
+            etf_floor=1_000_000, name_floor=250_000,
+        )
+        control = _run(at_open, etf_floor=1_000_000, name_floor=250_000)
+        assert mixed["events"] == control["events"] == []
+        assert mixed["state"] == control["state"]
+        assert mixed["state"]["root_gross_today"]["SPY"] == 600_000
+
+    def test_fractional_contract_size_is_dropped_before_premium_math(self):
+        invalid = _calls({
+            "price": 2.6, "bid": 2.4, "ask": 2.6, "size": 4000.5,
+            "sequence": 1000,
+        })
+        result = _run(invalid, etf_floor=1_000_000, name_floor=250_000)
+        assert result["events"] == []
+        assert result["state"]["contract_vol"] == {}
+        assert result["state"]["root_gross_today"] == {}
+
+    def test_expired_contract_is_dropped_before_any_state_mutation(self):
+        valid = _calls({
+            "expiration": "2026-07-17", "price": 2.6, "bid": 2.4, "ask": 2.6,
+            "size": 4000, "sequence": 1000,
+        })
+        expired = _calls({
+            "expiration": "2026-07-01", "strike": 551.0,
+            "price": 2.6, "bid": 2.4, "ask": 2.6,
+            "size": 4000, "sequence": 1001,
+        })
+        control = _run(valid, etf_floor=1_000_000, name_floor=250_000)
+        mixed = _run(
+            pd.concat([valid, expired], ignore_index=True),
+            etf_floor=1_000_000, name_floor=250_000,
+        )
+        assert mixed["events"] == control["events"]
+        assert mixed["state"] == control["state"]
+        assert any(
+            note.startswith("invalid_source_rows_dropped=")
+            for note in mixed["meta_notes"]
+        )
+
+    @pytest.mark.parametrize("invalid_root", ["BAD ROOT", "A/B"])
+    def test_invalid_root_cannot_poison_a_valid_contract(self, invalid_root):
+        valid = _calls({
+            "price": 2.6, "bid": 2.4, "ask": 2.6,
+            "size": 4000, "sequence": 1000,
+        })
+        invalid = _calls({
+            "root": invalid_root, "strike": 551.0,
+            "price": 2.6, "bid": 2.4, "ask": 2.6,
+            "size": 4000, "sequence": 1001,
+        })
+        control = _run(valid, etf_floor=1_000_000, name_floor=250_000)
+        mixed = _run(
+            pd.concat([valid, invalid], ignore_index=True),
+            etf_floor=1_000_000, name_floor=250_000,
+        )
+        assert mixed["events"] == control["events"]
+        assert mixed["state"] == control["state"]
+
+    @pytest.mark.parametrize("field,value", [
+        ("etf_floor", -1), ("name_floor", -1),
+        ("etf_floor", True), ("name_floor", 1.5),
+    ])
+    def test_invalid_floor_config_fails_before_processing(self, field, value):
+        kwargs = {"etf_floor": 1_000_000, "name_floor": 250_000}
+        kwargs[field] = value
+        with pytest.raises(ValueError, match="exact non-negative integer"):
+            _run(_calls(), **kwargs)
+
+    @pytest.mark.parametrize("field,value", [
+        ("etf_floor", -1), ("name_floor", "250000"),
+        ("etf_floor", True), ("name_floor", 1.5),
+    ])
+    def test_run_cycle_rejects_coercible_invalid_floor_config(self, field, value):
+        import scripts.live_flow_poller as poller
+
+        cfg = {
+            "max_concurrent": 2,
+            "etf_floor": 1_000_000,
+            "name_floor": 250_000,
+        }
+        cfg[field] = value
+        with pytest.raises(ValueError, match="exact non-negative integer"):
+            poller.run_cycle(
+                roots=[],
+                session_date=SESSION_DATE,
+                delta_mode="full_day",
+                day_state={},
+                baselines={},
+                cfg=cfg,
+                cycle_watermarks={},
+            )
+
+    @pytest.mark.parametrize("session_date", [
+        "2026-07-04", "2026-07-03", "20260702",
+    ])
+    def test_non_session_or_noncanonical_date_fails_before_processing(
+        self, session_date,
+    ):
+        with pytest.raises(ValueError, match="session_date must"):
+            lf.process_batch(
+                calls_df=_calls(), puts_df=None,
+                session_date=session_date, batch_ts=BATCH_TS,
+            )
+
+    @pytest.mark.parametrize("oi_vintage", [
+        "2026-07-04", "2026-07-02", "2026-07-06", "20260701",
+    ])
+    def test_invalid_oi_vintage_fails_before_event_state(self, oi_vintage):
+        with pytest.raises(ValueError, match="oi_vintage must"):
+            _run(_calls(), oi_vintage=oi_vintage)
+
+
+    def test_oi_loader_searches_only_prior_nyse_sessions(self, monkeypatch) -> None:
+        from engine import thetadata_store as theta_store
+        from scripts import live_flow_poller as poller
+
+        calls: list[str] = []
+
+        def fake_chain(session_date: str, root: str, *, store):
+            calls.append(session_date)
+            if session_date == "2026-09-03":
+                return pd.DataFrame({
+                    "expiration": ["2026-09-18"], "strike": [100.0],
+                    "right": ["C"], "open_interest": [50],
+                })
+            return pd.DataFrame()
+
+        monkeypatch.setattr(poller, "_oi_store", lambda: object())
+        monkeypatch.setattr(theta_store, "chain", fake_chain)
+        loaded = poller._load_oi_prev("TEST", "2026-09-08")
+        assert calls == ["2026-09-04", "2026-09-03"]
+        assert loaded is not None
+        assert loaded.attrs["oi_vintage"] == "2026-09-03"
+
+    def test_early_close_boundary_is_excluded(self):
+        before_close = _calls({
+            "trade_ts": "2026-11-27T12:59:59", "sequence": 1000,
+            "expiration": "2026-12-18",
+            "size": 4000, "price": 2.6, "bid": 2.4, "ask": 2.6,
+        })
+        at_close = _calls({
+            "trade_ts": "2026-11-27T13:00:00", "sequence": 1001,
+            "expiration": "2026-12-18",
+            "size": 4000, "price": 2.6, "bid": 2.4, "ask": 2.6,
+        })
+        result = lf.process_batch(
+            calls_df=pd.concat([before_close, at_close], ignore_index=True),
+            puts_df=None,
+            session_date="2026-11-27",
+            batch_ts="2026-11-27T18:00:01Z",
+            etf_floor=1_000_000,
+            name_floor=250_000,
+            etf_anchors=["SPY"],
+        )
+        assert len(result["events"]) == 1
+        assert result["events"][0]["size"] == 4000
+        assert result["events"][0]["ts"] == "2026-11-27T17:59:59Z"
+
     def test_same_tape_twice_no_new_events(self):
         """Re-processing the same tape within a session → zero new events."""
         calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000, "sequence": 1001})
@@ -380,7 +639,7 @@ class TestHeatGroups:
             {"price": 2.00, "bid": 1.90, "ask": 2.10, "size": 100},  # 20000
             {"price": 3.00, "bid": 2.90, "ask": 3.10, "size": 50},   # 15000
         )
-        result = _run(calls, etf_floor=1e9, name_floor=1e9)  # no events, but heat still fires
+        result = _run(calls, etf_floor=1_000_000_000, name_floor=1_000_000_000)  # no events, but heat still fires
         assert len(result["heat"]) == 1
         row = result["heat"][0]
         assert row["gross_premium"] == pytest.approx(35_000, abs=1)
@@ -388,21 +647,21 @@ class TestHeatGroups:
     def test_net_signed_premium_soft_positive_for_ask_side(self):
         """All ask-side → net_signed_premium_soft > 0."""
         calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 100})
-        result = _run(calls, etf_floor=1e9, name_floor=1e9)
+        result = _run(calls, etf_floor=1_000_000_000, name_floor=1_000_000_000)
         row = result["heat"][0]
         assert row["net_signed_premium_soft"] > 0
 
     def test_call_prem_share_for_calls_only(self):
         """Only call prints → call_prem_share=1.0."""
         calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 100})
-        result = _run(calls, etf_floor=1e9, name_floor=1e9)
+        result = _run(calls, etf_floor=1_000_000_000, name_floor=1_000_000_000)
         row = result["heat"][0]
         assert row["call_prem_share"] == pytest.approx(1.0, abs=0.01)
 
     def test_group_zh_present(self):
         """Every heat row must have a non-empty group_zh."""
         calls = _calls()
-        result = _run(calls, etf_floor=1e9, name_floor=1e9)
+        result = _run(calls, etf_floor=1_000_000_000, name_floor=1_000_000_000)
         for row in result["heat"]:
             assert row.get("group_zh"), f"group_zh missing/empty in heat row: {row}"
 
@@ -731,6 +990,30 @@ class TestVolGtOICumulative:
         assert last_events[0]["vol_gt_oi"] is True, (
             "Cumulative 120 over 3 cycles > OI 100 should be True")
 
+    def test_contract_volume_and_repetition_never_cross_ticker_roots(self):
+        """A same-strike SPY print cannot make QQQ look repeated or over OI."""
+        oi = self._oi_frame(oi=50)
+        spy = _calls({
+            "root": "SPY", "price": 2.60, "bid": 2.40, "ask": 2.60,
+            "size": 100, "sequence": 1000,
+        })
+        first = _run(spy, oi_prev=oi, etf_floor=0, name_floor=0)
+        assert first["events"][0]["vol_gt_oi"] is True
+        assert first["events"][0]["repeated"] is False
+
+        qqq = _calls({
+            "root": "QQQ", "price": 2.60, "bid": 2.40, "ask": 2.60,
+            "size": 1, "sequence": 1000,
+        })
+        second = _run(
+            qqq, oi_prev=oi, prior=first["state"], etf_floor=0, name_floor=0,
+        )
+        assert len(second["events"]) == 1
+        assert second["events"][0]["root"] == "QQQ"
+        assert second["events"][0]["vol_gt_oi"] is False
+        assert second["events"][0]["repeated"] is False
+        assert second["state"]["contract_vol"][("QQQ", "2026-07-05", 550.0, "C")] == 1
+
 
 # ──��──────────────────────────────────────────────────────────────────────────
 # FIX 2 — overlap double-count (sequence dedup) and watermark advance
@@ -780,7 +1063,7 @@ class TestSequenceDedup:
         calls1 = self._batch_calls([1, 2, 3], size=50)
         result1 = _run(calls1, etf_floor=0, name_floor=0)
         # Get the cumulative vol after cycle 1
-        key = ("2026-07-05", 550.0, "C")
+        key = ("SPY", "2026-07-05", 550.0, "C")
         vol_after_c1 = result1["state"]["contract_vol"].get(key, 0)
 
         # Re-deliver the exact same rows
@@ -813,12 +1096,12 @@ class TestSequenceDedup:
 
         result1 = _run(calls, etf_floor=0, name_floor=0)
         gross_c1 = result1["state"]["root_gross_today"].get("SPY", 0.0)
-        vol_c1   = result1["state"]["contract_vol"].get(("2026-07-05", 550.0, "C"), 0)
+        vol_c1   = result1["state"]["contract_vol"].get(("SPY", "2026-07-05", 550.0, "C"), 0)
 
         # Second pull of the SAME full-day data (simulating a full_day cycle re-pull)
         result2 = _run(calls, prior=result1["state"], etf_floor=0, name_floor=0)
         gross_c2 = result2["state"]["root_gross_today"].get("SPY", 0.0)
-        vol_c2   = result2["state"]["contract_vol"].get(("2026-07-05", 550.0, "C"), 0)
+        vol_c2   = result2["state"]["contract_vol"].get(("SPY", "2026-07-05", 550.0, "C"), 0)
 
         assert gross_c2 == pytest.approx(gross_c1, rel=1e-6), (
             "full_day re-pull must not change gross_today")
@@ -1952,7 +2235,8 @@ class TestRunCycleEndToEnd:
         }])
 
     def _run_real_cycle(self, monkeypatch, frames: dict,
-                        day_state: dict | None = None) -> tuple:
+                        day_state: dict | None = None,
+                        cycle_watermarks: dict | None = None) -> tuple:
         """Invoke the real run_cycle with all I/O stubbed.
 
         `frames` maps root → canned calls DataFrame (the puts leg returns an empty
@@ -1994,6 +2278,13 @@ class TestRunCycleEndToEnd:
             "etf_anchors": ["SPY", "QQQ", "IWM"],
             "retention_hours": 24,
         }
+        def fake_stager(session_date, events):
+            for event in events:
+                event["available_at"] = event["decision_at"]
+                event["published_at"] = None
+                event["source_snapshot_asof"] = event["available_at"]
+                event["anchor_strategy"] = "durable_available_at"
+            return events
         return poller.run_cycle(
             roots=list(frames.keys()),
             session_date=SESSION_DATE,
@@ -2001,9 +2292,26 @@ class TestRunCycleEndToEnd:
             day_state=day_state or {},
             baselines={},
             cfg=cfg,
-            cycle_watermarks={},
+            cycle_watermarks=cycle_watermarks if cycle_watermarks is not None else {},
             forced_full_day=True,
+            event_stager=fake_stager,
         )
+
+    def test_engine_failure_does_not_advance_root_watermark(self, monkeypatch):
+        frames = {
+            "SPY": self._root_frame("SPY", "09:30", size=100, seq_base=1000),
+        }
+        watermarks = {"SPY": {"ts": "2026-07-02T13:29:00Z", "seq": 999}}
+        monkeypatch.setattr(
+            lf, "process_batch",
+            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("synthetic engine failure")),
+        )
+        self._run_real_cycle(
+            monkeypatch, frames, cycle_watermarks=watermarks,
+        )
+        assert watermarks == {
+            "SPY": {"ts": "2026-07-02T13:29:00Z", "seq": 999}
+        }
 
     def test_market_tide_gross_sums_all_roots_same_minute(self, monkeypatch):
         """3 roots trading the same minute — gross must be the cross-root sum."""
@@ -2031,6 +2339,19 @@ class TestRunCycleEndToEnd:
             assert k in updated_state, f"tide key {k} missing from updated day state"
         assert updated_state["market_tide_minutes"]["09:30"]["gross"] == (
             pytest.approx(expected, rel=1e-4))
+
+    def test_event_availability_never_exceeds_snapshot_clock(self, monkeypatch):
+        feed, _, _, _, _ = self._run_real_cycle(
+            monkeypatch,
+            {"SPY": self._root_frame("SPY", "09:30", seq_base=1000)},
+        )
+        event = feed["events"][0]
+        assert pd.Timestamp(event["observed_at"]) <= pd.Timestamp(event["decision_at"])
+        assert pd.Timestamp(event["decision_at"]) <= pd.Timestamp(event["available_at"])
+        assert event["published_at"] is None
+        assert event["anchor_strategy"] == "durable_available_at"
+        assert event["source_snapshot_asof"] == event["available_at"]
+        assert pd.Timestamp(event["available_at"]) <= pd.Timestamp(feed["asof"])
 
     def test_tide_current_payload_covers_every_root(self, monkeypatch):
         """tide_current.json built from run_cycle's state must contain every root."""
@@ -2171,6 +2492,13 @@ class TestRunCycleViaFetchRoot:
             "etf_anchors": ["SPY", "QQQ"],   # NVDA is NOT an ETF anchor → "Other" sector
             "retention_hours": 24,
         }
+        def fake_stager(session_date, events):
+            for event in events:
+                event["available_at"] = event["decision_at"]
+                event["published_at"] = None
+                event["source_snapshot_asof"] = event["available_at"]
+                event["anchor_strategy"] = "durable_available_at"
+            return events
         return poller.run_cycle(
             roots=list(frames.keys()),
             session_date=SESSION_DATE,
@@ -2180,6 +2508,7 @@ class TestRunCycleViaFetchRoot:
             cfg=cfg,
             cycle_watermarks={},
             forced_full_day=True,
+            event_stager=fake_stager,
         )
 
     def test_tide_sectors_and_top_net_impact_all_roots(self, monkeypatch):
@@ -2471,7 +2800,7 @@ class TestDayStateVersionDiscard:
             "scripts.live_flow_poller._state_dir", lambda: state_dir)
 
         seq_key = ("SPY", "2026-07-05", 550.0, "C")
-        cv_key  = ("2026-07-05", 550.0, "C")   # contract_vol stays a 3-tuple
+        cv_key  = ("SPY", "2026-07-05", 550.0, "C")
         _save_day_state(SESSION_DATE, {
             "emitted_ids": set(),
             "seen_sequences": {seq_key: 500.0},
@@ -2485,8 +2814,263 @@ class TestDayStateVersionDiscard:
             f"4-tuple seen_sequences key must restore as a tuple after reload; "
             f"got keys {list(ss.keys())!r} (string key => dedup broken on restart)")
         assert ss[seq_key] == pytest.approx(500.0)
-        # 3-tuple contract_vol keys must still restore correctly
+        # All per-contract state is root-scoped and must round-trip identically.
         assert cv_key in loaded["contract_vol"]
+
+
+class TestDayStateLearningWal:
+    @staticmethod
+    def _state() -> dict:
+        return {
+            "emitted_ids": {"event-1"},
+            "all_events": [],
+            "pending_learning_events": [{
+                "id": "event-1",
+                "ts": "2026-07-02T14:30:00Z",
+                "observed_at": "2026-07-02T14:31:00Z",
+                "decision_at": "2026-07-02T14:32:00Z",
+            }],
+            "cycle_watermarks": {
+                "SPY": {"ts": "2026-07-02T14:30:00Z", "seq": 1000},
+            },
+            "seen_sequences": {
+                ("SPY", "2026-07-05", 550.0, "C"): 1000,
+            },
+            "contract_vol": {
+                ("SPY", "2026-07-05", 550.0, "C"): 100,
+            },
+            "notability_history": {
+                ("SPY", "2026-07-05", 550.0, "C"): 1,
+            },
+        }
+
+    @staticmethod
+    def _enriched(event: dict) -> dict:
+        return {
+            **event,
+            "available_at": "2026-07-02T14:33:00Z",
+            "published_at": None,
+            "source_snapshot_asof": "2026-07-02T14:33:00Z",
+            "anchor_strategy": "durable_available_at",
+        }
+
+    def test_wal_save_precedes_stage_and_survives_stage_failure(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        state = self._state()
+        poller._save_day_state(SESSION_DATE, state)
+
+        with pytest.raises(RuntimeError, match="stage failed"):
+            poller._drain_pending_learning_events(
+                SESSION_DATE,
+                state,
+                event_stager=lambda *_: (_ for _ in ()).throw(RuntimeError("stage failed")),
+            )
+        restored = poller._load_day_state(SESSION_DATE)
+        assert restored["pending_learning_events"] == state["pending_learning_events"]
+        assert restored["all_events"] == []
+        assert restored["seen_sequences"] == state["seen_sequences"]
+
+    def test_crash_after_stage_before_clear_replays_same_wal_then_clears(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        state = self._state()
+        poller._save_day_state(SESSION_DATE, state)
+        real_save = poller._save_day_state
+        staged_inputs: list[list[dict]] = []
+
+        def stager(_session, events):
+            staged_inputs.append([dict(event) for event in events])
+            return [self._enriched(event) for event in events]
+
+        monkeypatch.setattr(
+            poller, "_save_day_state",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                RuntimeError("crash before clear")
+            ),
+        )
+        with pytest.raises(RuntimeError, match="crash before clear"):
+            poller._drain_pending_learning_events(
+                SESSION_DATE, state, event_stager=stager,
+            )
+        monkeypatch.setattr(poller, "_save_day_state", real_save)
+        restored = poller._load_day_state(SESSION_DATE)
+        assert restored["pending_learning_events"]
+        cleared, _ = poller._drain_pending_learning_events(
+            SESSION_DATE, restored, event_stager=stager,
+        )
+        assert staged_inputs[0] == staged_inputs[1]
+        assert cleared["pending_learning_events"] == []
+        assert [event["id"] for event in cleared["all_events"]] == ["event-1"]
+        persisted = poller._load_day_state(SESSION_DATE)
+        assert persisted["pending_learning_events"] == []
+        assert persisted["all_events"] == cleared["all_events"]
+
+    def test_stager_mismatch_never_clears_wal(self, tmp_path, monkeypatch):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        state = self._state()
+        poller._save_day_state(SESSION_DATE, state)
+        with pytest.raises(RuntimeError, match="reconcile every"):
+            poller._drain_pending_learning_events(
+                SESSION_DATE, state, event_stager=lambda *_: [],
+            )
+        assert poller._load_day_state(SESSION_DATE)["pending_learning_events"]
+
+    def test_same_count_wrong_id_or_duplicate_never_clears_wal(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        state = self._state()
+        poller._save_day_state(SESSION_DATE, state)
+
+        wrong = self._enriched({**state["pending_learning_events"][0], "id": "wrong-id"})
+        with pytest.raises(RuntimeError, match="changed pending decision payload"):
+            poller._drain_pending_learning_events(
+                SESSION_DATE, state, event_stager=lambda *_: [wrong],
+            )
+        assert poller._load_day_state(SESSION_DATE)["pending_learning_events"]
+
+        duplicated = dict(state)
+        duplicated["pending_learning_events"] = [
+            state["pending_learning_events"][0],
+            dict(state["pending_learning_events"][0]),
+        ]
+        with pytest.raises(RuntimeError, match="duplicate event ids"):
+            poller._drain_pending_learning_events(
+                SESSION_DATE, duplicated, event_stager=lambda *_: [],
+            )
+
+    @pytest.mark.parametrize("override", [False, True])
+    def test_missing_or_corrupt_state_with_existing_stage_fails_closed(
+        self, tmp_path, monkeypatch, override: bool,
+    ):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        stage_dir = tmp_path / "override-events" if override else state_dir / "events"
+        stage_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        if override:
+            monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(stage_dir))
+        else:
+            monkeypatch.delenv("LIVE_FLOW_EVENT_STAGE_DIR", raising=False)
+        (stage_dir / f"{SESSION_DATE}.jsonl").write_text('{"durable":true}\n')
+        with pytest.raises(RuntimeError, match="missing"):
+            poller._load_day_state(SESSION_DATE)
+        (state_dir / f"day_state_{SESSION_DATE}.json").write_text("{broken")
+        with pytest.raises(RuntimeError, match="cannot recover"):
+            poller._load_day_state(SESSION_DATE)
+
+    def test_day_state_replace_is_file_and_directory_durable(
+        self, tmp_path, monkeypatch,
+    ):
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        order: list[str] = []
+        real_fsync = poller.os.fsync
+
+        def fsync_spy(fd: int):
+            order.append(
+                "directory_fsync"
+                if stat.S_ISDIR(poller.os.fstat(fd).st_mode)
+                else "file_fsync"
+            )
+            real_fsync(fd)
+
+        monkeypatch.setattr(poller.os, "fsync", fsync_spy)
+        path = poller._save_day_state(SESSION_DATE, self._state())
+        assert path.read_bytes().endswith(b"\n")
+        assert order[-2:] == ["file_fsync", "directory_fsync"]
+
+    def test_startup_drains_same_session_wal_before_theta_probe(
+        self, tmp_path, monkeypatch,
+    ):
+        import collectors.thetadata as td
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        state = self._state()
+        poller._save_day_state(SESSION_DATE, state)
+        order: list[str] = []
+
+        def stager(_session, events):
+            order.append("stage")
+            return [self._enriched(event) for event in events]
+
+        monkeypatch.setattr(poller, "_stage_raw_events", stager)
+        monkeypatch.setattr(poller, "_cfg", lambda: {"retention_hours": 24})
+        monkeypatch.setattr(poller, "_session_date", lambda _override=None: SESSION_DATE)
+        monkeypatch.setattr(
+            td, "reachable", lambda **_kwargs: order.append("theta") or False,
+        )
+        assert poller.main(["--once"]) == 1
+        assert order == ["stage", "theta"]
+        assert poller._load_day_state(SESSION_DATE)["pending_learning_events"] == []
+
+    def test_stale_prior_session_wal_is_visible_before_retention_or_theta(
+        self, tmp_path, monkeypatch,
+    ):
+        import collectors.thetadata as td
+        import scripts.live_flow_poller as poller
+
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(poller, "_state_dir", lambda: state_dir)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(state_dir / "events"))
+        poller._save_day_state(SESSION_DATE, self._state())
+        assert poller._stale_pending_learning_sessions("2026-07-06") == [SESSION_DATE]
+
+        order: list[str] = []
+        monkeypatch.setattr(poller, "_cfg", lambda: {"retention_hours": 24})
+        monkeypatch.setattr(poller, "_session_date", lambda _override=None: "2026-07-06")
+        monkeypatch.setattr(
+            poller, "_prune_day_states", lambda *_args: order.append("prune"),
+        )
+        monkeypatch.setattr(
+            td, "reachable", lambda **_kwargs: order.append("theta") or True,
+        )
+        assert poller.main(["--once"]) == 1
+        assert order == []
+
+    def test_launchd_restarts_only_abnormal_exit(self):
+        import plistlib
+
+        repo = Path(__file__).resolve().parent.parent
+        payload = plistlib.loads(
+            (repo / "ops/launchd/com.mastermind.liveflow.plist").read_bytes()
+        )
+        assert payload["KeepAlive"] == {"SuccessfulExit": False}
+        assert payload["ThrottleInterval"] == 60
 
     def test_missing_version_treated_as_v1(self, tmp_path, monkeypatch, caplog):
         """A day_state with no schema_version key is treated as version 1 → discarded."""
@@ -2530,15 +3114,15 @@ class TestDayStateVersionDiscard:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestEventPremiumZHonesty:
-    """Item 3: event premium_z must be null when baseline_source='floor'.
+    """Root-day baselines remain daily display context, never contract facts.
 
     The EOD-252 baselines are ROOT-LEVEL day-gross denominators; a per-contract
-    print vs that baseline is a scale mismatch.  premium_z must only be non-null
-    in events when baseline_source='z252' (per-contract baseline path — not yet built).
+    print vs that baseline is a scale mismatch. Until a governed per-contract
+    baseline exists, every event is floor-gated and carries no premium z-score.
     """
 
     def test_floor_gate_event_has_null_premium_z(self):
-        """Event gated by floor (no z252 baseline) → premium_z must be None."""
+        """Event gated by floor → premium_z must be None."""
         # No baselines provided → floor gate → baseline_source='floor'
         calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000})
         result = _run(calls, baselines=None, etf_floor=1_000_000, name_floor=250_000,
@@ -2551,19 +3135,7 @@ class TestEventPremiumZHonesty:
             "Day-gross EOD-252 baseline is a scale mismatch vs per-contract premium.")
 
     def test_floor_event_with_baseline_still_null_z(self):
-        """Floor-gated event when baselines exist but prem_z < 3 → premium_z=None.
-
-        Even if baselines exist and prem_z is computed inside _is_notable,
-        the event must expose premium_z=None because baseline_source='floor'
-        (the z gate didn't fire; only floor passed).
-        """
-        # mean=100_000, std=20_000.  premium = 2.60*4000*100 = 1_040_000 > $1M floor.
-        # prem_z = (1_040_000 - 100_000) / 20_000 = 47.0 → but baseline_source='floor'
-        # because the floor check runs AFTER the z check doesn't fire (z >= 3 already
-        # passed the notable gate, but baseline_src will be 'floor' as returned by
-        # _is_notable when premium >= floor regardless of z value).
-        # NOTE: _is_notable returns 'z252' only when prem_z >= 3.  When premium >= floor
-        # it returns 'floor' even if prem_z happens to be computed.
+        """A present root/day baseline cannot leak into an above-floor contract."""
         baselines = {"SPY": {"mean": 100_000.0, "std": 20_000.0, "n_obs": 200,
                              "computed_asof": "2026-07-01"}}
         calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000})
@@ -2571,27 +3143,17 @@ class TestEventPremiumZHonesty:
                       etf_anchors=["SPY"])
         assert len(result["events"]) == 1
         ev = result["events"][0]
-        # If the event was gated by floor (baseline_source != 'z252'),
-        # premium_z must be null:
-        if ev["baseline_source"] != "z252":
-            assert ev["premium_z"] is None, (
-                f"floor-gated event (baseline_source={ev['baseline_source']!r}) "
-                f"must have premium_z=None; got {ev['premium_z']!r}")
+        assert ev["baseline_source"] == "floor"
+        assert ev["premium_z"] is None
 
-    def test_z252_event_carries_premium_z(self):
-        """Event gated by z252 (prem_z >= 3) → premium_z must be non-null."""
-        # premium = 180_000; z = (180_000 - 100_000) / 20_000 = 4.0
+    def test_apparent_root_day_z_does_not_create_below_floor_event(self):
+        """An apparent 4-sigma root/day comparison is invalid at contract scale."""
         baselines = {"SPY": {"mean": 100_000.0, "std": 20_000.0, "n_obs": 200,
                              "computed_asof": "2026-07-01"}}
         calls = _calls({"price": 6.00, "bid": 5.90, "ask": 6.10, "size": 300})
         result = _run(calls, baselines=baselines, etf_floor=1_000_000, name_floor=250_000,
                       etf_anchors=["SPY"])
-        assert len(result["events"]) == 1
-        ev = result["events"][0]
-        assert ev["baseline_source"] == "z252"
-        assert ev["premium_z"] is not None, (
-            "z252-gated event must carry premium_z (non-null)")
-        assert float(ev["premium_z"]) >= 3.0
+        assert result["events"] == []
 
     def test_unusual_names_retain_prem_z(self):
         """unusual_names prem_z (day-gross vs day-gross baseline) must NOT be nulled."""
@@ -2650,7 +3212,7 @@ class TestStartupReachabilityTimeout:
     the poller must not abort on a slow-but-healthy terminal.
     """
 
-    def test_startup_uses_fifteen_second_default(self, monkeypatch):
+    def test_startup_uses_fifteen_second_default(self, monkeypatch, tmp_path):
         """With no THETA_CONNECT_TIMEOUT env, startup probe passes connect_timeout=15.
 
         Drives the real poller.main() code path so a revert of the production
@@ -2669,8 +3231,14 @@ class TestStartupReachabilityTimeout:
             pass
 
         monkeypatch.setattr("collectors.thetadata.reachable", fake_reachable)
+        monkeypatch.setattr(poller, "_cfg", lambda: {})
+        monkeypatch.setattr(poller, "_state_dir", lambda: tmp_path)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path / "events"))
         # Abort immediately after reachable() so we don't need a full environment.
-        monkeypatch.setattr(poller, "_cfg", lambda: (_ for _ in ()).throw(_StopAfterReachable()))
+        monkeypatch.setattr(
+            poller, "_resolve_universe",
+            lambda _cfg: (_ for _ in ()).throw(_StopAfterReachable()),
+        )
 
         with pytest.raises(_StopAfterReachable):
             poller.main(["--once"])
@@ -2678,7 +3246,7 @@ class TestStartupReachabilityTimeout:
         assert captured == [15], (
             f"startup probe should pass connect_timeout=15 by default; got {captured}")
 
-    def test_startup_respects_env_override(self, monkeypatch):
+    def test_startup_respects_env_override(self, monkeypatch, tmp_path):
         """THETA_CONNECT_TIMEOUT=30 → startup probe passes connect_timeout=30.
 
         Drives the real poller.main() code path so a revert of the production
@@ -2697,7 +3265,13 @@ class TestStartupReachabilityTimeout:
             pass
 
         monkeypatch.setattr("collectors.thetadata.reachable", fake_reachable)
-        monkeypatch.setattr(poller, "_cfg", lambda: (_ for _ in ()).throw(_StopAfterReachable()))
+        monkeypatch.setattr(poller, "_cfg", lambda: {})
+        monkeypatch.setattr(poller, "_state_dir", lambda: tmp_path)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path / "events"))
+        monkeypatch.setattr(
+            poller, "_resolve_universe",
+            lambda _cfg: (_ for _ in ()).throw(_StopAfterReachable()),
+        )
 
         with pytest.raises(_StopAfterReachable):
             poller.main(["--once"])
@@ -2714,6 +3288,8 @@ class TestStartupReachabilityTimeout:
 
         # Patch out everything that touches disk / config before the reachable() call
         monkeypatch.setattr(poller, "_cfg", lambda: {})
+        monkeypatch.setattr(poller, "_state_dir", lambda: tmp_path)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path / "events"))
 
         # Call main() with --once so it hits the startup reachable() check and returns.
         result = poller.main(["--once"])

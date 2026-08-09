@@ -8,9 +8,26 @@ how many times the seal broke during the session (炸板次数), the day's turno
 
   stock_zt_pool_em(date=YYYYMMDD) -> the whole limit-up pool for one trading date.
 
-We walk back from today to the most recent POPULATED trading date (weekends /
-holidays / a not-yet-published session return empty) and bake a flat per-name
-snapshot under data/china_zt_pool/pool.parquet, refreshed once per UTC day.
+We walk back from today over OUR OWN session calendar to the most recent trading date and
+bake a flat per-name snapshot under data/china_zt_pool/pool.parquet, refreshed each run.
+
+`date` IS THE TRADE DATE, NEVER THE RUN DATE (2026-08-08 heal)
+---------------------------------------------------------------
+The endpoint does not 404 on a non-session date: asked for any date at or after the last
+PUBLISHED session it CLAMPS and serves that session's pool.  This collector used to walk
+back from today over raw calendar days, stop at the first non-empty response, and stamp the
+row `date` with the date it had ASKED for — so every weekend run relabelled Friday's pool as
+Saturday/Sunday.  Measured before the heal: 11 of 47 stored dates were non-sessions, and
+each one was byte-identical to the session before it (2026-07-04/05 ≡ 07-03, …, 08-08 ≡
+08-07).  Two defences now stand:
+  1. the requested date is resolved against a session calendar derived from our own
+     data/china_stocks_raw store BEFORE the fetch, so only real sessions are ever asked for
+     or stamped (holidays included — no external calendar dependency);
+  2. a payload fingerprint refuses to stamp a session with a pool already stored under a
+     DIFFERENT date, which catches the same clamp on a real session the vendor has not
+     published yet.
+`asof` is the UTC day the row was scraped — provenance, not the market date; a stored
+session whose `asof` is far past its `date` was recovered late, not observed late.
 
 DISPLAY-ONLY context. A limit-up pool is the loudest LAGGING retail-momentum read
 there is — 连板 leaders (龙头) and consecutive-board chains are a froth / crowding
@@ -21,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import hashlib
 import logging
 
 import pandas as pd
@@ -33,6 +51,12 @@ log = logging.getLogger("china_zt_pool")
 
 OUT = config.data_dir() / "china_zt_pool" / "pool.parquet"
 WALK_BACK_DAYS = 10        # calendar days to walk back looking for a populated session
+SESSION_SAMPLE_NAMES = 24  # raw-store names sampled to derive the CN session calendar
+MAX_SESSIONS_PER_RUN = 4   # newest session + up to 3 recent gap fills, per run
+
+# The fields that make one session's pool that session's: an identical set across two dates
+# is a vendor re-serve, not two markets that happened to close the same way.
+_FINGERPRINT_COLS = ("ticker", "consec_boards", "seal_fund_yi", "failed_seals", "turnover_pct")
 
 
 def _col(cols: list[str], *needles: str) -> str | None:
@@ -55,13 +79,68 @@ def _pool_for(date: str) -> pd.DataFrame | None:
     return df if df is not None and not df.empty else None
 
 
-def _first_populated(dates: list[str]) -> tuple[str, pd.DataFrame] | tuple[None, None]:
-    """Walk newest->older, return the first date with a non-empty pool."""
-    for d in dates:
-        df = _pool_for(d)
-        if df is not None:
-            return d, df
-    return None, None
+def session_calendar() -> frozenset[str]:
+    """The CN trading sessions, read from OUR OWN price store — no external calendar.
+
+    A date is a session iff at least one sampled name in data/china_stocks_raw has a bar on
+    it.  The sample is deterministic and wide (``SESSION_SAMPLE_NAMES`` names evenly strided
+    across the sorted store), so no single suspension can hide a session, and the calendar
+    costs ~24 small parquet reads rather than 1,800.  Empty when the store is missing —
+    callers then fall back to a weekday test and say so in the log.
+    """
+    root = config.data_dir() / "china_stocks_raw"
+    if not root.is_dir():
+        return frozenset()
+    files = sorted(root.glob("*.parquet"))
+    if not files:
+        return frozenset()
+    step = max(1, len(files) // SESSION_SAMPLE_NAMES)
+    days: set[str] = set()
+    for fp in files[::step][:SESSION_SAMPLE_NAMES]:
+        try:
+            idx = pd.read_parquet(fp, columns=["close"]).index
+        except Exception:  # noqa: BLE001 — one unreadable name must not blind the calendar
+            continue
+        days.update(pd.to_datetime(idx).strftime("%Y-%m-%d"))
+    return frozenset(days)
+
+
+def candidate_sessions(anchor: _dt.date, sessions: frozenset[str]) -> list[str]:
+    """Trade dates worth asking the vendor for, newest first (ISO ``YYYY-MM-DD``).
+
+    Only real sessions are returned, so the clamped response for a weekend or holiday can
+    never be stamped with the date it was asked for.  Without a calendar this degrades to a
+    weekday filter, which stops the weekend defect but cannot see holidays.
+    """
+    window = [anchor - _dt.timedelta(days=i) for i in range(WALK_BACK_DAYS + 1)]
+    if sessions:
+        return [d.isoformat() for d in window if d.isoformat() in sessions]
+    log.warning("china zt pool: no session calendar under data/china_stocks_raw — falling "
+                "back to a weekday test (a holiday run can still mislabel)")
+    return [d.isoformat() for d in window if d.weekday() < 5]
+
+
+def _fingerprint(rows: list[dict]) -> str:
+    """A stable digest of one session's pool, over the fields that identify the session."""
+    body = sorted(tuple(str(r.get(c)) for c in _FINGERPRINT_COLS) for r in rows)
+    return hashlib.sha1("\n".join("\x1f".join(t) for t in body).encode()).hexdigest()
+
+
+def _stored_fingerprints() -> dict[str, str]:
+    """{fingerprint: date} for every session already on disk."""
+    if not OUT.exists():
+        return {}
+    try:
+        df = pd.read_parquet(OUT)
+    except Exception:  # noqa: BLE001
+        return {}
+    if df.empty or "date" not in df.columns:
+        return {}
+    cols = [c for c in _FINGERPRINT_COLS if c in df.columns]
+    out: dict[str, str] = {}
+    for d, part in df.groupby(df["date"].astype(str)):
+        out[_fingerprint(part[cols].to_dict("records"))] = str(d)
+    return out
 
 
 def _parse(date: str, df: pd.DataFrame, asof: str) -> list[dict]:
@@ -108,51 +187,96 @@ def _stored_sessions() -> set[str]:
         return set()
 
 
-def refresh() -> int:
-    """Bake the most recent populated limit-up pool and APPEND it to the point-in-time history
-    (keep-last per session `date`, so a same-session re-collect corrects). Best-effort; returns
-    names written for the latest session (0 on failure / already-stored session)."""
-    asof = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
-    today = _dt.date.today()
-    dates = [(today - _dt.timedelta(days=i)).strftime("%Y%m%d")
-             for i in range(WALK_BACK_DAYS + 1)]
-    pop_date, df = _first_populated(dates)
+def _collect(iso: str, asof: str, prints: dict[str, str]) -> int:
+    """Fetch + store ONE trading session. Returns rows written for that session (0 = skipped).
+
+    The stored slice for a session is REPLACED wholesale (``replace_dates``): the pool is a
+    complete set, so a name that left it between an early scrape and the final one must be
+    retired, not stranded by a per-ticker keep-last merge.  Other dates are untouched, so the
+    tape stays append-only across sessions.
+    """
+    df = _pool_for(iso.replace("-", ""))
     if df is None:
-        log.warning("china zt pool: no populated session in last %d days", WALK_BACK_DAYS)
         return 0
-    iso = pd.to_datetime(pop_date).strftime("%Y-%m-%d")
-    if iso in _stored_sessions():                          # append-only idempotency = per SESSION
-        log.info("china zt pool: session %s already stored", iso)
-        return 0
-    rows = _parse(pop_date, df, asof)
+    rows = _parse(iso.replace("-", ""), df, asof)
     if not rows:
         return 0
-    n = _drip.append_snapshot(OUT, rows, date_col="date")
-    log.info("china zt pool: appended %s (%d names, session %s, asof %s)",
-             OUT, n, pop_date, asof)
+    fp = _fingerprint(rows)
+    served = prints.get(fp)
+    if served is not None and served != iso:
+        # The vendor clamped to an already-stored session — it has not published `iso` yet.
+        log.warning("china zt pool: %s served the pool already stored for %s — not stamping "
+                    "it as a second session", iso, served)
+        return 0
+    n = len(rows)
+    _drip.append_snapshot(OUT, rows, date_col="date", replace_dates=True)
+    prints[fp] = iso            # a gap-fill later in THIS run must see what we just stored
+    log.info("china zt pool: stored session %s (%d names, asof %s)", iso, n, asof)
     return n
+
+
+def refresh(anchor: _dt.date | None = None) -> int:
+    """Bake the most recent trading sessions into the point-in-time history.
+
+    The NEWEST session is always re-collected so a partial/intraday scrape is corrected by a
+    later run of the same day (freshest wins, whole slice).  Older sessions are collected only
+    when MISSING — which self-heals the gaps the old walk-back left behind whenever the vendor
+    was late on the day itself (it stopped at the newest populated date, found it already
+    stored, and skipped the session under it forever; 3 such gaps in this store).  Bounded by
+    ``MAX_SESSIONS_PER_RUN`` and by ``WALK_BACK_DAYS``, so a run never costs more vendor calls
+    than the old walk-back already did.
+
+    ``anchor`` is the calendar day the walk-back starts from; it defaults to the UTC day, the
+    same clock ``asof`` uses (China is UTC+8, so its trade date is never BEHIND the UTC date —
+    anchoring there can never ask for a session that has not begun).  It is a parameter so the
+    tests can pin the day without patching a global clock.
+
+    Best-effort; returns rows written for the newest session collected (0 on failure)."""
+    now = _dt.datetime.now(_dt.timezone.utc)
+    asof = now.strftime("%Y-%m-%d")
+    anchor = anchor or now.date()
+    have = _stored_sessions()
+    prints = _stored_fingerprints()
+    cands = candidate_sessions(anchor, session_calendar())
+    if not cands:
+        log.warning("china zt pool: no trading session in the last %d days", WALK_BACK_DAYS)
+        return 0
+
+    first = 0
+    written = 0
+    for i, iso in enumerate(cands):
+        if i and iso in have:                 # older sessions: collect only what is MISSING
+            continue
+        n = _collect(iso, asof, prints)
+        if not n:
+            continue
+        first = first or n
+        written += 1
+        if written >= MAX_SESSIONS_PER_RUN:
+            break
+    if not written:
+        log.warning("china zt pool: nothing stored from %d candidate session(s)", len(cands))
+    return first
 
 
 def backfill(start: str, end: str) -> int:
     """Range-backfill the limit-up pool PIT history: append every populated trading session in
     [start, end] (YYYY-MM-DD). akshare serves stock_zt_pool_em per-date, so history is fetchable.
     Skips sessions already stored. Returns the number of NEW sessions appended."""
-    asof = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    asof = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d")
     have = _stored_sessions()
+    prints = _stored_fingerprints()
+    sessions = session_calendar()
     days = pd.bdate_range(start, end)                      # weekdays; holidays return empty pools
     added = 0
     for d in days:
         iso = d.strftime("%Y-%m-%d")
         if iso in have:
             continue
-        df = _pool_for(d.strftime("%Y%m%d"))
-        if df is None:
+        if sessions and iso not in sessions:               # a holiday inside the range
             continue
-        rows = _parse(d.strftime("%Y%m%d"), df, asof)
-        if rows:
-            _drip.append_snapshot(OUT, rows, date_col="date")
+        if _collect(iso, asof, prints):
             added += 1
-            log.info("china zt pool backfill: appended session %s (%d names)", iso, len(rows))
     log.info("china zt pool backfill: %d new sessions [%s..%s]", added, start, end)
     return added
 
