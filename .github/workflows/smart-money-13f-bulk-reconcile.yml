@@ -38,6 +38,7 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/pip" install --quiet \
             -r requirements/institutional-13f-macos-arm64-py312.lock
+          "$VENV/bin/python" -c "import boto3"
 
       - name: Retain SEC ZIP revisions and build completed-quarter census
         env:

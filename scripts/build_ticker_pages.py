@@ -34,8 +34,7 @@ from typing import Any
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.pages import (rendered_basket_pages, rendered_ticker_pages,  # noqa: E402

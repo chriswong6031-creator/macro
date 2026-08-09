@@ -38,7 +38,7 @@ _RANGE_RE = re.compile(r"^bytes=0-(?P<end>[0-9]{1,4})$")
 _HEX64_RE = re.compile(r"^[a-f0-9]{64}$")
 _GITHUB_SHA_RE = re.compile(r"^[a-f0-9]{40}$")
 _GITHUB_ACTOR_RE = re.compile(r"^[A-Za-z0-9-]{1,39}$")
-_EXPECTED_REPOSITORY = "chriswong6031-creator/macro"
+_EXPECTED_REPOSITORY = "mastermindx-market-intelligence/macro"
 _WORKFLOW_NAME = "capital-share-count-r2-concurrency.yml"
 _REQUIRED_ENV = (
     "R2_SHARE_COUNT_CONFORMANCE_ENDPOINT",

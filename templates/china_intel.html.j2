@@ -319,7 +319,7 @@
       <a href="china_policy_watch.html" style="font-size:11px;color:var(--link);text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
     </div>
     {%- if _pp.cold_start_organs %}
-    <p class="pp-cold">{{ t('Cold-start organs (no prior window yet — cannot detect APPEARED/DROPPED):','冷启动器官（尚无先验窗口——无法检测新增/消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
+    <p class="pp-cold">{{ t('Cold-start feeds (no prior window yet — cannot detect APPEARED/DROPPED):','刚启动的数据源（还没有历史窗口，无法判断新增或消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
     {%- endif %}
     {%- if _pp.recent_events %}
     {%- set _pp_all = _pp.recent_events[:24] %}
@@ -630,8 +630,11 @@
             {%- endif %}
           </td>
           <td>
-            <div class="cmd-read">{{ d.read }}</div>
-            {%- if d.falsifier %}<div class="cmd-fals">⚠ {{ d.falsifier[:80] }}</div>{%- endif %}
+            {#- read_zh is composed in engine/china_intel_hub._read_for; .get() so an
+                older command.json without the zh key degrades to the English. #}
+            <div class="cmd-read">{{ t(d.read, d.get('read_zh') or d.read) }}</div>
+            {#- Same independent per-language truncation as .disc-reason below. #}
+            {%- if d.falsifier %}<div class="cmd-fals">⚠ {{ t(d.falsifier[:80], (d.get('falsifier_zh') or d.falsifier)[:40]) }}</div>{%- endif %}
           </td>
         </tr>
       {%- endfor %}
@@ -682,7 +685,7 @@
               {%- if _traj2.get('off_high_pct') is not none %}&nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj2.get('off_high_pct')) }}%H</span>{%- endif %}
               {%- endif %}
             </td>
-            <td><div class="cmd-read">{{ d.read }}</div></td>
+            <td><div class="cmd-read">{{ t(d.read, d.get('read_zh') or d.read) }}</div></td>
           </tr>
         {%- endfor %}
         </tbody>
@@ -703,7 +706,9 @@
     <div class="disc-card {{ 'off-desk' if c.off_desk }}">
       <div class="disc-ticker">{{ c.ticker }}</div>
       <div class="disc-name">{{ c.name[:22] }}</div>
-      <div class="disc-reason">{{ (c.reason or '')[:80] }}</div>
+      {#- Each language is truncated on its OWN budget: 80 latin glyphs ≈ 40 CJK
+          glyph widths, so clipping the zh at the en length would overflow the card. #}
+      <div class="disc-reason">{{ t((c.reason or '')[:80], (c.get('reason_zh') or c.reason or '')[:40]) }}</div>
       <div class="disc-meta">
         <span class="lane-chip">{{ t((_LANE_EN.get(c.source) or c.source), (_LANE_ZH.get(c.source) or c.source)) }}</span>
         {%- if c.experimental %}<span class="exp-chip">{{ t('Experimental','实验性') }}</span>{%- endif %}
@@ -730,9 +735,11 @@
     {%- if _an.query %}
     <div class="analogs-query">
       {%- set _aq = _an.query %}
-      {%- if _aq.quad %}<span class="aq-chip">{{ t('Quad','象限') }}: {{ _aq.quad_name or _aq.quad }}</span>{%- endif %}
-      {%- if _aq.liquidity %}<span class="aq-chip">{{ t('Liquidity','流动性') }}: {{ _aq.liquidity }}</span>{%- endif %}
-      {%- if _aq.cycle %}<span class="aq-chip">{{ t('Cycle','周期') }}: {{ _aq.cycle }}</span>{%- endif %}
+      {#- Values go through td() (glossary), same as the regime chips at L340/L364 —
+          the LABEL alone through t() left `Stagflation`/`contracting`/`mid` in English. #}
+      {%- if _aq.quad %}<span class="aq-chip">{{ t('Quad','象限') }}: {{ td(_aq.quad_name or _aq.quad) }}</span>{%- endif %}
+      {%- if _aq.liquidity %}<span class="aq-chip">{{ t('Liquidity','流动性') }}: {{ td(_aq.liquidity) }}</span>{%- endif %}
+      {%- if _aq.cycle %}<span class="aq-chip">{{ t('Cycle','周期') }}: {{ td(_aq.cycle) }}</span>{%- endif %}
     </div>
     {%- endif %}
     {%- if _an.fan %}
@@ -811,9 +818,9 @@
     <div class="suite-group">
       <div class="suite-group-title">{{ t('Themes & Rotation','主题与轮动') }}</div>
       <div class="suite-links">
-        <a class="slink" href="sector_central_china.html#si-explore"><div><div class="sl-name">🧺 {{ t('China Baskets','中国主题篮') }}</div><div class="sl-desc">{{ t('Theme baskets · inside Sector Intelligence','主题篮 · 见行业智慧') }}</div></div></a>
+        <a class="slink" href="sector_central_china.html#si-explore"><div><div class="sl-name">🧺 {{ t('China Baskets','中国主题篮') }}</div><div class="sl-desc">{{ t('Theme baskets · inside Sector Intelligence','主题篮子 · 见行业情报') }}</div></div></a>
         <a class="slink" href="baskets_china_ths.html"><div><div class="sl-name">🧺 {{ t('China Baskets (THS)','中国主题篮 (同花顺)') }}</div><div class="sl-desc">{{ t('THS-derived thematic basket view','同花顺主题篮视图') }}</div></div></a>
-        <a class="slink" href="sector_central_china.html#si-movement"><div><div class="sl-name">🔀 {{ t('Subsector Rotation (China)','子行业轮动 (中国)') }}</div><div class="sl-desc">{{ t('Rotation map · inside Sector Intelligence','轮动图 · 见行业智慧') }}</div></div></a>
+        <a class="slink" href="sector_central_china.html#si-movement"><div><div class="sl-name">🔀 {{ t('Subsector Rotation (China)','子行业轮动 (中国)') }}</div><div class="sl-desc">{{ t('Rotation map · inside Sector Intelligence','轮动图 · 见行业情报') }}</div></div></a>
         <a class="slink" href="subsectors_china.html"><div><div class="sl-name">📌 {{ t('Subsectors (China)','子板块 (中国)') }}</div><div class="sl-desc">{{ t('NDX/RUT subsector confluence · China tab','子板块共振 · 中国标签页') }}</div></div></a>
       </div>
     </div>

@@ -54,7 +54,7 @@ set -u
 
 REPO="/Users/chriswong/flow-ops-wt"
 PUSH_REPO="/Users/chriswong/witness-push-repo"
-REMOTE_URL="https://github.com/chriswong6031-creator/macro.git"
+REMOTE_URL="https://github.com/mastermindx-market-intelligence/macro.git"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ART_NW="data/neuralweb/theme_options_witness.json"
 ART_SITE="site/basketdata/options_witness.json"

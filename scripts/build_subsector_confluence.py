@@ -24,15 +24,19 @@ from __future__ import annotations
 import json
 import logging
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 
-from engine import bar_derive          # the display-grid anchor era + b3 boundaries (DG-R3/R6)
-from engine import subsector_confluence as sc
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import bar_derive          # the display-grid anchor era + b3 boundaries (DG-R3/R6)  # noqa: E402
+from engine import subsector_confluence as sc  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
 

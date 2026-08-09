@@ -39,8 +39,7 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib import config  # noqa: E402
 

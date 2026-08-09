@@ -62,28 +62,32 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
 import time
 from typing import Any, Iterable
 
-from collectors.edgar_forensics import _user_agent
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.edgar_forensics import _user_agent  # noqa: E402
 from collectors.fundamental_forensics_acquisition import (
     AcquisitionError,
     AcquisitionTarget,
     acquire_bounded_filings,
     normalize_targets,
     parse_target,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.source_sync import (
     SourceSyncError,
     build_private_source_store,
     restore_source_roots,
     sync_source_roots,
-)
-from engine.research_vault.r2_store import Store
-from engine.fundamental_forensics.models import parse_utc, utc_text
-from lib import config
-from scripts.build_fundamental_forensics_disclosures import build_cached_disclosures
+)  # noqa: E402
+from engine.research_vault.r2_store import Store  # noqa: E402
+from engine.fundamental_forensics.models import parse_utc, utc_text  # noqa: E402
+from lib import config  # noqa: E402
+from scripts.build_fundamental_forensics_disclosures import build_cached_disclosures  # noqa: E402
 
 
 log = logging.getLogger("run_fundamental_forensics_wave2")

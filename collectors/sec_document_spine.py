@@ -1140,7 +1140,6 @@ __all__ = [
     "SecFilingArchiveCollector",
     "archive_receipt_from_json_bytes",
     "content_storage_key",
-    "document_with_retrieval",
     "find_reusable_primary_retrieval",
     "manifest_storage_key",
     "missing_document_receipt",

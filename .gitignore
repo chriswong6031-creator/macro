@@ -390,10 +390,6 @@ data/operator/
 # pre-built so the path is safe before any data ever lands here.
 data/private/
 
-# Licensed TuShare add-on response partitions are private, non-redistributable
-# pilot data. Never stage them through the nightly blanket `git add data/` sweep.
-data/tushare_addons/
-
 # SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
 # panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.
 # Mirrors pattern: data/massive_stock_day/*.parquet above.
