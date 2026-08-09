@@ -11,7 +11,8 @@ Board-aware limit widths (CN-SYS-R12)
   STAR (688/689.SS): ±20% from listing
   ChiNext (300/301.SZ): ±10% BEFORE 2020-08-24; ±20% on/after 2020-08-24
   BSE (8x/4x): ±30% (2021-11-15→) — not present in raw store as of 2026-07-08, handled
-  ST/*ST on MAIN boards only: ±5%; ST names on STAR/ChiNext keep 20%
+  ST/*ST on MAIN boards only: ±5% before 2026-07-06, ±10% on/after 2026-07-06
+  ST names on STAR/ChiNext keep their board widths (20% in the covered eras)
 
 IPO exclusion windows (CN-SYS-R12)
 ------------------------------------
@@ -27,16 +28,15 @@ and suppress events on those days (they are counted in a separate excluded_exdiv
 
 ST flags
 ---------
-data/china_st/ carries st_snapshot.parquet (current flags) and st_history.parquet (recent dates,
-currently only 2026-07-06 row — effectively current-only). Historical ST membership is NOT
-available for dates before the store coverage. We apply ST width (5%) only for dates where
-the store covers the flag. A 'st_flags_current_only' caveat is stamped in tape metadata and
-this docstring.
+data/china_st/ carries st_snapshot.parquet (a current-membership snapshot) and
+st_history.parquet (currently only one 2026-07-06 cross-section). Historical ST membership is
+NOT available. The snapshot is a proxy, not PIT history: membership is accepted only on its
+own attested ``asof`` date; unknown later membership uses the ordinary board width with an
+alarm. A 'st_flags_current_only' caveat is stamped in tape metadata.
 
-CAVEAT: st_flags_current_only — ST/\\*ST membership history in data/china_st is limited to
-the store's coverage window (effectively 2026-07-06 forward as of the W1 backfill). For earlier
-dates we apply the 20%/10% board widths, not the 5% ST width. This means historical sealed_down
-counts on known ST names may be understated before the store coverage date.
+CAVEAT: st_flags_current_only — only the snapshot's exact attested date has usable membership.
+For every other date we apply ordinary board widths. Historical events for then-ST names can
+therefore be misclassified; the manifest records the snapshot hash/asof and staleness explicitly.
 
 Schema contracts (§5, frozen)
 ------------------------------
@@ -100,6 +100,30 @@ LIMIT_TAPE_START_DATE = pd.Timestamp("2011-01-01")
 
 ST_STORE_COVERAGE_DATE = pd.Timestamp("2026-07-06")  # first date st_history covers
 
+# Shanghai and Shenzhen both widened main-board risk-warning price limits from 5% to 10%
+# effective 2026-07-06.  STAR/ChiNext remain governed by their board widths.
+# SSE: https://star.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20260424_10816474.shtml
+# SZSE: https://docs.static.szse.cn/www/lawrules/rule/trade/current/W020260424690713155663.pdf
+MAIN_RISK_WARNING_WIDE_DATE = pd.Timestamp("2026-07-06")
+
+
+class STMembershipSnapshot(frozenset[str]):
+    """Ticker set carrying the one date on which current membership is attested."""
+
+    def __new__(
+        cls,
+        tickers: object = (),
+        *,
+        attested_asof: pd.Timestamp | None = None,
+        source_path: Path | None = None,
+    ) -> "STMembershipSnapshot":
+        obj = super().__new__(cls, tickers)
+        obj.attested_asof = (
+            pd.Timestamp(attested_asof).normalize() if attested_asof is not None else None
+        )
+        obj.source_path = source_path
+        return obj
+
 
 # ── board classification ───────────────────────────────────────────────────────
 
@@ -131,7 +155,8 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
                           is_st: bool = False) -> float:
     """Return the limit-up/down width as a decimal fraction for a given board+date.
 
-    ST flag applies ONLY on main board (CN-SYS-R12); STAR/ChiNext ST names keep 20%.
+    ST flag applies ONLY on main board (CN-SYS-R12); its width is 5% before
+    2026-07-06 and 10% on/after that date. STAR/ChiNext keep their board width.
     BSE: 30% from 2021-11-15; before that date, BSE did not exist — treated as 30% for
     any bar in the raw store that starts after BSE_LAUNCH_DATE.
     """
@@ -145,26 +170,68 @@ def limit_width_for_date(board: str, trade_date: pd.Timestamp,
         return 0.30
     # main board
     if is_st:
-        return 0.05
+        return 0.10 if trade_date >= MAIN_RISK_WARNING_WIDE_DATE else 0.05
     return 0.10
 
 
 # ── ST membership lookup ───────────────────────────────────────────────────────
 
-def _load_st_set(data_dir: Path) -> frozenset[str]:
-    """Load current ST ticker set from the data store.  Returns frozenset of tickers."""
+def _load_st_set(data_dir: Path) -> STMembershipSnapshot:
+    """Load the ST snapshot; unknown dates use ordinary width and emit a stale alarm."""
     st_path = data_dir / "china_st" / "st_snapshot.parquet"
     if not st_path.exists():
         log.warning("ST snapshot not found at %s; ST widths not applied", st_path)
-        return frozenset()
+        return STMembershipSnapshot(source_path=st_path)
     try:
         df = pd.read_parquet(st_path)
-        # ticker column
         col = "ticker" if "ticker" in df.columns else df.columns[0]
-        return frozenset(df[col].astype(str).tolist())
+        asof_values = (
+            pd.to_datetime(df["asof"], errors="coerce").dropna().dt.normalize().unique()
+            if "asof" in df.columns
+            else []
+        )
+        attested_asof = pd.Timestamp(asof_values[0]) if len(asof_values) == 1 else None
+        snapshot = STMembershipSnapshot(
+            df[col].astype(str).tolist(),
+            attested_asof=attested_asof,
+            source_path=st_path,
+        )
+        if attested_asof is None:
+            log.warning(
+                "ST snapshot at %s has no single attested asof; membership will not be applied",
+                st_path,
+            )
+        elif attested_asof < pd.Timestamp(date.today()):
+            log.warning(
+                "ST snapshot is stale (asof=%s, today=%s); membership applies only on its "
+                "attested date",
+                attested_asof.date(),
+                date.today(),
+            )
+        return snapshot
     except Exception as exc:  # noqa: BLE001
         log.warning("Could not load ST snapshot: %s", exc)
-        return frozenset()
+        return STMembershipSnapshot(source_path=st_path)
+
+
+def _st_membership_attested(
+    st_set: frozenset[str],
+    ticker: str,
+    trade_date: pd.Timestamp,
+) -> bool:
+    """True only when membership is present and attested for ``trade_date``.
+
+    Plain frozensets remain supported for explicit synthetic/test callers. Production loads use
+    ``STMembershipSnapshot`` and therefore use ordinary width outside the snapshot's own asof.
+    """
+    if ticker not in st_set:
+        return False
+    if not isinstance(st_set, STMembershipSnapshot):
+        return True
+    return (
+        st_set.attested_asof is not None
+        and pd.Timestamp(trade_date).normalize() == st_set.attested_asof
+    )
 
 
 # ── per-ticker event detection ─────────────────────────────────────────────────
@@ -207,9 +274,6 @@ def _detect_limit_events(
     elif first_bar_global < IPO_PRE2014_DATE:
         ipo_window = PRE2014_IPO_WINDOW
 
-    # ST membership: apply 5% width only for dates >= ST_STORE_COVERAGE_DATE on main boards
-    is_st_current = (ticker in st_set)
-
     # Build prev_close shifted series
     closes     = df["close"].astype(float)
     highs      = df["high"].astype(float)
@@ -236,10 +300,11 @@ def _detect_limit_events(
             lianban_streak = 0
             continue
 
-        # Determine ST flag: only for main board and only when store covers the date
+        # Current-snapshot membership is accepted only on its exact attested date. A plain
+        # frozenset is treated as an explicit caller-provided fixture/attestation.
         is_st = (
             board == "main"
-            and is_st_current
+            and _st_membership_attested(st_set, ticker, trade_date)
             and trade_date >= ST_STORE_COVERAGE_DATE
         )
 
@@ -332,8 +397,13 @@ def _detect_limit_events(
 
 # ── aggregate computation ─────────────────────────────────────────────────────
 
-def aggregate_daily(events_df: pd.DataFrame, universe_n_by_date: dict[str, int],
-                    st_excluded_by_date: dict[str, int]) -> pd.DataFrame:
+def aggregate_daily(
+    events_df: pd.DataFrame,
+    universe_n_by_date: dict[str, int],
+    st_excluded_by_date: dict[str, int],
+    *,
+    backfill: bool,
+) -> pd.DataFrame:
     """Aggregate event rows into market-day aggregates matching limit_tape schema.
 
     Parameters
@@ -341,49 +411,58 @@ def aggregate_daily(events_df: pd.DataFrame, universe_n_by_date: dict[str, int],
     events_df : DataFrame with columns matching limit_events schema
     universe_n_by_date : {date_str: n_names_with_data_on_that_date}
     st_excluded_by_date : {date_str: count_of_ipo_excluded_bars}
+    backfill : True only for a full historical reconstruction; False for nightly/incremental rows
+
+    The output calendar is the union of event dates and ``universe_n_by_date``. This is
+    deliberate: a trading session with zero limit events is still a valid tape row.
     """
-    if events_df.empty:
-        return pd.DataFrame(columns=[
-            "date", "limit_up_count", "limit_down_count", "sealed_up_close",
-            "failed_up_seal_count", "lianban_2plus", "lianban_max",
-            "limit_up_breadth_pct", "limit_down_breadth_pct",
-            "st_excluded_counts", "universe_n", "backfill",
-        ])
+    columns = [
+        "date", "limit_up_count", "limit_down_count", "sealed_up_close",
+        "failed_up_seal_count", "lianban_2plus", "lianban_max",
+        "limit_up_breadth_pct", "limit_down_breadth_pct",
+        "st_excluded_counts", "universe_n", "backfill",
+    ]
 
-    grp = events_df.groupby("date")
+    def _normalise_date_key(value: object) -> str:
+        return pd.Timestamp(value).strftime("%Y-%m-%d")
 
-    sealed_up     = (events_df["event"] == "sealed_up")
-    sealed_down   = (events_df["event"] == "sealed_down")
-    failed_up     = (events_df["event"] == "failed_up_seal")
+    universe = {_normalise_date_key(key): int(value) for key, value in universe_n_by_date.items()}
+    excluded = {_normalise_date_key(key): int(value) for key, value in st_excluded_by_date.items()}
+    events = events_df.copy()
+    if events.empty:
+        events = pd.DataFrame(columns=["date", "event", "lianban_count"])
+        event_dates: set[str] = set()
+    else:
+        events["date"] = pd.to_datetime(events["date"]).dt.strftime("%Y-%m-%d")
+        event_dates = set(events["date"])
 
-    agg = pd.DataFrame({"date": sorted(events_df["date"].unique())})
-    agg = agg.set_index("date")
+    dates = sorted(set(universe) | event_dates)
+    if not dates:
+        return pd.DataFrame(columns=columns)
 
-    for d in agg.index:
-        day = events_df[events_df["date"] == d]
+    records: list[dict] = []
+    for d in dates:
+        day = events[events["date"] == d]
         su = day[day["event"] == "sealed_up"]
         sd = day[day["event"] == "sealed_down"]
         fu = day[day["event"] == "failed_up_seal"]
+        n = universe.get(d, 0)
+        records.append({
+            "date": d,
+            "limit_up_count": int(len(su) + len(fu)),
+            "limit_down_count": int(len(sd)),
+            "sealed_up_close": int(len(su)),
+            "failed_up_seal_count": int(len(fu)),
+            "lianban_2plus": int((su["lianban_count"] >= 2).sum()) if len(su) else 0,
+            "lianban_max": int(su["lianban_count"].max()) if len(su) else 0,
+            "limit_up_breadth_pct": round((len(su) + len(fu)) / n * 100, 4) if n else None,
+            "limit_down_breadth_pct": round(len(sd) / n * 100, 4) if n else None,
+            "st_excluded_counts": excluded.get(d, 0),
+            "universe_n": n,
+            "backfill": bool(backfill),
+        })
 
-        agg.loc[d, "limit_up_count"]       = int(len(su) + len(fu))  # touched_up = sealed + failed
-        agg.loc[d, "limit_down_count"]     = int(len(sd))
-        agg.loc[d, "sealed_up_close"]      = int(len(su))
-        agg.loc[d, "failed_up_seal_count"] = int(len(fu))
-
-        lb2 = int((su["lianban_count"] >= 2).sum())
-        lb_max = int(su["lianban_count"].max()) if len(su) else 0
-        agg.loc[d, "lianban_2plus"] = lb2
-        agg.loc[d, "lianban_max"]   = lb_max
-
-        n = universe_n_by_date.get(d, 0)
-        agg.loc[d, "universe_n"] = n
-        agg.loc[d, "st_excluded_counts"] = st_excluded_by_date.get(d, 0)
-        agg.loc[d, "limit_up_breadth_pct"]   = round((len(su) + len(fu)) / n * 100, 4) if n else None
-        agg.loc[d, "limit_down_breadth_pct"] = round(len(sd) / n * 100, 4) if n else None
-
-    agg = agg.reset_index()
-    agg["backfill"] = True  # all rows from the backfill are stamped backfill=True
-    return agg
+    return pd.DataFrame.from_records(records, columns=columns)
 
 
 # ── per-name microstructure packet ───────────────────────────────────────────
@@ -419,7 +498,7 @@ def name_packet(
     df.index = pd.to_datetime(df.index)
     latest = df.index[-1]
 
-    is_st = (board == "main" and ticker in st_set)
+    is_st = board == "main" and _st_membership_attested(st_set, ticker, latest)
     width = limit_width_for_date(board, latest, is_st=is_st)
     result["limit_width"] = round(width * 100, 1)
 

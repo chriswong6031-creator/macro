@@ -25,9 +25,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.china_microstructure import (
     CHINEXT_WIDE_DATE,
     LIMIT_TAPE_START_DATE,
+    MAIN_RISK_WARNING_WIDE_DATE,
     ST_STORE_COVERAGE_DATE,
     _board_from_ticker,
     _detect_limit_events,
+    _load_st_set,
+    _st_membership_attested,
     aggregate_daily,
     limit_width_for_date,
     name_packet,
@@ -93,8 +96,14 @@ class TestLimitWidthForDate:
     def test_main_normal(self):
         assert limit_width_for_date("main", pd.Timestamp("2020-01-01")) == 0.10
 
-    def test_main_st(self):
-        assert limit_width_for_date("main", pd.Timestamp("2020-01-01"), is_st=True) == 0.05
+    def test_main_st_before_2026_rule_change(self):
+        before = MAIN_RISK_WARNING_WIDE_DATE - pd.Timedelta(days=1)
+        assert limit_width_for_date("main", before, is_st=True) == 0.05
+
+    def test_main_st_on_2026_rule_change(self):
+        assert limit_width_for_date(
+            "main", MAIN_RISK_WARNING_WIDE_DATE, is_st=True
+        ) == 0.10
 
     def test_star_always_20(self):
         assert limit_width_for_date("star", pd.Timestamp("2019-08-01")) == 0.20
@@ -119,6 +128,10 @@ class TestLimitWidthForDate:
 
     def test_chinext_st_stays_20_after_cutoff(self):
         assert limit_width_for_date("chinext", CHINEXT_WIDE_DATE + pd.Timedelta(30), is_st=True) == 0.20
+
+    def test_star_and_chinext_unchanged_on_main_st_boundary(self):
+        assert limit_width_for_date("star", MAIN_RISK_WARNING_WIDE_DATE, is_st=True) == 0.20
+        assert limit_width_for_date("chinext", MAIN_RISK_WARNING_WIDE_DATE, is_st=True) == 0.20
 
 
 # ── event detection — sealed_up ───────────────────────────────────────────────
@@ -259,19 +272,34 @@ class TestChiNextWidthEra:
 # ── ST flag ───────────────────────────────────────────────────────────────────
 
 class TestSTFlag:
-    def test_st_main_gets_5pct(self):
-        # ST on main board, post-coverage date: 5% limit
-        # prev close = 10.0 → lim_up = round(10*1.05, 2) = 10.50
+    def test_loaded_snapshot_membership_is_attested_on_exact_asof_only(self, tmp_path):
+        store = tmp_path / "china_st"
+        store.mkdir()
+        pd.DataFrame({
+            "ticker": ["000001.SZ", "600000.SS"],
+            "asof": ["2026-07-06", "2026-07-06"],
+        }).to_parquet(store / "st_snapshot.parquet", index=False)
+        snapshot = _load_st_set(tmp_path)
+        assert snapshot.attested_asof == pd.Timestamp("2026-07-06")
+        assert _st_membership_attested(
+            snapshot, "000001.SZ", pd.Timestamp("2026-07-06")
+        )
+        assert not _st_membership_attested(
+            snapshot, "000001.SZ", pd.Timestamp("2026-07-07")
+        )
+
+    def test_st_main_gets_10pct_on_and_after_2026_rule_change(self):
+        # The ST store begins on the rule boundary; main-board risk-warning names now use 10%.
         start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 10.5]
-        highs  = [10.0, 10.0, 10.6]
+        closes = [10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset(["000001.SZ"])
         )
         su = [e for e in events if e["event"] == "sealed_up"]
         assert len(su) == 1
-        assert su[0]["limit_width"] == 5.0
+        assert su[0]["limit_width"] == 10.0
 
     def test_non_st_ticker_not_in_set(self):
         # Not in ST set → 10% limit
@@ -356,7 +384,7 @@ class TestAggregateDaily:
     def test_schema_columns(self):
         df = self._make_events()
         univ = {"2020-01-02": 100}
-        agg = aggregate_daily(df, univ, {})
+        agg = aggregate_daily(df, univ, {}, backfill=True)
         expected_cols = {
             "date", "limit_up_count", "limit_down_count", "sealed_up_close",
             "failed_up_seal_count", "lianban_2plus", "lianban_max",
@@ -368,7 +396,7 @@ class TestAggregateDaily:
     def test_counts_correct(self):
         df = self._make_events()
         univ = {"2020-01-02": 100}
-        agg = aggregate_daily(df, univ, {})
+        agg = aggregate_daily(df, univ, {}, backfill=True)
         row = agg[agg["date"] == "2020-01-02"].iloc[0]
         assert int(row["sealed_up_close"]) == 2
         assert int(row["failed_up_seal_count"]) == 1
@@ -378,14 +406,39 @@ class TestAggregateDaily:
     def test_breadth_pct(self):
         df = self._make_events()
         univ = {"2020-01-02": 100}
-        agg = aggregate_daily(df, univ, {})
+        agg = aggregate_daily(df, univ, {}, backfill=True)
         row = agg[agg["date"] == "2020-01-02"].iloc[0]
         # limit_up_breadth = (sealed_up + failed_up) / universe_n * 100 = 3/100*100 = 3.0
         assert abs(float(row["limit_up_breadth_pct"]) - 3.0) < 0.01
 
     def test_empty_events_returns_empty_df(self):
-        agg = aggregate_daily(pd.DataFrame(), {}, {})
+        agg = aggregate_daily(pd.DataFrame(), {}, {}, backfill=True)
         assert agg.empty
+
+    def test_zero_event_session_is_retained_and_incremental_is_not_backfill(self):
+        agg = aggregate_daily(
+            pd.DataFrame(),
+            {"2026-08-07": 1842},
+            {},
+            backfill=False,
+        )
+        row = agg.iloc[0]
+        assert row["date"] == "2026-08-07"
+        assert int(row["universe_n"]) == 1842
+        assert int(row["limit_up_count"]) == 0
+        assert int(row["limit_down_count"]) == 0
+        assert row["backfill"] is False or row["backfill"] == False  # noqa: E712
+
+    def test_historical_reconstruction_sets_backfill_true(self):
+        agg = aggregate_daily(
+            self._make_events(),
+            {"2020-01-02": 100, "2020-01-03": 100},
+            {},
+            backfill=True,
+        )
+        assert agg["backfill"].tolist() == [True, True]
+        zero_row = agg[agg["date"] == "2020-01-03"].iloc[0]
+        assert int(zero_row["limit_up_count"]) == 0
 
     def test_lianban_2plus(self):
         events = pd.DataFrame([
@@ -397,7 +450,7 @@ class TestAggregateDaily:
              "close_off_limit_pct": 0.0},
         ])
         univ = {"2020-01-02": 100}
-        agg = aggregate_daily(events, univ, {})
+        agg = aggregate_daily(events, univ, {}, backfill=True)
         row = agg.iloc[0]
         assert int(row["lianban_2plus"]) == 1    # only one lianban_count >= 2
         assert int(row["lianban_max"]) == 2
@@ -604,7 +657,7 @@ class TestDegrades:
     def test_aggregate_empty_events(self):
         agg = aggregate_daily(pd.DataFrame(columns=[
             "date", "ticker", "board", "limit_width", "event", "lianban_count", "close_off_limit_pct"
-        ]), {}, {})
+        ]), {}, {}, backfill=True)
         assert isinstance(agg, pd.DataFrame)
         assert agg.empty
 
