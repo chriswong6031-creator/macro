@@ -2703,7 +2703,22 @@ def _tool_get_house_view(params: dict, root: Path) -> dict:
                     "targets": p.get("targets"),
                     "what_to_do_now": p.get("what_to_do_now"),
                     "conviction_score": p.get("_conviction_score"),
-                    "signal_date": p.get("_signal_date") or p.get("signal_date"),
+                    # The index is the effective correction projection.  `_signal_date`
+                    # is a legacy frozen alias and must never override its corrected date.
+                    "signal_date": (
+                        p.get("signal_date")
+                        if "signal_date" in p else p.get("_signal_date")
+                    ),
+                    "formation_date": p.get("formation_date"),
+                    "confirmed_date": p.get("confirmed_date"),
+                    "observed_date": p.get("observed_date"),
+                    "price_basis_date": p.get("price_basis_date"),
+                    "entry_date": p.get("entry_date"),
+                    "recorded_at": p.get("recorded_at"),
+                    "signal_tier": p.get("signal_tier"),
+                    "signal_date_basis": p.get("signal_date_basis"),
+                    "signal_provisional": p.get("signal_provisional"),
+                    "source_marker_date": p.get("source_marker_date"),
                 }
                 for p in plans
             ]
@@ -2717,9 +2732,12 @@ def _tool_get_house_view(params: dict, root: Path) -> dict:
     ledger_path = root / "data" / "prophet" / "ledger.jsonl"
     if ledger_path.exists():
         try:
+            from engine.prophet_integrity import load_effective_ledger  # noqa: PLC0415
+
+            projection = load_effective_ledger(root)
             closed_n = sum(
-                1 for line in ledger_path.read_text(encoding="utf-8").splitlines()
-                if line.strip() and not line.strip().startswith("#")
+                1 for row in projection.rows
+                if str(row.get("id") or "") not in projection.quarantined_ids
             )
         except Exception:  # noqa: BLE001
             closed_n = 0
