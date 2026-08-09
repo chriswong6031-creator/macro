@@ -76,8 +76,18 @@ model_tier: default
 # sentinel.ramp.account_overrides, where a per-desk number is operator-scoped and
 # ANNOUNCED in the gate report — not buried here, where it silently undercut the
 # tier and nobody could see which layer was doing the throttling.
+# OPERATOR ORDER 2026-08-08: 20-30 posts/day/account. This number is not a
+# cadence wish, it is the coherence half of
+# sentinel.ramp.account_overrides.<id>.max_posts_per_account_per_day: the spec
+# and the ramp tier are ANDed at post time, so leaving it at 20 under a 30/day
+# override would make THIS FILE the throttle and the override dead config --
+# the exact regression tests/test_marketing_cadence_ramp_coherence.py exists to
+# refuse. Spacing is UNCHANGED at 20 + up to 3 jitter = 23 = the 30-min ladder
+# step minus publish.post_jitter_max_min (7); 20 x 30 = 600 min still fits the
+# 810-min ladder window. The real ceiling above this is the publisher's sweep
+# grid: 30 sweeps a UTC day, one post per desk per sweep.
 cadence:
-  posts_per_day: 20
+  posts_per_day: 30
   min_spacing_min: 20
   jitter_min: 3
   weekend_shape: medium
