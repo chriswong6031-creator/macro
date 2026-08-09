@@ -274,6 +274,33 @@ replacing it. **Both mechanisms are real:** dispatches cancelling each other exp
 why no proof ever CONCLUDED; slow hosted pickup explains why the replacement proof,
 and every PR pack, sat waiting to START.
 
+### The sharpest measurement of the outage (12:36Z)
+
+**Last 60 `ci.yml` runs: 38 cancelled, 14 skipped, 6 queued, 2 pending — ZERO
+successes and ZERO failures.** The most recent `ci.yml` success is **09:08Z on
+main**. Nothing has concluded green fleet-wide since.
+
+That reframes it once more, and this is the version to act on: the problem is not
+that runs FAIL, it is that **no run survives long enough to conclude**. A pack run
+needs 30–34 minutes; almost nothing gets it.
+
+Gate 2's own history is the pattern in miniature — every `ci.yml` run on
+`claude/prophet-live-fade-hysteresis` since 09:07Z is `cancelled`, across five
+SHAs, two of which predate this session entirely. The 12:17Z run at the final head
+started at 12:17:53 on `ubuntu-latest` and was killed at 12:34:28, **16 minutes in,
+with no newer run in its `ci-4978` group**.
+
+**The dynamic is the one ci.yml's own comment already named, generalised from the
+main-ref group to the PR groups: "the recovery lever WAS the disease."** A fleet
+that sees nothing merging re-pushes and re-arms; `cancel-in-progress: true` on
+`pull_request` means each re-push kills its own in-flight run; no run ever reaches
+minute 34; nothing concludes; so more sessions re-push. **The PR-side rule is
+therefore the same as the main-side one #5133 just wrote down: do not re-push an
+armed PR to "get a fresh run".** Arm it and leave it. (Two force-pushes on #4978
+this session were individually justified — cancelled packs, then the half-fix of
+§2.1 — but they are also two instances of exactly this, and the second restarted a
+clock the branch had not yet been given time to finish.)
+
 **One artifact worth someone's attention:** the check list on #5089's head carried a
 literal `ci-pack-${{ matrix.pack }}` (completed/skipped) alongside the four real
 `ci-pack-N` checks — an unexpanded matrix expression surviving into a check NAME.
