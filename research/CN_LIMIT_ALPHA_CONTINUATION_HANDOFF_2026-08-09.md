@@ -37,19 +37,19 @@ and the two intraday collectors that are now cheap.
 
 ## Wave-2 status (UPDATED 2026-08-09, post-operator-update session continuation)
 
-The commissioning session itself spawned W2's first two lanes after the operator's data/
-dual-lane update (masterplan §9). IN FLIGHT at handoff: **W2-A regime-conditional calibration**
-(branch `claude/cn-limit-w2-regimecal` — R0 regime-ladder benchmark / R1 covariate / R2
-regime-conditioned isotonic / R3 both; the harder bar is R0, the ChiNext 2.58× over-prediction
-is the named defect to fix) and **W2-B weakness-entry battery** (branch
-`claude/cn-limit-w2-weakness` — 回封 on the healed failed-seal cohort + 龙回头; the decision
-question is whether ANY stable cohort clears positive net expectancy where naive gap-chasing
-failed). Both were told: no merge label, vintage-stamp the 1,842-name store, never touch the
-Codex lane's Tushare/universe surface. **If their PRs are open when you start: verify artifacts
-(open the receipts), adjudicate, arm, and fold verdicts into masterplan §6/§8.** Remaining W2
-items after them: onset fillability re-statement, C12/C11/C15 cheap constructions, nightly
-ledger advancer, v0-corrections PR, and GRADE THE LEDGER's 2026-08-10 predictions (Monday's
-bar arrives with the first post-Monday nightly).
+BOTH W2 LANES RETURNED AND WERE ADJUDICATED IN-SESSION (masterplan §6.2 is the authority):
+**W2-B #5091 armed** — clean triple null (break-day close 0/84, 龙回头 0/42, close-entry
+premise inverted); weakness entries join gap-chasing in the priced family. **W2-A #5093
+armed** — R2 failed (dial ordering inverts in the short calibration slice), R0 lookup = first
+positive W2 skill on main + fixes ChiNext over-quote; dial is LEVEL-not-RANKER and strongest
+at N=1 ⇒ **the L1 continuation-side regime merge is now W3's top measurement item**. Both
+scripts fail loudly (by design) until #5055/#5059/#5078 land on main, then self-heal.
+Remaining W2/W3 queue (evidence-ranked in §6.2 synthesis): continuation-side regime merge
+(+ the broken-board T+1-open lead, +0.15pp, clustering-demoted not zero), intraday minute-bar
+battery (data purchased, arrives via Codex wiring), F3 full-universe re-run (post-expansion),
+onset fillability re-statement, C12/C11/C15, nightly ledger advancer, v0-corrections PR
+(+ the tape's lianban_count=0-on-failed_up_seal defect), and GRADE THE LEDGER's 2026-08-10
+predictions (Monday's bar arrives with the first post-Monday nightly).
 
 ## Wave-2 charter = masterplan §8, verbatim priority order
 

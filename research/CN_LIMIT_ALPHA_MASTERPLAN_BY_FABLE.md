@@ -239,6 +239,56 @@ the fillability treatment); H>1 horizons; soft near-limit labels; theme/题材-r
 anything (blocked on THS mapping). A null this wave closes ONLY: naive next-open gap-chasing
 riders (E1/E2/E3, all bands, main+chinext, fit+holdout) and B1-as-specified.
 
+### §6.2 WAVE-2 ADJUDICATION (Fable, 2026-08-09 — same session, post-operator-update)
+
+**W2-B #5091 APPROVED — the weakness families null cleanly, and the null is load-bearing.**
+210 pre-registered cohorts: **0/84** break-day-close (回封) and **0/42** 龙回头 cohorts clear
+positive net-of-15bp in fit AND holdout; 23 clear overall vs ~52 expected from coin flips —
+below-chance survivorship is evidence of negative drift, not hidden edge. 龙回头 is unambiguous
+(holdout −1.37% net, date-clustered t −6.87) despite a real, monotone probability structure
+(24.6% re-board ≤5 sessions) — Wave 1's auction-pricing null REPRODUCED in a second family.
+The close-entry premise inverted: break-day closes LOSE ~1.07pp vs next-open on identical
+trades (= the −0.952% overnight gap, verified to 0.12pp), and only 0.48% of break days are
+unfillable at the open — "guaranteed fill" buys nothing. Structural findings entering the
+permanent record: **breaking the seal destroys ~80% of the ladder's edge** (回封 rate 3-4% vs
+16.5% held first board — the seal IS the signal); trapdoor asymmetry (deep >3% breaks double
+next-day limit-down to 2.73%); two lore items contradicted (no 3-6d 龙回头 sweet spot — hazard
+falls from day 1; declining pullback volume is WORSE, 22.6% vs 29.9%); the house tape's
+`lianban_count` is **hardcoded 0 on failed_up_seal rows** (silent-null trap; panel-derive N);
+strict/tolerant event overlap is only 42.7% of union. Review provenance: the builder's
+commissioned adversarial reviewer died mid-flight (scratch cleanup); the builder executed the
+checklist itself, including a **corruption-experiment lookahead proof** (corrupt all bars past
+a cut, recompute, byte-identical before it) — that standard is adopted house practice.
+
+**W2-A #5093 APPROVED — the causal fix failed for a measured reason, and the simple object
+won.** R2 (regime-conditioned isotonic) made things WORSE on both boards because the dial's
+ordering INVERTS inside L3's 397-date calibration slice (0.773× vs 1.56-1.98× in fit/holdout)
+— slice-fragility is the disease and the per-stratum fix re-caught it. **R0 — the 15-cell
+连板 × i5-tercile lookup — posts the program's first positive Wave-2 skill on main (+0.061%
+vs B0) and fixes the ChiNext over-prediction (2.577× → 1.118×)**; P2 (f3+N logistic, L3's)
+remains the overall skill benchmark (+0.707%). Rulings: R0 = calibration-trusted display
+object for main; chinext ships B0 unchanged; STAR stays THIN-SKIP (137 fit-core positives vs
+the 150 floor — floor NOT lowered after seeing it; discipline held). **Two structural
+findings re-rank Wave 3:** the dial is a **LEVEL instrument, never a RANKER** (constant
+within-date ⇒ R0's top-K identical to B0's — regime tells you WHEN to trust and how much,
+never WHICH name), and the dial is strongest on the **N=1 rung (1.670×)** — so the largest
+expected effect in the program is the **L1 continuation-side regime merge**, not the onset
+side. ChiNext coverage degeneracy printed (54.6% of fit sessions print no boards — curated-
+universe thinness, F3's shadow again).
+
+**Wave-2 synthesis.** Three entry families are now cleanly priced at daily resolution on this
+universe: next-open strength (L1), break-day weakness (W2-B 回封), and pullback weakness
+(W2-B 龙回头) — while the probability structure stays real and well-ordered everywhere it is
+measured. What survives, in evidence order: (1) the **continuation-side regime merge** (dial's
+largest measured effect + W2-B's broken-board T+1-open lead: +0.15pp over the sealed cohort,
+sign-stable cells demoted only by the clustering judgment — not a zero); (2) the **intraday
+battery** the operator's minute-bar purchase unlocks (L1's median-vs-mean left-tail shape);
+(3) the **F3 full-universe re-run** (every W1/W2 number is a 1,842-name-curated,
+survivors-only statistic; ChiNext's degeneracy shows the bias mid-measurement); (4) selection
+depth via P2/B2-class models graded by the forward ledger. A kill this wave closes ONLY the
+constructions named above; the ore ledgers in #5091/#5093 carry 24 untested variants between
+them.
+
 ## §7 Forward-ledger law (from Wave 1, standing)
 
 Every probability the system emits is stamped (feature_date, predict_date, model_version, era
