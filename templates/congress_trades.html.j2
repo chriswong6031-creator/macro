@@ -267,7 +267,7 @@
       <td>
         <span class="tk"><a href="stock.html#{{ it.ticker }}">{{ it.ticker }}</a></span>
         {% if it.gate_tier %}<span class="cg-flag gate-{{ it.gate_tier|lower }}" data-tip-en="⚡ Prime entry — signal gate {{ it.gate_tier }}" data-tip-zh="⚡ 优质入场 — 信号门 {{ it.gate_tier }}">⚡ {{ it.gate_tier }}</span>{% endif %}
-        {% if it.t0 %}<span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI {{ it.t0_d3k }}) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>{% endif %}
+        {% if it.t0 %}<span class="cg-flag t0" title="T0 beta — washed out on the slower frame and just turning up on the daily. Early and unproven; not a buy signal.">T0</span>{% endif %}
         {# washout chips #}
         {%- if dual_wash -%}
           {%- set w2w_k = ent.wash_2w.k if ent.wash_2w is defined and ent.wash_2w.k is not none else none -%}
@@ -275,21 +275,21 @@
           {%- set w2w_st = ent.wash_2w.state if ent.wash_2w is defined and ent.wash_2w.state is defined else '' -%}
           {%- set w1m_st = ent.wash_1m.state if ent.wash_1m is defined and ent.wash_1m.state is defined else '' -%}
           <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K={{ w2w_k|round|int if w2w_k is not none else '—' }}, {{ WASH_EN.get(w2w_st, w2w_st) }}) AND monthly StochRSI (K={{ w1m_k|round|int if w1m_k is not none else '—' }}, {{ WASH_EN.get(w1m_st, w1m_st) }}) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-en="💎 Deep washout on both the two-week and monthly views ({{ w2w_k|round|int if w2w_k is not none else '—' }} and {{ w1m_k|round|int if w1m_k is not none else '—' }} out of 100) — rare, and the strongest reset there is."
             data-tip-zh="💎 双重超跌：两周随机RSI（K={{ w2w_k|round|int if w2w_k is not none else '—' }}，{{ WASH_ZH.get(w2w_st, w2w_st) }}）且月线（K={{ w1m_k|round|int if w1m_k is not none else '—' }}，{{ WASH_ZH.get(w1m_st, w1m_st) }}）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span>
         {%- else -%}
           {%- if w2w_hit -%}
             {%- set w2w_k = ent.wash_2w.k if ent.wash_2w is defined and ent.wash_2w.k is not none else none -%}
             {%- set w2w_st = ent.wash_2w.state if ent.wash_2w is defined and ent.wash_2w.state is defined else '' -%}
             <span class="cg-flag wash"
-              data-tip-en="🌊 2-week StochRSI washed out — K={{ w2w_k|round|int if w2w_k is not none else '—' }} (under 20 = deeply oversold); {{ WASH_EN.get(w2w_st, w2w_st) }}."
+              data-tip-en="🌊 Washed out on the two-week view — {{ w2w_k|round|int if w2w_k is not none else '—' }} out of 100 (under 20 is deeply washed out); {{ WASH_EN.get(w2w_st, w2w_st) }}."
               data-tip-zh="🌊 两周随机RSI超跌 — K={{ w2w_k|round|int if w2w_k is not none else '—' }}（低于20=深度超卖）；{{ WASH_ZH.get(w2w_st, w2w_st) }}。">🌊2W</span>
           {%- endif -%}
           {%- if w1m_hit -%}
             {%- set w1m_k = ent.wash_1m.k if ent.wash_1m is defined and ent.wash_1m.k is not none else none -%}
             {%- set w1m_st = ent.wash_1m.state if ent.wash_1m is defined and ent.wash_1m.state is defined else '' -%}
             <span class="cg-flag wash"
-              data-tip-en="🌊 Monthly StochRSI washed out — K={{ w1m_k|round|int if w1m_k is not none else '—' }} (under 20 = deeply oversold); {{ WASH_EN.get(w1m_st, w1m_st) }}."
+              data-tip-en="🌊 Washed out on the monthly view — {{ w1m_k|round|int if w1m_k is not none else '—' }} out of 100 (under 20 is deeply washed out); {{ WASH_EN.get(w1m_st, w1m_st) }}."
               data-tip-zh="🌊 月线随机RSI超跌 — K={{ w1m_k|round|int if w1m_k is not none else '—' }}（低于20=深度超卖）；{{ WASH_ZH.get(w1m_st, w1m_st) }}。">🌊1M</span>
           {%- endif -%}
         {%- endif -%}
@@ -476,7 +476,7 @@
   {% else %}
   <p class="mut2" style="font-size:12.5px">{{ t('No data yet — this beta screen populates after the next nightly build.', '暂无数据 — 此测试版筛选将在下次夜间构建后填充。') }}</p>
   {% endif %}
-  <p class="mut2" style="font-size:10.5px;margin-top:9px;border-top:1px solid var(--line);padding-top:7px">{{ t('T0 = 3-day-frame StochRSI under 30 with a same-day daily StochRSI up-cross (RSI14/Stoch14/3/3). Beta — an early, unproven flag; not a buy signal.', 'T0 = 3日框架StochRSI低于30且当日日线StochRSI上穿（RSI14/Stoch14/3/3）。测试版 — 早期且未经验证的提示，并非买入信号。') }}</p>
+  <p class="mut2" style="font-size:10.5px;margin-top:9px;border-top:1px solid var(--line);padding-top:7px">{{ t('T0 = washed out on the slower frame and turning up on the same day. Beta — an early, unproven flag; not a buy signal.', 'T0 = 在较慢的周期上已经跌透，当天在日线上开始转上来。测试中 — 早期提示，未经验证，不是买入信号。') }}</p>
 </div>
 
 {# ---------------- the raw disclosure feed ---------------- #}

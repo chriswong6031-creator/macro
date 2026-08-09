@@ -45,6 +45,23 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+def _ts_ago(days: int) -> str:
+    """ISO UTC timestamp `days` before now — NEVER hardcode a `scored_at`.
+
+    The decay monitor drops every joined row scored before
+    ``pd.Timestamp.now(tz="UTC") - window_days`` (``scripts/build_flow_signals.py``
+    :598 cutoff, :606-608 filter; ``window_days: 90`` from the fixture yml
+    below).  A literal ``scored_at`` is therefore a scheduled red: the pinned
+    ``2026-07-13T10:00:00+00:00`` aged past 90 days on 2026-10-11T10:00Z, at
+    which point the monitor returns ``{}`` — the breach test goes red and its
+    two siblings go silently vacuous behind ``if "8_90" in ...`` guards.  These
+    fixtures are hermetic in DATA (tmp_path parquets); a relative scored_at
+    makes them hermetic in TIME.  Anchor to the same clock the producer reads —
+    it re-imports pandas inside the function, so a monkeypatch would not hold.
+    """
+    return (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).isoformat()
+
+
 def _make_ledger(n: int = 5, dte_bucket: str = "8_30d",
                  root: str = "AAPL") -> pd.DataFrame:
     """Build a minimal synthetic ledger DataFrame."""
@@ -474,7 +491,7 @@ class TestDecayBreach:
                 "score_raw":         0.9,
                 "score_calibrated":  0.9,  # predict 90% for all
                 "status":            "scored",
-                "scored_at":         "2026-07-13T10:00:00+00:00",
+                "scored_at":         _ts_ago(7),   # inside the 90d decay window
             })
         _write_scores(fs_dir, pd.DataFrame(rows))
 
@@ -493,7 +510,7 @@ class TestDecayBreach:
                 "spy_excess_63": -0.01,
                 "outcome":       0,
                 "grade":         "ok",
-                "graded_at":     "2026-09-03T00:00:00+00:00",
+                "graded_at":     _ts_ago(2),   # derived AFTER scored_at above
             })
         _write_grades(fs_dir, pd.DataFrame(rows))
 
@@ -545,7 +562,7 @@ class TestDecayBreach:
                 "model_version": "v1", "detector_version": "v1",
                 "score_raw": p, "score_calibrated": p,
                 "status": "scored",
-                "scored_at": "2026-07-13T10:00:00+00:00",
+                "scored_at": _ts_ago(7),   # inside the 90d decay window
             })
             grades_rows.append({
                 "event_id": eid,
@@ -553,7 +570,7 @@ class TestDecayBreach:
                 "spy_excess_21": 0.01 * y,
                 "spy_excess": 0.01 * y,
                 "outcome": y, "grade": "ok",
-                "graded_at": "2026-09-03T00:00:00+00:00",
+                "graded_at": _ts_ago(2),   # derived AFTER scored_at above
             })
 
         _write_scores(fs_dir, pd.DataFrame(scores_rows))
@@ -572,12 +589,15 @@ class TestDecayBreach:
         # Monitor returns a dict (non-fatal)
         assert isinstance(monitor, dict)
 
-        if "8_90" in monitor:
-            # Perfectly calibrated predictions (pred == outcome) → ECE = 0 → no breach
-            assert monitor["8_90"]["decayed"] is False
-            ece_val = monitor["8_90"]["realized_ece"]
-            assert ece_val is not None
-            assert ece_val < 0.05, f"Perfect calibration should give ECE < 0.05, got {ece_val}"
+        # Unconditional: with a relative scored_at the bucket is always inside
+        # the decay window, so an `if "8_90" in monitor` guard would only ever
+        # hide a monitor that stopped emitting.
+        assert "8_90" in monitor
+        # Perfectly calibrated predictions (pred == outcome) → ECE = 0 → no breach
+        assert monitor["8_90"]["decayed"] is False
+        ece_val = monitor["8_90"]["realized_ece"]
+        assert ece_val is not None
+        assert ece_val < 0.05, f"Perfect calibration should give ECE < 0.05, got {ece_val}"
 
     def test_gate_carries_decay_flag(self, tmp_path):
         fs_dir = tmp_path / "data" / "flow_signals"
@@ -613,8 +633,10 @@ class TestDecayBreach:
         )
         gate = json.loads(gate_path.read_text())
         assert "monitor" in gate["scoring"]
-        if "8_90" in gate["scoring"]["monitor"]:
-            assert gate["scoring"]["monitor"]["8_90"]["decayed"] is True
+        # Unconditional for the same reason as above — the guard made the only
+        # assertion in this test optional.
+        assert "8_90" in gate["scoring"]["monitor"]
+        assert gate["scoring"]["monitor"]["8_90"]["decayed"] is True
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -3454,7 +3454,15 @@ def test_a_hard_failure_of_every_rung_is_named_as_a_transport_fault(monkeypatch)
     posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
 
     assert posts[0]["stage"] == "provider"
-    assert posts[0]["reasons"] == ["provider_error:ConnectionError"], posts[0]
+    # The FAMILY is unchanged; the label now carries the per-rung diagnosis too
+    # (W2, 2026-08-08). `provider_error:ConnectionError` said the transport broke
+    # and nothing about WHICH rungs broke or how, which is precisely the gap that
+    # let a codex-first lane run entirely on DeepSeek for weeks without any
+    # artifact recording that codex had been asked at all.
+    reason = posts[0]["reasons"][0]
+    assert reason.startswith("provider_error:ConnectionError"), posts[0]
+    assert "deepseek=transport" in reason, posts[0]
+    assert "oauth=transport" in reason, posts[0]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3609,3 +3617,291 @@ def test_every_bucket_line_renders_clean_in_every_voice():
         for r in write_posts_deterministic(contexts):
             assert r["violations"] == [], (trend, r["violations"],
                                            r["headline"], r["body"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W2 (2026-08-08) — write-time normalizer, number harmonizer, voice pack v4
+# register bans, per-stage funnel, and the per-rung drop trace.
+#
+# THE NIGHT THIS WAVE WAS BUILT FROM. The plan artifact for 2026-08-07 carried
+# 51 validate-stage drops, and the ai_costs ledger for the whole marketing
+# estate carried ZERO rows: 3,372 rows, 3,350 deepseek and 22 codex, none of
+# them from any marketing lane, on a config that pins codex FIRST on every
+# writing lane. Two separate blind spots, one indistinguishable symptom.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestWriteTimeNormalizer:
+    """Mechanical typography fixes that used to cost a whole post."""
+
+    def test_a_mid_clause_em_dash_becomes_a_comma(self):
+        assert cw.normalize_model_text("It held 122 — barely.") == \
+            "It held 122, barely."
+
+    def test_a_sentence_boundary_em_dash_does_not_double_the_full_stop(self):
+        """The obvious second defect: ", " after a period reads as ".. "."""
+        assert cw.normalize_model_text("It held. — The close was ugly.") == \
+            "It held. The close was ugly."
+
+    def test_an_em_dash_before_a_capital_becomes_a_full_stop(self):
+        assert cw.normalize_model_text("It held — Buyers showed up.") == \
+            "It held. Buyers showed up."
+
+    def test_a_numeric_range_dash_becomes_a_word(self):
+        """', ' would read as two separate figures, which is a meaning change."""
+        assert cw.normalize_model_text("Range 2024–2025 was flat.") == \
+            "Range 2024 to 2025 was flat."
+
+    def test_a_line_leading_dash_is_dropped_not_commafied(self):
+        assert cw.normalize_model_text("— leading dash line") == \
+            "leading dash line"
+
+    def test_smart_quotes_and_ellipsis_go_straight(self):
+        out = cw.normalize_model_text("“Smart” and ‘single’ and it’s fine…")
+        assert out == "\"Smart\" and 'single' and it's fine..."
+
+    def test_hard_spaces_and_doubled_spaces_collapse(self):
+        assert cw.normalize_model_text("double  spaces and nbsp") == \
+            "double spaces and nbsp"
+
+    def test_newlines_survive_because_the_stack_shapes_are_line_structure(self):
+        """A greedy \\s+ collapse would flatten a stack into one paragraph."""
+        out = cw.normalize_model_text("claim\n\n\n\nstat one   \n  stat two")
+        assert out == "claim\n\nstat one\nstat two"
+
+    def test_the_normalizer_never_raises_on_junk(self):
+        for junk in (None, "", 12345, object()):
+            assert isinstance(cw.normalize_model_text(junk), str)
+
+    def test_a_dash_draft_now_validates_instead_of_buying_a_repair(self, monkeypatch):
+        """THE POINT OF THE WHOLE PASS, end to end.
+
+        The prompt has banned em dashes since v2 shipped and models keep writing
+        them. Before this pass the draft below cost one repair turn and then a
+        validate-stage drop; now it is corrected and validated on the FIRST turn,
+        with `repairs` still at zero.
+        """
+        _arm_ladder(monkeypatch, [(
+            "codex",
+            _good("$ARES dipped back to 122 and held — buyers keep showing up."),
+        )])
+        posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        assert posts[0]["mode"] == "llm", posts[0]
+        assert "—" not in posts[0]["text"]
+        assert "held, buyers" in posts[0]["text"], posts[0]["text"]
+        assert cw.writer_stats()["repairs"] == 0
+
+
+class TestDisplayNumberHarmonizer:
+    """A model that names the RIGHT value in the WRONG spelling keeps its post."""
+
+    def test_source_precision_snaps_to_the_whitelisted_display_form(self):
+        assert cw.harmonize_display_numbers(
+            "ARES held 121.66 into the close.", ["122"]) == \
+            "ARES held 122 into the close."
+
+    def test_a_two_decimal_percent_snaps_to_the_one_decimal_form(self):
+        assert cw.harmonize_display_numbers("Up 2.30% today.", ["2.3%"]) == \
+            "Up 2.3% today."
+
+    def test_a_trailing_zero_percent_snaps_to_the_register_form(self):
+        assert cw.harmonize_display_numbers("Down -14.0% on the week.",
+                                            ["-14%"]) == \
+            "Down -14% on the week."
+
+    def test_a_number_the_whitelist_does_not_carry_is_left_to_be_rejected(self):
+        """The snap is value identity, NOT leniency. An invented level must
+        still reach the whitelist gate exactly as the model wrote it."""
+        assert cw.harmonize_display_numbers("Target 999 invented.", ["122"]) == \
+            "Target 999 invented."
+
+    def test_an_already_correct_number_is_untouched(self):
+        text = "It held 122 and 2.3%."
+        assert cw.harmonize_display_numbers(text, ["122", "2.3%"]) == text
+
+    def test_an_empty_whitelist_is_a_no_op(self):
+        assert cw.harmonize_display_numbers("It held 121.66.", []) == \
+            "It held 121.66."
+
+    def test_the_harmonizer_never_raises_on_junk(self):
+        assert isinstance(cw.harmonize_display_numbers(None, None), str)
+
+
+class TestVoicePackV4RegisterBans:
+    """Corpus-measured bans (500 posts, five accounts, 2026-08-08)."""
+
+    def _hits(self, text, **over):
+        return cw.register_v4_violations(text, _ctx(**over))
+
+    def test_a_hashtag_is_rejected(self):
+        assert any("hashtag" in v for v in self._hits("Semis led again. #stocks"))
+
+    def test_a_rank_hash_is_not_a_hashtag(self):
+        """'#1 in the group' is a rank and the corpus uses it."""
+        assert not any("hashtag" in v for v in self._hits("#1 in the group today."))
+
+    def test_two_exclamation_marks_are_rejected(self):
+        assert any("exclamation" in v for v in self._hits("Wild! Just wild!"))
+
+    def test_one_exclamation_is_left_to_the_persona_dial(self):
+        """Meagan's card grants exactly one; the dial owns that cap, not this."""
+        assert not any("exclamation" in v for v in self._hits("okay so wild!"))
+
+    def test_an_engagement_cta_is_rejected(self):
+        assert any("engagement CTA" in v
+                   for v in self._hits("Semis led. Follow for more."))
+
+    def test_a_hedging_softener_is_rejected(self):
+        assert any("hedge" in v for v in self._hits("I think semis led again."))
+
+    def test_an_announced_prequestion_is_rejected(self):
+        assert any("prequestion" in v
+                   for v in self._hits("What just happened, and what it changes"))
+
+    def test_a_wire_opener_on_an_analytical_desk_is_rejected(self):
+        assert any("wire opener" in v
+                   for v in self._hits("BREAKING: semis led again.",
+                                       account="flagship"))
+
+    def test_the_news_desk_keeps_its_wire_opener(self):
+        assert not any("wire opener" in v
+                       for v in self._hits("BREAKING: semis led again.",
+                                           account="mastermind_news"))
+
+    def test_an_orphan_superlative_is_rejected(self):
+        assert any("superlative" in v
+                   for v in self._hits("Semis posted the biggest drawdown."))
+
+    def test_an_anchored_superlative_passes(self):
+        """DELIBERATELY NARROW: a referent in the same sentence clears it."""
+        assert not any("superlative" in v for v in self._hits(
+            "Semis posted the biggest drawdown since March."))
+
+    def test_the_bans_are_wired_into_validate_copy_v2(self):
+        """A rule nothing calls is a rule that does not exist."""
+        hits = cw.validate_copy_v2("Semis led again. #stocks", _ctx())
+        assert any("hashtag" in v for v in hits), hits
+
+    def test_a_clean_post_trips_none_of_them(self):
+        assert self._hits("Semis led again, breadth sat it out again.") == []
+
+
+class TestPerStageFunnelAccounting:
+    """{selected, copy_attempted, provider_failed, validator_failed, repaired,
+    validated, emitted} + the top reasons + which rung served."""
+
+    def test_a_clean_run_reports_one_emitted_post(self, monkeypatch):
+        _arm_ladder(monkeypatch, [("codex", _good())])
+        cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        f = cw.copy_funnel()
+        assert f["selected"] == 1
+        assert f["copy_attempted"] == 1
+        assert f["emitted"] == 1
+        assert f["provider_failed"] == 0
+        assert f["validator_failed"] == 0
+        assert f["validated"] == 1
+
+    def test_a_provider_outage_lands_in_the_provider_column(self, monkeypatch):
+        def boom(**_kw):
+            raise ConnectionError("endpoint unreachable")
+
+        _arm_ladder(monkeypatch, [("codex", boom), ("deepseek", boom)])
+        cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        f = cw.copy_funnel()
+        assert f["provider_failed"] == 1
+        assert f["emitted"] == 0
+        assert f["validator_failed"] == 0, "a transport fault is not a copy fault"
+        assert f["top_reasons"][0][0] == "provider_error", f["top_reasons"]
+
+    def test_the_funnel_names_the_rung_that_served(self, monkeypatch):
+        """The number that was missing on 2026-08-08: which rung wrote tonight."""
+        _arm_ladder(monkeypatch, [("codex", _good())])
+        cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        assert cw.copy_funnel()["rungs"]["codex"]["ok"] >= 1
+
+    def test_the_annotation_starts_the_line_and_carries_every_stage(self):
+        """GitHub DROPS an annotation that is not at a line start, silently
+        (tests/test_gh_annotation_line_start.py). Assert the shape, not a log."""
+        line = cw.funnel_annotation()
+        assert line.startswith("::notice title=marketing-copy-funnel::")
+        assert "\n" not in line
+        for key in ("selected=", "copy_attempted=", "provider_failed=",
+                    "validator_failed=", "repaired=", "validated=", "emitted="):
+            assert key in line, key
+
+    def test_the_writer_prints_the_annotation(self, monkeypatch, capsys):
+        _arm_ladder(monkeypatch, [("codex", _good())])
+        cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines()
+                if ln.startswith("::notice title=marketing-copy-funnel::")]
+        assert len(hits) == 1, out
+        assert hits[0].startswith("::")
+
+    def test_reset_clears_the_funnel(self):
+        cw.reset_writer_stats()
+        assert cw.copy_funnel() == {}
+
+
+class TestDropLabelNamesEveryRung:
+    """`unreadable_reply:deepseek+oauth` never said what codex did."""
+
+    def test_a_failed_rung_above_the_server_is_named_with_its_error_class(
+            self, monkeypatch):
+        def usage_limited(**_kw):
+            raise RuntimeError("429 Codex usage limit reached")
+
+        def boom(**_kw):
+            raise ConnectionError("endpoint unreachable")
+
+        _arm_ladder(monkeypatch, [("codex", usage_limited), ("deepseek", boom)])
+        posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        reason = posts[0]["reasons"][0]
+        assert "codex=usage_limit" in reason, reason
+        assert "deepseek=transport" in reason, reason
+
+    def test_a_walk_where_nothing_failed_keeps_the_legacy_label(self, monkeypatch):
+        """Back-compatibility is deliberate: the trace is the MISSING half, so a
+        clean walk must produce the byte-identical label the census already
+        knows how to read."""
+        ledger = _arm_ladder(monkeypatch, [
+            ("deepseek", _always_empty), ("oauth", _always_empty)])
+        posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+        assert posts[0]["reasons"] == ["provider_no_text:deepseek+oauth"], ledger
+
+
+class TestVoiceCardDistinctness:
+    """Seven live desks, seven distinguishable prompt cards."""
+
+    LIVE_DESKS = ("flagship", "founder", "mastermind_news",
+                  "meagan", "sophia", "kelly", "cici")
+
+    def _cards(self):
+        import yaml
+        with open("config/marketing.yml", encoding="utf-8") as fh:
+            mk = yaml.safe_load(fh) or {}
+        return ((mk.get("copywriter") or {}).get("personas") or {})
+
+    def test_every_configured_desk_resolves_a_distinct_prompt_card(self):
+        personas = self._cards()
+        rendered: dict[str, str] = {}
+        for desk, raw in personas.items():
+            card = {"name": raw.get("name") or desk,
+                    "voice": str(raw.get("voice_notes") or "").strip(),
+                    "example_lines": list(raw.get("example_lines") or [])}
+            block = cw.persona_prompt_section(card)
+            assert block.strip(), f"{desk}: empty prompt card"
+            assert block not in rendered.values(), (
+                f"{desk} renders the same card as another desk")
+            rendered[desk] = block
+        assert len(rendered) == len(personas)
+
+    def test_kelly_owns_the_stacked_fact_list(self):
+        """W2: the bilello-style shape is hers alone, and it is fact-fed."""
+        kelly = str((self._cards().get("kelly") or {}).get("voice_notes") or "")
+        assert "STACKED FACT LIST" in kelly
+        assert "computed facts" in kelly
+        others = [d for d in ("flagship", "founder", "meagan", "sophia", "cici")
+                  if "STACKED FACT LIST" in str(
+                      (self._cards().get(d) or {}).get("voice_notes") or "")]
+        assert others == [], others

@@ -48,8 +48,13 @@ W0 Stage B-d additions (§5.1 sub-task 5, §3.4 Asia-lane stamping):
          the fill convention differs.
      (b) fwd_mfe at horizons 5/10/21/63 from the T+1 HL2 fill.
      (c) post_cushion_breach per-fire flag (cushioned-then-stopped = True) from CN fill.
-     (d) fill_basis="t1_hl2" provenance column on every row so cross-market readers can
+     (d) fill-basis provenance column on every row so cross-market readers can
          never confuse fill conventions with board_ledger (HK/CA) which uses grading fill.
+         CORRECTED 2026-08-08 (300363.SZ case study): this column used to be stamped with
+         the CONSTANT ``ENTRY_BASIS`` at row birth — before T+1 had even printed — so it
+         claimed "t1_hl2" for rows that were in fact filled at the raw T+1 OPEN. It now
+         carries ``basis_used``, the basis ACTUALLY used at derivation time
+         (t1_open / t1_hl2 / t1_close / deferred), null while T+1 is still pending.
      Locked-limit-excluded rows: all new axes null (unfillable is unfillable).
   2. _slice_table STRATIFIER COLUMNS: species_id, archetype added as nullable stratifiers.
   3. REGIME STAMPS (§3.4 Asia-lane rules):
@@ -71,10 +76,40 @@ W0 Stage B-d additions (§5.1 sub-task 5, §3.4 Asia-lane stamping):
   5. DTYPE HARDENING (_coerce_object_cols): pandas 3.x refuses string/bool cell writes to
      all-NaN columns typed float64 (loaded from legacy parquet). Coerce ALL string/bool
      nullable columns to object dtype at every frame-assembly point. Complete column set
-     documented in _OBJECT_COLS_CN below."""
+     documented in _OBJECT_COLS_CN below.
+
+ENTRY-PRICE INTEGRITY (2026-08-08 — 300363.SZ full-chain case study)
+--------------------------------------------------------------------
+The published entry `e` on the CN forward ledger was RE-DERIVED from the price store on
+every nightly, so it was mutable: 300363.SZ (board 2026-08-05) published `e=16.30,
+p=+4.5%` on 08-06 and silently restated to `e=17.52, p=+16.7%` once the price bar healed.
+The 08-06 bar as stored that night printed **open 16.2999 < low 16.98** — an impossible
+bar — and nothing on the entry path checked open ∈ [low, high]. Three rules close it:
+
+  1. BAR SANITY GATE (_t1_fill_detail). A T+1 bar whose open falls outside [low, high]
+     (relative float-dust tolerance) is CORRUPT: its open is refused as an entry basis and
+     a line-start ``::warning`` names ticker + T+1 date. The entry falls back to the
+     DOCUMENTED t1_hl2 basis when that bar's high/low are self-consistent (low <= high),
+     and otherwise DEFERS — no entry is derived, the episode counts as awaiting-T+1, and
+     the next nightly retries. A corrupt bar never fabricates a price.
+  2. PIT LATCH (append_entry_latches / resolve_entry, data/china_standout_track/
+     entry_latch.parquet, append-only, keep-FIRST on (date, ticker)). Once a non-null
+     entry has been derived for a board row it is LATCHED and every later nightly reads
+     the latched value. A re-derivation that disagrees beyond float dust does NOT
+     overwrite: the published entry stands and the disagreement is recorded ADDITIVELY
+     (``e_revised`` + ``e_revision_reason``) with its own ``::warning``. The published
+     return always derives from the latched entry, so a healed or re-stated bar can never
+     move a number the desk already published.
+     Keyed on (date, ticker) and NOT on board_definition: the T+1 fill is a property of
+     the price store, so two board definitions surfacing the same name on the same date
+     must publish the same entry.
+  3. TRUTHFUL BASIS PROVENANCE. ``ENTRY_BASIS`` is the INTENDED basis and is no longer
+     published as what happened; ``basis_used`` is stamped per row at derivation time and
+     the legacy ``fill_basis`` column now carries the same truthful value."""
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -98,8 +133,31 @@ _BENCH = "510300.SS"                      # CSI300 ETF — the ONLY China excess
 # handful of ETFs on a board fall back to the index/ETF store. The #791 bug read only `china` (30
 # ETFs) → 0/120 names resolved → n_graded=0 forever. Try names first, ETFs second.
 _PRICE_GROUPS = ("china_stocks", "china")
-ENTRY_BASIS = "t1_hl2"                    # T+1 (H+L)/2 proxy; upgrades to true T+1 open when collected
+# INTENDED basis only — NEVER publish this as what a given row actually used. The store has
+# carried a real `open` column for most names since the collector upgrade, so the basis that
+# actually fires is usually t1_open; stamping the constant as provenance is what made the
+# 300363.SZ ledger claim "t1_hl2" for two entries that were neither (16.30 then 17.52 vs an
+# actual 08-06 HL2 of 17.38).  Per-row truth lives in `basis_used` / `fill_basis`.
+ENTRY_BASIS = "t1_hl2"                    # T+1 (H+L)/2 proxy — the DOCUMENTED fallback convention
 _MIN_GRADED = 8                           # per-horizon rows required before a number is published
+
+# Per-row entry-basis tokens (stamped at derivation time — see _t1_fill_detail).
+BASIS_T1_OPEN = "t1_open"                 # the T+1 open, sanity-checked against [low, high]
+BASIS_T1_HL2 = "t1_hl2"                   # (H+L)/2 of the T+1 bar — ENTRY_BASIS, the documented proxy
+BASIS_T1_CLOSE = "t1_close"               # legacy last resort: the bar carries only a close
+BASIS_DEFERRED = "deferred"               # no honest entry derivable yet — retried next nightly
+_BASIS_TOKENS = (BASIS_T1_OPEN, BASIS_T1_HL2, BASIS_T1_CLOSE, BASIS_DEFERRED)
+
+# Relative tolerance for the open ∈ [low, high] bar-sanity gate and for the PIT-latch
+# disagreement test.  Prices round-trip through float32 parquet (~1.2e-7 relative), so 1e-6
+# is ~8x the representation error: it absorbs storage dust and nothing else.  The defect this
+# guards is not subtle — 300363.SZ printed open 16.2999 against low 16.98, a 4% violation.
+_PRICE_REL_TOL = 1e-6
+
+# PIT entry latch: append-only, keep-FIRST on (date, ticker).  See module docstring §2.
+_ENTRY_LATCH_FILE = "entry_latch.parquet"
+_ENTRY_LATCH_COLS = ("date", "ticker", "entry", "basis_used", "t1_date",
+                     "corrupt_bar", "latched_asof")
 
 # W0 Stage B-d: MFE horizons for CN-native spine (superset of _HORIZONS_D — added 5 and 10)
 _MFE_HORIZONS = (5, 10, 21, 63)
@@ -123,6 +181,10 @@ _SPINE_COLS = (
     "terminal_state_clean8_21",
     "post_cushion_breach",
     "fill_basis",
+    # 2026-08-08: the per-row basis ACTUALLY used to derive the entry. `fill_basis` is kept
+    # (engine/neuralweb/query.py reads it as the cross-market fill-convention provenance) and
+    # now carries the same truthful value — the two are stamped from one source and cannot drift.
+    "basis_used",
 )
 
 # W0 Stage B-d: species/archetype + regime stamp columns
@@ -152,6 +214,7 @@ _OBJECT_COLS_CN = (
     "terminal_state_clean8_21",
     "post_cushion_breach",         # bool but nullable — coerce to object
     "fill_basis",
+    "basis_used",
 )
 
 # Own-market regime constraint note (documented null — see module docstring §3a)
@@ -443,33 +506,40 @@ def _cn_fwd_mfe(
 def _cn_spine_axes(ticker: str, d0: pd.Timestamp) -> dict:
     """Compute all CN-native spine axes for one board row anchored at board-date ``d0``.
 
-    Uses _t1_fill to get the T+1 HL2 fill (with locked-limit exclusion). If the fill is
-    None or locked, ALL axes are returned as None (unfillable is unfillable — we do not
-    fabricate a fill). The fill_basis provenance column is always set to ENTRY_BASIS
-    ("t1_hl2") so a cross-market reader can never confuse fill conventions.
+    Uses the T+1 fill (with the bar-sanity gate and locked-limit exclusion). If the fill
+    is None or locked, ALL axes are returned as None (unfillable is unfillable — we do not
+    fabricate a fill).
 
-    Returns a dict with keys: fill_basis, fwd_mfe_5/10/21/63,
+    PROVENANCE (corrected 2026-08-08): ``basis_used`` — mirrored into the legacy
+    ``fill_basis`` column that engine/neuralweb/query.py reads — carries the basis the row
+    ACTUALLY used, not the ENTRY_BASIS constant. Stamping the constant is what let the CN
+    ledger publish "t1_hl2" for two entries that were the raw open and neither HL2.
+
+    Returns a dict with keys: fill_basis, basis_used, fwd_mfe_5/10/21/63,
     terminal_state_clean15_126, terminal_state_clean8_21, post_cushion_breach.
     """
-    null_result = {
-        "fill_basis": ENTRY_BASIS,
-        "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
-        "terminal_state_clean15_126": None,
-        "terminal_state_clean8_21": None,
-        "post_cushion_breach": None,
-    }
+    def _null(basis: str) -> dict:
+        return {
+            "fill_basis": basis, "basis_used": basis,
+            "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
+            "terminal_state_clean15_126": None,
+            "terminal_state_clean8_21": None,
+            "post_cushion_breach": None,
+        }
     df = _price_frame(ticker)
     if df is None:
-        return null_result
+        return _null(BASIS_DEFERRED)
     close = pd.to_numeric(df["close"], errors="coerce").dropna()
     if close.empty:
-        return null_result
+        return _null(BASIS_DEFERRED)
 
-    fill, locked, _pinned = _t1_fill(df, d0)
+    detail = _t1_fill_detail(df, d0, ticker)
+    fill, locked = detail["entry"], detail["locked"]
     if fill is None or locked:
-        return null_result
+        # An unfillable (locked) bar still has an honest basis; a deferred one does not.
+        return _null(detail["basis_used"])
 
-    result = {"fill_basis": ENTRY_BASIS}
+    result = {"fill_basis": detail["basis_used"], "basis_used": detail["basis_used"]}
 
     # fwd_mfe at each MFE horizon
     for h in _MFE_HORIZONS:
@@ -693,8 +763,14 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             # W0 Stage B-d: US context regime stamp (Asia-lane rule §3.4).
             **rv_stamp,
             # W0 Stage B-d: CN-native spine placeholders (null at birth; matured by grade()).
-            # fill_basis is always "t1_hl2" — provenance for cross-market readers.
-            "fill_basis": ENTRY_BASIS,
+            # fill_basis / basis_used are NULL at birth — T+1 has not printed yet, so no basis
+            # has happened.  Stamping the ENTRY_BASIS constant here was the false-provenance
+            # defect (300363.SZ): it claimed "t1_hl2" for a row that would go on to fill at the
+            # raw open.  grade() stamps the real basis via _cn_spine_axes once T+1 exists.
+            # engine/neuralweb/query.py reads fill_basis with an `or "t1_hl2"` default, so a
+            # null here degrades to today's documented convention rather than to nothing.
+            "fill_basis": None,
+            "basis_used": None,
             "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
             "terminal_state_clean15_126": None,
             "terminal_state_clean8_21": None,
@@ -745,37 +821,340 @@ def _bench_close() -> pd.Series | None:
     return pd.to_numeric(df["close"], errors="coerce").dropna()
 
 
-def _t1_fill(df: pd.DataFrame, d0: pd.Timestamp) -> tuple[float | None, bool, bool]:
-    """Fill-realistic entry: the FIRST session strictly AFTER the board-date close (T+1). Returns
-    (fill_price, locked_limit, pinned). fill = (H+L)/2 proxy (or true Open if the column exists).
-    ``locked_limit`` = T+1 bar printed high==low==close (unfillable — caller must exclude).
-    ``pinned`` = the board-date reference CLOSE sat at that day's high==close (informational)."""
+def _dust(*vals: float) -> float:
+    """Absolute float-dust tolerance scaled to the prices being compared (see _PRICE_REL_TOL)."""
+    scale = max([abs(float(v)) for v in vals if v is not None] or [0.0])
+    return max(scale, 1.0) * _PRICE_REL_TOL
+
+
+def _t1_fill_detail(df: pd.DataFrame, d0: pd.Timestamp,
+                    ticker: str | None = None) -> dict:
+    """Fill-realistic entry for the FIRST session strictly AFTER the board-date close (T+1),
+    with the 2026-08-08 BAR-SANITY GATE and truthful per-row basis provenance.
+
+    Returns a dict::
+
+        {entry, locked, pinned, basis_used, corrupt_bar, defer_reason, t1_date}
+
+    ``entry``       the fill price, or None when no honest entry is derivable yet.
+    ``locked``      T+1 bar printed high==low==close (unfillable — caller must exclude).
+    ``pinned``      the board-date reference CLOSE sat at that day's high (informational).
+    ``basis_used``  BASIS_T1_OPEN / BASIS_T1_HL2 / BASIS_T1_CLOSE / BASIS_DEFERRED — the basis
+                    ACTUALLY used, never the ENTRY_BASIS constant.
+    ``corrupt_bar`` the T+1 bar is internally impossible (see below).
+    ``defer_reason`` plain-word reason the entry was not derived (None when it was).
+
+    BASIS PRECEDENCE — unchanged for a sane bar (open → HL2 → close), gated for a corrupt one:
+
+      * A T+1 bar is CORRUPT when its open falls outside [low, high] beyond float dust, or when
+        low > high (an empty interval — every open is outside it).  300363.SZ's 2026-08-06 bar
+        as stored that night read open 16.2999 against low 16.98; the ledger took the open at
+        face value, published e=16.30/p=+4.5%, and restated to e=17.52/p=+16.7% when the bar
+        healed.  A corrupt bar's OPEN is never an entry.
+      * A corrupt bar falls back to the DOCUMENTED t1_hl2 basis only when its own high/low are
+        self-consistent (low <= high).  It never falls through to the close: a bar we have
+        already proven internally inconsistent has not earned a third guess.
+      * Otherwise the entry DEFERS (entry=None, basis_used=BASIS_DEFERRED).  The episode counts
+        as awaiting-T+1 and the next nightly retries — a deferral is honest, a fabricated price
+        is not.
+
+    Every corrupt bar prints a line-start ``::warning`` naming ticker + T+1 date.  The bare
+    ``print(..., flush=True)`` is deliberate and CI-guarded: a logger prefixes the line and
+    GitHub silently drops the annotation (tests/test_gh_annotation_line_start.py).
+    """
+    out: dict = {"entry": None, "locked": False, "pinned": False,
+                 "basis_used": BASIS_DEFERRED, "corrupt_bar": False,
+                 "defer_reason": None, "t1_date": None}
     idx = df.index
     after = idx[idx > d0]
     if len(after) == 0:
-        return None, False, False
+        out["defer_reason"] = "no session after the board date yet"
+        return out
     t1 = after[0]
+    t1_date = str(pd.Timestamp(t1).date())
+    out["t1_date"] = t1_date
     row = df.loc[t1]
     hi, lo = row.get("high"), row.get("low")
     op = row.get("open") if "open" in df.columns else None
     close = row.get("close")
-    locked = (hi is not None and lo is not None and close is not None
-              and pd.notna(hi) and pd.notna(lo) and pd.notna(close)
-              and float(hi) == float(lo) == float(close))
+    out["locked"] = bool(
+        hi is not None and lo is not None and close is not None
+        and pd.notna(hi) and pd.notna(lo) and pd.notna(close)
+        and float(hi) == float(lo) == float(close))
     # pinned reference close: the board-date bar closed AT its own high (limit-up-style pin) — the
     # reference the user saw was untradeable; we already grade from the T+1 fill so this is a flag.
     ref = df.loc[d0] if d0 in df.index else None
-    pinned = bool(ref is not None and pd.notna(ref.get("high")) and pd.notna(ref.get("close"))
-                  and float(ref.get("high")) == float(ref.get("close")))
-    if op is not None and pd.notna(op):
-        fill = float(op)                                  # true T+1 open once collected
-    elif hi is not None and lo is not None and pd.notna(hi) and pd.notna(lo):
-        fill = (float(hi) + float(lo)) / 2.0              # (H+L)/2 proxy
-    elif close is not None and pd.notna(close):
-        fill = float(close)
+    out["pinned"] = bool(ref is not None and pd.notna(ref.get("high")) and pd.notna(ref.get("close"))
+                         and float(ref.get("high")) == float(ref.get("close")))
+
+    hi_ok = hi is not None and pd.notna(hi)
+    lo_ok = lo is not None and pd.notna(lo)
+    op_ok = op is not None and pd.notna(op)
+    close_ok = close is not None and pd.notna(close)
+
+    # ── bar sanity ────────────────────────────────────────────────────────────────────
+    hl_consistent = bool(hi_ok and lo_ok and float(lo) <= float(hi) + _dust(hi, lo))
+    if hi_ok and lo_ok and not hl_consistent:
+        out["corrupt_bar"] = True
+        _warn_corrupt_bar(ticker, t1_date,
+                          f"T+1 bar low {float(lo):.4f} > high {float(hi):.4f}")
+    elif op_ok and hi_ok and lo_ok:
+        tol = _dust(hi, lo, op)
+        if not (float(lo) - tol <= float(op) <= float(hi) + tol):
+            out["corrupt_bar"] = True
+            _warn_corrupt_bar(
+                ticker, t1_date,
+                f"T+1 open {float(op):.4f} outside [low {float(lo):.4f}, "
+                f"high {float(hi):.4f}]")
+
+    # ── basis selection ───────────────────────────────────────────────────────────────
+    if op_ok and not out["corrupt_bar"]:
+        out["entry"] = float(op)                          # true T+1 open (sanity-checked)
+        out["basis_used"] = BASIS_T1_OPEN
+    elif hl_consistent:
+        out["entry"] = (float(hi) + float(lo)) / 2.0      # (H+L)/2 proxy — ENTRY_BASIS
+        out["basis_used"] = BASIS_T1_HL2
+    elif out["corrupt_bar"]:
+        out["defer_reason"] = (
+            f"T+1 bar {t1_date} is internally inconsistent and its high/low cannot be "
+            f"used either — entry deferred to the next nightly")
+    elif close_ok:
+        out["entry"] = float(close)                       # legacy: close-only bar
+        out["basis_used"] = BASIS_T1_CLOSE
     else:
-        return None, locked, pinned
-    return fill, bool(locked), pinned
+        out["defer_reason"] = f"T+1 bar {t1_date} carries no usable price"
+    return out
+
+
+# One annotation per (ticker, T+1 date, defect) per process. grade() walks every row through
+# _cn_spine_axes, _fwd_excess (×2 horizons) and _interim_excess, so an undeduped warning prints
+# the same corrupt bar four-plus times and buries the Actions summary. Tests that assert on the
+# annotation clear this set first.
+_CORRUPT_BAR_WARNED: set[tuple[str, str, str]] = set()
+
+
+def _warn_corrupt_bar(ticker: str | None, t1_date: str, detail: str) -> None:
+    """Line-start GitHub annotation for an impossible T+1 bar.
+
+    MUST be a bare print with flush=True — every logger in this repo prefixes the line, which
+    makes GitHub drop the annotation silently (house law; tests/test_gh_annotation_line_start.py).
+    """
+    key = (str(ticker or "unknown"), str(t1_date), str(detail))
+    if key in _CORRUPT_BAR_WARNED:
+        return
+    _CORRUPT_BAR_WARNED.add(key)
+    print(f"::warning title=cn-corrupt-t1-bar::{ticker or 'unknown'} {t1_date}: {detail} — "
+          f"refusing this bar's open as an entry basis", flush=True)
+
+
+def _t1_fill(df: pd.DataFrame, d0: pd.Timestamp,
+             ticker: str | None = None) -> tuple[float | None, bool, bool]:
+    """Back-compatible 3-tuple view over :func:`_t1_fill_detail`.
+
+    Returns (fill_price, locked_limit, pinned).  Kept because four call sites (two here, one in
+    interim grading, one in scripts/build_china_library) and the existing test suite bind this
+    shape.  New code that needs the basis or the corrupt-bar flag calls _t1_fill_detail — or,
+    for anything that PUBLISHES an entry, :func:`resolve_entry`, which adds the PIT latch.
+    """
+    d = _t1_fill_detail(df, d0, ticker)
+    return d["entry"], bool(d["locked"]), bool(d["pinned"])
+
+
+# ---------------------------------------------------------------------------
+# PIT ENTRY LATCH (2026-08-08 — 300363.SZ case study, module docstring §2)
+# A published entry price is a promise, not a derived quantity. Append-only,
+# keep-FIRST on (date, ticker) — the same rule board.parquet uses for its rows.
+# ---------------------------------------------------------------------------
+
+def _entry_latch_path():
+    """Sibling of board.parquet, derived from _store_path() rather than from data_dir().
+
+    That coupling is deliberate: the latch is part of the same store, and every existing
+    caller and test that redirects the board (``monkeypatch.setattr(cst, "_store_path", …)``)
+    now redirects the latch with it. Reading data_dir() independently made a test that had
+    already isolated the board silently write synthetic tickers into the repo's real
+    data/china_standout_track/ — caught by tests/test_track_ledger_emitters.py on the first
+    full run of this change.
+    """
+    return _store_path().parent / _ENTRY_LATCH_FILE
+
+
+def read_entry_latch() -> dict[tuple[str, str], dict]:
+    """Load the PIT entry latch as {(date, ticker): record}.
+
+    Returns an EMPTY dict when the store does not exist or cannot be read — a missing latch is
+    forward-only birth, never an error (the confluence_latch convention). Read once per build
+    and pass into :func:`resolve_entry`; lib.store reads are uncached and the ledger loop runs
+    over every episode in the store.
+    """
+    p = _entry_latch_path()
+    if not p.exists():
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001 — an unreadable latch degrades to forward-only
+        log.warning("china_standout_track: entry latch unreadable (%s) — treating as empty", e)
+        return {}
+    out: dict[tuple[str, str], dict] = {}
+    for _i, r in df.iterrows():
+        key = (str(r.get("date")), str(r.get("ticker")))
+        if key in out:                      # keep-FIRST also on read, so a duplicated
+            continue                        # store row can never flip the published entry
+        entry = r.get("entry")
+        out[key] = {
+            "date": key[0],
+            "ticker": key[1],
+            "entry": float(entry) if entry is not None and pd.notna(entry) else None,
+            "basis_used": (str(r.get("basis_used"))
+                           if r.get("basis_used") is not None and pd.notna(r.get("basis_used"))
+                           else None),
+            "t1_date": (str(r.get("t1_date"))
+                        if r.get("t1_date") is not None and pd.notna(r.get("t1_date")) else None),
+            "corrupt_bar": bool(r.get("corrupt_bar")) if pd.notna(r.get("corrupt_bar")) else False,
+            "latched_asof": (str(r.get("latched_asof"))
+                             if r.get("latched_asof") is not None
+                             and pd.notna(r.get("latched_asof")) else None),
+        }
+    return out
+
+
+def append_entry_latches(records: list[dict], *, lane: str | None = None,
+                         latched_asof: str | None = None) -> int:
+    """Persist newly-derived entries to the PIT latch. Keep-FIRST; best-effort, never raises.
+
+    Only rows with a non-null ``entry`` are latched — a DEFERRED derivation must stay unlatched
+    so the next nightly can retry it. Keep-first means a re-run, a second lane, or a healed bar
+    can never move a latched value; that immutability IS the fix.
+
+    ``lane`` is FAIL-CLOSED: ``lane == 'asia'`` writes and EVERYTHING else — an unrecognised
+    lane, or no lane at all — refuses. It deliberately does NOT mirror append_board's
+    permissive ``lane is not None`` form. append_board can afford that default because a
+    board row is re-derivable and a second lane writing it changes nothing; a latch row is
+    keep-FIRST and immutable, so the first writer of a (date, ticker) owns the published
+    entry price FOREVER. Both .github/workflows/daily.yml and weekly.yml run
+    scripts.build_china_library and both commit ``data/``, so under the permissive form
+    whichever lane the scheduler started first would decide a published number — which is
+    the exact property this latch exists to remove. Only asia-close.yml sets
+    ``CN_LANE=asia``; see scripts/build_china_library._entry_latch_lane for the resolver.
+    Returns the latch row count after the merge (0 when nothing was written).
+    """
+    if not records:
+        return 0
+    if lane != "asia":
+        log.info("china_standout_track: entry-latch append REFUSED (lane=%r, not 'asia') — "
+                 "%d record(s) left unlatched; the asia nightly is the sole advancer",
+                 lane, len(records))
+        return 0
+    stamp = latched_asof or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rows = []
+    for rec in records:
+        entry = rec.get("entry")
+        if entry is None or not np.isfinite(float(entry)):
+            continue                                    # deferred → never latched
+        rows.append({
+            "date": str(rec.get("date")),
+            "ticker": str(rec.get("ticker")),
+            "entry": float(entry),
+            "basis_used": rec.get("basis_used"),
+            "t1_date": rec.get("t1_date"),
+            "corrupt_bar": bool(rec.get("corrupt_bar")),
+            "latched_asof": stamp,
+        })
+    if not rows:
+        return 0
+    try:
+        new = pd.DataFrame(rows, columns=list(_ENTRY_LATCH_COLS))
+        p = _entry_latch_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if p.exists():
+            prior = pd.read_parquet(p)
+            cols = list(dict.fromkeys([*_ENTRY_LATCH_COLS, *prior.columns]))
+            combined = pd.concat(
+                [prior.reindex(columns=cols), new.reindex(columns=cols)],
+                ignore_index=True,
+            ).drop_duplicates(subset=["date", "ticker"], keep="first")
+        else:
+            combined = new
+        for col in ("basis_used", "t1_date", "latched_asof"):
+            if col in combined.columns and combined[col].dtype != object:
+                coerced = combined[col].astype(object)
+                combined[col] = coerced.where(pd.notna(coerced), None)
+        combined.to_parquet(p, index=False)
+        return int(len(combined))
+    except Exception as e:  # noqa: BLE001 — the latch is integrity plumbing, never fatal
+        log.warning("china_standout_track: entry-latch append failed: %s", e)
+        return 0
+
+
+def resolve_entry(ticker: str, d0: pd.Timestamp, df: pd.DataFrame | None = None, *,
+                  latch: dict | None = None, pending: list | None = None) -> dict:
+    """The ONE entry any caller that PUBLISHES a return must use.
+
+    Combines the bar-sanity gate (:func:`_t1_fill_detail`) with the PIT latch: the entry a row
+    has already published is the entry it keeps.  Returns::
+
+        {entry, locked, pinned, basis_used, corrupt_bar, defer_reason, t1_date,
+         latched, e_revised, e_revision_reason}
+
+    ``entry``       the LATCHED entry when one exists, else today's derivation.  The published
+                    return must be computed from THIS value and no other.
+    ``latched``     True when the value came from the PIT store rather than from today's bars.
+    ``e_revised``   today's re-derivation, populated ONLY when it disagrees with the latched
+                    entry beyond float dust.  Additive disclosure — it never replaces ``entry``.
+    ``e_revision_reason`` plain-word account of the disagreement.
+
+    ``latch``   pre-loaded :func:`read_entry_latch` mapping (load once per build).
+    ``pending`` a list the caller owns; newly-derived entries are appended to it and the caller
+                flushes them with :func:`append_entry_latches` after the loop.  Passing None
+                resolves read-only and latches nothing.
+
+    This is what stops the 300363.SZ restatement: on 08-06 the row derived e=16.30 from a bar
+    whose open was impossible (now refused outright); had it still published, the healed 08-07
+    bar's e=17.52 would arrive here as ``e_revised`` and the published +4.5% would stand.
+    """
+    if df is None:
+        df = _price_frame(ticker)
+    if df is None or "close" not in df:
+        return {"entry": None, "locked": False, "pinned": False,
+                "basis_used": BASIS_DEFERRED, "corrupt_bar": False,
+                "defer_reason": "no price frame for this name", "t1_date": None,
+                "latched": False, "e_revised": None, "e_revision_reason": None}
+
+    fresh = _t1_fill_detail(df, d0, ticker)
+    out = dict(fresh)
+    out.update({"latched": False, "e_revised": None, "e_revision_reason": None})
+
+    date_str = str(pd.Timestamp(d0).date())
+    prev = (latch or {}).get((date_str, str(ticker)))
+    prev_entry = (prev or {}).get("entry")
+
+    if prev is not None and prev_entry is not None:
+        out["entry"] = float(prev_entry)
+        out["basis_used"] = prev.get("basis_used") or BASIS_DEFERRED
+        out["latched"] = True
+        out["defer_reason"] = None
+        if fresh["entry"] is not None:
+            tol = _dust(prev_entry, fresh["entry"])
+            if abs(float(fresh["entry"]) - float(prev_entry)) > tol:
+                out["e_revised"] = float(fresh["entry"])
+                out["e_revision_reason"] = (
+                    f"re-derivation on today's bars gives {float(fresh['entry']):.4f} "
+                    f"({fresh['basis_used']}) against the published entry "
+                    f"{float(prev_entry):.4f} ({out['basis_used']}); the published entry is "
+                    f"point-in-time and is not restated")
+                print(f"::warning title=cn-entry-restatement-refused::{ticker} {date_str}: "
+                      f"entry re-derives to {float(fresh['entry']):.4f} vs the published "
+                      f"{float(prev_entry):.4f} — keeping the published (point-in-time) entry",
+                      flush=True)
+        return out
+
+    if fresh["entry"] is not None and pending is not None:
+        pending.append({"date": date_str, "ticker": str(ticker),
+                        "entry": float(fresh["entry"]),
+                        "basis_used": fresh["basis_used"],
+                        "t1_date": fresh["t1_date"],
+                        "corrupt_bar": bool(fresh["corrupt_bar"])})
+    return out
 
 
 def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
@@ -789,7 +1168,7 @@ def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
     df = _price_frame(ticker)
     if df is None:
         return None, False
-    fill, locked, pinned = _t1_fill(df, d0)
+    fill, locked, pinned = _t1_fill(df, d0, ticker)
     if fill is None or locked:                            # unfillable → exclude, don't fabricate
         return None, pinned
     close = pd.to_numeric(df["close"], errors="coerce").dropna()
@@ -822,6 +1201,24 @@ WATCH_DEFINITIONS = frozenset({
     # display surface — it must never own a headline grade.
     "cn_continuation_watch_v1",
 })
+
+
+def _basis_mix(df: pd.DataFrame) -> dict:
+    """Count the entry bases the graded rows ACTUALLY used: {basis_token: n}.
+
+    Published beside the intended convention so a reader can see, without opening the store,
+    how often the documented t1_hl2 proxy is the thing that fired.  Rows whose basis is not
+    yet known (T+1 pending, or written before the 2026-08-08 provenance fix) count as
+    'unknown' rather than being folded into a basis they may never have used.
+    """
+    out: dict[str, int] = {}
+    if df is None or df.empty or "basis_used" not in df.columns:
+        return out
+    for val in df["basis_used"]:
+        key = (str(val) if val is not None and pd.notna(val)
+               and str(val) not in ("", "nan", "None", "NaT") else "unknown")
+        out[key] = out.get(key, 0) + 1
+    return dict(sorted(out.items()))
 
 
 def _latest_definition_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
@@ -960,11 +1357,22 @@ def grade() -> dict:
            "dates": sorted(grade_df["date"].dropna().unique().tolist()),
            "horizons_d": list(_HORIZONS_D),
            "grading": {
-               "benchmark": _BENCH, "relative": True, "entry_basis": ENTRY_BASIS,
+               "benchmark": _BENCH, "relative": True,
+               # These two keys used to publish the ENTRY_BASIS CONSTANT, which read as a claim
+               # that every row filled at t1_hl2 — false for every row that filled at the raw
+               # open (300363.SZ, 2026-08-08 case study).  They now say where the truth lives;
+               # the constant is disclosed separately as the INTENDED convention, and the
+               # observed mix is counted from the rows themselves.
+               "entry_basis": "per-row — see the basis_used column",
+               "spine_fill_basis": "per-row — see the fill_basis column",
+               "entry_basis_intended": ENTRY_BASIS,
+               "entry_basis_per_row_column": "basis_used",
+               "entry_basis_observed": _basis_mix(grade_df),
+               "entry_pit_latched": True,
+               "bar_sanity_gate": "T+1 open must lie within [low, high]",
                "excludes_locked_limit": True, "flags_pinned": True,
                "anchor": "board_close_then_t1_fill", "marker_dates": "forbidden",
                "bench_available": bench is not None,
-               "spine_fill_basis": ENTRY_BASIS,  # provenance: CN-native, not grading.fill_index
            },
            "by_horizon": {}}
     for h in _HORIZONS_D:
@@ -1076,7 +1484,7 @@ def _interim_excess(
     df = _price_frame(ticker)
     if df is None:
         return None, False, None
-    fill, locked, pinned = _t1_fill(df, d0)
+    fill, locked, pinned = _t1_fill(df, d0, ticker)
     if fill is None or locked:                            # unfillable → exclude, don't fabricate
         return None, pinned, None
     close = pd.to_numeric(df["close"], errors="coerce").dropna()

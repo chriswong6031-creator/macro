@@ -10,6 +10,7 @@ import pytest
 from scripts import build_government_revenue, build_government_revenue_candidates
 from scripts.check_government_revenue_projection import (
     ProjectionDriftError,
+    _assert_workspace_admits_its_award_events,
     validate_projection,
 )
 from engine.government_revenue.workspace import build_procurement_workspace
@@ -19,6 +20,7 @@ from engine.government_revenue.entity_resolution import (
     build_recipient_resolution_coverage,
     load_recipient_entity_graph,
 )
+from tests.test_government_revenue_workspace import reviewed_award_event
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,7 +39,12 @@ def _porcelain_rebase_at(lane: Path, source: str) -> int:
     return source.index("git pull --rebase --autostash -X theirs origin main")
 
 
-def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path, Path, Path]:
+def _generation(
+    root: Path,
+    *,
+    recipient_activation: bool = False,
+    award_events: list[dict] | None = None,
+) -> tuple[Path, Path, Path]:
     template_dir = root / "templates"
     template_dir.mkdir(parents=True)
     template_dir.joinpath("government_revenue.html.j2").write_text(
@@ -76,6 +83,10 @@ def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path
         }],
         as_of="2026-08-02",
         known_at="2026-08-02T00:00:00Z",
+        award_events=award_events,
+        award_event_freshness=(
+            {"status": "ok"} if award_events is not None else None
+        ),
     )
     workspace["bundle_id"] = build_government_revenue._workspace_bundle_id(workspace)
     payload = {
@@ -472,3 +483,124 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
         "scripts/check_template_site_sync.py",
     ):
         assert path in guarded_inputs
+
+
+def _rewrite_canonical_workspace(root: Path, mutate) -> None:
+    """Re-publish one generation after editing its canonical coverage block."""
+    canonical_dir = root / "data" / "government_revenue"
+    latest = json.loads((canonical_dir / "latest.json").read_text(encoding="utf-8"))
+    workspace = latest["procurement_workspace"]
+    mutate(workspace["coverage"])
+    workspace["bundle_id"] = build_government_revenue._workspace_bundle_id(workspace)
+    canonical_dir.joinpath("latest.json").write_text(
+        json.dumps(latest, separators=(",", ":")), encoding="utf-8"
+    )
+    canonical_dir.joinpath("workspace.json").write_text(
+        build_government_revenue._canonical_json(workspace), encoding="utf-8"
+    )
+    build_government_revenue.build_site_only(root)
+
+
+def test_projection_fence_accepts_a_curator_shaped_reviewed_award_event(
+    tmp_path: Path,
+) -> None:
+    """The published generation must carry the reviewed issuer impact, not drop it."""
+    generation = _generation(tmp_path, award_events=[reviewed_award_event()])
+    assert generation
+
+    result = validate_projection(tmp_path)
+
+    workspace = json.loads(
+        (tmp_path / "data" / "government_revenue" / "workspace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    coverage = workspace["coverage"]
+    assert coverage["award_events"]["rejected"] == 0
+    assert coverage["award_events"]["first_rejection_reason"] is None
+    assert coverage["by_mapping_class"]["reviewed"]["visible"] == 1
+    assert coverage["by_mapping_class"]["reviewed"]["truncated_by_cap"] == 0
+    assert result["events"] == 2
+
+
+def test_projection_fence_refuses_a_generation_that_rejected_award_events(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A nonzero rejection count must fail CI, not sit unread in the artifact.
+
+    The event is rejected by the real contract gate — its ownership path carries
+    an uncontracted terminal relationship — rather than by a hand-set counter, so
+    this pins the same path that silently dropped every reviewed issuer impact.
+    """
+    poisoned = reviewed_award_event()
+    poisoned["listed_company_impacts"][0]["ownership_path"][-1]["relationship"] = (
+        "not_a_contracted_relationship"
+    )
+    _generation(tmp_path, award_events=[poisoned])
+    workspace = json.loads(
+        (tmp_path / "data" / "government_revenue" / "workspace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert workspace["coverage"]["award_events"]["rejected"] == 1
+
+    with pytest.raises(ProjectionDriftError) as excinfo:
+        validate_projection(tmp_path)
+
+    assert "rejected 1 award event(s)" in str(excinfo.value)
+    assert "ownership_path.1.relationship" in str(excinfo.value)
+    annotations = [
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::")
+    ]
+    assert annotations, "the failure must be visible in the Actions summary"
+    assert annotations[0].startswith("::error title=govrev-rejected-events::")
+
+
+def test_projection_fence_refuses_a_generation_that_truncated_reviewed_events(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Reviewed rows carry the issuer impacts; the display cap must never eat one."""
+    _generation(tmp_path, award_events=[reviewed_award_event()])
+
+    def _truncate_reviewed(coverage: dict) -> None:
+        coverage["by_mapping_class"]["reviewed"]["available_before_cap"] = 4
+        coverage["by_mapping_class"]["reviewed"]["truncated_by_cap"] = 3
+
+    _rewrite_canonical_workspace(tmp_path, _truncate_reviewed)
+
+    with pytest.raises(ProjectionDriftError) as excinfo:
+        validate_projection(tmp_path)
+
+    assert "dropped 3 reviewed event(s)" in str(excinfo.value)
+    annotations = [
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::")
+    ]
+    assert annotations
+    assert annotations[0].startswith("::error title=govrev-truncated-reviewed-events::")
+
+
+@pytest.mark.parametrize(
+    "workspace",
+    (
+        {},
+        {"coverage": {}},
+        {"coverage": {"award_events": {}}},
+        {"coverage": {"award_events": {"rejected": None}}},
+        {"coverage": {"award_events": {"rejected": -1}}},
+    ),
+)
+def test_award_event_admission_guard_reads_the_counter_or_fails_closed(
+    workspace: dict,
+) -> None:
+    """A missing counter is an unmeasured generation, never an implicit zero.
+
+    The v2 workspace contract makes ``rejected`` required, so a published
+    generation cannot reach the fence without it — this pins the guard's own
+    prologue rather than a path the schema already closes.
+    """
+    with pytest.raises(ProjectionDriftError):
+        _assert_workspace_admits_its_award_events(workspace)

@@ -60,19 +60,73 @@ land the remaining W-L0 gates, then start W-L1.
 ### W-L1
 - Design spec merged (#5027): `research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md` +
   16 reference crops in `mockups/refs/breathing-platform/`.
-- **W-L1b (surface) — BUILD COMMISSIONED this session**, opus `builder`, against
-  the pinned spec with all 12 acceptance gates inline. Instructed **not** to
-  self-merge: flagship UI returns its PR + visual artifact to the commissioning
-  session (spawn-handoff law §4).
+- **W-L1b (surface) — SHIPPED, REVIEWED, ARMED as #5148.** Reviewed by opening the
+  artifact: 16 real-page crops vs the pinned references, `◐` glyph and copy exact,
+  `theme.css` pair byte-identical, glance tier clean and the ZH idiomatic. §0-2 is
+  fail-closed at every branch and EXECUTED under node, not asserted as text. Two
+  changes pushed on review: the 390px ruling recorded as spec §8 item 10 (the
+  invariant is the transitionable `ahead`/`confirmed` pair at EVERY width, not the
+  four-way spread at two widths), and the node-executed contract test no longer
+  `skip`s itself under CI — it would have made gate §0-2 silently dark with the pack
+  green. Its own harness caught a genuine 25.25px zh/680 shove EN never showed.
 - **W-L1c (collect attribution rider) — SHIPPED AND MERGED as #5135.** Per-source
   `elapsed_sec` from `run_status.json` into the timings ledger, plus a
   `--sources`/`--job` reader so the data has a consumer. Its measurements are in
   §4.1 and they reshape W-L4's decomposition plan.
-- **W-L1a (close-pass engine lane) — COMMISSIONED this session** (opus `builder`,
-  branch `claude/wl1a-close-pass-provisional-board`), unblocked the moment gate 3
-  merged. It was deliberately held until then: the lane must name its price basis
-  at every seam and gate 3 defines those seams. §6 + §6.1 carry the corrected
-  scope, which is much smaller than the masterplan implies — read before reviewing.
+- **W-L1a (close-pass engine lane) — SHIPPED, REVIEWED, ARMED as #5154.** Lane +
+  sentinel SLA record + reconciler, 194 tests, and a real end-to-end pass against the
+  2.3 GB store with `data/` clean. **Read §1.1 before planning anything on top of
+  it** — it is honest, measured, and deliberately dark.
+
+### §1.1 W-L1 IS NOT DELIVERED — read this before planning the next wave
+
+Both halves shipped and are armed (**#5148** surface, **#5154** lane), and the wave's
+user-visible outcome is still **not** achieved: **no reader sees fresh picks by
+18:30 ET.** The stamp cannot paint, by construction and correctly.
+
+**Why:** the close-pass publishes **131** tickers; the rendered grid is the nightly's
+**79** cards. `_bsQualify` compares the payload's ordered tickers against the grid's
+`data-ticker` order and refuses on mismatch — which is gate §0-2 working exactly as
+designed. Forcing the match would re-create the lie the gate exists to prevent, and
+the builder rightly did not.
+
+**The spec contradicts itself, and it is the commissioning side's error, not a
+builder's:** design spec §3 State 1 requires the cards to BE tonight's picks, while
+§2 says "three additions, nothing else changes". Those cannot both hold. The identity
+check resolves it *safely*, not *fully*.
+
+**Ruling: the remaining W-L1 work is a CARD RENDERER for the evening board.** It is
+the only option that delivers §0 W-L1's gate. Trimming the close-pass board down to
+the nightly's curation is a dead end on measurement — the curation split runs through
+the cycles pass and needs inputs the close alone does not carry. Deliberately NOT
+spawned this session: it is wave-sized and should be scoped against the numbers below.
+
+**The numbers that scope it:** the close-only admission gate reproduces the nightly's
+set with **zero misses (75/75)** but **over-admits ~1.7×** — 131 admitted, of which
+72 confirmed and 59 dropped. *Membership is solved; the card grid is not.* The extras
+are curation, not disagreement.
+
+**"100% price-derived" is FALSE — and §6.1's census asserted it.** Only `signal` (30)
+and `runway` (10) are close-only. `entry` needs a macro regime + sector beta, `edge`
+is sector-neutralised, `quality` is a sector cohort — so the evening board scores on
+**40 of 100 weight points**, which is *why* it over-admits. The legs are omitted and
+disclosed, weights deliberately NOT renormalised. Note the failure mode in the census
+that got this wrong: it read the leg FUNCTIONS and concluded price-derived; the truth
+is in what feeds them. The missing inputs are a sector label and a macro read — **not**
+FINRA/OI/fundamentals, so the "zero score authority" claim survives intact.
+
+**Open, must land WITH the renderer:** `close_pass_mirror.annotate_live_strip`
+read-modify-writes one key into the evaluator's artifact. Accepted as built — it never
+creates the file, writes exactly one constant-named key, is idempotent, and fails dark
+— but the "windows are disjoint" argument is undercut by the lane's own measurement of
+**queue waits up to 71 minutes**. Add a compare-and-swap (re-read before write; skip if
+the file moved) rather than clobbering. Harmless until the key does something.
+
+Also settled by measurement: the mac pool is **two live physical hosts**, not five, and
+**closing-bell holds one of the two for the entire 16:15–17:30 window every weekday.**
+The lane is one slot deep. Cron placed at `:25`, the widest gap in the hour; worst
+observed queue wait still lands ~17:56 ET, inside the SLA. Unknown: both smart-money
+lanes merged within 48h and have never had a weekday firing.
 
 ### Adjacent, shipped this session
 - **Massive §0 global licensing gate CLOSED — PR #5139** (armed). An Enterprise
@@ -391,11 +445,20 @@ collect attribution rows exist in the timings ledger") is only satisfiable for
    as, W-L0 §0-4.)
 
 Also useful for scoping: ADMISSION is `engine/signal_gate.gate()`
-(`scripts/build_stock_library.py:3040`), all five score legs in
-`engine/us_board_rank.py` are price/close-derived (`SCORE_WEIGHTS:105-111`), and
-every non-price input (FINRA, GEX/OI, fundamentals, SUE, insider, 13F) is already
-in `ZERO_SCORE_AUTHORITY:174-192` — so the masterplan's "100% price-derived"
-close-pass claim checks out. The live-plane precedent chain is
+(`scripts/build_stock_library.py:3040`), and every non-price input (FINRA, GEX/OI,
+fundamentals, SUE, insider, 13F) is in `ZERO_SCORE_AUTHORITY:174-192`, so the
+zero-score-authority property holds.
+
+⚠️ **The rest of what this census said about the score legs was WRONG — see §1.1.**
+It reported all five legs in `engine/us_board_rank.py` (`SCORE_WEIGHTS:105-111`) as
+price/close-derived and concluded the masterplan's "100% price-derived" claim checks
+out. The build then traced the legs' INPUTS and found otherwise: only `signal` (30)
+and `runway` (10) are close-only; `entry` needs a macro regime + sector beta, `edge`
+is sector-neutralised, `quality` is a sector cohort. **Left here, corrected rather
+than deleted, because the failure mode is the reusable lesson: the census read the
+leg FUNCTIONS — which take already-computed values — and never asked what produces
+them.** A function whose body is arithmetic on `row[...]` tells you nothing about
+whether `row` is close-derived. The live-plane precedent chain is
 `engine/prophet_live/r2io.py` → `scripts/prophet_live_evaluator.py` (`SERVED_PATH`,
 atomic rename) → `app/deploy/macro-live-prophet.{service,timer}`, and
 `tests/test_prophet_live_vps_lane.py` is the richest guard set a new lane must

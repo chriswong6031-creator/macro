@@ -45,6 +45,25 @@ lanes:
           graders (grade_breadth_divergence / grade_policy_calendar /
           grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
           nightly sole-advancer law is untouched by the split.
+      - id: backfill_yahoo_universe
+        module: scripts.backfill_yahoo_universe
+        args: [--cap, "400", --budget-s, "480"]
+        note: >
+          Off-render price-coverage backfill for the Intelligence Hub ledger
+          universe (masterplan §4 item 2b). collectors/yahoo.py fetches the CONFIG
+          universe while the hub grades the SIGNAL LEDGER, and every hub grader
+          prices names from data/yahoo/<T>.parquet alone (the breadth cache is
+          split-UNADJUSTED). Measured 2026-08-08: 603 of 7,711 ledger tickers had a
+          parquet, desk_grader 20d coverage 6.2%, and 7 of that night's 30 Command
+          names were unpriceable. Incremental and resumable — the needed set is
+          recomputed from disk every run, state in data/yahoo_backfill_state.json —
+          and bounded twice (--cap names, --budget-s wall clock, plus a 12-minute
+          step timeout) so it can never eat the collect job's remaining budget.
+          Placed in the collect tail because it writes into data/yahoo and must
+          land before "commit market data"; it is deliberately NOT in that step's
+          named-steps gate (purely additive: it only ever creates a parquet for a
+          ledger ticker that had none). Non-fatal, exits 0 by design; the outcome
+          rides on line-start ::notice / ::warning annotations.
       - id: audit_massive_store
         module: scripts.audit_massive_store
         note: >
@@ -634,6 +653,20 @@ lanes:
       - id: build_flip_confirmation
         module: scripts.build_flip_confirmation
         note: "Policy-Shock W1-C — T+1 sector-flip confirmation lens; detects violent defensive/offense spread flips, appends keep-first ledger, registers qledger claims, emits site/flip_confirmation_data.json (display-only, non-fatal)"
+      - id: build_leader_pullback_coverage
+        module: scripts.build_leader_pullback_coverage
+        note: >
+          LEADER-PULLBACK coverage publisher (ANTICIPATION §6.9 R4) — runs the
+          engine.us_leader_pullback organ over the graded US universe on a run-wide PIT
+          cross-sectional RS percentile and writes site/anticipationdata/us_leader_pullback.json.
+          MUST PRECEDE build_prophet: engine.us_early_turn resolves the EARLY-TURN starter
+          tier's LEADER licence from that file at origination time. #5007 shipped the organ and
+          #5105 the intake, but nothing published the artifact, so the leader half resolved {}
+          on every production run while the washout half (us_basket_turn) admitted normally.
+          Reads data/yahoo/*.parquet only. Advances NO ledger and writes no data/ path.
+          DISPLAY TIER, ZERO AUTHORITY. A run-wide data failure publishes nothing and keeps the
+          previous artifact rather than overwriting real coverage with a board of nulls.
+          Measured 2026-08-09: ~39s over 680 graded names (budget 600s).
       - id: build_prophet
         module: scripts.build_prophet
         note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
@@ -1400,7 +1433,35 @@ lanes:
       - id: run_prophet_miss_audit
         module: scripts.run_prophet_miss_audit
         args: [--nightly]
-        note: "Prophet US trend-intelligence W0 — nightly miss-audit + conversion telemetry. Sole forward advancer of data/prophet_miss_audit/forward_log.jsonl (nightly-only, idempotent on price_through); also writes data/prophet_miss_audit/latest.json (both committed by nightly like every sibling forward ledger). Measures top-runner dominant-excluder attribution, the trailing-63-session eligibility window, sighting->plan conversion and theme representation through the production tier paths (confluence_tiers.tier_stream/cascade, signal_gate), plus the name_score_scorecard block — a READ-ONLY mirror of engine/name_score_grader's forward grade of the per-name POTENTIAL score (rank-IC 21d/63d, buy-tier hit rate, P@k vs each stamp date's own graded cross-section; roadmap PROPHET_US_SUPERINTELLIGENCE §4.4). It reads data/name_score/us_calls.parquet (written earlier the same night by build_stock_library) and changes nothing the grader computes. Ops telemetry; ZERO authority — no rank/gate/size/membership consumer (tests/test_prophet_miss_audit.py pins that nothing else imports it, and pins the scorecard against a live name_score_grader.grade() run so the caching adapter can never become a second opinion)."
+        note: >
+          Prophet US trend-intelligence W0 — nightly miss-audit + conversion telemetry.
+          Sole forward advancer of data/prophet_miss_audit/forward_log.jsonl (nightly-only,
+          idempotent on price_through); also writes data/prophet_miss_audit/latest.json.
+          Both are committed by nightly like every sibling forward ledger. Measures top-runner
+          dominant-excluder attribution, the trailing-63-session eligibility window,
+          sighting-to-plan conversion and theme representation through the production tier
+          paths (confluence_tiers.tier_stream/cascade, signal_gate), plus the
+          name_score_scorecard block — a READ-ONLY mirror of engine/name_score_grader's forward
+          grade of the per-name POTENTIAL score (rank-IC 21d/63d, buy-tier hit rate, P@k vs
+          each stamp date's own graded cross-section; roadmap PROPHET_US_SUPERINTELLIGENCE
+          §4.4). It reads data/name_score/us_calls.parquet, written earlier the same night by
+          build_stock_library, and changes nothing the grader computes.
+          Also publishes the entry_status_scorecard block (ANTICIPATION §6.6,
+          engine/us_entry_status_remeasure.py): admission-time entry status to already-graded
+          US forward outcome, structured cohort to horizon to status with no pooled outcome
+          figure. The A2 entry leg is intended to ship STATUS-NEUTRAL after the first US run
+          did not reproduce the historical CN adjusted-return ordering. The CN rates remain
+          context only: they are not exact legal-limit evidence and grant no automatic
+          status/ranking/Prophet authority; rewritten #4972's boundary lands first.
+          Re-introduction requires the chartered horizon, n>=50 per cell, sign-stable
+          half-splits and era-stamped anticipation-v1 episodes. Pure read: no new step,
+          script or ledger; no regrading or forward advance, so this step's existing nightly
+          gate carries it. One-shot receipt over the same code:
+          research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md. Ops telemetry;
+          ZERO authority — no rank, gate, size or membership consumer
+          (tests/test_prophet_miss_audit.py pins that nothing else imports it and pins the
+          scorecard against a live name_score_grader.grade() run, so the caching adapter can
+          never become a second opinion).
 
   - workflow: .github/workflows/daily.yml
     job: stock_briefs

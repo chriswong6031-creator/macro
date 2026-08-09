@@ -1847,7 +1847,10 @@ def _build_foundry_block(repo_root: Path | None = None) -> dict:
 
 
 def build_scorecard() -> dict:
-    """Assemble the full Signal Lab payload for the template. Pure assembler."""
+    """Assemble the full Signal Lab payload for the template. Pure assembler:
+    the live-stats / provenance / source-ref passes stamp a per-call deep copy
+    of ``REGISTRY``, never the module list itself, so a second caller in the
+    same process sees the registry exactly as authored."""
     warnings: list[str] = []  # A9: collect build warnings
 
     ft = _load_factor_table()
