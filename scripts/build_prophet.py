@@ -79,6 +79,7 @@ from engine.prophet_bridge import (
     originate_plans,
     plan_clock_date,
     plan_key,
+    refusal_receipts,
 )
 from engine.prophet_management import compute_management_state
 from engine.prophet_integrity import (
@@ -2035,6 +2036,20 @@ def main() -> None:
             "wait_reset": intake_stats.get("wait_reset", []),
             "early_turn_starters": intake_stats.get("early_turn_starters", []),
             "leader_pullback_source": intake_stats.get("leader_pullback_source", []),
+            # ── §6.9 R5: the PER-NAME layer over the tallies above ───────────────
+            # Everything else in this block is an aggregate — `refused_status` and
+            # friends count refusals without keeping a ticker, which is why the
+            # subscriber question "why isn't this name on the board?" cannot be answered
+            # from them. `refusal_receipts` re-reads the SAME rows through the SAME
+            # admission helpers (entry_status / admission_class) and returns the
+            # per-name view. Additive and display tier: it reports the gate above, it
+            # never moves it. This call site — unlike build_site's — knows tonight's
+            # origination run, so it can also disclose the `plan_not_built` cohort.
+            "receipts": refusal_receipts(
+                _standouts_doc,
+                active_keys,
+                {str(p.get("asset") or "") for p in new_plans},
+            ),
             # The receipt that separates "the organ saw these names and none qualified"
             # from "the organ saw none of them" — a bare zero admission count cannot.
             "leader_pullback_coverage": intake_stats.get(
