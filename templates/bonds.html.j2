@@ -419,7 +419,7 @@ html[data-theme="dark"] .kpi{background:var(--panel2)}
       {% endif %}
       {% else %}<div class="sub faint">{{ t('Building history.', '数据积累中。') }}</div>{% endif %}
       {% if usd_link %}
-      <div class="sub" style="margin-top:14px">{{ t('10-year vs the dollar', '10年债对美元') }}: <b style="color:{{ C.teal if usd_link.corr<0 else C.amber }}" data-tip-en="63-day correlation with the broad dollar. Context, not forecast." data-tip-zh="与广义美元的63日相关。仅作背景，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}
+      <div class="sub" style="margin-top:14px">{{ t('10-year vs the dollar', '10年债对美元') }}: <b style="color:{{ C.teal if usd_link.corr<0 else C.amber }}" data-tip-en="63-day correlation with the broad dollar. Context, not forecast." data-tip-zh="与广义美元的63日相关。仅供参考，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}
         {% if usd_link.real_rate_regime is not none %}<span class="faint"> · </span>{% if 'Rising' in usd_link.real_rate_regime %}{{ t('real rates rising', '实际利率上升') }}{% elif 'Falling' in usd_link.real_rate_regime %}{{ t('real rates falling', '实际利率下降') }}{% else %}{{ t('real rates steady', '实际利率平稳') }}{% endif %}{% endif %}</div>
       {% endif %}
     </div>
@@ -456,7 +456,7 @@ html[data-theme="dark"] .kpi{background:var(--panel2)}
         </div>
         {% endfor %}
       </div>
-      <div class="flag info" style="margin-top:14px">ℹ {{ t('Context only. The same factors helped most with drawdown control, not precise return timing.', '仅作背景。同类因子主要帮助控制回撤，而非精确择时收益。') }}</div>
+      <div class="flag info" style="margin-top:14px">ℹ {{ t('Context only. The same factors helped most with drawdown control, not precise return timing.', '仅供参考。同类因子主要帮助控制回撤，而非精确择时收益。') }}</div>
     </div>
     <div class="card">
       <h2>{{ t('Curve trade & expected return', '曲线交易与预期回报') }}</h2>
@@ -1106,7 +1106,7 @@ html[data-theme="dark"] .cc-watch-chip.wc-amber{color:#e0a030}
       {% endfor %}
     {% endfor %}
     </div>
-    <div class="sub faint" style="margin-top:10px">{{ t('Daily state changes, debounced to reduce whipsaw. Context only.', '每日状态变化，经去抖以减少噪音。仅作背景。') }}</div>
+    <div class="sub faint" style="margin-top:10px">{{ t('Daily state changes, debounced to reduce whipsaw. Context only.', '每日状态变化，经去抖以减少噪音。仅供参考。') }}</div>
   </div>
   {% endif %}
 

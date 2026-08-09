@@ -53,14 +53,18 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine.gex_engine import DEFAULTS, compute_gex
-from engine.thetadata_store import resolve_thetadata_store
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.gex_engine import DEFAULTS, compute_gex  # noqa: E402
+from engine.thetadata_store import resolve_thetadata_store  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("build_index_gex_history")
 
