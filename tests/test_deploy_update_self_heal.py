@@ -379,6 +379,13 @@ ADMIN_MUST_RESTART = [
     "engine/marketing/publication.py",
     # publish dry-run report (admin/marketing.py)
     "scripts/marketing_publisher.py",
+    # ...and one module further, since 2026-08-08: the publisher imports
+    # social_publisher's subscription-lock predicates at MODULE scope, on the
+    # same "must fail loudly" reasoning as copywriter — a lazily-imported lock
+    # predicate that failed to import would read as "no lock" and silently
+    # restore the requeue loop it exists to stop. Moved here from
+    # ADMIN_MUST_NOT_RESTART, where it sat as a nightly-only module.
+    "engine/marketing/social_publisher.py",
     # deliberation-spend panel (admin/prophet.py)
     "engine/codex_provider.py",
     "engine/codex_lane/runner.py",
@@ -412,7 +419,6 @@ ADMIN_MUST_NOT_RESTART = [
     "engine/china_radar.py",
     # nightly-only marketing modules — the package is named, not globbed
     "engine/marketing/seo_director.py",
-    "engine/marketing/social_publisher.py",
     "engine/marketing/breaking_feed.py",
     # macro-api's chart path, on no panel path
     "engine/marketing/chart_render.py",
