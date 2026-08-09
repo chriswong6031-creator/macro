@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-08T20:36:07.073178+00:00",
-  "as_of": "2026-08-08",
+  "generated_utc": "2026-08-09T00:10:30.094581+00:00",
+  "as_of": "2026-08-09",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6048,15 +6048,6 @@
           "parties": "Democratic/R"
         },
         {
-          "ticker": "BIIB",
-          "net": 6,
-          "buys": 9,
-          "sells": 3,
-          "members": 3,
-          "est_usd": 206004.0,
-          "parties": "Democratic/R"
-        },
-        {
           "ticker": "MLM",
           "net": 6,
           "buys": 8,
@@ -6073,6 +6064,15 @@
           "members": 2,
           "est_usd": 146003.0,
           "parties": "Democratic/R"
+        },
+        {
+          "ticker": "APH",
+          "net": 5,
+          "buys": 6,
+          "sells": 1,
+          "members": 4,
+          "est_usd": 97003.0,
+          "parties": "D/Democratic/R/Republican"
         }
       ],
       "sells": [
@@ -6203,7 +6203,7 @@
           "parties": "D"
         },
         {
-          "ticker": "FLEX",
+          "ticker": "VIK",
           "net": -6,
           "buys": 0,
           "sells": 6,
@@ -6251,7 +6251,7 @@
         "total_usd": 35216015.0,
         "contracts": 69,
         "agencies": 6,
-        "accel_x": 3.22,
+        "accel_x": 3.38,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6267,7 +6267,7 @@
         "total_usd": 15860793.0,
         "contracts": 4,
         "agencies": 2,
-        "accel_x": 15.63,
+        "accel_x": 18.45,
         "top_agency": "Department of Energy"
       },
       {
@@ -6479,7 +6479,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 20,
         "items": "8.01"
       },
       {
@@ -28754,294 +28754,301 @@
       {
         "ticker": "ACM",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.53,
         "last_surprise_pct": 0.6
       },
       {
         "ticker": "CAMT",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.67,
         "last_surprise_pct": 4.9
       },
       {
         "ticker": "MPT",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.16,
         "last_surprise_pct": -6.7
       },
       {
         "ticker": "SPG",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 3.18,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "DJT",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "HIMS",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": -550.0
       },
       {
         "ticker": "LIF",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": 500.0
       },
       {
         "ticker": "USAR",
         "next_date": "2026-08-10",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": 25.0
       },
       {
         "ticker": "DPC",
         "next_date": "2026-08-11",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.08,
         "last_surprise_pct": null
       },
       {
         "ticker": "LITE",
         "next_date": "2026-08-11",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.62,
         "last_surprise_pct": 3.9
       },
       {
         "ticker": "MIDD",
         "next_date": "2026-08-11",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.28,
         "last_surprise_pct": 11.3
       },
       {
         "ticker": "SMCI",
         "next_date": "2026-08-11",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.56,
         "last_surprise_pct": 23.6
       },
       {
         "ticker": "CRWV",
         "next_date": "2026-08-11",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": null,
         "last_surprise_pct": -17.9
       },
       {
         "ticker": "AMCR",
         "next_date": "2026-08-12",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.2,
         "last_surprise_pct": 0.0
       },
       {
         "ticker": "CSCO",
         "next_date": "2026-08-12",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.99,
         "last_surprise_pct": 4.7
       },
       {
         "ticker": "REZI",
         "next_date": "2026-08-12",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.61,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "NBIS",
         "next_date": "2026-08-12",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": null,
         "last_surprise_pct": 71.6
       },
       {
         "ticker": "AIT",
         "next_date": "2026-08-13",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 2.92,
         "last_surprise_pct": 0.8
       },
       {
         "ticker": "AMAT",
         "next_date": "2026-08-13",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 3.36,
         "last_surprise_pct": 6.7
       },
       {
         "ticker": "LUNR",
         "next_date": "2026-08-13",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": -157.1
       },
       {
         "ticker": "ONDS",
         "next_date": "2026-08-13",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": -140.0
       },
       {
         "ticker": "BIDU",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 1.19,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "HD",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 4.71,
         "last_surprise_pct": 0.9
       },
       {
         "ticker": "JKHY",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 1.43,
         "last_surprise_pct": 19.6
       },
       {
         "ticker": "KEYS",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 2.16,
         "last_surprise_pct": 24.0
       },
       {
         "ticker": "MRCY",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 0.2,
         "last_surprise_pct": 244.4
       },
       {
         "ticker": "TOL",
         "next_date": "2026-08-18",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 2.9,
         "last_surprise_pct": 5.4
       },
       {
         "ticker": "ADI",
         "next_date": "2026-08-19",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 3.33,
         "last_surprise_pct": 6.9
       },
       {
         "ticker": "LOW",
         "next_date": "2026-08-19",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 4.25,
         "last_surprise_pct": 2.4
       },
       {
         "ticker": "TJX",
         "next_date": "2026-08-19",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 1.18,
         "last_surprise_pct": 17.8
       },
       {
+        "ticker": "VIK",
+        "next_date": "2026-08-19",
+        "days_to": 10,
+        "eps_forecast": 1.25,
+        "last_surprise_pct": 8.3
+      },
+      {
         "ticker": "WMT",
         "next_date": "2026-08-20",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 0.73,
         "last_surprise_pct": 1.5
       },
       {
         "ticker": "INTU",
         "next_date": "2026-08-25",
-        "days_to": 17,
+        "days_to": 16,
         "eps_forecast": 2.14,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "A",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 1.48,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "CRM",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 2.35,
         "last_surprise_pct": 32.6
       },
       {
         "ticker": "CRWD",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 0.05,
         "last_surprise_pct": 33.3
       },
       {
         "ticker": "NVDA",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 2.01,
         "last_surprise_pct": 10.0
       },
       {
         "ticker": "OKTA",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 0.44,
         "last_surprise_pct": 32.3
       },
       {
         "ticker": "SNPS",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 2.67,
         "last_surprise_pct": 7.1
       },
       {
         "ticker": "VEEV",
         "next_date": "2026-08-26",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 1.62,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "DELL",
         "next_date": "2026-08-27",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": 4.65,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "DG",
         "next_date": "2026-08-27",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": 2.0,
         "last_surprise_pct": 5.8
       },
       {
         "ticker": "ESTC",
         "next_date": "2026-08-27",
-        "days_to": 19,
+        "days_to": 18,
         "eps_forecast": null,
         "last_surprise_pct": 88.9
       }
