@@ -159,6 +159,80 @@ the base-rate ladder on holdout AND a fillability-honest paper book with a grade
 ≥10 sessions, plus the regime gate. Authority promotion (any surface claiming action) goes
 through the gauntlet; display-tier ships freely.
 
+### §6.1 WAVE-1 ADJUDICATION (Fable, 2026-08-09)
+
+**Lane verdicts.** L0 #5059 APPROVED — the limit_events hole was **9× v0's estimate** (314
+holed / 264 fully absent; mechanism: the raw store grew 1,592→1,842 names on 2026-08-05 while
+history is built once and appended over a ~20-session window; v0's crosscheck intersected with
+the tape's ticker set, so fully-absent names were structurally invisible to it). zt_pool's "47
+dates" were **36** — Eastmoney's endpoint CLAMPS non-session requests to the last published
+session and the collector stamped the asked date, minting 11 phantom weekend/holiday dates of
+byte-identical rows. Healed both, with the honest residual printed (74/60, of which 60 have
+zero detectable events). **Free-field discovery:** 首次封板时间 (first-seal time) is served by
+the call we already make — Stage-4 collector #3 drops to near-zero cost; 涨停原因 is NOT on
+this endpoint (theme mapping stays a THS-side item). L1 #5061 APPROVED — the wave's landmark
+(below). L3 #5055 APPROVED as an **honest null with attributed cause**: B1 logistic+isotonic
+misses the pre-registered Brier-skill bar (main −0.17%, chinext −11.69%) because a frozen
+calibration slice imports its era's base rate (chinext slice ran 2.06× hotter than holdout);
+discrimination is strong (AUC 0.775 vs ladder 0.592; log-loss skill +4.61%) — the miss is
+LEVEL, not ORDER. B2 (f3×f6×N empirical buckets) is the only positive-skill six-feature object
+(+0.32% main, best ECE, best top-10); **f3+N alone beats everything at +0.71%** — and f3's
+coefficient flips sign as ladder dummies enter: v0's flagship 3.93× run-up lift is
+substantially **the 连板 ladder wearing a feature's clothes**. Forward ledger seeded (2,000
+retro + 100 live rows; live = 2026-08-07 features → 2026-08-10). L2: measurement completed,
+lane died on a session limit at the commit step; salvage lane finishing (M5 re-validated
+against L0's healed store — the 11 phantom dates would otherwise have injected
+fake-agreement rows).
+
+**The synthesis — the mechanism is real; the naive monetization is dead; both sharpen the
+program:**
+1. **The probability structure is extraordinary and forecastable.** Open-gap conditioning
+   inside the N=1 cohort spans 3.19%→41.57% (holdout, 13× spread), reproduces its fit value
+   to 0.32 pp on 1,251 fresh observations, and never leaves 19.7%+ in 16 years. The gap curve
+   is monotone (no exhaustion hump). The ladder, the gap, and the six features all order
+   events correctly.
+2. **The T+1 auction prices the public conditioners almost exactly.** Every fillability-honest
+   naive next-open book loses on holdout (E1 −0.384% / E3 −0.209% gross, worse after 15 bp),
+   and expectancy is ANTI-monotone in the probability conditioner: the 41.57% cell has the
+   worst open→close (−1.009%); the crowd pays the fair gap. **46.7% of realized main-board
+   next-day boards open unbuyable** (N≥3: 75.0%; ChiNext N≥3: 83.1%) — the published ladder's
+   most impressive cells are the least buyable (58.51% → 28.06% conditional on a fillable
+   open). The blinded lane's F1 falsifier ("the auction prices everything") is CONFIRMED for
+   the constructions tested — and per the ore law, ONLY for them (§ORE LEDGERs in both
+   receipts name what remains open).
+3. **Where the edge must live, if it lives** (Wave-2 charter §8, re-ranked): (a) SELECTION
+   beyond public conditioners — L3 proves order-information exists (AUC 0.775) and lacks only
+   regime-conditional calibration, whose cause is measured; (b) **entries the crowd cannot or
+   will not take** — weakness entries (龙回头 C10, 回封 C3 — the 13,871-event failed-seal
+   cohort is catalog-ready post-heal), where fills are guaranteed and adverse selection
+   inverts; (c) the regime dial deciding when the game pays at all (L2's instruments; the 3×
+   era swing dwarfs per-name features); (d) intraday moments daily bars cannot see — L1's g4
+   cell has mean −1.009% against **median +0.372%**: a left-tail shape that intraday pullback
+   entries could in principle cut, and the two collectors that see it (first-seal time,
+   auction snapshot) are now respectively free and small.
+4. **Risk architecture is now quantified, and it is severe.** Main N≥3 gapping below −3%:
+   **50.0% close at the DOWN limit the same day** (n=142, survivors-only so worse in truth).
+   Locked-down exits roll at up to 9.98% frequency (N≥3) costing −2.14% mean / −20.96% worst;
+   one naive −17.3% mark was really −32.3%. The confirmed ladder (N≥2 entry) is a WORSE
+   trade than N=1 (fillable subset adversely selected). Weekend fermentation is real in
+   probability (+4.48 pp holdout, Wilson-disjoint) and **fully mediated by the gap** — it
+   ferments into the auction price, not into post-gap drift.
+5. **Data-plane truths this wave established:** `china_stocks_raw` is **BACK-ADJUSTED, not
+   nominal** (on-tick share 36.4%→96.6% by year; 609/1,836 names on-tick throughout) — v0's
+   header is wrong, its tolerance adjudication SURVIVES (p99 tick error 0.15% < 0.2% cushion;
+   returns unaffected); v0's committed JSON still carries pre-reversal "strict is primary"
+   prose contradicting its own MD — both need a small v0-corrections PR once #4999 merges.
+
+**Program ore ledger (wave-level; lane ledgers in receipts):** UNTESTED at wave close —
+intraday pullback/half-way (半路) entries; seal-break (开板) re-entries; 回封 conditioning
+(C3); 龙回头 battery (C10); near-miss discontinuity (C12); cross-band telemetry (C15); 一字
+queue-depth (C11); regime × anything crosses; zt_pool-universe replication of EVERY number
+(F3 hangs over the whole wave: curated-slice survivorship could inflate the ladder itself);
+onset book open-anchored accounting (L1 treated continuation only; L3's top-K cells never got
+the fillability treatment); H>1 horizons; soft near-limit labels; theme/题材-resolved
+anything (blocked on THS mapping). A null this wave closes ONLY: naive next-open gap-chasing
+riders (E1/E2/E3, all bands, main+chinext, fit+holdout) and B1-as-specified.
+
 ## §7 Forward-ledger law (from Wave 1, standing)
 
 Every probability the system emits is stamped (feature_date, predict_date, model_version, era
@@ -168,18 +242,36 @@ advancer**; fillability noted per row (P is for a CLOSE; entry requires a fillab
 rider lane owns that arithmetic). The calibration curve is the product's spine. Era-stamp
 everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
 
-## §8 Wave map (forward)
+## §8 Wave map (forward) — re-ranked at Wave-1 adjudication (2026-08-09)
 
-- **W2 MERGE WAVE:** regime × rider × onset crosses (the dial sizes the book); blinded-list
-  constructions triaged in; theme-relay v1 if THS mapping lands; nightly ledger advancer wired;
-  grading report v1.
-- **W2/W3 COLLECTORS** (operator pre-authorized, per L0's field inventory): persist 封单/炸板
-  history (extend existing scrape — cheapest, ranked #1 by v0 Stage 4), closing-auction
-  imbalance, first-touch/seal-break times, THS concept membership snapshots.
-- **W3+:** zt_pool-universe expansion (the 打板 game lives in the omitted small/ST names —
-  labels exist market-wide even where OHLCV doesn't), cross-market rerate oracle (S5),
-  display-tier site surface (designer lane, glance-tier language, "windows not certainties"),
-  gauntlet promotion only when the forward ledger has ≥10 graded sessions.
+- **W2 (next session), in priority order:**
+  1. **Regime-conditional calibration** — L2 instruments as B1 covariates AND calibration-map
+     conditioners (the measured cause of L3's miss); re-run the frozen-holdout evaluation once,
+     pre-registered.
+  2. **The weakness-entry battery** — 回封 (C3, on the healed 13,871-event failed-seal cohort)
+     + 龙回头 (C10): the fillable-by-construction entries L1's null leaves standing. Open-
+     anchored, locked-exit-honest, regime-conditioned from day one.
+  3. **Onset book fillability re-statement** — L3's B2/top-K cells put through L1's open-
+     anchored accounting (the onset side never got the fillability treatment).
+  4. **Cheap catalog constructions:** near-miss discontinuity (C12), 一字 queue-depth (C11),
+     cross-band telemetry pilot (C15, post-2020 era).
+  5. **Collectors (operator pre-authorized):** extend the zt_pool scrape with 首次封板时间 +
+     涨停统计 (both on the current call — near-free); START the 9:25 auction snapshot (P5 — no
+     history exists anywhere; every uncollected day is lost); probe vendor backfill depth
+     (--backfill for the 3 missing sessions 06-29/07-09/07-22 + how far back it serves).
+  6. **Nightly ledger advancer** wired at L3's identified hook (asia-close.yml after the CN
+     Pick Lab step) — NOTE its commit step must learn to add the ledger's path (it adds
+     `data/` and `site/`, not `research/`; either relocate the ledger to
+     `data/cn_limit_lab/` or extend the add — decide at wiring, era-stamp the move).
+  7. **v0 corrections PR** (post-#4999-merge): header basis → back-adjusted (with L1's
+     tick-share evidence), JSON `definitions`/`why_strict_is_primary` prose → the MD's actual
+     verdict, tape_crosscheck intersection-blindness note (L0's 9× finding).
+- **W3+:** zt_pool-universe expansion (F3 is the standing threat: the ladder itself must be
+  re-measured market-wide — labels exist in the vendor pool even where OHLCV doesn't),
+  theme-relay v1 (blocked on THS concept mapping — 涨停原因 is NOT on the pool endpoint),
+  cross-market rerate oracle (S5), LHB per-seat history (P3), display-tier site surface
+  (designer lane, glance-tier language, "windows not certainties"), gauntlet promotion only
+  when the forward ledger has ≥10 graded sessions.
 
 ## §9 Session-chain protocol
 
