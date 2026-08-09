@@ -431,6 +431,10 @@ CANDIDATE_SOURCE_MODULES = frozenset({
     "engine.government_revenue.subaward_dossiers",
     "engine.government_revenue.budget_program",
     "engine.government_revenue.metrics",
+    # Display-tier and non-authoritative, but it reads the IDV and prime-award
+    # dossier rails and constructs new relationship evidence from exact source
+    # identities.  Keep evidence builders on the source side of this boundary.
+    "engine.government_revenue.idv_bridge",
     # A display-only evidence projection today, but it reads the recipient graph
     # and constructs a new Government Revenue rail from raw SBIR observations.
     # Keep it on the source side of this fail-closed boundary unless/until the
