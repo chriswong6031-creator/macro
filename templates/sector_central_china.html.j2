@@ -1587,6 +1587,10 @@ const sigChipHtml = (tier, fresh) => {
 const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
 const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
 const bth = b => (LANG()==='zh' && b && b.thesis_zh) ? b.thesis_zh : (b?b.thesis:'');
+// member blurb (成分 table 说明 column): zh mode shows the curated Chinese ONLY — never the
+// English alongside it (operator 2026-08-04). Falls back to English when a member has no
+// rationale_zh so the column is never blank.
+const mrat = m => (LANG()==='zh' && m && m.rationale_zh) ? m.rationale_zh : (m ? (m.rationale||'') : '');
 const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'沪深300') : (BASKETS.benchmark_label||'CSI 300');
 const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
 const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
@@ -1937,7 +1941,7 @@ function memRows(b){
   });
   return members.map(m=>`<tr>
     <td><a href="china_lookup.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span>${sigChipHtml(m.sig_tier, m.sig_fresh)}</td>
-    <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
+    <td class="why">${esc(mrat(m))}</td><td class="num muted sm">${esc(m.added)}</td>
     <td class="num ${cls(m.ret_5d)}">${fmtPct(m.ret_5d)}</td>
     <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join('');
 }

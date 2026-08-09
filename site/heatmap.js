@@ -2020,10 +2020,9 @@
       + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:transparent;text-shadow:0 1px 2px rgba(0,0,0,.7);}'
       + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
       + '.hm-sub-hd .snm{pointer-events:none;}'
-      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
+      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 3px rgba(0,0,0,.5);}'
       // dark-ink tiles (bright fills): the white-ink halo would smear dark text.
       // Compound selectors so this outranks .hm-mpc's own later shadow rule.
-      + '.hm-tile.hm-ink-dark,.hm-mpc.hm-ink-dark{text-shadow:none;}'
       + '.hm-tile.big{border-radius:3px;} .hm-tile.huge{border-radius:4px;}'
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
       + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
@@ -2168,7 +2167,7 @@
       + '.hm-mbr{margin-left:auto;width:58px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel);} .hm-mbr i{display:block;height:100%;} .hm-mbr i.up{background:var(--up);} .hm-mbr i.dn{background:var(--down);}'
       + '.hm-mrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-top:0;background:var(--panel);text-decoration:none;}'
       + '.hm-mgrp .hm-mrow:last-child{border-radius:0 0 10px 10px;}'
-      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
+      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 3px rgba(0,0,0,.5);}'
       + '.hm-mid{flex:1;min-width:0;display:flex;flex-direction:column;} .hm-mid b{font-size:14px;font-weight:800;color:var(--text);} .hm-mid span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mgo{color:var(--muted);font-size:20px;font-weight:700;flex:none;}'
       + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
