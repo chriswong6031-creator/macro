@@ -415,7 +415,7 @@ class TestCheckB:
         assert any(v.check == "b" and "alert_triage" in v.module for v in viols)
 
     def test_engine_world_state_not_allowlisted(self) -> None:
-        """engine/neuralweb/world_state.py is NOT in the allowlist."""
+        """World State may emit the mirror, but every read remains forbidden."""
         synthetic = {
             "engine/neuralweb/world_state.py": "x = state['allowed_actions']\n",
         }
