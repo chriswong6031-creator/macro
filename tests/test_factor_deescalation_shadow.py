@@ -495,6 +495,50 @@ class TestCheckB:
         assert viols[0].line_no == 3
 
     @pytest.mark.parametrize(
+        "forbidden_binding",
+        [
+            "import source as allowed_actions\n",
+            "from source import value as allowed_actions\n",
+            "def allowed_actions():\n    pass\n",
+            "class allowed_actions:\n    pass\n",
+            "try:\n    pass\nexcept Exception as allowed_actions:\n    pass\n",
+            "match value:\n    case _ as allowed_actions:\n        pass\n",
+            "match value:\n    case [*allowed_actions]:\n        pass\n",
+            "match value:\n    case {**allowed_actions}:\n        pass\n",
+        ],
+    )
+    def test_world_state_every_lexical_authority_binding_fails_closed(
+        self, forbidden_binding: str
+    ) -> None:
+        """No AST-node enumeration may create an unscanned binding form."""
+        synthetic = {"engine/neuralweb/world_state.py": forbidden_binding}
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert len(viols) >= 1
+
+    @pytest.mark.parametrize(
+        "forbidden_constant_use",
+        [
+            "alias = _INFLATION_INTELLIGENCE_ALLOWED_ACTIONS\n",
+            "_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS['may_trade'] = True\n",
+            "globals()['_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS']['may_trade'] = True\n",
+        ],
+    )
+    def test_world_state_constant_is_sealed_against_alias_and_mutation(
+        self, forbidden_constant_use: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                self._WORLD_CONSTANT
+                + forbidden_constant_use
+                + "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
+            )
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert len(viols) == 1
+
+    @pytest.mark.parametrize(
         "state_builder",
         [
             "engine/inflation_intelligence.py",

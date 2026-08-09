@@ -520,6 +520,12 @@ def _sealed_fixed_constants(
     for name, declaration in declarations.items():
         valid = True
         for node in ast.walk(tree):
+            # ``globals()["NAME"]`` and similar string-key lookups avoid an
+            # ast.Name load entirely.  Treat an exact configured-name literal
+            # as an opaque/indirect reference and invalidate the warrant.
+            if isinstance(node, ast.Constant) and node.value == name:
+                valid = False
+                break
             if not isinstance(node, ast.Name) or node.id != name:
                 continue
             if node is declaration:
@@ -582,7 +588,31 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
         for child in ast.iter_child_nodes(parent)
     }
     sealed_constants = _sealed_fixed_constants(tree, rel_path, parents)
-    permitted_nodes: set[int] = set()
+    source_lines = source.splitlines()
+    permitted_spans: set[tuple[int, int, int]] = set()
+
+    def char_offset(line: str, byte_offset: int) -> int:
+        """Translate CPython AST UTF-8 byte columns to string offsets."""
+        return len(line.encode("utf-8")[:byte_offset].decode("utf-8"))
+
+    def permit_literal_key(key: ast.Constant) -> None:
+        if key.lineno != key.end_lineno:
+            return
+        line = source_lines[key.lineno - 1]
+        start = char_offset(line, key.col_offset)
+        end = char_offset(line, key.end_col_offset)
+        token_start = line.find("allowed_actions", start, end)
+        if token_start >= 0:
+            permitted_spans.add(
+                (key.lineno, token_start, token_start + len("allowed_actions"))
+            )
+
+    def permit_keyword(keyword: ast.keyword) -> None:
+        line = source_lines[keyword.lineno - 1]
+        start = char_offset(line, keyword.col_offset)
+        end = start + len("allowed_actions")
+        if line[start:end] == "allowed_actions":
+            permitted_spans.add((keyword.lineno, start, end))
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
@@ -595,7 +625,7 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
                         value, rel_path, parents
                     )
                 ):
-                    permitted_nodes.add(id(key))
+                    permit_literal_key(key)
         elif isinstance(node, ast.Call):
             for keyword in node.keywords:
                 if (
@@ -607,31 +637,18 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
                         keyword.value, rel_path, parents
                     )
                 ):
-                    permitted_nodes.add(id(keyword))
+                    permit_keyword(keyword)
 
+    # Keep the original fail-closed lexical boundary and subtract only the
+    # exact AST-proven key/keyword token spans.  Enumerating selected AST node
+    # classes is insufficient: import aliases, exception bindings, pattern
+    # captures, and future Python syntax can all bind the same authority name.
     lines: set[int] = set()
-    for node in ast.walk(tree):
-        references_token = (
-            isinstance(node, ast.Constant)
-            and node.value == "allowed_actions"
-        ) or (
-            isinstance(node, ast.Name)
-            and node.id == "allowed_actions"
-        ) or (
-            isinstance(node, ast.Attribute)
-            and node.attr == "allowed_actions"
-        ) or (
-            isinstance(node, ast.arg)
-            and node.arg == "allowed_actions"
-        ) or (
-            isinstance(node, ast.keyword)
-            and node.arg == "allowed_actions"
-        ) or (
-            isinstance(node, (ast.Global, ast.Nonlocal))
-            and "allowed_actions" in node.names
-        )
-        if references_token and id(node) not in permitted_nodes:
-            lines.add(getattr(node, "lineno", 1))
+    for line_no, line in enumerate(source_lines, start=1):
+        for occurrence in re.finditer("allowed_actions", line):
+            span = (line_no, occurrence.start(), occurrence.end())
+            if span not in permitted_spans:
+                lines.add(line_no)
 
     return sorted(lines)
 
