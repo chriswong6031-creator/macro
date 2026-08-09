@@ -24,9 +24,13 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.government_revenue.candidates import (
     build_candidate_observations,
@@ -35,10 +39,10 @@ from engine.government_revenue.candidates import (
     candidate_queue_content_id,
     is_valid_candidate_payload,
     is_valid_candidate_queue,
-)
-from engine.government_revenue.entity_resolution import load_recipient_entity_graph
-from engine.government_revenue.workspace import is_valid_procurement_workspace
-from scripts import build_government_revenue
+)  # noqa: E402
+from engine.government_revenue.entity_resolution import load_recipient_entity_graph  # noqa: E402
+from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
+from scripts import build_government_revenue  # noqa: E402
 
 
 STATE_CONTRACT = "government_revenue.candidate_projection_state.v1"

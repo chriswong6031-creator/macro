@@ -47,13 +47,16 @@ import os
 import sys
 import warnings
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
 
-ROOT = "/Users/chriswong/Documents/Cluade/Macro Dashboard"
+# Derived from __file__, not hardcoded: this was pinned to the primary checkout,
+# so running it from any worktree imported — and wrote to — the WRONG tree.
+ROOT = str(Path(__file__).resolve().parent.parent)
 sys.path.insert(0, ROOT)
 DATA = os.path.join(ROOT, "data", "commodity_xsec")
 REPORT = os.path.join(ROOT, "reports", "commodity-xsec-carry-phase0.md")

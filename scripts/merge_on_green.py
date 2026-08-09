@@ -195,12 +195,16 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 try:  # imported as `scripts.merge_on_green` (the test pack, and any other caller)
     from scripts.gh_path_filter import NEGATION_PREFIX, matching_patterns

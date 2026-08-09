@@ -36,6 +36,7 @@ from jinja2 import Environment, FileSystemLoader, Undefined
 log = logging.getLogger("build_stage_analysis_page")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 # The committed context artifact (drives the warm-up hero counts/stance).
 _CONTEXT_REL = Path("stage_analysis") / "context" / "latest.json"
