@@ -436,6 +436,21 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     jobs = workflow["jobs"]
     pack = jobs["fence-pack"]
     assert pack["runs-on"] == ["self-hosted", "render-linux"]
+    clear_idx, clear = next(
+        (idx, step)
+        for idx, step in enumerate(pack["steps"])
+        if step.get("name")
+        == "clear any sparse checkout a sibling job left in this shared workspace"
+    )
+    checkout_idx = next(
+        idx
+        for idx, step in enumerate(pack["steps"])
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert clear_idx < checkout_idx
+    assert clear["if"] == "runner.environment != 'github-hosted'"
+    assert "sparse-checkout disable" in clear["run"]
+    assert "github.workspace" in clear["run"]
     checkout = next(
         step
         for step in pack["steps"]
