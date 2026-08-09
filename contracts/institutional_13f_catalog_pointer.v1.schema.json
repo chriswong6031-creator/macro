@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/institutional_13f_catalog_pointer.v1.schema.json",
+  "title": "Institutional 13F catalog current pointer v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generation_id",
+    "manifest_key",
+    "manifest_sha256",
+    "manifest_byte_length",
+    "report_period",
+    "published_at"
+  ],
+  "properties": {
+    "schema": {"const": "institutional_13f.catalog_current_pointer/v1"},
+    "generation_id": {"type": "string", "pattern": "^i13fgen_[a-f0-9]{64}$"},
+    "manifest_key": {
+      "type": "string",
+      "pattern": "^smart-money/13f/evidence/v1/quarters/report_period=[0-9]{4}-[0-9]{2}-[0-9]{2}/generations/i13fgen_[a-f0-9]{64}/manifest\\.json$"
+    },
+    "manifest_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "manifest_byte_length": {"type": "integer", "minimum": 1, "maximum": 1048576},
+    "report_period": {"type": "string", "format": "date"},
+    "published_at": {"type": "string", "format": "date-time", "pattern": "Z$"}
+  }
+}

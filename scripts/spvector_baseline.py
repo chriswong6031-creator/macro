@@ -21,9 +21,13 @@ from __future__ import annotations
 import sys
 
 import pandas as pd
+from pathlib import Path
 
-from engine import equity_alloc as ea
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from lib import config, store  # noqa: E402
 
 COST_BPS = 3.0                       # liquid index ETF one-way (SPY/QQQ ~1-3 bps)
 INDICES = ["SPY", "_DJI", "_RUT", "_GSPC"]   # _GSPC = ^GSPC long backbone (price index)

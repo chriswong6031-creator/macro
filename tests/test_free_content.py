@@ -956,11 +956,51 @@ class TestRenderedOutput:
             subdir = _SITE_DIR / d
             if subdir.exists():
                 files.extend(subdir.rglob("*.html"))
-        # also about-research.html
-        ar = _SITE_DIR / "about-research.html"
-        if ar.exists():
-            files.append(ar)
+        # also root-level pages owned by the free-content renderer
+        for name in (
+            "about-research.html",
+            "privacy.html",
+            "terms.html",
+            "disclaimer.html",
+        ):
+            page = _SITE_DIR / name
+            if page.exists():
+                files.append(page)
         return files
+
+    def test_legal_pages_preserve_policy_boundaries(self):
+        """Commercial restrictions and material privacy disclosures stay public."""
+        required = {
+            "terms.html": (
+                "Commercial use and data policy",
+                "Commercial and institutional licensing",
+                "resell or redistribute",
+                "use for AI or machine learning",
+                "build or improve a competing product",
+            ),
+            "privacy.html": (
+                "AI assistant data and evaluation",
+                "training-set curation",
+                "California notice at collection",
+                "mm_aid",
+            ),
+            "disclaimer.html": (
+                "Models, signals, scores, and probabilities",
+                "Past performance, track records, and hypotheticals",
+                "not an execution feed",
+            ),
+        }
+        errors = []
+        for name, phrases in required.items():
+            page = _SITE_DIR / name
+            if not page.exists():
+                errors.append(f"site/{name}: missing rendered legal page")
+                continue
+            html = page.read_text(encoding="utf-8")
+            for phrase in phrases:
+                if phrase not in html:
+                    errors.append(f"site/{name}: missing {phrase!r}")
+        assert not errors, "Legal policy coverage drift:\n" + "\n".join(errors)
 
     def test_rendered_pages_have_exactly_one_canonical(self):
         """Each rendered page has exactly one <link rel=canonical>."""

@@ -10,12 +10,16 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from engine.neuralweb import trade_memory
-from engine.neuralweb.trade_memory_store import SupabaseTradeMemoryStore, build_store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.neuralweb import trade_memory  # noqa: E402
+from engine.neuralweb.trade_memory_store import SupabaseTradeMemoryStore, build_store  # noqa: E402
 
 log = logging.getLogger("run_trade_memory")
 

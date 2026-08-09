@@ -1,0 +1,46 @@
+
+  /* ---- HKRV-W3: leadership banner + turn chip ---- */
+  .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
+    border-left: 4px solid var(--warn);
+    background: color-mix(in srgb, var(--warn) 9%, var(--panel));
+    border-top: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-right: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-bottom: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    display: flex; flex-direction: column; gap: 6px; }
+  .hkrv-banner-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .hkrv-banner-icon { font-size: 18px; flex: none; }
+  .hkrv-banner-title { font-size: 14px; font-weight: 800;
+    color: color-mix(in srgb, var(--warn) 90%, var(--text)); }
+  .hkrv-banner-line { font-size: 12.5px; color: var(--text); line-height: 1.5;
+    flex: 1; min-width: 200px; }
+  .hkrv-stance-chip { display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;
+    letter-spacing: .02em;
+    background: color-mix(in srgb, var(--warn) 20%, var(--panel));
+    color: color-mix(in srgb, var(--warn) 92%, var(--text));
+    border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
+    margin-left: auto; white-space: nowrap; flex: none; }
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+    background: none; border: none; padding: 0; font: inherit;
+    text-decoration: underline; text-decoration-style: dotted; }
+  .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
+    background: var(--panel2);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, var(--line));
+    border-radius: 9px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .hkrv-pop.hkrv-pop-open { display: block; }
+  .hkrv-pop-row { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .hkrv-pop-row:last-child { border-bottom: none; }
+  .hkrv-pop-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); display: block; margin-bottom: 1px; }
+  .hkrv-history-note { display: inline-block; margin-top: 5px; font-size: 11.5px;
+    font-weight: 600; color: var(--muted); padding: 4px 9px; border-radius: 7px;
+    background: color-mix(in srgb, var(--muted) 8%, var(--panel2));
+    border: 1px solid var(--line); }
+  .anv2-board .anv2-name-link { color: inherit; text-decoration: none; }
+  .anv2-board .anv2-name-link:hover .l-en,
+  .anv2-board .anv2-name-link:hover .l-zh { text-decoration: underline; }
+  .anv2-board .anv2-name-link:focus-visible { outline: 2px solid var(--link);
+    outline-offset: 2px; border-radius: 4px; }
+  .anv2-board .anv2-go { font-size: 10px; opacity: .55; margin-left: 3px; }
+  .anv2-board .anv2-empty { padding: 10px 13px; color: var(--muted); font-size: 11px; }
+  

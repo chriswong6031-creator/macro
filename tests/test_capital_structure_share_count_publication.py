@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from io import BytesIO
 import os
 from pathlib import Path
-import time
 
 import fcntl
 
@@ -1224,12 +1223,16 @@ def test_publication_base_rejects_unsafe_directory_entry_without_touching_target
     else:
         os.mkfifo(base)
 
+    # Frozen deterministic operation clock: on a loaded runner a real
+    # sub-second budget can expire during the directory walk, surfacing the
+    # deadline error before the unsafe-entry verdict.
     with pytest.raises(publication.ShareCountPublicationError, match="cannot be opened safely"):
         publication._recover_share_count_materialization_for_test(
             root=root,
             signer=signer,
             head_guard=guard,
-            deadline=time.monotonic() + 0.2,
+            deadline=1.0,
+            monotonic=lambda: 0.0,
         )
     assert list(outside.iterdir()) == []
 
@@ -1255,23 +1258,39 @@ def test_lease_rejects_unsafe_lock_file_without_blocking(tmp_path: Path) -> None
     lock = root / "data/capital_structure/share_counts/v2/.share_count_publish.lock"
     lock.parent.mkdir(parents=True)
     os.mkfifo(lock)
+    # Frozen deterministic operation clock: on a loaded runner a real
+    # sub-second budget can expire before the lock file is inspected,
+    # surfacing the deadline error before the unsafe-path verdict.
     with pytest.raises(publication.ShareCountPublicationError, match="lease path is unsafe"):
         publication._recover_share_count_materialization_for_test(
-            root=root, signer=signer, head_guard=guard, deadline=time.monotonic() + 0.2,
+            root=root, signer=signer, head_guard=guard, deadline=1.0, monotonic=lambda: 0.0,
         )
 
 
-def test_lease_deadline_includes_a_held_cross_process_lock(tmp_path: Path) -> None:
+def test_lease_deadline_includes_a_held_cross_process_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     signer, guard, root = _publisher(tmp_path)
     lock = root / "data/capital_structure/share_counts/v2/.share_count_publish.lock"
     lock.parent.mkdir(parents=True)
     fd = os.open(lock, os.O_RDWR | os.O_CREAT, 0o600)
+    # Deterministic operation clock advanced only by the lease retry sleep: on
+    # a loaded runner a real budget can expire before the flock wait begins,
+    # surfacing a deadline error instead of the timeout verdict.
+    clock = [0.0]
+
+    def advancing_sleep(seconds: float) -> None:
+        clock[0] += seconds
+
+    monkeypatch.setattr(publication.time, "sleep", advancing_sleep)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with pytest.raises(publication.ShareCountPublicationError, match="lease timed out"):
             publication._recover_share_count_materialization_for_test(
-                root=root, signer=signer, head_guard=guard, deadline=time.monotonic() + 0.08,
+                root=root, signer=signer, head_guard=guard, deadline=0.08,
+                monotonic=lambda: clock[0],
             )
+        assert clock[0] >= 0.08
     finally:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
