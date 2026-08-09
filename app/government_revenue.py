@@ -39,6 +39,11 @@ from engine.government_revenue.idv_dossiers import (
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.idv_bridge import (
+    award_bridge_view,
+    build_idv_bridge_payload,
+    unavailable_award_bridge_view,
+)
 from engine.government_revenue.candidates import (
     CONTRACT as CANDIDATE_CONTRACT,
     QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
@@ -98,6 +103,7 @@ _DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _BUDGET_PROGRAM_CACHE: dict = {"state": None, "payload": None}
 _IDV_DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_IDV_BRIDGE_CACHE: dict = {"state": None, "payload": None}
 _CANDIDATE_CACHE: dict = {"state": None, "payload": None}
 _DOD_BUDGET_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 _SENSITIVE_KEY = re.compile(
@@ -486,6 +492,36 @@ def _load_idv_dossiers() -> dict:
         _validate_idv_dossier_bindings(payload, prime_payload)
         _IDV_DOSSIER_CACHE.update(state=state, payload=payload)
         return payload
+
+
+def _award_idv_bridge(prime_payload: dict, idv_payload: dict, award_key: str) -> dict:
+    """Project one award's exact IDV bridge from two already-validated rails.
+
+    The bridge is a deterministic display-tier join over content-addressed
+    bytes, so it is cached on the joint identity of its two inputs rather than
+    stored as a separate artifact.  This is an optional context rail on top of
+    the receipt-bound relationship route: a projection that cannot be built
+    returns an explicit unavailable state so the proven relationships keep
+    serving, and so a reader never mistakes "not checked" for "no link".
+    """
+    state = (prime_payload.get("content_id"), idv_payload.get("content_id"))
+    with _LOCK:
+        payload = _IDV_BRIDGE_CACHE["payload"] if _IDV_BRIDGE_CACHE["state"] == state else None
+        if payload is None:
+            try:
+                payload = build_idv_bridge_payload(
+                    idv_payload=idv_payload,
+                    prime_payload=prime_payload,
+                    as_of=prime_payload.get("as_of"),
+                )
+            except (ValueError, TypeError, KeyError):
+                return unavailable_award_bridge_view(
+                    award_key,
+                    "The exact vehicle bridge could not be projected from this generation, so no link was "
+                    "checked. That is not an observation that no link exists.",
+                )
+            _IDV_BRIDGE_CACHE.update(state=state, payload=payload)
+        return award_bridge_view(payload, award_key)
 
 
 def _candidate_authority_is_display_only(value: object) -> bool:
@@ -1929,6 +1965,7 @@ def award_idv_relationships(award_key: str) -> dict:
     if award_key not in _dossier_award_map(prime_payload):
         raise HTTPException(status_code=404, detail="award not covered")
     payload = _load_idv_dossiers()
+    bridge = _award_idv_bridge(prime_payload, payload, award_key)
     relationships = [
         _public_idv_relationship(row)
         for row in payload.get("relationships") or []
@@ -1973,6 +2010,7 @@ def award_idv_relationships(award_key: str) -> dict:
         "freshness": payload.get("freshness"),
         "selection_provenance": payload.get("selection_provenance"),
         "award_coverage": award_coverage,
+        "bridge": bridge,
         "limitations": payload.get("limitations"),
         "award_key": award_key,
         "relationships": relationships,

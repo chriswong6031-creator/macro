@@ -1468,7 +1468,9 @@ class TestTemplateRender:
         assert "把最新财报放回历史脉络" in html
         assert "Coverage incomplete" not in html  # runtime state, never preclaimed
         assert "Context only" in html
-        assert "仅作背景参考" in html
+        # the ZH half of the same disclosure — pinned as a claim, not a phrasing:
+        # 仅作背景参考 read as "for background reference" (背景 is a person's background)
+        assert "仅供参考" in html
         assert "Recorded metrics" in html
         assert "reported metrics" not in html.lower()
         assert 'role="toolbar"' in html

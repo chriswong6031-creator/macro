@@ -25,10 +25,14 @@ import logging
 import sys
 
 import pandas as pd
+from pathlib import Path
 
-from lib import config
-from lib.procutil import hard_exit
-from collectors.edgar_stock_quality import apply_stock_quality
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from lib.procutil import hard_exit  # noqa: E402
+from collectors.edgar_stock_quality import apply_stock_quality  # noqa: E402
 
 log = logging.getLogger(__name__)
 

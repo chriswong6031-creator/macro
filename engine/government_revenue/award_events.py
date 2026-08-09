@@ -127,6 +127,25 @@ ACTION_DIFF_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("end_date", ("end_date", "period_of_performance_current_end_date")),
 )
 
+#: Economic class of each derived before/after delta, published on the amount
+#: fact's ``semantic``.  The class is NOT cosmetic: a snapshot's
+#: ``total_obligated_amount`` is a **cumulative balance**, so its delta is the
+#: movement of a running total, while an action rail's
+#: ``federal_action_obligation`` is a **single transaction**.  Those two
+#: quantities measure different things and may never be added into one figure --
+#: summing a cumulative movement with the transactions that produced it
+#: double-counts the same dollars.  Every delta previously carried the single
+#: label ``derived_from_official_before_after``, which recorded HOW the number
+#: was derived but not WHAT it is, so no consumer could tell the two apart.
+_DELTA_SEMANTICS: dict[str, str] = {
+    "federal_action_obligation": "transaction_delta_derived_from_official_before_after",
+    "total_obligated_amount": "award_cumulative_delta_derived_from_official_before_after",
+    "potential_award_amount": "award_ceiling_delta_derived_from_official_before_after",
+    "current_award_amount": "award_current_value_delta_derived_from_official_before_after",
+}
+#: Fallback for a changed field with no registered economic class (dates, text).
+_DERIVED_DELTA_SEMANTIC = "derived_from_official_before_after"
+
 _RETRACTION_RE = re.compile(r"\b(?:rescind(?:s|ed|ing)?|retract(?:s|ed|ing|ion)?)\b", re.I)
 _OPTION_RE = re.compile(r"\bexercise(?:d|s|ing)?(?:\s+an?)?\s+option\b", re.I)
 _EXTENSION_RE = re.compile(r"\b(?:extend(?:s|ed|ing)?|extension)\b", re.I)
@@ -789,13 +808,20 @@ def _snapshot_groups(changed_fields: list[dict[str, Any]], before: Mapping[str, 
     result: list[tuple[str, list[dict[str, Any]], list[str]]] = []
     value_items = [by_name[name] for name in ("current_award_amount", "potential_award_amount") if name in by_name]
     if value_items:
+        secondary: list[str] = []
         if len(value_items) == 2:
+            # A compound move STRICTLY CONTAINS the ceiling move a lone
+            # ``potential_award_amount`` change would have published.  Naming the
+            # contained types keeps that fact machine-readable instead of leaving
+            # a reader to infer it from the changed-field list: nothing about the
+            # ceiling stopped being true because the current value moved too.
             event_type = "award_value_changed"
+            secondary = ["ceiling_changed", "current_value_changed"]
         elif value_items[0]["field"] == "potential_award_amount":
             event_type = "ceiling_changed"
         else:
             event_type = "current_value_changed"
-        result.append((event_type, value_items, []))
+        result.append((event_type, value_items, secondary))
     if "end_date" in by_name:
         prior = timestamp(_snapshot_value(before, "end_date"))
         current = timestamp(_snapshot_value(after, "end_date"))
@@ -914,25 +940,35 @@ def _amount_facts(
                     "source_ref": source_ref,
                 }
             )
+    # Every changed field that has a numeric before AND after gets its own delta
+    # fact, in changed-field order.  Only the FIRST one used to be emitted, which
+    # meant a compound change (both award values moved on one snapshot) published
+    # the current-value delta and silently dropped the ceiling delta -- the
+    # contained semantic disappeared merely because a second field moved with it.
+    # The primary amount and the material amount are still the first computable
+    # delta, so this is strictly additive to the fact list.
+    deltas: list[dict[str, Any]] = []
     delta: float | None = None
     for changed in changed_fields:
         before_value, after_value = _number(changed.get("before")), _number(changed.get("after"))
-        if before_value is not None and after_value is not None:
-            delta = after_value - before_value
-            facts.insert(
-                0,
-                {
-                    "id": f"delta_{changed['field']}",
-                    "label_code": f"delta_{changed['field']}",
-                    "value": delta,
-                    "currency": "USD",
-                    "semantic": "derived_from_official_before_after",
-                    "as_of": _effective_at(after),
-                    "is_lower_bound": False,
-                    "source_ref": source_ref,
-                },
-            )
-            break
+        if before_value is None or after_value is None:
+            continue
+        value = after_value - before_value
+        if delta is None:
+            delta = value
+        deltas.append(
+            {
+                "id": f"delta_{changed['field']}",
+                "label_code": f"delta_{changed['field']}",
+                "value": value,
+                "currency": "USD",
+                "semantic": _DELTA_SEMANTICS.get(changed["field"], _DERIVED_DELTA_SEMANTIC),
+                "as_of": _effective_at(after),
+                "is_lower_bound": False,
+                "source_ref": source_ref,
+            }
+        )
+    facts = deltas + facts
     primary = facts[0]["id"] if facts else None
     primary_value = facts[0]["value"] if facts else None
     return facts, primary, delta if delta is not None else primary_value

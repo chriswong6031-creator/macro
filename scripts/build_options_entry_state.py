@@ -18,8 +18,7 @@ from pathlib import Path
 # Allow running as a standalone script from the repo root.
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.options_entry_state import build_state   # noqa: E402
 from lib import config                               # noqa: E402

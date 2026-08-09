@@ -82,6 +82,21 @@
   .leg-toggle { font-size:11px; padding:2px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel2); color:var(--muted); cursor:pointer; margin-right:6px; }
   .leg-toggle:hover { color:var(--text); border-color:var(--muted); }
   .btbl-cats { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
+  /* ---- GR1 group-pulse column (context tier, no score) ----
+     --gr is a deliberately NON-directional hue, the same one the basket read band uses:
+     nothing in this column is a buy or sell read, so it never borrows --up / --down. */
+  #btable { --gr:#8f8ae0; }
+  html[data-theme="light"] #btable { --gr:#5a51bd; }
+  #btable th.gpr-th { text-align:left; white-space:nowrap; }
+  #btable td.gpr-td { white-space:nowrap; }
+  .gpr-cell { display:inline-flex; align-items:center; gap:5px; cursor:help; }
+  .gpr-chg { font-size:9.5px; font-weight:700; letter-spacing:.03em; padding:1px 6px; border-radius:5px;
+    white-space:nowrap; border:1px solid var(--line); background:var(--panel2); color:var(--muted); }
+  .gpr-chg.on { color:var(--gr); border-color:color-mix(in srgb,var(--gr) 50%,var(--line));
+    background:color-mix(in srgb,var(--gr) 11%,transparent); }
+  .gpr-chg .g { margin-right:3px; font-weight:800; }
+  .gpr-mv { font-size:10.5px; color:var(--muted); white-space:nowrap; }
+  .gpr-mv b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:640; }
   .bcat-chip { font-size:11.5px; padding:2px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel2); color:var(--muted); cursor:pointer; }
   .bcat-chip.on { background:var(--link); border-color:var(--link); color:#fff; }
   .bcat-chip:hover:not(.on) { border-color:var(--muted); color:var(--text); }
@@ -2085,7 +2100,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% set _hero_cls = 'strain' if _tc_st == 'strain' else ('steady' if _tc_st == 'steady' else '') %}
   <section class="rvx-hero rvx-reveal {{ _hero_cls }}">
     <div class="rvx-eyebrow">
-      <span>{{ t('US Sector Intelligence 🇺🇸', '美国行业智慧 🇺🇸') }}</span>
+      <span>{{ t('US Sector Intelligence 🇺🇸', '美国行业情报 🇺🇸') }}</span>
       <span class="rvx-mut" id="hero-count"></span>
       <span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span>
     </div>
@@ -2135,7 +2150,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% else %}
   {# ── Fallback hero when theme_context absent ── #}
   <section class="rvx-hero rvx-reveal">
-    <div class="rvx-eyebrow"><span>{{ t('US Sector Intelligence 🇺🇸', '美国行业智慧 🇺🇸') }}</span><span class="rvx-mut" id="hero-count"></span><span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span></div>
+    <div class="rvx-eyebrow"><span>{{ t('US Sector Intelligence 🇺🇸', '美国行业情报 🇺🇸') }}</span><span class="rvx-mut" id="hero-count"></span><span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span></div>
     <div class="rvx-vword">{{ t('Thematic', '主题') }} <span class="ac">{{ t('baskets', '篮子') }}</span></div>
     <p class="rvx-vsub" id="story">{{ t('Equal-weight US theme baskets measured against the S&P 500. Use them to see which themes are leading or fading.', '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
     <div class="rvx-chips ctx" style="margin-top:12px">
@@ -2401,11 +2416,14 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <section id="table-section">
       <h2>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "Sortable snapshot of every basket. Toggle between raw return, return versus S&P 500, and each basket's own z-score. Click a basket to see members.",
+        "Every basket, sortable. Switch between plain return, return against S&P 500, and how unusual the move is for that basket. Click one to see what is in it.",
         '所有篮子的可排序快照。可切换原始回报、相对标普 500 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div id="btbl-cat-filter" class="btbl-cats"></div>
-      <div class="panel"><div class="ts"><table id="btable"></table></div></div>
+      <div class="panel"><div class="ts"><table id="btable"></table></div>
+        {# GR1 — the group-pulse ordering rule, printed on the surface it orders. Filled by
+           renderBTable() only when the nightly artifact is present. #}
+        <p class="muted" id="btbl-gr-rule" style="font-size:11px;line-height:1.5;margin:9px 0 0;max-width:96ch"></p></div>
     </section>
 
     <section id="chart-section">
@@ -2458,7 +2476,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
         <h2><span class="sc-h1-ic dash-icon submenu-icon-confluence" aria-hidden="true"></span> {{ t('Subsector Confluence', '子行业汇聚') }}</h2>
         <div class="sc-asof" id="sc-asof"></div>
       </div>
-      <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动背景、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
+      <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动情况、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
     </div>
 
     <div class="sc-tabs" role="tablist">
@@ -2577,6 +2595,46 @@ function renderBTableCats(){
   el.querySelectorAll('.bcat-chip').forEach(b=>b.onclick=()=>{ btblCat=b.dataset.cat; renderBTableCats(); renderBTable(); });
 }
 
+/* ── GR1 · group pulse on the board (group_pulse.v1) ────────────────────────────────
+   One extra column per basket: how participation CHANGED and how many members are
+   actually moving. Sorting by it is a disclosed RULE over named legs — state change,
+   then breadth of movement, then agreement — never a composite, rank or heat number
+   (R-TIL-3). The default sort is untouched; the reader opts in by clicking the header.
+   Absent artifact (before the first nightly) → no column, no rule line, no error. */
+let GPULSE=null;
+const GR_CHG={strengthening:['Broadening','扩散中','↑'], steady:['Steady','持平','→'],
+              cooling:['Narrowing','收窄中','↓'], quiet:['Quiet','安静','·']};
+const GR_CHG_RANK={strengthening:0, steady:1, cooling:2, quiet:3};
+function grPulseOf(id){ return (GPULSE&&GPULSE[id])||null; }
+function grPulseCell(id){
+  const p=grPulseOf(id);
+  if(!p) return '<span class="muted">—</span>';
+  const chg=((p.episode||{}).state_change)||'quiet', w=GR_CHG[chg]||GR_CHG.quiet;
+  const pa=p.participation||{}, n=pa.activity_n, nc=p.n_covered;
+  const tipEn='How the number of members moving unusually changed against the sessions before it, and how many are moving today. A member counts as moving when its move against SPY is large versus its own last 63 sessions, or its volume runs at least 1.5x its own 63-day median. Description of participation only — never a buy or sell read.';
+  const tipZh='与此前几个交易日相比，出现异动的成分股数量如何变化，以及今日有多少只在动。当某只成分股对冲SPY后的涨跌明显大于其自身近63个交易日的常态，或成交量至少达到自身63日中位数的1.5倍时，计为「在动」。仅描述参与度，不构成买卖判断。';
+  const mv=(n!=null&&nc!=null)?` <span class="gpr-mv">${L(`<b>${n}</b> of <b>${nc}</b> moving`,`<b>${nc}</b> 只中 <b>${n}</b> 只在动`)}</span>`:'';
+  return `<span class="gpr-cell" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"><span class="gpr-chg${chg==='strengthening'||chg==='cooling'?' on':''}"><span class="g">${w[2]}</span>${L(esc(w[0]),esc(w[1]))}</span>${mv}</span>`;
+}
+// The disclosed ordering rule, applied only when the reader selects the column.
+function grCmp(a,b){
+  const pa=grPulseOf(a.id), pb=grPulseOf(b.id);
+  if(!pa&&!pb) return 0;
+  if(!pa) return 1;                       // no read tonight → end of the list, either way
+  if(!pb) return -1;
+  const ca=GR_CHG_RANK[(pa.episode||{}).state_change]??3, cb=GR_CHG_RANK[(pb.episode||{}).state_change]??3;
+  if(ca!==cb) return ca-cb;
+  const sa=(pa.participation||{}).activity_share??-1, sb=(pb.participation||{}).activity_share??-1;
+  if(sa!==sb) return sb-sa;
+  const ga=(pa.direction||{}).agreement_pct??-1, gb=(pb.direction||{}).agreement_pct??-1;
+  return gb-ga;
+}
+function renderGroupPulseCol(){
+  fetch('basketdata/pulse.json',{cache:'no-cache'}).then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(j=>{ if(!j) return; GPULSE=j; renderBTable(); })
+    .catch(()=>{/* absent before the first nightly — the column simply never appears */});
+}
+
 function renderBTable(){
   let allRows = Object.entries(CHART.baskets).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
@@ -2588,6 +2646,7 @@ function renderBTable(){
   if(btblCat&&btblCat!=='All') allRows=allRows.filter(r=>r.cat===btblCat);
   const sc=btblSort.col, dir=btblSort.dir;
   allRows.sort((a,b)=>{ if(sc==='name') return a.name.localeCompare(b.name)*dir;
+    if(sc==='group') return grCmp(a,b)*(dir<0?1:-1);
     const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
   // Top 8 + bottom 8 at rest (no duplicate if ≤16 total); btblShowAll overrides to full list.
   let rows=allRows;
@@ -2596,19 +2655,27 @@ function renderBTable(){
   }
   const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
   const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
-  let html = `<thead><tr><th data-c="name">Basket${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
+  const gp=!!GPULSE, span=TBL_COLS.length+2+(gp?1:0);
+  const grTh=gp?`<th class="gpr-th ${sc==='group'?'sel':''}" data-c="group">${L('Group pulse','整体动向')}${sc==='group'?(dir<0?' ▾':' ▴'):''}</th>`:'';
+  let html = `<thead><tr><th data-c="name">Basket${sc==='name'?(dir<0?' ▾':' ▴'):''}</th>${grTh}<th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
   html += rows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${esc(r.name)}</td>
+    ${gp?`<td class="gpr-td">${grPulseCell(r.id)}</td>`:''}
     <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
     ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
   if(!btblShowAll && allRows.length>TABLE_SHOW*2){
-    html+=`<tr id="btbl-showall-row"><td colspan="${TBL_COLS.length+2}" style="text-align:center;padding:6px">
+    html+=`<tr id="btbl-showall-row"><td colspan="${span}" style="text-align:center;padding:6px">
       <button class="lst-more" onclick="btblShowAll=true;renderBTable()">${L('Show all','显示全部')} (${allRows.length})</button>
     </td></tr>`;
   }
   if(btblMode==='raw'){ const bv={}; TBL_COLS.forEach(c=>bv[c]=winRet(CHART.bench,c));
-    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>S&amp;P 500</td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
+    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>S&amp;P 500</td>${gp?'<td></td>':''}<td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
   html += '</tbody>';
   const tbl=document.getElementById('btable'); tbl.innerHTML=html;
+  // The ordering rule is printed where it orders — never a hidden weighting.
+  const rl=document.getElementById('btbl-gr-rule');
+  if(rl) rl.innerHTML=gp?L(
+    'Group pulse: how many members are actually moving, and whether that count is broadening or narrowing. Sorting by it orders on state change, then breadth of movement, then agreement — no composite score. Baskets with no read tonight sit at the end. Context only: it never ranks, sizes or gates a position.',
+    '「整体动向」：有多少成分股真正在动，以及这个数量在扩散还是收窄。按它排序的依据为：参与度变化，其次是在动成分股的广度，再次是方向一致度 — 不使用任何综合评分。今晚没有读数的篮子排在最后。仅为背景：不参与排序权重、仓位或准入。'):'';
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
     localStorage.setItem('fw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
@@ -2982,6 +3049,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; localStorage.setItem('fw-brange',String(n)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   initChartDefaults();
   renderBTable(); renderChart();
+  try{ renderGroupPulseCol(); }catch(e){}   // GR1 — additive; a missing artifact is normal
   if(location.hash.startsWith('#theme-')) resolveThemeHash();
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });

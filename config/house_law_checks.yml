@@ -1092,8 +1092,14 @@ checks:
       - Literal-path scan; does not catch dynamically constructed paths.
       - Inline _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES exempts allowed_actions
         readers; editing that list silently widens the exemption.
+      - Two exact inflation-state producers have AST-proven emit-only spans;
+        dynamically constructed key writes are intentionally rejected.
     owner_program: factor-intelligence
-    notes: null
+    notes: >
+      Inflation Intelligence and World State may emit fixed all-false
+      allowed_actions mirrors, but remain outside the reader allowlist. Mixed
+      key-plus-read lines, subscript/get reads, behavioral branches, adjacent
+      paths, and malformed source are mutation-tested to remain hard failures.
 
   - law_id: nw.dag_conformance
     summary: >
@@ -1741,6 +1747,37 @@ checks:
       entry below, which was registered by a post-hoc census fix for the same
       reason. Belongs to the darkness-census family with ops.no_skip_only_suites
       and ops.workflow_yaml_parses in the same job.
+
+  - law_id: ops.government_revenue_amount_semantics
+    summary: >
+      Amount classes are never conflated. Obligation, outlay, ceiling, bookings,
+      backlog, funded backlog, and GAAP revenue are distinct quantities. The
+      classes live once in engine/government_revenue/amount_semantics.py and are
+      derived from the collector's canonical number-column declarations. The
+      source guard fails when addition, summation, fallback, or publication
+      combines incompatible classes or drops the class label from a figure.
+    source_ref:
+      - scripts/check_government_revenue_amount_semantics.py
+      - engine/government_revenue/amount_semantics.py
+      - tests/test_government_revenue_amount_semantics.py
+      - "PR #4950"
+    severity: hard
+    check_script: scripts/check_government_revenue_amount_semantics.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: unrun-government-revenue
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Static source analysis cannot see a conflation assembled at runtime from
+        names it cannot resolve, such as getattr or a config-built column list.
+      - Coverage derives from the collector's canonical number-column
+        declarations, so a ledger field introduced outside those declarations
+        carries no class and is not judged.
+    owner_program: government-revenue-foresight
+    notes: null
 
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 

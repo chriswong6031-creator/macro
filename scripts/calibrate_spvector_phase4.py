@@ -18,12 +18,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import equity_alloc as ea
-from engine import equity_diversified as ed
-from engine.validation import deflated_sharpe, ret_moments
-from engine.trial_ledger import TrialLedger
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine import equity_diversified as ed  # noqa: E402
+from engine.validation import deflated_sharpe, ret_moments  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from lib import config, store  # noqa: E402
 
 COST_BPS = 3.0
 SPLIT = "2010-01-01"
