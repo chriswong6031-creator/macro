@@ -639,6 +639,149 @@ class TestCheckB:
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
     @pytest.mark.parametrize(
+        "mutation",
+        [
+            (
+                "from builtins import globals as g\n"
+                "g()['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "import builtins as b\n"
+                "getattr(b, 'glob' + 'als')()"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "from builtins import setattr as s\n"
+                "self_module = __import__(__name__)\n"
+                "s(self_module, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "import inspect\n"
+                "inspect.currentframe().f_globals"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "_inflation_intelligence_null.__globals__"
+                "['_inflation_intelligence_null'] = evil\n"
+            ),
+            (
+                "import engine.neuralweb.world_state as m\n"
+                "m._inflation_intelligence_null = evil\n"
+            ),
+            (
+                "import importlib\n"
+                "module = importlib.import_module(__name__)\n"
+                "module.__setattr__("
+                "_inflation_intelligence_null.__name__, evil)\n"
+            ),
+            (
+                "module = __import__(__name__)\n"
+                "type(module).__setattr__(module, "
+                "_inflation_intelligence_null.__name__, evil)\n"
+            ),
+        ],
+    )
+    def test_redteam_rejects_aliased_reflective_emitter_rebinding(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + mutation
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "ws._inflation_intelligence_null = evil\n",
+            (
+                "setter = setattr\n"
+                "setter(ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "import builtins\n"
+                "setter = builtins.setattr\n"
+                "setter(ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "ws.__dict__.update("
+                "{'_inflation_intelligence_null': evil})\n"
+            ),
+            "ws.__dict__.update(_inflation_intelligence_null=evil)\n",
+            (
+                "type(ws).__setattr__("
+                "ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "ws._inflation_intelligence_null.__code__ = "
+                "evil.__code__\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "fn.__code__ = evil.__code__\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "fn.__defaults__ = (evil,)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setattr(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setter = setattr\n"
+                "setter(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "type(fn).__setattr__(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setattr(fn, '__defaults__', (evil,))\n"
+            ),
+            (
+                "setattr(ws, ws._inflation_intelligence_null.__name__, evil)\n"
+            ),
+            (
+                "vars(ws)[ws._inflation_intelligence_null.__name__] = evil\n"
+            ),
+            (
+                "target = ws._inflation_intelligence_null\n"
+                "target.__globals__[target.__name__] = evil\n"
+            ),
+            (
+                "import operator\n"
+                "operator.setitem(ws.__dict__, "
+                "ws._inflation_intelligence_null.__name__, evil)\n"
+            ),
+        ],
+    )
+    def test_redteam_rejects_cross_module_fixed_emitter_rebinding(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+            ),
+            "engine/backdoor.py": (
+                "import engine.neuralweb.world_state as ws\n"
+                + mutation
+            ),
+        }
+        violations = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.module == "engine/backdoor.py" for v in violations)
+
+    @pytest.mark.parametrize(
         "forbidden_reference",
         [
             "observed = state['allowed_actions']",
