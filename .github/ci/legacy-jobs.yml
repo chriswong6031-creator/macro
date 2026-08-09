@@ -1907,6 +1907,14 @@ jobs:
       # line-start ::warning (masterplan §0.2 acceptance gate).
       - name: nightly runtime telemetry (W2 wiring + 85% tripwire behavior)
         run: python -m pytest tests/test_nightly_timings.py -q
+      # Fourth layer, same family: daily.yml's schedule is a DST cron PAIR and the
+      # root et_gate job keeps exactly one firing. The suite EXTRACTS the inline gate
+      # script out of the live workflow and executes it against instants either side
+      # of both DST flips, then pins the cron pair to the script's constants and that
+      # every job still reaches the gate. A drifted gate skips the sole authoritative
+      # nightly with nothing going red — the same silent class as the two above.
+      - name: daily ET regime gate (DST pair disambiguator + wiring pins)
+        run: python -m pytest tests/test_daily_et_gate.py -q
 
   push-retry-policy:
     if: ${{ false }}
