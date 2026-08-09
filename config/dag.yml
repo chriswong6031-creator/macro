@@ -813,6 +813,16 @@ lanes:
           no direction claims, no fused scores. Non-fatal (always exits 0).
           Artifacts: data/options_session/{DATE}/{ROOT}.json,
           site/session/{ROOT}.json, data/options_session/ledger.parquet.
+      - id: build_options_signal_episode
+        module: scripts.build_options_signal_episode
+        note: >
+          OIP point-in-time learning seam. Consumes only the append-only, date-keyed
+          live_flow event stage (never capped feed_current), validates the monotonic
+          checkpoint, freezes exact decision episodes, and accrues explicitly labeled
+          aligned-bar H+60 proxies from the existing intraday cache. All decision and
+          training authority is false; coarse/delayed measurements are
+          training_eligible=false. Runs serially after build_session_digest and advances
+          committed ledgers only in COLLECT_LANE=nightly. Non-fatal.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >

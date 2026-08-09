@@ -366,6 +366,18 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      - "engine/live_flow.py"
+      - "tests/test_live_flow.py"
+      # OIP PIT decision/outcome ledger: both the durable R2 source and the
+      # nightly consumer/contracts must trigger the exact adversarial suite.
+      - "engine/options_signal_episode.py"
+      - "scripts/build_options_signal_episode.py"
+      - "scripts/build_polygon_intraday.py"
+      - "contracts/options/options.signal_episode.v1.schema.json"
+      - "contracts/options/options.signal_episode_outcome.v1.schema.json"
+      - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
+      - "tests/test_options_signal_episode.py"
+      - "tests/test_polygon_intraday.py"
       # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
       # the Scanner-mode screener rows export. All three feed the Terminal/Options
       # workspace, so a silent contract change here shows up as a 404 over there.
