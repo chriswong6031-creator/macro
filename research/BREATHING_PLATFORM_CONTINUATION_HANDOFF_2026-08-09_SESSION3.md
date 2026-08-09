@@ -445,11 +445,20 @@ collect attribution rows exist in the timings ledger") is only satisfiable for
    as, W-L0 §0-4.)
 
 Also useful for scoping: ADMISSION is `engine/signal_gate.gate()`
-(`scripts/build_stock_library.py:3040`), all five score legs in
-`engine/us_board_rank.py` are price/close-derived (`SCORE_WEIGHTS:105-111`), and
-every non-price input (FINRA, GEX/OI, fundamentals, SUE, insider, 13F) is already
-in `ZERO_SCORE_AUTHORITY:174-192` — so the masterplan's "100% price-derived"
-close-pass claim checks out. The live-plane precedent chain is
+(`scripts/build_stock_library.py:3040`), and every non-price input (FINRA, GEX/OI,
+fundamentals, SUE, insider, 13F) is in `ZERO_SCORE_AUTHORITY:174-192`, so the
+zero-score-authority property holds.
+
+⚠️ **The rest of what this census said about the score legs was WRONG — see §1.1.**
+It reported all five legs in `engine/us_board_rank.py` (`SCORE_WEIGHTS:105-111`) as
+price/close-derived and concluded the masterplan's "100% price-derived" claim checks
+out. The build then traced the legs' INPUTS and found otherwise: only `signal` (30)
+and `runway` (10) are close-only; `entry` needs a macro regime + sector beta, `edge`
+is sector-neutralised, `quality` is a sector cohort. **Left here, corrected rather
+than deleted, because the failure mode is the reusable lesson: the census read the
+leg FUNCTIONS — which take already-computed values — and never asked what produces
+them.** A function whose body is arithmetic on `row[...]` tells you nothing about
+whether `row` is close-derived. The live-plane precedent chain is
 `engine/prophet_live/r2io.py` → `scripts/prophet_live_evaluator.py` (`SERVED_PATH`,
 atomic rename) → `app/deploy/macro-live-prophet.{service,timer}`, and
 `tests/test_prophet_live_vps_lane.py` is the richest guard set a new lane must
