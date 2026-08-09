@@ -1507,6 +1507,14 @@ jobs:
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
         run: python -m pytest tests/test_edgar_8k_items.py -q
+      # GR3b: 8-K counterparty extraction unlock. GR3 (#5008) measured the column
+      # as null in all 50,667 committed rows -- the name leg was gated behind the
+      # dollar leg, the "primary document" selector was reading the EDGAR submission
+      # HEADER page (index.json's `type` field is the listing ICON name, never a form
+      # type), and the fetched HTML was never stripped to prose. All three, plus the
+      # bounded exhibit reads and the enrich_rev backfill bookkeeping, are pinned here.
+      - name: edgar 8-K counterparty extraction + exhibit reads (GR3b, no network)
+        run: python -m pytest tests/test_edgar_8k_counterparty.py -q
       - name: LHB-R6 quarterly-store enrichment tag tests (no network)
         run: python -m pytest tests/test_edgar_quarterly_tags.py -q
       - name: edgar fundamentals universe widening (W2-A — R2000 via committed constituents)

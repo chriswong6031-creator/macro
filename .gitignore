@@ -77,6 +77,11 @@ data/press/staging/*.json
 data/financial_news/
 # GDELT cross-process throttle stamp (runtime-only; written by engine/gdelt_client._throttle)
 data/gdelt/
+# GR3b: 8-K primary-doc + material-contract-exhibit text cache (collectors/edgar_8k).
+# Transient fetch cache that makes the counterparty backfill resumable; the extraction
+# RESULT is committed in material_8k_events.parquet, the raw filing text never is (it is
+# hundreds of MB of public EDGAR prose that re-fetches on demand).
+data/edgar/_8k_doc_cache/
 data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
