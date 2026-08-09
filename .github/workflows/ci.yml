@@ -387,6 +387,14 @@ on:
       # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
+      # MSC R2.2-A Light U-CHAIN: compact per-root eligibility receipts and the
+      # monotonic all-root R2 discovery commit. Keep this list exact so source,
+      # schema, publisher, or either adversarial suite can start their packed job.
+      - "engine/options_structure_intraday.py"
+      - "scripts/build_options_structure_intraday.py"
+      - "contracts/options/options.contract_eligibility.v1.schema.json"
+      - "tests/test_options_structure_intraday.py"
+      - "tests/test_build_options_structure_intraday.py"
       - "scripts/live_flow_poller.py"
       - "engine/live_flow.py"
       - "tests/test_live_flow.py"

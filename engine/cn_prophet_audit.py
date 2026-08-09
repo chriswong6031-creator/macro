@@ -49,9 +49,9 @@ CONVENTIONS THAT ARE LOAD-BEARING
   never backfilled — both are far too heavy for the asia lane, and a replayed gate is
   not point-in-time anyway. Coverage therefore starts at the candidate store's birth
   (2026-07-30) and ``coverage_start`` is printed in every artifact.
-* **Write discipline.** Best-effort, never raises. Writes are gated to the asia
-  collection lane (``lane in (None, 'asia')`` — ``None`` is the legacy call convention)
-  and refused on a mid-session partial panel via the SAME
+* **Write discipline.** Best-effort, never raises. Writes are gated FAIL-CLOSED to the asia
+  collection lane (``lane == 'asia'`` writes; an unrecognised lane, or a caller that never
+  named one, refuses) and refused on a mid-session partial panel via the SAME
   ``china_standout_track.session_status`` check ``append_board`` uses. The forward log
   is append-only, keep-first per ``(date, board_definition)``.
 
@@ -1427,8 +1427,11 @@ def run(asof: str | None = None, lane: str | None = None) -> dict:
     """Nightly entry point. Best-effort, NEVER raises, ZERO authority.
 
     Gates (identical to ``china_standout_track.append_board`` — one discipline, not two):
-      * asia-lane only. ``lane=None`` is the legacy call convention and is allowed;
-        any other lane refuses without writing (render lanes discard data/ writes).
+      * asia-lane only, FAIL-CLOSED. ``lane == 'asia'`` writes; every other lane — including
+        a caller that never named one — refuses without writing. ``lane=None`` used to be
+        allowed as a "legacy call convention", which made the gate unreachable: the builder
+        resolved its lane from ``CN_LANE`` with an "asia" default, so no lane was ever
+        refused. See scripts/build_china_library._collection_lane.
       * a mid-session partial China panel refuses via ``session_status``.
 
     Returns a small status dict; the full artifact lands in
@@ -1439,7 +1442,7 @@ def run(asof: str | None = None, lane: str | None = None) -> dict:
     try:
         from engine import china_standout_track as _cst  # noqa: PLC0415
 
-        if lane is not None and lane != "asia":
+        if lane != "asia":
             log.info("cn_prophet_audit: skipped (lane=%s, not asia)", lane)
             return {"written": False, "reason": f"lane={lane} (not asia)",
                     "elapsed_seconds": round(time.perf_counter() - t0, 2)}
