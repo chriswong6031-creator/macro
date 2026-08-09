@@ -25,12 +25,16 @@ import argparse
 import json
 import re
 import shutil
+import sys
 from datetime import timedelta
 from pathlib import Path
 
 import pandas as pd
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 from scripts.ingest_digest_db import (
     ISSUE1_DATE,
     OUT,
@@ -38,7 +42,7 @@ from scripts.ingest_digest_db import (
     _parse_metrics,
     _parse_price,
     _parse_usd_m,
-)
+)  # noqa: E402
 
 # Final column order — MUST match scripts/ingest_digest_db.ingest() exactly.
 COLUMNS = [

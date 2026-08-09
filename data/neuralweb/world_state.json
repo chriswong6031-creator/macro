@@ -4817,7 +4817,7 @@
     ],
     "freshness": {
       "asof": "2026-08-07",
-      "built_at": "2026-08-08T14:56:17Z",
+      "built_at": "2026-08-08T20:35:57Z",
       "age_days": 1,
       "age_sessions": 0,
       "max_age_sessions": 1,
@@ -4859,7 +4859,7 @@
     "asof": "2026-08-07",
     "regime": {
       "n_active_complexes": 0,
-      "breadth": null,
+      "breadth": 0.6068,
       "vix_regime": 0.0873,
       "rotation_tag": {
         "tag": "quiet",
@@ -4886,12 +4886,12 @@
           "personality_as_of": "2026-08-07",
           "dominant_member_archetypes": [
             [
-              "high_beta_momentum",
-              0.25
+              "rate_sensitive",
+              0.2321
             ],
             [
-              "rate_sensitive",
-              0.1786
+              "high_beta_momentum",
+              0.1964
             ],
             [
               "speculative_unprofitable",
@@ -4940,12 +4940,12 @@
               0.2778
             ],
             [
-              "rate_sensitive",
+              "secular_growth",
               0.2222
             ],
             [
-              "secular_growth",
-              0.2222
+              "rate_sensitive",
+              0.1667
             ]
           ],
           "dominant_chart_labels": [
@@ -4987,15 +4987,15 @@
           "dominant_member_archetypes": [
             [
               "mixed",
-              0.4426
-            ],
-            [
-              "rate_sensitive",
-              0.1475
+              0.4754
             ],
             [
               "broken_growth",
-              0.1148
+              0.1311
+            ],
+            [
+              "speculative_unprofitable",
+              0.082
             ]
           ],
           "dominant_chart_labels": [
@@ -5037,7 +5037,7 @@
           "dominant_member_archetypes": [
             [
               "mixed",
-              0.3889
+              0.4167
             ],
             [
               "rate_sensitive",
@@ -5058,7 +5058,7 @@
               0.0811
             ],
             [
-              "basing_accumulator",
+              "mean_reversion_rubber_band",
               0.0541
             ]
           ],
@@ -5087,11 +5087,11 @@
           "dominant_member_archetypes": [
             [
               "rate_sensitive",
-              0.4902
+              0.5294
             ],
             [
               "cyclical",
-              0.2157
+              0.1765
             ],
             [
               "distressed",
@@ -5187,11 +5187,11 @@
             ],
             [
               "rate_sensitive",
-              0.3038
+              0.2911
             ],
             [
               "mixed",
-              0.2025
+              0.2278
             ]
           ],
           "dominant_chart_labels": [
@@ -5233,15 +5233,15 @@
           "dominant_member_archetypes": [
             [
               "cyclical",
-              0.4966
+              0.4621
             ],
             [
               "rate_sensitive",
-              0.1931
+              0.2207
             ],
             [
               "mixed",
-              0.0966
+              0.1034
             ]
           ],
           "dominant_chart_labels": [
@@ -5281,29 +5281,19 @@
     "liquidity_overlay": "contracting"
   },
   "data_health": {
-    "last_run": "2026-08-08T13:25:51.165077+00:00",
+    "last_run": "2026-08-08T19:57:32.482999+00:00",
     "counts": {
       "ok": 168,
-      "failed": 6,
+      "dead": 3,
       "blocked": 7,
+      "failed": 5,
       "already_present": 1,
       "creds_present": 1,
-      "empty": 2,
-      "dead": 1
+      "empty": 1
     },
-    "n_cb_failed": 7,
+    "n_cb_failed": 8,
     "n_stale_series": 148,
     "failed_sources": [
-      {
-        "source": "sentiment_naaim",
-        "error": "ValueError: NAAIM since-inception workbook link not found on page",
-        "checked_at": "2026-08-08T13:25:51.165448+00:00"
-      },
-      {
-        "source": "coingecko",
-        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.coingecko.com/api/v3/global",
-        "checked_at": "2026-08-08T13:25:51.166171+00:00"
-      },
       {
         "source": "hkma",
         "error": "ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read timeout=40)",
@@ -5312,7 +5302,12 @@
       {
         "source": "intl_universe",
         "error": "RuntimeError: intl_universe: no closes downloaded",
-        "checked_at": "2026-08-08T13:25:51.165928+00:00"
+        "checked_at": "2026-08-08T19:57:32.484002+00:00"
+      },
+      {
+        "source": "quiver_sec13f",
+        "error": "ReadTimeout: HTTPSConnectionPool(host='api.quiverquant.com', port=443): Read timed out. (read timeout=60)",
+        "checked_at": "2026-08-08T19:57:32.484837+00:00"
       },
       {
         "source": "china_tushare",
@@ -5328,11 +5323,11 @@
   },
   "alerts": {
     "asof": "2026-08-07",
-    "generated_utc": "2026-08-08 15:04",
+    "generated_utc": "2026-08-08 20:46",
     "total": 60,
     "critical": 2,
-    "major": 18,
-    "minor": 40,
+    "major": 19,
+    "minor": 39,
     "actionable": 2,
     "backtested": 2
   },
@@ -5438,27 +5433,27 @@
       {
         "asset": "XLB",
         "verdict": "headwind",
-        "net": -0.381
+        "net": -0.38
       },
       {
         "asset": "XLF",
         "verdict": "headwind",
-        "net": -0.323
+        "net": -0.321
       },
       {
         "asset": "XLK",
         "verdict": "headwind",
-        "net": -0.316
+        "net": -0.315
       },
       {
         "asset": "QQQ",
         "verdict": "headwind",
-        "net": -0.284
+        "net": -0.285
       },
       {
         "asset": "IWM",
         "verdict": "headwind",
-        "net": -0.258
+        "net": -0.257
       }
     ],
     "tailwinds": [
@@ -5470,7 +5465,7 @@
       {
         "asset": "GC=F",
         "verdict": "tailwind",
-        "net": 0.119
+        "net": 0.12
       }
     ],
     "yield_curve": {
@@ -5592,7 +5587,7 @@
     "scenario_intensity": [
       {
         "name": "em_crisis_capital_flight",
-        "value": 22.9
+        "value": 21.5
       },
       {
         "name": "haven_flight_risk_off",
@@ -5778,11 +5773,11 @@
     "strength_extremes": {
       "strongest": {
         "ccy": "JPY",
-        "strength": 0.851
+        "strength": 0.822
       },
       "weakest": {
-        "ccy": "USD",
-        "strength": -0.427
+        "ccy": "GBP",
+        "strength": -0.494
       },
       "horizon": "1m"
     },
@@ -5960,13 +5955,13 @@
         "label": "Gold",
         "trend": "up",
         "action": "HOLD",
-        "conviction": 7.2
+        "conviction": 7.0
       },
       {
         "label": "Silver",
         "trend": "up",
         "action": "HOLD",
-        "conviction": -2.6
+        "conviction": -2.7
       },
       {
         "label": "Copper",
@@ -5978,7 +5973,7 @@
         "label": "Oil · WTI",
         "trend": "up",
         "action": "HOLD",
-        "conviction": -12.9
+        "conviction": -13.1
       }
     ],
     "index": {
@@ -6457,15 +6452,15 @@
     "top_archetype_shares": [
       [
         "rate_sensitive",
-        0.1791
+        0.1818
       ],
       [
         "financial",
         0.1522
       ],
       [
-        "cyclical",
-        0.1412
+        "mixed",
+        0.1405
       ]
     ],
     "top_chart_shares": [
@@ -6488,34 +6483,34 @@
   },
   "context_risk": {
     "available": true,
-    "as_of": "2026-08-08T08:35Z",
+    "as_of": "2026-08-08T16:54Z",
     "board_top_overweights": [
       {
         "archetype": "broken_growth",
-        "ratio": 3.578,
-        "member_share": 0.0984,
-        "universe_share": 0.0275,
+        "ratio": 3.393,
+        "member_share": 0.0923,
+        "universe_share": 0.0272,
         "member_n": 6
       },
       {
         "archetype": "dividend_defensive",
-        "ratio": 1.708,
-        "member_share": 0.0164,
-        "universe_share": 0.0096,
+        "ratio": 1.621,
+        "member_share": 0.0154,
+        "universe_share": 0.0095,
         "member_n": 1
       },
       {
-        "archetype": "high_beta_momentum",
-        "ratio": 1.219,
-        "member_share": 0.0328,
-        "universe_share": 0.0269,
-        "member_n": 2
+        "archetype": "quality_compounder",
+        "ratio": 1.615,
+        "member_share": 0.0462,
+        "universe_share": 0.0286,
+        "member_n": 3
       }
     ],
     "weighted_p10_21d": -0.0848,
     "weighted_median_21d": 0.0108,
     "p10_interpretation": "per-type share-weighted average of marginal worst-decile returns; NOT a portfolio P10 — diversification and cross-type correlation are not modeled.",
-    "n_board": 78,
+    "n_board": 79,
     "regime_context": {
       "quad": "Q2",
       "liq": "contracting",
@@ -6641,13 +6636,21 @@
     "as_of": "2026-08-08",
     "n_themes": 18,
     "stage_counts": {
-      "RE-RATING": 1,
-      "WATCH": 10,
-      "BROADENING": 4,
-      "PRECIPICE": 3
+      "WATCH": 12,
+      "RE-RATING": 2,
+      "BROADENING": 3,
+      "PRECIPICE": 1
     },
-    "n_falsifiers_fired": 5,
+    "n_falsifiers_fired": 8,
     "falsifiers_fired": [
+      {
+        "theme_id": "ai_semiconductors",
+        "falsifier_id": "ai_semi_f2"
+      },
+      {
+        "theme_id": "data_center_power",
+        "falsifier_id": "dcp_f2"
+      },
       {
         "theme_id": "solar",
         "falsifier_id": "solar_f1"
@@ -6659,6 +6662,10 @@
       {
         "theme_id": "medical_devices",
         "falsifier_id": "meddev_f1"
+      },
+      {
+        "theme_id": "diagnostics_lifesci",
+        "falsifier_id": "diag_f1"
       },
       {
         "theme_id": "rare_earth_critical_min",
@@ -6673,13 +6680,18 @@
     "noteworthy": [
       {
         "theme_id": "ai_semiconductors",
+        "reason": "falsifier_fired",
+        "stage": "WATCH"
+      },
+      {
+        "theme_id": "memory_storage",
         "reason": "stage=RE-RATING",
         "stage": "RE-RATING"
       },
       {
         "theme_id": "data_center_power",
-        "reason": "stage=BROADENING",
-        "stage": "BROADENING"
+        "reason": "falsifier_fired",
+        "stage": "WATCH"
       },
       {
         "theme_id": "nuclear_power",
@@ -6697,19 +6709,29 @@
         "stage": "BROADENING"
       },
       {
+        "theme_id": "space_satellite",
+        "reason": "stage=RE-RATING",
+        "stage": "RE-RATING"
+      },
+      {
         "theme_id": "rare_earth_critical_min",
-        "reason": "falsifier_fired, stage=PRECIPICE",
-        "stage": "PRECIPICE"
+        "reason": "falsifier_fired",
+        "stage": "WATCH"
       },
       {
         "theme_id": "ag_fertilizer",
-        "reason": "falsifier_fired, stage=PRECIPICE",
-        "stage": "PRECIPICE"
+        "reason": "falsifier_fired",
+        "stage": "WATCH"
       },
       {
         "theme_id": "medical_devices",
         "reason": "falsifier_fired, stage=PRECIPICE",
         "stage": "PRECIPICE"
+      },
+      {
+        "theme_id": "diagnostics_lifesci",
+        "reason": "falsifier_fired",
+        "stage": "WATCH"
       },
       {
         "theme_id": "solar",
@@ -6725,7 +6747,7 @@
   "live_overlay": {
     "source": "data/regime/latest.json:freshness",
     "asof": "2026-08-07",
-    "built_at": "2026-08-08T14:56:17Z",
+    "built_at": "2026-08-08T20:35:57Z",
     "age_days": 1,
     "stale": false
   },
@@ -6802,12 +6824,12 @@
   "special_situations": {
     "asof": "2026-08-08",
     "counts": {
-      "total": 1352,
-      "new_today": 135,
+      "total": 1361,
+      "new_today": 144,
       "grade_a": 1,
       "grade_b": 3,
       "with_arb": 20,
-      "cross_border": 571
+      "cross_border": 575
     },
     "setups_display": [
       {
@@ -7732,7 +7754,7 @@
     "data/regime/latest.json": "2026-08-07",
     "data/breadth/breadth.parquet": "2026-08-07",
     "site/basketdata/oracle_state.json": "2026-08-07",
-    "data/run_status.json": "2026-08-08T13:25:51.165077+00:00",
+    "data/run_status.json": "2026-08-08T19:57:32.482999+00:00",
     "site/factordata/alerts_triage.json": "2026-08-07",
     "data/neuralweb/liquidity_plumbing.json": "2026-08-07",
     "data/rebalance_pulse/latest.json": "2026-08-07",
@@ -7759,7 +7781,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-08-08T16:22:12Z",
-  "inputs_hash": "sha256:e919ee047c730e0f7875c0fef3d69a1c6caa1a979d7a4103f1e6ea60b441fbd7",
+  "produced_at": "2026-08-09T01:32:52Z",
+  "inputs_hash": "sha256:3158fae64e26be2b557c4478fdfa943da77e8a022ddd67876d5d9f84850006e6",
   "tier": "infrastructure"
 }

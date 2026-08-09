@@ -453,12 +453,29 @@ class TestTheShippedSchedule:
 
     def test_kelly_is_on_the_second_tier_on_the_day_of_the_order(self, cfg):
         """Anchored to the operator's own date. She was `weeks_1_2` (10/day,
-        theme_list banned); the relaxation puts her on `weeks_3_4`."""
+        theme_list banned); the relaxation puts her on `weeks_3_4`.
+
+        THE TIER IS WHAT THIS TEST OWNS, NOT THE RESOLVED NUMBER. It used to
+        assert the resolved cap was 18, which was the same thing right up until
+        2026-08-08, when the 20-30/day order gave every live desk an
+        `account_overrides` row. An override applies ON TOP of the tier and may
+        LOOSEN, so kelly is `weeks_3_4` AND 30/day at once, and asserting 18 on
+        the resolution would have made this a test of the override table wearing
+        a tier test's name. The tier ROW is asserted directly instead, which is
+        the thing the 2026-08-03 relaxation actually edited; the resolved cap is
+        pinned in tests/test_marketing_w3_volume_caps.py.
+        """
         from engine.marketing.sentinel import resolve_ramp
         row = resolve_ramp(cfg, _AS_OF, root=ROOT,
                            announce=False)["accounts"]["kelly"]
         assert row["tier"] == "weeks_3_4"
-        assert row["caps"]["max_posts_per_account_per_day"] == 18
+        tier_row = ((cfg.get("sentinel") or {}).get("ramp") or {}).get("weeks_3_4") or {}
+        assert int(tier_row["max_posts_per_account_per_day"]) == 18
+        # The override may only ever widen her past the tier, never narrow her.
+        resolved = row["caps"]["max_posts_per_account_per_day"]
+        assert resolved is None or resolved >= 18, (
+            f"kelly resolves to {resolved}/day, below her own weeks_3_4 tier row"
+        )
         assert row["caps"]["theme_list_allowed"] is True
 
     def test_no_enabled_desk_is_banned_from_theme_list_today(self, cfg):

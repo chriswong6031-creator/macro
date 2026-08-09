@@ -176,6 +176,51 @@ def test_idempotent_tag(tmp_path, monkeypatch):
     assert row_after == row_before, "the PIT tag must be immutable across re-runs"
 
 
+def test_raw_pit_rows_append_without_rewriting_or_duplicate_supersession(tmp_path):
+    first = {
+        "schema": pss.LEDGER_SCHEMA,
+        "id": "AAA-BULL-20260701",
+        "asset": "AAA",
+        "signal_date": "2026-07-01",
+    }
+    second = {
+        "schema": pss.LEDGER_SCHEMA,
+        "id": "BBB-BULL-20260702",
+        "asset": "BBB",
+        "signal_date": "2026-07-02",
+    }
+    assert pss._append_raw_rows(tmp_path, [first]) == 1
+    path = pss.ledger_path(tmp_path)
+    original = path.read_bytes()
+
+    assert pss._append_raw_rows(tmp_path, [second]) == 1
+    appended = path.read_bytes()
+    assert appended.startswith(original)
+    assert len(appended) > len(original)
+
+    poisoned_duplicate = {**first, "signal_date": "2099-01-01"}
+    before_duplicate = path.read_bytes()
+    assert pss._append_raw_rows(tmp_path, [poisoned_duplicate]) == 0
+    assert path.read_bytes() == before_duplicate
+    assert pss._load_raw_ledger(tmp_path)[first["id"]]["signal_date"] == "2026-07-01"
+
+
+def test_atomic_projection_rejects_one_of_two_expected_entries_missing():
+    projection = pss.ShadowLedgerProjection(
+        rows={"A-BULL-20260701": {"id": "A-BULL-20260701"}},
+        raw_count=1,
+        revision_count=0,
+        quarantined_ids=frozenset(),
+        clock_mismatch_ids=frozenset(),
+    )
+    missing, unexpected = pss.projection_membership_gaps(
+        [{"id": "A-BULL-20260701"}, {"id": "B-BULL-20260702"}],
+        projection,
+    )
+    assert missing == frozenset({"B-BULL-20260702"})
+    assert unexpected == frozenset()
+
+
 # --------------------------------------------------------------------------- #
 # 3. EC strictly-before — most-recent call with call_date < entry_date.         #
 # --------------------------------------------------------------------------- #
@@ -386,3 +431,214 @@ def test_entry_enumeration_union(tmp_path, monkeypatch):
     by_id = {e["id"]: e for e in entries}
     assert by_id["L1-BULL-20210303"]["signal_date"] == "2021-03-03"
     assert by_id["I1-BULL-20210202"]["asset"] == "I1"
+
+
+def test_entry_enumeration_uses_effective_price_clock(tmp_path):
+    """A correction overlay wins over the immutable plan's legacy signal label."""
+    data_root, site_root = _make_store(
+        tmp_path, [("FIX-BULL-20210101", "FIX", "2021-01-01", "plan")]
+    )
+    correction = {
+        "schema": "prophet.plan_correction/v1",
+        "id": "FIX-BULL-20210101:price_basis_date:20260808",
+        "corrects_id": "FIX-BULL-20210101",
+        "field": "price_basis_date",
+        "old_value": None,
+        "new_value": "2021-02-02",
+        "basis": "test creation-vintage price match",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    (data_root / "prophet" / "plan_corrections.jsonl").write_text(
+        json.dumps(correction) + "\n", encoding="utf-8"
+    )
+
+    entries = pss.collect_prophet_entries(site_root, data_root)
+
+    assert entries == [{
+        "id": "FIX-BULL-20210101",
+        "asset": "FIX",
+        "signal_date": "2021-02-02",
+        "direction": "BULL",
+        "source": "effective_plan",
+    }]
+    raw = json.loads(
+        (site_root / "prophet/plans/FIX-BULL-20210101.json").read_text()
+    )
+    assert raw["signal_date"] == "2021-01-01"  # publication remains immutable
+
+
+def test_existing_shadow_row_is_retagged_on_corrected_clock_without_raw_rewrite(
+    tmp_path, monkeypatch
+):
+    """A keep-first legacy tag cannot keep grading on its disproven date."""
+    pid = "MIG-BULL-20210101"
+    data_root, site_root = _make_store(
+        tmp_path, [(pid, "MIG", "2021-01-01", "plan")]
+    )
+    pss.tag_entries(
+        root=data_root, site_root=site_root, asof="2026-08-07"
+    )
+    raw_before = pss.ledger_path(data_root).read_text(encoding="utf-8")
+    assert pss._load_raw_ledger(data_root)[pid]["signal_date"] == "2021-01-01"
+
+    correction = {
+        "schema": "prophet.plan_correction/v1",
+        "id": f"{pid}:price_basis_date:20260808",
+        "corrects_id": pid,
+        "field": "price_basis_date",
+        "old_value": None,
+        "new_value": MATURE_SIG,
+        "basis": "test correction to creation-vintage price clock",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    (data_root / "prophet" / "plan_corrections.jsonl").write_text(
+        json.dumps(correction) + "\n", encoding="utf-8"
+    )
+
+    migrated = pss.tag_entries(
+        root=data_root, site_root=site_root, asof="2026-08-08"
+    )
+    effective = pss._load_ledger(data_root)[pid]
+
+    assert migrated["n_clock_retagged"] == 1
+    assert effective["signal_date"] == MATURE_SIG
+    assert pss.ledger_path(data_root).read_text(encoding="utf-8") == raw_before
+    assert pss._load_raw_ledger(data_root)[pid]["signal_date"] == "2021-01-01"
+    events = [
+        json.loads(line)
+        for line in pss.revisions_path(data_root).read_text().splitlines()
+        if line.strip()
+    ]
+    assert len(events) == 1
+    assert events[0]["kind"] == "clock_retag"
+    assert events[0]["row"]["signal_date"] == MATURE_SIG
+
+    seen_dates = []
+
+    def fake_grade(row, _root):
+        seen_dates.append(row["signal_date"])
+        row["fwd"] = {"fwd_ret_126": 0.25}
+        row["graded"] = True
+        return True
+
+    monkeypatch.setattr(pss, "_grade_one", fake_grade)
+    graded = pss.grade_matured(
+        root=data_root, asof="2026-08-08", force=True
+    )
+    assert graded["advanced"] == 1
+    assert seen_dates == [MATURE_SIG]
+    assert pss._load_ledger(data_root)[pid]["fwd"]["fwd_ret_126"] == 0.25
+    # Grade persistence is another append-only overlay, never a raw-row mutation.
+    assert pss.ledger_path(data_root).read_text(encoding="utf-8") == raw_before
+
+
+def test_new_quarantine_tombstones_existing_shadow_row_everywhere(
+    tmp_path, monkeypatch
+):
+    """A row tagged before the audit is excluded from grade, summary and tilt."""
+    pid = "BAD-BULL-20210224"
+    data_root, site_root = _make_store(
+        tmp_path, [(pid, "BAD", MATURE_SIG, "plan")]
+    )
+    pss.tag_entries(root=data_root, site_root=site_root, asof="2026-08-07")
+    raw_before = pss.ledger_path(data_root).read_text(encoding="utf-8")
+    assert pid in pss._load_ledger(data_root)
+
+    quarantine = {
+        "schema": "prophet.plan_correction/v1",
+        "id": f"{pid}:integrity_status:20260808",
+        "corrects_id": pid,
+        "field": "integrity_status",
+        "old_value": None,
+        "new_value": "quarantined",
+        "basis": "test newly discovered chronology failure",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    quarantine_reason = {
+        "schema": "prophet.plan_correction/v1",
+        "id": f"{pid}:integrity_reason:20260808",
+        "corrects_id": pid,
+        "field": "integrity_reason",
+        "old_value": None,
+        "new_value": "test chronology cannot be made reliable",
+        "basis": "test newly discovered chronology failure",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    (data_root / "prophet" / "plan_corrections.jsonl").write_text(
+        json.dumps(quarantine) + "\n" + json.dumps(quarantine_reason) + "\n",
+        encoding="utf-8",
+    )
+
+    # Even the index union leg cannot rehabilitate a canonical quarantine.
+    assert pid not in {
+        row["id"] for row in pss.collect_prophet_entries(site_root, data_root)
+    }
+    assert pid not in pss._load_ledger(data_root)
+
+    def forbidden_grade(*_args, **_kwargs):
+        raise AssertionError("quarantined historical row reached the grader")
+
+    monkeypatch.setattr(pss, "_grade_one", forbidden_grade)
+    graded = pss.grade_matured(
+        root=data_root, asof="2026-08-08", force=True
+    )
+    assert graded["advanced"] == 0
+    assert graded["n_quarantined_excluded"] == 1
+
+    summary = pss.summarize(root=data_root, asof="2026-08-08")
+    assert summary["n_entries"] == 0
+    assert summary["n_matured"]["126"] == 0
+    assert summary["median_tilt"]["n_matured_126"] == {
+        "stage2_ec": 0,
+        "rest": 0,
+    }
+    integrity = summary["integrity_projection"]
+    assert integrity["quarantined_ids"] == [pid]
+    assert integrity["quarantined_excluded"] == 1
+    assert integrity["effective_rows"] == 0
+    # The tombstone is a deterministic projection; raw PIT evidence is untouched.
+    assert pss.ledger_path(data_root).read_text(encoding="utf-8") == raw_before
+    assert pid in pss._load_raw_ledger(data_root)
+
+
+def test_cli_returns_nonzero_when_any_atomic_stage_phase_fails(monkeypatch):
+    from scripts import build_prophet_stage_shadow as cli
+
+    def fail_tag(**_kwargs):
+        raise RuntimeError("tag")
+
+    monkeypatch.setattr(pss, "tag_entries", fail_tag)
+    monkeypatch.setattr(pss, "grade_matured", lambda **_kwargs: {"gate_open": True})
+    monkeypatch.setattr(
+        pss,
+        "summarize",
+        lambda **_kwargs: {
+            "n_entries": 0,
+            "n_tagged": 0,
+            "split": {"stage2": {"n": 0}},
+        },
+    )
+
+    assert cli.main([]) == 1
+
+
+def test_cli_returns_zero_only_for_a_complete_stage_projection(monkeypatch):
+    from scripts import build_prophet_stage_shadow as cli
+
+    monkeypatch.setattr(pss, "tag_entries", lambda **_kwargs: {"n_tagged_now": 0})
+    monkeypatch.setattr(pss, "grade_matured", lambda **_kwargs: {"gate_open": True})
+    monkeypatch.setattr(
+        pss,
+        "summarize",
+        lambda **_kwargs: {
+            "n_entries": 0,
+            "n_tagged": 0,
+            "split": {"stage2": {"n": 0}},
+        },
+    )
+
+    assert cli.main([]) == 0

@@ -85,20 +85,37 @@ jobs:
           # gitignored source trees on every run (measured current_files: 0 nightly), which
           # forced a full cold restore of the whole growing store; a warm root reduces the
           # restore to local hash verification (--verify-local-restore).
+          #
+          # --reuse-local-archive extends that warm root to the ACQUIRE leg. The ~128MB of
+          # 10-K/10-Q primary documents re-downloaded nightly is already retained here
+          # (127.96MB -> 127.93MB across 08-05..08-08, zero new filings), so a sha256-verified
+          # local hit reuses the ORIGINAL retrieval receipt instead of re-fetching identical
+          # bytes — SEC fair-access courtesy, and no cache hit ever mints a fresh clock. A cold,
+          # ambiguous, or unverifiable archive silently falls back to fetching; Submissions are
+          # always fetched fresh, which is how a new filing is discovered.
           RAW="$HOME/.cache/mm-ffsec/raw"
           ARCHIVE="$HOME/.cache/mm-ffsec/archive"
-          mkdir -p "$RAW" "$ARCHIVE"
+          # The per-run observation log ("we looked, nothing changed") is a SIBLING of the
+          # two synced trees, never a child: restore/sync carry exactly raw + archive, and
+          # our cron history is not a replay input (R6 of the 2026-08-08 mint adjudication,
+          # DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY). MUST be passed explicitly: the CLI's own
+          # default is inside the checkout, which clean:true wipes every run, so an implicit
+          # default would destroy the log nightly. The warm $HOME root is what makes it
+          # survive. NOT replicated to R2 — SOURCE_KINDS stays (raw, archive); a durable
+          # off-host copy would need its own prefix and publisher (deferred rider).
+          OBS="$HOME/.cache/mm-ffsec/observations"
+          mkdir -p "$RAW" "$ARCHIVE" "$OBS"
 
           python -m scripts.run_fundamental_forensics_wave2 \
             --targets-file config/fundamental_forensics/wave2_targets.v1.json \
-            --raw-root "$RAW" --archive-root "$ARCHIVE" \
-            --restore --verify-local-restore --acquire --require-complete-acquisition \
+            --raw-root "$RAW" --archive-root "$ARCHIVE" --observation-root "$OBS" \
+            --restore --verify-local-restore --acquire --reuse-local-archive --require-complete-acquisition \
             --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
 
           computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
           python -m scripts.run_fundamental_forensics_wave2 \
             --targets-file config/fundamental_forensics/wave2_targets.v1.json \
-            --raw-root "$RAW" --archive-root "$ARCHIVE" \
+            --raw-root "$RAW" --archive-root "$ARCHIVE" --observation-root "$OBS" \
             --build-projections --sync --incremental-sync \
             --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
       - name: publish disclosure-projection bundle (the engine's render input)

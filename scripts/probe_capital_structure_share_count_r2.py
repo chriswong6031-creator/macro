@@ -42,7 +42,7 @@ _GITHUB_WORKFLOW_REF_RE = re.compile(
     r"capital-share-count-r2-conformance\.yml@refs/heads/main$"
 )
 _GITHUB_ACTOR_RE = re.compile(r"^[A-Za-z0-9-]{1,39}$")
-_EXPECTED_REPOSITORY = "chriswong6031-creator/macro"
+_EXPECTED_REPOSITORY = "mastermindx-market-intelligence/macro"
 _HEX64_RE = re.compile(r"^[a-f0-9]{64}$")
 _REQUIRED_ENV = (
     "R2_SHARE_COUNT_CONFORMANCE_ENDPOINT",

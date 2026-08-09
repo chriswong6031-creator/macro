@@ -31,16 +31,28 @@ Cannot be exercised live locally without the key (CI secret); the append/dedup +
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import os
+import sys
+import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from collectors.polygon_options import PolygonOptions
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.polygon_options import PolygonOptions  # noqa: E402
+from engine.options_signal_episode import (  # noqa: E402
+    PRICE_BASIS,
+    PRICE_RECEIPT_SCHEMA,
+    TIMESTAMP_BASIS,
+)
+from lib import config  # noqa: E402
 
 log = logging.getLogger("polygon_intraday")
 GROUP = "intraday"
@@ -53,6 +65,83 @@ DELAYED_MIN = 15
 # Re-fetch this many days back from the last stored bar on an incremental run, so a
 # late aggregate correction (Polygon revises the most recent session) is captured.
 _OVERLAP_DAYS = 2
+def _iso_utc(value: datetime) -> str:
+    if value.tzinfo is None:
+        raise ValueError("receipt clock must be timezone-aware")
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _fsync_directory(path: Path) -> None:
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    encoded = (json.dumps(payload, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+        _fsync_directory(path.parent)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+def _bar_seconds(multiplier: int, timespan: str) -> int:
+    unit = {
+        "minute": 60,
+        "hour": 3600,
+        "day": 86400,
+    }.get(timespan.lower())
+    if unit is None or type(multiplier) is not int or multiplier <= 0:
+        raise ValueError(f"unsupported Polygon aggregate cadence: {multiplier}{timespan}")
+    return multiplier * unit
+
+
+def _write_price_receipt(
+    outdir: Path,
+    *,
+    ticker: str,
+    frame: pd.DataFrame,
+    bar_seconds: int,
+    now_fn=None,
+) -> Path:
+    """Bind a post-fsync source clock and digest to one exact parquet version."""
+    source = (outdir / f"{ticker}.parquet").resolve()
+    raw = source.read_bytes()
+    available = (now_fn or (lambda: datetime.now(timezone.utc)))()
+    if available.tzinfo is None:
+        raise ValueError("price receipt clock must be timezone-aware")
+    index = pd.to_datetime(frame.index, utc=True)
+    if frame.empty or index.hasnans:
+        raise ValueError(f"cannot receipt an empty/invalid price frame for {ticker}")
+    receipt = {
+        "schema": PRICE_RECEIPT_SCHEMA,
+        "ticker": ticker,
+        # Portable exact locator: resolved relative to this adjacent receipt.
+        "source_file": source.name,
+        "source_file_sha256": hashlib.sha256(raw).hexdigest(),
+        "source_available_at": _iso_utc(available),
+        "bar_seconds": bar_seconds,
+        "vendor_delay_minutes": DELAYED_MIN,
+        "adjusted": True,
+        "price_basis": PRICE_BASIS,
+        "timestamp_basis": TIMESTAMP_BASIS,
+        "row_count": len(frame),
+        "first_time": _iso_utc(index.min().to_pydatetime()),
+        "last_time": _iso_utc(index.max().to_pydatetime()),
+    }
+    path = outdir / f"{ticker}.parquet.receipt.json"
+    _atomic_write_json(path, receipt)
+    return path
 
 
 def _universe() -> list[str]:
@@ -107,6 +196,9 @@ def _write_meta(outdir, *, bar: str, universe_n: int, now: datetime) -> None:
             "delayed_min": DELAYED_MIN,
             "source": "polygon_standard",
             "realtime": DELAYED_MIN == 0,
+            "adjusted": True,
+            "price_basis": PRICE_BASIS,
+            "timestamp_basis": TIMESTAMP_BASIS,
             "note": ("15-MINUTE DELAYED (Polygon Standard plan) — NOT real-time"
                      if DELAYED_MIN else "real-time feed"),
             "universe": universe_n,
@@ -132,6 +224,7 @@ def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
     icfg = (config.load().get("polygon") or {}).get("intraday") or {}
     mult = int(icfg.get("multiplier", 1))
     span = str(icfg.get("timespan", "hour"))
+    bar_seconds = _bar_seconds(mult, span)
     lookback = int(lookback_days if lookback_days is not None else icfg.get("lookback_days", 180))
     sleep_s = float(icfg.get("sleep", 0.06))
 
@@ -182,7 +275,16 @@ def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
                 # by the *.parquet glob, so a stray temp never pollutes the universe.
                 tmp = outdir / f"{t}.parquet.tmp"
                 df.to_parquet(tmp)
-                tmp.replace(outdir / f"{t}.parquet")
+                with tmp.open("rb") as handle:
+                    os.fsync(handle.fileno())
+                os.replace(tmp, path)
+                _fsync_directory(outdir)
+                _write_price_receipt(
+                    outdir,
+                    ticker=t,
+                    frame=df,
+                    bar_seconds=bar_seconds,
+                )
                 written += 1
                 appended += max(0, len(df) - before)
         except Exception as e:  # noqa: BLE001 — degrade per-ticker, never abort the accrual
