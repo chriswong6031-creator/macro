@@ -4914,6 +4914,11 @@ jobs:
           # wholesale — 1,704 pages shipped markers)
           bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
           git add data/ site/ reports/
+          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
+          # matches nothing, and this step runs under `-eo pipefail` — a missing
+          # templates/ would abort the commit and lose the whole render rather than
+          # just the stamp. Staging site/ keeps its hard-fail semantics.
+          git add templates/ 2>/dev/null || true
           # Prophet has an earlier, provenance-checked SOLE git publisher. Never
           # let this broad commit re-stage its local tree: if the checkpoint
           # withheld on an off-main/provenance/same-path race, a later `-X theirs`
@@ -4954,11 +4959,6 @@ jobs:
           # reset above. Remove only this dedicated directory; append-only
           # correction ledgers elsewhere under data/prophet remain untouched.
           git clean -fd -- data/prophet/origination_receipts
-          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
-          # matches nothing, and this step runs under `-eo pipefail` — a missing
-          # templates/ would abort the commit and lose the whole render rather than
-          # just the stamp. Staging site/ keeps its hard-fail semantics.
-          git add templates/ 2>/dev/null || true
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
           # The GHA cache restore above (data/hk_stocks, restore-keys: hk-stocks-ohlc-)
