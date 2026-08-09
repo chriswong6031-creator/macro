@@ -631,6 +631,18 @@ class TestCheckB:
         }
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
+    def test_redteam_rejects_computed_key_after_fixed_emission(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    key = external_name()\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + ", key: evil}\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
     def test_redteam_rejects_decorated_approved_emitter(self) -> None:
         synthetic = {
             "engine/neuralweb/world_state.py": (

@@ -499,7 +499,11 @@ def _permitted_fixed_emission_nodes(
     for node in ast.walk(emitter):
         if not isinstance(node, ast.Dict):
             continue
-        if any(key is None for key in node.keys):
+        if any(
+            not isinstance(key, ast.Constant)
+            or not isinstance(key.value, str)
+            for key in node.keys
+        ):
             continue
         return_node = parents.get(id(node))
         if not (
