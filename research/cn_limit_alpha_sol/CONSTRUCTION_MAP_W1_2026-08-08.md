@@ -81,7 +81,8 @@ corresponding fillable return ruler.
 | `O-OPEN` | onset signal after `T-1` close, buy `T` opening auction | all features through `T-1` | exclude an open at/within the tolerant cushion of `T` upper limit | Wave-1 primary |
 | `O-PRECLOSE` | signal frozen before `T-1` closing auction, buy `T-1` close | only data available before 14:57 | requires intraday/frozen pre-close snapshot | untested data gap |
 | `O-NEAR` | buy late on `T` after 95%-of-band approach but before seal | same-day path, first-touch time, queue state | actual timestamp and executable quote required | untested data gap |
-| `C-OPEN` | after a board on `T`, buy `T+1` opening auction | board count, prior features, `T+1` auction gap | exclude opening-limit queues; sell no earlier than `T+2` | Wave-1 primary |
+| `C-AUCTION` | after a board on `T`, submit a `T+1` opening-auction order | board count and features known by `T` close; **not** the realised `T+1` gap | exclude opening-limit queues; sell no earlier than `T+2` | Wave-1 daily-data primary |
+| `C-POSTGAP` | observe the 09:25 auction result, then buy from 09:30 | board count, prior features, realised `T+1` auction gap | first trade / first-5-minute VWAP and actual queue state | untested until intraday collector |
 | `C-BREAK` | buy a seal break/reseal on `T+1` | intraday break time, queue depletion, reseal | actual intraday print required | untested data gap |
 | `C-PREBOARD` | already owned before board `T`, continue holding | onset model caused the ownership | no new fill; exit state machine only | Wave-1 portfolio bridge |
 
@@ -122,7 +123,9 @@ corresponding fillable return ruler.
 
 #### D. Seal, auction, and participant composition
 
-- `T+1` open-gap percentile, band-normalized and board-specific.
+- `T+1` open-gap percentile, band-normalized and board-specific. It is known after the 09:25
+  auction print and may update a 09:30 decision; it cannot filter an order and also claim the
+  already-realised official-open fill.
 - Seal wall normalized by turnover, free float, market value, or board-day traded value.
 - Failed seals, first-touch time, cumulative sealed minutes, final seal time.
 - Opening-auction matched volume and unmatched order imbalance.
@@ -205,18 +208,24 @@ coverage in a named block; any movement is printed as a deviation.
 - Metrics: Brier, log loss, calibration slope/intercept, ECE, top-K precision/lift, coverage,
   event rate, net return, drawdown, and locked-exit count.
 
-### Packet B — `C-OPEN` continuation rider
+### Packet B — continuation rider
 
 - Population: tolerant first and second boards, separately by board/era.
-- Entry: next open only when below the new upper-limit queue threshold.
-- Features available before entry: board count, prior five name-local inputs, band-normalized
-  opening gap, board geometry (one-price/open-lock, break/reseal shadow, low-off-limit),
-  weekday/holiday gap, and lagged ecology. The zt_pool seal fields and LHB fields are separate
-  short-history strata, never backfilled with zero.
+- Daily-data entry (`C-AUCTION`): place the order from `T`-close information and model an official
+  next-open fill only when the realised auction was below the new upper-limit queue threshold.
+  The realised opening gap is an execution outcome here, not a selection feature.
+- Post-auction construction (`C-POSTGAP`): the band-normalized opening gap updates the probability
+  at 09:25, but any claimed fill must use a 09:30 first trade or first-5-minute VWAP. Until that
+  collector exists, Wave 1 may measure the gap-conditioned event probability but may not report a
+  fill-honest strategy return for it.
+- Pre-auction features: board count, prior five name-local inputs, board-day geometry,
+  weekday/holiday gap, lagged ecology, and point-in-time seal/LHB fields where covered. The
+  zt_pool and LHB fields are separate short-history strata, never backfilled with zero.
 - Outcomes: next close board; any board in two sessions; `T+2` open/close return; state-machine net
   return; adverse excursion and locked-down carry.
-- Shapes frozen: raw ladder; gap deciles; ladder × gap; ladder × ecology; Friday interaction;
-  LHB hot-money/institution divergence where point-in-time coverage exists.
+- Shapes frozen: raw ladder; pre-auction ladder × ecology; Friday interaction; LHB
+  hot-money/institution divergence where point-in-time coverage exists; and **probability-only**
+  post-auction gap deciles / ladder × gap until executable intraday prices exist.
 - The older unconditional fill-realistic null is the baseline to beat, not an inconvenient result
   to omit.
 
@@ -268,6 +277,7 @@ Wave 1 itself does not spend that authority budget.
 The following remain open even if every Wave-1 packet is null:
 
 - pre-close and intraday near-limit onset entries;
+- post-auction gap-rider returns using a real 09:30/first-5-minute execution price;
 - first-touch time, cumulative seal duration, queue depth, closing-auction imbalance, and actual
   order priority;
 - full-market small-cap/ST/BSE universe and delisted names;
