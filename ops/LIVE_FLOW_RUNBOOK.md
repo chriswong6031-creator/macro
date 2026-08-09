@@ -299,11 +299,11 @@ Constraints that shaped the shape:
   2026-07-30:
   1. the repo-scoped SSH **deploy key** `~/.ssh/macro_dashboard_deploy`
      (`ssh -i ~/.ssh/macro_dashboard_deploy -T git@github.com` →
-     `Hi chriswong6031-creator/macro!`).  There is no `~/.ssh/config` on the M1,
+     `Hi mastermindx-market-intelligence/macro!`).  There is no `~/.ssh/config` on the M1,
      so the key is pinned in the clone's own `core.sshCommand`.
      Note `macro_dashboard_deploy_v2` does **not** authenticate — use the v1 key.
   2. anonymous **HTTPS** — the repo is public, so `git ls-remote
-     https://github.com/chriswong6031-creator/macro.git` needs no credentials.
+     https://github.com/mastermindx-market-intelligence/macro.git` needs no credentials.
      Fallback if the key is ever revoked.
 
 Rebuild, while the poller is idle (it self-exits 16:05 ET, so any weekday
@@ -330,7 +330,7 @@ test ! -e "$ROLLBACK"
 # 1. clone BESIDE the live path, never over it
 git clone --depth 1 --single-branch --branch main \
   --config "core.sshCommand=ssh -i /Users/chriswong/.ssh/macro_dashboard_deploy -o IdentitiesOnly=yes" \
-  git@github.com:chriswong6031-creator/macro.git "$NEW"
+  git@github.com:mastermindx-market-intelligence/macro.git "$NEW"
 LOCAL=$(git -C "$NEW" rev-parse HEAD)
 REMOTE=$(git -C "$NEW" ls-remote origin refs/heads/main | awk '{print $1}')
 test -n "$REMOTE"

@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 604, (
-        f"Expected 604 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 607, (
+        f"Expected 607 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Options Prophet shadow registered its display-only projection,"
+        " signing-quality context gate, and dislocation research gate = 604->607);"
         " (Polygon intraday price cache registered the receipt-bound H+60 input"
         " consumed by the outcome builder = 603->604);"
         " (Polygon intraday price receipt registered the causal cache sidecar"
