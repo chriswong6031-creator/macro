@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/cn_tushare_minutes_manifest.v1.schema.json",
   "title": "CN TuShare bulk historical minute-bar plane coverage manifest v1",
-  "description": "Versioned manifest written beside manifest/coverage.parquet by collectors/tushare_minutes_plane.write_manifest. The manifest is the ledger's cover sheet: it binds the coverage artifact's digest, the pinned stk_mins endpoint contract, the corporate-action basis, the shared-pool rate budget, the operator license authority, the TP-0 probe reference, and the sampled reconciliation result. coverageRow describes one row of the sibling Parquet ledger.",
+  "description": "Versioned manifest written beside manifest/coverage.parquet by collectors/tushare_minutes_plane.write_manifest. The manifest is the ledger's cover sheet: it binds the coverage artifact's digest, the pinned stk_mins endpoint contract, the corporate-action basis, the shared-pool rate budget, the TP-0 probe reference, and the sampled reconciliation result. coverageRow describes one row of the sibling Parquet ledger.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,6 @@
     "provenance",
     "rate_budget",
     "corporate_action_basis",
-    "license_authority_gate",
     "tp0_probe_reference",
     "plan_summary",
     "coverage",
@@ -33,9 +32,6 @@
     "provenance": {"$ref": "#/$defs/provenance"},
     "rate_budget": {"$ref": "#/$defs/rateBudget"},
     "corporate_action_basis": {"$ref": "#/$defs/corporateActionBasis"},
-    "license_authority_gate": {
-      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/licenseAuthorityGate"}]
-    },
     "tp0_probe_reference": {
       "oneOf": [{"type": "null"}, {"$ref": "#/$defs/tp0ProbeReference"}]
     },
@@ -148,28 +144,6 @@
         "vendor_revision_policy": {
           "const": "keep_first_immutable_partitions_revisions_recorded_as_contradictions"
         }
-      }
-    },
-    "licenseAuthorityGate": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "gate_state",
-        "accepted_basis",
-        "authority_document",
-        "authority_sha256",
-        "authority_statement",
-        "trust_anchor",
-        "scope"
-      ],
-      "properties": {
-        "gate_state": {"const": "satisfied_operator_license_authority_verified"},
-        "accepted_basis": {"const": "operator_attestation_verified"},
-        "authority_document": {"type": "string", "minLength": 1},
-        "authority_sha256": {"$ref": "#/$defs/sha256"},
-        "authority_statement": {"type": "string", "minLength": 1},
-        "trust_anchor": {"const": "code_reviewed_out_of_band_sha256_allowlist"},
-        "scope": {"type": "string", "minLength": 1}
       }
     },
     "tp0ProbeReference": {

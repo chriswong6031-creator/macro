@@ -14,11 +14,9 @@ What this module is
 * **Planning is free and offline.**  ``plan_backfill`` performs no network call
   and no filesystem write.  It emits every vendor call the backfill would make,
   the projected row budget, and the wall-clock floor.
-* **Execution is gated twice.**  ``execute_backfill`` fails closed unless (1)
-  the operator license-authority env pair is provisioned AND its digest is in
-  this module's code-reviewed allowlist, and (2) a Lane-A ``stk_mins`` TP-0
-  probe receipt already exists on disk.  Sequencing law: no bulk backfill runs
-  before that endpoint's live access/schema witness.
+* **Execution is gated by TP-0.** ``execute_backfill`` fails closed unless a
+  Lane-A ``stk_mins`` probe receipt already exists on disk. Sequencing law: no
+  bulk backfill runs before that endpoint's live access/schema witness.
 * **The store is keep-first immutable.**  A partition is one
   ``(frequency, ticker, year)`` bundle of ``part.parquet`` + ``receipt.json``.
   An identical rerun is a byte-preserving no-op.  Changed vendor rows for an
@@ -60,16 +58,16 @@ the two raw columns.
 Authority
 ---------
 
-Collection and in-repo research consumption are authorized by the operator's
-license statement in ``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md``
-(exclusive TuShare partnership agreement to 2035, confirmed, no reconfirmation
-required), pinned here by SHA-256.  Product surfaces built on this store ship
-through normal design commissioning, not by the existence of the store.
+Collection is operator-ordered under
+``research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md``. This module deliberately
+carries no self-attestation environment gate or legal conclusion. Product
+surfaces built on this store still ship through normal design commissioning,
+not merely because the private store exists.
 
 The nonclaims this module still makes are EPISTEMIC, not legal: access is
 observed at request time and nowhere else; an absent bar is never fabricated;
 a zero-volume bar is classified, never attributed to a cause it did not
-witness.  Those survive any licensing answer.
+witness. Those claims remain bounded to what the collected evidence can prove.
 """
 
 from __future__ import annotations
@@ -105,7 +103,9 @@ from lib import config
 DEFAULT_STORE_ROOT = config.data_dir() / "tushare_minutes"
 DEFAULT_ADDONS_ROOT = addons.DEFAULT_OUTPUT_ROOT
 DEFAULT_SPINE_STORE = config.data_dir() / "china_tushare_spine"
-DEFAULT_EVENT_CATALOG = config.data_dir() / "china_microstructure" / "limit_events.parquet"
+DEFAULT_EVENT_CATALOG = (
+    config.data_dir() / "china_microstructure" / "limit_events.parquet"
+)
 
 AUTHORITY = "context_display_only"
 PARTITION_SCHEMA_VERSION = "tushare_minutes_partition.v1"
@@ -123,26 +123,6 @@ BASE_ENDPOINT_CONTRACT = addons.ENDPOINTS["stk_mins"]
 BASE_VENDOR_FIELDS = BASE_ENDPOINT_CONTRACT.vendor_fields
 MAX_ROWS_PER_RESPONSE = BASE_ENDPOINT_CONTRACT.max_rows  # documented 8,000-row cap
 ALLOWED_FREQUENCIES = addons.ALLOWED_FREQUENCIES
-
-# --------------------------------------------------------------------------------------
-# License-authority execution gate (Lane A ships the same env names/values)
-# --------------------------------------------------------------------------------------
-
-#: Env NAMES are imported so the two lanes cannot drift apart on spelling.
-LICENSE_AUTHORITY_ENV = addons.LICENSE_AUTHORITY_ENV
-LICENSE_AUTHORITY_REFERENCE_ENV = addons.LICENSE_AUTHORITY_REFERENCE_ENV
-LICENSE_AUTHORITY_GATE_VALUE = "operator_attestation_verified"
-
-#: SHA-256 of the operator's licensing statement in
-#: ``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md`` (takeover branch,
-#: commit 88c03180f11): an exclusive TuShare partnership agreement to 2035, confirmed,
-#: requiring no reconfirmation.  The allowlist stays CODE-REVIEWED because an
-#: environment variable alone may never self-attest rights — provisioning the pair is
-#: how an operator points at the reviewed document, not how they author one.
-LICENSE_AUTHORITY_DOCUMENT = "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-TRUSTED_LICENSE_AUTHORITY_SHA256S: frozenset[str] = frozenset(
-    {"ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"}
-)
 
 # --------------------------------------------------------------------------------------
 # Rate budget (300/min is ONE shared premium pool; this plane margins itself to 240)
@@ -289,8 +269,10 @@ def file_hash(path: Path) -> str:
 
 
 def _is_sha256(value: object) -> bool:
-    return isinstance(value, str) and len(value) == 64 and all(
-        character in "0123456789abcdef" for character in value
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
     )
 
 
@@ -311,7 +293,9 @@ def exact_decimal(value: object, *, field_name: str) -> Decimal:
     try:
         parsed = value if isinstance(value, Decimal) else Decimal(str(value).strip())
     except (InvalidOperation, ValueError) as exc:
-        raise MinutesPlaneIntegrityError(f"{field_name} must be a finite decimal") from exc
+        raise MinutesPlaneIntegrityError(
+            f"{field_name} must be a finite decimal"
+        ) from exc
     if not parsed.is_finite():
         raise MinutesPlaneIntegrityError(f"{field_name} must be a finite decimal")
     return parsed
@@ -466,9 +450,7 @@ def load_session_calendar_from_spine(
         source="china_tushare_spine.reference.market_sessions",
         source_path=str(path),
         source_sha256=file_hash(path),
-        nonclaims=(
-            "attested_sse_szse_consensus_clock_bse_not_covered",
-        ),
+        nonclaims=("attested_sse_szse_consensus_clock_bse_not_covered",),
     )
 
 
@@ -700,7 +682,9 @@ def rate_budget_receipt(calls_per_minute: int = RATE_CEILING_CALLS_PER_MINUTE) -
         "client_throttle_seconds": throttle,
         "client_throttle_source": "collectors.tushare_client",
         "client_floor_calls_per_minute": round(client_floor, 4),
-        "effective_calls_per_minute": round(min(float(calls_per_minute), client_floor), 4),
+        "effective_calls_per_minute": round(
+            min(float(calls_per_minute), client_floor), 4
+        ),
         "concurrency": "sequential_only",
         "budget_note": (
             "the 300/min premium pool is shared with nightly incrementals and the "
@@ -829,7 +813,7 @@ def plan_backfill(
     end: date,
     store_root: Path = DEFAULT_STORE_ROOT,
     year_scope: str = "event-years",
-    manifest: "pd.DataFrame | None" = None,
+    manifest: pd.DataFrame | None = None,
 ) -> BackfillPlan:
     """Plan every vendor call the backfill would make.  No network, no write.
 
@@ -1036,8 +1020,13 @@ def arrow_schema() -> pa.Schema:
 
 
 def classify_bar(
-    *, volume: float, amount: float, open_cents: int, high_cents: int,
-    low_cents: int, close_cents: int,
+    *,
+    volume: float,
+    amount: float,
+    open_cents: int,
+    high_cents: int,
+    low_cents: int,
+    close_cents: int,
 ) -> str:
     """Retain every bar; name WHY a bar carries no volume.  Never drop, never trust.
 
@@ -1052,7 +1041,9 @@ def classify_bar(
         if amount != 0:
             return BAR_CLASS_ZERO_VOLUME_INCONSISTENT
         flat = open_cents == high_cents == low_cents == close_cents
-        return BAR_CLASS_ZERO_VOLUME_FLAT if flat else BAR_CLASS_ZERO_VOLUME_INCONSISTENT
+        return (
+            BAR_CLASS_ZERO_VOLUME_FLAT if flat else BAR_CLASS_ZERO_VOLUME_INCONSISTENT
+        )
     if amount == 0:
         return BAR_CLASS_VOLUME_WITHOUT_AMOUNT
     return BAR_CLASS_TRADED
@@ -1080,12 +1071,13 @@ def normalize_minute_rows(
             raise MinutesPlaneIntegrityError("vendor row escaped the requested ticker")
         try:
             stamp = pd.Timestamp(raw["trade_time"])
-        except Exception as exc:  # noqa: BLE001 - vendor stamp is untrusted input
+        except Exception as exc:
             raise MinutesPlaneIntegrityError("minute trade_time is invalid") from exc
         if pd.isna(stamp):
             raise MinutesPlaneIntegrityError("minute trade_time is null")
         stamp = (
-            stamp.tz_localize(SHANGHAI) if stamp.tzinfo is None
+            stamp.tz_localize(SHANGHAI)
+            if stamp.tzinfo is None
             else stamp.tz_convert(SHANGHAI)
         )
         if stamp.second or stamp.microsecond or stamp.nanosecond:
@@ -1163,7 +1155,9 @@ def partition_path(root: Path, *, frequency: str, ticker: str, year: int) -> Pat
     )
 
 
-def _partition_is_on_disk(root: Path, *, frequency: str, ticker: str, year: int) -> bool:
+def _partition_is_on_disk(
+    root: Path, *, frequency: str, ticker: str, year: int
+) -> bool:
     destination = partition_path(root, frequency=frequency, ticker=ticker, year=year)
     return (destination / "part.parquet").is_file() and (
         destination / "receipt.json"
@@ -1213,7 +1207,6 @@ def _partition_receipt_body(
     identity: Mapping[str, object],
     chunks: Sequence[Mapping[str, object]],
     calendar_receipt: Mapping[str, object],
-    license_authority: Mapping[str, object],
     tp0_probe: Mapping[str, object],
     governor_receipt: Mapping[str, object],
     observed_at: datetime,
@@ -1244,7 +1237,6 @@ def _partition_receipt_body(
             "governor": dict(governor_receipt),
         },
         "session_calendar_receipt": dict(calendar_receipt),
-        "license_authority_gate": dict(license_authority),
         "tp0_probe_reference": dict(tp0_probe),
         "access_observation_receipt": {
             "observation": "access_observed_at_request_time",
@@ -1407,7 +1399,6 @@ def install_partition(
     records: Sequence[Mapping[str, object]],
     chunks: Sequence[Mapping[str, object]],
     calendar_receipt: Mapping[str, object],
-    license_authority: Mapping[str, object],
     tp0_probe: Mapping[str, object],
     governor_receipt: Mapping[str, object],
     source_rows_hash: str,
@@ -1436,10 +1427,14 @@ def install_partition(
         )
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=".tushare-minutes-stage-", dir=destination.parent))
+    stage = Path(
+        tempfile.mkdtemp(prefix=".tushare-minutes-stage-", dir=destination.parent)
+    )
     try:
         parquet_path = stage / "part.parquet"
-        table = pa.Table.from_pylist([dict(row) for row in records], schema=arrow_schema())
+        table = pa.Table.from_pylist(
+            [dict(row) for row in records], schema=arrow_schema()
+        )
         pq.write_table(
             table,
             parquet_path,
@@ -1452,7 +1447,6 @@ def install_partition(
             identity=identity,
             chunks=chunks,
             calendar_receipt=calendar_receipt,
-            license_authority=license_authority,
             tp0_probe=tp0_probe,
             governor_receipt=governor_receipt,
             observed_at=observed_at,
@@ -1560,7 +1554,9 @@ def read_manifest(root: Path) -> pd.DataFrame:
     """The coverage ledger, or an empty typed frame when the store is new."""
     path = coverage_path(root)
     if not path.is_file():
-        return pd.DataFrame({name: pd.Series(dtype="object") for name in COVERAGE_COLUMNS})
+        return pd.DataFrame(
+            {name: pd.Series(dtype="object") for name in COVERAGE_COLUMNS}
+        )
     frame = pd.read_parquet(path)
     missing = sorted(set(COVERAGE_COLUMNS) - set(frame.columns))
     if missing:
@@ -1569,7 +1565,7 @@ def read_manifest(root: Path) -> pd.DataFrame:
 
 
 def _manifest_status_index(
-    manifest: "pd.DataFrame | None",
+    manifest: pd.DataFrame | None,
 ) -> dict[tuple[str, str, int], str]:
     if manifest is None or manifest.empty:
         return {}
@@ -1647,7 +1643,6 @@ def write_manifest(
     *,
     plan_summary: Mapping[str, object] | None = None,
     reconciliation: Mapping[str, object] | None = None,
-    license_authority: Mapping[str, object] | None = None,
     tp0_probe: Mapping[str, object] | None = None,
     generated_at: datetime | None = None,
 ) -> dict[str, object]:
@@ -1696,7 +1691,6 @@ def write_manifest(
         },
         "rate_budget": rate_budget_receipt(),
         "corporate_action_basis": dict(CORPORATE_ACTION_BASIS),
-        "license_authority_gate": dict(license_authority) if license_authority else None,
         "tp0_probe_reference": dict(tp0_probe) if tp0_probe else None,
         "plan_summary": dict(plan_summary) if plan_summary else None,
         "coverage": {
@@ -1711,7 +1705,9 @@ def write_manifest(
             "row_count": sum(int(row["row_count"] or 0) for row in ordered),
             "semantic_sha256": canonical_hash(ordered),
         },
-        "reconciliation": dict(reconciliation) if reconciliation else {
+        "reconciliation": dict(reconciliation)
+        if reconciliation
+        else {
             "status": "not_run",
             "note": "run scripts/backfill_tushare_minutes.py --verify",
         },
@@ -1804,11 +1800,11 @@ def reconcile_session(
         "open_exact": int(aggregate["open_cents"]) == daily_open,
         "minute_volume_share_of_daily": (
             round(minute_volume / daily_volume_shares, 6)
-            if daily_volume_shares > 0 else None
+            if daily_volume_shares > 0
+            else None
         ),
         "minute_amount_share_of_daily": (
-            round(minute_amount / daily_amount_cny, 6)
-            if daily_amount_cny > 0 else None
+            round(minute_amount / daily_amount_cny, 6) if daily_amount_cny > 0 else None
         ),
     }
     failed = sorted(name for name, ok in checks.items() if not ok)
@@ -1825,7 +1821,10 @@ def _sample_keys(
 ) -> list[tuple[str, str]]:
     """Deterministic, reproducible sample — the digest ordering IS the receipt."""
     scored = sorted(
-        keys, key=lambda key: hashlib.sha256(f"{seed}|{key[0]}|{key[1]}".encode()).hexdigest()
+        keys,
+        key=lambda key: hashlib.sha256(
+            f"{seed}|{key[0]}|{key[1]}".encode()
+        ).hexdigest(),
     )
     return scored[: max(0, sample_size)]
 
@@ -1841,7 +1840,9 @@ def load_daily_reference(
     frames: list[pd.DataFrame] = []
     for path in sorted(root.glob("year=*/month=*/part.parquet")):
         year_key = path.parent.parent.name.split("=", 1)[-1]
-        if wanted is not None and (not year_key.isdigit() or int(year_key) not in wanted):
+        if wanted is not None and (
+            not year_key.isdigit() or int(year_key) not in wanted
+        ):
             continue
         frames.append(pd.read_parquet(path))
     if not frames:
@@ -1878,9 +1879,7 @@ def _plain_record(row: Mapping[str, object]) -> dict[str, object]:
     ``read_parquet`` hands back NumPy scalars, which ``json.dumps`` refuses and which
     would otherwise make a recomputed digest silently un-comparable.
     """
-    return {
-        f.name: _PLAIN_CASTS[f.arrow_type](row[f.name]) for f in PARTITION_FIELDS
-    }
+    return {f.name: _PLAIN_CASTS[f.arrow_type](row[f.name]) for f in PARTITION_FIELDS}
 
 
 def read_partition_records(path: Path) -> list[dict[str, object]]:
@@ -1906,7 +1905,9 @@ def iter_store_partitions(root: Path) -> list[tuple[str, str, int, Path]]:
         ticker = directory.parent.name.split("=", 1)[-1]
         frequency = directory.parent.parent.name.split("=", 1)[-1]
         if not year_key.isdigit():
-            raise MinutesPlaneIntegrityError(f"store has a non-numeric year key: {directory}")
+            raise MinutesPlaneIntegrityError(
+                f"store has a non-numeric year key: {directory}"
+            )
         found.append((frequency, ticker, int(year_key), directory))
     return found
 
@@ -1914,7 +1915,7 @@ def iter_store_partitions(root: Path) -> list[tuple[str, str, int, Path]]:
 def run_reconciliation_gate(
     root: Path,
     *,
-    daily: "pd.DataFrame | None" = None,
+    daily: pd.DataFrame | None = None,
     sample_size: int = 50,
     seed: str = "cn_tushare_minutes_reconciliation.v1",
 ) -> dict[str, object]:
@@ -1998,42 +1999,8 @@ def run_reconciliation_gate(
 
 
 # --------------------------------------------------------------------------------------
-# Execution gates
+# Execution gate
 # --------------------------------------------------------------------------------------
-
-LICENSE_PROVISIONING_RECIPE = (
-    f"export {LICENSE_AUTHORITY_ENV}={LICENSE_AUTHORITY_GATE_VALUE}\n"
-    f"export {LICENSE_AUTHORITY_REFERENCE_ENV}=$(git show "
-    f"origin/claude/tushare-wiring-takeover:{LICENSE_AUTHORITY_DOCUMENT} "
-    "| shasum -a 256 | cut -d' ' -f1)\n"
-    "# the digest must equal the code-reviewed pin in "
-    "collectors/tushare_minutes_plane.TRUSTED_LICENSE_AUTHORITY_SHA256S"
-)
-
-
-def license_authority_receipt() -> dict[str, object]:
-    """Fail closed unless the operator's license authority is provisioned AND pinned."""
-    authority = os.environ.get(LICENSE_AUTHORITY_ENV, "").strip()
-    reference = os.environ.get(LICENSE_AUTHORITY_REFERENCE_ENV, "").strip().lower()
-    if authority != LICENSE_AUTHORITY_GATE_VALUE or not _is_sha256(reference):
-        raise MinutesPlaneHeld("operator_license_authority_env_pair_required")
-    if reference not in TRUSTED_LICENSE_AUTHORITY_SHA256S:
-        raise MinutesPlaneHeld("license_authority_digest_not_out_of_band_allowlisted")
-    return {
-        "gate_state": "satisfied_operator_license_authority_verified",
-        "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
-        "authority_document": LICENSE_AUTHORITY_DOCUMENT,
-        "authority_sha256": reference,
-        "authority_statement": (
-            "exclusive TuShare partnership agreement to 2035; confirmed by the "
-            "operator and requiring no reconfirmation"
-        ),
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "scope": (
-            "collection into this store plus in-repo research consumption; product "
-            "surfaces ship through normal design commissioning"
-        ),
-    }
 
 
 def find_tp0_probe_receipts(addons_root: Path = DEFAULT_ADDONS_ROOT) -> list[Path]:
@@ -2055,7 +2022,9 @@ def require_tp0_probe_receipt(
     """
     receipts = find_tp0_probe_receipts(addons_root)
     if not receipts:
-        raise MinutesPlaneHeld("tp0_stk_mins_probe_receipt_absent_backfill_is_sequenced")
+        raise MinutesPlaneHeld(
+            "tp0_stk_mins_probe_receipt_absent_backfill_is_sequenced"
+        )
     latest = receipts[-1]
     payload = json.loads(latest.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -2066,7 +2035,9 @@ def require_tp0_probe_receipt(
     ):
         raise MinutesPlaneHeld("tp0_probe_receipt_does_not_witness_access")
     contract = payload.get("endpoint_contract")
-    contract_sha = contract.get("contract_sha256") if isinstance(contract, dict) else None
+    contract_sha = (
+        contract.get("contract_sha256") if isinstance(contract, dict) else None
+    )
     return {
         "receipt_path": str(latest),
         "receipt_sha256": payload.get("receipt_sha256"),
@@ -2101,9 +2072,13 @@ def _source_scalar(value: object) -> object:
         return value
     if isinstance(value, float):
         if not math.isfinite(value):
-            raise MinutesPlaneIntegrityError("vendor source contains a non-finite value")
+            raise MinutesPlaneIntegrityError(
+                "vendor source contains a non-finite value"
+            )
         return value
-    raise MinutesPlaneIntegrityError("vendor source contains an unsupported scalar type")
+    raise MinutesPlaneIntegrityError(
+        "vendor source contains an unsupported scalar type"
+    )
 
 
 def _source_rows_hash(frames: Sequence[pd.DataFrame]) -> str:
@@ -2111,7 +2086,9 @@ def _source_rows_hash(frames: Sequence[pd.DataFrame]) -> str:
     rows: list[dict[str, object]] = []
     for frame in frames:
         for raw in frame.to_dict(orient="records"):
-            rows.append({name: _source_scalar(raw[name]) for name in BASE_VENDOR_FIELDS})
+            rows.append(
+                {name: _source_scalar(raw[name]) for name in BASE_VENDOR_FIELDS}
+            )
     rows.sort(key=_json_bytes)
     return canonical_hash(rows)
 
@@ -2145,12 +2122,11 @@ def execute_backfill(
 ) -> dict[str, object]:
     """Run the plan sequentially, partition by partition, and rewrite the ledger.
 
-    Both gates are enforced HERE, not by the caller: the operator license pin and a
-    TP-0 probe receipt.  A partition that raises is recorded ``contradiction`` in the
+    TP-0 is enforced HERE, not only by the caller: a successful bounded Lane-A probe
+    receipt must precede the bulk plane. A partition that raises is recorded ``contradiction`` in the
     coverage ledger and execution CONTINUES — a single bad ticker-year must not
     abort a multi-hour backfill, and it must not vanish either.
     """
-    license_authority = license_authority_receipt()
     tp0 = require_tp0_probe_receipt(addons_root)
     root = Path(store_root)
     engine = query or tc.query
@@ -2192,7 +2168,8 @@ def execute_backfill(
                 for chunk in partition.chunks
             ]
             combined = (
-                pd.concat(frames, ignore_index=True) if frames
+                pd.concat(frames, ignore_index=True)
+                if frames
                 else pd.DataFrame(columns=list(BASE_VENDOR_FIELDS))
             )
             records = normalize_minute_rows(
@@ -2216,7 +2193,6 @@ def execute_backfill(
                 records=records,
                 chunks=[chunk.vendor_request for chunk in partition.chunks],
                 calendar_receipt=plan.calendar_receipt,
-                license_authority=license_authority,
                 tp0_probe=tp0,
                 governor_receipt=pace.receipt(),
                 source_rows_hash=_source_rows_hash(frames),
@@ -2253,7 +2229,6 @@ def execute_backfill(
         root,
         list(existing.values()),
         plan_summary=plan.summary(),
-        license_authority=license_authority,
         tp0_probe=tp0,
     )
     return {
@@ -2267,7 +2242,7 @@ def execute_backfill(
 def verify_store(
     root: Path = DEFAULT_STORE_ROOT,
     *,
-    daily: "pd.DataFrame | None" = None,
+    daily: pd.DataFrame | None = None,
     sample_size: int = 50,
 ) -> dict[str, object]:
     """Recompute the ledger from the store and run the reconciliation gate.
@@ -2342,21 +2317,20 @@ def verify_store(
 __all__ = [
     "AUTHORITY",
     "BASE_ENDPOINT_CONTRACT",
-    "BackfillPlan",
-    "ChunkPlan",
     "CORPORATE_ACTION_BASIS",
     "COVERAGE_COLUMNS",
     "DEFAULT_STORE_ROOT",
     "MANIFEST_SCHEMA_VERSION",
     "MAX_ROWS_PER_RESPONSE",
+    "RATE_CEILING_CALLS_PER_MINUTE",
+    "BackfillPlan",
+    "ChunkPlan",
     "MinutesPlaneHeld",
     "MinutesPlaneIntegrityError",
     "PartitionPlan",
     "PartitionResult",
-    "RATE_CEILING_CALLS_PER_MINUTE",
     "RateGovernor",
     "SessionCalendar",
-    "LICENSE_PROVISIONING_RECIPE",
     "Universe",
     "aggregate_regular_window",
     "arrow_schema",
@@ -2380,7 +2354,6 @@ __all__ = [
     "require_tp0_probe_receipt",
     "run_reconciliation_gate",
     "sessions_per_chunk",
-    "license_authority_receipt",
     "verify_partition_bundle",
     "verify_store",
     "wall_clock_estimate",

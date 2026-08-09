@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 """Plan, execute, or verify the bulk historical A-share minute-bar backfill.
 
-``--plan`` is the DEFAULT and is completely offline: no network call, no write, no
-token, no license gate.  It prints every vendor call the backfill would make, the
+``--plan`` is the DEFAULT and is completely offline: no network call, no write, and no
+token. It prints every vendor call the backfill would make, the
 projected row budget, and the pacing floor.
 
-``--execute`` fails closed twice before a single byte moves:
-
-1. the operator license-authority env pair must be provisioned AND its digest must
-   be in the code-reviewed allowlist in ``collectors/tushare_minutes_plane``; and
-2. a Lane-A ``stk_mins`` TP-0 probe receipt must already exist on disk (sequencing
-   law: no bulk backfill before that endpoint's live access/schema witness).
+``--execute`` fails closed before a single byte moves unless a Lane-A ``stk_mins``
+TP-0 probe receipt already exists on disk (sequencing law: no bulk backfill before
+that endpoint's live access/schema witness).
 
 ``--verify`` recomputes the coverage ledger from the store's own bytes and runs the
 sampled daily-reconciliation gate.  The gate's only permitted anchor is the spine's
@@ -42,7 +39,9 @@ _UNIVERSE_CHOICES = ("event-catalog", "spine", "file")
 
 
 def _emit(payload: object) -> None:
-    print(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+    print(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    )
 
 
 def _parse_date(raw: str) -> date:
@@ -51,7 +50,7 @@ def _parse_date(raw: str) -> date:
         value = f"{value[:4]}-{value[4:6]}-{value[6:]}"
     try:
         return date.fromisoformat(value)
-    except ValueError as exc:  # noqa: TRY003 - argparse surfaces the message verbatim
+    except ValueError as exc:
         raise argparse.ArgumentTypeError(f"invalid date: {raw!r}") from exc
 
 
@@ -65,7 +64,9 @@ def _load_universe(args: argparse.Namespace) -> plane.Universe:
     # The full-A universe is DEFERRED: it needs the spine's reference generation to
     # exist and a separate budget ruling.  Failing loudly beats quietly planning a
     # 5,000-name backfill nobody sized.
-    raise plane.MinutesPlaneHeld("spine_full_a_universe_is_deferred_see_takeover_lane_b")
+    raise plane.MinutesPlaneHeld(
+        "spine_full_a_universe_is_deferred_see_takeover_lane_b"
+    )
 
 
 def _load_calendar(args: argparse.Namespace) -> plane.SessionCalendar:
@@ -99,10 +100,8 @@ def _run_plan(args: argparse.Namespace) -> int:
 
 
 def _run_execute(args: argparse.Namespace) -> int:
-    # Both gates raise before any network call or filesystem mutation.  They are
-    # re-checked inside execute_backfill; calling them here only buys a clean
-    # message with the provisioning recipe attached.
-    plane.license_authority_receipt()
+    # TP-0 raises before any network call or filesystem mutation and is re-checked
+    # inside execute_backfill so direct callers cannot bypass the sequencing law.
     plane.require_tp0_probe_receipt(args.addons_root)
     backfill = _build_plan(args)
     result = plane.execute_backfill(
@@ -150,7 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="mode",
         action="store_const",
         const="execute",
-        help="run the backfill (license gate + TP-0 probe receipt both required)",
+        help="run the backfill (TP-0 probe receipt required)",
     )
     mode.add_argument(
         "--verify",
@@ -195,7 +194,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--store-root", type=Path, default=plane.DEFAULT_STORE_ROOT)
     parser.add_argument("--spine-store", type=Path, default=plane.DEFAULT_SPINE_STORE)
     parser.add_argument("--addons-root", type=Path, default=plane.DEFAULT_ADDONS_ROOT)
-    parser.add_argument("--event-catalog", type=Path, default=plane.DEFAULT_EVENT_CATALOG)
+    parser.add_argument(
+        "--event-catalog", type=Path, default=plane.DEFAULT_EVENT_CATALOG
+    )
     parser.add_argument(
         "--include-chunks",
         action="store_true",
@@ -222,12 +223,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             "mode": args.mode,
             "reason_code": held.reason_code,
         }
-        if held.reason_code in {
-            "operator_license_authority_env_pair_required",
-            "license_authority_digest_not_out_of_band_allowlisted",
-        }:
-            payload["provisioning_recipe"] = plane.LICENSE_PROVISIONING_RECIPE
-            payload["authority_document"] = plane.LICENSE_AUTHORITY_DOCUMENT
         if held.reason_code.startswith("tp0_"):
             payload["sequencing_law"] = (
                 "TP-0: Lane A's live stk_mins probe receipt must exist under "

@@ -36,7 +36,6 @@ TICKER = "600519.SS"
 VENDOR_TICKER = "600519.SH"
 OTHER_TICKER = "000001.SZ"
 OBSERVED_AT = datetime(ANCHOR_YEAR, 6, 1, 12, 0, tzinfo=timezone.utc)
-LICENSE_REFERENCE = "cd" * 32
 
 
 # --------------------------------------------------------------------------------------
@@ -55,7 +54,9 @@ def make_sessions(count: int, *, start: date = ANCHOR_FIRST_SESSION) -> list[dat
     return sessions
 
 
-def make_calendar(sessions: list[date], *, source: str = "synthetic") -> plane.SessionCalendar:
+def make_calendar(
+    sessions: list[date], *, source: str = "synthetic"
+) -> plane.SessionCalendar:
     return plane.SessionCalendar(
         sessions=tuple(sessions),
         source=source,
@@ -140,7 +141,6 @@ def install(
         records=records,
         chunks=[{"api_name": "stk_mins", "ts_code": VENDOR_TICKER}],
         calendar_receipt={"source": "synthetic"},
-        license_authority={"gate_state": "synthetic"},
         tp0_probe={"receipt_path": "synthetic"},
         governor_receipt={"calls_per_minute": 240},
         source_rows_hash=source_hash,
@@ -149,21 +149,15 @@ def install(
 
 
 @pytest.fixture
-def provisioned_license(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(plane.LICENSE_AUTHORITY_ENV, plane.LICENSE_AUTHORITY_GATE_VALUE)
-    monkeypatch.setenv(plane.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
-    monkeypatch.setattr(
-        plane, "TRUSTED_LICENSE_AUTHORITY_SHA256S", frozenset({LICENSE_REFERENCE})
-    )
-
-
-@pytest.fixture
 def tp0_probe_root(tmp_path: Path) -> Path:
     """A minimal Lane-A ``stk_mins`` probe receipt that witnesses access."""
     root = tmp_path / "addons"
     directory = (
-        root / "stk_mins" / "by_frequency=1min"
-        / f"by_trade_date={ANCHOR_FIRST_SESSION.isoformat()}" / f"by_scope=ticker-{TICKER}"
+        root
+        / "stk_mins"
+        / "by_frequency=1min"
+        / f"by_trade_date={ANCHOR_FIRST_SESSION.isoformat()}"
+        / f"by_scope=ticker-{TICKER}"
     )
     directory.mkdir(parents=True)
     payload = {
@@ -193,11 +187,20 @@ def test_price_tick_constants_match_the_spine() -> None:
 
 @pytest.mark.parametrize(
     "clock",
-    [time(9, 30), time(10, 0), time(11, 30), time(13, 0), time(15, 0), time(15, 5),
-     time(15, 30)],
+    [
+        time(9, 30),
+        time(10, 0),
+        time(11, 30),
+        time(13, 0),
+        time(15, 0),
+        time(15, 5),
+        time(15, 30),
+    ],
 )
 def test_session_segment_matches_the_addons_pilot(clock: time) -> None:
-    assert plane.classify_session_segment(clock) == addons._minute_session_segment(clock)
+    assert plane.classify_session_segment(clock) == addons._minute_session_segment(
+        clock
+    )
 
 
 @pytest.mark.parametrize("clock", [time(9, 29), time(12, 0), time(15, 1), time(15, 31)])
@@ -259,7 +262,11 @@ def test_chunk_boundaries_split_exactly_at_the_cap() -> None:
         store_root=Path("/nonexistent"),
     )
     (partition,) = plan.partitions
-    assert [chunk.session_count for chunk in partition.chunks] == [per_chunk, per_chunk, 1]
+    assert [chunk.session_count for chunk in partition.chunks] == [
+        per_chunk,
+        per_chunk,
+        1,
+    ]
     assert partition.chunks[0].start_date == sessions[0]
     assert partition.chunks[0].end_date == sessions[per_chunk - 1]
     assert partition.chunks[1].start_date == sessions[per_chunk]
@@ -327,14 +334,20 @@ def test_inverted_range_and_unknown_frequency_are_held() -> None:
     calendar = make_calendar(make_sessions(3))
     with pytest.raises(plane.MinutesPlaneHeld):
         plane.plan_backfill(
-            universe=universe, calendar=calendar, frequency="1min",
-            start=date(ANCHOR_YEAR, 3, 1), end=date(ANCHOR_YEAR, 1, 1),
+            universe=universe,
+            calendar=calendar,
+            frequency="1min",
+            start=date(ANCHOR_YEAR, 3, 1),
+            end=date(ANCHOR_YEAR, 1, 1),
             store_root=Path("/nonexistent"),
         )
     with pytest.raises(plane.MinutesPlaneHeld):
         plane.plan_backfill(
-            universe=universe, calendar=calendar, frequency="2min",
-            start=date(ANCHOR_YEAR, 1, 1), end=date(ANCHOR_YEAR, 3, 1),
+            universe=universe,
+            calendar=calendar,
+            frequency="2min",
+            start=date(ANCHOR_YEAR, 1, 1),
+            end=date(ANCHOR_YEAR, 3, 1),
             store_root=Path("/nonexistent"),
         )
 
@@ -368,9 +381,14 @@ def test_replanning_skips_a_fetched_clean_partition_exactly(tmp_path: Path) -> N
         root,
         [
             plane.coverage_row(
-                frequency="1min", ticker=TICKER, year=ANCHOR_YEAR, status="fetched",
-                request_sha256=before.partitions[0].request_sha256, chunk_count=1,
-                planned_session_count=3, partition_path_value=result.partition_path,
+                frequency="1min",
+                ticker=TICKER,
+                year=ANCHOR_YEAR,
+                status="fetched",
+                request_sha256=before.partitions[0].request_sha256,
+                chunk_count=1,
+                planned_session_count=3,
+                partition_path_value=result.partition_path,
                 row_count=result.row_count,
             )
         ],
@@ -382,7 +400,9 @@ def test_replanning_skips_a_fetched_clean_partition_exactly(tmp_path: Path) -> N
     assert after.call_count == 0
 
 
-def test_ledger_fetched_without_a_partition_on_disk_is_replanned(tmp_path: Path) -> None:
+def test_ledger_fetched_without_a_partition_on_disk_is_replanned(
+    tmp_path: Path,
+) -> None:
     """A ledger row is a claim; the store is the evidence.  The store wins."""
     root = tmp_path / "store"
     sessions = make_sessions(3)
@@ -390,9 +410,15 @@ def test_ledger_fetched_without_a_partition_on_disk_is_replanned(tmp_path: Path)
         root,
         [
             plane.coverage_row(
-                frequency="1min", ticker=TICKER, year=ANCHOR_YEAR, status="fetched",
-                request_sha256="00" * 32, chunk_count=1, planned_session_count=3,
-                partition_path_value=str(root / "missing"), row_count=99,
+                frequency="1min",
+                ticker=TICKER,
+                year=ANCHOR_YEAR,
+                status="fetched",
+                request_sha256="00" * 32,
+                chunk_count=1,
+                planned_session_count=3,
+                partition_path_value=str(root / "missing"),
+                row_count=99,
             )
         ],
         generated_at=OBSERVED_AT,
@@ -409,9 +435,14 @@ def test_recorded_contradiction_blocks_rather_than_silently_refetching(
         root,
         [
             plane.coverage_row(
-                frequency="1min", ticker=TICKER, year=ANCHOR_YEAR,
-                status="contradiction", request_sha256="00" * 32, chunk_count=1,
-                planned_session_count=3, partition_path_value=str(root / "p"),
+                frequency="1min",
+                ticker=TICKER,
+                year=ANCHOR_YEAR,
+                status="contradiction",
+                request_sha256="00" * 32,
+                chunk_count=1,
+                planned_session_count=3,
+                partition_path_value=str(root / "p"),
                 contradiction_reason="vendor revised rows",
             )
         ],
@@ -506,7 +537,9 @@ def test_partition_round_trips_through_parquet(tmp_path: Path) -> None:
 def test_arrow_schema_pins_the_base_contract_digest() -> None:
     schema = plane.arrow_schema()
     metadata = {key.decode(): value.decode() for key, value in schema.metadata.items()}
-    assert metadata["base_contract_sha256"] == plane.BASE_ENDPOINT_CONTRACT.contract_hash
+    assert (
+        metadata["base_contract_sha256"] == plane.BASE_ENDPOINT_CONTRACT.contract_hash
+    )
     assert metadata["partition_schema_version"] == plane.PARTITION_SCHEMA_VERSION
     assert schema.field("open_cents").type == "int64"
     assert schema.field("trade_time_utc").type == "string"
@@ -519,21 +552,19 @@ def test_manifest_validates_against_the_versioned_contract(tmp_path: Path) -> No
         root,
         [
             plane.coverage_row(
-                frequency="1min", ticker=TICKER, year=ANCHOR_YEAR, status="fetched",
-                request_sha256="11" * 32, chunk_count=1, planned_session_count=1,
-                partition_path_value=result.partition_path, row_count=result.row_count,
-                receipt_sha256=result.receipt_hash, observed_at_utc=OBSERVED_AT.isoformat(),
+                frequency="1min",
+                ticker=TICKER,
+                year=ANCHOR_YEAR,
+                status="fetched",
+                request_sha256="11" * 32,
+                chunk_count=1,
+                planned_session_count=1,
+                partition_path_value=result.partition_path,
+                row_count=result.row_count,
+                receipt_sha256=result.receipt_hash,
+                observed_at_utc=OBSERVED_AT.isoformat(),
             )
         ],
-        license_authority={
-            "gate_state": "satisfied_operator_license_authority_verified",
-            "accepted_basis": plane.LICENSE_AUTHORITY_GATE_VALUE,
-            "authority_document": plane.LICENSE_AUTHORITY_DOCUMENT,
-            "authority_sha256": "ab" * 32,
-            "authority_statement": "operator statement",
-            "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-            "scope": "collection plus research consumption",
-        },
         generated_at=OBSERVED_AT,
     )
     schema = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
@@ -548,8 +579,13 @@ def test_manifest_validates_against_the_versioned_contract(tmp_path: Path) -> No
 
 def test_manifest_refuses_duplicate_partition_keys(tmp_path: Path) -> None:
     duplicate = plane.coverage_row(
-        frequency="1min", ticker=TICKER, year=ANCHOR_YEAR, status="planned",
-        request_sha256="11" * 32, chunk_count=1, planned_session_count=1,
+        frequency="1min",
+        ticker=TICKER,
+        year=ANCHOR_YEAR,
+        status="planned",
+        request_sha256="11" * 32,
+        chunk_count=1,
+        planned_session_count=1,
         partition_path_value="p",
     )
     with pytest.raises(plane.MinutesPlaneIntegrityError, match="duplicate"):
@@ -565,7 +601,9 @@ def test_zero_volume_bar_is_retained_and_classified() -> None:
     records = normalized(ANCHOR_FIRST_SESSION, bars=3, zero_volume_at=1)
     assert len(records) == 3, "a zero-volume bar must never be dropped"
     assert [r["bar_class"] for r in records] == [
-        plane.BAR_CLASS_TRADED, plane.BAR_CLASS_ZERO_VOLUME_FLAT, plane.BAR_CLASS_TRADED
+        plane.BAR_CLASS_TRADED,
+        plane.BAR_CLASS_ZERO_VOLUME_FLAT,
+        plane.BAR_CLASS_TRADED,
     ]
     stale = records[1]
     assert stale["open_cents"] == stale["close_cents"] == stale["high_cents"]
@@ -588,8 +626,12 @@ def test_bar_classification_table(
     high = 1000 if flat else 1002
     assert (
         plane.classify_bar(
-            volume=volume, amount=amount, open_cents=1000, high_cents=high,
-            low_cents=1000, close_cents=1000,
+            volume=volume,
+            amount=amount,
+            open_cents=1000,
+            high_cents=high,
+            low_cents=1000,
+            close_cents=1000,
         )
         == expected
     )
@@ -598,7 +640,11 @@ def test_bar_classification_table(
 def test_negative_volume_is_refused() -> None:
     with pytest.raises(plane.MinutesPlaneIntegrityError):
         plane.classify_bar(
-            volume=-1.0, amount=0.0, open_cents=1, high_cents=1, low_cents=1,
+            volume=-1.0,
+            amount=0.0,
+            open_cents=1,
+            high_cents=1,
+            low_cents=1,
             close_cents=1,
         )
 
@@ -620,9 +666,14 @@ def test_exact_decimal_prices_survive_a_float_hostile_value() -> None:
 
 def test_row_at_the_documented_cap_is_treated_as_truncated() -> None:
     chunk = plane.ChunkPlan(
-        frequency="1min", ticker=TICKER, year=ANCHOR_YEAR, chunk_index=0,
-        start_date=ANCHOR_FIRST_SESSION, end_date=ANCHOR_FIRST_SESSION,
-        session_count=1, projected_max_rows=268,
+        frequency="1min",
+        ticker=TICKER,
+        year=ANCHOR_YEAR,
+        chunk_index=0,
+        start_date=ANCHOR_FIRST_SESSION,
+        end_date=ANCHOR_FIRST_SESSION,
+        session_count=1,
+        projected_max_rows=268,
     )
     capped = pd.DataFrame(
         [minute_rows(ANCHOR_FIRST_SESSION, bars=1)[0]] * plane.MAX_ROWS_PER_RESPONSE,
@@ -652,7 +703,9 @@ def test_row_from_another_ticker_or_year_is_refused() -> None:
 def test_utc_runner_produces_shanghai_stamps() -> None:
     """CI runs UTC; a naive vendor stamp must still land on the Shanghai clock."""
     records = normalized(ANCHOR_FIRST_SESSION, bars=1)
-    assert records[0]["trade_time"].startswith(f"{ANCHOR_FIRST_SESSION.isoformat()}T09:31")
+    assert records[0]["trade_time"].startswith(
+        f"{ANCHOR_FIRST_SESSION.isoformat()}T09:31"
+    )
     assert records[0]["trade_time"].endswith("+08:00")
     assert records[0]["trade_time_utc"].startswith(
         f"{ANCHOR_FIRST_SESSION.isoformat()}T01:31"
@@ -732,7 +785,8 @@ def daily_reference_from(records: list[dict[str, object]]) -> pd.DataFrame:
                 "low_cents": aggregate["low_cents"],
                 "close_cents": aggregate["close_cents"],
                 "volume_lots": aggregate["volume_shares"] / plane.SHARES_PER_LOT,
-                "amount_cny_thousands": aggregate["amount_cny"] / plane.CNY_PER_AMOUNT_UNIT,
+                "amount_cny_thousands": aggregate["amount_cny"]
+                / plane.CNY_PER_AMOUNT_UNIT,
             }
         ]
     )
@@ -788,12 +842,21 @@ def test_reconciliation_catches_a_scaled_minute_tape(tmp_path: Path) -> None:
 def test_open_mismatch_is_reported_but_never_fails_the_gate() -> None:
     """Auction stamping is an unpinned vendor convention; it must not manufacture reds."""
     aggregate = {
-        "open_cents": 1000, "close_cents": 1010, "high_cents": 1020, "low_cents": 990,
-        "volume_shares": 1000.0, "amount_cny": 10_000.0, "bar_count": 4,
+        "open_cents": 1000,
+        "close_cents": 1010,
+        "high_cents": 1020,
+        "low_cents": 990,
+        "volume_shares": 1000.0,
+        "amount_cny": 10_000.0,
+        "bar_count": 4,
     }
     daily = {
-        "open_cents": 995, "close_cents": 1010, "high_cents": 1020, "low_cents": 990,
-        "volume_lots": 20.0, "amount_cny_thousands": 20.0,
+        "open_cents": 995,
+        "close_cents": 1010,
+        "high_cents": 1020,
+        "low_cents": 990,
+        "volume_lots": 20.0,
+        "amount_cny_thousands": 20.0,
     }
     outcome = plane.reconcile_session(aggregate, daily)
     assert outcome["passed"] is True
@@ -808,8 +871,12 @@ def test_post_close_rows_are_excluded_from_the_daily_aggregate() -> None:
             {
                 "ts_code": VENDOR_TICKER,
                 "trade_time": f"{session.isoformat()} 15:10:00",
-                "open": "99.00", "close": "99.00", "high": "99.00", "low": "99.00",
-                "vol": 500, "amount": 49_500.0,
+                "open": "99.00",
+                "close": "99.00",
+                "high": "99.00",
+                "low": "99.00",
+                "vol": 500,
+                "amount": 49_500.0,
             }
         ],
         columns=list(plane.BASE_VENDOR_FIELDS),
@@ -864,43 +931,23 @@ def test_verify_store_detects_tampered_parquet_bytes(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------------------
-# Execution gates
+# Execution gate
 # --------------------------------------------------------------------------------------
 
 
-def test_license_gate_fails_closed_without_the_env_pair(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv(plane.LICENSE_AUTHORITY_ENV, raising=False)
-    monkeypatch.delenv(plane.LICENSE_AUTHORITY_REFERENCE_ENV, raising=False)
-    with pytest.raises(plane.MinutesPlaneHeld, match="env_pair_required"):
-        plane.license_authority_receipt()
-
-
-def test_license_gate_refuses_an_unpinned_digest(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv(plane.LICENSE_AUTHORITY_ENV, plane.LICENSE_AUTHORITY_GATE_VALUE)
-    monkeypatch.setenv(plane.LICENSE_AUTHORITY_REFERENCE_ENV, "ff" * 32)
-    with pytest.raises(plane.MinutesPlaneHeld, match="not_out_of_band_allowlisted"):
-        plane.license_authority_receipt()
-
-
-def test_license_gate_pins_the_operator_statement_digest() -> None:
-    assert plane.LICENSE_AUTHORITY_GATE_VALUE == "operator_attestation_verified"
-    assert plane.TRUSTED_LICENSE_AUTHORITY_SHA256S == frozenset(
-        {"ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"}
-    )
-    assert plane.LICENSE_AUTHORITY_ENV == addons.LICENSE_AUTHORITY_ENV
-    assert plane.LICENSE_AUTHORITY_REFERENCE_ENV == addons.LICENSE_AUTHORITY_REFERENCE_ENV
-
-
 def test_tp0_probe_receipt_is_required_before_any_backfill(tmp_path: Path) -> None:
-    with pytest.raises(plane.MinutesPlaneHeld, match="tp0_stk_mins_probe_receipt_absent"):
+    with pytest.raises(
+        plane.MinutesPlaneHeld, match="tp0_stk_mins_probe_receipt_absent"
+    ):
         plane.require_tp0_probe_receipt(tmp_path / "empty")
 
 
 def test_tp0_probe_without_an_access_witness_is_refused(tmp_path: Path) -> None:
     directory = (
-        tmp_path / "stk_mins" / "by_frequency=1min" / "by_trade_date=2026-08-07"
+        tmp_path
+        / "stk_mins"
+        / "by_frequency=1min"
+        / "by_trade_date=2026-08-07"
         / f"by_scope=ticker-{TICKER}"
     )
     directory.mkdir(parents=True)
@@ -920,10 +967,7 @@ def test_tp0_probe_receipt_reports_contract_agreement(tp0_probe_root: Path) -> N
     )
 
 
-def test_execute_enforces_both_gates_even_when_the_caller_skipped_them(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.delenv(plane.LICENSE_AUTHORITY_ENV, raising=False)
+def test_execute_enforces_tp0_even_when_the_caller_skipped_it(tmp_path: Path) -> None:
     sessions = make_sessions(2)
     empty_plan = plane.plan_backfill(
         universe=make_universe([TICKER], years={TICKER: {ANCHOR_YEAR}}),
@@ -938,7 +982,7 @@ def test_execute_enforces_both_gates_even_when_the_caller_skipped_them(
 
 
 def test_execute_writes_a_partition_and_a_ledger_row(
-    tmp_path: Path, provisioned_license: None, tp0_probe_root: Path
+    tmp_path: Path, tp0_probe_root: Path
 ) -> None:
     root = tmp_path / "store"
     sessions = make_sessions(2)
@@ -993,7 +1037,7 @@ def test_execute_writes_a_partition_and_a_ledger_row(
 
 
 def test_execute_records_a_bad_partition_and_keeps_going(
-    tmp_path: Path, provisioned_license: None, tp0_probe_root: Path
+    tmp_path: Path, tp0_probe_root: Path
 ) -> None:
     """One poisoned ticker-year must not abort a multi-hour backfill, nor vanish."""
     root = tmp_path / "store"
@@ -1050,19 +1094,38 @@ def test_cli_plan_is_offline_and_emits_the_budget(
     universe_file.write_text(f"# comment\n{TICKER}\n\n", encoding="utf-8")
     catalog = tmp_path / "limit_events.parquet"
     pd.DataFrame(
-        {"date": [pd.Timestamp(day) for day in make_sessions(40)],
-         "ticker": [TICKER] * 40}
+        {
+            "date": [pd.Timestamp(day) for day in make_sessions(40)],
+            "ticker": [TICKER] * 40,
+        }
     ).to_parquet(catalog)
 
-    assert cli.main(
-        [
-            "--plan", "--universe", "file", "--universe-file", str(universe_file),
-            "--frequency", "1min", "--year-scope", "all-years",
-            "--session-source", "event-catalog", "--event-catalog", str(catalog),
-            "--start", ANCHOR_FIRST_SESSION.isoformat(), "--end", f"{ANCHOR_YEAR}-12-31",
-            "--store-root", str(tmp_path / "store"),
-        ]
-    ) == 0
+    assert (
+        cli.main(
+            [
+                "--plan",
+                "--universe",
+                "file",
+                "--universe-file",
+                str(universe_file),
+                "--frequency",
+                "1min",
+                "--year-scope",
+                "all-years",
+                "--session-source",
+                "event-catalog",
+                "--event-catalog",
+                str(catalog),
+                "--start",
+                ANCHOR_FIRST_SESSION.isoformat(),
+                "--end",
+                f"{ANCHOR_YEAR}-12-31",
+                "--store-root",
+                str(tmp_path / "store"),
+            ]
+        )
+        == 0
+    )
     payload = json.loads(capsys.readouterr().out)
     assert payload["mode"] == "planned_no_network_no_write"
     assert payload["call_count"] == 2  # 40 sessions -> 29 + 11
@@ -1070,50 +1133,55 @@ def test_cli_plan_is_offline_and_emits_the_budget(
     assert not (tmp_path / "store").exists(), "plan mode must not write"
 
 
-def test_cli_execute_without_the_license_gate_holds_with_the_recipe(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.delenv(plane.LICENSE_AUTHORITY_ENV, raising=False)
-    monkeypatch.delenv(plane.LICENSE_AUTHORITY_REFERENCE_ENV, raising=False)
-    assert cli.main(["--execute", "--store-root", str(tmp_path / "store")]) == 2
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "held"
-    assert payload["reason_code"] == "operator_license_authority_env_pair_required"
-    assert plane.LICENSE_AUTHORITY_ENV in payload["provisioning_recipe"]
-    assert payload["authority_document"] == plane.LICENSE_AUTHORITY_DOCUMENT
-
-
 def test_cli_execute_holds_on_the_tp0_sequencing_law(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
-    provisioned_license: None,
 ) -> None:
-    assert cli.main(
-        [
-            "--execute", "--store-root", str(tmp_path / "store"),
-            "--addons-root", str(tmp_path / "no-probes"),
-        ]
-    ) == 2
+    assert (
+        cli.main(
+            [
+                "--execute",
+                "--store-root",
+                str(tmp_path / "store"),
+                "--addons-root",
+                str(tmp_path / "no-probes"),
+            ]
+        )
+        == 2
+    )
     payload = json.loads(capsys.readouterr().out)
-    assert payload["reason_code"] == "tp0_stk_mins_probe_receipt_absent_backfill_is_sequenced"
+    assert (
+        payload["reason_code"]
+        == "tp0_stk_mins_probe_receipt_absent_backfill_is_sequenced"
+    )
     assert "TP-0" in payload["sequencing_law"]
 
 
 def test_cli_spine_universe_is_explicitly_deferred(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    assert cli.main(
-        ["--plan", "--universe", "spine", "--store-root", str(tmp_path / "store")]
-    ) == 2
+    assert (
+        cli.main(
+            ["--plan", "--universe", "spine", "--store-root", str(tmp_path / "store")]
+        )
+        == 2
+    )
     payload = json.loads(capsys.readouterr().out)
-    assert payload["reason_code"] == "spine_full_a_universe_is_deferred_see_takeover_lane_b"
+    assert (
+        payload["reason_code"]
+        == "spine_full_a_universe_is_deferred_see_takeover_lane_b"
+    )
 
 
 def test_cli_module_entrypoint_runs_without_a_token() -> None:
     """A keyless invocation must produce usage text, never a traceback."""
     completed = subprocess.run(
         [sys.executable, "-m", "scripts.backfill_tushare_minutes", "--help"],
-        cwd=ROOT, capture_output=True, text=True, timeout=120,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
         env={"PATH": "/usr/bin:/bin", "HOME": str(ROOT)},
     )
     assert completed.returncode == 0
