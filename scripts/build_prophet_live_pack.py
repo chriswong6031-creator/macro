@@ -146,11 +146,15 @@ def _workers(explicit: int | None) -> int:
 def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
           workers: int | None = None, limit: int | None = None) -> dict[str, Any]:
     """Run both phases across a process pool and return the assembled payload."""
-    from scripts.build_stock_library import universe  # noqa: PLC0415
+    from scripts.build_stock_library import universe, universe_price_adjustment  # noqa: PLC0415
 
     c = AP.pack_cfg(cfg)
     t0 = time.time()
     uni = universe()
+    # Read straight after universe(), which is what populates it: the map describes the
+    # LAST call, and the workers each make their own (see _winit), so a read taken later
+    # in this function would be racing a rebuild for no reason.
+    px_adjustment = universe_price_adjustment()
     if limit:
         uni = uni[: int(limit)]
     series: dict[str, Any] = {}
@@ -326,7 +330,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
         names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
     payload = AP.assemble(names, as_of=tip or "", cfg=c, universe_n=len(uni),
                           wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
-                          probe_seconds=probe_seconds,
+                          probe_seconds=probe_seconds, price_adjustment=px_adjustment,
                           build_seconds=time.time() - t0, skipped=skipped, now=now)
     payload["meta"]["phase_seconds"] = {"load": round(t_centre - t0, 1),
                                         "centre": round(centre_s, 1),

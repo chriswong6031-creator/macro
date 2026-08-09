@@ -82,8 +82,25 @@ def pack(names: dict, as_of: str | None = None) -> dict:
 
 
 def quotes(**px: float) -> dict:
-    return {t: {"price": v, "prev_close": v, "change_pct": 0.0, "ts_ms": None,
+    """A quote view with NO previous close.
+
+    ``prev_close: None`` is a real production shape (the heatmap-derived rows carry it,
+    by construction) and it is the right default here: it leaves the ONE PRICE BASIS
+    assertion UNCHECKED for these names, so the sixty tests below keep testing the
+    thing they are named after instead of also asserting a basis. The helper used to
+    set ``prev_close = price``, which claims the previous session closed at this pass's
+    live price — a 6% pack-vs-feed gap on the very first fixture, and every one of
+    those names would now dark ``basis_mismatch``. The basis gate has its own fixtures:
+    :func:`quotes_with_prev`.
+    """
+    return {t: {"price": v, "prev_close": None, "change_pct": 0.0, "ts_ms": None,
                 "source": "quotes"} for t, v in px.items()}
+
+
+def quotes_with_prev(px: dict, prev: dict) -> dict:
+    """A quote view that DOES carry previous closes — the basis assertion's fixture."""
+    return {t: {"price": v, "prev_close": prev.get(t), "change_pct": 0.0,
+                "ts_ms": None, "source": "quotes"} for t, v in px.items()}
 
 
 def _run(p, q, prev=None, *, now=NOW, age=1.0):
@@ -812,6 +829,113 @@ def test_every_dark_state_carries_a_reason_and_no_price():
         assert "price" not in st, tkr     # a dark row never carries a number
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE PRICE BASIS (W-L0 gate 3) — the startup assertion
+#
+# The armed levels are prices on the store's ADJUSTED close series; `price` is a RAW
+# vendor print. They are comparable only while both describe the same scale, and the
+# pack's `as_of_close` against the feed's `prev_close` for that same session is the
+# measurement of exactly that. The cross-module vocabulary lives in
+# tests/test_prophet_live_basis.py; what is pinned here is what the LANE does with it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_pack_close_that_matches_the_feeds_previous_close_evaluates_normally():
+    """The matching case. `buyable()` arms at as_of_close=100.0, so a feed that also
+    calls the previous close 100.0 is on the same scale and nothing is withheld."""
+    art = _run(pack({"BBB": buyable()}),
+               quotes_with_prev({"BBB": 100.0}, {"BBB": 100.0}))
+    assert art["states"]["BBB"]["state"] == "forming"
+    ba = art["meta"]["price_adjustment"]
+    assert ba["checked_n"] == 1 and ba["unchecked_n"] == 0 and ba["mismatched"] == {}
+
+
+def test_a_dividend_sized_pack_vs_feed_gap_darks_that_name():
+    """The materially-mismatched case. A 1% gap between the pack's close and the feed's
+    previous close for the SAME session is a distribution, not tick noise — the levels
+    and the tape are on different scales and no honest state can be read off them."""
+    art = _run(pack({"BBB": buyable()}),
+               quotes_with_prev({"BBB": 100.0}, {"BBB": 101.0}))
+    st = art["states"]["BBB"]
+    assert st["state"] == "dark"
+    assert st["reason"] == "basis_mismatch"
+    # The measured gap rides on the row: a dark that cannot be sized is a dark nobody
+    # can triage.
+    assert st["basis_gap_pct"] == pytest.approx(-0.9901, abs=1e-3)
+    assert "price" not in st                      # a dark row never carries a number
+    assert art["meta"]["dark_counts"] == {"basis_mismatch": 1}
+    assert set(art["meta"]["price_adjustment"]["mismatched"]) == {"BBB"}
+
+
+def test_a_basis_mismatch_darks_only_that_name_and_leaves_the_pack_live():
+    """Per-name withholding, the same trade `interval.membership_mismatches` makes: a
+    distribution is a per-name event, and a whole-artifact dark would additionally cost
+    every healthy name the debounce it has already banked today."""
+    art = _run(pack({"AAA": buyable(), "BBB": buyable()}),
+               quotes_with_prev({"AAA": 100.0, "BBB": 100.0},
+                                {"AAA": 100.0, "BBB": 101.0}))
+    assert art["status"] == "live"
+    assert art["states"]["AAA"]["state"] == "forming"
+    assert art["states"]["BBB"]["state"] == "dark"
+
+
+@pytest.mark.parametrize("prev,darked", [
+    (100.20, False),   # -0.1996% — inside 0.25%: cross-source cent noise, not a basis
+    (100.30, True),    # -0.2992% — past it: the smallest thing we call a distribution
+])
+def test_the_tolerance_is_the_thing_that_decides(prev, darked):
+    """Both sides of the threshold, so widening or narrowing it cannot pass silently."""
+    art = _run(pack({"BBB": buyable()}), quotes_with_prev({"BBB": 100.0}, {"BBB": prev}))
+    assert (art["states"]["BBB"]["state"] == "dark") is darked
+
+
+def test_the_tolerance_is_operator_configurable_and_actually_read():
+    cfg = LS.live_cfg({"prophet_live": {"debounce_passes": 2, "quote_max_age_min": 12,
+                                        "basis_tolerance_pct": 5.0}})
+    art = LS.evaluate(pack({"BBB": buyable()}),
+                      quotes_with_prev({"BBB": 100.0}, {"BBB": 101.0}), None,
+                      now=NOW, cfg=cfg, quote_age_of=lambda _q: 1.0)
+    assert art["states"]["BBB"]["state"] == "forming"   # 0.99% is inside a 5% tolerance
+
+
+def test_a_missing_previous_close_is_counted_unchecked_and_does_not_dark():
+    """Degrade-safe, and NOT a silent pass: a name we could not check is evaluated (the
+    lane's job is to speak when it honestly can) but it is counted, so a feed that stops
+    publishing previous closes reads as unverified rather than as verified clean."""
+    art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
+    assert art["states"]["BBB"]["state"] == "forming"
+    ba = art["meta"]["price_adjustment"]
+    assert ba["checked_n"] == 0 and ba["unchecked_n"] == 1
+
+
+def test_every_live_payload_names_both_price_bases():
+    """A consumer must never have to infer which series a number came from."""
+    art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
+    ba = art["meta"]["price_adjustment"]
+    assert ba["levels"] == LS.DEFAULT_PACK_ADJUSTMENT
+    assert ba["quote"] == LS.LIVE_QUOTE_ADJUSTMENT
+    assert ba["levels"] != ba["quote"], "the two seams are NOT the same basis"
+    assert ba["tol_pct"] == 0.25
+
+
+def test_the_payload_repeats_the_packs_own_basis_rather_than_asserting_one():
+    p = pack({"BBB": buyable()})
+    p["price_adjustment"] = "some_other_basis"
+    art = _run(p, quotes(BBB=100.0))
+    assert art["meta"]["price_adjustment"]["levels"] == "some_other_basis"
+
+
+def test_a_name_whose_levels_are_on_another_basis_says_so_on_its_own_row():
+    """The breadth-cache names accrue raw closes between rebuilds, so their levels are
+    NOT on the artifact-level basis. Key present ⇒ this row's basis; key absent ⇒ the
+    header's — the rule is written down, so nothing is derived."""
+    entry = buyable()
+    entry["price_adjustment"] = LS.LIVE_QUOTE_ADJUSTMENT
+    art = _run(pack({"AAA": buyable(), "BBB": entry}),
+               quotes(AAA=100.0, BBB=100.0))
+    assert "levels_adjustment" not in art["states"]["AAA"]
+    assert art["states"]["BBB"]["levels_adjustment"] == LS.LIVE_QUOTE_ADJUSTMENT
+
+
 def test_the_freshness_stamp_and_delay_ride_on_every_payload():
     art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
     m = art["meta"]
@@ -1004,9 +1128,17 @@ def test_the_evaluator_module_imports_no_data_writer():
                     assert full not in banned_modules, f"{rel}: imports {full}"
     # live_states reads the interval contract from the stdlib-only sibling, NOT from
     # armed_pack — the latter imports pandas, which this lane does not install.
-    src = (ROOT / "engine" / "prophet_live" / "live_states.py").read_text(encoding="utf-8")
-    assert ("from engine.prophet_live.interval import "
-            "in_probed_band, interval_contains, lower_edge") in src
+    # Asserted over the PARSED imports, not over a source substring: the substring
+    # version pinned one formatting of one import list, so adding a name to it (the
+    # price-basis vocabulary) read as a lane violation while the actual rule — where
+    # the contract comes from — was never checked.
+    live_tree = ast.parse((ROOT / "engine" / "prophet_live" / "live_states.py")
+                          .read_text(encoding="utf-8"))
+    from_interval: set[str] = set()
+    for node in ast.walk(live_tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "engine.prophet_live.interval":
+            from_interval |= {a.name for a in node.names}
+    assert {"in_probed_band", "interval_contains", "lower_edge"} <= from_interval
 
 
 def test_the_evaluator_imports_with_pandas_blocked():

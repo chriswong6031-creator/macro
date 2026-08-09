@@ -1047,12 +1047,19 @@ jobs:
       #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
       #                Stdlib + pyyaml only, so it rides in this job rather than
       #                needing one of its own.
+      #   one basis    tests/test_prophet_live_basis.py — W-L0 gate 3, the CROSS-MODULE
+      #                half: the adjustment vocabulary against engine.price_ladder's,
+      #                the pack's own basis stamp, and the per-pass pack-vs-feed audit.
+      #                The lane behaviour it feeds is pinned in the evaluator and
+      #                reconciler files above. LISTED HERE ON PURPOSE — this job
+      #                enumerates its files, so an unlisted new suite never runs.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
+          tests/test_prophet_live_basis.py
           tests/test_prophet_live_vps_lane.py -q
 
   collector-registry:
