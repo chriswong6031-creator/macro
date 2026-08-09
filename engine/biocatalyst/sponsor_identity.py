@@ -9,6 +9,13 @@ NOT a point-in-time identity service and NOT an inferred join:
   timestamp, and the authorizing ruling bound by path and content digest. A
   model cannot manufacture attributed human authority, so admission stays a
   human act even though the map now resolves;
+* an admitted row also declares its ``issuer_relationship``, because the
+  claimed ticker is not always the sponsor: ``direct_issuer`` means the
+  sponsor string IS the listed issuer, and ``parent_of_subsidiary_sponsor``
+  means the sponsor is a SUBSIDIARY whose trials are attributed to the parent
+  (a Genentech trial surfaces under Roche). That is a declared modelling
+  choice, not a discovered fact, so the row says which one it is instead of
+  leaving a reader to infer it from a name;
 * everything else returns unavailable WITH A REASON, never a guess;
 * ambiguity (several issuers, a subsidiary, a JV, a rename) is queued for a
   reviewer with its competing candidates recorded, never silently picked; and
@@ -69,6 +76,15 @@ ATTESTATION_FIELDS = (
     "ruling_ref",
     "ruling_sha256",
 )
+
+# An admitted row's ticker is not always the sponsor. `direct_issuer` means the
+# sponsor string IS the listed issuer; `parent_of_subsidiary_sponsor` means the
+# sponsor is a SUBSIDIARY and the ticker is its PARENT, so that subsidiary's
+# trials surface under the parent. That is a declared modelling choice, and a
+# reader must be able to tell the two apart without re-deriving it from a name,
+# so an admitted row is required to say which it is.
+ISSUER_RELATIONSHIPS = ("direct_issuer", "parent_of_subsidiary_sponsor")
+PARENT_OF_SUBSIDIARY_SPONSOR = "parent_of_subsidiary_sponsor"
 
 UNAVAILABLE_SPONSOR_UNKNOWN = "sponsor_not_in_reviewed_map"
 UNAVAILABLE_OUTSIDE_INTERVAL = "outside_effective_interval"
@@ -190,6 +206,13 @@ def _row_shape_issues(index: int, row: Mapping[str, Any]) -> list[ValidationIssu
         for key in ATTESTATION_FIELDS
     )
     has_ambiguity_reason = "ambiguity_reason" in row
+    has_issuer_relationship = "issuer_relationship" in row
+
+    # `issuer_relationship` is the admitted row's answer to "is this ticker the
+    # sponsor, or the sponsor's parent?". Only an admitted row claims a ticker
+    # under review, so only an admitted row may carry it — and must.
+    if review_state != "reviewed_admitted" and has_issuer_relationship:
+        issues.append(_issue(f"{base}.issuer_relationship", "sponsor_map.issuer_relationship_scope", "issuer_relationship belongs only to a reviewed_admitted row"))
 
     if review_state == "candidate_unreviewed":
         if ticker is None:
@@ -208,6 +231,11 @@ def _row_shape_issues(index: int, row: Mapping[str, Any]) -> list[ValidationIssu
             # ruling document exist at a digest it does not control. This is
             # the fence that keeps admission a human act.
             issues.append(_issue(f"{base}.review", "sponsor_map.admitted_attestation", "an admitted row must carry a complete operator attestation: named reviewer, timestamp, review reference, and the authorizing ruling bound by path and sha256"))
+        if row.get("issuer_relationship") not in ISSUER_RELATIONSHIPS:
+            # Silence here would let a subsidiary row read as an issuer row: the
+            # trial says Genentech, the map answers RHHBY, and nothing on the
+            # row records that those are a subsidiary and its parent.
+            issues.append(_issue(f"{base}.issuer_relationship", "sponsor_map.admitted_issuer_relationship", "an admitted row must declare whether its ticker is the sponsor itself (direct_issuer) or the sponsor's parent (parent_of_subsidiary_sponsor)"))
         if has_ambiguity_reason:
             issues.append(_issue(f"{base}.ambiguity_reason", "sponsor_map.ambiguity_reason_scope", "ambiguity_reason belongs only to an ambiguous_queued row"))
     elif review_state == "reviewed_rejected":
@@ -446,12 +474,24 @@ class SponsorResolution:
     review_state: str | None = None
     candidate_tickers: tuple[str, ...] = ()
     ambiguity_reason: str | None = None
+    issuer_relationship: str | None = None
     valid_from: str | None = None
     valid_to: str | None = None
 
     @property
     def available(self) -> bool:
         return self.status == "resolved"
+
+    @property
+    def ticker_is_the_parent_of_a_subsidiary_sponsor(self) -> bool:
+        """True when the resolved ticker is the sponsor's PARENT, not the sponsor.
+
+        A caller printing "the sponsor of this trial" must not print the parent's
+        name; a caller attributing the trial to an issuer must. The two are
+        different questions and this is the field that separates them.
+        """
+
+        return self.issuer_relationship == PARENT_OF_SUBSIDIARY_SPONSOR
 
 
 def _unavailable(sponsor_name: str, as_of: str, reason: str, **extra: Any) -> SponsorResolution:
@@ -526,6 +566,7 @@ def resolve_sponsor(
         ticker=row.get("ticker"),
         review_state="reviewed_admitted",
         candidate_tickers=candidates,
+        issuer_relationship=row.get("issuer_relationship"),
         valid_from=row.get("valid_from"),
         valid_to=row.get("valid_to"),
     )
