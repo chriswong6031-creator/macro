@@ -794,7 +794,10 @@ def test_vendor_pool_identity_canonicalization_matches_procurement_census():
         raw_tickers,
         load_market_calendar(DEFAULT_CALENDAR_PATH),
     )
-    assert inventory["rows"] == 3920
+    # Wave 0 physically removes the 818 weekend-clone rows; the continuation
+    # inventory must bind to that repaired 3,102-row artifact, not merely
+    # filter the stale pre-repair file at measurement time.
+    assert inventory["rows"] == 3102
     assert inventory["literal_unique_tickers"] == 1770
     assert inventory["unique_tickers"] == 1607
     assert inventory["literal_raw_overlap_tickers"] == 514
@@ -917,6 +920,9 @@ def test_full_small_fixture_is_deterministic_and_postgap_has_no_returns(tmp_path
     assert first["ore_coverage_ledger"]["n3plus"]["status"].startswith("EXPLORATORY")
     fingerprint = first["data_inventory"]["input_provenance"]
     assert fingerprint["combined_sha256"]
+    assert "snapshot still contains 2 off-calendar clone rows" in fingerprint[
+        "zt_pool_snapshot_disclosure"
+    ]
     assert set(fingerprint["components"]) == {
         "raw_ohlcv_content_sha256",
         "calendar_content_sha256",

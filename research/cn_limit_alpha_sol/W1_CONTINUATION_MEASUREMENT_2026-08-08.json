@@ -210,16 +210,16 @@
     },
     "input_provenance": {
       "algorithm": "sha256_content_addressed_v2",
-      "combined_sha256": "7924ccc8295c23d835c851e0e26a5f73ee09f1bba9d109e813e8f4270a5db76d",
+      "combined_sha256": "cb36dad39587ebdd230481da3c5932f22c08642f227a69c63fbc24e6da835d51",
       "components": {
         "raw_ohlcv_content_sha256": "65ebca929e9a3ff470233994cb5af7446ad584c74a8f066c89d8afd0d7a1e1df",
         "calendar_content_sha256": "53f8c51526e675e14d3591f2971accb0f57a9851e525c1e8cf052acf33d26623",
         "st_snapshot_content_sha256": "e7bfdd62b9b8c4e93823d9a5b49c98f690f3a1a704aaf48717578977cea51fcd",
-        "zt_pool_content_sha256": "83e0b2633263e6bfde9ad0ea1febac0c6589c34386bb7c5d678e0b0a862c265f",
-        "runner_content_sha256": "bcc88be97c113b6b76cda3571177b122cc5858c7d2ef48d8ec273c7bf12ef25a",
+        "zt_pool_content_sha256": "0b0f4d795a2381842e4865d8bedcbfcb08097ccc91a74c181237da6f6fc4e08f",
+        "runner_content_sha256": "fef8608e506a63025d48c977fa3f0f087113e4e2fa763b4c747cb59de6892404",
         "definition_config_sha256": "c1269bb79eb666d012ae5b7c54924cc057a85993b5508742de229f812717bf8d"
       },
-      "zt_pool_snapshot_disclosure": "The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated."
+      "zt_pool_snapshot_disclosure": "The hash covers the exact worktree file consumed; the physically repaired zt-pool artifact contains no off-calendar clone rows."
     },
     "read_errors": [],
     "st_snapshot": {
@@ -234,7 +234,7 @@
     "zt_pool": {
       "status": "canonical_identity_inventory_with_valid_session_descriptive_join",
       "path": "data/china_zt_pool/pool.parquet",
-      "rows": 3920,
+      "rows": 3102,
       "literal_unique_tickers": 1770,
       "unique_tickers": 1607,
       "ticker_alias_rule": "uppercase; .SH is canonicalized to repo-native .SS",
@@ -249,9 +249,9 @@
       "valid_observed_session_rows": 3102,
       "valid_observed_rows_with_raw_ohlcv": 1187,
       "valid_observed_rows_with_raw_ohlcv_pct": 38.26563507414571,
-      "stamped_dates": 47,
+      "stamped_dates": 36,
       "first_stamped_date": "2026-06-15",
-      "last_stamped_date": "2026-08-08",
+      "last_stamped_date": "2026-08-07",
       "limitation": "weekend clones are excluded and missing sessions are never imputed as zero"
     },
     "curated_slice_warning": "The local nominal OHLCV universe is a curated slice. Results do not generalise to the full 打板 universe or to vendor-observed names without local price history."
@@ -176072,23 +176072,11 @@
     },
     "VENDOR_DESCRIPTIVE_STRATUM": {
       "status": "descriptive_probability_only_no_imputation_no_return_verdict",
-      "rows_total": 3920,
+      "rows_total": 3102,
       "valid_observed_session_rows": 3102,
       "valid_observed_sessions": 36,
-      "excluded_clone_rows": 818,
-      "excluded_clone_dates": [
-        "2026-07-04",
-        "2026-07-05",
-        "2026-07-11",
-        "2026-07-12",
-        "2026-07-18",
-        "2026-07-19",
-        "2026-07-25",
-        "2026-07-26",
-        "2026-08-01",
-        "2026-08-02",
-        "2026-08-08"
-      ],
+      "excluded_clone_rows": 0,
+      "excluded_clone_dates": [],
       "missing_sessions_within_vendor_span_no_zero_imputation": [
         "2026-06-29",
         "2026-07-09",

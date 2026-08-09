@@ -151,16 +151,13 @@ TuShare states that the independent-permission prices above are personal prices 
 - no THS-derived field should appear in company/internal or user-facing use without the required THS commercial rights;
 - raw vendor data should never be redistributed; only derived features may leave the internal research plane, and only if the governing license permits derived-data use.
 
-### 4.4 Current credential blocker
+### 4.4 Purchase and credential status — verified 2026-08-08
 
-The GitHub secret exists and was updated on 2026-08-08, but the first Asia run after that update still received TuShare `code=40101` from `trade_cal`, `daily`, `daily_basic`, and all premium endpoints. The committed premium plane remains frozen at 2026-07-24.
+The operator completed the 10,000-point recharge and purchased the three recommended independent permissions: historical A-share minute bars, pre-market share-capital data, and auction data. No further displayed add-on is recommended now.
 
-Operator recovery:
+The refreshed GitHub Actions secret is live. [Asia-close run 31296860358](https://github.com/chriswong6031-creator/macro/actions/runs/31296860358) completed the TuShare adapter in 59.7 seconds without `40101` or `40203` and emitted, among other artifacts, 5,535-name `daily_basic`, 5,535-name `cyq_perf`, 5,905-name `moneyflow_dc`, 1,994-name margin, 165-name broker-recommendation, and 3,550-name forecast outputs for the current collection cycle. This proves the refreshed credential and 10,000-point specialty plane; no token value is recorded here.
 
-1. Log into tushare.pro and compare the current account-page token with the GitHub Actions secret `TUSHARE_TOKEN` without exposing either value.
-2. If they differ, update the secret with the current account token.
-3. If they match, verify that the membership/points purchase attached to that account is active; copying the same token again will not help.
-4. Recovery is proven only when a live call returns `code=0` and the nightly artifacts advance beyond 2026-07-24.
+That run does **not** prove the three independent add-on endpoints. The existing Asia collector does not yet call `stk_mins`, `stk_premarket`, or `stk_auction`. Their provenance-first collectors and bounded entitlement probes are the next ingestion wave. `stk_auction_o` and `stk_auction_c` remain disabled until TuShare confirms in writing that the purchased auction SKU includes them and states their historical range.
 
 ## 5. Level-2: useful, but only after a paid-data gauntlet
 

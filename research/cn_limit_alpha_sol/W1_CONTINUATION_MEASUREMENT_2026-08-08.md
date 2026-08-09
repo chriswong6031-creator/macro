@@ -29,9 +29,9 @@
 - IPO traded-session regimes (files): {"chinext_pre_reform_listing_day_only": 233, "chinext_registration_first_five": 120, "main_historical_listing_day_only": 1204, "main_registration_first_five": 41, "star_from_inception_first_five": 243}; raw rows before the first positive-volume session: 450,434.
 - Tolerant boards: 55,631; strict boards: 29,351; marginal tolerance rows: 26,280.
 - Measured after boundary purge: 55,140 signals, 3,699 date clusters, 44,177 board-run clusters.
-- `china_zt_pool` vendor strata use valid observed sessions only: 11 clone dates are excluded, missing sessions are not imputed, and retrospective rows are explicitly stamped non-PIT.
+- `china_zt_pool` vendor strata use valid observed sessions only: 0 clone dates are excluded, missing sessions are not imputed, and retrospective rows are explicitly stamped non-PIT.
 - Vendor alias reconciliation: 1,770 literal names become 1,607 canonical names; 580 overlap raw OHLCV, and 1,187/3,102 valid rows have local prices.
-- Content-addressed input/config fingerprint: `7924ccc8295c23d835c851e0e26a5f73ee09f1bba9d109e813e8f4270a5db76d`. The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated.
+- Content-addressed input/config fingerprint: `cb36dad39587ebdd230481da3c5932f22c08642f227a69c63fbc24e6da835d51`. The hash covers the exact worktree file consumed; the physically repaired zt-pool artifact contains no off-calendar clone rows.
 
 ## Construction verdicts
 
@@ -271,7 +271,7 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 
 ## Vendor descriptive stratum
 
-- Valid observed-session rows: 3,102; excluded clone rows: 818 across 11 dates.
+- Valid observed-session rows: 3,102; excluded clone rows: 0 across 0 dates.
 - Retrospectively fetched/not-proven-PIT rows: 1,205; joined curated event rows: 1,156.
 - Ticker canonicalization recovered 223 joins beyond the literal-suffix sensitivity (933 literal joins).
 - Absolute seal fund is unnormalised; all vendor-field verdicts remain descriptive.

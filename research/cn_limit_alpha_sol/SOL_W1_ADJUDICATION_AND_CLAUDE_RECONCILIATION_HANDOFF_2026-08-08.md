@@ -86,6 +86,8 @@ Both N=1 and N=2 primary endpoint cells are negative at that locked ruler. N≥3
 
 Canonicalizing vendor identities recovers 223 event joins: 933 literal-suffix joins become 1,156. The vendor pool still contains 1,205 retrospectively fetched/not-proven-PIT rows, so its seal-fund, failed-seal, and turnover strata remain descriptive. This packet kills only the named daily next-open rulers on the curated, large-cap-biased slice. It does not test the 1,027 missing vendor names, intraday wall dynamics, T+1 inventory vintages, auction imbalance, follower substitution, PIT theme topology, or a full-capacity/mark-to-market portfolio.
 
+The terminal repaired-pool continuation artifacts are content-addressed: receipt JSON SHA-256 `0e7dee5de8fb048fce53a5ca5b0fb87c94092f838b64926c35296f176c2babbe`, Markdown SHA-256 `66eac444fd7f660e9d1c363471fdb47544f09b8f8cb1ccdfa2f434f89473309f`, producer SHA-256 `fef8608e506a63025d48c977fa3f0f087113e4e2fa763b4c747cb59de6892404`, and combined input/config fingerprint `cb36dad39587ebdd230481da3c5932f22c08642f227a69c63fbc24e6da835d51`.
+
 ## 4. What the blinded map added
 
 The blinded map was materially additive. Its strongest constructions not already identical to the frozen SOL map are:
@@ -116,6 +118,8 @@ The score combines mechanism depth, immediate feasibility, and collector reuse. 
 | 9 | Down-limit release plus two-sided traversal | 18 | D-close state; first exact executable unlock; retain daily path ambiguity |
 | 10 | Availability-safe LHB/block sponsorship | 12 | require `usable_at`; lag one full session when publication time is absent |
 | 11 | Post-close fixed-price pilot | 12 | regular close → distinct post-close order/tape; never reuse the close as its fill |
+
+Procurement is no longer the immediate blocker for ranks 1, 5, 6, and 8. The operator has activated the TuShare 10,000-point specialty tier and purchased historical A-share minute, pre-market share-capital, and auction permissions. A live Asia-close TuShare adapter run returned fresh specialty rows without `40101`/`40203`. The three independent add-on endpoints were not called by that legacy collector, so their entitlement and schema probes remain pending; historical `stk_auction_o/c` also remains disabled until TuShare confirms that the purchased auction SKU includes those endpoints.
 
 The security/session/rule spine now precedes any all-market verdict because the present cache contains only 0.72% of sub-50亿元 names and 100% of the largest-cap decile. The next three constructions can still run on the repaired slice as exploratory debugging while full-universe collection and ranks 5–8 accrue in parallel, but their nulls cannot be generalized to the market.
 

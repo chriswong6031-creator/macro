@@ -2336,6 +2336,7 @@ def _input_fingerprint(
     calendar_path: Path,
     st_path: Path,
     zt_path: Path,
+    zt_pool_excluded_clone_rows: int,
 ) -> dict[str, Any]:
     """Content-address every input plus executable definition/config state."""
     config_bytes = json.dumps(
@@ -2352,15 +2353,22 @@ def _input_fingerprint(
     combined = hashlib.sha256(
         json.dumps(components, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+    if zt_pool_excluded_clone_rows:
+        zt_disclosure = (
+            "The hash covers the exact worktree file consumed; the snapshot still contains "
+            f"{zt_pool_excluded_clone_rows:,} off-calendar clone rows, which the measurement excludes "
+            "by observed-calendar identity."
+        )
+    else:
+        zt_disclosure = (
+            "The hash covers the exact worktree file consumed; the physically repaired zt-pool "
+            "artifact contains no off-calendar clone rows."
+        )
     return {
         "algorithm": "sha256_content_addressed_v2",
         "combined_sha256": combined,
         "components": components,
-        "zt_pool_snapshot_disclosure": (
-            "The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot "
-            "but are excluded by observed-calendar identity. No claim is made that a separate repaired "
-            "data commit is integrated."
-        ),
+        "zt_pool_snapshot_disclosure": zt_disclosure,
     }
 
 
@@ -2800,6 +2808,8 @@ def run_measurement(
     results["VENDOR_DESCRIPTIVE_STRATUM"] = _vendor_descriptive_stratum(
         zt_path, events, market_calendar
     )
+    vendor_result = results["VENDOR_DESCRIPTIVE_STRATUM"]
+    zt_inventory = _zt_inventory(zt_path, raw_tickers, market_calendar)
     tolerant_total = sum(int(d.get("tolerant_sealed_up_rows") or 0) for d in diagnostics)
     strict_total = sum(int(d.get("strict_sealed_up_rows") or 0) for d in diagnostics)
     marginal_total = sum(int(d.get("marginal_tolerant_rows") or 0) for d in diagnostics)
@@ -3013,10 +3023,13 @@ def run_measurement(
                 calendar_path=calendar_path,
                 st_path=st_path,
                 zt_path=zt_path,
+                zt_pool_excluded_clone_rows=int(
+                    vendor_result.get("excluded_clone_rows", 0)
+                ),
             ),
             "read_errors": errors,
             "st_snapshot": st_inventory,
-            "zt_pool": _zt_inventory(zt_path, raw_tickers, market_calendar),
+            "zt_pool": zt_inventory,
             "curated_slice_warning": (
                 "The local nominal OHLCV universe is a curated slice. Results do not generalise to the "
                 "full 打板 universe or to vendor-observed names without local price history."
