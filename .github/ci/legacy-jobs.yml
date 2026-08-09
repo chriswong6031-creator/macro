@@ -1422,6 +1422,18 @@ jobs:
       # above already carry pandas + requests for exactly that client.
       - name: china full-A spine collector + manifest contract (#5116)
         run: python -m pytest tests/test_china_tushare_spine.py -q
+      # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
+      # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
+      # hole: none of the three lanes named its suite in any run: step, so 144
+      # offline tests covering technical execution fences, immutable receipts,
+      # the minutes manifest and the chips M2/M4 aggregation would run dark.
+      # This is the #5116 spine's natural home: every suite is a China-native
+      # collector over collectors/tushare_client, and the dependency step above
+      # already carries the measured import closure (pandas, pyarrow,
+      # jsonschema, requests and pyyaml). Lane B imports Lane A's endpoint
+      # contract at collection time, so the three suites remain one atomic step.
+      - name: china tushare takeover suites — addons gate + minutes plane + chips (A/B/C)
+        run: python -m pytest tests/test_tushare_addons.py tests/test_tushare_minutes_plane.py tests/test_tushare_chips_distribution.py -q
 
   china-board-breadth:
     if: ${{ false }}
