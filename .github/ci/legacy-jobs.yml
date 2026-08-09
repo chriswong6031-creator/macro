@@ -6321,6 +6321,26 @@ jobs:
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
 
+  market-memory-contract:
+    # Public-safe temporal-context and product-shell contract. Partner captures,
+    # credentials, private findings, and provider-specific code are deliberately
+    # absent from the repository and this zero-network lane.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests
+      - name: canonical Market Memory temporal and shell contracts
+        run: >-
+          python -m pytest
+          tests/test_market_memory.py
+          tests/test_build_market_memory_page.py -q
+
   group-linked-outsiders:
     # GR3 of the Group Reads program: filing-linked outsiders per US basket.
     #
