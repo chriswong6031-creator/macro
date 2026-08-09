@@ -2357,6 +2357,15 @@ jobs:
           python -m pytest
           tests/test_asset_stamp_lane_order.py tests/test_optimize_assets.py
           tests/test_asset_stamp_refresh.py -q
+      # closing-bell duplicate-render dedup — the OTHER render-lane contract that only
+      # exists in workflow YAML, and the one that shipped broken from day one: the
+      # session-day guard dedup'd on the stamp's `as_of` (an ISO timestamp) against a
+      # bare ET date, so the DST pair's summer line re-rendered every trading day
+      # (median 85.0 min of a two-Mac pool, straight through the nightly's fire window).
+      # Same deps as the suite above (pytest + pyyaml); the test executes the workflow's
+      # real writer heredoc, so a mirrored copy can never drift green past it.
+      - name: "closing-bell dedup — stamp writer/reader field contract (DST pair safety)"
+        run: python -m pytest tests/test_closingbell_dedup_contract.py -q
       # ui.interfonts_theme_sync: templates/_interfonts.html.j2 carries the six
       # Inter @font-face blocks copied verbatim from templates/theme.css (#2119,
       # for standalone pages that don't link theme.css). A theme.css font edit
