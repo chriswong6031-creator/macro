@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_prophet_annotation.v1.schema.json",
+  "title": "Government Revenue Prophet Annotation v1",
+  "description": "Wave 9F envelope. Post-selection annotation delivered to Prophet: the record carries evidence and generation identity only. It has no field for a rank, a size, a gate, or a pick — the shape itself cannot express a selection act.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "generated_at", "annotations", "skipped", "coverage", "authority", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue.prophet_annotation.v1"}, "schema_version": {"const": "1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "annotations": {"type": "array", "maxItems": 250, "items": {"$ref": "#/$defs/annotation"}},
+    "skipped": {"type": "array", "maxItems": 250, "items": {"type": "object", "additionalProperties": false, "required": ["candidate_id", "reason_code"], "properties": {"candidate_id": {"type": ["string", "null"]}, "reason_code": {"type": "string", "minLength": 1}}}},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["selected_ticker_count", "annotated_candidate_count", "skipped_candidate_count", "shadow_packet_budget_exhausted", "is_complete"], "properties": {"selected_ticker_count": {"type": "integer", "minimum": 0}, "annotated_candidate_count": {"type": "integer", "minimum": 0}, "skipped_candidate_count": {"type": "integer", "minimum": 0}, "shadow_packet_budget_exhausted": {"type": "boolean"}, "is_complete": {"const": false}}},
+    "authority": {"$ref": "#/$defs/authority"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "authority": {"type": "object", "additionalProperties": false, "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"], "properties": {"tier": {"const": "display"}, "context_only": {"const": true}, "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false}, "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}}},
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract", "schema_version", "annotation_id", "candidate_id", "observation_id",
+        "candidate_family", "candidate_state", "ticker", "issuer", "procurement_event",
+        "evidence_refs", "generation", "known_at", "freshness", "coverage", "contradictions",
+        "shadow_context", "shadow_context_reason_code", "label", "allowed_behavior", "authority", "limitations"
+      ],
+      "properties": {
+        "contract": {"const": "government_revenue.prophet_annotation.v1"}, "schema_version": {"const": "1.0.0"},
+        "annotation_id": {"type": "string", "pattern": "^grpa1-[a-f0-9]{24}$"},
+        "candidate_id": {"type": "string", "pattern": "^grc1-[a-f0-9]{24}$"},
+        "observation_id": {"type": "string", "pattern": "^gro1-[a-f0-9]{24}$"},
+        "candidate_family": {"type": ["string", "null"], "minLength": 1},
+        "candidate_state": {"type": ["string", "null"], "minLength": 1},
+        "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+        "issuer": {"type": "object", "additionalProperties": false, "required": ["company_name", "ticker", "issuer_company_id", "relation_semantic", "resolution_state", "graph_id", "graph_digest"], "properties": {"company_name": {"type": ["string", "null"]}, "ticker": {"type": ["string", "null"]}, "issuer_company_id": {"type": ["string", "null"]}, "relation_semantic": {"enum": ["reviewed", null]}, "resolution_state": {"type": ["string", "null"]}, "graph_id": {"type": ["string", "null"]}, "graph_digest": {"type": ["string", "null"]}}},
+        "procurement_event": {"type": "object", "additionalProperties": false, "required": ["event_id", "record_id", "event_type", "source_rail", "effective_at", "known_at", "amount_id", "amount_value", "amount_units", "transmission_direction"], "properties": {"event_id": {"type": ["string", "null"]}, "record_id": {"type": ["string", "null"]}, "event_type": {"type": ["string", "null"]}, "source_rail": {"type": ["string", "null"]}, "effective_at": {"type": ["string", "null"]}, "known_at": {"type": ["string", "null"]}, "amount_id": {"type": ["string", "null"]}, "amount_value": {"type": ["number", "null"]}, "amount_units": {"type": ["string", "null"]}, "transmission_direction": {"enum": ["possible_positive", "possible_negative", null]}}},
+        "evidence_refs": {"type": "object", "additionalProperties": false, "required": ["artifact_content_ids", "event_refs", "ownership_path_refs", "resolution_evidence_refs", "receipt_refs"], "properties": {"artifact_content_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}, "event_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}, "ownership_path_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}, "resolution_evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}, "receipt_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
+        "generation": {"type": "object", "additionalProperties": false, "description": "Every rendered annotation traces to these generations: the queue content id the candidate was published in, its source generations, and the shadow packet id.", "required": ["queue_content_id", "queue_known_at", "queue_as_of", "queue_source_generation_ids", "queue_source_content_ids", "shadow_packet_id"], "properties": {"queue_content_id": {"type": ["string", "null"], "pattern": "^grcq1-[a-f0-9]{24}$"}, "queue_known_at": {"type": ["string", "null"]}, "queue_as_of": {"type": ["string", "null"]}, "queue_source_generation_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}, "queue_source_content_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}, "shadow_packet_id": {"type": ["string", "null"], "pattern": "^grsp1-[a-f0-9]{24}$"}}},
+        "known_at": {"type": "string", "format": "date-time"},
+        "freshness": {"type": "object", "additionalProperties": false, "required": ["status", "award_events_status", "recipient_graph_status", "event_known_at", "graph_known_at"], "properties": {"status": {"type": "string", "minLength": 1}, "award_events_status": {"type": "string", "minLength": 1}, "recipient_graph_status": {"type": "string", "minLength": 1}, "event_known_at": {"type": ["string", "null"]}, "graph_known_at": {"type": ["string", "null"]}}},
+        "coverage": {"type": "object", "additionalProperties": false, "required": ["scope", "exact_link_status", "is_complete", "shadow_leg_names", "shadow_present_leg_names"], "properties": {"scope": {"type": ["string", "null"]}, "exact_link_status": {"type": ["string", "null"]}, "is_complete": {"const": false}, "shadow_leg_names": {"type": "array", "items": {"type": ["string", "null"]}}, "shadow_present_leg_names": {"type": "array", "items": {"type": ["string", "null"]}}}},
+        "contradictions": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": false, "required": ["contradiction_id", "kind", "legs", "handling", "statement_en", "statement_zh"], "properties": {"contradiction_id": {"type": ["string", "null"]}, "kind": {"type": ["string", "null"]}, "legs": {"type": "array", "items": {"type": "string", "minLength": 1}}, "handling": {"enum": ["both_legs_remain_visible_not_averaged", null]}, "statement_en": {"type": ["string", "null"]}, "statement_zh": {"type": ["string", "null"]}}}},
+        "shadow_context": {"oneOf": [{"type": "null"}, {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_revenue_shadow_context.v1.schema.json#/$defs/packet"}]},
+        "shadow_context_reason_code": {"type": ["string", "null"], "minLength": 1},
+        "label": {"type": "object", "additionalProperties": false, "required": ["en", "zh"], "properties": {"en": {"const": "shadow context"}, "zh": {"const": "影子背景"}}},
+        "allowed_behavior": {"const": "annotate_only"},
+        "authority": {"$ref": "#/$defs/authority"},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

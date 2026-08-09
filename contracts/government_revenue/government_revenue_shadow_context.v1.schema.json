@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_shadow_context.v1.schema.json",
+  "title": "Government Revenue Shadow Context v1",
+  "description": "Wave 9E cross-check packets for candidates another engine already admitted. Named legs only: the schema carries no leg-level or packet-level number, so a fused super-score cannot be expressed in a valid document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "generated_at", "label", "packets", "coverage", "authority", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue_shadow_context.v1"}, "schema_version": {"const": "1.0.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "label": {"$ref": "#/$defs/label"},
+    "packets": {"type": "array", "maxItems": 250, "items": {"$ref": "#/$defs/packet"}},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["candidate_count", "packet_count", "packet_order", "is_complete"], "properties": {"candidate_count": {"type": "integer", "minimum": 0}, "packet_count": {"type": "integer", "minimum": 0}, "packet_order": {"const": "candidate_input_order"}, "is_complete": {"const": false}}},
+    "authority": {"$ref": "#/$defs/authority"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "authority": {"type": "object", "additionalProperties": false, "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"], "properties": {"tier": {"const": "display"}, "context_only": {"const": true}, "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false}, "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}}},
+    "label": {"type": "object", "additionalProperties": false, "required": ["en", "zh", "limit_en", "limit_zh"], "properties": {"en": {"const": "shadow context"}, "zh": {"const": "影子背景"}, "limit_en": {"type": "string", "minLength": 1}, "limit_zh": {"type": "string", "minLength": 1}}},
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract", "schema_version", "packet_id", "candidate_id", "observation_id", "ticker",
+        "issuer_company_id", "known_at", "candidate_artifact_content_ids", "label", "legs",
+        "contradictions", "coverage", "authority", "limitations"
+      ],
+      "properties": {
+        "contract": {"const": "government_revenue_shadow_context.v1"}, "schema_version": {"const": "1.0.0"},
+        "packet_id": {"type": "string", "pattern": "^grsp1-[a-f0-9]{24}$"},
+        "candidate_id": {"type": "string", "pattern": "^grc1-[a-f0-9]{24}$"},
+        "observation_id": {"type": "string", "pattern": "^gro1-[a-f0-9]{24}$"},
+        "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+        "issuer_company_id": {"type": ["string", "null"], "minLength": 1},
+        "known_at": {"type": "string", "format": "date-time"},
+        "candidate_artifact_content_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "label": {"$ref": "#/$defs/label"},
+        "legs": {"type": "array", "minItems": 1, "maxItems": 40, "items": {"$ref": "#/$defs/leg"}},
+        "contradictions": {"type": "array", "maxItems": 40, "items": {"$ref": "#/$defs/contradiction"}},
+        "coverage": {"type": "object", "additionalProperties": false, "required": ["leg_names", "present_leg_names", "unavailable_leg_names", "is_complete"], "properties": {"leg_names": {"type": "array", "items": {"type": "string", "minLength": 1}}, "present_leg_names": {"type": "array", "items": {"type": "string", "minLength": 1}}, "unavailable_leg_names": {"type": "array", "items": {"type": "string", "minLength": 1}}, "is_complete": {"const": false}}},
+        "authority": {"$ref": "#/$defs/authority"},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A named bag of named readings. There is deliberately no numeric property at leg level: a leg cannot carry a summary figure, so the contradiction between two legs can never be averaged into one.",
+      "required": ["leg_id", "leg_family", "name", "status", "reason_code", "readings", "clocks", "freshness", "provenance"],
+      "properties": {
+        "leg_id": {"type": "string", "minLength": 1},
+        "leg_family": {"enum": ["procurement", "market_context", "integrity"]},
+        "name": {"type": "string", "minLength": 1},
+        "status": {"enum": ["present", "stale", "missing", "abstained", "contradictory"]},
+        "reason_code": {"type": ["string", "null"], "minLength": 1},
+        "readings": {"type": "array", "maxItems": 40, "items": {"$ref": "#/$defs/reading"}},
+        "clocks": {"$ref": "#/$defs/clocks"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    },
+    "reading": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One separately-inspectable measurement. The value is a scalar so it cannot hide a nested composite.",
+      "required": ["name", "value", "kind", "units"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "value": {"type": ["string", "number", "boolean", "null"]},
+        "kind": {"enum": ["level", "percent", "percentile", "ratio", "state", "count"]},
+        "units": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Every leg carries its own clocks. observed_at_basis names WHAT the observation clock actually is, so a bar date is never passed off as a separate observation receipt.",
+      "properties": {
+        "source_time": {"type": ["string", "null"]},
+        "observed_at": {"type": ["string", "null"]},
+        "observed_at_basis": {"type": ["string", "null"], "minLength": 1},
+        "known_at": {"type": ["string", "null"]},
+        "benchmark_source_time": {"type": ["string", "null"]}
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {"type": "string", "minLength": 1},
+        "age_days": {"type": ["number", "null"]},
+        "sla_days": {"type": ["number", "null"]}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Open by design: each lobe discloses its own basis fields (price rung and adjustment basis, graph digest, read-only access note). additionalProperties stays true here and ONLY here, and engine.government_revenue.shadow_context.assert_no_fused_score still refuses any bare number that lands in it.",
+      "properties": {
+        "lobe": {"type": "string", "minLength": 1},
+        "loader": {"type": ["string", "null"]},
+        "artifact": {"type": ["string", "null"]},
+        "access": {"enum": ["read_only"]}
+      }
+    },
+    "contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A named disagreement. handling is a const: a valid document cannot describe a contradiction as resolved, netted, or averaged.",
+      "required": ["contradiction_id", "kind", "legs", "reading_names", "handling", "statement_en", "statement_zh"],
+      "properties": {
+        "contradiction_id": {"type": "string", "pattern": "^grsx1-[a-f0-9]{24}$"},
+        "kind": {"type": "string", "minLength": 1},
+        "legs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "reading_names": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "handling": {"const": "both_legs_remain_visible_not_averaged"},
+        "statement_en": {"type": "string", "minLength": 1},
+        "statement_zh": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
