@@ -5087,6 +5087,14 @@ jobs:
       # `covered_obligations`.  Stdlib + the job's existing pandas/pyarrow only.
       - name: amount-class conflation gate — obligation vs ceiling vs outlay vs delta
         run: python -m pytest tests/test_government_revenue_amount_semantics.py -q
+      # Unrun backfill 2026-08-09: the SBIR/STTR progression evidence lane
+      # (Wave 10 rail 3, #5012) landed named by no run: step — the unrun-suite
+      # gate reds main on it.  It belongs HERE because the suite drives
+      # collectors/sbir_awards.py and engine/government_revenue/sbir_progression.py,
+      # the same federal-award collector family as the SAM.gov/USAspending steps
+      # above, under the same jsonschema-bearing install line.
+      - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        run: python -m pytest tests/test_sbir_awards.py -q
       - name: amount-class semantics guard (selftest + live source scan)
         run: |
           python3 scripts/check_government_revenue_amount_semantics.py --selftest
@@ -5287,6 +5295,15 @@ jobs:
       - name: tech-lab parity fixtures — structure only (determinism is platform-dependent)
         run: python -m pytest tests/test_tech_parity_fixtures.py -q
           --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
+      # Unrun backfill 2026-08-09: the W-L1a evening close-pass lane (#5154) —
+      # mirror/publish/reconcile builders behind the provisional evening board —
+      # landed named by no run: step; the unrun-suite gate reds main on it.  It
+      # joins this lane because its builders are store/ops lane builders and its
+      # sibling instrument (the freshness sentinel #5154 extended) already runs
+      # in the sweep above.  Static/AST + engine.close_pass/us_board_rank only;
+      # pandas/pyyaml ride the existing install line.
+      - name: evening close-pass provisional board lane (W-L1a, #5154)
+        run: python -m pytest tests/test_close_pass_lane.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
@@ -5337,6 +5354,13 @@ jobs:
       # the #4331 prophet-board suites, whose staging follows that PR's merge.)
       - name: prophet live user-facing surfaces
         run: python -m pytest tests/test_prophet_live_surface.py -q
+      # Unrun backfill 2026-08-09: the W-L1 board-state surface (#5148 — "which
+      # board am I looking at?") landed named by no run: step; the unrun-suite
+      # gate reds main on it.  It joins this lane because it is a shipped
+      # dashboard surface, sibling to the prophet live surfaces #5148 itself
+      # extended in the step directly above.
+      - name: W-L1 board-state surface (#5148)
+        run: python -m pytest tests/test_wl1_board_state_surface.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -5357,6 +5381,15 @@ jobs:
       # selector join the producer lane that owns the release-forecast estate.
       - name: CPI bridge + official-event live client + Release Radar date selection
         run: python -m pytest tests/test_release_cpi_bridge.py tests/test_release_publications_live_client.py tests/test_release_radar_date_selection.py -q
+      # Unrun backfill 2026-08-09: Release Radar canonical inflation truth
+      # (#5153) landed five suites named by no run: step — the unrun-suite gate
+      # reds main on them.  They join the producer lane that owns the
+      # release-forecast estate: the inflation-intelligence engine + its
+      # neural-web registration, the release-actuals reconciler, the defect
+      # ledger, and the target-truth vintage collector.  numpy/pandas ride the
+      # existing install line.
+      - name: Release Radar — inflation truth, actuals, defects, target truth (#5153)
+        run: python -m pytest tests/test_inflation_intelligence.py tests/test_inflation_intelligence_nw.py tests/test_release_actuals.py tests/test_release_defects.py tests/test_release_target_truth.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
