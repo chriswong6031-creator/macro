@@ -131,7 +131,6 @@
   "tests/test_cboe_vol_collectors.py",
   "tests/test_cctv_completion_pipeline.py",
   "tests/test_chain_session_hole_disclosure.py",
-  "tests/test_chain_snapshot_poller.py",
   "tests/test_challenger_signals.py",
   "tests/test_chart_grammar_signals.py",
   "tests/test_chart_perception.py",

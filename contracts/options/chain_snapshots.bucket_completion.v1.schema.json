@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "chain_snapshots.bucket_completion/v1",
+  "title": "U-CHAIN producer bucket completion receipt",
+  "oneOf": [
+    {"$ref": "#/$defs/intent"},
+    {"$ref": "#/$defs/decision"},
+    {"$ref": "#/$defs/availability"},
+    {"$ref": "#/$defs/incomplete"}
+  ],
+  "$defs": {
+    "schema": {"const": "chain_snapshots.bucket_completion/v1"},
+    "bucket_id": {"type": "string", "pattern": "^csb_[a-f0-9]{24}$"},
+    "receipt_id": {"type": "string", "pattern": "^csbr_[a-f0-9]{24}$"},
+    "session_date": {"type": "string", "format": "date"},
+    "bucket": {"type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"},
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$",
+      "format": "date-time"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "root": {
+      "type": "string",
+      "pattern": "^(?=.*[A-Z0-9])[A-Z0-9.^=-]{1,32}$"
+    },
+    "root_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root", "status", "rows_appended", "rows_total", "bucket_rows",
+        "bucket_content_sha256", "parquet_sha256", "oi_rows", "oi_total_rows",
+        "oi_parquet_sha256", "first_vendor_min_at", "first_vendor_max_at",
+        "first_prebucket_rows", "first_at_or_after_bucket_rows",
+        "second_clock_matched_rows", "second_clock_unmatched_rows",
+        "quarantined", "oi_quarantined"
+      ],
+      "properties": {
+        "root": {"$ref": "#/$defs/root"},
+        "status": {"const": "ok"},
+        "rows_appended": {"type": "integer", "minimum": 0},
+        "rows_total": {"type": "integer", "minimum": 0},
+        "bucket_rows": {"type": "integer", "minimum": 1},
+        "bucket_content_sha256": {"$ref": "#/$defs/sha256"},
+        "parquet_sha256": {"$ref": "#/$defs/sha256"},
+        "oi_rows": {"type": "integer", "minimum": 0},
+        "oi_total_rows": {"type": "integer", "minimum": 1},
+        "oi_parquet_sha256": {"$ref": "#/$defs/sha256"},
+        "first_vendor_min_at": {"$ref": "#/$defs/clock"},
+        "first_vendor_max_at": {"$ref": "#/$defs/clock"},
+        "first_prebucket_rows": {"type": "integer", "minimum": 0},
+        "first_at_or_after_bucket_rows": {"type": "integer", "minimum": 0},
+        "second_clock_matched_rows": {"type": "integer", "minimum": 0},
+        "second_clock_unmatched_rows": {"type": "integer", "minimum": 0},
+        "quarantined": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+\\.corrupt-[0-9]{8}T[0-9]{12}Z\\.parquet$"
+          }
+        },
+        "oi_quarantined": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+\\.corrupt-[0-9]{8}T[0-9]{12}Z\\.parquet$"
+          }
+        }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roots", "universe_n", "roots_ok", "roots_failed", "rows_appended",
+        "rows_total", "bucket_rows", "oi_rows", "oi_total_rows",
+        "first_prebucket_rows", "first_at_or_after_bucket_rows",
+        "second_clock_matched_rows", "second_clock_unmatched_rows",
+        "root_results", "result_sha256"
+      ],
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/root"}
+        },
+        "universe_n": {"type": "integer", "minimum": 1},
+        "roots_ok": {"type": "integer", "minimum": 1},
+        "roots_failed": {
+          "type": "integer",
+          "const": 0,
+          "x-exact-json-integer": true
+        },
+        "rows_appended": {"type": "integer", "minimum": 0},
+        "rows_total": {"type": "integer", "minimum": 0},
+        "bucket_rows": {"type": "integer", "minimum": 1},
+        "oi_rows": {"type": "integer", "minimum": 0},
+        "oi_total_rows": {"type": "integer", "minimum": 1},
+        "first_prebucket_rows": {"type": "integer", "minimum": 0},
+        "first_at_or_after_bucket_rows": {"type": "integer", "minimum": 0},
+        "second_clock_matched_rows": {"type": "integer", "minimum": 0},
+        "second_clock_unmatched_rows": {"type": "integer", "minimum": 0},
+        "root_results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/root_result"}
+        },
+        "result_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "kind", "bucket_id", "receipt_id", "session_date", "bucket",
+        "cadence_min", "roots", "preexisting_target_roots", "intent_at"
+      ],
+      "properties": {
+        "schema": {"$ref": "#/$defs/schema"},
+        "kind": {"const": "intent"},
+        "bucket_id": {"$ref": "#/$defs/bucket_id"},
+        "receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "session_date": {"$ref": "#/$defs/session_date"},
+        "bucket": {"$ref": "#/$defs/bucket"},
+        "cadence_min": {
+          "type": "integer",
+          "x-exact-json-integer": true,
+          "enum": [1, 2, 3, 4, 5, 6, 10, 15, 30]
+        },
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/root"}
+        },
+        "preexisting_target_roots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/root"}
+        },
+        "intent_at": {"$ref": "#/$defs/clock"}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "kind", "bucket_id", "receipt_id", "session_date", "bucket",
+        "intent_receipt_id", "intent_sha256", "decision_at", "completion"
+      ],
+      "properties": {
+        "schema": {"$ref": "#/$defs/schema"},
+        "kind": {"const": "decision"},
+        "bucket_id": {"$ref": "#/$defs/bucket_id"},
+        "receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "session_date": {"$ref": "#/$defs/session_date"},
+        "bucket": {"$ref": "#/$defs/bucket"},
+        "intent_receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "intent_sha256": {"$ref": "#/$defs/sha256"},
+        "decision_at": {"$ref": "#/$defs/clock"},
+        "completion": {"$ref": "#/$defs/completion"}
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "kind", "bucket_id", "receipt_id", "session_date", "bucket",
+        "intent_receipt_id", "decision_receipt_id", "decision_at", "availability_at"
+      ],
+      "properties": {
+        "schema": {"$ref": "#/$defs/schema"},
+        "kind": {"const": "availability"},
+        "bucket_id": {"$ref": "#/$defs/bucket_id"},
+        "receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "session_date": {"$ref": "#/$defs/session_date"},
+        "bucket": {"$ref": "#/$defs/bucket"},
+        "intent_receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "decision_receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "decision_at": {"$ref": "#/$defs/clock"},
+        "availability_at": {"$ref": "#/$defs/clock"}
+      }
+    },
+    "incomplete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "kind", "bucket_id", "receipt_id", "session_date", "bucket",
+        "intent_receipt_id", "decision_receipt_id", "reason", "incomplete_at"
+      ],
+      "properties": {
+        "schema": {"$ref": "#/$defs/schema"},
+        "kind": {"const": "incomplete"},
+        "bucket_id": {"$ref": "#/$defs/bucket_id"},
+        "receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "session_date": {"$ref": "#/$defs/session_date"},
+        "bucket": {"$ref": "#/$defs/bucket"},
+        "intent_receipt_id": {"$ref": "#/$defs/receipt_id"},
+        "decision_receipt_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/receipt_id"},
+            {"type": "null"}
+          ]
+        },
+        "reason": {"enum": ["bucket_window_elapsed", "session_elapsed"]},
+        "incomplete_at": {"$ref": "#/$defs/clock"}
+      }
+    }
+  }
+}
