@@ -66,7 +66,10 @@ def _funddata_dir() -> Path:
 # Board assembly helpers (pure given resolved data)                             #
 # --------------------------------------------------------------------------- #
 
-def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
+def _build_initiations(sm: dict, tracker: dict,
+                       target_period: str | None = None,
+                       included_slugs: list[str] | set[str] | None = None
+                       ) -> list[dict]:
     """SM2-R2 neutral initiations board: new/material-add ≥ 1% book, filing_date DESC.
 
     Issuer-collapsed (if multiple funds initiate the same ticker, they appear as one
@@ -83,7 +86,7 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
     funds_cfg = (config.load().get("smart_money", {}) or {}).get("funds", {}) or {}
 
     try:
-        from engine.smart_money import _read_two, diff_snapshots, resolve_tickers
+        from engine.smart_money import _read_period_pair, diff_snapshots, resolve_tickers
         from engine.smart_money import name_ticker_map, full_cusip_map, _snapshot_filing_date
         from engine.smart_money import position_rank_and_tilt, window_dressing_flag
         name_map = name_ticker_map()
@@ -91,8 +94,11 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
     except Exception:  # noqa: BLE001
         return []
 
+    selected = set(included_slugs) if included_slugs is not None else set(funds_cfg)
     for slug, spec in funds_cfg.items():
-        prev, latest = _read_two(slug)
+        if slug not in selected:
+            continue
+        prev, latest = _read_period_pair(slug, target_period)
         if latest is None or latest.empty:
             continue
         fd = _snapshot_filing_date(latest)
@@ -194,9 +200,10 @@ def _build_grand_portfolio(sm: dict) -> list[dict]:
         trend = bt.get("trend", {})
         holders_series = trend.get("holders_series", []) if trend else []
         # QoQ holder delta
-        h_first = trend.get("holders_first", 0) if trend else 0
-        h_last = trend.get("holders_last", 0) if trend else 0
-        d_funds_qoq = (h_last - h_first) if trend else None
+        d_funds_qoq = (
+            int(holders_series[-1]) - int(holders_series[-2])
+            if len(holders_series) >= 2 else None
+        )
         # n_top10: how many current holders have this in their top-10 (approx from rank)
         holders = bt.get("holders", [])
         n_top10 = sum(1 for h in holders if (h.get("position_rank") or 99) <= 10)
@@ -466,12 +473,36 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("write smartmoney_tracker.json failed: %s", e)
 
+    # Filing-season transition is resolved before any aggregate board is built.
+    # This gives every downstream surface one homogeneous cohort contract:
+    # complete prior-quarter baseline before strict majority, then the paired
+    # incoming-quarter reporters as the rolling main cohort.
+    clock: dict = {}
+    filing_transition: dict = {}
+    try:
+        from engine.ownership_event_wire import (filing_season_clock,
+                                                 latest_fund_filings)
+        from engine.filing_transition import build_filing_transition
+        clock = filing_season_clock(
+            funds, fund_filings=latest_fund_filings(funds))
+        filing_transition = build_filing_transition(funds, clock, tracker or {})
+    except Exception as e:  # noqa: BLE001
+        # Mixing each manager's latest quarter is a silent data-integrity failure.
+        # Keep the prior published artifact and fail this build instead of
+        # falling back to the legacy mixed-quarter behaviour.
+        log.error("filing transition preflight failed — refusing mixed books: %s", e)
+        return 1
+
     # ---- Phase 2: compute_smart_money (SM2-R10: called here) ----
     t2 = time.monotonic()
     sm = None
     try:
         from engine.smart_money import compute_smart_money
-        sm = compute_smart_money(sm_cfg)
+        sm = compute_smart_money(
+            sm_cfg,
+            target_period=filing_transition.get("canonical_period"),
+            included_slugs=filing_transition.get("canonical_slugs"),
+        )
         if not sm:
             log.info("compute_smart_money: no data — degraded desk")
     except Exception as e:  # noqa: BLE001
@@ -487,12 +518,29 @@ def main() -> int:
     # ---- Phase 3: event wire + filing-season clock ----
     t3 = time.monotonic()
     wire: list[dict] = []
-    clock: dict = {}
     wire_13dg_activists: list[dict] = []
     try:
         from engine.ownership_event_wire import (build_wire, freshness_axes,
                                                  _13dg_rows, _13DG_LOOKBACK_ACTIVISTS)
         wire, clock = build_wire(funds)
+        # Rebuild the small transition payload from the exact clock returned with
+        # the wire, but preserve the preflight cohort atomically if files changed
+        # underneath this build. The next run will promote the newer receipt.
+        from engine.filing_transition import build_filing_transition
+        refreshed_transition = build_filing_transition(funds, clock, tracker or {})
+        preflight_contract = (
+            filing_transition.get("canonical_period"),
+            tuple(filing_transition.get("canonical_slugs") or []),
+        )
+        refreshed_contract = (
+            refreshed_transition.get("canonical_period"),
+            tuple(refreshed_transition.get("canonical_slugs") or []),
+        )
+        if refreshed_contract == preflight_contract:
+            filing_transition = refreshed_transition
+        else:
+            log.warning(
+                "filing transition changed during build; preserving atomic preflight cohort")
         freshness = freshness_axes(wire, clock)
         # Activists board keeps its own 45-day 13D/G feed (independent of main wire cap)
         try:
@@ -508,7 +556,11 @@ def main() -> int:
     # ---- Phase 4: assemble desk payload ----
     t4 = time.monotonic()
     try:
-        initiations = _build_initiations(sm or {}, tracker or {})
+        initiations = _build_initiations(
+            sm or {}, tracker or {},
+            target_period=filing_transition.get("canonical_period"),
+            included_slugs=filing_transition.get("canonical_slugs"),
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("initiations build failed: %s", e)
         initiations = []
@@ -570,17 +622,40 @@ def main() -> int:
     # ---- Phase 4.3: per-fund intelligence (full books / conviction / theme reads) ----
     t43 = time.monotonic()
     fund_intel: dict = {}
+    fund_intel_latest: dict = {}
     fund_intel_index: dict = {}
     try:
         from engine.fund_intelligence import build_fund_intel
-        fund_intel = build_fund_intel(sm_cfg, tracker) or {}
+        active_slugs = filing_transition.get("active_slugs") or list(funds)
+        # Individual dossiers roll as soon as that manager files. Aggregate
+        # flow/consensus boards receive a separate homogeneous cohort payload.
+        fund_intel_latest = build_fund_intel(
+            sm_cfg, tracker, included_slugs=active_slugs) or {}
+        latest_periods = {
+            str((fi.get("book_meta") or {}).get("period_end") or "")
+            for fi in (fund_intel_latest.get("funds") or {}).values()
+        }
+        canonical_slugs = filing_transition.get("canonical_slugs") or active_slugs
+        can_reuse_latest = (
+            set(canonical_slugs) == set(active_slugs)
+            and latest_periods == {str(filing_transition.get("canonical_period") or "")}
+        )
+        fund_intel = (
+            fund_intel_latest if can_reuse_latest else
+            (build_fund_intel(
+                sm_cfg, tracker,
+                target_period=filing_transition.get("canonical_period"),
+                included_slugs=canonical_slugs,
+            ) or {})
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("fund_intel build failed — continuing: %s", e)
         fund_intel = {}
-    if fund_intel.get("funds"):
+        fund_intel_latest = {}
+    if fund_intel_latest.get("funds"):
         _lb_grades = {r.get("slug"): r.get("grade")
                       for r in (tracker or {}).get("leaderboard", [])}
-        for slug, fi in (fund_intel.get("funds") or {}).items():
+        for slug, fi in (fund_intel_latest.get("funds") or {}).items():
             # Per-fund JSON page payload — the 50 full books never ride in the
             # desk JSON (small pages; the dossier/template hydrates from here).
             try:
@@ -897,6 +972,7 @@ def main() -> int:
     # ---- Phase 5: ledger advance (nightly-only) ----
     t5 = time.monotonic()
     ledger_added: dict = {}
+    manager_history: dict = {}
     try:
         from engine.ownership_ledger import advance_ledgers, ledger_summary
         # L5 cohort: the conviction-buys composite earns a forward record
@@ -906,6 +982,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("ledger advance/summary failed: %s", e)
         ledger = {}
+    try:
+        from engine.manager_history import (advance_manager_history,
+                                            manager_history_summary)
+        _manager_history_added = advance_manager_history(
+            (follow_desk.get("memory") or {}) if follow_desk else {})
+        manager_history = manager_history_summary()
+        manager_history["added_this_run"] = _manager_history_added
+    except Exception as e:  # noqa: BLE001
+        log.warning("manager grade/excess history advance failed: %s", e)
+        manager_history = {}
     phase_times["ledger"] = round(time.monotonic() - t5, 2)
     # "boards" keeps meaning the Phase-4 board assembly only — the new v3
     # phases are timed separately and subtracted so the benchmark stays honest.
@@ -918,9 +1004,59 @@ def main() -> int:
 
     built = datetime.now(timezone.utc).isoformat()
 
+    # Typed operational receipt: distinguishes a healthy no-new-filing poll from
+    # a stale collector or an unresolved post-deadline roster.  GitHub's narrow
+    # filing-season workflow fails loudly on collection/publish errors; this
+    # artifact lets the page and production probes inspect the same state.
+    transition_health: dict = {}
+    try:
+        import pandas as pd
+        run_path = config.data_dir() / "smart_money" / "smart_money_runs.parquet"
+        collector_checked = None
+        if run_path.exists():
+            runs = pd.read_parquet(run_path)
+            if len(runs.index):
+                collector_checked = str(pd.to_datetime(runs.index).max().date())
+        receipt_path = config.data_dir() / "smart_money" / "filing_receipts.parquet"
+        receipt_count = (len(pd.read_parquet(receipt_path))
+                         if receipt_path.exists() else 0)
+        violations: list[str] = []
+        if not collector_checked:
+            violations.append("collector heartbeat unavailable")
+        else:
+            age_d = (datetime.now(timezone.utc).date()
+                     - pd.Timestamp(collector_checked).date()).days
+            if age_d > 3:
+                violations.append(f"collector heartbeat is {age_d}d old")
+        if (clock.get("quarter_state") == "window_closed"
+                and filing_transition.get("pending_count", 0) > 0):
+            violations.append(
+                f"deadline passed with {filing_transition.get('pending_count')} unresolved funds")
+        transition_health = {
+            "status": "warning" if violations else "ok",
+            "violations": violations,
+            "collector_checked": collector_checked,
+            "latest_filing_date": max(
+                (str(row.get("filing_date") or "")
+                 for row in clock.get("filed_pending", [])), default="") or None,
+            "expected_period": filing_transition.get("expected_period"),
+            "canonical_period": filing_transition.get("canonical_period"),
+            "filed_count": filing_transition.get("filed_count", 0),
+            "active_count": filing_transition.get("active_count", 0),
+            "receipt_count": receipt_count,
+            "generated_at": built,
+        }
+        quality_path = config.ROOT / "data" / "quality" / "smart_money_freshness.json"
+        quality_path.parent.mkdir(parents=True, exist_ok=True)
+        quality_path.write_text(_jdump(transition_health))
+        (_site_dir() / "smartmoney_health.json").write_text(_jdump(transition_health))
+    except Exception as e:  # noqa: BLE001
+        log.warning("smart-money transition health receipt failed: %s", e)
+
     # Freshness block (SM2-R11 required)
     freshness_block = {
         "axes": freshness,
+        "quarter_end": clock.get("quarter_end", _STALE),
         "next_deadline": clock.get("next_deadline", _STALE),
         "days_to_deadline": clock.get("days_to_deadline"),
         "quarter_state": clock.get("quarter_state", _STALE),
@@ -955,6 +1091,8 @@ def main() -> int:
     desk: dict = {
         "built": built,
         "freshness": freshness_block,
+        "filing_transition": filing_transition,
+        "transition_health": transition_health,
         "wire": wire,
         "wire_display": wire_display,
         "initiations": initiations,
@@ -966,6 +1104,7 @@ def main() -> int:
         "flow": flow,
         "fund_intel_index": fund_intel_index,
         "ledger": ledger,
+        "manager_history": manager_history,
         "follow": follow_desk,
     }
 
@@ -999,7 +1138,7 @@ def main() -> int:
     # no nav_prefix). Per-fund try/except — one bad book never kills the rest. ----
     t65 = time.monotonic()
     n_dossiers = 0
-    if ((sm_cfg.get("dossier", {}) or {}).get("enabled", True)) and fund_intel.get("funds"):
+    if ((sm_cfg.get("dossier", {}) or {}).get("enabled", True)) and fund_intel_latest.get("funds"):
         _lb_rows = {r.get("slug"): r for r in (tracker or {}).get("leaderboard", [])}
         _by_fund = (tracker or {}).get("by_fund", {}) or {}
         dossier_tpl = None
@@ -1008,7 +1147,7 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("fund_dossier template unavailable — dossiers skipped: %s", e)
         if dossier_tpl is not None:
-            for slug, fi in (fund_intel.get("funds") or {}).items():
+            for slug, fi in (fund_intel_latest.get("funds") or {}).items():
                 try:
                     html_fund = dossier_tpl.render(
                         slug=slug,
@@ -1027,7 +1166,7 @@ def main() -> int:
         # Fund directory page — own try/except, degrades to no page.
         try:
             index_rows = []
-            for slug, fi in (fund_intel.get("funds") or {}).items():
+            for slug, fi in (fund_intel_latest.get("funds") or {}).items():
                 lb = _lb_rows.get(slug) or {}
                 sc = (_by_fund.get(slug) or {}).get("scorecard") or {}
                 meta = fi.get("book_meta") or {}
