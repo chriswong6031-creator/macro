@@ -80,6 +80,26 @@ jobs:
           path: data/russell_breadth/_closes_cache.parquet
           key: russell-closes-weekly-${{ github.run_id }}
           restore-keys: russell-closes-
+      # 2026-08-08 (901282ec209): these two were missing — build_hk/build_china
+      # here regenerate the regime history from whatever cache the persistent
+      # self-hosted workspace happened to hold. A weeks-stale leftover ran the
+      # HK inflation basket dry, the axis went NaN for 9 sessions, and the
+      # shipped hk_regime_timeline.json contradicted the committed parquet
+      # (landing-hub crash). Restore asia-close's same-morning saves. Keys are
+      # prefixed weekly- so this job's post-run save can never shadow an
+      # asia-close save under its own restore prefix.
+      - name: restore hk breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: weekly-hk-breadth-closes-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
+      - name: restore china breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: weekly-china-breadth-closes-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
       - name: weekly collect + recalibrate + build (resilient, self-diagnosing)
         # Same hardening as daily: each step runs isolated; a failure becomes a
         # ::error:: annotation (readable on the run page + via the public check-runs
@@ -268,7 +288,7 @@ jobs:
           # = adapters starting with `china` or `hk` (scripts/collect.py group_members);
           # data/hkma adapter key `hkma` also starts with `hk`.
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
-          # W0b carve-out: re-add the four weekly-OWNED outputs the reset above just
+          # W0b carve-out: re-add the weekly-OWNED outputs the reset above just
           # unstaged. These are produced by THIS job in THIS run — calibrate_china /
           # calibrate_hk ladder records and the china/hk fundamentals collector caches —
           # not checkout-stale copies of asia-close's market stores. weekly.yml is their
@@ -281,8 +301,17 @@ jobs:
           # ladder had to be hand-seeded in #2483 to unblock the A-share record table).
           # If a calibrate/collector sub-step failed this run, its file is unchanged in
           # the working tree and this add stages nothing — last good state persists.
+          # 2026-08-08 (901282ec209): regime_history.parquet joins the carve-out. The
+          # engines REGENERATE it this run and the site timeline JSONs (staged via
+          # `git add site/`) are built FROM that regeneration — discarding the parquet
+          # while shipping the JSON committed a timeline that contradicted its own
+          # store in one tree. Same THIS-run freshness argument as the ladder records;
+          # engine/store_guard.py refuses the write when the recompute is degraded, so
+          # what gets staged here is never worse than the checkout state.
           git add -- data/china_regime/ladder_calibration.json \
                      data/hk_regime/ladder_calibration.json \
+                     data/china_regime/regime_history.parquet \
+                     data/hk_regime/regime_history.parquet \
                      data/china_fundamentals/fundamentals.parquet \
                      data/hk_fundamentals/fundamentals.parquet 2>/dev/null || true
           # Stock-search libraries are gitignored — force-add so the committed-tree
