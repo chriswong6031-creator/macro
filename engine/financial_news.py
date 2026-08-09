@@ -37,6 +37,7 @@ from lib import config
 from engine import news_common as nc
 from engine import qbus as _qbus          # W2: unified item/event store
 from engine import news_events as _ne     # W2: event-identity layer (display-only)
+from engine import ticker_shape           # shared ticker gate (emitter-strict half)
 
 # Per-call reject collector — set to a fresh list by feed() before any
 # _normalise() calls; None between builds so no state leaks across invocations.
@@ -623,6 +624,34 @@ def _public(h: dict) -> dict:
     return {k: v for k, v in h.items() if not k.startswith("_")}
 
 
+def _assemble_by_ticker(tagged: list) -> tuple[dict, dict]:
+    """Group tagged headlines by VALIDATED ticker key. Non-symbol strings from provider
+    metadata passthrough (Polygon tickers[], Quiver ticker) are excluded WITH COUNT — never
+    silently. Exchange-prefixed forms (ASX:PEX) are excluded, not stripped-and-mapped: see
+    engine.ticker_shape. Returns (by_ticker_raw, excluded {raw_key: n_taggings})."""
+    by_ticker: dict[str, list[dict]] = {}
+    excluded: dict[str, int] = {}
+    for h in tagged:
+        for t in h.get("tickers", []):
+            # The headline's own h["tickers"] list is display metadata and stays untouched;
+            # only the KEY universe of the published index is gated.
+            key = ticker_shape.valid_us_ticker(t)
+            if key is None:
+                raw = str(t).strip()[:24]
+                if raw:
+                    excluded[raw] = excluded.get(raw, 0) + 1
+                continue
+            by_ticker.setdefault(key, []).append(h)
+    # Single emission point — the helper runs exactly once per feed build, so the annotation
+    # cannot double-fire. Bare print: a logger prefixes the level and GitHub drops the command.
+    if excluded:
+        ex = sorted(excluded)[:8]
+        print(f"::notice title=news-ticker-hygiene::news by_ticker excluded {len(excluded)} "
+              f"non-symbol ticker key(s) ({sum(excluded.values())} headline taggings): "
+              f"{', '.join(ex)}", flush=True)
+    return by_ticker, excluded
+
+
 # --------------------------------------------------------------------------- #
 # public: the assembled feed
 # --------------------------------------------------------------------------- #
@@ -722,10 +751,7 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
                         "headlines": [_public(h) for h in _dedup_rank(pool, top_basket)]}
 
     # ---- per-ticker index (for stock pages + Mastermind) --------------------
-    by_ticker: dict[str, list[dict]] = {}
-    for h in tagged:
-        for t in h.get("tickers", []):
-            by_ticker.setdefault(t, []).append(h)
+    by_ticker, _excluded_tickers = _assemble_by_ticker(tagged)
     by_ticker = {t: [_public(x) for x in _dedup_rank(v, top_ticker)]
                  for t, v in by_ticker.items()}
 
@@ -815,8 +841,10 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
                       "gdelt": _gdelt_ok},
         # providers_detail: POLY-003 / GDELT-002 tri-state additive field.
         "providers_detail": _providers_detail,
+        # counts is additive-safe; tickers_excluded is the hygiene receipt for the key gate.
         "counts": {"raw": len(all_items), "tagged": len(tagged),
-                   "tickers_covered": len(by_ticker)},
+                   "tickers_covered": len(by_ticker),
+                   "tickers_excluded": len(_excluded_tickers)},
         "market": market, "sectors": sectors, "mag7": mag7, "baskets": baskets,
         "by_ticker": by_ticker,
         "rejected": _collected_rejected,

@@ -51,8 +51,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from lib import config
-from lib.procutil import hard_exit
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from lib.procutil import hard_exit  # noqa: E402
 
 log = logging.getLogger(__name__)
 

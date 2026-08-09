@@ -73,6 +73,10 @@ def curated_universe(root: Path) -> set[str]:
     Fail-soft and DELIBERATELY over-inclusive: a name wrongly counted as curated
     is merely not scanned tonight, whereas a name wrongly counted as new gets a
     duplicate row. Keep-first in the store is the second fence behind this one.
+
+    The yahoo leg subtracts names the hub ledger-universe backfill created — see
+    ``_backfill_only_tickers``: for those, "has a parquet" no longer implies
+    curated, and leaving them in would silently shrink the scan tier.
     """
     curated: set[str] = set()
     stocks = root / "data" / "stocks"
@@ -87,8 +91,52 @@ def curated_universe(root: Path) -> set[str]:
             log.info("curated_universe: %s constituents absent", grp)
     yahoo = root / "data" / "yahoo"
     if yahoo.is_dir():
-        curated |= {p.stem for p in yahoo.glob("*.parquet") if not p.stem.startswith("_")}
+        backfilled = _backfill_only_tickers(root)
+        curated |= {p.stem for p in yahoo.glob("*.parquet")
+                    if not p.stem.startswith("_") and p.stem not in backfilled}
     return curated
+
+
+def _backfill_only_tickers(root: Path) -> set[str]:
+    """Names whose data/yahoo parquet exists ONLY because the ledger-universe
+    backfill wrote it (``scripts/backfill_yahoo_universe.py``).
+
+    The yahoo leg above uses "has a parquet" as a proxy for "is in the curated
+    roster". That proxy held while the only writer was ``collectors/yahoo.py``,
+    whose fetch list IS a curated universe. It stops holding once the hub backfill
+    runs: a parquet then means "the hub signal ledger mentioned this ticker", which
+    is the opposite of curated. Measured 2026-08-08, a fully drained backfill queue
+    would have moved 4,601 names out of the scan tier this way — silently, since
+    the exclusion is an absence.
+
+    ONLY is load-bearing: a ticker the backfill created that the collector ALSO
+    maintains (a config name whose parquet did not exist yet) is genuinely curated
+    and must stay excluded. Hence the intersection with the collector's maintained
+    set rather than a bare read of ``done``.
+
+    Fail-soft to the EMPTY set in every failure mode — absent file, corrupt JSON,
+    unresolvable maintained set — which leaves this function's behaviour exactly as
+    it was before the backfill existed. That is the safe direction here: this
+    lane's own contract is that over-inclusion in `curated` merely skips a name
+    tonight, while under-inclusion risks a duplicate row."""
+    import json
+
+    state = root / "data" / "yahoo_backfill_state.json"
+    try:
+        with open(state) as f:
+            done = json.load(f).get("done") or {}
+    except Exception:  # noqa: BLE001 — absent/corrupt state = no subtraction
+        return set()
+    if not done:
+        return set()
+    try:
+        from collectors.yahoo import YahooAdapter
+        maintained = set(YahooAdapter().maintained_tickers())
+    except Exception:  # noqa: BLE001 — cannot establish "ONLY" -> subtract nothing
+        log.info("curated_universe: collector maintained set unavailable; keeping "
+                 "every yahoo parquet in the curated exclusion")
+        return set()
+    return {str(t) for t in done if str(t) not in maintained}
 
 
 def stamp_context_vector(root: Path, tickers: list[str], disclosure: dict,

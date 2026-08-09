@@ -15,20 +15,25 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from lib import store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import store  # noqa: E402
 from engine.validation import (
     newey_west_tstat,
     benjamini_hochberg,
     deflated_sharpe,
     bootstrap_effective_t,
     block_bootstrap_ci,
-)
-from engine.trial_ledger import TrialLedger, register_trials
+)  # noqa: E402
+from engine.trial_ledger import TrialLedger, register_trials  # noqa: E402
 
 log = logging.getLogger("h5")
 

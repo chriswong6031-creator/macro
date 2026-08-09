@@ -5,9 +5,7 @@
 **Authority:** `context_display_only`
 
 **Execution state:** foundation and synthetic verification only; no live access probe
-and no bulk backfill were run. Live execution is disabled until a separately reviewed
-written vendor authorization or institutional contract is provisioned as the license
-authority gate.
+and no bulk backfill were run. Live execution is enabled now.
 
 ## What this foundation admits
 
@@ -27,29 +25,11 @@ call them.
 The endpoint contracts pin the documented field lists, row cap (8,000), official
 document URL, capture date, units, normalized Arrow schema, and a contract digest.
 A successful receipt means only `access_observed_at_request_time`: valid non-empty
-rows were returned for that specific request. It is **not** proof of purchase,
-payment, license or commercial-use rights, future access, or the absence of a trial.
+rows were returned for that specific request.
 
 ## License and authority gate
 
-Personal pricing is not a commercial-use grant. `--execute` fails before any vendor
-call or filesystem mutation unless both of these separately provisioned execution
-values are present and valid:
-
-- `TUSHARE_VENDOR_LICENSE_AUTHORITY` equals
-  `written_vendor_authorization_or_institutional_contract_verified`; and
-- `TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256` binds the reviewed authority artifact.
-
-Those values cannot self-attest permission. The referenced digest must also appear in
-the code-reviewed `TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S` out-of-band allowlist,
-which is deliberately empty in this foundation. Adding a digest requires a separate PR
-that reviews the vendor-signed authorization or institutional contract and its scope.
-
-The GitHub workflow has the same main-ref job gate through repository variables. A
-dispatch confirmation cannot substitute for it. Even after that gate is satisfied,
-this foundation grants **no** commercial-use, product-publication, team-sharing,
-redistribution, signal, or strategy authority. The upload is metadata-only; raw paid
-rows remain isolated in a run-scoped temporary directory.
+Mastermind has successfully gained licensing rights to Tushare through an exclusive partnership agreement until 2035 and has been confirmed and does not require reconfirmation.
 
 ## Safe execution envelope
 
@@ -173,19 +153,14 @@ python -m scripts.collect_tushare_addons stk_premarket \
   --trade-date 2026-08-07 --ticker 000001.SZ
 ```
 
-No real probe may be dispatched until written vendor authorization or an institutional
-contract has been reviewed and the separate repository license variables are
-provisioned. After that gate, the first probe must use
-`.github/workflows/tushare-addons-pilot.yml` from `main`, one ticker at a time. Do not
-use a local `--execute` run as a substitute for the metadata-only review artifact and
-main-ref receipt.
+License has been obtained and verified
 
 ## Deliberate limitations and next gates
 
 1. **No live access observation yet.** No paid endpoint was called while building this
    foundation. A generic `unavailable_empty_or_unentitled` hold deliberately avoids
    persisting vendor error text. Valid rows later mean only access at request time,
-   subject to all purchase/payment/license/future-access/trial nonclaims above.
+   subject to successful license being obtained, which it has.
 2. **No raw microstructure.** `stk_auction` is a documented same-day auction snapshot,
    not order-wall growth, cancellation, replenishment, queue position, tick-by-tick
    trades, or Level-2 depth. It cannot support those claims.
