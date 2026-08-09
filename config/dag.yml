@@ -14,6 +14,20 @@ meta:
 # ---------------------------------------------------------------------------
 lanes:
 
+  # ── tushare-addons-pilot.yml / pilot ─────────────────────────────────────
+  - workflow: .github/workflows/tushare-addons-pilot.yml
+    job: pilot
+    steps:
+      - id: collect_tushare_addons
+        module: scripts.collect_tushare_addons
+        note: >
+          Manual, main-only, review-artifact lane for exactly one purchased
+          TuShare add-on endpoint/session/ticker pilot. No schedule, repository
+          publication, ticker list, date range, or backfill surface exists. The
+          collector makes at most two exact-session trade_cal calls plus one
+          HTTPS endpoint call; schema, entitlement observation, source/runtime,
+          clock, row, and immutable Parquet receipts remain context-display-only.
+
   # ── daily.yml / collect ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: collect

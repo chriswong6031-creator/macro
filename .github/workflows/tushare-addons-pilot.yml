@@ -1,0 +1,160 @@
+name: tushare-addons-pilot
+
+# Review-only operator probe.  There is intentionally no schedule, push trigger,
+# repository commit, or range/backfill input in this workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "One purchased add-on endpoint"
+        required: true
+        type: choice
+        options:
+          - stk_mins
+          - stk_premarket
+          - stk_auction
+      trade_date:
+        description: "One exact SSE/SZSE session (YYYY-MM-DD)"
+        required: true
+        type: string
+      ticker:
+        description: "One A-share ticker; use repo-canonical .SS/.SZ/.BJ"
+        required: true
+        type: string
+      frequency:
+        description: "Used only by stk_mins"
+        required: true
+        default: 1min
+        type: choice
+        options:
+          - 1min
+          - 5min
+          - 15min
+          - 30min
+          - 60min
+      confirm_execute:
+        description: "I authorize at most three vendor calls and one review artifact"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tushare-addons-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    # Never expose the paid token to code dispatched from an arbitrary ref.
+    if: ${{ inputs.confirm_execute == true && github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 10
+    steps:
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: create isolated Python 3.12 environment
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="$RUNNER_TEMP/tushare-addons-${suffix}-venv"
+          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
+          test ! -e "$venv"
+          test ! -e "$artifact"
+          /opt/homebrew/bin/python3.12 -m venv "$venv"
+          mkdir "$artifact"
+          echo "$venv/bin" >> "$GITHUB_PATH"
+
+      - name: install exact pilot dependency lock
+        id: dependency-lock
+        run: |
+          set -euo pipefail
+          lock="requirements/tushare-addons-pilot-macos-arm64-py312.lock"
+          digest="$(shasum -a 256 "$lock" | awk '{print $1}')"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+          pip --isolated install \
+            --no-input \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            --retries 2 \
+            --timeout 15 \
+            -r "$lock"
+
+      - name: collect one immutable review partition
+        id: collect
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+          TUSHARE_ADDON_DEPENDENCY_LOCK_SHA256: ${{ steps.dependency-lock.outputs.sha256 }}
+          PILOT_ENDPOINT: ${{ inputs.endpoint }}
+          PILOT_TRADE_DATE: ${{ inputs.trade_date }}
+          PILOT_TICKER: ${{ inputs.ticker }}
+          PILOT_FREQUENCY: ${{ inputs.frequency }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
+          args=(
+            "$PILOT_ENDPOINT"
+            --trade-date "$PILOT_TRADE_DATE"
+            --ticker "$PILOT_TICKER"
+            --output-root "$artifact/partitions"
+            --execute
+          )
+          if [[ "$PILOT_ENDPOINT" == "stk_mins" ]]; then
+            args+=(--frequency "$PILOT_FREQUENCY")
+          fi
+          set +e
+          python -m scripts.collect_tushare_addons "${args[@]}" > "$artifact/result.json"
+          code=$?
+          set -e
+          if [[ ! -s "$artifact/result.json" ]]; then
+            printf '%s\n' '{"reason_code":"collector_produced_no_receipt","status":"unexpected_failure_fail_closed"}' > "$artifact/result.json"
+            code=4
+          fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: prove review artifact contains no token
+        if: ${{ always() }}
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
+          python - "$artifact" <<'PY'
+          import os
+          from pathlib import Path
+          import sys
+
+          root = Path(sys.argv[1])
+          token = os.environ.get("TUSHARE_TOKEN", "").encode()
+          if not token:
+              raise SystemExit("TUSHARE_TOKEN is absent")
+          for path in root.rglob("*"):
+              if path.is_file() and token in path.read_bytes():
+                  raise SystemExit("credential bytes detected in review artifact")
+          PY
+
+      - name: upload review-only pilot receipt
+        if: ${{ always() }}
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tushare-addons-pilot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tushare-addons-${{ github.run_id }}-${{ github.run_attempt }}-artifact
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: enforce collector verdict after receipt upload
+        if: ${{ always() }}
+        env:
+          COLLECT_EXIT_CODE: ${{ steps.collect.outputs.exit_code }}
+        run: |
+          set -euo pipefail
+          test "$COLLECT_EXIT_CODE" = "0"
