@@ -48,8 +48,8 @@ def _repo_root() -> Path:
 
 
 ROOT = _repo_root()
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.marketing import golden_set as gs  # noqa: E402
 

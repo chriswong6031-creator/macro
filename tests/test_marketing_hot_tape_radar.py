@@ -1210,10 +1210,24 @@ class TestSafetyStack:
     #: Scoped to those THREE symbols on ONE import line: any other hot_tape
     #: name in the publisher — a posting rule, a cap, a cadence knob — still
     #: fails this test.
-    _SANCTIONED_HOT_TAPE_REFS: dict[str, tuple[str, ...]] = {
-        "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
+    #: Each file maps to ALTERNATIVE token-sets: a line that says "hot_tape"
+    #: must carry every token of at least ONE alternative, so each admissible
+    #: line shape is a reviewed exception recorded by name and any other line
+    #: still fails.
+    _SANCTIONED_HOT_TAPE_REFS: dict[str, tuple[tuple[str, ...], ...]] = {
+        "engine/marketing/copywriter.py": (
+            ("hot_tape_llm", "numeric_violations"),
+            # 2026-08-08, voice pack v4 (#4994): WIRE_KINDS names the kinds
+            # licensed to open on a wire, and "hot_tape" is one of the kind
+            # SLUGS — outbox vocabulary on a frozenset literal, not a reach
+            # into the program (the outbox allowance below records the same
+            # direction of travel). The tokens pin the declaration line and
+            # nothing else: a reach for a hot-tape helper, threshold or
+            # config key carries none of them and still fails.
+            ("WIRE_KINDS", "frozenset", '"hot_tape"'),
+        ),
         "scripts/marketing_publisher.py": (
-            "hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),
+            ("hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),),
         # 2026-07-31, the wire reaper (outbox.expire_stale_wire). The outbox is
         # the SHARED queue and a provenance slug is its own vocabulary, not a
         # reach into this program — and the direction of travel is the opposite
@@ -1226,7 +1240,8 @@ class TestSafetyStack:
         # edit that reaches for a hot-tape threshold, config key or helper puts
         # the word on some other line and this test fails, exactly as intended.
         "engine/marketing/outbox.py": (
-            "hot_tape", "_WIRE_PROVENANCES", "press_lane", "publisher_live_movers"),
+            ("hot_tape", "_WIRE_PROVENANCES", "press_lane",
+             "publisher_live_movers"),),
     }
 
     def test_safety_modules_are_not_edited_by_this_program(self):
@@ -1255,9 +1270,10 @@ class TestSafetyStack:
                 f"{rel} no longer references hot_tape at all; delete its "
                 "allowance rather than leaving it as cover for the next edit")
             for line in hits:
-                assert all(tok in line for tok in required), (
+                assert any(all(tok in line for tok in alt) for alt in required), (
                     f"{rel} reaches into hot_tape for something other than "
-                    f"{'/'.join(required)}: {line.strip()!r}")
+                    f"{' OR '.join('/'.join(alt) for alt in required)}: "
+                    f"{line.strip()!r}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

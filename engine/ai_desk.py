@@ -52,6 +52,7 @@ from pathlib import Path
 import pandas as pd
 
 from lib import config
+from lib import ticker_aliases                   # stable key -> price-vendor symbol
 from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine import master_brain as _mb          # reuse the DeepSeek/Anthropic client
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser
@@ -186,10 +187,35 @@ _CLOSE_MEMO: dict[tuple[str, str], "pd.Series | None"] = {}
 
 
 def _close_series(ticker: str, root) -> pd.Series | None:
-    """Closes for an instrument. Prefers the per-ticker yahoo parquet (cols are
-    lowercase 'close'); falls back to the S&P 1500 breadth close cache so subjects
-    beyond the ~153 yahoo names are still scorable; then to the China price
-    parquets (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
+    """Closes for an instrument, with a last-resort price-vendor alias.
+
+    Tries ``ticker`` as written first (see ``_close_series_direct``). Only if
+    every rung there misses does it retry under ``lib.ticker_aliases.fetch_symbol``.
+    This keeps a stable-key claim (MMC/FI) priceable when a provider exposes the
+    history only under MRSH/FISV, without changing the claim, page or store key.
+
+    The retry is LAST and LOUD by design. A silent alias rung would hide a real
+    absence behind a neighbouring company's prices; this one fires only after the
+    direct read has failed on every store, and logs when it does."""
+    s = _close_series_direct(ticker, root)
+    if s is not None:
+        return s
+    vendor = ticker_aliases.fetch_symbol(str(ticker or "").strip().upper())
+    if vendor == str(ticker or "").strip().upper():
+        return None                      # no vendor boundary — genuinely absent
+    s = _close_series_direct(vendor, root)
+    if s is not None:
+        log.warning("price read for stable key %s served from vendor alias %s (%d bars)",
+                    ticker, vendor, len(s))
+    return s
+
+
+def _close_series_direct(ticker: str, root) -> pd.Series | None:
+    """Closes for an instrument under EXACTLY the symbol given. Prefers the
+    per-ticker yahoo parquet (cols are lowercase 'close'); falls back to the
+    S&P 1500 breadth close cache so subjects beyond the ~153 yahoo names are
+    still scorable; then to the China price parquets
+    (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
     for CN benches like 510300.SS) so the qledger grader can price China
     event-move claims and their 510300.SS benchmark. None if none has it.
 
@@ -233,13 +259,30 @@ def _close_series_uncached(ticker: str, root) -> pd.Series | None:
     return None
 
 
-def _level_asof(ticker: str, root, asof) -> float | None:
+# ── STALENESS BOUND for the asof-or-BEFORE price reads (D21) ──────────────────────────────
+# `_level_asof` / `desk_scorer.close_at` answer "the last close ON OR BEFORE this date" with no
+# lower bound, so a series that STOPPED UPDATING (delisted, ticker recycled, collector dropped
+# the name) keeps returning its final close forever — and every grader downstream reads that as
+# a live price, silently pricing a matured claim against an arbitrarily old bar. 7 calendar days
+# clears every US market closure (the longest exchange gap is a 3-day holiday weekend, ~4 days)
+# while catching a genuinely stalled series. Beyond the bound the read is None, which every
+# caller already treats as NOT COVERED — excluded from grading, visible in coverage, never
+# silently substituted.
+MAX_ASOF_STALE_DAYS = 7
+
+
+def _level_asof(ticker: str, root, asof, max_stale_days: int | None = MAX_ASOF_STALE_DAYS) -> float | None:
     s = _close_series(ticker, root)
     if s is None or s.empty:
         return None
     try:
+        ts = pd.Timestamp(asof).normalize()
         s = s[s.index <= pd.Timestamp(asof)]
-        return round(float(s.iloc[-1]), 4) if len(s) else None
+        if not len(s):
+            return None
+        if max_stale_days is not None and (ts - s.index[-1].normalize()).days > max_stale_days:
+            return None                      # series stalled before `asof` — not covered
+        return round(float(s.iloc[-1]), 4)
     except Exception:  # noqa: BLE001
         return None
 
