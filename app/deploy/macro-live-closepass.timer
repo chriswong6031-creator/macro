@@ -1,0 +1,31 @@
+# Close-pass mirror cadence. systemd calendars have no ET, so the window is
+# expressed as the UTC SPAN that covers the evening publish window in BOTH DST
+# regimes and the pass itself no-ops when there is nothing new:
+#   EDT  16:15 ET = 20:15Z   ...   18:30 ET = 22:30Z
+#   EST  16:15 ET = 21:15Z   ...   18:30 ET = 23:30Z
+# so 20..23 UTC covers both ends. One schedule, one window, no second copy of
+# "when does the evening board land" — the pass's own dedup (served as_of ==
+# fetched as_of) is what turns ~40 ticks into exactly one write a day, so the
+# span can be generous without the artifact being rewritten on every tick.
+#
+# The span deliberately runs PAST the 18:30 ET SLA rather than stopping at it: a
+# board that publishes late must still reach the page, and the sentinel's
+# first-fresh-at record is what says it was late. Stopping the mirror at the
+# deadline would turn a late board into a missing one.
+#
+# :02/5 rather than :00/5 — the mac pass publishes to R2 on no fixed second, and
+# two minutes of offset keeps this lane off the top-of-minute contention every
+# other timer on the box shares. Publication is an atomic rename either way, so
+# a read is never partial.
+[Unit]
+Description=Mirror the close-pass provisional board across the evening window
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 20..23:02/5:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=10s
+Persistent=false
+Unit=macro-live-closepass.service
+
+[Install]
+WantedBy=timers.target

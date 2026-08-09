@@ -14,7 +14,11 @@ import os
 from pathlib import Path
 import re
 import secrets
+import sys
 from typing import Any, Mapping, Sequence
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from engine.institutional_census.models import (
     EVIDENCE_PREFIX,
@@ -34,7 +38,7 @@ MAX_CONFORMANCE_OBJECT_BYTES = 4 * 1024
 MAX_RECEIPT_BYTES = 128 * 1024
 RECEIPT_FILENAME = "institutional_13f_r2_conformance_receipt.json"
 
-_EXPECTED_REPOSITORY = "chriswong6031-creator/macro"
+_EXPECTED_REPOSITORY = "mastermindx-market-intelligence/macro"
 _EXPECTED_WORKFLOW = ".github/workflows/smart-money-13f-r2-conformance.yml"
 _HEX32_RE = re.compile(r"^[a-f0-9]{32}$")
 _HEX40_RE = re.compile(r"^[a-f0-9]{40}$")

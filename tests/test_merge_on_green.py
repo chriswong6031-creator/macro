@@ -2956,12 +2956,13 @@ def test_a_baseline_ordered_inside_the_interval_floor_is_not_re_ordered(monkeypa
     """The bound that survives the race the status check cannot win.
 
     Sweeps overlap by design (no `concurrency:` block, and three wake-ups can arrive
-    within seconds), so several can all read "nothing in flight" and all dispatch. That
-    is not merely wasteful: ci.yml runs under `cancel-in-progress: true` keyed on the
-    ref, so a dispatch on main lands in `ci-refs/heads/main` and the SECOND dispatch
-    CANCELS THE FIRST — up to 34 minutes of a 4-job run discarded and the proof left
-    stale another cycle. Two cancelled `workflow_dispatch` runs on main 53 minutes
-    apart are already in the record (31148430602 / 31151246743, 2026-08-07).
+    within seconds), so several can all read "nothing in flight" and all dispatch.
+    Until 2026-08-09 that was catastrophic — ci.yml cancelled newest-wins on every
+    ref, so the SECOND dispatch on main CANCELLED THE FIRST (31148430602 /
+    31151246743, 53 minutes apart; then the 2026-08-09 cascade where no main proof
+    could conclude at all). #5136 keeps a dispatch's in-flight proof uncancellable,
+    so the racing loser only overwrites the queued pending slot — still a discarded
+    queue position and spent quota, which this floor bounds.
 
     It also covers the window where a dispatch has succeeded but its run is not yet
     visible in the API — which the status check, reading only visible runs, cannot.
