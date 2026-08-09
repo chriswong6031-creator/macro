@@ -177,10 +177,10 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
 
 # Release Radar inflation state builders (#5153) may *emit* one exact,
 # descriptive authority mirror. These are deliberately not whole-file
-# allowlist entries: any read, branch, or non-fixed emission in either producer
-# remains a check-b violation. World State shares the exact module-level mirror
-# below between its null and bounded lobe emissions; the AST check rejects any
-# mutation, alias, or non-emission use of that binding.
+# allowlist entries: any read, branch, non-fixed emission, alias, or dataflow
+# construction in either producer remains a check-b violation. The only warrant
+# is an inline six-key all-False mapping inside a direct return from one of the
+# named, undecorated module-level producer functions.
 _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS = frozenset(
     {
         "engine/inflation_intelligence.py",
@@ -199,24 +199,15 @@ _ALLOWED_ACTIONS_FIXED_KEYS = frozenset(
     }
 )
 
-_ALLOWED_ACTIONS_FIXED_CONSTANTS = {
-    "engine/neuralweb/world_state.py": frozenset(
-        {"_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS"}
-    ),
-}
-
 _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS = {
     "engine/inflation_intelligence.py": frozenset(
         {"build_inflation_intelligence"}
     ),
     "engine/neuralweb/world_state.py": frozenset(
-        {"_inflation_intelligence_null"}
-    ),
-}
-
-_ALLOWED_ACTIONS_FIXED_KEYWORD_EMITTERS = {
-    "engine/neuralweb/world_state.py": frozenset(
-        {"_compose_inflation_intelligence"}
+        {
+            "_inflation_intelligence_null",
+            "_compose_inflation_intelligence",
+        }
     ),
 }
 
@@ -408,161 +399,116 @@ def _is_fixed_false_actions_dict(node: ast.AST) -> bool:
     )
 
 
-def _binds_dict_name(node: ast.AST) -> bool:
-    """Return whether an AST node can shadow the builtin ``dict`` name."""
+def _binds_name(node: ast.AST, name: str) -> bool:
+    """Return whether an AST node can bind or delete *name*.
+
+    Python stores several binding forms as string attributes rather than
+    ``ast.Name(Store)`` nodes. Enumerating them here keeps the producer-function
+    identity check fail-closed across imports, definitions, exception aliases,
+    and structural-pattern captures.
+    """
     if (
         isinstance(node, ast.Name)
-        and node.id == "dict"
+        and node.id == name
         and isinstance(node.ctx, (ast.Store, ast.Del))
     ):
         return True
-    if isinstance(node, ast.arg) and node.arg == "dict":
+    if isinstance(node, ast.arg) and node.arg == name:
         return True
     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-        return node.name == "dict"
+        return node.name == name
     if isinstance(node, ast.alias):
-        return (node.asname or node.name.split(".", maxsplit=1)[0]) == "dict"
+        return (node.asname or node.name.split(".", maxsplit=1)[0]) == name
     if isinstance(node, ast.ExceptHandler):
-        return node.name == "dict"
+        return node.name == name
     if isinstance(node, (ast.Global, ast.Nonlocal)):
-        return "dict" in node.names
+        return name in node.names
     if isinstance(node, (ast.MatchAs, ast.MatchStar)):
-        return node.name == "dict"
+        return node.name == name
     if isinstance(node, ast.MatchMapping):
-        return node.rest == "dict"
+        return node.rest == name
     return False
 
 
-def _enclosing_function_name(
+def _enclosing_function(
     node: ast.AST,
     parents: dict[int, ast.AST],
-) -> str | None:
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
     """Return the nearest enclosing function without relying on source lines."""
     parent = parents.get(id(node))
     while parent is not None:
         if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            return parent.name
+            return parent
         parent = parents.get(id(parent))
     return None
 
 
-def _is_allowed_actions_value_position(
-    value: ast.AST,
+def _approved_direct_return_emitters(
+    tree: ast.Module,
     rel_path: str,
     parents: dict[int, ast.AST],
+) -> frozenset[int]:
+    """Return identities of sealed, named module-level producer functions."""
+    expected = _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.get(rel_path, frozenset())
+    if not expected:
+        return frozenset()
+
+    approved: set[int] = set()
+    walked = list(ast.walk(tree))
+    for name in expected:
+        candidates = [
+            node
+            for node in walked
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == name
+        ]
+        if len(candidates) != 1:
+            continue
+        function = candidates[0]
+        if (
+            not isinstance(parents.get(id(function)), ast.Module)
+            or function.decorator_list
+        ):
+            continue
+        if any(
+            node is not function and _binds_name(node, name)
+            for node in walked
+        ):
+            continue
+        approved.add(id(function))
+    return frozenset(approved)
+
+
+def _is_allowed_actions_value_position(
+    value: ast.AST,
+    parents: dict[int, ast.AST],
+    approved_emitters: frozenset[int],
 ) -> bool:
-    """Return whether *value* is directly assigned to an allowed_actions emission."""
+    """Return whether *value* is in a named producer's direct return mapping."""
     parent = parents.get(id(value))
-    if isinstance(parent, ast.keyword):
-        call = parents.get(id(parent))
-        return (
-            parent.arg == "allowed_actions"
-            and isinstance(call, ast.Call)
-            and isinstance(call.func, ast.Attribute)
-            and call.func.attr == "update"
-            and isinstance(call.func.value, ast.Name)
-            and call.func.value.id == "out"
-            and _enclosing_function_name(call, parents)
-            in _ALLOWED_ACTIONS_FIXED_KEYWORD_EMITTERS.get(
-                rel_path, frozenset()
-            )
-        )
     if isinstance(parent, ast.Dict):
         for key, candidate in zip(parent.keys, parent.values):
             if candidate is value:
+                return_node = parents.get(id(parent))
+                function = (
+                    _enclosing_function(return_node, parents)
+                    if isinstance(return_node, ast.Return)
+                    else None
+                )
                 return (
                     isinstance(key, ast.Constant)
                     and key.value == "allowed_actions"
-                    and _enclosing_function_name(parent, parents)
-                    in _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.get(
-                        rel_path, frozenset()
-                    )
+                    and isinstance(return_node, ast.Return)
+                    and return_node.value is parent
+                    and function is not None
+                    and id(function) in approved_emitters
                 )
     return False
 
 
-def _sealed_fixed_constants(
-    tree: ast.Module,
-    rel_path: str,
-    parents: dict[int, ast.AST],
-) -> frozenset[str]:
-    """Return configured fixed mirrors whose only loads are approved emissions.
-
-    This is intentionally stricter than recognizing an all-False assignment:
-    mutation, aliasing, helper reads, or using a shadowed ``dict`` constructor
-    invalidates the constant and makes every emission site fail closed.
-    """
-    configured = _ALLOWED_ACTIONS_FIXED_CONSTANTS.get(rel_path, frozenset())
-    if not configured:
-        return frozenset()
-
-    # A local binding could make dict(NAME) execute arbitrary code.
-    if any(_binds_dict_name(node) for node in ast.walk(tree)):
-        return frozenset()
-
-    declarations: dict[str, ast.Name] = {}
-    for statement in tree.body:
-        target: ast.AST | None = None
-        value: ast.AST | None = None
-        if isinstance(statement, ast.AnnAssign):
-            target, value = statement.target, statement.value
-        elif isinstance(statement, ast.Assign) and len(statement.targets) == 1:
-            target, value = statement.targets[0], statement.value
-        if (
-            isinstance(target, ast.Name)
-            and target.id in configured
-            and value is not None
-            and _is_fixed_false_actions_dict(value)
-        ):
-            declarations[target.id] = target
-
-    sealed: set[str] = set()
-    for name, declaration in declarations.items():
-        valid = True
-        for node in ast.walk(tree):
-            # ``globals()["NAME"]`` and similar string-key lookups avoid an
-            # ast.Name load entirely.  Treat an exact configured-name literal
-            # as an opaque/indirect reference and invalidate the warrant.
-            if isinstance(node, ast.Constant) and node.value == name:
-                valid = False
-                break
-            if not isinstance(node, ast.Name) or node.id != name:
-                continue
-            if node is declaration:
-                continue
-            parent = parents.get(id(node))
-            if not (
-                isinstance(node.ctx, ast.Load)
-                and isinstance(parent, ast.Call)
-                and isinstance(parent.func, ast.Name)
-                and parent.func.id == "dict"
-                and parent.args == [node]
-                and not parent.keywords
-                and _is_allowed_actions_value_position(parent, rel_path, parents)
-            ):
-                valid = False
-                break
-        if valid:
-            sealed.add(name)
-    return frozenset(sealed)
-
-
-def _is_fixed_actions_emission_value(
-    node: ast.AST,
-    sealed_constants: frozenset[str],
-) -> bool:
-    """Recognize only a literal mirror or a sealed ``dict(CONSTANT)`` copy."""
-    if _is_fixed_false_actions_dict(node):
-        return True
-    return (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "dict"
-        and len(node.args) == 1
-        and isinstance(node.args[0], ast.Name)
-        and node.args[0].id in sealed_constants
-        and not node.keywords
-    )
+def _is_fixed_actions_emission_value(node: ast.AST) -> bool:
+    """Recognize only an inline six-key, all-False literal mapping."""
+    return _is_fixed_false_actions_dict(node)
 
 
 def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]:
@@ -587,7 +533,9 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
         for parent in ast.walk(tree)
         for child in ast.iter_child_nodes(parent)
     }
-    sealed_constants = _sealed_fixed_constants(tree, rel_path, parents)
+    approved_emitters = _approved_direct_return_emitters(
+        tree, rel_path, parents
+    )
     source_lines = source.splitlines()
     permitted_spans: set[tuple[int, int, int]] = set()
 
@@ -607,40 +555,21 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
                 (key.lineno, token_start, token_start + len("allowed_actions"))
             )
 
-    def permit_keyword(keyword: ast.keyword) -> None:
-        line = source_lines[keyword.lineno - 1]
-        start = char_offset(line, keyword.col_offset)
-        end = start + len("allowed_actions")
-        if line[start:end] == "allowed_actions":
-            permitted_spans.add((keyword.lineno, start, end))
-
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for key, value in zip(node.keys, node.values):
                 if (
                     isinstance(key, ast.Constant)
                     and key.value == "allowed_actions"
-                    and _is_fixed_actions_emission_value(value, sealed_constants)
+                    and _is_fixed_actions_emission_value(value)
                     and _is_allowed_actions_value_position(
-                        value, rel_path, parents
+                        value, parents, approved_emitters
                     )
                 ):
                     permit_literal_key(key)
-        elif isinstance(node, ast.Call):
-            for keyword in node.keywords:
-                if (
-                    keyword.arg == "allowed_actions"
-                    and _is_fixed_actions_emission_value(
-                        keyword.value, sealed_constants
-                    )
-                    and _is_allowed_actions_value_position(
-                        keyword.value, rel_path, parents
-                    )
-                ):
-                    permit_keyword(keyword)
 
     # Keep the original fail-closed lexical boundary and subtract only the
-    # exact AST-proven key/keyword token spans.  Enumerating selected AST node
+    # exact AST-proven key token spans.  Enumerating selected AST node
     # classes is insufficient: import aliases, exception bindings, pattern
     # captures, and future Python syntax can all bind the same authority name.
     lines: set[int] = set()
@@ -918,15 +847,11 @@ def _run_selftest(root: Path) -> int:
     # --- (b fixed emission): same World State line also contains a forbidden read --
     synthetic_b_fixed_emission = {
         "engine/neuralweb/world_state.py": (
-            "_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS = {\n"
-            "    'may_rank': False, 'may_score': False, 'may_size': False,\n"
-            "    'may_gate': False, 'may_escalate': False, 'may_trade': False,\n"
-            "}\n"
             "def _inflation_intelligence_null():\n"
-            "    payload = {'allowed_actions': "
-            "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}; "
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}; "
             "observed = state.get('allowed_actions')\n"
-            "    return payload\n"
         ),
     }
     viols_b_fixed_emission = _check_b(
