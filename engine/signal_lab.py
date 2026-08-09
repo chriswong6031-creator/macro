@@ -1870,13 +1870,21 @@ def build_scorecard() -> dict:
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
 
-    # The three annotation passes below stamp rows in place — run them on a
-    # per-call copy so module-level REGISTRY stays as authored for any other
-    # consumer in this process.
-    registry = copy.deepcopy(REGISTRY)
-
     # Re-render the BTC Vector card off the calibrator's own artifacts BEFORE the
     # provenance pass, so the passport stamps the same n_trials the prose quotes.
+    # The three resolve passes below overwrite rows IN PLACE. Run them on a private
+    # deep copy so this assembler stays the pure one its docstring claims.
+    #
+    # Pointed at the module-level REGISTRY they left it half-resolved for every later
+    # caller in the process. That is what redded ci-pack-3 on 2026-08-08: the BTC
+    # frozen-quote fallback test compared against a row an earlier test had already
+    # rewritten with LIVE figures, so the degrade path could not be observed at all.
+    # #5032 healed that test with a collection-time pristine snapshot on the TEST
+    # side, which unblocked CI but left the mutation itself in place — so the defect
+    # is now masked rather than fixed. This is the engine-side half: nothing outside
+    # build_scorecard() should be able to tell that it ran.
+    registry = copy.deepcopy(REGISTRY)
+
     _resolve_vector_live_stats(registry, warnings)
 
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or

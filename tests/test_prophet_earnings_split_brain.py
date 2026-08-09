@@ -121,6 +121,11 @@ def _standouts_file(tmp_dir: Path) -> Path:
     p = tmp_dir / "us_standouts.json"
     p.write_text(json.dumps({
         "as_of": "2026-07-02",
+        "staleness": {
+            "price_through": "2026-07-02", "delayed": False, "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
         "gate_go": False,
         "buy": [
             _make_buy("MSFT", score=80, act_level=3, spot=420.0),
