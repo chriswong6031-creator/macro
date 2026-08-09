@@ -127,10 +127,12 @@ def test_manifest_pins_corrected_gap_and_zero_event_session_heal():
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     gap = manifest["historical_gap_census"]
     assert gap["later_added_files"] == 255
-    assert gap["tickers"] == 241
-    assert gap["rows"] == 11_043
+    # The first detector census reported 11,043 rows/241 names. Three rows across two names were
+    # registration-era main IPO no-limit sessions, so the rule-correct event gap is 11,040/239.
+    assert gap["tickers"] == 239
+    assert gap["rows"] == 11_040
     assert gap["rows_already_present_in_prior"] == 1
-    assert gap["event_bearing_later_tickers_absent_from_prior"] == 204
+    assert gap["event_bearing_later_tickers_absent_from_prior"] == 203
 
     coverage = manifest["aggregate_session_coverage"]
     assert coverage["reference_ticker"] == REFERENCE_TICKER
@@ -142,18 +144,18 @@ def test_manifest_pins_corrected_gap_and_zero_event_session_heal():
     assert coverage["zero_event_session_count"] >= 19
 
 
-def test_manifest_reconciles_all_eight_rows_without_duplicates_or_residuals():
+def test_manifest_reconciles_full_rebuild_and_ipo_correction_without_residuals():
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     receipt = manifest["prior_vs_rebuilt_reconciliation"]
     assert receipt["prior_rows"] == 60_428
-    assert receipt["rebuilt_rows"] == 71_463
-    assert receipt["added_event_keys"] == 11_133
-    assert receipt["removed_event_keys"] == 98
-    assert receipt["net_event_keys"] == 11_035
+    assert receipt["rebuilt_rows"] == 71_406
+    assert receipt["added_event_keys"] == 11_130
+    assert receipt["removed_event_keys"] == 152
+    assert receipt["net_event_keys"] == 10_978
     assert receipt["prior_duplicate_event_keys"] == 0
     assert receipt["rebuilt_duplicate_event_keys"] == 0
-    assert receipt["naive_prior_plus_broad_gap_rows"] == 71_471
-    assert receipt["rebuilt_minus_naive_rows"] == -8
+    assert receipt["naive_prior_plus_broad_gap_rows"] == 71_468
+    assert receipt["rebuilt_minus_naive_rows"] == -62
     components = receipt["arithmetic_components"]
     assert components == {
         "broad_gap_overlap_already_in_prior": -1,
@@ -162,10 +164,11 @@ def test_manifest_reconciles_all_eight_rows_without_duplicates_or_residuals():
         "classifier_302_chinext_added": 7,
         "stale_prior_rows_removed_after_raw_refresh": -69,
         "old_main_width_rows_removed_by_302_chinext_classifier": -29,
+        "registration_era_main_ipo_no_limit_rows_removed": -54,
         "unexplained_added": 0,
         "unexplained_removed": 0,
     }
-    assert sum(components.values()) == -8
+    assert sum(components.values()) == -62
     reasons = receipt["reason_detail"]
     assert reasons["classifier_302_shared_keys_relabelled_main_to_chinext"] == 51
     assert reasons["current_raw_refresh_removed"]["by_ticker"] == {
@@ -174,6 +177,19 @@ def test_manifest_reconciles_all_eight_rows_without_duplicates_or_residuals():
         "300806.SZ": 10,
         "603663.SS": 39,
     }
+    ipo = reasons["registration_era_main_ipo_no_limit_removed"]
+    assert ipo["rows"] == 54
+    assert ipo["tickers"] == 31
+    assert ipo["by_event"] == {
+        "failed_down_seal": 12,
+        "failed_up_seal": 11,
+        "sealed_down": 25,
+        "sealed_up": 6,
+    }
+    rule = manifest["rule_era"]["main_normal"]["registration_era_ipo_no_limit"]
+    assert rule["effective_first_listing_date"] == "2023-04-10"
+    assert rule["excluded_sessions_from_listing"] == 5
+    assert rule["sse_rule_source"] and rule["szse_rule_source"]
 
 
 def test_manifest_discloses_st_snapshot_proxy_hash_asof_and_staleness():

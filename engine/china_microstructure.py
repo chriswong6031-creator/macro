@@ -17,6 +17,7 @@ Board-aware limit widths (CN-SYS-R12)
 IPO exclusion windows (CN-SYS-R12)
 ------------------------------------
   STAR/ChiNext names: first 5 sessions excluded from limit detection (44% cap regime)
+  Main-board registration-era IPOs (listing on/after 2023-04-10): first 5 sessions excluded
   All pre-2014 listings (first bar before 2014-01-01): first session excluded (44% cap regime)
 
 Ex-div caveat
@@ -89,7 +90,9 @@ CHINEXT_WIDE_DATE = pd.Timestamp("2020-08-24")   # ChiNext switched to ±20% on 
 BSE_LAUNCH_DATE   = pd.Timestamp("2021-11-15")   # BSE launched
 STAR_LAUNCH_DATE  = pd.Timestamp("2019-07-22")   # STAR market launched
 IPO_PRE2014_DATE  = pd.Timestamp("2014-01-01")   # pre-2014 = 44% cap on day 1
+MAIN_REGISTRATION_IPO_DATE = pd.Timestamp("2023-04-10")  # first main registration listings
 CHINEXT_STAR_IPO_WINDOW = 5                       # first N sessions excluded for STAR/ChiNext
+MAIN_REGISTRATION_IPO_WINDOW = 5                  # first 5 sessions have no daily price limit
 PRE2014_IPO_WINDOW      = 1                       # first session excluded for pre-2014 listings
 
 # Earliest date for which this module produces valid limit data.  The A-share ±10% daily price
@@ -254,9 +257,23 @@ def _detect_limit_events(
     if df.empty or len(df) < 2:
         return [], 0, 0
 
-    # Normalise index to date
+    # Normalise index to date.  Freeze the listing-relative exclusion dates BEFORE applying a
+    # caller's backfill/nightly date filter.  Otherwise every incremental lookback silently treats
+    # its first five rows as a fresh IPO window, while a post-2023 main-board IPO can lose its real
+    # no-limit sessions when the filtered slice starts after the first row.
     df = df.copy()
     df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+
+    first_bar_global = pd.to_datetime(df.index.min())
+    ipo_window = 0
+    if board in ("star", "chinext"):
+        ipo_window = CHINEXT_STAR_IPO_WINDOW
+    elif board == "main" and first_bar_global >= MAIN_REGISTRATION_IPO_DATE:
+        ipo_window = MAIN_REGISTRATION_IPO_WINDOW
+    elif first_bar_global < IPO_PRE2014_DATE:
+        ipo_window = PRE2014_IPO_WINDOW
+    ipo_exclusion_dates = frozenset(pd.Timestamp(ts) for ts in df.index[:ipo_window])
 
     # Apply date filter if requested
     if start_date is not None:
@@ -265,14 +282,6 @@ def _detect_limit_events(
         df = df[df.index <= end_date]
     if df.empty:
         return [], 0, 0
-
-    # Determine IPO exclusion window
-    first_bar_global = pd.to_datetime(df.index.min())
-    ipo_window = 0
-    if board in ("star", "chinext"):
-        ipo_window = CHINEXT_STAR_IPO_WINDOW
-    elif first_bar_global < IPO_PRE2014_DATE:
-        ipo_window = PRE2014_IPO_WINDOW
 
     # Build prev_close shifted series
     closes     = df["close"].astype(float)
@@ -290,7 +299,7 @@ def _detect_limit_events(
         trade_date = pd.Timestamp(ts)
 
         # --- IPO window exclusion ---
-        if i < ipo_window:
+        if trade_date in ipo_exclusion_dates:
             ipo_excluded += 1
             lianban_streak = 0
             continue

@@ -268,7 +268,7 @@ def _event_reconciliation_receipt(
     comparison_source: dict[str, Any],
     current_raw_files: list[Path],
 ) -> dict[str, Any]:
-    """Explain the prior + 11,043 vs rebuilt eight-row arithmetic delta exactly."""
+    """Explain every event-key delta against the selected prior generation exactly."""
     keys = ["date", "ticker", "event"]
     prior = prior_events.copy()
     rebuilt = rebuilt_events.copy()
@@ -304,11 +304,38 @@ def _event_reconciliation_receipt(
     raw_delta_added = added[added["ticker"].isin(raw_delta_tickers)]
     raw_delta_removed = removed[removed["ticker"].isin(raw_delta_tickers)]
 
+    # Main-board registration-era IPOs have no daily price limit for their first five sessions.
+    # The earlier detector treated those rows as ordinary ±10% sessions.  Resolve the removed
+    # keys from each ticker's immutable raw listing-relative index instead of hard-coding names.
+    from engine.china_microstructure import MAIN_REGISTRATION_IPO_DATE
+
+    registration_ipo_keys: set[tuple[Any, ...]] = set()
+    for ticker in sorted(set(removed["ticker"].astype(str))):
+        if _board_from_ticker(ticker) != "main":
+            continue
+        raw_path = RAW_DIR / f"{ticker}.parquet"
+        if not raw_path.exists():
+            continue
+        raw_index = pd.to_datetime(pd.read_parquet(raw_path, columns=["close"]).index)
+        raw_index = raw_index[~raw_index.isna()].sort_values().unique()
+        if len(raw_index) == 0 or pd.Timestamp(raw_index[0]) < MAIN_REGISTRATION_IPO_DATE:
+            continue
+        no_limit_dates = {pd.Timestamp(ts) for ts in raw_index[:5]}
+        ticker_rows = removed[
+            (removed["ticker"] == ticker) & removed["date"].isin(no_limit_dates)
+        ]
+        registration_ipo_keys.update(
+            map(tuple, ticker_rows[keys].itertuples(index=False, name=None))
+        )
+    registration_ipo_removed = removed[
+        removed[keys].apply(tuple, axis=1).isin(registration_ipo_keys)
+    ]
+
     explained_added_keys = set(map(tuple, pd.concat([
         broad_gap, later_post_gap_added, classifier_added, raw_delta_added,
     ])[keys].itertuples(index=False, name=None)))
     explained_removed_keys = set(map(tuple, pd.concat([
-        classifier_removed, raw_delta_removed,
+        classifier_removed, raw_delta_removed, registration_ipo_removed,
     ])[keys].itertuples(index=False, name=None)))
     unexplained_added = len(added_keys - explained_added_keys)
     unexplained_removed = len(removed_keys - explained_removed_keys)
@@ -320,6 +347,7 @@ def _event_reconciliation_receipt(
         "classifier_302_chinext_added": len(classifier_added),
         "stale_prior_rows_removed_after_raw_refresh": -len(raw_delta_removed),
         "old_main_width_rows_removed_by_302_chinext_classifier": -len(classifier_removed),
+        "registration_era_main_ipo_no_limit_rows_removed": -len(registration_ipo_removed),
         "unexplained_added": unexplained_added,
         "unexplained_removed": -unexplained_removed,
     }
@@ -374,14 +402,18 @@ def _event_reconciliation_receipt(
             "classifier_302_chinext_added": _event_slice_summary(classifier_added),
             "classifier_302_chinext_removed": _event_slice_summary(classifier_removed),
             "classifier_302_shared_keys_relabelled_main_to_chinext": shared_board_relabels,
+            "registration_era_main_ipo_no_limit_removed": _event_slice_summary(
+                registration_ipo_removed
+            ),
         },
         "raw_revision_evidence_vs_original_generation": _raw_revision_evidence(
             raw_delta_tickers
         ),
         "conclusion": (
-            "The eight-row difference is not duplication or a failed heal: one of the 11,043 "
-            "gap rows was already present, 32 post-cutoff later-file rows and 59 current-raw/"
-            "classifier rows were added, and 98 stale/classifier-invalid prior rows were removed."
+            "Reconciliation closes exactly with no duplicate keys or residual delta: "
+            f"{len(added_keys):,} event keys were added, {len(removed_keys):,} removed, "
+            f"including {len(registration_ipo_removed):,} false registration-era main IPO "
+            "no-limit rows removed."
         ),
     }
 
@@ -784,7 +816,25 @@ def run_backfill(
             "max_observed_session": source_dates[-1] if source_dates else None,
         },
         "rule_era": {
-            "main_normal": {"width_pct": 10.0},
+            "main_normal": {
+                "width_pct": 10.0,
+                "registration_era_ipo_no_limit": {
+                    "effective_first_listing_date": "2023-04-10",
+                    "excluded_sessions_from_listing": 5,
+                    "sse_rule_source": (
+                        "https://www.sse.com.cn/aboutus/mediacenter/hotandd/"
+                        "c/c_20230201_5715605.shtml"
+                    ),
+                    "szse_rule_source": (
+                        "https://docs.static.szse.cn/www/lawrules/index/rule/"
+                        "W020230217564423808793.pdf"
+                    ),
+                    "effective_date_source": (
+                        "https://www.sse.com.cn/aboutus/mediacenter/hotandd/"
+                        "c/c_20230404_5719112.shtml"
+                    ),
+                },
+            },
             "main_risk_warning": {
                 "before_2026-07-06_width_pct": 5.0,
                 "on_or_after_2026-07-06_width_pct": 10.0,
