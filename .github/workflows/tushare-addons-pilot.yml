@@ -210,8 +210,27 @@ jobs:
           PY
           echo "passed=true" >> "$GITHUB_OUTPUT"
 
-      - name: upload metadata-only pilot receipt
+      - name: remove isolated paid-data directory before upload
+        id: raw_cleanup
         if: ${{ always() && steps.token_scan.outcome == 'success' && steps.token_scan.outputs.passed == 'true' }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          raw="$RUNNER_TEMP/tushare-addons-${suffix}-raw"
+          case "$raw" in
+            "$RUNNER_TEMP/tushare-addons-${suffix}-raw")
+              /bin/rm -rf -- "$raw"
+              ;;
+            *)
+              echo "refusing cleanup outside the run-scoped TuShare raw path" >&2
+              exit 1
+              ;;
+          esac
+          test ! -e "$raw"
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+
+      - name: upload metadata-only pilot receipt
+        if: ${{ always() && steps.token_scan.outcome == 'success' && steps.token_scan.outputs.passed == 'true' && steps.raw_cleanup.outcome == 'success' && steps.raw_cleanup.outputs.passed == 'true' }}
         # actions/upload-artifact v4.6.2
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -228,7 +247,7 @@ jobs:
           set -euo pipefail
           test "$COLLECT_EXIT_CODE" = "0"
 
-      - name: remove isolated paid-data and review directories
+      - name: remove remaining isolated run directories
         if: ${{ always() }}
         run: |
           set -euo pipefail

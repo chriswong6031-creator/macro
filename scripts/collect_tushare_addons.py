@@ -3,9 +3,10 @@
 
 There is deliberately no date-range, ticker-list, or backfill interface.  The
 default mode is a dry plan which performs no network call and no write.  A caller
-must pass ``--execute`` for the single partition requested on the command line, and
-execution still fails closed unless the separately provisioned written vendor
-authorization or institutional-contract gate is satisfied.
+must pass both ``--execute`` and an explicit ``--output-root`` for the single
+partition requested on the command line, and execution still fails closed unless
+the separately provisioned written vendor authorization or institutional-contract
+gate is satisfied.
 """
 
 from __future__ import annotations
@@ -40,8 +41,11 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=DEFAULT_OUTPUT_ROOT,
-        help="immutable pilot partition root",
+        default=None,
+        help=(
+            "immutable pilot partition root; required explicitly with --execute "
+            f"(plan default: {DEFAULT_OUTPUT_ROOT})"
+        ),
     )
     parser.add_argument(
         "--execute",
@@ -59,7 +63,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     minutes = subparsers.add_parser("stk_mins", help="one ticker/session/frequency")
     _add_common_arguments(minutes)
-    minutes.add_argument("--ticker", required=True, help="one A-share ticker")
+    minutes.add_argument(
+        "--ticker", required=True, help="one repo-canonical .SS or .SZ ticker"
+    )
     minutes.add_argument(
         "--frequency",
         choices=ALLOWED_FREQUENCIES,
@@ -73,7 +79,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_arguments(premarket)
     premarket.add_argument(
         "--ticker",
-        help="optional one-ticker probe; omit only for a deliberate whole-market pilot",
+        required=True,
+        help="one repo-canonical .SS or .SZ ticker",
     )
 
     auction = subparsers.add_parser(
@@ -82,7 +89,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_arguments(auction)
     auction.add_argument(
         "--ticker",
-        help="optional one-ticker probe; omit only for a deliberate whole-market pilot",
+        required=True,
+        help="one repo-canonical .SS or .SZ ticker",
     )
     return parser
 
@@ -99,11 +107,14 @@ def _request_from_args(args: argparse.Namespace) -> PilotRequest:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     request = _request_from_args(args)
+    output_root = args.output_root or DEFAULT_OUTPUT_ROOT
     try:
         if not args.execute:
-            _emit(pilot_plan(request, output_root=args.output_root))
+            _emit(pilot_plan(request, output_root=output_root))
             return 0
-        result = collect_pilot(request, output_root=args.output_root)
+        if args.output_root is None:
+            raise CollectionHeld("execute_requires_explicit_output_root")
+        result = collect_pilot(request, output_root=output_root)
         _emit(result.as_dict())
         return 0
     except CollectionHeld as exc:

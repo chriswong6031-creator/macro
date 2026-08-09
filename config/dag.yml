@@ -27,7 +27,8 @@ lanes:
           BSE, or backfill surface exists. The collector makes at most two
           exact-session trade_cal calls plus one HTTPS endpoint call; the clock
           is re-observed before that final call. Only metadata receipts may be
-          uploaded—never paid Parquet/rows—and access-at-request-time, schema,
+          uploaded—never paid Parquet/rows—and the isolated raw directory must
+          be scanned and deleted before upload. Access-at-request-time, schema,
           source/runtime, clock, and immutable-store receipts remain
           context-display-only with no commercial/team/product/strategy authority.
 

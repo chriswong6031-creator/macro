@@ -3,9 +3,9 @@
 This module intentionally exposes *pilot* collection only:
 
 * ``stk_mins`` accepts exactly one ticker, one exchange session, and one frequency;
-* ``stk_premarket`` accepts exactly one exchange session (optionally one ticker);
-* ``stk_auction`` accepts only the current Shanghai session during TuShare's
-  documented 09:26-09:29 capture window; and
+* ``stk_premarket`` accepts exactly one ticker and one exchange session;
+* ``stk_auction`` accepts exactly one ticker in the current Shanghai session during
+  TuShare's documented 09:26-09:29 capture window; and
 * no range/backfill API exists here.
 
 Every successful response is normalized and validated before the first filesystem
@@ -90,7 +90,6 @@ _MINUTE_CURRENT_DAY_NOT_BEFORE = time(21, 0)
 _PREMARKET_CURRENT_DAY_NOT_BEFORE = time(16, 30)
 _AUCTION_WINDOW_START = time(9, 26)
 _AUCTION_WINDOW_END = time(9, 30)
-_MARKET_SCOPE_MIN_ROWS = 1_000
 _HTTPS_API_URL = "https://api.tushare.pro"
 _HTTP_TIMEOUT_SECONDS = 30
 
@@ -216,7 +215,10 @@ ENDPOINTS: Mapping[str, EndpointContract] = {
         api_name="stk_premarket",
         document_id=329,
         title="股本情况（盘前）",
-        description="one-session total/float shares and official daily price limits",
+        description=(
+            "one-session total/float shares and TuShare-reported daily "
+            "price-limit fields"
+        ),
         vendor_fields=(
             "trade_date",
             "ts_code",
@@ -288,7 +290,11 @@ class NormalizedRequest:
 
     @property
     def scope(self) -> str:
-        return f"ticker-{self.ticker}" if self.ticker else "all-stocks"
+        if self.ticker is None:
+            raise CollectorIntegrityError(
+                "normalized pilot unexpectedly lacks a ticker"
+            )
+        return f"ticker-{self.ticker}"
 
     def identity(self) -> dict[str, object]:
         return {
@@ -455,7 +461,9 @@ def normalize_request(request: PilotRequest) -> NormalizedRequest:
         raise CollectionHeld("unsupported_tushare_addon_endpoint")
     trade_day = _parse_date(request.trade_date)
     ticker = _canonical_ticker(request.ticker) if request.ticker else None
-    if ticker and ticker.endswith(".BJ"):
+    if ticker is None:
+        raise CollectionHeld("all_tushare_addon_pilots_require_one_ticker")
+    if ticker.endswith(".BJ"):
         raise CollectionHeld("BSE_pilots_blocked_pending_calendar_authority")
     frequency = str(request.frequency).strip() if request.frequency else ""
 
@@ -792,8 +800,6 @@ def _normalize_premarket_rows(
         raise CollectorIntegrityError(
             "premarket response is empty or has duplicate tickers"
         )
-    if request.ticker is None and len(records) < _MARKET_SCOPE_MIN_ROWS:
-        raise CollectionHeld("premarket_whole_market_snapshot_is_suspiciously_thin")
     return records
 
 
@@ -833,8 +839,6 @@ def _normalize_auction_rows(
         raise CollectorIntegrityError(
             "auction response is empty or has duplicate tickers"
         )
-    if request.ticker is None and len(records) < _MARKET_SCOPE_MIN_ROWS:
-        raise CollectionHeld("auction_whole_market_snapshot_is_suspiciously_thin")
     return records
 
 

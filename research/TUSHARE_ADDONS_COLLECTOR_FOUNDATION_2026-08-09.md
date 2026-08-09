@@ -16,8 +16,8 @@ The runnable surface contains exactly three operator-reported purchases:
 | Endpoint | Official contract captured | Bounded pilot | Initial access context |
 |---|---|---|---|
 | `stk_mins` | [股票历史分钟行情, doc 370](https://tushare.pro/document/2?doc_id=370) | one ticker, one exchange session, one of `1min/5min/15min/30min/60min` | operator-reported purchase; not vendor-attested and not a license grant |
-| `stk_premarket` | [股本情况（盘前）, doc 329](https://tushare.pro/document/2?doc_id=329) | one exchange session, optionally one ticker | operator-reported purchase; not vendor-attested and not a license grant |
-| `stk_auction` | [当日集合竞价, doc 369](https://tushare.pro/document/2?doc_id=369) | current Shanghai session only, optionally one ticker, during 09:26–09:29 | operator-reported purchase; not vendor-attested and not a license grant |
+| `stk_premarket` | [股本情况（盘前）, doc 329](https://tushare.pro/document/2?doc_id=329) | one SSE/SZSE ticker and one exchange session | operator-reported purchase; not vendor-attested and not a license grant |
+| `stk_auction` | [当日集合竞价, doc 369](https://tushare.pro/document/2?doc_id=369) | one SSE/SZSE ticker in the current Shanghai session, during 09:26–09:29 | operator-reported purchase; not vendor-attested and not a license grant |
 
 `stk_auction_o` and `stk_auction_c` are **blocked pending written entitlement
 confirmation**. Their existence in documentation is not evidence that this account
@@ -44,14 +44,15 @@ The GitHub workflow has the same main-ref job gate through repository variables.
 dispatch confirmation cannot substitute for it. Even after that gate is satisfied,
 this foundation grants **no** commercial-use, product-publication, team-sharing,
 redistribution, signal, or strategy authority. The upload is metadata-only; raw paid
-rows remain isolated in a run-scoped temporary directory and are deleted on every
-outcome.
+rows remain isolated in a run-scoped temporary directory.
 
 ## Safe execution envelope
 
 `python -m scripts.collect_tushare_addons ...` plans by default. Planning performs no
-network call and no write. `--execute` is required to authorize one structurally
-bounded request. There is no start/end range, ticker-list, pagination, or backfill
+network call and no write. Both `--execute` and an explicit `--output-root` are
+required to authorize one structurally bounded request. The default
+`data/tushare_addons/` root is licensed-private and gitignored, but execution does not
+silently choose it. There is no start/end range, ticker-list, pagination, or backfill
 interface.
 
 Every license-gated executed request has a hard maximum of three HTTPS vendor calls:
@@ -73,8 +74,9 @@ This collector performs no price join. Its receipt nevertheless freezes the down
 basis rule exposed by the cross-lane audit: nominal historical price/limit joins must
 come from the TuShare `daily` / `stk_limit` effective-date plane keyed from the full-A
 spine. `china_stocks_raw`/Yahoo is split-adjusted and is explicitly forbidden as that
-nominal historical truth. The direct `stk_premarket.up_limit` and `down_limit` values
-are preserved in this store rather than re-derived from adjusted closes.
+nominal historical truth. The TuShare-reported `stk_premarket.up_limit` and
+`down_limit` fields are preserved in this store rather than re-derived from adjusted
+closes; the foundation does not relabel those vendor values as exchange-official.
 
 Additional collection clocks fail closed:
 
@@ -109,7 +111,7 @@ Each accepted request owns one directory:
 <root>/<endpoint>/
   by_frequency=<frequency>/
     by_trade_date=YYYY-MM-DD/
-      by_scope=ticker-<ticker>|all-stocks/
+      by_scope=ticker-<ticker>/
         part.parquet
         receipt.json
 ```
@@ -147,9 +149,12 @@ The paid token is read from `TUSHARE_TOKEN` only. This lane uses an isolated HTT
 transport, never includes the token in a URL, and never logs or persists vendor error
 text, request payloads, token bytes, or token hashes. Before upload, the workflow scans
 both the isolated raw directory and metadata-only review directory for the raw
-environment token bytes **and** the exact `.strip()` bytes used by transport. The
-upload step is conditional on that scan succeeding, and an `always()` cleanup removes
-the raw, review, and virtual-environment directories.
+environment token bytes **and** the exact `.strip()` bytes used by transport. The raw
+directory is deleted immediately after a successful scan and before upload; upload is
+conditional on both scan and raw-cleanup success. A final `always()` step attempts to
+remove any remaining raw, review, and virtual-environment directories. A hard job
+timeout, runner loss, or host termination can prevent that finalizer, so its presence
+is not proof that every failure outcome leaves no runner-local residue.
 
 ## Operator commands
 
@@ -186,9 +191,9 @@ main-ref receipt.
    years needs a separately reviewed object-store layout, license/redistribution
    ruling, request/rate budget, resumable manifest, coverage ledger, corporate-action
    basis contract, and sampled reconciliation. None is authorized here.
-5. **Whole-market pilots remain guarded.** The library can accept a single-session
-   whole-market `stk_premarket` or `stk_auction` response but rejects fewer than 1,000
-   rows as suspiciously thin. The workflow is narrower and requires one ticker.
+5. **Single-ticker only.** The library, CLI, and workflow require exactly one `.SS` or
+   `.SZ` ticker for all three pilots. Whole-market collection is not a supported
+   foundation path.
 6. **Ex-ante premarket capture is not solved.** The conservative current-day close
    gate makes an immutable schema pilot honest, but it is not the eventual before-open
    capture needed for a leak-free signal. Promotion requires a scheduled, witnessed

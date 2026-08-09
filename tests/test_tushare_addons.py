@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -168,6 +169,17 @@ def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
             )
         assert held.value.reason_code.endswith("written_entitlement_confirmation")
     assert not output.exists()
+
+
+def test_licensed_default_output_root_is_gitignored() -> None:
+    expected = ROOT / "data/tushare_addons"
+    assert Path(addons.DEFAULT_OUTPUT_ROOT).resolve() == expected.resolve()
+    ignored = subprocess.run(
+        ["git", "check-ignore", "-q", "data/tushare_addons/probe/part.parquet"],
+        cwd=ROOT,
+        check=False,
+    )
+    assert ignored.returncode == 0
 
 
 def test_minute_pilot_writes_provenance_receipt_without_secret(
@@ -355,6 +367,31 @@ def test_bse_pilots_fail_before_vendor_call_or_partition(tmp_path: Path) -> None
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
 
 
+def test_vendor_response_bse_row_fails_without_partition(tmp_path: Path) -> None:
+    frame = premarket_frame()
+    frame.loc[:, "ts_code"] = "430047.BJ"
+    query = FakeQuery("stk_premarket", frame)
+
+    with pytest.raises(addons.CollectionHeld, match="BSE_rows_blocked"):
+        addons.collect_pilot(
+            addons.PilotRequest(
+                endpoint="stk_premarket",
+                trade_date="2026-08-07",
+                ticker="000001.SZ",
+            ),
+            output_root=tmp_path,
+            query_fn=query,
+            now=HISTORICAL_NOW,
+        )
+
+    assert [call[0] for call in query.calls] == [
+        "trade_cal",
+        "trade_cal",
+        "stk_premarket",
+    ]
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
 def test_calendar_and_exact_session_fail_before_partition_mutation(
     tmp_path: Path,
 ) -> None:
@@ -519,17 +556,27 @@ def test_premarket_and_auction_single_ticker_partitions(tmp_path: Path) -> None:
     assert pq.read_table(Path(auction.partition_path) / "part.parquet").num_rows == 1
 
 
-def test_suspiciously_thin_market_scope_and_partial_bundle_fail_closed(
-    tmp_path: Path,
+@pytest.mark.parametrize("endpoint", ["stk_mins", "stk_premarket", "stk_auction"])
+def test_all_library_pilots_require_one_ticker_before_vendor_call(
+    tmp_path: Path, endpoint: str
 ) -> None:
-    with pytest.raises(addons.CollectionHeld, match="suspiciously_thin"):
+    query = FakeQuery(endpoint, minute_frame())
+    with pytest.raises(addons.CollectionHeld, match="require_one_ticker"):
         addons.collect_pilot(
-            addons.PilotRequest(endpoint="stk_premarket", trade_date="2026-08-07"),
+            addons.PilotRequest(
+                endpoint=endpoint,
+                trade_date="2026-08-07",
+                frequency="1min" if endpoint == "stk_mins" else None,
+            ),
             output_root=tmp_path,
-            query_fn=FakeQuery("stk_premarket", premarket_frame()),
+            query_fn=query,
             now=HISTORICAL_NOW,
         )
-    assert list(tmp_path.iterdir()) == []
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_partial_bundle_fails_closed(tmp_path: Path) -> None:
 
     normalized = addons.normalize_request(minute_request())
     partial = addons.partition_path(tmp_path, normalized)
@@ -624,6 +671,14 @@ def test_cli_defaults_to_plan_and_has_no_range_or_backfill_surface(
     assert "--start-date" not in option_strings
     assert "--end-date" not in option_strings
     assert "--backfill" not in option_strings
+    endpoint_parsers = next(
+        action.choices for action in parser._actions if getattr(action, "choices", None)
+    )
+    for endpoint_parser in endpoint_parsers.values():
+        ticker_action = next(
+            action for action in endpoint_parser._actions if action.dest == "ticker"
+        )
+        assert ticker_action.required is True
 
     rc = cli.main(
         [
@@ -643,6 +698,32 @@ def test_cli_defaults_to_plan_and_has_no_range_or_backfill_surface(
         json.loads(capsys.readouterr().out)["status"] == "planned_no_network_no_write"
     )
     assert not (tmp_path / "planned").exists()
+
+
+def test_cli_execute_requires_explicit_output_root_before_collection(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def forbidden(*args: object, **kwargs: object) -> addons.PilotResult:
+        raise AssertionError("collector must not run without explicit output root")
+
+    monkeypatch.setattr(cli, "collect_pilot", forbidden)
+    rc = cli.main(
+        [
+            "stk_mins",
+            "--trade-date",
+            "2026-08-07",
+            "--ticker",
+            "600519.SS",
+            "--frequency",
+            "1min",
+            "--execute",
+        ]
+    )
+
+    assert rc == 2
+    assert json.loads(capsys.readouterr().out)["reason_code"] == (
+        "execute_requires_explicit_output_root"
+    )
 
 
 def test_cli_failure_receipt_does_not_echo_exception_or_secret(
@@ -707,14 +788,25 @@ def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> Non
 
     steps = {step["name"]: step for step in job["steps"] if "name" in step}
     token_scan = steps["prove review artifact contains no token"]
+    raw_cleanup = steps["remove isolated paid-data directory before upload"]
     upload = steps["upload metadata-only pilot receipt"]
-    cleanup = steps["remove isolated paid-data and review directories"]
+    cleanup = steps["remove remaining isolated run directories"]
     assert token_scan["id"] == "token_scan"
     assert "raw_token" in token_scan["run"]
     assert "transport_token" in token_scan["run"]
+    assert raw_cleanup["id"] == "raw_cleanup"
+    assert "steps.token_scan.outcome == 'success'" in raw_cleanup["if"]
+    assert '/bin/rm -rf -- "$raw"' in raw_cleanup["run"]
+    assert 'test ! -e "$raw"' in raw_cleanup["run"]
     assert "steps.token_scan.outcome == 'success'" in upload["if"]
     assert "steps.token_scan.outputs.passed == 'true'" in upload["if"]
+    assert "steps.raw_cleanup.outcome == 'success'" in upload["if"]
+    assert "steps.raw_cleanup.outputs.passed == 'true'" in upload["if"]
     assert str(upload["with"]["path"]).endswith("-review")
+    step_names = [step.get("name") for step in job["steps"]]
+    assert step_names.index("remove isolated paid-data directory before upload") < (
+        step_names.index("upload metadata-only pilot receipt")
+    )
     assert cleanup["if"] == "${{ always() }}"
     assert '"$raw"' in cleanup["run"]
     assert '"$review"' in cleanup["run"]
