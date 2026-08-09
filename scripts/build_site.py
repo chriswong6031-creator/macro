@@ -4078,7 +4078,12 @@ def regime_timeline(hist: pd.DataFrame) -> dict:
     (≈1999→today) are shipped; everything is parallel arrays keyed by day index so
     the browser can rewind the whole regime core to any past date. The six warning
     flags are packed into one bitmask per day (decoded against `flag_order`)."""
-    h = hist[hist["quad"].notna()].copy()
+    # Labeled AND both axes present — a labeled-yet-axis-dark store row (the
+    # 2026-08-08 HK null-inflation-tail shape, commit 901282ec209) must never
+    # ship regardless of which lane wrote the store. Asia mirrors carry the
+    # same filter (build_hk / build_china).
+    h = hist[hist["quad"].notna()
+             & hist["growth_score"].notna() & hist["inflation_score"].notna()].copy()
 
     def r3(col: str) -> list:
         return [None if pd.isna(v) else round(float(v), 3) for v in h[col]]

@@ -12,13 +12,18 @@ from __future__ import annotations
 import json
 import logging
 import math
+import sys
 from collections import Counter
 from datetime import datetime, timezone, date as _date_type
+from pathlib import Path
 
-from engine import special_situations as sse
-from lib import config
-from lib.pages import write_page
-from scripts.build_vector import C
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import special_situations as sse  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+from scripts.build_vector import C  # noqa: E402
 
 log = logging.getLogger(__name__)
 

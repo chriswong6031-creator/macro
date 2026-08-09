@@ -270,7 +270,9 @@ def _cohort_pct_parab(closes: pd.DataFrame, spy: pd.Series | None) -> float | No
         from engine import theme_crowding as _tc
         if closes is None or closes.shape[1] < _CFG["cohort_min_members"]:
             return None
-        ext_map = _ext.extension_signals(closes)
+        # max_age=0: this value is stamped under today's asof into parab_history —
+        # a percentile-history point must never be a prior session's read.
+        ext_map = _ext.extension_signals(closes, max_age=0)
         ext_rows = [ext_map[t] for t in closes.columns if t in ext_map]
         if len(ext_rows) < _CFG["cohort_min_members"]:
             return None
