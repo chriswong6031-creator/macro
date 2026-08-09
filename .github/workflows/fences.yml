@@ -68,7 +68,10 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    # Same-repository PRs and main are trusted inputs and this fast static proof must
+    # not queue behind multi-hour hosted CI packs. Keep it on the dedicated light Mac;
+    # fork PRs still take the hosted fallback jobs below.
+    runs-on: [self-hosted, macstudio-light]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,6 +80,9 @@ jobs:
           filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
+        # The light Mac already provides Python 3.12. setup-python tries to create
+        # /Users/runner on that self-hosted account and fails before any guard runs.
+        if: runner.environment == 'github-hosted'
         with:
           python-version: "3.12"
       # jinja2/markupsafe are for the chat-nav guard below, which RENDERS
@@ -85,7 +91,9 @@ jobs:
       # skip, and the --selftest path additionally imports lib.pages (which pulls
       # lib.config → pyyaml).
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 markupsafe
+        run: |
+          python3 -c "import pytest, yaml, jinja2, markupsafe" 2>/dev/null || \
+            python3 -m pip install pytest pyyaml jinja2 markupsafe
 
       - name: self-mod-fence selftest (all four cases proven)
         id: self_mod_selftest
@@ -114,7 +122,7 @@ jobs:
       - name: self-mod-fence test suite
         id: self_mod_tests
         continue-on-error: true
-        run: python -m pytest tests/test_self_mod_fence.py -q
+        run: python3 -m pytest tests/test_self_mod_fence.py -q
 
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         id: capability_selftest
