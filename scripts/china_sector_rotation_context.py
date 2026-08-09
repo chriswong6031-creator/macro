@@ -20,15 +20,19 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import china_sector_cycles as ccc
-from engine import china_sector_index as csi
-from engine import sector_cycles as sc
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import china_sector_cycles as ccc  # noqa: E402
+from engine import china_sector_index as csi  # noqa: E402
+from engine import sector_cycles as sc  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("china_sector_rotation_context")
 

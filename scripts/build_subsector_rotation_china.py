@@ -11,11 +11,15 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from engine import subsector_rotation_china as srcn
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import subsector_rotation_china as srcn  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("build_subsector_rotation_china")
 

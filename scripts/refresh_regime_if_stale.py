@@ -37,10 +37,15 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 
 import pandas as pd
+from pathlib import Path
 
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, store  # noqa: E402
 
 log = logging.getLogger("refresh_regime")
 

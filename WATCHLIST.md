@@ -36,7 +36,7 @@ Project `MarketIntelligence` (`fsldfzlxyavsuwqbceod`) is wired up:
   provider), so sign-in emails a link the user clicks. The SDK is lazy-loaded
   only on sign-in / link-return, so anonymous visitors stay zero-third-party.
 - Redirect allowlist + Site URL are set for `http://localhost:8741/**` (preview)
-  and `https://chriswong6031-creator.github.io/macro/**` (production). If the
+  and `https://mastermindx-market-intelligence.github.io/macro/**` (production). If the
   deployed URL ever changes (custom domain, repo rename), update
   Supabase → Authentication → URL Configuration accordingly.
 

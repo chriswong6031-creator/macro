@@ -1,0 +1,82 @@
+{
+ "done": {
+  "AMAN": {
+   "backfilled": "2026-08-08",
+   "last_obs": "2026-08-07",
+   "rows": 56
+  },
+  "AMRZ": {
+   "backfilled": "2026-08-08",
+   "last_obs": "2026-08-07",
+   "rows": 284
+  },
+  "ASMB": {
+   "backfilled": "2026-08-08",
+   "last_obs": "2026-08-07",
+   "rows": 3932
+  },
+  "BRK.B": {
+   "backfilled": "2026-08-08",
+   "last_obs": "2026-08-07",
+   "rows": 7610
+  },
+  "CNVS": {
+   "backfilled": "2026-08-08",
+   "last_obs": "2026-08-07",
+   "rows": 5721
+  }
+ },
+ "last_run": {
+  "attempted": 5,
+  "batch_errors": 0,
+  "batch_size": 5,
+  "budget_exhausted": false,
+  "budget_s": 480.0,
+  "cap": 5,
+  "census": {
+   "already_stored": 751,
+   "bucket_1_current": 10,
+   "bucket_2_recent": 6212,
+   "bucket_3_rest": 0,
+   "hub_current_surface": 38,
+   "hub_universe": 54,
+   "ledger_tickers": 7711,
+   "missing": 7108,
+   "parked": 0,
+   "queue": 6222,
+   "union_needed": 7711,
+   "unsupported_sample": [
+    "()",
+    "0001",
+    "000100",
+    "000333",
+    "000488",
+    "0006",
+    "000620",
+    "000660",
+    "000803",
+    "000880",
+    "000930",
+    "0011"
+   ],
+   "unsupported_symbols": 886
+  },
+  "dry_run": false,
+  "elapsed_s": 3.9,
+  "no_data": 0,
+  "parked": 0,
+  "period": "max",
+  "planned": 5,
+  "ratio_anomalies": 0,
+  "ratio_anomaly_names": {},
+  "remaining": 6217,
+  "schema_rejected": 0,
+  "short_history": 0,
+  "started_utc": "2026-08-08T11:31:34+00:00",
+  "written": 5
+ },
+ "parked": {},
+ "pending": {},
+ "schema": "yahoo_backfill_state/1",
+ "updated_utc": "2026-08-08T11:31:37+00:00"
+}
