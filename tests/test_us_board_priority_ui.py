@@ -449,6 +449,159 @@ def test_featured_glow_is_static_and_theme_aware():
 
 
 # --------------------------------------------------------------------------- #
+# ANTICIPATION v1 — the per-row "Extended? Not checked" mark
+#
+# PR #4976 made the board DISCLOSE a missing extension reading instead of vetoing
+# the row out of the featured shelf, and wrote honest copy at four sites — two of
+# which never rendered, because `_MK_NOTIP = ('feat', 'new')` drops the ★ Featured
+# tooltip on both boards.  The aggregate count reached the reader (board footnote);
+# WHICH picks were unmeasured did not.  This section pins the visible carrier.
+#
+# ASSERTION STYLE: `.pv-mk-nck`'s CSS ships on every render, so every presence and
+# absence claim below targets the full markup string, never the bare class token
+# (module docstring, harness law).
+# --------------------------------------------------------------------------- #
+
+_NCK_MARK = '<span class="pv-mk-i pv-mk-nck"'
+
+
+def _ext_vm(mode: str) -> tuple[dict, list[str]]:
+    """The priority VM with `ext_unknown` stamped on every row, plus the receipt.
+
+    `mode="mixed"` is the ordinary board: two featured rows lost the reading and the
+    rest kept it — AND every non-featured row is unknown too, which is what makes the
+    featured-only scope falsifiable rather than incidental.
+    `mode="all"` is the total-outage night (2026-08-06 published a featured lane of
+    0 of 69 under the old veto; the same outage now lights the whole shelf unmeasured).
+
+    The coverage receipt is COMPUTED from these rows by the engine's own function, so
+    the footnote's count cannot drift from the cards the fixture renders.
+    """
+    from engine import us_board_rank as _ubr
+
+    vm = _priority_vm()
+    rows = vm["us_standouts"]["buy"]
+    featured = [r["ticker"] for r in rows if r.get("featured")]
+    assert len(featured) >= 3, "fixture lost its featured shelf — assertions would be weak"
+    if mode == "all":
+        unknown = {r["ticker"] for r in rows}
+    else:
+        unknown = {featured[0], featured[-1]}
+        unknown |= {r["ticker"] for r in rows if not r.get("featured")}
+    for row in rows:
+        row["ext_unknown"] = row["ticker"] in unknown
+    vm["us_standouts"]["ranking"] = {
+        "ext_unknown_coverage": _ubr.ext_unknown_coverage(rows),
+    }
+    return vm, featured
+
+
+def test_an_unmeasured_featured_card_says_so_and_a_measured_one_does_not():
+    """The deliverable: the reader can see WHICH picks the chase-risk check skipped."""
+    vm, featured = _ext_vm("mixed")
+    html = _render(vm)
+    rows = vm["us_standouts"]["buy"]
+    unknown_featured = [r["ticker"] for r in rows if r.get("featured") and r["ext_unknown"]]
+    known_featured = [r["ticker"] for r in rows if r.get("featured") and not r["ext_unknown"]]
+    assert unknown_featured and known_featured, "fixture must contain both to discriminate"
+
+    for ticker in unknown_featured:
+        assert _NCK_MARK in _card_markup(html, ticker), f"{ticker} lost its absence mark"
+    for ticker in known_featured:
+        assert _NCK_MARK not in _card_markup(html, ticker), (
+            f"{ticker} has an extension reading and must claim nothing about a gap")
+
+
+def test_the_absence_mark_stays_off_rows_whose_featured_claim_it_would_not_qualify():
+    """Scope is featured-only ON PURPOSE, though the engine stamps every row.
+
+    The extension reading feeds the featured gate; on a Wait or Blocked card nothing
+    on the card leans on it, so the mark would answer a question no reader is asking
+    (doctrine Law 1) while spending a slot in a row whose median card shows one chip.
+    The fixture makes every non-featured row unknown, so a mark that leaked onto them
+    fails here rather than shipping as chip spam."""
+    vm, _ = _ext_vm("mixed")
+    html = _render(vm)
+    plain_unknown = [r["ticker"] for r in vm["us_standouts"]["buy"]
+                     if not r.get("featured") and r["ext_unknown"]]
+    assert plain_unknown, "fixture must carry unknown NON-featured rows"
+    for ticker in plain_unknown:
+        assert _NCK_MARK not in _card_markup(html, ticker), (
+            f"{ticker} is not featured — it makes no claim for the mark to qualify")
+
+
+def test_the_absence_mark_is_bilingual_and_asserts_nothing_about_the_name():
+    """The honest stance is "we could not check", never "this name IS extended" and
+    never an all-clear.  The question mark is what carries that — the chip poses the
+    open question and answers it with the null, so neither misreading survives."""
+    vm, _ = _ext_vm("mixed")
+    html = _render(vm)
+    assert ('<span class="l-en">Extended? Not checked</span>'
+            '<span class="l-zh">涨过头？未检查</span>') in html
+    # The mark keeps its Tier-2 receipt: 'nck' is deliberately NOT in _MK_NOTIP,
+    # because unlike feat/new it names something the reader cannot infer from the card.
+    mark = html[html.find(_NCK_MARK):]
+    mark = mark[:mark.find("</span>", mark.find("l-zh"))]
+    assert "data-tip-en=" in mark and "data-tip-zh=" in mark
+    assert "an absence, not a finding that it has" in html
+    assert "是「没查」，不是「查出来涨过头了」" in html
+    # No slug and no enum token: the flag's name never reaches the page, and the mark's
+    # own markup carries neither it nor the engine field it is derived from.  (`ext_z`
+    # is NOT asserted page-wide — a long-standing display-only chip owns that class
+    # name in the stylesheet, which is not user-visible copy.)
+    assert "ext_unknown" not in html
+    assert "ext_z" not in mark
+    # Falsifier/refutation vocabulary is never front-facing (operator 2026-07-27).
+    for banned in ("falsifier", "refuted", "证伪"):
+        assert banned not in mark
+
+
+def test_the_absence_mark_suppresses_itself_when_the_whole_shelf_is_unmeasured():
+    """DESIGN_DOCTRINE Law 4 — "a constant belongs in the footer, once".
+
+    The mark identifies WHICH picks are unmeasured, and identification is worth a chip
+    only while the answer is *some of them*.  On an all-unknown shelf it degenerates
+    into the same chip on every card, so it suppresses and the footnote — which is
+    already stating the count — carries the whole story.  This is the rule that keeps
+    the HK board (no extension wiring at all, so 100% unknown) from turning every card
+    into noise, and it is keyed on the data, not on the market."""
+    vm, _ = _ext_vm("all")
+    html = _render(vm)
+    assert _NCK_MARK not in html, "an all-unknown shelf must not mark every card"
+    # ... and the footer is doing the work, so nothing goes dark.
+    footnote = _footnote(html)
+    featured = sum(1 for r in vm["us_standouts"]["buy"] if r.get("featured"))
+    assert f"({featured} of the featured names have none at all" in footnote
+    assert f"（另有{featured}只精选个股完全没有读数" in footnote
+
+
+def test_the_absence_mark_is_the_only_hollow_chip_in_the_row():
+    """The form IS the message: every other mark is a filled tint stating something
+    that IS true of the name; this one marks a slot where a reading should have been,
+    so it is drawn as the outline of a chip.  Dashed is borrowed from .pv-trg-soon
+    ("pending, not settled"), so the card gains no new hue and no new idiom."""
+    vm, _ = _ext_vm("mixed")
+    html = _render(vm)
+    rule = html[html.find(".pv-mk-nck{"):]
+    rule = rule[:rule.find("}") + 1]
+    assert "background:transparent" in rule, "the missing fill is the whole idea"
+    assert "border-style:dashed" in rule
+    assert "color:var(--muted)" in rule
+    # Sentence case is load-bearing — feat/new/adj/blow are uppercase badges, this is
+    # a note.  It must inherit .pv-mk-i's untransformed case.
+    assert "text-transform" not in rule
+    # No new colour: the featured aura is where this card spends its boldness.
+    for hue in ("--warn", "--info", "--pv-buy", "--up", "--down"):
+        assert hue not in rule
+
+
+def test_the_legacy_board_grows_no_absence_mark():
+    """Fail-soft: the pre-priority artifact carries no `featured` and no `ext_unknown`,
+    and must render byte-identically to before this lane."""
+    assert _NCK_MARK not in _legacy_html()
+
+
+# --------------------------------------------------------------------------- #
 # G0.6 — stage filter chips + NEW badge
 # --------------------------------------------------------------------------- #
 

@@ -1,0 +1,179 @@
+{
+  "base_sha": "085eebd0cd3bbf1462111606724caec722b151fc",
+  "board_asof": "2026-08-07",
+  "board_order_identical": true,
+  "dont_chase_deviation": {
+    "a_ran_row_outscores_a_live_row": true,
+    "best_ran_score": 73.0,
+    "every_ran_row_still_sorts_below_every_live_row": true,
+    "worst_live_score": 54.5
+  },
+  "featured": {
+    "base_n": 11,
+    "gained": [
+      {
+        "score": 95.7,
+        "stage": "setting_up",
+        "status": "bounce_wait",
+        "ticker": "AEIS"
+      }
+    ],
+    "head_n": 12,
+    "lost": []
+  },
+  "membership_identical": true,
+  "ordering_law": {
+    "base_score_non_increasing_within_stage": true,
+    "base_stage_sequence_monotone": true,
+    "head_score_non_increasing_within_stage": true,
+    "head_stage_sequence_monotone": true
+  },
+  "reversal_cohort": {
+    "as_of": "2026-08-07",
+    "baskets_in_cohort": 11,
+    "baskets_read": 49,
+    "board_members": [
+      "AEIS",
+      "ALB",
+      "CCJ",
+      "EU",
+      "OKLO",
+      "UEC",
+      "URG",
+      "UUUU"
+    ],
+    "coverage": {
+      "input": "present",
+      "members": 8,
+      "n": 79,
+      "selection_era": "anticipation-v1-2026-08-08",
+      "share": 0.1013
+    },
+    "input": "present",
+    "scores_unchanged_by_membership": true,
+    "universe_members": 104
+  },
+  "rows": 79,
+  "stage_census": {
+    "blocked": {
+      "featured": 0,
+      "n": 2
+    },
+    "live": {
+      "featured": 11,
+      "n": 29
+    },
+    "ran": {
+      "featured": 0,
+      "n": 18
+    },
+    "setting_up": {
+      "featured": 1,
+      "n": 30
+    }
+  },
+  "veto_reason_changes": {
+    "n": 50,
+    "of": 79,
+    "sample": [
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [],
+        "stage": "setting_up",
+        "ticker": "AEIS"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "BHP"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "BC"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "UUUU"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "WBD"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "RIO"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "ALB"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "FN"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "HP"
+      },
+      {
+        "base": [
+          "stage_not_live"
+        ],
+        "head": [
+          "featured_cap"
+        ],
+        "stage": "setting_up",
+        "ticker": "HCC"
+      }
+    ]
+  }
+}
