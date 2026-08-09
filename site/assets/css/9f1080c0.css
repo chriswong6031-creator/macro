@@ -1099,6 +1099,82 @@
             color: color-mix(in srgb, var(--warn) 60%, var(--text)); }
   /* board order / priority framing footnote */
   .pb-fn { margin: 9px 0 0; font-size: 11px; color: var(--muted); line-height: 1.55; }
+  /* ═══ W-L1 BOARD STATE STAMP ═══════════════════════════════════════════════
+     Contract: research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.2.
+     ONE axis, asked once: where does this board stand relative to the nightly board
+     of record?
+       data-boardstate="ahead"   provisional blue, DASHED — built from today's close;
+                                 the overnight pass has not countersigned it
+       data-boardstate="behind"  muted, SOLID            — the record did not arrive
+                                 (or the market is shut); this is the last confirmed board
+       attribute ABSENT          no stamp at all         — the board IS the record
+     Absence is the third state and it is load-bearing: a reader never has to read a
+     badge to learn that nothing is unusual.
+     Dashed=pending is not invented here — .pv-trg-soon already ships it for the
+     'imminent' trigger chip; the blue is the P1 .pv-live hue (--prov, theme.css §4.1)
+     reused ON PURPOSE, because the ◐ strip and this stamp name the same epistemic tier. */
+  .pbs { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800;
+         letter-spacing: .06em; text-transform: uppercase; line-height: 1.35; padding: 2.5px 9px;
+         border-radius: 6px; white-space: nowrap; flex: none; }
+  /* squarer than the board's 999px pills on purpose: this is a stamp on the whole board,
+     not another chip in the chip row. 6px matches the .pv-mk marks family. */
+  .pbs-ahead { color: var(--prov-ink); background: color-mix(in srgb, var(--prov) 11%, transparent);
+               border: 1px dashed color-mix(in srgb, var(--prov) 62%, transparent); }
+  .pbs-behind { color: var(--muted); background: color-mix(in srgb, var(--muted) 9%, transparent);
+                border: 1px solid color-mix(in srgb, var(--muted) 34%, transparent); }
+  .pbs-dt { font-variant-numeric: tabular-nums; }
+  .pbs[hidden] { display: none; }   /* a class-level display out-specifies the UA [hidden] rule
+                                       — the .pv-live[hidden] trap, one line earlier this time */
+  /* THE UNSEALED EDGE — the one place this design spends boldness.
+     A board-level state has to survive a full-page scroll-past, and the house has already
+     measured that a rim treatment ALONE does not (see the .pv-featured note in
+     _prophet_card.html.j2). So the panel's own top edge goes perforated while the board is
+     uncountersigned. Long dash (15/9), never a fine dot — a fine dotted line reads as a
+     broken border, a long dash reads as a deliberate perforation. Costs zero height: it
+     rides the existing 1px border.
+     Static by choice: 15 cards and a strip that already animates its rows in are enough
+     movement on this page, so there is no animation here and therefore no
+     prefers-reduced-motion kill block to keep in sync (the strongest form of that
+     compliance is having nothing to disable). If motion is ever added here, the kill block
+     must name ::before explicitly. */
+  .panel[data-boardstate] { position: relative; }
+  .panel[data-boardstate="ahead"]::before {
+    content: ""; position: absolute; left: -1px; right: -1px; top: -1px;
+    height: 2px; border-radius: 14px 14px 0 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg,
+      color-mix(in srgb, var(--prov) 78%, transparent) 0 15px, transparent 15px 24px); }
+  /* SLOT B — one line under the header. Four mutually exclusive contents (provisional
+     stance / confirmation receipt / last-confirmed stance / markets-closed stance), never
+     two at once, so the header height moves by at most a rounding wobble and the board
+     below never shoves. NOT a second footnote: .pb-fn stays the panel's single permanent
+     methodology note (doctrine Law 4).
+     Deliberately NOT .nb-stale-note's amber-on-tint banner: quiet honesty, not a caution —
+     no fill, no border, muted ink.
+     min-height RESERVES the slot (the .pv-mk precedent). The evening state arrives on the
+     live plane under a reader who is already looking at the board, so the slot has to hold
+     its line BEFORE the payload lands or the flip shoves the grid; an empty slot is
+     therefore exactly as tall as a one-line slot.
+     text-wrap:pretty is load-bearing, not polish: without it the trailing `?` help icon
+     wrapped alone onto a second line on the two longest notes, and that ALSO cost 18.8px
+     of header height on those states — measured 18.8px spread before, 1.5px after. */
+  .pbs-note { font-size: 11.5px; line-height: 1.5; margin: 7px 0 1px; color: var(--muted);
+              max-width: 94ch; min-height: 1.5em; text-wrap: pretty; }
+  .pbs-note b { font-weight: 700; color: var(--text); }
+  .pbs-fig { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
+  .pbs-note .help { margin-left: 5px; vertical-align: 1px; }
+  .pbs-nv[hidden] { display: none; }
+  @media (max-width: 680px) {
+    .pbs { font-size: 9.5px; padding: 2px 7px; }
+    .pbs-note { font-size: 11px; }
+    /* At this width the header row's free space is measured in characters. The EN subtitle
+       is long enough to sit on its own line already, in every state — but the ZH one fits
+       beside the title until the stamp arrives and pushes it down, which moved the whole
+       card grid 25.25px UNDER A READER at exactly the moment the evening state landed
+       (measured, verify_wl1.py). Pinning the subtitle to its own line makes the header's
+       LINE COUNT independent of whether a stamp is present, which is what the invariance
+       gate is actually asking for, and it makes ZH behave the way EN already does here. */
+    .pb-hdrow > .muted { flex: 1 0 100%; }
+  }
   /* per-card expander toggle bar */
   .nb-more-btn { display: flex; align-items: center; justify-content: center; gap: 4px;
                  width: 100%; margin-top: 4px; padding: 4px 0; min-height: 32px;

@@ -1,16 +1,38 @@
 """The extension panel must not mix a 5-session equity calendar with 24/7 crypto.
 
-`engine.extension.extension_signals` takes ONE global ``.iloc[-1]`` and drops every
-ticker whose latest cell is NaN.  ``scripts/build_stock_library`` builds its panel from
-the whole library universe, which carries both equities and the ``yahoo.tickers.crypto``
-names, so the panel index is the UNION of the two calendars.  On any build whose newest
-calendar date is not an equity session — every weekend, every US market holiday — the
-last row is crypto-only, every equity reads NaN, and ``ext_map`` collapses to the crypto
-names.  Downstream that zeroes the ``us_prophet_v1`` runway leg and strips the ez-term
-and the parabolic/stretched grade floor out of ``conviction.risk.components.ext``.
+``scripts/build_stock_library`` builds its panel from the whole library universe, which
+carries both equities and the ``yahoo.tickers.crypto`` names, so one panel is indexed on
+the UNION of the two calendars.  That broke the read in two ways:
 
-These tests pin the split, and they pin the DEFECT too: the mixed-panel assertions fail
-loudly if someone feeds one panel again, so the fix cannot be reverted quietly.
+  * ``engine.extension.extension_signals`` used to take ONE global ``.iloc[-1]`` and
+    drop every ticker whose latest cell was NaN, so on any build whose newest calendar
+    date is not an equity session — every weekend, every US market holiday — ``ext_map``
+    collapsed to the crypto names alone.  Downstream that zeroed the ``us_prophet_v1``
+    runway leg and stripped the ez-term and the parabolic/stretched grade floor out of
+    ``conviction.risk.components.ext``.  That HALF is now healed inside the module:
+    the read anchors to the newest row clearing ``ANCHOR_COVERAGE_FLOOR``, and a
+    crypto-only row is far under the floor, so it is skipped.
+  * the union index still injects ~189 all-NaN weekend rows into every 200-row window,
+    so ``px.rolling(200)`` averages far fewer real sessions and NO equity's ext_z is the
+    back-tested quantity.  The floor cannot see that, and it never will.
+
+And the anchor adds two more reasons to split.  Walking back to the last well-covered
+row means the mixed panel reads CRYPTO off the equity Friday too, throwing away the
+Saturday and Sunday sessions crypto actually traded — and over a LONG weekend the walk
+back is more than ``ANCHOR_MAX_AGE`` rows, so the mixed panel serves nothing at all
+rather than backdating the whole universe.  (Measured on the committed
+``data/intl_search/closes.parquet``, a real union-of-calendars store: ~11% of its
+sessions land in a coverage band that is empty on every single-calendar store —
+tests/test_extension.py::TestTheFloorIsCalibratedOnRealSessions.)
+
+The equity side of the fixture carries more than ``ANCHOR_MIN_LIVE`` names ON PURPOSE:
+below that count the anchor stops applying a panel rule at all (a fraction floor over a
+handful of names is a per-name gate), so a 3-name fixture would exercise a different
+code path from the ~3,000-name universe these tests claim to model.
+
+These tests pin the split, and they pin the surviving DEFECT too: the mixed-panel
+assertions fail loudly if someone feeds one panel again, so the fix cannot be reverted
+quietly.
 """
 from __future__ import annotations
 
@@ -22,12 +44,14 @@ import pandas as pd
 import pytest
 
 import scripts.build_stock_library as bsl
-from engine.extension import extension_signals
-from scripts.build_stock_library import (_crypto_tickers, _panel_asof,
-                                         extension_panels)
+from engine.extension import ANCHOR_MIN_LIVE, extension_signals
+from scripts.build_stock_library import _crypto_tickers, _panel_asof, extension_panels
 
 CRYPTO = ["BTC-USD", "ETH-USD", "SOL-USD"]
-EQUITIES = ["AAA", "BBB", "CCC"]
+# AAA/BBB/CCC stay first — TestNoCryptoInTheEquityPanel moves AAA to the crypto side to
+# prove the split follows config.  The rest exist so the equity panel clears
+# ANCHOR_MIN_LIVE and the anchor runs its PANEL rule, as it does on the real universe.
+EQUITIES = ["AAA", "BBB", "CCC"] + [f"EQ{i:02d}" for i in range(ANCHOR_MIN_LIVE + 4)]
 
 
 def _series(index, start=100.0, drift=0.0009, seed=0):
@@ -67,14 +91,34 @@ class TestWeekendCollision:
     # 2026-07-31 is a Friday, 2026-08-02 the Sunday after it.
     PANEL = dict(equity_end="2026-07-31", crypto_end="2026-08-02")
 
-    def test_one_mixed_panel_loses_every_equity(self):
-        """The defect, pinned. If this stops failing the split is no longer needed —
-        and if it stops holding, the test below is measuring nothing."""
+    def test_one_mixed_panel_still_misreads_every_equity(self):
+        """The defect, pinned — in the form it takes now that ``extension_signals``
+        anchors by coverage and declares its age.  A crypto-only Sunday row is far
+        under the floor, so it no longer blanks the equities board-wide; what is left
+        is what the anchor cannot reach:
+
+          * ~189 all-NaN weekend rows inside every 200-row window, so every equity's
+            ext_z off the mixed panel differs from its own-calendar value; and
+          * the anchor drops back to the last EQUITY session, so crypto — which traded
+            on Saturday and Sunday — is read two days stale, and says so.
+
+        If this stops failing the split is no longer needed; and if it stops holding,
+        the test below is measuring nothing."""
         mixed = _panel(**self.PANEL)
         assert str(mixed.index.max().date()) == "2026-08-02"      # a Sunday
         out = extension_signals(mixed)
-        assert set(out) == set(CRYPTO), "mixed panel should read crypto-only"
-        assert not (set(EQUITIES) & set(out))
+        eq, cx = extension_panels(mixed)
+        own = extension_signals(eq)
+        own.update(extension_signals(cx))
+        assert set(EQUITIES) <= set(out) & set(own)
+        assert all(out[t]["ext_z"] != own[t]["ext_z"] for t in EQUITIES), \
+            {t: (out[t]["ext_z"], own[t]["ext_z"]) for t in EQUITIES}
+        # the whole mixed read is stamped with the equity Friday — crypto's own
+        # Saturday and Sunday sessions are simply gone, and the age discloses it
+        assert {v["ext_asof"] for v in out.values()} == {"2026-07-31"}
+        assert {v["ext_age"] for v in out.values()} == {2}
+        assert {own[t]["ext_asof"] for t in CRYPTO} == {"2026-08-02"}
+        assert {own[t]["ext_age"] for t in CRYPTO} == {0}
 
     def test_split_panels_keep_full_equity_coverage(self):
         eq, cx = extension_panels(_panel(**self.PANEL))
@@ -116,13 +160,35 @@ class TestMondayHoliday:
     # 2026-07-31 Fri; crypto runs Sat 08-01, Sun 08-02, holiday Mon 08-03.
     PANEL = dict(equity_end="2026-07-31", crypto_end="2026-08-03")
 
-    def test_three_crypto_only_rows_still_lose_every_equity_unsplit(self):
+    def test_three_crypto_only_rows_leave_one_mixed_panel_with_no_read_at_all(self):
+        """Past ANCHOR_MAX_AGE the mixed panel cannot be served: the last well-covered
+        row is the equity Friday, three rows back, and publishing the whole universe
+        off it as today's reading is exactly what the age cap forbids.  So on ONE panel
+        a long weekend costs the board its extension read entirely — the strongest form
+        of the argument for splitting."""
         mixed = _panel(**self.PANEL)
         trailing = mixed[EQUITIES].isna().all(axis=1).iloc[-3:]
         assert trailing.all(), "fixture must carry 3 crypto-only rows"
-        assert set(extension_signals(mixed)) == set(CRYPTO)
-        # the trap the fix must avoid: dropping one row is still crypto-only
-        assert set(extension_signals(mixed.iloc[:-1])) == set(CRYPTO)
+        assert extension_signals(mixed) == {}
+        # ...and the trap no positional rule can avoid, in its current form: dropping
+        # ONE trailing row lands the panel back inside the age cap, so the same universe
+        # flips from "withheld" to "served" — off the Friday, two days stale, crypto
+        # included.  A mixed panel's read is a function of how the weekend fell, which
+        # is precisely the property a split removes.
+        one_back = extension_signals(mixed.iloc[:-1])
+        assert set(one_back) == set(EQUITIES) | set(CRYPTO)
+        assert {v["ext_asof"] for v in one_back.values()} == {"2026-07-31"}
+        assert {v["ext_age"] for v in one_back.values()} == {2}
+        # split, crypto keeps the sessions it actually traded and the equities are read
+        eq, cx = extension_panels(mixed)
+        assert {v["ext_asof"] for v in extension_signals(cx).values()} == {"2026-08-03"}
+        assert {v["ext_asof"] for v in extension_signals(eq).values()} == {"2026-07-31"}
+
+    def test_the_refusal_to_serve_is_announced(self, capsys):
+        extension_signals(_panel(**self.PANEL))
+        warn = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning") and "extension-anchor-uncovered" in ln]
+        assert warn, "a panel that serves nothing must say why"
 
     def test_split_panels_are_unaffected_by_the_holiday_gap(self):
         eq, cx = extension_panels(_panel(**self.PANEL))

@@ -98,16 +98,24 @@ def test_tag_literals_match_engine_source_bytes():
 def _env(snippet: str) -> Environment:
     """Render a sliced page block with the page's own file-top imports available.
 
-    china.html.j2 / hk.html.j2 import _decision_card and _lens at file top, OUTSIDE
-    every snippet sliced here — without the imports the slice renders against
-    Undefined. The FileSystemLoader fallback resolves the real partials, so a future
-    {% import %} never silently breaks this harness.
+    china.html.j2 / canada.html.j2 / hk.html.j2 import _decision_card, _lens and the
+    icon() macro at file top, OUTSIDE every snippet sliced here — without them the
+    slice renders against Undefined.
+
+    The FileSystemLoader fallback resolves each partial FILE, but it does not bind any
+    NAME: every import a sliced page relies on must still be listed in `blk` below, by
+    hand. A file-top import added to one of those pages and not mirrored here breaks
+    this harness — it is not protected against, only reported. That is exactly how the
+    §5.8 icon sweep landed: canada.html.j2 and hk.html.j2 gained
+    `{% from "_icons.html.j2" import icon %}` and all four render tests here died on
+    UndefinedError: 'icon' is undefined. Mirror new imports here in the same PR.
     """
     from engine import i18n
     blk = (
         '{% import "_prophet_card.html.j2" as pv %}\n'
         '{% import "_decision_card.html.j2" as dc %}\n'
         '{% import "_lens.html.j2" as lens %}\n'
+        '{% from "_icons.html.j2" import icon %}\n'
     ) + snippet
     env = Environment(
         loader=ChoiceLoader([

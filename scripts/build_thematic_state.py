@@ -28,8 +28,7 @@ from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.neuralweb.thematic_state import compose, append_phase_history
 from engine.neuralweb.envelope import stamp

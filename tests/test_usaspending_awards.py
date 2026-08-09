@@ -3042,3 +3042,282 @@ def test_repo_bwxt_entity_queries_wholly_owned_subsidiaries_and_excludes_the_jvs
         assert not any(term.upper() in excluded.upper() for term in terms), excluded
     assert entity["match_confidence"] == "medium"
     assert entity["exclusion_rationale"]
+
+
+# --- Action-rail recipient identity, attached under a named basis ----------
+#
+# ``POST /api/v2/transactions/`` returns no recipient identity at all: every one
+# of the 35,140 accrued action rows carries a null ``recipient_uei``, so the rail
+# that produces the admitted candidate families could never exact-link an issuer.
+# The award's recipient of record is attached instead -- on its own columns, with
+# its own basis name and its own retrieval clock.
+
+
+ACTION_RECEIPT = {
+    "receipt_id": "receipt-action-001",
+    "rail": "actions",
+    "endpoint": TRANSACTIONS_URL,
+    "response_sha256": "e" * 64,
+}
+
+
+def _raw_transaction(**overrides):
+    """A transactions-endpoint row, shaped as USAspending actually returns it."""
+    row = {
+        "id": "ACT-1",
+        "award_id": "N0001",
+        "piid": "N0001",
+        "action_date": "2026-01-08",
+        "action_type": "C",
+        "action_type_description": "FUNDING ONLY ACTION",
+        "modification_number": "P00007",
+        "federal_action_obligation": 250_000.0,
+        "description": "Incremental funding",
+    }
+    row.update(overrides)
+    return row
+
+
+def _enriched_award(**overrides):
+    award = normalize_award(_raw_award(), "LMT", OBSERVED)
+    award.update(overrides)
+    return award
+
+
+def test_action_rows_carry_the_awards_recipient_under_a_named_basis():
+    action = usaspending_awards.normalize_award_event_action(
+        _raw_transaction(),
+        _enriched_award(),
+        ACTION_RECEIPT,
+        OBSERVED,
+        event_eligible=True,
+    )
+
+    # The transaction's OWN identity fields are untouched: the payload asserted
+    # no recipient, so the row asserts none. Widening these is the thing the
+    # ruling forbids.
+    assert action["recipient_uei"] is None
+    assert action["recipient_name"] is None
+
+    # The award's recipient of record is attached beside them, named.
+    assert action["award_recipient_uei"] == "UEI123"
+    assert action["award_recipient_name"] == "LOCKHEED MARTIN CORP"
+    assert action["award_recipient_identity_basis"] == "award_level_recipient_at_collection"
+
+    # The identity's clock is the award record's retrieval clock, NOT the
+    # transaction's effective time. Stamping today's recipient with a January
+    # action date is exactly the point-in-time hazard the old boundary guarded.
+    assert action["award_recipient_known_at"] == OBSERVED
+    assert action["effective_at"] == "2026-01-08"
+    assert action["award_recipient_known_at"] != action["effective_at"]
+
+    # Both halves are written: the column AND its presence-manifest entry. A
+    # populated column with no manifest entry is skipped by the award-event
+    # reader, which is how this identity would ship dark.
+    presence = json.loads(action["source_field_presence"])
+    for column in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS:
+        assert column in presence
+    assert "recipient_uei" not in presence
+
+
+def test_transaction_asserted_recipient_is_kept_separate_from_the_award_level_one():
+    action = usaspending_awards.normalize_award_event_action(
+        _raw_transaction(recipient_uei="UEI-FROM-TRANSACTION"),
+        _enriched_award(),
+        ACTION_RECEIPT,
+        OBSERVED,
+        event_eligible=True,
+    )
+
+    assert action["recipient_uei"] == "UEI-FROM-TRANSACTION"
+    assert action["award_recipient_uei"] == "UEI123"
+    presence = json.loads(action["source_field_presence"])
+    assert "recipient_uei" in presence
+    assert "award_recipient_uei" in presence
+
+
+def test_award_without_a_recipient_attaches_no_basis_at_all():
+    action = usaspending_awards.normalize_award_event_action(
+        _raw_transaction(),
+        _enriched_award(recipient_uei=None, recipient_name=None),
+        ACTION_RECEIPT,
+        OBSERVED,
+        event_eligible=True,
+    )
+
+    presence = json.loads(action["source_field_presence"])
+    for column in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS:
+        assert action[column] is None
+        assert column not in presence
+
+
+def test_award_level_identity_never_manufactures_an_action_state_revision():
+    """A novation on the award is not a revision of a transaction.
+
+    The award-level identity comes from a different rail on a different clock.
+    Letting it into the version hash would append a fresh "revision" of an
+    action the source never re-issued.
+    """
+    for column in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS:
+        assert column not in usaspending_awards.AWARD_ACTION_VERSION_STATE_FIELDS
+
+    first = usaspending_awards.normalize_award_event_action(
+        _raw_transaction(), _enriched_award(), ACTION_RECEIPT, OBSERVED, event_eligible=True
+    )
+    novated = usaspending_awards.normalize_award_event_action(
+        _raw_transaction(),
+        _enriched_award(recipient_uei="UEI-NEW-OWNER", recipient_name="NEW OWNER LLC"),
+        ACTION_RECEIPT,
+        "2026-08-02T12:00:00+00:00",
+        event_eligible=True,
+    )
+    assert first["event_state_sha256"] == novated["event_state_sha256"]
+
+    merged = usaspending_awards.append_award_action_versions(
+        pd.DataFrame([first], columns=AWARD_ACTION_VERSION_COLUMNS),
+        pd.DataFrame([novated], columns=AWARD_ACTION_VERSION_COLUMNS),
+    )
+    assert len(merged) == 1
+    assert merged.iloc[0]["award_recipient_uei"] == "UEI123"
+
+
+def _pre_addition_action_store() -> pd.DataFrame:
+    """An accrued action ledger written before the identity columns existed.
+
+    Its version hashes are recomputed over the state fields as they stood
+    then -- not merely reprojected onto the old columns -- so a change that
+    quietly readmits the identity columns into the hash is visible as the
+    history rewrite it is.
+    """
+    legacy_columns = [
+        column
+        for column in AWARD_ACTION_VERSION_COLUMNS
+        if column not in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS
+    ]
+    legacy_state_fields = tuple(
+        field
+        for field in usaspending_awards.AWARD_ACTION_VERSION_STATE_FIELDS
+        if field not in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS
+    )
+    rows = []
+    for index in range(3):
+        row = usaspending_awards.normalize_award_event_action(
+            _raw_transaction(id=f"ACT-{index}"),
+            _enriched_award(recipient_uei=None, recipient_name=None),
+            ACTION_RECEIPT,
+            OBSERVED,
+            event_eligible=True,
+        )
+        row["event_state_sha256"] = usaspending_awards._event_state_sha256(
+            row, legacy_state_fields
+        )
+        rows.append(row)
+    return usaspending_awards._normalize_event_ledger(
+        pd.DataFrame(rows, columns=AWARD_ACTION_VERSION_COLUMNS)[legacy_columns],
+        legacy_columns,
+    )
+
+
+def test_appending_over_a_pre_addition_store_does_not_rewrite_prior_rows():
+    """The new columns are a SCHEMA ADDITION, not a rewrite of history.
+
+    Every accrued row keeps every byte it had, including its version hash, and
+    gains a null in each new column. Nothing is back-filled: a row collected
+    before the identity existed never gains a retroactive claim about who the
+    recipient was.
+    """
+    existing = _pre_addition_action_store()
+    incoming = pd.DataFrame(
+        [
+            usaspending_awards.normalize_award_event_action(
+                _raw_transaction(id="ACT-NEW"),
+                _enriched_award(),
+                ACTION_RECEIPT,
+                "2026-08-02T12:00:00+00:00",
+                event_eligible=True,
+            )
+        ],
+        columns=AWARD_ACTION_VERSION_COLUMNS,
+    )
+
+    merged = usaspending_awards.append_award_action_versions(existing, incoming)
+
+    assert len(merged) == len(existing) + 1
+    # Compare the bytes a reader actually loads: the persisted, dtype-pinned
+    # form of each prior row, column for column, hash included.
+    written = usaspending_awards._normalize_event_ledger(merged, AWARD_ACTION_VERSION_COLUMNS)
+    prior = written[written["action_id"].isin(existing["action_id"])].reset_index(drop=True)
+    pd.testing.assert_frame_equal(
+        prior[list(existing.columns)],
+        existing.reset_index(drop=True),
+    )
+    for column in usaspending_awards.AWARD_RECIPIENT_IDENTITY_COLUMNS:
+        assert prior[column].isna().all()
+    fresh = written[written["action_id"] == "ACT-NEW"].iloc[0]
+    assert fresh["award_recipient_uei"] == "UEI123"
+
+    # Re-running the identical collection against the merged store adds nothing
+    # and still leaves prior rows byte-identical.
+    replayed = usaspending_awards.append_award_action_versions(merged, incoming)
+    assert len(replayed) == len(merged)
+    pd.testing.assert_frame_equal(
+        usaspending_awards._normalize_event_ledger(replayed, AWARD_ACTION_VERSION_COLUMNS),
+        usaspending_awards._normalize_event_ledger(merged, AWARD_ACTION_VERSION_COLUMNS),
+    )
+
+
+def test_generation_binding_survives_a_schema_addition_but_not_a_tamper():
+    """A column added after a binding was written is not a torn pair.
+
+    The binding hashes each ledger's column list along with its rows, so the
+    exact recomputation disagrees with an untouched store the moment a canonical
+    column joins the list. Both the live publish lane and ``persist()`` refuse a
+    mismatched generation, so reading a schema addition as tampering would brick
+    them. The allowance is narrow: the stored rows must reproduce the binding
+    exactly under the columns that existed when it was written.
+    """
+    snapshots = pd.DataFrame(columns=AWARD_EVENT_SNAPSHOT_COLUMNS)
+    legacy_actions = _pre_addition_action_store()
+
+    # Bind the pair as it stood BEFORE the identity columns existed.
+    legacy_columns = list(legacy_actions.columns)
+    count, digest = usaspending_awards._award_event_ledger_generation(
+        legacy_actions, ledger="award_action_versions", columns=legacy_columns
+    )
+    snapshot_count, snapshot_digest = usaspending_awards._award_event_ledger_generation(
+        snapshots, ledger="award_event_snapshots", columns=AWARD_EVENT_SNAPSHOT_COLUMNS
+    )
+    state = usaspending_awards._award_event_projection_binding(
+        snapshot_columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        snapshot_count=snapshot_count,
+        snapshot_digest=snapshot_digest,
+        action_columns=legacy_columns,
+        action_count=count,
+        action_digest=digest,
+    )
+
+    # Read raw (the publish lane's shape) and reindexed (persist's shape).
+    assert usaspending_awards.award_event_projection_generation_matches(
+        state, snapshots, legacy_actions
+    )
+    assert usaspending_awards.award_event_projection_generation_matches(
+        state, snapshots, legacy_actions.reindex(columns=AWARD_ACTION_VERSION_COLUMNS)
+    )
+
+    # A changed row, a dropped row, and a store that already carries values in
+    # the new columns all still fail.
+    tampered = legacy_actions.copy()
+    tampered.loc[tampered.index[0], "federal_action_obligation"] = 1.0
+    assert not usaspending_awards.award_event_projection_generation_matches(
+        state, snapshots, tampered
+    )
+    assert not usaspending_awards.award_event_projection_generation_matches(
+        state, snapshots, legacy_actions.iloc[1:]
+    )
+    populated = legacy_actions.reindex(columns=AWARD_ACTION_VERSION_COLUMNS)
+    populated["award_recipient_uei"] = pd.Series(
+        ["UEI123", None, None], index=populated.index, dtype="string"
+    )
+    assert not usaspending_awards.award_event_projection_generation_matches(
+        state, snapshots, populated
+    )

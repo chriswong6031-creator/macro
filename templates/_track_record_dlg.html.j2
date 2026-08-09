@@ -328,6 +328,46 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-prior .trd-tbl .trd-tk{ color:var(--trd-text); }
 .trd-prior-more{ margin:8px 0 0;font-size:10.5px;color:var(--trd-muted); }
 
+/* ── Zone A′ — MEASUREMENT CHANGE (optional; US era break, 2026-08-07) ─────────
+   Not the same object as .trd-prior below. That one holds a RETIRED BOARD
+   DEFINITION — a different book, with its own rows, which must never be pooled
+   with the live one. This holds the SAME trades read two ways, so the design goal
+   inverts: invite the comparison, refuse a verdict.
+     · no .trd-card-v scale and no up/down ink — the cards above own the headline,
+       and colouring a measurement note turns it into a performance claim;
+     · the "before" column is MUTED with a hairline rail, never struck through. A
+       strikethrough reads as retracted; these numbers were not wrong, they were
+       read off a grid that moved. The visual must not contradict the sentence;
+     · a solid left rail (not the dashed one) — this is a continuation of one
+       record, not a break in it. */
+.trd-basis{ margin-top:14px;padding:12px 14px;border:1px solid var(--trd-line);
+  border-left:3px solid color-mix(in srgb,var(--trd-muted) 45%,transparent);
+  border-radius:10px;background:color-mix(in srgb,var(--trd-muted) 6%,transparent); }
+.trd-basis-hd{ font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--trd-muted);margin-bottom:6px; }
+.trd-basis-hd .dt{ letter-spacing:0;text-transform:none;font-weight:600;
+  font-variant-numeric:tabular-nums;margin-left:7px; }
+.trd-basis-line{ margin:0 0 10px;font-size:12px;line-height:1.5;color:var(--trd-text);max-width:74ch; }
+.trd-basis-cmp{ display:flex;flex-wrap:wrap;gap:8px 24px; }
+.trd-basis-col{ min-width:150px;padding-left:10px;
+  border-left:1px solid color-mix(in srgb,var(--trd-muted) 30%,transparent); }
+.trd-basis-col-k{ font-size:10.5px;font-weight:700;color:var(--trd-muted);margin-bottom:4px; }
+.trd-basis-row{ display:flex;justify-content:space-between;gap:12px;font-size:12.5px;line-height:1.7; }
+.trd-basis-row .n{ font-weight:700;font-variant-numeric:tabular-nums; }
+.trd-basis-row .w{ color:var(--trd-muted);font-size:11.5px; }
+.trd-basis-then{ color:var(--trd-muted); }
+.trd-basis-ft{ margin:9px 0 0;font-size:10.5px;line-height:1.45;color:var(--trd-muted);max-width:74ch; }
+
+/* The chip's Tier-2 receipt marker. Sits OUTSIDE the button so a click opens the
+   lens popover instead of the dialog, and so the chip's own hit target is unchanged. */
+.trd-basis-chip{ display:inline-flex;align-items:center;margin-left:7px;padding:2px 8px;
+  border:1px solid var(--trd-line);border-radius:999px;background:transparent;
+  font:600 10px/1.5 var(--font-ui,inherit);letter-spacing:.02em;color:var(--trd-muted);
+  cursor:help;vertical-align:middle;white-space:nowrap;transition:color .15s,border-color .15s; }
+.trd-basis-chip:hover,.trd-basis-chip:focus-visible{ color:var(--trd-text);
+  border-color:color-mix(in srgb,var(--trd-text) 26%,var(--trd-line)); }
+.trd-basis-chip:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
+
 /* Zone C — footer */
 .trd-ft{ flex:none;padding:12px 22px;border-top:1px solid color-mix(in srgb,var(--trd-text) 8%,transparent);
   display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
@@ -390,6 +430,21 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   </span>
   <span class="trd-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 L8 6 L4.5 9.5"/></svg></span>
 </button>
+{#- Tier-2 receipt for the measurement change. The chip itself stays at glance tier —
+    state + stance, nothing else — so the old numbers and the reason live behind this
+    marker and in the dialog, never as a copy dump on the strip. Outside the <button>
+    on purpose: a click here opens the lens popover instead of the dialog. No CJK in
+    title= (CI-guarded) — the bilingual text rides data-tip-en / data-tip-zh. -#}
+{#- `is mapping`, not a bare truth test: a producer field of the wrong type would
+    reach .get() below and raise, taking the whole host page down. -#}
+{%- set _pe_chip = trd.prior_era if (trd.prior_era is defined and trd.prior_era is mapping) else none -%}
+{%- if _pe_chip and trd.state == 'scored' and _win is not none
+       and _pe_chip.get('win_pct') is not none and _pe_chip.get('expectancy_pct') is not none -%}
+<span class="trd-basis-chip" tabindex="0" role="note"
+      data-tip-en="Measurement updated{% if _pe_chip.get('era_from') %} {{ _pe_chip.era_from }}{% endif %}. The timing used to decide when a trade is sold used to shift as older price history rolled out of our window, which moved the results of trades that had already closed. It no longer shifts; how picks are chosen, bought and sold has not changed. Before, to {{ _pe_chip.as_of }}: {{ _pe_chip.win_pct|round|int }}% made money, {{ '%+g'|format(_pe_chip.expectancy_pct) }}% average trade{% if _pe_chip.get('n_matured') is not none %} over {{ _pe_chip.n_matured }} finished trades{% endif %}. Open the record for the full comparison."
+      data-tip-zh="计量方式已更新{% if _pe_chip.get('era_from') %}（{{ _pe_chip.era_from }}）{% endif %}。判断卖出时点所用的时间刻度，过去会随着更早的价格数据滚出窗口而移动，令已经结束的交易的成绩也跟着改变；现在不会了，选股与买卖规则没有任何改动。此前（截至 {{ _pe_chip.as_of }}）：盈利占比 {{ _pe_chip.win_pct|round|int }}%、每笔平均 {{ '%+g'|format(_pe_chip.expectancy_pct) }}%{% if _pe_chip.get('n_matured') is not none %}，共 {{ _pe_chip.n_matured }} 笔已完成交易{% endif %}。点开往绩可看完整对照。"
+><span class="l-en">measurement updated</span><span class="l-zh">计量已更新</span></span>
+{%- endif -%}
 </span>
 
 {#- ─────────────────────────────────────────────────────────────────────────
@@ -523,6 +578,39 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
         </div>
       {%- endif -%}
       </div>{# /trd-cards #}
+
+      {#- ── Zone A′ — measurement change (optional host key `trd.prior_era`) ─────
+          {as_of, win_pct, expectancy_pct, n_matured, era_from}. Absent → nothing
+          renders and the dialog is byte-identical to before. Shows the previous
+          headline BESIDE the current one with the reason: an era boundary retires a
+          measurement, it must never quietly overwrite what that measurement said.
+          Glance wording only — no grid/anchor vocabulary, no refutation language. -#}
+      {%- set _pe = trd.prior_era if (trd.prior_era is defined and trd.prior_era is mapping) else none -%}
+      {%- if _pe and trd.state == 'scored' and _win is not none
+             and _pe.get('win_pct') is not none and _pe.get('expectancy_pct') is not none -%}
+      <div class="trd-basis">
+        <div class="trd-basis-hd"><span class="l-en">Measurement updated</span><span class="l-zh">计量方式已更新</span>{% if _pe.get('era_from') %}<span class="dt">{{ _pe.era_from }}</span>{% endif %}</div>
+        <p class="trd-basis-line"><span class="l-en">The timing used to decide when a trade is sold used to shift as older price history rolled out of our window — which moved the results of trades that had already closed. It no longer shifts. How picks are chosen, bought and sold has not changed.</span><span class="l-zh">判断卖出时点所用的时间刻度，过去会随着更早的价格数据滚出窗口而移动，令已经结束的交易的成绩也跟着改变。现在不会了。选股、买入和卖出的规则没有任何改动。</span></p>
+        <div class="trd-basis-cmp">
+          <div class="trd-basis-col trd-basis-then">
+            <div class="trd-basis-col-k"><span class="l-en">Before · to {{ _pe.as_of }}</span><span class="l-zh">此前 · 截至 {{ _pe.as_of }}</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">made money</span><span class="l-zh">盈利占比</span></span><span class="n">{{ _pe.win_pct|round|int }}%</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">average trade</span><span class="l-zh">每笔平均</span></span><span class="n">{{ '%+g'|format(_pe.expectancy_pct) }}%</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">finished trades</span><span class="l-zh">已完成交易</span></span><span class="n">{{ _pe.get('n_matured', '—') }}</span></div>
+          </div>
+          <div class="trd-basis-col">
+            <div class="trd-basis-col-k"><span class="l-en">Now</span><span class="l-zh">现在</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">made money</span><span class="l-zh">盈利占比</span></span><span class="n">{{ _win|round|int }}%</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">average trade</span><span class="l-zh">每笔平均</span></span><span class="n">{% if _st.get('expectancy_pct') is not none %}{{ '%+g'|format(_st.expectancy_pct) }}%{% else %}—{% endif %}</span></div>
+            <div class="trd-basis-row"><span class="w"><span class="l-en">finished trades</span><span class="l-zh">已完成交易</span></span><span class="n">{{ _st.get('n_matured', '—') }}</span></div>
+          </div>
+        </div>
+        {%- if _st.get('n_matured') is not none and _pe.get('n_matured') is not none
+               and _st.n_matured != _pe.n_matured -%}
+        <p class="trd-basis-ft"><span class="l-en">More than the measurement separates these two columns: {{ _st.n_matured }} trades have finished now against {{ _pe.n_matured }} on {{ _pe.as_of }}, so part of the move is simply more results, not a different ruler.</span><span class="l-zh">两列之间的差异不止来自计量方式：现已走完 {{ _st.n_matured }} 笔交易，而 {{ _pe.as_of }} 时为 {{ _pe.n_matured }} 笔，因此部分变化只是结果变多，并非换了尺子。</span></p>
+        {%- endif -%}
+      </div>
+      {%- endif -%}
       </div>{# /stg-1 #}
 
       {#- ── Zone B — filter rail + ledger table (client-side, lazy) ────────── -#}

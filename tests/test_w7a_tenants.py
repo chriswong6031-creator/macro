@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -29,7 +30,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # ---------------------------------------------------------------------------
 
 def _make_track_record(n_dates: int, hit_rate: float | None, root: Path) -> None:
-    """Write a minimal site/qledger/track_record.json fixture."""
+    """Write a minimal site/qledger/track_record.json fixture.
+
+    ``generated_at`` is relative and NEVER a literal: ``altdata_brain.py``
+    :547-550 carries it through as ``evidence_asof`` into constitution Gate 3
+    (``engine/neuralweb/constitution.py``:370-384, ``max_staleness_days`` = 120),
+    and nothing on that path passes a ``now=`` — so the gate reads the wall
+    clock.  The pinned ``2026-07-04`` was a scheduled red for all three tests
+    using this helper: it reached 121 days on 2026-11-02 UTC and every grant
+    flipped to ``stale-evidence: 121d > max 120d``.  Three days keeps the
+    evidence fresh at any clock without touching the 120-day contract.
+    """
     cell: dict = {"n_obs": n_dates * 10, "n_dates": n_dates}
     if hit_rate is not None:
         cell["hit_rate"] = hit_rate
@@ -37,7 +48,7 @@ def _make_track_record(n_dates: int, hit_rate: float | None, root: Path) -> None
         cell["hit_rate"] = None
     (root / "site" / "qledger").mkdir(parents=True, exist_ok=True)
     tr = {
-        "generated_at": "2026-07-04T11:05:29.729020+00:00",
+        "generated_at": (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(),
         "by_family": {"altdata": {"5": cell}},
     }
     (root / "site" / "qledger" / "track_record.json").write_text(json.dumps(tr))

@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,8 +43,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from engine import basket_index
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import basket_index  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 
