@@ -51,6 +51,7 @@ import logging
 import os
 import re
 import threading
+import time
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)
@@ -188,6 +189,26 @@ def _is_rate_limit_error(exc: BaseException) -> bool:
             or "529" in msg or "overloaded" in msg)
 
 
+def _error_class(exc: BaseException) -> str:
+    """Low-cardinality class name for one failed rung attempt.
+
+    Delegates to :mod:`engine.provider_health` so the ledger and the in-process
+    attempt list can never disagree about what a failure was called. Falls back
+    to this module's own predicates when that import is unavailable (the
+    marketing CI lane installs almost nothing).
+    """
+    try:
+        from engine import provider_health as _ph  # noqa: PLC0415
+
+        return _ph.classify_error(exc)
+    except Exception:  # noqa: BLE001
+        if _is_auth_error(exc):
+            return "auth"
+        if _is_rate_limit_error(exc):
+            return "usage_limit"
+        return "error"
+
+
 # --------------------------------------------------------------------------- #
 # OAuth key pool bridge (CLAUDE_CODE_OAUTH_TOKEN_1/2/3 failover)
 # --------------------------------------------------------------------------- #
@@ -322,6 +343,7 @@ def make_call(
     call_fn: Callable[[Any, str], tuple[str | None, str | None]],
     *,
     context: str = "",
+    attempts: list[dict] | None = None,
 ) -> tuple[str | None, str | None, str | None]:
     """Run call_fn(client, model) against the provider waterfall with 401-fallback.
 
@@ -335,6 +357,17 @@ def make_call(
         Should NOT catch exceptions — this function catches them.
     context:
         Short string for log messages (e.g. "whitehouse_brain").
+    attempts:
+        OPTIONAL out-parameter. When a list is passed, one dict per rung
+        outcome is APPENDED to it:
+        ``{"rung", "cap_id", "ok", "error_class", "latency_ms", "skipped"}``.
+
+        WHY AN OUT-PARAM AND NOT A RETURN VALUE. Every caller in the repo
+        unpacks a 3-tuple from this function, and the per-rung diagnosis is
+        wanted by exactly one of them today (the marketing copywriter, whose
+        drop labels name the rung that SERVED and say nothing about the three
+        it walked past). Widening the return type would touch ~30 call sites to
+        serve one; an ignored keyword touches none.
 
     Returns
     -------
@@ -350,6 +383,45 @@ def make_call(
     last_exc: BaseException | None = None
     any_tried = False
 
+    def _note(p: dict, *, ok: bool, t0: float, error_class: str = "",
+              detail: str = "", skipped: str = "") -> None:
+        """Record ONE rung outcome to the in-process list and the health ledger.
+
+        Wrapped in its own try/except: this is telemetry, and a defect in it
+        must never be able to break a waterfall that is otherwise working.
+        """
+        latency_ms = int(max(0.0, (time.time() - t0)) * 1000)
+        row = {
+            "rung": str(p.get("name") or "unknown"),
+            "cap_id": str(p.get("cap_id") or p.get("env_var") or "") or None,
+            "ok": bool(ok),
+            "error_class": error_class,
+            "latency_ms": latency_ms,
+        }
+        if skipped:
+            row["skipped"] = skipped
+        if attempts is not None:
+            try:
+                attempts.append(row)
+            except Exception:  # noqa: BLE001
+                pass
+        try:
+            from engine import provider_health as _ph  # noqa: PLC0415
+
+            _ph.record_attempt(
+                lane=str(p.get("usage_lane") or "unknown"),
+                context=context,
+                rung=row["rung"],
+                cap_id=row["cap_id"],
+                model=str(p.get("model") or ""),
+                ok=ok,
+                latency_ms=latency_ms,
+                error_class=error_class or (skipped and f"skipped_{skipped}") or "",
+                detail=detail,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.debug("llm_auth: provider_health record failed (%s)", exc)
+
     for p in providers:
         name = p.get("name", "unknown")
         env_var = p.get("env_var", "")
@@ -363,9 +435,17 @@ def make_call(
         if is_dead(name, env_var):
             log.debug("llm_auth[%s]: skipping dead provider '%s' (env=%s)",
                       context, name, env_var)
+            # A SKIP IS A RUNG OUTCOME, and it is the one that hid the longest.
+            # `mark_dead` lasts the whole PROCESS, so a single 429 on item 3 of
+            # a 900-item nightly silently removes that rung from items 4..900 —
+            # and the only trace was a debug line. Recorded, so the census can
+            # tell "codex refused this call" from "codex was struck off an hour
+            # ago and no longer participates".
+            _note(p, ok=False, t0=time.time(), skipped="dead")
             continue
 
         any_tried = True
+        _t0 = time.time()
         try:
             result = call_fn(client, model)
             text, reason = result[0], result[1]
@@ -385,8 +465,11 @@ def make_call(
             in_tok = int(getattr(_usage_obj, "input_tokens", 0) or 0)
             out_tok = int(getattr(_usage_obj, "output_tokens", 0) or 0)
             _note_pool_success(p, context, est_tokens=in_tok + out_tok)
+            _note(p, ok=True, t0=_t0)
             return text, reason, name
         except Exception as exc:  # noqa: BLE001
+            _note(p, ok=False, t0=_t0,
+                  error_class=_error_class(exc), detail=f"{type(exc).__name__}: {exc}")
             if _is_auth_error(exc):
                 mark_dead(name, env_var, reason="auth")
                 _cool_pool_key(p, "auth")
@@ -1283,9 +1366,31 @@ def build_providers(
     if cfg.get("respect_provider_cooling", True):
         try:
             from engine.neuralweb.key_pool import is_cooling as _is_cooling  # noqa: PLC0415
+            _before = [str(prov.get("name") or "?") for prov in out]
             out.sort(key=lambda prov: bool(
                 prov.get("cap_id") and _is_cooling(str(prov["cap_id"]))
             ))
+            _after = [str(prov.get("name") or "?") for prov in out]
+            # THE SILENT ROUTING INVERSION (2026-08-08). This sort is correct —
+            # a key another process just rate-limited is a bad first ask — but
+            # it can move a lane's DELIBERATELY FIRST rung below the metered
+            # floor, and until now it did so at log.debug with no artifact.
+            #
+            # config/marketing.yml pins codex first on every writing lane
+            # ("ChatGPT-first", operator 2026-07-29). `codex_account` is ONE
+            # subscription, so when its 5h window cools the sort drops it to
+            # last and DeepSeek — configured last precisely because it is the
+            # metered floor — serves the entire night. The ai_costs ledger then
+            # reads 100% deepseek for a lane the operator believes runs on
+            # ChatGPT, and nothing anywhere says the order was changed.
+            if _before and _after and _before[0] != _after[0]:
+                log.warning(
+                    "llm_auth: cooling demoted the configured first rung '%s' "
+                    "below '%s' for lane '%s' — this lane is NOT running on the "
+                    "rung its config names. Order was %s, is now %s.",
+                    _before[0], _after[0], cfg.get("usage_lane") or "?",
+                    _before, _after,
+                )
         except Exception as e:  # noqa: BLE001
             log.debug("llm_auth: provider cooldown ordering failed (%s)", e)
 
@@ -1301,6 +1406,23 @@ def build_providers(
                 prov["usage_cycle_id"] = _usage_cycle_id
             if _usage_stage:
                 prov["usage_stage"] = _usage_stage
+
+    # WHICH RUNGS THIS HOST COULD ACTUALLY BUILD. The ai_costs ledger only ever
+    # records the rung that SERVED, so an absent rung and a failing rung produce
+    # the same evidence: nothing. One row here separates them — a waterfall row
+    # with no codex entry means this host saw no CLI and no attached login,
+    # which is a completely different remedy from a codex rung that was asked
+    # and refused.
+    try:
+        from engine import provider_health as _ph  # noqa: PLC0415
+
+        _ph.record_waterfall(
+            lane=str(_usage_lane or "unknown"),
+            context=str(_usage_stage or ""),
+            rungs=out,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("llm_auth: provider_health waterfall record failed (%s)", exc)
 
     return out
 

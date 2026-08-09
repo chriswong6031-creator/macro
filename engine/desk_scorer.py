@@ -93,13 +93,22 @@ def covers(ticker, root, check_by) -> bool:
         return False
 
 
-def close_at(ticker, root, on_date) -> float | None:
+def close_at(ticker, root, on_date, max_stale_days: int | None = _desk.MAX_ASOF_STALE_DAYS) -> float | None:
+    """Last close ON OR BEFORE ``on_date``, bounded by ``max_stale_days`` (D21 — see
+    ai_desk.MAX_ASOF_STALE_DAYS). A series that stalled more than the bound before ``on_date``
+    returns None (NOT COVERED) instead of its final, arbitrarily old bar. Pass
+    ``max_stale_days=None`` for the historical unbounded read."""
     s = _desk._close_series(ticker, root)
     if s is None or s.empty:
         return None
     try:
+        ts = pd.Timestamp(on_date).normalize()
         s = s[s.index <= pd.Timestamp(on_date)]
-        return round(float(s.iloc[-1]), 4) if len(s) else None
+        if not len(s):
+            return None
+        if max_stale_days is not None and (ts - s.index[-1].normalize()).days > max_stale_days:
+            return None                      # series stalled before on_date — not covered
+        return round(float(s.iloc[-1]), 4)
     except Exception:  # noqa: BLE001
         return None
 
