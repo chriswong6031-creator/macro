@@ -8,10 +8,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import date
 from pathlib import Path
 
-from engine.seasonality.foundation import build_methodology_manifest
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.seasonality.foundation import build_methodology_manifest  # noqa: E402
 
 
 def build(*, root: Path, as_of: date | None = None) -> Path:

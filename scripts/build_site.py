@@ -3699,6 +3699,31 @@ def build_attention_data(site: Path) -> dict | None:
     return out
 
 
+def _resolve_smartmoney_canonical_cohort() -> tuple[dict, str, list[str]]:
+    """Resolve the same homogeneous 13F cohort used by the Smart-Money desk.
+
+    ``build_site`` runs independently in several render lanes, so it cannot assume
+    that ``smartmoney_desk.json`` was rebuilt first.  Recompute the small filing
+    transition contract from source receipts instead of reading a potentially stale
+    desk artifact or silently mixing each manager's latest quarter.
+    """
+    from engine.filing_transition import build_filing_transition
+    from engine.ownership_event_wire import (filing_season_clock,
+                                             latest_fund_filings)
+
+    sm_cfg = (config.load().get("smart_money", {}) or {})
+    funds = sm_cfg.get("funds", {}) or {}
+    if not funds:
+        raise ValueError("smart-money fund roster is empty")
+    clock = filing_season_clock(funds, fund_filings=latest_fund_filings(funds))
+    transition = build_filing_transition(funds, clock, {})
+    period = str(transition.get("canonical_period") or "")
+    slugs = [str(s) for s in (transition.get("canonical_slugs") or []) if s]
+    if not period or not slugs:
+        raise ValueError("smart-money canonical cohort is unresolved")
+    return sm_cfg, period, slugs
+
+
 def build_smartmoney_data(site: Path) -> dict | None:
     """Compute curated super-investor 13F holdings and write
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
@@ -3706,7 +3731,12 @@ def build_smartmoney_data(site: Path) -> dict | None:
     never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
     from engine.smart_money import compute_smart_money, enrich_since_filing
     try:
-        sm = compute_smart_money()
+        sm_cfg, canonical_period, canonical_slugs = _resolve_smartmoney_canonical_cohort()
+        sm = compute_smart_money(
+            sm_cfg,
+            target_period=canonical_period,
+            included_slugs=canonical_slugs,
+        )
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("smart-money engine failed: %s", e)
         return None

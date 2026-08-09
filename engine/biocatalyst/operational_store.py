@@ -1,12 +1,14 @@
-"""Inert, single-writer operational persistence for BioCatalyst (BC-O1a).
+"""Inert, single-writer operational persistence for BioCatalyst (BC-O1a + O1b).
 
-This module is a durable home for operational bookkeeping only: immutable
-source-run and soak receipts, identity and endpoint-alignment review queue
-items, review decisions, correction lineage, and replay metadata.  It does not
-collect, connect to a source, publish a route, advance a public pointer, accrue
-a prospective ledger, register a model, or store a forecast, an outcome, or an
-evaluation.  Those belong to BC-O1b and are deliberately absent from the record
-kind enum.
+This module is a durable home for operational bookkeeping and for the forward
+evidence ledger: immutable source-run and soak receipts, identity and
+endpoint-alignment review queue items, review decisions, correction lineage and
+replay metadata (BC-O1a), plus feature snapshots, forecast snapshots, outcome
+observations, model registrations, evaluation manifests, contribution traces
+and family-clock activation receipts (BC-O1b).  It does not collect, connect to
+a source, publish a route, advance a public pointer, run a model, or originate a
+probability, a ranking, a score, or a security-identity join.  O1b adds record
+kinds to the same single writer; it does not add a second write path.
 
 The substrate mirrors BioCatalyst's own durable idiom rather than importing a
 SQL engine: content-addressed immutable objects written with atomic
@@ -56,7 +58,7 @@ OBJECTS_DIRNAME = "objects"
 KEYS_DIRNAME = "keys"
 INDEX_DIRNAME = "index"
 
-RECORD_KINDS: tuple[str, ...] = (
+O1A_RECORD_KINDS: tuple[str, ...] = (
     "source_run_receipt",
     "soak_receipt",
     "identity_review_queue_item",
@@ -65,34 +67,59 @@ RECORD_KINDS: tuple[str, ...] = (
     "review_decision",
     "replay_metadata",
 )
-# Receipts and lineage are facts about something that already happened; they are
-# append-only and may never be superseded through the API.
-IMMUTABLE_RECORD_KINDS = frozenset(
-    {"source_run_receipt", "soak_receipt", "correction_lineage", "replay_metadata"}
+# BC-O1b: the forward evidence ledger.  Same writer, same idempotency, same
+# correction lineage, same replay semantics — only the record kinds are new.
+O1B_RECORD_KINDS: tuple[str, ...] = (
+    "feature_snapshot",
+    "forecast_snapshot",
+    "outcome_observation",
+    "model_registration",
+    "evaluation_manifest",
+    "contribution_trace",
+    "family_clock_activation",
 )
-# Review state is corrigible: a correction is a NEW record naming its
-# predecessor.  The predecessor object is never rewritten.
+RECORD_KINDS: tuple[str, ...] = O1A_RECORD_KINDS + O1B_RECORD_KINDS
+
+# Receipts, lineage, frozen registrations, pre-registrations and activation
+# receipts are facts about something that already happened; they are append-only
+# and may never be superseded through the API.
+IMMUTABLE_RECORD_KINDS = frozenset(
+    {
+        "source_run_receipt",
+        "soak_receipt",
+        "correction_lineage",
+        "replay_metadata",
+        "model_registration",
+        "evaluation_manifest",
+        "contribution_trace",
+        "family_clock_activation",
+    }
+)
+# Review state, feature snapshots, forecast snapshots and outcome observations
+# are corrigible: a correction is a NEW record naming its predecessor.  The
+# predecessor object is never rewritten.
 CORRIGIBLE_RECORD_KINDS = frozenset(RECORD_KINDS) - IMMUTABLE_RECORD_KINDS
 
-# BC-O1b owns forecasts, outcomes, model registrations, and evaluations.  These
-# record kinds are named here only so an attempt to smuggle one in fails closed
-# with a specific code instead of being quietly accepted as an unknown kind.
-DEFERRED_O1B_RECORD_KINDS = frozenset(
+# Near-miss names that are NOT record kinds.  They are enumerated so a caller
+# reaching for "forecast" or "prediction" fails closed with a specific code
+# instead of being quietly accepted as an unknown kind, and so no future edit
+# can introduce a second, differently spelled home for the same evidence.
+RESERVED_RECORD_KIND_ALIASES = frozenset(
     {
         "forecast",
         "forecast_record",
         "outcome",
         "outcome_label",
-        "model_registration",
         "evaluation",
         "evaluation_result",
         "prediction",
+        "score",
     }
 )
 
-# Authority fence: an operational record carries bookkeeping, never a score, a
-# ranking, a size, or a security identity join.  Keys are checked as substrings
-# so a nested "peer_rank" or "issuer_cik" is refused too.
+# Authority fence: a record carries facts and bookkeeping, never a ranking, a
+# size, an escalation, or a security identity join.  Keys are checked as
+# substrings so a nested "peer_rank" or "issuer_cik" is refused too.
 FORBIDDEN_PAYLOAD_KEY_TOKENS: tuple[str, ...] = (
     "alert",
     "cik",
@@ -121,6 +148,39 @@ FORBIDDEN_PAYLOAD_KEY_TOKENS: tuple[str, ...] = (
     "weight",
 )
 
+# NCT-only fence.  These tokens name a security, an issuer, or a sponsor join
+# and are refused in EVERY record kind.  No per-kind allowance may exempt them:
+# NCT-keyed facts never authorize an issuer, ticker, or sponsor join by
+# inference, so the store must not be able to hold one.
+NEVER_ALLOWED_PAYLOAD_KEY_TOKENS = frozenset(
+    {"cik", "cusip", "figi", "isin", "issuer", "sedol", "sponsor", "ticker"}
+)
+
+# A forecast ledger has to be able to say "forecast".  The allowance is scoped
+# to the kinds that structurally need it and covers ONLY that word: probability,
+# score, rank, sizing, escalation and identity tokens stay forbidden everywhere,
+# in every kind, so an O1b record can name a forward window but can never carry
+# a ranking, a size, or an issuer.
+KIND_SCOPED_PAYLOAD_KEY_ALLOWANCES: Mapping[str, frozenset[str]] = {
+    "forecast_snapshot": frozenset({"forecast"}),
+    "evaluation_manifest": frozenset({"evaluation"}),
+}
+
+# Payload documents for these kinds are validated against their own contract in
+# addition to the record contract, so the forward-ledger shape lives in one
+# place instead of being restated inside the record schema.
+PAYLOAD_CONTRACT_BY_RECORD_KIND: Mapping[str, str] = {
+    "forecast_snapshot": "biocatalyst_forecast_record.v1",
+    "outcome_observation": "biocatalyst_outcome_record.v1",
+    "family_clock_activation": "biocatalyst_family_clock_activation.v1",
+}
+
+# The M0a correction grammar links a revision through ``revision_of``; the O1a
+# store links it through ``corrects_record_id``.  For the corrigible O1b kinds
+# the two must name the same predecessor, so a revision can never be recorded
+# with a lineage the store cannot see.
+REVISION_LINKED_RECORD_KINDS = frozenset({"forecast_snapshot", "outcome_observation"})
+
 MAX_QUERY_LIMIT = 200
 PAYLOAD_MAX_BYTES = 4096
 RECORD_MAX_BYTES = 8192
@@ -139,6 +199,47 @@ _PAYLOAD_INTERVALS: tuple[tuple[str, str], ...] = (
     ("started_at", "finished_at"),
     ("window_start", "window_end"),
 )
+
+# The known-at clock, made executable.  Every pair is "earlier field must not be
+# later than the later field", parsed as instants rather than compared as
+# strings so a second-precision stamp and a microsecond stamp order correctly.
+_PAYLOAD_CLOCK_ORDERS: Mapping[str, tuple[tuple[str, str], ...]] = {
+    # M0a ordering_rule: effective_at <= known_at <= observed_at.
+    "outcome_observation": (("effective_at", "known_at"), ("known_at", "observed_at")),
+    "feature_snapshot": (("evidence_asof", "asof"),),
+    "forecast_snapshot": (
+        ("evidence_asof", "forecast_made_at"),
+        ("forecast_made_at", "resolves_after"),
+    ),
+    # A clock may start when it is opened or later; never earlier.  An accrual
+    # start before the evaluation instant is a backfilled first-seen.
+    "family_clock_activation": (("evaluated_at", "accrual_start_known_at"),),
+}
+
+# A payload field that may never be later than the record's own recorded_at: a
+# fact cannot be observed after it was written down, and a forecast cannot be
+# made after it was recorded.
+_PAYLOAD_NOT_AFTER_RECORDED_AT: Mapping[str, tuple[str, ...]] = {
+    "outcome_observation": ("effective_at", "known_at", "observed_at"),
+    "feature_snapshot": ("evidence_asof", "asof"),
+    "forecast_snapshot": ("evidence_asof", "forecast_made_at"),
+    "model_registration": ("registered_at",),
+    "evaluation_manifest": ("preregistered_at",),
+    "contribution_trace": ("traced_at",),
+    "family_clock_activation": ("evaluated_at",),
+}
+
+# A payload field that must be strictly LATER than the record's recorded_at.
+# This is the anti-look-ahead fence: a forward window may not be recorded after
+# it has already begun to resolve, and a clock may not start before it is
+# opened.
+_PAYLOAD_AFTER_RECORDED_AT: Mapping[str, tuple[str, ...]] = {
+    "forecast_snapshot": ("resolves_after",),
+}
+
+# M0a censoring grammar: exactly one rule resolves an outcome, and only that one
+# is terminal.  The store refuses any other pairing.
+_TERMINAL_CENSORING_STATES = frozenset({"not_censored_terminal_event"})
 
 
 class OperationalStoreError(RuntimeError):
@@ -245,7 +346,24 @@ def _issue(path: str, code: str, message: str) -> ValidationIssue:
     return ValidationIssue(path, code, message)
 
 
-def _forbidden_key_tokens(value: Any, depth: int = 0) -> tuple[list[str], bool]:
+def forbidden_payload_key_tokens_for(record_kind: Any) -> tuple[str, ...]:
+    """Return the tokens refused in one record kind's payload keys.
+
+    A kind-scoped allowance may exempt a token only if it is not in
+    ``NEVER_ALLOWED_PAYLOAD_KEY_TOKENS``; the identity-join tokens cannot be
+    switched off by any allowance, present or future.
+    """
+
+    allowed = KIND_SCOPED_PAYLOAD_KEY_ALLOWANCES.get(record_kind, frozenset())
+    effective = allowed - NEVER_ALLOWED_PAYLOAD_KEY_TOKENS
+    return tuple(
+        token for token in FORBIDDEN_PAYLOAD_KEY_TOKENS if token not in effective
+    )
+
+
+def _forbidden_key_tokens(
+    value: Any, tokens: Sequence[str], depth: int = 0
+) -> tuple[list[str], bool]:
     """Return forbidden key tokens found, and whether the depth cap was hit."""
 
     if depth > PAYLOAD_MAX_DEPTH:
@@ -256,18 +374,158 @@ def _forbidden_key_tokens(value: Any, depth: int = 0) -> tuple[list[str], bool]:
         for key, nested in value.items():
             if isinstance(key, str):
                 lowered = key.lower()
-                found.extend(
-                    token for token in FORBIDDEN_PAYLOAD_KEY_TOKENS if token in lowered
-                )
-            nested_found, nested_deep = _forbidden_key_tokens(nested, depth + 1)
+                found.extend(token for token in tokens if token in lowered)
+            nested_found, nested_deep = _forbidden_key_tokens(nested, tokens, depth + 1)
             found.extend(nested_found)
             too_deep = too_deep or nested_deep
     elif isinstance(value, list):
         for nested in value:
-            nested_found, nested_deep = _forbidden_key_tokens(nested, depth + 1)
+            nested_found, nested_deep = _forbidden_key_tokens(nested, tokens, depth + 1)
             found.extend(nested_found)
             too_deep = too_deep or nested_deep
     return found, too_deep
+
+
+def _instant(value: Any) -> datetime | None:
+    """Parse one UTC Z timestamp, or return None when it is not one."""
+
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _clock_issues(
+    record_kind: Any, payload: Mapping[str, Any], recorded_at: Any
+) -> list[ValidationIssue]:
+    """Return every known-at clock violation for one payload.
+
+    These are the look-ahead fences: a fact may not be known before it was
+    knowable, observed after it was written down, or forecast for a window that
+    has already begun to resolve.
+    """
+
+    issues: list[ValidationIssue] = []
+    for earlier, later in _PAYLOAD_CLOCK_ORDERS.get(record_kind, ()):
+        first = _instant(payload.get(earlier))
+        second = _instant(payload.get(later))
+        if first is not None and second is not None and first > second:
+            issues.append(
+                _issue(
+                    f"$.payload.{later}",
+                    "operational_record.clock_order",
+                    f"{earlier} must not be later than {later}",
+                )
+            )
+    written = _instant(recorded_at)
+    if written is None:
+        return issues
+    for field in _PAYLOAD_NOT_AFTER_RECORDED_AT.get(record_kind, ()):
+        stamp = _instant(payload.get(field))
+        if stamp is not None and stamp > written:
+            issues.append(
+                _issue(
+                    f"$.payload.{field}",
+                    "operational_record.clock_after_recorded_at",
+                    f"{field} must not be later than recorded_at",
+                )
+            )
+    for field in _PAYLOAD_AFTER_RECORDED_AT.get(record_kind, ()):
+        stamp = _instant(payload.get(field))
+        if stamp is not None and stamp <= written:
+            issues.append(
+                _issue(
+                    f"$.payload.{field}",
+                    "operational_record.window_already_resolving",
+                    f"{field} must be later than recorded_at; a forward window may "
+                    "not be recorded once it has begun to resolve",
+                )
+            )
+    return issues
+
+
+def _o1b_semantic_issues(
+    record_kind: Any, payload: Mapping[str, Any], document: Mapping[str, Any]
+) -> list[ValidationIssue]:
+    """Return the forward-ledger semantics the record schema cannot express."""
+
+    issues: list[ValidationIssue] = []
+
+    if record_kind in REVISION_LINKED_RECORD_KINDS:
+        # M0a links a revision through revision_of; O1a links it through
+        # corrects_record_id.  A revision the store cannot see is not a revision.
+        if payload.get("revision_of") != document.get("corrects_record_id"):
+            issues.append(
+                _issue(
+                    "$.payload.revision_of",
+                    "operational_record.revision_link",
+                    "revision_of must name the same predecessor as corrects_record_id",
+                )
+            )
+
+    if record_kind == "outcome_observation":
+        censoring_state = payload.get("censoring_state")
+        terminality = payload.get("terminality")
+        if isinstance(censoring_state, str) and isinstance(terminality, str):
+            expected = (
+                "terminal"
+                if censoring_state in _TERMINAL_CENSORING_STATES
+                else "non_terminal"
+            )
+            if terminality != expected:
+                issues.append(
+                    _issue(
+                        "$.payload.terminality",
+                        "operational_record.censoring_terminality",
+                        "only a terminal source statement is terminal; a censored "
+                        "observation is never a resolved outcome",
+                    )
+                )
+
+    if record_kind == "family_clock_activation":
+        clock_state = payload.get("clock_state")
+        blockers = payload.get("blockers")
+        unsatisfied = payload.get("unsatisfied_preconditions")
+        started = payload.get("accrual_start_known_at")
+        if clock_state == "opened":
+            if blockers or unsatisfied:
+                issues.append(
+                    _issue(
+                        "$.payload.clock_state",
+                        "operational_record.clock_opened_with_blockers",
+                        "a clock may not be recorded open while a precondition is "
+                        "unsatisfied or a blocker stands",
+                    )
+                )
+            if started is None:
+                issues.append(
+                    _issue(
+                        "$.payload.accrual_start_known_at",
+                        "operational_record.clock_open_without_start",
+                        "an open clock must record the known-at instant it starts accruing from",
+                    )
+                )
+        elif clock_state == "closed":
+            if not blockers:
+                issues.append(
+                    _issue(
+                        "$.payload.blockers",
+                        "operational_record.clock_closed_without_blocker",
+                        "a closed clock must name at least one blocker",
+                    )
+                )
+            if started is not None:
+                issues.append(
+                    _issue(
+                        "$.payload.accrual_start_known_at",
+                        "operational_record.closed_clock_accrual_start",
+                        "a closed clock accrues nothing and may not claim a start",
+                    )
+                )
+    return issues
 
 
 def operational_record_identity_payload(document: Mapping[str, Any]) -> dict[str, Any]:
@@ -293,12 +551,13 @@ def operational_record_semantic_issues(
     issues: list[ValidationIssue] = []
 
     record_kind = document.get("record_kind")
-    if record_kind in DEFERRED_O1B_RECORD_KINDS:
+    if record_kind in RESERVED_RECORD_KIND_ALIASES:
         issues.append(
             _issue(
                 "$.record_kind",
-                "operational_record.o1b_deferred",
-                "forecast, outcome, model registration, and evaluation records belong to BC-O1b",
+                "operational_record.reserved_alias",
+                "that name is a reserved alias, not a record kind; use the canonical "
+                "O1b kind so one kind of evidence has exactly one home",
             )
         )
     elif record_kind not in RECORD_KINDS:
@@ -306,7 +565,7 @@ def operational_record_semantic_issues(
             _issue(
                 "$.record_kind",
                 "operational_record.kind",
-                "record_kind must be one of the seven operational kinds",
+                "record_kind must be one of the declared O1a or O1b kinds",
             )
         )
 
@@ -367,7 +626,9 @@ def operational_record_semantic_issues(
         )
         return sorted(set(issues))
 
-    forbidden_tokens, too_deep = _forbidden_key_tokens(payload)
+    forbidden_tokens, too_deep = _forbidden_key_tokens(
+        payload, forbidden_payload_key_tokens_for(record_kind)
+    )
     if too_deep:
         issues.append(
             _issue(
@@ -398,6 +659,9 @@ def operational_record_semantic_issues(
                     f"{first} must not be later than {second}",
                 )
             )
+
+    issues.extend(_clock_issues(record_kind, payload, recorded_at))
+    issues.extend(_o1b_semantic_issues(record_kind, payload, document))
 
     try:
         payload_bytes = canonical_json_bytes(payload)
@@ -455,6 +719,22 @@ def validate_operational_record(
         if isinstance(document, Mapping)
         else [_issue("$", "operational_record.document", "record must be a JSON object")]
     )
+    if isinstance(document, Mapping):
+        payload_contract_id = PAYLOAD_CONTRACT_BY_RECORD_KIND.get(
+            document.get("record_kind")
+        )
+        if payload_contract_id is not None:
+            payload = document.get("payload")
+            for issue in registry.issues(payload_contract_id, payload):
+                # Re-root the payload contract's paths so one failure report
+                # names the field inside the record it was written to.
+                semantic_issues.append(
+                    _issue(
+                        "$.payload" + issue.path.lstrip("$"),
+                        issue.code,
+                        issue.message,
+                    )
+                )
     issues = tuple(sorted(set(schema_issues + semantic_issues)))
     if issues:
         raise ContractValidationError(OPERATIONAL_RECORD_CONTRACT_ID, issues)
@@ -757,8 +1037,8 @@ class OperationalStore:
         """
 
         root = self._available_root(for_write=True)
-        if record_kind in DEFERRED_O1B_RECORD_KINDS:
-            raise OperationalStoreError("OPERATIONAL_RECORD_KIND_DEFERRED_TO_O1B")
+        if record_kind in RESERVED_RECORD_KIND_ALIASES:
+            raise OperationalStoreError("OPERATIONAL_RECORD_KIND_RESERVED_ALIAS")
         if record_kind not in RECORD_KINDS:
             raise OperationalStoreError("OPERATIONAL_RECORD_KIND_UNKNOWN")
         if not isinstance(idempotency_key, str) or not _IDEMPOTENCY_KEY_RE.fullmatch(
