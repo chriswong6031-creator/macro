@@ -2408,6 +2408,84 @@ insider_lane:
   repeat_min_purchases: 2
   repeat_window_days: 180
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FOMC statement-diff desk (XG-W4b) — engine/marketing/fomc_desk.py
+#
+# Fires off the press wire when the Fed publishes the statement at 14:00 ET on a
+# decision day, and emits two items: a FLAGSHIP house-view post whose 2-4
+# paragraph analysis is rendered onto a statement-diff card, and a
+# mastermind_news STRAIGHT RELAY carrying the decision, the range and the vote
+# with no stance.
+#
+# The diff IS the product. An FOMC statement is edited, not rewritten, so most of
+# it is verbatim identical to last meeting's and the handful of edits are the
+# whole message. Measured on the real 2026-07-29 vs 2026-06-17 pair: six of nine
+# sentences carried over word for word, the vote went 12-0 to 9-3 with three
+# names who wanted a HIKE, and one policy verb moved from "reaffirmed" to "is
+# continuing". None of that is visible in the headline the wire already relays.
+#
+# SHIPS DARK-BUT-ARMED. The next live firing is the 2026-09-15/16 meeting. The
+# two most recent real statements are committed under data/fomc/statements/ as
+# both live baseline data and test fixtures, so the lane is proven against real
+# text rather than a mock before it ever fires.
+#
+# Idempotency is the statements ledger (data/fomc/statements.jsonl): the row is
+# written at the END of a firing, so a crash retries on the next 5-minute tick
+# and a completed firing never posts twice.
+fomc_desk:
+  enabled: true
+
+  # WHO TAKES WHICH POST. Defaults only — a sibling lane (W3) owns
+  # engine/marketing/wire_routing.py and may declare an `fomc` class there; when
+  # it does, the RELAY follows `wire_routing.classes` (answering "which desk owns
+  # a wire emission of this class" is what that table is for) and the analysis
+  # follows an `fomc.analysis` refinement if one is declared. This desk never
+  # edits that module and never calls route() for a class it has not SEEN
+  # declared, so the unknown-class park path cannot be entered by accident.
+  # See engine/marketing/fomc_desk.resolve_accounts.
+  accounts:
+    analysis: flagship          # the house read
+    relay: mastermind_news      # the stance-free wire
+
+  llm:
+    # Two-key arming, as every other marketing writing lane: this flag AND the
+    # MARKETING_LLM_ENABLED env var. The press-wire workflow already passes the
+    # env var and every provider credential.
+    enabled: true
+
+    # CHATGPT-FIRST, mirroring copywriter.llm (operator directive 2026-07-29).
+    # Sol writes: this lane produces user-facing prose (the analysis and the
+    # hook), which is the Sol tier by the fixed ruling in the copywriter block
+    # above. Terra critiques and wires; Luna never touches marketing words.
+    provider_order: [codex, oauth, anthropic, deepseek]
+    codex_source_model: "gpt-5.6-sol"
+    codex_reasoning_effort: "medium"
+    oauth_pool_lane: "marketing-fomc"
+    usage_lane: "marketing-fomc"          # ai_costs attribution
+
+    # One call writes the analysis, the hook and the relay together, because they
+    # are three registers of ONE reading and three separate calls produce three
+    # drafts that disagree about what happened. 1200 tokens covers all three with
+    # room for the model to think in prose.
+    max_tokens: 1200
+
+    # 45s, not the hot-tape lane's 5s: that lane writes one wire sentence inside a
+    # tick budget, this one writes an argument once a quarter. The press tick is
+    # every 5 minutes, so 45s of one tick is affordable and a truncated analysis
+    # is not.
+    client_timeout_s: 45.0
+    # 0: the provider WATERFALL is the retry. An SDK retry inside a dead rung only
+    # delays reaching the next one.
+    client_max_retries: 0
+
+  # THE NO-FALLBACK SPLIT, inherited rather than reinvented. The flagship
+  # analysis post is LLM-REQUIRED: when the waterfall is mute or its copy fails
+  # validation plus one repair turn, that post is SKIPPED and counted, never
+  # written from a template. The RELAY keeps its deterministic floor, exactly as
+  # copywriter.llm.required already exempts the wire lanes — wire register
+  # survives templating and a house read does not. This is not a knob; it is the
+  # lane's semantics, and it lives in code (fomc_desk.fire).
+
 # Our own pick engines as fact supply (operator ruling 2026-07-29). These ride
 # the EXISTING watchlist kind — no new kind, no writer change, no gate of their
 # own — and every pick names its desk in plain words plus that desk's own

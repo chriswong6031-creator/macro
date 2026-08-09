@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-09T07:56:21Z",
+  "produced_at": "2026-08-09T10:03:28Z",
   "as_of": "2026-08-09",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 11,
-    "passed": 11,
+    "items": 4,
+    "passed": 4,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -27,60 +27,12 @@
       "headline": "Commodities Metals ripping, +7.2% avg on Friday"
     },
     {
-      "id": "post-insider-001",
-      "account": "flagship",
-      "slot": "D1-S10",
-      "type": "insider",
-      "cashtag": "$CCB",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-001",
-      "account": "founder",
-      "slot": "D1-S1",
-      "type": "event",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-017",
-      "account": "founder",
-      "slot": "D1-S17",
-      "type": "chart",
-      "cashtag": "$SPCU",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-024",
-      "account": "founder",
-      "slot": "D1-S24",
-      "type": "chart",
-      "cashtag": "$SPCH",
-      "headline": "$SPCH has seen this movie before"
-    },
-    {
-      "id": "post-insider-002",
-      "account": "founder",
-      "slot": "D1-S6",
-      "type": "insider",
-      "cashtag": "$ATTO",
-      "headline": ""
-    },
-    {
       "id": "post-theme-004",
       "account": "meagan",
       "slot": "D1-S2",
       "type": "theme_list",
       "cashtag": "$TEAM",
       "headline": "Software ripping, +3.7% avg on Friday"
-    },
-    {
-      "id": "post-sophia-001",
-      "account": "sophia",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "The labor story isn't bending yet"
     },
     {
       "id": "post-mover-002",
@@ -91,25 +43,17 @@
       "headline": "$TEAM +35.3% on Friday"
     },
     {
-      "id": "post-kelly-027",
+      "id": "post-kelly-026",
       "account": "kelly",
-      "slot": "D1-S27",
-      "type": "chart",
-      "cashtag": "$POST",
+      "slot": "D1-S26",
+      "type": "watchlist",
+      "cashtag": "$TTC",
       "headline": ""
-    },
-    {
-      "id": "post-theme-005",
-      "account": "kelly",
-      "slot": "D1-S5",
-      "type": "theme_list",
-      "cashtag": "$NTRA",
-      "headline": "Healthcare & Biotech ripping, +2.6% avg on Friday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 46,
+      "pairs_checked": 6,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -132,7 +76,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": null,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {
@@ -421,7 +365,5 @@
       "theme_list_hits": 0
     }
   },
-  "notes": [
-    "receipts ledger age unknown — receipt items quarantined"
-  ]
+  "notes": []
 }

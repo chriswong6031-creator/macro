@@ -1,8 +1,9 @@
 """scripts/build_prophet_live_pack.py — nightly Prophet Live arming pass (P0 D2).
 
 Probes the SAME close-only admission gate the board is built from with candidate
-provisional closes and publishes the resulting per-name trigger/fade levels to R2 as
-``live_flow/prophet_live_armed.json``. The */5 evaluator reads that and never
+provisional closes APPENDED as tonight's new session bar — the construction the
+nightly itself runs — and publishes the resulting per-name trigger/fade levels to R2
+as ``live_flow/prophet_live_armed.json``. The */5 evaluator reads that and never
 re-derives a signal (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md
 §4.1). All compute lives in :mod:`engine.prophet_live.armed_pack`; this script owns
 the universe read, the process fan-out, the budget deadline and the publish.
@@ -244,7 +245,13 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
             t_cls = time.time()
             win = window if window is not None else AP.cross_window(
                 probe_budget, c["board_probe_share"], time.time() - t_probe)
-            payloads = [(t, {"span": recs[t]["span"], "known": recs[t].get("known") or {}})
+            # as_of_close, not a pre-computed verdict: the probe measures its own anchor
+            # at that price (armed_pack.probe_name). Handing it the centre census's
+            # verdict was sound only while the probe REPLACED the last bar — the two
+            # calls were then the same call — and would now plant a board verdict inside
+            # an interval measured on an appended bar.
+            payloads = [(t, {"span": recs[t]["span"],
+                             "as_of_close": recs[t]["as_of_close"]})
                         for t in names_for]
             futs = {ex.submit(_probe, p): p[0] for p in payloads}
             done_before = len(probes)
@@ -374,6 +381,7 @@ def main(argv: list[str] | None = None) -> int:
     m = payload["meta"]
     print(f"prophet-live pack: as_of={payload['as_of']} universe_n={m['universe_n']} "
           f"probed_n={m['probed_n']} armed_n={m['armed_n']} "
+          f"center_flips={m.get('probe_center_flips')} "
           f"gate_calls={m['gate_calls']} build_seconds={m['build_seconds']} "
           f"phases={m.get('phase_seconds')} states={m['states']} skipped={m['skipped']}",
           flush=True)

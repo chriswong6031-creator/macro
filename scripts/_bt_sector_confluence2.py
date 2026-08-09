@@ -20,10 +20,15 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine.cycles import macd_parts, stoch_rsi
-from engine.technicals import rsi
-from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS, BENCH, HORIZONS
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.cycles import macd_parts, stoch_rsi  # noqa: E402
+from engine.technicals import rsi  # noqa: E402
+from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS, BENCH, HORIZONS  # noqa: E402
 
 
 def _weekly_hist_state(close: pd.Series) -> pd.Series:
