@@ -4804,7 +4804,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # build_polygon_intraday imports the governed options episode validator;
+        # keep its Draft 2020-12 dependency present in this isolated job env.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema
       - name: R2 fetch/audit + accrual audits + surface freshness
         run: python -m pytest tests/test_fetch_r2.py tests/test_audit_r2.py tests/test_audit_options_accrual.py tests/test_audit_thetadata_accrual.py tests/test_check_surface_freshness.py -q
       - name: ledger-advance + builder failstreaks + turn-event notifier
