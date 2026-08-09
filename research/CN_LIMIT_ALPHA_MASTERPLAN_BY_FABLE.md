@@ -243,9 +243,10 @@ riders (E1/E2/E3, all bands, main+chinext, fit+holdout) and B1-as-specified.
 
 **W2-B #5091 APPROVED CONDITIONALLY — the weakness families null cleanly; the null survived
 adversarial review; several framing claims did not and are being amended.** 210 pre-registered
-cohorts: **0/84** break-day-close (回封) and **0/42** 龙回头 cohorts clear positive
-net-of-15bp in fit AND holdout, and across ALL 210 cohorts the maximum date-clustered t is
-**1.47** (nothing at ≥2) — that t-census, not any survivor count, is the null's statement.
+cohorts (final, post-amendment): **125 of 126 close-anchored cohorts negative** (the 126th —
+a thin ChiNext volz cell, n=222, fit mean +0.023%, dc-t 1.17 — clears no stability floor) and
+**0/42** 龙回头, and across ALL 210 cohorts the maximum date-clustered t is **1.86** (nothing
+at ≥2) — that t-census, not any survivor count, is the null's statement.
 (The receipt's original "23 vs ~52 coin flips ⇒ below chance" inference was REFUTED by review:
 all 23 survivors sit in the one 84-cohort T+1-open family whose coin-flip expectation is ~21 —
 at chance, not below — and the survivors are demoted by clustering, not by counting.) 龙回头
