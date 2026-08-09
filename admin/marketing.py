@@ -1983,7 +1983,15 @@ def outbox(root=None) -> dict:
                 "decided_at": decided_at,
                 "created_at": item.get("created_at"),
                 "last_transition_at": last_transition_at,
+                # BOTH counts ship. `attempts` is the raw forensic total (every
+                # transition into `failed`); `effective_attempts` is the only one
+                # MAX_POST_ATTEMPTS spends, because a rate-limit requeue and a
+                # subscription-lock pass-through walk THROUGH `failed` without
+                # any verdict on the copy (#4992). The console must gate on the
+                # second or it tells the operator a Buffer-outage item is spent
+                # when Approve would re-arm it fine.
                 "attempts": state["attempts"].get(item_id, 0),
+                "effective_attempts": _ob.effective_attempts(state, item_id),
                 "receipt": receipt,
                 "_effective": eff,
                 "_account": item.get("account", ""),
@@ -2040,9 +2048,12 @@ def outbox(root=None) -> dict:
         # `note` is the ledger's own reason line ("account_disabled",
         # "http_error 429", "operator batch rejection") and it is what the
         # console groups dead posts BY — without it the operator gets a wall of
-        # ids with no answer to "why did this one die". `attempts` distinguishes
-        # a spent failure from a re-armable one, which is the difference between
-        # a corpse and a post still waiting on him.
+        # ids with no answer to "why did this one die".
+        # `effective_attempts` — NOT `attempts` — is the spent-vs-re-armable
+        # discriminator, which is the difference between a corpse and a post
+        # still waiting on him: since #4992 the cap spends only REAL failures,
+        # so an item that rode nine excused backend refusals is at 0. `attempts`
+        # rides along as the raw forensic count and gates nothing.
         history_out = [
             {
                 "id": e["id"],
@@ -2054,6 +2065,7 @@ def outbox(root=None) -> dict:
                 "receipt": e["receipt"],
                 "note": (state["last"].get(e["id"]) or {}).get("note"),
                 "attempts": e["attempts"],
+                "effective_attempts": _ob.effective_attempts(state, e["id"]),
             }
             for e in terminal[:50]
         ]
@@ -2352,7 +2364,12 @@ def publisher(root=None) -> dict:
                 # still re-armable is only safe to retry while its market claim
                 # is current, so the age has to travel with the row.
                 "as_of": it.get("as_of"),
+                # Raw total for forensics; `effective_attempts` is the number
+                # the retry cap actually spends (#4992 — excused backend
+                # refusals are not verdicts on the post) and is what the triage
+                # split must gate on.
                 "attempts": state["attempts"].get(iid, 0),
+                "effective_attempts": _ob.effective_attempts(state, iid),
                 "note": lr.get("note"),
                 "excerpt": (txt[:110] + "…") if len(txt) > 110 else txt,
             }
@@ -3744,6 +3761,10 @@ def reply_queue(root=None, *, store=None, now=None) -> dict:
                 "created_at": item.get("created_at"),
                 "outcome": outcomes.get(iid) or {},
                 "claim": state["claims"].get(iid),
+                # RAW on purpose: reply_queue.MAX_SEND_ATTEMPTS is enforced
+                # against raw state["attempts"] and that ledger has no excused
+                # failure classes, so raw IS the enforced count here. Do not
+                # thread outbox.effective_attempts through — different lane.
                 "attempts": state["attempts"].get(iid, 0),
             }
             if status == "queued":
@@ -4361,6 +4382,10 @@ def _reply_card(iid: str, item: dict, status: str, *, state: dict, outcomes: dic
         "created_at": item.get("created_at"),
         "expires_at": item.get("expires_at"),
         "expires_in_min": _rq_minutes(expires, ts),
+        # RAW on purpose: reply_queue.MAX_SEND_ATTEMPTS is enforced against raw
+        # state["attempts"] and that ledger has no excused failure classes, so
+        # raw IS the enforced count here. Do not thread
+        # outbox.effective_attempts through — different lane.
         "attempts": (state.get("attempts") or {}).get(iid, 0),
         "decisions": list((decisions or {}).get(iid) or [])[-3:],
         "outcome": (outcomes or {}).get(iid) or {},

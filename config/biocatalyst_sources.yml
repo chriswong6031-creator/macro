@@ -122,7 +122,13 @@ sources:
     rights_reviewed_at: "2026-08-07T00:00:00Z"
     rights_review_basis: official_terms_conditions_not_legal_opinion
     rights_review_ruling_ref: research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md
-    rights_review_ruling_sha256: f2536d82f8d77ed8bc6571765a269f29db896844fcd3c77042edf848540f6b2a
+    # RE-BOUND 2026-08-08.  The ruling document gained Ruling 3 (the four
+    # subsidiary sponsor rows), which moved its digest.  Ruling 1 — the rights
+    # decision this block records — is UNCHANGED in that document; only the
+    # bytes surrounding it moved.  Nothing else in this block was touched: the
+    # runtime gate, the universe gate, the canary requirement, and every clock
+    # remain exactly as the operator left them on 2026-08-07.
+    rights_review_ruling_sha256: 6d6fe5771b70a2c3f6eacab4b2b1bb270331a1bc8c121064293905846d98a530
     production_ingest_allowed: true
     raw_archive: private_only
     public_projection: blocked_until_enable

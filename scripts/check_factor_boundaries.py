@@ -555,6 +555,7 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
                 (key.lineno, token_start, token_start + len("allowed_actions"))
             )
 
+    lines: set[int] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for key, value in zip(node.keys, node.values):
@@ -672,7 +673,9 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
                 continue
 
     for rel_path, source in file_iter:
-        if _TOKEN not in source:
+        if rel_path in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS:
+            violation_lines = _non_emission_allowed_actions_lines(rel_path, source)
+        elif _TOKEN not in source:
             continue
         if rel_path in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS:
             violation_lines = _non_emission_allowed_actions_lines(rel_path, source)

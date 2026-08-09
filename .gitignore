@@ -77,6 +77,11 @@ data/press/staging/*.json
 data/financial_news/
 # GDELT cross-process throttle stamp (runtime-only; written by engine/gdelt_client._throttle)
 data/gdelt/
+# GR3b: 8-K primary-doc + material-contract-exhibit text cache (collectors/edgar_8k).
+# Transient fetch cache that makes the counterparty backfill resumable; the extraction
+# RESULT is committed in material_8k_events.parquet, the raw filing text never is (it is
+# hundreds of MB of public EDGAR prose that re-fetches on demand).
+data/edgar/_8k_doc_cache/
 data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
@@ -389,6 +394,13 @@ data/operator/
 # blanket `git add data/` sweep.  No writer exists in v1 — the rail is
 # pre-built so the path is safe before any data ever lands here.
 data/private/
+
+# Paid TuShare add-on response partitions are private, non-redistributable pilot
+# data. Never stage them through the nightly blanket `git add data/` sweep.
+# Same rule for the minute plane (Lane B) and chip-distribution store (Lane C).
+data/tushare_addons/
+data/tushare_minutes/
+data/china_chips_distribution/
 
 # SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
 # panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.
