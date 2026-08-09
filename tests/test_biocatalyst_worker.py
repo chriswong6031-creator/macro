@@ -1900,9 +1900,44 @@ def test_history_environment_flag_is_default_off_and_rejects_nonbinary_input(tmp
     defaulted = worker.load_environment(base)
     assert defaulted.state == "enabled"
     assert defaulted.config is not None and defaulted.config.history_enabled is False
+
+    # The committed registry's rights gate was cleared by the operator ruling of
+    # 2026-08-07, so BIOCATALYST_HISTORY_ENABLED is now an operator control the
+    # host may set.  The registry check itself is unchanged and still fails
+    # closed: a registry that does NOT approve the source refuses the flag.
+    committed = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "1"})
+    assert committed.state == "enabled"
+    assert committed.config is not None and committed.config.history_enabled is True
+
+    unapproved_registry = tmp_path / "unapproved_biocatalyst_sources.yml"
+    unapproved_registry.write_text(
+        "sources:\n"
+        "  clinicaltrials_gov_record_history:\n"
+        "    source_id: clinicaltrials_gov_record_history\n"
+        "    production_ingest_allowed: false\n"
+        "    source_shape_canary_required: true\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(worker, "_SOURCE_REGISTRY_PATH", unapproved_registry)
     blocked = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "1"})
     assert blocked.state == "invalid"
     assert blocked.error_code == "BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED"
+
+    # The source-shape canary requirement is a second, independent condition:
+    # dropping it refuses the flag even with rights cleared.
+    no_canary_registry = tmp_path / "no_canary_biocatalyst_sources.yml"
+    no_canary_registry.write_text(
+        "sources:\n"
+        "  clinicaltrials_gov_record_history:\n"
+        "    source_id: clinicaltrials_gov_record_history\n"
+        "    production_ingest_allowed: true\n"
+        "    source_shape_canary_required: false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(worker, "_SOURCE_REGISTRY_PATH", no_canary_registry)
+    uncanaried = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "1"})
+    assert uncanaried.state == "invalid"
+    assert uncanaried.error_code == "BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED"
 
     approved_registry = tmp_path / "biocatalyst_sources.yml"
     approved_registry.write_text(

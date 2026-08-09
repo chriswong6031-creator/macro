@@ -153,6 +153,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date, datetime, timezone
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -330,14 +331,20 @@ def _activity_constants() -> tuple[float, float, int]:
     unlikely; the test suite pins the fallbacks to the masterplan literals.
     """
     try:  # pragma: no cover - exercised once group_pulse lands
-        from engine import group_pulse as _gp
+        _gp = import_module("engine.group_pulse")
+    except ModuleNotFoundError as exc:
+        # GR0 is still an independently reviewed sibling (#4995).  Only its
+        # literal absence authorises the frozen masterplan fallback; a missing
+        # dependency inside a present group_pulse must remain a real failure.
+        if exc.name != "engine.group_pulse":
+            raise
+        return (ACTIVITY_Z, ACTIVITY_VOLUME_RATIO, ACTIVITY_LOOKBACK_D)
+    else:
         return (
             float(getattr(_gp, "ACTIVITY_Z", ACTIVITY_Z)),
             float(getattr(_gp, "ACTIVITY_VOLUME_RATIO", ACTIVITY_VOLUME_RATIO)),
             int(getattr(_gp, "ACTIVITY_LOOKBACK_D", ACTIVITY_LOOKBACK_D)),
         )
-    except Exception:  # noqa: BLE001 — sibling wave not merged yet
-        return (ACTIVITY_Z, ACTIVITY_VOLUME_RATIO, ACTIVITY_LOOKBACK_D)
 
 
 # --------------------------------------------------------------------------

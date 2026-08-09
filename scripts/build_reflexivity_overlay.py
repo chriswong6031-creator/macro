@@ -38,6 +38,7 @@ from pathlib import Path
 log = logging.getLogger("build_reflexivity_overlay")
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 _FACTOR_BETAS   = ROOT / "site" / "factor_betas.json"
 _STANDOUTS_V2   = ROOT / "site" / "factordata" / "us_standouts_v2.json"
 _MEMBERSHIP     = ROOT / "data" / "baskets" / "membership.json"

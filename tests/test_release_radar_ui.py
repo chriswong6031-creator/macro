@@ -1264,6 +1264,76 @@ def test_r39a_ppi_expected_value_bench_median_no_market_implied():
 
 
 # ---------------------------------------------------------------------------
+# MRI-R40 combined-basis display honesty
+# ---------------------------------------------------------------------------
+
+def test_r40_combined_primary_requires_declared_benchmark_augmented_basis():
+    """A merely present combined block must not silently replace the champion point."""
+    src = _rr_section_src()
+    helper_start = src.find("function _usesBenchmarkAugmentedPrimary(")
+    helper_end = src.find("function _contextMetricsMatchPrimary(", helper_start)
+    helper = src[helper_start:helper_end]
+    assert helper_start >= 0, "combined-primary basis helper missing"
+    assert "primary_forecast_basis === 'combined_v1_benchmark_augmented'" in helper
+    assert "comb.combined_point != null" in helper
+
+    card_start = src.find("function renderCard(")
+    card_end = src.find("function renderModal(", card_start)
+    card = src[card_start:card_end]
+    assert "var displayPoint = usesBenchmarkBlend ? comb.combined_point : proj.point;" in card
+    assert "var displayP10 = (usesBenchmarkBlend && comb.p10 != null)" in card
+
+
+def test_r40_combined_primary_has_bilingual_blend_label_and_champion_fallback():
+    """Combined points disclose the benchmark; champion-only points retain their old label."""
+    src = _rr_section_src()
+    assert "Model + benchmark blend" in src
+    assert "模型与基准混合" in src
+    assert "? 'Model + benchmark blend' : 'Our projection'" in src
+    assert "? '模型与基准混合' : '本方预测'" in src
+    assert '<span class="l-en">ours</span><span class="l-zh">本方</span>' in src
+    assert "primaryLabelStyle" in src
+    assert "white-space:normal" in src
+    assert "text-transform:none" in src
+
+
+def test_r40_combined_receipt_counts_inputs_and_discloses_cleveland():
+    """The blend receipt counts heterogeneous inputs and names Cleveland when present."""
+    src = _rr_section_src()
+    modal_start = src.find("function renderModal(")
+    modal = src[modal_start:]
+    assert "Array.isArray(comb.combined_components.inputs_used)" in modal
+    assert "combInputs.indexOf('cleveland') !== -1" in modal
+    assert "Blend of '+esc(combNStr)+' inputs" in modal
+    assert "'+esc(combNStr)+'项输入混合" in modal
+    assert "includes Cleveland benchmark" in modal
+    assert "含克利夫兰基准" in modal
+    assert "Blend of '+esc(combNStr)+' models" not in modal
+
+
+def test_r40_mismatched_context_metrics_are_suppressed():
+    """Expectation, skew, and surprise UI cannot describe a differently based point."""
+    src = _rr_section_src()
+    helper_start = src.find("function _contextMetricsMatchPrimary(")
+    helper_end = src.find("function renderCard(", helper_start)
+    helper = src[helper_start:helper_end]
+    assert "return contextBasis === primaryBasis;" in helper
+
+    card_start = src.find("function renderCard(")
+    card_end = src.find("function renderModal(", card_start)
+    card = src[card_start:card_end]
+    assert "if (!isBenchmarkOnly && contextMetricsAligned)" in card
+
+    modal = src[card_end:]
+    aligned_start = modal.find("if (contextMetricsAligned){")
+    aligned_end = modal.find("chips += coverageChip", aligned_start)
+    aligned_block = modal[aligned_start:aligned_end]
+    assert "expectationChip" in aligned_block
+    assert "skewChip" in aligned_block
+    assert "!isNoData && contextMetricsAligned && sd" in modal
+
+
+# ---------------------------------------------------------------------------
 # MRI-R39a W11: track-record button + overlay; inline block + duplicate footer removed
 # ---------------------------------------------------------------------------
 
