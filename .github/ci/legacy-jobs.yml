@@ -838,6 +838,15 @@ jobs:
         run: python -m pytest tests/test_mirror_terminal_context.py -q
       - name: options screener (IV-rank percentile + Scanner-mode rows export shape)
         run: python -m pytest tests/test_build_options_screener.py -q
+      # The governed Prophet shadow foundation (#5067), named by NO run: step when it
+      # merged. It belongs in THIS job rather than a new one: its subject pair is
+      # scripts/build_options_prophet.py plus the R2 key map in scripts/mirror_flow_idx
+      # (OPTIONS_PROPHET_R2_KEY), and this job already owns the sibling mirror contract
+      # and the options PIT episode/R2-integrity suites above. Both subjects are
+      # stdlib-only at module scope; the suite's one non-stdlib import is yaml, and
+      # pyyaml is already on the install line.
+      - name: governed options Prophet shadow foundation (#5067)
+        run: python -m pytest tests/test_build_options_prophet.py -q
 
   cycle-grading-stats:
     if: ${{ false }}
