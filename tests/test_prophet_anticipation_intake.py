@@ -1040,9 +1040,14 @@ def _run_main(tmp_path: Path, buys: list[dict], *, asof: str = ASOF) -> dict:
     """
     standouts_path = _write(tmp_path, _standouts(buys, as_of=asof))
     saved = {name: getattr(bp, name) for name in
-             ("STANDOUTS_PATH", "SITE_PROPHET", "PLANS_DIR", "STATES_DIR",
+             ("_REPO", "STANDOUTS_PATH", "SITE_PROPHET", "PLANS_DIR", "STATES_DIR",
               "INDEX_PATH", "LEDGER_PATH", "LEDGER_DIR", "write_showcase")}
     try:
+        # build_prophet passes _REPO to the independent Prophet Arena hook at
+        # call time.  Redirect that root with the rest of this production-path
+        # harness so its prospective ledgers never touch the repository's real
+        # data/prophet_arena store.
+        bp._REPO = tmp_path
         bp.STANDOUTS_PATH = standouts_path
         bp.SITE_PROPHET = tmp_path / "site" / "prophet"
         bp.PLANS_DIR = bp.SITE_PROPHET / "plans"
@@ -1109,6 +1114,7 @@ class TestProductionCallPath:
         store = tmp_path / "data" / "prophet" / "legacy_shadow"
         assert store.exists(), "the nightly lane wrote no shadow part"
         assert list(store.glob("*/*.parquet"))
+        assert (tmp_path / "data" / "prophet_arena" / "scoreboard.json").exists()
         assert index["intake"]["legacy_shadow"]["rows_in_part"] >= 1
         assert index["intake"]["legacy_shadow"]["authority"] == "none"
 

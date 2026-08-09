@@ -122,6 +122,25 @@ gate genuinely accepted. Rounding again here could only move a level the wrong w
 print one the gate would reject, so the number travels exactly as armed. ``price`` is
 still rounded for display: that is a quote, not a threshold.
 
+ONE PRICE BASIS (W-L0 gate 3). The armed levels are prices on the nightly store's
+SPLIT+DIVIDEND ADJUSTED close series; ``price`` on every row is a RAW vendor print off
+the live plane. Both facts are stated on every payload under
+``meta.price_adjustment`` (``levels`` and ``quote``) instead of being left for a
+consumer to infer, and the live quote is deliberately NOT converted — an adjusted
+"quote" is a number no exchange ever printed.
+
+The two are only comparable while they describe the same scale, so every pass runs the
+assertion :func:`engine.prophet_live.interval.basis_audit`: the pack's ``as_of_close``
+against the feed's ``prev_close``, per name, for the same session. Past
+``basis_tolerance_pct`` that name goes ``dark`` with reason ``basis_mismatch`` and
+carries the measured ``basis_gap_pct`` — per NAME, because a distribution is a per-name
+event and a whole-artifact dark would additionally cost every healthy name the debounce
+it has banked today. ``meta.price_adjustment`` publishes ``checked_n``/``unchecked_n``
+alongside, so a feed that quietly stops carrying previous closes reads as unchecked
+rather than as clean. A row whose levels are on a basis OTHER than
+``meta.price_adjustment.levels`` — the breadth-cache names, which accrue raw between
+rebuilds — carries ``levels_adjustment``; absent means the artifact-level basis.
+
 VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
 confirmed, refuted or validated. The nightly build is the only thing that confirms,
 and falsifier language is never front-facing.
@@ -133,7 +152,14 @@ from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
 from engine.prophet_live.interval import (
-    in_probed_band, interval_contains, lower_edge, probe_floor)
+    DEFAULT_PACK_ADJUSTMENT,
+    LIVE_QUOTE_ADJUSTMENT,
+    basis_audit,
+    in_probed_band,
+    interval_contains,
+    lower_edge,
+    probe_floor,
+)
 
 log = logging.getLogger(__name__)
 
@@ -224,6 +250,24 @@ _DEFAULTS: dict[str, Any] = {
     # contractual delay — one polling gap (5 min) plus jitter. See the derivation of
     # `quote_max_age_min` below; this is the only half of that budget we control.
     "quote_slack_min": 10,
+    # ONE PRICE BASIS (W-L0 gate 3). How far the pack's `as_of_close` may sit from the
+    # quote feed's `prev_close` for the SAME session before that name is unevaluable.
+    #
+    # WHY 0.25%, between two measured anchors rather than picked:
+    #   FLOOR — what must NOT trip. Two vendors quoting the same close agree to the
+    #   cent: `engine.price_ladder` measured JPM and KO agreeing across all four price
+    #   sources, and a cent is <=0.05% on anything over $20. Tick noise cannot reach
+    #   25 bp for a name this lane can trade; a sub-$4 name's half-cent rounding can,
+    #   which is the one population this gate is deliberately loose about (it costs a
+    #   spurious dark, never a wrong state).
+    #   CEILING — what MUST trip. A distribution. The same module's receipt is CFG at
+    #   0.649%, "exactly CFG's quarterly dividend"; a US quarterly payer typically
+    #   lands 0.3-1.5%, and any split is orders of magnitude larger. All of those clear
+    #   25 bp with room.
+    # A very low-yield payer (AAPL, ~0.11% a quarter) sits UNDER the tolerance and is
+    # deliberately let through: 11 bp of basis error is inside the pack's own 4-dp edge
+    # rounding, so darkening the name would destroy more information than it protects.
+    "basis_tolerance_pct": 0.25,
 }
 
 #: The feed delay assumed when the caller hands us no ``live`` block at all (tests,
@@ -442,19 +486,27 @@ def _stamp_since(out: dict[str, Any], prev: dict[str, Any], now: datetime) -> di
 
 
 def name_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
-               prev: dict[str, Any] | None, now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
+               prev: dict[str, Any] | None, now: datetime, cfg: dict[str, Any],
+               basis_gap_pct: float | None = None) -> dict[str, Any]:
     """One name's state this pass. Never raises; unknowns become ``dark`` with a reason.
 
     Two steps: :func:`_resolve_state` decides the state off this pass's price and the
     previous pass's counters, then :func:`_stamp_since` puts the SINCE clock on it.
+
+    ``basis_gap_pct`` is this name's pack-close-vs-feed-previous-close gap, measured
+    ONCE per pass by :func:`evaluate` (see :func:`engine.prophet_live.interval.basis_audit`)
+    and passed in rather than re-derived here. None means "not measured" — the default,
+    and what every caller that has no previous close to compare against gets.
     """
     prev = prev or {}
     return _stamp_since(_resolve_state(entry, price=price, quote_age_min=quote_age_min,
-                                       prev=prev, now=now, cfg=cfg), prev, now)
+                                       prev=prev, now=now, cfg=cfg,
+                                       basis_gap_pct=basis_gap_pct), prev, now)
 
 
 def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min: float | None,
-                   prev: dict[str, Any], now: datetime, cfg: dict[str, Any]) -> dict[str, Any]:
+                   prev: dict[str, Any], now: datetime, cfg: dict[str, Any],
+                   basis_gap_pct: float | None = None) -> dict[str, Any]:
     """The state machine itself — everything except the SINCE clock."""
     try:
         if not entry.get("probed"):
@@ -467,6 +519,29 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
         if quote_age_min is None or float(quote_age_min) > max_age:
             return _dark("stale_quote", quote_age_min=(round(float(quote_age_min), 1)
                                                        if quote_age_min is not None else None))
+        # ONE PRICE BASIS (W-L0 gate 3). The armed levels are prices on the STORE's
+        # adjusted close series; this pass's `px` is a raw vendor print. They are
+        # comparable only while the two describe the same scale, and the pack's
+        # `as_of_close` against the feed's `prev_close` for that same session is the
+        # measurement of exactly that. Past the tolerance the levels and the tape are
+        # on different scales and every branch below would be arithmetic on two
+        # different currencies — so the NAME goes dark and says why.
+        #
+        # PER NAME, NOT THE WHOLE PACK, deliberately — the same trade
+        # `interval.membership_mismatches` makes one layer up. A distribution is a
+        # per-name event: darkening ~1,700 names because one went ex-dividend costs
+        # the session for every unaffected name, and a whole-artifact dark is strictly
+        # worse than a per-name one here because `dark_artifact` publishes no states at
+        # all, so the healthy names would also lose the debounce counters they have
+        # already banked today. The evaluator still prints the aggregate loudly, so a
+        # basis-WIDE break (a re-based store, a vendor switch) is never mistaken for a
+        # handful of dividends.
+        if basis_gap_pct is not None:
+            tol = abs(float(cfg.get("basis_tolerance_pct",
+                                    _DEFAULTS["basis_tolerance_pct"])))
+            if tol and abs(float(basis_gap_pct)) > tol:
+                return _dark("basis_mismatch", basis_gap_pct=round(float(basis_gap_pct), 4),
+                             quote_age_min=round(float(quote_age_min), 1))
 
         px = float(price)
         # OUTSIDE THE PROBED BAND THE PACK KNOWS NOTHING. Asked before membership,
@@ -780,6 +855,22 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
             "stale_pack", now=now, cfg=cfg, pack_as_of=pack_as_of, **dark_kw,
             detail=f"pack as_of={pack_as_of or 'none'} != last completed session {expected}")
 
+    # THE STARTUP ASSERTION (W-L0 gate 3), run once at the head of the pass over the
+    # whole pack rather than per name inside the walk: it is one question about the two
+    # PLANES — is the pack's idea of last session's close the same scale as the feed's? —
+    # and the per-name answers are just its rows. `_resolve_state` consumes the gap and
+    # darks the names that fail it.
+    audit = basis_audit(pack.get("names") or {}, quotes,
+                        tol_pct=cfg.get("basis_tolerance_pct",
+                                        _DEFAULTS["basis_tolerance_pct"]))
+    gaps = audit["gaps"]
+    # What the ARMED LEVELS are on. The pack states it; a pack built before the field
+    # existed falls back to the store's dominant family rather than publishing null,
+    # because "we do not know the basis" and "adjusted" are different claims and only
+    # one of them is true of this store.
+    raw_adj = pack.get("price_adjustment")
+    pack_adjustment = raw_adj if isinstance(raw_adj, str) and raw_adj else DEFAULT_PACK_ADJUSTMENT
+
     states: dict[str, Any] = {}
     events: list[dict[str, Any]] = []
     dark_counts: dict[str, int] = {}
@@ -801,7 +892,19 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
         px = q.get("price")
         age = quote_age_of(q) if (quote_age_of and q) else None
         st = name_state(entry, price=px, quote_age_min=age,
-                        prev=prev_states.get(tkr), now=now, cfg=cfg)
+                        prev=prev_states.get(tkr), now=now, cfg=cfg,
+                        basis_gap_pct=gaps.get(tkr))
+        # A name whose levels are NOT on the artifact's stated basis says so on its own
+        # row. Only the exceptions carry the key — the rule is written down in
+        # `meta.price_adjustment` and in the module docstring, so a reader derives
+        # nothing: key present ⇒ this row's levels are on THAT basis, key absent ⇒ on
+        # `meta.price_adjustment.levels`. Stamping all ~1,700 rows with the same string
+        # would add ~45 KB to a payload republished every five minutes to say what the
+        # header already says.
+        ent_adj = entry.get("price_adjustment")
+        if (st.get("state") != "dark" and isinstance(ent_adj, str) and ent_adj
+                and ent_adj != pack_adjustment):
+            st["levels_adjustment"] = ent_adj
         states[tkr] = st
         counts[st["state"]] = counts.get(st["state"], 0) + 1
         if st["state"] == "dark":
@@ -843,5 +946,22 @@ def evaluate(pack: dict[str, Any] | None, quotes: dict[str, Any], prev: dict[str
             "unprobed": unprobed,
             "unprobed_n": sum(unprobed.values()),
             "events_n": len(events),
+            # ONE PRICE BASIS (W-L0 gate 3), stated on every payload. `levels` is what
+            # the armed thresholds are on, `quote` is what `price` on each row is on,
+            # and they are DIFFERENT on purpose — a live print is nominal and
+            # converting it would publish a price no exchange made. The audit block is
+            # the evidence that the two are nonetheless describing the same scale:
+            # `checked_n` names compared, `unchecked_n` that carried no previous close
+            # to compare against, `mismatched` the ones past `tol_pct` (each of which
+            # is a `basis_mismatch` dark row above, never a silently re-based state).
+            "price_adjustment": {
+                "levels": pack_adjustment,
+                "quote": LIVE_QUOTE_ADJUSTMENT,
+                "tol_pct": audit["tol_pct"],
+                "checked_n": audit["checked_n"],
+                "unchecked_n": audit["unchecked_n"],
+                "mismatched_n": len(audit["mismatched"]),
+                "mismatched": audit["mismatched"],
+            },
         },
     }

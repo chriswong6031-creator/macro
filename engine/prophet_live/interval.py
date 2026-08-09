@@ -14,9 +14,15 @@ STDLIB ONLY, deliberately. :mod:`engine.prophet_live.armed_pack` needs pandas to
 probe; the */5 lane installs ``pyyaml boto3`` and no pandas. Putting the contract in
 the heavy module would make ``import live_states`` raise ModuleNotFoundError on the
 lane it exists to serve.
+
+It also owns the PRICE-ADJUSTMENT VOCABULARY (W-L0 gate 3), for the same reason: the
+pack builder, the */5 evaluator and the nightly reconciler all have to name the basis
+of every number they publish, and three copies of that vocabulary is how two of them
+end up disagreeing about what "adjusted" meant.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 #: The probe states, in the order the pack reports them. ``eligible_t4`` means
@@ -28,6 +34,110 @@ from typing import Any
 #: affirmative "nothing here".
 STATES: tuple[str, ...] = ("buyable", "eligible_t4", "near", "dormant", "irregular",
                            "stale")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Price-adjustment basis (W-L0 gate 3 — ONE PRICE BASIS)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT THIS VOCABULARY EXISTS FOR. Armed edges are probed on the nightly store's
+# close series, which is split+dividend adjusted; the live tape prints raw vendor
+# quotes; and the nightly ledger derived ``close_vs_cross_pct``/``fill_vs_cross_pct``
+# by dividing an ADJUSTED close by a RAW cross print. On a name with a distribution
+# between the cross and the read, the error IS the dividend — measured on this repo at
+# 0.649% for CFG (``engine.price_ladder``, the same finding one layer down).
+#
+# NOT ``price_basis``: :mod:`engine.live_quotes` already owns that name for the
+# LIVENESS rung a quote came off (``trade|minute|day|prev|regular``), which is a
+# different axis and rides in the same artifacts under the JSON key ``basis``. Naming
+# this one ``price_basis`` too would put two unrelated meanings on one word in one
+# payload. The values deliberately mirror :mod:`engine.price_ladder`'s
+# ADJUSTED/UNADJUSTED families rather than minting a third vocabulary; that module
+# cannot be imported here (it needs pandas, and the */5 lane installs none), so
+# ``tests/test_prophet_live_basis.py`` pins the two against each other instead.
+
+#: The store family the nightly gate and the armed edges are computed on.
+ADJUSTED = "split_and_dividend_adjusted"
+#: A raw vendor print: what the live tape and the quote feed's ``prevClose`` carry, and
+#: what the breadth close caches accrue between rebuilds (``price_ladder`` calls the
+#: same family ``closes_cache_UNADJUSTED``).
+UNADJUSTED = "unadjusted_vendor_print"
+
+#: What a pack entry's ``as_of_close`` is on when the pack did not stamp the name
+#: itself. The store's DOMINANT family, not a universal claim: a pack that stamps
+#: ``price_adjustment`` per name overrides this, and the breadth-cache names are
+#: exactly the ones that need to.
+DEFAULT_PACK_ADJUSTMENT = ADJUSTED
+
+#: What the live quote plane carries, at every rung. ``engine.live_quotes`` reads
+#: Polygon's snapshot (``lastTrade.p`` / ``prevDay.c``) and Yahoo's spark
+#: (``regularMarketPrice`` / ``previousClose``); neither request carries an adjustment
+#: parameter, because neither endpoint has one — a live quote is the nominal print.
+#: Stated rather than converted, on purpose: converting a live quote to the adjusted
+#: basis would put a number on the tape that no exchange ever printed.
+LIVE_QUOTE_ADJUSTMENT = UNADJUSTED
+
+
+def basis_gap_pct(as_of_close: Any, prev_close: Any) -> float | None:
+    """``as_of_close`` against ``prev_close``, in percent. None when either is unusable.
+
+    Both numbers claim to describe the SAME session's close for the SAME name — the
+    pack's is the adjusted store close it armed on, the quote feed's is the vendor's
+    raw previous-session print — so on a name with no distribution between the two
+    reads they agree to the cent, and a gap is the adjustment itself.
+    """
+    try:
+        a, b = float(as_of_close), float(prev_close)
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(a) and math.isfinite(b)) or a <= 0.0 or b <= 0.0:
+        return None
+    return (a / b - 1.0) * 100.0
+
+
+def basis_audit(names: dict[str, dict[str, Any]], quotes: dict[str, Any], *,
+                tol_pct: float) -> dict[str, Any]:
+    """The pack-vs-feed basis assertion, run ONCE at the head of a pass.
+
+    ``{"tol_pct", "checked_n", "unchecked_n", "gaps", "mismatched"}``. ``gaps`` is EVERY
+    measured gap and is what the state machine consumes; ``mismatched`` is the
+    reporting view — the subset past ``tol_pct``, small enough to publish.
+
+    THE TOLERANCE IS APPLIED IN EXACTLY ONE PLACE — ``live_states._resolve_state``,
+    which is handed a name's raw gap and decides. This function reproduces the
+    comparison only to COUNT it for the artifact and the journal line; if it filtered
+    the gaps it handed on, the state machine's own tolerance would be unreachable and a
+    mutation to it would pass every test.
+
+    UNCHECKED IS NOT PASSED. A quote with no usable ``prev_close`` — the heatmap-derived
+    rows carry ``prev_close: None`` by construction — cannot answer the question, so it
+    is COUNTED rather than waved through: the caller publishes ``unchecked_n`` every
+    pass, and a silent "no mismatches" over a feed that stopped carrying previous closes
+    is then impossible to mistake for a clean audit.
+
+    Only PROBED names are asked. An unprobed entry publishes no ``as_of_close`` the
+    evaluator would act on and is already outside ``states``.
+    """
+    gaps: dict[str, float] = {}
+    mismatched: dict[str, float] = {}
+    unchecked = 0
+    try:
+        tol = abs(float(tol_pct))
+    except (TypeError, ValueError):
+        tol = 0.0
+    for tkr, entry in (names or {}).items():
+        if not isinstance(entry, dict) or not entry.get("probed"):
+            continue
+        q = (quotes or {}).get(tkr) or {}
+        gap = basis_gap_pct(entry.get("as_of_close"),
+                            q.get("prev_close") if isinstance(q, dict) else None)
+        if gap is None:
+            unchecked += 1
+            continue
+        gaps[str(tkr)] = gap
+        if tol and abs(gap) > tol:
+            mismatched[str(tkr)] = round(gap, 4)
+    return {"tol_pct": tol, "checked_n": len(gaps), "unchecked_n": unchecked,
+            "gaps": gaps, "mismatched": dict(sorted(mismatched.items()))}
 
 
 def lower_edge(entry: dict[str, Any]) -> float | None:
