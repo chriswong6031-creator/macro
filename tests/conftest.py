@@ -460,11 +460,23 @@ def pytest_sessionfinish(session, exitstatus):
 # emulate it in memory: an emulated cache makes two same-prompt stubbed calls
 # inside one test serve the first reply to the second, breaking tests that
 # stub different replies per call (producer suite). The dedicated roundtrip
-# test opts out by name to exercise the real helpers under tmp_path.
+# tests opt out by name to exercise the real helpers under tmp_path.
+#
+# An opted-out test MUST isolate itself (root=tmp / absolute reply_cache_dir).
+# Keep this set in sync when a roundtrip test is added: an un-listed one reads
+# GREEN while asserting nothing (get is stubbed to always-miss, put to a no-op)
+# — test_w7_llm_determinism.py::test_master_brain_cache_hit sat that way until
+# its check() ledger was gated (2026-08-09).
 # --------------------------------------------------------------------------- #
+_REAL_MB_REPLY_CACHE_TESTS = frozenset({
+    "test_reply_cache_roundtrip_root_aware",   # tests/test_master_brain.py
+    "test_master_brain_cache_hit",             # tests/test_w7_llm_determinism.py
+})
+
+
 @pytest.fixture(autouse=True)
 def _hermetic_master_brain_reply_cache(request, monkeypatch):
-    if request.node.name == "test_reply_cache_roundtrip_root_aware":
+    if request.node.name in _REAL_MB_REPLY_CACHE_TESTS:
         yield
         return
     try:

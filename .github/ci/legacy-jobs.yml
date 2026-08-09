@@ -743,9 +743,13 @@ jobs:
       - name: install deps
         # jinja2 + pyarrow are for the options-screener suite below: the builder imports
         # jinja2 at module scope and reads its inputs from parquet.
-        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
+      - name: options PIT episodes (causal clocks, durable stage, H+60 labels, R2/checkpoint integrity)
+        run: python -m pytest tests/test_options_signal_episode.py -q
+      - name: live-flow PIT producer (RTH admission, stable source IDs, root-scoped state, cycle WAL)
+        run: python -m pytest tests/test_live_flow.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
       # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are
@@ -3659,8 +3663,10 @@ jobs:
           tests/test_biocatalyst_packet_producer.py
           tests/test_biocatalyst_packet_reader.py
           tests/test_biocatalyst_operational_store.py
+          tests/test_biocatalyst_o1b_forward_store.py
           tests/test_biocatalyst_m0a_outcome_family_policy.py
           tests/test_biocatalyst_sponsor_ticker_map.py
+          tests/test_biocatalyst_m0a_clock_activation.py
           tests/test_sector_intelligence_ownership.py -q
       - name: BioCatalyst D0a finite reference integrity
         run: python scripts/verify_biocatalyst_d0a_references.py --reference-integrity
@@ -5234,7 +5240,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: vector allocation surfaces + the calibration ledger and basket pulse they read
-        run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
+        run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_regime_dynamics_null_gaps.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
       - name: basket-turn grading pack + session-stamp heal (forward-ledger audit 2026-08-05)
         run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
@@ -5264,6 +5270,40 @@ jobs:
         run: python -m pytest tests/test_prophet_arena.py -q
       - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
         run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
+      - name: leader-pullback organ (§6.9 R4 — RS-leader reset detection, self-containment + no-authority pins)
+        run: python -m pytest tests/test_us_leader_pullback.py -q
+
+  prophet-anticipation-intake:
+    # ANTICIPATION A1 (status-class admission) + §6.9 R3 (structure-anchored entry
+    # zones, wait_reset, zone-with-expiry-to-starter, the EARLY-TURN starter tier).
+    # Enumerated at BIRTH: the unrun-suite census proved an unnamed suite is genuinely
+    # never executed, and 1,135 of 1,491 suites are already dark — a new acceptance
+    # battery that nothing runs is not an acceptance battery.
+    #
+    # Its OWN job rather than a step on `unrun-vector-*` (which already carries
+    # tests/test_prophet_bridge.py): that job is documented STRUCTURALLY AT-CAP at 15
+    # minutes and has repeatedly timed out on a busy pool with no regression in the
+    # PR. Six of the cases here drive the real `build_prophet.main()` publisher end to
+    # end — ~73 s serial on a fast box, and the whole point of them is that the lane
+    # gate is exercised through the PRODUCTION caller rather than a hand-fed argument —
+    # so adding them to an at-cap job would convert a proof into an unattributable red.
+    #
+    # engine/us_early_turn.py's indicator reads ride the same suite: the module
+    # deliberately owns no arithmetic of its own (it imports confluence_tiers'
+    # StochRSI/RSI-MACD/session-anchor helpers), and one test pins that import so a
+    # local re-derivation fails immediately.
+    if: ${{ false }}
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: anticipation intake (status-class admission, era stamps, entry zones, shadow-ledger lane gate)
+        run: python -m pytest tests/test_prophet_anticipation_intake.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
@@ -6149,3 +6189,32 @@ jobs:
           tests/test_earnings_release_binding.py
           tests/test_edgar_earnings_8k.py
           tests/test_marketing_edgar_earnings_wire.py -q -rs
+
+  group-linked-outsiders:
+    # GR3 of the Group Reads program: filing-linked outsiders per US basket.
+    #
+    # These assertions are the whole guard on an artifact that publishes a named
+    # relationship between two public companies.  The resolver is deliberately
+    # strict — unique near-verbatim registrant match only, no substring, no edit
+    # distance — and the admissibility matrix here is what stops a later "just
+    # loosen it a little" from shipping a wrong edge between two real tickers.
+    # The contract tests pin the frozen v1 key set (an unknown key is a
+    # violation, not a warning), the closed relationship vocabulary (no
+    # customer/supplier/partner/competitor role label the filing cannot ground),
+    # the append-only ledger's immutability, and the honest-null paths that keep
+    # a missing pulse.json or a missing tape from either crashing the nightly or
+    # printing a state it cannot support.
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: group linked outsiders — contract, resolver, states, ledger (GR3)
+        run: >-
+          python -m pytest
+          tests/test_group_linked_outsiders.py -q -rs

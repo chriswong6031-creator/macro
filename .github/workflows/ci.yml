@@ -366,6 +366,18 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      - "engine/live_flow.py"
+      - "tests/test_live_flow.py"
+      # OIP PIT decision/outcome ledger: both the durable R2 source and the
+      # nightly consumer/contracts must trigger the exact adversarial suite.
+      - "engine/options_signal_episode.py"
+      - "scripts/build_options_signal_episode.py"
+      - "scripts/build_polygon_intraday.py"
+      - "contracts/options/options.signal_episode.v1.schema.json"
+      - "contracts/options/options.signal_episode_outcome.v1.schema.json"
+      - "contracts/options/polygon.intraday_price_receipt.v1.schema.json"
+      - "tests/test_options_signal_episode.py"
+      - "tests/test_polygon_intraday.py"
       # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
       # the Scanner-mode screener rows export. All three feed the Terminal/Options
       # workspace, so a silent contract change here shows up as a 404 over there.
@@ -3462,13 +3474,60 @@ jobs:
     # names are the intended required-checks set (ci-pack-0..3) for branch
     # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
-    runs-on: ubuntu-latest
+    # MAIN's proof runs on the idle self-hosted Linux pool; pull requests stay on
+    # ubuntu-latest. This is a CONTROL-PLANE priority fix, not a capacity grab.
+    #
+    # Measured 2026-08-09: main's `ci.yml` proof sat `queued` 30+ minutes behind 133
+    # queued runs and never started, while `pc-render-1..4` (self-hosted, Linux, X64,
+    # `render-linux`) were idle. That single starved run is why ~50 pull requests could
+    # not be re-tested: `merge_on_green.main_proof` answers "is main green on ci-pack-N"
+    # from the newest CONCLUDED ci.yml run on main, so with no fresh proof the
+    # base-inherited-red refresh cannot fire and every armed pull request that inherited
+    # a since-healed red stays blocked. The signal the whole fleet depends on was
+    # queueing behind the fleet — the same priority inversion that put the merge sweeper
+    # 2 hours late until #5095 moved it to this pool.
+    #
+    # Scoped to non-`pull_request` events ON PURPOSE. Pull request CI is 4 packs x ~35
+    # minutes x ~40 PRs/day and would swamp a 4-runner pool; more importantly, this pool
+    # has never run the packs before, so the blast radius of a wrong guess is main's
+    # proof alone (one run, immediately visible, one line to revert) rather than every
+    # PR check in the repo. If a dispatched main baseline goes green here, that is the
+    # evidence needed to widen this to pull requests for real added capacity.
+    #
+    # NOT the macstudio pool: that is the render/nightly lane and is routinely saturated
+    # (CLAUDE.md — render budget is law). `render-linux` is a separate, idle pool.
+    runs-on: >-
+      ${{ github.event_name == 'pull_request'
+          && 'ubuntu-latest'
+          || fromJSON('["self-hosted","render-linux"]') }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
         pack: [0, 1, 2, 3]
     steps:
+      # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
+      # checked out sparsely leaves `core.sparseCheckout=true` behind in the SAME
+      # directory. `actions/checkout@v4` does not clear that when its own
+      # `sparse-checkout` input is absent, so the next job silently gets a partial tree.
+      #
+      # Measured 2026-08-09, the first main baseline on this pool: checkout, setup-python
+      # and setup-node all reported SUCCESS and the pack died 2-3 minutes later on
+      # `scripts/run_ci_pack.py: [Errno 2] No such file or directory`. The sweeper
+      # (#5095) had moved to these same runners and checks out exactly three paths for
+      # speed, so `scripts/` was simply not materialised. A green "Set up job" plus a
+      # missing source file is the signature of an inherited sparse checkout, not of a
+      # broken runner or a bad ref.
+      #
+      # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || true
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+          fi
       - uses: actions/checkout@v4
         with:
           # Keep the complete current working tree because legacy suites inspect
