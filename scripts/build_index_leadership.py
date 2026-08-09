@@ -17,14 +17,18 @@ from __future__ import annotations
 import json
 import logging
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import index_leadership as il
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import index_leadership as il  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 

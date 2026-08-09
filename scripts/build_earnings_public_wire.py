@@ -40,8 +40,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.earnings_narrative.public_wire import (  # noqa: E402
     PUBLIC_WIRE_MANIFEST_SCHEMA,
