@@ -76,8 +76,7 @@ from pathlib import Path
 from typing import Any
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:  # pragma: no cover - import bootstrap
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.marketing import live_verify as LV  # noqa: E402
 from engine.prophet_live import live_states as LS  # noqa: E402

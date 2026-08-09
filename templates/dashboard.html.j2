@@ -15828,9 +15828,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% if (n.get('blowoff') or {}).get('blowoff_risk') %}{% set _mk.rows = _mk.rows + [{'k':'blow','en':'Blow-off risk','zh':'冲顶风险',
             'tip_en':'12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.',
             'tip_zh':'12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。'}] %}{% endif %}
+          {# THE EXTENSION CLAUSE IS CONDITIONAL, because the check it describes does not
+             always run.  Until 2026-08-08 a row with no extension reading was VETOED
+             out of featured, so "price is not extended" was true of every row that
+             carried this chip.  ANTICIPATION v1 replaced that veto with a disclosure
+             (engine/us_board_rank.py — an outage published a featured lane of 0 of 69),
+             so a featured row may now carry `ext_unknown: true` — and on that row the
+             old sentence is a verification the board never performed, asserted in the
+             one place a reader goes to find out what the gate tested.  Plain-word
+             printed null instead (DESIGN_DOCTRINE Law 5): the absence is stated on the
+             same tier as the claim it replaces, in the reader's own words, no slug.
+
+             NOT CURRENTLY RENDERED, and fixed anyway. `_prophet_card.html.j2` carries
+             `_MK_NOTIP = ('feat', 'new')` (operator 2026-08-05 — the featured explainer
+             covered neighbouring cards), so this tip string is built and then dropped
+             on the floor; the sentence a reader actually gets is the board footnote
+             below, which is fixed too. Left correct rather than deleted because the
+             suppression is a layout decision that can be revisited, and a string that
+             comes back wrong is worse than one that comes back right. Do NOT read this
+             branch as a shipped surface — if the per-row disclosure is wanted on the
+             card, it needs a visible carrier, which is a design call, not a copy edit. #}
+          {% set _xu = n.get('ext_unknown') %}
           {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
-            'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor) and price is not extended. Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
-            'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+            'tip_en':'One of today’s top picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor)' ~ ('. How far this name has already run is unknown tonight — no extension reading came through for it, so that check was not scored.' if _xu else ' and price is not extended.') ~ ' Capped at 12 names and 4 per sector, so fewer can show. Priority order, not a return forecast.',
+            'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）' ~ ('。价格拉伸程度暂无读数 —— 今晚没有取到该股的读数，这一条未参与判定。' if _xu else '、价格未过度拉伸。') ~ '全板最多12只、每个板块最多4只，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
           {% if n.get('new') %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
             'tip_en':'This signal fired in tonight’s run — the name was not on the board yesterday.',
             'tip_zh':'该信号在今晚这一轮才触发 — 昨天不在榜上。'}] %}{% endif %}
@@ -16044,8 +16065,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          load-bearing: "edge above zero (an absolute floor)" describes the gate the
          engine runs; the older "above the board's midpoint" described a cross-sectional
          rank it never ran, and promised the opposite of the real gate on a weak board.
-         tests/test_us_board_priority_ui.py pins both sentences here. #}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), price not extended, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+         tests/test_us_board_priority_ui.py pins both sentences here.
+
+         AND THE EXTENSION CLAUSE IS NOW CONDITIONAL, for the same reason as the per-card
+         chip above: since ANTICIPATION v1 a featured row may carry no extension reading
+         at all, so "price not extended" can no longer be stated flatly for the shelf.
+         The count is read off the artifact's own receipt (ranking.ext_unknown_coverage,
+         recomputed every build) rather than hard-coded — a board-wide claim about
+         tonight's evidence must be measured on tonight's board. Zero unknown featured
+         rows and the sentence is exactly what it was; this is the common case (the
+         08-06 outage put it at 100%, the live board at 0).
+
+         THIS FOOTNOTE IS THE ONLY RENDERED HOME for that disclosure, so it must not
+         point at another one. The ★ Featured chip's tooltip carries the same split
+         (see the chip above) but `_prophet_card.html.j2` suppresses it — `_MK_NOTIP`
+         holds 'feat' since operator 2026-08-05 — so a sentence here promising that
+         "each says so on its card" would be a contract nothing renders. State the
+         count, claim nothing about where else to look. #}
+      {% set _xuc = ((_su.get('ranking') or {}).get('ext_unknown_coverage') or {}) %}
+      {% set _xfu = _xuc.get('featured_with_unknown') or 0 %}
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green glow is a featured attention shelf, not an admission limit: fresh signal, entry window open, edge above zero (an absolute floor), {% if _xfu %}price not extended wherever tonight’s extension reading came through ({{ _xfu }} of the featured names have none at all, so for those nothing was checked){% else %}price not extended{% endif %}, up to 12 names and 4 per sector. Every qualifying name remains on this ranked, searchable board, and US Prophet evaluates the full eligible set. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。绿色高亮只是精选关注层，并非准入上限：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、{% if _xfu %}取到拉伸读数的个股价格未过度拉伸（另有{{ _xfu }}只精选个股完全没有读数，这一项未作检查）{% else %}价格未过度拉伸{% endif %}，最多12只、每个板块最多4只。所有符合条件的股票都会保留在这个可排序、可搜索的完整榜单中，US Prophet 会评估全部合格候选。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}

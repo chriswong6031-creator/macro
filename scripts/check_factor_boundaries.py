@@ -637,7 +637,7 @@ def _check_a(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
 
 
 def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Violation]:
-    """FAIL if 'allowed_actions' appears outside the allowlist."""
+    """FAIL if 'allowed_actions' appears outside its read/emission boundary."""
     violations: list[Violation] = []
     _TOKEN = "allowed_actions"
 
@@ -863,6 +863,38 @@ def _run_selftest(root: Path) -> int:
         )
     else:
         print("  [OK] check-b-enforcement: contract validator is enforcement-only")
+
+    # --- (b emit-only): approved producer writes pass, reads on the same line red --
+    synthetic_b_emit = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': {'may_rank': False}}\n"
+            "payload.update(allowed_actions={'may_trade': False})\n"
+        ),
+    }
+    if _check_b(root, extra_files=synthetic_b_emit):
+        errors.append("SELFTEST FAIL (b-emit): approved descriptive emissions were rejected")
+    else:
+        print("  [OK] check-b-emit: exact descriptive emission spans permitted")
+
+    synthetic_b_mixed = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': source['allowed_actions']}\n"
+        ),
+    }
+    if not _check_b(root, extra_files=synthetic_b_mixed):
+        errors.append("SELFTEST FAIL (b-mixed): same-line behavioral read was hidden by key emission")
+    else:
+        print("  [OK] check-b-mixed: same-line read remains a violation")
+
+    synthetic_b_parse = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': {'may_rank': False}\n"
+        ),
+    }
+    if not _check_b(root, extra_files=synthetic_b_parse):
+        errors.append("SELFTEST FAIL (b-parse): malformed emitter source did not fail closed")
+    else:
+        print("  [OK] check-b-parse: malformed emitter source fails closed")
 
     # --- (c): forbidden field in state builder (colon form) --
     synthetic_c = {

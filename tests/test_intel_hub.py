@@ -157,16 +157,19 @@ def test_policy_conflict_flag():
 # 4. sector heat + command structure + degrade
 # --------------------------------------------------------------------------- #
 def test_peer_confirmation_theme_wide_vs_isolated():
-    # three bullish high-conviction names in the same basket → theme_wide; a lone one → isolated
+    # three bullish high-conviction names in the same basket → theme_wide; a lone one → isolated.
+    # Ticker literals must be REAL US-roster symbols: build() runs the universe-membership
+    # gate against the live symbol_directory roster, and an invented name is excluded
+    # exactly like a foreign listing (PLOW = Douglas Dynamics, alone in its basket).
     def n_bask(b):
         d = _news("pos"); d["baskets"] = [b]; return d
     b = _bundle({"AAA": n_bask("semis"), "BBB": n_bask("semis"), "CCC": n_bask("semis"),
-                 "LONE": n_bask("solo_theme")},
-                [_sig(t, 85) for t in ["AAA", "BBB", "CCC", "LONE"]],
-                [{"ticker": t, "state": "CONFIRMED_UP", "edge_score": 80} for t in ["AAA", "BBB", "CCC", "LONE"]])
+                 "PLOW": n_bask("solo_theme")},
+                [_sig(t, 85) for t in ["AAA", "BBB", "CCC", "PLOW"]],
+                [{"ticker": t, "state": "CONFIRMED_UP", "edge_score": 80} for t in ["AAA", "BBB", "CCC", "PLOW"]])
     hub = H.build(b, None, {}, today=_TODAY)
     aaa = next(d for d in hub["command"] if d["ticker"] == "AAA")
-    lone = next(d for d in hub["command"] if d["ticker"] == "LONE")
+    lone = next(d for d in hub["command"] if d["ticker"] == "PLOW")
     assert aaa["peer_confirm"] >= 2 and "theme_wide" in aaa["flags"]
     assert lone["peer_confirm"] == 0 and "isolated" in lone["flags"]
     assert hub["counts"]["theme_wide"] >= 3

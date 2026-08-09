@@ -308,32 +308,46 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_is_a_few_capacity_split_jobs_not_eighty_six() -> None:
+def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 on 2026-07-28 to halve time-to-green); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs, never one
-    # job per legacy suite (86 VMs), and the matrix must
+    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
+    # runners, never one job per legacy suite (86 VMs), and the matrix must
     # agree with the --pack-count handed to the runner or some packs' jobs
     # would execute nowhere.
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    # Live hosted pickup contradicted the expected enterprise ceiling. PR packs split
-    # between hosted and render-linux, while dispatched main proofs use render-linux.
-    # The macstudio render/nightly pool stays excluded.
+    # EVERY event runs on the hosted pool — one `runs-on`, no event-dependent routing,
+    # so main's baseline and a pull request prove the packs the SAME way.
+    #
+    # This replaces the 2026-08-09 self-hosted detour. Main's proof was briefly routed
+    # to `["self-hosted","render-linux"]` because it sat `queued` 30+ minutes behind 133
+    # queued runs while that pool idled, and a starved main proof blocks the whole fleet
+    # (`merge_on_green.main_proof` reads the newest CONCLUDED ci.yml run on main, so
+    # without one the base-inherited-red refresh cannot fire). The repository then moved
+    # to the MastermindX enterprise org and hosted concurrency went 40 -> 180; the queue
+    # fell from 103 runs to 7. There is nothing left to escape, and the detour cost more
+    # than it saved: `render-linux` is FOUR runners shared with render.yml,
+    # engine-render.yml and merge-on-green.yml, so main's four packs took the entire
+    # pool and starved the sweeper that merges every armed pull request.
+    assert pack["runs-on"] == "ubuntu-latest"
+    # The self-hosted pools are the render/nightly lanes and must never absorb CI packs.
     runs_on = " ".join(str(pack["runs-on"]).split())
-    assert "github.event_name == 'pull_request'" in runs_on
-    assert "matrix.pack < 2" in runs_on
-    assert "ubuntu-latest" in runs_on
-    assert "render-linux" in runs_on
-    assert "self-hosted" in runs_on
     assert "macstudio" not in runs_on
+    assert "render-linux" not in runs_on
+    assert "self-hosted" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
-    max_parallel = " ".join(str(pack["strategy"]["max-parallel"]).split())
-    assert "github.event_name == 'pull_request'" in max_parallel
-    assert "&& 4 || 2" in max_parallel
+    # No `max-parallel`: it existed only to stop main's packs from taking all four
+    # `render-linux` runners. With no shared pool to protect, throttling would only
+    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
+    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
+    assert "max-parallel" not in pack["strategy"], (
+        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
+        "ceiling is account-wide and this key cannot raise it"
+    )
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
@@ -434,23 +448,14 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     workflow = _yaml(FENCES)
     assert workflow["permissions"]["checks"] == "write"
     jobs = workflow["jobs"]
+    assert set(jobs) == {
+        "fence-pack",
+        "fork-self-mod-fence",
+        "fork-capability-broker",
+        "fork-grader-manifest",
+    }
     pack = jobs["fence-pack"]
-    assert pack["runs-on"] == ["self-hosted", "render-linux"]
-    clear_idx, clear = next(
-        (idx, step)
-        for idx, step in enumerate(pack["steps"])
-        if step.get("name")
-        == "clear any sparse checkout a sibling job left in this shared workspace"
-    )
-    checkout_idx = next(
-        idx
-        for idx, step in enumerate(pack["steps"])
-        if str(step.get("uses", "")).startswith("actions/checkout@")
-    )
-    assert clear_idx < checkout_idx
-    assert clear["if"] == "runner.environment != 'github-hosted'"
-    assert "sparse-checkout disable" in clear["run"]
-    assert "github.workspace" in clear["run"]
+    assert pack["runs-on"] == "ubuntu-latest"
     checkout = next(
         step
         for step in pack["steps"]
@@ -478,6 +483,7 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     ):
         fallback = jobs[job_id]
         assert "head.repo.full_name != github.repository" in fallback["if"]
+        assert fallback["runs-on"] == "ubuntu-latest"
         assert context in fallback["name"]
         assert f"fork-{context}-unused" in fallback["name"]
 

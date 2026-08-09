@@ -45,6 +45,25 @@ lanes:
           graders (grade_breadth_divergence / grade_policy_calendar /
           grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
           nightly sole-advancer law is untouched by the split.
+      - id: backfill_yahoo_universe
+        module: scripts.backfill_yahoo_universe
+        args: [--cap, "400", --budget-s, "480"]
+        note: >
+          Off-render price-coverage backfill for the Intelligence Hub ledger
+          universe (masterplan §4 item 2b). collectors/yahoo.py fetches the CONFIG
+          universe while the hub grades the SIGNAL LEDGER, and every hub grader
+          prices names from data/yahoo/<T>.parquet alone (the breadth cache is
+          split-UNADJUSTED). Measured 2026-08-08: 603 of 7,711 ledger tickers had a
+          parquet, desk_grader 20d coverage 6.2%, and 7 of that night's 30 Command
+          names were unpriceable. Incremental and resumable — the needed set is
+          recomputed from disk every run, state in data/yahoo_backfill_state.json —
+          and bounded twice (--cap names, --budget-s wall clock, plus a 12-minute
+          step timeout) so it can never eat the collect job's remaining budget.
+          Placed in the collect tail because it writes into data/yahoo and must
+          land before "commit market data"; it is deliberately NOT in that step's
+          named-steps gate (purely additive: it only ever creates a parquet for a
+          ledger ticker that had none). Non-fatal, exits 0 by design; the outcome
+          rides on line-start ::notice / ::warning annotations.
       - id: audit_massive_store
         module: scripts.audit_massive_store
         note: >

@@ -21,8 +21,10 @@ HONESTY:
 """
 from __future__ import annotations
 import sys, math, warnings, tempfile
+from pathlib import Path
 warnings.filterwarnings("ignore")
-sys.path.insert(0, ".")
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
 
 import numpy as np
 import pandas as pd
