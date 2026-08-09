@@ -238,6 +238,12 @@ PRIORITY_MIN_SCORED = 20
 # A lane's forward read is printed only once it has this many graded rows behind it.
 PRIORITY_MIN_LANE_N = 10
 
+# --- G. entry_status re-measurement (ANTICIPATION §6.6) ---------------------------------
+# The entry-value ladder's evidence loop. Named here only so a degraded row can name its
+# input; every definition, threshold and shape lives in engine.us_entry_status_remeasure,
+# which is where the block is computed.
+ENTRY_STATUS_LEDGER_REL = "data/us_board_ledger/retro_grades.parquet"
+
 # excluder vocabulary (stable strings — the histogram keys downstream reads)
 EXC_ELIGIBLE = "ELIGIBLE"
 EXC_INSUFFICIENT = "insufficient_history"
@@ -1655,6 +1661,59 @@ def priority_score_row_fields(doc: dict) -> dict:
     return out
 
 
+# --- G. entry_status re-measurement (ANTICIPATION §6.6) ---------------------------------
+def entry_status_scorecard(root: Path = ROOT, degraded: list[dict] | None = None) -> dict:
+    """The read-only ``entry_status`` block (PROPHET US ANTICIPATION §6.6).
+
+    The STANDING evidence loop for the patience-first entry-value ladder.  The A2 entry leg
+    is intended to ship STATUS-NEUTRAL after the first US run did not reproduce the
+    historical CN adjusted-return ordering.  The current US read is short-horizon,
+    legacy-selection, price-basis-mixed and vintage-confounded, with no ``bounce_wait``
+    marks at the patience horizon.  The CN rates remain non-authoritative cross-market
+    context: per rewritten #4972 they are not nominal-tick or exact legal-limit evidence,
+    and they grant no direct status/ranking/Prophet authority.  This table keeps accruing so
+    an ordering can only ever be re-introduced against a clean US record rather than a
+    memory.  It confers nothing on its own: the map is edited only in a separately reviewed
+    change.
+
+    All of it lives in :mod:`engine.us_entry_status_remeasure`; this wrapper
+    only supplies the miss-audit's root and degraded list, exactly as the ``priority_score``
+    block delegates to :mod:`engine.us_prophet_grades`.
+
+    Imported lazily and fail-soft for the same reason its sibling is: the minimal-deps
+    lanes that build this audit must degrade to a named null rather than raise.
+    """
+    deg = degraded if degraded is not None else []
+    try:
+        from engine import us_entry_status_remeasure as uesr
+    except Exception as exc:  # noqa: BLE001 — minimal-deps lanes
+        deg.append({"input": ENTRY_STATUS_LEDGER_REL, "severity": "unexpected",
+                    "reason": f"entry-status re-measurement module unavailable: {exc}"})
+        return {"tier": "ops_telemetry", "available": False,
+                "null_reason": f"entry-status re-measurement module unavailable: {exc}"}
+    try:
+        return uesr.scorecard(root, deg)
+    except Exception as exc:  # noqa: BLE001
+        deg.append({"input": ENTRY_STATUS_LEDGER_REL, "severity": "unexpected",
+                    "reason": f"entry-status re-measurement failed: {exc} — the block is "
+                              f"null, not zero"})
+        return {"tier": "ops_telemetry", "available": False,
+                "null_reason": f"entry-status re-measurement failed: {exc}"}
+
+
+def entry_status_row_fields(doc: dict) -> dict:
+    """The §6.6 table's headline cells, flattened for the forward-log row.
+
+    Delegates to the owning module so the flat column set has ONE definition; null-safe on
+    a doc with no block, and on a lane where the module could not be imported at all.
+    """
+    try:
+        from engine import us_entry_status_remeasure as uesr
+    except Exception:  # noqa: BLE001 — minimal-deps lanes
+        return {"entry_status_available": False}
+    return uesr.row_fields(doc)
+
+
 # --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
@@ -1708,6 +1767,7 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
                 with_cascade_basis: bool = True, with_name_score: bool = True,
                 with_scan_tier: bool = True,
                 with_priority_score: bool = True,
+                with_entry_status: bool = True,
                 with_baskets: bool = True) -> dict:
     """Compute the full audit document. Pure read: writes nothing."""
     degraded: list[dict] = []
@@ -1766,6 +1826,13 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     priority_score = (priority_score_scorecard(root, degraded) if with_priority_score else
                       {"tier": "ops_telemetry", "available": False,
                        "null_reason": "not computed (with_priority_score=False)"})
+    # §6.6 ANTICIPATION: entry-status -> forward outcome, the evidence loop behind the
+    # neutral no-claim default. A pure read of an already-graded US ledger — it regrades
+    # nothing and writes nothing. The historical CN adjusted-return rates are labelled
+    # context only and cannot become exact legal-limit or automatic ranking authority.
+    entry_status = (entry_status_scorecard(root, degraded) if with_entry_status else
+                    {"tier": "ops_telemetry", "available": False,
+                     "null_reason": "not computed (with_entry_status=False)"})
 
     days = [r["days_eligible"] for r in runner_rows if r.get("days_eligible") is not None]
     never = sum(1 for d in days if d == 0)
@@ -1836,6 +1903,7 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
         "name_score_scorecard": name_score,
         "scan_tier": scan_tier,
         "priority_score_scorecard": priority_score,
+        "entry_status_scorecard": entry_status,
         "top63_runners": runner_rows,
         "top21_runners": fast_rows,
         "eligible_today": cascade_elig,
@@ -2095,6 +2163,7 @@ def summary_row(doc: dict) -> dict:
         **name_score_row_fields(doc),
         **scan_tier_row_fields(doc),
         **priority_score_row_fields(doc),
+        **entry_status_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
     }
 
@@ -2330,6 +2399,15 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
                       f"{'  [THIN]' if h.get('thin') else ''} {class_txt}")
     elif ps:
         print(f"  priority_score: null — {ps.get('null_reason')}")
+    # §6.6: the entry-status table renders itself — the owning module holds the one
+    # definition of how its cells read, so this file never restates them.
+    try:
+        from engine import us_entry_status_remeasure as _uesr
+        for line in _uesr.summary_lines(doc.get("entry_status_scorecard")):
+            print(line)
+    except Exception:  # noqa: BLE001 — a summary print must never fail a nightly
+        es = doc.get("entry_status_scorecard") or {}
+        print(f"  entry_status: null — {es.get('null_reason') or 'unavailable'}")
     if doc["degraded"]:
         print(f"  DEGRADED ({len(doc['degraded'])}):")
         for d in doc["degraded"]:

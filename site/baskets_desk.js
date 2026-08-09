@@ -203,6 +203,18 @@ function termStrip(t){
   return `<div class="termstrip" title="descriptive — a shape/fragility read, not a forecast">${cells}
     <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
 }
+// reasonLine(x) — the " · "-joined score reasons, bilingual.
+// engine/theme_scoring.py publishes `reasons` (EN) and a parallel `reasons_zh` built
+// fragment-by-fragment, so the two lists are the same length and order by construction.
+// A payload built before reasons_zh existed (or an engine path that skipped it) falls
+// back to the English list in BOTH slots — English is a visible degrade, a blank line
+// is not. Consumed by the theme card and every act-now row.
+function reasonLine(x){
+  const en=(x&&x.reasons)||[];
+  if(!en.length) return '';
+  const zh=(x&&x.reasons_zh&&x.reasons_zh.length===en.length)?x.reasons_zh:en;
+  return L(esc(en.join(' · ')),esc(zh.join(' · ')));
+}
 function themeCard(t){
   const lc=labelColor(t.label);
   const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
@@ -262,6 +274,7 @@ function themeCard(t){
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
     ${dc?`<div class="txrow" style="margin:2px 0 4px">${dc}</div>`:''}
+    ${grCardChips(t.id)}
     <div class="subrow">
       <span>#${t.rank}</span>
       ${recoChip(t)}
@@ -279,7 +292,7 @@ function themeCard(t){
         <span class="tpill ${obc}" title="overbought / extension">${L('OB','超买')} ${esc(ob.band||'—')}</span>
         ${flags.join('')}
       </div>
-      <div class="treason">${esc((t.reasons||[]).join(' · '))}</div>
+      <div class="treason">${reasonLine(t)}</div>
       <div class="tstats">
         <span class="tpill">${L('above 50d','站上50日')} <b>${b.pct50==null?'—':Math.round(b.pct50*100)+'%'}</b></span>
         <span class="tpill">${L('+3% / −3%','+3% / −3%')} <b class="pos">${im.up3||0}</b>/<b class="neg">${im.down3||0}</b></span>
@@ -293,11 +306,98 @@ function themeCard(t){
     </details>
   </div>`;
 }
+/* ── GR1: group-pulse chips + a disclosed ordering rule ─────────────────────────
+   Per-card: how the group's participation CHANGED (broadening / steady / narrowing /
+   quiet) and how many members are actually moving. Plus one alternative ordering of the
+   desk, stated as a RULE over named legs and printed on the page — never a composite,
+   rank or heat number (R-TIL-3). Context tier: nothing here gates, sizes or ranks a
+   position, and the default desk order is untouched until the reader asks for the other
+   one. pulse.json is a US-only artifact; other boards never fetch it. */
+var GPULSE=null, GR_ORDER=false;
+var GR_CHG={strengthening:['Broadening','扩散中','↑'], steady:['Steady','持平','→'],
+            cooling:['Narrowing','收窄中','↓'], quiet:['Quiet','安静','·']};
+function grPulseOf(id){ return (GPULSE&&GPULSE[id])||null; }
+// The artifact is keyed by basket_id, so a board only lights up when its OWN ids are in
+// it. Today that is the US roster (GR0); the regional twins land in a later wave and need
+// no code change here — which is why this is an id check and not a market check.
+function grPulseCovers(j){
+  var all=(THEME&&THEME.themes)||[];
+  for(var i=0;i<all.length;i++){ if(all[i]&&j[all[i].id]) return true; }
+  return false;
+}
+// Chips for one desk card. Absent pulse row (a basket the nightly could not cover) → nothing.
+function grCardChips(id){
+  var p=grPulseOf(id); if(!p) return '';
+  var chg=((p.episode||{}).state_change)||'quiet', w=GR_CHG[chg]||GR_CHG.quiet;
+  var pa=p.participation||{}, n=pa.activity_n, nc=p.n_covered, out=[];
+  var tipEn='How the number of members moving unusually changed against the sessions before it. Description of participation only — never a buy or sell read.';
+  var tipZh='与此前几个交易日相比，出现异动的成分股数量如何变化。仅描述参与度，不构成买卖判断。';
+  out.push('<span class="gpr-chg'+(chg==='strengthening'||chg==='cooling'?' on':'')+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'"><span class="g">'+w[2]+'</span>'+L(esc(w[0]),esc(w[1]))+'</span>');
+  if(n!=null&&nc!=null){
+    var mEn='A member counts as moving when its move against SPY is large versus its own last 63 sessions, or its volume runs at least 1.5x its own 63-day median.';
+    var mZh='当某只成分股对冲SPY后的涨跌明显大于其自身近63个交易日的常态，或成交量至少达到自身63日中位数的1.5倍时，计为「在动」。';
+    out.push('<span class="gpr-mv" data-tip-en="'+esc(mEn)+'" data-tip-zh="'+esc(mZh)+'">'+L('<b>'+n+'</b> of <b>'+nc+'</b> moving','<b>'+nc+'</b> 只中 <b>'+n+'</b> 只在动')+'</span>');
+  }
+  return '<div class="gpr-row">'+out.join('')+'</div>';
+}
+// The disclosed ordering rule. Themes with no pulse row keep their desk order, last.
+var GR_CHG_RANK={strengthening:0, steady:1, cooling:2, quiet:3};
+function grDeskThemes(){
+  var all=(THEME&&THEME.themes)||[];
+  if(!GR_ORDER||!GPULSE) return all;
+  return all.map(function(t,i){return {t:t,i:i};}).sort(function(a,b){
+    var pa=grPulseOf(a.t.id), pb=grPulseOf(b.t.id);
+    if(!pa&&!pb) return a.i-b.i;
+    if(!pa) return 1;
+    if(!pb) return -1;
+    var ca=GR_CHG_RANK[(pa.episode||{}).state_change], cb=GR_CHG_RANK[(pb.episode||{}).state_change];
+    if(ca==null) ca=3; if(cb==null) cb=3;
+    if(ca!==cb) return ca-cb;
+    var sa=(pa.participation||{}).activity_share, sb=(pb.participation||{}).activity_share;
+    if((sa==null?-1:sa)!==(sb==null?-1:sb)) return (sb==null?-1:sb)-(sa==null?-1:sa);
+    var ga=(pa.direction||{}).agreement_pct, gb=(pb.direction||{}).agreement_pct;
+    if((ga==null?-1:ga)!==(gb==null?-1:gb)) return (gb==null?-1:gb)-(ga==null?-1:ga);
+    return a.i-b.i;
+  }).map(function(x){return x.t;});
+}
+// initShowMore caches its child list and marks the grid done, so a re-ordered desk has to
+// hand it a clean slate or the row cap keeps hiding the OLD positions.
+function grResetShowMore(){
+  var g=document.getElementById('theme-desk'); if(!g) return;
+  var sib=g.nextElementSibling;
+  if(sib&&sib.classList&&sib.classList.contains('sm-bar')) sib.remove();
+  try{ delete g.dataset.smInit; }catch(e){ g.removeAttribute('data-sm-init'); }
+}
+function grOrderBar(){
+  var host=document.getElementById('gr-order'); if(!host) return;
+  if(!GPULSE){ host.innerHTML=''; return; }
+  var b=function(on,en,zh,val){
+    return '<button type="button" class="gpr-ord-b'+(on?' on':'')+'" aria-pressed="'+(on?'true':'false')+'" data-gr-ord="'+val+'">'+L(esc(en),esc(zh))+'</button>';};
+  host.innerHTML='<div class="gpr-ord"><span class="gpr-ord-k">'+L('Order','排序')+'</span>'
+    +b(!GR_ORDER,'Desk default','看板默认','0')+b(GR_ORDER,'Group pulse','整体动向','1')
+    +'<span class="gpr-ord-rule">'+L(
+      'Group pulse orders by: state change, then breadth of movement, then agreement — no composite score. Themes with no read tonight keep their desk order, at the end.',
+      '「整体动向」的排序依据：参与度变化，其次是在动成分股的广度，再次是方向一致度 — 不使用任何综合评分。今晚没有读数的主题保持看板顺序，排在最后。')
+    +'</span></div>';
+  host.querySelectorAll('[data-gr-ord]').forEach(function(el){
+    el.onclick=function(){ var v=(el.getAttribute('data-gr-ord')==='1');
+      if(v===GR_ORDER) return; GR_ORDER=v; renderThemeDesk(); };
+  });
+}
+function renderGroupPulse(){
+  fetch('basketdata/pulse.json',{cache:'no-cache'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){ if(!j||!grPulseCovers(j)) return;   // none of THIS board's baskets — stay put
+      GPULSE=j; renderThemeDesk(); })
+    .catch(function(){/* absent before the first nightly — no chips, no console noise */});
+}
+
 function renderThemeDesk(){
   const sec=document.getElementById('theme-desk-section');
   if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
-  document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
+  grResetShowMore();
+  document.getElementById('theme-desk').innerHTML=grDeskThemes().map(themeCard).join('');
   const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+  try{ grOrderBar(); }catch(e){}
   // cap the freshly-built desk at 3 rows behind a "show more" (theme.js, idempotent).
   try{ if(window.initShowMore) window.initShowMore(); }catch(e){}
 }
@@ -310,12 +410,24 @@ function renderMacroCtx(){
   const empty=!m.quad_name&&!m.quad&&(!m.fed_dir||m.fed_dir==='unknown')&&!m.nfci_state&&!m.cycle&&!m.dollar_regime&&!m.bond_cycle;
   if(empty){ if(el) el.style.display='none'; return; }
   if(el) el.style.display='';
-  const item=(en,zh,v)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${esc(v==null?'—':v)}</b></span>`;
+  // Both the LABEL and the VALUE are bilingual. Every value here is a closed enum whose
+  // Chinese twin ships alongside it from engine/theme_scoring.py `_macro_context`
+  // (quad_name_zh / cycle_zh / fed_dir_zh / nfci_state_zh / nfci_trend_zh /
+  // dollar_regime_zh / bond_cycle_zh). Missing twin ⇒ show the English in both slots
+  // (visible degrade); missing value ⇒ the "—" placeholder, which is language-neutral.
+  const val=(v,vz)=>v==null||v===''?'—':L(esc(v),esc(vz==null||vz===''?v:vz));
+  const item=(en,zh,v,vz)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${val(v,vz)}</b></span>`;
+  // NFCI prints "state / trend"; compose each language separately so the slash-joined
+  // pair never mixes a Chinese state with an English trend.
+  const nfciTxt=(s,tr)=>(s||'—')+(tr?(' / '+tr):'');
+  const nfciEn=nfciTxt(m.nfci_state,m.nfci_trend);
+  const nfciZh=nfciTxt(m.nfci_state_zh||m.nfci_state,m.nfci_trend_zh||m.nfci_trend);
   document.getElementById('macro-ctx').innerHTML=
-    `<span>${L('Macro backdrop','宏观背景')}: <b>${esc(m.quad_name||m.quad||'—')}</b></span>`
-    +item('cycle','周期',m.cycle)+item('Fed','美联储',m.fed_dir)
-    +item('NFCI','NFCI',(m.nfci_state||'—')+(m.nfci_trend?(' / '+m.nfci_trend):''))
-    +item('USD','美元',m.dollar_regime)+item('bonds','债券',m.bond_cycle);
+    `<span>${L('Macro backdrop','宏观背景')}: <b>${val(m.quad_name||m.quad,m.quad_name_zh||m.quad_name||m.quad)}</b></span>`
+    +item('cycle','周期',m.cycle,m.cycle_zh)+item('Fed','美联储',m.fed_dir,m.fed_dir_zh)
+    +item('NFCI','NFCI',nfciEn,nfciZh)
+    +item('USD','美元',m.dollar_regime,m.dollar_regime_zh)
+    +item('bonds','债券',m.bond_cycle,m.bond_cycle_zh);
 }
 function renderRotation(){
   const sec=document.getElementById('rotation-section');
@@ -368,14 +480,14 @@ function renderActNow(){
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
+      <span class="anwhy muted sm">${reasonLine(x)}</span>
       <span class="ansc">${x.score}</span></a>`;};
   // wait-for-a-pullback rows: same reco verb (muted) + the honest per-theme reason.
   const rowWait=x=>{const ac=actColor(x.action);
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]};opacity:.72">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
+      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):reasonLine(x)}</span>
       <span class="ansc">${x.score}</span></a>`;};
   // W8-R5: reduce/avoid rows get dual-chip when tape is TURNING/CONFIRMED (FT-R1).
   const rowReduce=x=>{const ac=actColor(x.action);
@@ -387,7 +499,7 @@ function renderActNow(){
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
       ${dc||tc}
-      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
+      <span class="anwhy muted sm">${reasonLine(x)}</span>
       <span class="ansc">${x.score}</span></a>`;};
   const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
   // MLC-W2b: conflicted shelf — in favour on own read, but sector view says Reduce.
@@ -397,7 +509,7 @@ function renderActNow(){
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]};opacity:.72">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
+      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):reasonLine(x)}</span>
       <span class="ansc">${x.score}</span></a>`;};
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
@@ -495,7 +607,7 @@ function renderRegimeSizing(){
   const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
   const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
   const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
-  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
@@ -643,4 +755,4 @@ function deskBoot(){ try{ renderSleeveChip(); }catch(e){} try{ renderActNow(); }
   try{ renderMacroCtx(); }catch(e){}
   try{ renderThemeDesk(); }catch(e){} try{ renderConcentration(); }catch(e){}
   try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){}
-  try{ renderStanceChips(); }catch(e){} }
+  try{ renderStanceChips(); }catch(e){} try{ renderGroupPulse(); }catch(e){} }

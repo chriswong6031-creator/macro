@@ -952,7 +952,7 @@
     model: ['deciding what to look up next', '决定接下来查什么'],
     synthesis: ['putting the pieces together', '把各条线索拼起来'],
     writing: ['turning it into plain words', '用平实的话写出来'],
-    review: ["checking it against the desk's rules", '按台席规则复核']
+    review: ["checking it against the desk's rules", '按我们的规则复核']
   };
 
   /* ── DOM ─────────────────────────────────────────────────────────────── */
@@ -1021,7 +1021,7 @@
                      actually changes, in plain words, with its price stated rather than
                      discovered. aria-hidden + the aria-label above keep the accessible
                      name at "Deep Research" instead of a paragraph. */
-                  '<span class="mmb-rtip" aria-hidden="true"><b>' + LB('A deeper pass on the same desk', '同一台席，更深的一遍') + '</b>' +
+                  '<span class="mmb-rtip" aria-hidden="true"><b>' + LB('A deeper pass on the same desk', '同一批资料，再深挖一遍') + '</b>' +
                   LB('It can look up around twice as many sources, then writes a structured read that ends on a clear stance.',
                      '可查阅约两倍的资料，并写成结构化研判，最后给出明确立场。') +
                   '<span class="cost">' + LB('Runs on Pro · uses one Pro message', '走 Pro 通道 · 消耗一条 Pro 消息') + '</span></span>' +

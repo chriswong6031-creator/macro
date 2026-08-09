@@ -1837,6 +1837,188 @@ class TestOutboxActivityPayload:
         assert it["status"] == "failed"
 
 
+class TestEffectiveAttemptsInThePayload:
+    """THE CONSOLE MUST SHIP THE COUNT THE CAP ACTUALLY SPENDS.
+
+    Since #4992 ``apply_decisions`` charges ``MAX_POST_ATTEMPTS`` against
+    ``effective_attempts`` — real failures only — because a rate-limit requeue
+    and a subscription-lock pass-through both walk THROUGH ``failed`` without
+    any verdict on the copy. The panel kept shipping the RAW count alone, so an
+    item that rode nine 429s through the Buffer outage rendered "attempt 9 of
+    2 — spent" while Approve would in fact have re-armed it: the console lied to
+    the operator in precisely the scenario it exists for.
+
+    Every fixture below pins the two numbers APART. That inequality IS the test:
+    a regression that wires the panel's ``effective_attempts`` back to the raw
+    count makes them equal and fails here, where an equal-count fixture would
+    have passed on the broken code.
+
+    Note prefixes are IMPORTED from the classifier's own module. A mirrored
+    literal drifts the day the publisher changes its wording, and the drifted
+    half reads zero in silence.
+    """
+
+    def _seed_failed(self, tmp_path, notes, *, text="Post that met the backend."):
+        """One item walked approved -> (failed -> approved)* -> failed.
+
+        Ends AT ``failed`` — the shape a sweep actually leaves behind, and the
+        only shape the review rail, the triage split and the history panel all
+        see. ``now`` is the module's fixed clock so nothing here is same-second
+        flaky.
+        """
+        from engine.marketing.outbox import enqueue, transition
+        item = _make_ob_item(tmp_path, text=text)
+        iid = item["id"]
+        enqueue(item, root=tmp_path)
+        assert transition(iid, "approved", actor="t", root=tmp_path,
+                          now=_FIXED_NOW_OB)
+        for i, note in enumerate(notes):
+            assert transition(iid, "failed", actor="publisher", root=tmp_path,
+                              note=note, now=_FIXED_NOW_OB)
+            if i < len(notes) - 1:
+                assert transition(iid, "approved", actor="publisher",
+                                  root=tmp_path,
+                                  note="requeued for the next sweep",
+                                  now=_FIXED_NOW_OB)
+        return iid
+
+    def _item_row(self, payload, iid):
+        for acct in payload["accounts"]:
+            for row in acct["items"]:
+                if row["id"] == iid:
+                    return row
+        raise AssertionError(f"{iid} missing from the outbox payload")
+
+    def _history_row(self, payload, iid):
+        for row in payload["history"]:
+            if row["id"] == iid:
+                return row
+        raise AssertionError(f"{iid} missing from the history panel")
+
+    # -- 1. the rate-limit history the outage actually produced --------------
+
+    def test_rate_limited_item_reports_zero_spent_attempts(self, tmp_path):
+        from engine.marketing.outbox import RATE_LIMITED_NOTE_PREFIX
+        iid = self._seed_failed(
+            tmp_path, [f"{RATE_LIMITED_NOTE_PREFIX}: buffer 429"] * 3)
+
+        row = self._item_row(marketing.outbox(tmp_path), iid)
+        assert row["status"] == "failed"
+        assert row["attempts"] == 3, "the raw forensic count must survive"
+        assert row["effective_attempts"] == 0, (
+            "three quota refusals were charged to the post — the console is "
+            "gating on a number the backend does not enforce")
+        assert row["attempts"] != row["effective_attempts"]
+
+    def test_rate_limited_item_reports_both_counts_in_history(self, tmp_path):
+        """`failed` is terminal for the history panel, so the dead-post block
+        renders these rows too and needs the same discriminator."""
+        from engine.marketing.outbox import RATE_LIMITED_NOTE_PREFIX
+        iid = self._seed_failed(
+            tmp_path, [f"{RATE_LIMITED_NOTE_PREFIX}: buffer 429"] * 3)
+
+        row = self._history_row(marketing.outbox(tmp_path), iid)
+        assert row["attempts"] == 3
+        assert row["effective_attempts"] == 0
+        assert row["attempts"] != row["effective_attempts"]
+
+    # -- 2. a real failure is still a failure --------------------------------
+
+    def test_a_real_failure_still_spends_an_attempt(self, tmp_path):
+        """The excuse must not generalise: the whole point of the split is that
+        a verdict ON THE POST still counts."""
+        from engine.marketing.outbox import RATE_LIMITED_NOTE_PREFIX
+        iid = self._seed_failed(tmp_path, [
+            f"{RATE_LIMITED_NOTE_PREFIX}: buffer 429",
+            f"{RATE_LIMITED_NOTE_PREFIX}: buffer 429",
+            "http_error 500",
+        ])
+
+        row = self._item_row(marketing.outbox(tmp_path), iid)
+        assert row["attempts"] == 3
+        assert row["effective_attempts"] == 1
+        assert row["attempts"] != row["effective_attempts"]
+
+    # -- 3. the publisher's triage split reads the same numbers --------------
+
+    def test_publisher_dead_row_carries_both_counts(self, tmp_path):
+        """The triage page splits retryable from spent on this field. On the raw
+        count every outage item landed in the corpse groups."""
+        from engine.marketing.outbox import RATE_LIMITED_NOTE_PREFIX
+        iid = self._seed_failed(
+            tmp_path, [f"{RATE_LIMITED_NOTE_PREFIX}: buffer 429"] * 4)
+
+        pub = marketing.publisher(tmp_path)
+        assert pub["ok"] is True
+        rows = [r for r in pub["failed_dead"] if r["id"] == iid]
+        assert rows, f"{iid} missing from failed_dead: {pub['failed_dead']}"
+        assert rows[0]["attempts"] == 4
+        assert rows[0]["effective_attempts"] == 0
+        assert rows[0]["attempts"] != rows[0]["effective_attempts"]
+
+    # -- 4. the reply lane diverges ON PURPOSE -------------------------------
+
+    def test_reply_rows_carry_raw_attempts_and_no_effective_key(self, tmp_path):
+        """PINNED DIVERGENCE, not an oversight.
+
+        ``reply_queue.MAX_SEND_ATTEMPTS`` is enforced against the reply store's
+        RAW ``attempts``, and that ledger has no excused failure classes at all
+        — so raw IS the enforced count there. Threading the outbox's effective
+        count into this payload would invent an excuse the reply cap never
+        honours. Asserting the key's ABSENCE is what stops a later sweep from
+        "fixing" this lane for consistency.
+        """
+        from datetime import datetime, timezone
+
+        from engine.marketing import reply_critics as _rc
+        from engine.marketing import reply_queue as _rq
+
+        now = datetime(2026, 7, 28, 15, 0, tzinfo=timezone.utc)
+        stamp = _rc.stamp({
+            "verdict": "pass",
+            "rejected_by": [],
+            "critics": [{"critic": name, "verdict": "pass", "reasons": []}
+                        for name in _rc.CRITICS],
+        })
+        item = _rq.make_item(
+            account="kelly",
+            target_url="https://x.com/somequant/status/1900000000000000001",
+            parent_author="somequant",
+            parent_excerpt="Hyperscaler capex keeps climbing but credit spreads widen.",
+            draft=("IG spreads widened 12.5% this week while capex guidance held."
+                   "\n\nThe price move is the reaction. Credit is the test."),
+            tier="relationship",
+            score=0.8,
+            score_components={"author_tier": 0.26},
+            critics=stamp,
+            now=now,
+        )
+        assert _rq.enqueue(item, tmp_path, cfg={})["ok"]
+
+        panel = marketing.reply_queue(tmp_path, store=tmp_path, now=now)
+        assert panel["ok"] is True
+        rows = [r for blk in panel["accounts"]
+                for zone in ("awaiting", "approved", "done")
+                for r in blk[zone] if r["id"] == item["id"]]
+        assert rows, f"{item['id']} missing from the reply payload"
+        assert "attempts" in rows[0]
+        assert "effective_attempts" not in rows[0], (
+            "the reply cap spends RAW attempts — an effective count here would "
+            "excuse failures reply_queue.transition still charges")
+
+    # -- 5. the plan lock is excused the same way ----------------------------
+
+    def test_subscription_lock_is_excused_like_a_rate_limit(self, tmp_path):
+        from engine.marketing.outbox import SUBSCRIPTION_LOCKED_NOTE_PREFIX
+        iid = self._seed_failed(
+            tmp_path, [f"{SUBSCRIPTION_LOCKED_NOTE_PREFIX}: plan locked"] * 5)
+
+        row = self._item_row(marketing.outbox(tmp_path), iid)
+        assert row["attempts"] == 5
+        assert row["effective_attempts"] == 0
+        assert row["attempts"] != row["effective_attempts"]
+
+
 # ---------------------------------------------------------------------------
 # Operator console additions (PR 2/3) — pipeline block, sentinel/allow,
 # accounts/toggle, sentinel `passed` pass-through

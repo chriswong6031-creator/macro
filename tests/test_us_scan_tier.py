@@ -831,3 +831,128 @@ class TestScanStampNightlyGate:
             liquidity={"SCN1": {"mdv20_usd": 9e6}}, **append_kwargs) == 2
         assert ucv._part_path(STAMP, tmp_path).exists()
         assert set(ucv.load_candidates(tmp_path)["tier"]) == {ucv.TIER_SCAN}
+
+
+# --------------------------------------------------------------------------- #
+# curated_universe — the yahoo-parquet proxy, and the hub backfill that breaks it
+#
+# `curated_universe` is the set EXCLUDED from the scan tier, and one of its legs
+# uses "has a data/yahoo parquet" as a proxy for "is in the curated roster". That
+# proxy held while collectors/yahoo.py was the only writer, whose fetch list IS a
+# curated universe. scripts/backfill_yahoo_universe.py breaks it: a parquet then
+# means "the hub signal ledger mentioned this ticker", which is the opposite of
+# curated. Measured 2026-08-08, a fully drained backfill queue would have moved
+# 4,601 names out of the scan tier this way — silently, because the exclusion is
+# an ABSENCE and nothing prints it.
+# --------------------------------------------------------------------------- #
+def _yahoo_store(root: Path, tickers: list[str]) -> None:
+    d = root / "data" / "yahoo"
+    d.mkdir(parents=True, exist_ok=True)
+    idx = pd.bdate_range("2024-01-01", periods=40, name="Date")
+    for t in tickers:
+        pd.DataFrame({"close_price": 10.0, "close": 10.0, "volume": 1e6},
+                     index=idx).to_parquet(d / f"{t}.parquet")
+
+
+def _backfill_state(root: Path, done: list[str]) -> None:
+    (root / "data").mkdir(parents=True, exist_ok=True)
+    (root / "data" / "yahoo_backfill_state.json").write_text(json.dumps({
+        "schema": "yahoo_backfill_state/1",
+        "done": {t: {"backfilled": "2026-08-08", "rows": 40,
+                     "last_obs": "2024-02-23"} for t in done},
+    }))
+
+
+def _only_maintained(monkeypatch, names: list[str]) -> None:
+    """Pin the collector's maintained set without reading the repo's real config."""
+    class _Fake:
+        def maintained_tickers(self):
+            return list(names)
+    import collectors.yahoo as _y
+    monkeypatch.setattr(_y, "YahooAdapter", _Fake)
+
+
+class TestCuratedUniverseBackfillCarveOut:
+    def test_a_backfilled_only_name_stays_scan_eligible(self, tmp_path, monkeypatch):
+        """The whole point: a parquet that exists ONLY because the hub backfill wrote
+        it must not read as curation."""
+        _yahoo_store(tmp_path, ["KEEPME", "MAINTAINED"])
+        _backfill_state(tmp_path, ["KEEPME"])
+        _only_maintained(monkeypatch, ["MAINTAINED"])
+
+        curated = SCAN.curated_universe(tmp_path)
+
+        assert "KEEPME" not in curated, "a backfilled-only name must stay scannable"
+        assert "MAINTAINED" in curated, "a collector-maintained name stays excluded"
+
+    def test_a_name_the_collector_also_maintains_stays_excluded(self, tmp_path, monkeypatch):
+        """ONLY is load-bearing. A config name the backfill happened to create first is
+        genuinely curated, and subtracting it would hand the scan tier a duplicate."""
+        _yahoo_store(tmp_path, ["BOTH"])
+        _backfill_state(tmp_path, ["BOTH"])
+        _only_maintained(monkeypatch, ["BOTH"])
+
+        assert "BOTH" in SCAN.curated_universe(tmp_path)
+
+    @pytest.mark.parametrize("payload", [None, "{not json", "{}", '{"done": {}}'])
+    def test_absent_or_corrupt_state_leaves_the_old_behaviour_exactly(
+            self, tmp_path, monkeypatch, payload):
+        """Fail-soft to no subtraction: this lane's own contract is that
+        over-inclusion in `curated` merely skips a name tonight, while
+        under-inclusion risks a duplicate row."""
+        _yahoo_store(tmp_path, ["AAA", "BBB"])
+        if payload is not None:
+            (tmp_path / "data" / "yahoo_backfill_state.json").write_text(payload)
+        _only_maintained(monkeypatch, [])
+
+        curated = SCAN.curated_universe(tmp_path)
+
+        assert {"AAA", "BBB"} <= curated
+        assert SCAN._backfill_only_tickers(tmp_path) == set()
+
+    def test_an_unresolvable_maintained_set_subtracts_nothing(self, tmp_path, monkeypatch):
+        """Without the maintained set the word ONLY cannot be established, so the safe
+        answer is the pre-backfill behaviour, not a guess."""
+        _yahoo_store(tmp_path, ["AAA"])
+        _backfill_state(tmp_path, ["AAA"])
+
+        class _Boom:
+            def maintained_tickers(self):
+                raise RuntimeError("config unreadable")
+        import collectors.yahoo as _y
+        monkeypatch.setattr(_y, "YahooAdapter", _Boom)
+
+        assert SCAN._backfill_only_tickers(tmp_path) == set()
+        assert "AAA" in SCAN.curated_universe(tmp_path)
+
+    def test_underscore_prefixed_stores_are_still_skipped(self, tmp_path, monkeypatch):
+        """Index/FX stores (_GSPC, CL_F) were never curated-roster members and the
+        carve-out must not change that leg."""
+        _yahoo_store(tmp_path, ["_GSPC", "AAA"])
+        _backfill_state(tmp_path, [])
+        _only_maintained(monkeypatch, [])
+
+        curated = SCAN.curated_universe(tmp_path)
+        assert "_GSPC" not in curated and "AAA" in curated
+
+    def test_the_other_curated_legs_are_untouched(self, tmp_path, monkeypatch):
+        """The carve-out is scoped to the yahoo leg: data/stocks and the breadth
+        constituent lists must keep contributing exactly as before, even for a name
+        the backfill also wrote."""
+        stocks = tmp_path / "data" / "stocks"
+        stocks.mkdir(parents=True)
+        idx = pd.bdate_range("2024-01-01", periods=10, name="Date")
+        pd.DataFrame({"close": 1.0}, index=idx).to_parquet(stocks / "DEEP.parquet")
+        cons = tmp_path / "data" / "breadth"
+        cons.mkdir(parents=True)
+        pd.DataFrame({"x": [1]}, index=pd.Index(["MEMBER"], name="ticker")) \
+            .to_parquet(cons / "constituents.parquet")
+        _yahoo_store(tmp_path, ["DEEP", "MEMBER", "SCANME"])
+        _backfill_state(tmp_path, ["DEEP", "MEMBER", "SCANME"])
+        _only_maintained(monkeypatch, [])
+
+        curated = SCAN.curated_universe(tmp_path)
+
+        assert "DEEP" in curated, "data/stocks leg must still exclude it"
+        assert "MEMBER" in curated, "breadth constituents leg must still exclude it"
+        assert "SCANME" not in curated

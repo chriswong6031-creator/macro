@@ -26,7 +26,9 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from engine import ticker_shape
 from lib import config
+from lib import ticker_aliases          # provider symbol -> stable company key
 
 log = logging.getLogger(__name__)
 
@@ -41,28 +43,34 @@ def _s(v) -> str | None:
     return None if s.lower() in _MISSING else s
 
 
-# Tickers that survive string coercion but are NOT real symbols — placeholder junk
-# ("N/A" from a filing with no assigned ticker, etc.) that must never become a
-# convergence record on any channel. Paired with a shape check below.
-_TICKER_JUNK = {"NA", "N/A", "N.A.", "NAN", "NONE", "NULL", "TBD", "TBA", "NOTAV",
-                "UNKNOWN", "PRIVATE", "VARIOUS", "MULTIPLE", "-", "—", "?"}
-# US-equity ticker shape: starts with a letter, then alnum, with an optional
-# .-/-suffixed share class (BRK.B / BRK-B). Rejects "N/A" (slash), spaces, commas.
-_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9]{0,8}([.\-][A-Z0-9]{1,3})?$")
+# Ticker hygiene now lives in engine.ticker_shape — one home shared with the news feed's
+# boundary tripwire, so the two gates can never drift apart. The private names stay bound
+# here because callers reach for them directly (engine.altdata uses models._valid_ticker).
+_TICKER_JUNK = ticker_shape.TICKER_JUNK
+_TICKER_RE = ticker_shape.US_TICKER_RE
 
 
 def _valid_ticker(v) -> str | None:
     """A canonical, validated ticker, or None. Rejects placeholder junk ('N/A' and
     friends) and shape-invalid strings so no garbage name reaches the convergence
-    board. This is the single hygiene gate the kernel routes every ticker through."""
-    s = _s(v)
-    if s is None:
+    board, and collapses a provider symbol back onto the repository's stable
+    membership key. This is the single hygiene gate the kernel routes every
+    ticker through.
+
+    Resolving the rename HERE is what makes the merge free: every channel reaches
+    a record through rec()/add(), so both symbols land in the same ``by`` entry and
+    the existing channel / weighted_score / count logic aggregates them as one
+    company with no merge code. Marsh McLennan sat on this board as TWO companies
+    for ~7 months after its 2026-01-14 MMC -> MRSH rename — MMC carrying
+    news_sentiment at 0.20, MRSH carrying a trump channel at 0.50, neither aware of
+    the other — because nothing in the pipeline knew the two symbols were one name.
+    """
+    symbol = ticker_shape.valid_us_ticker(v)
+    if symbol is None:
         return None
-    s = s.strip()
-    u = s.upper()
-    if u in _TICKER_JUNK or not _TICKER_RE.match(u):
-        return None
-    return s
+    u = symbol.upper()
+    stable = ticker_aliases.store_key(u)
+    return stable if stable != u else symbol
 
 
 def _f(v) -> float:
@@ -447,21 +455,31 @@ def _dpi_z_lookup() -> dict[str, dict]:
     return out
 
 
-def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str, dict]:
+def channel_records(signals: dict, affiliations: dict | None = None, *,
+                    drop_stats: dict | None = None) -> dict[str, dict]:
     """THE kernel: invert the cross-sectional signal lists into one weighted record per
     ticker. Returns {ticker: {channels, channel_detail, weighted_score, count, ...metrics}}.
 
     `affiliations`: optional {ticker: detail} from the influence graph — adds an
     'affiliation' channel so a graph edge (actor -> name) converges with the hard feeds.
+    `drop_stats`: optional dict filled with {n_distinct, n_rows, examples} describing the
+    ticker keys the hygiene gate EXCLUDED — a rejection is announced, never silent.
     """
     by: dict[str, dict] = {}
+    dropped: dict[str, int] = {}
     dpi_z = _dpi_z_lookup()
 
     def rec(tk):
-        tk = _valid_ticker(tk)   # hygiene gate: junk ("N/A") + shape-invalid never enter
-        if not tk:
+        valid = _valid_ticker(tk)   # hygiene gate: junk ("N/A") + shape-invalid never enter
+        if not valid:
+            # Count what we exclude. A silent gate is why 26 snapshot days of "CONSECUTIVE"
+            # and "ASX:PEX" reached the hub ledger before a provider change was noticed.
+            # An ABSENT ticker (None/NaN) is missing data, not a garbage key — not counted.
+            raw = _s(tk)
+            if raw:
+                dropped[raw[:24]] = dropped.get(raw[:24], 0) + 1
             return None
-        return by.setdefault(tk, {"ticker": tk, "channels": {}, "metrics": {}})
+        return by.setdefault(valid, {"ticker": valid, "channels": {}, "metrics": {}})
 
     def add(tk, channel, detail, drops=()):
         r = rec(tk)
@@ -732,4 +750,14 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
             "count": len(chans),
             **r["metrics"],
         }
+
+    # Hygiene disclosure — ONE annotation per build, bare print so GitHub actually parses it
+    # (a logger prefixes the level and the workflow command is silently dropped).
+    if dropped:
+        ex = sorted(dropped)[:8]
+        d, n_rows = len(dropped), sum(dropped.values())
+        if drop_stats is not None:
+            drop_stats.update(n_distinct=d, n_rows=n_rows, examples=ex)
+        print(f"::notice title=altdata-ticker-hygiene::channel_records excluded {d} invalid "
+              f"ticker key(s) ({n_rows} gate hits): {', '.join(ex)}", flush=True)
     return out

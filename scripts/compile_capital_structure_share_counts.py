@@ -18,15 +18,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any, Sequence
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.capital_structure.share_count_truth import (
     ShareCountTruthError,
     compile_share_count_observations,
     source_acquisition_unavailable_result,
     validate_share_count_ledger,
-)
+)  # noqa: E402
 
 
 def _load_object(path: Path, *, label: str) -> dict[str, Any]:

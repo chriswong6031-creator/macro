@@ -30,6 +30,7 @@ import logging
 import math
 import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -37,18 +38,21 @@ from typing import Any, Iterable
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from engine.fundamental_forensics.private_state import (
     LOCAL_STATE_RELATIVE,
     STATE_SCHEMA,
     decode_state_blob,
     publish_state_blob,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.disclosure_projection import (
     DisclosureProjectionError,
     read_disclosure_projection_directory,
-)
+)  # noqa: E402
 
 log = logging.getLogger("build_fundamental_forensics")
 
