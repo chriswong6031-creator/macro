@@ -47,6 +47,15 @@ permissions:
                          # waiting for a human to run `gh workflow run ci.yml --ref
                          # main`. The sweeper now orders that baseline itself when its
                          # proof is too old to answer the reds it just saw.
+                         #
+                         # It dispatches integration-baseline.yml on main for the same
+                         # class of reason (2026-08-08). That workflow DOES have a
+                         # `push` trigger, but its paths: filter excludes data/site
+                         # publisher commits, so only SOURCE pushes re-prove main and
+                         # only merges make source pushes — a baseline that ages past
+                         # the freshness bound therefore blocks the merges that would
+                         # have refreshed it. Both dispatches are rate-floored in
+                         # scripts/merge_on_green.py and never fail the sweep.
   contents: write        # squash-merge, delete the merged head ref, and merge
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment

@@ -3317,3 +3317,285 @@ def test_the_baseline_proof_is_allowed_to_finish():
         "'11 baseline-blocked' against a green main. If a newer proof must win, supersede "
         "the PENDING one (which the group already does); do not kill the one on a runner."
     )
+
+
+# --- the sweeper orders the SOURCE baseline the freshness bound consumes -------
+#
+# `BASELINE_MAX_AGE_HOURS` shipped in the same change as the in-flight fix, and on its
+# own it is the SAME defect in a quieter form: a gate that halts on the absence of
+# evidence with no way to produce any. `integration-baseline.yml` does have a `push`
+# trigger, but its `paths:` filter excludes data/site publisher commits — so only SOURCE
+# pushes re-prove main, and the only source pushes to main are merges. A green that ages
+# out therefore blocks merges, which stops the pushes, which keeps it aged out. The
+# escapes were a human running `gh workflow run integration-baseline.yml --ref main` and
+# the single `main-red-repair` slot. So the sweeper orders it.
+
+
+def _source_api(monkeypatch, runs, **kwargs):
+    """`_proof_api` pointed at the baseline workflow's run list."""
+    return _proof_api(
+        monkeypatch, runs={"integration-baseline.yml": list(runs)}, **kwargs
+    )
+
+
+def _source_dispatches(calls):
+    """POSTs that ordered a SOURCE baseline — never ci.yml's."""
+    return [call for call in _dispatched(calls) if "integration-baseline.yml" in call[1]]
+
+
+def _stale_green(hours=None):
+    """A concluded green baseline past the freshness bound."""
+    return _wf_run(
+        9001,
+        conclusion="success",
+        created_at=_ago(hours=hours or MOG.BASELINE_MAX_AGE_HOURS + 3),
+    )
+
+
+def test_a_stale_green_orders_a_fresh_source_baseline(monkeypatch, capsys):
+    """THE completion. Without this the freshness bound is a one-way door."""
+    calls = _source_api(monkeypatch, [_stale_green()])
+    assert MOG.ensure_integration_baseline("acme/widgets", "write", "pending") == "dispatched"
+    posts = _source_dispatches(calls)
+    assert len(posts) == 1, f"expected exactly one dispatch, got {posts}"
+    assert posts[0][2] == {"ref": "main"}, "the baseline must be ordered on main"
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert lines and all(line.startswith("::") for line in lines), lines
+    assert any(line.startswith("::notice") for line in lines), (
+        "the sweep log must say what was ordered and why"
+    )
+
+
+@pytest.mark.parametrize(
+    "in_flight", ["queued", "in_progress", "requested", "waiting", "pending"]
+)
+def test_a_baseline_already_in_flight_is_never_stampeded(monkeypatch, in_flight):
+    """The half a `status=in_progress` + `status=queued` pair would miss. Ordering a
+    second proof while one is coming is not merely wasteful here: the group keeps ONE
+    pending run, so under the 75-94 minute hosted queue the replacement starts its wait
+    over."""
+    calls = _source_api(
+        monkeypatch,
+        [
+            _wf_run(9100, status=in_flight, conclusion=None, created_at=_ago(minutes=1)),
+            _stale_green(),
+        ],
+    )
+    result = MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+    assert result == f"skipped (a baseline is already {in_flight})"
+    assert _source_dispatches(calls) == []
+
+
+def test_a_baseline_ordered_inside_the_floor_is_not_re_ordered(monkeypatch):
+    """The bound the in-flight check cannot see: a run that has already concluded (here,
+    superseded) but is newer than the floor means one was ordered too recently."""
+    calls = _source_api(
+        monkeypatch,
+        [
+            _wf_run(9101, conclusion="cancelled", created_at=_ago(minutes=5)),
+            _stale_green(),
+        ],
+    )
+    result = MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+    assert "inside the" in result and "floor" in result, result
+    assert _source_dispatches(calls) == []
+
+
+def test_a_run_outside_the_floor_may_be_re_ordered(monkeypatch):
+    """The floor is a rate bound, not a second deadlock — it has to expire."""
+    calls = _source_api(
+        monkeypatch,
+        [
+            _wf_run(
+                9102,
+                conclusion="cancelled",
+                created_at=_ago(minutes=MOG.INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES + 5),
+            ),
+            _stale_green(),
+        ],
+    )
+    assert MOG.ensure_integration_baseline("acme/widgets", "write", "pending") == "dispatched"
+    assert len(_source_dispatches(calls)) == 1
+
+
+@pytest.mark.parametrize("state", ["red", "unproven", "green"])
+def test_only_a_pending_breaker_orders_a_baseline(monkeypatch, state):
+    """`red` is the important one: main is broken, and a fresh baseline would faithfully
+    re-prove the same red — spending a hosted run to learn nothing, on the pool whose
+    saturation caused all of this. `unproven` means nothing concluded to BE stale, and
+    `green` needs nothing. None of them may even spend the READ."""
+    calls = _source_api(monkeypatch, [_stale_green()])
+    result = MOG.ensure_integration_baseline("acme/widgets", "write", state)
+    assert result == f"not needed (breaker is {state})"
+    assert calls == [], f"a non-pending breaker must cost no API call, spent {calls}"
+
+
+def test_a_read_failure_aborts_the_sweep_before_any_baseline_is_ordered(
+    monkeypatch, capsys
+):
+    """A read failure raises out of `integration_baseline_state`, so `main()` returns 1
+    before the dispatcher exists — the fail-closed direction. Pinned at sweep level
+    because that is where the ordering between the two is decided."""
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [_pull(1)])
+    calls = _source_api(monkeypatch, [_stale_green()])
+
+    def unavailable(*_a):
+        raise RuntimeError("API down")
+
+    monkeypatch.setattr(MOG, "integration_baseline_state", unavailable)
+    monkeypatch.setattr(
+        MOG, "sweep_pull", lambda *_a: pytest.fail("no pull may be touched")
+    )
+    assert MOG.main() == 1
+    assert "Could not establish" in capsys.readouterr().out
+    assert _source_dispatches(calls) == []
+
+
+@pytest.mark.parametrize(
+    ("runs", "expected"),
+    [
+        ([], "not needed (no concluded baseline to be stale)"),
+        (
+            [_wf_run(9103, status="queued", conclusion=None, created_at=_ago(minutes=1))],
+            "not needed (no concluded baseline to be stale)",
+        ),
+        (
+            [_wf_run(9104, conclusion="failure", created_at=_ago(hours=9))],
+            "not needed (the newest concluded baseline is not green)",
+        ),
+        (
+            [_wf_run(9105, conclusion="success", created_at=_ago(hours=1))],
+            "not needed (the proof is 1.0h old)",
+        ),
+    ],
+)
+def test_the_stale_reason_is_re_derived_from_the_runs(monkeypatch, runs, expected):
+    """`pending` is necessary but not sufficient. The reason is re-derived from the run
+    list rather than parsed back out of the state's display string — the lesson
+    `failing_check_names` records: display strings are for humans, decisions are made
+    from data. A `pending` that is NOT the stale-green case must not dispatch."""
+    calls = _source_api(monkeypatch, runs)
+    assert MOG.ensure_integration_baseline("acme/widgets", "write", "pending") == expected
+    assert _source_dispatches(calls) == []
+
+
+def test_an_undatable_green_does_not_dispatch(monkeypatch):
+    """Age unknown is not age exceeded. `integration_baseline_state` also reports
+    `pending` for an undatable green, and dispatching on it would turn one unparseable
+    timestamp into a dispatch every sweep, forever."""
+    undated = _wf_run(9106, conclusion="success")
+    for field in ("created_at", "run_started_at", "updated_at"):
+        undated.pop(field, None)
+    calls = _source_api(monkeypatch, [undated])
+    result = MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+    assert result == "skipped (the newest concluded baseline has no usable timestamp)"
+    assert _source_dispatches(calls) == []
+
+
+def test_an_unreadable_run_list_skips_rather_than_dispatching(monkeypatch):
+    """Fail-closed in the cheap direction: an unreadable answer is treated as
+    'something is running', which costs one sweep of latency instead of a stampede."""
+    calls = _source_api(
+        monkeypatch, [_stale_green()], run_status={"integration-baseline.yml": 403}
+    )
+    result = MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+    assert result == "skipped (could not read the baseline runs: HTTP 403)"
+    assert _source_dispatches(calls) == []
+
+
+def test_a_failed_dispatch_is_logged_and_the_sweep_continues(monkeypatch, capsys):
+    """Ordering a baseline must never fail a sweep that merged pull requests
+    correctly."""
+    _source_api(monkeypatch, [_stale_green()], dispatch_status=500)
+    assert (
+        MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+        == "dispatch failed (HTTP 500)"
+    )
+    out = capsys.readouterr().out
+    assert "::warning" in out
+    assert all(line.startswith("::") for line in out.splitlines() if line.strip())
+
+
+def test_a_dispatch_that_raises_never_escapes(monkeypatch, capsys):
+    """The bare `except` is deliberate and this is what pins it — a transport error on
+    the POST is not a reason for a green sweep to go red."""
+
+    def boom(method, url, token, payload=None):
+        if method == "POST":
+            raise RuntimeError("socket died")
+        return 200, {"workflow_runs": [_stale_green()]}
+
+    monkeypatch.setattr(MOG, "_request", boom)
+    assert (
+        MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+        == "dispatch error"
+    )
+    assert "::warning" in capsys.readouterr().out
+
+
+def test_repeated_sweeps_order_at_most_one_baseline_per_interval(monkeypatch):
+    """THE ANTI-DEADLOCK PROPERTY, asserted as a COUNT over many sweeps.
+
+    Not "the third sweep dispatches" or "the first one wins" — #4845's scar is exactly
+    that shape: a test that pinned WHICH armed repair got the scarce slot silently
+    converted "one at a time" into "the same one forever", and the identity assertion
+    passed throughout. The invariant here is the RATE: however many times the sweeper
+    wakes while a green is stale — and it wakes on every completed proof workflow plus a
+    10-minute cron — it orders at most one baseline per interval.
+
+    The fake models what GitHub actually does after a 204: the run exists immediately,
+    `queued`, and every later sweep sees it.
+    """
+
+    def on_dispatch(pool, _jobs):
+        pool["integration-baseline.yml"].insert(
+            0,
+            _wf_run(9200, status="queued", conclusion=None, created_at=_ago(seconds=1)),
+        )
+
+    calls = _source_api(monkeypatch, [_stale_green()], on_dispatch=on_dispatch)
+    results = [
+        MOG.ensure_integration_baseline("acme/widgets", "write", "pending")
+        for _ in range(8)
+    ]
+    assert len(_source_dispatches(calls)) == 1, (
+        f"8 sweeps ordered {len(_source_dispatches(calls))} baselines: {results}"
+    )
+    assert results.count("dispatched") == 1
+    assert set(results[1:]) == {"skipped (a baseline is already queued)"}, (
+        "every later sweep must skip for the IN-FLIGHT reason — skipping because it "
+        "forgot the green was stale would be the same bug with a passing test"
+    )
+
+
+def test_the_dispatch_does_not_unblock_the_sweep_that_ordered_it(monkeypatch, capsys):
+    """Ordering evidence is not the same as having it. The sweep that dispatches must
+    still refuse ordinary merges — the next one judges them against the result."""
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [_pull(1), _pull(2)])
+    monkeypatch.setattr(
+        MOG,
+        "integration_baseline_state",
+        lambda *_a: ("pending", "newest concluded baseline is 9.0h old"),
+    )
+    monkeypatch.setattr(MOG.ProofFreshness, "build", classmethod(lambda *_a, **_k: _freshness()))
+    monkeypatch.setattr(MOG, "main_proof", lambda *_a: _proof("ci-pack-1"))
+    monkeypatch.setattr(MOG, "ensure_main_baseline", lambda *_a, **_k: "stubbed")
+    monkeypatch.setattr(
+        MOG,
+        "sweep_pull",
+        lambda *_a: pytest.fail("nothing ordinary may merge while the breaker is pending"),
+    )
+    calls = _source_api(monkeypatch, [_stale_green()])
+    assert MOG.main() == 0
+    out = capsys.readouterr().out
+    assert len(_source_dispatches(calls)) == 1
+    assert "2 baseline-blocked" in out, out
+    assert "source-baseline: dispatched" in out, (
+        "the summary must record the dispatch, so a suppressed one is diagnosable"
+    )
