@@ -1283,20 +1283,57 @@ class TestBulkTradeQuoteCurrentDayFallback:
         assert result is None
 
 
-class TestBulkTradeQuoteSchemaV2:
-    """R0.4 'keep what we pay for': bulk_trade_quote retains OPRA condition codes
-    and NBBO sizes (schema v2) and never sends a windowed wildcard request
-    (silently-empty on terminal build 202607231)."""
+class TestTradeQuoteSchemaV3:
+    """R0.4 tape truth: both trade_quote parsers retain all 23 paid CSV fields.
+
+    Windowed-wildcard routing remains covered here because it must produce the
+    same v3 frame as the direct bulk path.
+    """
 
     _HEADER = ("symbol,expiration,strike,right,trade_timestamp,quote_timestamp,"
                "sequence,ext_condition1,ext_condition2,ext_condition3,ext_condition4,"
                "condition,size,exchange,price,bid_size,bid_exchange,bid,bid_condition,"
                "ask_size,ask_exchange,ask,ask_condition")
     _ROW = ('"SPY","2026-08-21",550.000,"CALL",2026-07-30T10:00:01.000,'
-            '2026-07-30T10:00:00.999,100001,255,254,253,252,18,10,7,2.50,'
-            '100,1,2.40,50,200,1,2.60,50')
+            '2026-07-30T10:00:00.999,9007199254740993,EXT-1,EXT-2,EXT-3,EXT-4,'
+            'TRADE-COND,10,TRADE-EX,2.50,100,BID-EX,2.40,BID-COND,200,ASK-EX,'
+            '2.60,ASK-COND')
 
-    def test_v2_columns_retained_and_typed(self, monkeypatch):
+    @staticmethod
+    def _assert_all_23_source_fields(row):
+        """Assert every source field survives its canonical output mapping."""
+        expected = {
+            # source symbol is canonically named root
+            "root": "SPY",
+            "strike": 550.0,
+            "right": "C",
+            "trade_timestamp": "2026-07-30T10:00:01.000",
+            "quote_timestamp": "2026-07-30T10:00:00.999",
+            "sequence": 9007199254740993,
+            "ext_condition1": "EXT-1",
+            "ext_condition2": "EXT-2",
+            "ext_condition3": "EXT-3",
+            "ext_condition4": "EXT-4",
+            "condition": "TRADE-COND",
+            "size": 10,
+            "exchange": "TRADE-EX",
+            "price": 2.50,
+            "bid_size": 100,
+            "bid_exchange": "BID-EX",
+            "bid": 2.40,
+            "bid_condition": "BID-COND",
+            "ask_size": 200,
+            "ask_exchange": "ASK-EX",
+            "ask": 2.60,
+            "ask_condition": "ASK-COND",
+        }
+        # bulk preserves its legacy ISO string; single-contract exposes the
+        # additive field as datetime64. Both identify the exact source expiry.
+        assert pd.Timestamp(row["expiration"]) == pd.Timestamp("2026-08-21")
+        for field, value in expected.items():
+            assert row[field] == value, f"{field}: {row[field]!r} != {value!r}"
+
+    def test_bulk_retains_all_23_fields_with_exact_integers(self, monkeypatch):
         from collectors import thetadata as td
 
         def _mock_stream_lines(session, path, params):
@@ -1308,14 +1345,289 @@ class TestBulkTradeQuoteSchemaV2:
         df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
         assert df is not None and len(df) == 1
         row = df.iloc[0]
-        # v2 additions
-        assert row["condition"] == "18"
-        assert [row[f"ext_condition{i}"] for i in (1, 2, 3, 4)] == \
-            ["255", "254", "253", "252"]
-        assert row["bid_size"] == 100 and row["ask_size"] == 200
-        # v1 columns unchanged
-        assert row["bid"] == 2.40 and row["ask"] == 2.60 and row["size"] == 10
-        assert td.BULK_TRADE_QUOTE_SCHEMA_VERSION == 2
+        self._assert_all_23_source_fields(row)
+        assert str(df["sequence"].dtype) == "Int64"
+        assert str(df["size"].dtype) == "Int64"
+        assert str(df["bid_size"].dtype) == "Int64"
+        assert str(df["ask_size"].dtype) == "Int64"
+        assert int(row["sequence"]) == 2**53 + 1
+        assert td.BULK_TRADE_QUOTE_SCHEMA_VERSION == 3
+
+        # Legacy v2 order/columns stay intact; v3 provenance is appended.
+        legacy_v2 = [
+            "date", "trade_timestamp", "quote_timestamp", "sequence",
+            "expiration", "strike", "right", "price", "size", "exchange",
+            "bid", "ask", "condition", "ext_condition1", "ext_condition2",
+            "ext_condition3", "ext_condition4", "bid_size", "ask_size", "root",
+        ]
+        assert list(df.columns[:len(legacy_v2)]) == legacy_v2
+
+    def test_single_contract_retains_all_23_fields_additively(self, monkeypatch):
+        from collectors import thetadata as td
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        df = td.trade_quote(
+            "SPY", 20260821, "C", 550.0,
+            date(2026, 7, 30), date(2026, 7, 30),
+        )
+        assert df is not None and len(df) == 1
+        self._assert_all_23_source_fields(df.iloc[0])
+        assert int(df.loc[0, "sequence"]) == 2**53 + 1
+
+        legacy = [
+            "date", "trade_timestamp", "quote_timestamp", "price", "size",
+            "bid", "ask", "exchange", "strike", "right", "root",
+        ]
+        assert list(df.columns[:len(legacy)]) == legacy
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_every_exact_integer_field_preserves_above_float_limit(
+        self, monkeypatch, parser,
+    ):
+        """Sequence and all three size fields retain distinct >2^53 identities."""
+        from collectors import thetadata as td
+
+        row = (
+            '"SPY","2026-08-21",550.000,"CALL",2026-07-30T10:00:01.000,'
+            '2026-07-30T10:00:00.999,9007199254740993,1,2,3,4,18,'
+            '9007199254740994,7,2.50,9007199254740995,1,2.40,50,'
+            '9007199254740996,1,2.60,50'
+        )
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and len(df) == 1
+        assert [int(df.loc[0, col]) for col in (
+            "sequence", "size", "bid_size", "ask_size",
+        )] == [
+            9007199254740993,
+            9007199254740994,
+            9007199254740995,
+            9007199254740996,
+        ]
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_negative_sequence_preserved_but_negative_sizes_missing(
+        self, monkeypatch, parser,
+    ):
+        """Theta sequence is signed; contract and quote-size counts are not."""
+        from collectors import thetadata as td
+
+        row = (
+            '"SPY","2026-08-21",550.000,"CALL",2026-07-30T10:00:01.000,'
+            '2026-07-30T10:00:00.999,-19065287,1,2,3,4,18,'
+            '-1,7,2.50,-2,1,2.40,50,-3,1,2.60,50'
+        )
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and len(df) == 1
+        assert int(df.loc[0, "sequence"]) == -19065287
+        assert pd.isna(df.loc[0, "size"])
+        assert pd.isna(df.loc[0, "bid_size"])
+        assert pd.isna(df.loc[0, "ask_size"])
+
+    @pytest.mark.parametrize("field", ["symbol", "expiration", "strike", "right"])
+    def test_single_contract_rejects_mismatched_paid_identity(
+        self, monkeypatch, field,
+    ):
+        """A response row is never relabeled as the requested contract."""
+        from collectors import thetadata as td
+
+        replacements = {
+            "symbol": ('"SPY"', '"QQQ"'),
+            "expiration": ('"2026-08-21"', '"2026-08-22"'),
+            "strike": ("550.000", "551.000"),
+            "right": ('"CALL"', '"PUT"'),
+        }
+        old, new = replacements[field]
+        bad_row = self._ROW.replace(old, new, 1)
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, bad_row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        df = td.trade_quote(
+            "SPY", 20260821, "C", 550.0,
+            date(2026, 7, 30), date(2026, 7, 30),
+        )
+
+        assert df is not None and df.empty
+
+    @pytest.mark.parametrize(
+        "bad_row",
+        [
+            _ROW.replace('"SPY"', '"QQQ"', 1),
+            _ROW.replace('"CALL"', '"PUT"', 1),
+        ],
+        ids=["symbol", "right"],
+    )
+    def test_bulk_rejects_mismatched_root_or_right(
+        self, monkeypatch, bad_row,
+    ):
+        from collectors import thetadata as td
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, bad_row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and df.empty
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_response_expiration_requires_full_canonical_iso_lexeme(
+        self, monkeypatch, parser,
+    ):
+        """A valid date prefix with an untrusted suffix is not accepted."""
+        from collectors import thetadata as td
+
+        bad_row = self._ROW.replace("2026-08-21", "2026-08-21JUNK", 1)
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, bad_row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and df.empty
+
+    def test_bulk_explicit_expiration_rejects_mismatched_response_expiry(
+        self, monkeypatch,
+    ):
+        from collectors import thetadata as td
+
+        bad_row = self._ROW.replace("2026-08-21", "2026-08-22", 1)
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, bad_row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        df = td.bulk_trade_quote(
+            "SPY", "call", "2026-07-30", "2026-07-30",
+            expiration="2026-08-21",
+        )
+
+        assert df is not None and df.empty
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_exact_integer_failures_are_distinct_nullable_missing(
+        self, monkeypatch, parser,
+    ):
+        """Overflow, non-integral, blank, and malformed lexemes never round."""
+        from collectors import thetadata as td
+
+        row = (
+            '"SPY","2026-08-21",550.000,"CALL",2026-07-30T10:00:01.000,'
+            '2026-07-30T10:00:00.999,9223372036854775808,1,2,3,4,18,'
+            '10.5,7,2.50,,1,2.40,50,NOT-AN-INT,1,2.60,50'
+        )
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, row])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and len(df) == 1
+        assert pd.isna(df.loc[0, "sequence"])   # signed Int64 overflow
+        assert pd.isna(df.loc[0, "size"])       # non-integral numeric lexeme
+        assert pd.isna(df.loc[0, "bid_size"])   # blank lexeme
+        assert pd.isna(df.loc[0, "ask_size"])   # malformed lexeme
+        for col in ("sequence", "size", "bid_size", "ask_size"):
+            assert str(df[col].dtype) == "Int64"
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_blank_and_short_rows_rejected_without_losing_valid_row(
+        self, monkeypatch, parser,
+    ):
+        from collectors import thetadata as td
+
+        def _mock_stream_lines(session, path, params):
+            return iter(["", self._HEADER, "SPY,too,short", "   ", self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None and len(df) == 1
+        assert int(df.loc[0, "sequence"]) == 2**53 + 1
+
+    @pytest.mark.parametrize("parser", ["single", "bulk"])
+    def test_exact_integer_columns_support_legacy_arithmetic(
+        self, monkeypatch, parser,
+    ):
+        """Nullable Int64 remains compatible with current premium/volume math."""
+        from collectors import thetadata as td
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        if parser == "single":
+            df = td.trade_quote(
+                "SPY", 20260821, "C", 550.0,
+                date(2026, 7, 30), date(2026, 7, 30),
+            )
+        else:
+            df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+
+        assert df is not None
+        assert int(df["size"].sum()) == 10
+        assert float((df["price"] * df["size"] * 100.0).sum()) == 2500.0
 
     def test_windowed_wildcard_routes_per_exp_never_wildcard(self, monkeypatch):
         """expiration=* + time filter must NEVER reach the terminal as a wildcard

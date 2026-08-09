@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-09T02:08:03Z",
+  "produced_at": "2026-08-09T10:03:28Z",
   "as_of": "2026-08-09",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 16,
-    "passed": 16,
+    "items": 4,
+    "passed": 4,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,92 +19,20 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-004",
+      "id": "post-theme-003",
       "account": "flagship",
-      "slot": "D1-S4",
-      "type": "signal",
-      "cashtag": "$SMR",
-      "headline": ""
-    },
-    {
-      "id": "post-flagship-011",
-      "account": "flagship",
-      "slot": "D1-S11",
-      "type": "event",
-      "cashtag": "",
-      "headline": "Jobless claims are averaging 199 thousand a week this month"
-    },
-    {
-      "id": "post-conf-flagship-001",
-      "account": "flagship",
-      "slot": "CONF-01",
-      "type": "signal",
-      "cashtag": "$WFC",
-      "headline": "$WFC just lined up a pattern we track."
-    },
-    {
-      "id": "post-insider-001",
-      "account": "flagship",
-      "slot": "D1-S10",
-      "type": "insider",
-      "cashtag": "$CCB",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-003",
-      "account": "founder",
       "slot": "D1-S3",
-      "type": "watchlist",
-      "cashtag": "$AXTX",
-      "headline": ""
+      "type": "theme_list",
+      "cashtag": "$WWR",
+      "headline": "Commodities Metals ripping, +7.2% avg on Friday"
     },
     {
-      "id": "post-founder-008",
-      "account": "founder",
-      "slot": "D1-S8",
-      "type": "watchlist",
-      "cashtag": "$SMR",
-      "headline": "$SMR back above trend"
-    },
-    {
-      "id": "post-founder-027",
-      "account": "founder",
-      "slot": "D1-S27",
-      "type": "watchlist",
-      "cashtag": "$SOUN",
-      "headline": ""
-    },
-    {
-      "id": "post-insider-002",
-      "account": "founder",
-      "slot": "D1-S6",
-      "type": "insider",
-      "cashtag": "$ATTO",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-001",
-      "account": "sophia",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Growth is firm. Inflation hasn't left."
-    },
-    {
-      "id": "post-sophia-017",
-      "account": "sophia",
-      "slot": "D1-S17",
-      "type": "chart",
-      "cashtag": "$TTC",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-018",
-      "account": "sophia",
-      "slot": "D1-S18",
-      "type": "chart",
-      "cashtag": "$WS",
-      "headline": "The $WS rebound has precedent"
+      "id": "post-theme-004",
+      "account": "meagan",
+      "slot": "D1-S2",
+      "type": "theme_list",
+      "cashtag": "$TEAM",
+      "headline": "Software ripping, +3.7% avg on Friday"
     },
     {
       "id": "post-mover-002",
@@ -115,41 +43,17 @@
       "headline": "$TEAM +35.3% on Friday"
     },
     {
-      "id": "post-kelly-009",
+      "id": "post-kelly-026",
       "account": "kelly",
-      "slot": "D1-S9",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-kelly-012",
-      "account": "kelly",
-      "slot": "D1-S12",
+      "slot": "D1-S26",
       "type": "watchlist",
       "cashtag": "$TTC",
-      "headline": "The $TTC test"
-    },
-    {
-      "id": "post-theme-005",
-      "account": "kelly",
-      "slot": "D1-S5",
-      "type": "theme_list",
-      "cashtag": "$NTRA",
-      "headline": "Healthcare & Biotech ripping, +2.6% avg on Friday"
-    },
-    {
-      "id": "post-cici-001",
-      "account": "cici",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 99,
+      "pairs_checked": 6,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -168,11 +72,7 @@
     },
     "cherry_pick": {
       "status": "run",
-      "loss_tickers_in_window": [
-        "GME",
-        "GPI",
-        "QCOM"
-      ],
+      "loss_tickers_in_window": [],
       "cherry_pick_detected": false
     },
     "stale_receipts": {

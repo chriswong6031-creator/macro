@@ -44,7 +44,7 @@ Public repo, so the droplet self-clones:
 
 ```bash
 ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
-  'curl -fsSL https://raw.githubusercontent.com/chriswong6031-creator/macro/main/app/deploy/setup.sh | bash'
+  'curl -fsSL https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/main/app/deploy/setup.sh | bash'
 ```
 
 `setup.sh` is idempotent: installs Caddy, clones the repo to `/opt/macro`, installs the

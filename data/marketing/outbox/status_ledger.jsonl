@@ -1624,3 +1624,9 @@
 {"id":"ob-2026-08-07-1ca64f0abb","from":"queued","to":"quarantined","at":"2026-08-08T10:53:35Z","actor":"stale_purge","note":"stale_purge_2026-08-08: Buffer-outage backlog; event no longer fresh","receipt":null}
 {"id":"ob-2026-08-07-24b6cfe1c5","from":"approved","to":"quarantined","at":"2026-08-08T10:53:35Z","actor":"stale_purge","note":"stale_purge_2026-08-08: Buffer-outage backlog; event no longer fresh","receipt":null}
 {"id":"ob-2026-08-07-f2cbdf994b","from":"approved","to":"quarantined","at":"2026-08-08T10:53:35Z","actor":"stale_purge","note":"stale_purge_2026-08-08: Buffer-outage backlog; event no longer fresh","receipt":null}
+{"id":"ob-2026-08-07-23c6512041","from":"queued","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-07-92f7b21981","from":"queued","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-07-c6cc512047","from":"approved","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-07-46d19ac3b8","from":"queued","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-07-1ca64f0abb","from":"queued","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-07-24b6cfe1c5","from":"approved","to":"quarantined","at":"2026-08-09T07:56:21Z","actor":"nightly_expiry","note":"expired: superseded by tonight's plan","receipt":null}

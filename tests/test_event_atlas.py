@@ -303,6 +303,7 @@ def test_live_state_reports_the_latest_event_per_grid_with_freshness():
     close = _wavy(900)
     df = _library(se.extract_symbol_events("AAA", close, ctx=se.ExtractContext()))
     st = ea.live_state("AAA", close=close, df=df)
+    assert st["schema"] == ea.LIVE_STATE_SCHEMA
     assert st["ticker"] == "AAA"
     assert st["as_of"] == str(close.index[-1].date())
     assert set(st["grids"]) <= set(se.GRIDS) and st["grids"]

@@ -73,21 +73,37 @@ def test_every_family_clock_is_closed_and_no_entry_gate_is_satisfied(
         assert gate["satisfied"] is False, name
         assert gate["unsatisfied_preconditions"], name
         assert gate["blockers"], name
-        # Nothing may accrue while the O1b writer does not exist.
+        # Every family still requires the O1b writer; m0a.3 retains that
+        # discharge while distinguishing rights permission from activation.
         assert "o1b_outcome_writer" in gate["required_preconditions"], name
-        assert "o1b_outcome_writer" in gate["unsatisfied_preconditions"], name
-        assert "o1b_outcome_writer_absent" in gate["blockers"], name
+        assert "o1b_outcome_writer" not in gate["unsatisfied_preconditions"], name
+        assert "o1b_outcome_writer_absent" not in gate["blockers"], name
+        assert set(gate["unsatisfied_preconditions"]) <= set(
+            gate["required_preconditions"]
+        ), name
 
 
-def test_the_o1b_outcome_writer_contract_does_not_exist_yet(policy: dict) -> None:
+def test_the_o1b_outcome_writer_contract_now_exists(policy: dict) -> None:
     writer = policy["family_registration"]["writer_contract"]
     assert writer == "biocatalyst_outcome_record.v1"
-    assert policy["family_registration"]["writer_contract_state"] == (
-        "not_built_deferred_to_bc_o1b"
-    )
-    assert writer not in ContractRegistry(ROOT).contract_ids
+    assert policy["family_registration"]["writer_contract_state"] == "built_in_bc_o1b"
+    assert writer in ContractRegistry(ROOT).contract_ids
     for family in policy["families"].values():
         assert family["entry_gate"]["required_writer_contract"] == writer
+
+
+def test_the_clock_state_of_record_is_the_receipt_and_never_this_file(
+    policy: dict,
+) -> None:
+    activation = policy["clock_activation"]
+    assert activation["clock_state_authority"] == "activation_receipt_not_this_file"
+    assert activation["backfill"] == "forbidden_no_history_recorded"
+    assert activation["model_may_open_a_clock"] is False
+    assert activation["source_eligibility_rule"] == (
+        "required_source_ids_must_be_rights_allowed_and_any_runtime_universe_controls_armed"
+    )
+    assert activation["activation_record_contract"] in ContractRegistry(ROOT).contract_ids
+    assert activation["activation_record_kind"] in RECORD_KINDS
 
 
 def test_registration_is_an_operator_act_and_never_a_model_act(policy: dict) -> None:
@@ -253,7 +269,6 @@ def test_the_forecast_calibration_family_is_the_most_gated(policy: dict) -> None
         "eligible_identity_contract",
         "eligible_source_registration",
         "frozen_policy_version",
-        "o1b_outcome_writer",
     ]
     assert "no_graded_family_clock_is_open" in gate["blockers"]
     assert "prediction_is_an_outcome" in (

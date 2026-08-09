@@ -60,15 +60,21 @@ from typing import Any
 
 # ── repo path ─────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
+from engine import ledger_lane
 from engine.prophet_bridge import (
+    ADMITTED_STATUSES,
+    LEGACY_N_CANDIDATES,
     QUARANTINE_FILENAME,
     QUARANTINE_REASON,
     QUARANTINE_SCHEMA,
+    SELECTION_ERA,
     _panel_close_history,
     _PLAN_PRICE_DIRS,
+    append_legacy_shadow,
+    evaluate_entry_zone,
+    legacy_shadow_rows,
     load_quarantined_ids,
     originate_plans,
     plan_clock_date,
@@ -1551,6 +1557,60 @@ def main() -> None:
         print(f"::warning::prophet_arena hook failed: {e}", flush=True)
         log.warning("build_prophet: prophet_arena hook failed", exc_info=True)
 
+    # ── 2c. Legacy shadow ledger (ANTICIPATION §6.5) — ZERO AUTHORITY ─────────
+    # The pre-2026-08-08 admission gate keeps running every night against the same
+    # artifact and writes what it WOULD have selected.  Nothing in the live pick chain
+    # reads this store; it exists so the operator's "compare them later" is answerable
+    # from two accrued ledgers instead of from memory.
+    #
+    # THE LANE IS DECLARED HERE, AT THE PRODUCTION CALL SITE.  `append_legacy_shadow`
+    # takes `lane_nightly` as a keyword-only argument with NO DEFAULT, so this line is
+    # the only thing that can open the gate — a writer whose caller passes nothing and
+    # whose default branch is "allow" is a guard only the test suite ever exercises
+    # (the #5000 shape).  The writer then re-checks the process lane itself, so a caller
+    # that claims nightly in a render or intraday process still writes nothing.
+    #
+    # `existing_plans.keys()` rather than `existing_ids`: originate_plans MUTATES the
+    # set it is handed, so by this line `existing_ids` already carries tonight's new ids
+    # and the legacy replay would suppress rows the legacy gate never saw.  Same
+    # reasoning as the arena block above.
+    #
+    # The store is CO-LOCATED with the forward ledger — `LEDGER_DIR/legacy_shadow`,
+    # which in production is `data/prophet/legacy_shadow`.  tests/conftest.py arms
+    # COLLECT_LANE=nightly for EVERY test, so a writer that resolves its own data dir
+    # would write the repo's REAL data tree from any test that reaches this line.
+    # Handing the directory outright is the fail-CLOSED form: every bp.main() harness
+    # must already redirect LEDGER_DIR or advance_ledger would do the same damage.
+    _shadow_store = LEDGER_DIR / "legacy_shadow"
+    shadow_rows: list[dict] = []
+    shadow_written = 0
+    try:
+        with STANDOUTS_PATH.open(encoding="utf-8") as _f:
+            _shadow_standouts = json.load(_f)
+        shadow_rows = legacy_shadow_rows(
+            _shadow_standouts,
+            asof=asof,
+            existing_ids=set(existing_plans.keys()),
+            active_keys=active_keys,
+        )
+        shadow_written = append_legacy_shadow(
+            shadow_rows, asof, store_dir=_shadow_store,
+            lane_nightly=ledger_lane.nightly_advance_enabled(),
+        )
+        log.info(
+            "build_prophet: legacy shadow — %d legacy-admitted row(s), %d would have "
+            "been planned (cap %d); part now holds %d row(s)",
+            len(shadow_rows),
+            sum(1 for r in shadow_rows if r.get("would_have_planned")),
+            LEGACY_N_CANDIDATES,
+            shadow_written,
+        )
+    except Exception as e:  # noqa: BLE001 — a shadow ledger is NEVER fatal to the nightly
+        # Bare print at line start: a logger prefix makes GitHub drop the annotation.
+        print(f"::warning title=prophet-legacy-shadow::legacy shadow ledger failed: {e}",
+              flush=True)
+        log.warning("build_prophet: legacy shadow ledger failed", exc_info=True)
+
     # Merge the effective projection with tonight's raw new publications.  Existing
     # plan files stay immutable; only IDs in ``new_plan_ids`` may be written below.
     all_plans = {**existing_plans}
@@ -1653,6 +1713,17 @@ def main() -> None:
         resolved_phase = state.get("phase") or plan.get("phase", "pre_trigger")
         t1 = plan["targets"][0] if plan.get("targets") else None
         t2 = plan["targets"][1] if plan.get("targets") and len(plan["targets"]) > 1 else None
+        # ── §6.9 R3: nightly zone re-evaluation (zone-with-expiry-to-starter) ──
+        # DERIVED every night from the plan's own zone and the SAME PIT frame the
+        # management engine just read.  Nothing is written back into the plan JSON:
+        # plan files are immutable publication records and corrections are an
+        # append-only overlay, so a converted stance is recomputed rather than
+        # back-dated into the artifact that originated it.
+        try:
+            zone_state = evaluate_entry_zone(plan, ph_pit, asof)
+        except Exception as e:  # noqa: BLE001 — a zone read never breaks the publish
+            log.warning("build_prophet: zone re-evaluation failed for %s: %s", plan_id, e)
+            zone_state = {"state": "error", "reason": f"{type(e).__name__}: {e}"}
         # A plan with a forward-ledger row is FINISHED. The management engine still
         # states it (it is still in all_plans), so without this flag the row is
         # indistinguishable from a live one and its pulse would narrate a dead thesis.
@@ -1672,6 +1743,8 @@ def main() -> None:
                 invalidation=plan.get("invalidation"),
                 t1=t1,
                 t2=t2,
+                entry_zone=plan.get("entry_zone"),
+                zone_state=zone_state,
             )
             what_to_do_now_zh = _build_what_to_do_now_zh(
                 phase=resolved_phase,
@@ -1680,6 +1753,8 @@ def main() -> None:
                 invalidation=plan.get("invalidation"),
                 t1=t1,
                 t2=t2,
+                entry_zone=plan.get("entry_zone"),
+                zone_state=zone_state,
             )
         profit_plan = _build_profit_plan(
             phase=resolved_phase,
@@ -1782,6 +1857,20 @@ def main() -> None:
             # PSQ-TILT W1 provenance (whitelisted so the Terminal can consume it).
             "horizon_days": plan.get("horizon_days"),
             "stage_tilt": plan.get("stage_tilt"),
+            # ── ANTICIPATION §6.2 A1 / §6.9 R3 provenance (ADDITIVE — nothing
+            # renamed).  Whitelisted onto the index row for the same reason
+            # stage_tilt is: the Terminal and the showcase read `index.json`, not the
+            # per-plan files, so a stamp that never reaches this dict is a stamp no
+            # surface can show.  None on every plan originated before the era — that
+            # null IS the era boundary, and it is printed rather than back-filled.
+            "admission_class": plan.get("admission_class"),
+            "entry_status": plan.get("entry_status"),
+            "selection_era": plan.get("selection_era"),
+            "entry_basis": plan.get("entry_basis"),
+            "entry_zone": plan.get("entry_zone"),
+            # DERIVED tonight, never stored on the plan.
+            "entry_zone_state": zone_state,
+            "early_turn": plan.get("early_turn"),
         })
 
     # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
@@ -1874,6 +1963,10 @@ def main() -> None:
         "source_mixed_vintage": source_mixed_vintage,
         "cadence": "nightly-EOD",
         "authority_tier": "display",
+        # ANTICIPATION §6.2 A1 — the selection rule tonight's plans were originated
+        # under.  Stamped at the top level as well as on every plan so a reader (and a
+        # later side-by-side) never has to infer the era from a date.
+        "selection_era": SELECTION_ERA,
         "gate_go": _read_standouts_gate_go(),
         "plan_count": len(all_plans),
         # MISNOMER, deliberately preserved: `active_count` (and `plans[]`) count every
@@ -1917,12 +2010,53 @@ def main() -> None:
             "all_survivors_originated": intake_stats.get(
                 "all_survivors_originated", False
             ),
+            # ── A1 disclosure: the new admission and every refusal, by name ──────
+            "selection_era": intake_stats.get("selection_era", SELECTION_ERA),
+            "admitted_statuses": intake_stats.get(
+                "admitted_statuses", sorted(ADMITTED_STATUSES)),
+            "admitted_directions": intake_stats.get("admitted_directions", []),
+            "buy_rows": intake_stats.get("buy_rows", 0),
+            "admitted_by_class": intake_stats.get("admitted_by_class", {}),
+            "originated_by_class": intake_stats.get("originated_by_class", {}),
+            "unknown_status": intake_stats.get("unknown_status", 0),
+            "unknown_status_values": intake_stats.get("unknown_status_values", []),
+            "refused_status": intake_stats.get("refused_status", {}),
+            "refused_direction": intake_stats.get("refused_direction", {}),
+            "refused_no_entry_signal": intake_stats.get("refused_no_entry_signal", 0),
+            "refused_band_low": intake_stats.get("refused_band_low", 0),
+            "refused_tier": intake_stats.get("refused_tier", {}),
+            "stale_basis_max": intake_stats.get("stale_basis_max"),
+            "stale_basis_skipped": intake_stats.get("stale_basis_skipped", []),
+            # ── §6.9 R3 disclosure: zones, the anti-chase refusals, starters ─────
+            "zone_class_counts": intake_stats.get("zone_class_counts", {}),
+            "zone_conversion_classes": intake_stats.get("zone_conversion_classes", {}),
+            "zone_extension_unavailable": intake_stats.get(
+                "zone_extension_unavailable", 0),
+            "wait_reset": intake_stats.get("wait_reset", []),
+            "early_turn_starters": intake_stats.get("early_turn_starters", []),
+            "leader_pullback_source": intake_stats.get("leader_pullback_source", []),
+            # ── §6.5 comparison contract: the OLD gate, still accruing ───────────
+            "legacy_shadow": {
+                "admitted": len(shadow_rows),
+                "would_have_planned": sum(
+                    1 for r in shadow_rows if r.get("would_have_planned")),
+                "cap": LEGACY_N_CANDIDATES,
+                "rows_in_part": shadow_written,
+                "authority": "none",
+            },
             "basis": (
-                "Admission filters and ranking are unchanged. Every admitted candidate"
-                " that is neither a duplicate ID nor blocked by an open plan is attempted;"
-                " there is no positional plan-origination cap. Any candidate that cannot"
-                " produce a plan is listed under validation_failures. Featured-board,"
-                " sector, alert and portfolio-risk controls are separate and unchanged."
+                "Admission is a STATUS CLASS (ANTICIPATION A1): an entry status in"
+                " admitted_statuses, a signal tone in admitted_directions, conviction"
+                " band above low, and a T1-T3 signal tier. The prior act-level gate is"
+                " frozen with zero authority and keeps accruing a legacy shadow ledger"
+                " so the two selections can be compared on the same tape. Ranking is"
+                " unchanged. Every admitted candidate that is neither a duplicate ID nor"
+                " blocked by an open plan is attempted; there is no positional"
+                " plan-origination cap. Any candidate that cannot produce a plan is"
+                " listed under validation_failures. Every plan carries a"
+                " structure-anchored entry zone; the disclosed entry price remains the"
+                " point-in-time price-basis close. Featured-board, sector, alert and"
+                " portfolio-risk controls are separate and unchanged."
             ),
         },
         # Append-only plan correction projection.  Raw plan JSON files are publication
