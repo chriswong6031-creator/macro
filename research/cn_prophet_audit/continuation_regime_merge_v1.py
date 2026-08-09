@@ -66,9 +66,18 @@ TWO DELIBERATE AMENDMENTS TO L1's BOOK, BOTH DISCLOSED AND BOTH GATED
         (W3-A's amendment A1, adopted here from the first run rather than after review).
 
 Run from repo root:  TZ=UTC python3 research/cn_prophet_audit/continuation_regime_merge_v1.py
-Outputs (frozen, committed):
+Output written by this script (frozen, committed):
     research/cn_prophet_audit/CONTINUATION_REGIME_MERGE_V1_2026-08-09.json
-    research/cn_prophet_audit/CONTINUATION_REGIME_MERGE_V1_2026-08-09.md
+The receipt CONTINUATION_REGIME_MERGE_V1_2026-08-09.md beside it is HAND-WRITTEN from that
+JSON (the house pattern) and is NOT emitted by main(); every number in it is quoted from the
+frozen file.
+
+AMENDMENTS AFTER THE FIRST RUN — see AMENDMENTS_AFTER_FIRST_RUN below.  A commissioned
+adversarial review found the primary null reproduced exactly and every defect in the
+AFFIRMATIVE framing; the amendments replace a one-draw permutation control with a 200-draw
+one plus an era-preserving arm, put session-clustered inference on the affirmative shares,
+turn the lookahead leg into a check that can fail, and widen two gates from samples to full
+coverage.
 """
 from __future__ import annotations
 
@@ -245,15 +254,68 @@ CORRUPTION_ARMS = {
                      "lag-1 autocorrelation printed below is near 1.  Attenuation, not death, "
                      "is the honest expectation here."),
     "corrupt_lead1": ("the dial series shifted -1 trading session, so a trade at T reads the "
-                      "dial printed at T+1 — an ACTUAL lookahead.  If the effect were "
-                      "materially STRONGER here than under the true alignment, the true "
-                      "alignment would be suspect.  This is the direction that matters."),
-    "corrupt_perm": ("the dial values PERMUTED across the board's own sessions with a fixed "
-                     "seed — the destruction control.  This arm has full power: it keeps the "
-                     "dial's marginal distribution and its tercile masses and destroys only "
-                     "the date correspondence.  Every dial-conditioned effect MUST die here."),
+                      "dial printed at T+1 — an ACTUAL lookahead.  AMENDMENT A3 re-classes "
+                      "this as a POSITIVE CONTROL rather than a null control, because i5 at "
+                      "T+1 is computed FROM the T->T+1 continuation outcomes: the dial dated "
+                      "T+1 literally counts how many of T's boarders boarded again at T+1, "
+                      "which is the outcome the book is trading.  It MUST strengthen the "
+                      "movable statistics.  A lookahead arm that did NOT strengthen them "
+                      "would mean the join is not reading dates at all."),
 }
 PERM_SEED = 20260809
+N_PERM_DRAWS = 200            # amendment A1 — was ONE draw
+PERM_NULL_SEED = 20260811
+RUNGS = ("N1", "N2", "N3plus")
+BOOT_B = 1000                 # amendment A4 — session cluster bootstrap resamples
+BOOT_SEED = 20260810
+PERM_ARM_SUPERSEDED = (
+    "The single-draw `corrupt_perm` arm of the first run is REMOVED and superseded by "
+    "`permutation_nulls`, which draws the same null "
+    f"{N_PERM_DRAWS} times under two schemes and publishes mean/SD/p. One draw quoted to two "
+    "decimals was the defect; see that section's note."
+)
+
+AMENDMENTS_AFTER_FIRST_RUN = [
+    {"id": "A1", "trigger": "commissioned adversarial review, MAJOR",
+     "change": ("The destruction control was ONE global permutation draw and its quoted "
+                "'0.40 pp collapse' was a single sample stated to two decimals (the review "
+                "measured the null at -0.12 +- 5.06 pp over 20 draws — a coin flip). Replaced "
+                f"by {N_PERM_DRAWS} draws under TWO schemes, global and era-preserving "
+                "within-year, publishing null mean/SD and a two-sided permutation p for every "
+                "affirmative statistic."),
+     "effect_on_the_verdict": ("None on the primary null. It materially WEAKENS the "
+                               "receipt's own flagship magnitude claim: against the "
+                               "era-preserving null the -16.74 pp availability spread is not "
+                               "significant, so most of it is era composition.")},
+    {"id": "A2", "trigger": "commissioned adversarial review, MAJOR",
+     "change": ("The affirmative sections now lead with the ORDERING result, which survives "
+                "both nulls, instead of the -16.74 pp magnitude, which does not. Every "
+                "magnitude is banded with its permutation p.")},
+    {"id": "A3", "trigger": "commissioned adversarial review, MAJOR (S7 class)",
+     "change": ("The lookahead verdict keyed only on a maximum over 21 uniformly negative "
+                "cells, which cannot rise — a check that could not fail. It now keys on the "
+                "two series that move under a shifted dial, and the lookahead arm is "
+                "re-classed as a POSITIVE control that MUST strengthen them, because i5 dated "
+                "T+1 is computed from the T->T+1 outcome.")},
+    {"id": "A4", "trigger": "commissioned adversarial review, MAJOR",
+     "change": ("The affirmative shares — availability, fillability tax, mean gap — were the "
+                "only quantities in the receipt not clustered, carrying IID Wilson bands of "
+                "+-1.7 pp against a permutation-null SD of 5-8 pp. They now carry a session "
+                f"cluster bootstrap ({BOOT_B} resamples, seed {BOOT_SEED}), and the hot-cold "
+                "spreads a two-sample session bootstrap.")},
+    {"id": "A5", "trigger": "commissioned adversarial review, prose defects",
+     "change": ("Three false MD claims corrected against this file's own tables (the "
+                "per-trade-t direction, the sign-stability of the broken lead across exit "
+                "rules, and the count of run-stamp fields), and the script header no longer "
+                "claims main() writes the MD.")},
+    {"id": "A6", "trigger": "commissioned adversarial review, gate coverage",
+     "change": ("Lookahead gates G1 and G3 sampled 177 and 600 of 9,277 sessions while the "
+                "receipt claimed the legs PASSED outright. Both now run at FULL coverage.")},
+    {"id": "A7", "trigger": "commissioned adversarial review, labelling",
+     "change": ("The incomplete-window count inside the sealed-only closure parity block was "
+                "a both-cohort total. Split into sealed / broken / total with a note on which "
+                "denominator it is commensurable with.")},
+]
 
 PREREGISTRATION = {
     "registered_before_any_number_was_read": True,
@@ -533,7 +595,7 @@ def audit_lookahead(ser: pd.DataFrame, panel_pairs: pd.DataFrame,
         vals = s[REGIME_COL].to_numpy(dtype="float64")
         dks = _daykey(s["date"])
         bd_n = bd_diff = 0
-        for i in range(max(1, len(s) - 60), len(s) - 1):
+        for i in range(0, len(s) - 1):      # FULL COVERAGE (amendment A6)
             v_t, v_t1 = vals[i], vals[i + 1]
             g2_n += 1
             bd_n += 1
@@ -563,7 +625,10 @@ def audit_lookahead(ser: pd.DataFrame, panel_pairs: pd.DataFrame,
     out["G1_join_alignment"] = {
         "gate": "the value joined onto a trade equals the series value at that trade's OWN "
                 "feature date T",
-        "sampled_board_sessions": g2_n, "all_match": bool(g1_ok),
+        "coverage": ("EVERY (board, session) in the dial series, not a sample (amendment A6 — "
+                     "the first run checked only the last 60 sessions per board, 177 of 9,277, "
+                     "while the receipt claimed the leg PASSED outright)"),
+        "board_sessions_checked": g2_n, "all_match": bool(g1_ok),
         "worked_example_rows": g1_rows}
     out["G2_check_has_power"] = {
         "gate": "i5(T) != i5(T+1) on a material share of sessions, so a T+1 join would show up",
@@ -580,7 +645,7 @@ def audit_lookahead(ser: pd.DataFrame, panel_pairs: pd.DataFrame,
         s = sb[b]
         raw = s[REGIME_RAW_COL].to_numpy(dtype="float64")
         ma = s[REGIME_COL].to_numpy(dtype="float64")
-        for i in range(max(0, len(s) - 200), len(s)):
+        for i in range(0, len(s)):          # FULL COVERAGE (amendment A6)
             w = raw[max(0, i - 4):i + 1]
             w = w[np.isfinite(w)]
             exp = float(w.mean()) if w.size >= 3 else np.nan
@@ -596,6 +661,8 @@ def audit_lookahead(ser: pd.DataFrame, panel_pairs: pd.DataFrame,
     out["G3_backward_window"] = {
         "gate": "ma5(T) == mean of the series' own raw i5 over the <=5 sessions ENDING at T; "
                 "a forward or centred window fails here",
+        "coverage": ("EVERY session in the dial series, not a sample (amendment A6 — the first "
+                     "run checked the last 200 sessions per board, 600 of 9,277)"),
         "sessions_checked": g3_checked, "mismatches": g3_bad,
         "all_match": bool(g3_bad == 0), "worked_example_rows": g3_rows}
 
@@ -952,8 +1019,18 @@ def closure_parity(l1: pd.DataFrame, trades: pd.DataFrame) -> dict:
         "reading": ("The two books are the same book except on chains that crossed an "
                     "exchange closure. Every moved trade is a window L1 truncated at a "
                     "mark-to-market close and this lane carries to a real open."),
-        "incomplete_windows_excluded_from_the_priced_book":
-            int((~trades["complete_window"].astype(bool)).sum()),
+        # Amendment A7: this block is SEALED-ONLY (it compares against L1, which has no broken
+        # cohort), so a both-cohort incomplete count sitting inside it invited the reader to
+        # divide it by a sealed denominator.  Split and labelled.
+        "incomplete_windows_excluded_from_the_priced_book": {
+            "sealed_cohort_this_block's_population": int(
+                (~trades[trades["cohort"] == "sealed"]["complete_window"].astype(bool)).sum()),
+            "broken_cohort_not_in_this_block": int(
+                (~trades[trades["cohort"] == "broken"]["complete_window"].astype(bool)).sum()),
+            "both_cohorts_total": int((~trades["complete_window"].astype(bool)).sum()),
+            "note": ("Only the sealed count is commensurable with l1_trades / "
+                     "this_lane_sealed_trades above; the broken cohort has no L1 counterpart."),
+        },
     }
 
 
@@ -1000,10 +1077,13 @@ def split_gate(usable_dates: dict[str, np.ndarray]) -> dict:
 # ── STAGE 2 — the dial join, the terciles, the corruption arms ───────────────
 
 def dial_frames(ser: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """One (board, daykey) -> dial value frame per arm.  Cuts are refit per arm downstream."""
-    rng = np.random.default_rng(PERM_SEED)
+    """One (board, daykey) -> dial value frame per arm.  Cuts are refit per arm downstream.
+
+    The single-draw `corrupt_perm` arm is gone (amendment A1); permutation lives in
+    permutation_nulls() as a distribution over N_PERM_DRAWS draws under two schemes.
+    """
     out = {}
-    for arm in ("true", "corrupt_lag1", "corrupt_lead1", "corrupt_perm"):
+    for arm in ("true", "corrupt_lag1", "corrupt_lead1"):
         parts = []
         for b, g in ser.groupby("board", sort=True):
             g = g.sort_values("date").reset_index(drop=True)
@@ -1012,8 +1092,6 @@ def dial_frames(ser: pd.DataFrame) -> dict[str, pd.DataFrame]:
                 v = np.r_[np.nan, v[:-1]]
             elif arm == "corrupt_lead1":
                 v = np.r_[v[1:], np.nan]
-            elif arm == "corrupt_perm":
-                v = v[rng.permutation(v.size)]
             parts.append(pd.DataFrame({"board": str(b), "dk": _daykey(g["date"]), "dial": v}))
         out[arm] = pd.concat(parts, ignore_index=True)
     return out
@@ -1506,6 +1584,89 @@ def broken_vs_sealed(trades_l: pd.DataFrame, floors: dict) -> dict:
 
 # ── STAGE 5 — secondary (b): is the AUCTION pricing the regime? ──────────────
 
+CLUSTER_NOTE = (
+    "AMENDMENT A4. The affirmative quantities in this section — entry availability, the "
+    "fillability tax, the mean open gap — were the only numbers in the receipt NOT clustered: "
+    "they were pooled board-day shares carrying IID Wilson bands of about +-1.7 pp, while the "
+    "permutation null for the same statistic has an SD of 5-8 pp. An IID band on a quantity "
+    "whose real sampling unit is the SESSION understates its uncertainty by roughly the square "
+    "root of the trades-per-session count, and every affirmative claim in this receipt rests "
+    "on these numbers. They now carry a SESSION CLUSTER BOOTSTRAP "
+    f"({BOOT_B} resamples of whole sessions, seed {BOOT_SEED}) beside the pooled point "
+    "estimate, and the hot-minus-cold spreads carry a two-sample session bootstrap. The IID "
+    "Wilson band is kept beside it so the size of the correction is visible rather than "
+    "silently applied."
+)
+DISJOINT_NOTE = (
+    "The dial is CONSTANT WITHIN A DATE (W2-A: it is a level instrument, never a ranker), so a "
+    "session belongs to exactly one tercile and the hot and cold arms are DISJOINT session "
+    "sets. That is why the spread is a two-sample bootstrap over independent session sets "
+    "rather than a paired one, and it is also why no amount of within-date resampling can "
+    "narrow it: the comparison lives entirely between sessions."
+)
+
+
+def _sess_ratio(k_s: np.ndarray, n_s: np.ndarray, rng, b: int = BOOT_B) -> dict:
+    """Pooled ratio K/N with a session cluster bootstrap. k_s/n_s are PER-SESSION totals."""
+    K, N = float(k_s.sum()), float(n_s.sum())
+    out = {"sessions": int(k_s.size), "pooled_pct": _r(100.0 * K / N, 3) if N > 0 else None}
+    if k_s.size < 2 or N <= 0:
+        out["session_bootstrap"] = "NOT TESTABLE — fewer than 2 sessions"
+        return out
+    idx = rng.integers(0, k_s.size, size=(b, k_s.size))
+    bn = n_s[idx].sum(axis=1)
+    r = np.where(bn > 0, k_s[idx].sum(axis=1) / np.where(bn > 0, bn, 1.0), np.nan)
+    r = r[np.isfinite(r)]
+    out["session_cluster_se_pp"] = _r(100.0 * float(r.std(ddof=1)), 3)
+    out["session_boot_ci95_pct"] = [_r(100.0 * float(np.percentile(r, 2.5)), 3),
+                                    _r(100.0 * float(np.percentile(r, 97.5)), 3)]
+    return out
+
+
+def _sess_spread(kh, nh, kc, nc, rng, b: int = BOOT_B) -> dict:
+    """Hot-minus-cold spread over two DISJOINT session sets, two-sample cluster bootstrap."""
+    if kh.size < 2 or kc.size < 2 or nh.sum() <= 0 or nc.sum() <= 0:
+        return {"status": "NOT TESTABLE — an arm has fewer than 2 sessions"}
+    point = 100.0 * (kh.sum() / nh.sum() - kc.sum() / nc.sum())
+    ih = rng.integers(0, kh.size, size=(b, kh.size))
+    ic = rng.integers(0, kc.size, size=(b, kc.size))
+    bnh, bnc = nh[ih].sum(axis=1), nc[ic].sum(axis=1)
+    d = 100.0 * (kh[ih].sum(axis=1) / np.where(bnh > 0, bnh, 1.0)
+                 - kc[ic].sum(axis=1) / np.where(bnc > 0, bnc, 1.0))
+    d = d[np.isfinite(d)]
+    sd = float(d.std(ddof=1))
+    return {"spread_pp": _r(point, 3),
+            "session_cluster_se_pp": _r(sd, 3),
+            "session_cluster_t": _r(point / sd, 2) if sd > 0 else None,
+            "session_boot_ci95_pp": [_r(float(np.percentile(d, 2.5)), 3),
+                                     _r(float(np.percentile(d, 97.5)), 3)],
+            "hot_sessions": int(kh.size), "cold_sessions": int(kc.size)}
+
+
+def _per_session(g: pd.DataFrame, kind: str) -> tuple[np.ndarray, np.ndarray]:
+    """Per-session (numerator, denominator) totals for one affirmative quantity."""
+    dk = pd.Series(_daykey(g["date"]), index=g.index)
+    if kind == "avail":
+        k = (~g["unfillable_open"].astype(bool)).astype(float)
+        n = pd.Series(1.0, index=g.index)
+    elif kind == "tax":
+        k = (g["y_limit_up"] & g["unfillable_open"]).astype(float)
+        n = g["y_limit_up"].astype(float)
+    elif kind == "pnext":
+        # P(next board) is an affirmative quantity too, and it was carrying only an IID
+        # Wilson band; same defect class as A4 named for availability, so it is clustered here.
+        k = g["y_limit_up"].astype(float)
+        n = pd.Series(1.0, index=g.index)
+    else:                                    # mean gap
+        v = g["gap"].to_numpy(dtype="float64")
+        ok = np.isfinite(v)
+        k = pd.Series(np.where(ok, v, 0.0), index=g.index)
+        n = pd.Series(ok.astype(float), index=g.index)
+    a = pd.DataFrame({"dk": dk, "k": k, "n": n}).groupby("dk", sort=True).sum()
+    a = a[a["n"] > 0]
+    return a["k"].to_numpy(dtype="float64"), a["n"].to_numpy(dtype="float64")
+
+
 def fillable_share_by_dial(events_l: pd.DataFrame) -> dict:
     """Fillable share x dial tercile, per board and per rung.
 
@@ -1513,23 +1674,33 @@ def fillable_share_by_dial(events_l: pd.DataFrame) -> dict:
     exactly the states the dial says are good, and the paper edge is auctioned away before a
     single return is measured.  This is the mechanism question behind the primary null.
     """
+    rng = np.random.default_rng(BOOT_SEED)
     u = events_l[events_l["y_ok"] & (events_l["cohort"] == "sealed")]
-    rows = []
+    rows, sess = [], {}
     for (b, rl, sl, sp), g in u.groupby(["board", "rung_label", "stratum_label", "split"],
                                         sort=True):
         n = len(g)
         unf = int(g["unfillable_open"].sum())
         real = int(g["y_limit_up"].sum())
         real_unf = int((g["y_limit_up"] & g["unfillable_open"]).sum())
+        sess[(b, rl, sl, sp)] = {k: _per_session(g, k)
+                                 for k in ("avail", "tax", "gap", "pnext")}
         rows.append({
             "board": b, "rung": rl, "stratum": sl, "split": sp, "board_days": n,
             "entry_availability_pct": _r(100.0 * (n - unf) / max(1, n)),
-            "entry_availability_wilson95_pct": [
+            "entry_availability_wilson95_pct_IID_for_comparison": [
                 _r(100.0 * x) for x in (wilson(n - unf, n) or (float("nan"),) * 2)],
+            "entry_availability_session_clustered":
+                _sess_ratio(*sess[(b, rl, sl, sp)]["avail"], rng),
             "FILLABILITY_TAX_pct": _r(100.0 * real_unf / max(1, real)),
+            "fillability_tax_session_clustered":
+                _sess_ratio(*sess[(b, rl, sl, sp)]["tax"], rng),
             "realised_next_boards": real, "of_which_unfillable_open": real_unf,
             "mean_gap_pct": _r(100.0 * float(np.nanmean(g["gap"].to_numpy(dtype="float64")))
                                , 3) if n else None,
+            # _sess_ratio already scales by 100, and the gap numerator is a fraction, so its
+            # pooled_pct IS the mean gap in percent.
+            "mean_gap_session_clustered": _sess_ratio(*sess[(b, rl, sl, sp)]["gap"], rng),
         })
     spread = []
     idx = {(r["board"], r["rung"], r["stratum"], r["split"]): r for r in rows}
@@ -1537,16 +1708,23 @@ def fillable_share_by_dial(events_l: pd.DataFrame) -> dict:
         hot, cold = idx.get((b, rl, "T3_hot", sp)), idx.get((b, rl, "T1_cold", sp))
         if not hot or not cold:
             continue
+        sh, sc = sess[(b, rl, "T3_hot", sp)], sess[(b, rl, "T1_cold", sp)]
         spread.append({
             "board": b, "rung": rl, "split": sp,
             "entry_availability_pct_T3_hot": hot["entry_availability_pct"],
             "entry_availability_pct_T1_cold": cold["entry_availability_pct"],
             "hot_minus_cold_pp": _r(hot["entry_availability_pct"]
                                     - cold["entry_availability_pct"], 3),
+            "availability_spread_session_clustered":
+                _sess_spread(*sh["avail"], *sc["avail"], rng),
             "fillability_tax_pct_T3_hot": hot["FILLABILITY_TAX_pct"],
             "fillability_tax_pct_T1_cold": cold["FILLABILITY_TAX_pct"],
             "tax_hot_minus_cold_pp": _r(hot["FILLABILITY_TAX_pct"]
                                         - cold["FILLABILITY_TAX_pct"], 3),
+            "tax_spread_session_clustered": _sess_spread(*sh["tax"], *sc["tax"], rng),
+            "gap_spread_session_clustered": _sess_spread(*sh["gap"], *sc["gap"], rng),
+            "p_next_board_spread_session_clustered":
+                _sess_spread(*sh["pnext"], *sc["pnext"], rng),
         })
     # Is availability MONOTONE DECREASING in the dial?  Computed, not eyeballed.
     mono = []
@@ -1568,35 +1746,200 @@ def fillable_share_by_dial(events_l: pd.DataFrame) -> dict:
     nm = [m for m in mono if m["board"] == "main"]
     av_ok = sum(1 for m in nm if m["availability_monotone_decreasing"])
     gp_ok = sum(1 for m in nm if m["gap_monotone_increasing"])
-    return {"question": PREREGISTRATION["secondary_b"], "cells": rows,
+    msp = [s for s in spread if s["board"] == "main"]
+    sig = sum(1 for s in msp
+              if abs((s["availability_spread_session_clustered"] or {}).get(
+                  "session_cluster_t") or 0.0) >= 2.0)
+    return {"question": PREREGISTRATION["secondary_b"],
+            "inference_note": CLUSTER_NOTE, "disjointness": DISJOINT_NOTE,
+            "cells": rows,
             "hot_vs_cold_spread": spread, "monotonicity": mono,
             "main_availability_monotone_cells": f"{av_ok}/{len(nm)}",
             "main_gap_monotone_cells": f"{gp_ok}/{len(nm)}",
+            "main_availability_spreads_with_session_clustered_abs_t_ge_2":
+                f"{sig}/{len(msp)}",
             "verdict": (
-                f"THE AUCTION PRICES THE REGIME. On main, entry availability falls "
-                f"monotonically in the dial on {av_ok} of {len(nm)} (rung x window) cells and "
-                f"the mean open gap rises monotonically with it on {gp_ok} of {len(nm)}. Both "
-                f"orderings say the same thing from opposite sides: the hotter the regime the "
-                f"more of the next-day supply is locked away at the open, and the more you pay "
-                f"for what is left."
+                f"THE ORDERING IS THE FINDING; THE MAGNITUDES ARE NOT. On main, entry "
+                f"availability falls monotonically in the dial on {av_ok} of {len(nm)} "
+                f"(rung x window) cells and the mean open gap rises monotonically with it on "
+                f"{gp_ok} of {len(nm)} — the hotter the regime, the more of the next-day "
+                f"supply is locked away at the open and the more you pay for what is left. "
+                f"The SIZE of that effect is far less certain than the direction: only "
+                f"{sig} of {len(msp)} hot-minus-cold availability spreads reach a "
+                f"session-clustered |t| of 2, and the permutation_nulls section shows most of "
+                f"them do not survive an era-preserving null either. AMENDMENT A2 — the first "
+                f"run led with the -16.74 pp holdout magnitude, which is the weakest number "
+                f"here, not the strongest."
                 if (av_ok == len(nm) and len(nm)) else
                 "SEE THE TABLE — availability is not monotone on every main cell; read "
                 "monotonicity row by row rather than as a single statement")}
+
+
+# ── STAGE 5b — PERMUTATION NULLS (amendment A1) ──────────────────────────────
+
+PERM_NULL_NOTE = (
+    "AMENDMENT A1. The first run's destruction control was ONE global permutation draw, and "
+    "its headline — 'permuting the dial collapses the availability spread from 16.74 pp to "
+    "0.40 pp' — was a single sample from a distribution quoted to two decimal places. The "
+    "review drew it 20 times and measured a null of -0.12 +- 5.06 pp: 0.40 pp was a coin "
+    f"flip, not a collapse. It is replaced here by {N_PERM_DRAWS} draws under TWO nulls, with "
+    "the null mean, SD and a two-sided permutation p published for every true statistic.\n"
+    "  GLOBAL   — dial values shuffled across all of the board's sessions. Destroys the date "
+    "correspondence AND the era structure, so it is the wrong yardstick for a magnitude: any "
+    "statistic that is partly era composition will look enormous against it.\n"
+    "  WITHIN-YEAR — dial values shuffled only WITHIN each calendar year (an era-preserving "
+    "block permutation). Each year keeps its own dial distribution and each stratum keeps its "
+    "year composition, so what survives is within-year signal ONLY. This is the honest null "
+    "for a magnitude claim, and it is the one the review used to show that most of the -16.74 "
+    "pp flagship spread is era composition rather than regime.\n"
+    "Both nulls are reported for every statistic. Where they disagree, the WITHIN-YEAR null "
+    "governs the magnitude claim and the GLOBAL null governs only the 'is the date "
+    "correspondence load-bearing at all' question."
+)
+
+
+def _perm_setup(ev: pd.DataFrame, ser: pd.DataFrame, board: str) -> dict | None:
+    """Compact arrays for fast re-labelling of one board under a permuted dial."""
+    s = BOARD_SPLITS[board]
+    era_dk = int(_daykey([pd.Timestamp(s["era_start"])])[0])
+    split_dk = int(_daykey([pd.Timestamp(s["split_date"])])[0])
+    sb = ser[ser["board"].astype(str) == board].sort_values("date").reset_index(drop=True)
+    sdk = _daykey(sb["date"])
+    sval = sb[REGIME_COL].to_numpy(dtype="float64")
+    syear = sb["date"].dt.year.to_numpy()
+    g = ev[(ev["board"].astype(str) == board) & ev["y_ok"]]
+    if not len(g):
+        return None
+    rdk = _daykey(g["date"])
+    keep = rdk >= era_dk
+    g, rdk = g[keep], rdk[keep]
+    pos = np.searchsorted(sdk, rdk)
+    ok = (pos < sdk.size)
+    pos = np.where(ok, pos, 0)
+    ok &= (sdk[pos] == rdk)
+    if not ok.all():
+        g, rdk, pos = g[ok], rdk[ok], pos[ok]
+    return {
+        "sdk": sdk, "sval": sval, "syear": syear,
+        "sfit": (sdk >= era_dk) & (sdk < split_dk),
+        "ridx": pos, "rfit": rdk < split_dk,
+        "rrung": np.searchsorted(np.array(RUNGS), g["rung_label"].to_numpy().astype(str)),
+        "runf": g["unfillable_open"].to_numpy(dtype=bool),
+        "ry": g["y_limit_up"].to_numpy(dtype=bool),
+    }
+
+
+def _perm_stats(P: dict, sval: np.ndarray) -> dict:
+    """The affirmative statistics, recomputed from one dial vector.  Cuts refit per draw."""
+    v = sval[P["sfit"]]
+    v = v[np.isfinite(v)]
+    edges = ([float(x) for x in np.unique(np.quantile(v, [1 / 3, 2 / 3]))]
+             if v.size >= 30 else [])
+    st = assign_stratum(sval[P["ridx"]], edges)
+    out, viol = {}, 0
+    for ri, rl in enumerate(RUNGS):
+        for sp, m0 in (("fit", P["rfit"]), ("holdout", ~P["rfit"])):
+            m = m0 & (P["rrung"] == ri)
+            av, pb, ns = [], [], []
+            for k in (0, 1, 2):
+                mm = m & (st == k)
+                n = int(mm.sum())
+                ns.append(n)
+                av.append(100.0 * float((~P["runf"][mm]).sum()) / n if n else np.nan)
+                pb.append(100.0 * float(P["ry"][mm].sum()) / n if n else np.nan)
+            key = f"{rl}|{sp}"
+            out[key] = {"avail_spread": av[2] - av[0], "p_spread": pb[2] - pb[0],
+                        "avail_monotone": bool(np.all(np.isfinite(av))
+                                               and av[0] >= av[1] >= av[2]),
+                        "min_cell_n": int(min(ns))}
+            if not out[key]["avail_monotone"]:
+                viol += 1
+    out["_violations"] = viol
+    return out
+
+
+def permutation_nulls(ev: pd.DataFrame, ser: pd.DataFrame, board: str = "main") -> dict:
+    """Two permutation nulls x N draws for every affirmative statistic on `board`.
+
+    Restricted to main deliberately: it is the only board whose dial is non-degenerate and
+    whose families clear the fit-core floor, so it is the only board carrying an affirmative
+    claim that a null could refute.  ChiNext and STAR are coverage nulls either way.
+    """
+    P = _perm_setup(ev, ser, board)
+    if P is None:
+        return {"status": f"NOT TESTABLE — no usable {board} rows"}
+    true = _perm_stats(P, P["sval"])
+    rng = np.random.default_rng(PERM_NULL_SEED)
+    yrs = P["syear"]
+    blocks = [np.where(yrs == y)[0] for y in np.unique(yrs)]
+    draws = {"global": [], "within_year": []}
+    for _ in range(N_PERM_DRAWS):
+        draws["global"].append(_perm_stats(P, P["sval"][rng.permutation(P["sval"].size)]))
+        w = P["sval"].copy()
+        for bl in blocks:                      # era-preserving block permutation
+            w[bl] = w[bl][rng.permutation(bl.size)]
+        draws["within_year"].append(_perm_stats(P, w))
+
+    def summarise(key: str, field: str) -> dict:
+        t = true[key][field]
+        rec = {"true": _r(t, 3)}
+        for arm in ("global", "within_year"):
+            x = np.array([d[key][field] for d in draws[arm]], dtype="float64")
+            x = x[np.isfinite(x)]
+            if x.size < 2 or not np.isfinite(t):
+                rec[arm] = {"status": "NOT TESTABLE"}
+                continue
+            ge = int((np.abs(x) >= abs(t)).sum())
+            rec[arm] = {
+                "null_mean_pp": _r(float(x.mean()), 3),
+                "null_sd_pp": _r(float(x.std(ddof=1)), 3),
+                "draws": int(x.size),
+                "draws_at_or_beyond_abs_true": ge,
+                "two_sided_p": _r((1.0 + ge) / (x.size + 1.0), 4),
+                "z_vs_null": _r((t - float(x.mean())) / float(x.std(ddof=1)), 2)
+                if float(x.std(ddof=1)) > 0 else None,
+            }
+        return rec
+
+    stats = {}
+    for rl in RUNGS:
+        for sp in ("fit", "holdout"):
+            k = f"{rl}|{sp}"
+            stats[k] = {"availability_spread_pp": summarise(k, "avail_spread"),
+                        "p_next_board_spread_pp": summarise(k, "p_spread"),
+                        "min_cell_board_days": true[k]["min_cell_n"]}
+    # THE ORDERING statistic — the one the review found robust.  Under each null, how often
+    # does a shuffled dial reproduce the true monotone-availability ordering across all 6
+    # (rung x window) cells?
+    order = {"true_monotone_cells": 6 - true["_violations"], "cells": 6,
+             "true_violations": true["_violations"]}
+    for arm in ("global", "within_year"):
+        v = np.array([d["_violations"] for d in draws[arm]])
+        order[arm] = {
+            "draws": int(v.size),
+            "draws_with_violations_at_or_below_true": int((v <= true["_violations"]).sum()),
+            "one_sided_p": _r((1.0 + int((v <= true["_violations"]).sum())) / (v.size + 1.0), 4),
+            "null_mean_violations": _r(float(v.mean()), 2),
+            "null_sd_violations": _r(float(v.std(ddof=1)), 2) if v.size > 1 else None,
+        }
+    return {"note": PERM_NULL_NOTE, "board": board, "draws_per_arm": N_PERM_DRAWS,
+            "seed": PERM_NULL_SEED, "statistics": stats, "ordering": order}
 
 
 # ── STAGE 6 — the corruption experiment ──────────────────────────────────────
 
 def corruption_summary(events: pd.DataFrame, trades: pd.DataFrame,
                        dials: dict[str, pd.DataFrame]) -> dict:
-    """Re-run every dial-conditioned effect under each corrupted alignment.
+    """Re-run every dial-conditioned effect under each SHIFTED alignment.
 
     The pre-registered lag-1 arm is reported WITH its measured power: shifting a 5-session
     backward mean by one session leaves four of five inputs in place, so attenuation rather
     than death is the honest expectation and a surviving effect there is not evidence of a
-    broken index.  The permutation arm is the one that must kill everything.
+    broken index.  Permutation is no longer an arm here — see permutation_nulls().
     """
-    out = {"arms": CORRUPTION_ARMS, "permutation_seed": PERM_SEED, "results": {}}
-    for arm in ("true", "corrupt_lag1", "corrupt_lead1", "corrupt_perm"):
+    out = {"arms": CORRUPTION_ARMS, "permutation_arm_superseded": PERM_ARM_SUPERSEDED,
+           "results": {}}
+    for arm in ("true", "corrupt_lag1", "corrupt_lead1"):
         el, _ = label_frame(events, dials[arm])
         tl, _ = label_frame(trades, dials[arm])
         floors = family_floor(el)
@@ -1626,43 +1969,147 @@ def corruption_summary(events: pd.DataFrame, trades: pd.DataFrame,
                 bl["max_abs_lead_date_clustered_t_above_the_paired_date_floor"],
         }
     tr = out["results"]["true"]
-    perm = out["results"]["corrupt_perm"]
     lead = out["results"]["corrupt_lead1"]
+    # AMENDMENT A3 — the first run's lookahead predicate keyed ONLY on
+    # max_date_clustered_t_non_thin_families: a maximum over 21 uniformly NEGATIVE cells, which
+    # a lookahead cannot push above the bar, so the check could not fail and its PASS carried
+    # no information (the S7 class W3-A named — verify that a check can SEE failure).  The
+    # predicate now keys on the two series that actually MOVE under a shifted dial.
+    movable = [
+        ("availability_spread_abs_pp_max", tr["availability_spread_abs_pp_max"],
+         lead["availability_spread_abs_pp_max"]),
+        ("max_abs_broken_lead_t_above_paired_date_floor",
+         tr["max_abs_broken_lead_t_above_paired_date_floor"],
+         lead["max_abs_broken_lead_t_above_paired_date_floor"]),
+    ]
+    moved = [{"series": k, "true": t, "lookahead": l,
+              "strengthens_under_lookahead": bool((l or 0) > (t or 0))}
+             for k, t, l in movable]
+    n_moved = sum(1 for m in moved if m["strengthens_under_lookahead"])
     out["reading"] = {
-        "destruction_control": (
-            "PASS — permuting the dial across sessions COLLAPSES the availability spread that "
-            "the true alignment produces (see availability_spread_abs_pp_max: "
-            f"{perm['availability_spread_abs_pp_max']} pp permuted vs "
-            f"{tr['availability_spread_abs_pp_max']} pp true) and clears no cell the true "
-            "alignment does not already fail to clear. The dial-conditioned structure this "
-            "lane measures is a property of the DATE CORRESPONDENCE, which is exactly what a "
-            "correct index means."
-            if (perm["cells_clearing_the_FULL_decision_bar"]
-                <= tr["cells_clearing_the_FULL_decision_bar"]
-                and (perm["availability_spread_abs_pp_max"] or 0)
-                < (tr["availability_spread_abs_pp_max"] or 0))
-            else "SEE NUMBERS — the permuted dial reproduces structure the true one produces, "
-                 "which would mean the effect is not about the dial at all"),
+        "lookahead_is_a_POSITIVE_control_not_a_null_control": (
+            "i5 at T+1 is computed FROM the T->T+1 continuation outcomes — the dial dated T+1 "
+            "counts how many of T's boarders boarded again at T+1, which IS the outcome this "
+            "book trades. A T+1-dated dial therefore MUST strengthen any statistic that can "
+            "move, and the honest reading of this arm is 'the positive control fired', not "
+            "'nothing happened'. An arm that changed nothing would mean the join is not "
+            "reading dates at all."),
+        "movable_series": moved,
         "lookahead_direction": (
-            "PASS — reading the dial one session into the FUTURE does not strengthen the "
-            "effect, so the true alignment is not smuggling in a forward value"
-            if (lead["max_date_clustered_t_non_thin_families"] or 0) <= (
-                (tr["max_date_clustered_t_non_thin_families"] or 0) + 0.5)
-            else "SEE NUMBERS — the lookahead arm is materially STRONGER, which would make the "
-                 "true alignment suspect"),
+            f"PASS — the positive control fires on {n_moved} of {len(moved)} movable series "
+            "(availability spread and broken-lead max t both rise under a T+1-dated dial, "
+            "which is the expected benign signature described above), and the true alignment "
+            "is measurably distinguishable from it."
+            if n_moved == len(moved) else
+            f"SEE NUMBERS — the lookahead arm strengthens only {n_moved} of {len(moved)} "
+            "movable series. A T+1-dated dial that does NOT strengthen these is evidence the "
+            "join is not date-sensitive, which would invalidate every dial-conditioned number "
+            "in this file."),
+        "why_the_t_census_is_NOT_in_this_predicate": (
+            "max_date_clustered_t_non_thin_families is a maximum over 21 cells that are "
+            "uniformly negative under every arm. It cannot rise above the decision bar no "
+            "matter what the dial does, so keying a lookahead verdict on it produces a PASS "
+            "that carries no information. It is still printed, as a descriptive series."),
+        "destruction_control_moved": (
+            "The destruction control is no longer an arm here: one permutation draw quoted to "
+            "two decimals was the first run's MAJOR defect. See `permutation_nulls` for the "
+            f"{N_PERM_DRAWS}-draw distributions under a global and an era-preserving scheme, "
+            "with a permutation p for every affirmative statistic."),
         "power_caveat": (
             "The lag-1 arm's power is bounded by the dial's own lag-1 autocorrelation, printed "
-            "in dial_series.dial_lag1_autocorrelation. Where that is near 1 the lag-1 arm "
-            "cannot distinguish a correct index from a one-session-late one, and the "
-            "permutation arm is the load-bearing control. This is stated as a measured "
-            "limitation rather than left as an implied clean bill of health."),
+            "in dial_series.dial_lag1_autocorrelation (~0.92 on every board). Where that is "
+            "near 1 the lag-1 arm cannot distinguish a correct index from a one-session-late "
+            "one. It is reported as a measured limitation, not as a clean bill of health."),
         "why_all_cells_maxima_are_not_comparable_across_arms": (
             "max_date_clustered_t_all_cells moves wildly between arms because re-cutting the "
             "dial re-populates the THIN families, where a two-session cell can print any t at "
-            "all. The comparable series is max_date_clustered_t_non_thin_families, and the "
-            "availability spread, which is a population quantity and not a t at all."),
+            "all. The comparable series are the non-thin maximum and the availability spread."),
     }
     return out
+
+
+def adjudicate_affirmative(perm: dict, fillable: dict) -> dict:
+    """AMENDMENT A2 — which affirmative claims survive BOTH the era-preserving permutation
+    null and session-clustered inference, and which are direction-only.
+
+    The primary result of this lane is a NULL and is unaffected by any of this. What this
+    block governs is the small set of AFFIRMATIVE statements the receipt also makes, which
+    the first run stated at full strength on IID bands and one permutation draw.
+    """
+    ALPHA = 0.05
+    sp = {(s["rung"], s["split"]): s for s in fillable["hot_vs_cold_spread"]
+          if s["board"] == "main"}
+    rows = []
+    for rl in RUNGS:
+        for w in ("fit", "holdout"):
+            k = f"{rl}|{w}"
+            st = perm.get("statistics", {}).get(k, {})
+            for field, label in (("availability_spread_pp", "entry availability hot-cold"),
+                                 ("p_next_board_spread_pp", "P(next board) hot-cold")):
+                f = st.get(field, {})
+                wy = f.get("within_year", {})
+                gl = f.get("global", {})
+                cl = None
+                if (rl, w) in sp:
+                    ck = ("availability_spread_session_clustered"
+                          if field == "availability_spread_pp"
+                          else "p_next_board_spread_session_clustered")
+                    cl = (sp[(rl, w)].get(ck) or {}).get("session_cluster_t")
+                p_wy = wy.get("two_sided_p")
+                ok_perm = p_wy is not None and p_wy <= ALPHA
+                ok_clu = cl is None or abs(cl) >= BOOK_T_BAR
+                rows.append({
+                    "statistic": label, "rung": rl, "window": w, "true": f.get("true"),
+                    "global_null_p": gl.get("two_sided_p"),
+                    "within_year_null_p": p_wy,
+                    "session_clustered_t": cl,
+                    "SURVIVES_era_preserving_null": bool(ok_perm),
+                    "SURVIVES_session_clustering": bool(ok_clu),
+                    "MAGNITUDE_SUPPORTED": bool(ok_perm and ok_clu),
+                })
+    surv = [r for r in rows if r["MAGNITUDE_SUPPORTED"]]
+    order = perm.get("ordering", {})
+    return {
+        "why_this_block_exists": (
+            "The first run stated its affirmative magnitudes against IID Wilson bands and a "
+            "SINGLE permutation draw. Both instruments were too weak for the claims resting "
+            "on them. This block re-adjudicates every affirmative magnitude against the "
+            "era-preserving permutation null AND session-clustered inference, and separates "
+            "what survives from what is direction-only."),
+        "bar": (f"a magnitude is SUPPORTED only if its two-sided permutation p under the "
+                f"ERA-PRESERVING (within-year) null is <= {ALPHA} AND its session-clustered "
+                f"|t| is >= {BOOK_T_BAR}. The global-shuffle p is printed but does NOT confer "
+                "support: it destroys era structure, so it flatters any statistic that is "
+                "partly era composition."),
+        "rows": rows,
+        "magnitudes_supported": len(surv),
+        "magnitudes_tested": len(rows),
+        "the_ordering_result": {
+            "statistic": ("availability falls monotonically across cold->mid->hot on all 6 "
+                          "main (rung x window) cells"),
+            "true_violations": order.get("true_violations"),
+            "global_null": order.get("global"),
+            "within_year_null": order.get("within_year"),
+            "verdict": (
+                "SUPPORTED UNDER BOTH NULLS — this is the robust affirmative finding of the "
+                "lane. A shuffled dial reproduces the full monotone ordering essentially "
+                "never (null mean "
+                f"{(order.get('within_year') or {}).get('null_mean_violations')} violations "
+                "under the era-preserving scheme), while the true dial produces zero."
+                if (order.get("true_violations") == 0
+                    and ((order.get("within_year") or {}).get("one_sided_p") or 1.0) <= ALPHA
+                    and ((order.get("global") or {}).get("one_sided_p") or 1.0) <= ALPHA)
+                else "SEE THE NUMBERS — the ordering does not clear both nulls"),
+        },
+        "headline_reading": (
+            "DIRECTION SURVIVES, MAGNITUDE LARGELY DOES NOT. The monotone ordering clears both "
+            "nulls and the P(next board) spread clears the era-preserving null in both "
+            "windows. The availability MAGNITUDES mostly do not: in particular the first "
+            "run's flagship -16.74 pp holdout spread has an era-preserving permutation p of "
+            "about 0.07 and a session-clustered t of about -1.7, so most of it is era "
+            "composition and thin-holdout noise rather than regime. The receipt now leads "
+            "with the ordering and bands every magnitude."),
+    }
 
 
 # ── ORE LEDGER ───────────────────────────────────────────────────────────────
@@ -1768,12 +2215,12 @@ WHAT_THIS_DOES_NOT_ESTABLISH = [
 
 def main() -> int:
     t0 = time.time()
-    print("[1/7] building panel (L1 events + L1 parity book + this lane's book) ...",
+    print("[1/8] building panel (L1 events + L1 parity book + this lane's book) ...",
           flush=True)
     (events, trades, l1, pairs, ser, cal, dial_meta, meta, usable_dates,
      build_sec) = build()
 
-    print("[2/7] parity gates ...", flush=True)
+    print("[2/8] parity gates ...", flush=True)
     gates = {
         "v0_ladder": rider.v0_ladder_parity(events, meta),
         "l1_panel_and_book": l1_parity(meta, l1),
@@ -1781,7 +2228,7 @@ def main() -> int:
         "splits": split_gate(usable_dates),
     }
 
-    print("[3/7] dial join + lookahead audit ...", flush=True)
+    print("[3/8] dial join + lookahead audit ...", flush=True)
     dials = dial_frames(ser)
     ev_true = events.copy()
     ev_true["cohort"] = "sealed"
@@ -1794,7 +2241,7 @@ def main() -> int:
         ev_l["dial"].to_numpy(dtype="float64"))}
     lookahead = audit_lookahead(ser, pairs, joined)
 
-    print("[4/7] primary cells + t-census + era tables ...", flush=True)
+    print("[4/8] primary cells + t-census + era tables ...", flush=True)
     floors = family_floor(ev_l)
     rows, verdict, trunc = primary_book(tr_l, floors)
     eras = era_tables(tr_l, floors)
@@ -1806,13 +2253,16 @@ def main() -> int:
                                               r["split"]) == hl_key + (sp,)), None)
                 for sp in ("fit", "holdout")}
 
-    print("[5/7] secondary (a) broken-vs-sealed by dial state ...", flush=True)
+    print("[5/8] secondary (a) broken-vs-sealed by dial state ...", flush=True)
     broken = broken_vs_sealed(tr_l, floors)
 
-    print("[6/7] secondary (b) fillable share x dial ...", flush=True)
+    print("[6/8] secondary (b) fillable share x dial ...", flush=True)
     fillable = fillable_share_by_dial(ev_l)
 
-    print("[7/7] corruption experiment (3 arms) ...", flush=True)
+    print(f"[7/8] permutation nulls ({N_PERM_DRAWS} draws x 2 schemes) ...", flush=True)
+    perm_nulls = permutation_nulls(ev_l, ser, board="main")
+
+    print("[8/8] corruption experiment (shifted-dial arms) ...", flush=True)
     corruption = corruption_summary(ev_true, trades, dials)
 
     ev_tape = pd.read_parquet(LIMIT_EVENTS)
@@ -1872,9 +2322,13 @@ def main() -> int:
         "runtime_sec": None,          # filled below; a RUN-STAMP field, see determinism note
         "determinism": (
             "TZ=UTC python3 research/cn_prophet_audit/continuation_regime_merge_v1.py run "
-            "twice produces byte-identical JSON except the two run-stamp fields "
-            "`generated_utc` and `runtime_sec`. The only randomness in the file is the "
-            f"corruption experiment's permutation arm, seeded at {PERM_SEED}."),
+            "twice produces byte-identical JSON except THREE stamp fields: `generated_utc`, "
+            "`runtime_sec`, and `coverage_receipt.store_vintage.checkout_head_sha` "
+            "(amendment A5 — the first run's note said 'two', omitting the HEAD sha; it is "
+            "stable across two runs in one checkout but is a stamp, not a finding, and moves "
+            "with the checkout). All randomness is seeded: the permutation nulls at "
+            f"{PERM_NULL_SEED} and the session cluster bootstrap at {BOOT_SEED}."),
+        "amendments_after_first_run": AMENDMENTS_AFTER_FIRST_RUN,
         "preregistration": PREREGISTRATION,
         "coverage_receipt": coverage,
         "dial_series": dial_meta,
@@ -1904,6 +2358,8 @@ def main() -> int:
         "era_tables": eras,
         "secondary_a_broken_board_lead_by_dial_state": broken,
         "secondary_b_fillable_share_by_dial_state": fillable,
+        "permutation_nulls": perm_nulls,
+        "affirmative_claims_adjudicated": adjudicate_affirmative(perm_nulls, fillable),
         "corruption_experiment": corruption,
         "what_this_does_NOT_establish": WHAT_THIS_DOES_NOT_ESTABLISH,
         "ore_ledger": ORE_LEDGER,
@@ -1920,6 +2376,12 @@ def main() -> int:
           f"of {verdict['cells_total']}  (non-thin max dc-t "
           f"{verdict['t_census_non_thin_families_only']['max_date_clustered_t_either_window']}"
           f" over {verdict['t_census_non_thin_families_only']['cells']} cells)", flush=True)
+    adj = out["affirmative_claims_adjudicated"]
+    print(f"  affirmative magnitudes: {adj['magnitudes_supported']} of "
+          f"{adj['magnitudes_tested']} survive the era-preserving null + clustering",
+          flush=True)
+    print(f"  ordering result       : "
+          f"{adj['the_ordering_result']['verdict'][:58]}", flush=True)
     return 0
 
 
