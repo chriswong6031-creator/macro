@@ -25,6 +25,44 @@
   .tr-hero-stance{flex:1;min-width:220px}
   .tr-hero-stance .stance-main{font-size:14.5px;font-weight:700;line-height:1.5}
   .tr-hero-stance .stance-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  /* ── measurement-change comparison (era break, 2026-08-07) ──────────────────
+     Two readings of the SAME trades, so the visual job is the opposite of the
+     hero's: invite comparison, refuse a verdict. Three rules follow from that —
+       1. the "before" column is muted with a hairline rail, NOT struck through.
+          A strikethrough reads as retracted, and these numbers were never wrong;
+          they were measured on a grid that moved. The visual must not contradict
+          the sentence above it;
+       2. neither column takes .val's 28px or the up/down inks — the hero above
+          still owns the headline, and colouring a comparison turns a measurement
+          note into a performance claim;
+       3. one plain sentence carries the reason, and a second says how much of the
+          move is simply more trades finishing. Without it a reader reads the whole
+          drop as the measurement change, which is false. */
+  /* background is var(--panel) FLAT, not a muted wash over it. The wash reads fine on
+     dark (panel #181b21 lifts off canvas #0f1115) but in light it lands on
+     rgb(247,248,250) — the page canvas itself — so the whole block dissolved into the
+     page while the hero above it stayed white. That is the panel≈bg flatness bug the
+     doctrine names (§5.8). The block still reads quieter than the hero, but through
+     type and the rail, not through a background that only works in one theme. */
+  .tr-basis{margin:-8px 0 26px;padding:16px 18px;border:1px solid var(--line);
+    border-left:3px solid color-mix(in srgb,var(--muted) 45%,transparent);
+    border-radius:12px;background:var(--panel)}
+  .tr-basis-hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:8px}
+  .tr-basis-tag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted)}
+  .tr-basis-dt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .tr-basis-line{margin:0 0 14px;font-size:12.5px;line-height:1.55;color:var(--text);max-width:80ch}
+  .tr-basis-cmp{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:flex-start}
+  .tr-basis-col{min-width:170px;padding-left:11px;
+    border-left:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
+  .tr-basis-col-k{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px}
+  .tr-basis-row{display:flex;justify-content:space-between;gap:14px;font-size:13px;line-height:1.75}
+  .tr-basis-row .n{font-weight:700;font-variant-numeric:tabular-nums}
+  .tr-basis-row .w{color:var(--muted);font-size:12px}
+  .tr-basis-then{color:var(--muted)}
+  .tr-basis-ft{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:80ch}
+  @media (max-width:560px){ .tr-basis-cmp{gap:14px} .tr-basis-col{min-width:0;flex:1 1 140px} }
+
   .accruing-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
     color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);
