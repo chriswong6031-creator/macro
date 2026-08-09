@@ -16,33 +16,15 @@
   "harness_validity": {
     "c0_plan_ids": [],
     "live_plan_ids": [
-      "ALG-BULL-20260612",
-      "AMZN-BULL-20260731",
-      "APO-BULL-20260731",
-      "AVGO-BULL-20260731",
-      "AYI-BULL-20260731",
-      "CMC-BULL-20260731",
-      "ENR-BULL-20260731",
-      "FUL-BULL-20260805",
-      "HD-BULL-20260807",
-      "SMR-BULL-20260731",
-      "TTC-BULL-20260731",
-      "WS-BULL-20260731"
+      "FSS-BULL-20260728",
+      "GTES-BULL-20260731",
+      "RH-BULL-20260417"
     ],
-    "c0_mismatch_count": 12,
+    "c0_mismatch_count": 3,
     "missing_from_mirror": [
-      "ALG-BULL-20260612",
-      "AMZN-BULL-20260731",
-      "APO-BULL-20260731",
-      "AVGO-BULL-20260731",
-      "AYI-BULL-20260731",
-      "CMC-BULL-20260731",
-      "ENR-BULL-20260731",
-      "FUL-BULL-20260805",
-      "HD-BULL-20260807",
-      "SMR-BULL-20260731",
-      "TTC-BULL-20260731",
-      "WS-BULL-20260731"
+      "FSS-BULL-20260728",
+      "GTES-BULL-20260731",
+      "RH-BULL-20260417"
     ],
     "extra_in_mirror": [],
     "harness_ok": false,
@@ -289,7 +271,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 15.2
+        "runtime_s": 16.3
       }
     },
     "policies": {
@@ -299,8 +281,8 @@
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL",
           "WT",
+          "XPEL",
           "BIDU",
           "NVDA",
           "NGVT",
@@ -336,17 +318,16 @@
           "GTES",
           "GPCR",
           "ADAM",
-          "XPEL",
           "WT",
+          "XPEL",
           "BIDU",
           "NVDA"
         ],
         "plan_ids": [
-          "ALG-BULL-20260612",
           "FSS-BULL-20260728",
           "GTES-BULL-20260731"
         ],
-        "n_plans": 3,
+        "n_plans": 2,
         "selection": {
           "admitted": 30,
           "cap": 12,
@@ -355,12 +336,12 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 8,
+          "skipped_duplicate_id": 9,
           "skipped_open_plan": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 3
+          "originated": 2
         },
         "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
@@ -378,7 +359,7 @@
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL"
+          "WT"
         ],
         "plan_ids": [
           "DHR-BULL-20260521",
@@ -416,8 +397,8 @@
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL",
           "WT",
+          "XPEL",
           "BIDU",
           "NVDA",
           "AEM",
@@ -459,8 +440,8 @@
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL",
           "WT",
+          "XPEL",
           "BIDU",
           "NVDA",
           "NGVT",
@@ -490,8 +471,8 @@
         "selected_tickers": [
           "GPCR",
           "VSEC",
-          "XPEL",
           "WT",
+          "XPEL",
           "NVDA",
           "UEC",
           "UAL",
@@ -501,13 +482,8 @@
           "SMR",
           "APO"
         ],
-        "plan_ids": [
-          "APO-BULL-20260731",
-          "CMC-BULL-20260731",
-          "HD-BULL-20260807",
-          "SMR-BULL-20260731"
-        ],
-        "n_plans": 4,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
           "admitted": 30,
           "cap": 12,
@@ -523,14 +499,14 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 7,
+          "skipped_duplicate_id": 11,
           "skipped_open_plan": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 4
+          "originated": 0
         },
-        "ledger_rows_appended": 1,
+        "ledger_rows_appended": 0,
         "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
@@ -539,8 +515,8 @@
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL",
           "WT",
+          "XPEL",
           "BIDU",
           "NVDA",
           "NGVT",

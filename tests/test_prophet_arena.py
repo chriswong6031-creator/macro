@@ -23,6 +23,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 FIXTURE_ASOF = "2026-05-01"
 FIXTURE_STAMP = "20260501"
+HEALTHY_CLOCK = {
+    "price_through": FIXTURE_ASOF,
+    "source_delayed": False,
+    "source_unknown": False,
+    "source_basis": "panel_majority",
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -66,7 +72,7 @@ def standouts() -> dict:
 
       A01..A14  admitted; scores 90 down to 25 in steps of 5; act_level alternates
                 3, 2, 3, 2, ... so C1's "act_level==2 first" re-order is unambiguous.
-      X03       admitted, lowest score (10) — the row the cap keeps cutting.
+      X03       admitted, lowest score (10) — C0 retains it; capped challengers cut it.
       R01..R03  stage 'ran'; act_level 0/1 so the champion CANNOT admit them.
                 R03 is also band 'low', so even C2's widening must reject it.
       X01       band 'low' with the highest score of all — a hard exclusion no
@@ -85,7 +91,18 @@ def standouts() -> dict:
     buy.append(_row("X01", 95.0, 3, band="low"))
     buy.append(_row("X02", 92.0, 1))
     buy.append(_row("X03", 10.0, 2))
-    return {"as_of": FIXTURE_ASOF, "gate_go": True, "buy": buy}
+    return {
+        "as_of": FIXTURE_ASOF,
+        "gate_go": True,
+        "buy": buy,
+        "staleness": {
+            "price_through": FIXTURE_ASOF,
+            "delayed": False,
+            "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
+    }
 
 
 class FakePrices:
@@ -134,8 +151,11 @@ class TestPolicyDeterminism:
 
     def test_c0_exact(self, standouts):
         rows, rec = pa.select_for_policy("C0_champion_mirror", standouts, cap=12)
-        assert _tickers(rows) == [f"A{i:02d}" for i in range(1, 13)]
+        assert _tickers(rows) == [f"A{i:02d}" for i in range(1, 15)] + ["X03"]
         assert rec["admitted"] == 15
+        assert rec["cap"] is None
+        assert rec["cap_applied"] is False
+        assert rec["truncated"] == 0
 
     def test_c1_lifts_act_level_two_then_champion_order(self, standouts):
         rows, rec = pa.select_for_policy("C1_buy_soon_first", standouts, cap=12)
@@ -160,7 +180,9 @@ class TestPolicyDeterminism:
         c6, rec = pa.select_for_policy("C6_time_stop_21", standouts, cap=12)
         c0, _ = pa.select_for_policy("C0_champion_mirror", standouts, cap=12)
         assert _tickers(c6) == _tickers(c0)
-        assert "identical to C0" in rec["selection_basis"]
+        assert "lossless C0" in rec["selection_basis"]
+        assert len(c6) == 15
+        assert rec["cap"] is None
 
     def test_selection_is_deterministic_across_calls(self, standouts):
         for key in pa.POLICY_KEYS:
@@ -190,9 +212,9 @@ class TestPolicyDeterminism:
 # --------------------------------------------------------------------------- #
 class TestC0Mirror:
     def test_c0_equals_a_direct_select_candidates_call(self, standouts):
-        direct = pb.select_candidates(standouts, n=pb.N_CANDIDATES)
+        direct = pb.select_candidates(standouts, n=None)
         mirror, _ = pa.select_for_policy(
-            "C0_champion_mirror", standouts, cap=pb.N_CANDIDATES
+            "C0_champion_mirror", standouts, cap=pa.REGISTERED_CHALLENGER_CAP
         )
         assert _tickers(mirror) == _tickers(direct)
 
@@ -200,9 +222,9 @@ class TestC0Mirror:
         """The mirror must track the champion's own order-invariance, not the file's."""
         shuffled = dict(standouts)
         shuffled["buy"] = list(reversed(standouts["buy"]))
-        direct = pb.select_candidates(shuffled, n=pb.N_CANDIDATES)
+        direct = pb.select_candidates(shuffled, n=None)
         mirror, _ = pa.select_for_policy(
-            "C0_champion_mirror", shuffled, cap=pb.N_CANDIDATES
+            "C0_champion_mirror", shuffled, cap=pa.REGISTERED_CHALLENGER_CAP
         )
         assert _tickers(mirror) == _tickers(direct)
 
@@ -212,6 +234,7 @@ class TestC0Mirror:
             "C0_champion_mirror", rows,
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None, prices=FakePrices(),
+            **HEALTHY_CLOCK,
         )
         assert [p["id"] for p in plans] == [
             pb._make_id(t, "BULL", FIXTURE_ASOF) for t in _tickers(rows)
@@ -238,24 +261,26 @@ class TestC0Mirror:
 # --------------------------------------------------------------------------- #
 class TestOrigination:
     def test_geometry_comes_from_the_bridge(self, standouts):
-        rows, _ = pa.select_for_policy("C0_champion_mirror", standouts, cap=2)
+        rows = pa.admitted_pool(standouts)[:2]
         plans, _ = pa.originate_shadow_plans(
             "C0_champion_mirror", rows,
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None, prices=FakePrices(),
+            **HEALTHY_CLOCK,
         )
         assert plans[0]["invalidation"] == 90.0
         assert plans[0]["targets"] == [115.0, 130.0]
         assert plans[0]["horizon_days"] == pb.HORIZON_DAYS_DEFAULT
 
     def test_existing_id_and_open_key_suppression(self, standouts):
-        rows, _ = pa.select_for_policy("C0_champion_mirror", standouts, cap=3)
+        rows = pa.admitted_pool(standouts)[:3]
         plans, rec = pa.originate_shadow_plans(
             "C0_champion_mirror", rows,
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids={f"A01-BULL-{FIXTURE_STAMP}"},
             active_keys={pb.plan_key("A02", "BULL")},
             prices=FakePrices(),
+            **HEALTHY_CLOCK,
         )
         assert [p["asset"] for p in plans] == ["A03"]
         assert rec["skipped_duplicate_id"] == 1
@@ -268,6 +293,7 @@ class TestOrigination:
             "C0_champion_mirror", [row],
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None, prices=FakePrices(),
+            **HEALTHY_CLOCK,
         )
         assert plans == []
         assert rec["skipped_no_spot"] == 1
@@ -320,6 +346,7 @@ class TestC3Union:
             "C3_door_w_union", rows,
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None, prices=FakePrices(),
+            **HEALTHY_CLOCK,
         )
         ids = [p["id"] for p in plans]
         assert len(ids) == len(set(ids))
@@ -336,6 +363,7 @@ class TestC3Union:
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None,
             prices=FakePrices({"D01": None}),
+            **HEALTHY_CLOCK,
         )
         assert rec["skipped_door_w_no_geometry"] == 1
         assert rec["skipped_door_w_tickers"] == ["D01"]
@@ -352,6 +380,7 @@ class TestC3Union:
             asof=FIXTURE_ASOF, standouts_asof=FIXTURE_ASOF,
             existing_ids=set(), active_keys=None,
             prices=FakePrices({"D01": history}),
+            **HEALTHY_CLOCK,
         )
         assert rec["skipped_door_w_no_geometry"] == 0
         d01 = next(p for p in plans if p["asset"] == "D01")
@@ -401,7 +430,7 @@ def _write_regime(root: Path, payload: dict) -> None:
 
 
 class TestC4DispersionCap:
-    def test_lean_in_keeps_the_champion_cap(self, tmp_path):
+    def test_lean_in_keeps_c4s_registered_twelve_row_cap(self, tmp_path):
         _write_regime(tmp_path, {"as_of": "2026-05-01", "state": "lean_in"})
         cap, rec = pa.read_dispersion_state("2026-05-01", tmp_path)
         assert cap == pa.DISPERSION_CAP_LEAN_IN == 12
@@ -413,7 +442,7 @@ class TestC4DispersionCap:
         assert cap == pa.DISPERSION_CAP_OTHERWISE == 6
         assert rec["mode"] == "not_lean_in"
 
-    def test_absent_artifact_fails_open_to_the_champion_cap(self, tmp_path):
+    def test_absent_artifact_fails_open_to_c4s_registered_cap(self, tmp_path):
         cap, rec = pa.read_dispersion_state("2026-05-01", tmp_path)
         assert cap == pa.DISPERSION_CAP_LEAN_IN
         assert rec["mode"] == "fail_open_absent"
@@ -472,8 +501,8 @@ class StubGate:
 
 
 class TestC5AlignGate:
-    def test_gate_restricts_and_can_reach_past_the_champion_cap(self, standouts):
-        """A restriction frees cap slots, so C5 reaches rows C0's cap cut."""
+    def test_gate_restricts_across_the_full_champion_pool(self, standouts):
+        """C5 may retain deep C0 rows before applying its own registered cap."""
         allowed = {"A01", "A02", "A13", "A14", "X03"}
         rows, rec = pa.select_for_policy(
             "C5_align2_gate", standouts, cap=12, atlas=StubGate(allowed)
@@ -661,10 +690,17 @@ def nightly(monkeypatch):
 
 def _open(pid: str, night: str = "2026-05-01", **over) -> dict:
     row = {
-        "schema": pa.LEDGER_SCHEMA, "kind": "open", "policy": "C0_champion_mirror",
+        "schema": pa.LEDGER_SCHEMA, "temporal_contract": pa.TEMPORAL_CONTRACT,
+        "kind": "open", "policy": "C0_champion_mirror",
         "id": pid, "asset": pid.split("-")[0], "direction": "BULL",
-        "signal_date": FIXTURE_ASOF, "arena_night": night,
-        "entry": 100.0, "invalidation": 90.0, "targets": [115.0, 130.0],
+        "formation_date": FIXTURE_ASOF, "signal_date": FIXTURE_ASOF,
+        "confirmed_date": None, "observed_date": FIXTURE_ASOF,
+        "signal_tier": None, "signal_date_basis": "legacy_formation_alias",
+        "signal_provisional": False, "source_marker_date": None,
+        "price_basis_date": FIXTURE_ASOF, "entry_date": FIXTURE_ASOF,
+        "recorded_at": night, "arena_night": night,
+        "entry": 100.0, "trigger": None, "invalidation": 90.0,
+        "targets": [115.0, 130.0],
         "horizon_days": 45,
     }
     row.update(over)
@@ -759,7 +795,8 @@ def _seed_closed(root: Path, policy: str, results: list[float], night="2026-05-0
         pid = f"S{i:03d}-BULL-20260501"
         rows.append(_open(pid, night=night, policy=policy))
         rows.append({
-            "schema": pa.LEDGER_SCHEMA, "kind": "close", "policy": policy, "id": pid,
+            "schema": pa.LEDGER_SCHEMA, "temporal_contract": pa.TEMPORAL_CONTRACT,
+            "kind": "close", "policy": policy, "id": pid,
             "asset": f"S{i:03d}", "signal_date": FIXTURE_ASOF,
             "close_date": "2026-06-15",
             "outcome": "T1_HIT" if r > 0 else "EXPIRED",
@@ -1126,3 +1163,45 @@ class TestRunArena:
         assert board["harness_validity"]["harness_ok"] is True
         assert board["harness_validity"]["missing_from_mirror"] == []
         assert board["harness_validity"]["extra_in_mirror"] == []
+
+    def test_c0_harness_mirrors_every_survivor_above_twelve(
+        self, standouts, tmp_path, monkeypatch
+    ):
+        """C0/C6 are lossless; only registered selection challengers keep 12."""
+        monkeypatch.setattr(
+            "engine.prophet_doors.door_w_candidates",
+            lambda root=None: {"candidates": [], "disclosure": {}},
+            raising=True,
+        )
+        monkeypatch.setattr(
+            pa.AtlasGate, "_evaluate", lambda self, t: (True, "weekly_align_class")
+        )
+        admitted = pa.admitted_pool(standouts)
+        assert len(admitted) == 15 > pa.REGISTERED_CHALLENGER_CAP
+        duplicate_id = pb._make_id("A01", "BULL", FIXTURE_ASOF)
+        active_key = pb.plan_key("A02", "BULL")
+        live = {
+            pb._make_id(str(row["ticker"]), "BULL", FIXTURE_ASOF)
+            for row in admitted[2:]
+        }
+        assert len(live) == 13 > pa.REGISTERED_CHALLENGER_CAP
+
+        board = pa.run_arena(
+            standouts,
+            asof=FIXTURE_ASOF,
+            existing_ids={duplicate_id},
+            active_keys={active_key},
+            live_plan_ids=live,
+            repo_root=tmp_path,
+            write=False,
+            tilt_inputs=None,
+        )
+
+        assert board["harness_validity"]["harness_ok"] is True
+        tonight = board["tonight"]["policies"]
+        assert tonight[pa.CHAMPION_KEY]["n_plans"] == len(live) == 13
+        assert tonight["C6_time_stop_21"]["n_plans"] == 13
+        assert tonight["C1_buy_soon_first"]["n_plans"] <= 12
+        assert len(tonight["C1_buy_soon_first"]["selected_tickers"]) == 12
+        assert tonight[pa.CHAMPION_KEY]["selection"]["cap"] is None
+        assert tonight["C1_buy_soon_first"]["selection"]["cap"] == 12

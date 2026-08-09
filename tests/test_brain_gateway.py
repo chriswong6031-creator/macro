@@ -3160,6 +3160,76 @@ def test_finance_tools_missing_data_return_unavailable(tmp_path):
     assert "honesty" in hv and hv["honesty"]["closed_n"] == 0
 
 
+def test_house_view_prefers_effective_signal_and_excludes_quarantined_ledger(tmp_path):
+    root = tmp_path
+    index_dir = root / "site" / "prophet"
+    ledger_dir = root / "data" / "prophet"
+    index_dir.mkdir(parents=True)
+    ledger_dir.mkdir(parents=True)
+    (index_dir / "index.json").write_text(json.dumps({
+        "gate_go": True,
+        "plans": [{
+            "id": "TST-BULL-20260601",
+            "asset": "TST",
+            "_signal_date": "2026-06-01",
+            "signal_date": None,
+            "formation_date": "2026-06-01",
+            "confirmed_date": None,
+            "observed_date": "2026-06-04",
+            "price_basis_date": "2026-06-04",
+            "entry_date": "2026-06-04",
+            "recorded_at": "2026-06-05",
+            "signal_tier": "T3",
+            "signal_date_basis": "tier_observation",
+            "signal_provisional": True,
+            "source_marker_date": "2026-05-29",
+        }],
+    }), encoding="utf-8")
+    terminal = {
+        "schema": "prophet.ledger/v1",
+        "id": "BAD-BULL-20260501",
+        "asset": "BAD",
+        "direction": "BULL",
+        "signal_date": "2026-05-01",
+        "close_date": "2026-05-10",
+        "outcome": "EXPIRED",
+    }
+    (ledger_dir / "ledger.jsonl").write_text(
+        json.dumps(terminal) + "\n", encoding="utf-8"
+    )
+    base = {
+        "schema": "prophet.ledger_correction/v1",
+        "corrects_id": terminal["id"],
+        "basis": "test audit",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    corrections = [
+        dict(base, id="bad:reason", field="integrity_reason", old_value=None,
+             new_value="impossible terminal chronology"),
+        dict(base, id="bad:status", field="integrity_status", old_value=None,
+             new_value="quarantined"),
+    ]
+    (ledger_dir / "ledger_corrections.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in corrections), encoding="utf-8"
+    )
+
+    view = gw._tool_get_house_view({}, root)
+
+    plan = view["plans"][0]
+    assert plan["signal_date"] is None  # explicit T3 null must not revive _signal_date
+    assert plan["formation_date"] == "2026-06-01"
+    assert plan["confirmed_date"] is None
+    assert plan["observed_date"] == "2026-06-04"
+    assert plan["price_basis_date"] == plan["entry_date"] == "2026-06-04"
+    assert plan["recorded_at"] == "2026-06-05"
+    assert plan["signal_tier"] == "T3"
+    assert plan["signal_date_basis"] == "tier_observation"
+    assert plan["signal_provisional"] is True
+    assert plan["source_marker_date"] == "2026-05-29"
+    assert view["honesty"]["closed_n"] == 0
+
+
 # --- get_fundamentals en/zh dict guard ----------------------------------------
 
 def test_get_fundamentals_en_zh_guard(tmp_path):

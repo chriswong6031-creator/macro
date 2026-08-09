@@ -61,6 +61,43 @@ def _make_status_fixture(tmp_path: Path, include_us_parquet: bool = False) -> di
     return pg.build_status(root=tmp_path)
 
 
+def test_momoedge_summary_excludes_correction_quarantine(tmp_path):
+    import engine.neuralweb.prophet_governor as pg
+
+    store = tmp_path / "data" / "prophet"
+    store.mkdir(parents=True)
+    good = {"id": "GOOD-BULL-20260601", "outcome": "T1_HIT"}
+    bad = {"id": "BAD-BULL-20260601", "outcome": "EXPIRED"}
+    (store / "ledger.jsonl").write_text(
+        json.dumps(good) + "\n" + json.dumps(bad) + "\n", encoding="utf-8"
+    )
+    base = {
+        "schema": "prophet.ledger_correction/v1",
+        "corrects_id": bad["id"],
+        "basis": "test audit",
+        "corrected_at": "2026-08-08",
+        "evidence": {"fixture": True},
+    }
+    corrections = [
+        dict(base, id="bad:reason", field="integrity_reason", old_value=None,
+             new_value="impossible terminal chronology"),
+        dict(base, id="bad:status", field="integrity_status", old_value=None,
+             new_value="quarantined"),
+    ]
+    (store / "ledger_corrections.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in corrections), encoding="utf-8"
+    )
+
+    block = pg._build_momoedge_block(tmp_path)
+
+    assert block["ledger"] == {
+        "total_rows_sampled": 1,
+        "open_count": 0,
+        "closed_count": 1,
+        "outcome_mix": {"T1_HIT": 1},
+    }
+
+
 # ---------------------------------------------------------------------------
 # 1. Absent store => data_gap (SA-R15), not fabricated zeros
 # ---------------------------------------------------------------------------
