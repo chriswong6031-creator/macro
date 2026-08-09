@@ -1,6 +1,7 @@
 {% import "_prophet_card.html.j2" as pv %}
 {% import "_decision_card.html.j2" as dc %}
 {% import "_lens.html.j2" as lens %}
+{% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -3265,6 +3266,18 @@
     outline-offset: 2px; border-radius: 4px; }
   .anv2-board .anv2-go { font-size: 10px; opacity: .55; margin-left: 3px; }
   .anv2-board .anv2-empty { padding: 10px 13px; color: var(--muted); font-size: 11px; }
+  /* Hover-card mark — monoline (doctrine §5.8, emoji are not UI icons). Draws from
+     templates/_icons.html.j2 (24×24, stroke=currentColor) so it inherits the tile's
+     ink (--link on .row-pop-mark).
+     NO bare `.ic-svg {}` rule here on purpose: hosts scope their own copies (e.g.
+     sector_central.html.j2 under #si-confluence) and a global rule shipped from a
+     board would fight its host. Explicit selectors only.
+     .row-pop-mark is deliberately NOT scoped to #act-now — theme.js clones the hover
+     card onto document.body, so an id-scoped rule would style the hidden source and
+     miss the card the reader actually sees. */
+  .row-pop-mark .ic-svg { fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
   </style>
 {{ lens.lens_css() }}
   <div class="panel span12 anv2-board" id="act-now">
@@ -3426,7 +3439,7 @@
         {%- if _hk_sc is not none and _hk_sc.get('dc_day') is not none %}周期第 {{ _hk_sc.get('dc_day') }} 日{% endif -%}
         {%- endset -%}
         {{ dc.dc_card({
-          'kind': 'sector', 'mark': '🏛', 'tone': _hk_tone,
+          'kind': 'sector', 'mark': icon('sector'), 'tone': _hk_tone,
           'eyebrow': ('Sector pulse · ' ~ it.ticker, '板块脉搏 · ' ~ it.ticker),
           'name': (td(it.name),),
           'tag': (td(it.label),) if it.label else none,

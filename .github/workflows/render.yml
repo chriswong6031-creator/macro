@@ -242,6 +242,49 @@ jobs:
     # budget without weakening any guard or publishing a partial tree.
     timeout-minutes: 180
     steps:
+      # Same workspace-hygiene guard as ci.yml's pack job (#5108), and it must run FIRST
+      # — ahead of the bound step below, not just ahead of actions/checkout. A self-hosted
+      # runner REUSES its workspace between jobs, and `merge-on-green.yml` sweeps the
+      # `render-linux` runners (an operator option for this lane) every ~10 minutes with a
+      # non-cone sparse checkout of three files, leaving `core.sparseCheckout=true` in the
+      # SAME directory. Two properties of THIS job make that worse than the pack case:
+      #
+      #   * `git reset --hard` does NOT restore a path the index has marked skip-worktree,
+      #     so the bound step's fetch/reset/clean would happily "refresh" a partial tree.
+      #   * the checkout below is CONDITIONAL on `checkout_ready != 'true'`, so on the
+      #     managed fast path actions/checkout never runs and its own sparse handling
+      #     never happens at all.
+      #
+      # A pack job dies loudly on a missing script. This job would render, guard and
+      # COMMIT whatever subset of the tree it found — a truncated publish, not a red X.
+      #
+      # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
+      # SPARSE". It does — run 31304933108 shows checkout@v4 running
+      # `git sparse-checkout disable` itself — and the workspace was partial anyway:
+      # `disable` clears the WORKTREE-scoped flag, checkout then unsets
+      # `extensions.worktreeConfig`, and that makes the repo-scoped `core.sparseCheckout`
+      # effective again. The config unset is the half that ends the outage; the `disable`
+      # in front of it is what re-materialises the missing paths — and here, where
+      # checkout may be skipped entirely, it is the ONLY thing that does. Keep both.
+      #
+      # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
+          fi
       - name: bound persisted render checkout
         id: bound
         # Self-hosted workspaces persist between jobs. The generated site history made

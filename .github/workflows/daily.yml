@@ -6077,6 +6077,19 @@ jobs:
           # consolidate step above. The host spool (data/marketing/personas_host/)
           # is gitignored and must never appear here.
           git add data/marketing/personas 2>/dev/null || true
+          # THE MARKETING LANES' AI SPEND AND RUNG HEALTH (W2, 2026-08-08).
+          # Every marketing LLM lane already books an ai_costs row per served
+          # call (engine/llm_auth._capture_usage, usage_lane=marketing-*) and
+          # NOTHING IN THIS JOB EVER STAGED THEM: the two jobs whose broad
+          # `git add data/` sweeps usage.jsonl in are `engine:` and asia-close's
+          # `asia:`, so the marketing rows were written to this job's checkout
+          # and then discarded by the next actions/checkout. The committed
+          # ledger consequently held 3,372 rows on 2026-08-08 with ZERO from any
+          # marketing lane, which read as "the copywriter books no usage" and is
+          # in fact "the copywriter's usage is never committed". Same reason for
+          # provider_health.jsonl, the new per-rung ledger: an artifact nobody
+          # commits cannot answer a question a week later.
+          git add data/ai_costs 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           # Fail-closed conflict gate (P0 d29e4dd44d/#4167): the marketing
           # learning push above runs while these paths sit dirty — if its pull

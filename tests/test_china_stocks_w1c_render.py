@@ -54,6 +54,7 @@ SNIPPET_IMPORTS = (
     '{% import "_prophet_card.html.j2" as pv %}\n'
     '{% import "_decision_card.html.j2" as dc %}\n'
     '{% import "_lens.html.j2" as lens %}\n'
+    '{% from "_icons.html.j2" import icon %}\n'
 )
 
 
