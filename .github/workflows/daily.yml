@@ -314,6 +314,31 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: backfill yahoo price coverage for the hub ledger universe (bounded, non-fatal)
+        # collectors/yahoo.py fetches the CONFIG universe; the Intelligence Hub grades
+        # the SIGNAL LEDGER, and every hub grader prices names from
+        # data/yahoo/<T>.parquet and nothing else (engine/desk_grader.py:31,
+        # engine/trajectory.py:11 — the breadth cache is split-UNADJUSTED and poisons
+        # forward returns). Measured 2026-08-08: 603 of 7,711 ledger tickers had a
+        # parquet, desk_grader's 20d coverage was 6.2%, and 7 of that night's 30
+        # Command names could not be priced at all. This step closes that from the
+        # other side, ~400 names a night (~16 nights for the addressable backlog).
+        #
+        # HERE, in the collect tail, for two reasons: it writes into data/yahoo, so it
+        # must land before the market checkpoint below to be committed at all; and it is
+        # in the COLLECT job, which is a different job from the render — nothing on the
+        # 67-min render path waits on it. Bounded twice (--cap tickers and --budget-s
+        # wall clock, measured 181 ms/symbol => ~102s at cap 400) plus a step timeout,
+        # so a slow vendor night cannot eat the collect job's remaining budget.
+        #
+        # Strictly non-fatal and NOT in the market-checkpoint gate below: the backfill
+        # is purely additive (new parquets for names nobody had), so a night it gets
+        # nothing is a night with no new files, not a torn tree. The script exits 0 by
+        # design; the `||` guard covers an import/interpreter failure it cannot catch.
+        timeout-minutes: 12
+        run: |
+          python -m scripts.backfill_yahoo_universe --cap 400 --budget-s 480 \
+            || echo "::warning::yahoo universe backfill failed (non-fatal) — hub price coverage does not advance tonight"
       - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
         # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
         # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
@@ -472,6 +497,12 @@ jobs:
         #   data/zori/national.parquet -> `collect ZORI`             does NOT gate
         #     Both are self-guarded (`|| echo ::warning::`) and purely additive: a miss
         #     re-commits the previous snapshot, which is a no-op diff, not a torn tree.
+        #   data/yahoo/<T>.parquet (NEW names only) + data/yahoo_backfill_state.json
+        #                              -> `backfill yahoo price coverage`  does NOT gate
+        #     Same reason: bounded, self-guarded and additive — it only ever CREATES a
+        #     parquet for a ledger ticker that had none, so a night it gets nothing
+        #     stages nothing. It must never gate the market plane, which is collected
+        #     by `run collectors` above and has no dependency on it.
         #   data/quality/massive_store_audit.json
         #                              -> `audit massive_stock_day store`  does NOT gate
         #     A tripwire REPORTS on the tree; it does not produce it. Gating on an alarm
@@ -6046,6 +6077,19 @@ jobs:
           # consolidate step above. The host spool (data/marketing/personas_host/)
           # is gitignored and must never appear here.
           git add data/marketing/personas 2>/dev/null || true
+          # THE MARKETING LANES' AI SPEND AND RUNG HEALTH (W2, 2026-08-08).
+          # Every marketing LLM lane already books an ai_costs row per served
+          # call (engine/llm_auth._capture_usage, usage_lane=marketing-*) and
+          # NOTHING IN THIS JOB EVER STAGED THEM: the two jobs whose broad
+          # `git add data/` sweeps usage.jsonl in are `engine:` and asia-close's
+          # `asia:`, so the marketing rows were written to this job's checkout
+          # and then discarded by the next actions/checkout. The committed
+          # ledger consequently held 3,372 rows on 2026-08-08 with ZERO from any
+          # marketing lane, which read as "the copywriter books no usage" and is
+          # in fact "the copywriter's usage is never committed". Same reason for
+          # provider_health.jsonl, the new per-rung ledger: an artifact nobody
+          # commits cannot answer a question a week later.
+          git add data/ai_costs 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           # Fail-closed conflict gate (P0 d29e4dd44d/#4167): the marketing
           # learning push above runs while these paths sit dirty — if its pull

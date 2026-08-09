@@ -24,8 +24,7 @@ from pathlib import Path
 
 # Make the repo root importable when run as a bare script.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine import stage_analysis  # noqa: E402
 

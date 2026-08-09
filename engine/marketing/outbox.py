@@ -130,6 +130,94 @@ TRANSITIONS: dict[str, frozenset[str]] = {
 # is quarantined ("quarantine after 2 attempts, never retry-spam").
 MAX_POST_ATTEMPTS: int = 2
 
+#: The note the publisher stamps on the `posting -> failed` leg of a rate-limit
+#: requeue. ONE literal, written by scripts/marketing_publisher.py and read back
+#: by :func:`fold_state` — a counter keyed on a string the writer can change
+#: independently is a counter that silently reads zero.
+RATE_LIMITED_NOTE_PREFIX: str = "rate_limited (transient)"
+
+#: The note on the terminal `-> failed` row when the requeues run out.
+RATE_LIMITED_EXHAUSTED_NOTE_PREFIX: str = "rate_limited_exhausted"
+
+#: The note on the `posting -> failed` leg of a subscription-lock pass-through.
+#: Same contract as the line above: the publisher writes it, fold_state reads it.
+SUBSCRIPTION_LOCKED_NOTE_PREFIX: str = "subscription_locked"
+
+#: Both rate-limit shapes. The EXHAUSTED row counts as a rate limit too, which
+#: has one deliberate consequence: an item an operator re-arms after exhaustion
+#: is already at the requeue bound, so the next 429 parks it again immediately
+#: instead of grinding another eight sweeps. The operator's re-arm means "try
+#: once more", and one more refusal answers it.
+_RATE_LIMIT_NOTE_PREFIXES: tuple[str, ...] = (
+    RATE_LIMITED_NOTE_PREFIX, RATE_LIMITED_EXHAUSTED_NOTE_PREFIX)
+
+
+def _failure_class(note: str | None) -> str:
+    """Which bucket a ``-> failed`` ledger row belongs in.
+
+    ONE classifier, called by :func:`fold_state` and by :func:`transition`'s
+    in-place bookkeeping, because a mirrored predicate is a predicate that drifts
+    — and the half that drifts here silently re-arms the retry cap against
+    failures that were never the post's fault.
+
+    ``rate_limit`` and ``subscription_lock`` are both "the backend refused us":
+    the publisher walks each of them posting -> failed -> approved and nothing
+    about the copy was judged. ``real`` is a verdict ON THE POST, and it is the
+    only class :data:`MAX_POST_ATTEMPTS` may spend.
+    """
+    text = str(note or "")
+    if text.startswith(_RATE_LIMIT_NOTE_PREFIXES):
+        return "rate_limit"
+    if text.startswith(SUBSCRIPTION_LOCKED_NOTE_PREFIX):
+        return "subscription_lock"
+    return "real"
+
+
+def effective_attempts(state: dict, item_id: str) -> int:
+    """Genuine post failures for ``item_id`` — the only number the cap may spend.
+
+    WHY IT HAD TO EXIST (2026-08-08). ``attempts`` counts every transition INTO
+    ``failed``, and the rate-limit requeue walks THROUGH ``failed`` by design, so
+    a post refused three times for quota looked exactly like a post that failed
+    three times on its own merits. ``apply_decisions`` quarantines an operator's
+    approve at :data:`MAX_POST_ATTEMPTS` (2), so two quota refusals were enough
+    to make the admin's Approve button DESTROY the post it was clicked to save.
+
+    That was already live before the Buffer plan lock — the requeue branch's own
+    comment called it a "KNOWN COST, ACCEPTED" — and the lock turned it from a
+    rare edge into the default: every item that rode the outage accumulated
+    failure rows for a reason no human would call a failure. The bounded requeue
+    made it worse still: an item parked at ``rate_limited_exhausted`` has nine
+    ``failed`` rows, so the very remedy its annotation tells the operator to use
+    ("re-arm from the admin Outbox") would have quarantined it instead.
+
+    Reads the folded field when present and derives it otherwise, so a caller
+    holding a snapshot built before the field existed still gets the right number
+    rather than silently falling back to the raw count.
+    """
+    if "effective_attempts" in state:
+        return int((state.get("effective_attempts") or {}).get(item_id, 0) or 0)
+    total = int((state.get("attempts") or {}).get(item_id, 0) or 0)
+    excused = (int((state.get("rate_limited") or {}).get(item_id, 0) or 0)
+               + int((state.get("subscription_locked") or {}).get(item_id, 0) or 0))
+    return max(total - excused, 0)
+
+#: How many times a rate limit may send ONE item back to `approved` before the
+#: publisher stops requeueing it and leaves it at `failed`.
+#:
+#: THE UNBOUNDED LOOP THIS CLOSES (measured 2026-08-08). The requeue branch has
+#: no counter: a 429 walks the item posting -> failed -> approved and the next
+#: sweep picks it up again, forever. That is right for a quota blip measured in
+#: minutes and wrong for anything longer — while the Buffer plan was locked
+#: (2026-08-06 onward) the same items requeued every 30 minutes for days, each
+#: pass writing two ledger rows about copy that was already stale.
+#:
+#: 8 is ~4 hours at the 30-minute sweep cadence: long enough that a genuine
+#: shared-token exhaustion (a 24h allowance refilling) is ridden out without an
+#: operator, short enough that nothing spends a day pretending it is about to
+#: post. Past it the item stops moving and waits for a human.
+MAX_RATE_LIMITED_REQUEUES: int = 8
+
 # Ultra-fallback ONLY for when engine.marketing.sentinel cannot be imported at
 # all. Matches Sentinel's weeks_1_2 floor (2/day). The real authority is the
 # sentinel: block in config/marketing.yml — see effective_cap().
@@ -896,9 +984,24 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
       "status":    {id: folded status},
       "last":      {id: last APPLIED ledger row (at/actor/note/receipt)},
       "attempts":  {id: count of transitions INTO 'failed'},
+      "rate_limited": {id: count of those failures that were RATE-LIMIT
+                    requeues (note starts with RATE_LIMITED_NOTE_PREFIX)},
+      "subscription_locked": {id: count of those failures that were the backend
+                    refusing the ACCOUNT (SUBSCRIPTION_LOCKED_NOTE_PREFIX)},
+      "effective_attempts": {id: attempts MINUS the two counts above — the only
+                    number the retry cap may spend; see effective_attempts()},
       "decisions": {id: latest decision row},
       "held":      set of ids (status queued AND latest decision 'hold'),
     }
+
+    ``rate_limited`` and ``subscription_locked`` are SUBSETS of ``attempts`` on
+    purpose. Neither is a verdict on the post: the publisher walks both
+    posting -> failed -> approved, so both land in the failure count as
+    collateral. Counting them separately is what lets the runner bound the
+    requeues (:data:`MAX_RATE_LIMITED_REQUEUES`) and lets the retry cap
+    (:data:`MAX_POST_ATTEMPTS`) spend only real failures. All computed in the
+    SAME ledger pass — a second read of a 400KB append-only ledger on every
+    sweep is a cost with no buyer.
 
     Only legal transitions are applied; illegal or unknown rows are skipped
     with a log.warning (defensive — the ledger should never carry illegal rows
@@ -916,6 +1019,9 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
     status: dict[str, str] = {i: items[i].get("status", "queued") for i in order}
     last: dict[str, dict] = {}
     attempts: dict[str, int] = {}
+    rate_limited: dict[str, int] = {}
+    sub_locked: dict[str, int] = {}
+    effective: dict[str, int] = {}
 
     for row in read_jsonl(_ledger_path(root)):
         item_id = row.get("id")
@@ -937,6 +1043,16 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
         last[item_id] = row
         if to_status == "failed":
             attempts[item_id] = attempts.get(item_id, 0) + 1
+            # Counted UP into the right bucket rather than subtracted from the
+            # total: a subtraction is only correct while every dict agrees, and
+            # the one that goes stale is the invisible one.
+            _cls = _failure_class(row.get("note"))
+            if _cls == "rate_limit":
+                rate_limited[item_id] = rate_limited.get(item_id, 0) + 1
+            elif _cls == "subscription_lock":
+                sub_locked[item_id] = sub_locked.get(item_id, 0) + 1
+            else:
+                effective[item_id] = effective.get(item_id, 0) + 1
 
     decisions: dict[str, dict] = {}
     for row in read_jsonl(_decisions_path(root)):
@@ -955,6 +1071,9 @@ def fold_state(root: Path | str | None = None) -> dict[str, Any]:
         "status": status,
         "last": last,
         "attempts": attempts,
+        "rate_limited": rate_limited,
+        "subscription_locked": sub_locked,
+        "effective_attempts": effective,
         "decisions": decisions,
         "held": held,
     }
@@ -1487,6 +1606,16 @@ def transition(
             state["last"][item_id] = row
             if to == "failed":
                 state["attempts"][item_id] = state["attempts"].get(item_id, 0) + 1
+                # Same buckets fold_state fills, through the same classifier, so
+                # a batch caller holding a snapshot never disagrees with a fresh
+                # fold of the same ledger. `.setdefault` on each dict: a snapshot
+                # taken before these keys existed (or hand-built by a caller)
+                # must not KeyError.
+                _bucket = {"rate_limit": "rate_limited",
+                           "subscription_lock": "subscription_locked",
+                           "real": "effective_attempts"}[_failure_class(note)]
+                _counts = state.setdefault(_bucket, {})
+                _counts[item_id] = _counts.get(item_id, 0) + 1
             return True
 
         if _state is not None:
@@ -1694,9 +1823,13 @@ def apply_decisions(
       * approve + status queued              → approved
       * approve + status failed, decision recorded AFTER the failure
                                              → approved (re-arm) …unless the
-        item already failed max_attempts times, in which case → quarantined
-        ("never retry-spam", docket W1 §7). A stale approve (recorded before
-        the failure) does nothing — a failure always needs a fresh human look.
+        item already failed max_attempts times FOR ITS OWN REASONS, in which
+        case → quarantined ("never retry-spam", docket W1 §7). "Its own reasons"
+        is :func:`effective_attempts`: rate-limit requeues and subscription-lock
+        pass-throughs walk through `failed` without anybody judging the copy, and
+        counting them here turned Approve into a delete button (see that
+        function). A stale approve (recorded before the failure) does nothing —
+        a failure always needs a fresh human look.
       * hold                                 → no transition (held overlay)
 
     ``ids`` NARROWS THE SWEEP TO A NAMED SET, and exists because the admin's
@@ -1734,7 +1867,13 @@ def apply_decisions(
                     dec_at = dec.get("at") or ""
                     if dec_at <= last_at:
                         continue  # stale approve from before the failure
-                    if state["attempts"].get(item_id, 0) >= max_attempts:
+                    # EFFECTIVE attempts, not raw. A rate limit and a plan lock
+                    # both walk THROUGH `failed` by design, so the raw count made
+                    # "the backend refused us twice" indistinguishable from "this
+                    # post failed twice on its own merits" — and this branch then
+                    # DESTROYED the post the operator clicked Approve to save.
+                    # See effective_attempts() for the measured history.
+                    if effective_attempts(state, item_id) >= max_attempts:
                         if transition(item_id, "quarantined", actor=actor, root=root,
                                       note=f"max attempts reached ({max_attempts})",
                                       _state=state):
@@ -1976,6 +2115,7 @@ def expire_stale_planned(
     *,
     now: datetime | None = None,
     max_age_hours: int = _STALE_QUEUED_HOURS,
+    exempt_ids: frozenset[str] | set[str] | None = None,
     actor: str = "nightly_expiry",
 ) -> dict[str, Any]:
     """Retire planned-kind items that sat unposted long past their slot.
@@ -2009,6 +2149,13 @@ def expire_stale_planned(
     two-day-old tape. A reaper whose scope is "this lane's items" must not carry
     a second, narrower scope that quietly disagrees with it.
 
+    ``exempt_ids``: ids this sweep must leave alone whatever their age. Same
+    contract, and the same reason, as :func:`expire_stale_wire`'s — the
+    publisher now runs this reaper on every sweep (see its call site), and
+    without the exemption an operator's ``--post-now`` on a planned item that
+    took a while to get a human decision would be self-defeating: the run
+    summoned to send it would quarantine it, TERMINALLY, on the way in.
+
     Uses the canonical writer (`transition`) on a single pre-folded snapshot, the
     same batch pattern supersede_lane uses — never a hand-appended ledger row.
     Never raises: expiry failing must not stop tonight's emission.
@@ -2017,8 +2164,13 @@ def expire_stale_planned(
     try:
         ts_now = now if now is not None else datetime.now(timezone.utc)
         cutoff = ts_now - timedelta(hours=max(int(max_age_hours), 0))
+        spared = frozenset(exempt_ids or ())
         state = fold_state(root)
         for iid, it in (state.get("items") or {}).items():
+            if iid in spared:
+                # Checked FIRST, ahead of every other filter, so no later scope
+                # change can sneak past it (expire_stale_wire, same rule).
+                continue
             if str(state["status"].get(iid) or "") not in ("queued", "approved"):
                 continue
             if str(it.get("provenance") or "") != "content_studio":

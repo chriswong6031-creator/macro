@@ -2100,7 +2100,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% set _hero_cls = 'strain' if _tc_st == 'strain' else ('steady' if _tc_st == 'steady' else '') %}
   <section class="rvx-hero rvx-reveal {{ _hero_cls }}">
     <div class="rvx-eyebrow">
-      <span>{{ t('US Sector Intelligence 🇺🇸', '美国行业智慧 🇺🇸') }}</span>
+      <span>{{ t('US Sector Intelligence 🇺🇸', '美国行业情报 🇺🇸') }}</span>
       <span class="rvx-mut" id="hero-count"></span>
       <span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span>
     </div>
@@ -2150,7 +2150,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% else %}
   {# ── Fallback hero when theme_context absent ── #}
   <section class="rvx-hero rvx-reveal">
-    <div class="rvx-eyebrow"><span>{{ t('US Sector Intelligence 🇺🇸', '美国行业智慧 🇺🇸') }}</span><span class="rvx-mut" id="hero-count"></span><span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span></div>
+    <div class="rvx-eyebrow"><span>{{ t('US Sector Intelligence 🇺🇸', '美国行业情报 🇺🇸') }}</span><span class="rvx-mut" id="hero-count"></span><span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span></div>
     <div class="rvx-vword">{{ t('Thematic', '主题') }} <span class="ac">{{ t('baskets', '篮子') }}</span></div>
     <p class="rvx-vsub" id="story">{{ t('Equal-weight US theme baskets measured against the S&P 500. Use them to see which themes are leading or fading.', '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
     <div class="rvx-chips ctx" style="margin-top:12px">
@@ -2416,7 +2416,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <section id="table-section">
       <h2>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "Sortable snapshot of every basket. Toggle between raw return, return versus S&P 500, and each basket's own z-score. Click a basket to see members.",
+        "Every basket, sortable. Switch between plain return, return against S&P 500, and how unusual the move is for that basket. Click one to see what is in it.",
         '所有篮子的可排序快照。可切换原始回报、相对标普 500 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div id="btbl-cat-filter" class="btbl-cats"></div>
@@ -2476,7 +2476,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
         <h2><span class="sc-h1-ic dash-icon submenu-icon-confluence" aria-hidden="true"></span> {{ t('Subsector Confluence', '子行业汇聚') }}</h2>
         <div class="sc-asof" id="sc-asof"></div>
       </div>
-      <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动背景、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
+      <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动情况、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
     </div>
 
     <div class="sc-tabs" role="tablist">

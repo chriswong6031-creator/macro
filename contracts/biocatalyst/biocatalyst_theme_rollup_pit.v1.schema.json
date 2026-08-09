@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_theme_rollup_pit.v1.schema.json",
+  "title": "BioCatalyst Point-In-Time Theme Rollup v1",
+  "description": "A point-in-time theme rollup projected from bounded trial_snapshot.v1 reads. Display/context tier only: it originates no probability, ranking, score, size or escalation, and carries no issuer, ticker, sponsor-identity or security join.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "rollup_id", "as_of", "vocabulary_version",
+    "coverage_class", "membership_authority", "pit_key_policy", "row_shape",
+    "authority", "themes", "rows", "excluded", "row_notes", "disclosure",
+    "disclosure_zh", "hash_scope", "rollup_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_theme_rollup_pit.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "rollup_id": {"type": "string", "pattern": "^biocatalyst_theme_rollup_pit_[a-f0-9]{24}$"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "vocabulary_version": {"type": "string", "minLength": 1, "maxLength": 32},
+    "coverage_class": {"const": "current_only"},
+    "membership_authority": {"const": "reviewed_modality_config_only"},
+    "pit_key_policy": {"const": "knowledge_cutoff_at_or_before_as_of"},
+    "row_shape": {"const": "clinical_modality_monthly_store_columns.v1"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_rank", "may_gate", "may_size", "may_escalate", "is_context_only",
+        "allowed_uses", "forbidden_uses", "fused_obs_z_fence"
+      ],
+      "properties": {
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "is_context_only": {"const": true},
+        "allowed_uses": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["display", "context", "explain"]}
+        },
+        "forbidden_uses": {
+          "type": "array", "minItems": 7, "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "originate_signal", "rank_security", "select_security", "size_position",
+              "gate_decision", "execute_trade", "raise_authority"
+            ]
+          }
+        },
+        "fused_obs_z_fence": {"const": "SEPARATE_DISPLAY_LEG — never fold into fused_obs_z"}
+      }
+    },
+    "themes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/themeCoverage"}
+    },
+    "rows": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/rollupRow"}
+    },
+    "excluded": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "not_knowable_at_as_of", "unbound_nct", "binding_evidence_mismatch",
+        "unmapped_modality", "non_industry_sponsor",
+        "superseded_by_later_knowable_version"
+      ],
+      "properties": {
+        "not_knowable_at_as_of": {"$ref": "#/$defs/count"},
+        "unbound_nct": {"$ref": "#/$defs/count"},
+        "binding_evidence_mismatch": {"$ref": "#/$defs/count"},
+        "unmapped_modality": {"$ref": "#/$defs/count"},
+        "non_industry_sponsor": {"$ref": "#/$defs/count"},
+        "superseded_by_later_knowable_version": {"$ref": "#/$defs/count"}
+      }
+    },
+    "row_notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rows_without_observed_phases", "rows_without_observed_enrollment"],
+      "properties": {
+        "rows_without_observed_phases": {"$ref": "#/$defs/count"},
+        "rows_without_observed_enrollment": {"$ref": "#/$defs/count"}
+      }
+    },
+    "disclosure": {"type": "string", "minLength": 1},
+    "disclosure_zh": {"type": "string", "minLength": 1},
+    "hash_scope": {"const": "canonical_payload_excluding_rollup_payload_sha256"},
+    "rollup_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0},
+    "fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "provenance": {
+      "type": "string",
+      "enum": ["biocatalyst_pit", "legacy_theme_store", "mixed", "none"]
+    },
+    "themeCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_id", "n_studies_pit", "n_studies_legacy", "n_studies_total",
+        "pit_backed_fraction", "provenance", "modalities", "coverage_note",
+        "coverage_note_zh"
+      ],
+      "properties": {
+        "theme_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "n_studies_pit": {"$ref": "#/$defs/count"},
+        "n_studies_legacy": {"$ref": "#/$defs/count"},
+        "n_studies_total": {"$ref": "#/$defs/count"},
+        "pit_backed_fraction": {"$ref": "#/$defs/fraction"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "modalities": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/modalityCoverage"}
+        },
+        "coverage_note": {"type": "string", "minLength": 1},
+        "coverage_note_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "modalityCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modality_id", "n_studies_pit", "n_studies_legacy", "n_studies_total",
+        "pit_backed_fraction", "provenance"
+      ],
+      "properties": {
+        "modality_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "n_studies_pit": {"$ref": "#/$defs/count"},
+        "n_studies_legacy": {"$ref": "#/$defs/count"},
+        "n_studies_total": {"$ref": "#/$defs/count"},
+        "pit_backed_fraction": {"$ref": "#/$defs/fraction"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    },
+    "rollupRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modality_id", "theme_id", "nct_id", "study_first_post_date", "year_month",
+        "phases_raw", "phase1", "phase2", "phase3", "enrollment_target",
+        "sponsor_class", "ingest_date", "vocabulary_version", "provenance_plane",
+        "knowledge_cutoff", "source_version_ordinal", "snapshot_ref", "source_record_ref"
+      ],
+      "properties": {
+        "modality_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "theme_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+        "study_first_post_date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "year_month": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}$"},
+        "phases_raw": {"type": "string"},
+        "phase1": {"type": "boolean"},
+        "phase2": {"type": "boolean"},
+        "phase3": {"type": "boolean"},
+        "enrollment_target": {"type": ["integer", "null"], "minimum": 0},
+        "sponsor_class": {"const": "INDUSTRY"},
+        "ingest_date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "vocabulary_version": {"type": "string", "minLength": 1, "maxLength": 32},
+        "provenance_plane": {"const": "biocatalyst_pit"},
+        "knowledge_cutoff": {"type": "string", "format": "date-time"},
+        "source_version_ordinal": {"type": "integer", "minimum": 1},
+        "snapshot_ref": {"type": "string", "pattern": "^trial_snapshot_[a-zA-Z0-9_-]+$"},
+        "source_record_ref": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"}
+      }
+    }
+  }
+}
