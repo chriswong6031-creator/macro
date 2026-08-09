@@ -41,13 +41,18 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import time
 from datetime import date, timedelta
+from pathlib import Path
 
 import pandas as pd
 import requests
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -91,7 +96,6 @@ def _display_universe(mode: str = "display") -> set[str]:
     universe: set[str] = set()
     try:
         import sys, pathlib
-        sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
         from engine.options_universe import gex_symbols
         universe.update(gex_symbols())
         log.info("options_universe: %d symbols", len(universe))

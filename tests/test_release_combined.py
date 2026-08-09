@@ -435,6 +435,23 @@ class TestExtractScoredErrors:
         assert abs(errors["champion"][0] - (0.4 - 0.28)) < 1e-9
         assert abs(errors["champion"][1] - (-0.1 - 0.05)) < 1e-9
 
+    def test_official_actual_supersession_contributes_one_error(self):
+        legacy = {
+            **self._scored_champion_row("nfp", "2026-07", -126.0, 50.0),
+            "frozen_asof_night": "2026-08-06",
+        }
+        official = {
+            **legacy,
+            "actual": 57.0,
+            "actual_basis": "official_published_metric",
+            "actual_receipt_id": "official_actual:nfp-july",
+            "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
+        }
+
+        errors = extract_scored_errors([legacy, official], "nfp")
+
+        assert errors["champion"] == [7.0]
+
     def test_shadow_errors_extracted(self):
         ledger = [
             self._scored_shadow_row("cpi_headline", "2026-03", "v3_factor", 0.4, 0.30),
@@ -525,6 +542,7 @@ class TestProducerCombinedRow:
             "release": "cpi",
             "period": "2026-07",
             "release_date": "2026-08-12",
+            "code_receipt": "sha256:producer-receipt",
             "projection": {"point": 0.08, "p10": -0.02, "p25": 0.03, "p50": 0.08, "p75": 0.13, "p90": 0.18},
             "benchmark_set": {"cleveland_nowcast": -0.05},
             "surprise_skew": {"sigma_scale_pp": 0.12},
@@ -686,6 +704,7 @@ class TestSameNightOrdering:
             "release": "cpi",
             "period": "2026-07",
             "release_date": "2026-08-12",
+            "code_receipt": "sha256:producer-receipt",
             "projection": {"point": 0.08, "p10": -0.02, "p25": 0.03, "p50": 0.08, "p75": 0.13, "p90": 0.18},
             "shadows": {"v3_factor": {"point": 0.14}},
             "benchmark_set": {"cleveland_nowcast": -0.06},
@@ -696,6 +715,7 @@ class TestSameNightOrdering:
         producer._attach_combined_to_items([item], existing_ledger, Path("/dev/null"), date(2026, 7, 14))
 
         assert item["combined"] is not None, "Combined should be computed (>=2 inputs available)"
+        assert item["combined"]["code_receipt"] == "sha256:producer-receipt"
         cc = item["combined"]["combined_components"]
         assert cc["cold_start"] is True, (
             "cold_start must be True when the pre-scoring ledger has no scored rows; "

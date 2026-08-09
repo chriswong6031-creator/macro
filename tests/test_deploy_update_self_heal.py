@@ -59,6 +59,22 @@ def test_update_reconciles_codex_runtime_and_admin_unit():
     assert "ADMIN_UNIT_UPDATED=1" in SCRIPT
 
 
+def test_admin_import_closure_generation_forces_same_cycle_restart():
+    unit = (ROOT / "admin" / "deploy" / "admin.service").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        "Environment=MMX_ADMIN_IMPORT_CLOSURE_GENERATION="
+        "2026-08-09-prophet-integrity-v1"
+    ) in unit
+
+    reconcile = SCRIPT.index('cmp -s "$APP_DIR/admin/deploy/admin.service"')
+    updated = SCRIPT.index("ADMIN_UNIT_UPDATED=1", reconcile)
+    restart_guard = SCRIPT.index('if [ "$ADMIN_UNIT_UPDATED" -eq 1 ]', updated)
+    restart = SCRIPT.index("systemctl restart admin", restart_guard)
+    assert reconcile < updated < restart_guard < restart
+
+
 def test_update_reconciles_api_requirements_with_retryable_content_stamp():
     assert 'sha256sum "$APP_DIR/app/requirements.txt"' in SCRIPT
     assert '/opt/macro-api/.venv/bin/pip install -q -r "$APP_DIR/app/requirements.txt"' in SCRIPT

@@ -27,13 +27,13 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
-import pytest
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 PASS_COUNT = 0
 FAIL_COUNT = 0
+FAILURES: list[str] = []
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -44,7 +44,24 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     else:
         FAIL_COUNT += 1
         print(f"  FAIL  {name}  {detail}")
-    assert cond, f"{name} {detail}"
+        FAILURES.append(f"{name}  {detail}".rstrip())
+
+
+try:
+    import pytest
+except ImportError:  # script mode is promised to work without pytest installed
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _gate_checks():
+        # check() is a soft assert (it used to `assert cond` inline, which aborted
+        # the test function on the FIRST miss) so one run reports EVERY miss;
+        # this flush is what makes a miss fail the test under pytest.
+        before = len(FAILURES)
+        yield
+        fresh = FAILURES[before:]
+        assert not fresh, "check() failures:\n  " + "\n  ".join(fresh)
 
 
 # ---------------------------------------------------------------------------
@@ -692,7 +709,13 @@ if __name__ == "__main__":
         test_degrade_on_missing_turnover,
         test_degrade_on_missing_margin,
         test_degrade_on_missing_southbound,
-        test_degrade_missing_microstructure_falls_back_to_flows,
+        # The name below was `..._falls_back_to_flows` from #1939 (876fa7775a6) —
+        # a function that never existed, so `python -m tests.test_china_participation`
+        # died on NameError before running a single test for the file's whole life.
+        test_degrade_missing_microstructure_degrades_to_null,
+        # Added by #3786 (9f6fb073259) but never listed here — script mode skipped them.
+        test_w1_limit_tape_is_preferred_over_seal_rate_fallback,
+        test_w1_limit_tape_reaches_the_built_tape,
         test_latest_snapshot_shape,
         test_tape_not_empty_with_full_fixtures,
         test_broker_rs_multiindex_handled,

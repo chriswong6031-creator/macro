@@ -16,17 +16,53 @@
 | Field | Type | Description |
 |---|---|---|
 | `schema` | string | `"prophet.ledger/v1"` — always present |
-| `id` | string | Plan ID (`<TICKER>-<DIRECTION>-<signal_date>`) — matches `prophet.trade_plan/v1.id` |
+| `id` | string | Plan ID (`<TICKER>-<DIRECTION>-<formation_date>`; historically called the signal-date component) — matches `prophet.trade_plan/v1.id` |
 | `asset` | string | Ticker symbol |
 | `direction` | string | `"BULL"` or `"BEAR"` |
-| `signal_date` | string | ISO-8601 date the plan was originated |
+| `formation_date` | string \| null | Explicit base-formation date used by newly originated plans as the ID date component. Null on legacy rows; no historical row is rewritten to populate it. |
+| `signal_date` | string \| null | Causal tier event close on tier-aware plans: the marker knowability close for T1 or the native 2D cascade-cross close for T2. Null for projected T3 because no event has fired. Legacy rows may contain the old formation-date alias, disclosed by `signal_date_basis`. |
+| `confirmed_date` | string \| null | T1 marker buy-filter confirmation close, when proven. Never borrowed for T2 and null for provisional T1/T3. |
+| `observed_date` | string \| null | Session whose close produced the tier verdict. For T3 this is the honest observation/vintage while `signal_date` remains null. |
+| `signal_tier` | string \| null | Creation-vintage admission tier (`T1`–`T4`) when proven. New actionable plans admit T1–T3 only; an audited legacy T4 is quarantined. |
+| `signal_date_basis` | string \| null | Provenance label: `tier_event_date`, `tier_observation`, or `legacy_formation_alias`. |
+| `signal_provisional` | boolean \| null | True for forming T1 and projected T3 observations; false for confirmed T1/T2 events. |
+| `source_marker_date` | string \| null | Immutable legacy §7 marker bucket-open label, retained separately so it cannot be mistaken for the causal event close. |
+| `price_basis_date` | string \| null | NYSE session whose close supplied the plan's `entry`. Explicit on newly originated plans; null on legacy rows where that provenance was not recorded. |
+| `entry_date` | string \| null | Date from which the plan's horizon/outcome clock ran. For new plans it equals `price_basis_date`; older rows may contain a legacy fallback. |
+| `recorded_at` | string \| null | Run/publication date of the originating plan. It may be a weekend recovery date and therefore must never be used as a price-session substitute. |
 | `close_date` | string | ISO-8601 date the plan was closed |
 | `outcome` | string | Enum: `T1_HIT` / `T2_HIT` / `INVALIDATED` / `EXPIRED` / `CLOSED_EARLY` |
 | `stock_result_pct` | float \| null | Underlying % return from entry to close (signed) |
 | `option_result_pct` | float \| null | Option % return from entry_premium to close mark; null when no option rec existed |
-| `days_held` | int | Calendar days from signal_date to close_date |
+| `days_held` | int | Calendar days from `entry_date` to `close_date` |
 | `plan_adherence` | string | Descriptive note on adherence to plan geometry (free text) |
-| `asof` | string | ISO-8601 date the row was written by the nightly pipeline |
+| `asof` | string | ISO-8601 date the close row was written by the nightly pipeline |
+
+### Temporal clock contract
+
+The clocks are deliberately separate:
+
+- `formation_date` is the technical-base anchor and stable ID basis.
+- `signal_date` is the tier-native fired-event close for T1/T2; T3 has no fired
+  event, so it carries `signal_date=null` and a real `observed_date` instead.
+- Historical/pre-contract rows can retain the former formation-date alias, but must
+  identify it as `signal_date_basis=legacy_formation_alias` when newly projected.
+- `price_basis_date` and `entry_date` identify the actual NYSE session whose close
+  produced `entry` and starts grading.
+- Plan `asof`/`recorded_at` identify when the artifact was run or published.
+- Ledger `asof` identifies when the close event was recorded.
+
+A weekend recovery run may therefore carry `recorded_at=2026-08-08` and
+`price_basis_date=entry_date=2026-08-07`. The bridge rejects a weekend, holiday,
+malformed, or future `price_basis_date`; it never rounds one backward and silently
+attaches Friday to an unproven price.
+
+This contract is prospective. Existing plan files and ledger rows are append-only and
+are not rewritten or re-keyed by the clock repair. Proven historical facts are exposed
+through `data/prophet/plan_corrections.jsonl` and
+`data/prophet/ledger_corrections.jsonl`; authoritative readers use the shared effective
+projection. A missing field on a legacy row is an honest era boundary, not permission
+for a reader to infer a date.
 
 ---
 
@@ -58,7 +94,17 @@
   "id": "BA-BULL-20260702",
   "asset": "BA",
   "direction": "BULL",
+  "formation_date": "2026-07-02",
   "signal_date": "2026-07-02",
+  "confirmed_date": "2026-07-06",
+  "observed_date": "2026-07-06",
+  "signal_tier": "T1",
+  "signal_date_basis": "tier_event_date",
+  "signal_provisional": false,
+  "source_marker_date": "2026-06-30",
+  "price_basis_date": "2026-07-02",
+  "entry_date": "2026-07-02",
+  "recorded_at": "2026-07-02",
   "close_date": null,
   "outcome": null,
   "stock_result_pct": null,
@@ -78,8 +124,12 @@
    a filter on lines starting with `#`).
 2. `option_result_pct` is null whenever `option_contract` was null in the originating
    plan (symbol not in ThetaData store at plan creation time).
-3. Rows are append-only; updates are forbidden. If a close is corrected, a new row
-   with `outcome=CLOSED_EARLY` and a note in `plan_adherence` is appended.
+3. Rows are append-only; updates are forbidden. `CLOSED_EARLY` records a real operator
+   close and must not be repurposed as a correction mechanism. Historical corrections
+   use the versioned, append-only `prophet.ledger_correction/v1` envelope, which records
+   the original row, old value, new value, evidence basis, and correction time. The raw
+   row remains immutable; the shared effective reader applies the overlay and excludes
+   quarantined outcomes from aggregate claims.
 4. This ledger is a **forward ledger** — it accumulates outcomes as they occur nightly.
    No historical backfill is performed. The first real rows will appear after the first
    plan expires or hits a target level.
