@@ -95,6 +95,55 @@ def _read_optional_exact_twin(
     return canonical_raw, payload
 
 
+def _assert_workspace_admits_its_award_events(workspace: dict[str, Any]) -> None:
+    """Refuse a generation that silently discarded issuer-bearing award events.
+
+    ``coverage.award_events.rejected`` was invisible to CI for months while the
+    v2 event contract rejected every reviewed ownership path (the curator's
+    terminal ``issuer_legal_entity`` edge was missing from its ``relationship``
+    enum).  The workspace still validated, the page still rendered, and the only
+    trace was a counter nobody asserted on.  Both halves are guarded here: rows
+    the contract refused, and reviewed rows the display cap dropped.
+    """
+    coverage = _object(workspace.get("coverage"), "canonical workspace coverage")
+    award_events = _object(
+        coverage.get("award_events"), "canonical workspace award-event coverage"
+    )
+    rejected = award_events.get("rejected")
+    if not isinstance(rejected, int) or rejected < 0:
+        raise ProjectionDriftError(
+            "canonical workspace award-event rejection count is missing or invalid"
+        )
+    if rejected:
+        reason = award_events.get("first_rejection_reason") or "reason not recorded"
+        message = (
+            f"canonical workspace rejected {rejected} award event(s) "
+            f"before publication; first reason: {reason}"
+        )
+        print(f"::error title=govrev-rejected-events::{message}", flush=True)
+        raise ProjectionDriftError(message)
+
+    # A reviewed row is the only kind that carries a listed-company impact.
+    # Losing one to the bounded display window is a coverage failure, not a
+    # cosmetic truncation, so it fails closed rather than being disclosed only.
+    by_mapping_class = coverage.get("by_mapping_class")
+    reviewed = (
+        by_mapping_class.get("reviewed") if isinstance(by_mapping_class, dict) else None
+    )
+    reviewed_truncated = (
+        reviewed.get("truncated_by_cap") if isinstance(reviewed, dict) else None
+    )
+    if isinstance(reviewed_truncated, int) and reviewed_truncated > 0:
+        cap = coverage.get("event_cap")
+        message = (
+            f"canonical workspace dropped {reviewed_truncated} reviewed event(s) "
+            f"at the {cap}-event display cap; reviewed rows carry the issuer "
+            "impacts and must never lose the window"
+        )
+        print(f"::error title=govrev-truncated-reviewed-events::{message}", flush=True)
+        raise ProjectionDriftError(message)
+
+
 def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     """Validate canonical/public twins and the compact first-paint shell."""
 
@@ -248,6 +297,7 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             "canonical latest embeds a different workspace generation"
         )
+    _assert_workspace_admits_its_award_events(canonical_workspace)
 
     bundle_id = canonical_workspace.get("bundle_id")
     if not isinstance(bundle_id, str) or not _BUNDLE_RE.fullmatch(bundle_id):
