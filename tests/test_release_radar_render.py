@@ -240,6 +240,19 @@ def test_release_radar_fetch_path_in_template():
     assert "macrodata/release_forecast.json" in src
 
 
+def test_r40_combined_basis_honesty_copy_reaches_render_and_generated_macro():
+    """The bilingual combined-basis disclosure ships in both source render and site artifact."""
+    rendered = _render("macro")
+    generated = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
+    for surface in (rendered, generated):
+        assert "Model + benchmark blend" in surface
+        assert "模型与基准混合" in surface
+        assert "includes Cleveland benchmark" in surface
+        assert "含克利夫兰基准" in surface
+        assert "Blend of '+esc(combNStr)+' inputs" in surface
+        assert "Blend of '+esc(combNStr)+' models" not in surface
+
+
 # ---------------------------------------------------------------------------
 # Tests — v2 field rendering (fixture-based; fixture is deleted after tests run)
 # These tests parse JS source in the template to assert that the v2 helpers

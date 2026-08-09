@@ -1,11 +1,13 @@
 """tests/test_prophet_bridge_order_invariance.py — the bridge intake is order-invariant.
 
-`engine.prophet_bridge.select_candidates` reads `us_standouts.json["buy"]` and returns the
-plans the Prophet lane will originate. Its sort key was `(-score, -act_level)`, which is NOT a
+`engine.prophet_bridge.select_candidates` reads `us_standouts.json["buy"]` and returns a
+ranked candidate sample (or the full ordering with ``n=None``). Its sort key was
+`(-score, -act_level)`, which is NOT a
 total order: any two rows tied on both legs were left in the ARTIFACT's incoming order by
 Python's stable sort. That made the intake silently producer-dependent — a board re-emitted
-with `buy[]` in a different order could originate a DIFFERENT set of plans, with different
-plan IDs, on identical data. The fix appends `ticker` as the final key.
+with `buy[]` in a different order could produce a DIFFERENT sample on identical data. The
+fix appends `ticker` as the final key. Live origination now requests ``n=None`` and is
+lossless, but deterministic order remains a contract for rank display and research slices.
 
 Everything here shuffles the INPUT and asserts the OUTPUT does not move; the source itself
 contains no shuffling. Three things are pinned:
@@ -53,22 +55,37 @@ def _buy(ticker: str, *, score: int, act_level: int, band: str = "neutral",
 
 
 def _standouts(buys: list[dict], *, gate_go: bool = True) -> dict:
-    return {"as_of": "2026-07-31", "gate_go": gate_go, "buy": buys}
+    return {
+        "as_of": "2026-07-31",
+        "staleness": {
+            "price_through": "2026-07-31", "delayed": False, "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
+        "gate_go": gate_go,
+        "buy": buys,
+    }
 
 
 # Nine rows with distinct scores — the uncontested head of the board.
 _HEAD = [_buy(f"H{i}", score=95 - i, act_level=3) for i in range(9)]
-# Eight rows tied on BOTH legs — only (N_CANDIDATES - 9) = 3 of them fit.
-# Deliberately listed Z→A so an order-dependent implementation picks the WRONG three.
+# Nine rows tied on BOTH legs — only (N_CANDIDATES - 9) of them fit, so the cutoff
+# always bites inside this block whatever N_CANDIDATES is (it was 3 of 8 at N=12 and
+# is 7 of 9 at N=16).  Deliberately listed Z→A so an order-dependent implementation
+# picks the WRONG ones.
+_TIED_LETTERS = "ABCDEFGHI"
 _TIED = [_buy(f"TIE_{ch}", score=70, act_level=2)
-         for ch in reversed("ABCDEFGH")]
+         for ch in reversed(_TIED_LETTERS)]
 # Three rows that must never be reached (the cutoff is spent above them).
 _TAIL = [_buy(f"L{i}", score=61 + i, act_level=2) for i in range(3)]
 
 _BUYS = _HEAD + _TIED + _TAIL
 
 _EXPECTED_HEAD = [f"H{i}" for i in range(9)]
-_EXPECTED_TIED = ["TIE_A", "TIE_B", "TIE_C"]
+# Derived, never hardcoded: the point of this file is the TIE-BREAK, not the cap size.
+_EXPECTED_TIED = [f"TIE_{ch}" for ch in _TIED_LETTERS][:N_CANDIDATES - 9]
+assert 0 < len(_EXPECTED_TIED) < len(_TIED_LETTERS), (
+    "the fixture must keep the cutoff INSIDE the tied block or it proves nothing")
 
 
 def _shuffled(seed: int) -> list[dict]:

@@ -22,9 +22,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts.research_liquidity_gate import net_liquidity, MOM_LB, EXP_THR, START
-from scripts.research_trend_gate import STEP, asset_class, fwd_return, load_panel
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.research_liquidity_gate import net_liquidity, MOM_LB, EXP_THR, START  # noqa: E402
+from scripts.research_trend_gate import STEP, asset_class, fwd_return, load_panel  # noqa: E402
 
 ROC_4W = 20
 FWD = 21

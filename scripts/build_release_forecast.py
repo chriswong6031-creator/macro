@@ -23,12 +23,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import math
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -44,6 +46,7 @@ _LEDGER_RELPATH = "data/release_forecast/forward_ledger.jsonl"
 _LATEST_RELPATH = "data/release_forecast/latest.json"
 _SCOREBOARD_RELPATH = "data/release_forecast/scoreboard.json"
 _SITE_RELPATH = "site/macrodata/release_forecast.json"
+_OFFICIAL_ACTUALS_RELPATH = "data/release_forecast/official_actuals.jsonl"
 # MRI-R26: provenance snapshots dir (one JSON per prediction_id)
 _INPUT_SNAPSHOTS_RELPATH = "data/release_forecast/input_snapshots"
 
@@ -61,6 +64,68 @@ _SHADOW_MF_ENERGY_TARGETS = {"cpi_headline"}
 
 # MRI-R40: combined_v1 combination layer — cpi_headline + cpi_core only (prereg §2.1)
 _SHADOW_COMBINED_V1_TARGETS = {"cpi_headline", "cpi_core"}
+
+_MODEL_EPOCHS = {
+    "champion": "champion_legacy_target_v1",
+    "v3_factor": "v3_factor_legacy_target_v1",
+    "cpi_bridge": "cpi_bridge_legacy_target_v1",
+    "mf_energy": "mf_energy_legacy_target_v1",
+    "combined_v1": "combined_v1_legacy_target_v1",
+}
+
+
+def _target_epoch(release_type: str, model: str | None = None) -> str:
+    """Name the target construction without implying unearned clean evidence."""
+    if release_type == "claims":
+        return "official_initial_level_v1"
+    if model == "combined_v1":
+        return "mixed_legacy_cross_vintage_v0"
+    return "legacy_cross_vintage_initial_levels_v0"
+
+
+def _code_receipt(root: Path) -> str:
+    """Content receipt for the deterministic release-forecast implementation."""
+    digest = hashlib.sha256()
+    for rel in (
+        "engine/release_forecast.py",
+        "engine/release_forecast_v3.py",
+        "engine/release_cpi_bridge.py",
+        "engine/release_mf_energy.py",
+        "engine/release_combined.py",
+        "engine/release_market_context.py",
+        "engine/release_provenance.py",
+        "engine/release_target_truth.py",
+        "engine/release_actuals.py",
+        "engine/release_defects.py",
+        "scripts/build_release_forecast.py",
+    ):
+        try:
+            digest.update(rel.encode("utf-8"))
+            digest.update((root / rel).read_bytes())
+        except OSError:
+            continue
+    return "sha256:" + digest.hexdigest()
+
+
+def _payload_hash(value: object) -> str:
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _score_receipt_id(row: dict) -> str:
+    """Return a stable identity for a scored receipt, including legacy rows."""
+    frozen_prediction = row.get("frozen_prediction_id") or row.get("prediction_id")
+    identity = {
+        "release": row.get("release"),
+        "period": row.get("period"),
+        "model": row.get("model"),
+        "actual": row.get("actual"),
+        "actual_receipt_id": row.get("actual_receipt_id"),
+        "actual_basis": row.get("actual_basis"),
+        "frozen_prediction_id": frozen_prediction,
+        "frozen_asof_night": row.get("frozen_asof_night"),
+    }
+    return "score:" + _payload_hash(identity)[:24]
 
 # MRI-R21: NFP v3_factor warning (trails champion; sub-naive on full 2010+ window)
 _NFP_V3_WARNING = (
@@ -579,6 +644,9 @@ def _build_upcoming_block(
             "benchmark_set": proj.get("benchmark_set", {}),
             "surprise_skew": proj.get("surprise_skew", {}) if not _is_bmo else {},
             "pit": proj.get("pit_provenance", {}),
+            # Engine-owned input receipt.  This is deliberately top-level: pit_provenance
+            # classifies source legs but does not own the value hash.
+            "inputs_hash": proj.get("inputs_hash") or None,
             # input_manifest: feature values from projection — passed to _attach_provenance
             # so compute_coverage_flags sees real feature names in its denominator (MRI-R26 rework-2a).
             "input_manifest": proj.get("input_manifest") or {},
@@ -593,6 +661,9 @@ def _build_upcoming_block(
             "confidence_components_v2": proj.get("confidence_components_v2"),
             # NFP revision risk (None for all non-NFP release types).
             "revision_risk": proj.get("revision_risk"),
+            "model_epoch": _MODEL_EPOCHS["champion"],
+            "target_epoch": _target_epoch(rt),
+            "code_receipt": _code_receipt(root),
         }
         out.append(row)
 
@@ -623,7 +694,16 @@ def _load_ledger(ledger_path: Path) -> list[dict]:
 def _ledger_key(row: dict) -> tuple:
     # "model" key defaults to None for champion rows (backward-compatible with pre-2b ledger rows
     # that lack the key). Shadow rows carry an explicit model string.
-    return tuple(row.get(f) for f in _LEDGER_KEY)
+    key = tuple(row.get(f) for f in _LEDGER_KEY)
+    if row.get("row_type") == "scored":
+        # Multiple immutable actual receipts may grade the same frozen forecast
+        # (for example, a same-vintage proxy followed by the official print).
+        # They must coexist even when both arrive on the same run date; receipt
+        # identity keeps re-runs idempotent while canonical evaluation selects
+        # only one grade downstream.
+        receipt_key = row.get("score_receipt_id") or row.get("actual_receipt_id")
+        return (*key, receipt_key)
+    return key
 
 
 def _append_ledger_rows(ledger_path: Path, new_rows: list[dict]) -> None:
@@ -651,6 +731,7 @@ def _attach_provenance(
     ledger_path: Path,
     snapshots_dir: Path,
     dry_run: bool = False,
+    asof_day: date | None = None,
 ) -> None:
     """MRI-R26: attach input_snapshot and coverage flags to each upcoming item in-place.
 
@@ -683,7 +764,7 @@ def _attach_provenance(
         # so the snapshot filename matches the ledger row.
         _period_str = item.get("period") or ""
         _pred_id_for_snap = ""
-        _asof_night_str = date.today().isoformat()
+        _asof_night_str = (asof_day or date.today()).isoformat()
         try:
             from engine.release_forecast import make_release_id, make_prediction_id
             if rt and _period_str:
@@ -700,7 +781,7 @@ def _attach_provenance(
             "release": rt,
             "asof": _asof_night_str,
             "pit_provenance": pit,
-            "inputs_hash": pit.get("inputs_hash") or "",
+            "inputs_hash": item.get("inputs_hash") or pit.get("inputs_hash") or "",
             "input_manifest": item.get("input_manifest") or {},
             "display_only": True,
             "authority": False,
@@ -866,6 +947,7 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
             continue
 
         period_str = item.get("period")
+        code_receipt = item.get("code_receipt") or _code_receipt(root)
         release_date_str = item.get("release_date")
         release_date_obj: date | None = None
         if release_date_str:
@@ -886,6 +968,10 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
             if v3_result is not None:
                 entry: dict = {
                     "display_only": True,
+                    "inputs_hash": v3_result.get("inputs_hash"),
+                    "model_epoch": _MODEL_EPOCHS["v3_factor"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": v3_result.get("point"),
                     "p10": v3_result.get("p10"),
                     "p25": v3_result.get("p25"),
@@ -907,8 +993,27 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                 log.warning("_attach_shadows cpi_bridge(%s) raised — skipping: %s", rt, _e)
                 bridge_result = None
             if bridge_result is not None:
+                bridge_pit = (
+                    bridge_result.get("pit_provenance")
+                    if isinstance(bridge_result.get("pit_provenance"), dict)
+                    else {}
+                )
+                scope_mismatches = bridge_pit.get("known_scope_mismatches") or []
+                bridge_hash = _payload_hash({
+                    "model": "cpi_bridge",
+                    "asof": today.isoformat(),
+                    "period": period_str,
+                    "components": bridge_result.get("components"),
+                    "degraded_blocks": bridge_result.get("degraded_blocks"),
+                    "known_scope_mismatches": scope_mismatches,
+                    "weight_basis": bridge_result.get("weight_basis"),
+                })
                 shadows["cpi_bridge"] = {
                     "display_only": True,
+                    "inputs_hash": bridge_hash,
+                    "model_epoch": _MODEL_EPOCHS["cpi_bridge"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": bridge_result.get("point"),
                     "components": bridge_result.get("components"),
                     "prior_driven_share": bridge_result.get("prior_driven_share"),
@@ -919,6 +1024,9 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
                     # per-block `degraded` flags inside components have no roll-up and a
                     # one-leg bridge is indistinguishable from a full-leg one on the artifact.
                     "degraded_blocks": bridge_result.get("degraded_blocks"),
+                    "known_scope_mismatches": scope_mismatches,
+                    "weight_basis": bridge_result.get("weight_basis"),
+                    "weight_basis_warning": bridge_result.get("weight_basis_warning"),
                 }
 
         # W11-G task 1: mf_energy shadow (cpi_headline only, Track T MRI-R36)
@@ -931,6 +1039,10 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
             if mfe_result is not None:
                 shadows["mf_energy"] = {
                     "display_only": True,
+                    "inputs_hash": mfe_result.get("inputs_hash"),
+                    "model_epoch": _MODEL_EPOCHS["mf_energy"],
+                    "target_epoch": _target_epoch(rt),
+                    "code_receipt": code_receipt,
                     "point": mfe_result.get("point"),
                     "p10": mfe_result.get("p10"),
                     "p25": mfe_result.get("p25"),
@@ -1011,18 +1123,30 @@ def _attach_combined_to_items(
         sigma_champion = skew.get("sigma_scale_pp")
 
         # --- Scored errors from existing ledger ---
+        defect_notices: list[dict] = []
         try:
-            scored_errors = extract_scored_errors(existing_ledger, rt)
+            from engine.release_defects import (
+                canonical_scored_rows,
+                is_evaluation_eligible,
+                load_defect_notices,
+            )
+            defect_notices = load_defect_notices(root)
+            if not defect_notices:
+                raise RuntimeError("structured defect registry absent or empty")
+            scored_errors = extract_scored_errors(existing_ledger, rt, defect_notices)
+            canonical_existing_scores = canonical_scored_rows(existing_ledger)
         except Exception as exc:
-            log.warning("extract_scored_errors failed for %s: %s", rt, exc)
+            log.warning("clean ensemble evidence withheld for %s: %s", rt, exc)
             scored_errors = {}
+            canonical_existing_scores = []
+            is_evaluation_eligible = lambda _row, _notices: False  # type: ignore[assignment]
 
         # n_scored_basis: number of champion scored rows for this release
         n_scored_basis = sum(
-            1 for r in existing_ledger
-            if r.get("row_type") == "scored"
-            and r.get("release") == rt
+            1 for r in canonical_existing_scores
+            if r.get("release") == rt
             and r.get("model") is None
+            and is_evaluation_eligible(r, defect_notices)
         )
 
         # --- Compute combined ---
@@ -1033,6 +1157,26 @@ def _attach_combined_to_items(
             result = None
 
         if result is not None:
+            input_hashes = {
+                "champion": item.get("inputs_hash"),
+                "v3_factor": (shadows.get("v3_factor") or {}).get("inputs_hash"),
+                "cpi_bridge": (shadows.get("cpi_bridge") or {}).get("inputs_hash"),
+                "mf_energy": (shadows.get("mf_energy") or {}).get("inputs_hash"),
+                # Cleveland is an independently snapshotted benchmark.  Its point and
+                # target period form the parent receipt until its collector exposes a row hash.
+                "cleveland": _payload_hash({"period": period_str, "point": cleveland_pt})
+                if cleveland_pt is not None else None,
+            }
+            result["combined_components"]["input_hashes"] = {
+                key: value for key, value in input_hashes.items()
+                if key in result["combined_components"].get("inputs_used", [])
+            }
+            combined_hash = _payload_hash({
+                "model": "combined_v1",
+                "period": period_str,
+                "input_hashes": result["combined_components"]["input_hashes"],
+                "weights": result["combined_components"].get("weights"),
+            })
             item["combined"] = {
                 "combined_point": result["combined_point"],
                 "p10": result["p10"],
@@ -1042,9 +1186,19 @@ def _attach_combined_to_items(
                 "p90": result["p90"],
                 "combined_components": result["combined_components"],
                 "n_scored_basis": n_scored_basis,
+                "inputs_hash": combined_hash,
+                "model_epoch": _MODEL_EPOCHS["combined_v1"],
+                "target_epoch": _target_epoch(rt, "combined_v1"),
+                "code_receipt": item.get("code_receipt") or _code_receipt(root),
                 "display_only": True,
                 "authority": False,
             }
+            item["primary_forecast_basis"] = "combined_v1_benchmark_augmented"
+            item["context_metrics_basis"] = "champion_legacy_target_v1"
+            item["basis_warning"] = (
+                "Displayed combined_v1 includes the independent Cleveland benchmark; "
+                "expectation/context enrichments remain champion-basis and are not a street-consensus comparison."
+            )
             log.debug(
                 "combined_v1 %s/%s: point=%.4f n_active=%d cold_start=%s",
                 rt, period_str, result["combined_point"],
@@ -1053,6 +1207,7 @@ def _attach_combined_to_items(
             )
         else:
             item["combined"] = None
+            item["primary_forecast_basis"] = "champion_legacy_target_v1"
             log.debug("combined_v1 %s/%s: None (<2 inputs)", rt, period_str)
 
 
@@ -1133,6 +1288,7 @@ def _build_shadow_ledger_rows(
                     "release_date": release_date_str,
                     "release_id": _release_id,
                     "prediction_id": _pred_id,
+                    "inputs_hash": v3_result.get("inputs_hash"),
                     "horizon_days": _horizon_days,
                     "projection_point": v3_result.get("point"),
                     "projection_p10": v3_result.get("p10"),
@@ -1142,6 +1298,10 @@ def _build_shadow_ledger_rows(
                     "projection_p90": v3_result.get("p90"),
                     "confidence": v3_result.get("confidence"),
                     "input_completeness": v3_result.get("input_completeness"),
+                    "model_epoch": _MODEL_EPOCHS["v3_factor"],
+                    "target_epoch": _target_epoch(release_type),
+                    "code_receipt": item.get("code_receipt") or _code_receipt(root),
+                    "cutoff_label": item.get("cutoff_label"),
                     "display_only": True,
                     "authority": False,
                 }
@@ -1159,6 +1319,21 @@ def _build_shadow_ledger_rows(
                 log.warning("_build_shadow_ledger cpi_bridge(%s) raised — skipping: %s", release_type, _e)
                 bridge_result = None
             if bridge_result is not None:
+                bridge_pit = (
+                    bridge_result.get("pit_provenance")
+                    if isinstance(bridge_result.get("pit_provenance"), dict)
+                    else {}
+                )
+                scope_mismatches = bridge_pit.get("known_scope_mismatches") or []
+                bridge_inputs_hash = _payload_hash({
+                    "model": "cpi_bridge",
+                    "asof": today.isoformat(),
+                    "period": period_str,
+                    "components": bridge_result.get("components"),
+                    "degraded_blocks": bridge_result.get("degraded_blocks"),
+                    "known_scope_mismatches": scope_mismatches,
+                    "weight_basis": bridge_result.get("weight_basis"),
+                })
                 try:
                     _pred_id_br = make_prediction_id(
                         _release_id, f"{asof_night}:cpi_bridge"
@@ -1176,6 +1351,7 @@ def _build_shadow_ledger_rows(
                     "release_date": release_date_str,
                     "release_id": _release_id,
                     "prediction_id": _pred_id_br,
+                    "inputs_hash": bridge_inputs_hash,
                     "horizon_days": _horizon_days,
                     "projection_point": bridge_result.get("point"),
                     "projection_p10": None,  # bridge is point-only
@@ -1189,6 +1365,13 @@ def _build_shadow_ledger_rows(
                     "prior_driven_share": bridge_result.get("prior_driven_share"),
                     "weight_coverage": bridge_result.get("weight_coverage"),
                     "degraded_blocks": bridge_result.get("degraded_blocks"),
+                    "known_scope_mismatches": scope_mismatches,
+                    "weight_basis": bridge_result.get("weight_basis"),
+                    "weight_basis_warning": bridge_result.get("weight_basis_warning"),
+                    "model_epoch": _MODEL_EPOCHS["cpi_bridge"],
+                    "target_epoch": _target_epoch(release_type),
+                    "code_receipt": item.get("code_receipt") or _code_receipt(root),
+                    "cutoff_label": item.get("cutoff_label"),
                     "display_only": True,
                     "authority": False,
                 }
@@ -1221,6 +1404,7 @@ def _build_shadow_ledger_rows(
                     "release_date": release_date_str,
                     "release_id": _release_id,
                     "prediction_id": _pred_id_mfe,
+                    "inputs_hash": mfe_result.get("inputs_hash"),
                     "horizon_days": _horizon_days,
                     "projection_point": mfe_result.get("point"),
                     "projection_p10": mfe_result.get("p10"),
@@ -1231,6 +1415,10 @@ def _build_shadow_ledger_rows(
                     "confidence": mfe_result.get("confidence"),
                     "input_completeness": mfe_result.get("input_completeness"),
                     "mf_energy_components": mfe_result.get("mf_energy_components"),
+                    "model_epoch": _MODEL_EPOCHS["mf_energy"],
+                    "target_epoch": _target_epoch(release_type),
+                    "code_receipt": item.get("code_receipt") or _code_receipt(root),
+                    "cutoff_label": item.get("cutoff_label"),
                     "display_only": True,
                     "authority": False,
                 }
@@ -1260,6 +1448,7 @@ def _build_shadow_ledger_rows(
                     "release_date": release_date_str,
                     "release_id": _release_id,
                     "prediction_id": _pred_id_cv1,
+                    "inputs_hash": combined_data.get("inputs_hash"),
                     "horizon_days": _horizon_days,
                     "projection_point": combined_data.get("combined_point"),
                     "projection_p10": combined_data.get("p10"),
@@ -1269,6 +1458,10 @@ def _build_shadow_ledger_rows(
                     "projection_p90": combined_data.get("p90"),
                     "combined_components": combined_data.get("combined_components"),
                     "n_scored_basis": combined_data.get("n_scored_basis"),
+                    "model_epoch": _MODEL_EPOCHS["combined_v1"],
+                    "target_epoch": _target_epoch(release_type, "combined_v1"),
+                    "code_receipt": item.get("code_receipt") or _code_receipt(root),
+                    "cutoff_label": item.get("cutoff_label"),
                     "display_only": True,
                     "authority": False,
                 }
@@ -1352,6 +1545,9 @@ def _build_projection_ledger_rows(
             "release_id": _release_id,
             "prediction_id": _pred_id,
             "inputs_hash": _inputs_hash,
+            "model_epoch": item.get("model_epoch") or _MODEL_EPOCHS["champion"],
+            "target_epoch": item.get("target_epoch") or _target_epoch(str(release_type)),
+            "code_receipt": item.get("code_receipt"),
             "horizon_days": _horizon_days,
             "days_to": item.get("days_to"),
             "projection_mode": item.get("projection", {}).get("mode"),
@@ -1558,25 +1754,150 @@ def _check_release_day_capture(
     scored_rows = []
     asof_night = today.isoformat()
     lookback_cutoff = (today - timedelta(days=lookback_days)).isoformat()
+    try:
+        from engine.release_defects import evaluation_status, load_defect_notices
+        defect_notices_for_scoring = load_defect_notices(root)
+        if not defect_notices_for_scoring:
+            raise RuntimeError("structured defect registry absent or empty")
+    except Exception:
+        defect_notices_for_scoring = []
+        evaluation_status = lambda _row, _notices: {  # type: ignore[assignment]
+            "eligible": False,
+            "excluded_defect_ids": ["classification_unavailable"],
+            "basis": "defect_registry_unavailable_fail_closed",
+        }
 
-    # Find scored rows already in ledger — keyed on (release, period, model)
-    existing_scored_keys: set[tuple] = {
-        (r["release"], r["period"], r.get("model"))
-        for r in existing_ledger
-        if r.get("row_type") == "scored"
-    }
+    # Preserve every immutable score receipt per release/model.  A legacy score
+    # must not block a later official receipt when the values differ (the July
+    # 2026 PAYEMS cross-vintage defect is the concrete regression case).
+    existing_scores_by_key: dict[tuple[str, str, str | None], list[dict]] = {}
+    for existing_row in existing_ledger:
+        if existing_row.get("row_type") != "scored":
+            continue
+        key = (
+            str(existing_row.get("release") or ""),
+            str(existing_row.get("period") or ""),
+            existing_row.get("model"),
+        )
+        existing_scores_by_key.setdefault(key, []).append(existing_row)
 
-    # Actual-value cache: one lookup per (release, period)
+    # Actual-value cache: one lookup per (release, period).  Metadata is kept in
+    # a parallel cache so every score freezes the exact source/basis receipt.
     _actual_cache: dict[tuple[str, str], float | None] = {}
+    _actual_receipt_cache: dict[tuple[str, str], dict] = {}
+
+    try:
+        from engine.release_actuals import canonical_actual, load_actual_ledger
+        official_actuals = load_actual_ledger(root / _OFFICIAL_ACTUALS_RELPATH)
+    except Exception as exc:
+        log.debug("official actual ledger unavailable: %s", exc)
+        official_actuals = []
+
+    _truth_series = {
+        "cpi_headline": "CPIAUCSL",
+        "cpi_core": "CPILFESL",
+        "pce_headline": "PCEPI",
+        "pce_core": "PCEPILFE",
+        "ppi_finaldemand": "PPIFIS",
+        "nfp": "PAYEMS",
+    }
 
     def _get_actual(release_type: str, period_str: str, release_date_str: str) -> float | None:
         key = (release_type, period_str)
         if key not in _actual_cache:
+            # 1. Authoritative printed metric parsed from an official document.
+            try:
+                official = canonical_actual(official_actuals, release_type, period_str)
+            except Exception:
+                official = None
+            if official is not None:
+                try:
+                    _actual_cache[key] = float(official["actual"])
+                    _actual_receipt_cache[key] = {
+                        "actual_basis": official.get("actual_basis"),
+                        "actual_source": official.get("actual_source"),
+                        "actual_source_url": official.get("source_url"),
+                        "actual_source_sha256": official.get("source_sha256"),
+                        "actual_observed_at": official.get("observed_at"),
+                        "actual_receipt_id": official.get("receipt_id"),
+                        "exact_target_id": official.get("exact_target_id"),
+                        "raw_initial_print": official.get("actual_raw"),
+                    }
+                    return _actual_cache[key]
+                except (TypeError, ValueError, KeyError):
+                    pass
+
+            # 2. Same-release-vintage ALFRED reconstruction.  This is a one-decimal
+            # proxy for price indexes, not the official printed metric.
+            series_id = _truth_series.get(release_type)
+            if series_id:
+                try:
+                    from engine.release_target_truth import (
+                        default_vintage_path,
+                        load_full_vintage_parquets,
+                        reconstruct_release_target,
+                    )
+                    truth_path = default_vintage_path(root, series_id)
+                    require_marker = True
+                    if not truth_path.exists() and series_id == "PAYEMS":
+                        legacy_full = root / "data" / "fred_vintage" / "payems_all_vintages.parquet"
+                        if legacy_full.exists():
+                            truth_path = legacy_full
+                            require_marker = False
+                    if truth_path.exists():
+                        truth_frame = load_full_vintage_parquets(
+                            truth_path,
+                            series_id=series_id,
+                            require_output_type_marker=require_marker,
+                        )
+                        truth = reconstruct_release_target(
+                            truth_frame,
+                            series_id=series_id,
+                            period=period_str,
+                            release_date=release_date_str,
+                            as_of=today,
+                        )
+                        if truth.get("status") == "ok":
+                            actual_value = truth.get("published_proxy")
+                            _actual_cache[key] = float(actual_value) if actual_value is not None else None
+                            _actual_receipt_cache[key] = {
+                                "actual_basis": "same_release_vintage_published_proxy",
+                                "actual_source": "alfred_full_vintage",
+                                "actual_source_url": "https://fred.stlouisfed.org/",
+                                "actual_source_sha256": _payload_hash(truth),
+                                "actual_observed_at": today.isoformat(),
+                                "actual_receipt_id": "same_vintage:" + _payload_hash(truth)[:24],
+                                "exact_target_id": truth.get("target_id"),
+                                "raw_initial_print": truth.get("current_level"),
+                                "same_vintage_truth": truth,
+                            }
+                            return _actual_cache[key]
+                except Exception as exc:
+                    log.debug("same-vintage actual unavailable for %s/%s: %s", release_type, period_str, exc)
+
+            # 3. Legacy operational fallback.  The row is explicitly tagged and
+            # structured defect notices exclude this basis from all evaluation.
             raw_print = _get_initial_print(root, release_type, period_str, release_date_str)
             if raw_print is None:
                 _actual_cache[key] = None
             else:
                 _actual_cache[key] = _compute_actual_from_print(release_type, raw_print, root, period_str)
+                _actual_receipt_cache[key] = {
+                    "actual_basis": (
+                        "official_initial_level" if release_type == "claims"
+                        else "legacy_cross_vintage_level_change"
+                    ),
+                    "actual_source": (
+                        "alfred_initial_level" if release_type == "claims"
+                        else "alfred_cross_vintage_levels"
+                    ),
+                    "actual_source_url": "https://fred.stlouisfed.org/",
+                    "actual_source_sha256": None,
+                    "actual_observed_at": today.isoformat(),
+                    "actual_receipt_id": None,
+                    "exact_target_id": None,
+                    "raw_initial_print": raw_print,
+                }
         return _actual_cache[key]
 
     def _pick_t1_row(candidates: list[dict], release_date_str: str) -> tuple[dict | None, bool]:
@@ -1659,6 +1980,7 @@ def _check_release_day_capture(
         except Exception as exc:
             log.debug("expectation_hit failed for %s/%s: %s", release_type, period_str, exc)
 
+        actual_receipt = _actual_receipt_cache.get((release_type, period_str), {})
         row: dict = {
             "schema": 2,
             "row_type": "scored",
@@ -1669,7 +1991,14 @@ def _check_release_day_capture(
             "release_date": release_date_str,
             "actual": actual,
             "actual_first": actual,
-            "raw_initial_print": _actual_cache.get((release_type, period_str)),
+            "raw_initial_print": actual_receipt.get("raw_initial_print"),
+            "actual_basis": actual_receipt.get("actual_basis"),
+            "actual_source": actual_receipt.get("actual_source"),
+            "actual_source_url": actual_receipt.get("actual_source_url"),
+            "actual_source_sha256": actual_receipt.get("actual_source_sha256"),
+            "actual_observed_at": actual_receipt.get("actual_observed_at"),
+            "actual_receipt_id": actual_receipt.get("actual_receipt_id"),
+            "exact_target_id": actual_receipt.get("exact_target_id"),
             "frozen_asof_night": t1_proj.get("asof_night"),
             "frozen_projection_point": proj_point,
             "frozen_projection_p10": proj_p10,
@@ -1688,6 +2017,9 @@ def _check_release_day_capture(
             "expectation_hit": expectation_hit,
             # MRI-R35: freeze cutoff_label from T-1 projection row
             "cutoff_label": t1_proj.get("cutoff_label"),
+            "model_epoch": t1_proj.get("model_epoch") or _MODEL_EPOCHS["champion"],
+            "target_epoch": t1_proj.get("target_epoch") or _target_epoch(release_type),
+            "code_receipt": t1_proj.get("code_receipt"),
         }
         if frozen_on_release_day:
             row["frozen_on_release_day"] = True
@@ -1700,6 +2032,7 @@ def _check_release_day_capture(
             row["late_note"] = (
                 "MRI-R32c: no pre-release projection existed; scored against a late back-projection."
             )
+        row["evaluation"] = evaluation_status(row, defect_notices_for_scoring)
         return row
 
     # --- Collect all (release, period) pairs in the lookback window that need scoring ---
@@ -1726,10 +2059,6 @@ def _check_release_day_capture(
             seen_release_period_for_scoring[key] = release_date_str
 
     for (release_type, period_str, model_key), release_date_str in seen_release_period_for_scoring.items():
-        # Already scored?
-        if (release_type, period_str, model_key) in existing_scored_keys:
-            continue
-
         # Release date must have passed
         try:
             release_date = date.fromisoformat(release_date_str)
@@ -1743,6 +2072,25 @@ def _check_release_day_capture(
         if actual is None:
             log.debug("catch-up: no actual for %s/%s (model=%s) as of %s",
                       release_type, period_str, model_key, asof_night)
+            continue
+
+        prior_scores = existing_scores_by_key.get(
+            (release_type, period_str, model_key), []
+        )
+        actual_receipt = _actual_receipt_cache.get((release_type, period_str), {})
+        actual_receipt_id = actual_receipt.get("actual_receipt_id")
+        if actual_receipt_id:
+            # Receipt identity, not numeric coincidence, controls idempotency.
+            # An official printed value that equals a legacy proxy still earns
+            # its own provenance receipt; canonical selection prevents a double
+            # count while the append-only ledger preserves both observations.
+            if any(
+                row.get("actual_receipt_id") == actual_receipt_id
+                for row in prior_scores
+            ):
+                continue
+        elif prior_scores:
+            # Receipt-less legacy fallbacks can never supersede a frozen score.
             continue
 
         if model_key is None:
@@ -1772,6 +2120,13 @@ def _check_release_day_capture(
 
             sr = _score_champion(release_type, period_str, release_date_str, actual,
                                  t1_proj, frozen_on_rd, is_late)
+            sr["frozen_prediction_id"] = t1_proj.get("prediction_id")
+            sr["score_receipt_id"] = _score_receipt_id(sr)
+            if prior_scores:
+                sr["supersedes_score_receipt_ids"] = [
+                    row.get("score_receipt_id") or _score_receipt_id(row)
+                    for row in prior_scores
+                ]
             scored_rows.append(sr)
             log.info(
                 "catch-up scored: %s/%s — actual=%.4f vs proj=%.4f%s%s",
@@ -1812,6 +2167,7 @@ def _check_release_day_capture(
             if shadow_p10 is not None and shadow_p90 is not None:
                 shadow_interval_hit = bool(shadow_p10 <= actual <= shadow_p90)
 
+            actual_receipt = _actual_receipt_cache.get((release_type, period_str), {})
             scored_shadow_row: dict = {
                 "schema": 2,
                 "row_type": "scored",
@@ -1822,6 +2178,15 @@ def _check_release_day_capture(
                 "release_date": release_date_str,
                 "actual": actual,
                 "actual_first": actual,
+                "raw_initial_print": actual_receipt.get("raw_initial_print"),
+                "actual_basis": actual_receipt.get("actual_basis"),
+                "actual_source": actual_receipt.get("actual_source"),
+                "actual_source_url": actual_receipt.get("actual_source_url"),
+                "actual_source_sha256": actual_receipt.get("actual_source_sha256"),
+                "actual_observed_at": actual_receipt.get("actual_observed_at"),
+                "actual_receipt_id": actual_receipt.get("actual_receipt_id"),
+                "exact_target_id": actual_receipt.get("exact_target_id"),
+                "frozen_prediction_id": t1_shadow.get("prediction_id"),
                 "frozen_asof_night": t1_shadow.get("asof_night"),
                 "frozen_projection_point": shadow_point,
                 "frozen_projection_p10": shadow_p10,
@@ -1832,9 +2197,24 @@ def _check_release_day_capture(
                 "interval_hit": shadow_interval_hit,
                 # MRI-R35: freeze cutoff_label from shadow row
                 "cutoff_label": t1_shadow.get("cutoff_label"),
+                "model_epoch": t1_shadow.get("model_epoch") or _MODEL_EPOCHS.get(str(shadow_model)),
+                "target_epoch": t1_shadow.get("target_epoch") or _target_epoch(release_type, str(shadow_model)),
+                "code_receipt": t1_shadow.get("code_receipt"),
             }
+            scored_shadow_row["score_receipt_id"] = _score_receipt_id(
+                scored_shadow_row
+            )
+            if prior_scores:
+                scored_shadow_row["supersedes_score_receipt_ids"] = [
+                    row.get("score_receipt_id") or _score_receipt_id(row)
+                    for row in prior_scores
+                ]
             if frozen_on_rd:
                 scored_shadow_row["frozen_on_release_day"] = True
+
+            scored_shadow_row["evaluation"] = evaluation_status(
+                scored_shadow_row, defect_notices_for_scoring
+            )
 
             # Block-level scoring for cpi_bridge rows (display-tier context-accrual).
             # Fail-open: a block-scoring failure must never prevent the scored row.
@@ -2200,7 +2580,53 @@ def _build_scoreboard(
     by_shadow section keyed by (release, model). Champion (model=None) rows
     remain in by_release as before.
     """
-    scored = [r for r in ledger if r.get("row_type") == "scored"]
+    raw_scored_receipts = [r for r in ledger if r.get("row_type") == "scored"]
+    defect_notices = _load_defect_notices(root)
+    try:
+        from engine.release_defects import (
+            canonical_scored_rows,
+            is_evaluation_eligible,
+            matching_defect_ids,
+        )
+        if root is not None and not defect_notices:
+            raise RuntimeError("structured defect registry absent or empty")
+        all_scored = canonical_scored_rows(raw_scored_receipts)
+        scored = [r for r in all_scored if is_evaluation_eligible(r, defect_notices)]
+        excluded_scored = [r for r in all_scored if not is_evaluation_eligible(r, defect_notices)]
+    except Exception as exc:
+        log.warning("defect classification unavailable; clean scoreboard withheld: %s", exc)
+        all_scored = list(raw_scored_receipts)
+        scored = []
+        excluded_scored = list(all_scored)
+        is_evaluation_eligible = lambda _row, _notices: False  # type: ignore[assignment]
+        matching_defect_ids = lambda _row, _notices: ["classification_unavailable"]  # type: ignore[assignment]
+
+    # Compact canonical-event view.  Every raw/superseded receipt remains in the
+    # append-only ledger and is counted separately below; one frozen prediction
+    # enters errors/maturity at most once.
+    all_forward_groups: dict[str, dict[str, Any]] = {}
+    for row in all_scored:
+        model_name = str(row.get("model") or "champion")
+        key = f"{row.get('release', 'unknown')}:{model_name}"
+        group = all_forward_groups.setdefault(key, {"n": 0, "abs_errors": [], "excluded_n": 0})
+        group["n"] += 1
+        if not is_evaluation_eligible(row, defect_notices):
+            group["excluded_n"] += 1
+        actual, point = row.get("actual"), row.get("frozen_projection_point")
+        if actual is not None and point is not None:
+            try:
+                group["abs_errors"].append(abs(float(actual) - float(point)))
+            except (TypeError, ValueError):
+                pass
+    all_forward_summary = {
+        key: {
+            "n": group["n"],
+            "excluded_n": group["excluded_n"],
+            "mae_ours": round(float(np.mean(group["abs_errors"])), 4)
+            if group["abs_errors"] else None,
+        }
+        for key, group in sorted(all_forward_groups.items())
+    }
     revision_rows = [r for r in ledger if r.get("row_type") == "revision"]
     reaction_rws = [r for r in ledger if r.get("row_type") == "reaction"]
 
@@ -2530,9 +2956,6 @@ def _build_scoreboard(
                     ),
                 })
 
-    # FIX 5: load defect_notices.json and pass through as annotation (no metric change)
-    defect_notices = _load_defect_notices(root)
-
     # Block scoreboard: per-block forward MAE/bias for cpi_bridge rows.
     # Display-tier context-accrual (see engine/release_block_scoring.py).
     # Will be empty until the first cpi_bridge row scores. Fail-open.
@@ -2552,11 +2975,42 @@ def _build_scoreboard(
         "schema": "release_forecast_scoreboard.v2",
         "asof": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "forward_accrual_began": accrual_start,
-        "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
+        "note": (
+            "Forward-only: no backtest rows enter this scoreboard (MRI-R8). "
+            "Primary metrics use evaluation-eligible rows only; all_forward preserves the immutable raw record."
+        ),
+        "evaluation_basis": "clean_structured_defect_epochs_v1",
+        "evaluation_registry_status": (
+            "available" if defect_notices else ("legacy_no_root" if root is None else "unavailable")
+        ),
         "by_release": release_stats,
         "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
         "promotion_review": promotion_review,  # MRI-R40 §5: annotation, no metric changes
-        "defect_notices": defect_notices,  # annotation only; no metric computation changed
+        "all_forward": all_forward_summary,
+        "evaluation_exclusions": {
+            "n": len(excluded_scored),
+            "by_defect": {
+                defect_id: sum(
+                    1 for row in excluded_scored
+                    if defect_id in matching_defect_ids(row, defect_notices)
+                )
+                for defect_id in sorted({
+                    defect_id
+                    for row in excluded_scored
+                    for defect_id in matching_defect_ids(row, defect_notices)
+                })
+            },
+        },
+        "score_receipts": {
+            "raw_n": len(raw_scored_receipts),
+            "canonical_n": len(all_scored),
+            "superseded_n": max(0, len(raw_scored_receipts) - len(all_scored)),
+            "note": (
+                "Official actual receipts supersede same-vintage proxies and legacy "
+                "calculations for evaluation; every receipt remains in the ledger."
+            ),
+        },
+        "defect_notices": defect_notices,
         "block_scoreboard": block_scoreboard,  # per-block cpi_bridge MAE/bias (display-tier accrual)
     }
 
@@ -3162,7 +3616,10 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 3b. MRI-R26: attach provenance (input_snapshot + coverage_flags) to each upcoming item.
     # Must run AFTER enrichments so prediction_id is present; BEFORE ledger rows so flags freeze.
     snapshots_dir = root / _INPUT_SNAPSHOTS_RELPATH
-    _attach_provenance(upcoming_block, ledger_path, snapshots_dir, dry_run=dry_run)
+    _attach_provenance(
+        upcoming_block, ledger_path, snapshots_dir,
+        dry_run=dry_run, asof_day=today,
+    )
     log.info("provenance: coverage flags and snapshot refs attached to %d items", len(upcoming_block))
 
     # 3c. Round-2b + W11-G: attach shadow projections to upcoming items (display-only, additive).
@@ -3242,15 +3699,66 @@ def build(root: Path, dry_run: bool = False) -> dict:
     all_ledger_for_scoreboard = existing_ledger + scored_rows + revision_rows + reaction_rows
     scoreboard = _build_scoreboard(all_ledger_for_scoreboard, accrual_start, root=root)
 
-    # 9. Build last_scored for latest.json (most recent scored row per release_type, champion only)
-    all_scored = [r for r in existing_ledger if r.get("row_type") == "scored" and r.get("model") is None] + \
-                 [r for r in scored_rows if r.get("model") is None]
-    last_scored_by_rt: dict[str, dict] = {}
-    for row in all_scored:
-        rt = row.get("release", "")
-        if rt not in last_scored_by_rt or row.get("asof_night", "") > last_scored_by_rt[rt].get("asof_night", ""):
-            last_scored_by_rt[rt] = row
-    last_scored = list(last_scored_by_rt.values())
+    # 9. Build the latest clean score per release.  Tainted legacy rows remain
+    # available under last_scored_all_forward, but must not masquerade as the
+    # canonical current grade in the public artifact.
+    all_scored = [
+        r for r in existing_ledger + scored_rows
+        if r.get("row_type") == "scored" and r.get("model") is None
+    ]
+
+    def _latest_by_release(rows: list[dict]) -> list[dict]:
+        latest: dict[str, dict] = {}
+        for score_row in rows:
+            release_key = str(score_row.get("release") or "")
+            prior = latest.get(release_key)
+            score_stamp = (
+                str(score_row.get("asof_night") or ""),
+                str(score_row.get("actual_observed_at") or ""),
+            )
+            prior_stamp = (
+                str((prior or {}).get("asof_night") or ""),
+                str((prior or {}).get("actual_observed_at") or ""),
+            )
+            if prior is None or score_stamp > prior_stamp:
+                latest[release_key] = score_row
+        return list(latest.values())
+
+    try:
+        from engine.release_defects import evaluation_status, is_evaluation_eligible
+        last_score_notices = _load_defect_notices(root)
+        if not last_score_notices:
+            raise RuntimeError("structured defect registry absent or empty")
+        clean_scored = [
+            row for row in all_scored
+            if is_evaluation_eligible(row, last_score_notices)
+        ]
+        raw_scored_annotated = [
+            {
+                **row,
+                "score_receipt_id": row.get("score_receipt_id") or _score_receipt_id(row),
+                "evaluation": row.get("evaluation")
+                or evaluation_status(row, last_score_notices),
+            }
+            for row in all_scored
+        ]
+    except Exception as exc:
+        log.warning("last_scored clean view withheld: %s", exc)
+        clean_scored = []
+        raw_scored_annotated = [
+            {
+                **row,
+                "score_receipt_id": row.get("score_receipt_id") or _score_receipt_id(row),
+                "evaluation": {
+                    "eligible": False,
+                    "excluded_defect_ids": ["classification_unavailable"],
+                    "basis": "defect_registry_unavailable_fail_closed",
+                },
+            }
+            for row in all_scored
+        ]
+    last_scored = _latest_by_release(clean_scored)
+    last_scored_all_forward = _latest_by_release(raw_scored_annotated)
 
     # 10. Assemble latest.json artifact (schema release_forecast.v2)
     latest = {
@@ -3262,6 +3770,25 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
+        "methodology_status": {
+            "forecast_epoch": "legacy_cross_vintage_training_target_experimental",
+            "forecast_points_changed_by_wave1": False,
+            "coherent_target_refit_status": "not_started_requires_shadow_backfill_and_parity",
+            "next_required_step": "train_and_forward_score_new_coherent_target_shadow_slug",
+            "official_actuals_ref": _OFFICIAL_ACTUALS_RELPATH,
+            "canonical_target_store": "data/fred_vintage/release_targets/",
+            "clean_forward_cpi_n": sum(
+                int((scoreboard.get("by_release", {}).get(release_id) or {}).get("n") or 0)
+                for release_id in ("cpi_headline", "cpi_core")
+            ),
+            "accuracy_claim": "withheld_until_clean_aligned_forward_evidence",
+            "street_consensus": "unavailable",
+            "note": (
+                "Current model points remain experimental while coherent-target challengers accrue. "
+                "Official parsed metrics and same-vintage ALFRED receipts now define the truth spine."
+            ),
+        },
+        "last_scored_all_forward": last_scored_all_forward,
         "enrichments": [
             "surprise_distribution", "market_implied", "reaction_sensitivity",
             "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref",

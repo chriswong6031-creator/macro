@@ -17,11 +17,13 @@ import pytest
 from engine.biocatalyst import operational_store as store_module
 from engine.biocatalyst.operational_store import (
     CORRIGIBLE_RECORD_KINDS,
-    DEFERRED_O1B_RECORD_KINDS,
     IMMUTABLE_RECORD_KINDS,
     MAX_QUERY_LIMIT,
+    O1A_RECORD_KINDS,
+    O1B_RECORD_KINDS,
     OPERATIONAL_RECORD_CONTRACT_ID,
     RECORD_KINDS,
+    RESERVED_RECORD_KIND_ALIASES,
     STORE_META_FILENAME,
     STORE_SCHEMA_VERSION,
     OperationalStore,
@@ -87,10 +89,14 @@ def test_operational_record_contract_is_registered() -> None:
     assert OPERATIONAL_RECORD_CONTRACT_ID in registry.contract_ids
 
 
-def test_record_kinds_exclude_every_o1b_kind() -> None:
-    # Forecasts, outcomes, model registrations, and evaluations are BC-O1b.
-    assert set(RECORD_KINDS).isdisjoint(DEFERRED_O1B_RECORD_KINDS)
-    assert len(RECORD_KINDS) == 7
+def test_record_kinds_are_the_o1a_and_o1b_kinds_and_no_alias() -> None:
+    # O1b added record kinds to this store; it did not fork a second one.
+    assert RECORD_KINDS == O1A_RECORD_KINDS + O1B_RECORD_KINDS
+    assert len(O1A_RECORD_KINDS) == 7
+    assert len(RECORD_KINDS) == 14
+    assert len(set(RECORD_KINDS)) == len(RECORD_KINDS)
+    # A near-miss spelling is never quietly accepted as a new kind.
+    assert set(RECORD_KINDS).isdisjoint(RESERVED_RECORD_KIND_ALIASES)
     assert IMMUTABLE_RECORD_KINDS | CORRIGIBLE_RECORD_KINDS == set(RECORD_KINDS)
     assert not IMMUTABLE_RECORD_KINDS & CORRIGIBLE_RECORD_KINDS
 
@@ -560,13 +566,15 @@ def test_payload_may_not_carry_scoring_or_security_identity_keys(
     assert store.read("identity_review_queue_item", limit=MAX_QUERY_LIMIT).records == ()
 
 
-@pytest.mark.parametrize("record_kind", sorted(DEFERRED_O1B_RECORD_KINDS))
-def test_o1b_record_kinds_are_refused(
+@pytest.mark.parametrize("record_kind", sorted(RESERVED_RECORD_KIND_ALIASES))
+def test_reserved_record_kind_aliases_are_refused(
     store: OperationalStore, record_kind: str
 ) -> None:
+    # "forecast" and "prediction" are near-misses for forecast_snapshot; a
+    # second spelling would be a second home for the same evidence.
     with pytest.raises(OperationalStoreError) as error:
         store.append(record_kind, {"any": 1}, idempotency_key="x:1")
-    assert error.value.code == "OPERATIONAL_RECORD_KIND_DEFERRED_TO_O1B"
+    assert error.value.code == "OPERATIONAL_RECORD_KIND_RESERVED_ALIAS"
 
 
 def test_subject_refs_are_internal_and_never_a_security_join(

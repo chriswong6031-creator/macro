@@ -10,7 +10,7 @@ set -euo pipefail
 
 OPS_ROOT="${EARNINGS_OPS_ROOT:-/Users/chriswong/earnings-ops-wt}"
 PYTHON="${EARNINGS_PYTHON:-/Users/chriswong/earnings-venv/bin/python}"
-REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/chriswong6031-creator/macro.git}"
+REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/mastermindx-market-intelligence/macro.git}"
 LOCAL_LLM_BASE_URL="${EARNINGS_LLM_BASE_URL:-}"
 LOCAL_LLM_MODEL="${EARNINGS_LLM_MODEL:-}"
 if { [ -n "$LOCAL_LLM_BASE_URL" ] && [ -z "$LOCAL_LLM_MODEL" ]; } || \

@@ -13,7 +13,11 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Mapping, Sequence
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.capital_structure.share_count_retention import (
     DEFAULT_MAX_OBJECTS,
@@ -21,7 +25,7 @@ from engine.capital_structure.share_count_retention import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_QUARANTINE_SECONDS,
     ShareCountRetentionError,
-)
+)  # noqa: E402
 
 
 APPLY_ENABLE_ENV = "CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED"
