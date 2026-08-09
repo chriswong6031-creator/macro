@@ -26,12 +26,16 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from collections.abc import Iterable
 from datetime import date, timedelta
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path, PurePosixPath
 from typing import Any
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 import pandas as pd
 
