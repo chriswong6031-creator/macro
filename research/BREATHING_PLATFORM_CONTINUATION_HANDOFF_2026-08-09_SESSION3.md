@@ -26,8 +26,12 @@ land the remaining W-L0 gates, then start W-L1.
      --jq '.jobs[]|"\(.name) \(.status) started=\(.started_at) labels=\(.labels|join(","))"'
    ```
    **Do NOT re-push, re-arm, or re-dispatch to "fix" it** — it cannot help, and a
-   second push cancels the first run's packs. This is an operator/org-settings
-   question; §5 has the evidence and the options.
+   second push cancels the first run's packs. **In particular do NOT run
+   `gh workflow run ci.yml --ref main`:** main-ref dispatches share one
+   `cancel-in-progress` group, so a new dispatch KILLS the in-flight proof, and with
+   no CONCLUDED proof on main the sweeper's base-inherited-red refresh can never fire
+   and the armed backlog cannot drain (law: #5133, merged 12:07Z; fence: #5136).
+   Watch the live proof instead of starting a rival. §5 has both mechanisms.
 2. **Gate 2 (#4978) is the last W-L0 gate open** — armed and correct, rebase it onto
    the post-gate-3 main and let it merge. Gate 3 merged at 12:08Z, so **W-L1a (§6)
    is UNBLOCKED and is the next build.** If a pack comes back genuinely red on
@@ -248,6 +252,27 @@ self-hosted pool that demonstrably kept working, reverses a deliberate and
 well-argued decision (#5124) and is an operator call, not a session's unilateral
 one. Do NOT re-push, re-arm, or re-dispatch armed PRs while it is dark: it cannot
 help, and a second push cancels the first run's packs.
+
+**A SECOND mechanism, from a parallel session (Prophet EYES OPEN, 12:2xZ) — the two
+compose, and this one is the reason armed PRs were not draining.** Main-ref
+dispatches share ONE `cancel-in-progress` concurrency group, so **each new
+`workflow_dispatch` on main KILLS the in-flight proof**. Four baselines died serially
+this morning, one at minute 33 of 34. Since `merge_on_green.main_proof` reads the
+newest CONCLUDED `ci.yml` run on main, a main that never finishes a proof means the
+base-inherited-red refresh can never fire and the armed backlog cannot drain — the
+exact failure CLAUDE.md describes.
+
+**So the rule is now: never dispatch a main baseline over a live one.** Law landed on
+main as #5133 (merged 12:07:30Z, verified); a mechanical fence rides with #5136.
+Watch the in-flight proof instead of starting a rival.
+
+Verified independently rather than taken on trust, and one nuance matters: the proof
+run cited as "in flight, ETA ~12:55Z" (`31312993220`, main, `workflow_dispatch`,
+created 12:19Z) was still **`queued`** at 12:25Z, not running. So that ETA presumes a
+start that had not happened — which reinforces the pickup problem above rather than
+replacing it. **Both mechanisms are real:** dispatches cancelling each other explains
+why no proof ever CONCLUDED; slow hosted pickup explains why the replacement proof,
+and every PR pack, sat waiting to START.
 
 **One artifact worth someone's attention:** the check list on #5089's head carried a
 literal `ci-pack-${{ matrix.pack }}` (completed/skipped) alongside the four real
