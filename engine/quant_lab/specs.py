@@ -86,14 +86,14 @@ SOURCES = {
     "options_dislocation_module": {
         "title": "engine/options_dislocation.py — the feature layer, its pre-registration and its nulls",
         "publisher": "Macro Dashboard (this repo)", "date": "2026-08-05",
-        "url": "https://github.com/chriswong6031-creator/macro/blob/main/engine/options_dislocation.py",
+        "url": "https://github.com/mastermindx-market-intelligence/macro/blob/main/engine/options_dislocation.py",
         "why": "Unlike every other model here, this one is OURS — the construction is fully "
                "readable, so 'what the vendor says' and 'what we built' are the same text.",
     },
     "options_dislocation_assessment": {
         "title": "OPTIONS_INFORMATION_DISLOCATION_ASSESSMENT.md",
         "publisher": "Macro Dashboard (this repo)", "date": "2026-08-05",
-        "url": "https://github.com/chriswong6031-creator/macro/blob/main/research/options_estate/"
+        "url": "https://github.com/mastermindx-market-intelligence/macro/blob/main/research/options_estate/"
                "OPTIONS_INFORMATION_DISLOCATION_ASSESSMENT.md",
         "why": "The raw-vs-neutralised IC table: why every primitive is residualised against "
                "(iv30, log_spot) before it is allowed to mean anything.",

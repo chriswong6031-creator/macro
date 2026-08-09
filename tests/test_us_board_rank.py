@@ -153,9 +153,11 @@ class TestEntryLeg:
           * pre-2026-08-04 the US and CN maps were IDENTICAL, on the premise that
             the entry-status vocabulary is market-independent;
           * 2026-08-04 the CN V1 loser audit refuted that premise for the VALUES —
-            in the A-share tape the patience statuses were the era's best cohort
+            in the legacy split-adjusted A-share comparator the patience statuses were
+            the era's best cohort
             (bounce_wait 6.9% loser rate) and the action statuses its worst
-            (buy_now 30.0%; CN masterplan §2.3/§2.11).  cn_prophet_v3 adopted that
+            (buy_now 30.0%; CN masterplan §2.3/§2.11).  This was ordinary return
+            context, not exact legal-band evidence.  cn_prophet_v3 adopted that
             order; the US map kept the trend-tape order;
           * 2026-08-08, first draft of A2: the US map adopted the CN ordering on
             the parity anatomy's evidence.  It never reached main;
@@ -292,7 +294,8 @@ class TestEntryLeg:
         assert set(ubr._ENTRY_VALUE) == set(cn._ENTRY_VALUE)
         assert ubr._ENTRY_VALUE != cn._ENTRY_VALUE
         assert ubr._ENTRY_VALUE["extended"] == 0.0 and cn._ENTRY_VALUE["extended"] == 0.3
-        # CN still leads on patience — measured there, and left alone by this ruling.
+        # The historical CN adjusted-return comparator still orders patience first —
+        # context only, with no legal-band or US-map authority.
         assert max(cn._ENTRY_VALUE, key=cn._ENTRY_VALUE.get) == "bounce_wait"
         # ... and the US map no longer has a single leader at all.
         top = max(ubr._ENTRY_VALUE.values())
@@ -914,10 +917,11 @@ class TestFeaturedEntryStatuses:
 class TestExtensionUnknownIsDisclosed:
     """The 2026-08-06 shape, pinned: one upstream gap must not dark the lane.
 
-    Measured cause of that board (`site/factordata/us_standouts.json` @3cbef39a6ea):
-    the equity close panel's newest row carried 6 of 3,034 members, and
-    `engine.extension.extension_signals` reads one global `.iloc[-1]`, so all 69 buy
-    rows came back `ext_z` None and the B3 veto published `featured: 0`.
+    Historical cause (`site/factordata/us_standouts.json` @3cbef39a6ea): the equity
+    close panel's newest row carried 6 of 3,034 members and the pre-#4979 positional
+    reader selected it, so all 69 buy rows came back `ext_z` None and the B3 veto
+    published `featured: 0`.  #4979 now coverage-anchors and age-bounds that read; this
+    class pins the remaining policy for honest nulls, not a claim that the defect remains.
     """
 
     def test_unknown_is_eligible_and_flagged(self):
@@ -986,6 +990,8 @@ class TestExtensionUnknownIsDisclosed:
         # House law: the annotation must START the line, or GitHub drops it silently.
         assert lines[0].startswith("::warning title=featured-ext-z-unknown::"), lines[0]
         assert "4/4" in lines[0]
+        assert "coverage- and age-bounded reader" in lines[0]
+        assert ".iloc[-1]" not in lines[0]
 
     def test_a_healthy_board_stays_quiet(self, capsys):
         """Falsifier: the alarm must be a majority test, not an any-unknown test —
@@ -1155,9 +1161,9 @@ class TestRankingBlock:
     def test_the_block_stamps_the_selection_era(self):
         """ANTICIPATION §6.2 item 4 — a forward-ledger row must be readable against
         the SELECTION rule that produced it, not against today's constants.  The
-        stamp covers the entry ladder and the featured entry set, so it moves when
-        either does; the module constant and the published field are pinned together
-        so the stamp cannot drift from the block."""
+        stamp covers the selected population and admission regime, and deliberately
+        survives a value-map or featured-set revision so H=63 episodes can mature; the
+        module constant and published field are pinned together so it cannot drift."""
         block = ubr.ranking_block(
             ubr.score_rows([_row("A", ext_z=0.0)], board_asof="2026-07-31"))
         assert ubr.SELECTION_ERA == "anticipation-v1-2026-08-08"
@@ -1170,7 +1176,7 @@ class TestRankingBlock:
         from before the 2026-08-04 fork until 2026-08-08 — false for four days and
         false in a new way after this era.  What it must now do: name the ladder it
         actually applies, keep the vocabulary/values distinction, and say out loud
-        that the US re-measurement has not been run."""
+        that the US re-measurement has run and licenses no ordering."""
         entry = [p for p in ubr.ranking_block([])["formula_points"]
                  if p["component"] == "entry"][0]
         assert entry["basis"] != "frozen status map, shared with the China board"
@@ -1184,6 +1190,10 @@ class TestRankingBlock:
         assert "flat value" in entry["basis"]
         assert "ADVERSE" in entry["basis"]
         assert "H=21/H=63" in entry["basis"]
+        for boundary in ("split-adjusted cross-market context", "not exact legal-band",
+                         "no status/ranking/Prophet/Neural Web authority", "TuShare daily",
+                         "stk_limit", "integer-cent equality"):
+            assert boundary in entry["basis"], boundary
         # ... and the LEVEL's consequence: the range is unchanged and the
         # confirmation class is not deflated.  A reader comparing two eras' scores
         # needs that said, not inferred.
@@ -1216,6 +1226,9 @@ class TestRankingBlock:
             assert "flat value" in text
             assert ubr.SELECTION_ERA in text
             assert "vocabulary shared with the China board" in text
+            assert "split-adjusted cross-market context" in text
+            assert "not exact legal-band evidence" in text
+            assert "no status/ranking/Prophet/Neural Web authority" in text
 
         # The US board keeps the direct attribution ...
         assert "the §6.6 US re-measurement read ADVERSE" in own

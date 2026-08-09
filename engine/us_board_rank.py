@@ -24,7 +24,7 @@ Three US-specific departures from the CN module are deliberate and evidenced:
    that was a BUILDER WIRING defect, not a property of the leg.**
    ``build_stock_library`` fed :func:`engine.extension.extension_signals` one close
    panel holding both 5-sessions-a-week equities and 24/7 crypto; that panel is indexed
-   on the union of the two calendars, and ``extension_signals`` reads a single global
+   on the union of the two calendars, and ``extension_signals`` then read a single global
    ``.iloc[-1]``.  So on any build whose newest date was not an equity session — every
    weekend, every market holiday — the last row was crypto-only, every equity's
    ``ext_z`` came back NaN, and no board row carried the leg's input.  Splitting that
@@ -57,8 +57,11 @@ extended"), and a row with an unknown entry status buckets to ``setting_up``, ne
 FAIL-CLOSED IS ABOUT POINTS, NOT ABOUT THE LANE (ANTICIPATION v1, 2026-08-08).  From
 2026-08-06 an unknown ``ext_z`` also VETOED ``featured``, and on 2026-08-06 that turned
 one upstream data gap into a dark board: the equity close panel's newest row carried 6
-of 3,034 members, ``extension_signals`` takes a single global ``.iloc[-1]``, so all 69
-buy rows came back ``ext_z`` None and the featured lane published 0 of 69.  A veto that
+of 3,034 members, the pre-#4979 positional reader selected that sparse row, all 69 buy
+rows came back ``ext_z`` None, and the featured lane published 0 of 69.  #4979 now
+coverage-anchors the read and withholds it past a bounded age, preventing that exact
+sparse-row failure.  Unknowns remain possible when a name lacks enough own history or
+the bounded panel read is withheld, so the lane policy still matters.  A veto that
 converts an input outage into "we have nothing for you" is a bigger error than the one
 it was written to prevent.  An unknown reading is now DISCLOSED rather than vetoing:
 the row is featured-eligible and carries ``ext_unknown: true``, the artifact prints the
@@ -209,6 +212,14 @@ SELECTION_ERA = "anticipation-v1-2026-08-08"
 #     ([0.470, 0.626] vs [0.298, 0.490]) so the gap survives on its own terms, but the
 #     headline is weaker evidence than its point estimates read.  An ordering the
 #     record cannot cleanly test is a STRONGER case for the flat leg, not a weaker one.
+#
+# CROSS-MARKET BOUNDARY (#4972/#4988).  The quoted CN rates are an ordinary
+# split-adjusted forward-return comparator over Prophet standout-board admissions.  They
+# are context only: not exact legal-band evidence, and they transfer no status value,
+# ordering, rank, candidate, gate, Prophet, Neural Web, or trade authority to this map.
+# Exact CN legal-limit verdicts require authorized unadjusted TuShare ``daily`` joined to
+# same-key ``stk_limit`` with integer-cent equality.  The flat US ruling above rests on
+# the US record's inability to license either ordering; it does not import the CN rates.
 #
 # So the short ruler refutes the CN ordering in this window, and the RIGHT ruler is
 # unmeasured.  Neither patience-first nor chase-first is defensible as a ranking claim
@@ -493,7 +504,7 @@ def signal_value(verdict: Mapping[str, Any] | None) -> float:
 
 
 def entry_value(entry: Mapping[str, Any] | None) -> float:
-    """Entry-window value in ``[0, 1]`` — CN's ``_ENTRY_VALUE`` map verbatim."""
+    """Entry-window value in ``[0, 1]`` — the US flat-admissible map above."""
     return _ENTRY_VALUE.get(_status_of(entry), 0.0)
 
 
@@ -877,9 +888,11 @@ def featured_shortfalls(
     # B3 (2026-08-06) made an unknown reading a featured veto on the reasoning that a
     # veto whose input is dark cannot be said to have passed.  That reasoning is right
     # about the EVIDENCE and wrong about the REMEDY: on 2026-08-06 the equity close
-    # panel's newest row held 6 of 3,034 members, `extension_signals` reads one global
-    # `.iloc[-1]`, every one of the 69 buy rows came back None, and the veto published
-    # a featured lane of 0 — an upstream data gap rendered as "nothing to show you".
+    # panel's newest row held 6 of 3,034 members, the then-positional reader selected it,
+    # every one of the 69 buy rows came back None, and the veto published a featured lane
+    # of 0 — an upstream data gap rendered as "nothing to show you".  #4979 subsequently
+    # repaired that sparse-row selection with a coverage floor and bounded age; the rule
+    # here still covers honest nulls from insufficient history or a withheld panel read.
     # The board now says what it knows and flags what it does not: the row is eligible
     # and `score_rows` stamps `ext_unknown` on it, `ranking_block` prints the count,
     # and a majority-unknown board raises a ::warning.  A KNOWN reading past the line
@@ -1089,9 +1102,9 @@ def _warn_on_dark_extension(
         "featured-ext-z-unknown",
         f"{definition}: extension reading unknown on {unknown}/{total} scored rows "
         f"({unknown / total:.0%}) — the featured lane is publishing rows whose "
-        "chase-risk check has no input (ext_unknown: true). Check the extension "
-        "panel's newest row: a partial price advance leaves a sparse last session and "
-        "extension_signals reads one global .iloc[-1].",
+        "chase-risk check has no input (ext_unknown: true). Check the extension-anchor "
+        "warnings and the panel staleness receipt: the coverage- and age-bounded reader "
+        "may have withheld the panel, or these names may lack resolvable own history.",
     )
 
 
@@ -1153,14 +1166,20 @@ EDGE_READS_US = "residual alpha percentile inside this buy pool"
 _ENTRY_BASIS_PROVENANCE_OWN = (
     f"{SELECTION_ERA}: the §6.6 US re-measurement read ADVERSE to the CN ordering at "
     "H=5 and H=10 and has no marks at all at H=21/H=63, so no ordering is claimed in "
-    "either direction."
+    "either direction. The historical CN column is split-adjusted cross-market context, "
+    "not exact legal-band evidence, and transfers no status/ranking/Prophet/Neural Web "
+    "authority; exact CN bands require unadjusted TuShare daily plus same-key stk_limit "
+    "integer-cent equality."
 )
 _ENTRY_BASIS_PROVENANCE_INHERITED = (
     f"{SELECTION_ERA}: this ladder is the US board's, flattened by the §6.6 US "
     "re-measurement (ADVERSE to the CN ordering at H=5 and H=10; no marks at all at "
     "H=21/H=63). This board INHERITS it structurally, by sharing the ranking module — "
     "no equivalent re-measurement has been run on this market's own episodes, and none "
-    "is claimed here."
+    "is claimed here. The historical CN column is split-adjusted cross-market context, "
+    "not exact legal-band evidence, and transfers no status/ranking/Prophet/Neural Web "
+    "authority; exact CN bands require unadjusted TuShare daily plus same-key stk_limit "
+    "integer-cent equality."
 )
 
 

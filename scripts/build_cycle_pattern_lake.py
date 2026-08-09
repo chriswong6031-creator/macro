@@ -15,10 +15,14 @@ Run:  cd <repo> && python3 -m scripts.build_cycle_pattern_lake
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
-from engine.cycle_pattern import lake, registry
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.cycle_pattern import lake, registry  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("build_cycle_pattern_lake")
 

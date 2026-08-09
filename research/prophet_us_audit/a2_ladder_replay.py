@@ -1,16 +1,19 @@
 """A2 live proof — committed US boards replayed through the BASE and HEAD rank module.
 
 ANTICIPATION §6.2.  Nothing here is simulated: the "before" side is
-``origin/main:engine/us_board_rank.py`` materialised to a temp file and imported
+the pinned :data:`BASE_SHA` ``engine/us_board_rank.py`` materialised to a temp file and imported
 alongside the working-tree module, so both sides are real code running the same
 committed rows.  Rows come from committed artifacts only and nothing is written back
 into ``site/``.
 
 Three receipts:
 
-1. **The ext_z blackout.**  The 2026-08-06 board (69/69 rows with no extension
+1. **The ext_z blackout policy.**  The 2026-08-06 board (69/69 rows with no extension
    reading) published ``featured: 0``.  Replayed under HEAD it features again, every
-   featured row flagged ``ext_unknown``, and the outage raises a ``::warning``.
+   featured row flagged ``ext_unknown``, and the outage raises a ``::warning``.  #4979
+   has since coverage-anchored and age-bounded the extension reader, preventing that
+   historical sparse-row selection; this frozen board still tests what happens when a
+   reading is honestly absent or the bounded reader withholds the panel.
 2. **The map re-order.**  The current committed board, ranked under both maps, old
    rank -> new rank.  HEAD's map is FLAT across the five admissible statuses
    (ANTICIPATION v1 amendment, after the §6.6 first run read adverse to the CN

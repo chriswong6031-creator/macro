@@ -374,7 +374,7 @@ class TestCaptureFloorsTheMfeDenominator:
 # veto whose input is dark cannot be said to have passed.  That reasoning was right
 # about the evidence and wrong about the remedy: the very next board proved it, with
 # 69 of 69 buy rows carrying no reading (the equity close panel's newest row held 6 of
-# 3,034 members and ``extension_signals`` reads one global ``.iloc[-1]``) and a
+# 3,034 members and the pre-#4979 positional reader selected it) and a
 # featured lane published as 0.  ANTICIPATION v1 (2026-08-08) keeps the veto for a
 # KNOWN reading past the parabolic line and replaces the absence-veto with a
 # disclosure: ``ext_unknown`` on the row, a coverage count on the block, and a
