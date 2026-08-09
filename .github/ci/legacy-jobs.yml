@@ -5086,6 +5086,10 @@ jobs:
       # `covered_obligations`.  Stdlib + the job's existing pandas/pyarrow only.
       - name: amount-class conflation gate — obligation vs ceiling vs outlay vs delta
         run: python -m pytest tests/test_government_revenue_amount_semantics.py -q
+      - name: amount-class semantics guard (selftest + live source scan)
+        run: |
+          python3 scripts/check_government_revenue_amount_semantics.py --selftest
+          python3 scripts/check_government_revenue_amount_semantics.py
       # Unrun backfill 2026-08-09: the SBIR/STTR progression evidence lane
       # (Wave 10 rail 3, #5012) landed named by no run: step — the unrun-suite
       # gate reds main on it.  It belongs HERE because the suite drives
