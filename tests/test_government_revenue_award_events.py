@@ -667,3 +667,84 @@ def test_v2_event_and_workspace_contracts_validate_and_authority_is_display_only
         award_event_freshness={"status": "ok", "records_visible": len(events)},
     )
     workspace_validator.validate(workspace)
+
+
+def test_compound_value_move_keeps_the_ceiling_delta_it_strictly_contains():
+    """A second moving field may not delete the first field's semantic.
+
+    ``award_value_changed`` is a ``ceiling_changed`` with a current-value move
+    beside it.  The amount facts used to stop at the first computable delta, so
+    the ceiling component of a compound move was never published at all and the
+    contained change became unreadable downstream.
+    """
+    snapshots = [
+        _snapshot(
+            known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z",
+            source_receipt_id="a", snapshot_content_sha256="a" * 64,
+            current_award_amount=100.0, potential_award_amount=250.0,
+        ),
+        _snapshot(
+            known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z",
+            source_receipt_id="b", snapshot_content_sha256="b" * 64,
+            current_award_amount=150.0, potential_award_amount=400.0,
+        ),
+    ]
+
+    events = _type(_events(snapshots), "award_value_changed")
+
+    assert len(events) == 1
+    event = events[0]
+    amounts = {fact["id"]: fact for fact in event["amounts"]}
+    # The lead amount is unchanged: this is additive, not a re-pointing.
+    assert event["primary_amount_id"] == "delta_current_award_amount"
+    assert amounts["delta_current_award_amount"]["value"] == 50.0
+    assert amounts["delta_potential_award_amount"]["value"] == 150.0
+    assert amounts["delta_potential_award_amount"]["source_ref"] == amounts["delta_current_award_amount"]["source_ref"]
+    # ... and the containment is machine-readable rather than inferred.
+    assert event["award_change"]["secondary_types"] == ["ceiling_changed", "current_value_changed"]
+
+
+def test_lone_ceiling_and_lone_current_moves_still_publish_one_delta_each():
+    """Control for the test above: the non-compound cases are untouched."""
+    ceiling_only = [
+        _snapshot(known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z", source_receipt_id="a", snapshot_content_sha256="a" * 64),
+        _snapshot(known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z", source_receipt_id="b", snapshot_content_sha256="b" * 64, potential_award_amount=400.0),
+    ]
+
+    events = _type(_events(ceiling_only), "ceiling_changed")
+
+    assert len(events) == 1
+    assert events[0]["primary_amount_id"] == "delta_potential_award_amount"
+    assert [fact["id"] for fact in events[0]["amounts"] if fact["id"].startswith("delta_")] == ["delta_potential_award_amount"]
+    assert events[0]["award_change"]["secondary_types"] == []
+
+
+def test_delta_amount_semantics_name_the_quantity_not_only_the_derivation():
+    """A cumulative balance's move and a single transaction are not the same unit.
+
+    Both rails used to publish every delta as ``derived_from_official_before_
+    after``, which says how the number was produced but not what it measures --
+    so nothing downstream could refuse to add a running total's movement to the
+    transactions that moved it.
+    """
+    snapshots = [
+        _snapshot(known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z", source_receipt_id="a", snapshot_content_sha256="a" * 64, total_obligated_amount=20.0),
+        _snapshot(known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z", source_receipt_id="b", snapshot_content_sha256="b" * 64, total_obligated_amount=55.0),
+    ]
+    actions = [
+        _action(action_id="ACT-REV", action_content_sha256="1" * 64, federal_action_obligation=40.0),
+        _action(action_id="ACT-REV", action_content_sha256="2" * 64, known_at="2026-01-11T12:00:00Z", federal_action_obligation=75.0),
+    ]
+
+    balance_move = _type(_events(snapshots), "reported_obligation_balance_changed")
+    revision = _type(_events(actions=actions), "action_revised")
+
+    assert len(balance_move) == 1 and len(revision) == 1
+    snapshot_amount = next(fact for fact in balance_move[0]["amounts"] if fact["id"] == "delta_total_obligated_amount")
+    action_amount = next(fact for fact in revision[0]["amounts"] if fact["id"] == "delta_federal_action_obligation")
+    assert snapshot_amount["semantic"] == "award_cumulative_delta_derived_from_official_before_after"
+    assert action_amount["semantic"] == "transaction_delta_derived_from_official_before_after"
+    assert snapshot_amount["semantic"] != action_amount["semantic"]
+    # Equal magnitudes, different quantities: the labels are the only thing that
+    # keeps a downstream consumer from adding them together.
+    assert snapshot_amount["value"] == action_amount["value"] == 35.0

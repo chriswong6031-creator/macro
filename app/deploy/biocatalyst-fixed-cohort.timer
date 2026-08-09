@@ -1,0 +1,18 @@
+# B1S2b privileged fixed-cohort transport lane.
+#
+# This timer is installed DISABLED and stays disabled.  Neither
+# biocatalyst-fixed-cohort-setup.sh nor app/deploy/update.sh enables or starts
+# it; only an operator arms it, and only after the B1S2c arming decision.
+# Installing this file causes no collector traffic and opens no clock.
+[Unit]
+Description=Run the BioCatalyst fixed-cohort bounded transport daily (operator-armed only)
+
+[Timer]
+OnCalendar=daily
+AccuracySec=5min
+RandomizedDelaySec=900s
+Persistent=false
+Unit=macro-biocatalyst-fixed-cohort.service
+
+[Install]
+WantedBy=timers.target

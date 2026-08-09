@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<informationTable xmlns="http://www.sec.gov/edgar/document/thirteenf/informationtable">
+  <infoTable>
+    <nameOfIssuer>Alpha Corp.</nameOfIssuer>
+    <titleOfClass>Common Stock</titleOfClass>
+    <cusip>000000AA1</cusip>
+    <figi>BBG000ALPHA</figi>
+    <value>1000</value>
+    <shrsOrPrnAmt><sshPrnamt>10</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <putCall>Call</putCall>
+    <investmentDiscretion>DFND</investmentDiscretion>
+    <otherManager>1, 01</otherManager>
+    <votingAuthority><Sole>4</Sole><Shared>3</Shared><None>3</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>Beta Notes</nameOfIssuer>
+    <titleOfClass>Debt</titleOfClass>
+    <cusip>000000BB2</cusip>
+    <value>2000</value>
+    <shrsOrPrnAmt><sshPrnamt>20</sshPrnamt><sshPrnamtType>PRN</sshPrnamtType></shrsOrPrnAmt>
+    <putCall>Put</putCall>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>0</Sole><Shared>0</Shared><None>20</None></votingAuthority>
+  </infoTable>
+</informationTable>

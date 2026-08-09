@@ -26,6 +26,7 @@ from engine import spvector_overlay as sov
 from engine import whitehouse_brain as wb
 
 PASS = FAIL = 0
+FAILURES: list[str] = []
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -36,6 +37,24 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     else:
         FAIL += 1
         print(f"  FAIL  {name}  {detail}")
+        FAILURES.append(f"{name}  {detail}".rstrip())
+
+
+try:
+    import pytest
+except ImportError:  # script mode is promised to work without pytest installed
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _gate_checks():
+        # check() is a soft assert so one run reports EVERY miss; without this
+        # flush a bare check(False) cannot fail a test and the whole file is
+        # decorative under pytest (it was, for months — 4 stale pins invisible).
+        before = len(FAILURES)
+        yield
+        fresh = FAILURES[before:]
+        assert not fresh, "check() failures:\n  " + "\n  ".join(fresh)
 
 
 # --------------------------------------------------------------------------- #
@@ -59,11 +78,17 @@ def test_catalyst_tone_cache_hit():
 
 def test_master_brain_cache_hit():
     with tempfile.TemporaryDirectory() as tmpdir:
-        cfg = {"reply_cache_dir": str(tmpdir)}
+        # The mb helpers are ROOT-AWARE: pass root=tmpdir so the default cache dir
+        # resolves under tmp and the real data/master_brain tree is never touched
+        # (MM_DATA_GUARD). tests/conftest.py disables _mb_reply_cache_get/_put for
+        # every test except the roundtrip tests it names — this one is on that list,
+        # so the REAL get/put pair runs here instead of the always-miss stub.
+        cfg: dict = {}
         phash = mb._mb_prompt_hash("deepseek-v4-pro", "sys", "user")
-        check("mb cache miss on fresh hash", mb._mb_reply_cache_get(phash, cfg) is None)
-        mb._mb_reply_cache_put(phash, "some reply", cfg)
-        got = mb._mb_reply_cache_get(phash, cfg)
+        check("mb cache miss on fresh hash",
+              mb._mb_reply_cache_get(phash, cfg, root=tmpdir) is None)
+        mb._mb_reply_cache_put(phash, "some reply", cfg, root=tmpdir)
+        got = mb._mb_reply_cache_get(phash, cfg, root=tmpdir)
         check("mb cache hit after write", got == "some reply", repr(got))
 
 
@@ -93,7 +118,11 @@ def test_call_model_uses_cache(monkeypatch=None):
     with tempfile.TemporaryDirectory() as tmpdir:
         cfg_base = {"reply_cache_dir": str(tmpdir), "llm_model": "deepseek-v4-flash",
                     "api_key_env": "DEEPSEEK_API_KEY"}
-        model = cfg_base["llm_model"]
+        # Key the cache the way _call_model does. Since #970 (18a18de7559) the model
+        # id comes from _extraction_model(cfg) — config['llm_models']['extraction']
+        # OUTRANKS cfg['llm_model'] — so reading cfg["llm_model"] here wrote the cache
+        # under a hash _call_model never looks up (guaranteed miss, in CI too).
+        model = ct._extraction_model(cfg_base)
         # Build the exact user string that _call_model will construct
         source_text, context = "hello world", "test"
         user = (f"Document context: {context}\n\n"
@@ -101,7 +130,11 @@ def test_call_model_uses_cache(monkeypatch=None):
         phash = ct._prompt_hash(model, ct.CATALYST_SYSTEM, user)
         ct._reply_cache_put(phash, '{"tone_score": 0.5}', cfg_base)
 
-        # Stub _client: returns None (degrades); tracks whether called at all
+        # Stub _client so the test is hermetic in BOTH modes (plain code, not a
+        # fixture — script mode runs no fixtures): no API key and no network are
+        # ever needed. Returning None also keeps a REGRESSION cheap — on a cache
+        # miss _call_model degrades at the client check and never reaches
+        # llm_auth (no usage-ledger writes), and both checks below go red.
         client_calls: list = []
 
         def _sentinel_client(cfg):
@@ -343,15 +376,27 @@ def test_gather_state_price_regime_blocks_same_family():
 
 def test_same_tape_rule_in_system_prompt():
     """MASTER_SYSTEM_TMPL contains the same-tape rule so the LLM knows to count
-    shared-tape blocks as one observation."""
+    shared-tape blocks as one observation.
+
+    Pinned to the ABX v2 wording (#3097, ffabd32157c): that PR rewrote this prompt
+    into plain language ("kill machine text") and the machine tokens W7 originally
+    pinned — `price_regime` as the family example, and the `_lead_lag: leading` vs
+    `coincident` glossary — became prose. Both RULES survived the rewrite, so the
+    successor phrasing is pinned rather than the dead tokens; gather_state still
+    stamps `_tape_family`/`_lead_lag` on every block (engine/master_brain.py).
+    """
     tmpl = mb.MASTER_SYSTEM_TMPL
     check("SAME-TAPE RULE present in system template",
           "SAME-TAPE RULE" in tmpl or "tape_family" in tmpl,
           "missing")
-    check("price_regime family mentioned in template",
-          "price_regime" in tmpl, "missing")
-    check("coincident / leading distinction in template",
-          "coincident" in tmpl or "lead_lag" in tmpl, "missing")
+    # was: "price_regime" — now named as the cross-family independence clause
+    check("cross-family independence named in template",
+          "Independence only exists across families" in tmpl
+          and "prices vs rates/credit vs policy text" in tmpl, "missing")
+    # was: "coincident" / "lead_lag" — now the plain-language lead-vs-moves-with rule
+    check("lead-vs-moves-with distinction in template",
+          "lead only loosely and noisily" in tmpl
+          and "everything else moves with prices" in tmpl, "missing")
 
 
 # --------------------------------------------------------------------------- #

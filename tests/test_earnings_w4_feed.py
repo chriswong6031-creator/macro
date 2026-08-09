@@ -396,6 +396,26 @@ class TestReactionConvention:
 # ═══════════════════════════════════════════════════════════════════════════
 
 _NEW_ROW_KEYS = {"days_to_report", "reports_within_7", "stale"}
+_W4_MANIFEST_KEYS = {"post_earnings_move", "earnings_soon"}
+_W4_SCHEMA_VERSION_FLOOR = (1, 7, 0)
+
+
+def _assert_w4_manifest_entry(entry: dict) -> None:
+    """Guard W4's fields by their introduction floor, never a shared-counter pin.
+
+    PR #5074 correctly noticed that the old 1.7.0 equality had gone stale, but
+    re-pinning it to 1.8.0 would schedule the same failure for the next additive
+    schema release. Keep the useful provenance and make the floor direction
+    executable so a future equality mutation fails on a synthetic newer version.
+    """
+    version = tuple(int(part) for part in entry["schema_version"].split("."))
+    assert version >= _W4_SCHEMA_VERSION_FLOOR, (
+        f"us_standouts schema_version {entry['schema_version']} predates 1.7.0, the "
+        "release that registered the W4 catalyst keys"
+    )
+    assert _W4_MANIFEST_KEYS <= set(entry["optional_fields"])
+    assert _W4_MANIFEST_KEYS <= set(entry["schema_item_fields"])
+    assert not (_W4_MANIFEST_KEYS & set(entry["schema_fields"]))
 
 
 class TestBoardRowSchema:
@@ -483,12 +503,38 @@ class TestBoardRowSchema:
         from scripts.export_signal_contracts import ARTIFACT_MANIFEST
         entry = next(e for e in ARTIFACT_MANIFEST
                      if e["artifact"] == "site/factordata/us_standouts.json")
-        assert entry["schema_version"] == "1.7.0"
-        assert {"post_earnings_move", "earnings_soon"} <= set(entry["optional_fields"])
-        assert {"post_earnings_move", "earnings_soon"} <= set(entry["schema_item_fields"])
+        # FLOOR, never equality.  us_standouts' schema_version is a shared counter that
+        # ANY lane bumps on an additive registration — 1.8.0 arrived with
+        # `universe_sources` (#4965, a main-heal PR with nothing to do with earnings) and
+        # broke this assertion while every W4 key it actually guards was untouched.  An
+        # `==` literal on a monotonic counter is a scheduled red: it fires on someone
+        # else's field, and re-pinning it to the new number only re-arms it for 1.9.0.
+        # 1.7.0 is the release that registered the W4 keys, so at-or-after it is the
+        # honest statement — a version BELOW that means the entry was rolled back to a
+        # pre-W4 shape.  What the keys must actually do is asserted below, on the keys.
+        _assert_w4_manifest_entry(entry)
         # optional_fields is the may-be-absent register, NOT a promotion: neither key
         # may claim required status until a committed render proves it always ships.
-        assert not ({"post_earnings_move", "earnings_soon"} & set(entry["schema_fields"]))
+
+    @pytest.mark.parametrize("schema_version", ["1.7.0", "1.8.0", "1.9.0", "2.0.0"])
+    def test_the_w4_floor_accepts_future_additive_schema_versions(self, schema_version):
+        entry = {
+            "schema_version": schema_version,
+            "optional_fields": sorted(_W4_MANIFEST_KEYS),
+            "schema_item_fields": sorted(_W4_MANIFEST_KEYS),
+            "schema_fields": [],
+        }
+        _assert_w4_manifest_entry(entry)
+
+    def test_the_w4_floor_rejects_a_pre_registration_schema(self):
+        entry = {
+            "schema_version": "1.6.9",
+            "optional_fields": sorted(_W4_MANIFEST_KEYS),
+            "schema_item_fields": sorted(_W4_MANIFEST_KEYS),
+            "schema_fields": [],
+        }
+        with pytest.raises(AssertionError, match="predates 1.7.0"):
+            _assert_w4_manifest_entry(entry)
 
     def test_the_live_artifact_still_parses_and_keeps_its_lanes(self):
         """The committed board predates this build, so it does NOT yet carry the new

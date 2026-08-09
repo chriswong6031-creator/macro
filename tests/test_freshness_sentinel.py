@@ -87,9 +87,36 @@ def _prophet(asof: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
-def _served(result: fs.FetchResult):
-    """A served_reader stand-in that answers every path with ``result``."""
-    return lambda served_dir, path: result
+def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
+                 mtime_age_hours: float = 12.0) -> fs.FetchResult:
+    """One live-plane read of us_board_provisional.json (W-L1a close pass)."""
+    doc: dict = {"schema": "us_board_provisional/v1", "lane": "closepass",
+                 "provisional": True}
+    if as_of is not None:
+        doc["as_of"] = as_of
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
+
+#: What read_served returns for a file that is simply not there — the ordinary
+#: pre-publication state of the close-pass artifact for most of every day.
+ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] …")
+
+
+def _served(result: fs.FetchResult, live: fs.FetchResult | None = None):
+    """A served_reader stand-in.
+
+    PATH-AWARE, because one reader now answers two different roots: the
+    git-rsynced site.served tree (``/prophet/index.json``) and the
+    daemon-written live plane (``/live/…``, the close-pass board). A stub that
+    answered both with the same body would hand the prophet payload to a surface
+    judged on a different field and manufacture a breach that has nothing to do
+    with the case under test.
+    """
+    fallback = _provisional() if live is None else live
+    return lambda root, path: (fallback if path.startswith("/live/") else result)
 
 
 def _fresh_results() -> dict[str, fs.FetchResult]:
@@ -99,6 +126,7 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "hub": _page(14.0),
         "r2_massive_stock_day": _r2(10.0),
         "prophet_us": _prophet(),
+        "us_board_provisional": _provisional(),
     }
 
 
@@ -120,9 +148,11 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         "china": _page(30.0),
         "hub": _page(30.0),
         "r2_massive_stock_day": _r2(30.0),
-        # prophet_us is judged on content, not on a stamp — it stays ok here,
-        # which is the point: the four bake surfaces answer independently.
+        # prophet_us and us_board_provisional are judged on content, not on a
+        # stamp — they stay ok here, which is the point: the four bake surfaces
+        # answer independently.
         "prophet_us": _prophet(),
+        "us_board_provisional": _provisional(),
     }
     report = fs.evaluate(results, NOW)
     assert report["ok"] is False
@@ -211,6 +241,7 @@ def _stale_report(now: datetime = NOW) -> dict:
             # held fresh: these cases exercise the alert window, and the four
             # bake surfaces above are the breach set they assert on.
             "prophet_us": _prophet(),
+            "us_board_provisional": _provisional(),
         },
         now,
     )
@@ -711,7 +742,7 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
 
     def spy_served(served_dir, path):
         reads.append((str(served_dir), path))
-        return _prophet()
+        return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
         now=NOW,
@@ -727,7 +758,14 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     assert not [u for u in urls if "/prophet/" in u], (
         f"prophet must not be fetched over HTTP — the wall 401s it: {urls}"
     )
-    assert reads == [("/opt/macro/site.served", "/prophet/index.json")]
+    # The close-pass board is walled for the same reason (#3391 — the real board
+    # is not free content) and is read off the LIVE PLANE root, not the
+    # site.served tree and not over HTTP. Two roots, one reader, zero HTTP.
+    assert reads == [
+        ("/opt/macro/site.served", "/prophet/index.json"),
+        (str(tmp_path / "public"), "/live/us_board_provisional.json"),
+    ]
+    assert not [u for u in urls if "us_board_provisional" in u], urls
 
 
 def test_read_served_round_trips_and_maps_a_missing_file_to_indeterminate(tmp_path):
@@ -902,3 +940,264 @@ def test_china_fx_widget_stamp_is_not_mistaken_for_a_board_marker():
     report = fs.evaluate(results, NOW)
     assert report["stale_surfaces"] == []
     assert report["surfaces"]["china"]["board_delayed"] is False
+
+
+# --------------------------------------------------------------------------- #
+# W-L1a — the SLA record ("was the evening board live by 18:30 ET?")
+#
+# staleness.json and state.json are both overwritten every pass, so before this
+# the estate could answer "is it fresh NOW" and could not answer the only
+# question the W-L1 gate asks. These pin the two ways such a record silently
+# lies: keying it on the wrong clock, and counting a streak over its own gaps.
+# --------------------------------------------------------------------------- #
+#: 16:47 EDT on Friday 2026-08-07 — inside the 18:30 deadline, on the session's
+#: own ET day. The UTC hour (20:47) is deliberately one that reads as MISSED if
+#: anything on the path forgets to convert to Eastern.
+ON_TIME = datetime(2026, 8, 7, 20, 47, tzinfo=timezone.utc)
+#: 21:30 EDT the same session day — published, but after the deadline.
+LATE = datetime(2026, 8, 8, 1, 30, tzinfo=timezone.utc)
+#: 01:00 EDT on 08-08 — the next ET morning, still describing the 08-07 session.
+NEXT_MORNING = NOW
+
+
+def _ok_report(session: str = "2026-08-07", now: datetime = ON_TIME) -> dict:
+    results = _fresh_results()
+    results["us_board_provisional"] = _provisional(session)
+    return fs.evaluate(results, now)
+
+
+def test_the_sla_record_stamps_the_first_fresh_read_and_never_rewrites_it():
+    """First is first, forever. A later pass re-stamping would erase the only
+    measurement the gate has — and every pass after the board lands reads fresh,
+    so an overwrite-on-write record would converge on "landed at 23:55"."""
+    rec = fs.record_first_fresh({}, _ok_report(), ON_TIME)
+    entry = rec["sessions"]["2026-08-07"]["us_board_provisional"]
+    assert entry["first_fresh_at"] == ON_TIME.isoformat()
+    assert entry["first_fresh_et"] == "16:47"
+    assert entry["met"] is True
+    assert rec["schema"] == fs.FIRST_FRESH_SCHEMA
+
+    # Three more passes over the same session leave the stamp untouched.
+    for minutes in (30, 60, 400):
+        later = ON_TIME + timedelta(minutes=minutes)
+        rec = fs.record_first_fresh(rec, _ok_report(now=later), later)
+    assert rec["sessions"]["2026-08-07"]["us_board_provisional"] == entry
+
+
+def test_the_sla_record_is_keyed_on_the_session_not_the_wall_clock():
+    """The two disagree for five hours every evening. A UTC-date key would file
+    the 20:47Z measurement under 08-07 by luck and the 01:30Z one under 08-08 —
+    splitting one session's record across two keys on the very lane it measures.
+    """
+    rec = fs.record_first_fresh({}, _ok_report(now=LATE), LATE)
+    assert list(rec["sessions"]) == ["2026-08-07"]          # NOT 2026-08-08
+
+    # And a genuinely different session gets its own key rather than merging.
+    rec = fs.record_first_fresh(rec, _ok_report("2026-08-06"), ON_TIME)
+    assert sorted(rec["sessions"]) == ["2026-08-06", "2026-08-07"]
+
+
+def test_a_late_publish_is_recorded_and_scored_missed_not_dropped():
+    """Honesty in both directions: the record keeps the measurement AND the
+    verdict. Dropping a late board would make a missed SLA indistinguishable
+    from a board that never published."""
+    rec = fs.record_first_fresh({}, _ok_report(now=LATE), LATE)
+    entry = rec["sessions"]["2026-08-07"]["us_board_provisional"]
+    assert entry["first_fresh_et"] == "21:30"
+    assert entry["met"] is False
+
+
+def test_a_board_that_lands_after_midnight_et_never_scores_as_met():
+    """01:00 ET reads "01:00 <= 18:30" on the clock alone and would score as a
+    comfortable pass on a session it missed by seven hours. The date half of the
+    comparison is what stops that."""
+    rec = fs.record_first_fresh({}, _ok_report(now=NEXT_MORNING), NEXT_MORNING)
+    entry = rec["sessions"]["2026-08-07"]["us_board_provisional"]
+    assert entry["first_fresh_et"] == "01:00"
+    assert entry["met"] is False
+
+
+def test_an_indeterminate_pass_stamps_nothing():
+    """A pass that could not read the artifact says nothing about when it
+    landed. Stamping it would record a time the board may not have existed at."""
+    results = _fresh_results()
+    results["us_board_provisional"] = ABSENT
+    rec = fs.record_first_fresh({}, fs.evaluate(results, ON_TIME), ON_TIME)
+    assert rec.get("sessions") in (None, {})
+
+
+def test_a_stale_board_stamps_nothing():
+    """`ok` only. A board four sessions behind is present and readable and is
+    not the evening board this SLA is about."""
+    results = _fresh_results()
+    results["us_board_provisional"] = _provisional("2026-07-28")
+    report = fs.evaluate(results, ON_TIME)
+    assert report["surfaces"]["us_board_provisional"]["status"] == "stale"
+    assert fs.record_first_fresh({}, report, ON_TIME).get("sessions") in (None, {})
+
+
+def test_the_streak_walks_the_exchange_calendar_so_a_gap_breaks_it():
+    """The failure this exists to prevent: a session on which the board never
+    published leaves NO key, so a streak counted over recorded rows steps
+    straight over the miss and reports five green sessions that never happened.
+
+    2026-08-03..07 is a clean Mon-Fri week. Recording four of them and skipping
+    Wednesday must yield a streak of 2 (Fri, Thu), not 4.
+    """
+    rec: dict = {}
+    for session, stamp in (
+        ("2026-08-03", datetime(2026, 8, 3, 20, 40, tzinfo=timezone.utc)),
+        ("2026-08-04", datetime(2026, 8, 4, 20, 40, tzinfo=timezone.utc)),
+        # 08-05 deliberately missing — the lane did not publish that evening
+        ("2026-08-06", datetime(2026, 8, 6, 20, 40, tzinfo=timezone.utc)),
+        ("2026-08-07", datetime(2026, 8, 7, 20, 40, tzinfo=timezone.utc)),
+    ):
+        rec = fs.record_first_fresh(rec, _ok_report(session, stamp), stamp)
+
+    streak, rows = fs.sla_streak(rec, "us_board_provisional", NOW, cap=5)
+    assert [r["session"] for r in rows] == [
+        "2026-08-07", "2026-08-06", "2026-08-05", "2026-08-04", "2026-08-03"
+    ]
+    assert [r["met"] for r in rows] == [True, True, False, True, True]
+    assert streak == 2
+
+    # Fill the gap and the same record now clears the five-session gate.
+    gap = datetime(2026, 8, 5, 20, 40, tzinfo=timezone.utc)
+    rec = fs.record_first_fresh(rec, _ok_report("2026-08-05", gap), gap)
+    assert fs.sla_streak(rec, "us_board_provisional", NOW, cap=5)[0] == 5
+
+
+def test_the_streak_is_anchored_on_completed_sessions_not_on_today():
+    """expected_last_session, not date.today(): at 16:47 ET the session is not
+    over (the 17:00 settle buffer), and judging a board on a day still in
+    progress would score every in-flight session as a miss."""
+    _, rows = fs.sla_streak({}, "us_board_provisional", ON_TIME, cap=1)
+    assert rows[0]["session"] == "2026-08-06"      # not 08-07, still in flight
+
+
+def test_the_public_summary_carries_the_streak_and_the_gate_threshold():
+    rec: dict = {}
+    for session in ("2026-08-05", "2026-08-06", "2026-08-07"):
+        stamp = datetime.fromisoformat(f"{session}T20:40:00+00:00")
+        rec = fs.record_first_fresh(rec, _ok_report(session, stamp), stamp)
+
+    block = fs.sla_summary(rec, NOW)["us_board_provisional"]
+    assert block["by_et"] == "18:30" and block["sessions_required"] == 5
+    assert block["consecutive_met"] == 3
+    assert block["recent"][0] == {"session": "2026-08-07",
+                                  "first_fresh_et": "16:40", "met": True}
+    # Timestamps and verdicts only — this rides the PUBLIC staleness file.
+    assert set(block["recent"][0]) == {"session", "first_fresh_et", "met"}
+
+
+def test_the_history_is_bounded():
+    """Append-only must not mean unbounded — this file is written on a box whose
+    disk filling up is one of the outages the sentinel exists to catch."""
+    rec: dict = {}
+    for i in range(fs.SLA_HISTORY_SESSIONS + 15):
+        stamp = datetime(2026, 1, 1, 20, 40, tzinfo=timezone.utc) + timedelta(days=i)
+        rec = fs.record_first_fresh(rec, _ok_report(stamp.date().isoformat(), stamp), stamp)
+    assert len(rec["sessions"]) == fs.SLA_HISTORY_SESSIONS
+    # The NEWEST are the ones kept — a gate reads the recent sessions.
+    assert max(rec["sessions"]) == "2026-02-24"
+
+
+def test_an_absent_close_pass_board_is_not_blindness():
+    """This artifact publishes once a day, so it is legitimately missing for
+    most of every day. Counting those hours toward the blindness escalation
+    would page "the sentinel is blind" every morning by construction — the
+    false-positive machine the module's own falsifier law forbids."""
+    results = _fresh_results()
+    results["us_board_provisional"] = ABSENT
+    report = fs.evaluate(results, NOW)
+    c = report["surfaces"]["us_board_provisional"]
+    assert c["status"] == "indeterminate" and c["absent"] is True
+
+    state: dict = {}
+    for i in range(fs.BLIND_AFTER + 4):
+        alerts, state = fs.decide_alerts(report, state, NOW + timedelta(minutes=30 * i))
+        assert alerts == [], alerts
+    assert "us_board_provisional" not in (state.get("blind_counts") or {})
+
+
+def test_only_a_missing_file_is_absent_a_broken_read_is_still_blindness():
+    """Narrow on purpose. A permission error or a truncated read is the sentinel
+    failing to see, and exempting those would disarm the surface entirely."""
+    for err in ("served read failed: PermissionError: [Errno 13] denied",
+                "served body exceeded 2000000 byte cap"):
+        results = _fresh_results()
+        results["us_board_provisional"] = fs.FetchResult(status=200, error=err)
+        c = fs.evaluate(results, NOW)["surfaces"]["us_board_provisional"]
+        assert c["status"] == "indeterminate" and c["absent"] is False, err
+
+
+def test_a_dead_close_pass_lane_still_breaches_on_its_own_asof():
+    """The absence exemption must not become a way for the lane to die quietly:
+    once a board IS present and two sessions stale, it breaches like any other
+    surface (the same 'breach by day 2' shape prophet_us uses)."""
+    results = _fresh_results()
+    results["us_board_provisional"] = _provisional("2026-08-05")   # 2 behind at NOW
+    report = fs.evaluate(results, NOW)
+    c = report["surfaces"]["us_board_provisional"]
+    assert c["status"] == "stale" and c["asof_sessions_behind"] == 2
+    assert "budget 1" in c["detail"]
+
+    # One missed evening is absorbed — the second is what pages.
+    results["us_board_provisional"] = _provisional("2026-08-06")
+    assert fs.evaluate(results, NOW)["surfaces"]["us_board_provisional"]["status"] == "ok"
+
+
+def test_the_record_is_written_beside_the_state_and_rides_the_public_report(
+        tmp_path, monkeypatch):
+    """End to end through run(): a private append-only record on the state dir,
+    a public summary inside staleness.json, and no third file anywhere."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+
+    def fresh_fetcher(url, *, want_body):
+        return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
+                              body=HEALTHY_BODY if want_body else None)
+
+    assert fs.run(now=ON_TIME, base="https://example.invalid",
+                  r2_base="https://example.invalid",
+                  public_dir=tmp_path / "public", state_dir=tmp_path / "state",
+                  fetcher=fresh_fetcher,
+                  served_reader=_served(_prophet())) == 0
+
+    record = json.loads((tmp_path / "state" / "first_fresh.json").read_text())
+    assert record["sessions"]["2026-08-07"]["us_board_provisional"]["met"] is True
+    assert sorted(p.name for p in (tmp_path / "state").iterdir()) == [
+        "first_fresh.json", "state.json"
+    ]
+    served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
+    assert served["sla"]["us_board_provisional"]["consecutive_met"] == 0  # 08-07 in flight
+    assert served["sla"]["us_board_provisional"]["by_et"] == "18:30"
+
+
+def test_a_dry_run_reads_the_record_without_stamping_it(tmp_path, monkeypatch, capsys):
+    """The operator's lever for evaluating the gate must not perturb the very
+    measurement it reads."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+
+    fs.run(now=ON_TIME, base="https://example.invalid", r2_base="https://example.invalid",
+           public_dir=tmp_path / "public", state_dir=tmp_path / "state", dry_run=True,
+           fetcher=lambda url, *, want_body: fs.FetchResult(
+               status=200, last_modified=ON_TIME, body=HEALTHY_BODY if want_body else None),
+           served_reader=_served(_prophet()))
+    assert not (tmp_path / "state").exists()
+    out = capsys.readouterr().out
+    assert "SLA by 18:30 ET" in out and "0 consecutive of 5 required" in out
+
+
+def test_no_tzdata_reports_unknown_rather_than_a_utc_verdict(monkeypatch):
+    """A box without a timezone database must not answer in UTC: 20:47Z would
+    read as "missed the 18:30 deadline" on a session the board made with 100
+    minutes to spare. Unknown, never a wrong verdict."""
+    monkeypatch.setattr(fs, "_et", lambda stamp: None)
+    entry = fs.record_first_fresh({}, _ok_report(), ON_TIME)[
+        "sessions"]["2026-08-07"]["us_board_provisional"]
+    assert entry["met"] is None and entry["first_fresh_et"] is None
+    assert entry["first_fresh_at"] == ON_TIME.isoformat()   # the raw fact survives

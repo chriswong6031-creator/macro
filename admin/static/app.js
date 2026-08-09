@@ -7340,6 +7340,32 @@ const OBX_CHAR_CAP = 275;
 /* Attempt ceiling — the actuator quarantines (never re-arms) at this many fails. */
 const OBX_MAX_ATTEMPTS = 2;
 
+/* The count the retry cap actually SPENDS (backend outbox.effective_attempts):
+   real failures only — excused backend refusals (rate limit / plan lock) don't
+   count. Falls back to the raw count when the payload predates the field; raw
+   >= effective, so the fallback can only under-promise re-armability, never
+   promise a re-arm the backend would quarantine. */
+function obxSpentAttempts(it) {
+  const o = it || {};
+  return Number(o.effective_attempts ?? o.attempts ?? 0) || 0;
+}
+/* Refusals the backend owns, not the post: raw total minus what the cap spends.
+   0 whenever every recorded failure was a real one. */
+function obxExcusedAttempts(it) {
+  const o = it || {};
+  return Math.max((Number(o.attempts) || 0) - obxSpentAttempts(o), 0);
+}
+/* Hover forensics for a failure whose raw count overstates its spent count.
+   PLAIN WORDS — the ledger's own note strings never reach the operator here.
+   "" when nothing was excused, so a clean failure grows no tooltip. */
+function obxAttemptTitle(it) {
+  const raw = Number((it || {}).attempts) || 0;
+  const excused = obxExcusedAttempts(it);
+  if (!excused) return "";
+  return `${raw} ${raw === 1 ? "try" : "tries"} recorded — ${excused} excused `
+    + `(backend refused: rate limit / plan lock), ${obxSpentAttempts(it)} real`;
+}
+
 /* The per-state label/stance table that used to live here (OBX_STATE) is gone:
    it was one of four divergent chip vocabularies across these five pages, so the
    same fact rendered four ways. `stChip()` / `stLive()` from the Floor-suite
@@ -7359,9 +7385,12 @@ function obxEffState(it) {
    (held is queued+hold — still flippable). Approved/posted are locked. */
 function obxIsDecidable(it) { return it.status === "queued"; }
 /* A failed item is re-armable UNLESS it has already spent its attempts — at the
-   ceiling a fresh approval quarantines instead of retrying (backend contract). */
+   ceiling a fresh approval quarantines instead of retrying (backend contract).
+   Gates on the SPENT count, never the raw one: apply_decisions compares
+   effective_attempts, so a rail built on raw would strike out live posts that
+   only ever rode a Buffer outage. */
 function obxIsFailedRearmable(it) {
-  return it.status === "failed" && (it.attempts || 0) < OBX_MAX_ATTEMPTS;
+  return it.status === "failed" && obxSpentAttempts(it) < OBX_MAX_ATTEMPTS;
 }
 /* An item the publisher is mid-send on. Alive, but it is the MACHINE's turn —
    there is no operator verb for it. It was invisible before: `posting` was in
@@ -8950,10 +8979,16 @@ function stMeta(state) {
   };
   return ST[state] || ST.queued;
 }
-/* extra = optional stance override, e.g. "attempt 2 of 2". */
-function stChip(state, extra) {
+/* extra = optional stance override, e.g. "attempt 2 of 2".
+   title = optional hover forensics for a stance that compresses something (an
+   attempt count that excused refusals, say). Omitted → no attribute at all, so
+   a chip with nothing more to say never grows an empty tooltip. English-only
+   and plain-word: this is a native title, which the dual-span l-en/l-zh
+   mechanism cannot reach. */
+function stChip(state, extra, title) {
   const m = stMeta(state);
-  return `<span class="st ${m.cls}">${esc(m.label)} <i>· ${esc(extra || m.stance)}</i></span>`;
+  const t = title ? ` title="${esc(title)}"` : "";
+  return `<span class="st ${m.cls}"${t}>${esc(m.label)} <i>· ${esc(extra || m.stance)}</i></span>`;
 }
 function stLive(state) { return stMeta(state).live; }
 
@@ -9505,8 +9540,11 @@ function pubTriageSection(d) {
 
   /* --- Group 2: failed but still re-armable. A real action on a real endpoint,
      one item at a time. --- */
-  const retryable = failed.filter(r => (r.attempts || 0) < 2);
-  const spent = failed.filter(r => (r.attempts || 0) >= 2);
+  /* SPENT attempts, not raw: `publisher()` ships effective_attempts on every
+     dead row, and it is the number apply_decisions charges. Splitting on raw
+     buried re-armable posts in the corpse groups for the whole Buffer outage. */
+  const retryable = failed.filter(r => obxSpentAttempts(r) < OBX_MAX_ATTEMPTS);
+  const spent = failed.filter(r => obxSpentAttempts(r) >= OBX_MAX_ATTEMPTS);
   if (retryable.length) {
     groups.push({
       key: "retry", live: "you", ico: "↻", n: retryable.length,
@@ -10693,7 +10731,9 @@ function obxProvWord(p) {
 function obxItemCard(it, acctId) {
   const eff = obxEffState(it);
   const isFailed = it.status === "failed";
-  const attempts = it.attempts || 0;
+  /* SPENT, not raw: the cap charges only real failures, so an item that rode a
+     Buffer outage is re-armable however many rows its ledger carries. */
+  const attempts = obxSpentAttempts(it);
   const spent = isFailed && attempts >= OBX_MAX_ATTEMPTS;   /* re-arm would quarantine */
   const text = it.text || "";
   const n = [...text].length;               /* codepoint count, not UTF-16 units */
@@ -10716,9 +10756,13 @@ function obxItemCard(it, acctId) {
   /* Decision / state chip — one shared vocabulary across all five Floor-suite
      pages (stChip), so the same fact stops rendering four different ways.
      A failure spends its stance on the count, which is the only thing the
-     operator needs from it: how many tries are left. */
+     operator needs from it: how many tries are left. The count is the SPENT
+     one; the raw ledger total rides in the tooltip when the two disagree, so
+     "attempt 0 of 2" on a post with nine 429 rows is explained rather than
+     merely surprising. */
   const stateChip = isFailed
-    ? stChip("failed", `attempt ${attempts} of ${OBX_MAX_ATTEMPTS}`)
+    ? stChip("failed", `attempt ${attempts} of ${OBX_MAX_ATTEMPTS}`,
+             obxAttemptTitle(it))
     : stChip(eff);
 
   /* Copy-review finding (advisory). Present only when the reviewer had

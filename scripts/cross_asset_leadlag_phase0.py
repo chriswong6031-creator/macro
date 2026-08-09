@@ -21,9 +21,14 @@ Run: python -m scripts.cross_asset_leadlag_phase0
 from __future__ import annotations
 
 import numpy as np
+import sys
+from pathlib import Path
 
-from engine import cross_asset as ca
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import cross_asset as ca  # noqa: E402
+from lib import config  # noqa: E402
 
 LAGS = [1, 2, 3, 5, 10]
 HAC = 10

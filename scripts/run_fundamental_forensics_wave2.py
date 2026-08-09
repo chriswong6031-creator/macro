@@ -36,11 +36,17 @@ that option stops before projection or source sync when any target is partial.
 (``fundamental_forensics.wave2_targets/v1``) so a lane cannot drift from the
 universe its consumer expects; ``--target`` entries are merged after the file.
 
-Two opt-in incremental modes exist for a scheduled lane with a warm local
-store; both default OFF so an operator recovery run keeps proving every byte:
+Three opt-in incremental modes exist for a scheduled lane with a warm local
+store; all default OFF so an operator recovery run keeps proving every byte:
 
 * ``--verify-local-restore`` verifies a hash-equal local file instead of
-  re-downloading it (same manifest-bound hash check, local byte source); and
+  re-downloading it (same manifest-bound hash check, local byte source);
+* ``--reuse-local-archive`` (requires ``--acquire``) satisfies an
+  already-retrieved primary document from sha256-verified local bytes instead
+  of re-downloading identical bytes from SEC.  The manifest keeps the ORIGINAL
+  retrieval receipt, so a cache hit never claims a retrieval that did not
+  happen; Submissions are still fetched fresh, which is how new filings are
+  discovered; and
 * ``--incremental-sync`` (requires ``--sync``) skips uploading objects already
   bound by the latest immutable manifest.  The new manifest still enumerates
   every file.
@@ -56,28 +62,32 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
 import time
 from typing import Any, Iterable
 
-from collectors.edgar_forensics import _user_agent
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.edgar_forensics import _user_agent  # noqa: E402
 from collectors.fundamental_forensics_acquisition import (
     AcquisitionError,
     AcquisitionTarget,
     acquire_bounded_filings,
     normalize_targets,
     parse_target,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.source_sync import (
     SourceSyncError,
     build_private_source_store,
     restore_source_roots,
     sync_source_roots,
-)
-from engine.research_vault.r2_store import Store
-from engine.fundamental_forensics.models import parse_utc, utc_text
-from lib import config
-from scripts.build_fundamental_forensics_disclosures import build_cached_disclosures
+)  # noqa: E402
+from engine.research_vault.r2_store import Store  # noqa: E402
+from engine.fundamental_forensics.models import parse_utc, utc_text  # noqa: E402
+from lib import config  # noqa: E402
+from scripts.build_fundamental_forensics_disclosures import build_cached_disclosures  # noqa: E402
 
 
 log = logging.getLogger("run_fundamental_forensics_wave2")
@@ -149,9 +159,11 @@ def run_operator_flow(
     sync: bool = False,
     require_complete_acquisition: bool = False,
     verify_local_restore: bool = False,
+    reuse_local_archive: bool = False,
     incremental_sync: bool = False,
     raw_root: Path | None = None,
     archive_root: Path | None = None,
+    observation_root: Path | None = None,
     projection_root: Path | None = None,
     local_store: str | Path | None = None,
     snapshot_id: str | None = None,
@@ -166,6 +178,8 @@ def run_operator_flow(
     """Execute selected Wave-2 actions in safe fixed order, never rendering UI/state."""
     if not any((restore, acquire, build_projections, sync)):
         raise OperatorFlowError("select at least one action: --restore, --acquire, --build-projections, or --sync")
+    if reuse_local_archive and not acquire:
+        raise OperatorFlowError("--reuse-local-archive requires --acquire in the same invocation")
     if incremental_sync and not sync:
         raise OperatorFlowError("--incremental-sync requires --sync in the same invocation")
     resolved_root = Path(root).resolve()
@@ -175,6 +189,12 @@ def run_operator_flow(
     normalized_computed_at = _normalized_clock(computed_at, field="computed_at")
     resolved_raw = (raw_root or resolved_root / "data" / "fundamental_forensics" / "raw").resolve()
     resolved_archive = (archive_root or resolved_root / "data" / "fundamental_forensics" / "archive").resolve()
+    # Deliberately a sibling of raw/archive, never a child: the per-run
+    # observation log is cron history, and restore/sync carry exactly the two
+    # restorable source trees.
+    resolved_observations = (
+        observation_root or resolved_root / "data" / "fundamental_forensics" / "observations"
+    ).resolve()
     resolved_projection = (projection_root or resolved_root).resolve()
     active_store = store
     if restore or sync:
@@ -189,6 +209,7 @@ def run_operator_flow(
             "sync": bool(sync),
             "require_complete_acquisition": bool(require_complete_acquisition),
             "verify_local_restore": bool(verify_local_restore),
+            "reuse_local_archive": bool(reuse_local_archive),
             "incremental_sync": bool(incremental_sync),
         },
         "clocks": {
@@ -224,6 +245,7 @@ def run_operator_flow(
             targets=normalized,
             raw_root=resolved_raw,
             archive_root=resolved_archive,
+            observation_root=resolved_observations,
             user_agent=_user_agent(resolved_root),
             as_of=normalized_as_of,
             recorded_at=normalized_recorded_at,
@@ -233,6 +255,7 @@ def run_operator_flow(
             max_ticker_bytes=max_ticker_bytes,
             max_total_bytes=max_total_bytes,
             min_interval_seconds=min_interval_seconds,
+            reuse_local_archive=bool(reuse_local_archive),
         )
         result["results"]["acquire"] = acquired
         timings["acquire"] = round(time.monotonic() - started, 1)
@@ -293,12 +316,18 @@ def main(argv: list[str] | None = None) -> int:
         help="Verify hash-equal local files instead of re-downloading them (warm-store lanes only)",
     )
     parser.add_argument(
+        "--reuse-local-archive",
+        action="store_true",
+        help="Reuse sha256-verified already-retrieved primary documents from the local archive instead of re-downloading them; receipts keep the original retrieval clock (SEC fair-access courtesy); requires --acquire",
+    )
+    parser.add_argument(
         "--incremental-sync",
         action="store_true",
         help="Skip uploading objects already bound by the latest immutable manifest; requires --sync",
     )
     parser.add_argument("--raw-root", type=Path, default=None, help="Local immutable Submissions cache root")
     parser.add_argument("--archive-root", type=Path, default=None, help="Local immutable filing archive root")
+    parser.add_argument("--observation-root", type=Path, default=None, help="Per-run SEC observation log root; deliberately OUTSIDE the restorable raw/archive trees")
     parser.add_argument("--projection-root", type=Path, default=None, help="Private disclosure projection output root")
     parser.add_argument("--local-store", type=Path, default=None, help="Use LocalStore instead of private Research R2 (dry-run/test)")
     parser.add_argument("--snapshot-id", default=None, help="Restore a specific immutable source snapshot instead of latest")
@@ -327,9 +356,11 @@ def main(argv: list[str] | None = None) -> int:
             sync=args.sync,
             require_complete_acquisition=args.require_complete_acquisition,
             verify_local_restore=args.verify_local_restore,
+            reuse_local_archive=args.reuse_local_archive,
             incremental_sync=args.incremental_sync,
             raw_root=args.raw_root,
             archive_root=args.archive_root,
+            observation_root=args.observation_root,
             projection_root=args.projection_root,
             local_store=args.local_store,
             snapshot_id=args.snapshot_id,

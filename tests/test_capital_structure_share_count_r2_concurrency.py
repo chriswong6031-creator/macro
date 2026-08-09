@@ -158,7 +158,7 @@ class _Workers:
 
 def _provenance() -> tuple[dict[str, Any], dict[str, str]]:
     return (
-        {"repository": "chriswong6031-creator/macro", "workflow_ref": "chriswong6031-creator/macro/.github/workflows/capital-share-count-r2-concurrency.yml@refs/heads/main", "run_id": "12", "run_attempt": 1, "commit_sha": "a" * 40, "event_name": "workflow_dispatch", "actor": "reviewer"},
+        {"repository": "mastermindx-market-intelligence/macro", "workflow_ref": "mastermindx-market-intelligence/macro/.github/workflows/capital-share-count-r2-concurrency.yml@refs/heads/main", "run_id": "12", "run_attempt": 1, "commit_sha": "a" * 40, "event_name": "workflow_dispatch", "actor": "reviewer"},
         {"source_archive_sha256": "b" * 64, "dependency_lock_sha256": "c" * 64, "dependency_lock_name": core.DEPENDENCY_LOCK_NAME},
     )
 

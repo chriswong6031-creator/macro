@@ -6,9 +6,14 @@ status/counts; per-pick content remains in the committed autopsy artifacts.
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
-from engine.metabolism.standout_auditor import run_pick_autopsies
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.metabolism.standout_auditor import run_pick_autopsies  # noqa: E402
 
 
 def main() -> int:

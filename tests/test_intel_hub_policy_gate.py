@@ -100,41 +100,37 @@ def test_dirs_policy_set_when_high_conviction():
 
 
 # --------------------------------------------------------------------------- #
-# _leading_gap — low-conviction policy must not contribute to lag_up or lag_present
+# _leading_gap — policy contributes to lag_up / lag_present at NO conviction level
+# (operator ruling 2026-08-08, Option A — DNR:KILL-LLM-ORIGINATION / constitution A7).
+# The conviction gate this file originally guarded is now MOOT for scoring: the policy
+# desk's direction is LLM-originated, so it casts no vote at any conviction.
 # --------------------------------------------------------------------------- #
 
-def test_leading_gap_unchanged_by_low_conviction_policy():
-    """A low-conviction policy facet must not affect lag_up or lag_present vs no policy.
+def test_leading_gap_never_moved_by_policy_at_any_conviction():
+    """Policy must not affect lag_up or lag_present — low OR high conviction.
 
-    We use a minimal bundle with no news/standout so policy is the only candidate
-    lagging desk, isolating exactly what the gate should suppress.
+    A minimal bundle with no news/standout leaves policy as the ONLY candidate lagging
+    desk, so any non-zero lag_up/lag_present here could only have come from policy.
+    Before the A7 heal a high-conviction bullish policy lean scored lag_up=1, which
+    dropped gap by 1 and cut opportunity_score by 15% — an LLM-originated rank move.
     """
     # strip news/standout so only alt + radar (leading) + policy (lagging candidate) remain
     v_minimal = {"alt": {"signal_score": 75, "action": "BUY", "extended": False},
                  "radar": {"state": "POSITIVE_DIVERGENCE", "lifecycle": "forming"}}
-    low_facet = _make_policy_facet(conviction="low", dir_=1)
-    high_facet = _make_policy_facet(conviction="high", dir_=1)
 
-    dirs_low = _dirs(v_minimal, low_facet)
-    dirs_high = _dirs(v_minimal, high_facet)
+    for conviction in (None, "low", "medium", "high"):
+        facet = _make_policy_facet(conviction=conviction, dir_=1)
+        gap = _leading_gap(v_minimal, _dirs(v_minimal, facet))
+        assert gap["lag_up"] == 0, (
+            f"policy (conviction={conviction}) must not contribute to lag_up, got {gap['lag_up']}"
+        )
+        assert gap["lag_present"] == 0, (
+            f"policy (conviction={conviction}) must not appear in lag_present, "
+            f"got {gap['lag_present']}"
+        )
 
-    gap_low = _leading_gap(v_minimal, dirs_low)
-    gap_high = _leading_gap(v_minimal, dirs_high)
-
-    # low-conviction: policy must not appear in lag_up or lag_present at all
-    assert gap_low["lag_up"] == 0, (
-        f"low-conviction policy should not contribute to lag_up, got {gap_low['lag_up']}"
-    )
-    assert gap_low["lag_present"] == 0, (
-        f"low-conviction policy should not appear in lag_present, got {gap_low['lag_present']}"
-    )
-
-    # high-conviction policy dir=1: should add to lag_up (lag_up counts upward lagging desks)
-    assert gap_high["lag_up"] == 1, (
-        f"high-conviction policy dir=1 should add 1 to lag_up, got {gap_high['lag_up']}"
-    )
-    # and should count as present
-    assert gap_high["lag_present"] == 1
+    # the display direction is still carried on the dossier — only the VOTE is gone
+    assert _dirs(v_minimal, _make_policy_facet(conviction="high", dir_=1))["policy"] == 1
 
 
 # --------------------------------------------------------------------------- #
