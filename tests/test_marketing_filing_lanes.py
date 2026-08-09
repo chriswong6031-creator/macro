@@ -32,7 +32,7 @@ the whole module skipping.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -42,6 +42,18 @@ import pytest
 _TODAY = "2026-07-29"
 _YESTERDAY = "2026-07-28"
 _FIXED_NOW = datetime(2026, 7, 29, 6, 0, 0, tzinfo=timezone.utc)
+
+#: A signal date the eligibility gate always accepts — NEVER a literal.
+#: ``content_plan`` is called below without ``today=``, so
+#: ``engine/marketing/content_studio.py:484`` measures the plan's signal age
+#: against the REAL clock and drops anything older than
+#: ``_MAX_SIGNAL_AGE_DAYS`` = 21.  A pinned ``2026-07-28`` was a scheduled red:
+#: it hit 21 days on 2026-08-19, the plan stopped being postable, and the
+#: filing-lane claim assertions ("the congress lane was not told which tickers
+#: the plan already claimed") went red with nothing wrong in the lane.
+#: Same idiom as tests/test_marketing_content.py:44.  Deliberately NOT
+#: _TODAY/_YESTERDAY: those are weekday-pinned for the §5 cooldown maths.
+_FRESH = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
 
 #: The codex's worked RBKB example, verbatim from
 #: research/marketing_dockets/CODEX_CONTENT_CASE_STUDIES_2026_07_28.md.
@@ -1200,9 +1212,9 @@ def test_the_filing_lanes_receive_the_tickers_the_plan_already_claimed(
               "entry": 120.0, "invalidation": 100.0, "targets": [150.0],
               "trigger": 125.0, "phase": "triggered_pre_t1",
               "recommended_action": "hold", "management_confidence": 66.0,
-              "_signal_date": "2026-07-28",
+              "_signal_date": _FRESH,
               "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-              "signal_date": "2026-07-28"}]
+              "signal_date": _FRESH}]
     plan = content_plan(_lane_cfg(), plans, closes_loader=None, root=tmp_path)
 
     assert "congress" in seen and "insider" in seen, (
