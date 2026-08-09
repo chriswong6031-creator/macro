@@ -18,9 +18,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 

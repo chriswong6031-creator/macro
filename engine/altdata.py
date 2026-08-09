@@ -47,7 +47,9 @@ DATASETS: dict[str, tuple[str, str, str, str]] = {
     "sec13f_changes": ("🏦", "13F position changes", "13F持仓变化", "Date"),
     "cnbc":           ("📺", "CNBC stock picks", "CNBC选股", "Upload_Time"),
     "wallstreetbets": ("🦍", "WallStreetBets", "WSB热度", "_collected"),
-    "twitter":        ("🐦", "Twitter following", "推特关注", "Date"),
+    # DELISTED 2026-08-08: "twitter" (Quiver /beta/live/twitter). Dead since the 2023 X API
+    # shutdown — 1 row, last date 2023-08-11, collector tombstoned (collectors/quiver.py:229).
+    # Listing it here made it count as a live CONVERGENCE CHANNEL that can never converge.
     "spacs":          ("🛰️", "SPAC sentiment", "SPAC情绪", "Time"),
     "patents":        ("🔬", "US patents", "美国专利", "Date"),
     "flights":        ("✈️", "Corporate flights", "企业航班", "Date"),
