@@ -9,8 +9,12 @@ import time
 
 import pandas as pd
 import yfinance as yf
+from pathlib import Path
 
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, store  # noqa: E402
 
 
 def main() -> int:

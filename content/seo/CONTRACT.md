@@ -2,9 +2,10 @@
 
 Binding contract for the public acquisition estate: `/products/` (platform
 overview and honest product explainers), `/tools/` (Calculator Lab +
-spreadsheets), `/learn/` (Learning Center), `/blog/` (Blog). Every builder,
-designer and reviewer in this program codes against this file. Deviations
-require a contract edit in the same PR.
+spreadsheets), `/learn/` (Learning Center), `/blog/` (Blog), and the root-level
+research and legal pages rendered by the same pipeline. Every builder, designer
+and reviewer in this program codes against this file. Deviations require a
+contract edit in the same PR.
 
 Canonical host: `https://www.mastermind-x.com/` (import `lib.seo.SITE_BASE`).
 All pages are static, off the nightly render path; `scripts/build_free_content.py`
@@ -45,6 +46,9 @@ Deterministic: same inputs ⇒ identical bytes (no build timestamps).
 /blog/compound-growth-for-traders.html
 /blog/feed.xml                                   RSS 2.0, article items only
 /about-research.html                             Mastermind Research entity page
+/privacy.html                                    Privacy Policy
+/terms.html                                      Terms of Service + commercial license rules
+/disclaimer.html                                 Financial Disclaimer
 ```
 
 `site/learn.html` (Gamma Weather field manual) is NOT touched; the Learn hub
@@ -59,6 +63,9 @@ content/seo/
   blog/<slug>.md         B4 owns    frontmatter + HTML-fragment body
   learn/<track>/<slug>.md B5 owns   same format
   pages/about-research.md B4 owns   rendered with the article template
+  pages/privacy.md        canonical Privacy Policy source
+  pages/terms.md          canonical Terms + commercial license source
+  pages/disclaimer.md     canonical Financial Disclaimer source
   tools/trading-journal.md B2 owns  spreadsheet landing page body
   calculators.yml        B3 owns    calculator registry (hub cards + meta)
 scripts/build_free_content.py   B1 owns

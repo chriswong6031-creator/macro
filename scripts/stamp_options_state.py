@@ -119,12 +119,16 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import options_stamp
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import options_stamp  # noqa: E402
 from engine.options_stamp import (
     STAMP_COLS,
     STAMP_COVERAGE_COLS,
@@ -132,9 +136,9 @@ from engine.options_stamp import (
     _default_read_skew_snapshots,
     _default_read_ivspread_snapshots,
     stamp_options_state,
-)
-from engine.tape_flow_stamp import TAPE_FLOW_STAMP_COLS, stamp_tape_flow
-from lib import config
+)  # noqa: E402
+from engine.tape_flow_stamp import TAPE_FLOW_STAMP_COLS, stamp_tape_flow  # noqa: E402
+from lib import config  # noqa: E402
 
 LEDGER_PATH = config.data_dir() / "us_board_ledger" / "retro_grades.parquet"
 

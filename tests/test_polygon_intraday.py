@@ -8,6 +8,9 @@ be a clean no-op so the daily collect run never breaks on the additive 4H step.
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 from scripts import build_polygon_intraday as bpi
 
 
@@ -72,8 +75,6 @@ def test_accrue_is_incremental_append_and_key_deduped(monkeypatch, tmp_path):
 def test_accrue_stamps_delayed_meta_sidecar(monkeypatch, tmp_path):
     """The store carries an honest 15-min-delayed label (sidecar survives the parquet
     round-trip where DataFrame.attrs would not)."""
-    import json
-
     monkeypatch.setattr(bpi.PolygonOptions, "enabled", lambda self: True)
     monkeypatch.setattr(bpi.config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(bpi, "_universe", lambda: ["AAPL"])
@@ -85,3 +86,25 @@ def test_accrue_stamps_delayed_meta_sidecar(monkeypatch, tmp_path):
     assert meta["delayed_min"] == 15
     assert meta["realtime"] is False
     assert meta["source"] == "polygon_standard"
+    assert meta["adjusted"] is True
+    assert meta["price_basis"] == bpi.PRICE_BASIS
+
+    source = (tmp_path / "intraday" / "AAPL.parquet").resolve()
+    receipt_path = tmp_path / "intraday" / "AAPL.parquet.receipt.json"
+    receipt = json.loads(receipt_path.read_text())
+    assert receipt == {
+        "schema": bpi.PRICE_RECEIPT_SCHEMA,
+        "ticker": "AAPL",
+        "source_file": source.name,
+        "source_file_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "source_available_at": receipt["source_available_at"],
+        "bar_seconds": 3600,
+        "vendor_delay_minutes": 15,
+        "adjusted": True,
+        "price_basis": bpi.PRICE_BASIS,
+        "timestamp_basis": bpi.TIMESTAMP_BASIS,
+        "row_count": 1,
+        "first_time": "1970-01-01T00:00:01Z",
+        "last_time": "1970-01-01T00:00:01Z",
+    }
+    assert receipt_path.read_bytes().endswith(b"\n")

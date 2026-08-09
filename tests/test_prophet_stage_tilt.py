@@ -214,12 +214,15 @@ def _standouts():
         },
         "gate_go": False,
         "buy": [
+            # `status` is load-bearing since ANTICIPATION A1 (2026-08-08): admission
+            # reads the entry status class, not act_level. The act_levels stay as they
+            # were so the sort key's act_level leg is still exercised.
             {"ticker": "AAA", "dir": "up", "conviction": {"score": 80, "band": "high"},
-             "entry_signal": {"act_level": 3, "spot": 100.0}},
+             "entry_signal": {"act_level": 3, "status": "buy_now", "spot": 100.0}},
             {"ticker": "BBB", "dir": "up", "conviction": {"score": 70, "band": "high"},
-             "entry_signal": {"act_level": 2, "spot": 50.0}},
+             "entry_signal": {"act_level": 2, "status": "partial", "spot": 50.0}},
             {"ticker": "CCC", "dir": "up", "conviction": {"score": 65, "band": "neutral"},
-             "entry_signal": {"act_level": 2, "spot": 25.0}},
+             "entry_signal": {"act_level": 2, "status": "partial", "spot": 25.0}},
         ],
     }
 

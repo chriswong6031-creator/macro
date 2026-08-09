@@ -7,6 +7,7 @@ from __future__ import annotations
 from engine import spvector_overlay as ov
 
 PASS = FAIL = 0
+FAILURES: list[str] = []
 
 
 def check(name, cond, detail=""):
@@ -15,6 +16,24 @@ def check(name, cond, detail=""):
         PASS += 1; print(f"  PASS  {name}")
     else:
         FAIL += 1; print(f"  FAIL  {name}  {detail}")
+        FAILURES.append(f"{name}  {detail}".rstrip())
+
+
+try:
+    import pytest
+except ImportError:  # script mode is promised to work without pytest installed
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _gate_checks():
+        # check() is a soft assert so one run reports EVERY miss; without this
+        # flush a bare check(False) cannot fail a test and the whole file is
+        # decorative under pytest.
+        before = len(FAILURES)
+        yield
+        fresh = FAILURES[before:]
+        assert not fresh, "check() failures:\n  " + "\n  ".join(fresh)
 
 
 def snap(sr="unknown", conf="high", tone=0.0, gd="unknown", rd=0.0):

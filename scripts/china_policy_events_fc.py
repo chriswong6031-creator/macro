@@ -46,17 +46,19 @@ import numpy as np
 import pandas as pd
 
 # ── Worktree root guard ───────────────────────────────────────────────────────
-ROOT = pathlib.Path(".")
+# Derived from __file__, not from the CWD: `Path(".")` made every path below —
+# and the sys.path entry — depend on where the caller happened to stand.
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 assert (ROOT / "data").exists(), (
-    "Run from the worktree root (expected ./data/ to exist). "
-    f"CWD is {pathlib.Path.cwd()}"
+    f"Expected {ROOT}/data/ to exist (repo root derived from __file__)."
 )
 
 # Ensure the worktree root is on sys.path so that `engine` is importable
 # when exec_module() runs phase-0 (which does `from engine.validation import …`).
+# Unconditional: a root already present further down sys.path still loses to a
+# foreign package ahead of it.
 _root_str = str(ROOT.resolve())
-if _root_str not in sys.path:
-    sys.path.insert(0, _root_str)
+sys.path.insert(0, _root_str)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 COMMUNIQUES_PATH = ROOT / "data" / "china_official" / "communiques.parquet"

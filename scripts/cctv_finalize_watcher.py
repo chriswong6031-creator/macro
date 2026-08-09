@@ -58,6 +58,7 @@ from pathlib import Path
 # Paths
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 ARCHIVE_DIR = REPO_ROOT / "data" / "china_news" / "cctv_archive"
 STATE_FILE = ARCHIVE_DIR / "finalize_state.json"
 TONE_HISTORY_PATH = REPO_ROOT / "data" / "china_news" / "cctv_tone_history.parquet"
@@ -138,7 +139,6 @@ def _send_alert(msg: str, dry_run: bool = False) -> None:
         log.info("[dry-run] alert: %s", msg)
         return
     try:
-        sys.path.insert(0, str(REPO_ROOT))
         from lib import config  # noqa: PLC0415
         import requests  # noqa: PLC0415
 
