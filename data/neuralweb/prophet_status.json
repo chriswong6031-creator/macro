@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-08-09T07:29:25+00:00",
+  "as_of": "2026-08-09T09:53:19+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -178,21 +178,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 31.5,
+          "age_hours": 33.9,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 7.5,
+          "age_hours": 9.9,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
           "status": "stale",
-          "age_hours": 55.5,
+          "age_hours": 57.9,
           "sla_hours": 48
         }
       ],
@@ -206,7 +206,7 @@
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
           "status": "ok",
-          "age_hours": 7.5,
+          "age_hours": 9.9,
           "sla_hours": 30.0
         }
       ],
@@ -220,7 +220,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 0.5,
+          "age_hours": 1.9,
           "sla_hours": 48
         }
       ],
@@ -234,7 +234,7 @@
           "artifact": "ca-board-ledger",
           "path": "data/board_ledger/ca_board.parquet",
           "status": "ok",
-          "age_hours": 15.1,
+          "age_hours": 0.0,
           "sla_hours": 48
         }
       ],
@@ -248,7 +248,7 @@
           "artifact": "intl-setups",
           "path": "site/factordata/intl_setups.json",
           "status": "ok",
-          "age_hours": 1.1,
+          "age_hours": 0.7,
           "sla_hours": 48
         }
       ],
@@ -273,7 +273,7 @@
     },
     "index": {
       "as_of": null,
-      "plan_count": 131
+      "plan_count": 115
     }
   },
   "pick_lab": {

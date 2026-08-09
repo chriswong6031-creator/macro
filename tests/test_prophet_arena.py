@@ -1,6 +1,6 @@
 """tests/test_prophet_arena.py — the Prophet Arena shadow harness.
 
-Everything here is SYNTHETIC: a crafted 20-row standouts fixture, hand-built price
+Everything here is SYNTHETIC: a crafted 21-row standouts fixture, hand-built price
 series, and temporary roots.  No committed artifact is pinned (a test that asserts on
 tonight's board grades the tape, not the code) and no fixture is anchored to the wall
 clock (both the artifact date and the run's asof are supplied by the test, so nothing
@@ -66,7 +66,7 @@ def _row(
 
 @pytest.fixture()
 def standouts() -> dict:
-    """20 buy rows engineered so every policy resolves to a DIFFERENT, exact set.
+    """21 buy rows engineered so every policy resolves to a DIFFERENT, exact set.
 
     Admission is the STATUS CLASS (ANTICIPATION A1, 2026-08-08): an entry status in
     ``{bounce_wait, wait_pullback, hold, buy_now, partial}``, a tone in ``{up,
@@ -83,13 +83,17 @@ def standouts() -> dict:
                 entering on its own is exactly what A1 was built to do.
       R02..R03  stage 'ran', statuses the class refuses ('extended' / 'topping');
                 R03 is also band 'low'.  The champion cannot admit them, and neither
-                can C2's widening (see the C2 test for why the widening is now inert).
+                can C7 — its probe relaxes the status leg for `buy_soon` ONLY.
       X01       band 'low' with the highest score of all — a hard exclusion no
                 policy may ever reach.
-      X02       status 'buy_soon', band high — a hard exclusion under the STATUS
-                CLASS (A1), and NOT stage-ran, so C2's widening must not rescue it
-                either.  It was act_level 1 before A1 and excluded by the act gate;
-                the row keeps act_level 1 so C1's ordering leg is unaffected.
+      X02       status 'buy_soon', band high — refused by the champion's STATUS CLASS
+                (A1) and the ONE row C7's admission probe is allowed to rescue.  It
+                was act_level 1 before A1 and excluded by the act gate; the row keeps
+                act_level 1 so C1's ordering leg is unaffected.
+      X04       status 'buy_soon' AND band 'low' — C7's widening must NOT rescue it,
+                because the band leg still runs inside the probe.  Score 93 is chosen
+                so a wrong admission would visibly reorder the top of the book: it
+                would land above X02 (92) and A01 (90) rather than hide in the tail.
     """
     buy: list[dict] = []
     score = 90.0
@@ -102,6 +106,7 @@ def standouts() -> dict:
     buy.append(_row("X01", 95.0, 3, band="low"))
     buy.append(_row("X02", 92.0, 1, status="buy_soon"))
     buy.append(_row("X03", 10.0, 2))
+    buy.append(_row("X04", 93.0, 1, band="low", status="buy_soon"))
     return {
         "as_of": FIXTURE_ASOF,
         "gate_go": True,
@@ -185,26 +190,62 @@ class TestPolicyDeterminism:
         assert rec["act_level_2"] == 8
         assert rec["lifted"] == 8
 
-    def test_c2_widening_is_INERT_since_the_act_level_gate_was_removed(
-            self, standouts):
-        """C2's pool-widening lifts `act_level` to 2 — an input the champion no
-        longer reads (ANTICIPATION A1, 2026-08-08), so the widening can no longer
-        admit anything and C2 degenerates to a re-ordering policy.
+    def test_c2_is_retired(self, standouts):
+        """C2's key is SEALED, not re-pointed — a frozen key never changes meaning.
 
-        Pinned as a DELIBERATE non-repair: `engine/prophet_arena.py` is owned by the
-        Arena lane, not by A1, and re-basing C2's widening onto the status class is
-        that lane's call.  This test FAILS THE MOMENT the widening starts working
-        again, which is when the expectations below should be rewritten rather than
-        re-pointed.  R01 needs no widening any more — the champion admits it on its
-        `hold` status directly, which is the outcome A1 was built for.
+        Its widening patched `act_level`, an input the champion stopped reading when
+        ANTICIPATION A1 (2026-08-09) moved admission to the status class, so the
+        construction could no longer admit anything.  The lane's ruling was to retire
+        rather than re-base: the ledger file stays on disk, and the key raises here
+        instead of quietly accruing under a different de-facto rule.
         """
-        rows, rec = pa.select_for_policy("C2_stage_ran_preferred", standouts, cap=12)
-        assert rec["stage_ran_admitted_by_widening"] == 0, (
-            "the widening lifts act_level, which is no longer an admission input")
-        assert _tickers(rows) == ["R01"] + [
-            t for t in _POOL[:12] if t != "R01"]
-        assert rec["stage_ran_in_champion_pool"] == 1
-        assert rec["stage_ran_selected"] == 1
+        assert "C2_stage_ran_preferred" not in pa.POLICY_KEYS
+        with pytest.raises(ValueError):
+            pa.select_for_policy("C2_stage_ran_preferred", standouts, cap=12)
+        assert not hasattr(pa, "stage_ran_widened")
+
+        assert len(pa.RETIRED_POLICIES) == 1
+        retired = pa.RETIRED_POLICIES[0]
+        assert retired.key == "C2_stage_ran_preferred"
+        assert retired.successor == "C7_buy_soon_admitted"
+        assert retired.retired == "2026-08-09"
+
+    def test_c7_admits_buy_soon_by_status_probe(self, standouts):
+        """X02 (buy_soon, score 92) enters ABOVE A01 — earned on the champion's sort.
+
+        C7 adds no preference leg, so the widened book is the champion's own order
+        over a pool with one more row in it.
+        """
+        rows, rec = pa.select_for_policy("C7_buy_soon_admitted", standouts, cap=12)
+        assert _tickers(rows) == ["X02", "A01", "R01"] + [
+            f"A{i:02d}" for i in range(2, 11)
+        ]
+        assert len(rows) == 12
+        assert rec["buy_soon_in_board"] == 2            # X02 and the band-low X04
+        assert rec["buy_soon_admitted_by_widening"] == 1
+        assert rec["buy_soon_selected"] == 1
+        assert rec["admitted_with_widening"] == len(_POOL) + 1 == 17
+
+    def test_c7_probe_value_is_mechanically_irrelevant(self, standouts):
+        """Selection never reads status beyond the admission class — pinned, not assumed.
+
+        The probe patches to `hold`; a `buy_now` probe must select the same names.  A
+        future class-dependent selection change breaks this test rather than silently
+        bending C7's registered construction.
+        """
+        by_hold = pa.buy_soon_widened(standouts, probe_status="hold")
+        by_buy_now = pa.buy_soon_widened(standouts, probe_status="buy_now")
+        assert _tickers(by_hold) == _tickers(by_buy_now)
+        with pytest.raises(ValueError):
+            pa.buy_soon_widened(standouts, probe_status="extended")
+
+    def test_c7_widening_touches_only_the_status_leg(self, standouts):
+        widened = _tickers(pa.buy_soon_widened(standouts))
+        # Remove the one row the probe admits and the champion's pool is back —
+        # same names, same order.  Nothing else moved.
+        assert [t for t in widened if t != "X02"] == _POOL
+        # X04 is buy_soon too, but band 'low': the band leg still runs inside the probe.
+        assert "X04" not in widened
 
     def test_c4_and_c6_selections(self, standouts):
         six, _ = pa.select_for_policy(
@@ -231,15 +272,22 @@ class TestPolicyDeterminism:
             pa.select_for_policy("C9_nope", standouts)
 
     def test_hard_exclusions_are_unreachable_by_every_policy(self, standouts):
-        """A band-'low' row and a refused-status row must never appear anywhere."""
+        """A band-'low' row and a refused-status row must never appear anywhere.
+
+        X02 is the ONE deliberate exception: C7 is a registered admission probe on
+        exactly the `buy_soon` leg, so reaching X02 is the policy working.  Every
+        other policy — and C7 itself on every other refused row — must still miss.
+        """
         for key in pa.POLICY_KEYS:
             if key == "C5_align2_gate":
                 continue
             rows, _ = pa.select_for_policy(key, standouts, cap=12, door_rows=[])
             assert "X01" not in _tickers(rows), key   # band low
-            assert "X02" not in _tickers(rows), key   # buy_soon, not stage-ran
-            assert "R02" not in _tickers(rows), key   # stage-ran but 'extended'
-            assert "R03" not in _tickers(rows), key   # stage-ran but band low
+            if key != "C7_buy_soon_admitted":
+                assert "X02" not in _tickers(rows), key   # buy_soon
+            assert "X04" not in _tickers(rows), key   # buy_soon AND band low
+            assert "R02" not in _tickers(rows), key   # 'extended'
+            assert "R03" not in _tickers(rows), key   # 'topping' and band low
 
 
 # --------------------------------------------------------------------------- #
@@ -854,6 +902,41 @@ class TestScoreboard:
     def test_every_policy_has_a_block(self, tmp_path):
         board = pa.build_scoreboard(asof=FIXTURE_ASOF, root=tmp_path)
         assert [b["policy"] for b in board["policies"]] == list(pa.POLICY_KEYS)
+
+    def test_a_retired_policy_stays_disclosed_with_its_sealed_count(self, tmp_path):
+        """A retired key is DISCLOSED, never deleted — the sealed-era rule at policy grain.
+
+        Its ledger is not on this temporary root, so the counts are an honest zero and
+        `ledger_present` says which kind of zero it is.
+        """
+        board = pa.build_scoreboard(asof=FIXTURE_ASOF, root=tmp_path)
+        retired = board["retired_policies"]
+        assert [b["policy"] for b in retired] == ["C2_stage_ran_preferred"]
+        block = retired[0]
+        assert block["successor"] == "C7_buy_soon_admitted"
+        assert block["retired"] == "2026-08-09"
+        assert block["sealed"] is True
+        assert block["ledger_present"] is False
+        assert isinstance(block["opens"], int) and block["opens"] == 0
+        assert isinstance(block["closes"], int) and block["closes"] == 0
+        # The retired key is gone from the ACTIVE list, not merely annotated in it.
+        assert "C2_stage_ran_preferred" not in [b["policy"] for b in board["policies"]]
+
+    def test_a_retired_policys_sealed_rows_are_counted_when_the_file_exists(
+        self, tmp_path
+    ):
+        """The disclosure reads the real file through the same keep-first reader."""
+        pa.append_rows(
+            "C2_stage_ran_preferred",
+            [_open("A01-BULL-20260501", policy="C2_stage_ran_preferred")],
+            tmp_path,
+            force=True,
+        )
+        block = pa.build_scoreboard(asof=FIXTURE_ASOF, root=tmp_path)[
+            "retired_policies"][0]
+        assert block["ledger_present"] is True
+        assert block["opens"] == 1
+        assert block["closes"] == 0
 
     def test_empty_ledgers_print_nulls_not_zeros(self, tmp_path):
         board = pa.build_scoreboard(asof=FIXTURE_ASOF, root=tmp_path)

@@ -234,22 +234,6 @@ POLICIES: tuple[Policy, ...] = (
         ),
     ),
     Policy(
-        key="C2_stage_ran_preferred",
-        label_en="already-moving names first",
-        label_zh="优先已启动个股",
-        grain="selection",
-        time_stop_sessions=None,
-        rationale=(
-            "Rows the board stages as 'ran' (engine.us_board_rank.STAGE_RAN, entry status "
-            "extended/topping/hold) are admitted and lifted above the rest. The STAGE_RAN "
-            "shelf graded a 14.5% loser rate against 27.6% for the rest of the buy lane "
-            "(n=55) with no half-split flip, yet the board's own stage order ranks 'ran' "
-            "BELOW live and setting_up. REGISTERED DEVIATION: this policy WIDENS the pool "
-            "rather than only re-ordering it, because the champion's act_level gate and "
-            "the stage-ran population are structurally disjoint — see stage_ran_widened()."
-        ),
-    ),
-    Policy(
         key="C3_door_w_union",
         label_en="washout turns added",
         label_zh="纳入超跌转折",
@@ -313,11 +297,64 @@ POLICIES: tuple[Policy, ...] = (
             "compared PER-PLAN PAIRED, never as two cohorts."
         ),
     ),
+    Policy(
+        key="C7_buy_soon_admitted",
+        label_en="almost-ready entries admitted",
+        label_zh="纳入「即将买入」档",
+        grain="selection",
+        time_stop_sessions=None,
+        rationale=(
+            "SUCCESSOR to C2_stage_ran_preferred (retired 2026-08-09). The A1 status class "
+            "refuses buy_soon outright on the CN loser ledger (CN entry statuses graded worst-"
+            "first: buy_soon 46.7% loser rate), while the US entry-ladder battery graded "
+            "buy_soon the best NON-THIN US cell: +3.19pp per-name median excess at H=10, n=31, "
+            "9.7% loser rate, #1 in ranked_non_thin_by_per_name_median. Two retrospective "
+            "reads, one cell, opposite verdicts — the kind of question a prospective shadow "
+            "record exists to answer. Admission-only: the probe relaxes the status leg for "
+            "buy_soon rows alone; tone, band, tier, entry-signal presence and the champion's "
+            "own ordering are untouched, so a buy_soon row must earn its slot by score."
+        ),
+    ),
 )
 
 POLICY_KEYS: tuple[str, ...] = tuple(p.key for p in POLICIES)
 CHAMPION_KEY = "C0_champion_mirror"
 _POLICY_BY_KEY: dict[str, Policy] = {p.key: p for p in POLICIES}
+
+
+@dataclass(frozen=True)
+class RetiredPolicy:
+    """A key whose accrual STOPPED.  The ledger file is sealed in place — kept on disk,
+    never advanced, its open stamps never graded — mirroring the sealed v1 era."""
+
+    key: str
+    label_en: str
+    label_zh: str
+    retired: str      # date
+    reason: str
+    successor: str | None
+
+
+RETIRED_POLICIES: tuple[RetiredPolicy, ...] = (
+    RetiredPolicy(
+        key="C2_stage_ran_preferred",
+        label_en="already-moving names first",
+        label_zh="优先已启动个股",
+        retired="2026-08-09",
+        reason=(
+            "the champion's admission moved from an act-level threshold to a status class "
+            "(ANTICIPATION A1, 2026-08-09), which makes this policy's frozen widening — "
+            "patching act_level, an input admission no longer reads — unable to admit "
+            "anything; the status class itself now admits hold, the status that carried 47 "
+            "of the 55 rows behind this policy's evidence, so the champion absorbed the "
+            "bulk of the thesis and the leftover cells (extended n=8, topping n=0) are too "
+            "thin to re-register today"
+        ),
+        successor="C7_buy_soon_admitted",
+    ),
+)
+
+RETIRED_POLICY_KEYS: tuple[str, ...] = tuple(p.key for p in RETIRED_POLICIES)
 
 
 # --------------------------------------------------------------------------- #
@@ -570,75 +607,39 @@ def _act_level(row: dict) -> int:
         return 0
 
 
-def _is_stage_ran(row: dict) -> bool:
-    """True when the board stages this row as 'ran' (C2's evidence leg).
+def buy_soon_widened(standouts: dict, probe_status: str = "hold") -> list[dict]:
+    """The champion's admitted pool WITH buy_soon rows admitted — champion order, uncapped.
 
-    Reads the row's own ``stage`` field — stamped by ``engine.us_board_rank`` — and falls
-    back to the entry status bucket that produces it, so a pre-stage artifact still
-    classifies.  Both legs use us_board_rank's own constants; nothing is re-spelled here.
+    C7's one-leg relaxation, the same probe idiom C2 used against the act_level gate
+    (retired 2026-08-09 — see the registration doc): a COPY of the artifact is built in
+    which only the buy_soon rows' entry status is lifted to an admitted value, and
+    ``pb.select_candidates`` judges the copy — so tone, band, tier, entry-signal presence
+    and the champion's ordering all remain the champion's own code.  The rows returned are
+    the ORIGINAL, unpatched dicts; the patch is an admission probe, never plan material.
+
+    ``probe_status`` is mechanically irrelevant to selection today — admission class is
+    receipts-only and the sort key never reads status — and the invariance is test-pinned
+    so a future class-dependent selection change re-opens this choice loudly rather than
+    silently.  It must name an ADMITTED status; anything else is a construction error.
     """
-    try:
-        from engine import us_board_rank as ubr  # noqa: PLC0415
-    except Exception:  # noqa: BLE001
-        return str(row.get("stage") or "") == "ran"
-    if str(row.get("stage") or "") == ubr.STAGE_RAN:
-        return True
-    status = str((row.get("entry_signal") or {}).get("status") or "")
-    return status in ubr._RAN_STATUSES
-
-
-def stage_ran_widened(standouts: dict) -> list[dict]:
-    """Stage-ran buy rows that clear every champion filter EXCEPT the act_level gate.
-
-    WHY THIS EXISTS (measured, 2026-08-05 artifact — the finding that shaped C2).
-    ``stage_for`` returns STAGE_RAN only for entry statuses extended/topping/hold, and
-    ``act_level`` is derived from urgency (``entry_signal._ACT_LEVEL``), where only
-    "now" (3) and "imminent" (2) clear the champion's ``act_level >= 2`` gate.  On the
-    2026-07-31 artifact the two populations were exactly disjoint: 25 admitted rows, all
-    stage "live"; all 17 stage-ran rows carried act_level 0 or 1, none reached the
-    caution-mode ``score >= 60`` escape, and 12 of the 17 were band "low" anyway.
-
-    So a policy that merely RE-ORDERS the admitted pool by stage-ran evidence would sort
-    a set that structurally cannot contain a stage-ran row — a null by construction, and
-    worse, one that would read as "no effect" rather than "never tested".  The measurement
-    C2 exists to probe (the STAGE_RAN shelf's 14.5% loser rate against 27.6% for the rest
-    of the buy lane) is defined ON THOSE EXCLUDED ROWS, so C2 must widen the pool to reach
-    them.  This is a registered deviation from the literal "same filters" wording; see
-    ``research/PROPHET_ARENA_REGISTRATION.md`` §C2.
-
-    The widening relaxes ONE leg and reuses the champion's code for all the others: a
-    COPY of the artifact is built in which only the stage-ran rows' act_level is lifted to
-    the admission threshold, and ``select_candidates`` judges it.  Band, direction,
-    entry-signal presence and the gate_go mode are therefore still the champion's own.
-    The rows returned are the ORIGINAL, unpatched dicts — the patch is an admission probe,
-    never something a shadow plan is built from.
-    """
+    if probe_status not in pb.ADMITTED_STATUSES:
+        raise ValueError(f"probe_status must be an admitted status, got {probe_status!r}")
     buys = standouts.get("buy") or []
-    ran_tickers = {str(r.get("ticker")) for r in buys if _is_stage_ran(r)}
-    if not ran_tickers:
-        return []
+    originals: dict[str, dict] = {str(r.get("ticker")): r for r in buys}
     patched: list[dict] = []
     for row in buys:
-        if str(row.get("ticker")) in ran_tickers and (row.get("entry_signal") or {}):
+        if pb.entry_status(row) == "buy_soon":
             probe = dict(row)
             es = dict(row.get("entry_signal") or {})
-            try:
-                es["act_level"] = max(int(es.get("act_level") or 0), 2)
-            except (TypeError, ValueError):
-                es["act_level"] = 2
+            es["status"] = probe_status
             probe["entry_signal"] = es
             patched.append(probe)
         else:
             patched.append(row)
     shadow = dict(standouts)
     shadow["buy"] = patched
-    admitted = pb.select_candidates(shadow, n=max(len(patched), 1))
-    originals = {str(r.get("ticker")): r for r in buys}
-    return [
-        originals[str(r.get("ticker"))]
-        for r in admitted
-        if str(r.get("ticker")) in ran_tickers and str(r.get("ticker")) in originals
-    ]
+    admitted = pb.select_candidates(shadow, n=None)
+    return [originals[str(r.get("ticker"))] for r in admitted]
 
 
 def read_dispersion_state(
@@ -942,28 +943,6 @@ def select_for_policy(
         receipts["lifted"] = sum(1 for r in rows[:cap] if _act_level(r) == 2)
         return rows[:cap], receipts
 
-    if policy_key == "C2_stage_ran_preferred":
-        # POOL-WIDENING, not just re-ordering — see stage_ran_widened() for the measured
-        # reason the literal "same filters" version is a null by construction.
-        pool_tickers = {str(r.get("ticker")) for r in pool}
-        extra = [
-            r for r in stage_ran_widened(standouts)
-            if str(r.get("ticker")) not in pool_tickers
-        ]
-        combined = pool + extra
-        rows = sorted(
-            combined,
-            key=lambda r: (0 if _is_stage_ran(r) else 1, pb._selection_sort_key(r)),
-        )
-        receipts["stage_ran_in_champion_pool"] = sum(1 for r in pool if _is_stage_ran(r))
-        receipts["stage_ran_admitted_by_widening"] = len(extra)
-        receipts["stage_ran_selected"] = sum(1 for r in rows[:cap] if _is_stage_ran(r))
-        receipts["widening"] = (
-            "the act_level gate is relaxed for stage-ran rows only; band, direction, "
-            "entry-signal presence and the gate mode stay the champion's"
-        )
-        return rows[:cap], receipts
-
     if policy_key == "C3_door_w_union":
         doors = list(door_rows or [])
         champion_tickers = {str(r.get("ticker")) for r in pool}
@@ -1022,6 +1001,27 @@ def select_for_policy(
         receipts["selection_basis"] = "identical to lossless C0 by construction"
         receipts["truncated"] = 0
         return pool, receipts
+
+    if policy_key == "C7_buy_soon_admitted":
+        # ONE-LEG WIDENING, champion order — see buy_soon_widened() and the registration.
+        widened = buy_soon_widened(standouts)
+        pool_tickers = {str(r.get("ticker")) for r in pool}
+        rows = widened[:cap]
+        receipts["admitted_with_widening"] = len(widened)
+        receipts["buy_soon_in_board"] = sum(
+            1 for r in (standouts.get("buy") or []) if pb.entry_status(r) == "buy_soon"
+        )
+        receipts["buy_soon_admitted_by_widening"] = sum(
+            1 for r in widened if str(r.get("ticker")) not in pool_tickers
+        )
+        receipts["buy_soon_selected"] = sum(
+            1 for r in rows if str(r.get("ticker")) not in pool_tickers
+        )
+        receipts["widening"] = (
+            "the status-class gate is relaxed for buy_soon rows only; tone, band, tier, "
+            "entry-signal presence and the champion's own ordering stay the champion's"
+        )
+        return rows, receipts
 
     raise ValueError(f"unknown policy key: {policy_key!r}")
 
@@ -1266,10 +1266,15 @@ def read_ledger(policy_key: str, root: Path | None = None) -> list[dict]:
 
 
 def sealed_legacy_summary(root: Path | None = None) -> dict:
-    """Counts from the sealed v1 files for disclosure only; never returns grade data."""
+    """Counts from the sealed v1 files for disclosure only; never returns grade data.
+
+    RETIRED keys are counted too.  A key leaving :data:`POLICIES` stops its accrual; it
+    does not un-write the v1 era it already sat through, and dropping its rows here would
+    silently shrink a disclosed audit total the day a policy retires.
+    """
     by_policy: dict[str, dict[str, int]] = {}
     total_open = total_close = total_other = 0
-    for policy_key in POLICY_KEYS:
+    for policy_key in (*POLICY_KEYS, *RETIRED_POLICY_KEYS):
         counts = {"open": 0, "close": 0, "other": 0}
         path = legacy_ledger_path(policy_key, root)
         if path.exists():
@@ -1605,6 +1610,30 @@ def _paired_vs_champion(record: dict, champion: dict) -> dict:
     }
 
 
+def _retired_block(policy: RetiredPolicy, root: Path | None) -> dict:
+    """One sealed key's disclosure: who it was, why it stopped, what it accrued.
+
+    The counts come from :func:`read_ledger` — the SAME reader every active policy is
+    folded by, keep-first and all — so a sealed record is never re-counted by a second,
+    subtly different parser.  ``ledger_present`` separates "sealed at zero" from "the
+    file is not on this root at all", which is what a fresh temporary root looks like.
+    """
+    rows = read_ledger(policy.key, root)
+    return {
+        "policy": policy.key,
+        "label": policy.label_en,
+        "label_zh": policy.label_zh,
+        "retired": policy.retired,
+        "reason": policy.reason,
+        "successor": policy.successor,
+        "sealed": True,
+        "ledger_path": f"data/prophet_arena/{LEDGER_ERA}/{policy.key}.jsonl",
+        "ledger_present": ledger_path(policy.key, root).exists(),
+        "opens": sum(1 for r in rows if str(r.get("kind") or "") == "open"),
+        "closes": sum(1 for r in rows if str(r.get("kind") or "") == "close"),
+    }
+
+
 def build_scoreboard(
     *,
     asof: str,
@@ -1708,6 +1737,10 @@ def build_scoreboard(
         "headline_min_closed": HEADLINE_MIN_CLOSED,
         "harness_validity": checks,
         "policies": policies,
+        # A retired key stays VISIBLE with its sealed count. Deleting the block would
+        # make a policy that once traded look like one that never existed, which is the
+        # same disclosure failure the sealed v1 era is kept on disk to avoid.
+        "retired_policies": [_retired_block(p, root) for p in RETIRED_POLICIES],
         "tonight": tonight or {},
         "note": (
             "Each policy is a frozen way of choosing which plans to start, or when to "

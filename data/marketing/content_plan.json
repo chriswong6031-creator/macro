@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "engine/marketing/content_studio.py",
-  "produced_at": "2026-08-09T07:33:58Z",
+  "produced_at": "2026-08-09T09:58:50Z",
   "tier": "display",
   "schema": "marketing.content/v1",
   "as_of": "2026-08-09",
   "source": {
-    "prophet_plans": 131,
-    "plans_with_charts": 13,
-    "note": "131 Prophet plans ingested; 13 have close-price history for charts."
+    "prophet_plans": 115,
+    "plans_with_charts": 31,
+    "note": "115 Prophet plans ingested; 31 have close-price history for charts."
   },
   "content_types": [
     {
@@ -84,13 +84,9 @@
         "theme_list": 0.09
       },
       "mix_observed": {
-        "signal": 13,
-        "chart": 4,
         "event": 1,
-        "receipt": 1,
-        "watchlist": 1,
-        "theme_list": 1,
-        "insider": 1
+        "signal": 1,
+        "theme_list": 1
       },
       "mix_allocated": {
         "signal": 11,
@@ -123,35 +119,13 @@
           "headline": "Commodities Metals ripping, +7.2% avg on Friday",
           "body": "$WWR +87.8% $AREC +20.7% $CENX +11.5% $CDE +11.1% $USAR +11.0% $ERO +10.3% $AU +9.8% $UUUU +9.6% Do these highs hold when I look tomorrow?",
           "provenance": "movers_desk",
-          "chart_id": "chart-110",
+          "chart_id": "chart-203",
           "slot": "D1-S3",
           "status": "drafted",
           "_copy_mode": "movers_desk",
           "link": "https://mastermind-x.com/?utm_source=x&utm_medium=flagship&utm_campaign=theme_list&utm_content=post-theme-003",
           "short_code": "mfmfi6ws54",
           "short_link": "https://mastermind-x.com/go/mfmfi6ws54/",
-          "sentinel_ok": true
-        },
-        {
-          "id": "post-insider-001",
-          "type": "insider",
-          "account": "flagship",
-          "cashtag": "$CCB",
-          "ticker": "CCB",
-          "headline": "",
-          "body": "A director grew his disclosed $CCB stake by 60.6%. I won't pretend I know why.",
-          "provenance": "insider_desk",
-          "chart_id": "chart-115",
-          "slot": "D1-S10",
-          "status": "drafted",
-          "source": "insider",
-          "angle": "process",
-          "shape": "caption",
-          "_copy_mode": "llm_repair",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=flagship&utm_campaign=insider&utm_content=post-insider-001",
-          "short_code": "cwavwgcipc",
-          "short_link": "https://mastermind-x.com/go/cwavwgcipc/",
           "sentinel_ok": true
         }
       ]
@@ -272,14 +246,7 @@
         "mover": 0.12,
         "theme_list": 0.1
       },
-      "mix_observed": {
-        "event": 1,
-        "watchlist": 1,
-        "chart": 4,
-        "signal": 4,
-        "receipt": 1,
-        "insider": 1
-      },
+      "mix_observed": {},
       "mix_allocated": {
         "signal": 10,
         "chart": 4,
@@ -291,97 +258,7 @@
         "mover": 3,
         "theme_list": 3
       },
-      "queue": [
-        {
-          "id": "post-founder-001",
-          "type": "event",
-          "account": "founder",
-          "cashtag": "",
-          "ticker": "",
-          "headline": "",
-          "body": "Claims this month: 199 thousand a week\nAt 199 thousand, I’m not calling growth weak. Rising claims would change my read.",
-          "provenance": "neural_web",
-          "chart_id": null,
-          "slot": "D1-S1",
-          "status": "drafted",
-          "angle": "event_read",
-          "shape": "list",
-          "_copy_mode": "llm",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=founder&utm_campaign=event&utm_content=post-founder-001",
-          "short_code": "r6hivortxv",
-          "short_link": "https://mastermind-x.com/go/r6hivortxv/",
-          "sentinel_ok": true
-        },
-        {
-          "id": "post-founder-017",
-          "type": "chart",
-          "account": "founder",
-          "cashtag": "$SPCU",
-          "ticker": "SPCU",
-          "headline": "",
-          "body": "I don't see a clean precedent in $SPCU.\n$SPCU gives me no level to defend.",
-          "provenance": "neural_web",
-          "chart_id": null,
-          "slot": "D1-S17",
-          "status": "drafted",
-          "supply_pool": "hot_story",
-          "supply_why": "31.635071090047397% on the day",
-          "angle": "precedent",
-          "shape": "list",
-          "_copy_mode": "llm",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=founder&utm_campaign=chart&utm_content=post-founder-017",
-          "short_code": "wnvxrg3cac",
-          "short_link": "https://mastermind-x.com/go/wnvxrg3cac/",
-          "sentinel_ok": true
-        },
-        {
-          "id": "post-founder-024",
-          "type": "chart",
-          "account": "founder",
-          "cashtag": "$SPCH",
-          "ticker": "SPCH",
-          "headline": "$SPCH has seen this movie before",
-          "body": "I trust the bounce only if the next pullback holds.",
-          "provenance": "neural_web",
-          "chart_id": null,
-          "slot": "D1-S24",
-          "status": "drafted",
-          "supply_pool": "hot_story",
-          "supply_why": "31.428571428571427% on the day",
-          "angle": "precedent",
-          "shape": "two_part",
-          "_copy_mode": "llm",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=founder&utm_campaign=chart&utm_content=post-founder-024",
-          "short_code": "2g4crd6udl",
-          "short_link": "https://mastermind-x.com/go/2g4crd6udl/",
-          "sentinel_ok": true
-        },
-        {
-          "id": "post-insider-002",
-          "type": "insider",
-          "account": "founder",
-          "cashtag": "$ATTO",
-          "ticker": "ATTO",
-          "headline": "",
-          "body": "$ATTO's large shareholder raised its disclosed stake by 51.1%. I'm paying attention, but I won't invent a motive the filing can't prove.",
-          "provenance": "insider_desk",
-          "chart_id": null,
-          "slot": "D1-S6",
-          "status": "drafted",
-          "source": "insider",
-          "angle": "process",
-          "shape": "one_liner",
-          "_copy_mode": "llm_repair",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=founder&utm_campaign=insider&utm_content=post-insider-002",
-          "short_code": "miydsxu2uo",
-          "short_link": "https://mastermind-x.com/go/miydsxu2uo/",
-          "sentinel_ok": true
-        }
-      ]
+      "queue": []
     },
     {
       "id": "meagan",
@@ -400,8 +277,6 @@
         "theme_list": 0.06
       },
       "mix_observed": {
-        "signal": 4,
-        "receipt": 1,
         "theme_list": 1
       },
       "mix_allocated": {
@@ -435,7 +310,7 @@
           "headline": "Software ripping, +3.7% avg on Friday",
           "body": "$TEAM +35.3% $DOCS +32.6% $TWLO +24.9% $PLTR +10.3% $GTLB +9.2% $FROG +7.8% $MDB +7.8% $ESTC +7.4% Am I getting a second session out of this?",
           "provenance": "movers_desk",
-          "chart_id": "chart-111",
+          "chart_id": "chart-204",
           "slot": "D1-S2",
           "status": "drafted",
           "_copy_mode": "movers_desk",
@@ -463,12 +338,7 @@
         "theme_list": 0.07
       },
       "mix_observed": {
-        "macro": 1,
-        "signal": 4,
-        "receipt": 1,
-        "chart": 4,
-        "mover": 1,
-        "watchlist": 1
+        "mover": 1
       },
       "mix_allocated": {
         "signal": 7,
@@ -483,27 +353,6 @@
       },
       "queue": [
         {
-          "id": "post-sophia-001",
-          "type": "macro",
-          "account": "sophia",
-          "cashtag": "",
-          "ticker": "",
-          "headline": "The labor story isn't bending yet",
-          "body": "Jobless claims are averaging 199 thousand a week this month, 11.9% below a year ago. I'm treating labor strength as intact unless that gap closes.",
-          "provenance": "neural_web",
-          "chart_id": null,
-          "slot": "D1-S1",
-          "status": "drafted",
-          "angle": "macro_read",
-          "shape": "two_part",
-          "_copy_mode": "llm",
-          "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=sophia&utm_campaign=macro&utm_content=post-sophia-001",
-          "short_code": "etm5bbihr4",
-          "short_link": "https://mastermind-x.com/go/etm5bbihr4/",
-          "sentinel_ok": true
-        },
-        {
           "id": "post-mover-002",
           "type": "mover",
           "account": "sophia",
@@ -512,7 +361,7 @@
           "headline": "$TEAM +35.3% on Friday",
           "body": "TEAM surged +35.3% on Friday. TEAM has been above its 50-day average for two weeks now, which is the context the number needs.",
           "provenance": "movers_desk",
-          "chart_id": "chart-114",
+          "chart_id": "chart-207",
           "slot": "D1-S6",
           "status": "drafted",
           "angle": "group_read",
@@ -541,9 +390,6 @@
         "theme_list": 0.05
       },
       "mix_observed": {
-        "signal": 3,
-        "chart": 3,
-        "receipt": 1,
         "watchlist": 1,
         "theme_list": 1
       },
@@ -560,53 +406,24 @@
       },
       "queue": [
         {
-          "id": "post-kelly-027",
-          "type": "chart",
+          "id": "post-kelly-026",
+          "type": "watchlist",
           "account": "kelly",
-          "cashtag": "$POST",
-          "ticker": "POST",
+          "cashtag": "$TTC",
+          "ticker": "TTC",
           "headline": "",
-          "body": "$POST has to reclaim Friday's breakdown before the selling looks finished",
+          "body": "$TTC at 99.6. if it loses that, the whole thing is 84.2 waiting to happen.",
           "provenance": "neural_web",
           "chart_id": null,
-          "slot": "D1-S27",
+          "slot": "D1-S26",
           "status": "drafted",
-          "supply_pool": "hot_story",
-          "supply_why": "-12.7895378477225% on the day",
-          "angle": "level_watch",
+          "angle": "process",
           "shape": "one_liner",
           "_copy_mode": "llm_repair",
           "_copy_violations": [],
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=kelly&utm_campaign=chart&utm_content=post-kelly-027",
-          "short_code": "unsqitifz4",
-          "short_link": "https://mastermind-x.com/go/unsqitifz4/",
-          "sentinel_ok": true
-        },
-        {
-          "id": "post-theme-005",
-          "type": "theme_list",
-          "account": "kelly",
-          "cashtag": "$NTRA",
-          "cashtags": [
-            "$NTRA",
-            "$TNDM",
-            "$TXG",
-            "$TEM",
-            "$FATE",
-            "$EVH",
-            "$MRNA"
-          ],
-          "ticker": "",
-          "headline": "Healthcare & Biotech ripping, +2.6% avg on Friday",
-          "body": "$NTRA +21.4% $TNDM +19.1% $TXG +14.1% $TEM +12.9% $FATE +12.4% $EVH +10.0% $MRNA +9.9% Do I see follow-through at tomorrow's open?",
-          "provenance": "movers_desk",
-          "chart_id": "chart-112",
-          "slot": "D1-S5",
-          "status": "drafted",
-          "_copy_mode": "movers_desk",
-          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=kelly&utm_campaign=theme_list&utm_content=post-theme-005",
-          "short_code": "5pwgmk5jgk",
-          "short_link": "https://mastermind-x.com/go/5pwgmk5jgk/",
+          "link": "https://mastermind-x.com/?utm_source=x&utm_medium=kelly&utm_campaign=watchlist&utm_content=post-kelly-026",
+          "short_code": "c3wh6uygnh",
+          "short_link": "https://mastermind-x.com/go/c3wh6uygnh/",
           "sentinel_ok": true
         }
       ]
@@ -628,8 +445,6 @@
         "theme_list": 0.09
       },
       "mix_observed": {
-        "macro": 1,
-        "signal": 1,
         "theme_list": 1
       },
       "mix_allocated": {
@@ -688,7 +503,7 @@
   ],
   "featured_charts": [
     {
-      "id": "chart-110",
+      "id": "chart-203",
       "ticker": "",
       "account": "flagship",
       "cashtag": "$WWR",
@@ -701,7 +516,7 @@
       "source": "theme_list"
     },
     {
-      "id": "chart-111",
+      "id": "chart-204",
       "ticker": "",
       "account": "meagan",
       "cashtag": "$TEAM",
@@ -714,7 +529,7 @@
       "source": "theme_list"
     },
     {
-      "id": "chart-112",
+      "id": "chart-205",
       "ticker": "",
       "account": "kelly",
       "cashtag": "$NTRA",
@@ -727,7 +542,7 @@
       "source": "theme_list"
     },
     {
-      "id": "chart-113",
+      "id": "chart-206",
       "ticker": "",
       "account": "cici",
       "cashtag": "$PUBM",
@@ -740,7 +555,7 @@
       "source": "theme_list"
     },
     {
-      "id": "chart-114",
+      "id": "chart-207",
       "ticker": "TEAM",
       "account": "sophia",
       "cashtag": "$TEAM",
@@ -770,12 +585,12 @@
         "notes": [],
         "lookback_bars": 156
       },
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-114.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-207.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-114.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-207.png"
     },
     {
-      "id": "chart-115",
+      "id": "chart-208",
       "ticker": "CCB",
       "account": "flagship",
       "cashtag": "$CCB",
@@ -787,12 +602,12 @@
       "headline": "$CCB filing",
       "body": "Director Hovde Steven D bought 10,000 shares of CCB at an average $43.8, roughly $438K. The purchase raised the disclosed holding by 60.6%. The relative change is the part that matters, not the dollar headline.",
       "source": "insider",
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-115.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-208.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-115.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-208.png"
     },
     {
-      "id": "chart-116",
+      "id": "chart-209",
       "ticker": "GOLF",
       "account": "meagan",
       "cashtag": "$GOLF",
@@ -804,12 +619,12 @@
       "headline": "$GOLF on the board",
       "body": "Our special-situations desk is tracking a capital returns story at Acushnet Holdings (GOLF), just announced.",
       "source": "special_situations",
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-116.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-209.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-116.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-209.png"
     },
     {
-      "id": "chart-117",
+      "id": "chart-210",
       "ticker": "PFE",
       "account": "sophia",
       "cashtag": "$PFE",
@@ -821,12 +636,12 @@
       "headline": "$PFE on the board",
       "body": "Our tech lab has most of the signals it tracks on PFE pointing the same way right now.",
       "source": "tech_lab",
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-117.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-210.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-117.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-210.png"
     },
     {
-      "id": "chart-118",
+      "id": "chart-211",
       "ticker": "FOXA",
       "account": "kelly",
       "cashtag": "$FOXA",
@@ -838,12 +653,12 @@
       "headline": "$FOXA on the board",
       "body": "Our momentum screen has FOXA in the group that has been moving for a few sessions now.",
       "source": "impulse",
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-118.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-211.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-118.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-211.png"
     },
     {
-      "id": "chart-119",
+      "id": "chart-212",
       "ticker": "PCG",
       "account": "cici",
       "cashtag": "$PCG",
@@ -855,9 +670,9 @@
       "headline": "$PCG on the board",
       "body": "Our tech lab has most of the signals it tracks on PCG pointing the same way right now.",
       "source": "tech_lab",
-      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-119.png",
+      "media_png_path": "data/marketing/outbox/media/2026-08-09/chart-212.png",
       "media_render": "svg_raster",
-      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-119.png"
+      "media_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/marketing/charts/2026-08-09/chart-212.png"
     }
   ],
   "distinctness": {
@@ -866,9 +681,9 @@
     "note": "same signal rendered per-desk; variants checked"
   },
   "summary": {
-    "total_posts": 9,
+    "total_posts": 4,
     "signal_posts": 0,
-    "charts": 22,
+    "charts": 93,
     "accounts": 13,
     "forward_days": 1,
     "slots_offered": 168,
@@ -927,10 +742,10 @@
       "note": "1 mover posts, 4 theme_list posts seated on the D1 ladder with a card, at plan time; reuse-budget cuts are reported separately. 1 unseated (no_card=1)."
     },
     "confluence": {
-      "fired_combos": 9,
-      "built": 9,
+      "fired_combos": 10,
+      "built": 10,
       "surviving": 0,
-      "dropped_before_queue": 9,
+      "dropped_before_queue": 10,
       "charts": 2,
       "orphan_charts": 2,
       "posts": [
@@ -939,6 +754,12 @@
           "combo_id": "L0005",
           "win_rate": 82.3,
           "edge": 25.7
+        },
+        {
+          "ticker": "TTD",
+          "combo_id": "L0050",
+          "win_rate": 77.1,
+          "edge": 20.4
         },
         {
           "ticker": "HAL",
@@ -989,7 +810,7 @@
           "edge": 12.9
         }
       ],
-      "note": "9 confluence post(s) built and 2 chart(s) rendered; 0 reached a desk queue. This lane CANNOT publish as built: it slots posts as CONF-NN and outbox.emit_from_content_plan emits only D1- slots, so nothing it produces has ever reached the outbox. Charts now defer, so the render cost is no longer paid for posts that cannot ship."
+      "note": "10 confluence post(s) built and 2 chart(s) rendered; 0 reached a desk queue. This lane CANNOT publish as built: it slots posts as CONF-NN and outbox.emit_from_content_plan emits only D1- slots, so nothing it produces has ever reached the outbox. Charts now defer, so the render cost is no longer paid for posts that cannot ship."
     },
     "chart_quality": {
       "rastered": 6,
@@ -1003,152 +824,26 @@
     },
     "copy": {
       "mode": "llm",
-      "n_validated": 64,
-      "n_fallback": 7,
+      "n_validated": 8,
+      "n_fallback": 3,
       "violations_fixed": 0,
       "signals_killed_by_gate": 0,
       "auditor": {
         "ran": true,
-        "kept": 11,
-        "cut": 53,
-        "unaudited": 0,
+        "kept": 4,
+        "cut": 4,
+        "unaudited": 1,
         "cuts": [
-          {
-            "id": "post-flagship-001",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "bot_voice"
-            ],
-            "note": "It is an internal refusal rather than a useful market post.",
-            "text": "No setup to post There’s no fact or level here, so anything more would be made up."
-          },
-          {
-            "id": "post-flagship-006",
-            "account": "flagship",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It gives no price line or basis for the stated caution.",
-            "text": "$AXTX has no clean line yet I’m not trusting the move until one shows up."
-          },
-          {
-            "id": "post-flagship-009",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It repeats the batch’s internal no-post disclaimer without reader value.",
-            "text": "No named market, no level.\nThere isn't a trade to post."
-          },
           {
             "id": "post-flagship-011",
             "account": "flagship",
             "kind": "event",
             "codes": [
-              "esoteric"
+              "makes_no_sense",
+              "has_errors"
             ],
-            "note": "The macro conclusion cites no specific claims release or comparable figure.",
-            "text": "Claims still aren't flashing trouble Jobless claims are averaging 199 thousand a week this month. I'm leaning toward firmer growth with inflation still warm. A sustained rise in claims changes my read."
-          },
-          {
-            "id": "post-flagship-012",
-            "account": "flagship",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "The required pre-earnings price is not provided.",
-            "text": "$DOCS is among today's most discussed names\n$DOCS has to hold above its pre-earnings price"
-          },
-          {
-            "id": "post-flagship-014",
-            "account": "flagship",
-            "kind": "receipt",
-            "codes": [
-              "no_value",
-              "bot_voice"
-            ],
-            "note": "It is an internal status message, not a post for readers.",
-            "text": "No result was provided.\nThere’s no honest receipt to post."
-          },
-          {
-            "id": "post-flagship-017",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It repeats the same no-setup disclaimer already used repeatedly.",
-            "text": "No setup is named here, so there’s nothing honest to post."
-          },
-          {
-            "id": "post-flagship-022",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It is another internal disclaimer with no market insight.",
-            "text": "There’s no trade level here. Anything more would be fiction."
-          },
-          {
-            "id": "post-flagship-023",
-            "account": "flagship",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It names no actual level that would make the stock tradable.",
-            "text": "What would make $SPCH tradable? I need a price level the setup has to defend. None was provided."
-          },
-          {
-            "id": "post-flagship-026",
-            "account": "flagship",
-            "kind": "watchlist",
-            "codes": [
-              "no_value"
-            ],
-            "note": "The bounce and required hold level are both unspecified.",
-            "text": "$SPCF bounced hard. I need that bounce to hold before I trust it."
-          },
-          {
-            "id": "post-flagship-028",
-            "account": "flagship",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It gives no support or reclaim price for readers to use.",
-            "text": "$OKLL lost support. I need a reclaim before the bounce matters."
-          },
-          {
-            "id": "post-conf-flagship-001",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It uses the same templated signal copy repeated across the batch.",
-            "text": "$WFC just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 82% of the time about a month out over its full tested history, over 427 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradin"
-          },
-          {
-            "id": "post-conf-flagship-002",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It is a near-identical repeat of the batch’s signal template.",
-            "text": "$HAL just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 72% of the time about a month out over its full tested history, over 251 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradin"
+            "note": "GDPNow 5.8% contradicts median CPI 2.1% and low claims — too-strong growth with cool inflation is not 'pressing on the gas,' it is internally inconsistent.",
+            "text": "Claims running around 199k a week, GDPNow at 5.8% for the quarter, and median CPI at 2.1%. That is not a soft landing. That is an economy still pressing on the gas."
           },
           {
             "id": "post-conf-flagship-003",
@@ -1156,527 +851,197 @@
             "kind": "signal",
             "codes": [
               "bot_voice",
-              "repetitive"
-            ],
-            "note": "It repeats the same signal structure and disclaimer verbatim.",
-            "text": "$AVGO just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 71% of the time about a month out over its full tested history, over 282 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradi"
-          },
-          {
-            "id": "post-conf-flagship-004",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It is another instance of the identical signal template.",
-            "text": "$VST just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 66% of the time about a month out over its full tested history, over 957 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradin"
-          },
-          {
-            "id": "post-conf-flagship-005",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It repeats the same templated setup and closing language.",
-            "text": "$NRG just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 66% of the time about a month out over its full tested history, over 1951 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradi"
-          },
-          {
-            "id": "post-conf-flagship-006",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It is materially the same post as the other pattern-signal entries.",
-            "text": "$EBAY just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 65% of the time about a month out over its full tested history, over 5564 occurrences universe-wide, not this one name. A measured tendency on a study split, not our trad"
-          },
-          {
-            "id": "post-conf-flagship-007",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It repeats the exact batch structure with only ticker and statistics changed.",
-            "text": "$BKNG just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 64% of the time about a month out over its full tested history, over 5567 occurrences universe-wide, not this one name. A measured tendency on a study split, not our trad"
-          },
-          {
-            "id": "post-conf-flagship-008",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It uses the same templated signal copy as the preceding entries.",
-            "text": "$AMGN just lined up a pattern we track. Across every name we test it on, this combination has resolved lower 60% of the time about a month out over its full tested history, over 424 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradin"
-          },
-          {
-            "id": "post-conf-flagship-009",
-            "account": "flagship",
-            "kind": "signal",
-            "codes": [
-              "bot_voice",
-              "repetitive"
-            ],
-            "note": "It is another near-verbatim repetition of the same signal format.",
-            "text": "$TMO just lined up a pattern we track. Across every name we test it on, this combination has resolved lower 56% of the time about a month out over its full tested history, over 942 occurrences universe-wide, not this one name. A measured tendency on a study split, not our trading"
-          },
-          {
-            "id": "post-founder-003",
-            "account": "founder",
-            "kind": "watchlist",
-            "codes": [
               "no_value"
             ],
-            "note": "The claimed base has no level or evidence a reader can evaluate.",
-            "text": "$AXTX is base building\nI trust the setup only if the base survives."
+            "note": "Stock description of a pattern with no name, no level, and a disclaimer that buries any edge — reads like a compliance template.",
+            "text": "$HAL just lined up a pattern we track. Across every name we test it on, this combination has resolved higher 72% of the time about a month out over its full tested history, over 251 occurrences universe-wide, not this one name. A measured tendency on a study split, not our tradin"
           },
           {
-            "id": "post-founder-013",
-            "account": "founder",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It names chatter but offers no concrete signal or threshold.",
-            "text": "$DOCS made today's most-talked-about list.\nChatter has faded before. It has to last."
-          },
-          {
-            "id": "post-founder-018",
-            "account": "founder",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "It repeats the batch’s no-level theme without naming an asset or fact.",
-            "text": "No clean level here. I'm not pretending otherwise."
-          },
-          {
-            "id": "post-founder-019",
-            "account": "founder",
-            "kind": "signal",
-            "codes": [
-              "makes_no_sense"
-            ],
-            "note": "It never names what volume or prior instance it is referring to.",
-            "text": "Volume's done nothing special for three weeks.\nLast time we saw that it resolved inside six sessions.\nI don't know the direction yet, but the quiet ends soon."
-          },
-          {
-            "id": "post-founder-020",
-            "account": "founder",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "It repeats the no-level message and supplies no usable market fact.",
-            "text": "No level, no post I don't have a fact here worth putting money behind."
-          },
-          {
-            "id": "post-founder-025",
-            "account": "founder",
-            "kind": "signal",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It reports inactivity without a level, asset, or takeaway a reader can use.",
-            "text": "Quiet tape today. Watched a few levels, nothing gave. Some days the work is just not doing anything."
-          },
-          {
-            "id": "post-founder-026",
-            "account": "founder",
-            "kind": "chart",
-            "codes": [
-              "repetitive"
-            ],
-            "note": "It repeats the same next-pullback test already used in post 8.",
-            "text": "$SPCF rebound, same old question. Do buyers show up on the next pullback?"
-          },
-          {
-            "id": "post-founder-027",
-            "account": "founder",
-            "kind": "receipt",
-            "codes": [
-              "no_value"
-            ],
-            "note": "A missed fill is personal color without a market insight.",
-            "text": "Missed the fill by four cents. The whole day was spent watching it walk away from me."
-          },
-          {
-            "id": "post-meagan-003",
-            "account": "meagan",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It offers no market fact and repeats the batch's missing-input message.",
-            "text": "okay so the excitement can wait.\nNo price level was provided, so there’s no honest level watch to post."
-          },
-          {
-            "id": "post-meagan-006",
-            "account": "meagan",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It has no actionable market content and repeats the same refusal.",
-            "text": "No asset or level was provided, so there’s no usable trade setup to post."
-          },
-          {
-            "id": "post-meagan-019",
-            "account": "meagan",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It repeats the no-level premise without giving readers anything to assess.",
-            "text": "No level, no post There isn't a market fact here to put money against."
-          },
-          {
-            "id": "post-meagan-026",
-            "account": "meagan",
-            "kind": "receipt",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It provides no named event or fact and duplicates the batch's uncertainty theme.",
-            "text": "I’m not sure what changed yet, and pretending otherwise would be a fake receipt."
-          },
-          {
-            "id": "post-meagan-027",
-            "account": "meagan",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "repetitive"
-            ],
-            "note": "It is another version of the same no-fact, no-post message.",
-            "text": "I don't have a market fact or level to name here, so there isn't an honest post yet."
-          },
-          {
-            "id": "post-sophia-005",
-            "account": "sophia",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "This repeats the batch’s missing-level disclaimer without market value.",
-            "text": "No market or level was provided, so there’s no honest post here."
-          },
-          {
-            "id": "post-sophia-009",
-            "account": "sophia",
-            "kind": "receipt",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "Another generic disclaimer that adds no standalone insight.",
-            "text": "There’s no receipt without an outcome No result was provided, so claiming one would be fiction."
-          },
-          {
-            "id": "post-sophia-012",
-            "account": "sophia",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "It repeats the same no-level, no-story point.",
-            "text": "No level to defend means there’s no trade story yet."
-          },
-          {
-            "id": "post-sophia-013",
-            "account": "sophia",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "This is a near-duplicate of the other missing-level posts.",
-            "text": "The market’s story has no level to test here.\nWithout one, there’s no setup to defend."
-          },
-          {
-            "id": "post-sophia-016",
-            "account": "sophia",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It names no breakdown or reclaim level for readers to assess.",
-            "text": "$INHD's collapse changed the story. Buyers now have to reclaim the breakdown."
-          },
-          {
-            "id": "post-sophia-017",
-            "account": "sophia",
-            "kind": "chart",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "It repeats the batch’s generic missing-level framing without a level.",
-            "text": "$SNK’s story now depends on one question:\nWhat level makes it believable again?"
-          },
-          {
-            "id": "post-sophia-018",
-            "account": "sophia",
-            "kind": "chart",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "The rhetorical level question adds no concrete chart information.",
-            "text": "The $SPCG story has lost its footing Which level would make the selloff look finished?"
-          },
-          {
-            "id": "post-sophia-021",
-            "account": "sophia",
-            "kind": "chart",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "Finding a floor is another vague version of the same setup.",
-            "text": "The $SPCQ comeback story now depends on finding a floor."
-          },
-          {
-            "id": "post-sophia-025",
-            "account": "sophia",
-            "kind": "signal",
-            "codes": [
-              "repetitive",
-              "no_value"
-            ],
-            "note": "This repeats the day’s generic refusal-to-post language.",
-            "text": "There’s no market fact or level here, so there’s no honest story to tell."
-          },
-          {
-            "id": "post-housepick-002",
-            "account": "sophia",
-            "kind": "watchlist",
-            "codes": [
-              "esoteric",
-              "no_value"
-            ],
-            "note": "“Most measures” is unnamed and gives readers nothing verifiable.",
-            "text": "$PFE at 26.8, with most measures pointing higher. I’m leaning with them."
-          },
-          {
-            "id": "post-kelly-001",
+            "id": "post-theme-005",
             "account": "kelly",
-            "kind": "signal",
+            "kind": "theme_list",
             "codes": [
-              "has_errors",
+              "no_thesis",
               "no_value"
             ],
-            "note": "This is an internal-status message, not a publishable post.",
-            "text": "No verified fact or level was provided.\nThere’s nothing here to test."
-          },
-          {
-            "id": "post-kelly-003",
-            "account": "kelly",
-            "kind": "signal",
-            "codes": [
-              "esoteric",
-              "no_value"
-            ],
-            "note": "It names neither the credit measure nor the growth claim readers should test.",
-            "text": "The Part Credit Hasn't Priced Yet If spreads widen, the growth claim breaks. Credit is the confirming variable."
-          },
-          {
-            "id": "post-kelly-007",
-            "account": "kelly",
-            "kind": "signal",
-            "codes": [
-              "esoteric"
-            ],
-            "note": "It never identifies the index or provides breadth data to ground the divergence.",
-            "text": "no ticker to hang this on and that's the point\nbreadth thinned for a third straight session while the index itself barely budged\nthe divergence is sharp enough to notice but not yet sharp enough to trade against"
-          },
-          {
-            "id": "post-kelly-011",
-            "account": "kelly",
-            "kind": "chart",
-            "codes": [
-              "no_value"
-            ],
-            "note": "It gives no prior selloff level or evidence for readers to evaluate.",
-            "text": "$SNK’s prior selloff is the clue. Did buyers return then?"
-          },
-          {
-            "id": "post-kelly-012",
-            "account": "kelly",
-            "kind": "receipt",
-            "codes": [
-              "has_errors",
-              "no_value",
-              "repetitive"
-            ],
-            "note": "This is another internal-status message repeating the batch's missing-data theme.",
-            "text": "No verifiable outcome to post.\nWithout a confirming variable, there’s no receipt."
-          },
-          {
-            "id": "post-kelly-013",
-            "account": "kelly",
-            "kind": "watchlist",
-            "codes": [
-              "bot_voice",
-              "no_value"
-            ],
-            "note": "The generic distribution framing has no level or supporting evidence.",
-            "text": "Chart detective: $SPCG looks under distribution A firm close that holds would break that read. Sellers still have control. 🔍"
-          },
-          {
-            "id": "post-kelly-014",
-            "account": "kelly",
-            "kind": "chart",
-            "codes": [
-              "bot_voice",
-              "repetitive",
-              "no_value"
-            ],
-            "note": "The repeated question structure adds no specific precedent or test.",
-            "text": "$SPCQ precedent, where's the repeat?\n$SPCQ comeback, what breaks the claim?"
-          },
-          {
-            "id": "post-cici-001",
-            "account": "cici",
-            "kind": "macro",
-            "codes": [
-              "esoteric"
-            ],
-            "note": "It names claims but gives no inflation release or figure behind the central concern.",
-            "text": "Jobless claims are averaging 199 thousand a week this month.\nThat’s below a year ago, while inflation is still warm.\n别急 (not so fast). I need inflation cooling before I call this relief."
-          },
-          {
-            "id": "post-cici-017",
-            "account": "cici",
-            "kind": "signal",
-            "codes": [
-              "no_value",
-              "bot_voice"
-            ],
-            "note": "The vague “no price level” observation offers no level, asset, or usable context.",
-            "text": "While New York slept, no price level emerged.\nWithout a level, there’s no trade here to defend."
+            "note": "Stat dump with no argument; just lists movers and a weak question.",
+            "text": "Healthcare & Biotech ripping, +2.6% avg on Friday $NTRA +21.4% $TNDM +19.1% $TXG +14.1% $TEM +12.9% $FATE +12.4% $EVH +10.0% $MRNA +9.9% Do I see follow-through at tomorrow's open?"
           },
           {
             "id": "post-theme-006",
             "account": "cici",
             "kind": "theme_list",
             "codes": [
-              "no_thesis"
+              "no_thesis",
+              "no_value"
             ],
-            "note": "This is a sector gainers list with no argument beyond asking whether momentum continues.",
+            "note": "Stock list with average move but no argument or level for the follow-up question, so it's just a stat dump.",
             "text": "Artificial Intelligence ripping, +2.8% avg on Friday $PUBM +31.9% $OKLO +14.8% $SOUN +13.3% $DV +12.8% $AVAV +9.1% $CEVA +8.7% $BBAI +8.6% Am I getting a second session out of this?"
           }
         ],
         "notes": {
-          "flagship": "A concise, varied two-post batch with concrete market information and no meaningful repetition.",
-          "founder": "The day is weighed down by repeated abstention posts and vague chart commentary, while the claims and filing posts provide the clearest value.",
-          "meagan": "The day is dominated by repetitive internal-sounding non-posts, with only the software momentum item fit to publish.",
-          "sophia": "The day is dominated by repetitive missing-level disclaimers and vague chart prompts; only the macro and TEAM posts stand on their own.",
-          "kelly": "The day is weakened by several placeholder-like and vague chart posts, but the final two provide usable market hooks.",
-          "cici": "The day reads thin and screen-bound, with only the macro post approaching a complete idea."
+          "flagship": "Post 2 is the most glaring bot-speak, Post 1’s macro mishmash breaks the day’s credibility, leaving only the sector list as a clean keep.",
+          "meagan": "Single post, so batch repetition not applicable; the post adds value by naming the theme, the exact gain, and posing a clear next-day question.",
+          "kelly": "Short batch; one actionable technical level, one cut for lacking a thesis.",
+          "cici": "Single post day, cut for lacking a thesis."
         },
         "max_day": 1,
         "cost_monoculture_cut": 0
       },
-      "signals_dropped_not_demoted": 0,
-      "signals_dropped_by_reason": {},
+      "signals_dropped_not_demoted": 2,
+      "signals_dropped_by_reason": {
+        "unverified": 2
+      },
       "demotable_gate_reasons": [
         "runaway",
         "underwater"
       ],
       "graded_receipts": 0,
-      "written": 68,
+      "written": 6,
       "modes": {
-        "llm": 43,
-        "llm_repair": 25,
-        "confluence_hook": 9
+        "llm_repair": 3,
+        "llm": 3,
+        "confluence_hook": 1
       },
       "dropped": {
-        "provider": 16,
-        "critic": 10,
-        "validate": 35
+        "provider": 34,
+        "validate": 48
       },
       "dropped_reasons": {
-        "unreadable_reply:codex+oauth": 8,
-        "“here” has no named referent": 3,
-        "“the move” is never defined": 1,
-        "“Friday” has no stated event or level attached": 1,
-        "chart caption: 116 chars (max 100); the corpus median for this family is 61": 1,
-        "number '314' not in whitelist": 1,
-        "shape one_liner: 143 chars (max 140)": 1,
-        "chart caption: 143 chars (max 100); the corpus median for this family is 61": 1,
+        "unreadable_reply:deepseek+deepseek": 30,
+        "shape caption: 121 chars (max 90)": 1,
+        "chart caption: 121 chars (max 100); the corpus median for this family is 61": 1,
+        "number soup (3 numbers: 19, 66.9, 75.1, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "provider_error:APIConnectionError": 1,
+        "missing cashtag $NGVT": 1,
+        "number soup (6 numbers: 7.56, 06, 6.57, 9.68, 8.02, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape list: 1 row(s) carry a ticker or a number (need 2 to 6; a list of opinions is not a list)": 2,
+        "repair_unanswered:provider_error:APIConnectionError": 1,
+        "missing cashtag $GPCR": 1,
+        "emoji count 1 exceeds budget 0": 3,
+        "persona has 0-emoji budget but copy contains emoji": 3,
+        "shape stack: 276 chars (max 275)": 1,
+        "too long: 277 chars (max 275)": 1,
+        "number '2024' not in whitelist": 1,
+        "number '20.10' not in whitelist": 1,
+        "fake precision '20.10': a number this size is written rounded (285.10 is '285', 34.44 is '34.4')": 1,
+        "shape caption: 99 chars (max 90)": 2,
+        "missing cashtag $SMR": 1,
+        "level named only by pronoun, no price given: 'Three green weeks, back above the line that mattered for six'": 1,
+        "number '96%' not in whitelist": 1,
+        "number soup (4 numbers: 3, 52, 96%, 10, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape caption: 92 chars (max 90)": 1,
+        "missing cashtag $WFC": 1,
+        "repair_unanswered:unreadable_reply:deepseek+deepseek": 2,
+        "number '638' not in whitelist": 1,
+        "number '594' not in whitelist": 1,
+        "shape caption: 128 chars (max 90)": 1,
+        "number soup (3 numbers: 10,000, 43.8, 60.6%, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "chart_number_not_in_frame": 9,
+        "shape stack: 1 lines (need 2 to 5)": 1,
+        "em dash (U+2014)": 9,
+        "number '14.88' not in whitelist": 1,
+        "level '3.01' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
+        "fake precision '14.88': a number this size is written rounded (285.10 is '285', 34.44 is '34.4')": 1,
         "internal jargon 'screen': desk machinery the reader cannot see": 1,
-        "“Same level” names no level or subject": 1,
-        "shape list: 0 row(s) carry a ticker or a number (need 2 to 6; a list of opinions is not a list)": 5,
-        "shape list: 2 lines carry no ticker and no number (at most 1 closing read line)": 3,
-        "chart caption: 105 chars (max 100); the corpus median for this family is 61": 1,
-        "unreadable_reply:codex+deepseek": 8,
-        "“Same level” and “same size” lack referents": 1,
-        "“it” and “the whole thing” are unnamed": 1,
-        "quirk 'okay_so_opener' would be used 2x today, codex max_per_day is 1": 6,
-        "quirk 'okay_so_opener' would appear in 2 of the last 2 posts, codex max_share_7d 0.3 allows 1": 1,
-        "“price,” “level,” and “this setup” lack a named market or reference": 1,
-        "repair_empty:unreadable_reply:codex+deepseek": 2,
-        "quirk 'okay_so_opener' would appear in 2 of the last 3 posts, codex max_share_7d 0.3 allows 1": 3,
-        "chart_number_not_in_frame": 7,
-        "No market, asset or level is named": 1,
-        "shape list: 563 chars (max 275)": 1,
-        "shape list: 6 lines carry no ticker and no number (at most 1 closing read line)": 1,
-        "too long: 564 chars (max 275)": 1,
-        "“the damage means anything less” has no clear comparison": 1,
-        "shape one_liner: 162 chars (max 140)": 1,
-        "chart caption: 162 chars (max 100); the corpus median for this family is 61": 1,
-        "Refers to unnamed earlier price breaks": 1,
-        "shape list: 1 row(s) carry a ticker or a number (need 2 to 6; a list of opinions is not a list)": 1,
-        "chart caption: glyph '🔍' is outside the stance set (👀 🔥 🩸 🌶️ 😬 ✅ ❔ 📌)": 1,
-        "chart caption: 111 chars (max 100); the corpus median for this family is 61": 1,
+        "missing cashtag $SOFI": 2,
+        "number soup (7 numbers: 18, 14.7, 15.8, 18.7, 13.4%, budget 6 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "chart caption: 117 chars (max 100); the corpus median for this family is 61": 2,
+        "motto cadence '513 is the first target, 667 is the second.': write a sentence a person would text, not an aphorism": 1,
+        "number soup (4 numbers: 360, 513, 667, 257, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "chart caption: 108 chars (max 100); the corpus median for this family is 61": 1,
+        "internal jargon 'up top': desk machinery the reader cannot see": 1,
+        "number soup (4 numbers: 360, 25, 513, 257, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape caption: 133 chars (max 90)": 1,
         "chart caption: 133 chars (max 100); the corpus median for this family is 61": 1,
-        "em dash (U+2014)": 1,
-        "quirk 'detective_framing' would be used 2x today, codex max_per_day is 1": 1,
-        "headline fragment: opens lowercase (leading slot rendered empty): 'the broad growth claim has a test'": 1,
+        "shape one_liner: 203 chars (max 140)": 1,
+        "level '17' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
+        "motto cadence 'The Form 4 proves the trade, not the thesis.': write a sentence a person would text, not an aphorism": 1,
+        "number soup (3 numbers: 51.1%, 17, 4, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape stack: 310 chars (max 275)": 1,
+        "too long: 311 chars (max 275)": 2,
+        "number soup (6 numbers: 6.8%, 333, 3.6%, 356, 372, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "number '-73%' not in whitelist": 1,
+        "number '2021' not in whitelist": 2,
+        "chart caption: 111 chars (max 100); the corpus median for this family is 61": 1,
+        "number '73%' not in whitelist": 1,
+        "missing cashtag $XPEL": 1,
+        "number '12.5%' not in whitelist": 1,
+        "number soup (5 numbers: 12.5%, 1.4%, 8.7%, 46.1, 50.1, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape list: single newlines only, no blank-line spacers": 2,
+        "number '200' not in whitelist": 6,
+        "unwhitelisted quirk 'numbered_micro_list' (x1) for meagan — not in voice_codex.quirk_markers": 1,
+        "chart caption: glyph '✨' is outside the stance set (👀 🔥 🩸 🌶️ 😬 ✅ ❔ 📌)": 2,
+        "missing cashtag $WS": 1,
+        "expression dial 1 for kind 'signal' allows 0 playful/lifestyle line(s); found 1: ['signature_emoji']": 1,
+        "shape stack: 408 chars (max 275)": 1,
+        "too long: 409 chars (max 275)": 1,
+        "number '2023' not in whitelist": 1,
+        "number soup (5 numbers: 30, 115, 128, 101, 27, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "number '49.5%' not in whitelist": 1,
+        "shape caption: 97 chars (max 90)": 1,
+        "missing cashtag $FCX": 1,
+        "missing cashtag $UEC": 1,
+        "shape two_part: 312 chars (max 280)": 1,
+        "theme_list post must contain ≥4 cashtags; found 2": 1,
+        "headline fragment: opens lowercase (leading slot rendered empty): 'okay so 7 of the 8 software names I trac'": 1,
+        "number soup (4 numbers: 7, 8, 35.3%, 3.7%, budget 2 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape caption: 91 chars (max 90)": 1,
+        "number '118' not in whitelist": 1,
+        "shape list: 369 chars (max 275)": 1,
+        "missing cashtag $DOCS": 1,
+        "too long: 370 chars (max 275)": 1,
+        "number '27.40' not in whitelist": 1,
+        "level '32' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
+        "fake precision '27.40': a number this size is written rounded (285.10 is '285', 34.44 is '34.4')": 1,
+        "number soup (10 numbers: 38, 52, 18, 75, 27.40, budget 6 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape caption: 185 chars (max 90)": 1,
+        "chart caption: 185 chars (max 100); the corpus median for this family is 61": 1,
+        "unwhitelisted quirk 'numbered_micro_list' (x1) for sophia — not in voice_codex.quirk_markers": 1,
+        "number soup (4 numbers: 30, 54.4, 1.1%, 53.7, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape caption: 117 chars (max 90)": 1,
+        "banned vocab: 'point of control'": 1,
+        "number '16%' not in whitelist": 1,
+        "number '376' not in whitelist": 1,
+        "number soup (4 numbers: 360, 16%, 52, 376, budget 3 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "shape one_liner: 156 chars (max 140)": 1,
+        "chart caption: 156 chars (max 100); the corpus median for this family is 61": 1,
+        "level '15' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
+        "level '30' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
+        "shape caption: 96 chars (max 90)": 1,
+        "chart caption: glyph '🔍' is outside the stance set (👀 🔥 🩸 🌶️ 😬 ✅ ❔ 📌)": 1,
         "level '64' is not in whitelist (a number in an entry / target / stop slot has to come from the packet)": 1,
-        "shape list: 3 lines carry no ticker and no number (at most 1 closing read line)": 1,
-        "batch opener collision: another post in this plan already opens 'while new york slept no'": 2,
-        "shape list: 384 chars (max 275)": 1,
-        "too long: 385 chars (max 275)": 1,
-        "number '+1.1%' not in whitelist": 1,
-        "number '+0.6%' not in whitelist": 1,
-        "number '+2.3%' not in whitelist": 1,
-        "number '-0.8%' not in whitelist": 1,
-        "quirk 'session_handoff' would be used 2x today, codex max_per_day is 1": 2,
-        "quirk 'session_handoff' would appear in 2 of the last 3 posts, codex max_share_7d 0.3 allows 1": 2,
-        "theme_list body must end with a question mark (reply-bait)": 1,
-        "“our technical signals” is internal context": 1
+        "shape stack: 300 chars (max 275)": 1,
+        "too long: 301 chars (max 275)": 1,
+        "banned vocab: 'the backdrop'": 1,
+        "shape two_part: 444 chars (max 280)": 1,
+        "shape two_part: body 389 chars (max 275)": 1,
+        "number '+31%' not in whitelist": 1,
+        "shape list: 2 lines carry no ticker and no number (at most 1 closing read line)": 1,
+        "number soup (7 numbers: 224, 320, 416, 6.2%, 14.1%, budget 6 for this shape and kind): every number after the first has to be what the one before it is measured against, not a new claim": 1,
+        "chart caption: glyph '🍵' is outside the stance set (👀 🔥 🩸 🌶️ 😬 ✅ ❔ 📌)": 1,
+        "missing cashtag $ALG": 1,
+        "motto cadence 'Third rejection at the 200-day, and 168 is the floor that matters.': write a sentence a person would text, not an aphorism": 1,
+        "shape caption: 94 chars (max 90)": 1,
+        "missing cashtag $ENR": 1,
+        "unwhitelisted quirk 'parenthetical_aside' (x1) for cici — not in voice_codex.quirk_markers": 1,
+        "untranslated Chinese '事不过三' — the codex requires an instant English gloss in parentheses": 1,
+        "missing cashtag $PCG": 1
       },
       "shape_mix": {
-        "one_liner": 36,
-        "two_part": 29,
-        "stack": 17,
-        "list": 16,
-        "caption": 10
+        "one_liner": 9,
+        "two_part": 19,
+        "stack": 12,
+        "list": 10,
+        "caption": 22
       },
       "shape_mix_by_account": {
         "flagship": {
           "two_part": 6,
           "list": 3,
-          "one_liner": 8,
+          "caption": 7,
           "stack": 3,
-          "caption": 1
+          "one_liner": 2
         },
         "receipts": {},
         "theme_desk": {},
@@ -1684,53 +1049,53 @@
         "research_b": {},
         "research_c": {},
         "founder": {
-          "list": 3,
-          "one_liner": 8,
-          "stack": 3,
-          "two_part": 5
+          "list": 2,
+          "one_liner": 4,
+          "stack": 2,
+          "two_part": 3,
+          "caption": 2
         },
         "meagan": {
           "stack": 3,
           "two_part": 4,
           "list": 2,
-          "one_liner": 4,
-          "caption": 2
+          "one_liner": 1,
+          "caption": 5
         },
         "sophia": {
-          "two_part": 5,
-          "list": 3,
-          "one_liner": 5,
-          "stack": 3,
-          "caption": 3
+          "two_part": 3,
+          "list": 1,
+          "caption": 3,
+          "stack": 2,
+          "one_liner": 1
         },
         "kelly": {
-          "stack": 3,
-          "two_part": 6,
-          "list": 3,
-          "one_liner": 7,
-          "caption": 2
+          "stack": 1,
+          "two_part": 2,
+          "list": 1,
+          "caption": 2,
+          "one_liner": 1
         },
         "cici": {
-          "stack": 2,
-          "two_part": 3,
-          "list": 2,
-          "one_liner": 4,
-          "caption": 2
+          "stack": 1,
+          "two_part": 1,
+          "list": 1,
+          "caption": 3
         },
         "mastermind_news": {},
         "mastermind_research": {}
       },
       "shape_ledger_path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/marketing/shape_ledger.json",
       "llm_required": true,
-      "note": "64 posts written by copywriter; 7 fell back to templates; 0 signals killed by live gate."
+      "note": "8 posts written by copywriter; 3 fell back to templates; 0 signals killed by live gate."
     },
     "selection": {
-      "supply": 0,
-      "after_cooldown": 0,
-      "after_budget": 113,
-      "posts_total": 122,
-      "cooled_tickers": 36,
-      "cooled_signal_tickers": 41,
+      "supply": 30,
+      "after_cooldown": 25,
+      "after_budget": 77,
+      "posts_total": 87,
+      "cooled_tickers": 34,
+      "cooled_signal_tickers": 39,
       "cooldown_overrides": 0,
       "dropped_cooldown": 0,
       "dropped_cooldown_by_account": {},
@@ -1765,8 +1130,8 @@
       },
       "ramp_banned_kinds": {},
       "ramp_ban_refused": 0,
-      "dropped_ticker_budget": 14,
-      "dropped_signal_budget": 0,
+      "dropped_ticker_budget": 22,
+      "dropped_signal_budget": 28,
       "degenerate_stats_dropped": 0,
       "filing_lanes": {
         "congress": 0,
@@ -1774,39 +1139,38 @@
         "house_picks": 4
       },
       "attention_supply": {
-        "total": 276,
-        "fresh": 271,
+        "total": 271,
+        "fresh": 267,
         "by_pool": {
           "hot_story": 15,
-          "retail_attention": 73,
-          "options_volume": 65,
-          "dollar_volume": 67,
+          "retail_attention": 71,
+          "options_volume": 63,
+          "dollar_volume": 66,
           "stage2_leaders": 56
         }
       },
-      "supply_used": 45,
+      "supply_used": 10,
       "supply_used_by_pool": {
-        "hot_story": 44,
-        "retail_attention": 1
+        "hot_story": 10
       },
-      "dropped_chart_cap": 162,
+      "dropped_chart_cap": 8,
       "long_tail": {
-        "fresh_used": 3,
+        "fresh_used": 0,
         "quota": 3,
-        "fresh_available": 271,
-        "warned": false
+        "fresh_available": 267,
+        "warned": true
       },
-      "note": "36 ticker(s) inside the cross-day cooldown, 0 re-opened on a new fact; 14 post(s) over the per-ticker account budget, 0 over the signal budget; 0 degenerate stat(s) dropped."
+      "note": "34 ticker(s) inside the cross-day cooldown, 0 re-opened on a new fact; 22 post(s) over the per-ticker account budget, 28 over the signal budget; 0 degenerate stat(s) dropped."
     },
     "links": {
-      "posts_linked": 11,
+      "posts_linked": 4,
       "urls_rewritten": 0,
       "overflow_shortened": 0,
       "overflow_flagged": 0,
-      "note": "11 posts linked; 0 in-text URLs retagged."
+      "note": "4 posts linked; 0 in-text URLs retagged."
     },
     "followups": {
-      "originations_recorded": 2,
+      "originations_recorded": 34,
       "candidates": 0,
       "by_trigger": {},
       "path": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/marketing/followup_candidates.jsonl"
