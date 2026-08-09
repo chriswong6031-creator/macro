@@ -24,6 +24,7 @@ Run: .venv/bin/python -m scripts.research_commodity_conviction
 from __future__ import annotations
 
 import json
+import sys
 import warnings
 from pathlib import Path
 
@@ -31,6 +32,9 @@ import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from engine import commodity_signals, commodity_inputs  # noqa: E402

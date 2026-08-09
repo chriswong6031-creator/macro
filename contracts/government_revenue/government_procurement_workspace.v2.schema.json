@@ -239,10 +239,13 @@
         "entities": {
           "type": "array", "items": {
             "type": "object", "additionalProperties": false,
-            "required": ["ticker", "recipient_search_text"],
+            "required": ["ticker", "recipient_search_text", "recipient_query_terms"],
             "properties": {
               "ticker": {"type": "string"},
-              "recipient_search_text": {"type": "string"}
+              "recipient_search_text": {"type": "string"},
+              "recipient_query_terms": {
+                "type": "array", "minItems": 1, "items": {"type": "string"}
+              }
             }
           }
         },
