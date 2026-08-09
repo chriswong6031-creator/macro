@@ -1420,6 +1420,24 @@ jobs:
       # above already carry pandas + requests for exactly that client.
       - name: china full-A spine collector + manifest contract (#5116)
         run: python -m pytest tests/test_china_tushare_spine.py -q
+      # The three TuShare takeover suites (lane A #5164 addons gate, lane B
+      # #5163 minutes plane, lane C #5162 chips distribution). Same WIRING LAW
+      # as every step above, same hole: none of the three lanes named its suite
+      # in any run: step, so the takeover's fail-closed contracts — the Tier-1
+      # attestation gate, the minutes-plane manifest schema (a COLLECTION-time
+      # jsonschema import, same as the spine note on the pip step), the chips
+      # M2/M4 aggregation — would all run dark from the day they landed. Same
+      # home as the #5116 spine step: every suite here is a China native
+      # collector over collectors/tushare_client, and the pip line above
+      # already carries the full third-party closure (pandas, pyarrow,
+      # jsonschema, requests, pyyaml — measured from all three suites' import
+      # trees, 2026-08-09). SEQUENCING: lane B imports collectors/
+      # tushare_addons (lane A's file) at collection time, so this step goes
+      # green only once lanes A+B+C are all on main — a partial landing fails
+      # loudly here instead of merging dark and import-broken, which is
+      # exactly what the #5161 revert would otherwise have produced.
+      - name: china tushare takeover suites — addons gate + minutes plane + chips (A/B/C)
+        run: python -m pytest tests/test_tushare_addons.py tests/test_tushare_minutes_plane.py tests/test_tushare_chips_distribution.py -q
 
   china-board-breadth:
     if: ${{ false }}
