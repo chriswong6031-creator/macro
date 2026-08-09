@@ -1,6 +1,8 @@
 """Hermetic precision and coverage tests for the P0 recipient-resolution graph."""
 from __future__ import annotations
 
+from copy import deepcopy
+from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -8,16 +10,21 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 from engine.government_revenue.entity_resolution import (
+    _graph_row_order_canonical,
     build_entity_coverage,
     coverage_invariants,
     dedupe_source_records,
+    load_recipient_entity_graph,
     resolve_recipient,
     resolve_records,
     source_record_key,
 )
+from tests.test_government_revenue_candidates import _graph as _reviewed_graph_fixture
 
 
 CONTRACTS = Path(__file__).parents[1] / "contracts" / "government_revenue"
+#: Analysis clock covering the reviewed-graph fixture's 2026-08-02 claims.
+REVIEWED_AS_OF = "2026-08-03"
 
 
 def _graph(*, edge_known_at: str = "2025-01-01T00:00:00+00:00", edge_valid_from: str = "2020-01-01", overrides=None):
@@ -679,3 +686,76 @@ def test_resolution_schema_rejects_incomplete_attribution_and_issuer_on_unresolv
     unresolved["issuer"] = {"company_id": "central:LMT", "ticker": "LMT"}
     unresolved["economic_share"] = 1.0
     assert list(validator.iter_errors(unresolved))
+
+
+def _multi_row_reviewed_graph() -> dict:
+    """The strict reviewed-graph fixture with two receipts, in canonical order.
+
+    Every collection in the shared fixture holds one row, and permuting a
+    one-row list is the identity -- a row-order regression is only observable
+    against a collection that has more than one row.
+    """
+    graph = _reviewed_graph_fixture()
+    extra = deepcopy(graph["evidence"][0])
+    extra.update(
+        {
+            "evidence_id": "evidence:noc-b",
+            "record_id": "0000000000-26-000002",
+            "url": "https://www.sec.gov/Archives/edgar/data/1/test-b.htm",
+            "content_sha256": "c" * 64,
+            "source_ref": f"recipient-evidence:sha256:{'c' * 64}",
+        }
+    )
+    graph["evidence"].append(extra)
+    return graph
+
+
+def _digest(graph: dict) -> str:
+    loaded = load_recipient_entity_graph(graph, as_of=REVIEWED_AS_OF)
+    assert loaded["status"] == "ready", loaded["error_codes"]
+    return loaded["graph_digest"]
+
+
+def test_reviewed_graph_digest_ignores_row_order_and_still_sees_content():
+    """Row order is serialization; row content is the graph.
+
+    The digest is quoted by every candidate ``observation_id``, so while it
+    moved on a permutation, re-serializing the reviewed graph restated the whole
+    ledger as unseen and the append-only writer refused to publish.
+    """
+    base = _multi_row_reviewed_graph()
+    reordered = deepcopy(base)
+    for key in ("evidence", "companies", "legal_entities", "identifiers", "ownership_edges"):
+        reordered[key].reverse()
+
+    assert json.dumps(reordered, sort_keys=True) != json.dumps(base, sort_keys=True)
+    assert _digest(reordered) == _digest(base)
+
+    # Controls: the digest is order-blind, not content-blind.
+    retickered = deepcopy(base)
+    retickered["identifiers"][0]["value"] = "ZZZDEFGHJKLM"
+    assert _digest(retickered) != _digest(base)
+
+    grown = deepcopy(base)
+    grown["evidence"].append(
+        {**deepcopy(base["evidence"][0]), "evidence_id": "evidence:noc-c"}
+    )
+    assert _digest(grown) != _digest(base)
+
+
+def test_canonically_ordered_reviewed_graph_keeps_its_pre_canonicalization_digest():
+    """Canonicalizing row order must not restate an already-canonical document.
+
+    ``graph_digest`` is stored in the candidate projection state and status, the
+    recipient resolution coverage receipt, the published candidate queue, and
+    every candidate's artifact refs.  Those regenerate nightly, but the render
+    lane re-validates the *committed* ones on every run, so a recipe whose value
+    moved for an unchanged document would red the publish path until a nightly
+    caught up.  Equality with the plain-``sort_keys`` encoding is what makes the
+    change a no-op for every digest already on disk.
+    """
+    graph = _multi_row_reviewed_graph()
+    encoded = json.dumps(graph, sort_keys=True, default=str, separators=(",", ":"))
+
+    assert _graph_row_order_canonical(graph) == json.loads(encoded)
+    assert _digest(graph) == sha256(encoded.encode("utf-8")).hexdigest()

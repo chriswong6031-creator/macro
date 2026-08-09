@@ -45,6 +45,25 @@ lanes:
           graders (grade_breadth_divergence / grade_policy_calendar /
           grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
           nightly sole-advancer law is untouched by the split.
+      - id: backfill_yahoo_universe
+        module: scripts.backfill_yahoo_universe
+        args: [--cap, "400", --budget-s, "480"]
+        note: >
+          Off-render price-coverage backfill for the Intelligence Hub ledger
+          universe (masterplan §4 item 2b). collectors/yahoo.py fetches the CONFIG
+          universe while the hub grades the SIGNAL LEDGER, and every hub grader
+          prices names from data/yahoo/<T>.parquet alone (the breadth cache is
+          split-UNADJUSTED). Measured 2026-08-08: 603 of 7,711 ledger tickers had a
+          parquet, desk_grader 20d coverage 6.2%, and 7 of that night's 30 Command
+          names were unpriceable. Incremental and resumable — the needed set is
+          recomputed from disk every run, state in data/yahoo_backfill_state.json —
+          and bounded twice (--cap names, --budget-s wall clock, plus a 12-minute
+          step timeout) so it can never eat the collect job's remaining budget.
+          Placed in the collect tail because it writes into data/yahoo and must
+          land before "commit market data"; it is deliberately NOT in that step's
+          named-steps gate (purely additive: it only ever creates a parquet for a
+          ledger ticker that had none). Non-fatal, exits 0 by design; the outcome
+          rides on line-start ::notice / ::warning annotations.
       - id: audit_massive_store
         module: scripts.audit_massive_store
         note: >
@@ -601,6 +620,15 @@ lanes:
       - id: build_pick_lab
         module: scripts.build_pick_lab
         note: Pick Lab nightly runner — enriches snapshot, fires 27 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)
+      - id: build_options_prophet
+        module: scripts.build_options_prophet
+        note: >-
+          Display-only Options Prophet shadow projection. Runs immediately after
+          build_pick_lab; preserves Flow Leaders source order, exposes only
+          ledger-admitted plab_flow_leader/plab_flow_washout fires, and carries
+          signing/positioning/forward-sample gates without creating a composite,
+          direction, trajectory, execution claim, or Macro Prophet weight.
+          outputs: [site/options_prophet/index.json]
       - id: build_reflexivity_overlay
         module: scripts.build_reflexivity_overlay
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
@@ -625,6 +653,20 @@ lanes:
       - id: build_flip_confirmation
         module: scripts.build_flip_confirmation
         note: "Policy-Shock W1-C — T+1 sector-flip confirmation lens; detects violent defensive/offense spread flips, appends keep-first ledger, registers qledger claims, emits site/flip_confirmation_data.json (display-only, non-fatal)"
+      - id: build_leader_pullback_coverage
+        module: scripts.build_leader_pullback_coverage
+        note: >
+          LEADER-PULLBACK coverage publisher (ANTICIPATION §6.9 R4) — runs the
+          engine.us_leader_pullback organ over the graded US universe on a run-wide PIT
+          cross-sectional RS percentile and writes site/anticipationdata/us_leader_pullback.json.
+          MUST PRECEDE build_prophet: engine.us_early_turn resolves the EARLY-TURN starter
+          tier's LEADER licence from that file at origination time. #5007 shipped the organ and
+          #5105 the intake, but nothing published the artifact, so the leader half resolved {}
+          on every production run while the washout half (us_basket_turn) admitted normally.
+          Reads data/yahoo/*.parquet only. Advances NO ledger and writes no data/ path.
+          DISPLAY TIER, ZERO AUTHORITY. A run-wide data failure publishes nothing and keeps the
+          previous artifact rather than overwriting real coverage with a board of nulls.
+          Measured 2026-08-09: ~39s over 680 graded names (budget 600s).
       - id: build_prophet
         module: scripts.build_prophet
         note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
@@ -655,6 +697,23 @@ lanes:
           on (date, ticker, kind) so a rebake or double run only ever ADDS information.
           MEASURE-DARK: nothing reads this ledger — it accrues the evidence the §6 promotion
           gauntlet must be pre-registered on. Non-fatal; runs after the arming pass.
+      - id: build_turn_watch
+        module: scripts.build_turn_watch
+        note: >
+          TURN WATCH desk (ANTICIPATION §6.9 R8) — nightly early-surfacing deck of names whose
+          earliest turn evidence fired in the last 5 sessions, with the operator's review
+          checklist pre-computed. Reads data/yahoo/*.parquet, data/baskets/membership.json and
+          site/basketdata/us_basket_turn.json; writes site/turn_watch/turn_watch.json ONLY —
+          its OWN site root, never site/prophet, which the engine job restores from HEAD
+          before staging (a deck written there is lost on a SUCCESSFUL night).
+          Advances NO ledger and writes no data/ path. DISPLAY TIER, ZERO SCORED AUTHORITY —
+          its context_score orders the deck for reading and nothing else. Optimised for RECALL,
+          not precision: the operator is the second-stage filter, so beyond-cap names publish
+          {ticker, triggers_fired, basket} — never a bare ticker with its reason stripped.
+          Leg (d) runs the engine.us_leader_pullback organ on the run-wide PIT RS
+          cross-section; every row stamps leader_pullback_source. Never-raise; non-fatal.
+          Measured 2026-08-08: ~135s over 702 graded names (budget 600s, self-reported as
+          runtime_seconds and ::warning past it).
       # parallel band
       - id: band
         cluster:
@@ -813,6 +872,16 @@ lanes:
           no direction claims, no fused scores. Non-fatal (always exits 0).
           Artifacts: data/options_session/{DATE}/{ROOT}.json,
           site/session/{ROOT}.json, data/options_session/ledger.parquet.
+      - id: build_options_signal_episode
+        module: scripts.build_options_signal_episode
+        note: >
+          OIP point-in-time learning seam. Consumes only the append-only, date-keyed
+          live_flow event stage (never capped feed_current), validates the monotonic
+          checkpoint, freezes exact decision episodes, and accrues explicitly labeled
+          aligned-bar H+60 proxies from the existing intraday cache. All decision and
+          training authority is false; coarse/delayed measurements are
+          training_eligible=false. Runs serially after build_session_digest and advances
+          committed ledgers only in COLLECT_LANE=nightly. Non-fatal.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
@@ -877,6 +946,10 @@ lanes:
           outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
+        note: >-
+          Non-fatal single-artifact R2 mirrors for flow index, Flow Leaders,
+          Leader Radar, and the Options Prophet shadow projection. The latter
+          publishes site/options_prophet/index.json at options_prophet/index.json.
       - id: mirror_terminal_context_r2
         module: scripts.mirror_terminal_context_r2
         note: >-
@@ -1052,11 +1125,30 @@ lanes:
                    data/treasury/tga.parquet,
                    data/treasury_auctions/auctions.parquet]
           outputs: [data/neuralweb/liquidity_plumbing.json]
+      - id: collect_release_target_vintages
+        module: scripts.collect_release_target_vintages
+        note: >
+          non-fatal; canonical Release Radar truth substrate. Collects ALFRED
+          output_type=2 full-vintage matrices for CPI, PCE, PPI, and PAYEMS so
+          each target can be reconstructed from current and prior levels active
+          in the SAME release-date vintage. Missing credentials or a failed
+          series leave the last-good stores untouched.
+          inputs: [FRED_API_KEY]
+          outputs: [data/fred_vintage/release_targets/manifest.json]
+      - id: reconcile_release_actuals
+        module: scripts.reconcile_release_actuals
+        note: >
+          non-fatal; imports deterministic facts from the official-publication
+          live sidecar into an append-only, keep-first, source-hashed actual
+          ledger. Later differing documents are correction candidates and are
+          not automatically eligible for scoring.
+          inputs: [site/live/release_publications.json]
+          outputs: [data/release_forecast/official_actuals.jsonl]
       - id: build_release_forecast
         module: scripts.build_release_forecast
         note: >
           non-fatal; MRI PR-C nightly producer (macro-release-intel program).
-          Emits the release_forecast.v1 artifact: CPI (headline + core) and NFP
+          Emits the release_forecast.v2 artifact: CPI (headline + core) and NFP
           projections, Cleveland nowcast benchmark enrichment, policy_backdrop
           join (fed_stance/gap_bp/implied_cuts_12m/next_fomc/guidance_direction
           from persisted regime artifacts — no LLM calls). Runs AFTER collect
@@ -1064,12 +1156,30 @@ lanes:
           display_only=True; all authority booleans False (MRI-R7).
           Ledger is append-only (MRI-R8); idempotent per asof_night.
           inputs: [data/fred_vintage/vintages.parquet,
+                   data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/official_actuals.jsonl,
+                   data/release_forecast/defect_notices.json,
                    data/cleveland_nowcast/nowcast.parquet,
                    data/regime/latest.json]
           outputs: [data/release_forecast/latest.json,
                     data/release_forecast/forward_ledger.jsonl,
                     data/release_forecast/scoreboard.json,
                     site/macrodata/release_forecast.json]
+      - id: build_inflation_intelligence
+        module: scripts.build_inflation_intelligence
+        note: >
+          non-fatal; deterministic context-only inflation lobe. Keeps latest
+          released CPI state, next-release Radar forecast, and current-month
+          proxy pressure as three separate clocks, with explicit freshness,
+          coverage, revision basis, and forecast evolution. display_only=True;
+          authority=False; no score, rank, gate, size, escalation, or trade use.
+          inputs: [data/fred/CPIAUCSL.parquet,
+                   data/fred/CPILFESL.parquet,
+                   data/fred/STICKCPIM157SFRBATL.parquet,
+                   data/fred/FLEXCPIM157SFRBATL.parquet,
+                   data/release_forecast/latest.json,
+                   data/release_forecast/forward_ledger.jsonl]
+          outputs: [data/release_forecast/inflation_intelligence.json]
       - id: build_rates_command
         module: scripts.build_rates_command
         note: >
@@ -1323,7 +1433,35 @@ lanes:
       - id: run_prophet_miss_audit
         module: scripts.run_prophet_miss_audit
         args: [--nightly]
-        note: "Prophet US trend-intelligence W0 — nightly miss-audit + conversion telemetry. Sole forward advancer of data/prophet_miss_audit/forward_log.jsonl (nightly-only, idempotent on price_through); also writes data/prophet_miss_audit/latest.json (both committed by nightly like every sibling forward ledger). Measures top-runner dominant-excluder attribution, the trailing-63-session eligibility window, sighting->plan conversion and theme representation through the production tier paths (confluence_tiers.tier_stream/cascade, signal_gate), plus the name_score_scorecard block — a READ-ONLY mirror of engine/name_score_grader's forward grade of the per-name POTENTIAL score (rank-IC 21d/63d, buy-tier hit rate, P@k vs each stamp date's own graded cross-section; roadmap PROPHET_US_SUPERINTELLIGENCE §4.4). It reads data/name_score/us_calls.parquet (written earlier the same night by build_stock_library) and changes nothing the grader computes. Ops telemetry; ZERO authority — no rank/gate/size/membership consumer (tests/test_prophet_miss_audit.py pins that nothing else imports it, and pins the scorecard against a live name_score_grader.grade() run so the caching adapter can never become a second opinion)."
+        note: >
+          Prophet US trend-intelligence W0 — nightly miss-audit + conversion telemetry.
+          Sole forward advancer of data/prophet_miss_audit/forward_log.jsonl (nightly-only,
+          idempotent on price_through); also writes data/prophet_miss_audit/latest.json.
+          Both are committed by nightly like every sibling forward ledger. Measures top-runner
+          dominant-excluder attribution, the trailing-63-session eligibility window,
+          sighting-to-plan conversion and theme representation through the production tier
+          paths (confluence_tiers.tier_stream/cascade, signal_gate), plus the
+          name_score_scorecard block — a READ-ONLY mirror of engine/name_score_grader's forward
+          grade of the per-name POTENTIAL score (rank-IC 21d/63d, buy-tier hit rate, P@k vs
+          each stamp date's own graded cross-section; roadmap PROPHET_US_SUPERINTELLIGENCE
+          §4.4). It reads data/name_score/us_calls.parquet, written earlier the same night by
+          build_stock_library, and changes nothing the grader computes.
+          Also publishes the entry_status_scorecard block (ANTICIPATION §6.6,
+          engine/us_entry_status_remeasure.py): admission-time entry status to already-graded
+          US forward outcome, structured cohort to horizon to status with no pooled outcome
+          figure. The A2 entry leg is intended to ship STATUS-NEUTRAL after the first US run
+          did not reproduce the historical CN adjusted-return ordering. The CN rates remain
+          context only: they are not exact legal-limit evidence and grant no automatic
+          status/ranking/Prophet authority; rewritten #4972's boundary lands first.
+          Re-introduction requires the chartered horizon, n>=50 per cell, sign-stable
+          half-splits and era-stamped anticipation-v1 episodes. Pure read: no new step,
+          script or ledger; no regrading or forward advance, so this step's existing nightly
+          gate carries it. One-shot receipt over the same code:
+          research/prophet_us_audit/US_STATUS_REMEASUREMENT_2026-08-08.md. Ops telemetry;
+          ZERO authority — no rank, gate, size or membership consumer
+          (tests/test_prophet_miss_audit.py pins that nothing else imports it and pins the
+          scorecard against a live name_score_grader.grade() run, so the caching adapter can
+          never become a second opinion).
 
   - workflow: .github/workflows/daily.yml
     job: stock_briefs
@@ -2835,6 +2973,61 @@ lanes:
   # Checks newest parquet mtime ≤ max_age_days (3d default). --strict exits 1 on
   # STALE/DARK. Writes data/quality/options_surface_accrual_audit.json.
   # Should be wired into the nightly CI health check or run from the ops lane.
+
+  # ── close-pass.yml / publish — the evening PROVISIONAL board (W-L1a) ───────
+  - workflow: .github/workflows/close-pass.yml
+    job: publish
+    steps:
+      - id: check_price_store_freshness
+        module: scripts.check_price_store_freshness
+        args: [--heal]
+        note: >
+          Best-effort, continue-on-error. At 16:20 ET the daily bar may not be
+          finalized; a name without today's close is SKIPPED and counted by the
+          pass, never carried at yesterday's price, so a partial heal degrades
+          coverage and never truth.
+      - id: close_pass_publish
+        module: scripts.close_pass_publish
+        note: >
+          W-L1a. Recomputes ADMISSION (engine.signal_gate.gate — one close series
+          in, no FINRA/OI/fundamental/SUE/insider/13F anywhere in its call chain)
+          plus the two score legs that are computable from closes alone (signal 30,
+          runway 10 of us_board_rank.SCORE_WEIGHTS). entry/edge/quality are OMITTED
+          AND DISCLOSED, never imputed and never renormalised: ladder_state needs a
+          macro liquidity regime and this name's sector beta, residual alpha is
+          sector-neutralised, and the coiled/star verdict is a sector cohort.
+          Writes NO data/ path and runs no git command (runtime tier, G0.2,
+          DNR:KILL-INTRADAY-CHRONICLE) — the nightly daily pipeline remains the
+          sole advancer of every forward ledger. Publishes one R2 object
+          (live_flow/us_board_provisional.json); the VPS macro-live-closepass
+          timer mirrors it to the GATED live/us_board_provisional.json. Display
+          tier, stamped provisional: true, zero score authority. Deliberately not
+          a step in closing-bell.yml — that lane runs 109 measured minutes behind
+          an 81-minute spine and lands ~17:55 ET against an 18:30 SLA. The VPS
+          mirror also merges the derived `board_state` key into the served
+          live/prophet_live.json, which is the artifact the dashboard surface
+          (#5148) polls; its `board.tickers` list is compared against the cards
+          actually in the grid, so a page showing last night's cards cannot
+          render tonight's stamp.
+
+  # ── close-pass.yml / reconcile — the confirmation delta ───────────────────
+  - workflow: .github/workflows/close-pass.yml
+    job: reconcile
+    steps:
+      - id: close_pass_reconcile
+        module: scripts.close_pass_reconcile
+        note: >
+          Grades the evening board against the nightly board of record and
+          publishes the per-name confirmed/adjusted/dropped delta to
+          live_flow/us_board_confirmation.json. workflow_run on daily.yml
+          completing, so it is off the nightly's critical path by construction
+          (it cannot delay a build that already finished) and off the mac pool
+          entirely — it reads two JSON documents. Reconciles or publishes
+          nothing: n_confirmed + n_adjusted + n_dropped == n_total is checked,
+          and a session mismatch, a duplicate ticker or a non-closing sum emits
+          no receipt rather than a wrong one. Writes no data/ path; grading the
+          record by writing to it would be marking its own homework.
+
 # ---------------------------------------------------------------------------
 # DIVERGENCES — declared lane-difference ledger
 # Two kinds:
@@ -3320,6 +3513,37 @@ modules:
       and interrupted or partial generations preserve the last good state. Reported
       subaward amounts are self-reported context, never federal obligations, outlays,
       additive prime value, issuer attribution, backlog, revenue, cash, or investment authority.
+
+  - module: collectors.sbir_awards
+    # sbir_ingest_status.json is deliberately write-only here: the activation
+    # marker this collector reads back before appending is the projection state,
+    # and the status is a descriptive per-run receipt. Declaring it as a read
+    # would claim a fail-closed check the code does not perform.
+    reads:
+      - data/government_revenue/sbir_award_observations.parquet
+      - data/government_revenue/sbir_collection_receipts.jsonl
+      - data/government_revenue/sbir_projection_state.json
+    writes:
+      - data/government_revenue/sbir_award_observations.parquet
+      - data/government_revenue/sbir_collection_receipts.jsonl
+      - data/government_revenue/sbir_projection_state.json
+      - data/government_revenue/sbir_ingest_status.json
+      - data/government_revenue/sbir_collector_heartbeat.parquet
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      GOVREV W10-R3. Keyless official SBIR.gov award observations
+      (api.www.sbir.gov/public/api/awards), append-only by exact
+      agency_tracking_number identity. The public tier publishes a 10-requests-per-10-minutes
+      limit whose refusal is a plain-text 403, so the lane paces at 63s/request and hard-caps
+      itself at 8 requests/run — it is a slow off-render collect-lane step, never a render
+      dependency. The source publishes no pagination metadata or total, so exhaustion is
+      claimed only on a short page and a filled page cap is recorded as a complete bounded
+      sample. Point-of-contact/principal-investigator names, phones, emails, street address,
+      and ZIP are never persisted. Phase I to Phase II movement is progression evidence only
+      and never production conversion; issuer links require an exact UEI against the reviewed
+      recipient graph. Display/context tier, authority all-false, emits no candidates.
 
   - module: collectors.sam_gov
     reads:

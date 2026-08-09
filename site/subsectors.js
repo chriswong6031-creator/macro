@@ -58,8 +58,8 @@
   function relDot(rel) { var r = (rel || '').toLowerCase(); if (r !== 'high' && r !== 'med' && r !== 'low') return ''; var lab = { high: 'High confidence — deep live coverage', med: 'Medium confidence', low: 'Thin data — read with caution' }[r]; return '<span class="rel ' + r + '" title="' + lab + '"><i></i></span>'; }
   function freshTxt(e) {
     if (!e) return '';
-    if (e.tier === 'T3' || e.tier === 'T4') { var b = e.bars_to_cross; return b != null ? L('~' + b + ' bars to cross', '约' + b + ' 根后交叉') : L('about to cross', '即将交叉'); }
-    if (e.ticks != null) return e.ticks === 0 ? L('crossed this bar', '本根交叉') : L(e.ticks + ' tick' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 格前');
+    if (e.tier === 'T3' || e.tier === 'T4') return L('about to fire', '即将触发');
+    if (e.ticks != null) return e.ticks === 0 ? L('just fired', '刚刚触发') : L('fired ' + e.ticks + ' bar' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 根K线前触发');
     return '';
   }
   function detailHref(ds, key) { var d = DS[ds]; return d.dir + d.prefix + key + '.html'; }
@@ -330,13 +330,13 @@
     }).join('');
     var table = '<table class="sc-tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Its tier', '个股层级') + '</th><th>' + L('Inside subsector', '所在子行业') + '</th><th>' + L('Conviction', '综合把握') + '</th><th>' + L('vs sub 20d', '相对子行业20日') + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
     var body;
-    if (!buys.length) body = '<div class="empty">' + L('No double-confluence buys right now — no stock is firing its own entry inside a tailwind subsector.', '当前无双重汇聚买入——无个股在顺风子行业内触发自身入场。') + '</div>';
+    if (!buys.length) body = '<div class="empty">' + L('No qualified picks right now — no stock has a timely entry read inside a subsector that is working.', '目前没有符合条件的个股——暂时没有股票在走强的子行业中出现及时的入场判断。') + '</div>';
     else if (buys.length <= PICKS_CAP) body = table;
     else body = '<div class="sc-collapse sc-collapsed" data-n="' + buys.length + '" data-cap="' + PICKS_CAP + '">' + table
       + '<button class="sc-more" type="button"><span class="l-en">Show all ' + buys.length + ' picks ▾</span><span class="l-zh">展开全部 ' + buys.length + ' 个 ▾</span></button></div>';
-    return '<div class="sec sc-stagger sc-s2"><div class="sec-head"><h2>' + ic('diamond','sc-h2-ic') + ' ' + L('Double-confluence picks', '双重汇聚精选') + ' <span class="n">' + buys.length + '</span></h2></div>'
-      + '<div class="desc">' + L('Stocks whose own T1–T4 cascade is buyable <b>and</b> whose subsector has a tailwind — the two gates agree. Ranked by conviction = stock weight × subsector buyability (T1×T1 = 1.0)' + (buys.length > PICKS_CAP ? '. Top ' + PICKS_CAP + ' shown.' : '.'),
-        '自身 T1–T4 级联可买<b>且</b>所在子行业顺风的个股——两道闸门一致。按把握度排序 = 个股权重 × 子行业可买系数（T1×T1 = 1.0）' + (buys.length > PICKS_CAP ? '，默认显示前 ' + PICKS_CAP + ' 个。' : '。')) + '</div>'
+    return '<div class="sec sc-stagger sc-s2"><div class="sec-head"><h2>' + ic('diamond','sc-h2-ic') + ' ' + L('Stock picks', '个股精选') + ' <span class="n">' + buys.length + '</span></h2></div>'
+      + '<div class="desc">' + L('Stocks with an active or forming T1–T4 entry read inside a subsector that is also working. Strongest combined reads come first' + (buys.length > PICKS_CAP ? '; the top ' + PICKS_CAP + ' are shown.' : '.'),
+        '这些股票出现了已生效或正在形成的 T1–T4 入场判断，同时所在子行业也在走强。综合判断最强的排在前面' + (buys.length > PICKS_CAP ? '；默认显示前 ' + PICKS_CAP + ' 个。' : '。')) + '</div>'
       + '<div class="sc-tablecard">' + body + '</div></div>';
   }
 

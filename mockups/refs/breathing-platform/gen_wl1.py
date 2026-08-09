@@ -14,11 +14,17 @@ OUT.mkdir(parents=True, exist_ok=True)
 theme_css = (ROOT / "templates" / "theme.css").read_text()
 card_j2 = (ROOT / "templates" / "_prophet_card.html.j2").read_text()
 
-# ---- token layer: :root .. end of the ink-token block (theme.css 21..232) ----
+# ---- token layer: :root .. end of the ink-token block (theme.css 21..246) ----
+# Line-indexed slices, so they move whenever theme.css does. Re-anchored 2026-08-09
+# when the W-L1 --prov/--prov-ink pair landed in the ink block (+14 lines); the pair now
+# falls INSIDE the TOKENS slice, which is the point — the mockup then reads the shipped
+# token rather than its own copy of it and the two cannot drift.
 tl = theme_css.splitlines()
-TOKENS = "\n".join(tl[20:232])
+assert tl[245].lstrip().startswith("--prov-ink"), "TOKENS slice moved — re-anchor it"
+TOKENS = "\n".join(tl[20:246])
 # language visibility toggle + CJK face + body font
-LANGCSS = "\n".join(tl[246:257] + tl[282:286])
+assert tl[260].startswith("/* ---- language visibility"), "LANGCSS slice moved — re-anchor it"
+LANGCSS = "\n".join(tl[260:271] + tl[296:300])
 
 # ---- .pvcard CSS verbatim from the partial's pv_css() macro ----
 m = re.search(r"\{% macro pv_css\(\) %\}\s*<style>(.*?)</style>\s*\{% endmacro %\}", card_j2, re.S)

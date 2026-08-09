@@ -46,8 +46,7 @@ from pathlib import Path
 import pandas as pd
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from collectors.edgar_deadname_prices import (  # noqa: E402
     SPLICE_GAP_DAYS,

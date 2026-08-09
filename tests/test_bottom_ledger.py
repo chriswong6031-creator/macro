@@ -224,6 +224,166 @@ def test_accrual_counts_by_source_and_shape_tolerance(_grader_env):
     assert "DDD" not in set(store["ticker"])             # no-payload watch was not accrued
 
 
+def test_canonical_prophet_projection_error_fails_closed(tmp_path, monkeypatch, capsys):
+    """A corrupt canonical correction store never falls back to raw plan clocks."""
+    import json
+
+    root = tmp_path / "repo"
+    plans = root / "site" / "prophet" / "plans"
+    corrections = root / "data" / "prophet" / "plan_corrections.jsonl"
+    plans.mkdir(parents=True)
+    corrections.parent.mkdir(parents=True)
+    (plans / "bad.json").write_text(json.dumps({
+        "schema": "prophet.trade_plan/v1",
+        "id": "BAD-BULL-20260702",
+        "asset": "BAD",
+        "direction": "BULL",
+        "signal_date": "2026-07-02",
+    }), encoding="utf-8")
+    corrections.write_text("{not-json}\n", encoding="utf-8")
+    snapshots = root / "data" / "bottom_calls" / "snapshots.jsonl"
+    monkeypatch.setattr(G, "SNAPSHOTS_JSONL", snapshots)
+    monkeypatch.setattr(G, "PROPHET_PLANS_DIR", plans)
+
+    flags = G.collect_flags()
+
+    assert [row for row in flags if row.get("source") == "prophet_plan"] == []
+    assert "canonical Prophet flags withheld" in capsys.readouterr().out
+
+
+def test_canonical_prophet_flags_obey_date_family_and_both_quarantines(
+    tmp_path, monkeypatch
+):
+    """Legacy formation aliases never become learning dates; all quarantine authority wins."""
+    from types import SimpleNamespace
+    from engine import prophet_integrity as integrity
+
+    root = tmp_path / "repo"
+    plans_dir = root / "site" / "prophet" / "plans"
+    plans_dir.mkdir(parents=True)
+    monkeypatch.setattr(G, "PROPHET_PLANS_DIR", plans_dir)
+    monkeypatch.setattr(
+        G, "SNAPSHOTS_JSONL", root / "data" / "bottom_calls" / "missing.jsonl"
+    )
+
+    plans = {
+        "LEGACY-BULL-20260601": {
+            "id": "LEGACY-BULL-20260601", "asset": "LEGACY", "direction": "BULL",
+            "signal_date": "2026-06-01", "signal_date_basis": "legacy_formation_alias",
+            "price_basis_date": "2026-08-07",
+        },
+        "EVENT-BULL-20260806": {
+            "id": "EVENT-BULL-20260806", "asset": "EVENT", "direction": "BULL",
+            "signal_date": "2026-08-06", "signal_date_basis": "tier_event_date",
+        },
+        "OBS-BULL-20260805": {
+            "id": "OBS-BULL-20260805", "asset": "OBS", "direction": "BULL",
+            "signal_date": "2026-07-01", "observed_date": "2026-08-05",
+            "signal_date_basis": "tier_observation",
+        },
+        "UNKNOWN-BULL-20260701": {
+            "id": "UNKNOWN-BULL-20260701", "asset": "UNKNOWN", "direction": "BULL",
+            "signal_date": "2026-07-01",
+        },
+        "PLANQ-BULL-20260805": {
+            "id": "PLANQ-BULL-20260805", "asset": "PLANQ", "direction": "BULL",
+            "signal_date": "2026-08-05", "signal_date_basis": "tier_event_date",
+        },
+        "LEDGERQ-BULL-20260805": {
+            "id": "LEDGERQ-BULL-20260805", "asset": "LEDGERQ", "direction": "BULL",
+            "signal_date": "2026-08-05", "signal_date_basis": "tier_event_date",
+        },
+    }
+    monkeypatch.setattr(
+        integrity,
+        "load_effective_plans",
+        lambda _root: SimpleNamespace(
+            plans=plans, quarantined_ids=frozenset({"PLANQ-BULL-20260805"})
+        ),
+    )
+    monkeypatch.setattr(
+        integrity,
+        "load_effective_ledger",
+        lambda _root: SimpleNamespace(
+            quarantined_ids=frozenset({"LEDGERQ-BULL-20260805"})
+        ),
+    )
+
+    flags = [row for row in G.collect_flags() if row["source"] == "prophet_plan"]
+    by_id = {row["source_ref"]: row["flag_date"] for row in flags}
+    assert by_id == {
+        "LEGACY-BULL-20260601": "2026-08-07",
+        "EVENT-BULL-20260806": "2026-08-06",
+        "OBS-BULL-20260805": "2026-08-05",
+    }
+
+
+def test_bottom_ledger_projects_corrected_prophet_row_without_mutating_raw(
+    tmp_path, monkeypatch
+):
+    """Keep-union raw history may retain an old date, but only the corrected row learns."""
+    from types import SimpleNamespace
+    from engine import prophet_integrity as integrity
+
+    root = tmp_path / "repo"
+    plans_dir = root / "site" / "prophet" / "plans"
+    plans_dir.mkdir(parents=True)
+    monkeypatch.setattr(G, "PROPHET_PLANS_DIR", plans_dir)
+    plans = {
+        "LEGACY-BULL-20260601": {
+            "id": "LEGACY-BULL-20260601", "asset": "LEGACY", "direction": "BULL",
+            "signal_date": "2026-06-01", "signal_date_basis": "legacy_formation_alias",
+            "price_basis_date": "2026-08-07",
+        },
+        "PLANQ-BULL-20260805": {
+            "id": "PLANQ-BULL-20260805", "asset": "PLANQ", "direction": "BULL",
+            "signal_date": "2026-08-05", "signal_date_basis": "tier_event_date",
+        },
+    }
+    monkeypatch.setattr(
+        integrity,
+        "load_effective_plans",
+        lambda _root: SimpleNamespace(
+            plans=plans, quarantined_ids=frozenset({"PLANQ-BULL-20260805"})
+        ),
+    )
+    monkeypatch.setattr(
+        integrity,
+        "load_effective_ledger",
+        lambda _root: SimpleNamespace(quarantined_ids=frozenset()),
+    )
+
+    raw = pd.DataFrame([
+        G._flag_row(
+            flag_date="2026-06-01", ticker="LEGACY", source="prophet_plan",
+            source_ref="LEGACY-BULL-20260601",
+        ),
+        G._flag_row(
+            flag_date="2026-08-07", ticker="LEGACY", source="prophet_plan",
+            source_ref="LEGACY-BULL-20260601",
+        ),
+        G._flag_row(
+            flag_date="2026-08-05", ticker="PLANQ", source="prophet_plan",
+            source_ref="PLANQ-BULL-20260805",
+        ),
+        G._flag_row(
+            flag_date="2026-08-05", ticker="NOPROV", source="prophet_plan",
+        ),
+        G._flag_row(flag_date="2026-08-05", ticker="BOARD", source="board_buy"),
+    ])[G.STORE_COLS]
+    before = raw.copy(deep=True)
+
+    effective, excluded, error = G._project_effective_store(raw)
+
+    assert error is None
+    assert excluded == 3
+    assert list(zip(effective["source"], effective["ticker"], effective["flag_date"])) == [
+        ("prophet_plan", "LEGACY", "2026-08-07"),
+        ("board_buy", "BOARD", "2026-08-05"),
+    ]
+    pd.testing.assert_frame_equal(raw, before)
+
+
 def test_grader_idempotent_byte_identical_parquet(_grader_env):
     snaps, plans, rows_path, emit_path = _grader_env
     snaps.write_text(_snapshot_line("2026-06-30",

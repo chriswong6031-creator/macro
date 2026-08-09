@@ -25,7 +25,7 @@ for the full program; this file is only the live baton.
 - Run **31127471922** (workflow_dispatch on main, created 20:15Z) is the
   post-close rerun with the fixed caps. It was `pending` behind the cancelled
   pre-close run 31126815311's `if: always()` cleanup at handoff time.
-- Watch: `gh run view 31127471922 -R chriswong6031-creator/macro` every ~10
+- Watch: `gh run view 31127471922 -R mastermindx-market-intelligence/macro` every ~10
   min (NEVER `gh run watch` at default interval; quota law: --interval 60+).
 - Timeline if healthy: collect ~3h → engine ≤4h (cap 240) → "commit engine
   outputs" → VPS pulls main within 3 min → boards live.
@@ -62,7 +62,7 @@ for the full program; this file is only the live baton.
    also satisfies the sweeper's integration-baseline circuit breaker.
 3. Refresh armed PRs in batches of ~8 (NEVER all at once — a 28-PR refresh
    starved the runner pool this morning):
-   `gh api -X PUT repos/chriswong6031-creator/macro/pulls/<N>/update-branch`
+   `gh api -X PUT repos/mastermindx-market-intelligence/macro/pulls/<N>/update-branch`
    Skip any that 422 with a real conflict (they need manual rebase).
 4. The sweeper (cron every ~10 min) merges as heads green. Do not merge
    mid-flight by hand; `--admin` only for docs-only/spurious-Workers-X/wedge.
