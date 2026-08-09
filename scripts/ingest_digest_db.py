@@ -16,13 +16,17 @@ from __future__ import annotations
 import glob
 import json
 import re
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
 import pandas as pd
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 RAW = config.ROOT / "research" / "_recon_raw"
 OUT = config.data_dir() / "special_situations" / "digest_db.parquet"

@@ -63,8 +63,7 @@ import pandas as pd
 # Path bootstrap
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 import os
 os.chdir(_REPO_ROOT)

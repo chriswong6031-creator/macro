@@ -22,10 +22,15 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import china_inputs, china_conditions as cc
-from engine.equity_alloc import bear_episodes
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import china_inputs, china_conditions as cc  # noqa: E402
+from engine.equity_alloc import bear_episodes  # noqa: E402
+from lib import config, store  # noqa: E402
 
 INDEX = "000001.SS"   # Shanghai Composite — the deepest A-share history on disk
 
