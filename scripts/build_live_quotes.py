@@ -33,12 +33,16 @@ import argparse
 import json
 import logging
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.tape_symbols import TAPE_SYMBOLS
-from engine import live_quotes
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from app.tape_symbols import TAPE_SYMBOLS  # noqa: E402
+from engine import live_quotes  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("live_quotes_build")
 

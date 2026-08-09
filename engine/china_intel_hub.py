@@ -531,50 +531,78 @@ def _stage(edge_score: float, gap: int, lean: int, rolling_over: bool,
 # ── Falsifier string ──────────────────────────────────────────────────────── #
 
 def _falsifier(altdata_row: dict | None, radar_row: dict | None,
-               traj: dict | None, special_flags: dict | None) -> str | None:
-    """The most important unanswered disconfirming observation for this name."""
-    parts = []
+               traj: dict | None, special_flags: dict | None) -> tuple[str | None, str | None]:
+    """The most important unanswered disconfirming observation, as (English, 中文).
+
+    Composed in both languages here, for the same reason `_read_for` is: these are
+    free-form clauses, not glossary terms, so the i18n LEX cannot reach them and a
+    single-language return leaks English into the zh command table.
+    """
+    parts: list[str] = []
+    parts_zh: list[str] = []
+
+    def add(en: str, zh: str) -> None:
+        parts.append(en)
+        parts_zh.append(zh)
+
     traj = traj or {}
     if traj.get("rolling_over"):
-        parts.append("price is rolling over (20d drawdown + RS falling)")
+        add("price is rolling over (20d drawdown + RS falling)",
+            "价格正在转弱（20 日回撤 + 相对强度走低）")
     if altdata_row:
         conv = _f(altdata_row.get("convergence"))
         if conv is not None and altdata_row.get("side") == "accumulate" and conv < 0.4:
-            parts.append("weak altdata convergence score")
+            add("weak altdata convergence score", "另类数据共振度偏弱")
     if radar_row:
         rel = radar_row.get("reliability") or {}
         if rel.get("basis") == "unproven":
-            parts.append("radar signal unproven (0 resolved outcomes)")
+            add("radar signal unproven (0 resolved outcomes)",
+                "雷达信号尚未验证（已结算样本为 0）")
     if special_flags:
         if special_flags.get("unlock_large"):
-            parts.append("large lock-up unlock imminent")
+            add("large lock-up unlock imminent", "大额限售股即将解禁")
         if special_flags.get("pledge_stress"):
-            parts.append("pledge stress overhang")
-    return "; ".join(parts) if parts else None
+            add("pledge stress overhang", "股权质押风险压制")
+    if not parts:
+        return None, None
+    return "; ".join(parts), "；".join(parts_zh)
 
 
 # ── Read string ───────────────────────────────────────────────────────────── #
 
 def _read_for(stage: str, lean: int, dirs: dict, edge_score: int, gap: int,
-              altdata_row: dict | None) -> str:
-    """Plain-language synthesis for this name."""
+              altdata_row: dict | None) -> tuple[str, str]:
+    """Plain-language synthesis for this name, as an (English, 中文) pair.
+
+    Both languages are composed HERE (free-form sentences are translated at their
+    source, never through the i18n LEX glossary), so the template can emit a
+    bilingual span with `t(d.read, d.read_zh)`.  Numbers stay identical in both.
+    """
     pct = int(round(edge_score * 100))
     if stage == "emerging":
         return (f"Altdata/radar leading while news/board are still quiet — pre-consensus, "
-                f"~{pct}% of the move still ahead.")
+                f"~{pct}% of the move still ahead.",
+                f"另类数据/雷达领先，新闻与买入板仍安静——尚未形成共识，约 {pct}% 的行情仍在前方。")
     if stage == "early":
-        return f"A leading desk is ahead of the crowd — early, ~{pct}% edge remaining."
+        return (f"A leading desk is ahead of the crowd — early, ~{pct}% edge remaining.",
+                f"已有一个台走在市场前面——早期阶段，剩余边际约 {pct}%。")
     if stage == "faltering":
-        return "Price rolling over while desks remain constructive — wait for stabilization."
+        return ("Price rolling over while desks remain constructive — wait for stabilization.",
+                "价格已转弱而各台仍偏乐观——等待企稳。")
     if stage == "exhausted":
-        return f"Already priced-in across desks — late, only ~{pct}% edge remaining."
+        return (f"Already priced-in across desks — late, only ~{pct}% edge remaining.",
+                f"各台均已充分计价——偏晚，剩余边际仅约 {pct}%。")
     if stage == "distribution":
-        return "Desks lean bearish and price is rolling over — distribution phase."
+        return ("Desks lean bearish and price is rolling over — distribution phase.",
+                "各台偏空且价格转弱——派发阶段。")
     if stage == "consensus":
-        return f"Multiple desks agree with price confirmed — consensus, ~{pct}% edge remaining."
+        return (f"Multiple desks agree with price confirmed — consensus, ~{pct}% edge remaining.",
+                f"多个台意见一致且价格确认——共识阶段，剩余边际约 {pct}%。")
     if stage == "quiet":
-        return "No strong cross-desk signal — monitoring."
-    return f"Modestly constructive (~{pct}% edge remaining)."
+        return ("No strong cross-desk signal — monitoring.",
+                "跨台无明显信号——持续观察。")
+    return (f"Modestly constructive (~{pct}% edge remaining).",
+            f"温和偏积极（剩余边际约 {pct}%）。")
 
 
 # ── Per-ticker dossier ────────────────────────────────────────────────────── #
@@ -610,7 +638,9 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
         signal_core = float(radar_row.get("strength") or 0.0) * 0.6   # radar alone is weaker
 
     # falsifier penalty
-    fals = _falsifier(altdata_row, radar_row, traj, special_flags)
+    # Unpack, do NOT keep the tuple: `(None, None)` is truthy, so testing the
+    # return value directly would apply the 0.85 penalty to every name.
+    fals, fals_zh = _falsifier(altdata_row, radar_row, traj, special_flags)
     fals_pen = 0.85 if fals else 1.0
 
     # gap multiplier: ±15% per net leading desk, clamped ±2
@@ -629,7 +659,7 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
     if gov_mult < 1.0:
         opportunity = round(opportunity * gov_mult, 1)
 
-    read = _read_for(stage, lean, dirs, edge_rec["score"], gap_rec["gap"], altdata_row)
+    read, read_zh = _read_for(stage, lean, dirs, edge_rec["score"], gap_rec["gap"], altdata_row)
 
     # desk directions matrix for display (present=True/False + direction)
     desk_matrix = {
@@ -672,6 +702,7 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
         "lag_up": gap_rec["lag_up"],
         "signal_core": round(signal_core, 3),
         "falsifier": fals,
+        "falsifier_zh": fals_zh,
         "falsifier_penalty": fals_pen,
         "directions": dirs,
         "desk_matrix": desk_matrix,
@@ -684,6 +715,7 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
             "rolling_over": rolling_over,
         } if traj else None,
         "read": read,
+        "read_zh": read_zh,
         # raw desk payloads (for transparency, stripped in the compact export)
         "_altdata": altdata_row,
         "_radar": radar_row,
@@ -772,12 +804,16 @@ def _disc_lhb_first_seat(today: date | None = None) -> list:
                 reason = ("First LHB + institutional seat" if inst_first and is_first
                           else "First LHB seat in 90+ days" if is_first
                           else "First institutional seat on LHB")
+                reason_zh = ("龙虎榜首次上榜且有机构席位" if inst_first and is_first
+                             else "90 天以来首次登上龙虎榜" if is_first
+                             else "龙虎榜首次出现机构席位")
                 candidates.append({
                     "ticker": str(ticker),
                     "name": str(rec.get("name") or _spine_name(str(ticker)) or ticker),
                     "disc_score": round(dsc, 2),
                     "source": "lhb_first_seat",
                     "reason": reason,
+                    "reason_zh": reason_zh,
                     "off_desk": True,
                     "experimental": False,
                     "lhb_date": str(rec["date"])[:10],
@@ -835,6 +871,7 @@ def _disc_margin_velocity(today: date | None = None) -> list:
                 "disc_score": round(dsc, 2),
                 "source": "margin_velocity",
                 "reason": f"Margin financing delta z={dz:.1f} (20d increase vs peers)",
+                "reason_zh": f"融资余额变化 z={dz:.1f}（20 日增幅高于同业）",
                 "off_desk": True,
                 "experimental": True,
                 "caveat": "EXPERIMENTAL — Phase-0 accruing (60-session gate). Contributes zero to opportunity ranking.",
@@ -898,6 +935,7 @@ def _disc_southbound_delta(today: date | None = None) -> list:
                 "disc_score": round(dsc, 2),
                 "source": "southbound_delta",
                 "reason": f"Southbound holdings +{dp:.1f}% over 20d",
+                "reason_zh": f"南向持股 20 日增加 +{dp:.1f}%",
                 "off_desk": True,
                 "experimental": False,
                 "venue": "HK",
@@ -955,6 +993,11 @@ def _disc_ths_emerging_concepts(today: date | None = None) -> list:
             concept_name = alert.get("headline_zh") or alert.get("headline") or "Emerging concept"
             # strip emoji prefix
             concept_name = concept_name.lstrip("🔥 ").strip()
+            # zh side prefers the native headline; en side falls back to it when
+            # the alert carries no English form (concept names are CN-native).
+            concept_name_zh = (alert.get("headline_zh") or alert.get("headline")
+                               or "新兴概念")
+            concept_name_zh = concept_name_zh.lstrip("🔥 ").strip()
 
             for t in tickers_in_concept:
                 if t in seen_tickers:
@@ -967,6 +1010,7 @@ def _disc_ths_emerging_concepts(today: date | None = None) -> list:
                     "disc_score": round(dsc, 2),
                     "source": "ths_emerging_concepts",
                     "reason": f"THS emerging concept: {concept_name[:60]}",
+                    "reason_zh": f"同花顺新兴概念：{concept_name_zh[:60]}",
                     "off_desk": True,
                     "experimental": False,
                 })

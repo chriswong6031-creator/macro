@@ -68,7 +68,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from lib import config, nyse_calendar
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config, nyse_calendar  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 GROUP = "polygon_gex"

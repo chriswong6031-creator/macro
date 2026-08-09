@@ -878,3 +878,242 @@ def route(
     """
     return route_verdict(event_class, cfg=cfg, root=root,
                          refinement=refinement).account
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Macro fan-out (W3) — may ONE public fact be written from more than one angle?
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE THIRD QUESTION, and keeping it separate from the other two is the whole
+# safety argument. ``classes`` answers "whose item is this" and its answer stays
+# ONE desk. ``spill_pool`` answers "who may take overflow" and stays persona-free
+# for the charter §4 reason above: a wire account RELAYS, so handing a persona a
+# raw press relay is a voice violation dressed up as a volume fix. Neither moves.
+#
+# This block answers "may one public fact be written up from more than one
+# angle", and it is the only one whose answer may name a persona desk — because
+# what a persona receives HERE is not a relay. An ``angle`` is an assignment:
+# mastermind_news relays the print, flagship says what it does to the house path,
+# founder says how it trades. Three posts written from scratch, not one post
+# forwarded three times.
+#
+# THE REWORDING IS NOT TAKEN ON TRUST, and this module enforces none of it. Every
+# sibling still meets the cross-account near-dup radar, the same-account Jaccard,
+# the plan-time 3-gram gate and the frame-similarity gate, all unchanged. A
+# sibling that is only a reskin trips one of them and dies, which is the intended
+# outcome. This function buys an OPPORTUNITY to write three posts. It does not
+# and cannot certify that three were written.
+
+#: Off unless config says otherwise. A config-less checkout — every unit-test
+#: fixture is one — keeps the single owner it has always had, so fan-out can
+#: never arrive as a side effect of an absent key.
+DEFAULT_FANOUT_ENABLED = False
+
+#: Salience floor when ``fanout.enabled`` is on but no floor is named. 72 is the
+#: shipped number and sits above ``breaking.salience_threshold`` (60, admission
+#: AT ALL) on purpose: clearing the bar to exist is not the bar to be written
+#: three ways.
+DEFAULT_FANOUT_MIN_SALIENCE = 72.0
+
+#: Hard ceiling on seats when config names none, INCLUDING the owner. A
+#: miscounted table must not be able to address the whole network.
+DEFAULT_FANOUT_MAX_ACCOUNTS = 3
+
+
+@dataclass(frozen=True)
+class FanoutSeat:
+    """One desk's assignment for a fan-out event.
+
+    ``angle`` is the post's JOB, and it is the same field name the content
+    studio already stamps on items (``item["angle"]``) rather than a second
+    angle channel — two vocabularies for one concept is how a copywriter ends up
+    reading the wrong one.
+
+    ``owner`` is True for exactly one seat, the first. It is the desk
+    :func:`route` picks on its own, so a fan-out never MOVES an item off the desk
+    that owns it; the later seats are additive and may individually fail.
+    """
+    account: str
+    angle: str = ""
+    owner: bool = False
+
+
+def _fanout_block(cfg: dict | None) -> dict[str, Any]:
+    raw = _block(cfg).get("fanout")
+    return raw if isinstance(raw, dict) else {}
+
+
+def _fanout_rows(cfg: dict | None, event_class: Any) -> list[tuple[str, str]]:
+    """``[(account, angle)]`` declared for ``event_class``, config order kept.
+
+    Rows that name no account are dropped rather than raising: the seat cannot
+    be addressed, and a YAML slip in one row must not delete the other two.
+    """
+    classes = _fanout_block(cfg).get("classes")
+    if not isinstance(classes, dict):
+        return []
+    rows = classes.get(str(event_class))
+    if not isinstance(rows, (list, tuple)):
+        return []
+    out: list[tuple[str, str]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        acct = str(row.get("account") or "").strip()
+        if acct:
+            out.append((acct, str(row.get("angle") or "").strip()))
+    return out
+
+
+def fanout_desks(
+    event_class: Any,
+    *,
+    cfg: dict | None,
+    root: Path | str | None = None,
+    refinement: str = "",
+    salience: float | None = None,
+) -> list[FanoutSeat]:
+    """The desks that may each write this event from their own angle.
+
+    ALWAYS RETURNS AT LEAST ONE SEAT, and seat 0 is always the account
+    :func:`route` chose. Every refusal path below therefore narrows to that one
+    seat rather than returning nothing — a caller that cannot fan out still has
+    an item to emit, and no failure in here can delete a post.
+
+    THE BAR IS BOTH HALVES, and both are cheap to verify:
+
+      * MAJOR only. ``refinement`` is the token
+        :func:`breaking_relevance.macro_routing_refinement` derives, and it is
+        ``""`` exactly for a tier-1 US release (the ratified CPI/PCE/payrolls/
+        FOMC/GDP/retail-sales/ISM/PPI/claims list). Any non-empty refinement —
+        ``macro_print.minor``, a Swiss CPI, a Canadian trade balance — fans out
+        to NOBODY and keeps its single existing owner. That is the 2026-08-05
+        split reused rather than re-litigated. ``policy`` carries no tier
+        dimension (``macro_print_tier`` is scoped to ``macro_print`` by
+        construction), so for policy the salience floor is the whole bar.
+      * ``salience`` clears ``fanout.min_salience``. A MISSING salience is BELOW
+        the bar, never through it: an item scored before the key existed, or a
+        caller that never measured, is not evidence of a major event, and the
+        expensive direction of this gate is the permissive one.
+
+    LIVENESS DROPS AN ADDITIVE SEAT, IT NEVER REDIRECTS IT. Seats 1..n read the
+    same ``_enabled_accounts`` roster :func:`route` does, but a dark desk here is
+    simply not written — it does not park (a seat that never existed is not an
+    item being held, and counting it in ``park_census`` would inflate that census
+    with posts nobody wrote) and it does not hand its angle to another desk (the
+    angle belongs to the voice, not to the slot). The three-answer contract from
+    :func:`resolve_desk` holds: None (accounts model unavailable) and the empty
+    set (no ``desk_network`` roster) are UNKNOWN, not proof of darkness, so both
+    leave the configured seats intact.
+
+    THE RELAY CEILING DOES NOT BIND AN ADDITIVE SEAT, and this is the one place
+    a reader will think the code is wrong, so it is stated plainly. Config sets
+    ``wire_volume.breaking.accounts.founder: 0`` — and 0 for meagan, sophia,
+    kelly and cici — as a belt: if some future lane ever addresses a persona
+    directly with a RELAY, its ceiling is zero rather than the network default.
+    That belt is correct and stays. It does not apply here because it answers a
+    different question. ``breaking_cap_verdict`` bounds how many RELAYS a desk
+    may take; a fan-out seat is an authored angle on a public fact, which is the
+    thing charter §4 permits a persona precisely because it is not a relay. The
+    bound on seats is ``wire_routing.fanout.max_accounts`` (3), not that counter.
+
+    So if you are reading this because you found a ``founder`` breaking item next
+    to a ``founder: 0`` row: the row still bans founder from relays and from
+    :func:`spill_pool`, and :func:`route` still never returns founder for any
+    class. Fan-out is deliberately outside that counter. The triple is pinned in
+    tests/test_marketing_wire_fanout.py so this cannot rot into a hole.
+
+    SEAT 0 IS THE EXCEPTION, because seat 0 IS the relay. It comes from
+    :func:`route`, cap check and all, so a capped owner still spills to a desk
+    with headroom exactly as it does today — this function changes nothing about
+    the item that would have been emitted anyway.
+
+    Never raises.
+    """
+    try:
+        owner = str(route(event_class, cfg=cfg, root=root,
+                          refinement=refinement) or "").strip()
+    except Exception as exc:  # noqa: BLE001 — fan-out must not break routing
+        log.warning("wire_routing.fanout_desks: route failed (%s)", exc)
+        owner = default_account(cfg)
+    owner = owner or default_account(cfg)
+
+    try:
+        block = _fanout_block(cfg)
+        rows = _fanout_rows(cfg, event_class)
+        # The owner's angle is whatever the table assigns it. A table that never
+        # names the owner leaves it blank, which is the honest answer: config
+        # declared no job for that desk, and inventing one would put words in
+        # the copywriter's mouth.
+        owner_seat = FanoutSeat(
+            account=owner,
+            angle=next((a for acct, a in rows if acct == owner), ""),
+            owner=True,
+        )
+
+        if not bool(block.get("enabled", DEFAULT_FANOUT_ENABLED)):
+            return [owner_seat]
+        if not rows or refinement:
+            return [owner_seat]
+        try:
+            floor = float(block.get("min_salience", DEFAULT_FANOUT_MIN_SALIENCE))
+        except (TypeError, ValueError):
+            floor = DEFAULT_FANOUT_MIN_SALIENCE
+        if salience is None:
+            return [owner_seat]
+        try:
+            if float(salience) < floor:
+                return [owner_seat]
+        except (TypeError, ValueError):
+            # Unmeasurable is the same answer as unmeasured. See the docstring.
+            return [owner_seat]
+
+        # ORDER IS MEANING and it is never dict-order roulette: the owner first,
+        # then the config rows in the order the operator wrote them. If the
+        # writer produces only one usable post it is the owner's.
+        if rows and rows[0][0] != owner:
+            _warn_once(
+                ("fanout-owner-mismatch", str(event_class), rows[0][0], owner),
+                f"::warning title=wire-fanout-owner-mismatch::event_class "
+                f"{str(event_class)!r} lists {rows[0][0]!r} first under "
+                f"wire_routing.fanout.classes, but wire_routing.classes routes "
+                f"it to {owner!r}. The route wins: {owner!r} is seat 0 and "
+                f"{rows[0][0]!r} keeps its angle as an additive seat. Fan-out "
+                f"adds reads, it never moves an item off its owner. Reorder the "
+                f"fanout rows to match, or repoint wire_routing.classes.",
+            )
+
+        try:
+            ceiling = int(block.get("max_accounts", DEFAULT_FANOUT_MAX_ACCOUNTS))
+        except (TypeError, ValueError):
+            ceiling = DEFAULT_FANOUT_MAX_ACCOUNTS
+        # Floored at 1 for the same reason the outbox budget is: the ceiling
+        # bounds SIBLINGS, so a typo must not be able to delete the owner.
+        ceiling = max(1, ceiling)
+
+        # LIVENESS IS THE ONLY FILTER ON AN ADDITIVE SEAT, and the absence of a
+        # `breaking_cap_verdict` call in this loop is deliberate, not an
+        # oversight. The persona desks carry `wire_volume.breaking.accounts.
+        # <id>: 0`, so consulting that ceiling here would delete the founder seat
+        # (and every other persona angle) on arrival while looking like a bug in
+        # config. It is not the right counter: it bounds RELAYS, and an angle is
+        # not a relay — that distinction is the whole reason a persona may be
+        # seated at all. `max_accounts` above is this loop's bound. Seat 0 came
+        # from `route`, which DOES apply the ceiling, so the relay half of the
+        # question keeps its existing answer untouched.
+        live = _enabled_accounts(cfg, root)
+        seats = [owner_seat]
+        seen = {owner}
+        for acct, angle in rows:
+            if len(seats) >= ceiling:
+                break
+            if acct in seen:
+                continue  # a table listing one desk twice yields one seat
+            seen.add(acct)
+            if live and acct not in live:
+                continue  # dark: dropped, never redirected. See the docstring.
+            seats.append(FanoutSeat(account=acct, angle=angle))
+        return seats[:ceiling]
+    except Exception as exc:  # noqa: BLE001 — never delete a post from in here
+        log.warning("wire_routing.fanout_desks failed (%s) — owner only", exc)
+        return [FanoutSeat(account=owner, owner=True)]

@@ -1817,10 +1817,25 @@ _GOVERNMENT_REVENUE_METRICS = (
 def _government_revenue_freshness(
     payload: dict,
     reference: Any | None = None,
-) -> tuple[str, str]:
-    """Read elapsed-time-aware governed health rails."""
+) -> tuple[str, str, str]:
+    """Read elapsed-time-aware governed health rails.
+
+    The award-event rail is returned alongside the aggregate because
+    ``effective_freshness`` deliberately EXCLUDES it from the aggregate
+    (``engine/government_revenue/freshness.py`` line 171): a dead award-event
+    spine leaves ``status == "ok"``.  ``reviewed_award_change_context`` then
+    gates on that rail on its own, so dropping it here would publish an empty
+    ``award_change_events`` list with no stated cause — indistinguishable from
+    a ticker that genuinely had no award changes.  Mastermind already discloses
+    it (``engine/neuralweb/mastermind_context.py`` line 2101); this rail must
+    not be the silent sibling.
+    """
     evaluated = effective_freshness(payload, reference=reference)
-    return str(evaluated["status"]), str(evaluated["opportunities"])
+    return (
+        str(evaluated["status"]),
+        str(evaluated["opportunities"]),
+        str(evaluated.get("award_events") or "unknown"),
+    )
 
 
 def _load_government_revenue_context(
@@ -1894,7 +1909,7 @@ def _load_government_revenue_context(
         if payload_known > cutoff or payload_day > cutoff:
             return {}
 
-    overall_status, opportunity_status = _government_revenue_freshness(
+    overall_status, opportunity_status, award_event_status = _government_revenue_freshness(
         payload,
         reference=cutoff,
     )
@@ -1923,6 +1938,7 @@ def _load_government_revenue_context(
             "freshness": {
                 "status": overall_status,
                 "opportunities": opportunity_status,
+                "award_events": award_event_status,
             },
             "metrics": metrics,
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
@@ -4035,4 +4051,40 @@ def originate_plans(
             "licensed": sum(1 for c in _leader_ctx if c.get("leader_pullback")),
         }
 
-    return plans
+    # ── W9F: Government Revenue post-selection annotation (display/context) ────
+    # Runs HERE and nowhere earlier: selection, ordering, sizing, and gating are
+    # complete and `plans` is final, so the adapter's only possible effect is to
+    # hang evidence off a plan that already exists. It derives its universe FROM
+    # this list, so there is no path by which procurement evidence influences
+    # WHICH names are in it, and it fingerprints the decision projection before
+    # and after its own work — a pass that moved any decision field discards
+    # itself. Fail-open at every layer; a raise here would cost the nightly its
+    # plans for an annotation, which is never the right trade.
+    return _annotate_with_government_revenue(plans, asof)
+
+
+def _annotate_with_government_revenue(plans: list[dict], asof: str) -> list[dict]:
+    """Attach Government Revenue annotation to plans Prophet ALREADY selected.
+
+    Separate function so the post-selection boundary is visible in a stack trace
+    and monkeypatchable in the byte-identity suite.  Today's candidate radar is
+    legitimately empty (Wave 9C: it stays empty until a real post-baseline
+    eligible event exists), so this is provably inert in production until the
+    first exact candidate lands — and `tests/test_government_revenue_prophet_
+    annotation.py` pins that inertness against the committed artifact.
+    """
+    if not plans:
+        return plans
+    try:
+        from engine.government_revenue.prophet_annotation import (  # noqa: PLC0415
+            annotate_plans_from_repo,
+        )
+
+        return annotate_plans_from_repo(
+            plans,
+            repo_root=Path(__file__).resolve().parents[1],
+            generated_at=f"{asof}T00:00:00+00:00",
+        )
+    except Exception as exc:  # noqa: BLE001 — annotation never costs Prophet its plans
+        log.warning("prophet_bridge: government-revenue annotation skipped (%s)", exc)
+        return plans
