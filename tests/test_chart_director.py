@@ -732,7 +732,9 @@ class TestAttentionSupply:
             "supply-sourced item; watchlist posts will ship uncharted and defer")
         # And the two plan_match dereferences below it must stay None-safe.
         assert 'if variant == "signal" and plan_match is not None:' in src
-        assert '(plan_match or {}).get("_signal_date", "")' in src
+        # Post-#5071 the date is resolved through the honest-dating contract,
+        # still None-safe on a missing plan_match.
+        assert 'effective_public_plan_date(plan_match or {}) or ""' in src
 
     def test_no_supply_leaves_the_historic_behaviour_exactly(self):
         acct = {"id": "flagship", "voice": "authoritative desk"}
