@@ -173,6 +173,28 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  all-exports-resolve:
+    if: ${{ false }}
+    # A stale __all__ entry — a name the module never binds — is a dormant
+    # AttributeError: `from m import *` raises on the first missing name, and
+    # the traceback lands on the importing PR, not on the module that broke
+    # its promise. Found live in collectors/sec_document_spine.py, which
+    # listed "document_with_retrieval" without ever importing it from the
+    # engine sibling. AST-static like the annotation guard above: importing
+    # every engine/scripts module in CI would execute import-time side effects
+    # for a source-visible property (measured 52.7s dynamic vs 2.3s static,
+    # identical findings). Package __init__ files listing real submodules are
+    # exempt by construction — `from pkg import *` imports those.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: every __all__ name must resolve (bind it or drop the entry)
+        run: python -m pytest tests/test_all_exports_resolve.py -q
+
   no-module-leak:
     if: ${{ false }}
     # A test that evicts a module from sys.modules and does not put it back
@@ -5056,6 +5078,20 @@ jobs:
       # fails CLOSED and every payload reads invalid (the 2026-08-03 staging pass).
       - name: prophet ↔ government-revenue context bridge
         run: python -m pytest tests/test_prophet_government_revenue_context.py -q
+      # Waves 9E + 9F: the shadow cross-check packet and the Prophet
+      # post-selection annotation — the two seams that connect the lobe to the
+      # rest of the platform without giving it signal authority. Both suites
+      # carry byte-identity proofs (the candidate queue's wire bytes across four
+      # shadow states; Prophet's decision projection with the adapter on/off) and
+      # a TRANSITIVE import-boundary walk proving no Prophet module can reach a
+      # govrev candidate SOURCE. They belong in THIS job because both read the
+      # jsonschema-validated candidate contract, and the live probes read the
+      # committed data/{baskets/ohlcv,yahoo,regime,us_prophet_rank} stores plus
+      # data/government_revenue/candidate_queue.json — all tracked, so the probes
+      # exercise real artifacts here rather than degrading to fixtures. Measured
+      # locally under this job's exact dependency set: 103 passed in ~7s.
+      - name: waves 9E/9F — shadow context packets + prophet annotation boundary
+        run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
@@ -5072,7 +5108,7 @@ jobs:
       # were invisible, not because they passed.  Measured on origin/main under
       # this job's exact dependency set: 270 passed in 19s.
       - name: award-event spine, candidate/projection, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same

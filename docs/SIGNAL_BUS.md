@@ -35,8 +35,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
-| fundamental-forensics | 2 |
-| government-revenue-foresight | 35 |
+| fundamental-forensics | 3 |
+| government-revenue-foresight | 40 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -48,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | leader-radar | 5 |
 | long-hold | 36 |
 | macro-context-rail | 17 |
-| macro-release-intel | 6 |
+| macro-release-intel | 9 |
 | mag7-regime | 3 |
 | mag7-washout | 5 |
 | market-structure | 3 |
@@ -110,19 +110,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 367 |
-| infrastructure | 147 |
+| display | 368 |
+| infrastructure | 153 |
 | scored | 4 |
-| shadow | 89 |
+| shadow | 91 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 571 |
+| git | 579 |
 | git+r2 | 3 |
 | gitignored-local | 17 |
-| r2 | 16 |
+| r2 | 17 |
 
 ## Artifacts by owner_program
 
@@ -411,7 +411,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
-| fundamental-forensics-sec-source-snapshot | `fundamental_forensics/sec-source/v1/latest.json` | json | daily-engine | infrastructure | 2 | 0 |
+| fundamental-forensics-disclosure-bundle | `fundamental_forensics/disclosures/v1/latest.json` | json | nightly-sec | infrastructure | 2 | 0 |
+| fundamental-forensics-sec-source-snapshot | `fundamental_forensics/sec-source/v1/latest.json` | json | nightly-sec | infrastructure | 2 | 0 |
 
 ### government-revenue-foresight
 
@@ -435,6 +436,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-recipient-resolution-coverage | `data/government_revenue/recipient_resolution_coverage.json` | json | intraday | infrastructure | 2 | 0 |
 | government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
+| government-revenue-sbir-award-observations | `data/government_revenue/sbir_award_observations.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| government-revenue-sbir-collection-receipts | `data/government_revenue/sbir_collection_receipts.jsonl` | jsonl | collect | infrastructure | 2 | 0 |
+| government-revenue-sbir-projection-state | `data/government_revenue/sbir_projection_state.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-subaward-dossiers | `data/government_revenue/subaward_dossiers.json` | json | intraday | display | 2 | 0 |
 | government-revenue-subaward-ingest-status | `data/government_revenue/subaward_ingest_status.json` | json | collect | infrastructure | 2 | 0 |
 | site-government-revenue-candidates | `site/government-revenue-data/candidates.json` | json | intraday | display | 2 | 0 |
@@ -447,6 +451,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-sam-opportunity-documents | `data/government_revenue/opportunity_documents.parquet` | parquet | intraday | infrastructure | 1 | 0 |
 | government-revenue-sam-opportunity-heartbeat | `data/government_revenue/sam_opportunity_heartbeat.parquet` | parquet | intraday | infrastructure | 1 | 0 |
 | government-revenue-sam-opportunity-revisions | `data/government_revenue/opportunity_revisions.parquet` | parquet | intraday | infrastructure | 1 | 0 |
+| government-revenue-sbir-collector-heartbeat | `data/government_revenue/sbir_collector_heartbeat.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-sbir-ingest-status | `data/government_revenue/sbir_ingest_status.json` | json | collect | infrastructure | 1 | 0 |
 | government-revenue-subaward-collector-heartbeat | `data/government_revenue/subaward_collector_heartbeat.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-workspace | `data/government_revenue/workspace.json` | json | intraday | display | 1 | 0 |
 | site-government-revenue-dossiers | `site/government-revenue-data/dossiers.json` | json | intraday | display | 1 | 0 |
@@ -592,10 +598,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 2 | 1 |
-| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| inflation-intelligence | `data/release_forecast/inflation_intelligence.json` | json | daily-engine | display | 4 | 1 |
+| release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 3 | 1 |
+| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 3 | 0 |
+| release-target-vintage-manifest | `data/fred_vintage/release_targets/manifest.json` | json | daily-engine | shadow | 2 | 0 |
 | cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| release-official-actuals | `data/release_forecast/official_actuals.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
 | release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
 
@@ -1602,6 +1611,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 
 - **path:** `data/government_revenue/sam_opportunity_heartbeat.parquet`
 - **declared producer:** `collectors/sam_gov.py`
+- **extra writers:**
+  - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+
+### government-revenue-sbir-collector-heartbeat
+
+- **path:** `data/government_revenue/sbir_collector_heartbeat.parquet`
+- **declared producer:** `collectors/sbir_awards.py`
 - **extra writers:**
   - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
 
