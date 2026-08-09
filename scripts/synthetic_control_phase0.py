@@ -257,8 +257,7 @@ if __name__ == "__main__":
     logging.disable(logging.INFO)
 
 WT_ROOT = Path(__file__).resolve().parents[1]
-if str(WT_ROOT) not in sys.path:
-    sys.path.insert(0, str(WT_ROOT))
+sys.path.insert(0, str(WT_ROOT))
 
 from engine import synthetic_control as sc          # noqa: E402
 from engine import validation as V                  # noqa: E402

@@ -145,6 +145,62 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
   .fl-changes { grid-template-columns:1fr; }
 }
 
+/* ---- permanent all-filer institutional census ---- */
+.institutional-census { margin:14px 0 8px; padding:18px 20px; border:1px solid var(--line);
+                        border-radius:15px; background:var(--panel); overflow:hidden; }
+.census-head { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);
+               align-items:end; gap:24px; }
+.census-kicker { color:var(--info); font-size:10.5px; font-weight:750; letter-spacing:.07em;
+                 text-transform:uppercase; }
+.institutional-census h2 { margin:5px 0 4px; font-size:clamp(19px,2.4vw,25px); letter-spacing:-.01em; }
+.census-sub { max-width:720px; color:var(--muted); font-size:12.5px; line-height:1.55; }
+.census-state { display:inline-flex; margin-left:7px; padding:2px 7px; border:1px solid var(--line);
+                border-radius:99px; color:var(--muted); background:var(--panel2);
+                font-size:9.5px; letter-spacing:.05em; vertical-align:1px; }
+.census-progress-meta { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+                        margin-bottom:6px; color:var(--muted); font-size:10.5px; }
+.census-progress-meta strong { color:var(--text); font-size:13px; font-variant-numeric:tabular-nums; }
+.census-progress { display:block; width:100%; height:9px; overflow:hidden; border:0; border-radius:9px;
+                   background:var(--panel2); accent-color:var(--info); }
+.census-progress::-webkit-progress-bar { background:var(--panel2); border:1px solid var(--line); border-radius:9px; }
+.census-progress::-webkit-progress-value { border-radius:9px; background:linear-gradient(90deg,var(--info),var(--up)); }
+.census-progress::-moz-progress-bar { border-radius:9px; background:linear-gradient(90deg,var(--info),var(--up)); }
+.census-period { margin-top:7px; color:var(--muted); font-size:10.5px; }
+.census-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+.census-panel { min-width:0; padding:12px 13px; border:1px solid var(--line); border-radius:11px;
+                background:var(--panel2); }
+.census-panel h3 { margin:0 0 3px; font-size:12.5px; }
+.census-panel-note { min-height:30px; margin-bottom:5px; color:var(--muted); font-size:10.5px; line-height:1.4; }
+.census-list { list-style:none; margin:0; padding:0; }
+.census-list li { display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:8px; align-items:center;
+                  min-width:0; padding:7px 0; border-top:1px solid var(--line); }
+.census-rank { color:var(--muted); font-size:10px; font-variant-numeric:tabular-nums; }
+.census-name { min-width:0; }
+.census-name strong { display:block; overflow:hidden; color:var(--text); font-size:11.5px;
+                      text-overflow:ellipsis; white-space:nowrap; }
+.census-name small { display:block; overflow:hidden; color:var(--muted); font-size:9.5px;
+                     text-overflow:ellipsis; white-space:nowrap; }
+.census-metric { text-align:right; color:var(--muted); font-size:9.5px; line-height:1.35; }
+.census-metric strong { display:block; color:var(--text); font-size:10.5px; font-variant-numeric:tabular-nums; }
+.census-metric.up strong { color:var(--up); }
+.census-metric.down strong { color:var(--down); }
+.census-extra > summary { display:flex; align-items:center; gap:4px; cursor:pointer;
+                          color:var(--muted); font-size:10.5px; }
+.census-foot { margin-top:11px; padding-top:9px; border-top:1px solid var(--line); color:var(--muted);
+               font-size:10.5px; line-height:1.5; }
+.census-empty { margin-top:12px; padding:11px 13px; border:1px dashed var(--line); border-radius:10px;
+                background:var(--panel2); color:var(--muted); font-size:11.5px; }
+.census-empty strong { display:block; margin-bottom:2px; color:var(--text); }
+@media(max-width:820px){
+  .census-head { grid-template-columns:1fr; gap:14px; }
+  .census-grid { grid-template-columns:1fr; }
+}
+@media(max-width:620px){
+  .institutional-census { padding:15px 14px; }
+  .census-panel-note { min-height:0; }
+  .census-extra > summary { min-height:44px; }
+}
+
 /* ---- section headers ---- */
 .sm-sec { margin:42px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
 .sm-sec::after { content:''; flex:1; height:1px; background:var(--line); align-self:center; }
@@ -285,8 +341,14 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
              border:1px solid var(--line); color:var(--muted); text-decoration:none;
              white-space:nowrap; }
 .sm-rail a:hover { color:var(--text); border-color:var(--info); }
-.sm-sec[id], .filing-live[id] { scroll-margin-top:56px; }
-@media(max-width:620px){ .sm-sec[id], .filing-live[id] { scroll-margin-top:96px; } }
+.sm-sec[id], .filing-live[id], .institutional-census[id] { scroll-margin-top:56px; }
+@media(max-width:620px){
+  .sm-rail { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-inline:contain;
+             scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .sm-rail::-webkit-scrollbar { display:none; }
+  .sm-rail a { flex:0 0 auto; min-height:36px; display:inline-flex; align-items:center; }
+  .sm-sec[id], .filing-live[id], .institutional-census[id] { scroll-margin-top:60px; }
+}
 
 /* ---- v3: ticker logos (big boards only — never wire rows / leaderboard) ---- */
 .tlogo { width:18px; height:18px; border-radius:4px; vertical-align:-4px; margin-right:6px;
@@ -465,10 +527,31 @@ a.mem-card:hover { border-color:var(--info); }
   {%- else -%}{{ v }}
   {%- endif -%}
 {%- endmacro -%}
+{%- macro census_row(r, direction, rank) -%}
+  {%- set label = r.get('ticker') or r.get('sector') or r.get('name') or '—' -%}
+  {%- set issuer = r.get('issuer') or r.get('sector_label') -%}
+  {%- set net = r.get('net_increasers') -%}
+  {%- if net is none %}{% set net = r.get('net_filer_delta') %}{% endif -%}
+  {%- set paired = r.get('paired_observations') -%}
+  {%- if paired is none %}{% set paired = r.get('paired_filings') %}{% endif -%}
+  {%- set holder_delta = r.get('holder_delta') -%}
+  <li>
+    <span class="census-rank" aria-hidden="true">{{ rank }}</span>
+    <span class="census-name"><strong>{{ label }}</strong>{% if issuer and issuer != label %}<small>{{ issuer }}</small>{% endif %}</span>
+    <span class="census-metric {{ 'up' if direction == 'up' or (direction == 'sector' and net is number and net >= 0) else 'down' }}">
+      <strong>
+        {% if direction == 'up' %}↑{% elif direction == 'down' %}↓{% elif net is number and net >= 0 %}↑{% else %}↓{% endif %}
+        {% if net is number %}{{ net | abs }}{% else %}{{ net or '—' }}{% endif %} {{ t('net filers','净披露机构') }}
+      </strong>
+      {% if holder_delta is not none %}Δ {{ holder_delta }} {{ t('holders','持有机构') }}{% elif paired is not none %}{{ paired }} {{ t('paired','配对') }}{% endif %}
+    </span>
+  </li>
+{%- endmacro -%}
 
 {#- ===== set desk shorthand ===== -#}
 {% set d_fresh = desk.get('freshness') or {} %}
 {% set d_roll = desk.get('filing_transition') or {} %}
+{% set d_census = desk.get('institutional_census') or {} %}
 {% set d_wire = desk.get('wire') or [] %}
 {% set WIRE_FOLD = 20 %}{#- newest N shown by default; "See more" reveals the rest (client-side) -#}
 {% set d_gp = desk.get('grand_portfolio') or [] %}
@@ -539,7 +622,7 @@ a.mem-card:hover { border-color:var(--info); }
         {% endif %}
       {% endfor %}
     </div>
-    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后；适用于持有至少1亿美元13(f)证券的经理所申报的多头持仓。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
+    <div class="hon-note"><span data-tip-en="13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions." data-tip-zh="13F = 季度披露，约45天滞后；适用于持有至少1亿美元13(f)证券的经理所披露的多头持仓。不含空头、现金或非美股仓位。">{{ t('Quarterly filings, ~45-day lag — context, never a directional signal.','季度披露、约45天滞后——仅为背景参考，永远不是方向性信号。') }}</span></div>
   </div>
 
   {# Full-width row 2: per-axis freshness chips (long labels — never fit a 1/3 column) #}
@@ -588,13 +671,13 @@ a.mem-card:hover { border-color:var(--info); }
         <span class="neg">{{ f.action_counts.get('trim',0) }} {{ t('trims','减仓') }}</span>
         <span class="neg">{{ f.action_counts.get('exit',0) }} {{ t('exits','清仓') }}</span>
       </div>
-      {% if f.value_unit_adjusted %}<span class="fl-unit" data-tip-en="SEC reported value retained; display normalized from a detected legacy-thousands filing." data-tip-zh="保留SEC原始申报值；显示值按检测到的旧千美元单位完成标准化。">{{ t('SEC unit normalized','SEC单位已标准化') }}</span>{% endif %}
+      {% if f.value_unit_adjusted %}<span class="fl-unit" data-tip-en="SEC reported value retained; display normalized from a detected legacy-thousands filing." data-tip-zh="保留SEC原始披露值；显示值按检测到的旧千美元单位完成标准化。">{{ t('SEC unit normalized','SEC单位已标准化') }}</span>{% endif %}
     </article>
     {% endfor %}
   </div>
 
   {% if d_roll.get('notices') %}
-  <div class="fl-notices"><strong>{{ t('Notice-only filings','仅通知申报') }}:</strong>
+  <div class="fl-notices"><strong>{{ t('Notice-only filings','仅通知披露') }}:</strong>
     {% for n in d_roll.get('notices') or [] %}{{ n.name }} · {{ n.form }} · {{ n.filing_date }}{% if not loop.last %}; {% endif %}{% endfor %}.
     {{ t('No holdings book was supplied, so these managers remain outside incoming-quarter consensus and never count as exits.','未提交持仓明细，因此这些经理不进入新季度共识，也绝不会被计作清仓。') }}
   </div>
@@ -626,6 +709,7 @@ a.mem-card:hover { border-color:var(--info); }
 {# aria-label is an attribute — t()'s <span> markup breaks the quote and leaks text; plain EN only #}
 <nav class="sm-rail" aria-label="Sections">
   {% if d_roll.get('show_early_radar') %}<a href="#sec-filing-live">{{ t('Filing live','披露直播') }}</a>{% endif %}
+  <a href="#sec-census">{{ t('Census','全景') }}</a>
   <a href="#sec-follow">{{ t('Follow','跟随台') }}</a>
   <a href="#sec-wire">{{ t('Wire','播报') }}</a>
   <a href="#sec-ideas">{{ t('Ideas','想法榜') }}</a>
@@ -635,6 +719,96 @@ a.mem-card:hover { border-color:var(--info); }
   <a href="#sec-activists">{{ t('Activists','维权') }}</a>
   <a href="#sec-dossier">{{ t('Dossier','档案') }}</a>
 </nav>
+
+{# ======================================================================== #}
+{# PERMANENT CENSUS — bounded all-filer breadth, never private holdings      #}
+{# ======================================================================== #}
+{% set _c_state = d_census.get('state') or 'degraded' %}
+{% set _c_cov = d_census.get('coverage') or {} %}
+{% set _c_periods = d_census.get('periods') or {} %}
+{% set _c_leaders = d_census.get('leaders') or {} %}
+{% set _c_broad = (_c_leaders.get('broadening') or [])[:6] %}
+{% set _c_narrow = (_c_leaders.get('narrowing') or [])[:6] %}
+{% set _c_sectors = (d_census.get('sector_breadth') or [])[:6] %}
+{% set _c_current = _c_cov.get('current_original_filings') if _c_cov.get('current_original_filings') is not none else (_c_cov.get('current_filings') or 0) %}
+{% set _c_baseline = _c_cov.get('baseline_original_filings') if _c_cov.get('baseline_original_filings') is not none else (_c_cov.get('baseline_filings') or 0) %}
+{% set _c_paired = _c_cov.get('paired_filings') if _c_cov.get('paired_filings') is not none else (_c_cov.get('paired_filers') or 0) %}
+{% set _c_progress = _c_cov.get('progress_pct') or 0 %}
+{% set _c_current_period = _c_periods.get('current') %}
+{% set _c_baseline_period = _c_periods.get('baseline') %}
+{% if _c_current_period is mapping %}{% set _c_current_period = _c_current_period.get('label') or _c_current_period.get('period_end') %}{% endif %}
+{% if _c_baseline_period is mapping %}{% set _c_baseline_period = _c_baseline_period.get('label') or _c_baseline_period.get('period_end') %}{% endif %}
+
+<section class="institutional-census" id="sec-census" aria-labelledby="census-title">
+  <div class="census-head">
+    <div>
+      <div class="census-kicker">{{ t('ALL SEC 13F FILERS','SEC 13F披露全景') }}
+        {% if _c_state == 'rolling' %}<span class="census-state">{{ t('ROLLING','滚动更新') }}</span>
+        {% elif _c_state == 'complete' %}<span class="census-state">{{ t('COMPLETE','本季完整') }}</span>
+        {% elif _c_state != 'degraded' %}<span class="census-state">{{ t('LIVE','实时更新') }}</span>{% endif %}
+      </div>
+      <h2 id="census-title">{{ t('Where institutional ownership is broadening','机构持仓广度正在向哪里移动') }}</h2>
+      <div class="census-sub">
+        {% if _c_state == 'degraded' %}
+          {{ t('The all-filer projection is temporarily unavailable. The featured-manager desk below remains independent and current to its own filing clock.','全部披露机构汇总暂不可用。下方精选经理面板独立运行，并按其自身披露时钟更新。') }}
+        {% else %}
+          {{ _c_current_period or t('Current quarter','本季度') }} · <strong>{{ _c_paired }}</strong> {{ t('filers matched across both completed quarters.','家披露机构在两个完整季度中成功配对。') }}
+          {{ t('Pending filers are excluded—not counted as sellers.','待披露机构不进入样本，也不会被计作卖方。') }}
+        {% endif %}
+      </div>
+    </div>
+    {% if _c_state != 'degraded' %}
+    <div>
+      <div class="census-progress-meta">
+        <span><strong>{{ _c_paired }}/{{ _c_current }}</strong> {{ t('comparable current filers','本季度可比披露机构') }}</span>
+        <span>{{ _c_progress }}%</span>
+      </div>
+      <progress class="census-progress" max="100" value="{{ _c_progress }}" aria-label="Current-quarter SEC 13F coverage">{{ _c_progress }}%</progress>
+      <div class="census-period">{{ t('Comparison','比较区间') }} · {{ _c_current_period or '—' }} vs {{ _c_baseline_period or '—' }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if _c_state == 'degraded' %}
+    <div class="census-empty" role="status"><strong>{{ t('Census refresh pending','全景数据等待刷新') }}</strong>{{ t('No stale leader ranking is shown while the bounded public receipt is unavailable.','在受限公开数据不可用时，不展示过期的领先排名。') }}</div>
+  {% else %}
+  <div class="census-grid">
+    <article class="census-panel">
+      <h3>{{ t('Ownership broadening','持仓广度扩张') }}</h3>
+      <div class="census-panel-note">{{ t('Most net increasers among paired SEC filers.','配对SEC披露机构中净增持最广。') }}</div>
+      {% if _c_broad %}
+      <ol class="census-list">
+        {% for r in _c_broad[:3] %}{{ census_row(r, 'up', loop.index) }}{% endfor %}
+      </ol>
+      {% if _c_broad | length > 3 %}<details class="census-extra"><summary>{{ t('Show remaining','显示其余') }} {{ (_c_broad | length) - 3 }}</summary><ol class="census-list" start="4">{% for r in _c_broad[3:] %}{{ census_row(r, 'up', loop.index + 3) }}{% endfor %}</ol></details>{% endif %}
+      {% else %}<div class="census-empty">{{ t('No paired breadth ranking yet.','尚无配对广度排名。') }}</div>{% endif %}
+    </article>
+
+    <article class="census-panel">
+      <h3>{{ t('Ownership narrowing','持仓广度收窄') }}</h3>
+      <div class="census-panel-note">{{ t('Most net decreasers among paired SEC filers.','配对SEC披露机构中净减持最广。') }}</div>
+      {% if _c_narrow %}
+      <ol class="census-list">
+        {% for r in _c_narrow[:3] %}{{ census_row(r, 'down', loop.index) }}{% endfor %}
+      </ol>
+      {% if _c_narrow | length > 3 %}<details class="census-extra"><summary>{{ t('Show remaining','显示其余') }} {{ (_c_narrow | length) - 3 }}</summary><ol class="census-list" start="4">{% for r in _c_narrow[3:] %}{{ census_row(r, 'down', loop.index + 3) }}{% endfor %}</ol></details>{% endif %}
+      {% else %}<div class="census-empty">{{ t('No paired breadth ranking yet.','尚无配对广度排名。') }}</div>{% endif %}
+    </article>
+
+    <article class="census-panel">
+      <h3>{{ t('Sector breadth','行业持仓广度') }}</h3>
+      <div class="census-panel-note">{{ t('Net filer participation by sector—not dollar flow.','按行业统计净披露机构参与度，并非资金流。') }}</div>
+      {% if _c_sectors %}
+      <ol class="census-list">
+        {% for r in _c_sectors[:3] %}{{ census_row(r, 'sector', loop.index) }}{% endfor %}
+      </ol>
+      {% if _c_sectors | length > 3 %}<details class="census-extra"><summary>{{ t('Show remaining','显示其余') }} {{ (_c_sectors | length) - 3 }}</summary><ol class="census-list" start="4">{% for r in _c_sectors[3:] %}{{ census_row(r, 'sector', loop.index + 3) }}{% endfor %}</ol></details>{% endif %}
+      {% else %}<div class="census-empty">{{ t('Sector breadth is still accruing.','行业广度仍在积累。') }}</div>{% endif %}
+    </article>
+  </div>
+  <div class="census-foot">{{ t('All-filer breadth, not manager skill. Passive, quant and custody filers are included here but stay outside Follow. Counts are by filer until parent and affiliate normalization is ready. 13F holdings arrive with roughly a 45-day lag.','这是全部披露机构的广度统计，并非经理能力评分。被动、量化与托管机构计入此处，但不进入跟随台。在母公司与关联机构归一化完成前，均按披露机构计数。13F持仓通常滞后约45天。') }}</div>
+  {% endif %}
+</section>
 
 {# ======================================================================== #}
 {# HERO: SEC-FOLLOW — Managers worth following                               #}

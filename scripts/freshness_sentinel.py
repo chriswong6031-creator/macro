@@ -129,6 +129,9 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # Cloudflare's WAF 403s python-default User-Agents on the public r2.dev host
 # (scripts/audit_r2.py, same constant class).
 UA = "macro-freshness-sentinel/1.0"
