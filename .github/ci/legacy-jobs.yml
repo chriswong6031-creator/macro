@@ -5094,6 +5094,10 @@ jobs:
       # above, under the same jsonschema-bearing install line.
       - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
         run: python -m pytest tests/test_sbir_awards.py -q
+      - name: amount-class semantics guard (selftest + live source scan)
+        run: |
+          python3 scripts/check_government_revenue_amount_semantics.py --selftest
+          python3 scripts/check_government_revenue_amount_semantics.py
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
