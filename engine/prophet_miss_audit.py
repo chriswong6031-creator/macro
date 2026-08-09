@@ -1665,9 +1665,14 @@ def priority_score_row_fields(doc: dict) -> dict:
 def entry_status_scorecard(root: Path = ROOT, degraded: list[dict] | None = None) -> dict:
     """The read-only ``entry_status`` block (PROPHET US ANTICIPATION §6.6).
 
-    The evidence loop for the patience-first entry-value ladder: the shipped v1 constants
-    are the CHINA board's measured ordering, and this table is the US measurement that
-    revises them.  All of it lives in :mod:`engine.us_entry_status_remeasure`; this wrapper
+    The STANDING evidence loop for the patience-first entry-value ladder.  The A2 entry leg
+    ships STATUS-NEUTRAL per the §6.6 ruling — on the first US run of this measurement
+    (2026-08-08) the CHINA board's measured ordering did not reproduce — and this table is
+    what keeps accruing behind that ruling, so an ordering can only ever be re-introduced
+    against a record rather than against a memory.  It confers nothing on its own: the map
+    is edited by hand by an operator reading these cells.
+
+    All of it lives in :mod:`engine.us_entry_status_remeasure`; this wrapper
     only supplies the miss-audit's root and degraded list, exactly as the ``priority_score``
     block delegates to :mod:`engine.us_prophet_grades`.
 

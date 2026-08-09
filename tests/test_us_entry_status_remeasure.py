@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -249,11 +250,224 @@ class TestThinAndNullLabelling:
 
 
 # --------------------------------------------------------------------------- #
+# vintage / maturation disclosure — a long horizon selects the EARLIEST dates
+# --------------------------------------------------------------------------- #
+
+class TestMarkedDateRange:
+    def test_a_cells_date_range_spans_its_marked_rows_not_its_episodes(self, tmp_path):
+        """The maturation confound, pinned.
+
+        A 63-session mark needs 63 sessions to exist, so the marked subset at a long
+        horizon is systematically the EARLIEST board dates while the episode count keeps
+        growing with the newest admissions.  A date range computed over the episodes would
+        describe a window the statistics were never computed over.
+        """
+        rows = [_row(as_of="2026-06-01", ticker="M1", horizon=63, excess_spy=0.02),
+                _row(as_of="2026-06-02", ticker="M2", horizon=63, excess_spy=-0.01),
+                # admitted late, not yet matured: it moves the EPISODE span, never the marks
+                _row(as_of="2026-07-30", ticker="U1", horizon=63, excess_spy=None)]
+        _write_ledger(tmp_path, rows)
+        block = uesr.scorecard(tmp_path)
+        leg = _cell(block, "buy", 63, "bounce_wait")
+        assert leg["n"] == 3 and leg["n_excess"] == 2
+        assert leg["as_of_first"] == "2026-06-01"
+        assert leg["as_of_last"] == "2026-06-02"      # NOT the unmatured 2026-07-30
+        cell = block["by_cohort"]["buy"]["63d"]
+        # both counts printed and labelled — the gap between them IS the confound
+        assert cell["n_dates"] == 3
+        assert cell["n_dates_marked"] == 2
+        assert cell["as_of_marked_last"] == "2026-06-02"
+
+    def test_two_statuses_at_one_horizon_can_be_read_as_two_vintages(self, tmp_path):
+        """The reason the range is PER CELL: statuses mature over different windows."""
+        rows = [_row(as_of="2026-06-01", ticker=f"A{i}", horizon=63, excess_spy=0.01)
+                for i in range(3)]
+        rows += [_row(as_of="2026-07-01", ticker=f"B{i}", horizon=63,
+                      entry_status="buy_now", excess_spy=0.01) for i in range(3)]
+        _write_ledger(tmp_path, rows)
+        block = uesr.scorecard(tmp_path)
+        assert _cell(block, "buy", 63, "bounce_wait")["as_of_last"] == "2026-06-01"
+        assert _cell(block, "buy", 63, "buy_now")["as_of_first"] == "2026-07-01"
+
+    def test_a_cell_with_no_marks_has_no_date_range(self, store):
+        """Null, not a zero-width window: nothing in the cell produced a statistic."""
+        leg = _cell(uesr.scorecard(store), "buy", 21, "hold")
+        assert leg["n"] == 3 and leg["n_excess"] == 0
+        assert leg["as_of_first"] is None and leg["as_of_last"] is None
+
+    def test_a_ledger_with_no_as_of_still_stands(self, tmp_path):
+        """``as_of`` is optional — its absence costs the dates, never the table."""
+        rows = [{"horizon": 10, "lane": "buy", "ticker": f"T{i}",
+                 "entry_status": "hold", "excess_spy": 0.01} for i in range(3)]
+        _write_ledger(tmp_path, rows)
+        block = uesr.scorecard(tmp_path)
+        assert block["available"] is True
+        leg = _cell(block, "buy", 10, "hold")
+        assert leg["n_excess"] == 3
+        assert leg["as_of_first"] is None and leg["as_of_last"] is None
+        assert block["by_cohort"]["buy"]["10d"]["n_dates_marked"] is None
+
+
+# --------------------------------------------------------------------------- #
+# intervals — a printed thin cell must print its own uncertainty
+# --------------------------------------------------------------------------- #
+
+class TestIntervals:
+    def test_every_rate_carries_its_own_wilson_bounds(self, store):
+        for legs in uesr.scorecard(store)["by_cohort"].values():
+            for cell in legs.values():
+                for status, leg in (cell.get("by_entry_status") or {}).items():
+                    for rate in ("loser_rate", "win_rate"):
+                        lo, hi = leg[f"{rate}_wilson_lo"], leg[f"{rate}_wilson_hi"]
+                        if leg[rate] is None:
+                            assert lo is None and hi is None, status
+                            continue
+                        assert 0.0 <= lo <= leg[rate] <= hi <= 1.0, (status, rate)
+
+    def test_a_thin_cell_prints_an_interval_wide_enough_to_refuse_a_ranking(self, store):
+        """THIN_MIN_N guarantees this cell prints; the interval is what stops it ranking."""
+        leg = _cell(uesr.scorecard(store), "buy", 10, "buy_now")
+        assert leg["thin"] is True and leg["loser_rate"] == 0.75      # 3 of 4
+        assert leg["loser_rate_wilson_lo"] < 0.35
+        assert leg["loser_rate_wilson_hi"] > 0.95
+
+    def test_a_non_thin_cells_interval_is_tighter_than_a_thin_ones(self, store):
+        block = uesr.scorecard(store)
+        wide = _cell(block, "buy", 10, "buy_now")                     # n=4
+        tight = _cell(block, "buy", 10, "bounce_wait")                # n=21
+        assert (tight["loser_rate_wilson_hi"] - tight["loser_rate_wilson_lo"]) < \
+               (wide["loser_rate_wilson_hi"] - wide["loser_rate_wilson_lo"])
+
+    def test_the_win_interval_mirrors_the_loser_interval(self, store):
+        """Loser and win are exact complements, so their bounds must mirror exactly."""
+        leg = _cell(uesr.scorecard(store), "buy", 10, "bounce_wait")
+        assert leg["win_rate_wilson_lo"] == pytest.approx(
+            1.0 - leg["loser_rate_wilson_hi"], abs=1e-4)
+        assert leg["win_rate_wilson_hi"] == pytest.approx(
+            1.0 - leg["loser_rate_wilson_lo"], abs=1e-4)
+
+    def test_a_zero_width_interval_is_never_produced_at_a_boundary_rate(self, tmp_path):
+        """At 100% a Wald interval collapses to zero width — the reading Wilson refuses."""
+        _write_ledger(tmp_path, [_row(ticker=f"F{i}", excess_spy=0.0) for i in range(4)])
+        leg = _cell(uesr.scorecard(tmp_path), "buy", 10, "bounce_wait")
+        assert leg["loser_rate"] == 1.0
+        assert leg["loser_rate_wilson_lo"] < 0.6      # 4/4 is not proof of 100%
+        assert leg["loser_rate_wilson_hi"] == 1.0
+
+    def test_the_interval_is_the_sibling_board_tables_ruler_not_a_fork(self):
+        """Two Wilson formulas over the same ledger would be two rulers.
+
+        The formula is REPLICATED here (an engine module must not import a scripts one), so
+        the fence is behavioural rather than textual: every (k, n) pair must agree with
+        ``scripts.grade_us_board.wilson_ci``, the ruler that graded every mark this module
+        reads.  Imported inside the test so a sibling import problem fails THIS test rather
+        than erroring collection for the whole file.
+        """
+        from scripts import grade_us_board as G
+
+        assert all(math.isnan(x) for x in uesr.wilson_ci(0, 0))
+        assert all(math.isnan(x) for x in G.wilson_ci(0, 0))
+        for n in range(1, 60):
+            for k in range(0, n + 1):
+                assert uesr.wilson_ci(k, n) == G.wilson_ci(k, n), (k, n)
+
+
+# --------------------------------------------------------------------------- #
+# price-basis era disclosure — two eras live in one parquet
+# --------------------------------------------------------------------------- #
+
+class TestPriceBasisEra:
+    def test_the_era_split_is_reported_as_row_counts(self, tmp_path):
+        rows = [_row(ticker=f"P{i}") | {"price_basis": uesr.PRE_ERA_BASIS}
+                for i in range(3)]
+        rows += [_row(ticker=f"A{i}") | {"price_basis": "adjusted"} for i in range(2)]
+        rows += [_row(ticker="U0") | {"price_basis": "unadjusted"}]
+        rows += [_row(ticker="N0") | {"price_basis": None}]
+        _write_ledger(tmp_path, rows)
+        era = uesr.scorecard(tmp_path)["coverage"]["price_basis_era"]
+        assert era["column"] == "price_basis"
+        assert era["n_by_basis"] == {uesr.PRE_ERA_BASIS: 3, "adjusted": 2, "unadjusted": 1}
+        assert era["n_pre_era"] == 3
+        assert era["n_unstamped"] == 1
+        assert "never re-graded" in era["note"]
+
+    def test_era_1_rows_are_disclosed_never_filtered_out(self, tmp_path):
+        """Dropping era-1 rows would be this module re-grading, which it does not do."""
+        rows = [_row(ticker=f"P{i}", excess_spy=-0.01) | {"price_basis": uesr.PRE_ERA_BASIS}
+                for i in range(3)]
+        rows += [_row(ticker="A0", excess_spy=0.05) | {"price_basis": "adjusted"}]
+        _write_ledger(tmp_path, rows)
+        block = uesr.scorecard(tmp_path)
+        # all four rows still reach the cell — the split is a disclosure, not a filter
+        assert _cell(block, "buy", 10, "bounce_wait")["n_excess"] == 4
+        assert block["coverage"]["price_basis_era"]["n_pre_era"] == 3
+
+    def test_the_column_is_projected_out_of_the_ledger(self):
+        """A block cannot report a column the read never asked the parquet for."""
+        assert uesr.PRICE_BASIS_COLUMN in uesr.LEDGER_COLUMNS
+        assert uesr.PRICE_BASIS_COLUMN not in uesr.REQUIRED_COLUMNS
+
+    def test_the_era_value_agrees_with_the_writing_lane(self):
+        """The stamp is a stored string in a shipped parquet — one spelling, or no split."""
+        from scripts import grade_us_board as G
+
+        assert uesr.PRE_ERA_BASIS == G.PRE_ERA_BASIS
+
+    def test_a_ledger_with_no_price_basis_column_prints_a_named_null(self, store):
+        """The column is optional: its absence costs the split, never the table."""
+        block = uesr.scorecard(store)
+        assert block["available"] is True
+        era = block["coverage"]["price_basis_era"]
+        assert era["n_by_basis"] == {}
+        assert "not computable" in era["null_reason"]
+        assert "not a single-era ledger" in era["null_reason"]
+
+    def test_the_absent_column_is_named_in_the_degraded_row(self, store):
+        deg: list[dict] = []
+        uesr.scorecard(store, deg)
+        assert deg and uesr.PRICE_BASIS_COLUMN in deg[0]["reason"]
+        assert deg[0]["severity"] == "expected"
+
+
+# --------------------------------------------------------------------------- #
+# the §6.6 ruling — the block must not claim a shipped CN ordering
+# --------------------------------------------------------------------------- #
+
+class TestRulingIsStatedAccurately:
+    def test_the_block_says_the_ladder_ships_status_neutral(self, store):
+        purpose = uesr.scorecard(store)["purpose"]
+        assert "STATUS-NEUTRAL" in purpose
+        assert "did not reproduce" in purpose
+
+    def test_the_reintroduction_bar_names_all_four_conditions(self, store):
+        bar = uesr.scorecard(store)["reintroduction_bar"]
+        for condition in ("chartered horizon", "n>=50", "half-splits", "anticipation-v1"):
+            assert condition in bar, condition
+
+    def test_the_cn_ordering_is_never_described_as_currently_shipped(self, store):
+        """The mutual-staleness trap: this block and the map must not contradict."""
+        note = uesr.scorecard(store)["cn_reference"]["note"]
+        assert "NOT a US measurement" in note
+        assert "no longer a shipped US ordering" in note
+
+    def test_the_module_docstring_does_not_claim_a_cn_ordered_shipped_ladder(self):
+        doc = uesr.__doc__ or ""
+        assert "STATUS-NEUTRAL" in doc
+        assert "ships with **CN-ordered v1" not in doc
+        # the bar lives in the docstring too, so a reader of the source sees it
+        assert "n >= 50 per cell" in doc
+
+
+# --------------------------------------------------------------------------- #
 # no pooled top-level figure (W7 house style)
 # --------------------------------------------------------------------------- #
 
 class TestNoPooledFigure:
-    OUTCOME_KEYS = {"loser_rate", "win_rate", "median_excess", "mean_excess"}
+    # The interval bounds are outcome statistics too: a pooled Wilson interval would be the
+    # same lane-mix figure the point estimate is banned for, wearing a different name.
+    OUTCOME_KEYS = {"loser_rate", "win_rate", "median_excess", "mean_excess",
+                    "loser_rate_wilson_lo", "loser_rate_wilson_hi",
+                    "win_rate_wilson_lo", "win_rate_wilson_hi"}
 
     def _walk(self, node, path=()):
         if isinstance(node, dict):
@@ -278,8 +492,11 @@ class TestNoPooledFigure:
 
     def test_the_top_level_carries_counts_and_dates_only(self, store):
         cov = uesr.scorecard(store)["coverage"]
+        # `price_basis_era` is admitted here as COUNTS per price era — record composition,
+        # the same family as `n_by_status`, never a rate.
         assert set(cov) <= {"n_episodes", "n_with_status", "status_coverage_pct",
-                            "n_excess", "n_dates", "as_of", "n_by_status", "note"}
+                            "n_excess", "n_dates", "as_of", "n_by_status",
+                            "price_basis_era", "note"}
 
     def test_the_block_says_why_there_is_no_pooled_figure(self, store):
         assert "lane mix" in uesr.scorecard(store)["no_pooled_figure"]

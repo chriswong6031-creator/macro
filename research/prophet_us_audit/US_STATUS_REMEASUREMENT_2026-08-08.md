@@ -18,13 +18,27 @@ thesis makes its claim has no US data at all.**
 
 On the admitted (buy) lane at H=5, with every cell above the 20-mark floor:
 
-- `bounce_wait` — **54.9% loser rate**, median excess **−0.96%** (n=153). CN measured 6.9%.
-- `buy_now` — **39.0% loser rate**, median excess **+1.05%** (n=95). CN measured 30.0%.
+- `bounce_wait` — **54.9% loser rate** (95% Wilson 47.0–62.6%), median excess **−0.96%**
+  (n=153). CN measured 6.9%.
+- `buy_now` — **39.0% loser rate** (95% Wilson 29.8–49.0%), median excess **+1.05%** (n=95).
+  CN measured 30.0%.
 
-That is the shipped v1 constants' ordering read backwards: the status the map now scores
-**1.0** is the worst non-thin cell in the window, and the status it scores **0.7** is the
-best. The spread is not subtle (15.9 points of loser rate, 2.0 points of median excess), and
-neither cell is thin.
+That is the v1 constants' ordering read backwards: the status those constants scored **1.0**
+is the worst non-thin cell in the window, and the status they scored **0.7** is the best. The
+spread is not subtle (15.9 points of loser rate, 2.0 points of median excess), neither cell
+is thin, and the two intervals do not overlap.
+
+**Ruling (§6.6):** the A2 entry leg ships **status-neutral** — one flat value across the five
+admissible statuses. An unreproduced ordering does not get to keep its ranks. An ordering may
+be re-introduced only at the ladder's chartered horizon, with n≥50 per cell, sign-stable
+across two half-splits, on era-stamped `anticipation-v1` episodes.
+
+**Read the two cells' windows before reading their gap.** `bounce_wait` is a **late-window
+cohort**: it has zero buy-lane episodes before **2026-07-17** and 205 after it, over 8 board
+dates, while `buy_now` spans all 18 dates from 2026-06-18. The two rates are therefore
+measured over different tape, which is a confound the gap alone cannot survive — see
+*What this does NOT establish* §6. The nightly block prints `as_of_first`/`as_of_last` on
+every cell so this is visible at a glance rather than reconstructed.
 
 **And the null that matters more than either number:** `bounce_wait` has **zero graded marks
 at H=21**, in every lane, out of 345 episodes. The patience case is "these names take time" —
@@ -72,8 +86,9 @@ topping 61 · exit 13.
 Read at H=10 the picture changes shape but not direction: `bounce_wait` goes to **65.4%**
 (n=52, still above the floor) while `buy_now`'s 61.1% sits on **n=18** and is thin. The one
 cell that holds up across both horizons at real n is `await_confluence` (46.5% / 37.0% on
-n=99 / n=92) — a status the current map scores 0.45 and neither the US nor the CN ordering
-pays much attention to.
+n=99 / n=92) — a status the v1 constants scored 0.45 and neither the US nor the CN ordering
+paid much attention to. It is also the widest-window cell in the table (2026-06-30 → 07-30
+at H=5), which is part of why it holds up.
 
 ## Watch lane — the pre-admission population
 
@@ -100,7 +115,7 @@ receipt has: it is the same status behaving the same way twice, not one cohort's
 non-`extended` cell in them is thin; the leaders lane has 45 episodes at H=5 only and reads
 85–100% loser across every status, which is a statement about the lane, not the statuses.
 
-## Side by side with the CN measurement that shipped the constants
+## Side by side with the CN measurement that shipped the v1 constants
 
 | entry status | CN loser rate (H=10, n=257, CSI300-rel) | US buy lane (H=5) | US buy lane (H=10) |
 |---|---|---|---|
@@ -114,8 +129,8 @@ non-`extended` cell in them is thin; the leaders lane has 45 episodes at H=5 onl
 
 These are **not the same measurement**: different market, different benchmark, different
 selection upstream, and CN's column is H=10 against a US column that is strongest at H=5.
-The comparison is here because those CN numbers are the stated basis for the constants now
-running in the US map — not because the two columns are interchangeable.
+The comparison is here because those CN numbers were the stated basis for the v1 US
+constants that this measurement retired — not because the two columns are interchangeable.
 
 ## What this does NOT establish
 
@@ -135,6 +150,16 @@ running in the US map — not because the two columns are interchangeable.
 5. **It is not a mandate to revert the map.** Operator ruling §6.0 is that the new selection
    ships live while the legacy shadow ledger accrues; this block is display-tier with zero
    authority and is an input to that comparison, not a substitute for it.
+6. **The status cohorts do not share a window.** Statuses entered the buy lane on different
+   dates, so a rate compared across two of them can be a comparison of two stretches of
+   tape. Buy-lane episode spans: `bounce_wait` **2026-07-17 → 07-30 (8 dates, 0 episodes
+   before 07-17)**, `await_confluence` 2026-06-30 → 07-30 (14), and `hold` / `buy_now` /
+   `buy_soon` / `partial` / `wait_pullback` / `extended` 2026-06-18 → 07-30 (14–18). The
+   headline gap is between the narrowest cohort in the table and one of the widest. This
+   does not restore the CN ordering — it means the US record has not cleanly tested it
+   either way, which is the same reason the leg ships neutral. Per-cell `as_of_first` /
+   `as_of_last` in the nightly block is the standing disclosure; the re-introduction bar's
+   two-half-split condition is what would close it.
 
 ## What would make the reading trustworthy
 
@@ -142,12 +167,17 @@ running in the US map — not because the two columns are interchangeable.
 - Anticipation-era rows (`selection_era: anticipation-v1-2026-08-08`) accruing beside the
   legacy shadow ledger, so the status cohorts can be read within one selection regime instead
   of across two.
+- **Overlapping windows.** Enough dates that `bounce_wait` and the statuses it is compared
+  against are measured over the same tape, and enough of them to split the window in half and
+  check the sign twice.
 - A second regime. Six weeks that includes no meaningful drawdown cannot separate "this
   status is early" from "this tape rewarded chasing".
 
-Until then the nightly `entry_status_scorecard` block prints these cells every night with
-their n, their thin labels and their nulls, so the constants stop being a Chinese measurement
-wearing an American map and start being a series someone can watch move.
+Until then the leg stays neutral and the nightly `entry_status_scorecard` block prints these
+cells every night with their n, their Wilson bounds, their marked date ranges, their thin
+labels and their nulls — so the ladder stops being a Chinese measurement wearing an American
+map and becomes a series someone can watch move, against a re-introduction bar that was
+written down before the numbers arrived.
 
 ## Provenance
 

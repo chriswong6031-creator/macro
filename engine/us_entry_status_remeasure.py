@@ -1,12 +1,35 @@
-"""Nightly US entry-STATUS re-measurement — the evidence loop for the entry-value ladder.
+"""Nightly US entry-STATUS re-measurement — the standing evidence loop for the entry ladder.
 
-PROPHET US ANTICIPATION §6.6.  The A2 patience-first entry map ships with **CN-ordered v1
-constants** (``bounce_wait`` highest … ``buy_soon`` lowest), lifted from the China board's
-own measured ordering (CN §2.3, 2026-08-04: ``bounce_wait`` 6.9% loser rate vs ``buy_now``
-30.0%, n=257 CN episodes).  Those constants are provisional BY CONSTRUCTION — they are a
-Chinese measurement wearing an American map.  This module is what replaces them with a US
-number: it groups the US board's own graded episodes by the entry status they carried AT
-STAMP TIME and reports, per status, what the tape then did.
+PROPHET US ANTICIPATION §6.6.  The A2 patience-first entry map ships **STATUS-NEUTRAL** —
+one flat entry value across the five admissible statuses — because that is what the §6.6
+ruling left standing: on the first US run of this measurement (2026-08-08) the CN ordering
+DID NOT REPRODUCE.  The v1 constants that neutrality replaced were China's own measured
+ordering (``bounce_wait`` highest … ``buy_soon`` lowest; CN §2.3, 2026-08-04:
+``bounce_wait`` 6.9% loser rate vs ``buy_now`` 30.0%, n=257 CN episodes) — a Chinese
+measurement wearing an American map — and the US board's H=5 cells, the only horizon where
+both of those two cleared the disclosure floor, ran the other way.  A neutral ladder is
+what an unreproduced ordering earns.
+
+This module is the STANDING EVIDENCE LOOP behind that ruling, not the one-off verdict that
+produced it: it groups the US board's own graded episodes by the entry status they carried
+AT STAMP TIME and reports, per status, what the tape then did — every night, so the record
+keeps accruing after the ruling rather than being asserted once and left.
+
+RE-INTRODUCING AN ORDERING — the bar, stated so it cannot be lowered quietly
+----------------------------------------------------------------------------
+An ordering may be put back into the map ONLY when all four hold together:
+
+* at the ladder's **CHARTERED HORIZON** — the patience thesis claims these names take time,
+  so a reading at 5 sessions cannot license it;
+* **n >= 50 per cell**, well above this block's :data:`THIN_MIN_N` disclosure floor, which
+  LABELS a cell rather than qualifying one;
+* **sign-stable across two half-splits** of the window, so an ordering is not one regime's
+  accident;
+* on **era-stamped anticipation-v1 episodes**, so the cohorts are read inside one selection
+  regime instead of across two.
+
+Until all four hold the leg stays neutral.  Nothing here re-introduces anything: an operator
+reads these cells and edits the map by hand.
 
 It publishes into the nightly miss-audit artifact as ``entry_status_scorecard``, beside the
 ``priority_score`` block, so the ladder's evidence base is visible in days rather than
@@ -60,6 +83,16 @@ DEFINITIONS — STATED, because a loser rate is a definition before it is a numb
 * **thin** — a cell with fewer than :data:`THIN_MIN_N` marks is LABELLED thin and read as
   directional only.  It is still printed: a small honest cell is the state of the record,
   and hiding it would make an accruing cohort look like an absent one.
+* **wilson_lo / wilson_hi** — the 95% Wilson score interval on the rate beside them, so a
+  thin cell prints its own uncertainty instead of ranking on a point estimate.  Same ruler
+  as the sibling board table (``scripts/grade_us_board.wilson_ci``), replicated rather than
+  imported for the dependency-direction reason below, and it must stay the same formula:
+  two Wilson bounds that disagree are two rulers.
+* **as_of_first / as_of_last** — the stamp-date span of the MARKED rows in the cell, the
+  ones that produced ``n_excess``.  Printed because a long horizon selects a VINTAGE: an
+  H=63 mark needs 63 sessions to exist, so at long horizons the marked subset is
+  systematically the EARLIEST board dates.  Two statuses compared at one horizon can
+  therefore be two different eras, and only these dates make that visible.
 
 STRUCTURE — cohort -> horizon -> class, with NO POOLED TOP-LEVEL FIGURE
 -----------------------------------------------------------------------
@@ -107,13 +140,26 @@ COHORT_COLUMN = "lane"
 #: The forward mark.  Benchmark-relative by choice: the CN table it must be comparable to is
 #: CSI300-relative, and an absolute US return in a rising tape flatters every status equally.
 EXCESS_COLUMN = "excess_spy"
+#: The PRICE-BASIS ERA STAMP.  ``data/us_board_ledger/README.md`` documents two eras living
+#: in this one parquet, split at the 2026-08-06 boundary: era-1 rows priced the name leg
+#: from the RAW breadth caches against a back-adjusted benchmark, so a name's own dividend
+#: could book as underperformance in :data:`EXCESS_COLUMN` — this table's entire input.
+#: Rows are NEVER re-graded across the boundary, so the stamp is the only way to tell the
+#: eras apart, and a table that reports neither is quietly mixing them.
+PRICE_BASIS_COLUMN = "price_basis"
+#: The era-1 value.  RESTATED from ``scripts.grade_us_board.PRE_ERA_BASIS`` for the same
+#: dependency-direction reason as :data:`HORIZONS` below; it is a stored string in a shipped
+#: parquet, so it is frozen by the data rather than by either module.
+PRE_ERA_BASIS = "unverified_pre_20260806"
 
 #: Columns projected out of an ~87-column ledger.  Everything else is another study's.
-LEDGER_COLUMNS = ("as_of", "horizon", COHORT_COLUMN, "ticker", STATUS_COLUMN, EXCESS_COLUMN)
+LEDGER_COLUMNS = ("as_of", "horizon", COHORT_COLUMN, "ticker", STATUS_COLUMN, EXCESS_COLUMN,
+                  PRICE_BASIS_COLUMN)
 
 #: The three columns without which there is no measurement.  Everything else in
 #: :data:`LEDGER_COLUMNS` is OPTIONAL and degrades in place: no ``lane`` means one
-#: ``unlaned`` cohort, no ``as_of`` means no date count.  The distinction matters because
+#: ``unlaned`` cohort, no ``as_of`` means no date count, no ``price_basis`` means the era
+#: split is printed as a named null.  The distinction matters because
 #: the ledger's writer is a live file with its own lanes — a column renamed there must cost
 #: the read that used it, never the whole table.
 REQUIRED_COLUMNS = ("horizon", STATUS_COLUMN, EXCESS_COLUMN)
@@ -141,7 +187,7 @@ LOG_STATUSES = ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "b
 
 #: The lanes that get stable columns in the flat forward log.  BUY ONLY, deliberately: the
 #: entry-value map decides ADMISSION, so the admitted cohort is the one whose series a
-#: reader plots when they ask whether the constants are earning their place.  Every other
+#: reader plots when they ask whether an ordering would earn its place.  Every other
 #: lane is in the artifact block in full — this is a plotting projection, not the table.
 LOG_COHORTS = ("buy",)
 
@@ -169,6 +215,43 @@ def _num(value: Any, digits: int = 5) -> float | None:
     if not math.isfinite(out):
         return None
     return round(out, digits)
+
+
+def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval on ``k`` of ``n``.  ``(nan, nan)`` when ``n`` is zero.
+
+    REPLICATED, NOT FORKED.  This is character-for-character the sibling board table's
+    ruler, ``scripts/grade_us_board.py::wilson_ci`` (the same script that wrote every mark
+    this module reads).  It is copied rather than imported for the reason :data:`HORIZONS`
+    is restated: an ``engine`` module importing a ``scripts`` module inverts the dependency
+    direction.  A DIFFERENT interval formula here would be the forked-ruler failure — two
+    tables over the same ledger quoting two uncertainties — so this body must keep tracking
+    the sibling's, not diverge from it.
+
+    Wilson rather than the normal approximation because the cells this table prints are
+    routinely small: at n=4 a Wald interval runs outside [0, 1], and at k=0 or k=n it
+    collapses to zero width, which is exactly the reading a thin cell must not offer.
+    """
+    if n == 0:
+        return (float("nan"), float("nan"))
+    p = k / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denom
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def marked_dates(sub: pd.DataFrame, marked: Any) -> list[str]:
+    """Sorted stamp dates of the MARKED rows — the ones a statistic was computed over.
+
+    ``marked`` is a boolean mask over ``sub``.  Empty when the ledger carries no ``as_of``
+    (the column is optional) or when nothing in the cell is marked; the caller prints that
+    as a null rather than as a zero-length window.
+    """
+    if "as_of" not in sub.columns:
+        return []
+    stamps = sub.loc[marked, "as_of"].dropna()
+    return sorted({str(d)[:10] for d in stamps})
 
 
 # --------------------------------------------------------------------------- #
@@ -223,7 +306,8 @@ def load_ledger(root: Any, degraded: list[dict] | None = None,
         deg.append({"input": LEDGER_REL, "severity": "expected",
                     "reason": f"ledger carries no {', '.join(absent)} column — the reads "
                               f"that used it degrade in place (no lane = one 'unlaned' "
-                              f"cohort; no as_of = no date count); the table still stands"})
+                              f"cohort; no as_of = no date count; no price_basis = no era "
+                              f"split); the table still stands"})
     try:
         frame = pd.read_parquet(path, columns=[c for c in want if c in present])
     except Exception as exc:  # noqa: BLE001
@@ -245,25 +329,53 @@ def status_leg(sub: pd.DataFrame) -> dict:
     mark.  Every statistic is computed on ``n_excess``, and a cell with none of them is a
     printed null with a reason — an unmarked episode is a missing observation, never a zero
     excess and never a loss.
+
+    ``as_of_first``/``as_of_last`` span the MARKED rows only, never the cell's episodes: at
+    a long horizon the marked subset is systematically the earliest board dates, so two
+    statuses read side by side at one horizon can be two different vintages.  The dates are
+    what let a reader see that before comparing the rates.
+
+    Every rate ships with its own 95% Wilson bounds, because :data:`THIN_MIN_N` guarantees
+    thin cells are PRINTED — a labelled point estimate with no interval still invites the
+    ranking the label was meant to prevent.
     """
-    vals = pd.to_numeric(sub[EXCESS_COLUMN], errors="coerce").dropna()
-    out: dict[str, Any] = {"n": int(len(sub)), "n_excess": int(len(vals))}
-    if not len(vals):
-        out.update({"loser_rate": None, "win_rate": None, "median_excess": None,
-                    "mean_excess": None, "thin": True,
+    marks = pd.to_numeric(sub[EXCESS_COLUMN], errors="coerce")
+    vals = marks.dropna()
+    dates = marked_dates(sub, marks.notna())
+    n = int(len(vals))
+    out: dict[str, Any] = {
+        "n": int(len(sub)), "n_excess": n,
+        # Over the MARKED rows — see the docstring. Null, not a zero-width window, when the
+        # cell has no mark or the ledger carries no `as_of`.
+        "as_of_first": (dates[0] if dates else None),
+        "as_of_last": (dates[-1] if dates else None),
+    }
+    if not n:
+        out.update({"loser_rate": None, "loser_rate_wilson_lo": None,
+                    "loser_rate_wilson_hi": None, "win_rate": None,
+                    "win_rate_wilson_lo": None, "win_rate_wilson_hi": None,
+                    "median_excess": None, "mean_excess": None, "thin": True,
                     "null_reason": ("no episode in this cell carries a forward mark yet — "
                                     "not computable, which is not a 0% loser rate")})
         return out
+    k_lose = int((vals <= 0).sum())
+    lose_lo, lose_hi = wilson_ci(k_lose, n)
+    win_lo, win_hi = wilson_ci(n - k_lose, n)
     out.update({
-        "loser_rate": _num((vals <= 0).mean(), 4),
-        "win_rate": _num((vals > 0).mean(), 4),
+        "loser_rate": _num(k_lose / n, 4),
+        "loser_rate_wilson_lo": _num(lose_lo, 4),
+        "loser_rate_wilson_hi": _num(lose_hi, 4),
+        "win_rate": _num((n - k_lose) / n, 4),
+        "win_rate_wilson_lo": _num(win_lo, 4),
+        "win_rate_wilson_hi": _num(win_hi, 4),
         "median_excess": _num(vals.median()),
         "mean_excess": _num(vals.mean()),
-        "thin": bool(len(vals) < THIN_MIN_N),
+        "thin": bool(n < THIN_MIN_N),
     })
     if out["thin"]:
-        out["thin_reason"] = (f"{len(vals)} graded mark(s) — below the {THIN_MIN_N}-mark "
-                              f"disclosure floor; DIRECTIONAL ONLY, not a measurement")
+        out["thin_reason"] = (f"{n} graded mark(s) — below the {THIN_MIN_N}-mark disclosure "
+                              f"floor; DIRECTIONAL ONLY, not a measurement. Read the Wilson "
+                              f"bounds beside each rate before ranking this cell")
     return out
 
 
@@ -272,15 +384,29 @@ def horizon_leg(sub: pd.DataFrame, horizon: int) -> dict:
 
     No cell is dropped for being thin and no status is merged into an "other" bucket — the
     shape of a still-accruing cohort IS the finding while the anticipation era matures.
+
+    BOTH date counts are emitted, labelled, because they answer different questions and the
+    gap between them IS the maturation confound: ``n_dates`` spans every episode at this
+    horizon, ``n_dates_marked`` only the ones carrying a forward mark.  A 63-session mark
+    needs 63 sessions to exist, so at long horizons the marked subset is the EARLIEST board
+    dates while the episode count keeps growing with the newest ones.  Reporting only the
+    episode span would describe a window the statistics were never computed over.
     """
     marks = pd.to_numeric(sub[EXCESS_COLUMN], errors="coerce")
     statuses = sub[STATUS_COLUMN]
+    marked_span = marked_dates(sub, marks.notna())
     out: dict[str, Any] = {
         "horizon_d": int(horizon),
         "n_episodes": int(len(sub)),
         "n_excess": int(marks.notna().sum()),
         "n_with_status": int(statuses.notna().sum()),
+        # ALL episodes at this horizon.
         "n_dates": int(sub["as_of"].nunique()) if "as_of" in sub.columns else None,
+        # Only the MARKED ones — the window every statistic below was actually computed
+        # over. Null (not 0) when the ledger carries no `as_of` to count.
+        "n_dates_marked": (len(marked_span) if "as_of" in sub.columns else None),
+        "as_of_marked_first": (marked_span[0] if marked_span else None),
+        "as_of_marked_last": (marked_span[-1] if marked_span else None),
         "by_entry_status": {},
         "thin_statuses": [],
     }
@@ -305,6 +431,48 @@ def horizon_leg(sub: pd.DataFrame, horizon: int) -> dict:
     return out
 
 
+def price_basis_era(frame: pd.DataFrame) -> dict:
+    """Row counts per :data:`PRICE_BASIS_COLUMN` — the ledger's two price eras, disclosed.
+
+    ``data/us_board_ledger/README.md`` documents two eras living in this one parquet, split
+    at the 2026-08-06 boundary.  Era-1 rows (:data:`PRE_ERA_BASIS`) priced the name leg from
+    the RAW breadth caches against a back-adjusted benchmark, so a name's own dividend could
+    book as underperformance in :data:`EXCESS_COLUMN` — which is this table's whole input.
+    Rows are never re-graded across the boundary, so the stamp is the only way to tell them
+    apart, and a status table that reports neither is silently mixing two rulers' output.
+
+    COUNTS ONLY, never a rate.  This is a fact about the record's composition, in the same
+    family as ``coverage.n_by_status`` — not an outcome statistic (see ``no_pooled_figure``).
+    Era 1 is UNVERIFIED, not presumed wrong: measured at the boundary, 2,277 of 2,287
+    shipped rows already agreed with the adjusted basis to <0.01pp.  So this is a disclosure
+    a reader weights, not a filter this module applies — dropping era-1 rows here would be
+    this module re-grading, which it does not do.
+    """
+    if PRICE_BASIS_COLUMN not in frame.columns:
+        return {
+            "column": PRICE_BASIS_COLUMN,
+            "n_by_basis": {},
+            "null_reason": (f"ledger carries no {PRICE_BASIS_COLUMN} column — the era split "
+                            f"is not computable here, which is not a single-era ledger"),
+        }
+    col = frame[PRICE_BASIS_COLUMN]
+    counts = {str(k): int(v) for k, v in col.value_counts(dropna=True).items()}
+    return {
+        "column": PRICE_BASIS_COLUMN,
+        "n_by_basis": counts,
+        "n_pre_era": int(counts.get(PRE_ERA_BASIS, 0)),
+        "n_unstamped": int(col.isna().sum()),
+        "pre_era_basis": PRE_ERA_BASIS,
+        "note": (f"two price eras live in this parquet, split at 2026-08-06. "
+                 f"'{PRE_ERA_BASIS}' rows priced the name leg from the raw breadth caches "
+                 f"against a back-adjusted benchmark, so a dividend could book as "
+                 f"underperformance in {EXCESS_COLUMN}; rows are never re-graded across the "
+                 f"boundary. Era 1 is UNVERIFIED, not presumed wrong — disclosed here as "
+                 f"counts so a reader can weight a cell, never filtered out, because "
+                 f"dropping rows would be this module re-grading"),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # the block
 # --------------------------------------------------------------------------- #
@@ -322,9 +490,18 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
         "authority": "none — read-only aggregation of an existing graded ledger; no rank, "
                      "gate, size, board, plan or user-facing consumer. The entry-value map "
                      "constants are revised BY HAND by an operator reading this table",
-        "purpose": ("ANTICIPATION §6.6 — the evidence loop for the patience-first entry "
-                    "ladder. The shipped v1 constants are the CN measured ordering; this "
-                    "is the US measurement that revises them"),
+        "purpose": ("ANTICIPATION §6.6 — the STANDING evidence loop for the patience-first "
+                    "entry ladder. The A2 entry leg ships STATUS-NEUTRAL (one flat value "
+                    "across the five admissible statuses) per the §6.6 ruling: on the first "
+                    "US run of this measurement, 2026-08-08, the CN ordering did not "
+                    "reproduce. This table is what keeps accruing after that ruling"),
+        "reintroduction_bar": (
+            "an ordering may be put back into the map ONLY when all four hold together: at "
+            "the ladder's chartered horizon; n>=50 per cell (the thin floor LABELS a cell, "
+            "it does not qualify one); sign-stable across two half-splits of the window; on "
+            "era-stamped anticipation-v1 episodes. Until then the leg stays neutral. This "
+            "block re-introduces nothing — an operator reads these cells and edits the map "
+            "by hand"),
         "source": LEDGER_REL,
         "graded_by": ("scripts.grade_us_board — engine.grading.forward_metrics (next-bar "
                       "fill, positional session horizons), excess vs SPY. Nothing is "
@@ -342,6 +519,21 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
                        f"Lanes are different selections and are never pooled"),
             "thin": (f"a cell with fewer than {THIN_MIN_N} graded marks is labelled thin "
                      f"and read as directional only; it is still printed"),
+            "interval": (
+                "loser_rate_wilson_lo/hi and win_rate_wilson_lo/hi are the 95% Wilson score "
+                "interval on the rate beside them, over that cell's n_excess. Same ruler as "
+                "the sibling board table (scripts/grade_us_board.wilson_ci), replicated "
+                "rather than imported so an engine module does not depend on a scripts one. "
+                "Wilson, not the normal approximation, because thin cells are printed here "
+                "by design: a Wald interval runs outside [0,1] at small n and collapses to "
+                "zero width at 0% or 100%"),
+            "as_of_range": (
+                "as_of_first/as_of_last on a status cell span the MARKED rows — the ones "
+                "that produced n_excess — never the cell's episodes. A long horizon selects "
+                "a VINTAGE: a 63-session mark needs 63 sessions to exist, so at long "
+                "horizons the marked subset is systematically the EARLIEST board dates. Two "
+                "statuses compared at one horizon can therefore be two different eras, and "
+                "these dates are what make that visible before the rates are ranked"),
         },
         "no_pooled_figure": (
             "there is deliberately no top-level loser rate, win rate or median excess. A "
@@ -357,9 +549,10 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
             "admissions). When a sibling lane stamps entry_signal.status into the W7 "
             "candidates store it becomes a second, wider read — not a replacement"),
         "cn_reference": {
-            "note": ("the CN §2.3 ordering the shipped v1 constants encode, restated so the "
-                     "US numbers below are read against what they are replacing. CN "
-                     "episodes, CSI300-relative, H=10, n=257 — NOT a US measurement"),
+            "note": ("the CN §2.3 ordering the v1 constants encoded BEFORE the §6.6 ruling "
+                     "neutralized the entry leg, restated so the US numbers below are read "
+                     "against what they replaced. CN episodes, CSI300-relative, H=10, "
+                     "n=257 — NOT a US measurement, and no longer a shipped US ordering"),
             "source": "research/cn_prophet_audit/v1_loser_audit_results.json (2026-08-04)",
             # Same naming rule as ``definitions`` above: these are CHINA's numbers, so the
             # key must not read as one of this table's own outcome statistics.
@@ -400,6 +593,8 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
                       "last": (dates[-1] if dates else None)},
             "n_by_status": {str(k): int(v)
                             for k, v in statuses.value_counts(dropna=True).items()},
+            # Counts per price era — composition, not an outcome statistic.
+            "price_basis_era": price_basis_era(frame),
             "note": ("an episode with no entry status is EXCLUDED from the table rather "
                      "than bucketed; the count above is what that exclusion costs"),
         },
