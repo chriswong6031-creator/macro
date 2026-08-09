@@ -24,8 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 from engine.close_pass.reconcile import confirmation_receipt  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402

@@ -29,13 +29,18 @@ import argparse
 import json
 import logging
 import re
+import sys
 import threading
 import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from engine import live_quotes
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import live_quotes  # noqa: E402
 
 log = logging.getLogger("quotes_server")
 

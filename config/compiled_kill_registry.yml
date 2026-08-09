@@ -657,6 +657,13 @@ entries:
     section: 3
     section_name: estimator_laws
 
+  - topic: 'Hashing a per-run clock into the IDENTITY of a content artifact in an immutable, content-addressed evidence store — and expressing "we re-checked, nothing changed" by re-minting the artifact'
+    key: LAW-RUN-CLOCK-IN-CONTENT-IDENTITY
+    verdict: 'FORBIDDEN construction. A run clock in the identity makes every run mint new evidence bytes on unchanged content, so artifact COUNT measures our cadence rather than the world, the retention clock silently comes to mean last-run instead of first-retention, and every whole-store consumer (restore, readback-sync, rglob validation, snapshot enumeration) becomes O(store age) — measured on Filing Forensics Wave-2: ~121-165 files/night on a FIXED 12-ticker universe, ~45k/yr, engine step 7.4m→23.8m in four days while SEC bytes stayed flat. Retain the observation as an explicit append-only OBSERVATION LOG (one object per run, binding artifact id + recomputed digest + observation clock + outcome), not as a duplicate artifact: a dated sequence has a checkable shape, so a missing night is detectable, whereas duplicates have no expected cardinality. Identity hashes are NOT weakened to fix this — the mint becomes idempotent on unchanged content, so ids stabilise because their inputs stop moving. Forward-only: never delete or rewrite already-synced objects (sealed attestations pin them by exact storage key). Does NOT license skipping the re-fetch — an observation log that records a check which did not happen is worse than the duplicates it replaced'
+    source: '`research/FILING_FORENSICS_SEC_STORE_MINT_ADJUDICATION_2026-08-08.md`; diagnosed PR #4986 (2026-08-08); conforms to the pre-registered `first_observed_at` + single "latest retrieval receipt" contract in `CALCBENCH_FUNDAMENTAL_FORENSICS_ENGINE_ASSESSMENT_AND_BUILD_DOCKET_FOR_FABLE.md` §10.3'
+    section: 3
+    section_name: estimator_laws
+
   - topic: 'PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard'
     key: HOLD-PSS-RH1-RELIEF-HAZARD
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation.'

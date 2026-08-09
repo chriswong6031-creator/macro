@@ -35,8 +35,7 @@ from typing import Any
 
 _HERE = Path(__file__).resolve()
 _ROOT = _HERE.parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+sys.path.insert(0, str(_ROOT))
 
 log = logging.getLogger("metabolism_audit")
 logging.basicConfig(
