@@ -714,10 +714,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
+| prophet-index | `site/prophet/index.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
 | us-prophet-grades | `data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
-| prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 
 ### narrative-ignition

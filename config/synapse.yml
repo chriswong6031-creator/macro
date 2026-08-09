@@ -11436,7 +11436,7 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [scripts/build_site.py]
     external_consumers:
       - terminal:oracle-tab
     notes: >
