@@ -759,7 +759,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 fastapi httpx
+        # app.main mounts app.market_memory, whose authenticated stock-data
+        # reader imports requests at module scope.  Keep the serving-boundary
+        # lane's isolated environment closed over that production import.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -3607,10 +3610,10 @@ jobs:
         # loudly), and that pulls engine/earnings_narrative/__init__.py ->
         # promotion.py -> yaml. Under the swallow this job never noticed the
         # dependency because the failed import was silently discarded — the
-        # same silence that hid the dropped paid routes. This job is the only
-        # one of the 13 that import app.main whose line lacked pyyaml;
-        # verified by blocking yaml and collecting the suite.
-        run: pip install pytest fastapi pyyaml
+        # same silence that hid the dropped paid routes. app.main also mounts
+        # app.market_memory eagerly now, so this isolated lane must declare its
+        # direct requests import just like the other app.main suites.
+        run: pip install pytest fastapi pyyaml requests
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
 
@@ -3673,7 +3676,8 @@ jobs:
         # HAPPY path is exercised too (the code degrades if they're absent, but CI
         # proves the real stamp path as well). pyyaml closes the Brain gateway's
         # Fundamental Forensics package import in this isolated environment.
-        run: pip install pytest fastapi httpx pypdf reportlab pyyaml
+        # requests closes app.main's eager app.market_memory import.
+        run: pip install pytest fastapi httpx pypdf reportlab pyyaml requests
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
@@ -4571,7 +4575,9 @@ jobs:
         # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
         # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
         # projection silently collapses to empty (PR #4300 shipped red on exactly that).
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
+        # The endpoint suite imports app.main, whose eagerly mounted Market Memory
+        # router imports requests at module scope.
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml requests
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
