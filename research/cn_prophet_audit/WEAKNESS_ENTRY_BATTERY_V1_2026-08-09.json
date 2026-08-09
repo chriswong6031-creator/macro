@@ -8,8 +8,8 @@
     "research/CN_LIMIT_ALPHA_BLINDED_BRAINSTORM_2026-08-08.md — C3 and C10"
   ],
   "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
-  "generated_utc": "2026-08-09T06:02:07Z",
-  "runtime_sec": 20.1,
+  "generated_utc": "2026-08-09T06:11:30Z",
+  "runtime_sec": 14.3,
   "pre_registration": {
     "registered_before_any_number_was_read": true,
     "split": "2021-11-26 — v0's computed 70/30 date, reused as a frozen constant. ONE holdout pass. Every conditioner, band edge, exit rule, cost bar and cell floor below was fixed by the lane brief before the first run.",
@@ -184,7 +184,10 @@
       "bad_base": 0
     },
     "vintage": {
-      "head_sha": "ec81107b3167e35db497accddfc617a1e5c9361d",
+      "base_sha": "ec81107b3167e35db497accddfc617a1e5c9361d",
+      "data_store_sha": "035914cd3dafe1c0c7fd25bbc5f51d8a0290d64e",
+      "build_head_sha": "0f26a13663ce416d5a294b82f42e62d17e79490f",
+      "sha_note": "base_sha (this branch's point off main) and data_store_sha (the last commit touching the input stores) are the stable vintage identity. build_head_sha is whatever HEAD the run happened on and BY CONSTRUCTION pre-dates the commit that carries this file — it will differ on any re-run after commit, and that is not a reproducibility failure. Everything else in this payload is byte-identical run to run.",
       "raw_store_names": 1842,
       "names_kept_after_st_exclusion": 1836,
       "expansion_status": "PRE-EXPANSION. This checkout's data/china_stocks_raw holds a curated subset of the listed A-share market. A sibling Codex lane is expanding the universe toward ~5,400 names; that expansion is NOT in this store and every count, rate and expectancy below is scoped to the smaller universe. Re-running this instrument post-expansion is the first item in the ORE LEDGER.",

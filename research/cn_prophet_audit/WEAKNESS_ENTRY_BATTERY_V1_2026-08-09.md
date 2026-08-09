@@ -114,10 +114,20 @@ that same cell prints **−3.38% / −3.08%** (t = −3.60).
 
 **10. One genuinely positive side finding, stated as ore and not as a result.** The broken-board
 cohort is a *less adversely selected* place to buy the T+1 open than L1's sealed-board cohort.
-Same board, same anchor, same exits, holdout, gross: **L1 E1 −0.384% / E3 −0.209%** versus
-**here E1 −0.176% / E3 +0.047%**. Still not clearing net, and it is a control rather than this
-lane's construction — but it points at where the next lane should look, and it is the one
-number in this receipt that improves on Wave 1.
+L1's book is **tolerant**-basis, so the like-for-like comparison is against this study's
+tolerant column — main board, T+1 open, same exits, holdout, gross:
+
+| | E1 | E3 |
+|---|---|---|
+| L1 rider — sealed-board cohort (tolerant) | −0.384% | −0.209% |
+| **here — broken-board cohort (tolerant)** | **−0.230%** | **−0.050%** |
+| here — broken-board cohort (strict, for reference only) | −0.176% | +0.047% |
+
+A gain of **+0.15 pp on both exits** on the matching basis. Still not clearing net, and it is a
+*control* rather than this lane's construction — but it points at where the next lane should
+look, and it is the one number in this receipt that improves on Wave 1. The strict row is
+printed for reference and is **not** the comparison: L1 never ran a strict book, so pairing it
+against L1 would be the basis-mixing this receipt otherwise refuses.
 
 **11. What the nulls close, precisely.** They close the *break-day close entry* and the
 *pullback-day close entry*, as constructed here, on daily bars, on this universe, with these
@@ -133,7 +143,8 @@ everything above.
 
 | Fact | Measured |
 |---|---|
-| HEAD SHA at build | `ec81107b3167e35db497accddfc617a1e5c9361d` |
+| Base SHA (this branch's point off main) | `ec81107b3167e35db497accddfc617a1e5c9361d` |
+| Input-store SHA (last commit touching the data dirs) | `035914cd3dafe1c0c7fd25bbc5f51d8a0290d64e` |
 | Raw OHLCV store | `data/china_stocks_raw`, **1,842** names; **1,836** kept after ST exclusion |
 | Universe vintage | **PRE-EXPANSION.** A sibling Codex lane is expanding toward ~5,400 names; that is not in this checkout |
 | Limit-event tape | **71,463 rows — HEALED vintage confirmed** (pre-heal is 60,428; 314 names' history would be missing) |
@@ -410,3 +421,10 @@ from `claude/cn-limit-w1-dataheal` and `claude/cn-limit-w1-regime-salvage`; it p
 vintage it actually loaded into `meta.tape.vintage`. **Check that field reads
 `HEALED (PR #5059)` before reading any number** — on the pre-heal store 314 names' history is
 missing.
+
+**Determinism.** Verified by running twice and comparing payloads: byte-identical apart from
+`generated_utc` and `runtime_sec`. The vintage block deliberately records `base_sha` (the
+branch point) and `data_store_sha` (the last commit touching the input stores) rather than
+build-time HEAD alone — an artifact that pins its own build HEAD can never reproduce by
+equality once it is committed, because committing moves HEAD. `build_head_sha` is carried for
+provenance and *is* expected to differ on any re-run after commit.

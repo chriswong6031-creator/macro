@@ -957,14 +957,36 @@ def build(verbose: bool = True):
     return hf, lht, tr_hf, tr_lht, meta, pop
 
 
-def vintage_receipt(files_found: int, kept: int) -> dict:
+def _git(*args: str) -> str:
     try:
-        sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True,
-                             text=True, timeout=30).stdout.strip()
+        r = subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True,
+                           timeout=30)
+        return r.stdout.strip() or "UNKNOWN"
     except Exception:  # noqa: BLE001
-        sha = "UNKNOWN"
+        return "UNKNOWN"
+
+
+def vintage_receipt(files_found: int, kept: int) -> dict:
+    """Vintage identity that is STABLE across the commit that carries this output.
+
+    Recording the build-time HEAD alone makes the artifact un-reproducible by equality the
+    moment it is committed: committing moves HEAD, so the next run writes a different SHA and
+    a byte-comparison of a frozen artifact would be a scheduled failure. The stable identity
+    is the BASE and the DATA-STORE commits, which do not move when this file lands.
+    """
     return {
-        "head_sha": sha,
+        # merge-base, NOT `rev-parse origin/main`: worktrees share one .git, so a sibling
+        # lane's fetch moves origin/main under this run. The branch point does not move.
+        "base_sha": _git("merge-base", "HEAD", "origin/main"),
+        "data_store_sha": _git("log", "-1", "--format=%H", "--",
+                               "data/china_stocks_raw", "data/china_microstructure"),
+        "build_head_sha": _git("rev-parse", "HEAD"),
+        "sha_note": ("base_sha (this branch's point off main) and data_store_sha (the last "
+                     "commit touching the input stores) are the stable vintage identity. "
+                     "build_head_sha is whatever HEAD the run happened on and BY CONSTRUCTION "
+                     "pre-dates the commit that carries this file — it will differ on any "
+                     "re-run after commit, and that is not a reproducibility failure. "
+                     "Everything else in this payload is byte-identical run to run."),
         "raw_store_names": files_found,
         "names_kept_after_st_exclusion": kept,
         "expansion_status": (
