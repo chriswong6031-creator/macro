@@ -3610,10 +3610,10 @@ jobs:
         # loudly), and that pulls engine/earnings_narrative/__init__.py ->
         # promotion.py -> yaml. Under the swallow this job never noticed the
         # dependency because the failed import was silently discarded — the
-        # same silence that hid the dropped paid routes. This job is the only
-        # one of the 13 that import app.main whose line lacked pyyaml;
-        # verified by blocking yaml and collecting the suite.
-        run: pip install pytest fastapi pyyaml
+        # same silence that hid the dropped paid routes. app.main also mounts
+        # app.market_memory eagerly now, so this isolated lane must declare its
+        # direct requests import just like the other app.main suites.
+        run: pip install pytest fastapi pyyaml requests
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
 
