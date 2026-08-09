@@ -249,6 +249,11 @@ on:
       #     tests/test_signal_quality_no_leak.py pins one layer up.
       - "research/prophet_us_audit/label_grading_battery.py"
       - "research/prophet_us_audit/test_label_grading_battery.py"
+      #   * earnings-ignition cohort logic: the derived knowability convention, the
+      #     EDGAR-roll-aware announcement window, and the single reaction-session anchor
+      #     both the reaction and the forward cells hang from. Rides the same step.
+      - "research/prophet_us_audit/earnings_ignition_measurement.py"
+      - "research/prophet_us_audit/test_earnings_ignition_measurement.py"
       - "research/signal_engine/buy_filters.py"
       - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
