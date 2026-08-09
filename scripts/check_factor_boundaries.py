@@ -74,9 +74,8 @@ Pattern note
 ------------
 Checks (a) and (c) are literal scans. Check (b) uses a narrow AST exception for
 fixed all-false authority-mirror emissions in two named inflation producers;
-those paths also detect statically foldable string-literal ``+`` chains. All
-other paths retain the literal scan. Runtime-built names (for example joins,
-formats, decoded bytes, or imported aliases) remain outside this static guard.
+all other paths retain the literal scan. Dynamic path construction without the
+matching literal is NOT detected.
 """
 from __future__ import annotations
 
@@ -176,10 +175,12 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "docs/research/",
 ]
 
-# Release Radar inflation state builders (#5153) may each *emit* one exact,
-# descriptive authority mirror from one unique top-level producer. These are
-# deliberately not whole-file allowlist entries: any read, branch, alias,
-# non-fixed emission, or second emission remains a check-b violation.
+# Release Radar inflation state builders (#5153) may *emit* one exact,
+# descriptive authority mirror. These are deliberately not whole-file
+# allowlist entries: any read, branch, non-fixed emission, alias, or dataflow
+# construction in either producer remains a check-b violation. The only warrant
+# is an inline six-key all-False mapping inside a direct return from one of the
+# named, undecorated module-level producer functions.
 _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS = frozenset(
     {
         "engine/inflation_intelligence.py",
@@ -198,10 +199,28 @@ _ALLOWED_ACTIONS_FIXED_KEYS = frozenset(
     }
 )
 
-_ALLOWED_ACTIONS_FIXED_EMITTERS = {
-    "engine/inflation_intelligence.py": "build_inflation_intelligence",
-    "engine/neuralweb/world_state.py": "_inflation_intelligence_null",
+_ALLOWED_ACTIONS_FIXED_DICT_EMITTERS = {
+    "engine/inflation_intelligence.py": frozenset(
+        {"build_inflation_intelligence"}
+    ),
+    "engine/neuralweb/world_state.py": frozenset(
+        {
+            "_inflation_intelligence_null",
+            "_compose_inflation_intelligence",
+        }
+    ),
 }
+
+# These constructs can replace a validated producer or its executable body
+# without creating an ``ast.Name(Store)`` binding. Fixed-emission modules do
+# not receive a warrant when any of them is present; the lexical/semantic token
+# scan then fails closed on the otherwise-exempt emission key.
+_REFLECTIVE_EMITTER_NAMES = frozenset(
+    {"globals", "locals", "vars", "exec", "eval", "setattr", "delattr"}
+)
+_REFLECTIVE_EMITTER_ATTRIBUTES = frozenset(
+    {"modules", "__code__", "__dict__", "__defaults__", "__kwdefaults__"}
+)
 
 # ---------------------------------------------------------------------------
 # Forbidden field names in state-builder and shadow script (check-c)
@@ -391,164 +410,164 @@ def _is_fixed_false_actions_dict(node: ast.AST) -> bool:
     )
 
 
-def _static_string(node: ast.AST) -> str | None:
-    """Fold literal strings and literal ``+`` chains without executing code."""
-    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-        return node.value
-    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        left = _static_string(node.left)
-        right = _static_string(node.right)
-        if left is not None and right is not None:
-            return left + right
+def _binds_name(node: ast.AST, name: str) -> bool:
+    """Return whether an AST node can bind or delete *name*.
+
+    Python stores several binding forms as string attributes rather than
+    ``ast.Name(Store)`` nodes. Enumerating them here keeps the producer-function
+    identity check fail-closed across imports, definitions, exception aliases,
+    and structural-pattern captures.
+    """
+    if (
+        isinstance(node, ast.Name)
+        and node.id == name
+        and isinstance(node.ctx, (ast.Store, ast.Del))
+    ):
+        return True
+    if isinstance(node, ast.arg) and node.arg == name:
+        return True
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return node.name == name
+    if isinstance(node, ast.alias):
+        return (node.asname or node.name.split(".", maxsplit=1)[0]) == name
+    if isinstance(node, ast.ExceptHandler):
+        return node.name == name
+    if isinstance(node, (ast.Global, ast.Nonlocal)):
+        return name in node.names
+    if isinstance(node, (ast.MatchAs, ast.MatchStar)):
+        return node.name == name
+    if isinstance(node, ast.MatchMapping):
+        return node.rest == name
+    return False
+
+
+def _enclosing_function(
+    node: ast.AST,
+    parents: dict[int, ast.AST],
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    """Return the nearest enclosing function without relying on source lines."""
+    parent = parents.get(id(node))
+    while parent is not None:
+        if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return parent
+        parent = parents.get(id(parent))
     return None
 
 
-class _ModuleBindingVisitor(ast.NodeVisitor):
-    """Collect bindings in module scope without descending into local scopes."""
-
-    def __init__(self) -> None:
-        self.names: list[str] = []
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
-        self.names.append(node.name)
-
-    def visit_AsyncFunctionDef(  # noqa: N802
-        self, node: ast.AsyncFunctionDef
-    ) -> None:
-        self.names.append(node.name)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
-        self.names.append(node.name)
-
-    def visit_Lambda(self, node: ast.Lambda) -> None:  # noqa: N802
-        return
-
-    def visit_Name(self, node: ast.Name) -> None:  # noqa: N802
-        if isinstance(node.ctx, (ast.Store, ast.Del)):
-            self.names.append(node.id)
-
-    def visit_alias(self, node: ast.alias) -> None:
-        self.names.append(node.asname or node.name.split(".", maxsplit=1)[0])
-
-    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:  # noqa: N802
-        if node.name:
-            self.names.append(node.name)
-        self.generic_visit(node)
-
-    def visit_MatchAs(self, node: ast.MatchAs) -> None:  # noqa: N802
-        if node.name:
-            self.names.append(node.name)
-        self.generic_visit(node)
-
-    def visit_MatchStar(self, node: ast.MatchStar) -> None:  # noqa: N802
-        if node.name:
-            self.names.append(node.name)
-
-    def visit_MatchMapping(self, node: ast.MatchMapping) -> None:  # noqa: N802
-        if node.rest:
-            self.names.append(node.rest)
-        self.generic_visit(node)
-
-
-def _module_scope_bindings(tree: ast.Module) -> list[str]:
-    visitor = _ModuleBindingVisitor()
-    visitor.visit(tree)
-    return visitor.names
-
-
-def _emitter_name_is_sealed(
-    tree: ast.Module,
-    emitter_name: str,
-    parents: dict[int, ast.AST],
-) -> bool:
-    """Return whether the approved producer keeps one callable identity.
-
-    Production references to either approved emitter are direct calls. Reject
-    every other use of its name so assignments through ``globals``/``vars``,
-    module attributes, function-object mutation, aliases, and statically named
-    dynamic execution cannot replace the audited producer after its definition.
-    """
+def _has_reflective_emitter_mutation(tree: ast.Module) -> bool:
+    """Return whether source can replace a validated producer indirectly."""
     for node in ast.walk(tree):
-        static_value = _static_string(node)
-        if static_value is not None and emitter_name in static_value:
-            return False
-        if isinstance(node, ast.Name) and node.id == emitter_name:
-            parent = parents.get(id(node))
-            if not (
-                isinstance(node.ctx, ast.Load)
-                and isinstance(parent, ast.Call)
-                and parent.func is node
-            ):
-                return False
-        if isinstance(node, ast.Attribute) and node.attr == emitter_name:
-            return False
-        if isinstance(node, ast.keyword) and node.arg == emitter_name:
-            return False
         if (
-            isinstance(node, (ast.Global, ast.Nonlocal))
-            and emitter_name in node.names
+            isinstance(node, ast.Name)
+            and node.id in _REFLECTIVE_EMITTER_NAMES
         ):
-            return False
-    return True
+            return True
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr in _REFLECTIVE_EMITTER_ATTRIBUTES
+        ):
+            return True
+    return False
 
 
-def _permitted_fixed_emission_nodes(
+def _approved_direct_return_emitters(
     tree: ast.Module,
     rel_path: str,
     parents: dict[int, ast.AST],
-) -> set[int]:
-    """Return the one structurally exact fixed-emission key, or no warrant.
+) -> frozenset[int]:
+    """Return identities of sealed, named module-level producer functions."""
+    expected = _ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.get(rel_path, frozenset())
+    if not expected or _has_reflective_emitter_mutation(tree):
+        return frozenset()
 
-    The producer must be one unique top-level function. Its fixed six-key map
-    must be the value of ``allowed_actions`` in a Dict returned directly by that
-    function. Nested, duplicated, conditional, copied, and keyword emissions
-    therefore fail closed without line-number or name-only exemptions.
-    """
-    emitter_name = _ALLOWED_ACTIONS_FIXED_EMITTERS.get(rel_path)
-    bindings = _module_scope_bindings(tree)
-    if (
-        not emitter_name
-        or "*" in bindings
-        or bindings.count(emitter_name) != 1
-        or not _emitter_name_is_sealed(tree, emitter_name, parents)
-    ):
-        return set()
-    emitters = [
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == emitter_name
-    ]
-    if len(emitters) != 1:
-        return set()
-    emitter = emitters[0]
-    if emitter.decorator_list:
-        return set()
-
-    candidates: list[ast.Constant] = []
-    for node in ast.walk(emitter):
-        if not isinstance(node, ast.Dict):
+    approved: set[int] = set()
+    walked = list(ast.walk(tree))
+    for name in expected:
+        candidates = [
+            node
+            for node in walked
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == name
+        ]
+        if len(candidates) != 1:
+            continue
+        function = candidates[0]
+        if (
+            not isinstance(parents.get(id(function)), ast.Module)
+            or function.decorator_list
+        ):
             continue
         if any(
-            not isinstance(key, ast.Constant)
-            or not isinstance(key.value, str)
-            for key in node.keys
+            node is not function and _binds_name(node, name)
+            for node in walked
         ):
             continue
-        return_node = parents.get(id(node))
-        if not (
-            isinstance(return_node, ast.Return)
-            and parents.get(id(return_node)) is emitter
-        ):
-            continue
-        for key, value in zip(node.keys, node.values):
-            if (
-                isinstance(key, ast.Constant)
-                and key.value == "allowed_actions"
-                and _is_fixed_false_actions_dict(value)
-            ):
-                candidates.append(key)
+        approved.add(id(function))
+    return frozenset(approved)
 
-    return {id(candidates[0])} if len(candidates) == 1 else set()
+
+def _is_allowed_actions_value_position(
+    value: ast.AST,
+    parents: dict[int, ast.AST],
+    approved_emitters: frozenset[int],
+) -> bool:
+    """Return whether *value* is in a named producer's direct return mapping."""
+    parent = parents.get(id(value))
+    if isinstance(parent, ast.Dict):
+        for index, (key, candidate) in enumerate(
+            zip(parent.keys, parent.values)
+        ):
+            if candidate is value:
+                return_node = parents.get(id(parent))
+                function = (
+                    _enclosing_function(return_node, parents)
+                    if isinstance(return_node, ast.Return)
+                    else None
+                )
+                # A later **unpack or computed key could overwrite the fixed
+                # mirror. Literal, known-different keys are safe. Unpacks and
+                # computed keys before this final override remain safe, which
+                # preserves production's {**out, "allowed_actions": ...} shape.
+                safe_tail = all(
+                    isinstance(later_key, ast.Constant)
+                    and later_key.value != "allowed_actions"
+                    for later_key in parent.keys[index + 1 :]
+                )
+                return (
+                    isinstance(key, ast.Constant)
+                    and key.value == "allowed_actions"
+                    and safe_tail
+                    and isinstance(return_node, ast.Return)
+                    and return_node.value is parent
+                    and function is not None
+                    and id(function) in approved_emitters
+                )
+    return False
+
+
+def _is_fixed_actions_emission_value(node: ast.AST) -> bool:
+    """Recognize only an inline six-key, all-False literal mapping."""
+    return _is_fixed_false_actions_dict(node)
+
+
+def _constant_string_value(node: ast.AST) -> str | None:
+    """Resolve a side-effect-free constant string expression, if possible."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _constant_string_value(node.left)
+        right = _constant_string_value(node.right)
+        if left is not None and right is not None:
+            return left + right
+    if isinstance(node, ast.JoinedStr):
+        pieces: list[str] = []
+        for value in node.values:
+            piece = _constant_string_value(value)
+            if piece is None:
+                return None
+            pieces.append(piece)
+        return "".join(pieces)
+    return None
 
 
 def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]:
@@ -559,40 +578,77 @@ def _non_emission_allowed_actions_lines(rel_path: str, source: str) -> list[int]
     """
     try:
         tree = ast.parse(source)
-    except SyntaxError as exc:
+    except SyntaxError:
         # Fail closed for malformed source rather than accidentally granting a
         # whole-file exemption when the AST cannot prove an emission is inert.
-        return [exc.lineno or 1]
+        return [
+            line_no
+            for line_no, line in enumerate(source.splitlines(), start=1)
+            if "allowed_actions" in line
+        ]
 
     parents = {
         id(child): parent
         for parent in ast.walk(tree)
         for child in ast.iter_child_nodes(parent)
     }
-    permitted_nodes = _permitted_fixed_emission_nodes(tree, rel_path, parents)
+    approved_emitters = _approved_direct_return_emitters(
+        tree, rel_path, parents
+    )
+    source_lines = source.splitlines()
+    permitted_spans: set[tuple[int, int, int]] = set()
+    permitted_key_ids: set[int] = set()
 
-    lines: set[int] = set()
+    def char_offset(line: str, byte_offset: int) -> int:
+        """Translate CPython AST UTF-8 byte columns to string offsets."""
+        return len(line.encode("utf-8")[:byte_offset].decode("utf-8"))
+
+    def permit_literal_key(key: ast.Constant) -> None:
+        if key.lineno != key.end_lineno:
+            return
+        line = source_lines[key.lineno - 1]
+        start = char_offset(line, key.col_offset)
+        end = char_offset(line, key.end_col_offset)
+        token_start = line.find("allowed_actions", start, end)
+        if token_start >= 0:
+            permitted_spans.add(
+                (key.lineno, token_start, token_start + len("allowed_actions"))
+            )
+            permitted_key_ids.add(id(key))
+
     for node in ast.walk(tree):
-        references_token = (
-            _static_string(node) == "allowed_actions"
-        ) or (
-            isinstance(node, ast.Name)
-            and node.id == "allowed_actions"
-        ) or (
-            isinstance(node, ast.Attribute)
-            and node.attr == "allowed_actions"
-        ) or (
-            isinstance(node, ast.arg)
-            and node.arg == "allowed_actions"
-        ) or (
-            isinstance(node, ast.keyword)
-            and node.arg == "allowed_actions"
-        ) or (
-            isinstance(node, (ast.Global, ast.Nonlocal))
-            and "allowed_actions" in node.names
-        )
-        if references_token and id(node) not in permitted_nodes:
-            lines.add(getattr(node, "lineno", 1))
+        if isinstance(node, ast.Dict):
+            for key, value in zip(node.keys, node.values):
+                if (
+                    isinstance(key, ast.Constant)
+                    and key.value == "allowed_actions"
+                    and _is_fixed_actions_emission_value(value)
+                    and _is_allowed_actions_value_position(
+                        value, parents, approved_emitters
+                    )
+                ):
+                    permit_literal_key(key)
+
+    # Keep the original fail-closed lexical boundary and subtract only the
+    # exact AST-proven key token spans.  Enumerating selected AST node
+    # classes is insufficient: import aliases, exception bindings, pattern
+    # captures, and future Python syntax can all bind the same authority name.
+    lines: set[int] = set()
+    for line_no, line in enumerate(source_lines, start=1):
+        for occurrence in re.finditer("allowed_actions", line):
+            span = (line_no, occurrence.start(), occurrence.end())
+            if span not in permitted_spans:
+                lines.add(line_no)
+
+    # Python folds adjacent literals and can build the authority key with
+    # constant concatenation while the raw source never contains the token.
+    # Treat every statically resolvable occurrence as equivalent to the literal
+    # spelling, except for the exact AST key node warranted above.
+    for node in ast.walk(tree):
+        if id(node) in permitted_key_ids:
+            continue
+        if _constant_string_value(node) == "allowed_actions":
+            lines.add(node.lineno)
 
     return sorted(lines)
 
@@ -670,7 +726,7 @@ def _check_a(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
 
 
 def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Violation]:
-    """FAIL if 'allowed_actions' appears outside its read/emission boundary."""
+    """FAIL if 'allowed_actions' appears outside the allowlist."""
     violations: list[Violation] = []
     _TOKEN = "allowed_actions"
 
@@ -691,6 +747,8 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
             violation_lines = _non_emission_allowed_actions_lines(rel_path, source)
         elif _TOKEN not in source:
             continue
+        if rel_path in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS:
+            violation_lines = _non_emission_allowed_actions_lines(rel_path, source)
         elif _is_allowlisted_for_allowed_actions(rel_path):
             continue
         else:
@@ -896,44 +954,6 @@ def _run_selftest(root: Path) -> int:
         )
     else:
         print("  [OK] check-b-enforcement: contract validator is enforcement-only")
-
-    # --- (b emit-only): only the producer's exact fixed mirror passes --
-    synthetic_b_emit = {
-        "engine/neuralweb/world_state.py": (
-            "def _inflation_intelligence_null():\n"
-            "    return {'allowed_actions': {"
-            "'may_rank': False, 'may_score': False, 'may_size': False, "
-            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}\n"
-        ),
-    }
-    if _check_b(root, extra_files=synthetic_b_emit):
-        errors.append("SELFTEST FAIL (b-emit): approved descriptive emissions were rejected")
-    else:
-        print("  [OK] check-b-emit: exact descriptive emission spans permitted")
-
-    synthetic_b_mixed = {
-        "engine/neuralweb/world_state.py": (
-            "def _inflation_intelligence_null():\n"
-            "    return {'allowed_actions': {"
-            "'may_rank': False, 'may_score': False, 'may_size': False, "
-            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}; "
-            "observed = source['allowed_actions']\n"
-        ),
-    }
-    if not _check_b(root, extra_files=synthetic_b_mixed):
-        errors.append("SELFTEST FAIL (b-mixed): same-line behavioral read was hidden by key emission")
-    else:
-        print("  [OK] check-b-mixed: same-line read remains a violation")
-
-    synthetic_b_parse = {
-        "engine/neuralweb/world_state.py": (
-            "payload = {'allowed_actions': {'may_rank': False}\n"
-        ),
-    }
-    if not _check_b(root, extra_files=synthetic_b_parse):
-        errors.append("SELFTEST FAIL (b-parse): malformed emitter source did not fail closed")
-    else:
-        print("  [OK] check-b-parse: malformed emitter source fails closed")
 
     # --- (c): forbidden field in state builder (colon form) --
     synthetic_c = {

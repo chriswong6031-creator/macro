@@ -1007,14 +1007,24 @@ def _compose_inflation_intelligence(root: "Path | str | None" = None) -> dict:
         "source_status": state.get("source_status") if isinstance(state.get("source_status"), dict) else None,
         "gaps": [str(gap) for gap in source_gaps[:25]],
     })
-    # Authority is ALWAYS all-false regardless of artifact content/version.
-    out.update(
-        display_only=True,
-        authority=False,
-        is_context_only=True,
-        authority_note=_INFLATION_INTELLIGENCE_NOTE,
-    )
-    return out
+    # Return a built-in mapping with a final inline authority override.  The
+    # source artifact and intermediate ``out`` object can never supply or
+    # mutate the authority mirror carried by World State.
+    return {
+        **out,
+        "display_only": True,
+        "authority": False,
+        "is_context_only": True,
+        "allowed_actions": {
+            "may_rank": False,
+            "may_score": False,
+            "may_size": False,
+            "may_gate": False,
+            "may_escalate": False,
+            "may_trade": False,
+        },
+        "authority_note": _INFLATION_INTELLIGENCE_NOTE,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
