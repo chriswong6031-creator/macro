@@ -92,8 +92,9 @@ jobs:
       # lib.config → pyyaml).
       - name: install minimal deps
         run: |
-          python3 -c "import pytest, yaml, jinja2, markupsafe" 2>/dev/null || \
-            python3 -m pip install pytest pyyaml jinja2 markupsafe
+          python3 -m venv "$RUNNER_TEMP/fence-venv"
+          "$RUNNER_TEMP/fence-venv/bin/pip" install pytest pyyaml jinja2 markupsafe
+          echo "$RUNNER_TEMP/fence-venv/bin" >> "$GITHUB_PATH"
 
       - name: self-mod-fence selftest (all four cases proven)
         id: self_mod_selftest
