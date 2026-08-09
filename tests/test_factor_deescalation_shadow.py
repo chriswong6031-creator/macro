@@ -433,19 +433,14 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert not any(v.check == "b" for v in viols)
 
-    def test_world_state_fixed_constant_emissions_allowed(self) -> None:
-        """Both production World State emission forms retain the narrow warrant."""
+    def test_world_state_fixed_literal_emission_allowed(self) -> None:
+        """The unique top-level null builder retains one narrow emission warrant."""
         synthetic = {
             "engine/neuralweb/world_state.py": (
-                self._WORLD_CONSTANT
-                + "def _inflation_intelligence_null():\n"
+                "def _inflation_intelligence_null():\n"
                 "    return {'allowed_actions': "
-                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
-                "def _compose_inflation_intelligence():\n"
-                "    out = {}\n"
-                "    out.update(allowed_actions="
-                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS))\n"
-                "    return out\n"
+                + self._FIXED_LITERAL
+                + "}\n"
             )
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
@@ -467,32 +462,32 @@ class TestCheckB:
         """A legitimate emission grants no file-level read/behavior authority."""
         synthetic = {
             "engine/neuralweb/world_state.py": (
-                self._WORLD_CONSTANT
-                + "def _inflation_intelligence_null():\n"
+                "def _inflation_intelligence_null():\n"
                 "    return {'allowed_actions': "
-                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
+                + self._FIXED_LITERAL
+                + "}\n"
                 "def _compose_inflation_intelligence():\n"
                 "    " + forbidden_reference + "\n"
             )
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert len(viols) == 1
-        assert viols[0].line_no == 5
+        assert viols[0].line_no == 4
 
     def test_world_state_same_line_emission_does_not_hide_read(self) -> None:
         """AST-node exemptions cannot swallow a read on the emission's line."""
         synthetic = {
             "engine/neuralweb/world_state.py": (
-                self._WORLD_CONSTANT
-                + "def _inflation_intelligence_null():\n"
-                "    payload = {'allowed_actions': "
-                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}; "
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}; "
                 "observed = state.get('allowed_actions')\n"
             )
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert len(viols) == 1
-        assert viols[0].line_no == 3
+        assert viols[0].line_no == 2
 
     @pytest.mark.parametrize(
         "state_builder",
@@ -521,38 +516,10 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert len(viols) == 1
 
-    def test_world_state_rejects_nonfixed_constant_emission(self) -> None:
-        nonfixed = self._WORLD_CONSTANT.replace(
-            "'may_trade': False", "'may_trade': True"
-        )
-        synthetic = {
-            "engine/neuralweb/world_state.py": (
-                nonfixed
-                + "def _inflation_intelligence_null():\n"
-                "    return {'allowed_actions': "
-                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
-            )
-        }
-        viols = _check_b(REPO_ROOT, extra_files=synthetic)
-        assert len(viols) == 1
-
-    @pytest.mark.parametrize(
-        "dict_shadow",
-        [
-            "def dict(value):\n    return value\n",
-            "class dict:\n    pass\n",
-            "import builtins as dict\n",
-            "from builtins import dict\n",
-            "try:\n    pass\nexcept Exception as dict:\n    pass\n",
-        ],
-    )
-    def test_world_state_shadowed_dict_constructor_fails_closed(
-        self, dict_shadow: str
-    ) -> None:
+    def test_world_state_rejects_named_constant_copy_emission(self) -> None:
         synthetic = {
             "engine/neuralweb/world_state.py": (
                 self._WORLD_CONSTANT
-                + dict_shadow
                 + "def _inflation_intelligence_null():\n"
                 "    return {'allowed_actions': "
                 "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
@@ -579,6 +546,153 @@ class TestCheckB:
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert len(viols) == 1
+
+    @pytest.mark.parametrize(
+        "emitter_defs",
+        [
+            (
+                "def outer():\n"
+                "    def _inflation_intelligence_null():\n"
+                "        return {'allowed_actions': "
+                + _FIXED_LITERAL
+                + "}\n"
+            ),
+            (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + _FIXED_LITERAL
+                + "}\n"
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + _FIXED_LITERAL
+                + "}\n"
+            ),
+        ],
+    )
+    def test_redteam_rejects_nested_or_duplicate_approved_emitter_defs(
+        self, emitter_defs: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": emitter_defs
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    def test_redteam_rejects_behavior_sink_named_out(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "class BehaviorSink:\n"
+                "    def update(self, **kwargs):\n"
+                "        execute_trade()\n"
+                "def _compose_inflation_intelligence():\n"
+                "    out = BehaviorSink()\n"
+                "    out.update(allowed_actions="
+                + self._FIXED_LITERAL
+                + ")\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    def test_redteam_rejects_reflective_constant_mutation(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                self._WORLD_CONSTANT
+                + "globals()['_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS']"
+                "['may_trade'] = True\n"
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                "dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)}\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+        production = (REPO_ROOT / "engine/neuralweb/world_state.py").read_text()
+        assert "_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS" not in production
+
+    def test_redteam_rejects_constant_folded_split_token_read(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                "key = 'allowed_' + 'actions'\n"
+                "observed = state[key]\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    def test_redteam_rejects_outer_dict_unpack_after_fixed_emission(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + ", **evil}\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    def test_redteam_rejects_decorated_approved_emitter(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "@replace_with_behavior\n"
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    @pytest.mark.parametrize(
+        "rebind",
+        [
+            "_inflation_intelligence_null = behavior\n",
+            (
+                "async def _inflation_intelligence_null():\n"
+                "    return evil\n"
+            ),
+            "class _inflation_intelligence_null:\n    pass\n",
+            "import behavior as _inflation_intelligence_null\n",
+        ],
+    )
+    def test_redteam_rejects_any_second_top_level_emitter_binding(
+        self, rebind: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + rebind
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            (
+                "def mutate():\n"
+                "    global _inflation_intelligence_null\n"
+                "    _inflation_intelligence_null = evil\n"
+            ),
+            "globals()['_inflation_intelligence_null'] = evil\n",
+        ],
+    )
+    def test_redteam_rejects_indirect_module_emitter_rebinding(
+        self, mutation: str
+    ) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "def _inflation_intelligence_null():\n"
+                "    return {'allowed_actions': "
+                + self._FIXED_LITERAL
+                + "}\n"
+                + mutation
+            )
+        }
+        assert _check_b(REPO_ROOT, extra_files=synthetic)
 
     def test_state_builder_allowlisted(self) -> None:
         synthetic = {
