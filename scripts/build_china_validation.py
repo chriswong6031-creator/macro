@@ -11,6 +11,11 @@ See research/CHINA_INTEL_POWERHOUSE.md §1.1 and the masterplan §4 CN-SYS-R1.
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 
 def build() -> dict | None:
