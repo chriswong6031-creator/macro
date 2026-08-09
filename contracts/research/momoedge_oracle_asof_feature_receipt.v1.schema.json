@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_oracle_asof_feature_receipt.v1.schema.json",
+  "title": "Required point-in-time feature receipt for an Oracle replay case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "case_id",
+    "family",
+    "decision_layers",
+    "cutoff_id",
+    "candidate_as_of",
+    "issue_time_state",
+    "status",
+    "point_in_time_contract",
+    "required_evidence",
+    "evidence"
+  ],
+  "properties": {
+    "schema": {"const": "momoedge.oracle_asof_feature_receipt_requirement/v1"},
+    "receipt_id": {"type": "string", "pattern": "^momo_feat_[a-f0-9]{24}$"},
+    "case_id": {"type": "string", "pattern": "^momo_case_[a-f0-9]{24}$"},
+    "family": {
+      "enum": [
+        "price_technical",
+        "macro_regime",
+        "options_flow_campaign",
+        "gex_vol_oi",
+        "news_alt_data"
+      ]
+    },
+    "decision_layers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"enum": ["selection", "contract_construction", "management"]}
+    },
+    "cutoff_id": {"enum": ["market_open", "mid_session", "market_close_boundary"]},
+    "candidate_as_of": {"type": "string", "format": "date-time"},
+    "issue_time_state": {"const": "unknown_date_only"},
+    "status": {"const": "required_unresolved"},
+    "point_in_time_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_time_lte",
+        "available_at_lte",
+        "source_vintage_required",
+        "revision_identity_required",
+        "missingness_required",
+        "quality_required",
+        "same_day_eod_requires_observed_availability",
+        "unknown_issue_time_uses_prior_session_daily_state",
+        "issue_day_eod_not_assumed_available"
+      ],
+      "properties": {
+        "event_time_lte": {"type": "string", "format": "date-time"},
+        "available_at_lte": {"type": "string", "format": "date-time"},
+        "source_vintage_required": {"const": true},
+        "revision_identity_required": {"const": true},
+        "missingness_required": {"const": true},
+        "quality_required": {"const": true},
+        "same_day_eod_requires_observed_availability": {"const": true},
+        "unknown_issue_time_uses_prior_session_daily_state": {"const": true},
+        "issue_day_eod_not_assumed_available": {"const": true}
+      }
+    },
+    "required_evidence": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,80}$"}
+    },
+    "evidence": {"const": []}
+  }
+}
