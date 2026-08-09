@@ -34,11 +34,15 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-from lib import config
-from scripts.calibrate_vector import backtest
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
+from scripts.calibrate_vector import backtest  # noqa: E402
 
 SIG_PATH = "data/vector/signals.parquet"
 SPLIT = "2021-01-01"

@@ -32,15 +32,36 @@ A suite that is both is STRICTLY DARK: no possible edit produces a signal.  Thos
 ranked first, and within them the ones reachable from the nightly/render pipelines
 rank highest — a silent break there moves shipped numbers with nothing going red.
 
+THE CENSUS IS NOW A GATE (2026-08-09).  It reported for three weeks and the backlog
+did not move: 969 unrun suites of 2,146 on the day it was armed, and six separate PRs
+(#4567, #4589, #4709, #4710, #4800, #4826) each un-darkened ONE suite by hand while
+nothing stopped the seventh from landing dark.  A report nobody is obliged to read
+re-creates the trap it measures.  So the exit code now carries the finding — but only
+for suites that are NEW, against two files:
+
+  config/unrun_test_baseline.json    the pre-gate backlog, grandfathered.  SHRINK-ONLY:
+                                     a row leaves when the suite is wired or deleted,
+                                     and nothing is ever added.  Rows that no longer
+                                     read as unrun WARN (prune them); they never red.
+
+  config/unrun_test_waivers.yml      suite path → reason.  For a suite that must stay
+                                     unrun with an owner and an argument, not a
+                                     dumping ground: every waived-and-unrun row is
+                                     printed with its reason on every run.
+
+Wiring every unrun suite at once would blow the ci-pack budget, which is why the
+backlog is grandfathered rather than gated — the tiers below stay triage input.  What
+the gate buys is the ratchet: the 970th dark suite cannot ship silently.
+
 Usage:
-    python3 scripts/audit_unrun_tests.py                     # summary table
+    python3 scripts/audit_unrun_tests.py                     # summary table, then GATE
     python3 scripts/audit_unrun_tests.py --tier P0           # list one tier
     python3 scripts/audit_unrun_tests.py --json out.json     # full machine-readable rows
-    python3 scripts/audit_unrun_tests.py --selftest          # discovery round-trip
+    python3 scripts/audit_unrun_tests.py --selftest          # discovery + gate round-trip
+    python3 scripts/audit_unrun_tests.py --write-baseline    # re-freeze the grandfather list
 
-Exit status is always 0 (except `--selftest`): this is a reporting tool, not a gate.
-Wiring every unrun suite would blow the ci-pack budget, so the output is triage
-input, not a to-do list.
+Exit 1 means a suite is unrun and in neither file (or the waiver file is malformed).
+`--selftest` and `--write-baseline` do not gate.
 """
 from __future__ import annotations
 
@@ -60,6 +81,11 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github/workflows"
 CI_MANIFEST = ROOT / ".github/ci/legacy-jobs.yml"
+# The two files the gate reads. Both are OPTIONAL on disk: a checkout without them
+# gates every unrun suite, which is the correct failure direction for a ratchet —
+# deleting the baseline cannot quietly disarm it.
+BASELINE = ROOT / "config/unrun_test_baseline.json"
+WAIVERS = ROOT / "config/unrun_test_waivers.yml"
 # There is deliberately no `TESTS = ROOT / "tests"` constant any more. It was the
 # scope that blinded all three guards at once, nothing imports it, and leaving it
 # here would invite the next reader to narrow discovery back onto it.
@@ -360,15 +386,36 @@ def _writes_ledger(relpaths: list[str]) -> bool:
     return False
 
 
+def _named_by_a_run_step(rel: str, blob: str, ambiguous: frozenset[str]) -> bool:
+    """Does some workflow `run:` step name this suite?
+
+    Path first.  The BASENAME fallback is real — a step that cd's into a directory
+    names the file alone — but it is only sound while the basename identifies exactly
+    one suite.  Measured 2026-08-09: one basename in this tree is shared,
+    `test_price_ladder.py`, living in both `tests/` and `research/prophet_us_audit/`.
+    Both were unrun, so the collision was harmless until the hour the research one was
+    wired — at which point the `tests/` one started reading as COVERED with nothing
+    running it, and would have vanished from the backlog it belongs in.  A suite that
+    reads green because of a sibling's NAME is this census's own failure mode, so an
+    ambiguous basename demands the full path.
+    """
+    if rel in blob:
+        return True
+    name = rel.rsplit("/", 1)[-1]
+    return name not in ambiguous and name in blob
+
+
 def census() -> list[dict]:
     blob = _workflow_blob()
     patterns = _ci_paths()
     pipeline = _pipeline_modules()
+    suites = discover_suites()
+    shared = Counter(rel.rsplit("/", 1)[-1] for rel in suites)
+    ambiguous = frozenset(n for n, seen in shared.items() if seen > 1)
     rows = []
-    for rel_test in discover_suites():
+    for rel_test in suites:
         path = ROOT / rel_test
-        name = path.name
-        if rel_test in blob or name in blob:
+        if _named_by_a_run_step(rel_test, blob, ambiguous):
             continue                                    # named by some run: step
         subjects = sorted({
             rel for mod in _subject_modules(path) for rel in _to_relpaths(mod)
@@ -397,6 +444,156 @@ def census() -> list[dict]:
     return rows
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# the gate — grandfathered backlog + reasoned waivers, everything else is red
+# ─────────────────────────────────────────────────────────────────────────────
+
+_BASELINE_NOTE = (
+    "Shrink-only grandfather list: the unrun-suite backlog as it stood on the day "
+    "scripts/audit_unrun_tests.py started gating. NEVER add to it. A new suite gets "
+    "wired into the job that owns its subject, or gets a row in "
+    "config/unrun_test_waivers.yml with a reason. Rows leave this list when the suite "
+    "is wired or deleted (the gate warns on rows that no longer read as unrun); "
+    "regenerate with `python scripts/audit_unrun_tests.py --write-baseline`."
+)
+
+
+class _Unparseable(str):
+    """A waivers file YAML could not read, carried into the gate as data.
+
+    The schema is enforced in `gate()` and nowhere else, so the file path and the
+    unit-test path fail identically. A parse error is just another malformed shape;
+    subclassing str keeps it inert everywhere except the one isinstance below.
+    """
+
+
+def _load_waivers() -> object:
+    """Raw parsed waivers — deliberately UNvalidated (see `_validate_waivers`).
+
+    A missing file is not an error: it means no waivers, and the gate then judges
+    every unrun suite against the baseline alone.
+    """
+    if not WAIVERS.exists():
+        return {}
+    try:
+        return yaml.safe_load(WAIVERS.read_text()) or {}
+    except yaml.YAMLError as exc:
+        return _Unparseable(f"{WAIVERS.name} does not parse as YAML: {exc}")
+
+
+def _validate_waivers(waivers: object) -> tuple[dict[str, str], list[str]]:
+    """``(normalized waivers, malformed complaints)`` — one enforcement point.
+
+    A waiver with no reason is the failure this schema exists to prevent: it reads
+    exactly like the baseline, silently, and turns the exception list back into a
+    dumping ground. An unreadable waiver set is fatal rather than ignored, because
+    ignoring it would red every waived suite at once and bury the real complaint.
+    """
+    if isinstance(waivers, _Unparseable):
+        return {}, [str(waivers)]
+    if not isinstance(waivers, dict):
+        return {}, [
+            f"config/{WAIVERS.name} must be a mapping of suite path -> reason, "
+            f"got {type(waivers).__name__}"
+        ]
+    normalized: dict[str, str] = {}
+    problems: list[str] = []
+    for key, reason in waivers.items():
+        if not isinstance(key, str) or not key.strip():
+            problems.append(f"config/{WAIVERS.name} has a non-string suite path: {key!r}")
+            continue
+        if not isinstance(reason, str) or not reason.strip():
+            problems.append(
+                f"config/{WAIVERS.name}: {key} has no reason — a waiver without an "
+                f"argument is a baseline row wearing a disguise"
+            )
+            continue
+        normalized[key] = reason.strip()
+    return normalized, problems
+
+
+def _load_baseline() -> set[str]:
+    """Grandfathered suite paths. Keys starting with `_` are prose for the reader."""
+    if not BASELINE.exists():
+        return set()
+    doc = json.loads(BASELINE.read_text())
+    rows: set[str] = set()
+    for key, value in doc.items():
+        if key.startswith("_"):
+            continue
+        if isinstance(value, list):
+            rows.update(str(entry) for entry in value)
+    return rows
+
+
+def gate(unrun: list[str], baseline: set[str], waivers: object,
+         suites: set[str]) -> int:
+    """0 unless a suite is unrun and in neither file. Pure: prints, reads nothing."""
+    normalized, malformed = _validate_waivers(waivers)
+    if malformed:
+        for detail in malformed:
+            print(f"::error title=unrun-waivers-malformed::{detail}", flush=True)
+        return 1
+
+    unrun_set = set(unrun)
+
+    # Visible accounting, never an annotation: a waiver is only honest while its
+    # reason stays in front of whoever reads this output.
+    waived_live = sorted(unrun_set & set(normalized))
+    if waived_live:
+        print(f"\n  waived ({len(waived_live)}) — unrun on purpose, "
+              f"config/{WAIVERS.name}:")
+        for rel in waived_live:
+            print(f"    {rel}\n      {normalized[rel]}")
+
+    for rel in sorted(baseline - unrun_set):
+        why = "wired into a job" if rel in suites else "deleted or renamed"
+        print(f"::warning title=stale-unrun-baseline::{rel} is no longer an unrun "
+              f"suite ({why}) — prune it from config/{BASELINE.name}", flush=True)
+    for rel in sorted(set(normalized) - unrun_set):
+        why = "wired into a job" if rel in suites else "deleted or renamed"
+        print(f"::warning title=stale-unrun-waiver::{rel} is no longer an unrun suite "
+              f"({why}) — delete its row from config/{WAIVERS.name}", flush=True)
+    # The waiver wins where both name a suite — it carries the reason — so the
+    # baseline row is pure duplication and the one to drop.
+    for rel in sorted(baseline & set(normalized)):
+        print(f"::warning title=stale-unrun-baseline::{rel} is both grandfathered and "
+              f"waived; the waiver is the reason of record — prune the row from "
+              f"config/{BASELINE.name}", flush=True)
+
+    findings = [rel for rel in unrun
+                if rel not in baseline and rel not in normalized]
+    for rel in findings:
+        print(
+            f"::error title=unrun-suite::{rel} is a collecting pytest suite named by "
+            f"no run: step in any workflow — wire it into the job that owns its "
+            f"subject (see the signal-contract research-resident steps in "
+            f".github/ci/legacy-jobs.yml for the pattern) or add it to "
+            f"config/{WAIVERS.name} with a reason",
+            flush=True,
+        )
+    return 1 if findings else 0
+
+
+def _write_baseline(unrun: list[str], waivers: object) -> int:
+    """Re-freeze the grandfather list. Refuses to run on an unreadable waiver set."""
+    normalized, malformed = _validate_waivers(waivers)
+    if malformed:
+        for detail in malformed:
+            print(f"::error title=unrun-waivers-malformed::{detail}", flush=True)
+        return 1
+    grandfathered = sorted(rel for rel in set(unrun) if rel not in normalized)
+    payload = {
+        "_frozen": "2026-08-09",
+        "_note": _BASELINE_NOTE,
+        "grandfathered": grandfathered,
+    }
+    BASELINE.write_text(json.dumps(payload, indent=1) + "\n")
+    print(f"\nwrote {BASELINE} ({len(grandfathered)} grandfathered, "
+          f"{len(normalized)} waived)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -404,6 +601,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", type=Path, help="write all rows as JSON")
     ap.add_argument("--selftest", action="store_true",
                     help="round-trip discovery and classification against fixtures")
+    ap.add_argument("--write-baseline", action="store_true",
+                    help="re-freeze config/unrun_test_baseline.json from this census")
     args = ap.parse_args(argv)
 
     if args.selftest:
@@ -450,7 +649,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         args.json.write_text(json.dumps(rows, indent=1))
         print(f"\nwrote {args.json} ({len(rows)} rows)")
-    return 0
+
+    unrun = sorted(r["test"] for r in rows)
+    waivers = _load_waivers()
+    if args.write_baseline:
+        return _write_baseline(unrun, waivers)
+    # --tier and --json are report SHAPES, not report-only modes: a run that gates
+    # for one caller and not another is a gate that can be turned off by a flag.
+    return gate(unrun, _load_baseline(), waivers, set(suites))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -475,6 +681,8 @@ _FIXTURE_INSTRUMENT = (
 
 
 def _selftest() -> int:
+    import contextlib
+    import io
     import tempfile
 
     failures: list[str] = []
@@ -536,11 +744,69 @@ def _selftest() -> int:
         if target.is_file() and defines_tests(target):
             failures.append(f"{rel} collects no tests but classified as a suite")
 
+    # 3. The gate itself, exercised PURELY — no ROOT repoint, no files on disk, so a
+    #    census that cannot see is caught above and a gate that cannot judge is caught
+    #    here. stdout is captured: a PASSING selftest must not stamp its fixture's
+    #    ::error lines onto the real run's Actions summary.
+    def _gate(unrun, baseline, waivers, suites=()) -> tuple[int, str]:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = gate(list(unrun), set(baseline), waivers, set(suites))
+        return code, buf.getvalue()
+
+    def _has(out: str, prefix: str) -> bool:
+        """Line-START, per house law — an annotation with anything in front is dropped."""
+        return any(line.startswith(prefix) for line in out.splitlines())
+
+    new = "research/packet/test_newly_dark.py"
+    old = "tests/test_grandfathered.py"
+
+    code, out = _gate([new], set(), {}, {new})
+    if code != 1:
+        failures.append("gate() cleared a suite that is unrun, unbaselined and unwaived")
+    if not _has(out, "::error title=unrun-suite::"):
+        failures.append("gate() failed without a line-start ::error unrun-suite annotation")
+
+    code, out = _gate([new], {new}, {}, {new})
+    if code != 0:
+        failures.append("gate() reds a grandfathered suite; the backlog is not a to-do list")
+
+    code, out = _gate([new], set(), {new: "owner + argument"}, {new})
+    if code != 0:
+        failures.append("gate() reds a waived suite")
+    if "owner + argument" not in out:
+        failures.append("gate() hid a live waiver's reason; a silent waiver is a baseline row")
+
+    # Stale rows are a prune instruction, never a red: a suite that got WIRED must not
+    # break the branch that wired it.
+    code, out = _gate([], {old}, {}, {old})
+    if code != 0 or not _has(out, "::warning title=stale-unrun-baseline::"):
+        failures.append("a stale baseline row must warn and exit 0 (got "
+                        f"{code}, warned={_has(out, '::warning title=stale-unrun-baseline::')})")
+    code, out = _gate([], set(), {old: "why"}, {old})
+    if code != 0 or not _has(out, "::warning title=stale-unrun-waiver::"):
+        failures.append("a stale waiver must warn and exit 0 (got "
+                        f"{code}, warned={_has(out, '::warning title=stale-unrun-waiver::')})")
+    code, out = _gate([new], {new}, {new: "why"}, {new})
+    if code != 0 or not _has(out, "::warning title=stale-unrun-baseline::"):
+        failures.append("a suite in BOTH files must warn about the duplication and exit 0")
+
+    for bad, why in (
+        (["not", "a", "mapping"], "a list is not a suite path -> reason mapping"),
+        ({new: ""}, "an empty reason is a baseline row wearing a disguise"),
+        ({new: 232}, "a non-string reason carries no argument"),
+        (_Unparseable("boom"), "an unreadable waiver set must not silently red every waiver"),
+    ):
+        code, out = _gate([new], {new}, bad, {new})
+        if code != 1 or not _has(out, "::error title=unrun-waivers-malformed::"):
+            failures.append(f"malformed waivers accepted ({why})")
+
     if failures:
         for failure in failures:
             print(f"::error title=unrun-census-selftest::{failure}", flush=True)
         return 1
-    print("SELFTEST OK — discovery reaches outside tests/, instruments classified out.")
+    print("SELFTEST OK — discovery reaches outside tests/, instruments classified out, "
+          "gate reds only the unbaselined and unwaived.")
     return 0
 
 

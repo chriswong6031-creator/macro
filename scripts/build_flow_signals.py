@@ -34,9 +34,13 @@ import json
 import logging
 import math
 import os
+import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 log = logging.getLogger(__name__)
 

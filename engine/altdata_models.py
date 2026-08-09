@@ -28,6 +28,7 @@ import pandas as pd
 
 from engine import ticker_shape
 from lib import config
+from lib import ticker_aliases          # provider symbol -> stable company key
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +48,29 @@ def _s(v) -> str | None:
 # here because callers reach for them directly (engine.altdata uses models._valid_ticker).
 _TICKER_JUNK = ticker_shape.TICKER_JUNK
 _TICKER_RE = ticker_shape.US_TICKER_RE
-_valid_ticker = ticker_shape.valid_us_ticker
+
+
+def _valid_ticker(v) -> str | None:
+    """A canonical, validated ticker, or None. Rejects placeholder junk ('N/A' and
+    friends) and shape-invalid strings so no garbage name reaches the convergence
+    board, and collapses a provider symbol back onto the repository's stable
+    membership key. This is the single hygiene gate the kernel routes every
+    ticker through.
+
+    Resolving the rename HERE is what makes the merge free: every channel reaches
+    a record through rec()/add(), so both symbols land in the same ``by`` entry and
+    the existing channel / weighted_score / count logic aggregates them as one
+    company with no merge code. Marsh McLennan sat on this board as TWO companies
+    for ~7 months after its 2026-01-14 MMC -> MRSH rename — MMC carrying
+    news_sentiment at 0.20, MRSH carrying a trump channel at 0.50, neither aware of
+    the other — because nothing in the pipeline knew the two symbols were one name.
+    """
+    symbol = ticker_shape.valid_us_ticker(v)
+    if symbol is None:
+        return None
+    u = symbol.upper()
+    stable = ticker_aliases.store_key(u)
+    return stable if stable != u else symbol
 
 
 def _f(v) -> float:

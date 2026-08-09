@@ -753,7 +753,9 @@ def test_bounded_collector_builds_all_three_ledgers_without_network(tmp_path):
     assert status["snapshots_total"] == 1
     assert not status["errors"]
     assert status["bounded"] is True
-    assert status["award_search_limit_per_entity"] == 50
+    # page_size defaults to the endpoint maximum of 100 (one page here).
+    assert status["page_size"] == 100
+    assert status["award_search_limit_per_entity"] == 100
     assert status["detail_awards_attempted"] == 1
     assert status["detail_awards_succeeded"] == 1
     assert status["action_awards_attempted"] == 1
@@ -2644,3 +2646,399 @@ def test_b3_absent_projection_state_beside_populated_ledgers_fails_closed(tmp_pa
 
     with pytest.raises(RuntimeError, match="cold-start"):
         usaspending_awards._load_award_event_projection_state(state_path)
+
+
+# --- Wave 9E coverage repair: alias-list discovery, zero-row tripwire, page cap ---
+
+
+class _AliasSession(_Session):
+    """Answer only when the query carries the subsidiary alias, never the parent."""
+
+    def __init__(self, *, matching_term: str):
+        super().__init__()
+        self.matching_term = matching_term
+
+    def post(self, url, json, headers, timeout):
+        self.calls.append((url, json, headers, timeout))
+        if url == AWARDS_URL:
+            terms = json["filters"]["recipient_search_text"]
+            # The live filter is a contiguous-substring match, so a parent legal
+            # name that no award row spells returns a clean, empty, exhausted page.
+            hit = any(term == self.matching_term for term in terms)
+            return _Response({
+                "results": [_raw_award()] if hit else [],
+                "page_metadata": {"hasNext": False},
+            })
+        assert url == TRANSACTIONS_URL
+        return _Response({
+            "results": [{
+                "id": "TX1", "action_date": "2026-07-30", "modification_number": "P1",
+                "federal_action_obligation": 12.0, "description": "Option exercised",
+            }],
+            "page_metadata": {"hasNext": False},
+        })
+
+    def get(self, url, headers, timeout):
+        self.calls.append((url, None, headers, timeout))
+        return _Response({
+            "generated_unique_award_id": "CONT_AWD_N0001",
+            "piid": "N0001",
+            "total_obligation": 80.0,
+            "total_outlay": 60.0,
+            "base_exercised_options": 100.0,
+            "base_and_all_options": 150.0,
+            "period_of_performance": {
+                "start_date": "2025-01-01",
+                "end_date": "2027-01-01",
+                "last_modified_date": "2026-07-31",
+            },
+            "recipient": {"recipient_name": "LOCKHEED MARTIN CORP", "recipient_uei": "UEI123"},
+            "latest_transaction_contract_data": {
+                "dod_acquisition_program_description": "F-35 Joint Strike Fighter"
+            },
+        })
+
+
+def _write_alias_entity(tmp_path, entity):
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "entities.json").write_text(json.dumps({"entities": {"BWXT": entity}}))
+    return data_dir
+
+
+def test_recipient_query_terms_sends_the_alias_list_not_only_the_primary_string():
+    """``recipient_aliases`` was published downstream but never queried.
+
+    The discovery rail read a single ``recipient_search_text`` string, so an
+    issuer whose award rows carry a differently spelled operating-subsidiary
+    name could not be reached no matter what the alias list said.
+    """
+    terms, dropped = usaspending_awards.recipient_query_terms(
+        {
+            "name": "BWX Technologies",
+            "recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP",
+            "recipient_aliases": [
+                "BWXT NUCLEAR OPERATIONS GROUP",
+                "BWXT ORDNANCE TENNESSEE",
+                "NUCLEAR FUEL SERVICES",
+            ],
+        },
+        "BWXT",
+    )
+    assert terms == [
+        "BWXT NUCLEAR OPERATIONS GROUP",
+        "BWXT ORDNANCE TENNESSEE",
+        "NUCLEAR FUEL SERVICES",
+    ]
+    assert dropped == []
+
+
+def test_recipient_query_terms_dedupes_case_insensitively_and_keeps_config_order():
+    terms, dropped = usaspending_awards.recipient_query_terms(
+        {
+            "recipient_search_text": "LOCKHEED MARTIN",
+            "recipient_aliases": ["lockheed martin", "LOCKHEED MARTIN SPACE", "  "],
+        },
+        "LMT",
+    )
+    assert terms == ["LOCKHEED MARTIN", "LOCKHEED MARTIN SPACE"]
+    assert dropped == []
+
+
+def test_recipient_query_terms_fall_back_to_name_then_ticker():
+    assert usaspending_awards.recipient_query_terms({"name": "Boeing"}, "BA") == (["Boeing"], [])
+    assert usaspending_awards.recipient_query_terms({}, "BA") == (["BA"], [])
+
+
+def test_recipient_query_terms_stop_at_the_measured_safety_cap_and_report_the_rest():
+    """A 10-term recipient_search_text body is rejected with a retry-proof 503.
+
+    Measured 2026-08-07 against the live endpoint: 9 terms returned 200 and 10
+    returned 503 identically on 6/6 repeats, so an uncapped alias list would
+    blank the entity instead of degrading it.  Terms past the cap are returned
+    for disclosure rather than dropped in silence.
+    """
+    aliases = [f"ALIAS {index}" for index in range(12)]
+    terms, dropped = usaspending_awards.recipient_query_terms(
+        {"recipient_search_text": "PRIMARY", "recipient_aliases": aliases},
+        "XYZ",
+    )
+    assert usaspending_awards.MAX_RECIPIENT_QUERY_TERMS == 8
+    assert len(terms) == 8
+    assert terms[0] == "PRIMARY"
+    assert dropped == aliases[7:]
+    assert set(terms) & set(dropped) == set()
+
+
+def test_award_discovery_query_carries_every_configured_alias(tmp_path):
+    """The end-to-end proof: a parent-name-only query collects nothing."""
+    entity = {
+        "name": "BWX Technologies",
+        "recipient_search_text": "BWX TECHNOLOGIES",
+        "recipient_aliases": ["BWX TECHNOLOGIES", "BWXT NUCLEAR OPERATIONS GROUP"],
+    }
+    data_dir = _write_alias_entity(tmp_path, entity)
+    session = _AliasSession(matching_term="BWXT NUCLEAR OPERATIONS GROUP")
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    )
+    status = collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+    award_body = session.calls[0][1]
+    assert award_body["filters"]["recipient_search_text"] == [
+        "BWX TECHNOLOGIES",
+        "BWXT NUCLEAR OPERATIONS GROUP",
+    ]
+    assert status["awards_total"] == 1
+    assert status["entities_with_awards"] == 1
+    assert pd.read_parquet(data_dir / "awards.parquet")["ticker"].tolist() == ["BWXT"]
+
+
+def test_coverage_manifest_records_every_queried_term_not_only_the_primary():
+    """A coverage contract narrower than the query would hide an alias edit.
+
+    ``coverage_manifest_id`` is what forces a forward-event rebaseline; if the
+    manifest recorded only ``recipient_search_text`` an alias change would widen
+    the collected universe while every accrued baseline stayed marked valid.
+    """
+    kwargs = dict(
+        lookback_days=1826,
+        page_size=100,
+        max_pages=2,
+        max_action_awards_per_entity=8,
+        action_page_size=5000,
+        max_action_pages=100,
+    )
+    narrow = usaspending_awards.award_event_coverage_manifest(
+        {"BWXT": {"recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP"}},
+        **kwargs,
+    )
+    wide = usaspending_awards.award_event_coverage_manifest(
+        {
+            "BWXT": {
+                "recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP",
+                "recipient_aliases": [
+                    "BWXT NUCLEAR OPERATIONS GROUP",
+                    "BWXT ORDNANCE TENNESSEE",
+                ],
+            }
+        },
+        **kwargs,
+    )
+    assert narrow["entities"][0]["recipient_query_terms"] == [
+        "BWXT NUCLEAR OPERATIONS GROUP"
+    ]
+    assert wide["entities"][0]["recipient_query_terms"] == [
+        "BWXT NUCLEAR OPERATIONS GROUP",
+        "BWXT ORDNANCE TENNESSEE",
+    ]
+    assert award_event_coverage_manifest_id(narrow) != award_event_coverage_manifest_id(wide)
+
+
+def test_zero_row_query_is_flagged_instead_of_reading_as_silent_completion(tmp_path, capsys):
+    """An empty exhausted query scored the collector's strongest health signal.
+
+    ``BWX TECHNOLOGIES`` matched no award recipient at all, and because the
+    source answered ``hasNext=false`` on an empty page the run recorded
+    ``complete`` / ``source_exhausted`` / ``bounded_sample_complete`` with no
+    error row — indistinguishable from an issuer that genuinely holds no awards.
+    Zero stays a permitted answer, so the state arithmetic is untouched and the
+    disclosure is what changes.
+    """
+    entity = {
+        "name": "BWX Technologies",
+        "recipient_search_text": "BWX TECHNOLOGIES",
+        "recipient_aliases": ["BWX TECHNOLOGIES"],
+    }
+    data_dir = _write_alias_entity(tmp_path, entity)
+    session = _AliasSession(matching_term="BWXT NUCLEAR OPERATIONS GROUP")
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    )
+    status = collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+
+    assert status["entities_with_awards"] == 0
+    zero_rows = [
+        row for row in status["errors"]
+        if row.get("reason") == "zero_rows_for_configured_query"
+    ]
+    assert len(zero_rows) == 1
+    assert zero_rows[0]["ticker"] == "BWXT"
+    assert "BWX TECHNOLOGIES" in zero_rows[0]["error"]
+
+    denominators = status["rails"]["awards"]["denominators"]
+    assert denominators["queries_zero_rows_for_configured_query"] == 1
+    assert denominators["recipient_query_terms_safety_cap"] == 8
+    # Flag, not fail: an empty exhausted query really is exhausted.
+    assert status["rails"]["awards"]["completeness"]["source_exhausted"] is True
+
+    ingest = json.loads((data_dir / "ingest_status.json").read_text())
+    assert ingest["rails"]["awards"]["denominators"][
+        "queries_zero_rows_for_configured_query"
+    ] == 1
+
+    # GitHub annotations are dropped unless they START the line (house law).
+    annotations = [
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::warning title=government-revenue-zero-award-rows::")
+    ]
+    assert len(annotations) == 1
+    assert "BWXT" in annotations[0]
+
+
+def test_nonzero_query_never_raises_the_zero_row_tripwire(tmp_path, capsys):
+    """The tripwire must stay silent when the mapping actually reaches rows."""
+    entity = {
+        "name": "BWX Technologies",
+        "recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP",
+        "recipient_aliases": ["BWXT NUCLEAR OPERATIONS GROUP"],
+    }
+    _write_alias_entity(tmp_path, entity)
+    session = _AliasSession(matching_term="BWXT NUCLEAR OPERATIONS GROUP")
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    )
+    status = collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+    assert status["awards_total"] == 1
+    assert not [
+        row for row in status["errors"]
+        if row.get("reason") == "zero_rows_for_configured_query"
+    ]
+    assert status["rails"]["awards"]["denominators"][
+        "queries_zero_rows_for_configured_query"
+    ] == 0
+    assert "government-revenue-zero-award-rows" not in capsys.readouterr().out
+
+
+def test_alias_list_past_the_safety_cap_is_disclosed_not_silently_dropped(tmp_path, capsys):
+    entity = {
+        "name": "Wide Issuer",
+        "recipient_search_text": "PRIMARY NAME",
+        "recipient_aliases": [f"ALIAS {index}" for index in range(12)],
+    }
+    _write_alias_entity(tmp_path, entity)
+    session = _AliasSession(matching_term="PRIMARY NAME")
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    )
+    status = collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+    assert len(session.calls[0][1]["filters"]["recipient_search_text"]) == 8
+    truncations = [
+        row for row in status["errors"]
+        if row.get("reason") == "recipient_query_terms_truncated"
+    ]
+    assert len(truncations) == 1
+    assert "ALIAS 11" in truncations[0]["error"]
+    assert status["rails"]["awards"]["denominators"][
+        "queries_recipient_terms_truncated"
+    ] == 1
+    annotations = [
+        line for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::warning title=government-revenue-recipient-query-truncated::")
+    ]
+    assert len(annotations) == 1
+
+
+def test_award_page_size_default_is_the_endpoint_maximum_without_extra_requests(tmp_path):
+    """Gap B: the affordable knob is page size, not page count.
+
+    Measured 2026-08-07 across the full 21-issuer universe on the live endpoint:
+    page_size=50/max_pages=2 -> 40 requests, 1,958 rows, 78.3 s, 2 issuers source
+    exhausted; page_size=100/max_pages=2 -> 40 requests, 3,766 rows, 78.3 s, 4
+    issuers source exhausted.  Same request count, same wall time, +92% sample.
+    Raising ``max_pages`` toward exhaustion is the unaffordable one: 195,400
+    in-window contract awards need 1,965 pages, and deep pages measured 8.35 s
+    each, so the safety cap and its truncation disclosure stay.
+    """
+    _write_alias_entity(tmp_path, {
+        "name": "BWX Technologies",
+        "recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP",
+        "recipient_aliases": ["BWXT NUCLEAR OPERATIONS GROUP"],
+    })
+    session = _AliasSession(matching_term="BWXT NUCLEAR OPERATIONS GROUP")
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path, session=session, request_pacing_seconds=0
+    )
+    assert collector.page_size == 100
+    assert collector.max_pages == 2
+    collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+    assert session.calls[0][1]["limit"] == 100
+
+
+def test_truncated_award_page_cap_still_refuses_to_claim_source_exhaustion(tmp_path):
+    """A raised page size may not blur bounded-sample semantics.
+
+    Every page retrieved at the declared cap with ``hasNext`` still true is a
+    complete *bounded sample* and never corpus completion.
+    """
+    _write_alias_entity(tmp_path, {
+        "name": "Lockheed Martin",
+        "recipient_search_text": "LOCKHEED MARTIN",
+    })
+    session = _PagedSession(
+        award_pages={
+            1: {"results": [_raw_award()], "page_metadata": {"hasNext": True}},
+            2: {
+                "results": [_raw_award_for("N0002", "LOCKHEED MARTIN SPACE", 90.0)],
+                "page_metadata": {"hasNext": True},
+            },
+        },
+        action_pages={1: {"results": [], "page_metadata": {"hasNext": False}}},
+    )
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_action_awards_per_entity=0,
+        request_pacing_seconds=0,
+    )
+    status = collector.collect(["BWXT"], as_of="2026-08-01", lookback_days=30)
+    awards_rail = status["rails"]["awards"]
+    assert awards_rail["pages"]["safety_cap_per_entity"] == 2
+    assert awards_rail["denominators"]["queries_truncated_by_safety_cap"] == 1
+    assert awards_rail["completeness"]["truncated_by_safety_cap"] is True
+    assert awards_rail["completeness"]["source_exhausted"] is False
+    assert awards_rail["completeness"]["bounded_sample_complete"] is True
+    assert awards_rail["completeness"]["full_usaspending_corpus"] is False
+    assert status["award_event_spine"]["source_exhausted"] is False
+    assert status["award_event_spine"]["truncated_by_safety_cap"] is True
+
+
+def test_repo_bwxt_entity_queries_wholly_owned_subsidiaries_and_excludes_the_jvs():
+    """The BWXT repair is a config assertion, so the config is what gets pinned.
+
+    Measured against the live endpoint 2026-08-07 over the 1826-day window: the
+    prior ``BWX TECHNOLOGIES`` string returned 0 rows, a bare ``BWXT`` substring
+    returned 35 rows of which the joint-venture and legacy site-management names
+    were $23.06B of $23.56B (~98%), and this allowlist returns 22 rows / $816M
+    exhausted on page one.
+    """
+    seed = json.loads(Path("data/government_revenue/entities.json").read_text())
+    entity = seed["entities"]["BWXT"]
+    terms, dropped = usaspending_awards.recipient_query_terms(entity, "BWXT")
+    assert dropped == [], "BWXT alias list must fit the measured request safety cap"
+    assert len(terms) <= usaspending_awards.MAX_RECIPIENT_QUERY_TERMS
+    assert "BWX TECHNOLOGIES" not in terms, "the SEC legal name matches no award recipient"
+    assert "BWXT NUCLEAR OPERATIONS GROUP" in terms
+    assert "NUCLEAR FUEL SERVICES" in terms
+    # A bare "BWXT" term would re-admit every excluded joint venture, because the
+    # filter is a contiguous substring match and an exclusion list cannot subtract.
+    assert "BWXT" not in {term.upper() for term in terms}
+    for excluded in entity["excluded_recipient_names"]:
+        assert not any(term.upper() in excluded.upper() for term in terms), excluded
+    assert entity["match_confidence"] == "medium"
+    assert entity["exclusion_rationale"]

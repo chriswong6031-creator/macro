@@ -45,9 +45,18 @@ HONEST DEGRADATION (G0.3). Three independent ways to be dark, all named:
   * pack ``as_of`` is not the last completed session → ``"stale_pack"``; yesterday's
     triggers are never evaluated against today's tape
   * per-name: no quote, quote older than ``quote_max_age_min``, an irregular gate,
-    or a name the pack could not probe → that NAME goes dark with its reason while
-    the rest of the artifact stays live.
+    a name the pack could not probe, or a pack close that disagrees with the feed's
+    previous close past ``basis_tolerance_pct`` (``basis_mismatch``, W-L0 gate 3) →
+    that NAME goes dark with its reason while the rest of the artifact stays live.
 No path invents a state, and nothing here says fired, confirmed or refuted.
+
+ONE PRICE BASIS (W-L0 gate 3). The armed levels are adjusted store closes; the tape is
+raw vendor prints. Both are NAMED on every payload (``meta.price_adjustment``) and the
+per-pass assertion that they still describe the same scale — pack ``as_of_close`` vs
+feed ``prev_close``, per name — is ``live_states.evaluate``'s first act. This script
+owns only the LOUD half: the aggregate line, a ``::warning`` when names actually
+mismatch, and a second one when NOTHING could be checked, because a feed that stops
+publishing ``prevClose`` produces the same zero-mismatch count as a healthy one.
 
 NO PANDAS ON THIS PATH. The workflow installs ``pyyaml boto3`` only.
 ``live_verify`` imports pandas lazily (inside its earnings helper, which this lane
@@ -67,8 +76,7 @@ from pathlib import Path
 from typing import Any
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:  # pragma: no cover - import bootstrap
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.marketing import live_verify as LV  # noqa: E402
 from engine.prophet_live import live_states as LS  # noqa: E402
@@ -377,10 +385,40 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
                          "pack_edges_checked": pm.get("edges_checked"),
                          "unprobed_n": m.get("unprobed_n"),
                          "pack_skipped": pm.get("skipped")}
+        # ONE PRICE BASIS (W-L0 gate 3). The per-name verdict is already in the
+        # artifact — every mismatch is a `basis_mismatch` dark row — so this is the
+        # AGGREGATE, which is the thing a per-name dark cannot say: a handful of names
+        # is a dividend calendar, most of the tape is a basis-wide break (a re-based
+        # store, a vendor switch on the quote plane), and only the second one is an
+        # incident. `unchecked_n` is reported in the same breath because a feed that
+        # stops carrying `prevClose` produces zero mismatches and zero assurance, and
+        # those two must never read the same.
+        ba = m.get("price_adjustment") or {}
+        checked, unchecked = int(ba.get("checked_n") or 0), int(ba.get("unchecked_n") or 0)
+        bad = ba.get("mismatched") or {}
+        print(f"prophet-live basis levels={ba.get('levels')} quote={ba.get('quote')} "
+              f"checked={checked} unchecked={unchecked} mismatched={len(bad)} "
+              f"tol={ba.get('tol_pct')}%", flush=True)
+        if bad:
+            worst = sorted(bad.items(), key=lambda kv: -abs(float(kv[1])))[:6]
+            share = (len(bad) / checked * 100.0) if checked else 0.0
+            print(f"::warning title=prophet-live-basis::{len(bad)} of {checked} names "
+                  f"({share:.1f}%) have a pack close that disagrees with the feed's "
+                  f"previous close by more than {ba.get('tol_pct')}% — those names are "
+                  f"dark (basis_mismatch), not re-based: "
+                  f"{', '.join(f'{t} {g:+.2f}%' for t, g in worst)}", flush=True)
+        if checked == 0 and unchecked:
+            print(f"::warning title=prophet-live-basis::none of {unchecked} armed names "
+                  "carried a previous close to check the price basis against — the "
+                  "levels-vs-tape basis is UNVERIFIED this pass, not verified clean",
+                  flush=True)
         print(f"prophet-live pass={m['pass_ts']} pack_as_of={m['pack_as_of']} "
               f"quotes={m['quotes_n']}@{m['quote_asof']} src={live.get('source')}"
               f"{'(' + '+'.join(live['local_files']) + ')' if live.get('local_files') else ''} "
-              f"states={m['states']} dark={m['dark_counts']} events={m['events_n']}",
+              f"states={m['states']} dark={m['dark_counts']} "
+              # The pack's coverage limit, printed beside the lane's. They are two
+              # different failures and a single "unreadable" number hides that.
+              f"unknown={m.get('unknown_counts')} events={m['events_n']}",
               flush=True)
         for ev in art.get("events") or []:
             print(f"prophet-live EVENT {ev['kind']} {ev['ticker']} px={ev.get('price')} "

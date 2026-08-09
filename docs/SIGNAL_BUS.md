@@ -70,8 +70,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
 | options-alpha | 8 |
-| options-intelligence-program | 6 |
+| options-dislocation | 1 |
+| options-flow | 1 |
+| options-intelligence-program | 12 |
 | options-nw-entry-intelligence | 3 |
+| options-prophet-shadow | 1 |
 | oracle | 29 |
 | personality-timing | 12 |
 | pick-lab | 3 |
@@ -108,18 +111,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 367 |
-| infrastructure | 142 |
+| infrastructure | 147 |
 | scored | 4 |
-| shadow | 85 |
+| shadow | 89 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 566 |
-| git+r2 | 2 |
-| gitignored-local | 15 |
-| r2 | 15 |
+| git | 571 |
+| git+r2 | 3 |
+| gitignored-local | 17 |
+| r2 | 16 |
 
 ## Artifacts by owner_program
 
@@ -400,7 +403,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 2 | 0 |
+| site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 3 | 0 |
 | site-flow-leaders-page | `site/flow_leaders.html` | other | daily-engine | display | 0 | 0 |
 
 ### fundamental-forensics
@@ -798,8 +801,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
+| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 1 | 0 |
 | operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | daily-engine | infrastructure | 0 | 0 |
-| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-context-intelligence
 
@@ -844,6 +847,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
 
+### options-dislocation
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-dislocation-gate | `data/options_dislocation/validation_gate.json` | json | weekly | shadow | 2 | 0 |
+
+### options-flow
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-flow-signing-gate | `data/options_flow/signing_gate.json` | json | on-demand | infrastructure | 2 | 0 |
+
 ### options-intelligence-program
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -851,7 +866,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | live-flow-dte-tide-dated | `live_flow/dte_tide/<DATE>.json` | json | intraday | display | 1 | 1 |
 | live-flow-surface-dated | `live_flow/surface/<ROOT>/<DATE>/idx.json` | json | intraday | display | 1 | 1 |
 | live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
+| live-flow-event-stage-dated | `live_flow/events/<DATE>.jsonl` | jsonl | intraday | infrastructure | 1 | 0 |
 | options-session-ledger | `data/options_session/ledger.parquet` | parquet | daily-engine | display | 1 | 0 |
+| options-signal-episode-checkpoint | `data/options_signal_episode/checkpoint.json` | json | daily-engine | infrastructure | 1 | 0 |
+| options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| options-signal-episodes | `data/options_signal_episode/episodes.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| polygon-intraday-price-cache | `data/intraday/<TICKER>.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| polygon-intraday-price-receipt | `data/intraday/<TICKER>.parquet.receipt.json` | json | daily-engine | infrastructure | 1 | 0 |
 | options-session-latest | `site/session/` | json | daily-engine | display | 0 | 0 |
 | options-session-records | `data/options_session/` | json | daily-engine | display | 0 | 0 |
 
@@ -860,8 +881,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 3 | 1 |
-| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 1 | 1 |
+| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 2 | 1 |
 | live-options-flow-current | `live_flow/feed_current.json` | json | collect | display | 0 | 1 |
+
+### options-prophet-shadow
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-prophet-shadow | `site/options_prophet/index.json` | json | daily-engine | shadow | 1 | 1 |
 
 ### oracle
 
@@ -918,7 +945,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| pick-lab-entry-ledger | `site/labdata/pick_lab.json` | json | daily-engine | display | 1 | 0 |
+| pick-lab-entry-ledger | `site/labdata/pick_lab.json` | json | daily-engine | display | 2 | 0 |
 | pick-lab-longhold-ledger | `site/labdata/pick_lab_longhold.json` | json | daily-engine | display | 1 | 0 |
 | pick-lab-snapshots | `data/pick_lab/snapshots/` | parquet | daily-engine | infrastructure | 1 | 0 |
 
@@ -1783,6 +1810,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/flow_cohorts.py`
 - **extra writers:**
   - scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert
+
+### options-flow-signing-gate
+
+- **path:** `data/options_flow/signing_gate.json`
+- **declared producer:** `scripts/calibrate_flow_signing.py`
+- **extra writers:**
+  - scripts/calibrate_thetadata_tape_sessions.py — updates only the thetadata_tape sub-key
 
 ### pick-lab-snapshots
 

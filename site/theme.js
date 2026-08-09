@@ -450,7 +450,7 @@
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260807-mm-icons'; s.async = true;
+    s.src = pfx + 'account.js?v=20260809-board-copy-guard'; s.async = true;
     document.head.appendChild(s);
   })();
 
@@ -2580,7 +2580,7 @@
     language:   ['Language', '语言'],
     langNote:   ['Applies to every page.', '应用于所有页面。'],
     // desk preferences — the answers given at signup, editable ever after
-    deskGroup:  ['Your desk', '你的台席'],
+    deskGroup:  ['Your desk', '你的工作台'],
     markets:    ['Markets you follow', '你关注的市场'],
     marketsNote:['The markets you actually watch. Carried with your account.', '你真正关注的市场，随账户同步。'],
     mktUs:      ['United States', '美国'],

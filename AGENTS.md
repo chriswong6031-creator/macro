@@ -176,6 +176,44 @@ is the merge's evidence — watch it to conclusion. `--admin` remains only for t
 spurious Workers X, docs-only pull requests that trigger no pack checks, and
 genuine wedges — never to outrun CI.
 
+**A `merge-blocked` backlog means main is UNPROVEN, not that the pull requests are
+bad (#5037, 2026-08-08).** The sweeper's base-inherited-red refresh — the mechanism
+that drains an armed backlog once main is healed — can only tell an inherited red
+from a real one against a RECENT proof of main. `ci.yml` has no `push` trigger, so
+main is proven ONLY by a `workflow_dispatch`, while the nightly/wire lanes push ~24
+`[skip ci]` commits per 2 hours — so any commit-window heuristic ages out in ~100
+minutes. Measured 2026-08-08: main's newest proof sat **117 commits / 12 HOURS**
+back, the refresh resolved zero pack names, and 61 pull requests sat armed with 60
+of them red on `ci-pack-2`/`ci-pack-3` that main's own last run had proven green.
+Three properties now hold and must not be regressed: the proof is resolved from the
+newest completed `ci.yml`/`fences.yml` **RUN on main** (velocity-independent, and
+cheaper than the walk it replaced); a refresh additionally requires that proof to
+**POSTDATE** the pull request's failing checks (correctness — a green that predates
+your red does not excuse it — and the loop guard, because `update-branch`'s
+422-on-current-head does NOT prevent loops when main moves every few minutes); and
+the sweeper **dispatches its own main baseline** when its proof is too stale to
+answer the reds it just saw. **Diagnose a fresh backlog from the sweep log first:** a
+summary reading `0 main commit(s) classified`, or a proof set carrying no
+`ci-pack-*`, means the refresh path is closed no matter how green main is. Operator
+lever unchanged: `gh workflow run ci.yml --ref main`.
+
+**But NEVER dispatch over a live baseline (livelock, measured 2026-08-09).**
+Main-ref ci.yml dispatches share ONE concurrency group with
+`cancel-in-progress: true`, so every re-dispatch KILLS the in-flight proof: the
+11:00Z baseline died 44 min in — likely minutes from concluding — to a sibling
+session's re-dispatch, whose own run died 4 min later to the next session's. With
+several pinned sessions each firing the lever, no proof ever concludes, the
+sweeper keeps reading `0 main commit(s) classified`, and the entire fleet stays
+pinned — the escape hatch IS the lock. (fences.yml's main-push runs were dying
+the same way under main's ~1/min push cadence, closing the other proof source;
+structural fix = event-conditional cancel-in-progress, in flight 2026-08-09.)
+Preflight before the lever:
+`gh run list --workflow ci.yml --branch main --json databaseId,status,createdAt --jq '[.[]|select(.status!="completed")]'`
+— anything `queued`/`in_progress` → WATCH it (`gh run watch <id> --interval 60`)
+instead of dispatching. Dispatch only over a clear field, or over a run stuck
+`queued` >40 min with the pool otherwise moving (orphaned-run escape — your
+dispatch is then the mercy kill, not a murder).
+
 ### Waiting on CI without jamming every other session
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
@@ -286,7 +324,9 @@ on main (same check failing on ≥2 independent concurrent PR heads pre-merge, o
 green ci.yml run on a main descendant) is excluded by name rather than pinning the
 session forever; the operator lever for a healed base is
 `gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
-merge at once. Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
+merge at once, but preflight for an in-flight baseline first (see the livelock
+note above: a re-dispatch cancels the very proof every pinned session is waiting
+on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
 An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
 2026-07-27): a queued or running render whose head covers this merge satisfies the
