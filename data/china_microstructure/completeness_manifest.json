@@ -49,7 +49,7 @@
       "max_date": "2026-08-07",
       "min_date": "2011-01-05",
       "path": "data/china_microstructure/limit_events.parquet",
-      "rows": 71463,
+      "rows": 71406,
       "schema": [
         {
           "dtype": "datetime64[us]",
@@ -80,7 +80,7 @@
           "name": "close_off_limit_pct"
         }
       ],
-      "sha256": "bcfb56d5cc8987ec971295ce68f8f17277a6157e2c2a1393df0a22d1db8dafad"
+      "sha256": "20f0ae483dc65e328fc73e9b1d5a5f522aaeec8b9f11f764085cbd5b3b987065"
     },
     "limit_tape": {
       "max_date": "2026-08-07",
@@ -137,14 +137,14 @@
           "name": "backfill"
         }
       ],
-      "sha256": "8dbd5dbe603e82fd27446fe7af1e0f6c6615757eb36ba01f50048b6e1a6dae9e"
+      "sha256": "d2407d1de27db8ccac6a4ca1b703bc172c774c11808f43324a5c4670461b2ba4"
     }
   },
   "authority": "context_only",
   "build_identity": {
     "algorithm": "sha256",
     "reproducible_command": "python3 scripts/backfill_china_limit_tape.py --comparison-ref e1fea822972e359a73dedfa34b6c4e03a192b255",
-    "value": "b0572082cd599133d96c2d5e50322af9740c8da41874383f1b36210715a98745"
+    "value": "03e64aa481d348de9621c864efbc2a6dcd86576f9b26ac5e6864836cf8cc38a2"
   },
   "complete": true,
   "completeness_scope": "current_1842_file_nominal_OHLCV_scan_and_session_calendar_only",
@@ -160,12 +160,12 @@
     }
   },
   "event_counts": {
-    "failed_down_seal": 9876,
-    "failed_up_seal": 16366,
-    "sealed_down": 13315,
-    "sealed_up": 31906
+    "failed_down_seal": 9864,
+    "failed_up_seal": 16355,
+    "sealed_down": 13287,
+    "sealed_up": 31900
   },
-  "generated_utc": "2026-08-09T02:18:00.070019+00:00",
+  "generated_utc": "2026-08-09T03:12:42.066248+00:00",
   "historical_gap_census": {
     "current_raw_files": 1842,
     "cutoff_inclusive": "2026-06-30",
@@ -173,7 +173,7 @@
       "by_event": {
         "failed_down_seal": 1477,
         "failed_up_seal": 2505,
-        "sealed_down": 2181,
+        "sealed_down": 2178,
         "sealed_up": 4880
       },
       "by_ticker": {
@@ -362,7 +362,6 @@
         "600933.SS": 26,
         "600998.SS": 26,
         "601000.SS": 37,
-        "601026.SS": 1,
         "601099.SS": 53,
         "601128.SS": 16,
         "601155.SS": 26,
@@ -377,10 +376,9 @@
         "601928.SS": 22,
         "603063.SS": 68,
         "603100.SS": 45,
-        "603124.SS": 15,
+        "603124.SS": 14,
         "603162.SS": 18,
         "603166.SS": 84,
-        "603376.SS": 1,
         "603596.SS": 32,
         "603605.SS": 21,
         "603638.SS": 21,
@@ -434,18 +432,18 @@
         "2022": 681,
         "2023": 327,
         "2024": 762,
-        "2025": 615,
+        "2025": 612,
         "2026": 311
       },
-      "rows": 11043,
-      "tickers": 241
+      "rows": 11040,
+      "tickers": 239
     },
-    "event_bearing_later_tickers_absent_from_prior": 204,
+    "event_bearing_later_tickers_absent_from_prior": 203,
     "later_added_files": 255,
     "original_raw_files": 1587,
-    "rows": 11043,
+    "rows": 11040,
     "rows_already_present_in_prior": 1,
-    "tickers": 241
+    "tickers": 239
   },
   "implementation_version": "full-rebuild-v2",
   "not_complete_for": [
@@ -459,7 +457,7 @@
       "by_event": {
         "failed_down_seal": 1483,
         "failed_up_seal": 2522,
-        "sealed_down": 2197,
+        "sealed_down": 2194,
         "sealed_up": 4931
       },
       "by_ticker": {
@@ -652,7 +650,6 @@
         "600933.SS": 26,
         "600998.SS": 26,
         "601000.SS": 37,
-        "601026.SS": 1,
         "601099.SS": 53,
         "601128.SS": 16,
         "601155.SS": 26,
@@ -667,10 +664,9 @@
         "601928.SS": 22,
         "603063.SS": 68,
         "603100.SS": 45,
-        "603124.SS": 15,
+        "603124.SS": 14,
         "603162.SS": 18,
         "603166.SS": 86,
-        "603376.SS": 1,
         "603596.SS": 32,
         "603605.SS": 21,
         "603638.SS": 23,
@@ -725,19 +721,20 @@
         "2022": 683,
         "2023": 334,
         "2024": 770,
-        "2025": 617,
+        "2025": 614,
         "2026": 349
       },
-      "rows": 11133,
-      "tickers": 246
+      "rows": 11130,
+      "tickers": 244
     },
-    "added_event_keys": 11133,
+    "added_event_keys": 11130,
     "arithmetic_components": {
       "broad_gap_overlap_already_in_prior": -1,
       "classifier_302_chinext_added": 7,
       "current_raw_refresh_added": 52,
       "later_file_events_after_2026_06_30": 32,
       "old_main_width_rows_removed_by_302_chinext_classifier": -29,
+      "registration_era_main_ipo_no_limit_rows_removed": -54,
       "stale_prior_rows_removed_after_raw_refresh": -69,
       "unexplained_added": 0,
       "unexplained_removed": 0
@@ -749,7 +746,7 @@
         "by_event": {
           "failed_down_seal": 1477,
           "failed_up_seal": 2505,
-          "sealed_down": 2181,
+          "sealed_down": 2178,
           "sealed_up": 4880
         },
         "by_ticker": {
@@ -938,7 +935,6 @@
           "600933.SS": 26,
           "600998.SS": 26,
           "601000.SS": 37,
-          "601026.SS": 1,
           "601099.SS": 53,
           "601128.SS": 16,
           "601155.SS": 26,
@@ -953,10 +949,9 @@
           "601928.SS": 22,
           "603063.SS": 68,
           "603100.SS": 45,
-          "603124.SS": 15,
+          "603124.SS": 14,
           "603162.SS": 18,
           "603166.SS": 84,
-          "603376.SS": 1,
           "603596.SS": 32,
           "603605.SS": 21,
           "603638.SS": 21,
@@ -1010,18 +1005,18 @@
           "2022": 681,
           "2023": 327,
           "2024": 762,
-          "2025": 615,
+          "2025": 612,
           "2026": 311
         },
-        "rows": 11043,
-        "tickers": 241
+        "rows": 11040,
+        "tickers": 239
       },
-      "event_bearing_later_tickers_absent_from_prior": 204,
+      "event_bearing_later_tickers_absent_from_prior": 203,
       "later_added_files": 255,
       "original_raw_files": 1587,
-      "rows": 11043,
+      "rows": 11040,
       "rows_already_present_in_prior": 1,
-      "tickers": 241
+      "tickers": 239
     },
     "comparison_source": {
       "event_blob": "c6fab62b3d4baa2f7f0c592ddf2da22543ae5c09",
@@ -1029,14 +1024,14 @@
       "ref": "e1fea822972e359a73dedfa34b6c4e03a192b255",
       "tape_blob": "24186abfc4d5f0f322f2bd9e1bcba303ee04c1d8"
     },
-    "conclusion": "The eight-row difference is not duplication or a failed heal: one of the 11,043 gap rows was already present, 32 post-cutoff later-file rows and 59 current-raw/classifier rows were added, and 98 stale/classifier-invalid prior rows were removed.",
+    "conclusion": "Reconciliation closes exactly with no duplicate keys or residual delta: 11,130 event keys were added, 152 removed, including 54 false registration-era main IPO no-limit rows removed.",
     "event_key": [
       "date",
       "ticker",
       "event"
     ],
-    "naive_prior_plus_broad_gap_rows": 71471,
-    "net_event_keys": 11035,
+    "naive_prior_plus_broad_gap_rows": 71468,
+    "net_event_keys": 10978,
     "prior_duplicate_event_keys": 0,
     "prior_rows": 60428,
     "raw_revision_evidence_vs_original_generation": {
@@ -1221,23 +1216,103 @@
         },
         "rows": 32,
         "tickers": 25
+      },
+      "registration_era_main_ipo_no_limit_removed": {
+        "by_event": {
+          "failed_down_seal": 12,
+          "failed_up_seal": 11,
+          "sealed_down": 25,
+          "sealed_up": 6
+        },
+        "by_ticker": {
+          "001232.SZ": 2,
+          "001233.SZ": 1,
+          "001248.SZ": 1,
+          "001257.SZ": 3,
+          "001280.SZ": 1,
+          "001286.SZ": 1,
+          "001287.SZ": 2,
+          "001359.SZ": 1,
+          "001369.SZ": 1,
+          "001382.SZ": 2,
+          "001391.SZ": 3,
+          "001399.SZ": 4,
+          "600930.SS": 2,
+          "601033.SS": 2,
+          "601061.SS": 1,
+          "601083.SS": 1,
+          "601096.SS": 3,
+          "601112.SS": 1,
+          "603072.SS": 1,
+          "603119.SS": 2,
+          "603175.SS": 2,
+          "603193.SS": 1,
+          "603194.SS": 1,
+          "603341.SS": 2,
+          "603395.SS": 1,
+          "603402.SS": 2,
+          "603406.SS": 1,
+          "603407.SS": 3,
+          "603418.SS": 1,
+          "603435.SS": 2,
+          "603459.SS": 3
+        },
+        "by_year": {
+          "2023": 11,
+          "2024": 8,
+          "2025": 14,
+          "2026": 21
+        },
+        "rows": 54,
+        "tickers": 31
       }
     },
     "rebuilt_duplicate_event_keys": 0,
-    "rebuilt_minus_naive_rows": -8,
-    "rebuilt_rows": 71463,
+    "rebuilt_minus_naive_rows": -62,
+    "rebuilt_rows": 71406,
     "removed_detail": {
       "by_event": {
-        "failed_down_seal": 16,
-        "failed_up_seal": 27,
-        "sealed_down": 13,
-        "sealed_up": 42
+        "failed_down_seal": 28,
+        "failed_up_seal": 38,
+        "sealed_down": 38,
+        "sealed_up": 48
       },
       "by_ticker": {
         "000990.SZ": 19,
+        "001232.SZ": 2,
+        "001233.SZ": 1,
+        "001248.SZ": 1,
+        "001257.SZ": 3,
+        "001280.SZ": 1,
+        "001286.SZ": 1,
+        "001287.SZ": 2,
+        "001359.SZ": 1,
+        "001369.SZ": 1,
+        "001382.SZ": 2,
+        "001391.SZ": 3,
+        "001399.SZ": 4,
         "002827.SZ": 1,
         "300806.SZ": 10,
         "302132.SZ": 29,
+        "600930.SS": 2,
+        "601033.SS": 2,
+        "601061.SS": 1,
+        "601083.SS": 1,
+        "601096.SS": 3,
+        "601112.SS": 1,
+        "603072.SS": 1,
+        "603119.SS": 2,
+        "603175.SS": 2,
+        "603193.SS": 1,
+        "603194.SS": 1,
+        "603341.SS": 2,
+        "603395.SS": 1,
+        "603402.SS": 2,
+        "603406.SS": 1,
+        "603407.SS": 3,
+        "603418.SS": 1,
+        "603435.SS": 2,
+        "603459.SS": 3,
         "603663.SS": 39
       },
       "by_year": {
@@ -1251,22 +1326,22 @@
         "2020": 11,
         "2021": 11,
         "2022": 4,
-        "2023": 8,
-        "2024": 25,
-        "2025": 6,
-        "2026": 10
+        "2023": 19,
+        "2024": 33,
+        "2025": 20,
+        "2026": 31
       },
-      "rows": 98,
-      "tickers": 5
+      "rows": 152,
+      "tickers": 36
     },
-    "removed_event_keys": 98
+    "removed_event_keys": 152
   },
   "producer": {
-    "pandas": "3.0.5",
-    "python": "3.12.2",
+    "pandas": "3.0.3",
+    "python": "3.12.4",
     "source_sha256": {
-      "engine/china_microstructure.py": "e485aba78c25673e68fe1a300c53b9383062d1ea5b54992bafa4f8b929bdcda1",
-      "scripts/backfill_china_limit_tape.py": "13a85c9ef345cc65c7fdc44a6824b133464de2e4568e74d610ae27a070407329"
+      "engine/china_microstructure.py": "e577e3349614fd598e053d32e262beb139c43377cbd71ec25260d52cd44312d3",
+      "scripts/backfill_china_limit_tape.py": "be14a9842423f4b92ca1e3c0b8743e780350a07df91b16c81190c6dcbb8f8115"
     }
   },
   "publication": {
@@ -1293,6 +1368,13 @@
       "on_or_after_2020-08-24_width_pct": 20.0
     },
     "main_normal": {
+      "registration_era_ipo_no_limit": {
+        "effective_date_source": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230404_5719112.shtml",
+        "effective_first_listing_date": "2023-04-10",
+        "excluded_sessions_from_listing": 5,
+        "sse_rule_source": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230201_5715605.shtml",
+        "szse_rule_source": "https://docs.static.szse.cn/www/lawrules/index/rule/W020230217564423808793.pdf"
+      },
       "width_pct": 10.0
     },
     "main_risk_warning": {

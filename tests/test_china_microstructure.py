@@ -3,7 +3,7 @@
 Covers:
   - Board classification + era-aware limit widths
   - ST flag application (main only, ST_STORE_COVERAGE_DATE gate)
-  - IPO exclusion windows (STAR/ChiNext first-5, pre-2014 first-1)
+  - IPO exclusion windows (STAR/ChiNext and registration-era main first-5, pre-2014 first-1)
   - Ex-div suspect suppression
   - Event detection: sealed_up, failed_up_seal, sealed_down, failed_down_seal
   - lianban_count accumulation
@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.china_microstructure import (
     CHINEXT_WIDE_DATE,
     LIMIT_TAPE_START_DATE,
+    MAIN_REGISTRATION_IPO_DATE,
     MAIN_RISK_WARNING_WIDE_DATE,
     ST_STORE_COVERAGE_DATE,
     _board_from_ticker,
@@ -290,9 +291,10 @@ class TestSTFlag:
 
     def test_st_main_gets_10pct_on_and_after_2026_rule_change(self):
         # The ST store begins on the rule boundary; main-board risk-warning names now use 10%.
+        # Six rows keep this synthetic late-start fixture outside the registration-era IPO window.
         start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 11.0]
-        highs  = [10.0, 10.0, 11.1]
+        closes = [10.0, 10.0, 10.0, 10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 10.0, 10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset(["000001.SZ"])
@@ -302,10 +304,10 @@ class TestSTFlag:
         assert su[0]["limit_width"] == 10.0
 
     def test_non_st_ticker_not_in_set(self):
-        # Not in ST set → 10% limit
+        # Not in ST set → 10% limit. Six rows clear the synthetic fixture's IPO window.
         start = ST_STORE_COVERAGE_DATE.strftime("%Y-%m-%d")
-        closes = [10.0, 10.0, 11.0]
-        highs  = [10.0, 10.0, 11.1]
+        closes = [10.0, 10.0, 10.0, 10.0, 10.0, 11.0]
+        highs  = [10.0, 10.0, 10.0, 10.0, 10.0, 11.1]
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, _, _ = _detect_limit_events(
             "000001.SZ", df, "main", frozenset()   # not in ST set
@@ -337,6 +339,35 @@ class TestIPOExclusion:
         df     = _ohlcv(closes=closes, highs=highs, start=start)
         events, ipo_excl, _ = _detect_limit_events("000001.SZ", df, "main", frozenset())
         assert ipo_excl == 1
+
+    def test_registration_era_main_first_5_sessions_excluded(self):
+        # Main-board registration rules took effect with the first listings on 2023-04-10:
+        # sessions 1-5 have no daily price limit.  A nominal +10% close inside that window is not
+        # a board; the same move on session 6 is.
+        closes = [10.0, 11.0, 12.1, 13.31, 14.64, 16.10]
+        highs = closes.copy()
+        df = _ohlcv(closes=closes, highs=highs, start=str(MAIN_REGISTRATION_IPO_DATE.date()))
+        events, ipo_excl, _ = _detect_limit_events("001399.SZ", df, "main", frozenset())
+        assert ipo_excl == 5
+        assert [(e["date"], e["event"]) for e in events] == [
+            (df.index[5].strftime("%Y-%m-%d"), "sealed_up")
+        ]
+
+    def test_filtered_scan_uses_global_listing_window_not_slice_position(self):
+        # A nightly slice beginning on listing session 4 excludes only the two remaining true IPO
+        # sessions.  Session 6 is evaluated normally; the slice does not invent a new five-row
+        # exclusion window.
+        closes = [10.0, 11.0, 12.1, 13.31, 14.64, 16.10, 17.71, 19.48]
+        df = _ohlcv(closes=closes, highs=closes, start=str(MAIN_REGISTRATION_IPO_DATE.date()))
+        events, ipo_excl, _ = _detect_limit_events(
+            "001399.SZ", df, "main", frozenset(), start_date=df.index[3]
+        )
+        assert ipo_excl == 2
+        assert [e["date"] for e in events] == [
+            df.index[5].strftime("%Y-%m-%d"),
+            df.index[6].strftime("%Y-%m-%d"),
+            df.index[7].strftime("%Y-%m-%d"),
+        ]
 
 
 # ── ex-div suspect suppression ────────────────────────────────────────────────
