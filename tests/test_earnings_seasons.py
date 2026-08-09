@@ -73,6 +73,34 @@ def _call(ticker, name, industry, date, sent, perf, combined,
     }
 
 
+def _days_ago(days: int) -> str:
+    """ISO date `days` before today (UTC) — NEVER hardcode a fixture call date.
+
+    The producer downgrades ``data_status`` ready -> stale once the newest call
+    is more than 14 days old (``engine/earnings_qual.py``, the age_days > 14
+    branch), so a literal date is a scheduled red: it passes until the wall
+    clock walks past it, then fails on every future run.  A literal newest call
+    of ``2026-07-25`` reddened ci-pack-0 on main on 2026-08-09.  These fixtures
+    are hermetic in DATA (own tmp_path parquet); relative dates make them
+    hermetic in TIME too.  This file has no freezegun dependency, and the
+    producer re-imports pandas inside its functions, so a clock monkeypatch
+    would not hold — anchoring the fixture to the same clock the producer reads
+    is what keeps the 14-day product contract itself untouched.
+    """
+    return (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).date().isoformat()
+
+
+def _prior_quarter(date_iso: str) -> str:
+    """First day of the quarter before `date_iso`.
+
+    QoQ eligibility needs the two calls exactly one fiscal quarter apart
+    (``fiscal_period_order`` gap == 1, derived from ``call_date``).  A fixed
+    day offset does NOT guarantee that — a 91-day step lands two quarters back
+    whenever it straddles a short quarter — so step by quarter, not by days.
+    """
+    return (pd.Timestamp(date_iso).to_period("Q") - 1).to_timestamp().date().isoformat()
+
+
 def _write_transport_manifest(root: Path) -> None:
     earnings = root / "data" / "earnings_calls"
     scores = earnings / "scores.parquet"
@@ -492,9 +520,14 @@ def test_r2_history_wins_over_committed_fallback(tmp_path):
     ])
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
+    # Relative dates, not literals: this asserts data_status == "ready", which
+    # ages out to "stale" after 14 days.  See _days_ago().  The prior call must
+    # stay exactly one fiscal quarter back for qoq_eligible_tickers == 1, hence
+    # _prior_quarter() rather than a day offset.
+    newest = _days_ago(3)
     pd.DataFrame([
-        _call("LIVE", "Live", "Hardware", "2026-07-30", 25, 5, 30),
-        _call("LIVE", "Live", "Hardware", "2026-04-30", 20, 2, 22),
+        _call("LIVE", "Live", "Hardware", newest, 25, 5, 30),
+        _call("LIVE", "Live", "Hardware", _prior_quarter(newest), 20, 2, 22),
     ]).to_parquet(live, index=False)
     _write_transport_manifest(tmp_path)
 
@@ -526,14 +559,21 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
     """The owned score producer can advance Stage beyond the import cutoff."""
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
+    # Relative dates, not literals: this asserts health status == "ready", which
+    # ages out to "stale" after 14 days.  See _days_ago().  quarter/year are
+    # derived from the same date so the overlay stays one quarter ahead of
+    # history (qoq_eligible_tickers == 1), and a past date also keeps the score
+    # clear of the producer's future-call quarantine.
+    newest = _days_ago(3)
+    newest_ts = pd.Timestamp(newest)
     pd.DataFrame([
-        _call("AAA", "Alpha", "Software", "2026-04-30", 20, 2, 22),
+        _call("AAA", "Alpha", "Software", _prior_quarter(newest), 20, 2, 22),
     ]).to_parquet(live, index=False)
     pd.DataFrame([{
         "ticker": "AAA",
-        "quarter": "Q3",
-        "year": 2026,
-        "call_date": "2026-07-31",
+        "quarter": f"Q{newest_ts.quarter}",
+        "year": int(newest_ts.year),
+        "call_date": newest,
         "sentiment": 2 / 3,
         "performance": 7.5,
         "confidence": 0.9,
@@ -548,7 +588,7 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
 
     assert len(frame) == 2
     assert frame.attrs["source_tier"] == "r2_history_plus_score_overlay"
-    assert frame["call_dt"].max().date().isoformat() == "2026-07-31"
+    assert frame["call_dt"].max().date().isoformat() == newest
     health = eq.earnings_intelligence_health(root=tmp_path, frame=frame, write=False)
     assert health["status"] == "ready"
     assert health["checks"]["has_full_history"] is True
@@ -801,10 +841,15 @@ def test_ec_grid_fail_open_missing_seed(tmp_path: Path):
 
 def test_ec_grid_uses_history_for_usa_when_region_seed_is_absent(tmp_path: Path):
     """A transported call archive must also unblank the EC industry grid."""
+    # Relative dates, not literals: this asserts data_status == "ready", which
+    # the producer downgrades to "stale" once the newest call is >14 days old.
+    # See _days_ago().  The grid's week axis is data-derived (_ec_grid_region
+    # keeps the last N distinct dates), so only the age threshold is at stake.
+    newest = _days_ago(3)
     calls = [
-        _call("AAA", "Alpha", "Software", "2026-07-25", 24, 4, 28),
-        _call("BBB", "Beta", "Banks", "2026-07-24", 12, -2, 10),
-        _call("AAA", "Alpha", "Software", "2026-04-18", 20, 2, 22),
+        _call("AAA", "Alpha", "Software", newest, 24, 4, 28),
+        _call("BBB", "Beta", "Banks", _days_ago(4), 12, -2, 10),
+        _call("AAA", "Alpha", "Software", _prior_quarter(newest), 20, 2, 22),
     ]
     p = tmp_path / "data" / "earnings_calls" / "history.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
