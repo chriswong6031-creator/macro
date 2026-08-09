@@ -5,6 +5,8 @@ import ast
 from copy import deepcopy
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 import yaml
@@ -305,3 +307,47 @@ def test_script_has_no_r2_list_or_delete_capability() -> None:
     assert attributes.isdisjoint(
         {"delete_object", "delete_objects", "list_objects", "list_objects_v2", "list_prefix"}
     )
+
+
+def test_conformance_import_does_not_load_dataframe_parser_stack() -> None:
+    script = f"""
+import importlib.abc
+import sys
+
+class BlockPandas(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path, target=None):
+        if fullname == "pandas" or fullname.startswith("pandas."):
+            raise RuntimeError("pandas import escaped into the conformance runtime")
+        return None
+
+sys.meta_path.insert(0, BlockPandas())
+sys.path.insert(0, {str(ROOT)!r})
+from scripts import institutional_13f_r2_conformance as proof
+from engine.institutional_census.storage import build_institutional_13f_store
+
+assert proof.RECEIPT_SCHEMA == "institutional_13f.r2_conformance_receipt/v1"
+assert callable(build_institutional_13f_store)
+assert "pandas" not in sys.modules
+assert "engine.institutional_census.sec_sources" not in sys.modules
+"""
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_package_lazy_exports_preserve_the_public_sec_source_surface() -> None:
+    import engine.institutional_census as package
+    from engine.institutional_census import sec_sources
+
+    namespace: dict[str, object] = {}
+    exec("from engine.institutional_census import *", namespace)
+    assert set(package.__all__).issubset(dir(package))
+    assert "sec_sources" in dir(package)
+    assert package.sec_sources is sec_sources
+    for name in package.__all__:
+        assert getattr(package, name) is getattr(sec_sources, name)
+        assert namespace[name] is getattr(sec_sources, name)
