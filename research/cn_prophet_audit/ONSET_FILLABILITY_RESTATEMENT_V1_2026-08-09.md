@@ -44,9 +44,10 @@ place of a paper hit rate. Nothing here was reframed when it came back negative.
    with a fit-window date-clustered t of essentially zero** — and **0 clear a date-clustered
    t ≥ 2.0 in both windows.** The largest holdout date-clustered t over EVERY implementable
    cell in the study is **1.54**.
-6. **ChiNext is barely taxed, and that is not good news.** Its book's entry availability is
-   99.08–99.75% because its book does not select boards in the first place: 2.36% realized at
-   K=10 against a 0.357% base. A censor cannot tax a selection that is not selecting.
+6. **ChiNext is barely taxed, and that is not good news.** Its book's entry availability runs
+   **99.08–100.0%** across every ranker and K because its book does not select boards in the
+   first place: 2.36% realized at K=10 against a 0.357% base. A censor cannot tax a selection
+   that is not selecting.
 7. **The censor is doing the work, and it is proved rather than asserted.** Permuting
    fillability within each session collapses the mean absolute paper-versus-implementable
    rate gap from **2.787 pp to 0.031 pp** (1.1% of the real gap) and the E1 return gap from
@@ -125,7 +126,9 @@ book to re-state. STAR is unmeasured here, not null.
   **The ENTRY pair rule stays v0's 10 days**, because it defines the population L3 and L1
   both measured. Both step rules are run and printed.
 - **Complete-window books only** in every headline; still-forced trades are counted in their
-  own block.
+  own block. **Censoring is two-sided:** a pick with no usable T+1 bar is excluded from the
+  return book on the PAPER side as well as the implementable side. A paper book that priced a
+  suspension placeholder's stale open would be the same class of fiction as buying a 一字.
 - **Survival is a RATIO only where the paper number is positive.** Where the paper number is
   negative or straddles zero the pp difference is the statement. Paper and implementable are
   never blended.
@@ -135,22 +138,48 @@ book to re-state. STAR is unmeasured here, not null.
 
 ---
 
-## VERIFICATION GATES — all four PASS
+## VERIFICATION GATES — all 11 PASS (the run exits non-zero if any does not)
 
 | Gate | What it pins | Result |
 |---|---|---|
 | **L3 top-K parity** | the paper column against L3's published holdout top-K table, cell for cell | **PASS** — main 12/12 cells, ChiNext 4/4, zero mismatches (e.g. B1·K=10 main: published 11,350 rows / 1,882 hits / 16.581%, re-derived 11,350 / 1,882 / 16.5815%) |
+| **Prefix-order pin** (internal) | that K=1/3/5 are prefixes of the K=10 book under L3's exact ordering | **PASS** — **26,105** (ranker, feature-date) groups across all four U1 scopes; zero non-monotone P̂ sequences, zero mis-ordered ties, zero non-contiguous rank runs |
 | **L1 trade parity** | the restated exit walker against `continuation_rider_v1.process_ticker`, trade for trade, under L1's strict step rule | **PASS** — 230 tickers (deterministic 1-in-8), **18,777 trades compared, 0 mismatched, 0 missing, max abs return diff 0.0** |
-| **y_ok agreement** | L3's panel pair rule against L1's independently derived one | **PASS** — agreement on all 4,981,168 rows |
+| **y_ok agreement** | L3's panel pair rule against L1's **second code path** for the same rule | **PASS** — agreement on all 4,981,168 rows |
 | **Exclusion-cause pin** | the re-derived exclusion cascade against `_ticker_arrays`' own counts | **PASS** — IPO 2,793 / ex-div 620 / zero-volume 133,781, both ways; **0 blocked bars left unclassified** |
+| **Corruption control** | that the censor, not a coding artifact, produces the gap | **PASS** — collapse ratio 0.0112 against a pre-registered ceiling of 0.10 |
+
+**What the external pin does NOT cover, stated plainly.** L3 published 16 of this file's 180
+(board × cell × exit) combinations — main {B0,B1,B2,P1} × K{10,20,50} plus ChiNext K=10 only.
+**No K < 10** (the head of the book, which is exactly where the tax-on-confidence claim
+lives), no P2, no fit window, no ChiNext K ∈ {20,50}. The prefix-order pin closes the K < 10
+hole **internally**: if within each (ranker, feature-date) the picks are ordered by P̂
+descending with ties by ticker ascending and ranks are contiguous, then top-1 ⊂ top-3 ⊂
+top-5 ⊂ top-10 by construction and the head rows are a prefix of externally pinned
+membership. That is a weaker claim than an external check — it **inherits** L3's ordering, it
+does not re-verify it — and it is labelled as such in the JSON.
+
+**Two further limits of the pins.** The L1 trade-parity gate runs `closure_tolerant=False`
+because that is the rule L1 published, so the tolerant walker used in every headline is
+pinned only on the branch the two rules share; `step_rule_effect` prints the divergence
+(895 / 2,023 / 2,616 windows on E1 / E2 / E3). And the y_ok gate is a **transcription check**,
+not independent corroboration: both paths derive `pair_ok & nxt_live` from identical
+exclusion masks. It is still worth having, because this file joins the two lanes row-wise and
+a silent disagreement would misalign every pairing above.
 
 The L1 parity gate is what makes the restated walker safe to use: L1 defines its entry book
 inside a closure and cannot be imported, so the alternative to a gate is a silent divergence
 in the one arithmetic this lane exists to apply.
 
+**The exit code carries the gates.** `main()` walks every `pass` field in the gate tree — 11
+of them — and returns non-zero if any is not exactly `True` (a `None`, meaning the gate did
+not run, counts as a failure). A receipt whose gates fail is still written, so the failure is
+inspectable, but the process reports it. Without this a future re-run against a drifted
+dependency would write a same-named artifact with `pass: false` buried inside and exit green.
+
 **Determinism.** Two consecutive `TZ=UTC` runs produce byte-identical JSON with
 `generated_utc` and `runtime_sec` excluded. SHA-256 of the canonicalised payload, both runs:
-`238a0f77e74d6817b2d08717f5cf7485089440627d5e48f615cbbfd5cf3b623d`. Runtime ~75–90 s.
+`3195ff530f585d5690b4127601478cdd5c2e5221ddd21894e42cf1a55d528c57`. Runtime ~75–90 s.
 
 ---
 
@@ -192,6 +221,17 @@ Rate survival 0.831–1.000 (median 0.929). **ChiNext's book is nearly untaxed b
 nearly not selecting** — 2.36% realized at K=10 is a 6.6× lift on a 0.357% base, but it is
 not a board book in the sense the main board's is, and the 一字 population it would have to
 pay for barely appears in its picks (0.028% of them).
+
+**THIN on SUCCESSES, not only on trials.** A survival ratio is a ratio of two rates and
+inherits the noise of the thinner numerator, which a trials-based flag cannot see: a ChiNext
+K=1 cell carries 433 trials and can still rest on single-digit hits. Every survival block
+therefore also carries a successes count against a pre-registered floor of 30. **Six of
+ChiNext's 30 holdout cells are THIN on successes — B0·K1, B1·K1, B2·K1, P1·K1, P1·K3,
+P2·K1 — and none of main's 60.** In particular **ChiNext P1·K=1 prints "survival 1.000" off
+9 hits versus 9 hits**; that is not a measured survival and is now labelled as such in the
+JSON. An interval on the ratio itself (bootstrap over feature-dates; the arms are nested and
+positively dependent, so an independent-samples delta method would be conservative in an
+un-quantified direction) is untested — it is in the ore ledger, not in this pass.
 
 ---
 
@@ -276,9 +316,41 @@ statement is about the big numbers, not about every sign. The implementable book
 in **16 of 17 year-rows**; the one exception (2021 fit, +0.057%) carries a date-clustered t
 of **0.17**.
 
+### ERA TABLE — the flip exemplar, main · B1 · K=1 · E1 (§0 gate 2)
+
+The K=1 head of the book is where the paper-positive-to-implementable-negative claim is made,
+so it gets its own yearly table rather than borrowing K=10's.
+
+| year | picks | fill% | **paper net** | **impl net** | impl dc-t |
+|---|---|---|---|---|---|
+| 2011 | 244 | 92.62 | +0.007% | −0.659% | −2.33 |
+| 2012 | 243 | 93.00 | −0.240% | −0.128% | −0.31 |
+| 2013 | 238 | 83.19 | **+1.625%** | **+0.074%** | 0.18 |
+| **2014** | 245 | **75.10** | **+3.476%** | **−0.190%** | −0.41 |
+| **2015** | 244 | **77.46** | **+3.017%** | **−0.455%** | −0.85 |
+| 2016 | 244 | 89.34 | −0.643% | −0.927% | −2.12 |
+| 2017 | 244 | 86.48 | −0.355% | −0.166% | −0.49 |
+| 2018 | 243 | 91.77 | −1.124% | −1.199% | −2.80 |
+| 2019 | 242 | 91.32 | −1.080% | −1.183% | −2.20 |
+| 2020 | 242 | 92.98 | +0.568% | −0.103% | −0.15 |
+| 2021 (fit) | 217 | 93.09 | +0.710% | +0.626% | 0.91 |
+| 2021 (hold) | 26 | 84.62 | −2.268% | −2.176% | −1.39 |
+| 2022 | 242 | 91.32 | −2.410% | −2.301% | −3.57 |
+| 2023 | 241 | 93.78 | +0.616% | −0.517% | −1.04 |
+| 2024 | 241 | 88.80 | −0.754% | −2.315% | −3.74 |
+| 2025 | 243 | 91.36 | −0.501% | −0.294% | −0.49 |
+| 2026 | 142 | 97.89 | +1.441% | +1.384% | 1.61 |
+
+Implementable is negative in **14 of 17 year-rows**. **2014 is the sharpest cell in the
+study:** the single most confident pick of the day earns a paper **+3.476%** while a quarter
+of those picks (24.9%) could not be bought at all, and what remained earned **−0.190%**. 2015
+repeats it (+3.017% → −0.455% at 77.46% fillability). The three positive implementable years
+— 2013 (+0.074%, t 0.18), 2021 fit (+0.626%, t 0.91) and 2026 (+1.384%, t 1.61, a partial
+year of 142 picks) — none reaches |t| = 2.
+
 ---
 
-## SECONDARY (a) — does model confidence correlate with unfillability? YES, monotonically
+## SECONDARY (a) — does model confidence correlate with unfillability? YES, near-monotonically
 
 ### By top-K bucket (main, holdout; market-wide baseline 99.79% fillable, 0.21% 一字)
 
@@ -291,19 +363,29 @@ of **0.17**.
 | B2 一字 | **8.19%** | 6.46% | 5.36% | 3.57% | 2.14% | 0.97% |
 
 Wilson 95% on the B0·K=1 cell: [80.33%, 84.74%], n = 1,135 — the deviation from the 99.79%
-baseline is **−17.15 pp** and nowhere near its interval. Every ranker, every K, is below the
-market baseline, and the deficit shrinks monotonically as the book widens.
+baseline is **−17.15 pp** and nowhere near its interval. **Every ranker, at every K, is below
+the market baseline, and the deficit shrinks NEAR-monotonically as the book widens — B1
+reverses once, at K=1 → K=3 (91.982% → 91.630%), which the row above shows directly.** B0 and
+B2 are strictly monotone across all six sizes. The reversal is 0.35 pp inside a
+17-pp-scale effect; it changes nothing about the direction or the magnitude, and it is named
+here rather than smoothed over.
 
 ### By P̂ decile (main, holdout)
 
-| Model | bins | top-vs-bottom fillable | shape |
-|---|---|---|---|
-| B1 | 9 | **−1.63 pp** | 99.978% (P̂ 0.30%) → 98.344% (P̂ 4.56%); 一字 0.009% → 0.470% (**52×**) |
-| B2 | 10 | **−1.73 pp** | 99.978% → 98.253%; 一字 0.012% → 0.487% |
-| **B0** | 4 | **−28.70 pp** | **99.91% → 93.00% → 83.44% → 71.21%** across N = 0/1/2/3+; 一字 **0.022% → 2.007% → 7.205% → 13.527%** |
+| Model | bins | top-vs-bottom fillable | shape | monotone? |
+|---|---|---|---|---|
+| B1 | 9 | **−1.63 pp** | 99.978% (P̂ 0.30%) → 98.344% (P̂ 4.56%); 一字 0.009% → 0.470% (**52×**) | strictly |
+| B2 | 10 | **−1.73 pp** | 99.978% → 98.253%; 一字 0.012% → 0.487% | **two reversals** |
+| **B0** | 4 | **−28.70 pp** | **99.91% → 93.00% → 83.44% → 71.21%** across N = 0/1/2/3+; 一字 **0.022% → 2.007% → 7.205% → 13.527%** | strictly |
 
-The decile view is diluted — 99.8% of the panel is ordinary N=0 rows — and the monotonicity
-is the signal, not the magnitude. **B0 states it undiluted** because its four distinct values
+**Near-monotone, stated precisely.** B1's nine deciles and B0's four rungs fall strictly. B2
+reverses twice — decile 3 → 4 (99.9582% → 99.9616%) and decile 7 → 8 (99.9133% → 99.9297%),
+using the JSON's own 0-based decile ids — both inside the fourth decimal place of a
+percentage, on a −1.73 pp effect. No trend test was run (see the ore ledger); the direction
+is read off the printed sequence and the reversals are named rather than smoothed over.
+
+The decile view is diluted — 99.8% of the panel is ordinary N=0 rows — and the direction is
+the signal, not the magnitude. **B0 states it undiluted** because its four distinct values
 ARE the 连板 ladder: L3's own reliability rule (distinct values as bins when a model has fewer
 values than requested bins) is reused here, and without it `qcut` collapses the ladder to a
 single bucket and reports the benchmark as structureless. **The hypothesis is confirmed for
@@ -335,6 +417,26 @@ Every one of them has a fit-window date-clustered t indistinguishable from zero.
 shape of a coin-flip census, not of a survivor: with 180 combinations, 8 sign-agreements at
 |t| < 1.3 is what noise looks like. **Per the ore law this closes the constructions tested and
 nothing else** — see the ledger.
+
+**And the era tables finish them off.** §0 gate 2 requires a yearly sign table for every cell
+a receipt names, so one is cut for each of the 8 (both windows) — ChiNext's era runs
+2020-08-24 onward, giving 5 fit years and 3 holdout years:
+
+| cell · exit | fit years positive | **holdout years positive (of 3)** |
+|---|---|---|
+| B0·K=20 E3 | 2021, 2023, 2024 | **2025 only** |
+| B0·K=50 E3 | 2021, 2023, 2024 | **2025 only** |
+| B1·K=50 E3 | 2020, 2021, 2024 | 2025, 2026 |
+| B2·K=3 E2 | 2023, 2024 | **2025 only** |
+| B2·K=50 E3 | 2021, 2023, 2024 | 2025, 2026 |
+| P1·K=1 E2 | 2021, 2023, 2024 | 2024, 2025 |
+| P2·K=3 E2 | 2021, 2023, 2024 | **2025 only** |
+| P2·K=5 E3 | 2020, 2021, 2023 | **2025 only** |
+
+**All 8 are positive in 2025, and 5 of the 8 are positive in NO other holdout year.** Not one
+is a book that worked across the holdout; each is one good year inside three. Combined with
+fit-window t-statistics of |t| ≤ 0.38, the two-window sign agreement is an artifact of a
+single ChiNext year, and the census reads as a clean null rather than as eight near-misses.
 
 ---
 
@@ -385,6 +487,32 @@ book's expectancy by ≤ 0.001 pp. For the ONSET question the resolution-conditi
 denominator is an honest caveat, not a material distortion. (It is not thereby closed for
 other questions — a limit-DOWN or delisting study would look very different.)
 
+### A defect this receipt fixed rather than footnoted: the U2 paper book priced 停牌 opens
+
+The first cut of this instrument masked censored picks out of the **implementable** book and
+not out of the **paper** book. `walk_trades` accepts any finite positive `open[T+1]`, and a
+zero-volume suspension placeholder bar carries one — so the U2 paper return book was scoring
+a small number of trades at **stale placeholder opens**, in direct violation of this file's
+own pre-registration ("censored, never scored"). It could not touch U1, where every pick has
+a usable next bar by construction.
+
+Rather than disclose it, the mask was made two-sided and the instrument re-run; downstream
+waves read the frozen JSON, and a contaminated artifact with a caveat is worse than a clean
+one. **Every U2 number the mask touched now prints its own delta** in
+`books.<rule>.paper_censored_excluded`. The scale:
+
+| board | window | cell (full pick set) | trades removed | share | paper mean net |
+|---|---|---|---|---|---|
+| main | fit | B1·K=50 E1 | 568 of 130,520 | 0.435% | −0.069% → **−0.070%** |
+| main | holdout | B1·K=50 E1 | 197 of 56,729 | 0.347% | −0.245% → **−0.249%** |
+| chinext | fit | B1·K=50 E1 | 115 of 50,402 | 0.228% | −0.087% → **−0.085%** |
+| chinext | holdout | B1·K=50 E1 | 54 of 21,635 | 0.250% | −0.014% → **−0.014%** |
+
+**360 cell × rule combinations were touched, all of them U2; the largest absolute move on any
+paper number anywhere in the study is 0.055 pp** (ChiNext·U2·fit·B2·K=1·E2). U1 removals: 0,
+and every U1 number in this receipt is unchanged. The correction is immaterial to every
+conclusion and is reported anyway, because "immaterial" is a finding, not an excuse.
+
 ---
 
 ## THE CORRUPTION CONTROL — the finding's own falsifier
@@ -434,7 +562,7 @@ the panel's 99.792%) and the implementable book becomes the paper book. **PASS.*
 
 ---
 
-## ORE LEDGER — untested variants (17)
+## ORE LEDGER — untested variants (19)
 
 Under the ORE LAW a null on one construction never closes a hypothesis. Nothing below is
 claimed dead; all of it is unmeasured.
@@ -458,6 +586,15 @@ rather than P(board), which is the obvious next construction this receipt argues
 size-weighted or P̂-weighted books (everything here is equal-weight within a date);
 **replacement books** that spend a refused slot on the next-ranked fillable name rather than
 leaving it empty.
+
+**Inference (2)** — **a confidence interval on the survival ratio itself**: every survival
+number here is a point ratio of two rates whose arms are NESTED (implementable ⊂ paper) and
+therefore positively dependent, so an independent-samples delta method would be conservative
+in an un-quantified direction; a bootstrap over feature-dates is the obvious construction and
+was not run. This pass reports the point ratio, a Wilson interval on each arm, and a
+successes-based THIN flag. Also untested: **a formal monotonicity test** in K or in P̂ decile
+(Jonckheere–Terpstra, isotonic fit) — direction is read off the printed sequence and the two
+observed reversals are named.
 
 **Population (3)** — **F3**, the full ~5,400-name universe including ST and delisted names
 (the censoring rate itself may be a curation artifact, since the omitted small-caps are where

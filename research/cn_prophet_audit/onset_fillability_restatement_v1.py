@@ -229,8 +229,10 @@ HEADLINE_RANKERS = ("B1", "B2")        # era tables are cut for these two only
 HEADLINE_K = 10                        # L3's smallest published K
 P_DECILES = 10
 CORRUPTION_SEED = 20260809
+CORRUPTION_COLLAPSE_MAX = 0.10         # PASS iff corrupted gap < 10% of the real gap
 CLOSURE_TOLERANT_PRIMARY = True
 PARITY_TICKER_STRIDE = 8               # L1 trade-parity gate: deterministic 1-in-8 sample
+THIN_SUCCESSES = 30                    # a rate cell with < 30 HITS in either arm is THIN
 
 # Store vintage — stamped so a post-expansion re-run is comparable (masterplan §9).
 VINTAGE = {
@@ -284,9 +286,17 @@ PREREG = {
         "complete-window books only in every headline; forced/truncated trades are counted "
         "in their own block",
         "date-clustered t beside per-trade stats on every return cell",
-        f"THIN at n < {THIN_CELL_N}; L3's {MIN_FIT_CORE_POS} fit-core-positive board floor "
-        "inherited and never lowered",
-        "the corruption control and its expected outcome were written before it was run",
+        f"THIN at n < {THIN_CELL_N} trials AND, on every survival table, THIN at "
+        f"< {THIN_SUCCESSES} SUCCESSES in either arm — a survival ratio is a ratio of two "
+        "rates and inherits the noise of the thinner NUMERATOR, which a trials-only flag "
+        "cannot see; L3's "
+        f"{MIN_FIT_CORE_POS} fit-core-positive board floor inherited and never lowered",
+        "the corruption control and its expected outcome were written before it was run, "
+        f"and its PASS threshold is fixed here: the corrupted gap must fall below "
+        f"{CORRUPTION_COLLAPSE_MAX:.0%} of the real gap",
+        "a pick with no usable T+1 bar is CENSORED — it is excluded from the return book on "
+        "BOTH sides of the pairing, not only the implementable one; a paper book that priced "
+        "a suspension placeholder open would be the same fiction this lane exists to remove",
     ],
     "what_would_falsify_the_finding": (
         "The paper-vs-implementable gap is claimed to be the fillability censor doing real "
@@ -386,8 +396,16 @@ def book_block(rets: np.ndarray, dates: np.ndarray,
     return b
 
 
-def survival(paper: float | None, impl: float | None) -> dict:
-    """Paper -> implementable survival.  Ratio ONLY where paper is positive."""
+def survival(paper: float | None, impl: float | None,
+             paper_k: int | None = None, impl_k: int | None = None) -> dict:
+    """Paper -> implementable survival.  Ratio ONLY where paper is positive.
+
+    `paper_k` / `impl_k` are the SUCCESS counts behind the two rates.  A survival ratio is a
+    ratio of two rates and inherits the noise of the thinner NUMERATOR, so a trials-based
+    THIN flag cannot see it: a ChiNext K=1 cell can carry 433 trials and 9 hits in each arm
+    and print "survival 1.000" off 9-versus-9.  That is flagged here rather than left to the
+    reader to reconstruct from the rate blocks.
+    """
     if paper is None or impl is None:
         return {"delta_pp": None, "survival_ratio": None,
                 "ratio_suppressed": "a paper or implementable value is missing"}
@@ -397,6 +415,14 @@ def survival(paper: float | None, impl: float | None) -> dict:
     else:
         d["ratio_suppressed"] = ("paper value is <= 0 — a survival ratio across zero is "
                                  "meaningless; read delta_pp")
+    if paper_k is not None and impl_k is not None:
+        thin = bool(min(int(paper_k), int(impl_k)) < THIN_SUCCESSES)
+        d["successes"] = {"paper_k": int(paper_k), "implementable_k": int(impl_k),
+                          "floor": THIN_SUCCESSES, "thin_successes": thin}
+        if thin:
+            d["successes"]["reading"] = (
+                "fewer than the pre-registered floor of successes in one arm — the ratio is "
+                "a ratio of small counts, not a measured survival")
     return d
 
 
@@ -774,12 +800,24 @@ def _cell_pairing(sub: pd.DataFrame, trades: dict, base_rate: float,
         "positives_available": pos_total,
     }
     cell["survival_rate"] = survival(cell["paper"]["rate"]["rate_pct"],
-                                     cell["implementable"]["rate"]["rate_pct"])
+                                     cell["implementable"]["rate"]["rate_pct"],
+                                     paper_k=paper_hits, impl_k=impl_hits)
     cell["survival_capture"] = survival(cell["paper"]["capture_share_pct"],
-                                        cell["implementable"]["capture_share_pct"])
+                                        cell["implementable"]["capture_share_pct"],
+                                        paper_k=paper_hits, impl_k=impl_hits)
 
     # ── the return axis, per exit family ──────────────────────────────────────
+    #
+    # THE CENSORING MASK IS TWO-SIDED.  A pick with no usable T+1 bar is censored, and the
+    # pre-registration says censored means "never scored" — on BOTH sides.  Without the
+    # y_ok term below, the PAPER book quietly prices a 停牌 placeholder bar's stale open
+    # (walk_trades accepts any finite positive open; a zero-volume suspension bar carries
+    # one), which is the same class of fiction as buying a 一字.  It bit only U2, where
+    # non-y_ok picks exist at all, and only 0.21% of its trades — and it is fixed rather
+    # than footnoted, because downstream waves read the frozen JSON, not the caveats.
+    # The `paper_censored_excluded` block below prints exactly what the mask removed.
     books = {}
+    yok = sub["y_ok"].to_numpy().astype(bool)
     key = pd.MultiIndex.from_arrays([sub["ticker"].to_numpy(), sub["date"].to_numpy()])
     for rule in EXIT_RULES:
         tr = trades[rule]
@@ -791,7 +829,8 @@ def _cell_pairing(sub: pd.DataFrame, trades: dict, base_rate: float,
         dts = sub["date"].to_numpy()
         nms = sub["ticker"].to_numpy()
 
-        m_paper = priced & complete
+        m_unmasked = priced & complete            # what this file printed before the fix
+        m_paper = m_unmasked & yok                # the pre-registered paper book
         m_impl = m_paper & fill_flag
         blk = {
             "paper": book_block(ret[m_paper], dts[m_paper], nms[m_paper]),
@@ -801,6 +840,22 @@ def _cell_pairing(sub: pd.DataFrame, trades: dict, base_rate: float,
             "rolls_implementable": int(np.nansum(
                 np.where(m_impl, hit["rolls"].to_numpy(), 0))),
         }
+        n_censored = int((m_unmasked & ~yok).sum())
+        blk["paper_censored_excluded"] = {"trades": n_censored}
+        if n_censored:
+            was = book_block(ret[m_unmasked], dts[m_unmasked], nms[m_unmasked])
+            blk["paper_censored_excluded"].update({
+                "share_of_unmasked_paper_pct": _r(100.0 * n_censored / max(1, int(
+                    m_unmasked.sum())), 3),
+                "unmasked_mean_net_pct": was.get("mean_net_pct"),
+                "masked_mean_net_pct": blk["paper"].get("mean_net_pct"),
+                "delta_pp": _r((blk["paper"].get("mean_net_pct") or 0.0)
+                               - (was.get("mean_net_pct") or 0.0), 4),
+                "unmasked_date_eq_net_pct": was.get("date_eq_weight_net_pct"),
+                "masked_date_eq_net_pct": blk["paper"].get("date_eq_weight_net_pct"),
+                "what_was_removed": ("picks with no usable T+1 bar — suspension placeholder "
+                                     "opens, excluded bars, exchange closures, store edge"),
+            })
         blk["survival_mean_net"] = survival(blk["paper"].get("mean_net_pct"),
                                             blk["implementable"].get("mean_net_pct"))
         blk["survival_date_eq_net"] = survival(
@@ -1026,6 +1081,48 @@ def l1_trade_parity(cache: dict) -> dict:
     }
 
 
+def prefix_order_pin(picks: pd.DataFrame, label: str) -> dict:
+    """Every K < 10 book is a PREFIX of the externally pinned K=10 book.  Internal gate.
+
+    WHY THIS EXISTS.  The L3 parity gate can only pin the cells L3 published — K in
+    {10, 20, 50}, four rankers, main plus one ChiNext row: 16 of this file's 180 combinations.
+    The tax-on-confidence claim lives at K = 1, which has no external pin at all.  This gate
+    closes that hole from the inside: if, within each (ranker, feature-date), the picks are
+    ordered by P-hat descending with ties broken by ticker ascending and ranks are a
+    contiguous 0..m-1, then top-1 subset top-3 subset top-5 subset top-10 by construction and
+    the head-of-book rows are a prefix of externally pinned membership.  It is a weaker claim
+    than an external pin and is labelled as such — it inherits L3's ordering, it does not
+    re-verify it.
+    """
+    bad_order = bad_tie = bad_rank = groups = 0
+    for _key, g in picks.groupby(["ranker", "date"], sort=False):
+        groups += 1
+        g = g.sort_values("rank", kind="stable")
+        r = g["rank"].to_numpy()
+        p = g["p_hat"].to_numpy()
+        t = g["ticker"].to_numpy()
+        if r[0] != 0 or not np.array_equal(r, np.arange(len(r), dtype=r.dtype)):
+            bad_rank += 1
+        if len(p) > 1:
+            d = np.diff(p)
+            if bool((d > 0).any()):
+                bad_order += 1
+            tie = d == 0
+            if bool(tie.any()) and bool((t[:-1][tie] >= t[1:][tie]).any()):
+                bad_tie += 1
+    return {
+        "scope": label,
+        "date_ranker_groups_checked": groups,
+        "groups_with_non_monotone_p_hat": bad_order,
+        "groups_with_a_mis-ordered_tie": bad_tie,
+        "groups_with_non_contiguous_ranks": bad_rank,
+        "pass": bool(groups > 0 and bad_order == 0 and bad_tie == 0 and bad_rank == 0),
+        "what_it_pins": ("that K=1/3/5 are prefixes of the K=10 book under L3's exact "
+                         "ordering, so the un-pinned head of the book inherits the K=10 "
+                         "external pin by construction — INTERNAL, not an external check"),
+    }
+
+
 L3_PUBLISHED_TOPK = {
     # board -> (ranker, K) -> (rows, hits, realized_pct)   [ONSET_CALIBRATION_V1 receipt]
     "main": {
@@ -1063,7 +1160,16 @@ def l3_topk_parity(board: str, cells: dict) -> dict:
     return {"cells_checked": len(checked), "mismatches": bad, "pass": bool(want and bad == 0),
             "detail": checked,
             "what_it_pins": ("the paper column against ONSET_CALIBRATION_V1's published "
-                             "holdout top-K table, row for row")}
+                             "holdout top-K table, row for row"),
+            "what_it_does_NOT_pin": (
+                "COVERAGE IS 16 OF THIS FILE'S 180 (board x cell x exit) combinations: "
+                "main {B0,B1,B2,P1} x K{10,20,50} plus ChiNext K=10 only.  No K < 10 (the "
+                "head of the book, where the tax-on-confidence claim lives), no P2, no fit "
+                "window, and no ChiNext K in {20,50} — L3 published none of those.  The "
+                "prefix_order_pin gate covers K < 10 INTERNALLY.  Separately, the L1 trade "
+                "parity gate runs closure_tolerant=False because that is the rule L1 "
+                "published, so the tolerant walker used in every headline is pinned only on "
+                "the branch the two rules share; step_rule_effect prints the divergence.")}
 
 
 # ── ORE LEDGER ────────────────────────────────────────────────────────────────
@@ -1101,6 +1207,19 @@ ORE_LEDGER = {
         "Size-weighted or P-weighted books — every book here is equal-weight within a date.",
         "Books that spend the refused slot on the next-ranked fillable name (a REPLACEMENT "
         "book) rather than leaving it empty.",
+    ],
+    "inference_untested": [
+        "A CONFIDENCE INTERVAL ON THE SURVIVAL RATIO ITSELF.  Every survival number here is "
+        "a point ratio of two rates whose arms share picks; both arms carry a Wilson "
+        "interval and the ratio now carries a successes-based THIN flag, but the ratio has "
+        "no interval of its own.  The correct object is a paired/nested-sample interval "
+        "(the implementable arm is a SUBSET of the paper arm, so the two are positively "
+        "dependent and an independent-samples delta method would be conservative in an "
+        "un-quantified direction) — bootstrap over feature-dates is the obvious "
+        "construction.  Untested: this pass reports the point ratio and flags thin arms.",
+        "A formal test of MONOTONICITY in K or in P-hat decile.  The direction is read off "
+        "the printed sequence and the two observed reversals are named; no trend test "
+        "(Jonckheere-Terpstra, isotonic fit) was run.",
     ],
     "population_untested": [
         "F3 — the full ~5,400-name universe including ST and delisted names.  Every number "
@@ -1178,6 +1297,7 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
 
     # ── models, books, pairing, per board ─────────────────────────────────────
     by_board, pick_store = {}, []
+    picks_by, prefix_pins = {}, []
     for board in sorted(panel["board"].unique()):
         if board not in splits:
             continue
@@ -1243,6 +1363,11 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
                 picks = attach(topk_frame(df, preds, max(TOP_K)), df)
                 picks["universe"], picks["window"], picks["board"] = uni, window, board
                 pick_store.append(picks[["ticker", "date"]])
+                # Retained past the loop: the survivor census cannot name its cells until
+                # every board is scored, and §0 gate 2 wants an era table for each of them.
+                picks_by[(board, uni, window)] = picks
+                if uni == PRIMARY_UNIVERSE:
+                    prefix_pins.append(prefix_order_pin(picks, f"{board}/{uni}/{window}"))
 
                 corrupted = corrupt_fillability(df, CORRUPTION_SEED)
                 picks["fillable_corrupt"] = corrupted[picks["row"].to_numpy()]
@@ -1419,17 +1544,56 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
             if not hf.empty and hf["impl_dc_t"].notna().any() else None),
     }
 
+    # ── §0 gate 2: an era table for EVERY cell this receipt names ─────────────
+    #
+    # The standing per-board era tables cover {B1,B2} x K10 only.  A yearly sign table is
+    # mandatory for any cell a receipt puts its name to, and two classes were uncovered: the
+    # flip exemplar (main B1 K=1 E1, where the paper-positive-to-implementable-negative claim
+    # is made) and every cell the survivor census reports as positive in both windows.  A
+    # "survivor" with no era table is a claim whose year-by-year composition is unexamined.
+    named_cells = [("main", "B1|K1", "E1_board_fail", "flip exemplar")]
+    named_cells += [(s["board"], s["cell"], s["exit"], "two-window positive survivor")
+                    for s in survivor_census["detail"]]
+    named_era = {}
+    for board, cell, rule, why in named_cells:
+        ranker, kpart = cell.split("|K")
+        k = int(kpart)
+        for window in WINDOWS:
+            pk = picks_by.get((board, PRIMARY_UNIVERSE, window))
+            if pk is None:
+                continue
+            sub = pk[(pk["ranker"] == ranker) & (pk["rank"] < k)]
+            if sub.empty:
+                continue
+            named_era[f"{board}|{cell}|{rule}|{window}"] = {
+                "why_named": why,
+                "rows": era_table(sub, trades_primary, rule),
+            }
+    survivor_census["era_tables_for_named_cells"] = named_era
+    survivor_census["era_coverage_note"] = (
+        f"{len(named_cells)} named cells x {len(WINDOWS)} windows, beside the standing "
+        f"{{B1,B2}} x K{HEADLINE_K} x {{E1,E3}} per-board tables.")
+
     # ── verification gates ────────────────────────────────────────────────────
     gates = {
         "y_ok_agreement_L3_vs_L1_arrays": {
             "pass": yok_agree,
-            "what_it_pins": ("L3's panel y_ok and L1's independently derived pair rule agree "
-                             "row for row — the two lanes are reading the same population"),
+            "what_it_pins": ("L3's panel y_ok and L1's SECOND CODE PATH for the same pair "
+                             "rule agree row for row.  Both derive `pair_ok & nxt_live` from "
+                             "identical exclusion masks, so this is a TRANSCRIPTION check "
+                             "between two implementations of one rule, not independent "
+                             "corroboration of the rule itself — still worth having, because "
+                             "this file joins the two lanes row-wise and a silent "
+                             "disagreement would misalign every pairing below."),
         },
         "exclusion_cause_pin": store_meta["store_pass"]["exclusion_cause_pin"],
         "l1_trade_parity": l1_trade_parity(cache),
         "l3_topk_parity": {b: e.get("l3_topk_parity") for b, e in by_board.items()
                            if e.get("status") == "modelled"},
+        "prefix_order_pin": {
+            "scopes": prefix_pins,
+            "pass": bool(prefix_pins) and all(p["pass"] for p in prefix_pins),
+        },
         "corruption_control": None,   # filled below
     }
     print(f"[5] gates: L1 trade parity "
@@ -1473,17 +1637,45 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
         "mean_abs_corrupt_net_gap_pp_E1":
             _r(float(cdf["corrupt_net_gap_pp_E1"].abs().mean()), 3) if len(cdf) else None,
         "collapse_ratio_rate": None,
+        "collapse_ratio_max_prereg": CORRUPTION_COLLAPSE_MAX,
         "pass": None,
-        "reading": ("PASS requires the corrupted gap to collapse toward zero relative to the "
-                    "real one.  A corrupted gap of the same size would mean the censor is a "
-                    "coding artifact and the whole finding is void."),
+        "reading": ("PASS requires the corrupted gap to collapse below the PRE-REGISTERED "
+                    f"{CORRUPTION_COLLAPSE_MAX:.0%} of the real one (see PREREG — the "
+                    "threshold is a pre-registration term, not a runtime constant).  A "
+                    "corrupted gap of the same size would mean the censor is a coding "
+                    "artifact and the whole finding is void."),
         "detail": corr_rows,
     }
     if len(cdf) and float(cdf["real_rate_gap_pp"].abs().mean()) > 0:
         ratio = (float(cdf["corrupt_rate_gap_pp"].abs().mean())
                  / float(cdf["real_rate_gap_pp"].abs().mean()))
         gates["corruption_control"]["collapse_ratio_rate"] = _r(ratio, 4)
-        gates["corruption_control"]["pass"] = bool(ratio < 0.10)
+        gates["corruption_control"]["pass"] = bool(ratio < CORRUPTION_COLLAPSE_MAX)
+
+    # Every `pass` field anywhere in the gate tree, collected by path.  A gate added later
+    # is picked up automatically — the exit code should never depend on someone remembering
+    # to extend a hand-written list.
+    def _collect(node, path, out):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "pass":
+                    out.append((path or "gates", v))
+                else:
+                    _collect(v, f"{path}.{k}" if path else k, out)
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                _collect(v, f"{path}[{i}]", out)
+
+    found: list[tuple[str, object]] = []
+    _collect(gates, "", found)
+    gate_summary = {
+        "checked": len(found),
+        "failed": sorted(p for p, v in found if v is not True),
+        "all_pass": all(v is True for _p, v in found),
+        "contract": ("main() exits non-zero when ANY of these is not exactly True — a "
+                     "None (gate did not run) counts as a failure, because a gate that "
+                     "silently did not run is indistinguishable from one that passed."),
+    }
 
     # strip the working frames the JSON must not carry
     for entry in by_board.values():
@@ -1555,6 +1747,7 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
         "market_fillable_pct_by_board": market_fillable,
         "step_rule_effect": step_rule_effect,
         "verification_gates": gates,
+        "gates_summary": gate_summary,
         "survivor_census": survivor_census,
         "headline_grid": headline,
         "by_board": by_board,
@@ -1568,6 +1761,19 @@ def main() -> int:  # noqa: C901 - one linear instrument, deliberately readable 
     OUT_JSON.write_text(json.dumps(jsonable(payload), indent=2, ensure_ascii=False) + "\n")
     print(f"[6] -> {OUT_JSON.name}  ({payload['runtime_sec']:.0f}s, "
           f"{OUT_JSON.stat().st_size / 1e6:.2f} MB)", flush=True)
+
+    # THE EXIT CODE MUST CARRY THE GATES.  Returning 0 regardless of every `pass` field is
+    # the S7 defect: a future re-run against a drifted dependency would write a same-named
+    # receipt with `pass: false` buried inside it and exit GREEN, and whatever runs this
+    # would report success.  A gate that cannot fail the process is a decoration.
+    if not gate_summary["all_pass"]:
+        print(f"::error title=onset-fillability-gates::FAILED gates: "
+              f"{', '.join(gate_summary['failed'])}", flush=True)
+        print(f"[!] {len(gate_summary['failed'])} of {gate_summary['checked']} verification "
+              f"gates FAILED — the receipt was written so the failure is inspectable, but "
+              f"its numbers are NOT trustworthy: {gate_summary['failed']}", flush=True)
+        return 1
+    print(f"[7] all {gate_summary['checked']} verification gates PASS", flush=True)
     return 0
 
 
