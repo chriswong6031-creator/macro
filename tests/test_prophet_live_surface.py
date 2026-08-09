@@ -428,7 +428,10 @@ def test_absent_artifact_leaves_the_panel_hidden(stocks_html):
     assert "#prophet-live.visible{display:block}" in _strip_css()
     js = _strip_js()
     catch = js[js.index(".catch(function(){"):]
-    assert "if(_plvData) _plvRender();" in catch, \
+    # W-L1 added a second consumer of this artifact (the board-state stamp on
+    # #us-standouts), so the repaint is _plvPaint — the strip and the board state read the
+    # same fetch and must never disagree about which one they are describing.
+    assert "if(_plvData) _plvPaint();" in catch, \
         "a later failure keeps the last good render until the age gate trips it"
 
 
@@ -934,7 +937,9 @@ def test_first_fetch_is_never_gated_on_document_hidden():
     """The preview pane renders with visibility:hidden, so a visibility-gated first fetch
     produces a permanently empty strip in every verification screenshot."""
     js = _nc(_strip_js())
-    boot = js[js.index("if(_plvPanel){"):]
+    # W-L1: the poll is owned by EITHER panel — #us-standouts carries the board-state slots
+    # and outlives the strip, which hides itself once the nightly publishes.
+    boot = js[js.index("if(_plvPanel||_bsPanel){"):]
     first = boot.index("_plvFetch();")
     guard = boot.index("if(!document.hidden) _plvFetch();")
     assert first < guard, "the unconditional first fetch must come before the interval"
