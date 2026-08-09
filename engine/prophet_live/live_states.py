@@ -783,6 +783,10 @@ def transitions(ticker: str, new: dict[str, Any], prev: dict[str, Any] | None, *
         base["via"] = new["via"]
     if new.get("state") != prev.get("state") and new.get("state") in EVENT_KINDS:
         rows.append({**base, "kind": new["state"]})
+    # Dedup is intentionally marker-level for this measurement wave.  A same-session
+    # drop suppression followed by an overrun suppression therefore emits one
+    # ``fade_unconfirmed`` row, not one row per side.  Do not interpret marker counts
+    # as side-complete until a separately measured side-key migration is reviewed.
     seen_before = set(prev.get("internal_seen") or [])
     for marker in INTERNAL_MARKERS:
         if new.get("internal") == marker and marker not in seen_before:
