@@ -156,7 +156,7 @@
         firesHtml += '</ul>';
       } else {
         firesHtml = '<p class="td-no-fires">'
-          + t('No cascade fires in this sector today','此板块今日暂无级联信号')
+          + t('Nothing fired in this sector today','此板块今天没有信号触发')
           + '</p>';
       }
       var qualFilters = sec.qual_filters_true || [];

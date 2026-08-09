@@ -24,13 +24,18 @@ from __future__ import annotations
 import glob
 import json
 import logging
+import sys
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
-from collectors import massive_flatfiles as mf
-from engine import options_flow as of
-from lib import config, nyse_calendar, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors import massive_flatfiles as mf  # noqa: E402
+from engine import options_flow as of  # noqa: E402
+from lib import config, nyse_calendar, store  # noqa: E402
 
 log = logging.getLogger(__name__)
 SUMMARY_KEYS = ("spot", "volume", "premium_mn", "net_premium_mn", "pc_ratio", "signed_pc",

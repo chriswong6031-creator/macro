@@ -25,11 +25,15 @@ import argparse
 import json
 import logging
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from engine import live_overlay, live_quotes, technicals
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import live_overlay, live_quotes, technicals  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger("live_overlay_build")
 

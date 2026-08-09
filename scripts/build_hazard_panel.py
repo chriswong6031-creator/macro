@@ -54,8 +54,7 @@ import pandas as pd
 # Repo bootstrap (works both as a script and from pytest cwd)
 # ---------------------------------------------------------------------------
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.cycle_ontology import (
     TURN_DETECTOR_DEFAULTS,
