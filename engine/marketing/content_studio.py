@@ -488,7 +488,24 @@ def is_postable_signal(plan: dict, *, today: str | None = None) -> bool:
 
 def postable_signals(plans: list[dict], *, today: str | None = None) -> list[dict]:
     """Filter a plan list to only the signals that pass the eligibility gate."""
-    return [p for p in (plans or []) if is_postable_signal(p, today=today)]
+    pool = [p for p in (plans or []) if isinstance(p, dict) and p.get("asset")]
+    out = [p for p in pool if is_postable_signal(p, today=today)]
+    # Post-#5071 the freshness gate reads effective_public_plan_date, which
+    # FAILS CLOSED on any plan without a signal_date_basis family. Correct for
+    # one bad plan; catastrophic when the whole pipeline stops stamping the
+    # field, because the signal lane then starves with no error anywhere. Losses
+    # must reach the console, so a dominant no-date-family pool screams here.
+    if len(pool) >= 5:
+        dateless = sum(1 for p in pool if effective_public_plan_date(p) is None)
+        if dateless * 5 >= len(pool) * 4:
+            print(
+                "::warning title=marketing-signal-supply-dark::"
+                f"{dateless} of {len(pool)} prophet plans have no public-safe "
+                "date family (signal_date_basis missing/unknown) — the signal "
+                "lane is starving; check the plan pipeline's #5071 date-basis "
+                "stamping before blaming selection",
+                flush=True)
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────

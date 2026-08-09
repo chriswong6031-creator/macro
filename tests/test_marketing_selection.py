@@ -260,6 +260,9 @@ def test_cooled_ticker_is_not_planned_but_an_override_brings_it_back(tmp_path):
         "entry": 60.0, "targets": [70.0], "phase": "triggered_pre_t1",
         "recommended_action": "hold", "management_confidence": 70.0,
         "_signal_date": _YESTERDAY,
+        # #5071 contract: public freshness reads effective_public_plan_date,
+        # which needs a declared date family or the plan is withheld.
+        "signal_date": _YESTERDAY, "signal_date_basis": "tier_event_date",
     }]
 
     cooled = plan_account(account, plans, n_days=1, per_day=6,
@@ -740,11 +743,14 @@ _STUB_PLANS = [
     {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
      "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 66.0, "_signal_date": _YESTERDAY},
+     "management_confidence": 66.0, "_signal_date": _YESTERDAY,
+     # #5071 contract: declared date family or the plan is withheld.
+     "signal_date": _YESTERDAY, "signal_date_basis": "tier_event_date"},
     {"id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL", "entry": 82.0,
      "invalidation": 75.0, "targets": [95.0], "trigger": 84.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 61.0, "_signal_date": _YESTERDAY},
+     "management_confidence": 61.0, "_signal_date": _YESTERDAY,
+     "signal_date": _YESTERDAY, "signal_date_basis": "tier_event_date"},
 ]
 
 
@@ -1042,3 +1048,33 @@ class TestFailedSignalDisposal:
         drop_at = src.index("_stale_dropped = [d for d in queue")
         phase2_at = src.index("# Phase 2: build all contexts")
         assert drop_at < phase2_at, "the drop must precede context building"
+
+
+def test_dateless_plan_pool_screams_instead_of_starving_silently(capsys):
+    """A pool that is ≥80% date-family-less warns loudly (losses reach the console).
+
+    Post-#5071 the freshness gate withholds any plan without signal_date_basis.
+    One such plan is a correct refusal; a whole pipeline of them is the signal
+    lane silently going dark, which must print a line-start ::warning.
+    """
+    from engine.marketing.content_studio import postable_signals
+
+    dateless = [{
+        "id": f"T{i}-BULL", "asset": f"T{i}", "direction": "BULL",
+        "entry": 10.0, "targets": [12.0], "phase": "triggered_pre_t1",
+        "recommended_action": "hold", "management_confidence": 70.0,
+        "_signal_date": _YESTERDAY,
+    } for i in range(6)]
+    out = postable_signals(dateless, today=_TODAY)
+    assert out == []
+    captured = capsys.readouterr().out
+    line = next((ln for ln in captured.splitlines()
+                 if "marketing-signal-supply-dark" in ln), "")
+    assert line.startswith("::warning "), captured
+    assert "6 of 6" in line
+
+    # A healthy pool (dated plans) must NOT warn.
+    dated = [dict(p, signal_date=_YESTERDAY,
+                  signal_date_basis="tier_event_date") for p in dateless]
+    assert len(postable_signals(dated, today=_TODAY)) == 6
+    assert "marketing-signal-supply-dark" not in capsys.readouterr().out
