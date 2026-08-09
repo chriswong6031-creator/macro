@@ -56,6 +56,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from lib import config
+from lib import ticker_aliases       # stable keys whose vendor listing moved
 
 log = logging.getLogger(__name__)
 
@@ -279,6 +280,31 @@ def resolve_dead_ciks(dead_tickers: list[str], force: bool = False,
 EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{:010d}.json"
 EFTS_MIN_DATE = "2001-01-01"        # EDGAR full-text search coverage floor
+
+
+def _dead_only(m: pd.DataFrame) -> set[str]:
+    """Tickers whose S&P membership closed and never reopened — i.e. DEAD COMPANIES.
+
+    A closed point-in-time interval with no open one is not by itself a death. It
+    is any of three things, and only the last belongs in this module's universe:
+
+      * A RENAME — the company trades on under a different symbol. Marsh McLennan
+        closed its MMC interval on 2026-01-14 and opened MRSH the same day; same
+        company, same CUSIP, same listing. Treating MMC as delisted sent this
+        collector hunting for the final filings of a firm that never stopped
+        filing, and stamped a live S&P 500 name as dead.
+      * A TICKER REUSE — the symbol trades on under a different company (ECHO:
+        Echo Global Logistics was acquired in 2021, EchoStar holds the symbol now).
+        The old interval is genuinely closed, so this one IS dead-name work.
+      * A DELISTING — company and symbol both gone. The real subject here.
+
+    Known listing moves are excluded via the stable-key boundary in
+    ``lib.ticker_aliases``.  That map keeps MMC/FI as universe and ledger keys
+    while fetching their current vendor series under MRSH/FISV.
+    """
+    closed = set(m[m["end_date"].notna()]["ticker"].astype(str))
+    live = set(m[m["end_date"].isna()]["ticker"].astype(str))
+    return closed - live - set(ticker_aliases.YAHOO_FETCH_ALIASES)
 FTS_FORMS = "10-K,20-F,40-F"        # annual reports carry the cover-page trading symbol
 FTS_MIN_DOCS = 4                    # the dominant entity must have >= this many hits...
 FTS_DOMINANCE = 2.5                 # ...and >= this multiple of the runner-up entity
@@ -426,7 +452,7 @@ def _dead_windows() -> dict[str, tuple[str, str | None]]:
     (union of stints), clamped to the EDGAR FTS coverage floor and padded one year
     past the index exit (the final annual report files after the delisting)."""
     m = pd.read_parquet(config.data_dir() / "breadth" / "sp1500_pit_membership.parquet")
-    dead = set(m[m["end_date"].notna()]["ticker"]) - set(m[m["end_date"].isna()]["ticker"])
+    dead = _dead_only(m)
     dm = m[m["ticker"].isin(dead)]
     g = dm.groupby("ticker").agg(start=("start_date", "min"), end=("end_date", "max"))
     floor = pd.Timestamp(EFTS_MIN_DATE)
@@ -737,8 +763,7 @@ def coverage(dead_universe: list[str] | None = None) -> dict:
     data/edgar/_dead_name_coverage.json."""
     if dead_universe is None:
         m = pd.read_parquet(config.data_dir() / "breadth" / "sp1500_pit_membership.parquet")
-        dead_universe = sorted(set(m[m["end_date"].notna()]["ticker"]) -
-                               set(m[m["end_date"].isna()]["ticker"]))
+        dead_universe = sorted(_dead_only(m))
     cache = _load_cik_cache()
     resolved = {t for t, v in cache.items() if v.get("cik")}
     by_method: dict[str, int] = {}
@@ -776,8 +801,7 @@ def coverage(dead_universe: list[str] | None = None) -> dict:
 
 
 def dead_universe() -> list[str]:
-    """The 1,083-name dead-only S&P PIT universe (closed membership, never re-listed
-    live)."""
+    """The dead-only S&P PIT universe (closed membership, never re-listed live,
+    and not merely RENAMED — see _dead_only)."""
     m = pd.read_parquet(config.data_dir() / "breadth" / "sp1500_pit_membership.parquet")
-    return sorted(set(m[m["end_date"].notna()]["ticker"]) -
-                  set(m[m["end_date"].isna()]["ticker"]))
+    return sorted(_dead_only(m))

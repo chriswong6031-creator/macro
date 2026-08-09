@@ -16,16 +16,21 @@ Run: python -m scripts.build_china_strategies
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine import china_allocation as ca
-from engine import china_strategies as S
-from lib import config
-from lib.pages import write_page
-from scripts.build_strategies import _card, _detail_vm, _evaluate
-from scripts.build_vector import C
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import china_allocation as ca  # noqa: E402
+from engine import china_strategies as S  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+from scripts.build_strategies import _card, _detail_vm, _evaluate  # noqa: E402
+from scripts.build_vector import C  # noqa: E402
 
 BACK = ("China Strategies", "中国策略")
 
