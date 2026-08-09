@@ -47,6 +47,7 @@ from scripts.exit_policy_study import (  # noqa: E402
     R_PLAN_STOP,
     R_PLAN_TARGET,
     R_TRAIL,
+    _MFE_FLOOR,
     _coupling,
     _plan_geometry,
     build_cohort,
@@ -571,12 +572,27 @@ class TestCaptureGuard:
     def _row_with(self, mfe, pnl):
         return _row("A", "d1", pnl, 10, mfe=mfe, mae=min(mfe, pnl) - 1.0)
 
+    @staticmethod
+    def _naive_capture(rows):
+        """What the ORIGINAL ``abs(mfe) > 1e-9`` filter would print for these rows.
+
+        The witness used to be ``ts.summarize`` itself, because it still carried the
+        defect. #4684 ported this study's floor upstream into ``track_scoring.summarize``
+        (its G5 leg — "a -11.4% loser scored 2.51"), so the two now AGREE and summarize
+        can no longer stand in for the broken behaviour: the assertion went red reading
+        ``None == 1.67``. The witness lives here instead. It is the same anti-vacuity
+        job — show the flattering number the floor suppresses, so a null capture cannot
+        pass for the wrong reason — without pinning a second module to a defect we want
+        fixed everywhere. Cross-module AGREEMENT is pinned separately, below.
+        """
+        caps = [r["pnl"] / r["mfe"] for r in rows if abs(r["mfe"]) > 1e-9]
+        return float(np.median(caps)) if caps else None
+
     def test_a_negative_mfe_row_yields_a_null_capture_not_a_flattering_ratio(self):
         rows = [self._row_with(mfe=-3.0, pnl=-5.0)]
-        # The defect being fixed: summarize's own filter is abs(mfe) > 1e-9, so it divides
-        # two negatives and reports a HEALTHY-LOOKING +1.67 for a position that never once
-        # traded above its entry.
-        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(1.67, abs=0.01)
+        # The defect being guarded: the old filter divides two negatives and reports a
+        # HEALTHY-LOOKING +1.67 for a position that never once traded above its entry.
+        assert self._naive_capture(rows) == pytest.approx(1.67, abs=0.01)
         m = policy_metrics(rows)
         assert m["capture"] is None
         assert (m["n_capture"], m["n_capture_undefined"]) == (0, 1)
@@ -593,8 +609,36 @@ class TestCaptureGuard:
         m = policy_metrics(rows)
         assert m["capture"] == pytest.approx(0.38)      # median(0.50, 0.25), rounded
         assert (m["n_capture"], m["n_capture_undefined"]) == (2, 1)
-        # Keeping the undefined row would make the meaningless +1.67 the MEDIAN.
-        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(0.50)
+        # Keeping the undefined row drags the median off 0.38 — the meaningless +1.67
+        # outranks both real rows, so the median lands on 0.50 instead.
+        assert self._naive_capture(rows) == pytest.approx(0.50)
+
+    def test_summarize_applies_THE_SAME_floor_and_the_two_must_stay_equal(self):
+        """The contract #4684 created, pinned on VALUES rather than on a source grep.
+
+        ``policy_metrics`` used to be a deliberate DEPARTURE from
+        ``track_scoring.summarize``; #4684 ported the floor upstream so the study and the
+        shipped track record report the same quantity under one column name. Agreement is
+        now the invariant, and it is the reason the witness above had to move: if either
+        side moves its floor, `capture` silently means two things again. The sibling pin
+        in tests/test_us_board_grader_honesty.py greps the study's SOURCE for the literal;
+        this one compares the numbers both functions actually return.
+        """
+        assert _MFE_FLOOR == ts.MFE_FLOOR
+        rows = [self._row_with(mfe=10.0, pnl=5.0),      # defined, 0.50
+                self._row_with(mfe=4.0, pnl=1.0),       # defined, 0.25
+                self._row_with(mfe=-3.0, pnl=-5.0),     # undefined — negative excursion
+                self._row_with(mfe=0.0, pnl=-2.0)]      # undefined — no excursion at all
+        study = policy_metrics(rows)
+        record = ts.summarize(rows, metric="pnl")
+        for key in ("capture", "n_capture", "n_capture_undefined",
+                    "capture_undefined_pct"):
+            assert study[key] == record[key], (
+                f"`{key}` disagrees: study {study[key]!r} vs track record "
+                f"{record[key]!r} — one side's capture floor has drifted")
+        # Anti-vacuity: the rows must actually exercise the floor, or the loop above
+        # would pass on two functions that both had nothing to drop.
+        assert (study["n_capture"], study["n_capture_undefined"]) == (2, 2)
 
 
 # --------------------------------------------------------------------------- #
@@ -750,10 +794,45 @@ def manifest():
 
 
 class TestCalibration:
+    @pytest.mark.xfail(strict=True, reason=(
+        "THE ERA BREAK IS DUE — this is the same notification as the ob_mask tripwire, "
+        "measured a second way. See the docstring; drop this marker with #4942, not here."))
     def test_p0_reproduces_the_shipped_ledger_key_for_key(self, vintage):
         """G3's calibration check, on the pinned vintage. P0 is the incumbent rule run
         through track_scoring on the ledger's own cohort AND its own price vintage, so
-        here a non-zero delta really does mean the reconstruction drifted."""
+        here a non-zero delta really does mean the reconstruction drifted.
+
+        XFAILED 2026-08-07, AND THE CHANGE IS NAMED. The marker is not a way to make an
+        unexplained drift go quiet — the docstring above demands the change be found, and
+        it has been: PR #4732 (`abs-session-2026-08-06`) migrated `confluence_tiers._tf_bars`
+        to an absolute session anchor IN PLACE, `grade_us_board._ob_mask` imports `_tf_bars`
+        directly, and `_ob_mask` is the incumbent episode's TARGET EXIT leg. So the bar an
+        episode sells on moved, and with it every realised number P0 reconstructs:
+
+            win_pct -4.6 · expectancy_pct -0.89 · median_pct -0.85 · profit_factor -0.54
+            capture -0.36 · ci_lo_pct -7.5 · ci_hi_pct -3.5 · median_hold -1.0
+
+        (`capture` also carries #4684's `MFE_FLOOR` port, which made this study's floor and
+        `track_scoring.summarize`'s agree — see TestCaptureGuard. That is a second, smaller
+        contributor to one key, not the cause of the rest.)
+
+        WHY THE FIXTURE IS NOT RE-CUT. `cal["shipped"]` is the fixture's frozen copy of
+        `site/factordata/us_track_ledger.json`, and the LIVE artifact is still that same
+        pre-era object — `as_of` 2026-07-31, `win_pct` 63.6, and no `meta.anchor_era` — the
+        grading lane having been dark since 08-01. Re-cutting the fixture against today's
+        code would therefore pin NEW-anchor numbers against a PUBLISHED ledger that still
+        shows the old ones, i.e. it would settle the era question inside a test fixture. The
+        session-anchor ruling reserves that call: a graded-population change requires a new
+        era STAMP, never a silent recompute. `scripts/build_exit_policy_vintage_fixture.py`
+        agrees and refuses to write a fixture that does not reproduce both artifacts.
+
+        WHAT DISCHARGES THIS. `research/US_TRACK_RECORD_ERA_BREAK_PROPOSAL.md`, executed by
+        #4942 (re-measure, stamp, disclose) — which re-publishes the ledger and re-cuts this
+        fixture together. `strict=True` is deliberate: on the day that lands, the deltas go
+        to zero, this XPASSes, and the red forces the marker out in the same PR that earns
+        it. Sibling tripwire and full mechanism:
+        tests/test_ob_mask_start_invariance.py.
+        """
         cal = vintage["calibration"]
         assert cal["shipped"], "the pinned fixture must carry the ledger it reproduces"
         bad = {k: v for k, v in cal["deltas"].items() if v not in (0, 0.0)}

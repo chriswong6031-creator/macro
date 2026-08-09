@@ -1,4 +1,5 @@
 {% import "_decision_card.html.j2" as dc %}
+{% from "_icons.html.j2" import icon %}
 {#- ====================== US ACT-NOW BOARD (v2, five lanes) ======================
    The mature sectors+themes action board, transplanted from us_stocks.html
    (#action-board, assembled by scripts/build_site.action_board()). SHARED include:
@@ -66,12 +67,39 @@
   .act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn, var(--warn)); }
   .act-hold { --act-accent: var(--muted); --act-accent-ink: var(--muted); }
   html[data-theme="light"] .act-run { --act-accent-ink: color-mix(in srgb, #8b5cf6 72%, var(--text)); }
+  /* ── Monoline marks (doctrine §5.8 — emoji are not UI icons) ──────────────
+     Lane heads, row marks, the legend and the hover-card mark all draw from
+     templates/_icons.html.j2 (24×24, stroke=currentColor), so each mark
+     inherits its context's ink: the lane icons ride
+     --act-accent-ink, which is what carries forward the per-lane colour
+     identity the coloured dots used to supply — and the glyph now says what
+     the lane DOES, which a coloured dot never did.
+     The bottoming-watch strip (_us_bottoming_watch.html.j2, the board's own
+     watch surface) reuses .acth-icon / .ai-bdg for its two marks instead of
+     shipping a third icon rule, so it is sized from here.
+     NO bare `.ic-svg {}` rule here on purpose: sector_central.html.j2 scopes
+     its own copy under #si-confluence, and a global rule shipped from a panel
+     would fight its host. Explicit selectors only, one size per context.
+     .row-pop-mark is deliberately NOT scoped to #action-board — theme.js
+     clones the hover card onto document.body, so an id-scoped rule would
+     style the hidden source and miss the card the reader actually sees. */
+  .ai-bdg .ic-svg, .acth-icon .ic-svg, .row-pop-mark .ic-svg,
+  .ab-shock-ic .ic-svg, #action-board .help .tip .ic-svg {
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .ai-bdg .ic-svg { width: 13px; height: 13px; display: block; }
+  .acth-icon .ic-svg { width: 14px; height: 14px; display: block; }
+  .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
+  /* inline runs — a mark inside a sentence keeps the text baseline, never block */
+  .ab-shock-ic { color: var(--ink-warn, var(--warn)); }
+  .ab-shock-ic .ic-svg { width: 14px; height: 14px; display: inline-block; vertical-align: -.17em; }
+  #action-board .help .tip .ic-svg { width: 12px; height: 12px; display: inline-block; vertical-align: -.14em; }
   /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
   .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
   .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
                   border-radius: 14px 14px 0 0; background: var(--act-accent); }
   .acth-title-row { display: flex; align-items: center; gap: 5px; }
-  .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
+  .acth-icon { display: flex; line-height: 1; flex: none; color: var(--act-accent-ink, var(--act-accent)); }
   .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
                color: var(--act-accent-ink, var(--act-accent)); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -90,7 +118,10 @@
   .actitem:hover, .actitem:focus { background: color-mix(in srgb, var(--panel2) 55%, transparent); outline: none; }
   .actitem.hovered { background: color-mix(in srgb, var(--panel2) 80%, transparent); }
   .act-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
-  .ai-bdg { font-size: 11.5px; flex: none; opacity: .85; cursor: default; }
+  /* Row kind mark. --muted, not text-at-85%: it is a type label (fund vs basket),
+     never a signal, so it must stay subordinate to the name in BOTH themes —
+     near-black at .85 on white is a heavier mark than the same rule on dark. */
+  .ai-bdg { display: flex; flex: none; color: var(--muted); cursor: default; }
   .act-row-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text);
                   line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* theme composite score — anv2-score idiom (big number, right of the name) */
@@ -212,21 +243,27 @@
   /* help-tip-framework:END */
   </style>
   <div class="panel span12" id="action-board">
+    {#- Legend. Captured with {% set %}…{% endset %} so the block is Markup and the
+        icon() macro output survives autoescape — the legend must show the SAME
+        marks the rows show, or it is a legend for a board that no longer exists.
+        ✓ and ★ are text glyphs, not emoji; they stay as characters. -#}
+    {%- set _legend_en %}Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: {{ icon('sector') }} sector fund · {{ icon('diamond') }} theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.{% endset -%}
+    {%- set _legend_zh %}所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：{{ icon('sector') }} 板块基金 · {{ icon('diamond') }} 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。{% endset -%}
     <h2>{{ t('What to act on now', '当前可操作') }}
-      {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
-      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业情报页</span></a>
+      {{ help(_legend_en, _legend_zh) }}
+      <a href="sector_central.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → Sector Intelligence</span><span class="l-zh">主题详情 → 行业智慧页</span></a>
     </h2>
     {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
        no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
     {% if shock_state is defined and shock_state and shock_state.get('active') %}
     <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
-      ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
+      <span class="ab-shock-ic">{{ icon('alert') }}</span> <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
     </div>
     {% endif %}
-    {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
-       lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
-       and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
-       narrative-rotation model book. #}
+    {# Unified board: diamond-marked narrative baskets (the AI-buildout-vs-rest resolution)
+       lead each lane, landmark-marked GICS sectors follow. Basket buys carry a
+       leadership-LENS marker (≈, descriptive) and basket reduces a backtested marker
+       (✓, the absolute-trend drawdown gate); ★ = in the narrative-rotation model book. #}
     {# (legacy themeitem / themeitem_run row macros removed 2026-07-11 — dead since the
        V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
     {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
@@ -235,7 +272,7 @@
     {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="Two reads on {{ x.ticker }}: cycle timing = {{ _ewtr.cycle_label_en }}; equal-weight basket = {{ _ewtr.ew_label_en }}. Different constructions — both shown for context." data-tip-zh="{{ x.ticker }} 两个读数：周期 = {{ _ewtr.cycle_label_zh }}；等权篮子 = {{ _ewtr.ew_label_zh }}。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _ewtr.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr.cycle_label_zh }}</b> vs 等权 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
     {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
     {#- V2 ACTION BOARD — new lane design (adjudicated 2026-07-10)
-        Each lane: header (emoji + EN/ZH name + count + subtitle) + row list.
+        Each lane: header (monoline lane icon + EN/ZH name + count + subtitle) + row list.
         Sector rows: glyph + name + optional chip + optional gate-✓ + stat line.
         Theme rows: name + star/check/lens glyphs (% moves to popover).
         Popover data stored in hidden .rp-src span, cloned by theme.js row-pop engine on hover.
@@ -302,7 +339,7 @@
     {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}周期第 {{ x.dc_day }} 日{% endif -%}
     {%- endset -%}
     {{ dc.dc_card({
-      'kind': 'sector', 'mark': '🏛', 'tone': _stag_tone,
+      'kind': 'sector', 'mark': icon('sector'), 'tone': _stag_tone,
       'eyebrow': ('Sector pulse · ' ~ x.ticker, '板块脉搏 · ' ~ x.ticker),
       'name': (x.name|e, tr(x.name)|e),
       'tag': (td(x.label),),
@@ -351,7 +388,7 @@
       {%- set _ = _trust.append({'tone': 'up', 'en': '✓ Risk gate', 'zh': '✓ 风险门槛'}) -%}
     {%- endif -%}
     {{ dc.dc_card({
-      'kind': 'theme', 'mark': '◆', 'tone': _rtone,
+      'kind': 'theme', 'mark': icon('diamond'), 'tone': _rtone,
       'eyebrow': ('Theme basket','主题篮子'),
       'name': (x.name|e, (x.name_zh or x.name)|e),
       'tag': (x.get('label') or _reco, x.get('label_zh') or x.get('label') or _reco),
@@ -377,7 +414,7 @@
     {%- macro ab_sector_row(x) -%}
     <a class="actitem" data-rpop href="{{ x.href }}">
       <span class="act-row-top">
-        <span class="ai-bdg">🏛</span>
+        <span class="ai-bdg">{{ icon('sector') }}</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
       </span>
       {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') or x.get('recovering_chip_en') %}
@@ -400,7 +437,7 @@
     {%- macro ab_theme_row(x) -%}
     <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
       <span class="act-row-top">
-        <span class="ai-bdg">🧩</span>
+        <span class="ai-bdg">{{ icon('diamond') }}</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
         {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
         {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
@@ -443,7 +480,7 @@
       <div class="actcol act-buy">
         <div class="acth">
           <div class="acth-title-row">
-            <span class="acth-emoji">🟢</span>
+            <span class="acth-icon">{{ icon('target') }}</span>
             <span class="acth-name"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
             <span class="acth-count">{{ _bn_cnt }}</span>
           </div>
@@ -453,7 +490,7 @@
           {% for x in action_board.buy_now %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
-          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
+          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
         {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -461,7 +498,7 @@
       <div class="actcol act-soon">
         <div class="acth">
           <div class="acth-title-row">
-            <span class="acth-emoji">🔵</span>
+            <span class="acth-icon">{{ icon('clock') }}</span>
             <span class="acth-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span>
             <span class="acth-count">{{ _bs_cnt }}</span>
           </div>
@@ -471,7 +508,7 @@
           {% for x in action_board.buy_soon %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
-          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
+          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
         {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -479,7 +516,7 @@
       <div class="actcol act-run">
         <div class="acth">
           <div class="acth-title-row">
-            <span class="acth-emoji">🏃</span>
+            <span class="acth-icon">{{ icon('accel') }}</span>
             <span class="acth-name"><span class="l-en">In favour — don't chase</span><span class="l-zh">看好 — 勿追高</span></span>
             <span class="acth-count">{{ _run_cnt }}</span>
           </div>
@@ -489,7 +526,7 @@
           {% for x in action_board.get('on_the_run', []) %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
-          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
+          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
         {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -497,7 +534,7 @@
       <div class="actcol act-trim">
         <div class="acth">
           <div class="acth-title-row">
-            <span class="acth-emoji">🟠</span>
+            <span class="acth-icon">{{ icon('profits') }}</span>
             <span class="acth-name"><span class="l-en">Take profits</span><span class="l-zh">止盈</span></span>
             <span class="acth-count">{{ _tp_cnt }}</span>
           </div>
@@ -507,7 +544,7 @@
           {% for x in action_board.take_profits %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
-          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
+          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
         {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -516,7 +553,7 @@
       <div class="actcol act-hold lst-wrap">
         <div class="acth">
           <div class="acth-title-row">
-            <span class="acth-emoji">⚪</span>
+            <span class="acth-icon">{{ icon('hold') }}</span>
             <span class="acth-name"><span class="l-en">Stand aside</span><span class="l-zh">观望</span></span>
             <span class="acth-count">{{ _hold_cnt }}</span>
           </div>
@@ -530,7 +567,7 @@
           {% for x in action_board.avoid %}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% endfor %}
-          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业情报页 →</span></a></p>{%- endif %}
+          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="sector_central.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on Sector Intelligence →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见行业智慧页 →</span></a></p>{%- endif %}
         </div>
         {% if _hold_cnt > 3 %}
         <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>

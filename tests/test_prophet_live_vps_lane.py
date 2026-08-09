@@ -664,11 +664,13 @@ def test_the_served_artifact_is_not_public_anywhere():
     assert POLICY["premium"]["default_tier"] == "essential"
 
 
-def test_the_public_live_exceptions_are_exactly_the_three_reviewed_files():
-    """A prefix would have swept prophet_live.json in with them. There is no prefix."""
+def test_the_public_live_exceptions_are_exactly_the_reviewed_files():
+    """A prefix would have swept prophet_live.json in with them. There is no
+    prefix — each entry is an individually reviewed file (staleness.json is the
+    W1 freshness-sentinel state: verdicts and timestamps, no signal rows)."""
     live_public = sorted(p for p in _caddy_public_exclusions() if p.startswith("/live/"))
     assert live_public == ["/live/breadth.json", "/live/quotes.json",
-                           "/live/release_publications.json"]
+                           "/live/release_publications.json", "/live/staleness.json"]
     assert not any(p.startswith("/live/") for p in POLICY["public"]["prefixes"])
 
 
@@ -780,7 +782,13 @@ def test_live_setup_installs_arms_and_funds_the_prophet_lane():
     """A fresh provision must not need a second manual step to arm the lane, and the
     lane's one extra dependency must be in the venv it runs from."""
     assert "macro-live-prophet.service macro-live-prophet.timer" in LIVE_SETUP
-    assert "macro-live-prophet.timer >/dev/null" in LIVE_SETUP
+    # Matched inside the `enable --now` BLOCK rather than as the line-final
+    # `macro-live-prophet.timer >/dev/null`: that spelling only held while this
+    # lane happened to be last in the list, and it broke the day a sibling lane
+    # (macro-live-closepass, W-L1a) was armed after it — a test failing because
+    # something else was added correctly is a test pinned to the wrong thing.
+    enable_block = LIVE_SETUP.split("systemctl enable --now")[1].split("\n\n")[0]
+    assert "macro-live-prophet.timer" in enable_block
     pip = next(ln for ln in LIVE_SETUP.splitlines() if "pip\" install -q pandas" in ln)
     assert "boto3" in pip
 

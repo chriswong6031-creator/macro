@@ -198,7 +198,7 @@
     {
       "case_ref": "CIE-GC-0227",
       "ticker": "CDNS",
-      "expected_v2_outcome": "duplicate_collapsed",
+      "expected_v2_outcome": "typed_absence",
       "collector_edgar_earnings_8k_row": {
         "ticker": "CDNS",
         "cik": 1648083,
@@ -422,7 +422,7 @@
     {
       "case_ref": "CIE-GC-0234",
       "ticker": "CVS",
-      "expected_v2_outcome": "duplicate_collapsed",
+      "expected_v2_outcome": "typed_absence",
       "collector_edgar_earnings_8k_row": {
         "ticker": "CVS",
         "cik": 1678857,

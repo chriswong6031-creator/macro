@@ -31,7 +31,8 @@ StateDirectoryMode=0700
 # STRIPE_SECRET_KEY=sk_test_...      # server-side Stripe key; routes 503 cleanly when unset
 # STRIPE_WEBHOOK_SECRET=whsec_...    # from the Stripe Dashboard webhook endpoint; required for /api/billing/webhook
 # SUPABASE_SERVICE_ROLE_KEY=...      # already used by analytics/brain — the webhook writes user_entitlements with it
-# MM_SITE_BASE=https://mastermind-x.com   # where hosted Checkout/Portal return (apex, not www)
+# MM_SITE_BASE=https://www.mastermind-x.com  # where hosted Checkout/Portal return. Prefer www: the apex
+#                                    # is valid but 301s to www, costing one extra hop per return (app/billing.py)
 # STRIPE_AUTOMATIC_TAX=1             # Stripe Tax on (default); set 0 until the account's Tax origin is configured
 # ── Static-site access env ───────────────────────────────────────────────────
 # REGWALL_ENABLED=1                  # default; 0 is emergency registration-wall rollback

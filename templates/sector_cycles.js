@@ -1502,21 +1502,16 @@
     // reading #1); the 63d quarter lens stays as the muted sub-value per row.
     var _frk = function (s) { return s.now.rs_21d_rank || s.now.rs_rank; };
     var lead = activeList().filter(function (s) { return _frk(s); }).sort(function (a, b) { return _frk(a) - _frk(b); });
-    // Every row renders; the ones past the cap are HIDDEN behind a real control.
-    // This used to slice the list at 12 and append a dead "+ N more" <div> — an
-    // unstyled label that named rows the reader had no way to reach, and left the
-    // sector lens (leadCap = lead.length) dumping all ~31 rows with no control at all.
-    var leadCap = 12;
-    var leadMany = lead.length > leadCap + 2;
-    var leadRows = lead.map(function (s, i) {
+    var leadCap = baskets ? 12 : lead.length;
+    var leadRows = lead.slice(0, leadCap).map(function (s) {
       var rs21 = s.now.rs_21d, rs63 = s.now.rs_63d;
       var fast = rs21 != null ? rs21 : rs63;
       var sub = (rs21 != null && rs63 != null)
         ? '<span class="sc-lead-sub">63d ' + (rs63 >= 0 ? "+" : "") + rs63 + '%</span>' : '';
-      return '<div class="sc-lead-row' + (leadMany && i >= leadCap ? ' sc-lead-hidden' : '') + '"><span class="sc-lead-rk">' + _frk(s) + '</span>' +
+      return '<div class="sc-lead-row"><span class="sc-lead-rk">' + _frk(s) + '</span>' +
         '<span class="sc-lead-nm" role="button" tabindex="0" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + nm(s) + '</span>' + sub +
         '<span class="sc-lead-rs ' + (fast >= 0 ? "pos" : "neg") + '">' + (fast >= 0 ? "+" : "") + fast + '%</span></div>';
-    }).join("");
+    }).join("") + (lead.length > leadCap ? '<div class="sc-lead-more">+ ' + (lead.length - leadCap) + ' ' + L("more", "更多") + '</div>' : "");
 
     // long fields dominate the panel (US baskets ~46, China Shenwan sectors ~31,
     // China baskets ~22) — clamp the "where they stand" map to a compact height
@@ -1527,14 +1522,11 @@
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L(unitEC() + " rotation · ", unitZ() + "轮动 · ")) + META.asOf + '</div>' +
-        // Plain-word copy (operator 2026-08-06): say what the reader does and what
-        // they see, not how the chart is built. No "equal-weight index", no
-        // "rebased, log", no "0–100 oscillator" — those belong on the detail page.
         '<p class="rg-headline">' + (baskets
-          ? L("The strongest few are charted to start. Tap a name to add it, or hit <b>Select all visible</b> to chart all " + activeList().length + ". Switch between <b>Cycle position</b> — how far along a move is — and <b>Price</b>, what actually happened.",
-              "先画出最强的几个。点名字可以加进来，或者按<b>全选可见</b>把 " + activeList().length + " 个全画上。可以在<b>周期位置</b>（这波走到哪一步了）和<b>价格</b>（实际怎么走的）之间切换。")
-          : L("Every " + unitE() + " on the same clock — near the top means the move is late, near the bottom means it is washed out. Switch to <b>Price</b> for what actually happened, and tap a " + unitE() + " to see its turning points.",
-              "所有" + unitZ() + "放在同一个刻度上——靠上说明这波已经走了很久，靠下说明跌得比较透。切到<b>价格</b>看实际走势，点某个" + unitZ() + "可以看它的拐点。")) + '</p>' +
+          ? L("The <b>strongest items</b> are charted to start — each an equal-weight index of its members on a 0–100 <b>cycle-position</b> clock. Tap an item to add it, use <b>Where they stand</b> to narrow, or hit <b>Select all visible</b> for the whole field of " + activeList().length + ". Flip to <b>Price</b> for the real tape (rebased, log).",
+              "已先绘制<b>最强的几个条目</b>——每个均为其成分股的等权指数，置于 0–100 <b>周期位置</b>时钟上。点击条目可加入，用<b>所处阶段</b>缩小范围，或点<b>全选可见</b>查看全部 " + activeList().length + " 个。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
+          : L("Every " + unitE() + " on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a " + unitE() + " to see its turning points and the story behind each move.",
+              "每个" + unitZ() + "同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某" + unitZ() + "查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the ", "各") + noun + L(" stand", "所处位置") + '</div>' +
@@ -1551,17 +1543,15 @@
           L("See all " + activeList().length + " ▾", "展开全部 " + activeList().length + " ▾") + '</button>' : '') +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-lbl">' + L("Leadership · vs ", "领涨 · 对比") + benchLabel() + L(" (21d · 63d)", "(21日 · 63日)") + '</div>' +
-        '<div class="sc-lead" id="sc-lead">' + leadRows + '</div>' +
-        (leadMany ? '<button type="button" class="xc-more" id="sc-lead-more" aria-expanded="false" aria-controls="sc-lead">' +
-          L("See all " + lead.length + " ▾", "展开全部 " + lead.length + " ▾") + '</button>' : '') +
+        '<div class="cyc-lbl">' + L("Leadership · RS vs ", "领涨 · 相对") + benchLabel() + L(" (21d · 63d)", "(21日 · 63日)") + '</div>' +
+        '<div class="sc-lead">' + leadRows + '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("How to read", "如何解读") + '</div>' +
         '<ul class="cyc-how">' +
-          '<li>' + L("<b>Price</b> is what actually happened. <b>Cycle position</b> is how far along the move is — near the top is late, near the bottom is washed out.", "<b>价格</b>是实际走势。<b>周期位置</b>说明这波走到哪一步了——靠上是走了很久，靠下是跌得比较透。") + '</li>' +
-          '<li>' + L("▲ and ▼ mark the big turns; the <b>● dot</b> is where the " + unitE() + " stands today.", "▲ 和 ▼ 标出大的拐点；<b>● 圆点</b>是该" + unitZ() + "今天所处的位置。") + '</li>' +
-          '<li>' + L("<b>Tap a " + unitE() + "</b> (chip, card, or line), then tap a <b>leg</b> to read what drove that move.", "<b>点某个" + unitZ() + "</b>（标签、卡片或曲线），再点其中一<b>段</b>，就能看到那段是什么在推动。") + '</li>' +
+          '<li>' + L("<b>Price</b> shows the real tape (rebased, log); <b>Cycle position</b> shows a 0–100 oscillator — high = stretched/late, low = washed-out.", "<b>价格</b>显示真实走势（再基准化、对数）；<b>周期位置</b>显示 0–100 振荡器——高=拉伸/晚期，低=超卖。") + '</li>' +
+          '<li>' + L("▲ peaks and ▼ troughs are auto-detected major turns; the <b>● dot</b> is where the " + unitE() + " is now.", "▲ 波峰与 ▼ 波谷为自动识别的重大拐点；<b>● 圆点</b>是该" + unitZ() + "当前位置。") + '</li>' +
+          '<li>' + L("<b>Tap a " + unitE() + "</b> (chip, card, or line), then tap a <b>leg</b> to read what drove that move.", "<b>点按某" + unitZ() + "</b>（标签、卡片或曲线），再点按某<b>区段</b>了解推动该走势的原因。") + '</li>' +
         '</ul>' +
       '</div>';
 
@@ -1577,19 +1567,6 @@
         xcMore.textContent = open
           ? L("See less ▴", "收起 ▴")
           : L("See all " + activeList().length + " ▾", "展开全部 " + activeList().length + " ▾");
-      });
-    }
-    var ldMore = def.querySelector("#sc-lead-more");
-    if (ldMore) {
-      ldMore.addEventListener("click", function () {
-        var open = ldMore.getAttribute("aria-expanded") !== "true";
-        def.querySelectorAll(".sc-lead-row").forEach(function (r, i) {
-          r.classList.toggle("sc-lead-hidden", !open && i >= leadCap);
-        });
-        ldMore.setAttribute("aria-expanded", open ? "true" : "false");
-        ldMore.textContent = open
-          ? L("See less ▴", "收起 ▴")
-          : L("See all " + lead.length + " ▾", "展开全部 " + lead.length + " ▾");
       });
     }
     def.classList.add("show");

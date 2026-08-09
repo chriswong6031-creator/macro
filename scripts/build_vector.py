@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -1567,28 +1568,6 @@ def _market_stocks_state(market: str) -> dict:
         return {"label": "", "n_setups": 0}
 
 
-def _regime_change_ccs(alerts: list[dict], run_date: str | None = None) -> set[str]:
-    """Return the set of market CCs (e.g. 'US') with a regime-label-change alert
-    within the past 7 days. Cross-references the home alert feed — no new detection.
-    Mapping: transition_state_change / growth_confidence_floor / inflation_confidence_floor
-    rules fire on the US macro dashboard; gex_flip_cross is also US-market-level."""
-    _US_RULES = frozenset({"transition_state_change", "growth_confidence_floor",
-                           "inflation_confidence_floor", "gex_flip_cross"})
-    ccs: set[str] = set()
-    cutoff = (pd.Timestamp(run_date) if run_date
-              else pd.Timestamp.utcnow().tz_localize(None)) - pd.Timedelta(days=7)
-    for a in alerts:
-        ts = pd.Timestamp(a.get("ts", "1970-01-01"))
-        if ts.tzinfo is not None:
-            ts = ts.tz_localize(None)
-        if ts < cutoff:
-            continue
-        rule = a.get("type", "")
-        if rule in _US_RULES:
-            ccs.add("US")
-    return ccs
-
-
 def _standout_tickers(market: str = "us") -> list[str]:
     """Return up to 3 top-ranked standout tickers from the committed factordata artifact.
     Reads site/factordata/{market}_standouts.json (display-tier, committed artifact).
@@ -1710,11 +1689,50 @@ _ZH_HALF_TRANSLATED_RULES = frozenset({
     "sector_holdings_accumulation",
 })
 
+# Same treatment, but the rule id is per-tripwire ("cycle_falsifier_fired:<id>")
+# so membership is a PREFIX, not an equality. Its emitter used to interpolate the
+# author-written English `claim` into the zh body; the rows already baked with
+# that shape are healed by the rebuild below, which reads the registry's
+# authored `claim_zh`.
+_ZH_HALF_TRANSLATED_PREFIXES = ("cycle_falsifier_fired:",)
 
-def _translate_macro_detail(msg_en: str) -> str:
+
+def _zh_needs_rebuild(rule: str) -> bool:
+    """True when the persisted message_zh for `rule` is known to carry English."""
+    rule = str(rule or "")
+    return (rule in _ZH_HALF_TRANSLATED_RULES
+            or rule.startswith(_ZH_HALF_TRANSLATED_PREFIXES))
+
+
+@lru_cache(maxsize=1)
+def _falsifier_registry() -> tuple[dict, dict]:
+    """(by falsifier id, by English claim) → registry entry, for zh claim lookup.
+
+    data/cycle_ontology/falsifiers.json is hand-authored and small (24 rows);
+    read once per process.  Returns empty maps rather than raising when the file
+    is absent, so a data-less checkout still renders the English body.
+    """
+    try:
+        entries = json.loads(
+            (Path(config.ROOT) / "data" / "cycle_ontology" / "falsifiers.json")
+            .read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("falsifier registry unreadable for zh claims (%s)", exc)
+        return {}, {}
+    by_id = {str(e.get("id")): e for e in entries if e.get("id")}
+    by_claim = {str(e.get("claim")): e for e in entries if e.get("claim")}
+    return by_id, by_claim
+
+
+def _translate_macro_detail(msg_en: str, rule: str = "") -> str:
     """Attempt to translate a baked English macro alert message to Chinese.
     Returns the Chinese string if the pattern matches, or empty string to
-    signal "no match — caller should fall back to English"."""
+    signal "no match — caller should fall back to English".
+
+    `rule` is optional context: the cycle read-change branch resolves its zh
+    claim by falsifier id, which survives a re-worded claim the way matching on
+    the claim text itself does not.
+    """
     # Inflation / Growth axis confidence floor
     # EN: "Inflation axis confidence dropped below 30%: 42% -> 24%"
     # EN: "Growth axis confidence dropped below 30%: 42% -> 24%"
@@ -1742,15 +1760,31 @@ def _translate_macro_detail(msg_en: str) -> str:
 
     # Cycle read-change condition HIT (pre-#3821 logs say "Cycle falsifier FIRED";
     # both shapes translate to the sanctioned register)
-    # EN: "Cycle read-change condition HIT — credit: <claim>. Direction: ... Coverage: ..."
+    # EN: "Cycle read-change condition HIT — credit: '<claim>' (coverage: X, direction: Y)."
+    #     "Cycle read-change condition HIT — credit: <claim>. Direction: X. Coverage: Y."
     m = _re.match(r"Cycle (?:read-change condition HIT|falsifier FIRED) — ([^:]+): (.+)",
-                  msg_en)
+                  msg_en, flags=_re.DOTALL)
     if m:
-        cycle = m.group(1)
-        rest = m.group(2)
-        # strip trailing "Direction: X. Coverage: Y." suffix if present
-        rest_clean = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL).strip()
-        return f"周期改判条件触发 — {cycle}：{rest_clean}。"
+        from engine.falsifier_tripwires import _CYCLE_ZH, _DIRECTION_ZH
+        cycle, rest = m.group(1), m.group(2)
+        # The claim is authored prose, so it can only be rendered by looking up
+        # the zh the author wrote — no vocabulary map can gloss it. Resolve by
+        # falsifier id (stable across a re-worded claim) and fall back to the
+        # claim text for a caller that has no rule to hand.
+        # Read the direction out of the METADATA SUFFIX, not out of `rest` as a
+        # whole — a claim is free prose and may itself contain the phrase.
+        suffix = (_re.search(r"\(coverage:[^)]*direction:\s*([^)]+)\)\.?\s*$", rest)
+                  or _re.search(r"\.\s*Direction:\s*([^.]+)\.", rest))
+        direction = "confirms" if suffix and "supports" in suffix.group(1) else "refutes"
+        rest = _re.sub(r"\s*\(coverage:[^)]*\)\.?\s*$", "", rest)
+        rest = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL)
+        claim_en = rest.strip().strip("'").strip()
+        by_id, by_claim = _falsifier_registry()
+        fid = str(rule).split(":", 1)[1] if str(rule).startswith("cycle_falsifier_fired:") else ""
+        entry = by_id.get(fid) or by_claim.get(claim_en) or {}
+        claim_zh = str(entry.get("claim_zh") or "").strip()
+        return (f"周期改判条件触发 — {_CYCLE_ZH.get(cycle, cycle)}："
+                f"「{claim_zh or claim_en}」（{_DIRECTION_ZH[direction]}）。")
 
     # HY OAS widening
     # EN: "HY OAS 1-day widening +0.12pp is 2.3 sigma (level 4.56%)"
@@ -1922,12 +1956,14 @@ def home_alert_feed() -> list[dict]:
             # after the zh column landed in the parquet schema), then try the
             # template-prefix translation map for backlog entries that predate the
             # column (returns "" on no-match, falling back to English).
-            # EXCEPT for _ZH_HALF_TRANSLATED_RULES, whose persisted zh is known to
-            # carry raw English inside the Chinese wrapper — there the translator's
+            # EXCEPT for the rules whose persisted zh is known to carry raw
+            # English inside the Chinese wrapper — there the translator's
             # rebuild-from-canonical-English wins over the stored value.
+            # _zh_needs_rebuild subsumes the plain _ZH_HALF_TRANSLATED_RULES
+            # membership test and adds the per-tripwire PREFIX family.
             stored_zh = str(r.get("message_zh", "") or "").strip()
-            if not stored_zh or r["rule"] in _ZH_HALF_TRANSLATED_RULES:
-                stored_zh = _translate_macro_detail(r["message"]) or stored_zh
+            if not stored_zh or _zh_needs_rebuild(r["rule"]):
+                stored_zh = _translate_macro_detail(r["message"], r["rule"]) or stored_zh
             detail_zh = stored_zh or r["message"]
             out.append({
                 "source": "macro", "source_label": h["macro_label"],
@@ -2601,22 +2637,6 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 }
 .go-tx{display:inline}
 
-/* ===== regime-change badge on market cards ===== */
-.regime-changed{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;
- background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
- color:var(--warn);margin-left:6px;vertical-align:middle;white-space:nowrap}
-.regime-changed .l-zh{display:none}
-html[data-lang="zh"] .regime-changed .l-en{display:none}
-html[data-lang="zh"] .regime-changed .l-zh{display:inline}
-/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
-   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
-.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
-.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
-.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
-.regime-drift .l-zh{display:none}
-html[data-lang="zh"] .regime-drift .l-en{display:none}
-html[data-lang="zh"] .regime-drift .l-zh{display:inline}
-
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
 
@@ -2804,11 +2824,28 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
-    if len(g) < 30 or len(i) < 30:
+    # A null TIP is not a gap to compact — it is a MISSING CURRENT READING, and the two
+    # must not be conflated. Compaction alone anchors `pairs[-1]` on the last CLEAN day,
+    # so HK (whose `i` has been null since 2026-07-28) would publish an 11-day-stale
+    # endpoint AS today's direction, with nothing on the card saying so — the same lie as
+    # coercing the gap to 0.0, which renders a confident rdir="stable". No current
+    # reading, no verdict: disclose null, exactly like a market with no timeline at all
+    # (JP/KR/TW/GB/EZ already render that way). Writers route through `pd.isna`, so a gap
+    # always arrives as None, never NaN.
+    if not (g and i and g[-1] is not None and i[-1] is not None):
         return empty
-    N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    # Collection gaps commit as nulls in the timeline series; a null endpoint
+    # would TypeError here and a null-holed window would misstate the drift.
+    # The trajectory math needs ALIGNED g/i readings, so keep only paired
+    # non-null days — dropping gap days just widens the calendar span of the
+    # ~1-month window, and the 30-reading coverage floor now counts clean pairs.
+    pairs = [(gv, iv) for gv, iv in zip(g, i) if gv is not None and iv is not None]
+    if len(pairs) < 30:
+        return empty
+    N = min(20, len(pairs) - 1)                   # ~1 month of trading days
+    g_now, i_now = pairs[-1]
+    g_then, i_then = pairs[-1 - N]
+    dg, di = g_now - g_then, i_now - i_then
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()
@@ -2917,10 +2954,8 @@ def _g_legend(blob):
 
 
 def _g_markets(blob, us_n, cn_n, hk_n,
-               regime_changed_ccs: "set[str] | None" = None,
                standout_tickers: "dict[str, list[str]] | None" = None):
     by = {m["cc"]: m for m in blob}
-    _regime_changed = regime_changed_ccs or set()
     _tickers = standout_tickers or {}
     # Each entry: (href, ic, ten, tzh, ten_s, tzh_s, sen, szh)
     # ten_s/tzh_s = short label shown on mobile; ten/tzh = full label shown on desktop
@@ -2960,29 +2995,10 @@ def _g_markets(blob, us_n, cn_n, hk_n,
             btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
                         '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + em_html + '</em></span>'
                         '<span class="sb-go" aria-hidden="true">→</span></a>')
-        # regime-change badge on card header
-        changed_badge = (
-            '<span class="regime-changed">'
-            '<span class="l-en">changed</span>'
-            '<span class="l-zh">已切换</span>'
-            '</span>'
-        ) if cc in _regime_changed else ""
-        # regime TRAJECTORY badge — the label is never shown without its direction; a
-        # deteriorating "Goldilocks" and a firming one are opposite trades. From rdir.
-        _rd = m.get("rdir")
-        if _rd == "deteriorating":
-            drift_badge = ('<span class="regime-drift det">↘ '
-                           + _bi(m.get("rtoward_en") or "cooling", m.get("rtoward_zh") or "转弱") + '</span>')
-        elif _rd == "improving":
-            drift_badge = ('<span class="regime-drift imp">↗ '
-                           + _bi(m.get("rtoward_en") or "firming", m.get("rtoward_zh") or "转强") + '</span>')
-        else:
-            drift_badge = ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
-                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
-                     + changed_badge + drift_badge + '</div>'
+                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span></div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
             '<div class="nav mk reveal">' + "".join(cards) + '</div>')
@@ -3339,7 +3355,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
     # --- new hub sections ---
-    regime_ccs = _regime_change_ccs(alerts)
     _tickers: dict[str, list[str]] = {}
     for _mkt, _key in (("US", "us"), ("CN", "china"), ("HK", "hk")):
         _t = _standout_tickers(_key)
@@ -3347,9 +3362,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             _tickers[_mkt] = _t
     latest_rpt = _latest_report_data()
     # --- end new hub sections ---
-    markets = _g_markets(blob, us_n, cn_n, hk_n,
-                         regime_changed_ccs=regime_ccs,
-                         standout_tickers=_tickers)
+    markets = _g_markets(blob, us_n, cn_n, hk_n, standout_tickers=_tickers)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
                          latest_report=latest_rpt, ipo=ipo)
     alerts_html = _g_alerts(alerts)

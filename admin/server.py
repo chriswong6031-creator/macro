@@ -34,7 +34,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                chronicle,
                codex_panel,
                config_store,
-               content, context_lobe, email_center, entitlements, experiments,
+               content, context_lobe, edge_trust, email_center, entitlements, experiments,
                flags, ga4, github_api, github_config, gitops, health, key_alerts, long_hold,
                live_runs,
                macro_thesis,
@@ -48,6 +48,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                orchestrator_chat,
                personas,
                press,
+               program_watch,
                prophet,
                revenue,
                services, settings, site_gate,
@@ -375,6 +376,7 @@ def _summary_payload() -> dict:
         "services": _safe(services.status),
         "experiments": _safe(experiments.alert_summary),
         "key_alerts": _safe(key_alerts.panel),
+        "program_watch": _safe(program_watch.panel),
     }
     if isinstance(result["health"], dict) and "error" not in result["health"]:
         result["health"] = {
@@ -505,35 +507,61 @@ class Handler(BaseHTTPRequestHandler):
     def _authed(self) -> bool:
         return auth.valid_session(self._cookie_val(auth.SESSION_COOKIE))
 
-    def _client_id(self) -> str:
-        """Real client IP for per-client login throttling. SECURITY: the admin host is
-        grey-cloud / direct-to-origin (see app/deploy/Caddyfile), so the HTTP client is
-        the open internet and any forwarding header it sends is untrusted. Caddy injects
-        the verified TCP peer as X-Admin-Client-IP (header_up replaces a spoofed one) —
-        trust that first. Fall back to the LAST X-Forwarded-For hop, which is the element
-        Caddy appends (the real peer); the FIRST hop is attacker-controlled and must
-        never be trusted — reading it let a brute-force client rotate the header per
+    def _verified_peer(self) -> str | None:
+        """The TCP peer as verified by OUR OWN infrastructure, or None outside deployed
+        mode. This is the value nothing the caller sends can influence, and every
+        identity decision below is built on it.
+
+        Caddy injects it as X-Admin-Client-IP and `header_up` REPLACES any
+        caller-supplied copy, so it cannot be spoofed. Fall back to the LAST
+        X-Forwarded-For hop, which is the element Caddy writes — measured 2026-08-07:
+        for an UNTRUSTED peer (`trusted_proxies static private_ranges`, and the edge is
+        public) Caddy REPLACES the inbound header outright rather than appending to it,
+        so the whole header is the peer. The FIRST hop is attacker-controlled and must
+        never be trusted: reading it let a brute-force client rotate the header per
         request to land every guess in a fresh lockout bucket and defeat the throttle."""
-        if settings.deployed():
-            trusted = (self.headers.get("X-Admin-Client-IP") or "").strip()
-            if trusted:
-                return trusted[:64]
-            hops = [h.strip() for h in (self.headers.get("X-Forwarded-For") or "").split(",") if h.strip()]
-            if hops:
-                return hops[-1][:64]
+        if not settings.deployed():
+            return None
+        trusted = (self.headers.get("X-Admin-Client-IP") or "").strip()
+        if trusted:
+            return trusted[:64]
+        hops = [h.strip() for h in (self.headers.get("X-Forwarded-For") or "").split(",") if h.strip()]
+        if hops:
+            return hops[-1][:64]
+        return None
+
+    def _client_id(self) -> str:
+        """Per-client identity for the login throttle in auth.password_ok.
+
+        The verified peer USED to be the answer on its own, back when admin.* was
+        believed to be direct-to-origin. It is edge-proxied (corrected 2026-08-07), so
+        the peer is an EdgeOne origin-pull address for every real visitor and keying on
+        it alone put ALL edge-borne traffic in one bucket — an anonymous
+        operator-lockout DoS. admin.edge_trust resolves the visitor behind an ATTESTED
+        edge peer and returns the peer untouched otherwise, so a direct-to-origin caller
+        still cannot nominate its own bucket with a forwarded header. Read that module's
+        header before changing which headers are honoured here."""
+        peer = self._verified_peer()
+        if peer:
+            return edge_trust.resolve_client_id(peer, self.headers)[:64]
         try:
             return self.client_address[0]
         except Exception:  # noqa: BLE001
             return "-"
 
     def _real_client_ip(self) -> str:
-        """The visitor IP for the site-access gate's self-lockout allow-list. SECURITY:
-        the admin host is NOT behind the site's CDN, so the CDN real-client headers
-        (EO-/CF-Connecting-IP, True-Client-IP) are never set by our infra here — an
-        inbound one is attacker-supplied and must not be honoured (it would let a caller
-        poison the gate's auto-allow list). Use the verified IP from _client_id(); the
-        operator's public IP is the same whether they reach the admin host directly or
-        the CDN-fronted site, so the auto-allowed IP still matches what the gate sees."""
+        """The visitor IP for the site-access gate's self-lockout allow-list.
+
+        Same resolution as _client_id(), and for a second reason beyond throttling: this
+        value is what site_gate.save_rules() auto-allows so the operator cannot lock
+        themselves out. Behind the edge an unresolved peer would auto-allow an EDGE
+        address — i.e. every visitor sharing that node — so the edge attestation is what
+        keeps this entry meaning "the operator".
+
+        SECURITY: the CDN real-client headers a caller can forge (EO-Client-IP,
+        CF-Connecting-IP, True-Client-IP, X-Real-IP — all measured passing through the
+        edge unmodified on 2026-08-07) are still never honoured. Only EO-Connecting-IP
+        is, and only behind an attested edge peer."""
         return self._client_id()
 
     def _secure_cookie(self) -> bool:
@@ -950,6 +978,12 @@ class Handler(BaseHTTPRequestHandler):
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
                 limit = _int_param(q, "limit", 60, 1, 1000)
                 return self._json(_alerts_mod.panel(limit=limit))
+            if path == "/api/program_watch":
+                # Seasonality program watch (RUL-8: authed only, GET-only reader).
+                # Underscore, like every other multiword GET here (/api/live_runs,
+                # /api/site_gate); the panel's "Recheck now" button fetches it with
+                # ?force=1 so a re-read is a real re-read, not the 15s cache.
+                return self._json(program_watch.panel())
             if path == "/api/codex":
                 return self._json(codex_panel.panel())
             if path == "/api/live_runs":

@@ -188,8 +188,8 @@
 <body>
 <h1>{{ t('Buy Board 2.0','买入榜 2.0') }}<span class="shadow-tag">SHADOW · not live</span></h1>
 <p class="lead-p">{{ t(
-  'Names that are BOTH worth buying (trajectory up, not lagging) AND at a good entry rather than a chase — the entry signal has to have fired. Sector, subsector and theme rotation only set priority; they never decide whether a name qualifies. Two separate marks, never fused into one number: the EDGE grade and the ENTRY state.',
-  '同时满足"值得买"（趋势向上、不是落后股）和"入场点好、不是追高"——入场信号必须已经触发。板块、子行业和主题轮动只影响优先级，绝不决定一只股票能不能入选。两个标记始终分开，不合成一个数字：优势评级，和入场状态。') }}</p>
+  'Names that are BOTH good to buy (trajectory up, not Lagging) AND a good entry, not chasing — hard-gated by the validated MACD-2D × StochRSI-3D confluence (the same gate that guards setups.json). Rotation context from sector / subsector / theme engines sets PRIORITY, never a gate. Two glyphs, never one fused score: EDGE grade (colored by verdict) and ENTRY state (tier + freshness).',
+  '同时满足"值得买入"（趋势向上、非落后）与"入场点好、不追高"——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。') }}</p>
 
 <div class="strip">
   <span class="stat">{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
@@ -216,7 +216,7 @@
 
 {# ---- SETTING UP lane ---- #}
 <div class="sec"><h2>{{ t('Setting up','酝酿中') }}</h2><span class="cnt">{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
-<p class="sub">{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the "about to cross" detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——"即将交叉"检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
+<p class="sub">{{ t('These names are improving but have not confirmed yet. Every row is provisional and may change, so treat it as a watch — not an entry.','这些股票正在改善，但还没有确认。每一行都是暂定判断，仍可能变化；先放进观察列表，不要当作入场点。') }}</p>
 {{ conc_banner(d.concentration.setting_up, 'setting_up') }}
 {% if d.lanes.setting_up %}
 <div class="grid">

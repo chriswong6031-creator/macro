@@ -12,6 +12,7 @@
 {% set seo_path = "fundamental_forensics.html" %}
 {% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="tier_preview.css">
 <link rel="stylesheet" href="fundamental_forensics.css">
 </head>
 <body class="ff-page">
@@ -79,6 +80,111 @@
 
     <section class="ff-data-notice" id="ff-data-notice" aria-live="polite" hidden></section>
 
+    {#- The access gate. It replaces the workbench whenever the desk cannot be
+        read, and the ANONYMOUS variant below is server-rendered on purpose: a
+        stranger (and a crawler, which never has a session) must meet the
+        product rather than a loading skeleton. The other three states are
+        session-only, so fundamental_forensics.js renders those at runtime and
+        restores this markup verbatim from a stash. Nothing here is a finding,
+        a company, or a number read out of the private state. -#}
+    <section class="ff-gate" id="ff-gate" aria-labelledby="ff-gate-title" hidden>
+      <div class="ff-gate-state" id="ff-gate-state" data-state="signin" aria-live="polite">
+        <p class="ff-gate-chip"><span class="ff-gate-dot" aria-hidden="true"></span>{{ t('Members only', '会员可见') }}</p>
+        <h2 id="ff-gate-title">{{ t('Open to Essential members', 'Essential 会员可读') }}</h2>
+        <p class="ff-gate-stance">{{ t('Sign in to read it, or see what Essential includes.', '登录即可查阅，或先了解 Essential 包含哪些内容。') }}</p>
+        <div class="ff-gate-actions">
+          <button class="ff-gate-primary" type="button" data-gate-action="plans">{{ t('View Essential plans', '查看 Essential 方案') }}</button>
+          <button class="ff-gate-secondary" type="button" data-gate-action="signin">{{ t('Sign in', '登录') }}</button>
+        </div>
+      </div>
+
+      <div class="ff-gate-preview" id="ff-gate-preview">
+        <dl class="ff-gate-facts">
+          <div>
+            <dt>{{ t('Source', '数据来源') }}</dt>
+            <dd>SEC EDGAR</dd>
+          </div>
+          <div>
+            <dt>{{ t('Scope', '覆盖范围') }}</dt>
+            <dd>{{ t('Companies that file with the SEC', '在 SEC 披露的公司') }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('Basis', '数据口径') }}</dt>
+            <dd>{{ t('Company Facts and filing text', '公司事实与披露原文') }}</dd>
+          </div>
+          {#- The only numbers on this page. Aggregate counts stay free by the
+              rule templates/tier_preview.js states outright — "a count names
+              nobody", while the member rows are the product — so this names no
+              company, ranks nothing and reveals no finding. Both counts come
+              from the build's own projection of state["summary"], never a
+              literal, so they cannot outlive their recompute; when the build
+              supplies no summary (fresh clone, CI checkout, first build) the
+              fact is omitted whole rather than printing a zero. -#}
+          {%- if state_summary.get('companies') and state_summary.get('findings') %}
+          <div>
+            <dt>{{ t('Last pass', '最近一轮') }}</dt>
+            <dd>{{ t(
+              '{:,} companies read, {:,} changes ranked for a look'.format(state_summary['companies'], state_summary['findings']),
+              '读取 {:,} 家公司，排出 {:,} 项值得一看的变化'.format(state_summary['companies'], state_summary['findings'])
+            ) }}</dd>
+          </div>
+          {%- endif %}
+        </dl>
+
+        <ol class="ff-gate-steps">
+          <li>
+            <span class="ff-gate-step-index" aria-hidden="true">01</span>
+            <h3>{{ t('Read', '读取') }}</h3>
+            <p>{{ t('Rule-based checks read each new filing and rank what deserves a look.', '基于规则的检查逐份读取新的披露文件，并对值得关注的变化排序。') }}</p>
+          </li>
+          <li>
+            <span class="ff-gate-step-index" aria-hidden="true">02</span>
+            <h3>{{ t('Compare', '对照') }}</h3>
+            <p>{{ t('This filing’s wording and numbers are set against the one before it.', '把本次披露的措辞与数字，与上一次逐项对照。') }}</p>
+          </li>
+          <li>
+            <span class="ff-gate-step-index" aria-hidden="true">03</span>
+            <h3>{{ t('Trace', '溯源') }}</h3>
+            <p>{{ t('Every result links back to the SEC document it was read from.', '每项结果都能回到其读取来源的 SEC 文件。') }}</p>
+          </li>
+        </ol>
+
+        {#- The signature: the product's own evidence furniture, shown empty.
+            Deliberately NOT a blurred or invented sample row — the withheld
+            slots are ruled placeholders, which stay honest in both themes and
+            put no fabricated finding into a public byte. -#}
+        <section class="ff-gate-anatomy" aria-labelledby="ff-gate-anatomy-title">
+          <p class="ff-kicker">{{ t('The receipt behind every result', '每项结果背后的凭据') }}</p>
+          <h3 id="ff-gate-anatomy-title">{{ t('What one result opens to', '一项结果可展开查看') }}</h3>
+          <ol class="ff-gate-slots">
+            <li>
+              <span class="ff-gate-slot-index" aria-hidden="true">01</span>
+              <span class="ff-gate-slot-label">{{ t('Normalized inputs', '标准化输入') }}</span>
+              <span class="ff-gate-rule" aria-hidden="true"></span>
+            </li>
+            <li>
+              <span class="ff-gate-slot-index" aria-hidden="true">02</span>
+              <span class="ff-gate-slot-label">{{ t('The rule and its threshold', '规则与阈值') }}</span>
+              <span class="ff-gate-rule" aria-hidden="true"></span>
+            </li>
+            <li>
+              <span class="ff-gate-slot-index" aria-hidden="true">03</span>
+              <span class="ff-gate-slot-label">{{ t('What changed', '变化内容') }}</span>
+              <span class="ff-gate-rule" aria-hidden="true"></span>
+            </li>
+            <li>
+              <span class="ff-gate-slot-index" aria-hidden="true">04</span>
+              <span class="ff-gate-slot-label">{{ t('SEC source link', 'SEC 来源链接') }}</span>
+              <span class="ff-gate-rule" aria-hidden="true"></span>
+            </li>
+          </ol>
+          <p class="ff-gate-anatomy-foot">{{ t('Values are shown as reported. Missing facts stay missing — nothing is filled in.', '数值按披露原样呈现；缺失事实保持缺失，不做填补。') }}</p>
+        </section>
+
+        <p class="ff-gate-limit">{{ t('A comparison of text and numbers — not a judgment about motive, materiality, or financial impact.', '这是文本与数字的对比，不代表对动机、重大性或财务影响的判断。') }}</p>
+      </div>
+    </section>
+
     <nav class="ff-tabs" aria-label="Forensics views">
       <div class="ff-tablist" role="tablist" aria-label="Forensics views">
         <button class="ff-tab is-active" id="ff-tab-radar" type="button" role="tab"
@@ -99,7 +205,7 @@
         </button>
         <button class="ff-tab" id="ff-tab-timeline" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-timeline" tabindex="-1" data-tab="timeline">
-          <span class="ff-tab-index" aria-hidden="true">05</span>{{ t('Filing trail', '申报轨迹') }}
+          <span class="ff-tab-index" aria-hidden="true">05</span>{{ t('Filing trail', '披露轨迹') }}
         </button>
         <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
@@ -164,7 +270,7 @@
     <section class="ff-panel" id="ff-panel-disclosures" role="tabpanel" aria-labelledby="ff-tab-disclosures" tabindex="0" hidden>
       <header class="ff-panel-head ff-disclosure-head">
         <div>
-          <p class="ff-kicker">{{ t('Filing change feed', '申报变化动态') }}</p>
+          <p class="ff-kicker">{{ t('Filing change feed', '披露变化动态') }}</p>
           <h2>{{ t('What changed in the filing', '财报披露有哪些变化') }}</h2>
           <p>{{ t('This is a text comparison, not an explanation of motive, materiality, or financial impact.', '这是文本对比，不代表对动机、重大性或财务影响的解释。') }}</p>
         </div>
@@ -197,9 +303,9 @@
     <section class="ff-panel" id="ff-panel-timeline" role="tabpanel" aria-labelledby="ff-tab-timeline" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker">{{ t('Filing trail', '申报轨迹') }}</p>
+          <p class="ff-kicker">{{ t('Filing trail', '披露轨迹') }}</p>
           <h2>{{ t('The filing record behind this review', '本次审阅对应的财报记录') }}</h2>
-          <p>{{ t('Confirm the reporting form, filing date, accession, and original SEC document before drawing a conclusion.', '在得出结论前，请确认申报表格、申报日期、文件编号及 SEC 原文。') }}</p>
+          <p>{{ t('Confirm the reporting form, filing date, accession, and original SEC document before drawing a conclusion.', '在得出结论前，请确认报表类型、披露日期、文件编号及 SEC 原文。') }}</p>
         </div>
       </header>
       <div class="ff-timeline" id="ff-timeline" aria-label="Filing comparison timeline"></div>
@@ -302,6 +408,7 @@
 </template>
 
 <script src="theme.js" defer></script>
+<script src="tier_preview.js" defer></script>
 <script src="fundamental_forensics.js" defer></script>
 </body>
 </html>

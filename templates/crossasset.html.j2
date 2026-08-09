@@ -392,7 +392,7 @@
   </table>
   <p class="ca-note">
     {{ t('Trend = sign of the trailing 3/6/12-month return averaged across horizons. Context — not a buy list.',
-        '趋势 = 过去3/6/12个月收益符号均值。仅供参考，非买入清单。') }}
+        '趋势 = 过去3/6/12个月收益符号均值。仅作背景，非买入清单。') }}
   </p>
 </div>
 {% endif %}
@@ -785,7 +785,7 @@
     {% endfor %}
   </div>
   <p class="ca-note">
-    {{ t('Carry is background only — short history, not a tested signal.', '套息仅供参考——历史较短，非经检验的信号。') }}
+    {{ t('Carry is background only — short history, not a tested signal.', '套息仅为背景——历史较短，非经检验的信号。') }}
     {% if carry.note is not none %}
     <span class="qm" tabindex="0"
       data-tip-en="{{ carry.note }}"

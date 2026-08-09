@@ -161,6 +161,16 @@ def test_merge_idempotent(tmp_path, monkeypatch):
 # build_track tests
 # ---------------------------------------------------------------------------
 
+# build_track applies the file's ONE era rule (G3 2026-08-06): rows dated before
+# LEDGER_HISTORY_FROM describe the 120-name broad-screen board, not the product that
+# ships today, and are excluded here exactly as emit_ledger already excluded them.
+# These fixtures therefore date IN-ERA. The date is a fixed constant, not a
+# wall-clock offset, so it cannot expire; the exclusion itself is pinned separately
+# in TestOneEraRule below.
+_IN_ERA = "2026-06-30"
+_PRE_ERA = "2026-06-16"
+
+
 def _boards_stub(*as_ofs):
     return [{"as_of": a, "rows": []} for a in as_ofs]
 
@@ -171,16 +181,16 @@ def _names_stub():
 
 def test_build_track_never_empty_with_rows():
     """build_track must not emit empty:true when df has rows — the core regression."""
-    df = _minimal_grade_df(n=5)
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=5)
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "empty" not in track, "build_track emitted empty:true with non-empty df"
     assert track["graded_rows_total"] == 5
 
 
 def test_build_track_hit_rate_in_range():
     """Hit rate is between 0 and 1; n matches input."""
-    df = _minimal_grade_df(n=10, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=10, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]["vs_spy"]
     assert 0.0 <= buy_h5["hit_rate"] <= 1.0
     assert buy_h5["n"] == 10
@@ -195,8 +205,8 @@ def test_build_track_empty_df_emits_empty_flag():
 
 def test_build_track_precision_at_k_present():
     """precision_at_k keys exist for the buy lane at each horizon."""
-    df = _minimal_grade_df(n=6, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=6, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "precision_at_k_board_order_vs_spy" in buy_h5
     assert "precision_at_k_alpha_order_vs_spy" in buy_h5
@@ -221,8 +231,8 @@ def test_graded_df_carries_tier_cascade():
 def test_build_track_by_tier_cascade_present():
     """W0.2b: build_track emits by_tier_cascade in the buy_lane block so downstream
     consumers can stratify graded results by T1/T2/T3/T4 cascade tier."""
-    df = _minimal_grade_df(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
     assert "by_tier_cascade" in buy_h5, "by_tier_cascade missing from buy_lane output"
     # the strata should be non-empty (the df has T1/T2/T3/T4 with n=1 each)
@@ -231,8 +241,8 @@ def test_build_track_by_tier_cascade_present():
 
 def test_by_tier_cascade_hit_stats_are_bounded():
     """W0.2b: per-tier hit_rate in by_tier_cascade is between 0 and 1 (sanity)."""
-    df = _minimal_grade_df(n=8, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df(as_of=_IN_ERA, n=8, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     by_tier = track["per_horizon"]["h5"]["buy_lane"]["by_tier_cascade"]
     for tier, stats in by_tier.items():
         if "hit_rate" in stats:
@@ -397,8 +407,8 @@ def test_63d_lane_in_horizons():
 
 def test_63d_lane_graded_in_build_track():
     """W0.1 B-b: build_track processes h63 rows and emits per_horizon.h63 block."""
-    df = _minimal_grade_df_with_h63(n=4, lane="buy")
-    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    df = _minimal_grade_df_with_h63(as_of=_IN_ERA, n=4, lane="buy")
+    track = build_track(df, _boards_stub(_IN_ERA), _names_stub())
     assert "h63" in track.get("per_horizon", {}), "h63 block missing from per_horizon"
     h63_block = track["per_horizon"]["h63"]
     assert h63_block.get("overall_vs_spy", {}).get("n", 0) == 4
@@ -1021,3 +1031,94 @@ def test_backfill_archetype_noop_without_the_column():
     out, n = _backfill_archetype(df)
     assert n == 0
     assert "archetype" not in out.columns
+
+
+# ── disclosed null eras: the hole that must NOT be repaired by backfilling ────
+#
+# data/us_board_ledger/snapshots.jsonl has no rows for 2026-08-03..08-06. That
+# looks exactly like an outage someone should fix, and the obvious fix — backfill
+# the dates — is the WRONG action, because the board published on those days but
+# ranked on factors frozen at 2026-07-31.
+#
+# scripts/build_stock_library.py:3850 ranks by alpha
+# (`rank_setups(cand, as_of=alpha_asof, rank_by="alpha", ...)`), and every
+# site/factordata/alpha.json revision from 2026-07-31T20:35Z to 2026-08-06T16:36Z
+# carries as_of=2026-07-31 — one distinct value across the whole window. So those
+# boards ordered names by six-day-stale factors while pricing entry zones off
+# current data. Grading them would teach Prophet from that hybrid.
+#
+# Operator adjudication 2026-08-07: disclosed null era, no graded entries. These
+# tests are what make the disclosure load-bearing rather than prose — filling the
+# window turns them red and forces a conscious decision.
+
+import json as _json  # noqa: E402
+
+_LEDGER_DIR = Path(__file__).resolve().parents[1] / "data" / "us_board_ledger"
+_DISCLOSED_GAPS = _LEDGER_DIR / "disclosed_gaps.json"
+_SNAPSHOTS = _LEDGER_DIR / "snapshots.jsonl"
+
+
+def _gaps() -> list[dict]:
+    doc = _json.loads(_DISCLOSED_GAPS.read_text())
+    assert doc.get("schema_version"), "disclosed_gaps.json must carry a schema_version"
+    return doc.get("gaps") or []
+
+
+def _snapshot_dates() -> set[str]:
+    out = set()
+    for line in _SNAPSHOTS.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.add(str(_json.loads(line).get("as_of"))[:10])
+        except Exception:  # noqa: BLE001 — a malformed line is not this test's subject
+            continue
+    return out
+
+
+def test_the_disclosed_null_era_is_declared_with_its_reason():
+    """A gap with no stated reason is indistinguishable from an unnoticed outage."""
+    gaps = _gaps()
+    assert gaps, "disclosed_gaps.json lists no gaps — did the file get truncated?"
+    frozen = [g for g in gaps if g.get("id") == "us-board-frozen-alpha-2026-08"]
+    assert frozen, "the 2026-08 frozen-alpha era must stay declared"
+    g = frozen[0]
+    assert g["gradeable"] is False
+    assert g["backfillable"] is False
+    assert g["missing_trading_days"] == [
+        "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"
+    ]
+    # the reason must name the MECHANISM, not just assert badness
+    assert "rank_by" in g["why_not_gradeable"] or "alpha" in g["why_not_gradeable"]
+    assert g["adjudication"]["by"] == "operator"
+
+
+def test_no_graded_rows_were_backfilled_into_a_disclosed_null_era():
+    """THE load-bearing assertion: the hole must stay a hole.
+
+    If a future session 'repairs' the gap by backfilling snapshots for those dates,
+    this goes red. That is the point — the window is not missing data, it is data
+    that must not be graded, and reopening it needs a NEW board_definition era (a
+    re-ranked board is a different admission rule from the one that published).
+    """
+    dates = _snapshot_dates()
+    for g in _gaps():
+        if g.get("gradeable") is not False:
+            continue
+        intruders = sorted(set(g["missing_trading_days"]) & dates)
+        assert not intruders, (
+            f"snapshots.jsonl now carries rows for {intruders}, which sit inside the "
+            f"disclosed null era {g['id']!r} ({g['headline']}). Those days are not "
+            f"gradeable: {g['why_not_gradeable'][:160]}... If this backfill is "
+            f"deliberate, it needs a NEW board_definition era stamp and this gap "
+            f"record must be amended in the same change — do not just delete the test."
+        )
+
+
+def test_the_disclosed_window_is_still_absent_from_the_ledger():
+    """Guards the guard: if snapshots.jsonl ever loses its 07-31 anchor the test above
+    could pass vacuously against an empty file."""
+    dates = _snapshot_dates()
+    assert len(dates) >= 17, f"snapshots.jsonl shrank to {len(dates)} dates — read it before trusting the gap assertions"
+    assert "2026-07-31" in dates, "the pre-gap anchor date is missing; the ledger changed shape"

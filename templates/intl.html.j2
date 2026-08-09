@@ -479,7 +479,7 @@
     <span style="flex:1"></span>
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('Prophet signals from major non-US markets, ranked within their own market. Search any name above.', '主要非美市场 Prophet 选股，按各自市场内部排序。可在上方搜索。') }}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Prophet signals from major non-US markets, ranked within their own market. Search any name above.', '主要非美市场先知选股，按各自市场内部排序。可在上方搜索。') }}
     <a href="intl.html" style="color:var(--link);font-weight:600">← {{ t('Macro comparison', '宏观对比') }}</a></p>
 </div>
 {% endif %}
@@ -1001,7 +1001,7 @@
         {% if r.vel_20d_bp is defined and r.vel_20d_bp is not none %}
         {% set _vdir = '↑' if r.vel_20d_bp > 0 else '↓' if r.vel_20d_bp < 0 else '→' %}
         {% set _vcls = 'neg' if r.vel_20d_bp > 0 else 'pos' if r.vel_20d_bp < 0 else '' %}
-        {% set _vz_tip_en = 'Yield moved ' ~ ('%+.1f'|format(r.vel_20d_bp)) ~ ' bp over 20 days — ' ~ ('%+.2f'|format(r.vel_20d_z) if r.vel_20d_z is defined and r.vel_20d_z is not none else '—') ~ ' against its own 3-year normal. Rising yields are a headwind for bond prices.' %}
+        {% set _vz_tip_en = '20-day yield velocity: ' ~ ('%+.1f'|format(r.vel_20d_bp)) ~ ' bp. Z-score vs 3y: ' ~ ('%+.2f'|format(r.vel_20d_z) if r.vel_20d_z is defined and r.vel_20d_z is not none else '—') ~ '. Rising yields = bond price headwind.' %}
         {% set _vz_tip_zh = '20日利率变化速度：' ~ ('%+.1f'|format(r.vel_20d_bp)) ~ ' bp。相对3年Z分数：' ~ ('%+.2f'|format(r.vel_20d_z) if r.vel_20d_z is defined and r.vel_20d_z is not none else '—') ~ '。利率上升 = 债券价格逆风。' %}
         <span class="rk">{{ t('10y vel 20d', '10年20日速度') }}</span>
         <span class="rv {{ _vcls }}" data-tip-en="{{ _vz_tip_en }}" data-tip-zh="{{ _vz_tip_zh }}">
@@ -1366,7 +1366,7 @@
   </div><!-- /hero chips -->
 
   <div class="ird-asof" style="margin-top:14px;">
-    {{ t('As of ' + (RD.get('built', '')[:10] or '—') + ' · context only, not a forecast', '截至 ' + (RD.get('built', '')[:10] or '—') + ' · 仅供参考，非预测') }}
+    {{ t('As of ' + (RD.get('built', '')[:10] or '—') + ' · context only, not a forecast', '截至 ' + (RD.get('built', '')[:10] or '—') + ' · 仅作背景，非预测') }}
   </div>
 </div><!-- /ird-stage -->
 
@@ -1964,7 +1964,7 @@
 
 <!-- ===== Standout stocks ===== -->
 <div class="panel">
-  <h2>{{ t('Prophet Stock Signals', 'Prophet 选股') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
+  <h2>{{ t('Prophet Stock Signals', '先知选股') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
   {% set buys = (setups.buy if setups else []) %}
   {% if buys %}
   {# shared progressive "See more" — theme.js initShowMore inserts the .sm-bar
@@ -2012,7 +2012,7 @@
     {% endfor %}
   </div>
   <p class="caveat" style="margin-top:10px">{{ t('Each card is ranked against its own market. Click for details.', '每张卡片都相对自身市场排序。点击查看详情。') }}</p>
-  {% else %}<p class="muted small">{{ t('Prophet signals unavailable — universe still building.', 'Prophet 选股不可用 — 个股库构建中。') }}</p>{% endif %}
+  {% else %}<p class="muted small">{{ t('Prophet signals unavailable — universe still building.', '先知选股不可用 — 个股库构建中。') }}</p>{% endif %}
 </div>
 
 {% endif %}

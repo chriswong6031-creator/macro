@@ -151,6 +151,10 @@
         "sampled_awards": {"$ref": "#/$defs/metadataScalar"},
         "identity_failures": {"$ref": "#/$defs/metadataScalar"},
         "state": {"$ref": "#/$defs/metadataScalar"},
+        "published_this_run": {"$ref": "#/$defs/metadataScalar"},
+        "collection_state": {"$ref": "#/$defs/metadataScalar"},
+        "collection_bounded_sample_complete": {"$ref": "#/$defs/metadataScalar"},
+        "collection_source_exhausted": {"$ref": "#/$defs/metadataScalar"},
         "full_usaspending_corpus": {"$ref": "#/$defs/metadataScalar"},
         "bounded_sample_complete": {"$ref": "#/$defs/metadataScalar"},
         "source_exhausted": {"$ref": "#/$defs/metadataScalar"},
@@ -238,7 +242,11 @@
             "required": ["ticker", "recipient_search_text"],
             "properties": {
               "ticker": {"type": "string"},
-              "recipient_search_text": {"type": "string"}
+              "recipient_search_text": {"type": "string"},
+              "recipient_query_terms": {
+                "type": "array", "minItems": 1, "items": {"type": "string"},
+                "description": "Terms actually sent to the discovery rail. Producer-required: the collector always emits this (pinned by tests/test_usaspending_awards.py) and its appearance in the manifest triggers the one-time forward-event rebaseline. Schema-optional because canonical vintages committed before the field existed must stay readable; requiredness may return only after the committed store's manifest carries it."
+              }
             }
           }
         },

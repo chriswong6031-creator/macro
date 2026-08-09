@@ -190,6 +190,7 @@ def all_adapters() -> dict:
         ("usaspending_awards", "collectors.usaspending_awards", "UsaspendingAwardsAdapter"),  # keyless award/action detail + PIT snapshots -> Government Revenue Foresight
         ("usaspending_subawards", "collectors.usaspending_subawards", "UsaspendingSubawardsAdapter"),  # bounded official count + identity pages; source-only, non-additive subaward context
         ("usaspending_idv_graph", "collectors.usaspending_idv_graph", "UsaspendingIdvGraphAdapter"),  # bounded IDV discovery + exact parent/child activity receipts; identity context only
+        ("sbir_awards", "collectors.sbir_awards", "SbirAwardsAdapter"),  # append-only SBIR.gov Phase I/II observations; exact agency_tracking_number identity, 10-req/10-min paced
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
@@ -387,6 +388,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "usaspending_idv_graph", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
+    "sbir_awards",  # GOVREV W10-R3: paced at 63s/request against a published 10-req/10-min public limit
 }
 
 
@@ -423,7 +425,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
                              audit_fred_groups, audit_massive_store, audit_price_basis,
-                             audit_stocks_freshness)
+                             audit_reused_tickers, audit_stocks_freshness)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -442,6 +444,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # gaps only) and check_price_store_freshness (SPY/yahoo only). Per-name
             # stale-tip tripwire; flags-only, never gates this run.
             ("stocks_freshness", lambda: audit_stocks_freshness.run(cfg=cfg)),
+            # 2026-08-06 ECHO identity swap: a dead name's key (Echo Global Logistics,
+            # taken private 2021) silently filled with EchoStar's full history after
+            # its SATS->ECHO rename — invisible to every gap/freshness check because
+            # the file is fresh, continuous, and internally consistent. Dead-registry
+            # cross-reference + NASDAQ-directory presence tripwire; flags-only.
+            ("reused_tickers", lambda: audit_reused_tickers.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
@@ -947,7 +955,11 @@ def main() -> int:
     if "yahoo" in registry:
         try:
             from collectors.yahoo import YahooAdapter, audit_store_freshness
-            audit_store_freshness(YahooAdapter().all_tickers(), group="yahoo")
+            # maintained_tickers(), NOT all_tickers(): a delisted name is dropped from
+            # the FETCH list but its store still exists and still has to be audited —
+            # that is the only check that would catch a wrong exit row or a reused
+            # ticker refilling under a dead name.
+            audit_store_freshness(YahooAdapter().maintained_tickers(), group="yahoo")
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             print(f"::warning title=yahoo store audit crashed::{e}", flush=True)
 

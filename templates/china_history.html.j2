@@ -86,7 +86,7 @@
 
   <div class="panel">
     <h2>{{ t('Regime lifespans — base rates', '周期存续期 — 基准概率') }}
-      {{ help("Every regime period since ~2006 in this classifier: how many there were, how long they typically lasted, and where they went next. China regimes are shorter and less stable than the US — treat as context.", "本分类器自约 2006 年以来的每个周期时段：共出现多少次、通常持续多久、结束后转向何处。中国的周期比美国更短、更不稳定 — 仅供参考。") }}
+      {{ help("Every regime period since ~2006 in this classifier: how many there were, how long they typically lasted, and where they went next. China regimes are shorter and less stable than the US — treat as context.", "本分类器自约 2006 年以来的每个周期时段：共出现多少次、通常持续多久、结束后转向何处。中国的周期比美国更短、更不稳定 — 仅作背景参考。") }}
     </h2>
     <table>
       <tr><th>{{ t('regime', '周期') }}</th><th>{{ t('periods', '次数') }}</th><th>{{ t('median length (days)', '存续中位数（天）') }}</th><th>{{ t('most common next', '最常见的下一周期') }}</th></tr>
@@ -205,10 +205,10 @@
       </tr>
       {% endfor %}
     </table>
-    <p style="font-size:10.5px;color:var(--muted);margin:6px 0 0">{{ t('Display-only analog readout. Context only — no forward projection or signal (CN-SYS-R1).', '展示性历史类比读取。仅供参考 — 不作前瞻预测或信号解读（CN-SYS-R1）。') }}</p>
+    <p style="font-size:10.5px;color:var(--muted);margin:6px 0 0">{{ t('Display-only analog readout. Context only — no forward projection or signal (CN-SYS-R1).', '展示性历史类比读取。仅供背景参考 — 不作前瞻预测或信号解读（CN-SYS-R1）。') }}</p>
     {% endif %}
 
-    <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5">{{ t('Context-only (CN-SYS-R1). Phase tape accruing since W3 launch. ERA table covers 2005→. Watch-condition ledger graded nightly.', '仅供参考（CN-SYS-R1）。阶段磁带自W3启动后持续积累。ERA表格涵盖2005年至今。改判条件台账每夜评分。') }}</p>
+    <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5">{{ t('Context-only (CN-SYS-R1). Phase tape accruing since W3 launch. ERA table covers 2005→. Watch-condition ledger graded nightly.', '仅供背景参考（CN-SYS-R1）。阶段磁带自W3启动后持续积累。ERA表格涵盖2005年至今。改判条件台账每夜评分。') }}</p>
   </div>
   <script>
   (function(){

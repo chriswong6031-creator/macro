@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -123,6 +124,33 @@ RETRIEVAL_LANE_WEIGHTS = {
 RETRIEVAL_LANE_ORDER = tuple(RETRIEVAL_LANE_WEIGHTS)
 DISCOVERY_SCOPE_REGISTRATION = "registration_issuance"
 DISCOVERY_SCOPE_RECONCILIATION = "issuer_reconciliation"
+
+# A filing whose retrieval keeps failing may not be retried forever.  Before this
+# bound, a systematic defect (the 2026-08-06 NaN manifest abort below) re-deferred
+# the SAME filings every night: 130 identical warnings on 2026-08-06, and the count
+# could only grow, because nothing ever left the queue.  That is the creep shape —
+# an unbounded backlog whose only symptom is log volume.
+#
+# Three recorded unclosed attempts park an accession.  Parking is a QUEUE
+# decision, never an evidence decision: no manifest, attempt row, or discovery row
+# is deleted or rewritten, so a parked filing is still fully auditable and raising
+# ``CS_MAX_RETRIEVAL_ATTEMPTS`` picks it straight back up.  The parked count is
+# printed every run, so a bounded backlog stays visible instead of going quiet.
+MAX_RETRIEVAL_ATTEMPTS = 3
+MAX_RETRIEVAL_ATTEMPTS_ENV = "CS_MAX_RETRIEVAL_ATTEMPTS"
+# ``storage_deferred``/``transient_error`` retained NOTHING: the retrieval itself
+# failed and the attempt row is the only thing left to show for it.
+_RETRIEVAL_FAILURE_STATES = frozenset({"storage_deferred", "transient_error"})
+# What the bound must count is an attempt that left the queue item OPEN, and that
+# is a strictly larger set.  ``stored`` closes the item through ``have_complete``.
+# ``stored_parser_deferred`` does NOT: it retained the bytes, but
+# ``_eligible_complete_accessions`` admits only ``eligible``/``clean`` manifests,
+# so a parser-deferred filing is never in ``have_complete`` and re-enters the
+# queue every night.  Counting only the two retrieval failures therefore left the
+# WORST class of filing — an SEC error page, a corrupt bundle, suspect bytes — as
+# the one backlog the bound could never close.  That is the same creep shape,
+# reopened for exactly the filings least likely to heal on their own.
+_UNCLOSED_ATTEMPT_STATES = _RETRIEVAL_FAILURE_STATES | {"stored_parser_deferred"}
 
 _DISCOVERY_COLUMNS = [
     "accession", "cik", "ticker", "company_name", "form", "filing_date",
@@ -809,8 +837,67 @@ def _fair_lane_rows(
     return selected
 
 
+def _max_retrieval_attempts() -> int:
+    """Resolve the parking bound, honouring the operator override at the point of use.
+
+    Read per call rather than frozen at import, so ``CS_MAX_RETRIEVAL_ATTEMPTS``
+    exported for one manual run — or set in the workflow after a systematic defect
+    is fixed — takes effect without an edit and a deploy.  This is the ONLY lever
+    that unparks a filing; there is no ``--rebuild`` flag on this collector.
+
+    An unparsable or non-positive value falls back to the default instead of
+    raising: a typo in a workflow variable must not abort the night, and it must
+    not silently uncap the backlog the bound exists to close either.
+    """
+    raw = (os.environ.get(MAX_RETRIEVAL_ATTEMPTS_ENV) or "").strip()
+    if not raw:
+        return MAX_RETRIEVAL_ATTEMPTS
+    try:
+        value = int(raw)
+    except ValueError:
+        value = 0
+    if value <= 0:
+        log.warning(
+            "sec_capital_structure: %s=%r is not a positive integer — using the "
+            "default bound %d", MAX_RETRIEVAL_ATTEMPTS_ENV, raw, MAX_RETRIEVAL_ATTEMPTS,
+        )
+        return MAX_RETRIEVAL_ATTEMPTS
+    return value
+
+
+def parked_accessions(
+    attempts: pd.DataFrame, *, max_attempts: int | None = None
+) -> set[str]:
+    """Accessions with ``max_attempts`` attempts that never closed the queue item.
+
+    A ``stored`` attempt is terminal for the queue — the bytes land in
+    ``have_complete`` and the accession never comes back — so every OTHER recorded
+    attempt for a still-queued accession is by construction a *consecutive* unclosed
+    attempt.  A plain count is therefore the consecutive count, with no ordering to
+    get wrong.  ``stored_parser_deferred`` counts: it retained the bytes but cannot
+    be ``eligible``/``clean``, so it never reaches ``have_complete`` and the filing
+    comes back tomorrow night unless the bound holds it.
+
+    This bounds the BACKLOG, not the evidence: parking hides a filing from the
+    retrieval queue and deletes nothing.  Raising ``CS_MAX_RETRIEVAL_ATTEMPTS``
+    brings it straight back.
+    """
+    if max_attempts is None:
+        max_attempts = _max_retrieval_attempts()
+    if attempts.empty or "accession" not in attempts.columns or max_attempts <= 0:
+        return set()
+    unclosed = attempts.loc[attempts["state"].isin(_UNCLOSED_ATTEMPT_STATES)]
+    if unclosed.empty:
+        return set()
+    counts = unclosed["accession"].astype(str).value_counts()
+    return set(counts.loc[counts >= int(max_attempts)].index)
+
+
 def _retrieval_queue_candidates(
-    discovery: pd.DataFrame, *, have_complete: set[str]
+    discovery: pd.DataFrame,
+    *,
+    have_complete: set[str],
+    parked: set[str] | frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
     """Build fail-closed eligible candidates and their auditable lane labels."""
     if not {"form", "accession"}.issubset(discovery.columns):
@@ -837,6 +924,7 @@ def _retrieval_queue_candidates(
     return queue.loc[
         queue["_retrieval_lane"].notna()
         & ~queue["accession"].astype(str).isin(have_complete)
+        & ~queue["accession"].astype(str).isin(parked)
     ].copy()
 
 
@@ -956,6 +1044,7 @@ def select_retrieval_queue(
     have_complete: set[str],
     max_filings: int,
     now: datetime,
+    parked: set[str] | frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
     """Select a bounded queue with auditable lane quotas and aging.
 
@@ -965,7 +1054,9 @@ def select_retrieval_queue(
     current-report/periodic reconciliation evidence.
     """
     columns = list(discovery.columns)
-    queue = _retrieval_queue_candidates(discovery, have_complete=have_complete)
+    queue = _retrieval_queue_candidates(
+        discovery, have_complete=have_complete, parked=parked
+    )
     if queue.empty or max_filings <= 0:
         empty = queue.head(0)[columns]
         empty.attrs["retrieval_queue_receipt"] = _queue_receipt(
@@ -1012,6 +1103,55 @@ def select_retrieval_queue(
         for row in selected
     }
     return result
+
+
+def _manifest_scalar(
+    value: Any, *, field: str | None = None, sanitized: list[str] | None = None,
+) -> Any:
+    """Normalize a pandas missing-value sentinel to the JSON ``null`` the contract declares.
+
+    Discovery rows reach ``_manifest_record`` from a pandas frame, and pandas
+    represents an absent scalar as ``float('nan')`` — a *sentinel*, not a number.
+    Every discovery-sourced field in the manifest is declared ``["string", "null"]``
+    by ``contracts/capital_structure_source_manifest.schema.json`` (``collection_scope``
+    even lists ``null`` in its enum), so ``None`` is the contract-correct value and
+    NaN is not a legal value at all.
+
+    Left unconverted the sentinel reaches ``canonical_manifest_bytes`` →
+    ``_native`` and raises ``TypeError: non-finite numbers are not canonical
+    manifest values`` (``engine/capital_structure/source_identity.py:112``), which
+    the retrieval loop's broad ``except Exception`` records as a per-filing
+    deferral — so the filing retries and fails identically every night.  That is
+    the 2026-08-06 nightly (130 deferrals in one run).
+
+    Never coerce to ``0.0`` or ``""``: nulling records "we do not know", while a
+    zero would publish a fabricated observation into immutable evidence.  Nothing
+    this touches is a measurement, so there is no number to lose.
+
+    ``field``/``sanitized`` are the disclosure channel.  The 2026-08-06 storm said
+    only "non-finite numbers are not canonical manifest values" — 130 times, naming
+    no field — and an undiagnosable repeat is why this ran six nights.  Only a REAL
+    conversion is appended: a field that was already ``None`` is not reported, so
+    "sanitized" never conflates with "legitimately absent" (``filing.file_number``
+    is routinely null by contract).
+    """
+    if value is None:
+        return value
+    converted = False
+    if isinstance(value, float):
+        converted = not math.isfinite(value)
+    elif not isinstance(value, (str, bytes, bool, int, list, tuple, dict)):
+        # ``pd.NA``/``NaT`` are not floats.  ``pd.isna`` is array-aware, so it is
+        # reached only for scalars — a list (``issuer.aliases``) would raise here.
+        try:
+            converted = bool(pd.isna(value))
+        except (TypeError, ValueError):
+            converted = False
+    if not converted:
+        return value
+    if sanitized is not None and field:
+        sanitized.append(field)
+    return None
 
 
 def _read_table(path: Path, columns: list[str]) -> pd.DataFrame:
@@ -1258,6 +1398,7 @@ class SecCapitalStructureAdapter(Adapter):
         first_seen_at: str,
         document_version: int,
         parent_manifest_id: str | None,
+        sanitized: list[str] | None = None,
     ) -> dict:
         digest = hashlib.sha256(raw).hexdigest()
         from engine.capital_structure.source_store import object_key_for_sha256
@@ -1270,6 +1411,16 @@ class SecCapitalStructureAdapter(Adapter):
         ):
             raise ValueError("source-store receipt does not bind the exact manifest bytes")
         ticker = discovery.get("ticker")
+        # Named in the disclosure like every other sanitized field.  A NaN company
+        # name silently DROPS the issuer alias below, and an undisclosed drop is
+        # the shape that made the 08-06 storm undiagnosable in the first place.
+        company_name = _manifest_scalar(
+            discovery.get("company_name"), field="issuer.aliases", sanitized=sanitized,
+        )
+
+        def _scalar(value: Any, field: str) -> Any:
+            return _manifest_scalar(value, field=field, sanitized=sanitized)
+
         record = {
             "schema": "capital_structure.source_manifest/v1",
             "source_system": "sec_edgar",
@@ -1278,17 +1429,21 @@ class SecCapitalStructureAdapter(Adapter):
                 "issuer_id": f"sec:cik:{str(discovery['cik']).zfill(10)}",
                 "cik": str(discovery["cik"]).lstrip("0") or "0",
                 "ticker": ticker if isinstance(ticker, str) and ticker else None,
-                "aliases": [str(discovery.get("company_name") or "")]
-                if discovery.get("company_name") else [],
+                # ``company_name`` is nulled BEFORE the truthiness test on purpose:
+                # ``float('nan')`` is truthy, so the raw value used to publish the
+                # alias ``["nan"]`` for every row whose name was absent.
+                "aliases": [str(company_name)] if company_name else [],
             },
             "filing": {
-                "accession": discovery["accession"],
-                "form": discovery["form"],
-                "filing_date": discovery["filing_date"],
-                "accepted_at": bundle.accepted_at,
-                "file_number": bundle.file_number,
+                "accession": _scalar(discovery["accession"], "filing.accession"),
+                "form": _scalar(discovery["form"], "filing.form"),
+                "filing_date": _scalar(discovery["filing_date"], "filing.filing_date"),
+                "accepted_at": _scalar(bundle.accepted_at, "filing.accepted_at"),
+                "file_number": _scalar(bundle.file_number, "filing.file_number"),
                 "file_number_provenance": bundle.file_number_provenance,
-                "collection_scope": discovery.get("collection_scope"),
+                "collection_scope": _scalar(
+                    discovery.get("collection_scope"), "filing.collection_scope"
+                ),
             },
             "document": {
                 "canonical_url": canonical_url,
@@ -1467,11 +1622,29 @@ class SecCapitalStructureAdapter(Adapter):
         # page) remain retryable and cannot permanently close the queue item.
         have_complete = _eligible_complete_accessions(manifests)
 
+        attempt_bound = _max_retrieval_attempts()
+        parked = parked_accessions(attempts, max_attempts=attempt_bound)
+        if parked:
+            print(
+                f"::warning title=capital-structure-retrieval-parked::"
+                f"{len(parked)} filing(s) parked after {attempt_bound} retrieval "
+                f"attempts each that never closed the queue item — bounded backlog, "
+                f"evidence retained, not retried tonight; raise "
+                f"{MAX_RETRIEVAL_ATTEMPTS_ENV} to pick them back up",
+                flush=True,
+            )
+            log.warning(
+                "sec_capital_structure: %d accession(s) parked at >=%d unclosed attempts: %s",
+                len(parked), attempt_bound,
+                ", ".join(sorted(parked)[:10]) + (" …" if len(parked) > 10 else ""),
+            )
+
         queue = select_retrieval_queue(
             discovery,
             have_complete=have_complete,
             max_filings=self.max_filings_per_run,
             now=now,
+            parked=parked,
         )
         queue_receipt = queue.attrs["retrieval_queue_receipt"]
         _validate_retrieval_queue_receipt(queue_receipt)
@@ -1481,8 +1654,14 @@ class SecCapitalStructureAdapter(Adapter):
         source_store = self._source_store()
         new_manifests: list[dict] = []
         new_attempts: list[dict] = []
-        for _, series in queue.iterrows():
-            row = series.to_dict()
+        sanitized_fields: list[str] = []
+        # ``to_dict("records")`` rather than ``iterrows()``: ``iterrows`` builds a
+        # per-row Series, and building it normalizes a ``None`` in an object column
+        # into ``float('nan')``.  That laundering is the 2026-08-06 nightly abort —
+        # ``collection_scope`` is legitimately ``None`` for every discovery row
+        # written before Wave 2C added the column, and it arrived at the manifest
+        # writer as NaN.  ``to_dict("records")`` preserves ``None`` (measured).
+        for row in queue.to_dict("records"):
             accession = str(row["accession"])
             selected_lane = selected_lanes.get(accession)
             if selected_lane not in RETRIEVAL_LANE_ORDER:
@@ -1543,7 +1722,7 @@ class SecCapitalStructureAdapter(Adapter):
                     sequence="0", raw=raw, receipt=receipt, retrieved_at=retained_at,
                     inspection=complete_inspection,
                     first_seen_at=retained_at, document_version=bundle_version,
-                    parent_manifest_id=None,
+                    parent_manifest_id=None, sanitized=sanitized_fields,
                 )
                 _validate_source_manifest(complete_manifest)
                 filing_manifests.append(complete_manifest)
@@ -1563,7 +1742,7 @@ class SecCapitalStructureAdapter(Adapter):
                         raw=document.raw, receipt=doc_receipt, retrieved_at=retained_at,
                         inspection=inspection,
                         first_seen_at=retained_at, document_version=bundle_version,
-                        parent_manifest_id=parent_id,
+                        parent_manifest_id=parent_id, sanitized=sanitized_fields,
                     )
                     _validate_source_manifest(document_manifest)
                     filing_manifests.append(document_manifest)
@@ -1600,6 +1779,22 @@ class SecCapitalStructureAdapter(Adapter):
             })
             time.sleep(PACE_SECONDS)
 
+        if sanitized_fields:
+            # Disclosure, not decoration: name the fields so an expected legacy gap
+            # (``filing.collection_scope`` on pre-Wave-2C discovery rows) reads
+            # differently from an alarm (``filing.accession``).  Bare print at line
+            # start — a logger prefix would make GitHub silently drop the annotation.
+            counts = ", ".join(
+                f"{field}={sanitized_fields.count(field)}"
+                for field in sorted(set(sanitized_fields))
+            )
+            print(
+                f"::warning title=capital-structure-manifest-null-fields::"
+                f"{len(sanitized_fields)} absent manifest field(s) recorded as null "
+                f"instead of a pandas NaN sentinel: {counts}",
+                flush=True,
+            )
+
         manifests = _append_manifests_strict(manifests, new_manifests)
         attempts = _append_keep_first(
             attempts, new_attempts, key="attempt_id", columns=_ATTEMPT_COLUMNS
@@ -1609,8 +1804,13 @@ class SecCapitalStructureAdapter(Adapter):
 
         successful = sum(1 for attempt in new_attempts if attempt["state"] == "stored")
         retained_after_run = _eligible_complete_accessions(manifests)
+        # Recomputed from the POST-run attempts ledger, so tonight's failures count
+        # toward the bound immediately rather than one night late.  The bound is the
+        # one resolved before the queue was built, so a run reports against a single
+        # bound even if the environment changes underneath it.
+        parked_after_run = parked_accessions(attempts, max_attempts=attempt_bound)
         pending_after_run = _retrieval_queue_candidates(
-            discovery, have_complete=retained_after_run
+            discovery, have_complete=retained_after_run, parked=parked_after_run,
         )
         heartbeat = pd.DataFrame(
             {
@@ -1618,7 +1818,12 @@ class SecCapitalStructureAdapter(Adapter):
                 "discovered": [len(new_discovery)],
                 "retrieved": [successful],
                 "deferred": [len(new_attempts) - successful],
+                # ``backlog`` is the RETRYABLE queue; parking removes rows from it.
+                # ``parked`` is published beside it precisely so that shrink can
+                # never be mistaken for healing — a backlog that falls because the
+                # collector stopped looking must say so in the same frame.
                 "backlog": [len(pending_after_run)],
+                "parked": [len(parked_after_run)],
             },
             index=[pd.Timestamp(now.date())],
         )

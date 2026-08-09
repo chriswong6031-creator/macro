@@ -2009,7 +2009,7 @@ wikipedia:                        # keyless retail-attention axis (Wikimedia RES
   pageviews_url: https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/{article}/daily/{start}/{end}
   article: Bitcoin
   earliest: "2015070100"          # first day Wikimedia serves daily per-article views
-  user_agent: "macro-dashboard research (chriswong6031-creator) macro-dashboard@users.noreply.github.com"
+  user_agent: "macro-dashboard research (mastermindx-market-intelligence) macro-dashboard@users.noreply.github.com"
   retries: 3
 
 mempool:
@@ -2389,7 +2389,10 @@ stock_search:
     - CSGP   # CoStar Group
     - CSW    # CSW Industrials
     - CSX    # CSX Corp
-    - CTRA   # Coterra Energy
+    - CTRA   # Coterra Energy — DELISTED 2026-05-07 (acquired by Devon Energy, 0.70 DVN
+             # per share; that is a different pre-existing security, so nothing
+             # continues this price line). Membership kept for the same reason as TPH
+             # below — see config/delisted_symbols.yml before touching this line.
     - CTSH   # Cognizant
     - CVNA   # Carvana
     - CVR    # CVR Energy
@@ -2529,15 +2532,29 @@ stock_search:
     - SYF    # Synchrony Financial
     - T      # AT&T
     - TCBI   # Texas Capital Bancshares
-    - TCNNF  # Trulieve Cannabis
     - TECH   # Bio-Techne
     - TEL    # TE Connectivity
     - TFC    # Truist Financial
     - THC    # Tenet Healthcare
     - TJX    # TJX Companies
     - TMUS   # T-Mobile US
-    - TPH    # Tri Pointe Homes
+    - TPH    # Tri Pointe Homes — DELISTED 2026-05-14 (acquired by Sumitomo Forestry,
+             # US$47.00 cash; last session 05-13). Membership is KEPT on purpose: the
+             # page, its search entry and its deep links stay alive (CSP-R1) and the
+             # history stays readable. The exit row in config/delisted_symbols.yml is
+             # what stops the nightly fetch requesting it and swaps the page's
+             # cause-neutral "no new data" note for the truth. Do NOT delete this line
+             # to "clean up" — that removes the name from universe() and 404s the page.
     - TPR    # Tapestry
+    - TRLV   # Trulieve Cannabis — KEY MIGRATION from TCNNF (2026-08-06). Trulieve
+             # uplisted from the OTC quote TCNNF to NYSE:TRLV on 2026-06-09 (Form
+             # 8-A12B + NYSE listing certification, CIK 1754195); Yahoo stopped serving
+             # TCNNF on 2026-07-17 and the store froze there. Same security, same basis
+             # — TRLV and TCNNF closes agree to the cent on all 19 overlapping sessions
+             # — so data/yahoo/TCNNF.parquet was re-keyed, not re-based. The ticker
+             # here, the store filename and the extra_names label move TOGETHER or the
+             # library mints a duplicate company.
+             # research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md
     - TSCO   # Tractor Supply
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
@@ -2580,6 +2597,36 @@ stock_search:
     - EQX    # Equinox Gold
     - EGO    # Eldorado Gold
     - BTG    # B2Gold
+    # ---- Precious-metals parity (W1-C, added 2026-08-07) -----------------------
+    # The gold sleeve above shipped 2026-07-30; the SILVER complex never did, so the
+    # whole silver/streaming/PGM side of the precious-metals trade was outside the
+    # graded population while it rallied 10-19% (2026-07-20..08-06). Membership in the
+    # S&P Composite 1500 was checked per name against data/universe/membership.parquet
+    # on 2026-08-07: HL, CDE, SSRM and RGLD already resolve through the index pipeline
+    # and are deliberately NOT duplicated here; every name below does not.
+    # Silver producers (silver_miners basket members, off-index)
+    - PAAS   # Pan American Silver
+    - AG     # First Majestic Silver
+    - FSM    # Fortuna Mining
+    - EXK    # Endeavour Silver
+    - SVM    # Silvercorp Metals
+    # Royalty / streaming (WPM is listed above; RGLD resolves through the S&P 1500)
+    - FNV    # Franco-Nevada
+    # Platinum-group metals (pgm_miners basket members). SBSW/PLG are US-exchange
+    # listed and SEC-registered; IMPUY (OTCQX) and ANGPY (Pink) are ADRs of JSE-listed
+    # producers — the same OTC-ADR shape obesity_glp1 already carries with RHHBY.
+    - SBSW   # Sibanye Stillwater (ADR, NYSE)
+    - PLG    # Platinum Group Metals (NYSE American)
+    - IMPUY  # Impala Platinum (ADR, OTCQX)
+    - ANGPY  # Valterra Platinum (ADR, Pink; renamed from Anglo American Platinum 2025)
+    # DELIBERATELY ABSENT: MAG (MAG Silver) and GATO (Gatos Silver). Both stopped
+    # trading long before the silver_miners basket was curated on 2026-08-05 — MAG
+    # 25-NSE 2025-09-04 + 15-12G 2025-09-17 (acquired by PAAS), GATO 25-NSE 2025-01-16
+    # + 15-12G 2025-01-27 (acquired by AG) — and both are absent from the SEC
+    # company_tickers directory. Listing a dead symbol here would request it nightly
+    # forever and park a permanent entry in the missing-symbol warning, which is the
+    # exact failure config/delisted_symbols.yml exists to prevent. Their disclosure
+    # lives on their membership rows (`removed` + receipts) instead.
     # Additional intel-hub off-desk discovery names found post-build
     - HPE    # Hewlett Packard Enterprise
     - ROST   # Ross Stores
@@ -2629,6 +2676,16 @@ stock_search:
     EQX:  {name: "Equinox Gold", sector: "Materials"}
     EGO:  {name: "Eldorado Gold", sector: "Materials"}
     BTG:  {name: "B2Gold", sector: "Materials"}
+    PAAS: {name: "Pan American Silver", sector: "Materials"}
+    AG:   {name: "First Majestic Silver", sector: "Materials"}
+    FSM:  {name: "Fortuna Mining", sector: "Materials"}
+    EXK:  {name: "Endeavour Silver", sector: "Materials"}
+    SVM:  {name: "Silvercorp Metals", sector: "Materials"}
+    FNV:  {name: "Franco-Nevada", sector: "Materials"}
+    SBSW: {name: "Sibanye Stillwater (ADR)", sector: "Materials"}
+    PLG:  {name: "Platinum Group Metals", sector: "Materials"}
+    IMPUY: {name: "Impala Platinum (ADR)", sector: "Materials"}
+    ANGPY: {name: "Valterra Platinum (ADR)", sector: "Materials"}
     TSM:  {name: "Taiwan Semiconductor (ADR)", sector: "Information Technology"}
     SE:   {name: "Sea Limited (ADR)", sector: "Communication Services"}
     NU:   {name: "Nu Holdings", sector: "Financials"}
@@ -2742,6 +2799,16 @@ stock_search:
     DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
     POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
     OSCR:  {name: "Oscar Health", sector: "Health Care"}
+    # Trulieve had no label under its old OTC ticker, so search showed a bare "TCNNF /
+    # ETF / macro" for a real operating company. GICS Health Care per SEC SIC 2833
+    # (medicinal chemicals & botanical products).
+    TRLV:  {name: "Trulieve Cannabis", sector: "Health Care"}
+    # CTRA and TPH keep their labels while their pages stand (both delisted 2026-05,
+    # config/delisted_symbols.yml): the page still has to name the company it is
+    # showing, and a name that renders as "CTRA / ETF / macro" is a worse page than
+    # one that says Coterra Energy stopped trading.
+    CTRA:  {name: "Coterra Energy", sector: "Energy"}
+    TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -3275,7 +3342,7 @@ notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
   # When set, alert pings deep-link to the exact scorecard panel on macro.html.
   # Leave blank to send alerts without a link.
-  site_url: "https://chriswong6031-creator.github.io/macro"
+  site_url: "https://mastermindx-market-intelligence.github.io/macro"
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:
@@ -3495,6 +3562,23 @@ quality:
   # 2026-08-03 incident: names exiting every sector SPDR's top-20 froze their
   # data/stocks parquets 10-46d with nothing watching per-name tips.
   stocks_stale_calendar_days: 7  # per-name tip lag beyond this = stale FLAG only (mirrors #4441 ledger gate's _MAX_BAR_LAG_DAYS; strict >)
+  # --- reused-ticker / zombie-print tripwire (audit_reused_tickers) ---
+  # A ticker STRING is not a stable identity: delisted/take-private names get their
+  # symbol recycled, and the per-ticker stores fetch by bare string, so a dead name's
+  # key silently fills with the new holder's full spliced history (ECHO 2026-06:
+  # Echo Global Logistics d.2021 -> EchoStar after its SATS->ECHO rename). Acked names
+  # below are operator-ratified identities — still disclosed nightly in
+  # data/quality/reused_tickers_audit.json, never ::warning'd. The ack text is the
+  # key-migration record the house law requires (ticker-rename-is-a-key-migration).
+  reused_grace_days: 30          # store tip must advance > this many days past the name's last dead-registry bar to count as "printing past death"
+  reused_ticker_acks:
+    ECHO: "EchoStar Corp (NASDAQ dir 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00) under its 2026-06-24 SATS->ECHO rename — store holds EchoStar's full history (2008->). Prior holder Echo Global Logistics (CUSIP 27875T101, take-private 2021-12 @ $48.25) lives ONLY in the dead registry."
+    SPWR: "New SunPower (ex-Complete Solaria) adopted the SPWR ticker 2024-09 after SunPower Corp's 2024-08 Ch.11 — store rows spanning the corpse era are the new holder's tape (overlap corr ~0.05)."
+    RPT: "Rithm Property Trust took RPT in 2024 after RPT Realty merged into Kimco 2024-01 — store rows spanning the corpse era are Rithm's spliced tape (overlap corr ~0.22)."
+    FI: "Membership key FI = Fiserv, deliberately fetched via the FISV vendor alias (lib/ticker_aliases; Fiserv left NYSE 'FI' ~2025-11, NASDAQ lists FISV). The registry's FI rows are foreign tape — registry-side contamination, not a store defect."
+    AHRT: "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) — registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
+  delisted_printing_acks:
+    - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs

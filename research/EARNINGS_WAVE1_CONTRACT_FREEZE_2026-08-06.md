@@ -113,10 +113,19 @@ document-level lineage must not be silently upgraded to span-level — a typed
 absence is the compliant answer, not a fabricated receipt.
 
 The corpus commits an `expected_v2_outcome` per case, and its distribution is the
-grading key: `exact_receipt` 155, `typed_absence` 49, `duplicate_collapsed` 16,
-`quarantined` 14. **49 typed absences is the number that matters** — if a Wave 1
+grading key: `exact_receipt` 155, `typed_absence` 51, `duplicate_collapsed` 14,
+`quarantined` 14. **51 typed absences is the number that matters** — if a Wave 1
 implementation resolves materially more than 155 to `exact_receipt`, it is
 manufacturing citations.
+
+The `typed_absence`/`duplicate_collapsed` split was corrected from 49/16 on
+2026-08-07: two `edgar_identity_join` cases (CIE-GC-0227, CIE-GC-0234) had been
+labelled `duplicate_collapsed` by a positional rule in the builder, but their
+fixture rows are structurally identical to the twelve siblings that expect
+`typed_absence` — no second document, so no duplicate to observe. They are now
+`typed_absence`, which is what the EDGAR fixture's own `open_contract_question`
+said all along. `duplicate_collapsed` keeps its 14 evidenced cases from the
+`duplicate_release` class, each carrying a real second revision.
 
 ### Q4 — The fiscal label belongs to the EVENT
 
@@ -163,19 +172,64 @@ it is a Wave 7 value and must not be minted before there is a rights check that
 can actually return it; a status value no code path can produce is a lie in a
 dropdown.
 
+### Q6 — a span's byte range is VERIFIED; its locator attributes are CLAIMED
+
+*Added 2026-08-07, raised by Wave 1A ([#4910](https://github.com/mastermindx-market-intelligence/macro/pull/4910))
+while implementing against the corpus. This answer was not in the original five.*
+
+**Frozen: `source_span.v1` must distinguish what it verified from what it copied.**
+
+The corpus has 12 `speaker_role_error` cases, and **10 of them expect
+`exact_receipt`**. That is not a contradiction — the receipt *is* exact about
+where the text lives. Verified on `CIE-GC-0199`: the cited segment byte-replays
+correctly, and its locator `speaker` reads `"Analyst, Kestrel Securities"` on a
+sentence in which the CFO states the quarter's revenue and EPS.
+
+So the span is simultaneously:
+
+- **verified** on `text_sha256`, `span_start_byte`, `span_end_byte` — the byte
+  replay proves the quoted text is what the document says at that offset; and
+- **merely transcribed** on `speaker`, `role`, `chapter` — these are asserted by
+  the transcript producer and nothing in the receipt checks them.
+
+Today the envelope emits both at the same apparent confidence. A surface that
+renders attribution — the Terminal Brief, a dossier evidence rail, a Struct
+article byline — would print *"the CFO said"* with an **exact receipt** badge
+beside a role the receipt never checked. A confidently wrong attribution is worse
+than an absent one, and it is worse specifically because the receipt makes it
+look audited.
+
+**What Wave 1 must carry:** a per-attribute reliability marker on the locator —
+a `disputed_fields` list, or an explicit `verified` / `source_asserted` split
+across locator keys. The shape is an implementation choice; the invariant is not:
+
+> No consumer may render a locator attribute at the same confidence as the byte
+> range unless something verified it.
+
+**Grading note.** The corpus grades only the *outcome* (`exact_receipt`), so this
+class passes without the marker — which is precisely why the class exists. Wave 1A
+recorded the gap rather than papering over it. Any implementation that resolves
+these 10 cases to `exact_receipt` **and** emits an unmarked speaker has satisfied
+the benchmark and shipped the bug.
+
+**Corollary for Wave 4 and Wave 6.** `Mentioned By`, the commitment ledger, and
+any Struct prose that attributes a statement to a named person all inherit this.
+An attribution is a claim about a *person*, and it needs its own evidence — not
+the byte range's.
+
 ---
 
 ## 3. Wave 0 status ledger
 
 | Lane | PR | State |
 |---|---|---|
-| base — heal both `ci-pack-2` reds pinning the fleet | [#4774](https://github.com/chriswong6031-creator/macro/pull/4774) | open; proof run dispatched |
-| R0-A — Qwen model alignment, preflight, fallback disclosure | [#4778](https://github.com/chriswong6031-creator/macro/pull/4778) | open, armed |
-| R0-A2 — per-rung prompt bound for the 4096-token local window | [#4784](https://github.com/chriswong6031-creator/macro/pull/4784) | open, armed |
-| R0-B — EDGAR sparse-checkout cone + attributable zero-emission | [#4780](https://github.com/chriswong6031-creator/macro/pull/4780) | open, armed |
-| R0-C — sever the Prophet earnings split-brain, disclose the starved arm | [#4781](https://github.com/chriswong6031-creator/macro/pull/4781) | open, armed |
-| R0-D — golden corpus (130 issuers / 234 difficult events / 17 classes) | [#4783](https://github.com/chriswong6031-creator/macro/pull/4783) | open, armed |
-| ruling — freeze the PSQ hold-tilt promotion clock | [#4785](https://github.com/chriswong6031-creator/macro/pull/4785) | open, armed |
+| base — heal both `ci-pack-2` reds pinning the fleet | [#4774](https://github.com/mastermindx-market-intelligence/macro/pull/4774) | open; proof run dispatched |
+| R0-A — Qwen model alignment, preflight, fallback disclosure | [#4778](https://github.com/mastermindx-market-intelligence/macro/pull/4778) | open, armed |
+| R0-A2 — per-rung prompt bound for the 4096-token local window | [#4784](https://github.com/mastermindx-market-intelligence/macro/pull/4784) | open, armed |
+| R0-B — EDGAR sparse-checkout cone + attributable zero-emission | [#4780](https://github.com/mastermindx-market-intelligence/macro/pull/4780) | open, armed |
+| R0-C — sever the Prophet earnings split-brain, disclose the starved arm | [#4781](https://github.com/mastermindx-market-intelligence/macro/pull/4781) | open, armed |
+| R0-D — golden corpus (130 issuers / 234 difficult events / 17 classes) | [#4783](https://github.com/mastermindx-market-intelligence/macro/pull/4783) | open, armed |
+| ruling — freeze the PSQ hold-tilt promotion clock | [#4785](https://github.com/mastermindx-market-intelligence/macro/pull/4785) | open, armed |
 
 ### Findings Wave 0 produced that no handoff predicted
 

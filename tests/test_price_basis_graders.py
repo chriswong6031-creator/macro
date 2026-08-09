@@ -47,9 +47,21 @@ CACHE_GROUP_NAMES = {"breadth", "midcap_breadth", "smallcap_breadth", "russell_b
 #: any of these string fragments in a literal means the module names a raw close cache
 _CACHE_MARKERS = ("_closes_cache",)
 
-#: reaching the caches THROUGH the shared helper instead of by name
-_CACHE_FUNCS = {"_closes"}
-_CACHE_MODULES = {"engine.equity_factors", "equity_factors"}
+#: reaching the caches THROUGH a shared helper instead of by name.
+#:
+#: `merge_close_caches` is here because leaving it out made this guard HALF-BLIND, and the
+#: blindness read as a repair. #4711 moved the tier-merging cache accessor out of
+#: `engine.equity_factors._closes` into `lib/closes_panel.py`; every caller that migrated
+#: kept reading the same raw `_closes_cache.parquet` files but stopped naming them, so the
+#: AST saw no cache leg. `engine/manager_trades.py` silently left the census that way and
+#: `test_the_registry_does_not_rot` then demanded its registry line be deleted — i.e. the
+#: guard was asking to record a fix nobody made. A detector that only knows the accessor's
+#: OLD name decays every time the accessor is refactored; both names are matched now.
+_CACHE_FUNCS = {"_closes", "merge_close_caches"}
+_CACHE_MODULES = {
+    "engine.equity_factors", "equity_factors",   # _closes()
+    "lib.closes_panel", "closes_panel",          # merge_close_caches() — #4711 onward
+}
 
 #: literals that name a back-adjusted per-name store
 _ADJUSTED_MARKERS = ("data/yahoo", "baskets/ohlcv", "baskets/extras", "data/stocks")
@@ -98,7 +110,30 @@ KNOWN_UNMIGRATED = {
     "engine/us_sector_rotation.py":           "VERIFIED: fast-RS = raw member closes / adjusted ETF closes",
     "engine/narrative_rotation.py":           "VERIFIED: market residuals vs adjusted SPY",
     "engine/baskets.py":                      "VERIFIED: vs-SPY relative return per horizon",
-    "engine/manager_trades.py":               "VERIFIED: ClosePanel falls back to the raw breadth panel",
+    "engine/manager_trades.py": (
+        "VERIFIED: ClosePanel.get() serves data/yahoo first and falls back to the raw "
+        "merged breadth panel, while the benchmark leg (self.spy) always resolves from "
+        "adjusted yahoo — so excess() = stock - bench mixes bases for any name the "
+        "breadth caches carry and yahoo does not. RESTORED 2026-08-07: this exact row "
+        "was deleted by #4863 because #4711's accessor rename had made the DETECTOR "
+        "blind (the module stopped naming _closes_cache when it moved to "
+        "merge_close_caches), not because the module was repaired. #4874 restored the "
+        "detector but not the row. Do not delete it again without reading excess()."),
+    # ---- reads both stores, but performs NO name-vs-benchmark arithmetic ------------
+    "engine/prophet_bridge.py": (
+        "NO PAIRING: _load_price_history (#4684 P3) is a hand-rolled ADJUSTED-FIRST "
+        "ladder — data/baskets/ohlcv -> data/stocks -> the four breadth close panels. "
+        "Exactly ONE rung ever serves a ticker (the per-ticker parquets return before "
+        "_panel_close_history is reached), and the module computes no benchmark-relative "
+        "return anywhere: excess/vs_spy are absent, and its only 'spy' is risk_radar's "
+        "spy_below_200dma BOOLEAN context gate, not a price leg. RESIDUAL, named rather "
+        "than hidden: a rung-3-only name (the 19 of 23 previously unpriced plans this "
+        "rung exists to price) has its swing-level geometry measured on UNADJUSTED "
+        "history. NOT migrated to the shared ladder because that returns closes, not the "
+        "OHLCV the geometry reads, and its rung set and cache-group ORDER both differ "
+        "(midcap/smallcap are swapped) — migrating blind would silently move which "
+        "source prices a live plan."),
+    "engine/prophet_doors.py":                "BENIGN: disjoint uses — cache gives the universe/flags, ohlcv gives self-contained W8 coil features joined on the flag DATE (exact bar, never imputed); no expression differences the two",
     "engine/factor_exposure.py":              "VERIFIED: regresses raw stock closes on adjusted ETFs",
     "engine/residual_momentum.py":            "VERIFIED: orthogonalises raw closes against adjusted SPY",
     "engine/residual_alpha.py":               "VERIFIED: orthogonalises raw closes against adjusted SPY",
@@ -110,6 +145,12 @@ KNOWN_UNMIGRATED = {
     "engine/quant_lab/specs.py":              "BENIGN: metadata dict of store paths; never reads a parquet",
     "engine/prophet_miss_audit.py":           "INHERITS: reads excess_spy from a ledger, does not compute it",
     "scripts/fetch_basket_extras.py":         "BENIGN: writes the adjusted store; reads caches to pick symbols",
+    # NB: `engine/prophet_doors.py` used to appear HERE as well as above. A dict literal
+    # keeps the LAST duplicate, so #4863's longer "NO PAIRING" triage was silently dead
+    # from the moment #4874 added this one — two commits triaged the same module without
+    # either noticing the other. The surviving text is unchanged; only the dead twin went.
+    "scripts/measure_cycles_anchor_blast_radius.py": "BENIGN: the instrument that MEASURES cross-basis divergence — it holds the three loaders apart on as-of-aligned reads by design",
+    "scripts/measure_coiled_mtf_anchor_blast_radius.py": "BENIGN: same instrument class as measure_cycles_anchor_blast_radius.py above — it reads deep stocks/, 2014-start baskets/ohlcv and the breadth caches at their NATIVE depth as SEPARATE, as-of-aligned universes and REPORTS the per-loader disagreement as its output. Holding the bases apart is the measurement, not a defect",
     # ---- reaches both families; combining expression NOT hand-verified by this PR ------
     "engine/altdata_picks.py":                "not triaged",
     "engine/foresight_earliness.py":          "not triaged",
@@ -336,7 +377,8 @@ def test_the_registry_is_not_vacuous():
     zero the AST matchers have stopped matching, not the repo become clean."""
     found = _pairing_modules()
     assert len(found) >= 30, (
-        f"only {len(found)} pairing modules detected (46 on 2026-08-06) — the AST "
+        f"only {len(found)} pairing modules detected (46 on 2026-08-06; 47 on 2026-08-07 "
+        "once the merge_close_caches accessor was matched) — the AST "
         "matchers have probably stopped recognising a store path or the _closes helper, "
         "which would make the whole guard vacuous"
     )
@@ -364,3 +406,28 @@ def test_the_detector_sees_a_planted_pairing(tmp_path):
         "    return resolve_close(t).series\n"
     )
     assert _reach(clean).uses_shared_ladder
+
+
+def test_the_detector_sees_the_cache_through_the_shared_accessor(tmp_path):
+    """The SAME pairing, reached through `lib.closes_panel.merge_close_caches` instead of by
+    filename — the shape that made this guard half-blind between #4711 and now.
+
+    Without this, the only thing pinning the accessor marker is the incidental fact that some
+    module in the tree happens to use it, and the next accessor rename re-opens the hole
+    silently. Drop `merge_close_caches` from `_CACHE_FUNCS` and this fails; the census tests
+    would merely go quiet.
+    """
+    m = tmp_path / "via_accessor.py"
+    m.write_text(
+        "from lib.closes_panel import merge_close_caches\n"
+        "from lib import store\n"
+        "def go(t):\n"
+        "    panel, _ = merge_close_caches(('breadth', 'midcap_breadth'))\n"
+        "    spy = store.read('yahoo', 'SPY')['close']\n"
+        "    return panel[t].pct_change() - spy.pct_change()\n"
+    )
+    r = _reach(m)
+    assert r.cache, (
+        "a module reaching the raw breadth caches through merge_close_caches reads as "
+        "cache-free — the accessor moved and the detector did not follow it")
+    assert r.adjusted and not r.uses_shared_ladder

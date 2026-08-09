@@ -175,9 +175,6 @@ html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { col
 .sc-lead-rs { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sc-lead-rs.pos { color: var(--up); }
 .sc-lead-rs.neg { color: var(--down); }
-/* rows past the cap, revealed by the "See all N" control below the list (the
-   button reuses .xc-more so the two see-more affordances on this panel match) */
-.sc-lead-row.sc-lead-hidden { display: none; }
 
 /* scorecard header: keep the (sometimes long) phase badge from overlapping the
    (sometimes 2-line) sector name — let the name column flex/shrink, tags stay top-right */

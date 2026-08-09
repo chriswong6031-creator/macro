@@ -53,6 +53,18 @@ from engine.fundamental_forensics.disclosure_projection import (
 log = logging.getLogger("build_fundamental_forensics")
 
 SCHEMA = STATE_SCHEMA
+
+# The counts-only public projection: aggregate totals the anonymous gate may
+# print, carried in a committed file because the private state is gitignored.
+PUBLIC_SUMMARY_RELATIVE = Path("data/fundamental_forensics/public_summary.json")
+PUBLIC_SUMMARY_SCHEMA = "fundamental_forensics.public_summary/v1"
+# How long a committed projection may keep being published. daily.yml's run_py
+# prints an ::error annotation for a failed builder but does NOT exit non-zero,
+# so a broken forensics build leaves the nightly green while build_site keeps
+# re-rendering this page from the last good file — the counts would freeze and
+# stay published forever. The stamp bounds that: a projection nobody has
+# refreshed in a month stops being printed instead of quietly going stale.
+PUBLIC_SUMMARY_MAX_AGE_DAYS = 30
 QUARTERLY_METRICS = (
     "revenue",
     "gross_profit",
@@ -257,6 +269,20 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
     rev_g = _growth(current.get("revenue"), prior.get("revenue"))
     gm_cur = _ratio(current.get("gross_profit"), current.get("revenue"))
     gm_prev = _ratio(prior.get("gross_profit"), prior.get("revenue"))
+    # A computable revenue GROWTH is not the same as a usable revenue BASE.
+    # _growth only requires the PRIOR denominator to be positive, so a filer
+    # whose revenue collapses to 0 (or is reported negative) still yields
+    # rev_g = -1.0 or lower. The working-capital spreads below then degenerate:
+    # `ar_g > rev_g + 0.10` becomes `ar_g > -0.90`, which almost any receivables
+    # series clears — a near-certain FALSE FIRE driven entirely by the revenue
+    # collapse rather than by any receivables behaviour. Both sibling
+    # implementations already refuse here (engine/moat_falsifiers.py returns
+    # None; engine/fundamental_forensics/detectors.py returns NOT_EVALUABLE with
+    # "positive_revenue_and_nonzero_prior_balance_required"), so this gate makes
+    # the workbench agree with them instead of publishing the artefact.
+    # The margin check needs no such gate: _ratio already requires d > 0.
+    rev_cur = _finite(current.get("revenue"))
+    rev_cur_positive = rev_cur is not None and rev_cur > 0
 
     if rev_g is not None and rev_g >= 0.03 and gm_cur is not None and gm_prev is not None and gm_cur < gm_prev:
         compression = gm_prev - gm_cur
@@ -280,7 +306,7 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
         ))
 
     ar_g = _growth(current.get("receivables"), prior.get("receivables"))
-    if rev_g is not None and ar_g is not None and ar_g > rev_g + 0.10:
+    if rev_g is not None and rev_cur_positive and ar_g is not None and ar_g > rev_g + 0.10:
         gap = ar_g - rev_g
         out.append(_finding(
             "receivables_stretch", "high" if gap >= 0.25 else "watch", current, prior,
@@ -302,7 +328,7 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
         ))
 
     inv_g = _growth(current.get("inventory"), prior.get("inventory"))
-    if rev_g is not None and inv_g is not None and inv_g > rev_g + 0.15:
+    if rev_g is not None and rev_cur_positive and inv_g is not None and inv_g > rev_g + 0.15:
         gap = inv_g - rev_g
         out.append(_finding(
             "inventory_build", "high" if gap >= 0.30 else "watch", current, prior,
@@ -326,9 +352,21 @@ def detect_quarterly(current: pd.Series, prior: pd.Series, cik: int | None) -> l
     capex_g = _growth(current.get("capex"), prior.get("capex"))
     op_g = _growth(current.get("op_income"), prior.get("op_income"))
     op_cur = _finite(current.get("op_income"))
+    # Current capex must be POSITIVE — the detector is about rising capital
+    # SPENDING, and a non-positive current capex is net disposal proceeds (or a
+    # quarter with none reported), which is the opposite direction. _growth only
+    # constrains the PRIOR, so without this gate a zero/negative current capex
+    # yields a well-formed capex_g <= -1.0 that can never clear rev_g + 0.10 —
+    # so the pair reports "clear" forever AND is counted as covered, a permanent
+    # verdict drawn from evidence that cannot support one. Both siblings already
+    # refuse here (engine/moat_falsifiers.py skips on current capex <= 0; the
+    # registry kernel returns not_evaluable with
+    # "nonzero_revenue_and_positive_capex_required").
+    capex_cur = _finite(current.get("capex"))
+    capex_cur_positive = capex_cur is not None and capex_cur > 0
     capex_triggered = False
     capex_gap = None
-    if capex_g is not None and rev_g is not None and capex_g > rev_g + 0.10:
+    if capex_g is not None and rev_g is not None and capex_cur_positive and capex_g > rev_g + 0.10:
         if op_cur is not None and op_cur <= 0:
             capex_triggered, capex_gap = True, capex_g - rev_g
         elif op_g is not None and capex_g > op_g + 0.10:
@@ -394,16 +432,27 @@ def detector_evaluability(
     capex_g = _growth(current.get("capex"), prior.get("capex"))
     op_cur = _finite(current.get("op_income"))
     op_g = _growth(current.get("op_income"), prior.get("op_income"))
+    # Mirrors the gate added to detect_quarterly: a non-positive CURRENT revenue
+    # makes the working-capital spread an artefact of the revenue collapse, so
+    # the pair is not evaluable rather than "covered but clear".
+    rev_cur = _finite(current.get("revenue"))
+    rev_cur_positive = rev_cur is not None and rev_cur > 0
+    # Mirrors detect_quarterly: a non-positive CURRENT capex is disposal
+    # proceeds, not capital spending, so the pair is not evaluable rather than
+    # "covered and clear".
+    capex_cur = _finite(current.get("capex"))
+    capex_cur_positive = capex_cur is not None and capex_cur > 0
     capex_evaluable = (
         capex_g is not None
         and rev_g is not None
+        and capex_cur_positive
         and op_cur is not None
         and (op_cur <= 0 or op_g is not None)
     )
     return {
         "margin_compression_despite_revenue_growth": rev_g is not None and gm_cur is not None and gm_prev is not None,
-        "receivables_stretch": rev_g is not None and ar_g is not None,
-        "inventory_build": rev_g is not None and inv_g is not None,
+        "receivables_stretch": rev_g is not None and ar_g is not None and rev_cur_positive,
+        "inventory_build": rev_g is not None and inv_g is not None and rev_cur_positive,
         "capital_intensity_rising": capex_evaluable,
         "accruals_trending_up": _accrual_inputs(annual) is not None,
     }
@@ -743,7 +792,9 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
 
 def render(root: Path, state: dict[str, Any]) -> Path:
     """Atomically render the public shell/assets, then commit private state last."""
-    page = render_shell(root)
+    summary = state.get("summary") or {}
+    _write_public_summary(root, summary, generated_at=state.get("generated_at"))
+    page = render_shell(root, state_summary=summary)
     _write_state_atomic(root / LOCAL_STATE_RELATIVE, state)
     return page
 
@@ -783,14 +834,94 @@ def _write_state_atomic(path: Path, state: dict[str, Any]) -> Path:
     return path
 
 
-def render_shell(root: Path) -> Path:
-    """Render only the data-free public workbench shell and versioned assets."""
+def public_summary_projection(summary: dict[str, Any]) -> dict[str, int]:
+    """Project the private summary down to the two counts the gate may publish.
+
+    Aggregate COUNTS are free by the same house rule the tier preview states:
+    a count names nobody, while the member rows are the product. This builds the
+    projection field by field on purpose — never by spreading `summary` — so a
+    later key added to compose_state() (a symbol, a top-finding, a per-company
+    breakdown) cannot reach a public byte by default.
+    """
+    return {
+        "companies": int(summary.get("companies") or 0),
+        "findings": int(summary.get("findings") or 0),
+    }
+
+
+def _write_public_summary(root: Path, summary: dict[str, Any], *, generated_at: str | None = None) -> Path:
+    """Persist the counts-only projection so BOTH render paths read one number.
+
+    The private state is gitignored, and build_site.py re-renders this shell
+    through render_from_state() moments after the nightly forensics build (see
+    daily.yml — forensics, then build_site) and again on every render.yml lane
+    that never composes state at all. A count passed only in-process would be
+    overwritten by that second render within seconds and would never exist on a
+    render-lane rebuild. This file is committed by the nightly's broad
+    `git add data/`, so the shell prints the same counts on every path.
+    """
+    path = root / PUBLIC_SUMMARY_RELATIVE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    stamped = generated_at or datetime.now(timezone.utc).isoformat()
+    payload = {
+        "schema": PUBLIC_SUMMARY_SCHEMA,
+        "generated_at": stamped,
+        **public_summary_projection(summary),
+    }
+    temp = _temp_sibling(path)
+    try:
+        temp.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+    return path
+
+
+def read_public_summary(root: Path, *, now: datetime | None = None) -> dict[str, int]:
+    """Read the committed counts, or {} when absent/unreadable/malformed/stale.
+
+    Absence is a normal state, not an error: a fresh clone, a CI checkout and
+    the very first build all lack the file, and the page must simply omit the
+    fact rather than print a zero or a stale literal. A projection older than
+    PUBLIC_SUMMARY_MAX_AGE_DAYS is treated the same way as an absent one — see
+    that constant for why an unrefreshed file can otherwise outlive its build.
+    """
+    try:
+        raw = json.loads((root / PUBLIC_SUMMARY_RELATIVE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(raw, dict) or raw.get("schema") != PUBLIC_SUMMARY_SCHEMA:
+        return {}
+    try:
+        stamped = datetime.fromisoformat(str(raw["generated_at"]))
+    except (KeyError, TypeError, ValueError):
+        return {}
+    if stamped.tzinfo is None:
+        stamped = stamped.replace(tzinfo=timezone.utc)
+    age = (now or datetime.now(timezone.utc)) - stamped
+    if age.days > PUBLIC_SUMMARY_MAX_AGE_DAYS:
+        return {}
+    try:
+        return public_summary_projection(raw)
+    except (TypeError, ValueError):
+        return {}
+
+
+def render_shell(root: Path, state_summary: dict[str, Any] | None = None) -> Path:
+    """Render only the public workbench shell, versioned assets, and free counts.
+
+    `state_summary` carries no rows — only the aggregate counts projected by
+    public_summary_projection(). When the caller supplies none (build_site's
+    compatibility hook), the committed projection is read from disk so every
+    render path agrees.
+    """
     site = root / "site"
     site.mkdir(parents=True, exist_ok=True)
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
+    counts = public_summary_projection(state_summary) if state_summary else read_public_summary(root)
     html = env.get_template("fundamental_forensics.html.j2").render(
         generated_utc="private-state-runtime",
-        state_summary={},
+        state_summary=counts,
         active_section="research",
         active_page="fundamental_forensics",
     )

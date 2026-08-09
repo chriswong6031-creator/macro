@@ -20,9 +20,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine.cycles import macd_parts, stoch_rsi
-from engine.technicals import rsi
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.cycles import macd_parts, stoch_rsi  # noqa: E402
+from engine.technicals import rsi  # noqa: E402
 
 SECTORS = ["XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY"]
 BENCH = "SPY"

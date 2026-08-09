@@ -442,7 +442,7 @@
         <span class="l-zh">当前没有早期主题——我们跟踪的主题要么偏晚、要么仍平静。<b>观望，勿追。</b></span>
       {%- endif -%}
     </div>
-    <div class="fx-asof"><span class="fxdot"></span>{{ t('As of', '截至') }} {{ asof or '—' }} · {{ t('context, not trade calls', '仅供参考，非交易信号') }}</div>
+    <div class="fx-asof"><span class="fxdot"></span>{{ t('As of', '截至') }} {{ asof or '—' }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
 
     {%- if health and health.mode == 'CONFIRMER-ONLY' %}
     <div class="fx-mode"><span class="fxdot"></span>{{ t('Leading signals are dark right now — the desk is showing confirmations only, so no theme can be called truly early until a supply signal lights.', '领先信号当前暗淡——本台仅显示确认信号；在供给信号点亮前，任何主题都无法被判定为真正早期。') }}</div>
@@ -486,7 +486,7 @@
   {% if convergence and convergence.ranked %}
   <div class="fx-sec"><span class="sh-dot"></span><h2>{{ t('Heating up early', '正在早期升温') }}</h2>
     <span class="n">{{ t('up to', '最多') }} {{ convergence.max_sources or convergence.max_signals }} {{ t('independent sources', '个独立数据源') }}</span></div>
-  <p class="fx-ssub">{{ t('Themes where several independent signals are stacking up at once — the earliest heads-up, before any single number is loud.', '多个独立信号同时叠加的主题——在任何单一数据变响之前，最早的提示。') }} {{ fxq('Sources = supply · demand · guidance · alt-data · filings. A theme surfaces when several agree at once while it is still early. Dark sources are dropped, not penalised. A heads-up, not a buy signal — coverage differs by theme, so heat is not perfectly comparable across themes. Threshold provisional, pending calibration.', '数据源＝供给·需求·指引·另类数据·备案。当多个源在早期同时一致时，主题浮现。暗源直接舍弃，不惩罚。这是提示，非买入信号——各主题覆盖不同，热度不完全可比。阈值暂定，待校准。') }}</p>
+  <p class="fx-ssub">{{ t('Themes where several independent signals are stacking up at once — the earliest heads-up, before any single number is loud.', '多个独立信号同时叠加的主题——在任何单一数据变响之前，最早的提示。') }} {{ fxq('Sources = supply · demand · guidance · alt-data · filings. A theme surfaces when several agree at once while it is still early. Dark sources are dropped, not penalised. A heads-up, not a buy signal — coverage differs by theme, so heat is not perfectly comparable across themes. Threshold provisional, pending calibration.', '数据源＝供给·需求·指引·替代数据·备案。当多个源在早期同时一致时，主题浮现。暗源直接舍弃，不惩罚。这是提示，非买入信号——各主题覆盖不同，热度不完全可比。阈值暂定，待校准。') }}</p>
 
   {% if convergence.heating_up %}
   <div class="fx-heat-grid">

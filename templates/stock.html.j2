@@ -629,6 +629,8 @@
       <!-- Weekly washout-turn dual-read — sits DIRECTLY under the entry-status
            headline in #sv-decision, never instead of it (engine/washout_turn). -->
       <div id="r_washout" style="display:none"></div>
+      <!-- Matching past episodes for the current event class (engine/event_atlas) -->
+      <div id="r_episodes" style="display:none"></div>
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
       <!-- W6-C HOLD tracker — basing state / invalidation (display-only) -->
@@ -694,7 +696,7 @@
     <div class="panel" id="panel_demand" style="display:none">
       <h2>🧭 {{ t('Demand context — is the rally already priced?', '需求背景 — 涨势是否已被定价？') }}
         {{ help('A framing of WHERE a rally\'s demand story sits, in three honest layers. (1) Trailing = demand that already converted to financials — backward-looking by accounting construction. (2) Consensus = the forward view the market has ALREADY bought (forward P/E, next-quarter estimate, analyst revisions, SUE); agreeing with it is exposure, not edge, because it is already in the price. (3) Independent observable = a management-independent read on FORWARD demand (bookings/backlog, customer-capex, hiring) — the only layer that could say a rally is MIS-priced. It is not yet measured (Phase 1 of the Demand Desk). DISPLAY-ONLY context; nothing here is a buy signal.',
-          '用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅供参考展示，均非买入信号。') }}</h2>
+          '用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅作背景展示，均非买入信号。') }}</h2>
       <div id="r_demand"></div>
     </div>
 
@@ -720,11 +722,7 @@
     <div class="panel" id="panel_aq" style="display:none">
       <h2>🧾 {{ t('Accounting quality', '会计质量') }}
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
-<<<<<<< ours
           '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至披露日；年度数据，对部分公司不全。') }}</h2>
-=======
-          '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅供参考展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
->>>>>>> theirs
       <div id="r_aq"></div>
     </div>
 
@@ -740,11 +738,7 @@
     <div class="panel" id="panel_evwin" style="display:none">
       <h2>🗓 {{ t('Event windows', '事件窗口') }}
         {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
-<<<<<<< ours
           '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC披露日期。') }}</h2>
-=======
-          '当前标的即将到来的事件日历参考：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
->>>>>>> theirs
       <div id="r_evwin"></div>
     </div>
 
@@ -761,7 +755,7 @@
 
     <div class="panel" id="panel_fac" style="display:none">
       <h2>🧬 {{ t('Factor fingerprint', '因子指纹') }}
-        {{ help('Where this name sits on the standard factors against the rest of the S&P 1500 (0 = average, +2 = top of the pack; bars right of centre are attractive). These are relative ranks as of the latest filing — context, not a verdict on quality and not an edge on its own.',
+        {{ help('Where this name sits on the canonical smart-beta factors versus the S&P 1500 cross-section (winsorized z-scores; 0 = average, +2 = top of the pack, bars right of centre = attractive). These are RELATIVE RANKS lagged to the latest filing — context, not a validated alpha and not a quality verdict.',
           '该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。') }}</h2>
       <div id="r_fac_standout" class="fac-standout"></div>
       <div class="facwrap">
@@ -812,13 +806,13 @@
     <div class="panel" id="panel_fragility" style="display:none">
       <h2>⚠️ {{ t('Crowded & fragile', '拥挤且脆弱') }}
         {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
-          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅供参考展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
+          "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅作背景展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
       <div id="r_fragility"></div>
     </div>
 
     <div class="panel" id="panel_smartmoney" style="display:none">
       <h2>🏦 {{ t('Super-investors — 13F holders', '超级投资者 — 13F 持仓') }}
-        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
+        {{ help("Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag and reports long positions for managers with at least $100M in Section 13(f) securities (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.",
           "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度披露，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
     </div>
@@ -853,7 +847,7 @@
     </div>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
       'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
-      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅供研究参考展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
@@ -877,7 +871,11 @@
           ph: 'Search any S&P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
           th_dipm: 'typical dip', th_dipb: 'bad-case dip',
-          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored' },
+          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored',
+          delisted_pre: '· stopped trading ', delisted_by: ' — bought by ',
+          delisted_post: '; no longer scored', delisted_only: ' — no longer scored',
+          months: ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                   'August', 'September', 'October', 'November', 'December'] },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -886,11 +884,39 @@
           ph: '搜索任意标普500股票、ETF、大宗商品或加密货币…（例如 AAPL、Energy、Bitcoin）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
           th_dipm: '典型回撤', th_dipb: '最坏回撤',
-          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分' } };
+          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分',
+          // No padding around the acquirer slot: Chinese sets Latin runs off with
+          // spaces ("被 Devon Energy 收购") but sets CJK names solid ("被住友林业
+          // 收购"). Hardcoding either one is wrong for the other name, so the
+          // spacing is decided at render time — see zhPad() in render().
+          delisted_pre: '· ', delisted_by: '停止交易 — 被',
+          delisted_post: '收购；不再评分', delisted_only: '停止交易 — 不再评分',
+          months: null } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   // pick the Chinese variant of a composed analysis string when in zh mode
   // (the per-stock JSON carries parallel *_zh fields from engine/cycles.py)
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
+  // ISO date -> the reader's own convention: "7 May 2026" / "2026年5月7日".
+  // Parsed by hand rather than through Date(): `new Date('2026-05-07')` is UTC
+  // midnight, which renders as the PREVIOUS day for every viewer west of Greenwich
+  // — and a delisting note that names the wrong date is worse than no note.
+  // Falls back to the raw ISO string on anything unexpected; never throws.
+  function fmtDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) { return String(iso || ''); }
+    var y = m[1], mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+    if (lang() === 'zh') { return y + '年' + mo + '月' + d + '日'; }
+    var names = L('months');
+    return (names && names[mo - 1]) ? (d + ' ' + names[mo - 1] + ' ' + y) : String(iso);
+  }
+  // Chinese sets a Latin run off with spaces ("被 Devon Energy 收购") and a CJK
+  // name solid ("被住友林业收购"). English carries its own spacing in the string
+  // table, so this is a no-op there. Returns '' or ' ' for the given edge.
+  function zhPad(s, edge) {
+    if (lang() !== 'zh' || !s) { return ''; }
+    var ch = edge === 'end' ? s.charAt(s.length - 1) : s.charAt(0);
+    return /[A-Za-z0-9]/.test(ch) ? ' ' : '';
+  }
 
   // ===== fundamentals suite (Phase 1) — render panels baked by engine/stock_fundamentals.py =====
   var TF = {
@@ -903,7 +929,7 @@
           archhelp:'Archetype from factor ranks', conf:'confidence',
           fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
-          shortflow:'Daily short flow', sfratio:'Short ratio', sftrend:'Trend (recent−base)', sfz:'Ratio vs normal',
+          shortflow:'Daily short flow', sfratio:'Short ratio', sftrend:'Trend (recent−base)', sfz:'Ratio z-score',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
           suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500. Standout on the shallow 2023-2025 window, but its cross-sectional edge does NOT persist on deep 2011-2026 history (see the factors page) — earnings-momentum / PEAD context, not a standalone signal.',
@@ -1076,7 +1102,7 @@
     if (!box) return;
     if (!a) { box.style.display = 'none'; return; }
     box.className = 'macro-sens ad-tier-' + a.tier;
-    var ttl = lang() === 'zh' ? '另类数据' : 'Alternative data';
+    var ttl = lang() === 'zh' ? '替代数据' : 'Alternative data';
     var chips = (a.channels || []).map(function (c) {
       return '<span class="ms-chip">' + esc(lz(c.en, c.zh)) + '</span>'; });
     if (a.score >= 2) {
@@ -2604,7 +2630,7 @@
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F filed quarterly, ~45-day lag — reported long positions from managers with at least $100M in Section 13(f) securities (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
         '13F 季度披露、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
@@ -3063,6 +3089,51 @@
     box.style.display = '';
   }
 
+  // ---- Matching past episodes (engine/event_atlas, display-tier) ----------------
+  // Sibling of the washout chip: that one says the name IS in a deep-base turn,
+  // this one says what the matching historical episodes of the SAME class did —
+  // on this name, and on its cohort, blended by how much history the name has.
+  // Every number is null-tolerant: a missing component renders an em dash, never
+  // "NaN" or "undefined". No act-now verb, no rank, no title= attribute.
+  function renderEpisodes(d) {
+    var box = el('r_episodes');
+    if (!box) return;
+    var ea = d && d.event_atlas;
+    var wk = ea && ea.grids && ea.grids.W;
+    // Show beside the washout chip, or on its own when the weekly read is fresh.
+    var show = wk && ((wk.live_fresh === true) || (d && d.washout_turn));
+    if (!show) { box.innerHTML = ''; box.style.display = 'none'; return; }
+
+    var rc = wk.receipt || {};
+    var hz = rc.horizons || {};
+    var h13 = hz['13w'] || {};
+    var h26 = hz['26w'] || {};
+    function num(v) { return (v === null || v === undefined || isNaN(v)) ? '—' : v; }
+    // Percentages carry one decimal in both slots — JS drops a trailing ".0",
+    // and "13w 3% · 26w 5.5%" reads as two different precisions of the same
+    // measure. Counts stay integers.
+    function pct(v) {
+      return (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(1);
+    }
+    var nName = num(h13.n_name);
+    var nArch = num(h13.n_archetype);
+    var med13 = pct((h13.name_post || {}).med);
+    var med26 = pct((h26.name_post || {}).med);
+    var align = num(wk.align_class);
+
+    var line = lz(
+      'similar past setups on this name: n=' + nName + ' · with its cohort n=' + nArch +
+        ' · typical 13w ' + med13 + '% · 26w ' + med26 + '%',
+      '本股类似历史形态：n=' + nName + ' · 同类股 n=' + nArch +
+        ' · 典型13周 ' + med13 + '% · 26周 ' + med26 + '%');
+    var mini = lz('grids aligned: ' + align + '/2', '周期共振：' + align + '/2');
+
+    box.innerHTML =
+      '<div class="muted" style="font-size:11px;margin:0 0 6px">' + esc(line) +
+        '<span style="margin-left:7px;opacity:.75">' + esc(mini) + '</span></div>';
+    box.style.display = '';
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
@@ -3076,13 +3147,33 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     var r_asof = document.getElementById('r_asof');
     r_asof.textContent = L('asof') + ' ' + d.asof;
-    // R1 feed-freshness disclosure (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
-    // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its page
-    // but loses scoring authority (scripts/build_stock_library.py::_apply_feed_demotion).
-    // Cause-neutral copy — never "stale"/"delisted" (cause is not established per name).
-    // Uses behind_days (not d.asof again) — the r_asof line above already states the
-    // date once; repeating it here read as a self-quoting non-sequitur.
-    if (d.feed_stale && d.feed_stale.behind_days != null) {
+    // Two mutually exclusive honesty notes on the as-of line, never both.
+    //
+    // `delisted` (config/delisted_symbols.yml -> _apply_delisting): the security
+    // stopped existing and we have the SEC receipts, so the page says so and names
+    // who bought it. #4616's law — delisted is not stale — and the cause-neutral
+    // wording the #4643 adjudication mandated applied only while the cause was
+    // unresolved; it is resolved for these names (research/RESOLUTION_20260806_
+    // SIDE_STORE_SYMBOLS.md). No apology, no hedge: what happened, and what it
+    // means for the score.
+    //
+    // `feed_stale` (R1, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_
+    // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its
+    // page but loses scoring authority. Cause-neutral on purpose — "stale" vs
+    // "delisted" is exactly what is NOT known for a name in this branch. Uses
+    // behind_days (not d.asof again): the r_asof line above already states the date
+    // once, and repeating it here read as a self-quoting non-sequitur.
+    if (d.delisted && d.delisted.on) {
+      var dl = document.createElement('span');
+      dl.className = 'feed-stale-note';
+      var who = lang() === 'zh' ? (d.delisted.acquirer_zh || d.delisted.acquirer)
+                                : d.delisted.acquirer;
+      dl.textContent = ' ' + L('delisted_pre') + fmtDate(d.delisted.on) +
+        (who ? L('delisted_by') + zhPad(who, 'start') + who + zhPad(who, 'end') +
+               L('delisted_post')
+             : L('delisted_only'));
+      r_asof.appendChild(dl);
+    } else if (d.feed_stale && d.feed_stale.behind_days != null) {
       var fs = document.createElement('span');
       fs.className = 'feed-stale-note';
       fs.textContent = ' ' + L('feedstale_pre') + d.feed_stale.behind_days + L('feedstale_post');
@@ -3099,6 +3190,7 @@
         lz('Could not render the analysis — please refresh.', '无法渲染分析——请刷新页面。') + '</p></div>';
     }
     renderWashoutTurn(d);   // dual-read chip, directly under the entry-status headline
+    renderEpisodes(d);      // matching past episodes for the current event class
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -3285,7 +3377,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_washout', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_washout', 'r_episodes', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-08-06",
-  "generated_at": "2026-08-06T13:04:51.643902+00:00",
+  "as_of": "2026-08-08",
+  "generated_at": "2026-08-09T06:57:51.141204+00:00",
   "region": "cn",
   "gate": {
     "min_n": 150,
@@ -27,7 +27,7 @@
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 280,
+      "n_matured": 290,
       "ic": 0.3121,
       "t_hac": 3.253,
       "horizon": "10",

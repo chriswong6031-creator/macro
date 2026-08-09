@@ -23,12 +23,51 @@
 # before launch. Product login (Supabase) arrives in Slice 2; for a private beta
 # right now, front this with Cloudflare Access (email OTP, zero code).
 {
-	# The CDN edge owns the public http->https redirect for the proxied hosts; don't
-	# fight it with Caddy's automatic upgrade, which can loop the edge's origin pull.
-	# Only the grey-cloud admin.* host (direct, no CDN) declares its own explicit
-	# http:// redirect block below — disable_redirects just suppresses the AUTO ones.
+	# The CDN edge owns the public http->https redirect for EVERY host in this file;
+	# don't fight it with Caddy's automatic upgrade, which can loop the edge's origin
+	# pull. disable_redirects suppresses only the AUTO upgrades — the explicit http://
+	# blocks below (the www :80 mirror, the admin redirect, the port-80 421 catch-all)
+	# still route normally.
+	#
+	# There is NO grey-cloud exception, despite what this comment claimed until
+	# 2026-08-07. admin.* is edge-proxied like the rest: it CNAMEs to
+	# admin.mastermind-x.com.eo.dnse3.com -> 43.159.99.101 / 43.159.98.106, the same
+	# EdgeOne edge IPs as apex/www/app/bot, and the edge Force-HTTPS 302s
+	# http://admin.* before this box ever sees it (all five hosts probed on :80,
+	# 2026-08-07 — every one answered 302 with `Server: TencentEdgeOne`). So the
+	# explicit http:// blocks now serve exactly ONE path: a direct-to-origin :80 hit
+	# that bypasses DNS, which ufw permits from Anywhere. Still worth keeping for
+	# that path (see the admin block), but no longer what upgrades a real visitor.
 	auto_https disable_redirects
-	# Trust Cloudflare's forwarded client IP (so logs show the real visitor).
+
+	# NOT "the real visitor" — this said "trust Cloudflare's forwarded client IP",
+	# which is not what the directive does. private_ranges trusts RFC1918 peers only,
+	# and the edge arrives from PUBLIC addresses (43.175.104.x observed on
+	# origin-pull), so it is deliberately UNTRUSTED: {remote_host}, {client_ip} and
+	# the access log all resolve to the EDGE, not the client. That default is the safe
+	# one, because ufw lets anyone reach this box directly: a caller can forge ANY
+	# forwarding header. `EO-Connecting-IP` is the ONLY one the edge overwrites on
+	# EVERY zone this box serves; `True-Client-IP`, `X-Real-IP` and `CF-Connecting-IP`
+	# arrive carrying whatever the caller sent, everywhere.
+	#
+	# `EO-Client-IP` IS ZONE-DEPENDENT — do not read a claim about it as estate-wide.
+	# #4922 probed admin.* and found it absent from a clean request and forwarded
+	# verbatim when forged (the EdgeOne "Client IP Header" rule is not active there).
+	# Re-probing www.* on 2026-08-07 found the OPPOSITE: the rule IS active, a clean
+	# request carries it, and a forged copy arrives overwritten with the true client.
+	# Both measurements are real; they describe different zones. A resolver that reads
+	# it is correct on one host and silently forgeable on the other, which is why
+	# `app/edge_client.py` reads only the header that holds on both.
+	#
+	# Consequence before you key anything on a peer IP: per-client keying off
+	# {remote_host} buckets ALL edge-borne traffic into one. That bit the admin login
+	# lockout, and it is FIXED in `admin/edge_trust.py` (resolve behind an ATTESTED
+	# edge peer, fall back to the peer otherwise) — NOT by reading a header here.
+	# The public app needs no such attestation, because on www the edge does write a
+	# true per-visitor `EO-Connecting-IP`; `app/edge_client.py` explains why routing
+	# www through `from_edge` would RE-CREATE the admin lockout DoS rather than fix
+	# anything. Read whichever of the two modules serves the host you are editing
+	# before adding a `header_up` anywhere in this file.
 	servers {
 		trusted_proxies static private_ranges
 	}
@@ -93,13 +132,24 @@
 		# The eo-*/cf-* headers are deliberately NOT scrubbed: EdgeOne sets them for
 		# real in CN routing and other consumers (analytics geo, the site gate) read
 		# them. This adds a trustworthy signal rather than removing untrusted ones.
+		# WHICH of them the app may believe is decided in app/edge_client.py — probing
+		# www through the live edge on 2026-08-07 found EO-Connecting-IP overwritten
+		# with the true client while True-Client-IP, X-Real-IP and CF-Connecting-IP
+		# arrived carrying the forged values a caller sent. Read that module before
+		# adding a consumer of any eo-*/cf-* header.
 		header_up X-MM-Peer {remote_host}
 	}
 
 	# Live Tape websocket — same-origin relay to macro-api (app/tape.py).
 	# China-reachable (same-origin, like the /sb Supabase proxy). Placed with
 	# the /api/* proxy so a ws upgrade never reaches the HTML gate matchers.
-	reverse_proxy /ws/tape 127.0.0.1:8000
+	reverse_proxy /ws/tape 127.0.0.1:8000 {
+		# Same trusted peer as /api/*, for the same reason: app/tape.py caps
+		# concurrent sockets per client, and without this header its resolver has no
+		# unspoofable rung between the edge's EO-Connecting-IP and the 127.0.0.1
+		# socket peer — which is Caddy for every visitor, i.e. one shared bucket.
+		header_up X-MM-Peer {remote_host}
+	}
 
 	# ── Supabase auth/REST proxy — the GFW hole ───────────────────────────────
 	# *.supabase.co is fronted by CLOUDFLARE (verified: `server: cloudflare`,
@@ -141,7 +191,7 @@
 	# before the external file is considered. Never add a top-level /live/*
 	# file_server: that would bypass the default-deny static boundary.
 	@vps_public_live {
-		path /live/quotes.json /live/breadth.json /live/release_publications.json
+		path /live/quotes.json /live/breadth.json /live/release_publications.json /live/staleness.json
 		file {
 			root /var/lib/macro-live/public
 		}
@@ -161,6 +211,10 @@
 		file_server
 	}
 	handle /live/release_publications.json {
+		header Cache-Control "no-store"
+		file_server
+	}
+	handle /live/staleness.json {
 		header Cache-Control "no-store"
 		file_server
 	}
@@ -281,7 +335,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /market_memory.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/staleness.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -319,7 +373,7 @@
 
 	@gate_html {
 		# Public funnel only — IP gate retains its fail-open availability contract.
-		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /market_memory.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 	}
 
 	handle @gate_html {
@@ -407,7 +461,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /sb/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /market_memory.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /fundamental_forensics.css /fundamental_forensics.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -418,7 +472,7 @@
 
 		# Public funnel only: retain fail-open availability if the IP gate is down.
 		@gate_html_err {
-			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /market_memory.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /etfs.html /china_heatmap.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 		}
 		handle @gate_html_err {
 			header Cache-Control "no-store"
@@ -451,7 +505,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /marketdata/china_heatmap.json /stock_seasonality.css /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"
@@ -471,7 +525,7 @@
 	# re-revalidated on every page navigation — the dominant mobile cost. Refs
 	# WITHOUT ?v= (e.g. a page rendered before the sweep) keep the short TTL above.
 	@public_versioned {
-		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/*
+		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /market_memory.css /market_memory.js /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/js/* /assets/landing/*
 		query v=*
 	}
 	header @public_versioned Cache-Control "public, max-age=31536000, immutable"
@@ -512,14 +566,42 @@ www.mastermind-x.com {
 	# crashes startup. journald is the idiomatic, sandbox-safe sink.
 }
 
-# ---- apex mastermind-x.com - DIRECT redirect to the CDN-fronted www --------
-# The apex A record points straight at this origin (it CANNOT be a CNAME to the
-# EdgeOne edge, because mastermind-x.com also carries the MX for email; a CNAME
-# at the apex illegally shadows MX and makes mail flap). So the apex is a direct
-# host here: Caddy issues a REAL public Let's Encrypt cert (ACME HTTP-01 on :80
-# works because apex A -> this box) and 301s everything to https://www, which
-# stays behind EdgeOne. Kept OUT of the www serving block above so EdgeOne's www
-# origin-pull (Host: www.mastermind-x.com) can never land on this redirect+loop.
+# ---- apex mastermind-x.com — 301 to the CDN-fronted www ---------------------
+# Split out of the www block by #3040 (2026-07-19). The SPLIT is still correct:
+# keeping the apex out of the www serving block is what stops EdgeOne's www
+# origin-pull (Host: www.mastermind-x.com) from landing on this redirect and
+# looping. #3040's DNS/TLS rationale was wrong when written; corrected below,
+# all of it re-verified live 2026-08-07.
+#
+# * The apex is a CNAME, NOT an A record: mastermind-x.com ->
+#   mastermind-x.com.eo.dnse3.com -> 43.159.98.106 / 43.159.99.101, the same
+#   EdgeOne edge IPs as www. Every estate host (apex/www/admin/app/bot) is
+#   proxied this way — pages.yml recorded it 2026-07-05, two weeks BEFORE #3040
+#   claimed the apex pointed straight here. Nothing migrated after #3040; the
+#   comment simply mis-described a topology that was already in place.
+# * Public TLS for the apex is terminated AT THE EDGE (TrustAsia DV, EdgeOne's
+#   CA). Visitors never see this box's cert. The Let's Encrypt cert Caddy holds
+#   is what the ORIGIN presents on EdgeOne's origin-pull (and to direct-to-IP
+#   hits) — real and in use, but not the public-facing cert.
+# * ACME HTTP-01 still works, but NOT "on :80" as #3040 said — the edge's
+#   Force-HTTPS 302s the challenge away before it ever reaches this box. It
+#   survives that hop: LE follows the 302 to https://mastermind-x.com/..., the
+#   edge origin-pulls it here, and Caddy answers the challenge ahead of routing.
+#   Verified by GETting the challenge path through the edge and watching this
+#   box's handler fire ("looking up info for HTTP challenge", identifier
+#   mastermind-x.com) in `journalctl -u caddy`. NB no renewal has been exercised
+#   since the apex moved behind the edge — the cert is still the original
+#   2026-06-30 issuance and ARI selects 2026-08-29 05:42 UTC for the first one.
+#   Watch that run. If it ever fails, the fix is `tls internal` here (origin-pull
+#   is non-strict, exactly like www above), NOT a DNS revert.
+# * The MX hazard #3040 feared has NOT materialised. The apex still carries
+#   `10 m.northlighttrade.com` and it resolves alongside the apex CNAME (28/28
+#   across Google/Cloudflare/Quad9/OpenDNS/114DNS/AliDNS) because DNSPod answers
+#   the apex per-qtype instead of chasing its own CNAME. That is still RFC 1034
+#   §3.6.2 non-conformant, and transient CNAME-only/NODATA answers for MX (and
+#   even for A) did show up during that testing — so treat it as a live caution,
+#   not a closed question. Reverting the apex to an A record is the remedy IF
+#   mail ever flaps; nothing else needs it, ACME included.
 http://mastermind-x.com {
 	redir https://www.mastermind-x.com{uri} permanent
 }
@@ -594,38 +676,125 @@ app.mastermind-x.com {
 	tls internal
 }
 
-# ---- bot.mastermind-x.com — Brain BOT serve-only mirror (uvicorn :8001) -------
+# ---- bot.mastermind-x.com — Brain BOT desk, PRO-ONLY (uvicorn :8001) ----------
 # The Mastermind Brain dashboard (paper-trading FastAPI), served by
-# mastermind.service on 127.0.0.1:8001. The app handles its own auth
-# (MASTERMIND_PASSWORD in /opt/mastermind/.env; currently disabled). MUST live
-# here — without a site block, Caddy's `tls internal` has no cert for this SNI and
-# the Cloudflare<->origin handshake fails with HTTP 525. DNS A record:
-# bot -> 146.190.142.17 (proxied), SSL mode "Full".
+# mastermind.service on 127.0.0.1:8001. The app's browser login flow is gone; its
+# remaining auth covers only mutating/LLM-triggering operator POSTs (bearer
+# token), so until this block gained a gate every PAGE and read API on the desk
+# answered 200 to anyone. MUST live here — without a site block, Caddy's `tls
+# internal` has no cert for this SNI and the Cloudflare<->origin handshake fails
+# with HTTP 525. DNS A record: bot -> 146.190.142.17 (proxied), SSL mode "Full".
+#
+# THE GATE. Every path except /health is a Pro-membership surface. Identity is
+# the shared Supabase session cookie (Domain=.mastermind-x.com, so a request to
+# this host carries it), resolved by macro-api's /api/paywall/check_pro — a
+# WHO-only sibling of /api/paywall/check that deliberately does NOT classify the
+# path: config/site_access.yml describes the macro site's URL space, and this is
+# a different application's. 2xx continues to the origin; on anything else
+# Caddy's default copy_response streams the 403 interstitial back and STOPS, so
+# the bot app is never reached. Fail-closed by construction: if macro-api is
+# down, unreachable, or answering 404, nobody gets in.
+#
+# DEPLOY-ORDER WINDOW (accepted, self-healing). app/deploy/update.sh reinstalls
+# and reloads Caddy near the top of its run but only restarts macro-api much
+# later, after runtime setup and pip reconciliation. On the single tick that
+# ships (or later changes) this endpoint, Caddy therefore calls a route the
+# still-running macro-api does not have yet: 404, non-2xx, deny — every visitor
+# including Pro members sees the upgrade interstitial for roughly a minute, then
+# the macro-api restart heals it. That is the correct direction to fail, so the
+# ordering is left alone; do NOT "fix" it by treating 404 as allow.
+#
+# /health is handled FIRST and stays ungated on purpose: admin/uptime_board.py
+# probes it over the PUBLIC hostname and needs an unauthenticated 200 to tell
+# "the service is down" apart from "you are not Pro" — a gated probe collects an
+# anonymous 403 and cannot see an outage. (The bot repo's own deploy script hits
+# 127.0.0.1:8001/health directly for its rollback check, so it never passes
+# through here; keeping this hole open is for the public-side monitor.)
 bot.mastermind-x.com {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8001
 	header {
 		X-Robots-Tag "noindex, nofollow, noarchive"
 		-Server
 	}
+
+	handle /health {
+		reverse_proxy 127.0.0.1:8001
+	}
+
+	handle {
+		route {
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/paywall/check_pro
+				header_up X-Original-Uri {http.request.uri}
+				@proallow status 2xx
+				handle_response @proallow {
+				}
+			}
+			# A Pro-only body must never sit in a shared cache. This host is
+			# orange-clouded, so Cloudflare is the shared cache in question.
+			header Cache-Control "private, no-store"
+			header Vary "Cookie"
+			reverse_proxy 127.0.0.1:8001
+		}
+	}
+
 	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
 	tls internal
 }
 
 # ---- admin.mastermind-x.com — the Admin console (python -m admin :8787) -------
 # Authenticated control + observability console (admin.service on 127.0.0.1:8787).
-# UNLIKE the other hosts this is GREY-CLOUD / DNS-only (A record admin ->
-# 146.190.142.17, NOT proxied through Cloudflare), so Caddy provisions a REAL
-# Let's Encrypt cert over HTTP-01 (port 80 is kept open to all in ufw by
-# firewall-cloudflare.sh's grey-cloud escape hatch) — no `tls internal`, no
-# Cloudflare in front. The app enforces password + signed-session auth
-# (ADMIN_PASSWORD in /etc/macro-admin.env); Caddy adds anti-framing + HSTS headers.
+# The app enforces password + signed-session auth (ADMIN_PASSWORD in
+# /etc/macro-admin.env); Caddy adds anti-framing + HSTS headers.
 #
-# The global `auto_https disable_redirects` (correct for the CF-fronted hosts)
-# would otherwise serve this host over PLAINTEXT http:// with no upgrade — and the
-# login posts the shared password. So we add an explicit http:// block that
-# force-redirects to https:// (Caddy still answers the ACME HTTP-01 challenge on
-# :80 ahead of this redirect, so cert issuance/renewal is unaffected).
+# NOT GREY-CLOUD. This block claimed for months that admin.* was a direct A record
+# with no CDN in front, and the global options block above repeated it. Both were
+# wrong. Corrected and re-verified live 2026-08-07:
+#
+# * admin is a CNAME to admin.mastermind-x.com.eo.dnse3.com -> 43.159.99.101 /
+#   43.159.98.106 — the same EdgeOne edge IPs as apex/www/app/bot. No host in this
+#   estate is grey-cloud; :80/:443 being open to Anywhere in ufw (the
+#   firewall-cloudflare.sh escape hatch) is what makes the direct path reachable,
+#   not evidence that DNS points here.
+# * Public TLS is terminated AT THE EDGE — TrustAsia DV (EdgeOne's CA), Jun 30 ->
+#   Sep 27 2026. Visitors never see the certificate this box holds.
+# * The Let's Encrypt cert Caddy provisions (YE1, Jun 30 -> Sep 28 2026) is real and
+#   in use, but only on the edge's origin-pull and on direct-to-IP hits. Keeping it
+#   over `tls internal` is fine — origin-pull is non-strict either way.
+#
+# ACME HTTP-01 SURVIVES THE EDGE HOP, password gate and all. NOT "on :80 ahead of
+# this redirect" as this comment used to say — :80 never reaches the box for a real
+# client. LE follows the edge's 302 to https://admin.mastermind-x.com/.well-known/…,
+# the edge origin-pulls it here, and Caddy's solver answers AHEAD of routing, so
+# neither the admin password gate nor the reverse_proxy below can shadow it; the
+# edge does not gate /.well-known/acme-challenge/* on this host either. Verified by
+# GETting the challenge path through the edge and watching the handler fire in
+# `journalctl -u caddy` (the 401 the probe gets back is the admin app answering
+# after the solver falls through — the journal line is the evidence, not the body):
+#   "looking up info for HTTP challenge" identifier=admin.mastermind-x.com
+#   remote_addr=43.175.104.236 error="no information found to solve challenge…"
+# "no information found" just means no order was in flight; the point is that the
+# request REACHED the solver, from an edge IP. Zero ACME errors for this host in the
+# journal, and Caddy polls LE's ARI for it roughly every 6h.
+#
+# NB NO RENEWAL HAS BEEN EXERCISED since admin moved behind the edge — the cert is
+# still the original 2026-06-30 issuance, so a clean journal is not proof the next
+# one works. ARI selects 2026-08-29 20:13 UTC (window 08-28 12:07 -> 08-30 07:18);
+# the apex's first lands the same week. Watch both. If either fails, the fix is
+# `tls internal` here (origin-pull is non-strict, exactly like www), NOT a DNS
+# revert — TLS-ALPN-01 genuinely is dead behind the edge, so HTTP-01 is the only
+# live path and must not be removed.
+#
+# WHY THE http:// BLOCK BELOW STILL EARNS ITS KEEP, now that its original reason is
+# gone. It no longer fires for real visitors: the edge Force-HTTPS 302s them before
+# the origin sees the request, so this host cannot serve the password login over
+# plaintext regardless. It survives for the one path that bypasses the edge — a
+# direct-to-origin :80 hit — where it 301s to https instead of dropping into the
+# port-80 catch-all's 421 (both verified 2026-08-07). It cannot fight the edge,
+# because anything arriving through the edge was already redirected there. Deleting
+# it would not expose the login (the catch-all 421s), but it would turn a working
+# upgrade into a confusing error for the direct path.
 http://admin.mastermind-x.com {
 	redir https://admin.mastermind-x.com{uri} permanent
 }
@@ -648,10 +817,37 @@ admin.mastermind-x.com {
 
 	handle {
 		reverse_proxy 127.0.0.1:8787 {
-			# admin.* is grey-cloud / direct-to-origin (no CDN), so the TCP peer IS
-			# the real client. Inject it as a trusted header the app reads for its
-			# per-client login lockout; replacing a caller-supplied value prevents
-			# brute-force clients from rotating lockout buckets.
+			# {remote_host} is the verified TCP peer and header_up REPLACES any
+			# caller-supplied X-Admin-Client-IP, so this value cannot be spoofed.
+			# That half is deliberately UNCHANGED by the lockout fix below: it is what
+			# stops a brute-forcer rotating buckets, and every identity decision in the
+			# admin app is built on top of it.
+			#
+			# What does NOT hold is the claim this comment carried until 2026-08-07 —
+			# that admin.* is "grey-cloud / direct-to-origin (no CDN), so the TCP peer
+			# IS the real client". It is edge-proxied (see the block header), so for
+			# every visitor arriving through the edge the peer is an EDGE IP: a probe
+			# fired from a residential Mac landed here as 43.175.104.236.
+			#
+			# The live defect that followed — admin/auth.py keying its per-client login
+			# lockout on this value, so ALL edge-borne traffic shared ONE bucket and any
+			# anonymous client could lock the operator out of their own console — is
+			# FIXED IN THE APP, not here. admin/edge_trust.py resolves the visitor behind
+			# an ATTESTED edge peer and falls back to this peer otherwise, so nothing in
+			# this block had to change.
+			#
+			# READ THAT MODULE BEFORE ADDING A header_up HERE. Probing THIS host
+			# through the edge on 2026-08-07 (headers captured off the :8787 loopback hop)
+			# found EO-Connecting-IP is the ONLY header the edge overwrites; EO-Client-IP,
+			# True-Client-IP, X-Real-IP and CF-Connecting-IP all arrived carrying the
+			# forged values a caller sent, and a clean edge request carries no
+			# EO-Client-IP at all. Forwarding any of those as identity would reopen the
+			# hole in the other direction — unlimited bucket rotation.
+			#
+			# The EO-Client-IP half of that is TRUE HERE AND FALSE ON www, where the
+			# EdgeOne "Client IP Header" rule is active and the edge overwrites it (see
+			# the global options block). Do not copy this paragraph to another vhost —
+			# re-probe the zone you are actually editing.
 			header_up X-Admin-Client-IP {remote_host}
 		}
 	}
@@ -693,20 +889,24 @@ admin.mastermind-x.com {
 # that does not point at the box — but the pairing test forbids it anyway,
 # because the config half without the DNS half is a claim nobody verified.
 #
-# REAL CERTIFICATES, NOT `tls internal`. Every other host in this file sits
-# behind the EdgeOne CDN and uses a self-signed origin cert. These two do not:
-# they are GREY-CLOUD / direct A records, exactly like admin.mastermind-x.com
-# above, so Caddy provisions genuine Let's Encrypt certs over HTTP-01 on :80
-# (ufw keeps :80 open for the grey-cloud escape hatch). A `tls internal` here
-# would serve a self-signed cert straight to a browser — the test asserts its
-# absence.
+# REAL CERTIFICATES, NOT `tls internal`. These two are planned as direct A records
+# to 146.190.142.17 with NO CDN in front, so a browser sees this box's certificate
+# and it has to be a genuine Let's Encrypt one — ACME HTTP-01 on :80 works
+# directly for them (ufw keeps 80/443 open to Anywhere). A `tls internal` here
+# would serve a self-signed cert straight to a browser; the test asserts its
+# absence. NB this paragraph used to cite them as "GREY-CLOUD / direct A records,
+# exactly like admin.mastermind-x.com above" — admin is edge-proxied like every
+# other host here (corrected 2026-08-07), so on cutover these two would be the
+# FIRST direct hosts in the file, not a copy of an existing arrangement. Re-check
+# that assumption at cutover rather than inheriting it.
 #
 # WHY THE http:// BLOCKS EXIST: the global `auto_https disable_redirects` (right
 # for the CDN-fronted hosts, which must not fight the edge's own redirect) means
 # Caddy adds NO automatic http->https upgrade. Without an explicit redirect these
 # hosts would answer plain http from the port-80 catch-all as a 421. Caddy answers
 # ACME HTTP-01 challenges BEFORE routing, so these redirects never interfere with
-# issuance or renewal — same arrangement admin.* has run on for months.
+# issuance or renewal — the same ordering admin.* relies on, though for admin the
+# challenge now arrives via the edge's HTTPS origin-pull rather than on :80.
 #
 # ONE CANONICAL HOST. The apex (mastermindx.ai) serves; www 301s to it. Serving
 # BOTH names off one site block would put every page on two live URLs and rely

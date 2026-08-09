@@ -152,14 +152,22 @@ names — membership is intact; the provider went silent per-symbol.
 - **Chipped, out of scope:** (1) `data/stocks` collector retention fetch
   (QCOM/HOOD/MRVL/CVNA/HON/WDC/SATS still stale at HEAD — the load-bearing
   upstream defect named by #4441 §3, still unbuilt); (2) symbol-level
-  resolution for the refused names — #4622 (open) established these are often
-  **retired-symbol renames** (FI→FISV, MMC→MRSH; K = Kellanova delisted via the
-  Mars close): CTRA and TPH must be resolved against the NASDAQ symbol
-  directory + OpenFIGI CUSIP per the #4622 protocol (a rename is a KEY
-  MIGRATION, never an in-place refetch) — until resolved, this PR's demotion
-  keeps them honest; page copy is deliberately cause-neutral ("no new data
-  since X") because stale-vs-delisted-vs-renamed is NOT established per name
-  (#4616 law: delisted is not stale); (3) the ~19 other breadth-cache readers
+  resolution for the refused names — **RESOLVED 2026-08-06,
+  `research/RESOLUTION_20260806_SIDE_STORE_SYMBOLS.md`**. The rename hypothesis
+  this chip carried is inverted on every name: CTRA and TPH are DELISTINGS
+  (Coterra→Devon Energy, merger closed 2026-05-07, Form 25-NSE same day; Tri
+  Pointe Homes→Sumitomo Forestry at US$47.00 cash, closed 2026-05-14, last
+  session 05-13) whose store tips are last trading sessions, not broken pulls —
+  neither has a successor symbol to re-point at. TCNNF, the one name a vendor
+  probe called "possibly delisted", is the actual rename: Trulieve uplisted from
+  the OTC quote to NYSE:TRLV on 2026-06-09 (Form 8-A12B + NYSE certification, no
+  Form 25/15 ever), and its closes match TRLV's to the cent on all 19
+  overlapping sessions, so the store was re-keyed. The cause-neutral copy this
+  chip mandated applied only while the cause was unknown; CTRA and TPH now carry
+  a truthful `delisted` note (#4616 law: delisted is not stale) and leave the
+  fetch list via `config/delisted_symbols.yml`, keeping their pages (CSP-R1).
+  `K` and `RGI` remain unresolved and are re-chipped there; (3) the ~19 other
+  breadth-cache readers
   (factor panels, sector map, chart data, …) that read frozen columns with no
   freshness gate — same class, separate program.
 

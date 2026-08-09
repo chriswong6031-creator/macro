@@ -1255,6 +1255,15 @@
   [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
   [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+  /* The needle itself, which the three rules above cannot reach: `> text` stops at the
+     needle <g>, and `g[stroke]` matches only the tick group (it carries a stroke
+     ATTRIBUTE; the needle group does not). So the pointer kept its dark-mode ink and
+     went white-on-white on the light .cnx-card — the dial rendered as an arc with no
+     reading on it. The hub ring / core / tip already paint from --up/--warn/--down and
+     stay as they are. Identical twin rule on body.page-macro. */
+  [data-theme="light"] body.page-china .cnx-gauge-needle line{stroke:rgba(10,16,24,.20);}
+  [data-theme="light"] body.page-china .cnx-gauge-needle polygon{fill:rgba(10,16,24,.82);}
+  [data-theme="light"] body.page-china .cnx-gauge-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
   /* Regime pill (sizes to content, never clips) */
   body.page-china .mx5-regime-pill{
     display:inline-flex;align-items:center;gap:6px;
@@ -1499,6 +1508,30 @@
 
 <div class="grid">
 
+  {# ── Delayed-board disclosure ────────────────────────────────────────────────
+     The CN twin of the US board's staleness banner (templates/dashboard.html.j2,
+     `_su.staleness.delayed`). Engine-driven: scripts/build_china_library.py's
+     compute_board_staleness() decides `delayed` from the CSI300 settled-session anchor
+     against lib/cn_calendar, so this never renders on a healthy bake — weekends and
+     mainland holidays included.
+
+     Deliberately OUTSIDE the mode split. china.html (macro) is the surface
+     scripts/freshness_sentinel.py watches, and it renders no setups board; a disclosure
+     nested in the stocks-only block would leave the watched page silent during exactly the
+     freeze it exists to announce. Both pages read the same prices, so both disclose.
+
+     The English "prices as of YYYY-MM-DD" wording is load-bearing, not decorative — it is the
+     string the sentinel parses to measure the board's self-reported lag against the china
+     delay budget. Keep that phrase in the l-en span if this copy is ever revised.
+     Fail-soft: absent key or delayed=False renders nothing. Bilingual via l-en/l-zh spans;
+     no translated text in attributes (check_title_i18n). #}
+  {% set _cn_stale = board_staleness if board_staleness is defined else none %}
+  {% if _cn_stale and _cn_stale.get('delayed') and _cn_stale.get('price_through') %}
+  <div class="panel span12" style="border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel));padding:9px 13px;font-size:12px;line-height:1.55">
+    <span class="l-en"><strong>⚠ BOARD DELAYED</strong> — prices as of {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %} ({{ _cn_stale.get('age_days') }}d behind){% endif %}. Data is stale; {{ 'entry signals' if mode == 'stocks' else 'readings on this page' }} may not reflect latest prices. Check a live quote before acting.</span><span class="l-zh"><strong>⚠ 数据延迟</strong> — 价格截至 {{ _cn_stale.get('price_through') }}{% if _cn_stale.get('age_days') is not none %}（落后 {{ _cn_stale.get('age_days') }} 天）{% endif %}。当前数据过期，{{ '入场信号' if mode == 'stocks' else '本页读数' }}可能不反映最新价格，操作前请确认最新报价。</span>
+  </div>
+  {% endif %}
+
   {% if mode == 'stocks' %}
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   {# Header geometry is the SHARED stock-board head — identical partial the US
@@ -1507,15 +1540,20 @@
      boards move together. #}
   {% include "_stocks_header_css.html.j2" %}
   <div class="panel span12" id="stocks-header">
-    {# Freshness pill — the CN analogue of the US board's staleness chip. There is
-       no CN exchange calendar in lib/, so this claims NO session-count verdict:
-       the degrade is driven only by facts the board already publishes — a partial
-       collection session (setups.coverage.partial_session) or the W0.7 coverage
-       outage flag (setups.data_outage.flag) — and the stamped date is the board's
-       own settled-session anchor (coverage.data_through = CSI300 last bar). #}
+    {# Freshness pill — the CN analogue of the US board's staleness chip. It now DOES carry a
+       session-count verdict: lib/cn_calendar.py supplies the A-share session calendar this
+       comment used to say was missing, and build_china_library.compute_board_staleness turns
+       it into board_staleness.delayed. Three degrade sources, most severe first: a delayed
+       board (>= 2 sessions behind, or past the calendar-day backstop), a partial collection
+       session (setups.coverage.partial_session), or the W0.7 coverage outage flag
+       (setups.data_outage.flag). The stamped date stays the board's own settled-session
+       anchor (coverage.data_through = CSI300 last bar).
+       The `delayed` leg is what keeps this pill from reading "Fresh" directly above the
+       delayed-board banner at the top of the grid — one page, one verdict. #}
     {% set _cn_cov = setups.coverage if (setups and setups.coverage is defined) else none %}
     {% set _cn_outage = (setups.get('data_outage') or {}) if setups else {} %}
-    {% set _cn_degraded = (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
+    {% set _cn_delayed = _cn_stale.get('delayed') if _cn_stale else false %}
+    {% set _cn_degraded = _cn_delayed or (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
     {% set _cn_through = (_cn_cov.data_through if _cn_cov else none) or (setups.as_of if setups else none) or latest.date %}
     <div class="stk-headline">
       <h1>🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
@@ -1523,7 +1561,7 @@
       <div class="stk-head-meta">
         <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}">
           <span class="stk-fresh-dot" aria-hidden="true"></span>
-          <span class="l-en">{{ 'Partial data' if _cn_degraded else 'Fresh' }}</span><span class="l-zh">{{ '数据不全' if _cn_degraded else '新鲜' }}</span>
+          <span class="l-en">{{ 'Delayed' if _cn_delayed else ('Partial data' if _cn_degraded else 'Fresh') }}</span><span class="l-zh">{{ '数据延迟' if _cn_delayed else ('数据不全' if _cn_degraded else '新鲜') }}</span>
           {% if _cn_through %}<strong>{{ _cn_through }}</strong>{% endif %}
         </span>
       {# Regime + Posture header pills, aligned with the US stock dashboard #}
@@ -2347,7 +2385,7 @@
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow">{{ t('A-Share Phase','A股阶段') }}</div>
         {% endif %}
-        <div class="cnx-receipt">{{ t('Context, not a forecast. China-native composite — options-fear and margin-froth legs stand in for VIX/HY.','仅供参考，非预测。中国本土综合指标——期权恐慌与两融拥挤腿代替VIX/HY。') }}</div>
+        <div class="cnx-receipt">{{ t('Context, not a forecast. China-native composite — options-fear and margin-froth legs stand in for VIX/HY.','仅作背景，非预测。中国本土综合指标——期权恐慌与两融拥挤腿代替VIX/HY。') }}</div>
       </div>
     </div>
   </div>
@@ -2423,7 +2461,7 @@
         <div style="font-size:9.5px;color:var(--muted)"><span class="l-en">FX data as of {{ _fxc.built_date }}</span><span class="l-zh">外汇数据截至 {{ _fxc.built_date }}</span></div>
         {%- endif %}
         {% endif %}
-        <div class="cnx-receipt">{{ t('Gauges read what has already turned — context, not a forecast.','仪表读取的是已经转变的信号 — 仅供参考，非预测。') }}</div>
+        <div class="cnx-receipt">{{ t('Gauges read what has already turned — context, not a forecast.','仪表读取的是已经转变的信号 — 仅作背景，非预测。') }}</div>
       </div>
     </div>
   </div>
@@ -2511,7 +2549,7 @@
           <div class="cnx-ihcard"><div class="t">QVIX</div><div class="p">{{ I.margin.qvix }}</div><span class="cnx-okchip">{{ t('options fear','期权恐慌') }}</span></div>
           {% endif %}
         </div>
-        <div class="cnx-receipt">{{ t('Context only — click a sector or name to open in the Terminal.','仅供参考 — 点击板块或个股在终端中查看。') }}</div>
+        <div class="cnx-receipt">{{ t('Context only — click a sector or name to open in the Terminal.','仅作背景 — 点击板块或个股在终端中查看。') }}</div>
       </div>
     </div>
   </div>
@@ -3156,7 +3194,7 @@
   {% set _n_ran = (_ran_late_rows | length) + (_ran | length) + _n_late_lane %}
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
-    <h2>{% if _cn_v2 %}{{ t('⚡ China Prophet — Live Board', '⚡ 中国 Prophet — 实时榜单') }}{% else %}{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国 Prophet — 精选入场') }}{% endif %}
+    <h2>{% if _cn_v2 %}{{ t('⚡ China Prophet — Live Board', '⚡ 中国先知 — 实时榜单') }}{% else %}{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}{% endif %}
       {#- MERGE NOTE (this branch × the G0.2 unified-grid branch). The title split is
           G0.2's and is test-pinned; the TIP is this branch's plain-word LENS card,
           and it deliberately renders on BOTH artifact paths rather than only the
@@ -3430,10 +3468,10 @@
       {%- set _wo_zh = '过去两周的重挫已基本释放（2周洗盘）。' if n.washout_2w else '' %}
       {%- if _cld.get('star') %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Selling easing','zh':'抛压减弱',
         'tip_en':'The whole sector sold off together and this name\'s decline is losing force — the strongest base shape this board tracks.' ~ _wo_en ~ ' Context for the setup, never a reason on its own.',
-        'tip_zh':'整个板块同步下跌，而该股跌势正在减弱 — 本榜追踪的最强底部形态。' ~ _wo_zh ~ '仅作形态参考，本身不构成理由。'}] %}
+        'tip_zh':'整个板块同步下跌，而该股跌势正在减弱 — 本榜追踪的最强底部形态。' ~ _wo_zh ~ '仅为形态背景，本身不构成理由。'}] %}
       {% elif n.washout_2w %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
         'tip_en':'Two weeks of heavy selling have already run their course here — washed out (2W). Context for the setup, never a reason on its own.',
-        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅作形态参考，本身不构成理由。'}] %}{% endif %}
+        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅为形态背景，本身不构成理由。'}] %}{% endif %}
       {# A v2 artifact always RESERVES the slot (so the tracker and zone rows stay aligned
          across a grid row — macro law); a pre-v2 artifact renders no row at all UNLESS it
          earned a base-shape chip, in which case it gets exactly that one. A pre-v2 row with
@@ -3459,7 +3497,7 @@
         'edge': _edge_txt,
         'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
         'edge_tip_en': 'China Prophet priority 0–100 — signal 35% · entry 25% · runway 20% · bottom quality 10% · reversal-sleeve membership 10%. Transparent readiness rank; not a win probability or return forecast.',
-        'edge_tip_zh': '中国 Prophet 优先级0–100 — 信号35% · 入场25% · 上行空间20% · 底部质量10% · 反转组合成员10%。透明就绪度排序；不是胜率或收益预测。',
+        'edge_tip_zh': '中国先知优先级0–100 — 信号35% · 入场25% · 上行空间20% · 底部质量10% · 反转组合成员10%。透明就绪度排序；不是胜率或收益预测。',
         'stage': _stage_n, 'spark': n.get('spark_svg'),
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
@@ -3518,7 +3556,7 @@
          NOTE es.action is deliberately NOT surfaced on this shelf: on a muted row it still
          reads "Buy now", which is the exact BUY-family language rule 2 forbids here. #}
       {%- set _RAN_MK = {
-        'hold':        ['Still rated Hold', '主评级仍为“持有”'],
+        'hold':        ['Still rated Hold', '主评级仍为「持有」'],
         'topping':     ['Rolling over', '见顶迹象'],
         'extended':    ['Already ran', '已经拉升'],
         'blocked':     ['Entry blocked', '入场受阻'],
@@ -3533,7 +3571,7 @@
       {%- if n.get('muted_entry') %}
         {%- set _rmk.rows = _rmk.rows + [{'k':'lane','en':'Not actionable','zh':'不可操作',
           'tip_en':'The entry gauge is open on this name, but it sits on the RAN / LATE shelf because price has already extended past the zone. Wait for a pullback.',
-          'tip_zh':'该股入场量表已打开，但因价格已越过买区而列入“信号已过”板块。请等待回调。'}] %}
+          'tip_zh':'该股入场量表已打开，但因价格已越过买区而列入「信号已过」板块。请等待回调。'}] %}
       {%- elif _rw or (es and es.get('headline')) %}
         {%- set _rmk.rows = _rmk.rows + [{'k':'lane',
           'en':(_rw[0] if _rw else 'Entry window passed'), 'zh':(_rw[1] if _rw else '入场窗口已过'),
@@ -3546,7 +3584,7 @@
       {%- set _rcld = n.get('coiled') or {} %}
       {%- if not _rcld.get('star') and n.washout_2w %}{% set _rmk.rows = _rmk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
         'tip_en':'Two weeks of heavy selling have already run their course here — washed out (2W). Context for the setup, never a reason on its own.',
-        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅作形态参考，本身不构成理由。'}] %}{% endif %}
+        'tip_zh':'过去两周的重挫已基本释放（2周洗盘）。仅为形态背景，本身不构成理由。'}] %}{% endif %}
       {# `marks` is always a LIST here, never `none`: every card on this shelf earns an
          entry-read chip, so reserving the slot on the handful that do not keeps the tracker
          and zone rows aligned across a grid row (macro law). #}
@@ -3631,7 +3669,7 @@
             {# Metrics grid #}
             <div class="rip-metrics">
               {# 2W Stoch + reclaim arrow #}
-              <div class="rip-metric" data-tip-en="How washed out it is, 0–100. 35 and below = washed out, 20 and below = very washed out; the arrow shows which way it is heading." data-tip-zh="跌得有多透，0–100。≤35＝已经跌透，≤20＝跌得很透；箭头是它的方向。">
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
                 <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
                 <div class="rip-metric-val {% if _r_stoch is not none and _r_stoch <= 20 %}pos{% elif _r_stoch is not none and _r_stoch > 35 %}mut{% endif %}">
                   {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
@@ -3647,7 +3685,7 @@
                 </div>
               </div>
               {# Washout depth (d at cross) #}
-              <div class="rip-metric" data-tip-en="How washed out it was at the moment it turned up, 0–100. Below 25 = it turned from a real washout; the lower the number, the deeper the reset." data-tip-zh="它转上来那一刻跌得有多透，0–100。低于25＝从真正的低位转上来；数字越低，洗得越干净。">
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
                 <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
                 <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
               </div>
@@ -3729,7 +3767,7 @@
             </div>
             {% if r.get('spark_svg') %}<div class="rip-card-spark">{{ r.get('spark_svg') | safe }}</div>{% endif %}
             <div class="rip-metrics">
-              <div class="rip-metric" data-tip-en="How washed out it is, 0–100. 35 and below = washed out, 20 and below = very washed out; the arrow shows which way it is heading." data-tip-zh="跌得有多透，0–100。≤35＝已经跌透，≤20＝跌得很透；箭头是它的方向。">
+              <div class="rip-metric" data-tip-en="Oversold gauge — the 2-week StochRSI. 35 and below = washout zone, 20 and below = deeply oversold; the arrow is its direction." data-tip-zh="超卖量表 — 双周随机RSI。≤35＝洗盘区，≤20＝深度超卖；箭头为其方向。">
                 <div class="rip-metric-lbl"><span class="l-en">Oversold gauge</span><span class="l-zh">超卖程度</span></div>
                 <div class="rip-metric-val mut">
                   {% if _r_stoch is not none %}{{ '%.1f'|format(_r_stoch) }}{% else %}—{% endif %}
@@ -3743,7 +3781,7 @@
                   {%- if _r_slope == 1 %}<span style="font-size:9px">↑</span>{%- elif _r_slope == -1 %}<span style="font-size:9px">↓</span>{%- endif %}
                 </div>
               </div>
-              <div class="rip-metric" data-tip-en="How washed out it was at the moment it turned up, 0–100. Below 25 = it turned from a real washout; the lower the number, the deeper the reset." data-tip-zh="它转上来那一刻跌得有多透，0–100。低于25＝从真正的低位转上来；数字越低，洗得越干净。">
+              <div class="rip-metric" data-tip-en="How oversold the weekly gauge was when it turned up (weekly StochRSI %D at the cross, 0–100 scale). Below 25 = turned up from a true washout; lower = deeper reset." data-tip-zh="周线量表转向时的超卖深度（周随机RSI %D，0–100）。低于25＝从真正的洗盘区转向；越低洗盘越深。">
                 <div class="rip-metric-lbl"><span class="l-en">Washout depth</span><span class="l-zh">超卖深度</span></div>
                 <div class="rip-metric-val mut">{% if _r_d is not none %}{{ '%.1f'|format(_r_d) }}{% else %}—{% endif %}</div>
               </div>
@@ -4097,7 +4135,7 @@
         var anyBoost = (DATA[cur] || []).some(function (r) { return boostOf(r) > 0; });
         if (legend) {
           legend.style.display = anyBoost ? '' : 'none';
-          if (anyBoost) legend.innerHTML = '<span class="sbt-chip">▲ ' + bl('sector turned', '板块已转向') + '</span> ' + bl('= the stock’s sector sold off with it and has just turned up too.', '＝该股所在板块和它一起跌透，现在也刚刚转上来。') + ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底') + '</span> ' + bl('= the sector’s washed-out peers have stopped falling (velocity collapsed, some ticking up).', '＝板块内洗盘个股大多已止跌（下跌骤减、部分回升）。') + ' ' + bl('Boosted rows float to the top of the default order — click any column for the pure sort. A display re-rank, never a filter.', '仅提升默认排序（点击任意列即为纯排序）。展示层重排、绝非过滤。');
+          if (anyBoost) legend.innerHTML = '<span class="sbt-chip">▲ ' + bl('sector turned', '板块已转向') + '</span> ' + bl('= the name’s sector washed out with it and just fired the validated 2D-MACD × 3D-StochRSI turn.', '＝该股所在板块随其一同洗盘，且刚在已验证的 2D-MACD × 3D-StochRSI 上转向。') + ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底') + '</span> ' + bl('= the sector’s washed-out peers have stopped falling (velocity collapsed, some ticking up).', '＝板块内洗盘个股大多已止跌（下跌骤减、部分回升）。') + ' ' + bl('Boosted rows float to the top of the default order — click any column for the pure sort. A display re-rank, never a filter.', '仅提升默认排序（点击任意列即为纯排序）。展示层重排、绝非过滤。');
         }
         // header
         var hh = '<tr>';
@@ -4252,19 +4290,25 @@
     <h2>{{ t('Turn Setups (multi-timeframe)', '多周期转折形态') }}
       <span class="help">?<span class="tip tip-wide">
         <span class="l-en">
-          Four timeframes are checked for an upturn &mdash; day, 3-day, week and two-week.
-          <b>Confirmed</b> means at least three agree, including a weekly one; <b>Watch</b> means two agree.
-          The monthly picture is shown alongside so a turn inside a falling market is easy to spot.
-          Context only: this read has no track record behind it yet, so it is not a signal and not a forecast.
-          Covers up to 400 A-shares drawn from the buy list, the bottoming list and the themes that are moving.
-          Updates after the Asian close.
+          Forward-graded meter (expected-null; prior sector-level turn in backtest printed NULL — Oracle P8 / DO_NOT_REBUILD §2).
+          Display context only — not a directional signal or a return forecast. Tier = display.
+          <b>Legs:</b> D = daily MACD bull cross (&le;5 sessions); 3D = house 3-day confluence (MACD+StochRSI);
+          W = weekly MACD (confirmed cross &le;3 bars); 2W = biweekly MACD cross.
+          <b>States:</b> UPTURN_CONFIRMED (K&ge;3 incl. &ge;1 weekly/2W leg) &middot; UPTURN_WATCH (K&ge;2).
+          <b>Monthly phase</b> is anti-trap context only (not a gate).
+          CN analog of TS-R3/TS-R4; promotion question earliest 2027.
+          Universe: board buy + ripening + THS act-now theme members (&le;400 names).
+          Data lands after nightly asia close. Accruing from ship date.
         </span>
         <span class="l-zh">
-          我们在日线、3日、周线、双周四个周期上看它有没有转上来。
-          <b>已确认</b>＝至少三个周期一致，其中至少有一个是周线级别；<b>观察中</b>＝两个一致。
-          旁边同时给出月线情况，方便看出这是不是在下跌大势里的短暂反弹。
-          这里只是参考：这个读数目前还没有历史成绩支撑，既不是信号，也不是收益预测。
-          覆盖买入榜、筑底榜和正在走强的题材，最多 400 只A股。每晚亚洲收盘后更新。
+          前瞻计量（预期空值；回测中板块级别拐点为NULL — Oracle P8 / DO_NOT_REBUILD §2）。
+          仅展示参考，非方向信号或收益预测。层级=展示。
+          <b>信号腿：</b>D=日线MACD金叉（5日内）；3D=本系统3日共振（MACD+StochRSI）；
+          W=周线MACD（确认交叉&le;3根K线）；2W=双周MACD交叉。
+          <b>状态：</b>UPTURN_CONFIRMED（K&ge;3含&ge;1周/双周腿）&middot; UPTURN_WATCH（K&ge;2）。
+          <b>月线阶段</b>仅作防陷阱参考（非门控）。
+          CN版本对应TS-R3/TS-R4；晋升问题最早2027年。
+          覆盖范围：买入榜单+成熟区+THS立即行动主题成员（&le;400只）。数据在每晚亚洲收盘后更新。
         </span>
       </span></span>
       {% if _mtf_cn.get('as_of') %}<span class="note" style="text-transform:none"> &middot; {{ _mtf_cn.as_of }}</span>{% endif %}
@@ -4658,7 +4702,7 @@ function initStockTableView(){
   var cols = [
     { key:'lane', labelEn:'Lane', labelZh:'通道', default:true, sortable:true,
       fmt:function(v){ return laneBadge(v); },
-      tip:{en:'Prophet admission lane. Featured cleared every execution check; depth lanes state why a name did not.',zh:'Prophet 准入通道。精选标的通过全部成交检查；扩展通道说明未入选原因。'} },
+      tip:{en:'Prophet admission lane. Featured cleared every execution check; depth lanes state why a name did not.',zh:'先知准入通道。精选标的通过全部成交检查；扩展通道说明未入选原因。'} },
     { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:false, sortable:false,
       fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.zone); },
       tip:{en:'Signal stage and zone (rows are pre-ranked by system)',zh:'信号阶段与区域（行已按系统排序）'} },
@@ -4691,10 +4735,10 @@ function initStockTableView(){
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
         var n = Math.round(parseFloat(v)); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
         return '<span class="' + cls + '">' + n + '</span>'; },
-      tip:{en:'China Prophet priority 0–100. Readiness rank, not a win probability or return forecast.',zh:'中国 Prophet 优先级0–100。就绪度排序，不是胜率或收益预测。'} },
+      tip:{en:'China Prophet priority 0–100. Readiness rank, not a win probability or return forecast.',zh:'中国先知优先级0–100。就绪度排序，不是胜率或收益预测。'} },
     { key:'conviction', labelEn:'Context score', labelZh:'情境评分', default:false, sortable:true, right:true,
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': String(Math.round(parseFloat(v))); },
-      tip:{en:'Legacy profile score shown only as context; it does not control Prophet v2 order.',zh:'旧版画像评分仅作参考；不影响 Prophet v2 排序。'} },
+      tip:{en:'Legacy profile score shown only as context; it does not control Prophet v2 order.',zh:'旧版画像评分仅作情境参考；不影响先知v2排序。'} },
     { key:'mcap', labelEn:'Mkt cap', labelZh:'市值(亿)', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v,r){ if(v==null) return '<span class="st-muted">—</span>';
         var b2 = r.cap_bucket; var cls = b2==='large'?'st-pos':b2==='small'?'st-neg':'';
@@ -4715,7 +4759,7 @@ function initStockTableView(){
         var arr = r.w2_stoch_arrow; var arrowStr = arr===1?' ↑':arr===-1?' ↓':'';
         var cls = v<=20?'st-neg':v<=35?'':'st-pos';
         return '<span class="' + cls + '">' + fn(v,1) + arrowStr + '</span>';
-      }, tip:{en:'How washed out it is. ≤35 = washed out; the arrow is its direction',zh:'跌得有多透。≤35＝已经跌透；箭头是方向'} },
+      }, tip:{en:'2W StochRSI washout level. ≤35 = washout zone; arrow = direction',zh:'双周随机RSI洗盘水平。≤35=洗盘区；箭头=方向'} },
     { key:'macd_hist_d', labelEn:'MACD D/2D/3D', labelZh:'MACD多周期', default:false, sortable:false,
       fmt:function(v,r){ return mg(r.macd_hist_d, r.macd_d2, r.macd_d3); },
       tip:{en:'Daily / 2D / 3D MACD histogram direction (▲ pos / ▼ neg / · unknown)',zh:'日线/2日/3日MACD柱方向（▲正 / ▼负 / ·未知）'} },

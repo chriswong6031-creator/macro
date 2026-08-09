@@ -60,6 +60,13 @@
 .sv-band-constructive { background: color-mix(in srgb, var(--up) 62%, var(--panel)); }
 .sv-band-neutral { background: var(--muted); }
 .sv-band-low { background: var(--down); }
+/* A record the score refused to read (engine/name_score.not_scored). Deliberately NOT
+   `low`: red is a claim about the name, and the whole point of the null is that no claim
+   is being made. Muted, hollow, dashed — visibly an absence, not a reading. */
+.sv-band-unscored {
+  background: transparent; color: var(--muted);
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, var(--line));
+}
 .sv-band-word { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; }
 .sv-score { font-size: 20px; font-weight: 800; margin-top: 2px; }
 .sv-score small { font-size: 11px; font-weight: 600; opacity: .8; }

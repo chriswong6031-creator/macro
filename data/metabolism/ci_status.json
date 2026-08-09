@@ -1,44 +1,14 @@
 {
-  "ts": "2026-08-07T04:43:25+00:00",
-  "main_sha": "fa7294e4bf33f0f4c544c101f134b5835f0b8dec",
+  "ts": "2026-08-09T08:13:13+00:00",
+  "main_sha": "fd2394640d913754b55aaf6249c5a990b000b381",
   "red_required": [
-    {
-      "name": "sweep",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31148043837/job/92771613892"
-    },
-    {
-      "name": "sweep",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31147857245/job/92771052387"
-    },
-    {
-      "name": "sweep",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31147617664/job/92770269216"
-    },
     {
       "name": "Supabase Preview",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/92770141389"
-    },
-    {
-      "name": "sweep",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31147557955/job/92770086556"
-    },
-    {
-      "name": "sweep",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/31147540741/job/92770032445"
+      "url": "https://github.com/chriswong6031-creator/macro/runs/93218304269"
     }
   ],
   "green": false,
-  "consecutive_failures": 3
+  "consecutive_failures": 2
 }

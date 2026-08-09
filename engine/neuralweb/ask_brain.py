@@ -182,6 +182,17 @@ _LIQUIDITY_PLUMBING_TRIGGER_TERMS = re.compile(
     re.IGNORECASE,
 )
 
+# Release Radar inflation-intelligence questions. Checked before the generic
+# macro/regime branch so CPI-print questions receive the dedicated read tool.
+_INFLATION_INTELLIGENCE_TRIGGER_TERMS = re.compile(
+    r"(?i)\b("
+    r"inflation|disinflation|reflation|cpi|consumer\s+price(?:s|\s+index)?|"
+    r"headline\s+cpi|core\s+cpi|price\s+pressure|inflation\s+print|cpi\s+print|"
+    r"next\s+(?:inflation|cpi)\s+(?:release|print)|current\s+inflation"
+    r")\b",
+    re.IGNORECASE,
+)
+
 # Prompt-injection reject patterns
 _INJECTION_PATTERNS = [
     # Canonical phrase variants: "ignore [all] [the/your/previous/prior] instructions",
@@ -217,6 +228,8 @@ _ASK_READ_TOOLS = frozenset({
     "explain_factor_context",
     # CPI P6 wave 1: cycle-pattern turn-hazard read tool (display/context only)
     "read_cycle_pattern_state",
+    # Release Radar inflation intelligence (display/context only, authority false)
+    "read_inflation_intelligence",
     # W3 MPC consumer: mechanism pathway artifact (display/context only, RUL-CC-1)
     "read_mechanism_pathways",
     # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
@@ -292,6 +305,9 @@ TOOL INSTRUCTIONS:
 - When querying the spine, cite signal_id values in your answer.
 - When reporting kernel reliability, cite shrunken_ic and kernel_armed values.
 - Note: kernel_armed=False means the cell is display-only (first FDR batch 2026-10-01).
+- For inflation intelligence, keep released_state, next_release_forecast, and
+  current_month_proxy_pressure distinct. The last is a proxy, never an official CPI
+  observation. This artifact has no scoring, ranking, gating, sizing, or trade authority.
 
 PROBATION CONTEXT:
 All Neural Web outputs carry is_context_only=True. No signal family has been through
@@ -530,6 +546,9 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
         if re.search(r"\b(confluence|confirm\w*|align\w*|agree\w*)\b", q):
             seeds.append("query_options_confluence")
         return _BUDGET_OPTIONS, seeds
+    # Release Radar inflation intelligence — dedicated current/next-print context.
+    if _INFLATION_INTELLIGENCE_TRIGGER_TERMS.search(question):
+        return _BUDGET_REGIME, ["read_inflation_intelligence", "read_world_state"]
     # "what contradicts / contradictions / disagreement" — generic graph contradictions
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
@@ -2256,6 +2275,7 @@ def _dispatch_read_tool_raw(tool_name: str, tool_params: dict, root: Path) -> di
         _tool_list_factor_contradictions,
         _tool_explain_factor_context,
         _tool_read_cycle_pattern_state,
+        _tool_read_inflation_intelligence,
         _tool_read_mechanism_pathways,
     )
 
@@ -2289,6 +2309,8 @@ def _dispatch_read_tool_raw(tool_name: str, tool_params: dict, root: Path) -> di
         return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "read_cycle_pattern_state":
         return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_inflation_intelligence":
+        return _tool_read_inflation_intelligence(root, tool_params)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
     elif tool_name == "read_china_decision_packet":
@@ -2373,13 +2395,11 @@ def _extract_citations(messages: list[dict]) -> list[str]:
 # here.  Without this, ask-brain Claude-OAuth spend never reaches the ledger.
 # ---------------------------------------------------------------------------
 
-# Provider-name → (ledger provider, cost_basis).  Mirrors llm_auth._capture_usage.
-_ASK_PROVIDER_MAP: dict[str, tuple[str, str]] = {
-    "oauth": ("claude_oauth", "subscription"),
-    "anthropic": ("claude_api", "metered"),
-    "deepseek": ("deepseek", "metered"),
-    "codex": ("codex", "subscription"),
-}
+# Provider-name → (ledger provider, cost_basis) comes from llm_auth's own table
+# (llm_auth.ledger_provider_for).  This was a hand-copied mirror that drifted:
+# it never learned the `ollama` rung, so a local call recorded here landed as
+# Claude-subscription spend — the same defect fixed in _capture_usage on
+# 2026-08-07.  Importing the table is what keeps it from drifting again.
 
 
 def _new_usage_tot() -> dict[str, int]:
@@ -2411,8 +2431,10 @@ def _record_ask_usage(
     try:
         if not usage_tot or usage_tot.get("calls", 0) <= 0:
             return
-        provider, cost_basis = _ASK_PROVIDER_MAP.get(
-            prov_name or "oauth", ("claude_oauth", "subscription"))
+        from engine.llm_auth import ledger_provider_for  # noqa: PLC0415
+        # ask_brain's own default rung is oauth, so a missing name resolves
+        # there; an UNKNOWN name records itself rather than the OAuth lane.
+        provider, cost_basis = ledger_provider_for(prov_name or "oauth")
         from lib import ai_costs as _ac  # noqa: PLC0415
         _ac.record_usage(
             lane="ask-brain",
@@ -2426,6 +2448,8 @@ def _record_ask_usage(
             cost_basis=cost_basis,
             stage="ask-brain",
             note=f"{usage_tot.get('calls', 0)} turns",
+            # Match _capture_usage: a free rung states $0.00, not null.
+            **({"est_cost_usd": 0.0} if cost_basis == "local" else {}),
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("ask_brain: usage record failed (%s)", exc)

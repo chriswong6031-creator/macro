@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_operational_record.v1.schema.json",
+  "title": "BioCatalyst Operational Record v1",
+  "description": "One durable record in the private BC-O1a/O1b operational store. Operational records carry receipts, review queue items, review decisions, correction lineage and replay metadata (O1a), plus feature snapshots, forecast snapshots, outcome observations, model registrations, evaluation manifests, contribution traces and family-clock activation receipts (O1b). They never carry a score, a ranking, a size, an escalation, or a security identity join, and no record kind may be promoted to authority by this contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "record_schema_version", "record_kind", "idempotency_key", "recorded_at", "corrects_record_id", "authority", "payload", "hash_scope", "record_id"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_operational_record.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "record_schema_version": {"type": "string", "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"},
+    "record_kind": {"$ref": "#/$defs/record_kind"},
+    "idempotency_key": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,127}$"},
+    "recorded_at": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "corrects_record_id": {"oneOf": [{"$ref": "#/$defs/record_id"}, {"type": "null"}]},
+    "authority": {"const": "facts_and_context_only"},
+    "hash_scope": {"const": "canonical_payload_excluding_record_id"},
+    "record_id": {"$ref": "#/$defs/record_id"},
+    "payload": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_kind": {"const": "source_run_receipt"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "run_id", "started_at", "finished_at", "run_state", "evidence_sha256"],
+            "properties": {
+              "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+              "run_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "started_at": {"$ref": "#/$defs/utc_timestamp"},
+              "finished_at": {"$ref": "#/$defs/utc_timestamp"},
+              "run_state": {"enum": ["complete", "incomplete", "failed", "skipped"]},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "soak_receipt"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["soak_id", "window_start", "window_end", "observed_state", "evidence_sha256"],
+            "properties": {
+              "soak_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "window_start": {"$ref": "#/$defs/utc_timestamp"},
+              "window_end": {"$ref": "#/$defs/utc_timestamp"},
+              "observed_state": {"enum": ["within_slo", "outside_slo", "insufficient_observation"]},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "identity_review_queue_item"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["queue_item_id", "subject_ref", "review_state", "blocker"],
+            "properties": {
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "subject_ref": {"$ref": "#/$defs/internal_subject_ref"},
+              "review_state": {"enum": ["open", "in_review", "deferred", "closed"]},
+              "blocker": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9_]*$"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "endpoint_alignment_review_queue_item"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["queue_item_id", "nct_id", "candidate_ref", "review_state", "blocker"],
+            "properties": {
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+              "candidate_ref": {"$ref": "#/$defs/internal_subject_ref"},
+              "review_state": {"enum": ["open", "in_review", "deferred", "closed"]},
+              "blocker": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9_]*$"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "correction_lineage"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["superseded_record_id", "superseding_record_id", "correction_reason"],
+            "properties": {
+              "superseded_record_id": {"$ref": "#/$defs/record_id"},
+              "superseding_record_id": {"$ref": "#/$defs/record_id"},
+              "correction_reason": {"enum": ["operator_correction", "source_correction", "policy_correction", "duplicate_merge"]}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "review_decision"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision_id", "queue_item_id", "decision_state", "decided_by_kind", "rationale_ref"],
+            "properties": {
+              "decision_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "queue_item_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "decision_state": {"enum": ["accepted", "rejected", "deferred", "needs_more_evidence"]},
+              "decided_by_kind": {"enum": ["deterministic_policy", "analyst", "adjudication_panel"]},
+              "rationale_ref": {"$ref": "#/$defs/internal_subject_ref"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "replay_metadata"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["replay_id", "replayed_kind", "from_cursor", "to_cursor", "entry_count", "replay_sha256"],
+            "properties": {
+              "replay_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,95}$"},
+              "replayed_kind": {"$ref": "#/$defs/record_kind"},
+              "from_cursor": {"oneOf": [{"$ref": "#/$defs/cursor"}, {"type": "null"}]},
+              "to_cursor": {"oneOf": [{"$ref": "#/$defs/cursor"}, {"type": "null"}]},
+              "entry_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+              "replay_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "feature_snapshot"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["feature_set_key", "feature_set_version", "subject_ref", "asof", "evidence_asof", "evidence_sha256", "authority_tier", "revision_of"],
+            "properties": {
+              "feature_set_key": {"$ref": "#/$defs/token"},
+              "feature_set_version": {"type": "string", "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"},
+              "subject_ref": {"$ref": "#/$defs/internal_subject_ref"},
+              "asof": {"$ref": "#/$defs/utc_timestamp"},
+              "evidence_asof": {"$ref": "#/$defs/utc_timestamp"},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"},
+              "authority_tier": {"const": "display_only_not_promoted"},
+              "revision_of": {"oneOf": [{"$ref": "#/$defs/record_id"}, {"type": "null"}]}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "model_registration"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["model_key", "model_version", "registered_at", "frozen_input_contract", "authority_tier", "evidence_sha256"],
+            "properties": {
+              "model_key": {"$ref": "#/$defs/token"},
+              "model_version": {"type": "string", "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"},
+              "registered_at": {"$ref": "#/$defs/utc_timestamp"},
+              "frozen_input_contract": {"type": "string", "pattern": "^[a-z][a-z0-9_]*\\.v[1-9][0-9]*$"},
+              "authority_tier": {"const": "display_only_not_promoted"},
+              "evidence_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "evaluation_manifest"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["manifest_key", "preregistered_at", "subject_model_key", "evaluation_metric_keys", "evaluation_gate_state", "authority_tier"],
+            "properties": {
+              "manifest_key": {"$ref": "#/$defs/token"},
+              "preregistered_at": {"$ref": "#/$defs/utc_timestamp"},
+              "subject_model_key": {"$ref": "#/$defs/token"},
+              "evaluation_metric_keys": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/token"}},
+              "evaluation_gate_state": {"const": "preregistered_not_run"},
+              "authority_tier": {"const": "display_only_not_promoted"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "contribution_trace"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trace_key", "subject_record_id", "subject_record_kind", "component_key", "component_share", "traced_at", "authority_tier"],
+            "properties": {
+              "trace_key": {"$ref": "#/$defs/token"},
+              "subject_record_id": {"$ref": "#/$defs/record_id"},
+              "subject_record_kind": {"enum": ["feature_snapshot", "forecast_snapshot"]},
+              "component_key": {"$ref": "#/$defs/token"},
+              "component_share": {"type": "number", "minimum": 0, "maximum": 1},
+              "traced_at": {"$ref": "#/$defs/utc_timestamp"},
+              "authority_tier": {"const": "display_only_not_promoted"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "forecast_snapshot"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["contract_id"],
+            "properties": {"contract_id": {"const": "biocatalyst_forecast_record.v1"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "outcome_observation"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["contract_id"],
+            "properties": {"contract_id": {"const": "biocatalyst_outcome_record.v1"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_kind": {"const": "family_clock_activation"}}, "required": ["record_kind"]},
+      "then": {
+        "properties": {
+          "corrects_record_id": {"type": "null"},
+          "payload": {
+            "type": "object",
+            "required": ["contract_id"],
+            "properties": {"contract_id": {"const": "biocatalyst_family_clock_activation.v1"}}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "record_kind": {
+      "enum": [
+        "source_run_receipt",
+        "soak_receipt",
+        "identity_review_queue_item",
+        "endpoint_alignment_review_queue_item",
+        "correction_lineage",
+        "review_decision",
+        "replay_metadata",
+        "feature_snapshot",
+        "forecast_snapshot",
+        "outcome_observation",
+        "model_registration",
+        "evaluation_manifest",
+        "contribution_trace",
+        "family_clock_activation"
+      ]
+    },
+    "token": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "record_id": {"type": "string", "pattern": "^bcop_[a-f0-9]{32}$"},
+    "cursor": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{12}Z__bcop_[a-f0-9]{32}$"},
+    "utc_timestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "internal_subject_ref": {"type": "string", "pattern": "^(?:nct:NCT[0-9]{8}|internal:[a-z0-9_.-]{1,64})$"}
+  }
+}

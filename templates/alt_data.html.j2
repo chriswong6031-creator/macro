@@ -130,7 +130,7 @@
   {# ---------- HERO ---------- #}
   <section class="sid-hero">
     <p class="sid-eyebrow">📡 {{ t('Signal Intelligence Desk', '信号情报台') }}</p>
-    <h1>{{ t('Alternative Data', '另类数据') }}</h1>
+    <h1>{{ t('Alternative Data', '替代数据') }}</h1>
     <p class="sid-sub">{{ t(
       'Where independent public-record channels — congressional & insider buying, federal-contract acceleration, lobbying, dark-pool flow, smart-money 13F, app-store demand, patents — and the affiliations of influential actors line up on the same name. We surface the connection, score the conviction, grade every call against the tape, and emit it to the portfolio bot.',
       '当多条独立的公开记录信号——国会与内部人买入、联邦合同加速、游说、暗池资金流、聪明钱13F、应用商店需求、专利——与有影响力人物的关联在同一标的上对齐时浮现出来。我们呈现关联、评估置信、用市场检验每个判断，并将其传输给组合机器人。') }}</p>
@@ -278,7 +278,7 @@
 
       <table class="sid-t" style="margin-top:12px;">
         <thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Connected actors','关联人物') }}</th>
-          <th class="num">{{ t('Actors','人数') }}</th><th>{{ t('Alt-data','另类数据') }}</th><th>{{ t('Top holder','最大股东') }}</th></tr></thead>
+          <th class="num">{{ t('Actors','人数') }}</th><th>{{ t('Alt-data','替代数据') }}</th><th>{{ t('Top holder','最大股东') }}</th></tr></thead>
         <tbody>
         {% for w in influence.watch[:16] %}
         <tr>
@@ -489,7 +489,7 @@
       </div>
       <p class="mut" style="font-size:11px;margin:11px 0 0;">{{ t(
         'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · FINRA short interest · analyst estimate revisions · earnings calendar · StockTwits retail · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the accountable ledger, not assumed right.',
-        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · FINRA 空头持仓 · 分析师预期修正 · 财报日历 · StockTwits 散户 · Hugging Face · GitHub + 精选影响力图谱。公开记录另类数据；可操作轴由可问责战绩校准，而非假定正确。') }}</p>
+        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · FINRA 空头持仓 · 分析师预期修正 · 财报日历 · StockTwits 散户 · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可问责战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
 
@@ -500,7 +500,7 @@
   {# ---------- NEWS CROSS-SURFACE (additive; client-fetched — no server coupling) ---------- #}
   <section class="sid-sec">
     <h2>📰 <span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
-      <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅供参考，绝不混合</span></span></h2>
+      <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅作背景，绝不混合</span></span></h2>
     <div id="sid-news" class="sid-card"><p class="mut" style="font-size:12px"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
   </section>
 

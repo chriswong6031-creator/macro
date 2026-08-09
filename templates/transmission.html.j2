@@ -427,7 +427,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
     <div class="tx-brand">🔀 <span class="gn">{{ t('Transmission', '传导') }}</span></div>
     <p class="tx-sub">{{ t('How rates, inflation and the dollar push on every asset we track.', '利率、通胀与美元如何推动我们跟踪的每一类资产。') }}</p>
     {% if hero and hero.line %}<div class="tx-verdict">{{ b(hero.line) }}</div>{% endif %}
-    <div class="tx-asof"><span class="txdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅供参考，非交易信号') }}</div>
+    <div class="tx-asof"><span class="txdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
   </header>
 
   <!-- ===================== WHAT CHANGED ===================== -->
@@ -768,7 +768,7 @@ html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
           </table>
           {% set M = yc.momentum %}
           <p class="sub" style="font-size:11.5px;margin-top:8px">{{ t('Curve speed (63d)','曲线速度（63日）') }}: {{ t('real 10y','实际10年') }} {{ '%+d'|format(M.real10y_speed_bp|int) if M.real10y_speed_bp is not none else '—' }}bp · {{ t('front 2y','前端2年') }} {{ '%+d'|format(M.front2y_speed_bp|int) if M.front2y_speed_bp is not none else '—' }}bp · {{ t('|real-speed| pctile','|实际速度|分位') }} {{ pct(M.real_speed_pctile) }}. {{ t('Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.','变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。') }}</p>
-          {% if M.trend_spread is not none %}<p class="sub" style="font-size:11.5px;margin-top:4px">{{ t('Term-spread trend (2y smooth)','期限利差趋势（2年平滑）') }}: <b style="color:var(--ink)">{{ '%+.2f'|format(M.trend_spread) }}</b>{% if M.trend_spread_dir %} · {{ t(M.trend_spread_dir, {'rising':'上行','falling':'下行','flat':'平稳'}.get(M.trend_spread_dir, M.trend_spread_dir)) }}{% endif %}. {{ t('The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.','文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅供参考，绝非择时信号。') }}</p>{% endif %}
+          {% if M.trend_spread is not none %}<p class="sub" style="font-size:11.5px;margin-top:4px">{{ t('Term-spread trend (2y smooth)','期限利差趋势（2年平滑）') }}: <b style="color:var(--ink)">{{ '%+.2f'|format(M.trend_spread) }}</b>{% if M.trend_spread_dir %} · {{ t(M.trend_spread_dir, {'rising':'上行','falling':'下行','flat':'平稳'}.get(M.trend_spread_dir, M.trend_spread_dir)) }}{% endif %}. {{ t('The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.','文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。') }}</p>{% endif %}
         </div>
         <div class="card">
           <h2>{{ t('Forward rates & carry', '远期利率与持有收益') }}</h2>

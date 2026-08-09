@@ -268,7 +268,7 @@ html[data-theme="dark"] body::before{
   <div class="sot-brand"><span class="gl">🗺️</span><span class="gn">{{ t('Theme Tracker', '主题追踪') }}</span></div>
   <p class="sot-tag">{{ t('Which market stories are gaining money and breadth — and which just tripped a break-rule.', '哪些市场主题正在吸金、扩散——哪些刚刚触发否定条件。') }}</p>
   {% if n_themes and hero_en %}<div class="sot-verdict"><span class="l-en">{{ hero_en|safe }}</span><span class="l-zh">{{ hero_zh|safe }}</span></div>{% endif %}
-  <div class="sot-asof"><span class="bdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅供参考，非交易信号') }}</div>
+  <div class="sot-asof"><span class="bdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
 </header>
 
 {% if themes %}

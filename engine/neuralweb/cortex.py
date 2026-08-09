@@ -112,6 +112,10 @@ _READ_TOOLS = frozenset({
     "explain_factor_context",
     # CPI P6 wave 1: read-only cycle-pattern turn-hazard state tool
     "read_cycle_pattern_state",
+    # Release Radar: released/current/next-print CPI context (display-only)
+    "read_inflation_intelligence",
+    # Seasonality W5: read-only biopharma calendar-clock shadow lobe
+    "read_seasonality_state",
     # W3 MPC consumer: read-only mechanism pathway artifact
     "read_mechanism_pathways",
     # W4 context scanner: read-only context candidates + risk lens
@@ -850,6 +854,298 @@ def _tool_read_cycle_pattern_state(root: Path, _params: dict) -> dict:
         }
 
 
+_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS: dict[str, bool] = {
+    "may_rank": False,
+    "may_score": False,
+    "may_size": False,
+    "may_gate": False,
+    "may_escalate": False,
+    "may_trade": False,
+}
+
+_INFLATION_INTELLIGENCE_AUTHORITY_NOTE = (
+    "DISPLAY/CONTEXT ONLY. released_state is latest-local official CPI index "
+    "history, next_release_forecast is a Release Radar forecast, and "
+    "current_month_proxy_pressure is an in-progress proxy rather than an "
+    "official CPI observation. This artifact may never originate, score, rank, "
+    "gate, size, escalate, or execute a signal or trade."
+)
+
+
+def _inflation_intelligence_tool_null(gap: str) -> dict:
+    return {
+        "schema": "inflation_intelligence.v1",
+        "asof": None,
+        "display_only": True,
+        "authority": False,
+        "is_context_only": True,
+        "allowed_actions": dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS),
+        "authority_note": _INFLATION_INTELLIGENCE_AUTHORITY_NOTE,
+        "gaps": [gap],
+    }
+
+
+def _force_inflation_authority_false(value: Any) -> Any:
+    """Recursively remove contradictory authority flags from a JSON payload."""
+    if isinstance(value, list):
+        return [_force_inflation_authority_false(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    out = {
+        key: _force_inflation_authority_false(item)
+        for key, item in value.items()
+    }
+    if "display_only" in out:
+        out["display_only"] = True
+    if "authority" in out:
+        out["authority"] = False
+    if "is_context_only" in out:
+        out["is_context_only"] = True
+    for action in _INFLATION_INTELLIGENCE_ALLOWED_ACTIONS:
+        if action in out:
+            out[action] = False
+    if "allowed_actions" in out:
+        out["allowed_actions"] = dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS)
+    return out
+
+
+def _tool_read_inflation_intelligence(root: Path, _params: dict) -> dict:
+    """Read Release Radar's inert released/current/next-print CPI artifact.
+
+    Fails open with a structured null. Authority fields are overwritten rather
+    than defaulted so an older or malformed producer can never promote this read
+    path into scoring, ranking, gating, sizing, escalation, or trade authority.
+    """
+    p = _data(root, "release_forecast", "inflation_intelligence.json")
+    if not p.exists():
+        return _inflation_intelligence_tool_null(
+            "data/release_forecast/inflation_intelligence.json: absent — "
+            "build_inflation_intelligence has not run yet"
+        )
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return _inflation_intelligence_tool_null(
+            f"data/release_forecast/inflation_intelligence.json: unreadable — {exc}"
+        )
+    if not isinstance(state, dict):
+        return _inflation_intelligence_tool_null(
+            "data/release_forecast/inflation_intelligence.json: not_object"
+        )
+
+    out = _force_inflation_authority_false(state)
+    out.update(
+        display_only=True,
+        authority=False,
+        is_context_only=True,
+        allowed_actions=dict(_INFLATION_INTELLIGENCE_ALLOWED_ACTIONS),
+        authority_note=_INFLATION_INTELLIGENCE_AUTHORITY_NOTE,
+    )
+    if not isinstance(out.get("gaps"), list):
+        out["gaps"] = ["inflation_intelligence: invalid gaps field"]
+    return out
+
+
+_SEASONALITY_ROW_CAP = 40
+#: Gaps are bounded independently of rows so that appending a structured note
+#: (expired / abstaining / invalid / truncated) can never push the list past its
+#: own cap, and so that the notes — which say what is MISSING — are never the
+#: entries a slice drops.
+_SEASONALITY_GAP_CAP = 40
+
+
+def _seasonality_reference_time(now: str | datetime | None) -> datetime:
+    """The instant expiry is judged against. Never naive, never a silent skip.
+
+    The dispatcher hands this the cortex run's own as-of string (a date, or a
+    timestamp) so one run judges every artifact against one clock.  Anything
+    unparseable falls back to wall-clock UTC rather than to "no expiry check":
+    a bad reference must not turn the TTL off.
+    """
+    if isinstance(now, datetime):
+        return now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    if isinstance(now, str) and now.strip():
+        try:
+            parsed = datetime.fromisoformat(now.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return datetime.now(timezone.utc)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc)
+
+
+def _tool_read_seasonality_state(
+    root: Path, params: dict, now: str | datetime | None = None
+) -> dict:
+    """Read data/neuralweb/biopharma_seasonality_state.json (Lane 6 shadow lobe).
+
+    Per-symbol expiring CALENDAR context for the covered biopharma universe:
+    which window a name is in, the historical share of complete years that
+    window finished up, the same-length all-starts base rate it is measured
+    against, and the de-escalating flags.  Dual-read: v1 and v2 states are both
+    projected through the same ``seasonality_state_projection`` the candidate
+    bridge uses, so the cortex and the board see one number under one name.
+
+    FIVE THINGS THIS TOOL DELIBERATELY DOES NOT RETURN:
+
+    * a recommendation, rank, or score — the lobe's authority ceiling is
+      all-false and there is nothing here to originate from;
+    * ``calibrated_estimate`` — it is null everywhere the emitter produces, and
+      surfacing a calibrated number is a promotion decision this read is not;
+    * EXPIRED states — each state carries a 48h ``expires_at`` and the whole
+      point of the TTL is that a stale read is dropped rather than carried
+      forward.  The sibling consumer (``mastermind_context._load_seasonality_map``)
+      already drops them; a tool that served them would put the two readers of
+      one artifact into disagreement about what is current, with the permissive
+      one wired to the chat model;
+    * ABSTAINING states — ``abstain`` is the lobe declining to speak (a stale
+      artifact, or too few complete years), and both the sibling consumer and
+      ``state.register_rows`` treat it that way.  Serving the row anyway puts a
+      full ``p`` in front of the model on a sample the lobe itself refused to
+      publish, with nothing in the prompt saying what the flag obliges;
+    * the raw states — output is bounded to ``_SEASONALITY_ROW_CAP`` compact
+      rows (a ``ticker`` param narrows to one), because the full map is ~28
+      states of several KB each and an unbounded read is a context bomb.
+
+    Everything dropped is COUNTED and named in ``gaps`` — an omission that
+    leaves no trace is the failure this lobe's whole contract is built against.
+
+    ``now`` fixes the expiry reference (the dispatcher passes the cortex run's
+    own as-of); it defaults to wall-clock UTC.
+
+    ``p`` is a HISTORICAL positive-year share, never a forecast. Fails open with
+    structured gaps.  is_context_only always true.
+    """
+    rel = "data/neuralweb/biopharma_seasonality_state.json"
+    p = _data(root, "neuralweb", "biopharma_seasonality_state.json")
+    base = {
+        "is_context_only": True,
+        "display_only": True,
+        "mandate": (
+            "calendar context only; p is a historical positive-year share, not a "
+            "calibrated probability; never a rank, score, or recommendation"
+        ),
+    }
+    if not p.exists():
+        return {
+            **base,
+            "gaps": [f"{rel}: absent — build_seasonality_shadow_state has not run yet"],
+            "note": "Seasonality shadow state not yet built. Run the nightly "
+                    "build_seasonality_shadow_state job.",
+        }
+    try:
+        payload = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {**base, "gaps": [f"{rel}: unreadable — {exc}"]}
+    if not isinstance(payload, dict):
+        return {**base, "gaps": [f"{rel}: not an object"]}
+
+    from engine.seasonality.contracts import (  # noqa: PLC0415
+        ContractError,
+        seasonality_state_projection,
+        validate_seasonality_state,
+    )
+
+    states = payload.get("states")
+    if not isinstance(states, dict):
+        return {**base, "gaps": [f"{rel}: carries no states map"]}
+
+    wanted = str(params.get("ticker") or "").strip().upper()
+    reference = _seasonality_reference_time(now)
+
+    rows: list[dict] = []
+    n_invalid = 0
+    n_expired = 0
+    n_abstain = 0
+    n_truncated = 0
+    for symbol in sorted(states):
+        if wanted and symbol.upper() != wanted:
+            continue
+        state = states[symbol]
+        if not isinstance(state, dict):
+            n_invalid += 1
+            continue
+        try:
+            projection = seasonality_state_projection(validate_seasonality_state(state))
+        except ContractError:
+            # A state that did not pass its contract is not a weaker row, it is
+            # an unbounded one — it is counted, never rendered.
+            n_invalid += 1
+            continue
+        try:
+            expires = datetime.fromisoformat(
+                str(projection["expires_at"]).replace("Z", "+00:00")
+            )
+        except ValueError:
+            n_invalid += 1
+            continue
+        if expires <= reference:
+            # The 48h TTL, enforced at BOTH readers of this artifact.
+            n_expired += 1
+            continue
+        if projection["abstain"]:
+            n_abstain += 1
+            continue
+        if len(rows) >= _SEASONALITY_ROW_CAP:
+            # Counted rather than `break`ed: a silent cut-off makes the counts
+            # below describe only the prefix that happened to fit.
+            n_truncated += 1
+            continue
+        row = {"symbol": symbol, **projection["block"], "abstain": projection["abstain"]}
+        # The two measurement slots, as REASON CODES rather than as silence: an
+        # unmeasured overlap is not zero redundancy and an unchecked
+        # contradiction is not an absence of one.
+        for field in ("contradiction", "overlap"):
+            measured = state.get(field)
+            if isinstance(measured, dict):
+                row[field] = {
+                    key: measured.get(key)
+                    for key in ("present", "measured", "redundancy", "reason_code")
+                    if key in measured
+                }
+        rows.append(row)
+
+    # Structured notes FIRST so the slice below can only ever drop per-symbol
+    # producer gaps, never the count of what this read itself withheld.
+    notes: list[str] = []
+    if n_invalid:
+        notes.append(f"{n_invalid} state(s) failed the context contract — skipped")
+    if n_expired:
+        notes.append(
+            f"{n_expired} expired state(s) skipped — context expires by design "
+            "(48h TTL)"
+        )
+    if n_abstain:
+        notes.append(
+            f"{n_abstain} abstaining state(s) skipped — the lobe declined to "
+            "publish a share for them (stale artifact or too few complete years)"
+        )
+    if n_truncated:
+        notes.append(
+            f"{n_truncated} further state(s) not returned — output is capped at "
+            f"{_SEASONALITY_ROW_CAP} rows; pass a ticker to read one"
+        )
+    gaps: list[str] = (
+        notes
+        + [
+            f"{g.get('symbol') or 'run'}: {g.get('reason_code')} — {g.get('detail')}"
+            for g in (payload.get("gaps") or [])
+            if isinstance(g, dict)
+        ]
+    )[:_SEASONALITY_GAP_CAP]
+
+    return {
+        **base,
+        "as_of": payload.get("as_of"),
+        "generated_at": payload.get("generated_at"),
+        "state_schema": payload.get("state_schema"),
+        "universe": payload.get("universe"),
+        "n_returned": len(rows),
+        "row_cap": _SEASONALITY_ROW_CAP,
+        "states": rows,
+        "gaps": gaps,
+    }
+
+
 def _tool_read_mechanism_pathways(root: Path, _params: dict) -> dict:
     """Read data/neuralweb/mechanism_pathways.json (MPC W1 artifact).
 
@@ -1579,6 +1875,12 @@ def dispatch_tool(
         return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "read_cycle_pattern_state":
         return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_inflation_intelligence":
+        return _tool_read_inflation_intelligence(root, tool_params)
+    elif tool_name == "read_seasonality_state":
+        # `now_str` is the run's own as-of: the seasonality states carry a 48h
+        # TTL and one run must judge every one of them against one clock.
+        return _tool_read_seasonality_state(root, tool_params, now_str)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
     elif tool_name == "read_context_candidates":
@@ -1814,6 +2116,53 @@ def _tool_schemas() -> list[dict]:
                 "structured gaps when absent."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- Release Radar inflation intelligence: display/context only ---
+        {
+            "name": "read_inflation_intelligence",
+            "description": (
+                "Read data/release_forecast/inflation_intelligence.json: three "
+                "strictly separate clocks — released_state (latest-local official CPI "
+                "index history, not original-release vintage), next_release_forecast "
+                "(Release Radar distribution and forecast path), and "
+                "current_month_proxy_pressure (in-progress model/proxy, NEVER an "
+                "official CPI observation). DISPLAY/CONTEXT ONLY; authority is "
+                "always false. It may NEVER originate, score, rank, gate, size, "
+                "escalate, or execute a signal or trade. Fails open with structured "
+                "gaps when absent. is_context_only: true."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- Seasonality W5: biopharma calendar-clock shadow lobe ---
+        {
+            "name": "read_seasonality_state",
+            "description": (
+                "Read data/neuralweb/biopharma_seasonality_state.json — the Lane 6 "
+                "biopharma seasonality shadow lobe: per-symbol expiring CALENDAR "
+                "context (window phase, start/end day-of-year, occurrence end date, "
+                "historical positive-year share p, same-length all-starts base rate "
+                "p_baseline, edge, n_years, forward-graded live_n, de-escalating "
+                "flags), plus each state's contradiction and overlap reason codes. "
+                "Dual-read: v1 and v2 states project identically. "
+                "'p' IS A HISTORICAL SHARE OF COMPLETE YEARS THAT FINISHED UP, not a "
+                "calibrated probability and not a forecast — always say so when "
+                "citing it. No calibrated estimate is returned (none exists). "
+                "Authority ceiling is all-false (RUL: may explain and may flag "
+                "attention; may never rank, gate, size, originate, rewrite geometry, "
+                "or boost confidence): cite as context only, never as a rank, score, "
+                "or recommendation, and never combine it with another engine's "
+                "number into a fused score. An 'overlap.measured: false' means "
+                "redundancy is UNMEASURED, not zero. Output is bounded to 40 rows; "
+                "pass ticker to narrow to one. is_context_only: true. Fails open "
+                "with structured gaps when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {"type": "string", "description": "Optional: restrict to one ticker symbol"},
+                },
+                "required": [],
+            },
         },
         # --- W3 MPC consumer: mechanism pathway artifact ---
         {
@@ -2351,7 +2700,8 @@ READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_grap
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
-           read_cycle_pattern_state, read_mechanism_pathways,
+           read_cycle_pattern_state, read_inflation_intelligence,
+           read_mechanism_pathways, read_seasonality_state,
            read_context_candidates, read_causal_candidates,
            read_liquidity_plumbing, read_china_decision_packet, read_china_flows,
            read_theme_state, read_theme_thesis, read_theme_pathways,
@@ -2371,6 +2721,24 @@ Forbidden: treating cards as signals, escalations, or confidence-ranked items.
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
 probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).
 It may de-escalate a calibrated key; it may never originate, score, or escalate.
+
+INFLATION-INTELLIGENCE CEILING: read_inflation_intelligence is display/context only and
+has no scoring, ranking, gating, sizing, escalation, or trade authority. Keep its three
+clocks distinct: released_state is latest-local official index history (not original-
+release vintage), next_release_forecast is a forecast, and current_month_proxy_pressure
+is an in-progress proxy — never describe that proxy as an official CPI observation.
+
+SEASONALITY CEILING: read_seasonality_state is display/context only, authority all-false.
+Its 'p' is the HISTORICAL share of complete years that window finished up — never a
+calibrated probability and never a forecast; say which it is whenever you cite it, and
+always next to p_baseline (the same-length all-starts base rate), never alone. It may
+explain and may flag attention; it may never rank, gate, size, originate, or be combined
+with another engine's number into a fused score. 'overlap.measured: false' means
+redundancy is UNMEASURED, not zero; 'contradiction.present: false' with a reason_code
+means the check could not be run, not that the clocks agree. The tool returns only
+UNEXPIRED, NON-ABSTAINING states: a state past its 48h TTL, or one the lobe abstained
+on (stale artifact / too few complete years), is withheld and counted in 'gaps' — read
+those counts as coverage this read does not have, never as names with nothing to say.
 
 MECHANISM-PATHWAY CEILING: read_mechanism_pathways is display/context only (RUL-CC-1).
 Use 'consistent with / supported / unsupported / conflicted / missing' language.

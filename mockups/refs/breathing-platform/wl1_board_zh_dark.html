@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="zh" data-theme="dark" data-lang="zh">
+<head><meta charset="utf-8"><title>W-L1 provisional board — zh dark</title>
+<style>
+:root {
+  /* ── font stacks ─────────────────────────────────────────────────────────────
+     --font-ui   : primary UI stack. Inter (self-hosted woff2) leads; the chain
+                   covers Windows (Segoe UI), Android (Roboto), and native CJK
+                   glyph coverage (PingFang SC / Hiragino / Microsoft YaHei) so
+                   mixed EN+ZH text renders cleanly without the zh-body override.
+     --font-mono : monospace for code, tickers, numeric labels. ui-monospace
+                   resolves to SF Mono (macOS/iOS), Consolas (Windows), or the
+                   platform mono — no external download needed. */
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  /* --num : numeric-face alias. Referenced ~30× on the macro dashboard for its
+     data numerals; body.page-macro overrides it to a mono terminal face on its
+     own scope. This :root default keeps the token valid everywhere else (a bare
+     `font-family:var(--num)` is otherwise an invalid decl on non-macro pages). */
+  --num: var(--font-ui);
+  --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
+  --muted: #8b93a1;
+  /* Estate contrast pass 2026-08-03: #2a2f3a measured 1.13–1.29:1 against the
+     dark panels — fainter than the LIGHT theme's raised 1.6 floor, inverted from
+     how the two themes should sit. #3a4150 lands containers at 1.56–1.85 across
+     the estate's dark surfaces, the same perceptual band as light. */
+  --line: #3a4150;
+  --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
+  --warn: #e0a030; --act: #e05555; --ok: #3da564;
+  --up: #45b873; --down: #e06464; --orange: #e08b45;
+  --info: #5b9bf0; --link: #7aa7e0;
+  --g-cold: #4d8df0; --g-hot: #e0a23c; --g-mid: #3a4150;
+  /* ── prophet-card verb hues (_prophet_card.html.j2) ─────────────────────────
+     One hue per card state: buy/near/wait/hold/avoid. English uses the Western
+     green-up/red-down convention. Chinese mode rebinds only these Prophet tokens
+     onto the site's Asia-aware --up/--down pair below, so every Prophet board
+     becomes red-bullish/green-bearish without recolouring non-Prophet status UI. */
+  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
+  --pv-hold: #8b93a1; --pv-avoid: #e06464;
+  --chart-bg: transparent;
+  --card-shadow: 0 1px 0 rgba(255,255,255,.02);
+  --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
+  /* ── custom scrollbars ───────────────────────────────────────────────────────
+     Thumb tint derived from --muted so it adapts to dark / light / zh with no
+     per-theme override (--info gives the drag-state a branded accent). Consumed
+     by the global scrollbar rules further down and mirrored (with fallbacks) by
+     theme.js for the self-contained pages that don't link this file. */
+  --sb-thumb: color-mix(in srgb, var(--muted) 34%, transparent);
+  --sb-thumb-hover: color-mix(in srgb, var(--muted) 60%, transparent);
+  --sb-thumb-active: color-mix(in srgb, var(--info) 62%, var(--muted));
+  /* ── frosted-glass popover system ───────────────────────────────────────────
+     ONE token set shared by every floating menu surface — the top-nav dropdowns,
+     the Research mega-menu, the global-search suggestions, the gear settings
+     popover, the bell alert popover and the fired-alerts popup — so they all read
+     as a single design family. backdrop-filter blurs the aurora + page behind the
+     panel; the translucent fill lets that colour bleed through. Opacity + shadow
+     are re-tuned per theme in the light block below. The self-contained vector
+     family (no theme.css) mirrors these values inline in _vector_polish.html.j2
+     and theme.js, so keep the three in sync if you retune the glass. */
+  --glass-bg: color-mix(in srgb, var(--panel) 86%, transparent);
+  --glass-brd: color-mix(in srgb, var(--text) 14%, transparent);
+  --glass-blur: saturate(180%) blur(22px);
+  --glass-shadow: 0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55),
+    inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent);
+  /* ── gbtn: house glass-button token set (macro sweep 2026-07) ──────────────
+     The default button surface for the whole site — a frosted pill that reads as
+     one family with the glass popovers above. Fill/border derive from --panel2 /
+     --text via color-mix so dark, light and the zh swap all resolve at paint. */
+  --gbtn-bg:        color-mix(in srgb, var(--panel2) 52%, transparent);
+  --gbtn-bg-hover:  color-mix(in srgb, var(--panel2) 76%, transparent);
+  --gbtn-brd:       color-mix(in srgb, var(--text) 12%, transparent);
+  --gbtn-brd-hover: color-mix(in srgb, var(--text) 24%, transparent);
+  --gbtn-sheen:     rgba(255,255,255,.09);
+}
+html[data-theme="light"] {
+  /* light glass buttons: white reads thin when too transparent, so lift the fill
+     and soften the top sheen (the dark theme's bright inset reads as a hard line
+     on a white pill). */
+  --gbtn-bg:        color-mix(in srgb, var(--panel2) 78%, var(--panel));
+  --gbtn-bg-hover:  color-mix(in srgb, var(--panel2) 96%, var(--panel));
+  /* Estate contrast pass 2026-08-03: at 11%, the pill outline measured 1.24:1 —
+     the border IS the affordance on a glass button, a WCAG 1.4.11 component
+     boundary, so it earns the 3:1 bar (50% text ≈ 3.08 on the light canvas).
+     Dark is left alone: its frosted fill + sheen carry the boundary there, and
+     the dark A/B in this pass is pinned to byte-identical. */
+  --gbtn-brd:       color-mix(in srgb, #1c2430 50%, transparent);
+  --gbtn-brd-hover: color-mix(in srgb, #1c2430 66%, transparent);
+  --gbtn-sheen:     rgba(255,255,255,.7);
+}
+html[data-theme="light"] {
+  /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
+     canvas, white cards on a soft #EAECF0 grid, and the same vivid #285FFF
+     primary so links / buttons / accents read as one design family. The dark
+     theme (the :root block above) is intentionally left untouched. */
+  --bg: #f7f8fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
+  --muted: #5d6b7e;
+  /* Estate contrast pass 2026-08-03: #eaecf0 drew a 1.02–1.18:1 hairline on the
+     light surfaces — a card boundary you have to hunt for (the W3 audit's words
+     for the same defect on the sector page). 16% text lands the container edge
+     at 1.61 vs a white card / 1.48 vs the canvas, matching the W3 light floor
+     (1.6) and the raised dark hairline below, without turning row rules into a
+     grid. */
+  --line: color-mix(in srgb, #1c2430 16%, #eaecf0);
+  --q1: #1f8b41; --q2: #b07d05; --q3: #c12f2f; --q4: #2f63c4;
+  --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
+  --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
+  --info: #285fff; --link: #285fff;
+  --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
+  /* prophet-card verb hues — light English variants; zh rebinds them below */
+  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
+  --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
+  --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
+  --card-shadow: 0 1px 3px rgba(20,30,50,.07);
+  /* soft, light popover shadow — the dark theme's heavy 50%-black drop shadow
+     reads as a murky grey halo on the white light-mode tooltips */
+  --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+  /* light glass: brighter fill (white reads thin when too transparent) + an airy
+     soft shadow with a crisp white top-edge sheen instead of the dark theme's
+     heavy drop. */
+  --glass-bg: color-mix(in srgb, var(--panel) 90%, transparent);
+  --glass-brd: color-mix(in srgb, #1c2430 9%, transparent);
+  --glass-shadow: 0 20px 54px -24px rgba(20,32,64,.34), 0 10px 24px -14px rgba(20,32,64,.20),
+    inset 0 1px 0 rgba(255,255,255,.85);
+}
+/* ---- Chinese mode: Asia colour convention -----------------------------------
+   In Asia red = up/bullish, green = down/bearish — the inverse of the West. So
+   in zh mode we SWAP the up/down pair and flip the green/red quadrants
+   (Goldilocks -> red, Stagflation -> green); gold (Reflation) and blue
+   (Growth-scare) already read right and stay. Status colours (--ok/--warn/--act,
+   data-health, alert severity) encode health/danger, NOT price direction, so
+   they are deliberately left alone. Because every tinted badge, gauge, quad tile
+   and .pos/.neg already resolves these vars at paint time (mtf.js re-reads them
+   on `langchange`), the whole UI recolours instantly.
+   Specificity note: html[data-theme="light"] and html[data-lang="zh"] tie at
+   (0,1,1); the dual-attribute selector (0,2,1) below pins the light+zh combo. */
+html[data-lang="zh"] {
+  --up: #e06464; --down: #45b873;        /* swapped: red now = up */
+  --q1: #d04545;                         /* Goldilocks -> red */
+  --q3: #2e9e4f;                         /* Stagflation -> green */
+  /* Prophet-only verdict palette: buy/near = bullish red, avoid = bearish green.
+     Wait/hold stay direction-neutral amber/grey.  `near` is a lighter red so it
+     remains distinguishable from the solid Buy state without changing meaning. */
+  --pv-buy: var(--up);
+  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
+  --pv-avoid: var(--down);
+}
+html[data-theme="light"][data-lang="zh"] {
+  --up: #cf4040; --down: #1f9a55;
+  --q1: #c12f2f;
+  --q3: #1f8b41;
+}
+/* ---- Text-grade state INKS (estate pass 2026-08-03; method = SI V2 W3 audit) --
+   The state palette is FILL-grade, not TEXT-grade: on light, --up #1f9a55 tops
+   out at 3.61:1 on pure white (3.00 on the estate's darkest common surface
+   #e8eaed) and --warn/--orange sit at 2.9–3.6 — yet this file and most product
+   pages print them as 9–15px text. These tokens are the text-safe form.
+
+   Shape: --ink-mix-* holds the share of the STATE hue kept in the ink; the rest
+   is --text. Dark keeps 100% (ink ≡ raw token → dark renders byte-identical —
+   measured raw dark inks pass 4.5:1 on every estate surface). Light percentages
+   are keyed to HUE, not token name — green sits high in luminance and needs far
+   more darkening than red — and are adopted verbatim from the W3 calibration so
+   the estate and the SI workspace speak one vocabulary: measured on the worst
+   light surface (#e8eaed) they land at 4.8–5.5:1 (up 5.22 · down 4.83 · warn
+   5.25 · ok 5.27 · act 4.96 · orange 5.45 · link 4.81). The zh twin re-keys
+   up/down because 红涨绿跌 swaps the HUES under the names: red clears AA with
+   far less mixing, and keeping one percentage for both would print a dour
+   maroon (W3's words — the exact failure this prevents).
+
+   The inks resolve at html scope (page-level :root re-themes still flow in;
+   subtree rebinds of --up do not — the one subtree rebinder today, the SI V2
+   workspace, computes the same formula so the results agree). Consumers in page
+   templates should write var(--ink-up, var(--up)) so a cache-stale theme.css
+   degrades to today's colors rather than an invalid declaration. */
+:root {
+  --ink-mix-up: 100%; --ink-mix-down: 100%; --ink-mix-warn: 100%; --ink-mix-ok: 100%;
+  --ink-mix-act: 100%; --ink-mix-orange: 100%; --ink-mix-link: 100%; --ink-mix-info: 100%;
+}
+html[data-theme="light"] {
+  --ink-mix-up: 62%; --ink-mix-down: 84%; --ink-mix-warn: 62%; --ink-mix-ok: 70%;
+  --ink-mix-act: 88%; --ink-mix-orange: 58%; --ink-mix-link: 88%; --ink-mix-info: 88%;
+}
+html[data-theme="light"][data-lang="zh"] {
+  --ink-mix-up: 84%;   /* red under 红涨绿跌 */
+  --ink-mix-down: 62%; /* green */
+}
+:root {
+  --ink-up:     color-mix(in srgb, var(--up)     var(--ink-mix-up),     var(--text));
+  --ink-down:   color-mix(in srgb, var(--down)   var(--ink-mix-down),   var(--text));
+  --ink-warn:   color-mix(in srgb, var(--warn)   var(--ink-mix-warn),   var(--text));
+  --ink-ok:     color-mix(in srgb, var(--ok)     var(--ink-mix-ok),     var(--text));
+  --ink-act:    color-mix(in srgb, var(--act)    var(--ink-mix-act),    var(--text));
+  --ink-orange: color-mix(in srgb, var(--orange) var(--ink-mix-orange), var(--text));
+  --ink-link:   color-mix(in srgb, var(--link)   var(--ink-mix-link),   var(--text));
+  --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
+}
+/* prophet-card verb inks. English keeps the original hue calibration; the light+zh
+   twin below re-keys the percentages after bullish becomes red and bearish green. */
+:root {
+  --ink-pv-buy: var(--pv-buy); --ink-pv-near: var(--pv-near);
+  --ink-pv-wait: var(--pv-wait); --ink-pv-avoid: var(--pv-avoid);
+}
+html[data-theme="light"] {
+  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   62%, var(--text));
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  56%, var(--text));
+  --ink-pv-wait:  color-mix(in srgb, var(--pv-wait)  62%, var(--text));
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 84%, var(--text));
+}
+html[data-theme="light"][data-lang="zh"] {
+  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   84%, var(--text));
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
+}
+/* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
+   Same hue as the P1 .pv-live chip's local --plvc, and that is the point: the ◐ strip
+   and the ◐ board stamp name the SAME epistemic tier — settled by the tape, not yet by
+   the record — and a second vocabulary for one idea is a tax on the reader.
+   --prov is the FILL-grade hue (tints, rules, borders); --prov-ink is the TEXT-grade
+   one, following this file's own --ink-* convention. Dark keeps ink ≡ raw so dark
+   renders byte-identical to a single-token version; light deepens toward --text,
+   because the fill-grade blue measured 4.22:1 as type on its own 11% tint over white —
+   under AA, and invisible to anyone who only ever looked at the dark shot (doctrine
+   §5.8: light is a design target, not a translation).
+   Direction-neutral BY CONSTRUCTION so 红涨绿跌 holds: never derive it from --up/--down. */
+:root { --prov: #62a0e8; --prov-ink: var(--prov); }
+html[data-theme="light"] { --prov: #2f6fd0;
+  --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text)); }
+/* ---- language visibility toggle (dual-emit text) ---------------------------- */
+html:not([data-lang="zh"]) .l-zh { display: none; }
+html[data-lang="zh"] .l-en { display: none; }
+/* CJK type: put the native CJK face first so Hanzi always uses a proper glyph
+   rather than Inter's Latin fallback, and drop wide tracking on headings (looks
+   wrong on Hanzi). Inter stays in the stack so any Latin mixed-in text still
+   picks up the branded weight. */
+html[data-lang="zh"] body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", Inter, sans-serif;
+}
+   the site resolve to one consistent stack. */
+html body { font-family: var(--font-ui); font-size: 15px;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+
+html body{background:var(--bg);color:var(--text);margin:0;padding:26px 22px 40px;font-size:15px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+h2{font-size:17px;margin:0;letter-spacing:.01em}
+.muted{color:var(--muted)}
+.nbgrid{display:grid;gap:12px;margin-top:12px}
+.mk-lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  margin:30px 0 8px;font-weight:800;display:flex;align-items:center;gap:10px}
+.mk-lbl::after{content:"";flex:1;height:1px;background:var(--line)}
+.mk-lbl:first-child{margin-top:0}
+.help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;
+  border-radius:50%;border:1px solid color-mix(in srgb,var(--muted) 45%,transparent);
+  color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex:none;line-height:1}
+
+
+.pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
+.pvcard:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.22);border-color:color-mix(in srgb,var(--pvh) 55%,var(--line))}
+.pv-buy{--pvh:var(--pv-buy);--pvh-ink:var(--ink-pv-buy,var(--pvh))}.pv-near{--pvh:var(--pv-near);--pvh-ink:var(--ink-pv-near,var(--pvh))}.pv-wait{--pvh:var(--pv-wait);--pvh-ink:var(--ink-pv-wait,var(--pvh))}.pv-hold{--pvh:var(--pv-hold);--pvh-ink:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid);--pvh-ink:var(--ink-pv-avoid,var(--pvh))}
+.pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
+.pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
+
+
+.pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 2.5%,var(--panel2));
+  border-color:color-mix(in srgb,var(--pv-buy) 38%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 24%,transparent),
+             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 32%,transparent),
+             0 10px 26px -14px rgba(0,0,0,.7)}
+
+.pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 48%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 30%,transparent),
+             0 0 20px -6px color-mix(in srgb,var(--pv-buy) 40%,transparent),
+             0 8px 22px -8px rgba(0,0,0,.5)}
+.pvcard.pv-featured::before{background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 55%,transparent));
+  box-shadow:0 1px 10px color-mix(in srgb,var(--pvh) 40%,transparent)}
+
+html[data-theme="light"] .pvcard.pv-featured{background:#fff;
+  border-color:color-mix(in srgb,var(--pv-buy) 30%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 16%,transparent),
+             0 0 12px -6px color-mix(in srgb,var(--pv-buy) 22%,transparent),
+             0 8px 20px -14px rgba(24,58,40,.22)}
+html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 40%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 22%,transparent),
+             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 30%,transparent),
+             0 8px 20px -10px rgba(24,58,40,.18)}
+
+.pvcard:has(.pv-cau:hover),.pvcard:has(.pv-cau:focus-within){overflow:visible;z-index:40}
+.pv-chart{position:relative;min-width:0;border-radius:11px 11px 0 0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
+.pv-chart svg{display:block;width:100%;height:74px;border-radius:11px 11px 0 0}
+
+.pv-chart svg *{stroke:var(--pvh)!important}
+.pv-chart svg [fill]:not([fill="none"]){fill:var(--pvh)!important;stroke:none!important}
+.pv-nochart{height:74px}
+.pv-ov{position:absolute;top:8px;display:flex;gap:5px;align-items:center;z-index:2;max-width:70%}
+
+.pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
+.pv-ovl{left:9px}.pv-ovr{right:9px}
+.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 40%,transparent)}
+/* solid Buy chip: ink-grade fill + panel ink — white on the raw hue was 3.61:1
+   light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
+   audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
+.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
+.pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
+.pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
+.pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
+.pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
+.pv-tk{font-size:13px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.pv-flg{font-size:12px;flex:none}
+.pv-nm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pv-edge{display:inline-flex;align-items:baseline;gap:4px;flex:none}
+.pv-edl{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pv-edn{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--pvh-ink,var(--pvh));line-height:1}
+.pv-edn.pv-edna{color:var(--muted);font-weight:600;font-size:12px}
+.pv-ind{font-size:10.5px;color:var(--muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+
+
+.pv-mk{display:flex;flex-wrap:wrap;align-items:center;gap:3px 4px;margin-top:4px;min-width:0;min-height:18px}
+.pv-mk-i{font-size:9.5px;font-weight:700;line-height:1.45;padding:1px 6px;border-radius:6px;
+  white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+  color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
+.pv-mk-feat{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--pv-buy) 60%,var(--text));
+  background:color-mix(in srgb,var(--pv-buy) 16%,var(--panel2));
+  border-color:color-mix(in srgb,var(--pv-buy) 44%,transparent)}
+.pv-mk-new{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--info) 60%,var(--text));
+  background:color-mix(in srgb,var(--info) 13%,var(--panel2));
+  border-color:color-mix(in srgb,var(--info) 38%,transparent)}
+.pv-mk-warm{color:color-mix(in srgb,var(--warn) 60%,var(--text));
+  background:color-mix(in srgb,var(--warn) 15%,var(--panel2));
+  border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
+.pv-mk-theme{color:color-mix(in srgb,var(--muted) 55%,var(--text));
+  border-color:color-mix(in srgb,var(--muted) 34%,transparent)}
+
+
+.pv-mk-blow{font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-warn,var(--warn));
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+  border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
+
+.pv-mk-adj{font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
+  background:color-mix(in srgb,var(--prov) 7%,transparent);
+  border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
+
+.pv-mk-i[data-tip-en]{cursor:help}
+.pv-stp{display:flex;align-items:center;margin:7px 1px 0}
+.pv-dot{width:6.5px;height:6.5px;border-radius:50%;background:var(--line);flex:none}
+.pv-seg{flex:1;height:2px;background:var(--line);opacity:.75}
+.pv-dot.pa,.pv-seg.pa{background:color-mix(in srgb,var(--pvh) 45%,var(--line));opacity:1}
+.pv-dot.on{background:var(--pvh);box-shadow:0 0 0 3px color-mix(in srgb,var(--pvh) 18%,transparent)}
+.pv-stl{display:flex;justify-content:space-between;gap:3px;margin-top:3px;min-width:0}
+.pv-stl span{font-size:9.5px;color:var(--muted);opacity:.7;white-space:nowrap}
+.pv-stl span.on{color:var(--pvh);opacity:1;font-weight:700}
+.pv-zn{display:flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--panel) 55%,var(--bg));border-top:1px solid var(--line);padding:6px 10px 7px;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-top:auto}
+.pv-znl{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--pvh-ink,var(--pvh));flex:none}
+.pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
+.pv-trg{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 9%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 45%,transparent)}
+.pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
+.pv-cau{position:relative;display:inline-flex}
+.pv-cau-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;line-height:1.35;padding:2px 7px;border-radius:999px;cursor:pointer;background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--ink-warn,var(--warn));border:1px solid color-mix(in srgb,var(--ink-warn,var(--warn)) 40%,transparent);font-family:inherit}
+
+.pv-cau-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:264px;max-width:min(264px,78vw);max-height:min(300px,58vh);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px 10px;box-shadow:var(--popover-shadow);white-space:normal;text-align:left}
+.pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
+.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+
+.pv-cau-row{position:relative;display:block;padding-left:12px;font-size:10.5px;line-height:1.5;color:var(--text)}
+.pv-cau-row::before{content:"";position:absolute;left:2px;top:6.5px;width:4px;height:4px;border-radius:50%;background:var(--warn);opacity:.7}
+.pv-cau-row + .pv-cau-row{margin-top:7px}
+
+.pv-live{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;--plvc:#62a0e8;background:color-mix(in srgb,var(--plvc) 12%,var(--panel));color:var(--plvc);border:1px solid color-mix(in srgb,var(--plvc) 44%,transparent)}
+
+.pv-live[hidden]{display:none}
+html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
+
+.pv-live--close{background:color-mix(in srgb,var(--plvc) 18%,var(--panel));border-color:color-mix(in srgb,var(--plvc) 70%,transparent)}
+.pv-live--drop,.pv-live--over{--plvc:var(--pv-wait)}
+[data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
+[data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
+[data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
+[data-showmore-rows] .pvcard .pv-mk{margin-top:3px}
+@media (min-width:681px){
+  .nbgrid:has(> .pvcard),.cards:has(> .pvcard),.rip-grid:has(> .pvcard){grid-template-columns:repeat(auto-fill,minmax(246px,1fr))!important}
+}
+@media (max-width:680px){
+  .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
+
+  .pv-hd{align-items:flex-start}
+  .pv-idw{flex:1 1 auto;flex-wrap:wrap;row-gap:1px;overflow:visible}
+  .pv-nm{flex-basis:100%;width:100%}
+  .pv-stl span{font-size:9px}
+  .pv-zn{font-size:10px}
+  /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
+     teaches "marked ⚡"); !important outranks the html[data-lang] l-en/l-zh
+     visibility rules, which otherwise win at any width. The overlay's own
+     flex-wrap now applies at EVERY width (promoted above — it was a desktop
+     clipping bug), so it is no longer repeated here. */
+  .pv-trg .l-en,.pv-trg .l-zh{display:none!important}
+  .pv-trg{padding:2px 5px;gap:0}
+  /* same collapse-to-glyph rule for the ◐ live chip */
+  .pv-live .l-en,.pv-live .l-zh{display:none!important}
+  .pv-live{padding:2px 5px;gap:0}
+  /* marks chips do NOT collapse to a glyph — "Featured" and the theme name are
+     the words that make the row non-colour-only; they get one size UP instead,
+     because a phone is where 9.5px stops being readable. */
+  .pv-mk-i{font-size:10px;padding:2px 7px}
+}
+
+
+/* ═══ W-L1 BOARD STATE STAMP ═══════════════════════════════════════════════
+   ONE axis, asked once: where does this board stand relative to the nightly
+   board of record?
+     data-boardstate="ahead"   provisional blue, DASHED  — built from today's
+                               close; the overnight pass has not countersigned it
+     data-boardstate="behind"  muted, SOLID              — the record did not
+                               arrive (or the market is shut); this is the last
+                               confirmed board
+     attribute ABSENT          no stamp at all           — the board IS the record
+   Absence is the third state and it is load-bearing: the stamp appears only when
+   the board is NOT the current record, so a reader never has to read a badge to
+   learn that nothing is unusual.
+
+   Dashed=pending is not invented here — .pv-trg-soon already ships it for the
+   'imminent' trigger chip. The blue is the P1 provisional hue (.pv-live --plvc)
+   reused ON PURPOSE: the ◐ strip above and this stamp name the SAME epistemic
+   tier — settled by the tape, not yet by the record — and a second vocabulary
+   for one idea is a tax on the reader. Do not give this its own hue.
+   NOT a directional token, so 红涨绿跌 holds by construction. */
+/* Two tokens, following theme.css's own --ink-* convention exactly: --prov is
+   the FILL-grade hue (tints, rules, borders), --prov-ink is the TEXT-grade one.
+   Dark keeps ink ≡ raw so dark renders byte-identical to a single-token version;
+   light deepens toward --text, because the fill-grade blue measured 4.22:1 as
+   type on its own 11% tint over white — under AA, and invisible to anyone who
+   only ever looked at the dark shot. (Doctrine §5.8: light is a design target,
+   not a translation.) Measured after: 5.05:1 light / 5.35:1 dark. */
+:root{--prov:#62a0e8;--prov-ink:var(--prov)}
+html[data-theme="light"]{--prov:#2f6fd0;
+  --prov-ink:color-mix(in srgb,var(--prov) 82%,var(--text))}
+
+.pbs{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;line-height:1.35;padding:2.5px 9px;
+  border-radius:6px;white-space:nowrap;flex:none}
+/* squarer than the board's 999px pills on purpose: this is a stamp on the whole
+   board, not another chip in the chip row. 6px matches the .pv-mk marks family. */
+.pbs-ahead{color:var(--prov-ink);background:color-mix(in srgb,var(--prov) 11%,transparent);
+  border:1px dashed color-mix(in srgb,var(--prov) 62%,transparent)}
+.pbs-behind{color:var(--muted);background:color-mix(in srgb,var(--muted) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 34%,transparent)}
+.pbs-dt{font-variant-numeric:tabular-nums}
+
+/* THE UNSEALED EDGE — the one place this design spends boldness.
+   A board-level state has to survive a full-page scroll-past, and the house has
+   already measured that a header chip alone does not (the .pv-featured note:
+   a rim treatment ALONE vanished in a dense grid). So the panel's own top edge
+   goes perforated while the board is uncountersigned. Long dash (15/9), never a
+   fine dot — a fine dotted line reads as a broken border, a long dash reads as
+   a deliberate perforation. Costs zero height: it rides the existing 1px border.
+   Static by choice: 15 cards and a strip that already animates its rows in are
+   enough movement on this page, so there is no animation here and therefore no
+   prefers-reduced-motion kill block to keep in sync. */
+.panel[data-boardstate]{position:relative}
+.panel[data-boardstate="ahead"]::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;
+  height:2px;border-radius:14px 14px 0 0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,
+    color-mix(in srgb,var(--prov) 78%,transparent) 0 15px,transparent 15px 24px)}
+
+/* SLOT B — one line under the header. Three mutually exclusive contents
+   (provisional stance / confirmation receipt / last-confirmed stance), never
+   two at once, so the panel header height moves by at most one line and the
+   board below never shoves. NOT a second footnote: .pb-fn stays the panel's
+   single permanent methodology note (doctrine Law 4, one footnote per panel).
+   Deliberately NOT .nb-stale-note's amber-on-tint banner: this is quiet
+   honesty, not a caution — no fill, no border, muted ink. */
+/* text-wrap:pretty is load-bearing, not polish: without it the trailing `?`
+   help icon wrapped alone onto a second line on the two longest notes, which
+   reads as a stray glyph rather than as the receipt handle for the sentence
+   above it. */
+.pbs-note{font-size:11.5px;line-height:1.5;margin:7px 0 1px;color:var(--muted);
+  max-width:94ch;text-wrap:pretty}
+.pbs-note b{font-weight:700;color:var(--text)}
+.pbs-fig{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}
+.pbs-note .help{margin-left:5px;vertical-align:1px}
+
+/* PER-CARD DELTA — exactly one new marks kind. 'Confirmed' is deliberately NOT
+   a chip: it is the other N-1 cards, and a constant belongs in the receipt line
+   once, never stamped N times (doctrine Law 4 — the vetoed "T+1 58% fade on
+   every row" defect). Overnight ADDITIONS need no new kind either; they are new
+   to the board and the existing 'new' mark already says so.
+
+   DESATURATED ON PURPOSE (caught in the first render): at the marks row's full
+   formula — color-mix(<hue> 58%, --text) on a 12% tint — this chip came out the
+   same blue as .pv-mk-new, which sits inches away on the same board and means
+   something completely different ("new to the board" is a signal; "adjusted" is
+   a receipt). Two meanings in one hue is a defect no amount of wording fixes.
+   The fix is weight, not hue: 'adjusted' resolves toward --muted so it reads as
+   the quietest thing in the row, while --new keeps the saturated --info. That
+   also matches what the mark is worth to the reader — the honest answer to "so
+   what do I do" here is nothing, the card already shows the updated numbers. */
+.pv-mk-adj{font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
+  background:color-mix(in srgb,var(--prov) 7%,transparent);
+  border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
+
+@media (max-width:680px){
+  .pbs{font-size:9.5px;padding:2px 7px}
+  .pbs-note{font-size:11px}
+}
+
+</style></head>
+<body>
+<div class="mk-lbl">状态 1 — 傍晚临时榜</div>
+<div class="panel span12" data-boardstate="ahead">
+  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <h2>先知选股</h2>
+    <span class="pbs pbs-ahead">◐ 今晚选股</span>
+    <span class="muted" style="font-size:11.5px">已显示 15 · 93 个形态 · 绿点＝现在可入场，黄点＝等回调。<span class="help">?</span></span>
+  </div>
+  <div class="pbs-note"><b>可以开始准备</b> — 依今日收盘价选出，明早完成确认。<span class="help">?</span></div>
+  <div class="nbgrid">
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">182.44</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NVDA</span><span class="pv-nm">英伟达</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">82</span></span></div>
+    <div class="pv-ind">半导体</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">168.20–176.90</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">14.86</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">ROIV</span><span class="pv-nm">罗益万科学</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">77</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">13.90–14.60</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">38.12</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">XPEL</span><span class="pv-nm">XPEL</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">71</span></span></div>
+    <div class="pv-ind">汽车零部件</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">35.40–36.80</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">11.03</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">SOUN</span><span class="pv-nm">声猎人工智能</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">69</span></span></div>
+    <div class="pv-ind">软件</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">10.10–10.70</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">51.77</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NGVT</span><span class="pv-nm">英力士</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">63</span></span></div>
+    <div class="pv-ind">特种化工</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">128.40</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">VSEC</span><span class="pv-nm">VSE 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">61</span></span></div>
+    <div class="pv-ind">航空国防</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">119.00–124.50</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">27.35</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">GPCR</span><span class="pv-nm">结构治疗</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">58</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,40.1 6,37.8 12,35.8 18,34.1 24,32.8 30,31.9 36,31.4 42,31.4 48,31.8 54,32.7 60,34.0 66,35.7 72,37.8 78,40.2 84,42.9 90,45.9 96,49.0 102,52.3 108,55.6 114,59.0 120,62.2 126,65.4 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,68.0 222,68.0 228,65.7 234,62.9 240,59.9"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">46.90</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">CTS</span><span class="pv-nm">CTS 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">54</span></span></div>
+    <div class="pv-ind">电子设备</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on">筑底</span><span>转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">无买区 — 观望</span><span class="pv-dt">08-08</span></div>
+</a>
+  </div>
+</div>
+<div class="mk-lbl">状态 2 — 隔夜确认后</div>
+<div class="panel span12">
+  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <h2>先知选股</h2>
+    
+    <span class="muted" style="font-size:11.5px">已显示 15 · 93 个形态 · 绿点＝现在可入场，黄点＝等回调。<span class="help">?</span></span>
+  </div>
+  <div class="pbs-note"><span class="pbs-fig">15</span> 只中 <span class="pbs-fig">13</span> 只隔夜确认 · 调整 <span class="pbs-fig">1</span> 只，离榜 <span class="pbs-fig">1</span> 只<span class="help">?</span></div>
+  <div class="nbgrid">
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">182.44</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NVDA</span><span class="pv-nm">英伟达</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">82</span></span></div>
+    <div class="pv-ind">半导体</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">168.20–176.90</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">14.86</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">ROIV</span><span class="pv-nm">罗益万科学</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">77</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">13.90–14.60</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">38.12</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">XPEL</span><span class="pv-nm">XPEL</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">71</span></span></div>
+    <div class="pv-ind">汽车零部件</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-adj">已调整</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">35.40–36.80</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">11.03</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">SOUN</span><span class="pv-nm">声猎人工智能</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">69</span></span></div>
+    <div class="pv-ind">软件</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">10.10–10.70</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">51.77</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NGVT</span><span class="pv-nm">英力士</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">63</span></span></div>
+    <div class="pv-ind">特种化工</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">128.40</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">VSEC</span><span class="pv-nm">VSE 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">61</span></span></div>
+    <div class="pv-ind">航空国防</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-new">新增</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">119.00–124.50</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">27.35</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">GPCR</span><span class="pv-nm">结构治疗</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">58</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-08</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,40.1 6,37.8 12,35.8 18,34.1 24,32.8 30,31.9 36,31.4 42,31.4 48,31.8 54,32.7 60,34.0 66,35.7 72,37.8 78,40.2 84,42.9 90,45.9 96,49.0 102,52.3 108,55.6 114,59.0 120,62.2 126,65.4 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,68.0 222,68.0 228,65.7 234,62.9 240,59.9"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">46.90</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">CTS</span><span class="pv-nm">CTS 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">54</span></span></div>
+    <div class="pv-ind">电子设备</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on">筑底</span><span>转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">无买区 — 观望</span><span class="pv-dt">08-08</span></div>
+</a>
+  </div>
+</div>
+<div class="mk-lbl">状态 3 — 提前更新未到位</div>
+<div class="panel span12" data-boardstate="behind">
+  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <h2>先知选股</h2>
+    <span class="pbs pbs-behind">上次确认 · <span class="pbs-dt">08-07</span></span>
+    <span class="muted" style="font-size:11.5px">已显示 15 · 93 个形态 · 绿点＝现在可入场，黄点＝等回调。<span class="help">?</span></span>
+  </div>
+  <div class="pbs-note">今晚的提前更新未到位，以下为昨晚确认的选股名单。操作前请先看一下实时报价。<span class="help">?</span></div>
+  <div class="nbgrid">
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">182.44</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NVDA</span><span class="pv-nm">英伟达</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">82</span></span></div>
+    <div class="pv-ind">半导体</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">168.20–176.90</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">14.86</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">ROIV</span><span class="pv-nm">罗益万科学</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">77</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">13.90–14.60</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">38.12</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">XPEL</span><span class="pv-nm">XPEL</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">71</span></span></div>
+    <div class="pv-ind">汽车零部件</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">35.40–36.80</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">11.03</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">SOUN</span><span class="pv-nm">声猎人工智能</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">69</span></span></div>
+    <div class="pv-ind">软件</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">10.10–10.70</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">51.77</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NGVT</span><span class="pv-nm">英力士</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">63</span></span></div>
+    <div class="pv-ind">特种化工</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">128.40</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">VSEC</span><span class="pv-nm">VSE 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">61</span></span></div>
+    <div class="pv-ind">航空国防</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">119.00–124.50</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">27.35</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">GPCR</span><span class="pv-nm">结构治疗</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">58</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,40.1 6,37.8 12,35.8 18,34.1 24,32.8 30,31.9 36,31.4 42,31.4 48,31.8 54,32.7 60,34.0 66,35.7 72,37.8 78,40.2 84,42.9 90,45.9 96,49.0 102,52.3 108,55.6 114,59.0 120,62.2 126,65.4 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,68.0 222,68.0 228,65.7 234,62.9 240,59.9"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">46.90</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">CTS</span><span class="pv-nm">CTS 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">54</span></span></div>
+    <div class="pv-ind">电子设备</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on">筑底</span><span>转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">无买区 — 观望</span><span class="pv-dt">08-07</span></div>
+</a>
+  </div>
+</div>
+<div class="mk-lbl">状态 4 — 休市</div>
+<div class="panel span12" data-boardstate="behind">
+  <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <h2>先知选股</h2>
+    <span class="pbs pbs-behind">上次确认 · <span class="pbs-dt">08-07</span></span>
+    <span class="muted" style="font-size:11.5px">已显示 15 · 93 个形态 · 绿点＝现在可入场，黄点＝等回调。<span class="help">?</span></span>
+  </div>
+  <div class="pbs-note">休市中，以下为最近一次确认的选股名单。下一个交易日收盘后更新。<span class="help">?</span></div>
+  <div class="nbgrid">
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">182.44</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NVDA</span><span class="pv-nm">英伟达</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">82</span></span></div>
+    <div class="pv-ind">半导体</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">168.20–176.90</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">14.86</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">ROIV</span><span class="pv-nm">罗益万科学</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">77</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">13.90–14.60</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">38.12</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">XPEL</span><span class="pv-nm">XPEL</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">71</span></span></div>
+    <div class="pv-ind">汽车零部件</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">35.40–36.80</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-buy pv-featured" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,32.0 6,31.1 12,30.6 18,30.6 24,31.0 30,31.9 36,33.2 42,34.9 48,37.0 54,39.4 60,42.1 66,45.1 72,48.2 78,51.5 84,54.8 90,58.2 96,61.4 102,64.6 108,67.5 114,68.0 120,68.0 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,67.7 204,64.9 210,62.1 216,59.1 222,56.2 228,53.3 234,50.6 240,48.1"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">买入</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">11.03</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">SOUN</span><span class="pv-nm">声猎人工智能</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">69</span></span></div>
+    <div class="pv-ind">软件</div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat">★ 精选</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span>就绪</span><span class="on">趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znr">10.10–10.70</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">51.77</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">NGVT</span><span class="pv-nm">英力士</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">63</span></span></div>
+    <div class="pv-ind">特种化工</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-near" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,33.5 6,31.7 12,30.3 18,29.4 24,28.9 30,28.8 36,29.2 42,30.0 48,31.3 54,32.9 60,34.8 66,37.0 72,39.5 78,42.2 84,45.0 90,47.8 96,50.7 102,53.5 108,56.1 114,58.6 120,60.8 126,62.8 132,64.4 138,65.6 144,66.4 150,66.8 156,66.7 162,66.2 168,65.3 174,63.9 180,62.1 186,59.9 192,57.4 198,54.6 204,51.6 210,48.3 216,45.0 222,41.6 228,38.2 234,34.8 240,31.6"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">临近</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">128.40</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">VSEC</span><span class="pv-nm">VSE 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">61</span></span></div>
+    <div class="pv-ind">航空国防</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span>转向</span><span class="on">就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl">买区</span><span class="pv-znm">119.00–124.50</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,35.4 6,33.7 12,32.4 18,31.5 24,31.0 30,31.0 36,31.4 42,32.3 48,33.6 54,35.3 60,37.4 66,39.8 72,42.5 78,45.5 84,48.6 90,51.9 96,55.2 102,58.6 108,61.8 114,65.0 120,67.9 126,68.0 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,65.3 222,62.5 228,59.5 234,56.6 240,53.7"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">27.35</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">GPCR</span><span class="pv-nm">结构治疗</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">58</span></span></div>
+    <div class="pv-ind">生物科技</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span>筑底</span><span class="on">转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">买区待确认后生成</span><span class="pv-dt">08-07</span></div>
+</a>
+<a class="pvcard pv-wait" href="#">
+  <div class="pv-chart"><svg viewBox="0 0 240 74" preserveAspectRatio="none"><polyline fill="none" stroke-width="1.6" points="0,40.1 6,37.8 12,35.8 18,34.1 24,32.8 30,31.9 36,31.4 42,31.4 48,31.8 54,32.7 60,34.0 66,35.7 72,37.8 78,40.2 84,42.9 90,45.9 96,49.0 102,52.3 108,55.6 114,59.0 120,62.2 126,65.4 132,68.0 138,68.0 144,68.0 150,68.0 156,68.0 162,68.0 168,68.0 174,68.0 180,68.0 186,68.0 192,68.0 198,68.0 204,68.0 210,68.0 216,68.0 222,68.0 228,65.7 234,62.9 240,59.9"/></svg>
+    <span class="pv-ov pv-ovl"><span class="pv-chip">等待</span><span class="pv-live" hidden></span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px">46.90</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd"><span class="pv-idw"><span class="pv-tk">CTS</span><span class="pv-nm">CTS 公司</span></span>
+      <span class="pv-edge"><span class="pv-edl">优势</span><span class="pv-edn">54</span></span></div>
+    <div class="pv-ind">电子设备</div>
+    <div class="pv-mk"></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on">筑底</span><span>转向</span><span>就绪</span><span>趋势</span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znm">无买区 — 观望</span><span class="pv-dt">08-07</span></div>
+</a>
+  </div>
+</div>
+
+</body></html>

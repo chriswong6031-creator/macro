@@ -71,6 +71,14 @@
   .pw .sh-needle-hub{fill:var(--panel,#0e1013);stroke:var(--sh-accent);stroke-width:1.5}
   .pw .sh-needle-core,.pw .sh-needle-tip{fill:var(--sh-accent)}
   .pw .sh-needle-tip{filter:drop-shadow(0 0 3.5px var(--sh-accent))}
+  /* Light mode: the needle's backing line and blade ship as dark-mode presentation
+     attributes (rgba(255,255,255,.30) / white) and composited to ~1:1 on the light
+     .cnx-card (rgba(255,255,255,.82)) — the dial rendered as an arc with no reading on
+     it. Hub / core / tip already paint from --sh-accent above. Twin rules on
+     body.page-macro / .page-china / .page-canada / .page-hk — same component. */
+  [data-theme="light"] .pw .sh-needle line{stroke:rgba(10,16,24,.20);}
+  [data-theme="light"] .pw .sh-needle polygon{fill:rgba(10,16,24,.82);}
+  [data-theme="light"] .pw .sh-needle circle:first-of-type{fill:rgba(10,16,24,.07);}
   .pw .sh-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .pw .sh-big{font-size:60px;font-weight:800;line-height:.9;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--sh-accent);text-shadow:0 0 34px var(--sh-glow)}
   @media(max-width:560px){.pw .sh-big{font-size:40px}}
@@ -267,7 +275,7 @@
           <div class="sh-pop-flag">{{ t('Data limits', '数据限制') }}</div>
           <div class="sh-prow-rc">{{ nt.gaps|join(' · ') }}</div>
           {% endif %}
-          <div class="sh-pop-note">{{ t('Context only — a read on whether the state is defending the market, not a buy signal. State intervention is loud by design; this fuses its public footprint (ETF creation, policy impulse, index-heavyweight lift) into one intensity gauge. Nulls are shown, not hidden.', '仅供参考——用以判断国家队是否在护盘，并非买入信号。国家干预本就高调；本表将其公开足迹（ETF份额创设、政策脉冲、权重股护指数）汇成一个强度读数。空值如实显示，不予隐藏。') }}</div>
+          <div class="sh-pop-note">{{ t('Context only — a read on whether the state is defending the market, not a buy signal. State intervention is loud by design; this fuses its public footprint (ETF creation, policy impulse, index-heavyweight lift) into one intensity gauge. Nulls are shown, not hidden.', '仅作背景——用以判断国家队是否在护盘，并非买入信号。国家干预本就高调；本表将其公开足迹（ETF份额创设、政策脉冲、权重股护指数）汇成一个强度读数。空值如实显示，不予隐藏。') }}</div>
         </div>
       </div>
     </div>
@@ -418,7 +426,7 @@
   </div>
   {% endif %}
 
-  <p class="disc">{{ t('Context only — not a signal, score or trade. The National Team Radar fuses the public footprint of state intervention into a display-tier intensity read; it is not a buy signal and never gates a trade. PBoC corridor + NBS prints are point-in-time and may be revised; the sector matrix, NPC targets and prediction ledger are a hand-curated, dated intel substrate (data/china_policy/intel.json), not a model output.', '仅供参考，非信号、评分或交易。国家队雷达将国家干预的公开足迹汇成一个展示层强度读数；它不是买入信号，也从不用于交易闸口。央行利率走廊与统计局数据为特定时点快照，可能修订；行业矩阵、两会目标与预测台账为人工整理、有日期的情报底稿（data/china_policy/intel.json），并非模型输出。') }}</p>
+  <p class="disc">{{ t('Context only — not a signal, score or trade. The National Team Radar fuses the public footprint of state intervention into a display-tier intensity read; it is not a buy signal and never gates a trade. PBoC corridor + NBS prints are point-in-time and may be revised; the sector matrix, NPC targets and prediction ledger are a hand-curated, dated intel substrate (data/china_policy/intel.json), not a model output.', '仅作背景，非信号、评分或交易。国家队雷达将国家干预的公开足迹汇成一个展示层强度读数；它不是买入信号，也从不用于交易闸口。央行利率走廊与统计局数据为特定时点快照，可能修订；行业矩阵、两会目标与预测台账为人工整理、有日期的情报底稿（data/china_policy/intel.json），并非模型输出。') }}</p>
 {% endif %}
 </div>
 {% endblock %}

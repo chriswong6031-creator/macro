@@ -20,8 +20,8 @@ MACRO_HTML = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
 # The cache-buster the theme.js -> account.js -> nav_market.js chain is pinned
 # to, and a digest of the payload that key is responsible for busting. They MUST
 # move together -- see test_nav_release_key_moves_with_the_payload_it_busts.
-NAV_RELEASE_KEY = "20260806-zh-natural"
-NAV_PAYLOAD_DIGEST = "7b8eebce"
+NAV_RELEASE_KEY = "20260809-market-memory"
+NAV_PAYLOAD_DIGEST = "af8e4276"
 
 
 def _payload_digest() -> str:
@@ -177,8 +177,10 @@ def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
         "20260731-folded2",
         "20260801-crossfade",
         "20260806-zh-megamenu",
-        "20260806-us-confluence",
         "20260803-onemenu",
+        "20260806-us-confluence",
+        "20260807-post-sweep",
+        "20260807-mm-icons",
     ):
         assert stale not in TEMPLATE_THEME_JS
         assert stale not in SITE_THEME_JS
@@ -343,3 +345,35 @@ def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
         assert source.count("var pfx = _mmSharedAssetRoot;") == 3
         assert "location.pathname.indexOf('/sectors/')" not in source
         assert f"s.src = pfx + 'account.js?v={NAV_RELEASE_KEY}'" in source
+
+
+def test_research_icon_bridge_never_stomps_an_unknown_card() -> None:
+    """The Mastermind twins must not wear one glyph (operator report 2026-08-07).
+
+    enhanceResearchMenu's icon leg is a compatibility bridge for LEGACY pages:
+    it rewrites a card's icon to the mockup drawing when the card's file is in
+    MOCKUP_RESEARCH_ICON_BY_FILE.  Its old fallback — `|| ['dashboard', '']` —
+    stomped every UNKNOWN card with the same default square, so the adjacent
+    "Mastermind Portfolio" and "Mastermind Bot" cards (and Filing Forensics and
+    Stock Seasonality) all rendered byte-identical glyphs and the two Mastermind
+    cards read as one product listed twice.  Cards born after the mockup era
+    already ship their real icon-drawing markup server-side, so the exact
+    normalisation for an unknown card is to leave it alone.
+    """
+    for source in (TEMPLATE_JS, SITE_JS):
+        # the stomp is gone, in the one place it lived
+        assert "|| ['dashboard', '']" not in source
+        # unknown card => no icon rewrite (the gate rides the map lookup)
+        assert "var oldIcon = iconSpec ? item.querySelector('.nm-ic') : null;" in source
+        # the two Mastermind cards are KNOWN, each with its own glyph + tint
+        assert "'watchlist.html': ['portfolio', 'violet']" in source
+        assert "'bot.mastermind-x.com': ['bot', 'cyan']" in source
+        # and the glyphs are the template's own drawings, not the dashboard square
+        assert "portfolio: '<path class=\"ghost\" d=\"M25 7a17 17 0 0 1 16 16\"/>" in source
+        assert "bot: '<path d=\"M17 11V6M24 11V6M31 11V6" in source
+        # the two drawings must stay DISTINCT from each other and from the default
+        import re as _re
+        icons = dict(_re.findall(r"\n    (portfolio|bot): '([^']+)'", source))
+        assert icons["portfolio"] != icons["bot"]
+        dashboard = _re.search(r"\n    dashboard: '([^']+)'", source).group(1)
+        assert icons["portfolio"] != dashboard and icons["bot"] != dashboard

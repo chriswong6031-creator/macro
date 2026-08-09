@@ -209,7 +209,7 @@ var RECEIPTS={
   map:['Counts the groups sitting strong and still rising on the map below, named by the same ranking the map draws. Display only.',
        '统计下方图中既强势又仍在上行的板块，命名沿用图表所用排序。仅为展示。'],
   moving:['Counts how many groups moved up or down this week’s ranking in the payload. A context lens — it ranks nothing and gates nothing.',
-          '统计本周排名上升或下降的板块数量。仅供参考视角 — 不排序、不门控。'],
+          '统计本周排名上升或下降的板块数量。仅为背景视角 — 不排序、不门控。'],
   money:['Restates the money-flow reading shown on the breadth card below, in plain words. Display only.',
          '以平实措辞复述下方广度卡片的资金流向读数。仅为展示。'],
   explore:['Counts the baskets carried in tonight’s payload — the same set the table below lists.',

@@ -88,13 +88,13 @@ function render() {
   h += `<div class="stats">`
     + `<span>${L('as of', '截至')} <b>${esc(g.as_of)}</b></span>`
     + `<span>${L('members', '成分')} <b>${g.n_priced || g.n_members}</b>${g.n_members && g.n_priced && g.n_priced !== g.n_members ? '/' + g.n_members : ''}</span>`
-    + (r.stoch_3d != null ? `<span>${L('Washout','超卖')} <b>${Math.round(r.stoch_3d)}</b>/100</span>` : '')
+    + (r.rsi_3d != null ? `<span>3D RSI <b>${Math.round(r.rsi_3d)}</b> · StochRSI <b>${Math.round(r.stoch_3d)}</b></span>` : '')
     + (e.ticks != null ? `<span>${L('cross age', '交叉时长')} <b>${e.ticks} ${L('tick(s)', '格')}</b></span>` : '')
     + (e.bars_to_cross != null ? `<span>${L('to cross', '距交叉')} <b>~${e.bars_to_cross}</b></span>` : '')
     + (r.rs_60d != null ? `<span>RS60 ${sgn(r.rs_60d)}</span>` : '')
     + (e.above200 != null ? `<span>${e.above200 ? L('above 200d ✓', '在200日上方 ✓') : L('below 200d', '在200日下方')}</span>` : '')
     + `</div>`;
-  h += `<div class="chart-card"><div id="chart-host"></div><div style="color:var(--muted);font-size:10.5px;padding:4px 6px">${L('The group traded as one basket, every member weighted the same and rebased to the start. Buy / sell / cut marks are the read on that basket — shown for context only.', '把整组当成一个等权篮子来看，从起点归一。买／卖／止损标记是对这个篮子的研判——仅供参考。')}</div></div>`;
+  h += `<div class="chart-card"><div id="chart-host"></div><div style="color:var(--muted);font-size:10.5px;padding:4px 6px">${L('Equal-weight synthetic index (level rebased to 1.0 at first bar). BUY/SELL/cut markers = the confluence cascade read on this index — display only.', '等权合成指数（首根归一为1.0的水平）。买/卖/止损标记 = 本指数上的汇聚级联研判——仅供展示。')}</div></div>`;
 
   // member table
   const ms = g.members || [];

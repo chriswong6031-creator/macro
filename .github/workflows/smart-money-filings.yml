@@ -1,0 +1,144 @@
+name: smart-money filing-season fast path
+
+on:
+  schedule:
+    # Six lightweight polls per US business day during an open 13F window.
+    # The in-job filing clock no-ops outside the quarter-end +45d window.
+    - cron: "17 13-23/2 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline-smart-money-filings
+  cancel-in-progress: false
+
+jobs:
+  rolling-13f:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python 3.12 (shared runner venv)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+          "$VENV/bin/pip" install --quiet -r requirements.txt
+
+      - name: Gate to an open filing window
+        id: window
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from engine.ownership_event_wire import filing_season_clock
+          clock = filing_season_clock({})
+          active = clock["quarter_state"] == "window_open"
+          if os.environ.get("EVENT_NAME") == "workflow_dispatch":
+              active = True
+          print(f"active={'true' if active else 'false'}")
+          print(f"period={clock['quarter_end']}")
+          print(f"deadline={clock['next_deadline']}")
+          PY
+
+      - name: Poll featured 13F CIKs
+        if: steps.window.outputs.active == 'true'
+        env:
+          COLLECT_LANE: filing-season
+        run: python -m scripts.collect --only edgar_13f
+
+      - name: Detect a new filing accession
+        if: steps.window.outputs.active == 'true'
+        id: discovery
+        run: |
+          CHANGED=$(git status --porcelain -- data/smart_money \
+            | awk '{print $2}' \
+            | grep -E '^data/smart_money/(filing_receipts\.parquet|[^/]+/([^/]+|amendments/[^/]+)\.parquet)$' \
+            | grep -v 'smart_money_runs\.parquet' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "new=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "$CHANGED"
+          else
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "No unseen 13F accession; narrow build skipped."
+          fi
+
+      - name: Resolve newly seen CUSIPs (non-fatal enrichment)
+        if: steps.discovery.outputs.new == 'true'
+        env:
+          COLLECT_LANE: filing-season
+          OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
+        run: |
+          python -m scripts.collect --only openfigi \
+            || echo "::warning::OpenFIGI enrichment failed; filing remains visible with coverage disclosure"
+
+      - name: Rebuild the rolling Smart Money surface
+        if: steps.discovery.outputs.new == 'true'
+        env:
+          COLLECT_LANE: filing-season
+        run: python -m scripts.build_smart_money
+
+      - name: Assert accession-to-page handoff
+        if: steps.discovery.outputs.new == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          desk = json.loads(Path("site/factordata/smartmoney_desk.json").read_text())
+          roll = desk.get("filing_transition") or {}
+          assert roll.get("expected_period") == "${{ steps.window.outputs.period }}"
+          assert roll.get("automation_mode") == "rolling_filing_season"
+          assert Path("site/smart_money.html").exists()
+          page = Path("site/smart_money.html").read_text()
+          if roll.get("show_early_radar"):
+              assert "Reported so far" in page
+          elif roll.get("filed_count", 0) >= roll.get("majority_at", 1):
+              assert roll.get("canonical_period") == roll.get("expected_period")
+          else:
+              assert roll.get("notice_count", 0) > 0
+          print(f"transition={roll.get('filed_count')}/{roll.get('active_count')}")
+          PY
+
+      - name: Commit and publish the narrow update
+        if: steps.discovery.outputs.new == 'true'
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A -- data/smart_money data/openfigi/cusip_ticker.parquet \
+            data/quality/smart_money_freshness.json \
+            site/smart_money.html site/factordata/smartmoney_tracker.json \
+            site/factordata/smartmoney.json site/factordata/smartmoney_desk.json \
+            site/factordata/smartmoney_follow.json site/factordata/smartmoney_health.json \
+            site/funddata site/fund_index.html \
+            site/fund_*.html
+          if git diff --cached --quiet; then
+            echo "No publishable Smart Money changes after rebuild."
+            exit 0
+          fi
+          git commit -m "smart-money: rolling 13F filing update $(date -u +%FT%H:%MZ) [skip ci]"
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_ALARM=300
+          push_retry_init "rolling 13F filing update"
+          while push_attempt; do
+            perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+            if perl -e 'alarm 300; exec @ARGV or die' -- \
+                 git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              if push_do; then
+                echo "Published rolling 13F update on attempt $PUSH_ATTEMPT"
+                push_won
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::error::New 13F accession was collected and rendered but could not be pushed"
+          exit 1

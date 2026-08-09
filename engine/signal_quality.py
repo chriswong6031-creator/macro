@@ -439,6 +439,52 @@ def _bucket_last_session(daily_close: pd.Series, *, market: str = "US") -> pd.Se
     return _tf_grid(daily_close, 3, market).last_session
 
 
+def marker_last_session(daily_close: pd.Series, marker_date, *,
+                        market: str = "US") -> pd.Timestamp | None:
+    """The LAST daily session inside a §7 marker's own 3D bucket — the knowability date.
+
+    A marker is LABELLED with its bucket's OPEN date (:func:`_tf_grid`, R-SQ2), so the
+    label precedes the bar that closed the bucket by up to two sessions. Anything that
+    measures HOW OLD a signal is from the label therefore ages it by up to two sessions
+    it did not exist for. Measured on the committed 2026-08-06 board: APH and FCX
+    published ``days_since_signal 4`` on signals whose bucket had only closed 2 sessions
+    earlier, which is past ``templates/stocktable.js``'s ``FRESH_DAYS = 2`` — the freshest
+    turns on the board were the ones the fresh-only filter dropped.
+
+    This is NOT :func:`confirmation_date`, and the two must not be swapped. That function
+    answers "when was the ``_buy_filter`` LABEL knowable" and walks a further
+    :data:`CONFIRM_BARS` buckets forward (~6 more daily sessions) because a forward RETURN
+    graded any earlier would be reading its own answer. An AGE measured from that anchor
+    would run negative on every genuinely fresh marker — the opposite of the defect above.
+    Ages come from here; forward returns come from there.
+
+    Returns ``None`` — never a guess — when ``marker_date`` is not a bucket label of THIS
+    series, or the series/date cannot be read. Cheap on purpose: :func:`_tf_grid` alone,
+    no :func:`signal_frame`, no MACD/StochRSI — this runs per-ticker on the render path.
+    """
+    if daily_close is None or marker_date is None or len(daily_close) == 0:
+        return None
+    try:
+        stamp = pd.Timestamp(marker_date).normalize()
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(stamp):
+        return None
+    try:
+        sessions = _bucket_last_session(daily_close, market=market)
+    except FileNotFoundError:
+        # session_anchor RAISES rather than silently bucketing a non-US name on NYSE
+        # sessions (the no-fallback-chain law). A checkout without that market's
+        # reference calendar cannot derive this anchor — a disclosed null, not a guess.
+        return None
+    if sessions is None or len(sessions) == 0:
+        return None
+    session = sessions.get(stamp)
+    if session is None or pd.isna(session):
+        return None
+    return pd.Timestamp(session)
+
+
 def confirmation_date(daily_close: pd.Series, marker_date, *,
                       market: str = "US") -> pd.Timestamp | None:
     """First daily close at which a marker's ``_buy_filter`` label was KNOWABLE.
@@ -549,8 +595,32 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
     # advance-warning. Kept OUT of the validated trade stream; suppressed on a confirmed-buy bar
     # (then it is no longer "early"). Advance-warning ONLY — not every one is followed by a buy.
     markers, risk_flags, early_markers = [], [], []
+    # THE THREE DATES A MARKER HAS, named on the marker itself (§7 signal-date family).
+    # They disagree by up to ~8 daily sessions and three separate surfaces were each
+    # reading a different one as "the signal date" with no field saying which:
+    #   `date`           the bucket's OPEN label (R-SQ2) — the chart's x-anchor. FROZEN
+    #                    here; it is what `marker_integrity` may never re-date.
+    #   `signal_date`    the SAME bucket's last session — the close that produced the
+    #                    signal, i.e. when it became KNOWABLE. This is the date a
+    #                    "Buy · Aug 7" panel means and what an AGE must use.
+    #   `confirmed_date` the first close at which the `_buy_filter` LABEL was knowable
+    #                    (:data:`CONFIRM_BARS` buckets further on) — null while the
+    #                    confirmation window is open. Buy/rebuy only: sell/cut run no buy
+    #                    filter, so they have no confirmation to date.
+    # Derive from ONE `_bucket_last_session` call so these emitted fields and the
+    # standalone resolvers cannot drift apart (tests/test_signal_date_family.py).
+    sessions = _bucket_last_session(daily_close, market=market)
+
+    def _session_str(label) -> str | None:
+        """Return this bucket label's last session, disclosing null rather than guessing."""
+        got = sessions.get(label) if sessions is not None else None
+        if got is None or pd.isna(got):
+            return None
+        return str(pd.Timestamp(got).date())
+
     for i in range(n):
         ds = str(idx[i].date())
+        signal_date = _session_str(idx[i])
         is_buy = bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i])
         if is_buy:
             ok, reason, reasons = _buy_filter_full(
@@ -564,11 +634,15 @@ def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = 
             # because reasons[0] is always `reason`: a reader falls back to [reason] exactly.
             if len(reasons) > 1:
                 m["reasons"] = reasons
+            # Append after legacy keys so the marker's published prefix stays unchanged.
+            m["signal_date"] = signal_date
+            m["confirmed_date"] = (_session_str(idx[i + CONFIRM_BARS])
+                                   if i + CONFIRM_BARS < n else None)
             markers.append(m)
         elif bool(sig["CS"].iloc[i]):
-            markers.append({"date": ds, "type": "sell"})
+            markers.append({"date": ds, "type": "sell", "signal_date": signal_date})
         elif bool(sig["revSell"].iloc[i]):
-            markers.append({"date": ds, "type": "cut"})
+            markers.append({"date": ds, "type": "cut", "signal_date": signal_date})
         if bool(fresh_breach.iloc[i]):
             risk_flags.append(ds)
         if bool(sig["early"].iloc[i]) and not is_buy:

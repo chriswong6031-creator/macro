@@ -175,7 +175,7 @@
 {%- set wb_label = 'Polygon market-cap weights' if wb == 'polygon_mktcap' else 'Equal weights (cap data unavailable)' -%}
 {%- set mags_note = 'MAGS ETF last priced ' ~ mags.asof ~ ' (' ~ ((mags.px)|string) ~ ') — ' ~ (run_days|string) ~ ' sessions in' if mags and mags.asof else 'MAGS ETF data unavailable' -%}
 {%- set help_en = 'Cap-weighted view of the 7 largest US stocks. Weights: ' ~ wb_label ~ '. ' ~ mags_note ~ '. Numbers are descriptive context reads — a heads-up, not a buy signal; the Buy lanes below still decide entries.' -%}
-{%- set help_zh = '七只最大美股的市值加权视图。权重：' ~ ('市值加权（Polygon）' if wb == 'polygon_mktcap' else '等权（市值数据不可用）') ~ '。' ~ mags_note ~ '。以上数字均仅作描述读数 — 仅供参考，非买入信号；下方买入通道仍决定入场时机。' -%}
+{%- set help_zh = '七只最大美股的市值加权视图。权重：' ~ ('市值加权（Polygon）' if wb == 'polygon_mktcap' else '等权（市值数据不可用）') ~ '。' ~ mags_note ~ '。以上数字均为描述性背景读数 — 仅供参考，非买入信号；下方买入通道仍决定入场时机。' -%}
 
 <div class="span12 m7p m7p-{{ state }}">
 

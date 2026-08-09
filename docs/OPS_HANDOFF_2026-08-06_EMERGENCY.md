@@ -25,7 +25,7 @@ for the full program; this file is only the live baton.
 - Run **31127471922** (workflow_dispatch on main, created 20:15Z) is the
   post-close rerun with the fixed caps. It was `pending` behind the cancelled
   pre-close run 31126815311's `if: always()` cleanup at handoff time.
-- Watch: `gh run view 31127471922 -R chriswong6031-creator/macro` every ~10
+- Watch: `gh run view 31127471922 -R mastermindx-market-intelligence/macro` every ~10
   min (NEVER `gh run watch` at default interval; quota law: --interval 60+).
 - Timeline if healthy: collect ~3h → engine ≤4h (cap 240) → "commit engine
   outputs" → VPS pulls main within 3 min → boards live.
@@ -62,7 +62,7 @@ for the full program; this file is only the live baton.
    also satisfies the sweeper's integration-baseline circuit breaker.
 3. Refresh armed PRs in batches of ~8 (NEVER all at once — a 28-PR refresh
    starved the runner pool this morning):
-   `gh api -X PUT repos/chriswong6031-creator/macro/pulls/<N>/update-branch`
+   `gh api -X PUT repos/mastermindx-market-intelligence/macro/pulls/<N>/update-branch`
    Skip any that 422 with a real conflict (they need manual rebase).
 4. The sweeper (cron every ~10 min) merges as heads green. Do not merge
    mid-flight by hand; `--admin` only for docs-only/spurious-Workers-X/wedge.
@@ -102,3 +102,24 @@ for the full program; this file is only the live baton.
 - CI tests the MERGE REF (head+main at run start), not the branch head.
 - The M1 and the Studio share the username/paths — identify a machine by
   runner agentName, never by path.
+
+## ADDENDUM 2026-08-07 08:2xZ — the third dead nightly was HOST OVERLOAD, not caps
+
+Run 31127471922: collect killed AT the new 240m cap (00:06→04:06Z on
+mac-builder-5), engine killed AT its 240m cap (04:10→08:10Z, same host). Same
+host ran collect in 172m cold two nights earlier — the caps were sufficient;
+the HOST was not. At 08:16Z the Studio's load average was **79** with ~493
+claude-related processes: the five parallel chip build-sessions (and their
+Opus subagents running pytest) shared the box with the runner all night.
+
+**Law for the successor: the CI host is not a fleet host during a render
+window.** Before any daily re-dispatch or tonight's 23:28Z schedule:
+1. `uptime` on the Studio — do not dispatch above ~load 8.
+2. Let the chip sessions conclude (or the operator pauses them); they are the
+   load.
+3. Prophet picks are the ONLY stale surface left (engine-render scope=all
+   healed the rest to 2026-08-06 data). One clean daily run closes it — and
+   pulling Aug-6 EOD remains correct any time before Aug-7's close.
+4. Longer-term fix belongs to the masterplan's W5: pin `macstudio` nightly
+   jobs to the M1 pair during fleet-heavy periods, or reserve the Studio
+   spare for CI only.

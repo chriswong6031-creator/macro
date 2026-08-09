@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import sys
 import tempfile
 import urllib.error
 import urllib.request
@@ -39,8 +40,11 @@ from typing import Any
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from engine import event_calendar
-from scripts import official_release_parsers
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import event_calendar  # noqa: E402
+from scripts import official_release_parsers  # noqa: E402
 
 log = logging.getLogger("release_publications")
 

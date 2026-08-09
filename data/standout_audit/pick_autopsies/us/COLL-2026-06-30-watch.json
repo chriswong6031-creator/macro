@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "COLL-2026-06-30-watch",
+  "ticker": "COLL",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "COLL",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "COLL",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Health Care",
+    "excess_spy": -0.015084630522120945,
+    "excess_sector": -0.03224844750467326,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "COLL underperformed SPY and ended DEAD_MONEY. The recorded cause is mixed and the process is clean, so this is a conditioning question rather than evidence for tighter gates.",
+    "root_cause": "COLL underperformed SPY and ended DEAD_MONEY. The recorded cause is mixed and the process is clean, so this is a conditioning question rather than evidence for tighter gates.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The watch and path books exposed a weak maturation, while Health Care rotation and company-alpha engines lacked evidence to distinguish the cause.",
+    "engines_credit": "The outcome ledger correctly preserves the clean-process distinction; regime, rotation, catalyst, and stale-opportunity diagnostics are the laggards.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "An unfavorable rotation away from the relevant Health Care exposure may have produced relative weakness.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Stable or improving Health Care breadth during COLL's underperformance would weaken the rotation explanation.",
+        "evidence_refs": [
+          "sector=Health Care",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "The existing board tenure may indicate that the opportunity had aged before the stated pick date.",
+        "evidence_status": "corroborated",
+        "timing_status": "known_at_entry",
+        "counterfactual": "A documented evidence refresh or renewed setup at entry would weaken the age-decay explanation.",
+        "evidence_refs": [
+          "board_tenure_days=7.0",
+          "process_fault=clean"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Relative weakness matured into a DEAD_MONEY state rather than a productive continuation.",
+        "evidence_status": "corroborated",
+        "timing_status": "emerged_after",
+        "counterfactual": "A later durable liftoff would show that the maturity window, rather than the thesis, drove the classification.",
+        "evidence_refs": [
+          "excess_spy negative",
+          "terminal_state=DEAD_MONEY"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Company-specific deterioration may have outweighed sector conditions.",
+      "The maturity window may have ended before the thesis could develop.",
+      "Broad defensive rotation may have favored other Health Care groups."
+    ],
+    "missing_evidence": [
+      "Health Care industry classification and peer returns",
+      "Board-refresh and thesis-change history",
+      "Absolute and intraperiod returns",
+      "Company news, estimates, and volume chronology",
+      "Entry-date regime and rotation features"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_tenure_conditioning",
+        "feature": "Watch-lane tenure conditioning",
+        "measurement": "Compare matured path outcomes by board age, evidence refresh, and sector-relative momentum at entry.",
+        "expected_direction": "Aged observations without renewed relative momentum should more often produce dead-money paths.",
+        "falsifier": "Tenure and refresh status do not differentiate path outcomes.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-07",
+  "asof": "2026-08-07",
+  "ts": "2026-08-07T08:35:36+00:00"
+}

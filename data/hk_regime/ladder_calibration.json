@@ -1,51 +1,57 @@
 {
   "DECLINE": {
-    "n": 10211,
-    "hit_pct": 53.6,
-    "avg_fwd_pct": 1.34,
-    "dd_med_pct": -4.89,
-    "dd_p10_pct": -18.32,
-    "dd_bad_pct": 27.1
+    "n": 10298,
+    "hit_pct": 53.9,
+    "avg_fwd_pct": 1.44,
+    "dd_med_pct": -4.84,
+    "dd_p10_pct": -18.27,
+    "dd_bad_pct": 26.9,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "BOTTOM WATCH": {
-    "n": 5199,
-    "hit_pct": 47.8,
-    "avg_fwd_pct": 125.37,
-    "dd_med_pct": -3.94,
-    "dd_p10_pct": -15.75,
-    "dd_bad_pct": 21.4
+    "n": 5210,
+    "hit_pct": 47.9,
+    "avg_fwd_pct": 125.13,
+    "dd_med_pct": -3.93,
+    "dd_p10_pct": -15.74,
+    "dd_bad_pct": 21.3,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "TURN SIGNALED": {
-    "n": 18027,
-    "hit_pct": 50.9,
-    "avg_fwd_pct": 1.49,
+    "n": 17896,
+    "hit_pct": 50.8,
+    "avg_fwd_pct": 1.48,
     "dd_med_pct": -4.34,
-    "dd_p10_pct": -14.52,
-    "dd_bad_pct": 21.0
+    "dd_p10_pct": -14.5,
+    "dd_bad_pct": 21.0,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "FRESH BUY": {
-    "n": 3912,
-    "hit_pct": 53.0,
-    "avg_fwd_pct": 1.57,
-    "dd_med_pct": -4.08,
-    "dd_p10_pct": -13.96,
-    "dd_bad_pct": 19.5
+    "n": 3916,
+    "hit_pct": 52.9,
+    "avg_fwd_pct": 1.56,
+    "dd_med_pct": -4.09,
+    "dd_p10_pct": -13.98,
+    "dd_bad_pct": 19.5,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "RALLY ON": {
-    "n": 3743,
-    "hit_pct": 53.6,
-    "avg_fwd_pct": 1.73,
-    "dd_med_pct": -3.97,
-    "dd_p10_pct": -14.14,
-    "dd_bad_pct": 19.3
+    "n": 3756,
+    "hit_pct": 53.7,
+    "avg_fwd_pct": 1.74,
+    "dd_med_pct": -3.95,
+    "dd_p10_pct": -14.09,
+    "dd_bad_pct": 19.2,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "TOP WATCH": {
-    "n": 10338,
-    "hit_pct": 51.9,
-    "avg_fwd_pct": 1.71,
+    "n": 10399,
+    "hit_pct": 52.0,
+    "avg_fwd_pct": 1.73,
     "dd_med_pct": -4.37,
-    "dd_p10_pct": -14.81,
-    "dd_bad_pct": 21.7
+    "dd_p10_pct": -14.85,
+    "dd_bad_pct": 21.7,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "ROLLING OVER": {
     "n": 345,
@@ -53,30 +59,34 @@
     "avg_fwd_pct": 1.45,
     "dd_med_pct": -4.61,
     "dd_p10_pct": -15.72,
-    "dd_bad_pct": 23.5
+    "dd_bad_pct": 23.5,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "COUNTERTREND BOUNCE": {
-    "n": 16735,
-    "hit_pct": 50.8,
-    "avg_fwd_pct": 1.02,
-    "dd_med_pct": -4.57,
-    "dd_p10_pct": -16.18,
-    "dd_bad_pct": 23.8
+    "n": 16851,
+    "hit_pct": 51.0,
+    "avg_fwd_pct": 1.04,
+    "dd_med_pct": -4.54,
+    "dd_p10_pct": -16.16,
+    "dd_bad_pct": 23.8,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "BOTTOM WATCH +early-bull": {
-    "n": 188,
-    "hit_pct": 47.3,
-    "avg_fwd_pct": 1.15,
-    "dd_med_pct": -3.74,
-    "dd_p10_pct": -12.6,
-    "dd_bad_pct": 18.6
+    "n": 193,
+    "hit_pct": 45.6,
+    "avg_fwd_pct": 0.96,
+    "dd_med_pct": -3.52,
+    "dd_p10_pct": -12.39,
+    "dd_bad_pct": 18.1,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   },
   "BOTTOM WATCH no-early": {
-    "n": 5011,
-    "hit_pct": 47.8,
-    "avg_fwd_pct": 130.03,
+    "n": 5017,
+    "hit_pct": 48.0,
+    "avg_fwd_pct": 129.91,
     "dd_med_pct": -3.94,
-    "dd_p10_pct": -15.83,
-    "dd_bad_pct": 21.5
+    "dd_p10_pct": -15.82,
+    "dd_bad_pct": 21.4,
+    "anchor_era": "cyc-abs-session-2026-08-06"
   }
 }

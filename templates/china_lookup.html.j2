@@ -275,19 +275,19 @@
     <div class="panel" id="r_fund_panel" style="display:none">
       <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
         'Descriptive financial health, valuation, and dividends — a backdrop to read ALONGSIDE the validated reversal / low-vol signals, NOT a buy ranking. On ~35 years of A-share data, value and quality are NOT validated cross-sectional edges (cheap names are often value traps; junk has beaten quality), so do not read "cheap vs sector" or "high Piotroski" as a signal. Piotroski / Altman are standard health scores shown for context; Altman is approximate on A-share accounting. Fundamentals refresh on a slower cadence than price.',
-        '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅供参考；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</h2>
+        '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅作背景；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</h2>
       <div id="r_fund"></div>
     </div>
     <div class="panel" id="r_vband_panel" style="display:none">
       <h2>{{ t('Valuation band', '估值分位') }} <span class="note" style="text-transform:none">· {{ t('own 5-year range', '自身5年区间') }}</span>{{ help(
         'Where today\'s multiple sits inside the stock\'s OWN trailing-5-year range (市盈率/市净率分位) — how A-share desks read valuation. Lower percentile = cheaper than its own norm. Context only: on ~35y of A-share data cheapness is NOT a validated edge (cheap is often a value trap), so a low percentile is not a buy.',
-        '当前估值倍数处于该股<b>自身</b>近5年区间中的位置（市盈率／市净率分位）—— A股机构惯用的估值读法。分位越低＝相对自身越便宜。仅供参考：在约35年A股数据上，便宜并非有效优势（常是价值陷阱），低分位不等于买入。') }}</h2>
+        '当前估值倍数处于该股<b>自身</b>近5年区间中的位置（市盈率／市净率分位）—— A股机构惯用的估值读法。分位越低＝相对自身越便宜。仅作背景：在约35年A股数据上，便宜并非有效优势（常是价值陷阱），低分位不等于买入。') }}</h2>
       <div id="r_vband" class="fnd-grid"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
       <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'Eastmoney sell-side aggregate: 6-month institutional rating mix (买入/增持/中性/减持/卖出), coverage breadth, and forward EPS forecasts; forward P/E uses the live price. Sell-side opinion shown as coverage context, NOT an endorsement — high coverage and a bullish skew are not a validated edge.',
-        '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅说明覆盖范围，并非推荐——高覆盖与看多倾向并非有效优势。') }}</h2>
+        '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅作覆盖背景，并非推荐——高覆盖与看多倾向并非有效优势。') }}</h2>
       <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
@@ -297,7 +297,7 @@
     <div class="panel" id="r_pos_panel" style="display:none">
       <h2>{{ t('Margin positioning', '融资融券仓位') }} <span class="note" style="text-transform:none">· {{ t('leveraged financing', '杠杆资金') }}</span>{{ help(
         'Per-name margin financing balance (融资余额) and its ~20-trading-day change — the A-share leverage/crowding plane (the per-stock cut of the market-wide margin meter). A-share leverage is retail-driven, so a fast build-up is a froth/crowding tell and an unwind is de-risking. Context only — leverage is not a validated timing signal, and margin-eligibility is not universal.',
-        '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅供参考 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</h2>
+        '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅作背景 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</h2>
       <div id="r_pos"></div>
     </div>
     </details>
@@ -319,7 +319,7 @@
     </div>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
       'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
-      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅供研究参考展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>

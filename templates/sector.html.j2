@@ -216,7 +216,7 @@
       <div class="sigchip ctx">
         <span class="sc-k">Stoch</span>
         <span class="sc-v">{{ sv|round(0)|int if sv is not none else '—' }}</span>
-        <span class="sc-s">{{ t('Washout','超卖') }}</span>
+        <span class="sc-s">{{ t('StochRSI','随机RSI') }}</span>
       </div>
       {% set dd = s.cycle.dc_day %}{% set band = s.cycle.dc_band %}
       <div class="sigchip ctx">
@@ -272,8 +272,8 @@
   {% if s.confluence and s.confluence.ok %}
   {% set c = s.confluence %}
   <div class="panel" id="confluence">
-    <h2>{{ t('Entry setup — the 3-day view', '入场配置 — 3 日视角') }}
-      {{ help("The same buy/sell read that drives the Sector setups board on the main dashboard, checked against the 200-day trend. A sector whose momentum is already stretched is never a fresh buy. The base rate is what this state actually went on to do over the next 63 days, against SPY. A risk and timing read, not a forecast.", "和主看板「板块买卖配置」用的是同一套买卖读数，以 200 日趋势把关。动量已经拉得很开的板块，绝不算新买点。基础概率是这个状态在随后 63 天里对 SPY 的实际表现。这是风险和择时的参考，不是预测。") }}
+    <h2>{{ t('Confluence setup — 3-day MACD + StochRSI', '共振配置 — 3 日 MACD + StochRSI') }}
+      {{ help("The validated buy/sell engine that drives the main-dashboard Sector setups board: a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.", "驱动主看板「板块买卖配置」的已验证买卖引擎：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。") }}
     </h2>
     <p style="margin:6px 0">
       <span class="state" style="border:1px solid {{ c.color }};color:{{ c.color }};padding:2px 9px;border-radius:7px;font-weight:700">{{ t(c.label, c.label_zh) }}</span>
@@ -292,7 +292,7 @@
 
   <div class="panel">
     <h2>{{ t('Momentum across timeframes', '跨周期动量') }}
-      {{ help("Daily, 3-day and weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. The gauges run from washed-out to overbought; the bars show which way momentum is heading and roughly how many days until it turns.", "同一只 ETF 的日线、3 日和周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。表盘从跌透到超买；柱状图显示动量往哪个方向走，以及大概还有几天转向。") }}
+      {{ help("Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.", "同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。") }}
     </h2>
     <div data-mtf='{{ s.mtf_json }}'></div>
   </div>
@@ -433,7 +433,7 @@
     {% set ew = calibration["BOTTOM WATCH +early-bull"] %}{% set nw = calibration["BOTTOM WATCH no-early"] %}
     <p class="early" style="margin-top:10px">⚡ <span class="l-en"><b>Do the early (pre-emptive) signals actually help?</b>
       We measured it the same way. When a "nearing a low" reading ALSO had an early bullish signal
-      (momentum diverging, turning up, or popping off the low end), the next month was up
+      (RSI divergence / histogram turning / StochRSI pop), the next month was up
       <b>{{ ew.hit_pct }}%</b> of the time (avg {{ "%+.2f" | format(ew.avg_fwd_pct) }}%, n={{ ew.n }}) —
       versus <b>{{ nw.hit_pct }}%</b> (avg {{ "%+.2f" | format(nw.avg_fwd_pct) }}%, n={{ nw.n }}) without one.
       So on average the early signals did <b>not</b> beat simply waiting — they fire sooner and catch the
@@ -441,7 +441,7 @@
       attention</i>, then still require confirmation before committing. That's the honest tradeoff,
       measured rather than assumed.</span><span class="l-zh"><b>这些提前（预判）信号真的有用吗？</b>
       我们用同样的方法做了测量。当一次“接近低点”的读数同时伴有提前的看多信号
-      （动量出现背离、开始转向，或从低位跳起）时，此后一个月上涨的概率为
+      （RSI 背离／柱状图转向／StochRSI 跳升）时，此后一个月上涨的概率为
       <b>{{ ew.hit_pct }}%</b>（均值 {{ "%+.2f" | format(ew.avg_fwd_pct) }}%，n={{ ew.n }}）—
       而没有此信号时为 <b>{{ nw.hit_pct }}%</b>（均值 {{ "%+.2f" | format(nw.avg_fwd_pct) }}%，n={{ nw.n }}）。
       所以平均而言，提前信号并<b>未</b>胜过单纯等待 — 它们触发更早，能抓住偶尔出现的尖锐 V 型底，

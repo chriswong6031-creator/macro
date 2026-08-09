@@ -12,11 +12,15 @@ abuse posture is the design, not a decoration:
     teach the bot which field betrayed it).
   * **time-to-fill** — ``t0`` is the epoch-ms the form was rendered. A submission under
     3 seconds old was not typed by a person. Generic 400.
-  * **dual-key rate limit** — every real-client header the app can read (EO-Client-IP,
-    CF-Connecting-IP, XFF …) is attacker-suppliable at the origin, so a bot that rotates
-    one lands every hit in a fresh bucket. Two independent in-process fixed windows,
-    and EITHER can refuse:
-      - the CLAIMED ip (``app.main._mm_client_ip``) at 5/hour — tight, but spoofable;
+  * **dual-key rate limit** — a caller that reaches the origin directly (ufw permits
+    80,443/tcp from Anywhere) can set any forwarding header it likes, so a bot that
+    rotates one lands every hit in a fresh bucket. Two independent in-process fixed
+    windows, and EITHER can refuse:
+      - the CLAIMED ip (``app.main._mm_client_ip``) at 5/hour — tight, and spoofable
+        only from OFF the edge since 2026-08-07: the resolver now reads just the header
+        the edge overwrites, so a bot arriving through the edge cannot rotate this key
+        at all (it used to prefer four headers the edge forwards verbatim). Direct-to-
+        origin it is still caller-chosen, which is what the peer key below is for;
       - the TRUSTED peer (``X-MM-Peer``, which Caddy's ``header_up`` overwrites with the
         real TCP peer, so a client cannot set it) at 60/hour — unspoofable, but loose,
         because CN traffic legitimately aggregates behind a few EdgeOne edge IPs.

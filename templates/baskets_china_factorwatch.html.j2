@@ -394,7 +394,7 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "Every basket, sortable. Switch between plain return, return against CSI 300, and how unusual the move is for that basket. Filter by category. Click one to see what is in it.",
+        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Filter by category. Click a basket to see members.",
         '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。可按类别筛选。点击篮子查看成分。') }}</p>
       <div class="cat-filter-bar" id="tbl-cat-filter"></div>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
@@ -946,7 +946,7 @@ function renderEntryRadar(){
   if(!candidates.length){
     host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}</div>
       <div class="er-empty">${zh?'目前无满足条件的篮子 — 大多数时候确实如此。':'None right now — most days none.'}</div>
-      <div class="er-note">${zh?'这是让你留意的地方，不是买入的理由。':'A place to look, not a reason to buy.'}</div></div>`;
+      <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明。':'Lifecycle from the washout state machine; entry aids, not proof.'}</div></div>`;
     return;
   }
   const items=candidates.map(b=>{
@@ -963,7 +963,7 @@ function renderEntryRadar(){
   host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}<span class="chip">${candidates.length}</span></div>
     <div class="er-sub">${zh?subZh:subEn}</div>
     <div class="er-items">${items}</div>
-    <div class="er-note">${zh?'这是让你留意的地方，不是买入的理由——这个读数目前还没有历史成绩支撑。':'A place to look, not a reason to buy — this read has no track record behind it yet.'}</div>
+    <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明（显示层，无验证前瞻优势）。':'Lifecycle from the washout state machine; entry aids, not proof (display-tier, no validated forward edge).'}</div>
   </div>`;
 }
 

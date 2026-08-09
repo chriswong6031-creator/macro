@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-08-05",
+  "asof": "2026-08-07",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -23,101 +23,93 @@
     "summary": "Net liquidity is contracting in an orderly manner; conditions may steer toward headwind for buy setups (existing engine limits apply)."
   },
   "fed": {
-    "assets_bn": 6738.19,
-    "assets_chg_20d_bn": 2.581,
-    "reserve_balances_bn": 2984.57,
-    "walcl_stale_days": 5,
+    "assets_bn": 6748.567,
+    "assets_chg_20d_bn": 12.958,
+    "reserve_balances_bn": 2993.349,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-08-05"
+    "asof": "2026-08-07"
   },
   "treasury": {
-    "tga_bn": 924.219,
-    "tga_chg_20d_bn": 139.255,
-    "net_issuance_20d_bn": 409.973,
+    "tga_bn": 961.726,
+    "tga_chg_20d_bn": 217.089,
+    "net_issuance_20d_bn": 442.425,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
-      "active": false,
-      "direction": null,
-      "magnitude_bn": null,
-      "days": null,
-      "since": null,
+      "active": true,
+      "direction": "build",
+      "magnitude_bn": 84.5,
+      "days": 10,
+      "since": "2026-07-23",
       "quarter_end_adjacent": false,
-      "summary_en": "No TGA impulse detected.",
-      "summary_zh": "未检测到TGA冲量。"
+      "summary_en": "Treasury rebuilt its cash account by $84B since Jul 23 — that cash is absorbed from the financial system (mild headwind while it lasts).",
+      "summary_zh": "自7月23日起，美国财政部已向现金账户补充$84B — 这部分资金从金融体系中吸收（短期内为温和阻力）。"
     },
-    "asof": "2026-08-04"
+    "asof": "2026-08-06"
   },
   "rrp": {
-    "rrp_bn": 1.65,
-    "rrp_chg_20d_bn": -1.697,
+    "rrp_bn": 1.45,
+    "rrp_chg_20d_bn": 0.905,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5812.321,
-    "netliq_chg_20d_bn": -170.697,
-    "netliq_chg_65d_bn": -7.043,
-    "netliq_pctile_expanding": 0.77537,
+    "netliq_bn": 5785.391,
+    "netliq_chg_20d_bn": -211.4,
+    "netliq_chg_65d_bn": -59.724,
+    "netliq_pctile_expanding": 0.768234,
     "overlay": "contracting"
   },
   "quality": {
     "label": "contracting",
-    "fed_share": 0.12,
+    "fed_share": 0.09,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.73,
-      "hy_oas_z": 0.22,
+      "hy_oas_pct": 2.71,
+      "hy_oas_z": 0.17,
       "nfci": -0.529,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 5
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
-    "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.9126,
-    "sofr_minus_iorb_bp": 1.0,
-    "sofr_minus_iorb_d20_bp": 4.0,
-    "sofr_minus_iorb_pctile": 0.9345,
-    "sofr_99pctl_minus_iorb_bp": 9.0,
-    "sofr_99pctl_minus_iorb_d20_bp": 3.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.8808,
+    "effr_minus_iorb_d20_bp": 1.0,
+    "effr_minus_iorb_pctile": 0.9127,
+    "sofr_minus_iorb_bp": 0.0,
+    "sofr_minus_iorb_d20_bp": 12.0,
+    "sofr_minus_iorb_pctile": 0.9106,
+    "sofr_99pctl_minus_iorb_bp": 8.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 8.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8522,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-08-04"
+    "asof": "2026-08-06"
   },
   "components": {
     "walcl": {
-      "level_bn": 6738.2,
-      "d20_bn": 2.6,
-      "d65_bn": 38.2,
-      "pctile": 0.7707
+      "level_bn": 6748.6,
+      "d20_bn": 13.0,
+      "d65_bn": 39.1,
+      "pctile": 0.7736
     },
     "rrp": {
-      "level_bn": 1.6,
-      "d20_bn": -1.7,
-      "d65_bn": 1.0,
-      "pctile": 0.3072
+      "level_bn": 1.4,
+      "d20_bn": 0.9,
+      "d65_bn": -0.2,
+      "pctile": 0.2629
     },
     "tga": {
-      "level_bn": 924.2,
-      "d20_bn": 175.0,
-      "d65_bn": 44.3,
-      "pctile": 0.9381
+      "level_bn": 961.7,
+      "d20_bn": 223.5,
+      "d65_bn": 99.0,
+      "pctile": 0.9482
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-05-07",
-        "v": 5862.2
-      },
-      {
-        "d": "2026-05-08",
-        "v": 5869.6
-      },
       {
         "d": "2026-05-11",
         "v": 5853.8
@@ -360,23 +352,31 @@
       },
       {
         "d": "2026-08-05",
-        "v": 5812.3
+        "v": 5817.6
+      },
+      {
+        "d": "2026-08-06",
+        "v": 5785.4
+      },
+      {
+        "d": "2026-08-07",
+        "v": 5785.4
       }
     ],
     "reserves": {
-      "level_bn": 2984.6,
-      "d20_bn": -53.1,
-      "d65_bn": -234.6,
-      "pctile": 0.7721
+      "level_bn": 2993.3,
+      "d20_bn": -26.6,
+      "d65_bn": -225.3,
+      "pctile": 0.7723
     }
   },
   "foreign_dollar": {
-    "swap_lines_bn": 0.132,
-    "facility_loans_bn": 6.565,
+    "swap_lines_bn": 0.145,
+    "facility_loans_bn": 5.319,
     "fima_repo_bn": null,
     "state": "quiescent",
     "note": "IRD-R5: swap-line levels are confirmation tier — they grade severity after price signals fire, never trigger alerts. FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line.",
-    "asof": "2026-07-29"
+    "asof": "2026-08-05"
   },
   "entry_effect": {
     "direction": "headwind",
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-06T23:28:11Z",
-  "inputs_hash": "sha256:d513697700bb4f94095a676088c8399defaeda4e013d2a6b87883a9ad9c4dac7",
+  "produced_at": "2026-08-08T16:19:50Z",
+  "inputs_hash": "sha256:bccbf890a155ae52636b2cadb2333716cfd96c42ffea8fc3075af98215fff6ab",
   "tier": "shadow"
 }

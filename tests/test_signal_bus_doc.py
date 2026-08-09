@@ -73,9 +73,24 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 595, (
-        f"Expected 595 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 607, (
+        f"Expected 607 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Options Prophet shadow registered its display-only projection,"
+        " signing-quality context gate, and dislocation research gate = 604->607);"
+        " (Polygon intraday price cache registered the receipt-bound H+60 input"
+        " consumed by the outcome builder = 603->604);"
+        " (Polygon intraday price receipt registered the causal cache sidecar"
+        " consumed by H+60 accrual = 602->603);"
+        " (Dated live-flow PIT event stage registered as the episode builder's"
+        " critical R2 source = 601->602);"
+        " (Options signal episode durable-stage checkpoint = 600->601);"
+        " (Options signal episodes registered the immutable PIT decision ledger"
+        " and append-only H+60 outcome ledger = 598->600);"
+        " (Prophet-US W1-D added us-basket-turn + us-basket-turn-ledger — the US"
+        " washout-lifecycle organ, port of china_basket_turn = 595->597;"
+        " Biopharma Seasonality program watch then registered"
+        " data-seasonality-program-watch, the operator-facing tripwire = 597->598);"
         " (pin drifted: registry carried 595 while pin said 594 — racing merges during the"
         " 2026-08-05/06 Prophet-US + CN wave trains; repaired here);"
         " (CN Prophet W-C registered the loser/miss telemetry artifact + its forward"

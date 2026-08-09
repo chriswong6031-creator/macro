@@ -467,12 +467,25 @@ def _moat_sensors_to_axis(
         return sensors
 
     coverage = moat_result.get("sensor_coverage", "missing")
+    # THE PRODUCER'S ACTUAL SHAPE FIRST. engine/moat_falsifiers.py's
+    # compute_moat_falsifiers() emits {"sensors": {<id>: {"fired": ...}}} and has
+    # never emitted "sensor_fired_map" or a top-level per-detector key. Reading
+    # only those two legacy shapes made every sensor here resolve to None and so
+    # report "unverifiable" — dead today only because
+    # scripts/research/build_falsifier_packets.py passes
+    # moat_falsifiers_result=None, and silently wrong the day anyone wires it up.
+    # The legacy shapes are kept as fallbacks so hand-built dicts still resolve.
+    sensors_map = moat_result.get("sensors")
+    sensors_map = sensors_map if isinstance(sensors_map, dict) else {}
     fired_map: dict[str, bool] = moat_result.get("sensor_fired_map", {}) or {}
-    # Individual sensor fired flags may also be top-level keys
     for name, label in _MOAT_SENSOR_LABELS.items():
-        fired_raw = fired_map.get(name)
-        if fired_raw is None:
-            fired_raw = moat_result.get(name)  # direct key fallback
+        entry = sensors_map.get(name)
+        if isinstance(entry, dict):
+            fired_raw = entry.get("fired")
+        else:
+            fired_raw = fired_map.get(name)
+            if fired_raw is None:
+                fired_raw = moat_result.get(name)  # direct key fallback
 
         age = _evidence_age_days(asof_date)
         stale = _is_stale(age)

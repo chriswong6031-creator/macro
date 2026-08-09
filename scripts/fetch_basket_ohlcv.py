@@ -92,15 +92,28 @@ def _membership_tickers(active_only: bool = False) -> list[str]:
     the 15 removed rows are cross-listed exits, e.g. HOOD crypto→fintech), so the filter is
     per-TICKER, never per-row. This is the set the staleness census judges: a name the
     curator has exited — or that the market has (a delisting) — must not read as a broken
-    per-member pull forever."""
+    per-member pull forever.
+
+    A member stamped `delisted_before_curation` is dropped from BOTH sets. The default
+    universe is wide because a removed member's history is still worth repairing — but
+    that reasoning assumes a history exists. These names have none: the security had
+    already stopped existing when the curator wrote the row (silver_miners MAG and GATO,
+    stamped 2026-08-07 against SEC Form 25-NSE receipts), so there is nothing on disk to
+    refresh and nothing the vendor can ever return. Requesting them anyway is what
+    config/delisted_symbols.yml exists to prevent: a symbol that can never resolve parks
+    a permanent entry in the missing-symbol warning and trains the reader to ignore the
+    one tripwire that would catch the NEXT real outage."""
     out: set[str] = set()
     active: set[str] = set()
+    dead: set[str] = set()
     for m in _membership_rows():
         t = m["ticker"]
         out.add(t)
+        if m.get("delisted_before_curation"):
+            dead.add(t)
         if not m.get("removed"):
             active.add(t)
-    return sorted(active if active_only else out)
+    return sorted((active if active_only else out) - dead)
 
 
 def _removed_members() -> dict[str, dict]:

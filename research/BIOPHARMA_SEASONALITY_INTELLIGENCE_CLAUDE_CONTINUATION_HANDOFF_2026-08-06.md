@@ -7,7 +7,7 @@
 | As of | 2026-08-06 |
 | Audited baseline | `origin/main` at `981d8851e0b43c89532be54e3488a2bd8e57dccc` |
 | Audience | Claude/Fable commissioner, builders, reviewers, and operator |
-| Canonical execution file | This file |
+| Canonical execution file | **SUPERSEDED for status/sequencing** by `research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md` (Waves 1-7 implemented 2026-08-07). This file remains authoritative for §1 binding gates, §13 exclusions, and all statistical/product law. |
 | Detailed product and statistical specification | `research/SEASONAX_BIOPHARMA_SEASONALITY_INTELLIGENCE_BUILD_DOCKET_FOR_FABLE.md` |
 | Binding cross-program seam | `research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md` |
 | Shipped Calendar Clock design contract | `research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md` |

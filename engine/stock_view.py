@@ -269,7 +269,11 @@ def _conflict(conv: dict, falsifiers: list[dict]) -> tuple[str, list[dict]]:
     has_edge = sel_t in ("high", "mid")
     if has_edge and (pillars or (size_pct is not None and size_pct < 25)):
         return "conflict", pillars
-    if band in ("neutral", "low", "na"):
+    # `unscored` = engine/name_score refused to score this record at all. It belongs with
+    # the no-clear-lean bands, NOT in the "ok" fall-through: a page that could not read
+    # the name has not judged it acceptable, and an unrecognized band silently landing on
+    # "ok" is how a printed null turns back into a claim.
+    if band in ("neutral", "low", "na", "unscored"):
         return "neutral", []
     return "ok", pillars
 
@@ -293,6 +297,10 @@ _NAME_LABEL = {
     "constructive": ("Solid name", "稳健个股"),
     "neutral":      ("Average name", "中等个股"),
     "low":          ("Weak name", "偏弱个股"),
+    # engine/name_score.not_scored — the model could not read this record. Say so in
+    # plain words: an em dash would HIDE the null, and the house rule is that nulls are
+    # printed. (`na` keeps the dash: it is an absent band, not a refusal on record.)
+    "unscored":     ("Not scored yet", "暂未评分"),
     "na":           ("—", "—"),
 }
 

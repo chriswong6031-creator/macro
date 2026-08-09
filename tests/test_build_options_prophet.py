@@ -1,0 +1,1113 @@
+"""Focused contract tests for the Options Prophet shadow projection."""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import sys
+from pathlib import Path
+
+import yaml
+
+from scripts import mirror_flow_idx
+from scripts.build_options_prophet import SCHEMA, build_from_disk, build_payload
+from scripts.mirror_flow_idx import OPTIONS_PROPHET_R2_KEY
+
+
+def _flow_payload() -> dict:
+    common = {
+        "signing_source": "tape",
+        "recurrence_count": 6,
+        "net_prem_norm_abs": 1.25,
+        "flow_z": 2.1,
+        "days_since_inflection": 1,
+        "oi_confirmed": True,
+        "zerodte_dominated": False,
+        "gamma_regime": "short",
+        "K_a": 3,
+        "n_avail_a": 5,
+        "K_b": 2,
+        "n_avail_b": 4,
+        "de_escalation": {"earnings_window": False},
+    }
+    return {
+        "schema": "flow_leaders.v1",
+        "session_date": "2026-08-07",
+        "as_of": "2026-08-08T01:00:00+00:00",
+        "stale": False,
+        "cold_start": False,
+        "board_a": [
+            {**common, "ticker": "AAA", "fire_a": False, "fire_b": False},
+            {**common, "ticker": "DUP", "fire_a": False, "fire_b": False},
+        ],
+        "board_b": [
+            {**common, "ticker": "DUP", "fire_a": False, "fire_b": True},
+            {**common, "ticker": "BBB", "fire_a": False, "fire_b": False},
+        ],
+    }
+
+
+def _scoreboard(engine_id: str) -> dict:
+    return {
+        "engine_id": engine_id,
+        "name_en": engine_id,
+        "name_zh": f"zh-{engine_id}",
+        "status": "ACCRUING",
+        "authority": "display_only",
+        "ruler": "21d_spy_excess",
+        "n_fires": 3,
+        "n_open": 1,
+        "n_distinct_fire_dates": 2,
+        "months_span": 0.4,
+        "h5_n": 2,
+        "h5_wr_abs": 0.5,
+        "h5_wr_exc": 0.5,
+        "h5_med_exc": 0.01,
+        "h10_n": 1,
+        "h21_n": 0,
+        "h63_n": 0,
+        "path25_n": 1,
+        "path25_med_mfe": 0.04,
+        "path63_n": 0,
+    }
+
+
+def _pick_payload() -> dict:
+    return {
+        "as_of": "2026-08-07",
+        "built_at": "2026-08-08T11:20:33+00:00",
+        "authority": "display_only",
+        "books": {
+            "plab_flow_leader": {
+                "engine_id": "plab_flow_leader",
+                "picks_today": [
+                    {
+                        "ticker": "AAA",
+                        "rank": 1,
+                        "fire_date": "2026-08-07",
+                        "sector": "Tech",
+                        "close_at_fire": 100.0,
+                        "why": ["flow_recur", "fire_a"],
+                        "features": {"signing_source": "tape"},
+                    }
+                ]
+            },
+            "plab_flow_washout": {
+                "engine_id": "plab_flow_washout",
+                "picks_today": [],
+            },
+        },
+        "scoreboard": [
+            _scoreboard("plab_flow_leader"),
+            _scoreboard("plab_flow_washout"),
+        ],
+    }
+
+
+def _failed_signing_gate() -> dict:
+    return {
+        "direction_reliable": False,
+        "net_sign_recovery": 0.41,
+        "bar": 0.7,
+        "thetadata_tape": {
+            "direction_reliable_tape": False,
+            "production_ready": False,
+            "sessions_n": 3,
+            "production_ready_criteria": {"sessions_ok_needed": 5},
+            "suspend_reason": "calibration failed",
+        },
+    }
+
+
+def _coverage_payload() -> dict:
+    return {
+        "schema": "options_entry_coverage.v1",
+        "as_of": "2026-08-07",
+        "absent_stores": [],
+        "feature_coverage": {
+            "n_rows": 419,
+            "n_features": 31,
+            "features": [
+                {
+                    "feature": "iv_rank_252",
+                    "n_nonnull": 0,
+                    "n_total": 419,
+                    "share_nonnull": 0.0,
+                },
+                {
+                    "feature": "vanna_hedge_5d",
+                    "n_nonnull": 14,
+                    "n_total": 419,
+                    "share_nonnull": 0.0334,
+                },
+            ],
+        },
+        "structural_nulls": {
+            "iv_rank_252": {
+                "null_share": 1.0,
+                "root_cause": "IV backfill not yet attached",
+            }
+        },
+    }
+
+
+def test_projection_preserves_source_order_and_exports_only_pick_lab_fires():
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        signing_gate=_failed_signing_gate(),
+        options_entry_gate={
+            "schema": "options_entry.gate.v3",
+            "status": "signal",
+            "scored": False,
+            "weight": 0.0,
+        },
+        options_entry_coverage=_coverage_payload(),
+        dislocation_gate={
+            "schema": "options_dislocation.gate.v1",
+            "status": "insufficient_history",
+            "scored": False,
+            "scored_primitives": [],
+        },
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert payload["schema"] == SCHEMA
+    assert [row["symbol"] for row in payload["watchlist"]] == ["AAA", "DUP", "BBB"]
+    duplicate = payload["watchlist"][1]
+    assert duplicate["lanes"] == ["flow_leader", "flow_washout"]
+    assert duplicate["source_positions"] == {"board_a": 2, "board_b": 1}
+    assert duplicate["fire_lanes"] == ["flow_washout"]
+
+    # A source-board fire does not become an opportunity unless Pick Lab actually
+    # admitted and ledgered it after its lockout/liquidity rules.
+    assert [row["symbol"] for row in payload["opportunities"]] == ["AAA"]
+    assert payload["opportunities"][0]["authority"] == "display_only"
+    assert payload["opportunities"][0]["direction_reliable"] is False
+    assert "score" not in payload["opportunities"][0]
+    assert "confidence" not in payload["opportunities"][0]
+
+
+def test_failed_signing_and_zero_authority_gates_are_explicitly_not_ready():
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        signing_gate=_failed_signing_gate(),
+        options_entry_gate={"scored": False, "weight": 0.0},
+        options_entry_coverage=_coverage_payload(),
+        dislocation_gate={"scored": False, "scored_primitives": []},
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    components = payload["readiness"]["components"]
+    assert components["information"]["ready"] is False
+    assert components["signed_flow"]["ready"] is False
+    assert payload["direction"]["reliable"] is False
+    assert payload["direction"]["value"] is None
+
+    assert components["positioning"]["context_available"] is True
+    assert components["positioning"]["promotion_ready"] is False
+    assert components["positioning"]["ready"] is False
+    assert components["positioning"]["authority"]["weight"] == 0.0
+    coverage = components["positioning"]["evidence"]["coverage"]
+    assert coverage["n_rows"] == 419
+    assert coverage["n_features"] == 31
+    assert coverage["feature_highlights"][0]["feature"] == "iv_rank_252"
+    assert coverage["feature_highlights"][1]["feature"] == "vanna_hedge_5d"
+    assert coverage["structural_null_highlights"][0] == {
+        "feature": "iv_rank_252",
+        "null_share": 1.0,
+        "note": "IV backfill not yet attached",
+    }
+
+    assert components["execution"]["ready"] is False
+    assert components["execution"]["context_available"] is False
+    assert payload["trajectory"]["status"] == "withheld"
+    assert payload["trajectory"]["take_profit"] is None
+    assert payload["macro_feedback"] == {
+        "enabled": False,
+        "weight": 0.0,
+        "mode": "shadow_only",
+        "reason": (
+            "No paired incremental-attribution gate has earned options weight in "
+            "Macro Prophet ranking."
+        ),
+    }
+
+
+def test_forward_flow_books_are_projected_without_claiming_incremental_attribution():
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        signing_gate=_failed_signing_gate(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    ledgers = payload["forward_ledgers"]
+    assert [row["engine_id"] for row in ledgers["books"]] == [
+        "plab_flow_leader",
+        "plab_flow_washout",
+    ]
+    assert ledgers["books"][0]["horizons"]["h5"]["n"] == 2
+    assert ledgers["books"][0]["paths"]["path25"]["median_mfe"] == 0.04
+    assert ledgers["books"][0]["name_en"] == "plab_flow_leader"
+    assert ledgers["books"][0]["name_zh"] == "zh-plab_flow_leader"
+    assert ledgers["incremental_options_attribution"]["available"] is False
+    assert payload["readiness"]["gates"]["forward_sample"]["pass"] is False
+
+
+def test_pit_execution_and_event_outcome_accrual_are_explicit_and_separate():
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        signing_gate=_failed_signing_gate(),
+        built_at="2026-08-08T22:00:00-04:00",
+    )
+
+    assert payload["decision_at"] is None
+    assert payload["available_at"] == "2026-08-09T02:00:00Z"
+    assert payload["pit_provenance"] == {
+        "clock": "UTC",
+        "decision_at_required_for_issued_portfolio": True,
+        "decision_at_status": "not_available_in_current_pick_lab_contract",
+        "available_at_status": "exact_projection_publication_time",
+        "source_available_at": {
+            "flow_leaders": "2026-08-08T01:00:00Z",
+            "pick_lab": "2026-08-08T11:20:33Z",
+        },
+        "promotion_ready": False,
+        "reason": (
+            "An issued position requires exact decision_at and available_at on "
+            "every fire. Current Pick Lab fires expose exact artifact availability "
+            "when present but not an exact decision clock."
+        ),
+    }
+    fire = payload["opportunities"][0]
+    assert fire["decision_at"] is None
+    assert fire["available_at"] == "2026-08-08T11:20:33Z"
+    assert fire["execution"] == {
+        "status": "withheld",
+        "executable": False,
+        "contract": {
+            "occ_symbol": None,
+            "right": None,
+            "strike": None,
+            "expiry": None,
+        },
+        "entry": {"type": None, "price": None, "quote_at": None},
+        "stop": None,
+        "targets": [],
+        "take_profit_management": None,
+        "reason": (
+            "No point-in-time contract selection, executable quote/fill, or managed "
+            "exit lifecycle is attached."
+        ),
+    }
+
+    accrual = payload["accrual"]
+    assert accrual["events"]["unit"] == "immutable_options_originated_fire"
+    assert accrual["events"]["published_now"] == 1
+    assert accrual["events"]["timestamp_coverage"] == {
+        "n_published": 1,
+        "n_exact_decision_at": 0,
+        "n_exact_available_at": 1,
+    }
+    assert list(accrual["outcomes"]["horizons"]) == [
+        "1h",
+        "eod",
+        "1d",
+        "3d",
+        "5d",
+        "10d",
+        "expiry",
+    ]
+    assert accrual["outcomes"]["horizons"]["1h"]["instrumented"] is False
+    assert accrual["outcomes"]["horizons"]["5d"]["instrumented"] is True
+    assert accrual["outcomes"]["horizons"]["5d"]["pit_exact"] is False
+    assert payload["selection_policy"]["style"] == "abstention_first"
+    assert payload["selection_policy"]["capacity_enforced_by_projection"] is False
+    assert payload["portfolio_boundary"]["operator_reviewed_issue_desk"] is False
+    assert payload["portfolio_boundary"]["issued_model_portfolio"] is False
+    assert payload["portfolio_boundary"]["managed_positions"] is False
+
+    exact_pick = _pick_payload()
+    exact_pick["books"]["plab_flow_leader"]["picks_today"][0].update(
+        {
+            "decision_at": "2026-08-07T15:42:00-04:00",
+            "available_at": "2026-08-07T19:42:07Z",
+        }
+    )
+    exact = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=exact_pick,
+        built_at="2026-08-09T00:00:00Z",
+    )["opportunities"][0]
+    assert exact["decision_at"] == "2026-08-07T19:42:00Z"
+    assert exact["available_at"] == "2026-08-07T19:42:07Z"
+
+    reversed_pick = _pick_payload()
+    reversed_pick["books"]["plab_flow_leader"]["picks_today"][0].update(
+        {
+            "decision_at": "2026-08-07T19:43:00Z",
+            "available_at": "2026-08-07T19:42:07Z",
+        }
+    )
+    assert build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=reversed_pick,
+        built_at="2026-08-09T00:00:00Z",
+    )["opportunities"] == []
+
+    future_row = _pick_payload()
+    future_row["books"]["plab_flow_leader"]["picks_today"][0]["available_at"] = (
+        "2026-08-08T12:01:00Z"
+    )
+    assert build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=future_row,
+        built_at="2026-08-08T12:00:00Z",
+    )["opportunities"] == []
+
+
+def test_konseki_market_memory_seam_is_context_only_and_zero_weight():
+    missing = build_payload(built_at="2026-08-08T12:00:00Z")
+    assert missing["context_inputs"]["konseki_market_memory"] == {
+        "expected_schema": "konseki.market_memory/v1",
+        "connected": False,
+        "authority": "context_only",
+        "weight": 0.0,
+        "may_rank": False,
+        "may_gate": False,
+        "may_size": False,
+        "decision_at": None,
+        "available_at": None,
+        "receipt": None,
+        "reason": "No governed Konseki Market Memory receipt is connected.",
+    }
+
+    connected = build_payload(
+        konseki_context={
+            "schema": "konseki.market_memory/v1",
+            "authority": "context_only",
+            "memory_id": "km-20260808-001",
+            "decision_at": "2026-08-08T19:00:00-04:00",
+            "available_at": "2026-08-08T23:01:00Z",
+            "context_tags": ["post-earnings-drift", "risk-on"],
+            "score": 99,
+            "weight": 1,
+        },
+        built_at="2026-08-09T00:00:00Z",
+    )["context_inputs"]["konseki_market_memory"]
+    assert connected["connected"] is True
+    assert connected["authority"] == "context_only"
+    assert connected["weight"] == 0
+    assert connected["decision_at"] == "2026-08-08T23:00:00Z"
+    assert connected["available_at"] == "2026-08-08T23:01:00Z"
+    assert connected["receipt"] == {
+        "memory_id": "km-20260808-001",
+        "context_tags": ["post-earnings-drift", "risk-on"],
+    }
+    assert "score" not in connected
+
+    wrong_authority = build_payload(
+        konseki_context={
+            "schema": "konseki.market_memory/v1",
+            "authority": "ranking",
+            "available_at": "2026-08-08T23:01:00Z",
+        },
+        built_at="2026-08-09T00:00:00Z",
+    )["context_inputs"]["konseki_market_memory"]
+    assert wrong_authority["connected"] is False
+    assert wrong_authority["weight"] == 0
+
+    for unsafe in (
+        {
+            "schema": "konseki.market_memory/v1",
+            "authority": "context_only",
+            "memory_id": "km-missing-decision",
+            "available_at": "2026-08-08T23:01:00Z",
+        },
+        {
+            "schema": "konseki.market_memory/v1",
+            "authority": "context_only",
+            "decision_at": "2026-08-08T23:00:00Z",
+            "available_at": "2026-08-08T23:01:00Z",
+        },
+        {
+            "schema": "konseki.market_memory/v1",
+            "authority": "context_only",
+            "memory_id": "km-clock-reversed",
+            "decision_at": "2026-08-08T23:02:00Z",
+            "available_at": "2026-08-08T23:01:00Z",
+        },
+    ):
+        receipt = build_payload(
+            konseki_context=unsafe,
+            built_at="2026-08-09T00:00:00Z",
+        )["context_inputs"]["konseki_market_memory"]
+        assert receipt["connected"] is False
+        assert receipt["receipt"] is None
+
+    future_context = build_payload(
+        konseki_context={
+            "schema": "konseki.market_memory/v1",
+            "authority": "context_only",
+            "memory_id": "km-from-the-future",
+            "decision_at": "2026-08-08T23:00:00Z",
+            "available_at": "2026-08-08T23:01:00Z",
+        },
+        built_at="2026-08-08T12:00:00Z",
+    )["context_inputs"]["konseki_market_memory"]
+    assert future_context["connected"] is False
+    assert future_context["receipt"] is None
+
+
+def test_accrual_never_turns_missing_counts_into_measured_zero():
+    pick_lab = _pick_payload()
+    pick_lab["scoreboard"][0].pop("h5_n")
+    pick_lab["scoreboard"][0].pop("n_distinct_fire_dates")
+    accrual = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=pick_lab,
+        built_at="2026-08-08T12:00:00Z",
+    )["accrual"]
+
+    assert accrual["events"]["books"] == []
+    assert accrual["outcomes"]["horizons"]["5d"] == {
+        "instrumented": False,
+        "status": "not_instrumented",
+        "authority": "none",
+        "books": [],
+        "pit_exact": False,
+        "reason": (
+            "No complete governed nonnegative sample count is available for "
+            "every registered outcome book at this horizon."
+        ),
+    }
+
+    fractional = _pick_payload()
+    fractional["scoreboard"][0]["h5_n"] = 0.6
+    fractional_accrual = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=fractional,
+        built_at="2026-08-08T12:00:00Z",
+    )["accrual"]
+    assert fractional_accrual["outcomes"]["horizons"]["5d"]["instrumented"] is False
+    assert fractional_accrual["outcomes"]["horizons"]["5d"]["books"] == []
+
+    malformed_book = _pick_payload()
+    malformed_book["scoreboard"][0]["n_fires"] = -1
+    ledgers = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=malformed_book,
+        built_at="2026-08-08T12:00:00Z",
+    )["forward_ledgers"]
+    assert [book["engine_id"] for book in ledgers["books"]] == [
+        "plab_flow_washout"
+    ]
+
+
+def test_passing_signing_gate_never_turns_projection_into_directional_opportunity():
+    signing_gate = {
+        "direction_reliable": True,
+        "thetadata_tape": {
+            "direction_reliable_tape": True,
+            "production_ready": True,
+        },
+    }
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        signing_gate=signing_gate,
+        built_at="2026-08-09T00:00:00Z",
+    )
+
+    assert payload["direction"]["signing_gate_passed"] is True
+    assert payload["direction"]["reliable"] is False
+    assert payload["readiness"]["components"]["information"]["ready"] is True
+    assert payload["readiness"]["components"]["information"]["promotion_ready"] is False
+    assert payload["direction"]["value"] is None
+    assert payload["opportunities"][0]["source_signing_reliable"] is True
+    assert payload["opportunities"][0]["direction_reliable"] is False
+    assert payload["watchlist"][0]["source_signing_reliable"] is True
+    assert payload["watchlist"][0]["direction_reliable"] is False
+    assert payload["macro_feedback"]["enabled"] is False
+
+
+def test_string_why_is_one_reason_and_upstream_authority_cannot_escape():
+    pick_lab = _pick_payload()
+    pick_lab["books"]["plab_flow_leader"]["picks_today"][0]["why"] = "fire_a"
+    pick_lab["scoreboard"][0]["authority"] = "rank_and_gate"
+
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=pick_lab,
+        signing_gate=_failed_signing_gate(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert payload["opportunities"][0]["why"] == ["fire_a"]
+    assert payload["forward_ledgers"]["books"][0]["authority"] == "display_only"
+
+
+def test_pick_lab_fire_must_belong_to_the_declared_session():
+    pick_lab = _pick_payload()
+    pick_lab["books"]["plab_flow_leader"]["picks_today"][0]["fire_date"] = (
+        "2026-08-06"
+    )
+
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=pick_lab,
+        signing_gate=_failed_signing_gate(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert payload["opportunities"] == []
+
+
+def test_unknown_signing_source_fails_closed_even_when_known_source_gates_pass():
+    flow = _flow_payload()
+    for board_name in ("board_a", "board_b"):
+        for row in flow[board_name]:
+            row["signing_source"] = "mystery_feed"
+    pick_lab = _pick_payload()
+    pick_lab["books"]["plab_flow_leader"]["picks_today"][0]["features"] = {
+        "signing_source": "mystery_feed"
+    }
+    payload = build_payload(
+        flow_leaders=flow,
+        pick_lab=pick_lab,
+        signing_gate={
+            "direction_reliable": True,
+            "thetadata_tape": {
+                "direction_reliable_tape": True,
+                "production_ready": True,
+            },
+        },
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert payload["opportunities"][0]["source_signing_reliable"] is False
+    assert payload["watchlist"][0]["source_signing_reliable"] is False
+    assert payload["direction"]["signing_gate_passed"] is False
+    assert payload["readiness"]["components"]["information"]["ready"] is False
+
+
+def test_missing_signing_source_blocks_mixed_source_information_readiness():
+    flow = _flow_payload()
+    flow["board_b"][1]["signing_source"] = None
+    payload = build_payload(
+        flow_leaders=flow,
+        pick_lab=_pick_payload(),
+        signing_gate={
+            "direction_reliable": True,
+            "thetadata_tape": {
+                "direction_reliable_tape": True,
+                "production_ready": True,
+            },
+        },
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert payload["watchlist"][-1]["source_signing_reliable"] is False
+    assert payload["direction"]["signing_gate_passed"] is False
+    assert payload["readiness"]["components"]["information"]["ready"] is False
+
+
+def test_nonempty_error_shaped_gate_does_not_claim_positioning_context():
+    payload = build_payload(
+        options_entry_gate={"error": "upstream read failed"},
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    positioning = payload["readiness"]["components"]["positioning"]
+    assert positioning["context_available"] is False
+    assert positioning["ready"] is False
+
+
+def test_foreign_stale_or_misaligned_sources_cannot_project_rows():
+    foreign_flow = _flow_payload()
+    foreign_flow["schema"] = "flow_leaders.future"
+    payload = build_payload(
+        flow_leaders=foreign_flow,
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["watchlist"] == []
+    assert payload["opportunities"] == []
+    assert payload["readiness"]["gates"]["source_freshness"]["pass"] is False
+    assert (
+        payload["readiness"]["gates"]["source_freshness"]["scope"]
+        == "flow_leaders_freshness_and_pick_lab_contract"
+    )
+
+    undated_flow = _flow_payload()
+    undated_flow.pop("session_date")
+    payload = build_payload(
+        flow_leaders=undated_flow,
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["watchlist"] == []
+    assert payload["opportunities"] == []
+    assert payload["readiness"]["components"]["flow_leaders"]["ready"] is False
+    assert payload["readiness"]["gates"]["source_freshness"]["pass"] is False
+
+    stale_flow = _flow_payload()
+    stale_flow["stale"] = True
+    payload = build_payload(
+        flow_leaders=stale_flow,
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["watchlist"] == []
+    assert payload["opportunities"] == []
+
+    future_flow = _flow_payload()
+    future_flow["as_of"] = "2026-08-08T12:01:00Z"
+    payload = build_payload(
+        flow_leaders=future_flow,
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["watchlist"] == []
+    assert payload["opportunities"] == []
+    assert payload["readiness"]["components"]["flow_leaders"]["ready"] is False
+
+    future_picks = _pick_payload()
+    future_picks["built_at"] = "2026-08-08T12:01:00Z"
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=future_picks,
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["opportunities"] == []
+    assert payload["forward_ledgers"]["books"] == []
+    assert payload["readiness"]["components"]["pick_lab"]["ready"] is False
+
+    untrusted_picks = _pick_payload()
+    untrusted_picks["authority"] = "rank_and_gate"
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=untrusted_picks,
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["opportunities"] == []
+    assert payload["forward_ledgers"]["books"] == []
+    assert payload["as_of"] == "2026-08-07"
+
+    foreign_book = _pick_payload()
+    foreign_book["books"]["plab_flow_leader"]["engine_id"] = "other_engine"
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=foreign_book,
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["opportunities"] == []
+    assert payload["readiness"]["components"]["pick_lab"]["ready"] is False
+
+    misaligned_picks = _pick_payload()
+    misaligned_picks["as_of"] = "2026-08-06"
+    payload = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=misaligned_picks,
+        built_at="2026-08-08T12:00:00Z",
+    )
+    assert payload["opportunities"] == []
+    alignment = payload["readiness"]["gates"]["source_alignment"]
+    assert alignment["pass"] is False
+    assert alignment["scope"] == "flow_leaders_and_pick_lab_only"
+
+
+def test_nonfinite_upstream_values_become_strict_json_null():
+    flow = _flow_payload()
+    flow["board_a"][0]["gamma_regime"] = math.nan
+    payload = build_payload(
+        flow_leaders=flow,
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    # allow_nan=False follows the browser JSON boundary; this must never raise.
+    encoded = json.dumps(payload, allow_nan=False)
+    assert "NaN" not in encoded
+    assert payload["watchlist"][0]["observations"]["gamma_regime"] is None
+
+
+def test_disk_builder_writes_explicit_degraded_artifact_when_inputs_are_absent(tmp_path: Path):
+    output = tmp_path / "site" / "options_prophet" / "index.json"
+    payload = build_from_disk(
+        flow_leaders_path=tmp_path / "missing-flow.json",
+        pick_lab_path=tmp_path / "missing-picks.json",
+        signing_gate_path=tmp_path / "missing-signing.json",
+        options_entry_gate_path=tmp_path / "missing-entry.json",
+        options_entry_coverage_path=tmp_path / "missing-coverage.json",
+        dislocation_gate_path=tmp_path / "missing-dislocation.json",
+        output_path=output,
+        built_at="2026-08-08T12:00:00Z",
+    )
+
+    assert json.loads(output.read_text(encoding="utf-8")) == payload
+    assert payload["opportunities"] == []
+    assert payload["watchlist"] == []
+    assert payload["readiness"]["components"]["execution"]["ready"] is False
+    assert payload["provenance"]["flow_leaders"]["error"] == "missing"
+    assert payload["provenance"]["pick_lab"]["error"] == "missing"
+    assert payload["provenance"]["options_entry_coverage"]["error"] == "missing"
+
+
+def test_disk_builder_consumes_optional_konseki_receipt_without_authority(tmp_path: Path):
+    context = tmp_path / "konseki.json"
+    context.write_text(
+        json.dumps(
+            {
+                "schema": "konseki.market_memory/v1",
+                "authority": "context_only",
+                "memory_id": "km-1",
+                "decision_at": "2026-08-08T23:00:00Z",
+                "available_at": "2026-08-08T23:01:00Z",
+                "context_tags": ["risk-on"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "site" / "options_prophet" / "index.json"
+    payload = build_from_disk(
+        flow_leaders_path=tmp_path / "missing-flow.json",
+        pick_lab_path=tmp_path / "missing-picks.json",
+        signing_gate_path=tmp_path / "missing-signing.json",
+        options_entry_gate_path=tmp_path / "missing-entry.json",
+        options_entry_coverage_path=tmp_path / "missing-coverage.json",
+        dislocation_gate_path=tmp_path / "missing-dislocation.json",
+        konseki_context_path=context,
+        output_path=output,
+        built_at="2026-08-09T00:00:00Z",
+    )
+
+    receipt = payload["context_inputs"]["konseki_market_memory"]
+    assert receipt["connected"] is True
+    assert receipt["authority"] == "context_only"
+    assert receipt["weight"] == 0
+    assert payload["provenance"]["konseki_market_memory"]["path"] == str(context)
+
+
+def test_daily_dag_synapse_and_r2_contract_are_wired():
+    root = Path(__file__).resolve().parents[1]
+    daily = (root / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+    dag = (root / "config" / "dag.yml").read_text(encoding="utf-8")
+    synapse_path = root / "config" / "synapse.yml"
+    synapse = synapse_path.read_text(encoding="utf-8")
+    artifacts = yaml.safe_load(synapse)["artifacts"]
+
+    pick_call = 'run_py "pick lab nightly runner (build_pick_lab)" scripts.build_pick_lab'
+    prophet_call = (
+        'run_py "options prophet shadow (build_options_prophet)" '
+        "scripts.build_options_prophet"
+    )
+    assert daily.index(prophet_call) > daily.index(pick_call)
+    assert daily.index(prophet_call) - daily.index(pick_call) < 800
+    assert "python -m scripts.mirror_flow_idx --options-prophet --strict" in daily
+    assert "id: build_options_prophet" in dag
+    assert "path: site/options_prophet/index.json" in synapse
+    assert "schema: options.prophet_shadow/v1" in synapse
+    for source_id in (
+        "site-flow-leaders",
+        "pick-lab-entry-ledger",
+        "options-flow-signing-gate",
+        "options-entry-gate",
+        "options-entry-coverage",
+        "options-dislocation-gate",
+    ):
+        assert "scripts/build_options_prophet.py" in artifacts[source_id]["consumers"]
+    assert artifacts["options-entry-gate"]["schema"] == "options_entry.gate.v3"
+    assert artifacts["options-prophet-shadow"]["storage"] == "git+r2"
+    assert OPTIONS_PROPHET_R2_KEY == "options_prophet/index.json"
+
+
+def test_options_prophet_mirror_selects_the_canonical_r2_key(tmp_path, monkeypatch):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"schema":"options.prophet_shadow/v1"}', encoding="utf-8")
+    fake_client = object()
+    calls = []
+
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(mirror_flow_idx, "_r2_client", lambda: fake_client)
+    monkeypatch.setattr(
+        mirror_flow_idx,
+        "_upload",
+        lambda client, path, key, bucket: (
+            calls.append((client, path, key, bucket)) or True
+        ),
+    )
+    monkeypatch.setenv("R2_BUCKET", "fixture-bucket")
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet"]
+    )
+
+    assert mirror_flow_idx.main() == 0
+    assert calls == [
+        (fake_client, source, "options_prophet/index.json", "fixture-bucket")
+    ]
+
+
+def test_options_prophet_strict_mirror_reports_publication_failure(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"schema":"options.prophet_shadow/v1"}', encoding="utf-8")
+
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(mirror_flow_idx, "_r2_client", lambda: object())
+    monkeypatch.setattr(mirror_flow_idx, "_upload", lambda *_args: False)
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet", "--strict"]
+    )
+
+    assert mirror_flow_idx.main() == 1
+
+
+def test_options_prophet_strict_mirror_rejects_nonfinite_json(tmp_path, monkeypatch):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        '{"schema":"options.prophet_shadow/v1","authority":"display_only",'
+        '"mode":"shadow","watchlist":[{"flow_z":NaN}]}',
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(
+        mirror_flow_idx,
+        "_r2_client",
+        lambda: (_ for _ in ()).throw(AssertionError("must not build client")),
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet", "--strict"]
+    )
+
+    assert mirror_flow_idx.main() == 1
+
+
+def test_options_prophet_strict_mirror_rejects_incomplete_or_unsafe_contract(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        '{"schema":"options.prophet_shadow/v1","authority":"display_only",'
+        '"mode":"shadow"}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(
+        mirror_flow_idx,
+        "_r2_client",
+        lambda: (_ for _ in ()).throw(AssertionError("must not build client")),
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet", "--strict"]
+    )
+
+    assert mirror_flow_idx.main() == 1
+
+    crossed = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    crossed["opportunities"][0]["lane"] = "flow_washout"
+    source.write_text(json.dumps(crossed), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    future_child = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    future_child["opportunities"][0]["available_at"] = "2026-08-08T12:01:00Z"
+    source.write_text(json.dumps(future_child), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    future_source = build_payload(built_at="2026-08-08T12:00:00Z")
+    future_source["pit_provenance"]["source_available_at"]["pick_lab"] = (
+        "2026-08-08T12:01:00Z"
+    )
+    source.write_text(json.dumps(future_source), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    conflated_accrual = build_payload(built_at="2026-08-08T12:00:00Z")
+    conflated_accrual["accrual"]["outcomes"][
+        "separate_from_event_accrual"
+    ] = False
+    source.write_text(json.dumps(conflated_accrual), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    manufactured_zero = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    manufactured_zero["accrual"]["outcomes"]["horizons"]["5d"]["books"][0][
+        "n"
+    ] = None
+    source.write_text(json.dumps(manufactured_zero), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    fractional_count = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    fractional_count["accrual"]["outcomes"]["horizons"]["5d"]["books"][0][
+        "n"
+    ] = 0.6
+    source.write_text(json.dumps(fractional_count), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    duplicate_book = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    books = duplicate_book["accrual"]["outcomes"]["horizons"]["5d"]["books"]
+    books.append(dict(books[0]))
+    source.write_text(json.dumps(duplicate_book), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    malformed_ledger_count = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    malformed_ledger_count["forward_ledgers"]["books"][0]["n_fires"] = 0.6
+    source.write_text(json.dumps(malformed_ledger_count), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    duplicate_ledger = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    ledger_books = duplicate_ledger["forward_ledgers"]["books"]
+    ledger_books.append(dict(ledger_books[0]))
+    source.write_text(json.dumps(duplicate_ledger), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    unsafe_konseki = build_payload(built_at="2026-08-08T12:00:00Z")
+    unsafe_konseki["context_inputs"]["konseki_market_memory"] = {
+        "expected_schema": "konseki.market_memory/v1",
+        "connected": True,
+        "authority": "context_only",
+        "weight": 0,
+        "may_rank": False,
+        "may_gate": False,
+        "may_size": False,
+        "decision_at": None,
+        "available_at": "2026-08-08T23:01:00Z",
+        "receipt": {"memory_id": None, "context_tags": []},
+    }
+    source.write_text(json.dumps(unsafe_konseki), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    future_konseki = build_payload(built_at="2026-08-08T12:00:00Z")
+    future_konseki["context_inputs"]["konseki_market_memory"] = {
+        "expected_schema": "konseki.market_memory/v1",
+        "connected": True,
+        "authority": "context_only",
+        "weight": 0,
+        "may_rank": False,
+        "may_gate": False,
+        "may_size": False,
+        "decision_at": "2026-08-08T12:00:30Z",
+        "available_at": "2026-08-08T12:01:00Z",
+        "receipt": {"memory_id": "km-future", "context_tags": []},
+    }
+    source.write_text(json.dumps(future_konseki), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+    required_shape = build_payload(
+        flow_leaders=_flow_payload(),
+        pick_lab=_pick_payload(),
+        built_at="2026-08-08T12:00:00Z",
+    )
+    for remove in (
+        lambda item: item.pop("decision_at"),
+        lambda item: item["selection_policy"].pop("target_batch_size"),
+        lambda item: item["forward_ledgers"].pop(
+            "incremental_options_attribution"
+        ),
+        lambda item: item["accrual"]["events"].pop("timestamp_coverage"),
+        lambda item: item.pop("provenance"),
+    ):
+        malformed = json.loads(json.dumps(required_shape))
+        remove(malformed)
+        source.write_text(json.dumps(malformed), encoding="utf-8")
+        assert mirror_flow_idx.main() == 1
+
+    blank_symbol = json.loads(json.dumps(required_shape))
+    blank_symbol["opportunities"][0]["symbol"] = "  "
+    source.write_text(json.dumps(blank_symbol), encoding="utf-8")
+    assert mirror_flow_idx.main() == 1
+
+
+def test_options_prophet_strict_mirror_verifies_uploaded_object(tmp_path, monkeypatch):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        json.dumps(build_payload(built_at="2026-08-08T12:00:00Z")),
+        encoding="utf-8",
+    )
+
+    class FakeClient:
+        def __init__(self):
+            self.uploads = []
+            self.heads = []
+
+        def upload_file(self, path, bucket, key, ExtraArgs):
+            self.uploads.append((path, bucket, key, ExtraArgs))
+
+        def head_object(self, *, Bucket, Key):
+            self.heads.append((Bucket, Key))
+            return {
+                "ContentLength": source.stat().st_size,
+                "Metadata": {
+                    "sha256": hashlib.sha256(source.read_bytes()).hexdigest()
+                },
+            }
+
+    client = FakeClient()
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(mirror_flow_idx, "_r2_client", lambda: client)
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet", "--strict"]
+    )
+
+    assert mirror_flow_idx.main() == 0
+    assert client.heads == [("mastermindx", "options_prophet/index.json")]
+
+
+def test_options_prophet_strict_mirror_rejects_remote_receipt_mismatch(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "site" / "options_prophet" / "index.json"
+    source.parent.mkdir(parents=True)
+    payload = build_payload(built_at="2026-08-08T12:00:00Z")
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    class StaleClient:
+        def upload_file(self, *_args, **_kwargs):
+            return None
+
+        def head_object(self, **_kwargs):
+            return {"ContentLength": 1, "Metadata": {"sha256": "stale"}}
+
+    monkeypatch.setattr(mirror_flow_idx, "OPTIONS_PROPHET_PATH", source)
+    monkeypatch.setattr(mirror_flow_idx, "_r2_client", lambda: StaleClient())
+    monkeypatch.setattr(
+        sys, "argv", ["mirror_flow_idx", "--options-prophet", "--strict"]
+    )
+
+    assert mirror_flow_idx.main() == 1

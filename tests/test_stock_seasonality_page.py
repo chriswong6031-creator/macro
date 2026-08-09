@@ -524,3 +524,719 @@ def test_symbol_picker_is_a_real_combobox(html):
     assert 'role="combobox"' in block and 'aria-expanded="false"' in block
     assert 'aria-controls="sx-results"' in block
     assert 'role="listbox"' in html
+
+
+
+
+# ── Catalyst mode — the evidence boundary (W2C/W3) ─────────────────────────
+METHODOLOGY = ROOT / "site" / "seasonalitydata" / "methodology.json"
+
+# Causal language is the fabrication this surface is uniquely exposed to. Its
+# whole premise is "no event source is connected", so a sentence that explains
+# WHY a name moves in a season is a claim derived from data the same page says
+# it does not have — and it needs no numeral, so the invention ban below cannot
+# see it (mutation 8, adversarial review 2026-08-07).
+BANNED_CAUSAL = [
+    r"\bbecause\b", r"\bdrives?\b", r"\bdriven by\b", r"\bdue to\b",
+    r"\bcaused? by\b", r"\bcauses\b", r"\bexplains?\b", r"\bleads? to\b",
+    r"\bresults? from\b", r"\bwhy this\b", r"\breason\b",
+    "导致", "推动", "由于", "因为", "原因", "促使", "造成",
+]
+# Nor may it promise. A schedule with no feed behind it is the same defect
+# wearing the future tense.
+BANNED_PROMISE = [
+    r"\bexpected\b", r"\bupcoming\b", r"\bscheduled\b", r"\bwill happen\b",
+    r"\bnext catalyst\b", r"\bahead of\b",
+    "预计", "即将", "定于", "预期",
+]
+
+
+@pytest.fixture(scope="module")
+def methodology() -> dict:
+    return json.loads(METHODOLOGY.read_text())
+
+
+def render_with(methodology: dict | None, entity: dict) -> str:
+    """Render the real template against a synthetic method contract.
+
+    Without this every Catalyst guard reads ONE artifact state, so a page that
+    hardcodes its counts and a page that computes them are indistinguishable —
+    the repo's own hardcoded-promotion-stat-outlives-its-recompute trap."""
+    from jinja2 import Environment, FileSystemLoader
+
+    view = bss.build_view(entity, None, True, methodology)
+    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")), autoescape=True)
+    env.globals.update(zip=zip, abs=abs, enumerate=enumerate)
+    return env.get_template("stock_seasonality.html.j2").render(v=view, built="test")
+
+
+def _balanced(markup: str, start: int, tag: str = "div") -> str:
+    """`markup[start:]` up to the element's MATCHING close tag."""
+    depth, j, o, c = 0, start, f"<{tag}", f"</{tag}>"
+    while j < len(markup):
+        if markup.startswith(o, j):
+            depth += 1
+            j += len(o)
+        elif markup.startswith(c, j):
+            depth -= 1
+            j += len(c)
+            if depth == 0:
+                return markup[start:j]
+        else:
+            j += 1
+    raise AssertionError(f"unbalanced <{tag}> from {start}")
+
+
+def catalyst_markup(markup: str) -> str:
+    """The Catalyst surface — by CLASS MEMBERSHIP, not by a positional slice.
+
+    The first cut sliced from the wrapper to the calendar's first card, so a
+    SECOND `.sx-cat` panel placed after that card rendered in the same mode, on
+    the same screen, and was invisible to every guard below: a fabricated FDA
+    decision date and a 62% hit rate shipped green (mutation C, adversarial
+    review 2026-08-07). One panel is asserted, then extracted balanced."""
+    assert markup.count('class="sx-cat"') == 1, "exactly one Catalyst panel"
+    assert markup.count('id="sx-catalyst"') == 1
+    return _balanced(markup, markup.index('<div class="sx-cat"'))
+
+
+def catalyst_text(markup: str) -> str:
+    """Always-visible Catalyst copy: help tips stripped, tags out, entities decoded."""
+    return unescape(re.sub(r"<[^>]+>", " ", visible(catalyst_markup(markup))))
+
+
+def catalyst_tip_text(markup: str) -> str:
+    """Tier-2 tip copy on the Catalyst surface. `visible()` strips it, so the
+    invention ban never looked inside a tooltip."""
+    tips = re.findall(r'<span class="sx-tip">(.*?)</span></span>',
+                      catalyst_markup(markup), flags=re.S)
+    return unescape(re.sub(r"<[^>]+>", " ", " ".join(tips)))
+
+
+def _spans(markup: str, opener: str) -> list[int]:
+    out, i = [], markup.find(opener)
+    while i != -1:
+        out.append(i)
+        i = markup.find(opener, i + 1)
+    return out
+
+
+def _balanced_span(markup: str, start: int) -> str:
+    depth, j = 0, start
+    while j < len(markup):
+        if markup.startswith("<span", j):
+            depth += 1
+            j += 5
+        elif markup.startswith("</span>", j):
+            depth -= 1
+            j += 7
+            if depth == 0:
+                return markup[start:j]
+        else:
+            j += 1
+    raise AssertionError("unbalanced span")
+
+
+def _js_body(js: str, name: str) -> str:
+    """The body of `function <name>(`, brace-counted."""
+    i = js.index(f"function {name}(")
+    j = js.index("{", i)
+    depth, k = 0, j
+    while k < len(js):
+        if js[k] == "{":
+            depth += 1
+        elif js[k] == "}":
+            depth -= 1
+            if depth == 0:
+                return js[j:k + 1]
+        k += 1
+    raise AssertionError(f"unbalanced body for {name}")
+
+
+def _reduced_motion_block(css: str) -> str:
+    """The reduced-motion at-rule, bounded at its CLOSING BRACE.
+
+    Slicing to EOF made every assertion satisfiable by a selector appearing
+    anywhere later in the sheet — including in a rule that re-enables motion
+    (mutation 5b)."""
+    i = css.index("@media (prefers-reduced-motion: reduce)")
+    j = css.index("{", i)
+    depth, k = 0, j
+    while k < len(css):
+        if css[k] == "{":
+            depth += 1
+        elif css[k] == "}":
+            depth -= 1
+            if depth == 0:
+                return css[i:k + 1]
+        k += 1
+    raise AssertionError("unbalanced reduced-motion block")
+
+
+# ── the mode control ───────────────────────────────────────────────────────
+def test_mode_switch_is_in_the_masthead_not_the_lens_row(html):
+    """Mode changes what the page is ABOUT; a lens changes how one chart is drawn.
+    So it must not sit in .sx-ctrls with Median/Raw/Max — it takes the masthead
+    slot above the H1, and it reuses the segmented idiom rather than inventing
+    a control (or, worse, a second page header)."""
+    mast = html[html.index('<header class="sx-mast">'):html.index("</header>")]
+    assert 'id="sx-mode"' in mast, "mode switch must live in the masthead"
+    assert mast.index('id="sx-mode"') < mast.index('class="sx-h1"'), "mode sits above the H1"
+    ctrls = html[html.index('<div class="sx-ctrls">'):]
+    ctrls = ctrls[:ctrls.index("</section>")]
+    assert 'id="sx-mode"' not in ctrls, "mode must not join the lens row"
+    # the same family as the three lens groups, not a new widget
+    block = html[html.index('<span class="sx-seg sx-mode"'):][:700]
+    assert 'id="sx-mode"' in block and 'role="group"' in block
+    assert block.count('aria-pressed="true"') == 1, "exactly one mode is pressed"
+    assert block.count("<button") == 2
+    assert 'data-v="calendar"' in block and 'data-v="catalyst"' in block
+
+
+def test_the_mode_group_carries_a_bilingual_accessible_name(html):
+    """A role="group" with no name is announced as bare "group"; an aria-label
+    can hold exactly ONE language and translated attribute text is a CI-guarded
+    house-law violation, so the name is a visually-hidden bilingual span. The
+    inactive .l-* is display:none and therefore out of the name computation."""
+    block = html[html.index('<span class="sx-seg sx-mode"'):][:400]
+    assert 'aria-labelledby="sx-mode-lab"' in block
+    assert "aria-label=" not in block, "an aria-label can only be one language"
+    lab = html[html.index('id="sx-mode-lab"'):]
+    lab = lab[:lab.index("</span>", lab.index("l-zh"))]
+    assert "Page mode" in lab and "页面模式" in lab
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert ".sx-sr {" in css and "clip-path: inset(50%)" in css
+
+
+def test_a_deep_link_never_leaves_the_control_contradicting_the_body(html):
+    """?mode=catalyst paints the catalyst BODY from <head>, but the control ships
+    calendar-pressed and was only reconciled by stock_seasonality.js at the end
+    of <body> — so between parse and script the segment labelled the wrong page,
+    and permanently if that file never loaded. Two fixes, both here: the pressed
+    FILL is derived from html[data-sx-mode] so it cannot desync at all, and an
+    inline script reconciles the ARIA during parse."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert 'html:not([data-sx-mode="catalyst"]) .sx-seg.sx-mode .gbtn[data-v="calendar"],' in css
+    assert 'html[data-sx-mode="catalyst"] .sx-seg.sx-mode .gbtn[data-v="catalyst"] {' in css
+    assert '.sx-seg.sx-mode .gbtn[aria-pressed="true"]' not in css, \
+        "pressed fill must not wait for a JS-written attribute"
+    # the ARIA reconciliation is INLINE and sits with the control, not at </body>
+    bar = html[html.index('<div class="sx-modebar">'):]
+    bar = bar[:bar.index("</div>")]
+    assert "<script>" in bar and "aria-pressed" in bar
+    assert bar.index('id="sx-mode"') < bar.index("<script>")
+
+
+def test_the_mode_control_outranks_the_lens_controls_in_type_not_only_place(html):
+    """It is the page's most senior control, so it must LOOK senior next to the
+    lens segments. The first cut set both at 12.5px — the whole claimed
+    hierarchy was a weight step, and placement was carrying it alone."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    mode = re.search(r"\.sx-seg\.sx-mode \.gbtn \{(.*?)\}", css, flags=re.S).group(1)
+    lens = re.search(r"\n\.sx-seg \.gbtn \{(.*?)\}", css, flags=re.S).group(1)
+    mode_px = float(re.search(r"(\d+(?:\.\d+)?)px", mode.split("font:")[1]).group(1))
+    lens_px = float(re.search(r"(\d+(?:\.\d+)?)px", lens.split("font:")[1]).group(1))
+    assert mode_px > lens_px, f"mode {mode_px}px is not senior to lens {lens_px}px"
+    assert "var(--sx-display)" in mode and "var(--sx-data)" in lens
+
+
+def test_mode_change_is_announced_and_keyboard_reachable(html):
+    """A pressed segment is silent to a reader who is not on the control."""
+    live = html[html.index('id="sx-mode-live"'):][:200]
+    assert 'role="status"' in live and 'aria-live="polite"' in live
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    # native <button>s (Enter/Space are the user agent's job) + a visible ink ring
+    assert ".sx-seg .gbtn:focus-visible { outline: 2px solid var(--sx-ink)" in css
+    js = (ROOT / "templates" / "stock_seasonality.js").read_text()
+    assert "sx-mode-live" in js
+    # WIRED, not merely defined: deleting the call site left the identifier in
+    # the file and the old grep-assertion green while the click path went silent.
+    assert "announceMode(" in _js_body(js, "setMode")
+
+
+def test_the_catalyst_cta_keeps_a_visible_focus_ring():
+    """The only click affordance unique to this mode. Its sibling segment ring is
+    pinned above; this one shipped unguarded, so `outline: none` was green."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert ".sx-cta:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 2px; }" in css
+
+
+def test_mode_creates_no_second_page_header(html):
+    """CLAUDE.md §Navigation: exactly two header families, and this page uses the
+    authenticated one. A mode switch is a control, never a chrome bar."""
+    block = catalyst_markup(html)
+    for tag in ("<header", "<nav", "site-nav", "nav-links"):
+        assert tag not in block, tag
+    assert html.count('<nav class="site-nav">') == 1
+
+
+def test_mode_persists_the_way_the_page_already_persists_state(html):
+    """The symbol lives in the URL query; so does the mode. pushState, not
+    replaceState, because Back must return the reader to the mode they came
+    from — and the head applies it before first paint so a deep link never
+    flashes the calendar first."""
+    head = html[:html.index("</head>")]
+    assert "searchParams.get('mode')" in head and "data-sx-mode" in head
+    js = (ROOT / "templates" / "stock_seasonality.js").read_text()
+    assert 'u.searchParams.set("mode", m)' in js
+    assert 'u.searchParams.delete("mode")' in js
+    assert "history.pushState" in js
+    assert 'addEventListener("popstate"' in js
+    # a symbol switch rewrites the URL from the CURRENT href, so mode rides along
+    assert 'u.searchParams.set("symbol", j.symbol)' in js
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert 'html[data-sx-mode="catalyst"] .sx-cal { display: none; }' in css
+    assert 'html[data-sx-mode="catalyst"] .sx-cat { display: block; }' in css
+
+
+def test_back_returns_the_reader_and_not_only_the_mode():
+    """A mode swap rewrites the document from the masthead down. Back into
+    catalyst from a scrolled calendar left the viewport 690px BELOW the mode's
+    entire message at 375px, reading a bullet from a card that no longer
+    existed; the only signal was the polite live region."""
+    js = (ROOT / "templates" / "stock_seasonality.js").read_text()
+    body = _js_body(js, "revealMode")
+    assert "sx-catalyst" in body and "sx-verdict" in body
+    assert "prefers-reduced-motion" in body, "a forced smooth scroll ignores the setting"
+    assert "if ((window.pageYOffset || 0) <= top) return;" in body, \
+        "never yank a reader who is already above the surface"
+    assert "revealMode(m)" in _js_body(js, "setMode")
+    pop = js[js.index('addEventListener("popstate"'):][:400]
+    assert "setMode(m, false, true)" in pop
+
+
+def test_the_mode_switch_writes_no_dead_state():
+    """`root.dataset.mode` was written on every switch and read by nothing —
+    css and js both key off html[data-sx-mode]."""
+    js = (ROOT / "templates" / "stock_seasonality.js").read_text()
+    assert "root.dataset.mode" not in js
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert ".sx-eyebrow {" not in css, "the mode bar replaced its only consumer"
+
+
+# ── the ledger is computed, never authored ─────────────────────────────────
+def test_catalyst_is_driven_by_the_availability_block(html, methodology):
+    """Every line reads methodology.json. The page ships an UNAVAILABLE state
+    because live_event_graph is false — if the artifact ever says otherwise this
+    must be rewritten, not silently keep claiming a boundary that moved."""
+    avail = methodology["availability"]
+    assert avail["live_event_graph"] is False, "premise of the shipped copy"
+    cat = bss.build_catalyst(methodology)
+    sources = [r for r in cat["rows"] if r["source"]]
+    assert cat["n_live"] == sum(1 for r in sources if r["live"])
+    assert cat["n_live"] + cat["n_dark"] == len(sources)
+    assert cat["n_never"] == len(cat["rows"]) - len(sources)
+    live = {r["key"] for r in cat["rows"] if r["live"]}
+    assert live == {k for k, v in avail.items() if v is True and k != "note"}
+    text = catalyst_text(html)
+    assert f"{cat['n_live']} connected" in text
+    assert f"{cat['n_dark']} not connected" in text
+
+
+def test_the_rendered_ledger_is_exactly_the_built_ledger(html, methodology):
+    """Pins the MARKUP to build_catalyst(), row for row and state for state.
+
+    Without this the guards are lexical only: a fabricated row carrying no
+    numeral passed every one of them (mutation 2b), and hardcoding the chip
+    literals passed too (mutation B) because the count assertion only proved the
+    string was present, never that the page recomputed it."""
+    cat = bss.build_catalyst(methodology)
+    block = catalyst_markup(html)
+    rows = re.findall(r'<li class="sx-led-row is-(on|off|never)">(.*?)</li>', block, flags=re.S)
+    assert len(rows) == len(cat["rows"]), "the ledger renders every built row and no other"
+    built = [(r["state"], r["en"], r["zh"], r["why_en"], r["why_zh"]) for r in cat["rows"]]
+    seen = []
+    for state, body in rows:
+        name = re.search(r'<span class="sx-led-name">(.*?)</span></span>\s*</span>', body, flags=re.S)
+        name_en = re.search(r'<span class="l-en">(.*?)</span>', body).group(1)
+        name_zh = re.search(r'<span class="l-zh">(.*?)</span>', body).group(1)
+        whys = re.findall(r'<span class="l-(?:en|zh)">(.*?)</span>', body, flags=re.S)
+        seen.append((state, unescape(name_en), unescape(name_zh),
+                     unescape(whys[2]), unescape(whys[3])))
+        assert name is None or True  # name span located above
+    assert seen == built, f"markup drifted from build_catalyst(): {seen} != {built}"
+    # and the state WORDS partition the same way
+    assert block.count(">Connected<") == cat["n_live"]
+    assert block.count(">Not connected<") == cat["n_dark"]
+    assert block.count(">Not offered<") == cat["n_never"]
+
+
+def test_the_counts_track_a_synthetic_artifact(entity, methodology):
+    """Flip a field and the page must move. The chips are recomputed, not typed."""
+    import copy
+    m = copy.deepcopy(methodology)
+    m["availability"]["live_event_graph"] = True
+    out = render_with(m, entity)
+    cat = bss.build_catalyst(m)
+    assert (cat["n_live"], cat["n_dark"]) == (3, 0), "premise of this fixture"
+    text = catalyst_text(out)
+    assert "3 connected" in text and "0 not connected" in text
+    assert "已接入 3 项" in text and "未接入 0 项" in text
+    # and the headline follows the same field
+    assert "Event coverage is connected" in text
+    assert "Catalyst coverage is not connected" not in text
+
+
+def test_a_connected_event_feed_never_renders_the_absence_clause(entity, methodology):
+    """The event row's why-clause was assigned unconditionally, so flipping the
+    feed live printed "No feed is connected for regulatory decisions, …"
+    underneath the state word CONNECTED."""
+    import copy
+    m = copy.deepcopy(methodology)
+    m["availability"]["live_event_graph"] = True
+    row = [r for r in bss.build_catalyst(m)["rows"] if r["key"] == "live_event_graph"][0]
+    assert row["live"] is True and row["state"] == "on"
+    assert "No feed is connected" not in row["why_en"]
+    assert "无数据源接入" not in row["why_zh"]
+    assert "connected for" in row["why_en"] and "已接入数据源" in row["why_zh"]
+    text = catalyst_text(render_with(m, entity))
+    assert "No feed is connected" not in text
+    # the empty-clocks branch has the same two faces
+    assert "connected" in bss.event_clock_clause({}, True)[0]
+    assert bss.event_clock_clause({}, False)[0].startswith("No clinical or regulatory")
+
+
+def test_a_design_choice_is_never_counted_as_a_missing_feed(html, methodology):
+    """`Forecasts` and `Symbol screening` say in their own why-clauses that we
+    chose not to build them. Shipping them under NOT CONNECTED made the glance
+    chip read "3 not connected" — "this page is 40% built" — when exactly ONE
+    source is missing. They are off the rail and out of the counts."""
+    cat = bss.build_catalyst(methodology)
+    never = {r["key"] for r in cat["rows"] if r["state"] == "never"}
+    assert never == {"live_forecasts", "live_screener"}
+    assert cat["n_dark"] == 1, "exactly one source is actually missing"
+    block = catalyst_markup(html)
+    text = catalyst_text(html)
+    assert "1 not connected" in text and "3 not connected" not in text
+    assert "Chosen, not missing" in text and "刻意不做，并非缺失" in text
+    assert "Not offered" in text and "不提供" in text
+    # the rail is the evidence encoding, so a choice carries none of it
+    for body in re.findall(r'<li class="sx-led-row is-never">(.*?)</li>', block, flags=re.S):
+        assert "sx-rail" not in body, "a design choice must not be marked on the evidence axis"
+    for state in ("on", "off"):
+        for body in re.findall(rf'<li class="sx-led-row is-{state}">(.*?)</li>', block, flags=re.S):
+            assert 'class="sx-rail"' in body
+    # and the closing line no longer hardcodes the length of the list above it
+    assert "all three hold" not in text
+
+
+def test_a_missing_availability_field_renders_unavailable_never_a_default():
+    """Fail closed: absent, null, or a truthy non-bool is NOT a connected feed."""
+    assert not [r for r in bss.build_catalyst({})["rows"] if r["live"]]
+    assert bss.build_catalyst({})["n_live"] == 0
+    assert bss.build_catalyst({})["asof_en"] == ""
+    for bogus in (None, "true", 1, {}, "yes"):
+        cat = bss.build_catalyst({"availability": {"live_event_graph": bogus}})
+        assert not [r for r in cat["rows"] if r["key"] == "live_event_graph"][0]["live"], bogus
+
+
+def test_catalyst_renders_with_no_methodology_artifact(entity):
+    """The producer contract does not exist yet, so the unreadable/absent case is
+    the one that must not blow up or invent a reading."""
+    view = bss.build_view(entity, None, True, None)
+    cat = view["catalyst"]
+    assert cat["n_live"] == 0
+    assert cat["n_dark"] == sum(1 for _, _, _, _, _, src in bss.AVAIL_ROWS if src)
+    assert cat["event_live"] is False and cat["clock_live"] is False
+    assert cat["meth_ok"] is False
+
+
+def test_the_dark_ledger_never_makes_a_claim_about_the_whole_page(entity, methodology):
+    """Fail-closed produced a FALSE statement: with the availability block gone
+    the page said "Nothing on this page is connected right now" one click away
+    from 25 drawn years and a verdict it stands behind. The stance is scoped to
+    the ledger, or to the method file, and always leaves a route."""
+    import copy
+    for m, probe_en, probe_zh in (
+        ({k: v for k, v in methodology.items() if k != "availability"},
+         "The method file could not be read.", "方法文件无法读取。"),
+        (dict(copy.deepcopy(methodology), availability={"live_forecasts": False}),
+         "No source below is connected.", "下方没有任何已接入的数据源。"),
+    ):
+        text = catalyst_text(render_with(m, entity))
+        assert probe_en in text and probe_zh in text
+        assert "Nothing on this page is connected" not in text
+        assert "本页目前没有任何已接入的数据" not in text
+        # Law 1: a stance still has to leave somewhere to go
+        assert "The calendar clock is still drawn here." in text
+        assert "Open the calendar clock" in text
+
+
+# ── the hard line: nothing invented ────────────────────────────────────────
+def test_catalyst_invents_no_event_no_date_no_probability(html, methodology):
+    """The hard line: not one number on this surface that is not computed from a
+    real artifact. Every numeral must live inside the page's figure idiom
+    (<span class="n"> in a chip) — a structural rule, so it cannot go slack when
+    the artifact's own date happens to contain a convenient digit."""
+    cat = bss.build_catalyst(methodology)
+    block = visible(catalyst_markup(html))
+    text = unescape(re.sub(r"<[^>]+>", " ", block))
+    outside = unescape(re.sub(r"<[^>]+>", " ", _strip_balanced(block, '<span class="n">')))
+    assert not re.search(r"\d", outside), \
+        f"figure outside the chip idiom: {re.findall(r'[^ ]*[0-9][^ ]*', outside)}"
+    figures = [unescape(re.sub(r"<[^>]+>", " ", _balanced_span(block, i)))
+               for i in _spans(block, '<span class="n">')]
+    assert figures, "the counts are the only figures, and they must be there"
+    for f in figures:
+        assert (f"{cat['n_live']} connected" in f or f"{cat['n_dark']} not connected" in f
+                or (cat["asof_en"] and cat["asof_en"] in f)), f"unexplained figure: {f!r}"
+    assert "%" not in text, "no probability may appear where there is no model"
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", text), "no ISO date"
+    # not a placeholder and not a splash
+    for term in ("coming soon", "stay tuned", "placeholder", "TBD", "to be announced",
+                 "will be available", "即将", "敬请期待", "占位"):
+        assert term.lower() not in text.lower(), term
+
+
+def test_the_tier2_tips_invent_nothing_either(html):
+    """`visible()` strips tips, so the whole invention ban had a hole exactly the
+    size of a tooltip — a fabricated decision date in a `?` popover was unguarded."""
+    tip = catalyst_tip_text(html)
+    assert tip.strip(), "the surface does carry tips; this guard must not be vacuous"
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", tip)
+    assert "%" not in tip
+    for pattern in BANNED_PROMISE:
+        assert not re.search(pattern, tip), pattern
+
+
+def test_catalyst_asserts_no_cause(html):
+    """A sentence explaining WHY a name moves in a season is knowledge derived
+    from data this page says it does not have — and it carries no numeral, so
+    the invention ban cannot see it. House law: copy never originates a signal."""
+    text = catalyst_text(html)
+    for pattern in BANNED_CAUSAL:
+        assert not re.search(pattern, text, flags=re.I), f"causal claim: {pattern}"
+    for pattern in BANNED_PROMISE:
+        assert not re.search(pattern, text, flags=re.I), f"promise: {pattern}"
+
+
+def test_catalyst_names_the_missing_feeds_in_plain_words_never_by_slug(html, methodology):
+    """Doctrine Law 2: raw machine slugs never reach the reader. An unmapped clock
+    folds into one plain phrase rather than leaking its key."""
+    text = catalyst_text(html)
+    for slug in (methodology.get("clocks") or {}).get("event") or []:
+        # machine-shaped identifiers, never — a slug that happens to also be an
+        # ordinary English word ("conference") is allowed to appear only because
+        # its plain label legitimately contains it ("medical conferences")
+        if "_" in slug:
+            assert slug not in text, f"raw slug on the page: {slug}"
+        assert bss.EVENT_CLOCK_EN[slug] in text, f"{slug} has no plain-word label"
+        assert bss.EVENT_CLOCK_ZH[slug] in text, f"{slug} has no Chinese label"
+    for slug in ("live_event_graph", "live_forecasts", "live_screener",
+                 "live_calendar_clock", "live_selection_correction",
+                 "biopharma.event.v1", "calendar_clock_live", "shadow"):
+        assert slug not in text, slug
+    en, zh = bss.event_clock_clause(methodology)
+    assert "regulatory decisions" in en and "监管决定" in zh
+    unmapped = bss.event_clock_clause({"clocks": {"event": ["a_brand_new_clock"]}})
+    assert "a_brand_new_clock" not in unmapped[0] and bss.OTHER_CLOCK_EN in unmapped[0]
+    assert bss.OTHER_CLOCK_ZH in unmapped[1]
+    assert bss.event_clock_clause({})[0].startswith("No clinical or regulatory")
+
+
+# ── the as-of stamp ────────────────────────────────────────────────────────
+def test_a_malformed_as_of_prints_no_date_at_all():
+    """It used to fold through the seasonal clock's 365-slot day-of-year helper,
+    which returns slot 1 on any parse failure — so an ordinary ISO TIMESTAMP
+    from a producer rendered "Through Jan 1", a date computed from nothing, on
+    the one surface whose thesis is that no figure appears unless an artifact
+    produced it. Availability fails closed; the date must too."""
+    for bad in ("2026-08-06T00:00:00Z", "2026-08", "garbage", "2026-13-99",
+                "20260806", " ", "2026/08/06", None):
+        cat = bss.build_catalyst({"as_of": bad})
+        assert cat["asof_en"] == "" and cat["asof_zh"] == "", bad
+    good = bss.build_catalyst({"as_of": "2026-08-06"})
+    assert good["asof_en"] == "Aug 6, 2026" and good["asof_zh"] == "2026年8月6日"
+    # the 365-slot leap fold is a CLOCK convention; a wall-clock date is not folded
+    leap = bss.build_catalyst({"as_of": "2028-02-29"})
+    assert leap["asof_en"] == "Feb 29, 2028" and leap["asof_zh"] == "2028年2月29日"
+
+
+def test_the_as_of_chip_carries_its_year_and_its_own_idiom(html, methodology):
+    """Two bare "Through <Mon D>" chips in one masthead, in the same words the
+    seasonal window chips use, is ambiguous on a 25-year page — and a two-year
+    stale method was byte-identical to today's."""
+    cat = bss.build_catalyst(methodology)
+    assert re.search(r"\d{4}$", cat["asof_en"]), "the year is the point"
+    text = catalyst_text(html)
+    assert f"Method as of {cat['asof_en']}" in text
+    assert f"方法更新于 {cat['asof_zh']}" in text
+    assert "Through" not in text, "that idiom belongs to the price-coverage chip"
+
+
+# ── doctrine ───────────────────────────────────────────────────────────────
+def test_catalyst_carries_a_stance_and_a_one_click_route_back(html):
+    """Doctrine Law 1 — a surface that shows a state with no 'so what do I do'
+    makes the reader do the analyst's job, even when the honest answer is
+    'this one is empty, read the other one'."""
+    text = catalyst_text(html)
+    assert "Catalyst coverage is not connected" in text
+    assert "Read the calendar clock instead" in text
+    assert "催化剂数据尚未接入" in text and "改用日历时钟" in text
+    # the route is a control, not a sentence pointing somewhere
+    assert 'id="sx-to-cal"' in html and 'class="sx-cta"' in html
+    js = (ROOT / "templates" / "stock_seasonality.js").read_text()
+    assert "sx-to-cal" in js and 'setMode("calendar", true' in js
+    # and it names what the calendar does answer
+    assert "What the calendar clock answers" in text
+    assert "日历时钟能回答什么" in text
+    # conditions being watched — never a promise and never a date
+    assert "Conditions we watch — not a schedule." in text
+    assert "stays empty on purpose" in text
+
+
+def test_the_boundary_says_where_trial_dates_actually_live(html):
+    """The reader's next question at "no trial dates here" is "then who has
+    them?" — and BioCatalyst Intelligence is one click away in this page's own
+    nav rail. Leaving it unmentioned made an honest page-scoped claim read as a
+    false program-scoped one to anyone arriving from that nav item. The second
+    sentence is load-bearing: it says what that page is NOT."""
+    text = catalyst_text(html)
+    assert "Trial and approval dates live on" in text
+    assert "BioCatalyst Intelligence" in text and "生物医药催化剂智能" in text
+    assert "Nothing there is checked against past years." in text
+    assert "不与过往年份对照检验" in text
+    assert 'href="biocatalyst.html"' in catalyst_markup(html)
+    assert (ROOT / "site" / "biocatalyst.html").is_file(), "never route into a 404"
+    import yaml
+    policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
+    tiers = [t for t in ("public", "free_registered")
+             if "/biocatalyst.html" in policy[t]["exact"]]
+    assert tiers, "never route at a page the serving policy does not allow-list"
+    # the same tier this page's own nav rail already links it at
+    nav = (ROOT / "templates" / "_navlinks.html.j2").read_text()
+    assert "biocatalyst.html" in nav
+
+
+def test_catalyst_stance_stays_inside_the_glance_word_budget(html):
+    """Doctrine Law 4: title <=4 words, subtitle <=14. The header region of a
+    Tier-3 page still follows Tier 1, and the guard is written to the LAW — the
+    first cut asserted <=20, six words of slack the doctrine does not grant."""
+    block = catalyst_markup(html)
+    for cls in ('<p class="sx-verdict">', '<p class="sx-cat-act">'):
+        chunk = block[block.index(cls):]
+        chunk = chunk[:chunk.index("</p>")]
+        en = unescape(re.sub(r"<[^>]+>", " ", chunk.split('<span class="l-zh">')[0]))
+        assert len(en.split()) <= 14, f"over budget ({len(en.split())}): {en.strip()!r}"
+
+
+def test_catalyst_copy_survives_the_tier1_vocabulary_ban(html):
+    """The page-wide guard already scans this markup; this pins the Catalyst
+    surface on its own so a future edit fails HERE, naming the surface."""
+    text = catalyst_text(html)
+    for term in BANNED:
+        assert term not in text, term
+    for pattern in BANNED_WORDS:
+        assert not re.search(pattern, text), pattern
+    assert "validated" not in text.lower()
+
+
+def test_every_calendar_block_is_tagged_for_the_mode_swap(html):
+    """Mode hides `.sx-cal` and shows `.sx-cat`. Anything carrying NEITHER leaks
+    into both modes: the seasonality loader error and the "we don't cover that
+    symbol yet" 404 notice both printed on the Catalyst surface, the second one
+    directly above a chip saying coverage here is the same for every symbol."""
+    wrap = html[html.index('<main class="sx-wrap"'):html.index("</main>")]
+    body = wrap[wrap.index("</header>"):]
+    tops = re.findall(r'\n  <(?:p|ul|div|section|details)\b[^>]*class="([^"]*)"', body)
+    assert len(tops) >= 6, "the scan must actually see the page's blocks"
+    for cls in tops:
+        names = cls.split()
+        assert "sx-cal" in names or "sx-cat" in names, \
+            f"untagged top-level block leaks into both modes: {cls!r}"
+
+
+# ── bilingual ──────────────────────────────────────────────────────────────
+def test_catalyst_zh_is_native_not_transliterated_english(html):
+    """Count-equality alone is not parity: a string authored with NO t() wrapper
+    keeps the counts equal and shows English to a ZH reader (mutation 4b). So the
+    EN lane is REMOVED and whatever survives must be Chinese."""
+    block = catalyst_markup(html)
+    assert block.count('class="l-en"') == block.count('class="l-zh"')
+    zh_only = visible(re.sub(r'<span class="l-en">.*?</span>', " ", block, flags=re.S))
+    for chunk in unescape(re.sub(r"<[^>]+>", "\n", zh_only)).split("\n"):
+        t = chunk.strip()
+        if not t or CJK.search(t):
+            continue
+        # figures, arrows, the `?` help glyph and punctuation are legitimately
+        # latin in a zh lane; letters are not, so no English word survives this
+        assert re.fullmatch(r"[-+0-9.,%<>→?·|:()\s/、。；：]{0,24}", t), \
+            f"untranslated copy reaches a zh reader: {t!r}"
+    bad = []
+    for body in re.findall(r'<span class="l-zh">(.*?)</span>', block, flags=re.S):
+        t = re.sub(r"<[^>]+>", "", body).strip()
+        if not t or CJK.search(t) or re.fullmatch(r"[-+0-9.,%<>→·|:()\s/A-Z]{0,24}", t):
+            continue
+        bad.append(t)
+    assert not bad, f"zh spans with no Chinese: {bad[:5]}"
+
+
+def test_catalyst_zh_is_not_english_shaped(html, methodology):
+    """Memory: zh-copy-was-english-shaped-not-wrong. These three read as
+    transliteration, not as Chinese a pharma reader would write."""
+    text = catalyst_text(html)
+    assert "试验读数" not in text, "读数 is a meter reading; a readout is 结果公布"
+    assert "上市销售" not in text, "上市 alone reads as an IPO on a stock page"
+    assert "按设计" not in text, "a direct calque of 'by design'; native is 刻意"
+    assert bss.EVENT_CLOCK_ZH["clinical_trial"] == "试验结果公布"
+    assert bss.EVENT_CLOCK_ZH["commercial"] == "产品上市"
+    # CJK typography: 破折号 or a colon, never a half-width em dash with spaces
+    block = catalyst_markup(html)
+    for body in re.findall(r'<span class="l-zh">(.*?)</span>', block, flags=re.S):
+        assert " — " not in body, f"half-width em dash in zh copy: {body[:60]!r}"
+    mast = html[html.index('<div class="sx-modebar">'):]
+    mast = mast[:mast.index("</div>")]
+    for body in re.findall(r'<span class="l-zh">(.*?)</span>', mast, flags=re.S):
+        assert " — " not in body, f"half-width em dash in zh copy: {body[:60]!r}"
+
+
+# ── the one graphic device ─────────────────────────────────────────────────
+def test_catalyst_rail_reads_as_a_boundary_in_both_states():
+    """The one graphic device in this mode. A hollow 1px outline was tried and
+    does not read at a 3px width, so 'not connected' is dashed — which is
+    already this page's vocabulary for unsettled (gate rules, exploratory chip,
+    notice boxes)."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    assert ".is-on  > .sx-rail { background: var(--sx-ink); }" in css
+    assert "repeating-linear-gradient" in css[css.index(".is-off > .sx-rail"):][:400]
+    # "2 connected" is a count of sources, not a price direction: --up would flip
+    # red under the zh 红涨绿跌 swap and read as a market call about coverage
+    tpl = (ROOT / "templates" / "stock_seasonality.html.j2").read_text()
+    cat = tpl[tpl.index('<div class="sx-cat"'):]
+    assert "sx-chip-up" not in cat and "var(--up)" not in cat
+    assert "sx-chip-ink" in cat and ".sx-chip-ink {" in css
+
+
+def test_reduced_motion_parks_the_catalyst_affordances():
+    """The kill block is read to its CLOSING BRACE, not to EOF — sliced to EOF
+    any later rule in the sheet satisfied it, including one re-enabling motion.
+    And only selectors that actually MOVE are pinned: `.sx-cta::before/::after`
+    were asserted while `.sx-cta` has no generated content at all, so two of the
+    five assertions were vacuous."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    block = _reduced_motion_block(css)
+    assert block.endswith("}")
+    # COMMENTS OUT FIRST. Deleting `.sx-cta` from the selector list left a
+    # comment in this very block that names it, and the presence assertion
+    # passed on the prose — a guard satisfied by its own explanation.
+    decls = re.sub(r"/\*.*?\*/", " ", block, flags=re.S)
+    assert ".sx-cta" in decls, "the mode's one moving affordance must be parked"
+    assert "animation: none !important; transition: none !important;" in decls
+    # nothing named here may be a pseudo with no motion behind it
+    assert ".sx-cta::before" not in decls and ".sx-led-break::before" not in decls
+    # and .sx-cta genuinely moves, so the assertion above is not vacuous either
+    cta = css[css.index("\n.sx-cta {"):]
+    assert "transition:" in cta[:cta.index("}")]
+
+
+def test_catalyst_recomposes_at_the_mobile_floor():
+    """375px is the hard floor. The ledger drops its status column under the row
+    rather than squeezing it, and the rail spans both lines so one row still
+    reads as one piece of evidence. Measured in the browser at 375px:
+    document.scrollWidth == window.innerWidth == 375, EN and ZH."""
+    css = (ROOT / "templates" / "stock_seasonality.css").read_text()
+    block = css[css.index("@media (max-width: 720px)"):]
+    block = block[:block.index("@media (max-width: 420px)")]
+    assert ".sx-led-row, .sx-led-never .sx-led-row { grid-template-columns: 3px minmax(0, 1fr);" in block
+    assert ".sx-rail { grid-row: 1 / span 2; }" in block
+    assert ".sx-led-state, .sx-led-never .sx-led-state { grid-column: 2;" in block

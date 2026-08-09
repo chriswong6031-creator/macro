@@ -98,6 +98,13 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   color:var(--muted)}
 .mh-loop-return .rr{color:var(--blue-ink);margin-right:5px;font-size:.8rem;line-height:1}
 
+/* Forward record — one honest count, same register as the loop stats above.
+   Mono is on the FIGURES only; the words stay in the body face. */
+.mh-fwd{margin:0 0 22px;font-size:.72rem;line-height:1.5;color:var(--muted)}
+.mh-fwd-num{font-family:var(--font-mono);font-size:.94rem;font-weight:700;
+  color:var(--text);letter-spacing:-.01em;margin-right:4px}
+.mh-fwd-sep{margin:0 7px;opacity:.45}
+
 /* Where it stands — the one stance line. Calm left rule, not an alarm box. */
 .mh-stand{font-size:.9rem;line-height:1.65;color:var(--muted);max-width:78ch;
   margin:0;padding-left:15px;border-left:2px solid var(--blue)}
@@ -540,7 +547,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   {# ── HERO — the calibration loop (Tier 1) ─────────────────────────────── #}
   {% set n_engines_live = engines | rejectattr('missing') | list | length %}
   <header class="mh-hero">
-    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Calibration Lab</span><span class="l-zh">周期情报 · 校准实验室</span></div>
+    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Calibration Lab</span><span class="l-zh">周期智慧 · 校准实验室</span></div>
     <h1 class="mh-title"><span class="l-en">Measured, not asserted</span><span class="l-zh">已测量，而非断言</span></h1>
     <p class="mh-deck">
       <span class="l-en">How our cycle reads are scored and sharpened — every night.</span>
@@ -588,6 +595,39 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     <div class="mh-loop-rail">
       <span class="mh-loop-return"><span class="rr" aria-hidden="true">&#8635;</span><span class="l-en">Runs again tonight</span><span class="l-zh">今夜再跑一次</span></span>
     </div>
+
+    {# Forward record — the seasonal-window half of the same loop. One fact:
+       how many windows are written down, and how many have been scored. When
+       the count cannot be read it says so; a zero here would read as a
+       measurement, and "we could not check" is not a measurement.
+
+       The closing clause is not decoration. A bare "0 scored so far" cannot be
+       told apart from "nothing works" by the reader it is written for, and the
+       doctrine's Law 3 says a number on this tier arrives with the sentence
+       that says what it means. The honest sentence here is WHEN a score first
+       becomes possible — a grade cannot exist before its window closes — so the
+       earliest open close date rides along. It is a public-safe fact: a date,
+       no study name, no path, no slug. #}
+    {% if seasonality_record %}
+    <p class="mh-fwd">
+      {%- if seasonality_record.available %}
+      <span class="mh-fwd-num">{{ "{:,}".format(seasonality_record.registered) }}</span><span class="l-en">seasonal windows on the record</span><span class="l-zh">个季节性窗口在案</span>
+      <span class="mh-fwd-sep" aria-hidden="true">&middot;</span>
+      <span class="mh-fwd-num">{{ "{:,}".format(seasonality_record.graded) }}</span><span class="l-en">scored so far</span><span class="l-zh">个已打分</span>
+      {%- if seasonality_record.graded == 0 %}
+        {%- if seasonality_record.next_close %}
+      <span class="l-en">&mdash; a window has to close before it can be scored; the earliest closes {{ seasonality_record.next_close }}</span><span class="l-zh">——窗口收官后才能打分，最早一个 {{ seasonality_record.next_close }} 收官</span>
+        {%- else %}
+      <span class="l-en">&mdash; a window has to close before it can be scored, and none has closed yet</span><span class="l-zh">——窗口收官后才能打分，目前还没有窗口收官</span>
+        {%- endif %}
+      {%- elif seasonality_record.next_close %}
+      <span class="l-en">&mdash; the next one closes {{ seasonality_record.next_close }}</span><span class="l-zh">——下一个 {{ seasonality_record.next_close }} 收官</span>
+      {%- endif %}
+      {%- else %}
+      <span class="l-en">Seasonal windows: we could not read the count tonight.</span><span class="l-zh">季节性窗口：今夜未能读到数量。</span>
+      {%- endif %}
+    </p>
+    {% endif %}
 
     <p class="mh-stand">
       <strong><span class="l-en">Where it stands:</span><span class="l-zh">当前状况：</span></strong>
