@@ -457,6 +457,16 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
 
 ## §9 DUAL-LANE PROTOCOL + DATA HORIZON (operator update, 2026-08-09)
 
+**AMENDED BY OPERATOR ORDER, 2026-08-09 (second session): the Codex session conducting the
+Tushare wiring FAILED, and the data-plane build-out (Tushare wiring, collectors, and the
+purchased add-on planes) TRANSFERS to this (Claude) lane.** Authority + entitlement scope +
+plane architecture: `research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md`. Clause 3's collision
+boundary is dissolved for Tushare/collector surfaces; clause 1 (analytic blindness — never
+read `research/cn_limit_alpha_sol/` strategy artifacts) and clause 4 (reconciliation is
+operator-triggered) REMAIN in force. Universe-expansion ownership: unknown pending operator
+clarification — do not build on `china_stocks_raw` expansion surfaces without checking for
+Codex activity first.
+
 **Two independent lanes now work this mechanism by operator design.** A Codex session runs the
 SAME project in parallel — deliberately, for cross-comparison and reconciliation later ("fresh
 eyes... different conclusions and perhaps different strategies"). Binding consequences for
