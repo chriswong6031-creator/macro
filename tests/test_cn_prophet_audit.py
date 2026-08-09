@@ -294,11 +294,19 @@ class TestWriteGates:
         assert not cpa.latest_path().exists()
         assert not cpa.forward_log_path().exists()
 
-    def test_the_legacy_none_lane_still_writes(self, sandbox):
-        """lane=None is the historical asia-build call convention — never break it."""
+    def test_an_unnamed_lane_refuses_without_writing(self, sandbox):
+        """FAIL-CLOSED: lane=None refuses too. It used to be honoured as the "legacy
+        asia-build call convention", which is exactly what made the gate unreachable —
+        the builder resolved its lane as os.environ.get("CN_LANE", "asia"), so no caller
+        ever presented a lane the gate could refuse.
+        """
         res = cpa.run(asof=_ASOF, lane=None)
-        assert res["written"] is True
-        assert cpa.latest_path().exists()
+        assert res["written"] is False
+        assert "not asia" in res["reason"] and "None" in res["reason"]
+        assert not cpa.latest_path().exists()
+        assert not cpa.forward_log_path().exists()
+        # WITNESS: the same sandbox DOES write once the lane names itself.
+        assert cpa.run(asof=_ASOF, lane="asia")["written"] is True
 
     def test_a_partial_session_panel_refuses_without_writing(self, sandbox, monkeypatch):
         """Same refusal append_board makes, through the SAME session_status call.

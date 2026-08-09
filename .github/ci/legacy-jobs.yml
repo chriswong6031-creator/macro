@@ -1644,6 +1644,8 @@ jobs:
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
       - name: CN entry-price integrity (corrupt-bar gate, PIT latch, fail-closed lane — PR 5000)
         run: python -m pytest tests/test_cn_entry_price_integrity.py -q
+      - name: CN board-append lane gate (fail-closed CN_LANE — board/ripening/audit/event-latch)
+        run: python -m pytest tests/test_cn_board_lane_gate.py -q
 
   workflow-yaml:
     if: ${{ false }}
