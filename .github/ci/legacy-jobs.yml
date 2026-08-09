@@ -5616,6 +5616,13 @@ jobs:
         run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
       - name: leader-pullback organ (§6.9 R4 — RS-leader reset detection, self-containment + no-authority pins)
         run: python -m pytest tests/test_us_leader_pullback.py -q
+      - name: leader-pullback coverage publisher (§6.9 R4 — the artifact the EARLY-TURN intake reads)
+        # Rides the organ's own lane because it is the organ's publisher: it supplies the
+        # PIT cross-section the organ refuses to reach for, and #5007's organ + #5105's
+        # intake were joined by nothing until it shipped. Its end-to-end cases drive the
+        # real `originate_plans` reading the real artifact off disk (~5s serial), so the
+        # pair must be able to red each other on the same head.
+        run: python -m pytest tests/test_us_leader_pullback_coverage.py -q
       - name: turn-watch desk + group-turn organ (§6.9 R8 — publish path, leg-(d) organ vs fallback, recall contract; §6.9 R6 basket lifecycle)
         # The TURN WATCH desk consumes the group-turn organ's artifact and R4's organ, so
         # all three ride one lane. test_us_basket_turn.py was named by NO run: step in any
@@ -5655,6 +5662,13 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: anticipation intake (status-class admission, era stamps, entry zones, shadow-ledger lane gate)
         run: python -m pytest tests/test_prophet_anticipation_intake.py -q
+      - name: zone-basis copy (no raw enum/slug/internal state on the published entry_zone; EN+ZH)
+        # Same job as the intake because it guards the same payload: `entry_zone` is
+        # whitelisted onto site/prophet/index.json, so its `basis`/`conversion_evidence`
+        # are user-visible copy. The leader branch used to interpolate the organ's own
+        # state enum ("leader pullback (RESET_TURN) — …"); it was unreachable only
+        # because nothing published the organ's coverage.
+        run: python -m pytest tests/test_prophet_zone_basis_copy.py -q
 
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
