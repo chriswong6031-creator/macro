@@ -1124,6 +1124,12 @@ def sweep_order(
 #: re-creating the block it replaces. A stale green reports ``pending`` WITH ITS AGE and
 #: the dispatch to run, so a sweep log names this cause instead of any other non-green.
 BASELINE_MAX_AGE_HOURS = 6
+#: Number of newest integration-baseline runs examined in one API request. During
+#: the 2026-08-09 queue incident, 25 cancelled/in-flight runs sat above a fresh
+#: concluded green, so the former 20-run window falsely reported main as unproven.
+#: GitHub permits 100 here; one bounded request keeps the control-plane cost fixed
+#: while leaving enough room to reach the newest real verdict under churn.
+INTEGRATION_BASELINE_RUN_LOOKBACK = 100
 #: Minimum gap between two sweeper-ordered `integration-baseline.yml` dispatches, and
 #: the reason `ensure_integration_baseline` can be safe at all. MUCH shorter than
 #: `MAIN_BASELINE_MIN_INTERVAL_MINUTES` (30, for ci.yml) because this workflow is the
@@ -1202,7 +1208,8 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     ("the circuit breaker reads a never-concluding newest run as `pending`, and pending
     blocks ordinary merges") when it flipped `cancel-in-progress` to false.
 
-    Every fail-closed property is kept. The walk falls through to the newest run that
+    Every fail-closed property is kept. One bounded 100-run listing falls through to
+    the newest run that
     actually CONCLUDED and decides on that one: a genuine `failure`/`timed_out` stops
     the walk and returns ``red`` (an in-flight run can never launder a red, and an older
     green is never reached past one), the ancestry check still applies to whichever run
@@ -1213,7 +1220,9 @@ def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
     different claim from "main is proven".
     """
     workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
-    query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
+    query = urllib.parse.urlencode(
+        {"branch": "main", "per_page": str(INTEGRATION_BASELINE_RUN_LOOKBACK)}
+    )
     status, payload = _request(
         "GET",
         f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
@@ -1337,7 +1346,9 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
         if baseline_state != "pending":
             return f"not needed (breaker is {baseline_state})"
         workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
-        query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
+        query = urllib.parse.urlencode(
+            {"branch": "main", "per_page": str(INTEGRATION_BASELINE_RUN_LOOKBACK)}
+        )
         status, payload = _request(
             "GET",
             f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
