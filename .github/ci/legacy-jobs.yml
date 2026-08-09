@@ -743,7 +743,7 @@ jobs:
       - name: install deps
         # jinja2 + pyarrow are for the options-screener suite below: the builder imports
         # jinja2 at module scope and reads its inputs from parquet.
-        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
@@ -754,6 +754,10 @@ jobs:
         run: python -m pytest tests/test_mirror_terminal_context.py -q
       - name: options screener (IV-rank percentile + Scanner-mode rows export shape)
         run: python -m pytest tests/test_build_options_screener.py -q
+      # Authorized Oracle history replay is synthetic/aggregate-only in CI: it never
+      # reads the private JV source. This lane already owns the parquet adapter closure.
+      - name: Oracle replay (PIT cutoffs, R2 plan, privacy and no-signal authority)
+        run: python -m pytest tests/test_momoedge_oracle_history_replay.py -q
 
   cycle-grading-stats:
     if: ${{ false }}

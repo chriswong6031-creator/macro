@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_oracle_history_authorized.v1.schema.json",
+  "title": "Authorized MomoEdge Oracle history research input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "captured_at",
+    "source",
+    "authorization",
+    "displayed_summary",
+    "limitations",
+    "records"
+  ],
+  "properties": {
+    "schema": {"const": "momoedge.oracle_history_authorized/v1"},
+    "captured_at": {"type": "string", "format": "date-time"},
+    "source": {"$ref": "#/$defs/source"},
+    "authorization": {"$ref": "#/$defs/authorization"},
+    "displayed_summary": {"$ref": "#/$defs/displayedSummary"},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5000,
+      "items": {"$ref": "#/$defs/record"}
+    }
+  },
+  "$defs": {
+    "numberOrNull": {"type": ["number", "null"]},
+    "countOrNull": {"type": ["integer", "null"], "minimum": 0},
+    "mdyDateOrNull": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}$"},
+        {"type": "null"}
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product", "url", "surface", "method", "export_button_result", "scope"],
+      "properties": {
+        "product": {"type": "string", "minLength": 1, "maxLength": 200},
+        "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "surface": {"type": "string", "minLength": 1, "maxLength": 200},
+        "method": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "export_button_result": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "scope": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "permission_receipt_image_sha256",
+        "permission_receipt_image_bytes",
+        "excerpt",
+        "handling"
+      ],
+      "properties": {
+        "basis": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "permission_receipt_image_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "permission_receipt_image_bytes": {"type": "integer", "minimum": 1},
+        "excerpt": {"type": "string", "minLength": 1, "maxLength": 10000},
+        "handling": {"type": "string", "minLength": 1, "maxLength": 4000}
+      }
+    },
+    "displayedSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trades",
+        "wins_displayed",
+        "win_rate_pct",
+        "total_alpha_pct",
+        "total_alpha_definition",
+        "avg_gain_pct",
+        "avg_loss_pct",
+        "avg_days",
+        "max_drawdown_pct",
+        "bull_win_rate_pct",
+        "bear_win_rate_pct",
+        "best_trade",
+        "worst_trade"
+      ],
+      "properties": {
+        "trades": {"type": "integer", "minimum": 1},
+        "wins_displayed": {"type": "integer", "minimum": 0},
+        "win_rate_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "total_alpha_pct": {"type": "number"},
+        "total_alpha_definition": {"type": "string", "minLength": 1, "maxLength": 500},
+        "avg_gain_pct": {"type": "number"},
+        "avg_loss_pct": {"type": "number"},
+        "avg_days": {"type": "number", "minimum": 0},
+        "max_drawdown_pct": {"type": "number"},
+        "bull_win_rate_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "bear_win_rate_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "best_trade": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "worst_trade": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "underlyingOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "exit", "return_pct"],
+      "properties": {
+        "entry": {"$ref": "#/$defs/numberOrNull"},
+        "exit": {"$ref": "#/$defs/numberOrNull"},
+        "return_pct": {"type": "number"}
+      }
+    },
+    "optionOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "expiration",
+        "premium_paid",
+        "premium_exit",
+        "return_pct",
+        "leverage_x",
+        "contracts",
+        "dollar_pnl"
+      ],
+      "properties": {
+        "contract": {"type": "string", "minLength": 1, "maxLength": 300},
+        "expiration": {"type": "string", "minLength": 1, "maxLength": 100},
+        "premium_paid": {"type": "number", "minimum": 0},
+        "premium_exit": {"$ref": "#/$defs/numberOrNull"},
+        "return_pct": {"$ref": "#/$defs/numberOrNull"},
+        "leverage_x": {"$ref": "#/$defs/numberOrNull"},
+        "contracts": {"type": ["string", "null"], "maxLength": 100},
+        "dollar_pnl": {"$ref": "#/$defs/numberOrNull"}
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_index",
+        "display_ticker",
+        "ticker",
+        "direction",
+        "instrument",
+        "issued_date",
+        "closed_date",
+        "days_held",
+        "confidence_pct",
+        "setup",
+        "table_status",
+        "detail_status",
+        "underlying",
+        "option",
+        "table_row"
+      ],
+      "properties": {
+        "source_index": {"type": "integer", "minimum": 0},
+        "display_ticker": {"type": "string", "minLength": 1, "maxLength": 300},
+        "ticker": {"type": "string", "minLength": 1, "maxLength": 40},
+        "direction": {"enum": ["BULL", "BEAR"]},
+        "instrument": {"enum": ["underlying", "option"]},
+        "issued_date": {"type": "string", "pattern": "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}$"},
+        "closed_date": {"$ref": "#/$defs/mdyDateOrNull"},
+        "days_held": {"$ref": "#/$defs/countOrNull"},
+        "confidence_pct": {"$ref": "#/$defs/numberOrNull"},
+        "setup": {"type": "string", "maxLength": 1000},
+        "table_status": {"enum": ["CLOSED EARLY", "INVALIDATED", "T1 HIT", "T2 HIT"]},
+        "detail_status": {"enum": ["CLOSED EARLY", "INVALIDATED", "T1 HIT", "T2 HIT", "EXPIRED"]},
+        "underlying": {"$ref": "#/$defs/underlyingOutcome"},
+        "option": {
+          "oneOf": [
+            {"$ref": "#/$defs/optionOutcome"},
+            {"type": "null"}
+          ]
+        },
+        "table_row": {"type": "string", "minLength": 1, "maxLength": 20000}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"instrument": {"const": "option"}}, "required": ["instrument"]},
+          "then": {"properties": {"option": {"$ref": "#/$defs/optionOutcome"}}}
+        },
+        {
+          "if": {"properties": {"instrument": {"const": "underlying"}}, "required": ["instrument"]},
+          "then": {"properties": {"option": {"type": "null"}}}
+        }
+      ]
+    }
+  }
+}
