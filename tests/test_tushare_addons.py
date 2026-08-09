@@ -16,6 +16,16 @@ from scripts import collect_tushare_addons as cli
 ROOT = Path(__file__).resolve().parents[1]
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 HISTORICAL_NOW = datetime(2026, 8, 9, 12, tzinfo=timezone.utc)
+LICENSE_REFERENCE = "ab" * 32
+
+
+@pytest.fixture(autouse=True)
+def provision_synthetic_license_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        addons.LICENSE_AUTHORITY_ENV,
+        addons.LICENSE_AUTHORITY_GATE_VALUE,
+    )
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
 
 
 def minute_frame(*, high: float = 10.2, trade_date: str = "2026-08-07") -> pd.DataFrame:
@@ -43,6 +53,12 @@ def minute_frame(*, high: float = 10.2, trade_date: str = "2026-08-07") -> pd.Da
             },
         ]
     )
+
+
+def minute_clock_frame(clock: str) -> pd.DataFrame:
+    frame = minute_frame().iloc[[0]].copy()
+    frame.loc[:, "trade_time"] = f"2026-08-07 {clock}"
+    return frame
 
 
 def premarket_frame() -> pd.DataFrame:
@@ -110,6 +126,14 @@ class FakeQuery:
         return self.frame.copy()
 
 
+class SequenceClock:
+    def __init__(self, *observations: datetime) -> None:
+        self.observations = iter(observations)
+
+    def __call__(self) -> datetime:
+        return next(self.observations)
+
+
 def minute_request() -> addons.PilotRequest:
     return addons.PilotRequest(
         endpoint="stk_mins",
@@ -128,6 +152,12 @@ def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
     assert plan["maximum_vendor_calls"] == 3
     assert plan["range_or_bulk_mode"] is False
     assert plan["request"]["ticker"] == "600519.SS"
+    assert plan["license_authority_gate"] == {
+        "required_for_execute": True,
+        "state": "not_evaluated_plan_only",
+        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
+        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
+    }
     assert not output.exists()
 
     for endpoint in ("stk_auction_o", "stk_auction_c"):
@@ -170,9 +200,30 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
     assert secret.encode() not in receipt_bytes
     receipt = json.loads(receipt_bytes)
     assert receipt["authority"] == "context_display_only"
+    access = receipt["access_observation_receipt"]
+    assert access["observation"] == "access_observed_at_request_time"
     assert (
-        receipt["entitlement_receipt"]["observation"] == "valid_nonempty_rows_returned"
+        access["observation_basis"] == "valid_nonempty_rows_returned_for_this_request"
     )
+    assert access["nonclaims"] == [
+        "not_proof_of_purchase",
+        "not_proof_of_payment",
+        "not_proof_of_license_or_commercial_use_rights",
+        "not_proof_of_future_access",
+        "not_proof_of_trial_absence",
+    ]
+    assert receipt["license_authority_gate"] == {
+        "gate_state": "satisfied_for_bounded_metadata_only_pilot",
+        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
+        "authority_reference_sha256": LICENSE_REFERENCE,
+        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
+        "scope_nonclaims": [
+            "no_commercial_use_authority",
+            "no_product_publication_authority",
+            "no_team_sharing_or_redistribution_authority",
+            "no_signal_or_strategy_authority",
+        ],
+    }
     assert receipt["request"]["maximum_vendor_calls"] == 3
     assert receipt["request"]["range_or_bulk_mode"] is False
     assert receipt["request"]["vendor_request_without_token"]["transport"] == "HTTPS"
@@ -186,6 +237,13 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
         in receipt["join_basis_contract"]["forbidden_nominal_history"]
     )
     assert receipt["exact_session_receipt"]["required_exchanges"] == ["SSE", "SZSE"]
+    assert receipt["request_clock"]["observation_point"] == (
+        "after_trade_cal_immediately_before_addon_endpoint_request"
+    )
+    assert (
+        access["observed_at_asia_shanghai"]
+        == receipt["request_clock"]["observed_at_asia_shanghai"]
+    )
     assert receipt["runtime_receipt"]["collector_source_sha256"]
     assert receipt["data_receipt"]["row_count"] == 2
     assert (
@@ -198,6 +256,10 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
     table = pq.read_table(destination / "part.parquet")
     assert table.schema.metadata[b"endpoint"] == b"stk_mins"
     assert table.column("ticker").to_pylist() == ["600519.SS", "600519.SS"]
+    assert table.column("session_segment").to_pylist() == [
+        "regular_trading_window",
+        "regular_trading_window",
+    ]
 
 
 def test_identical_rerun_is_noop_and_revision_is_keep_first_contradiction(
@@ -259,6 +321,40 @@ def test_rehashed_authority_tamper_is_still_rejected(tmp_path: Path) -> None:
         )
 
 
+def test_license_gate_fails_before_vendor_call_or_partition(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(addons.LICENSE_AUTHORITY_ENV)
+    monkeypatch.delenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV)
+    query = FakeQuery("stk_mins", minute_frame())
+
+    with pytest.raises(addons.CollectionHeld, match="written_vendor_authorization"):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_bse_pilots_fail_before_vendor_call_or_partition(tmp_path: Path) -> None:
+    query = FakeQuery("stk_mins", minute_frame())
+    request = addons.PilotRequest(
+        endpoint="stk_mins",
+        trade_date="2026-08-07",
+        ticker="430047.BJ",
+        frequency="1min",
+    )
+
+    with pytest.raises(addons.CollectionHeld, match="BSE_pilots_blocked"):
+        addons.collect_pilot(
+            request, output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
 def test_calendar_and_exact_session_fail_before_partition_mutation(
     tmp_path: Path,
 ) -> None:
@@ -316,6 +412,90 @@ def test_clock_guards_make_no_vendor_call_or_partition(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == []
 
 
+def test_auction_rechecks_clock_after_calendars_and_blocks_0930_crossing(
+    tmp_path: Path,
+) -> None:
+    query = FakeQuery("stk_auction", auction_frame())
+    clock = SequenceClock(
+        datetime(2026, 8, 10, 9, 29, 59, tzinfo=SHANGHAI),
+        datetime(2026, 8, 10, 9, 30, 0, tzinfo=SHANGHAI),
+    )
+
+    with pytest.raises(addons.CollectionHeld, match="outside_documented"):
+        addons.collect_pilot(
+            addons.PilotRequest(
+                endpoint="stk_auction", trade_date="2026-08-10", ticker="000001.SZ"
+            ),
+            output_root=tmp_path,
+            query_fn=query,
+            clock_fn=clock,
+        )
+
+    assert [call[0] for call in query.calls] == ["trade_cal", "trade_cal"]
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_auction_receipt_binds_final_pre_request_clock(tmp_path: Path) -> None:
+    query = FakeQuery("stk_auction", auction_frame())
+    final_clock = datetime(2026, 8, 10, 9, 27, 8, tzinfo=SHANGHAI)
+    result = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint="stk_auction", trade_date="2026-08-10", ticker="000001.SZ"
+        ),
+        output_root=tmp_path,
+        query_fn=query,
+        clock_fn=SequenceClock(
+            datetime(2026, 8, 10, 9, 27, 0, tzinfo=SHANGHAI),
+            final_clock,
+        ),
+    )
+    receipt = json.loads(
+        (Path(result.partition_path) / "receipt.json").read_text(encoding="utf-8")
+    )
+
+    assert (
+        receipt["request_clock"]["observed_at_asia_shanghai"] == final_clock.isoformat()
+    )
+    assert (
+        receipt["access_observation_receipt"]["observed_at_asia_shanghai"]
+        == final_clock.isoformat()
+    )
+
+
+@pytest.mark.parametrize("clock", ["15:05:00", "15:30:00"])
+def test_minute_validator_preserves_post_close_boundary_rows(
+    tmp_path: Path, clock: str
+) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path / clock.replace(":", ""),
+        query_fn=FakeQuery("stk_mins", minute_clock_frame(clock)),
+        now=HISTORICAL_NOW,
+    )
+    table = pq.read_table(Path(result.partition_path) / "part.parquet")
+
+    assert table.column("session_segment").to_pylist() == ["unclassified_post_close"]
+
+
+def test_minute_validator_rejects_clock_after_admitted_post_close_window(
+    tmp_path: Path,
+) -> None:
+    query = FakeQuery("stk_mins", minute_clock_frame("15:31:00"))
+    with pytest.raises(addons.CollectorIntegrityError, match="admitted A-share clocks"):
+        addons.collect_pilot(
+            minute_request(),
+            output_root=tmp_path,
+            query_fn=query,
+            now=HISTORICAL_NOW,
+        )
+    assert [call[0] for call in query.calls] == [
+        "trade_cal",
+        "trade_cal",
+        "stk_mins",
+    ]
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
 def test_premarket_and_auction_single_ticker_partitions(tmp_path: Path) -> None:
     premarket = addons.collect_pilot(
         addons.PilotRequest(
@@ -368,6 +548,10 @@ def test_https_query_keeps_token_out_of_url(monkeypatch: pytest.MonkeyPatch) -> 
     observed: dict[str, object] = {}
 
     class Response:
+        status_code = 200
+        is_redirect = False
+        is_permanent_redirect = False
+
         def raise_for_status(self) -> None:
             return None
 
@@ -391,6 +575,35 @@ def test_https_query_keeps_token_out_of_url(monkeypatch: pytest.MonkeyPatch) -> 
     assert observed["json"]["fields"] == "exchange,cal_date"
     assert observed["json"]["params"] == {"exchange": "SSE"}
     assert observed["timeout"] == 30
+    assert observed["allow_redirects"] is False
+
+
+def test_https_query_rejects_redirect_without_reading_body(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class RedirectResponse:
+        status_code = 307
+        is_redirect = True
+        is_permanent_redirect = True
+
+        def raise_for_status(self) -> None:
+            raise AssertionError("redirect must be rejected before status parsing")
+
+        def json(self) -> dict[str, object]:
+            raise AssertionError("redirect body must never be parsed")
+
+    observed: dict[str, object] = {}
+
+    def fake_post(url: str, **kwargs: object) -> RedirectResponse:
+        observed["url"] = url
+        observed.update(kwargs)
+        return RedirectResponse()
+
+    monkeypatch.setenv("TUSHARE_TOKEN", " paid-secret-with-space ")
+    monkeypatch.setattr(addons.requests, "post", fake_post)
+
+    assert addons._query_tushare_https("trade_cal", exchange="SSE") is None
+    assert observed["url"] == "https://api.tushare.pro"
     assert observed["allow_redirects"] is False
 
 
@@ -477,6 +690,8 @@ def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> Non
     assert "push:" not in workflow_text
     assert "refs/heads/main" in job["if"]
     assert "confirm_execute" in job["if"]
+    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" in job["if"]
+    assert addons.LICENSE_AUTHORITY_GATE_VALUE in job["if"]
     assert job["permissions"] if "permissions" in job else workflow["permissions"]
     assert "persist-credentials: false" in workflow_text
     assert "actions/upload-artifact@ea165f" in workflow_text
@@ -485,6 +700,24 @@ def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> Non
     assert "--end-date" not in workflow_text
     assert "stk_auction_o" not in workflow_text
     assert "stk_auction_c" not in workflow_text
+    assert "part.parquet" not in workflow_text
+    assert 'raw_paid_rows_included"] = False' in workflow_text
+    assert 'raw_parquet_included"] = False' in workflow_text
+    assert ".strip().encode()" in workflow_text
+
+    steps = {step["name"]: step for step in job["steps"] if "name" in step}
+    token_scan = steps["prove review artifact contains no token"]
+    upload = steps["upload metadata-only pilot receipt"]
+    cleanup = steps["remove isolated paid-data and review directories"]
+    assert token_scan["id"] == "token_scan"
+    assert "raw_token" in token_scan["run"]
+    assert "transport_token" in token_scan["run"]
+    assert "steps.token_scan.outcome == 'success'" in upload["if"]
+    assert "steps.token_scan.outputs.passed == 'true'" in upload["if"]
+    assert str(upload["with"]["path"]).endswith("-review")
+    assert cleanup["if"] == "${{ always() }}"
+    assert '"$raw"' in cleanup["run"]
+    assert '"$review"' in cleanup["run"]
 
     dag = yaml.safe_load((ROOT / "config/dag.yml").read_text(encoding="utf-8"))
     lanes = [

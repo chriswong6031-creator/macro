@@ -4,18 +4,20 @@
 
 **Authority:** `context_display_only`
 
-**Execution state:** foundation and synthetic verification only; no live entitlement
-probe and no bulk backfill were run.
+**Execution state:** foundation and synthetic verification only; no live access probe
+and no bulk backfill were run. Live execution is disabled until a separately reviewed
+written vendor authorization or institutional contract is provisioned as the license
+authority gate.
 
 ## What this foundation admits
 
 The runnable surface contains exactly three operator-reported purchases:
 
-| Endpoint | Official contract captured | Bounded pilot | Initial entitlement state |
+| Endpoint | Official contract captured | Bounded pilot | Initial access context |
 |---|---|---|---|
-| `stk_mins` | [股票历史分钟行情, doc 370](https://tushare.pro/document/2?doc_id=370) | one ticker, one exchange session, one of `1min/5min/15min/30min/60min` | reported purchased; unverified until valid rows return |
-| `stk_premarket` | [股本情况（盘前）, doc 329](https://tushare.pro/document/2?doc_id=329) | one exchange session, optionally one ticker | reported purchased; unverified until valid rows return |
-| `stk_auction` | [当日集合竞价, doc 369](https://tushare.pro/document/2?doc_id=369) | current Shanghai session only, optionally one ticker, during 09:26–09:29 | reported purchased; unverified until valid rows return |
+| `stk_mins` | [股票历史分钟行情, doc 370](https://tushare.pro/document/2?doc_id=370) | one ticker, one exchange session, one of `1min/5min/15min/30min/60min` | operator-reported purchase; not vendor-attested and not a license grant |
+| `stk_premarket` | [股本情况（盘前）, doc 329](https://tushare.pro/document/2?doc_id=329) | one exchange session, optionally one ticker | operator-reported purchase; not vendor-attested and not a license grant |
+| `stk_auction` | [当日集合竞价, doc 369](https://tushare.pro/document/2?doc_id=369) | current Shanghai session only, optionally one ticker, during 09:26–09:29 | operator-reported purchase; not vendor-attested and not a license grant |
 
 `stk_auction_o` and `stk_auction_c` are **blocked pending written entitlement
 confirmation**. Their existence in documentation is not evidence that this account
@@ -24,8 +26,26 @@ call them.
 
 The endpoint contracts pin the documented field lists, row cap (8,000), official
 document URL, capture date, units, normalized Arrow schema, and a contract digest.
-A successful receipt means only that valid non-empty rows were observed for that
-specific request. It does not attest any other endpoint or future access.
+A successful receipt means only `access_observed_at_request_time`: valid non-empty
+rows were returned for that specific request. It is **not** proof of purchase,
+payment, license or commercial-use rights, future access, or the absence of a trial.
+
+## License and authority gate
+
+Personal pricing is not a commercial-use grant. `--execute` fails before any vendor
+call or filesystem mutation unless both of these separately provisioned execution
+values are present and valid:
+
+- `TUSHARE_VENDOR_LICENSE_AUTHORITY` equals
+  `written_vendor_authorization_or_institutional_contract_verified`; and
+- `TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256` binds the reviewed authority artifact.
+
+The GitHub workflow has the same main-ref job gate through repository variables. A
+dispatch confirmation cannot substitute for it. Even after that gate is satisfied,
+this foundation grants **no** commercial-use, product-publication, team-sharing,
+redistribution, signal, or strategy authority. The upload is metadata-only; raw paid
+rows remain isolated in a run-scoped temporary directory and are deleted on every
+outcome.
 
 ## Safe execution envelope
 
@@ -34,7 +54,7 @@ network call and no write. `--execute` is required to authorize one structurally
 bounded request. There is no start/end range, ticker-list, pagination, or backfill
 interface.
 
-Every executed request has a hard maximum of three HTTPS vendor calls:
+Every license-gated executed request has a hard maximum of three HTTPS vendor calls:
 
 1. exact-date `trade_cal` observation for SSE;
 2. exact-date `trade_cal` observation for SZSE; and
@@ -44,6 +64,10 @@ Both exchanges must return one unique row, agree, and mark the requested date op
 The returned add-on rows must then stay inside the exact requested session and ticker
 scope. No output directory is mutated until the clock, calendar, response columns,
 row cap, types, domains, uniqueness, and exact-session checks all pass.
+
+`.BJ` pilots and `.BJ` response rows are blocked until a documented BSE calendar
+authority is added. An SSE/SZSE `trade_cal` agreement cannot authenticate a BSE
+session.
 
 This collector performs no price join. Its receipt nevertheless freezes the downstream
 basis rule exposed by the cross-lane audit: nominal historical price/limit joins must
@@ -55,15 +79,27 @@ are preserved in this store rather than re-derived from adjusted closes.
 Additional collection clocks fail closed:
 
 - `stk_auction`: requested date must equal the current Asia/Shanghai date and the
-  collector clock must be `09:26 <= time < 09:30`;
+  collector clock must be `09:26 <= time < 09:30`. The clock is observed once before
+  calendar calls and again immediately before the add-on request; the second clock is
+  authoritative and is bound into the receipt;
 - current-session `stk_mins`: held until 21:00 Asia/Shanghai; and
 - current-session `stk_premarket`: held until 16:30 Asia/Shanghai so the first
   immutable pilot does not pretend a still-changing premarket response is final.
 
-The manual workflow requires one ticker even for the daily endpoints, an explicit
-boolean confirmation, and the `main` ref. It has no schedule or write permission and
-uploads only a 30-day review artifact. This is an entitlement/schema witness, not a
-production collector or canonical publication lane.
+TuShare doc 370 does not define a hard minute cutoff. The validator therefore keeps
+returned `15:05`–`15:30` rows as `session_segment=unclassified_post_close` instead of
+silently discarding them. This is consistent with the current
+[SSE 2026 trading rules](https://www.sse.com.cn/lawandrules/sselawsrules2025/stocks/exchange/c/c_20260424_10816482.shtml)
+and [SZSE 2026 trading rules](https://docs.static.szse.cn/www/lawrules/rule/trade/current/W020260424690713155663.pdf),
+which describe post-close fixed-price trading during that window. It is not a
+ticker/date-specific effective-date classifier and makes no completeness claim.
+
+The manual workflow requires one SSE/SZSE ticker even for the daily endpoints, an
+explicit boolean confirmation, the separately provisioned license gate, and the
+`main` ref. It has no schedule or write permission. It uploads only a 30-day
+metadata-only review directory containing the result, receipt, and manifest—never
+`part.parquet` or raw rows. This is an access/schema witness, not a production
+collector or canonical publication lane.
 
 ## Immutable storage and receipts
 
@@ -88,11 +124,14 @@ keep-first integrity contradiction and does not overwrite the first evidence.
 The receipt binds:
 
 - official endpoint contract and SHA-256;
-- operator-reported entitlement plus the observed-valid-row fact;
+- operator-reported access context plus `access_observed_at_request_time` and its
+  purchase/payment/license/future-access/trial nonclaims;
+- the separately provisioned license-authority reference and explicit no-sharing /
+  no-product / no-strategy authority;
 - blocked/unconfirmed endpoint states;
 - the TuShare-only nominal-price join basis and explicit Yahoo adjusted-plane ban;
 - sanitized vendor parameters with no token;
-- collection clocks in UTC and Asia/Shanghai;
+- the final pre-request clock in UTC and Asia/Shanghai, observed after `trade_cal`;
 - exact SSE/SZSE `trade_cal` observations and digest;
 - normalized schema and digest;
 - canonical pre-normalization vendor field/value observations and digest;
@@ -100,14 +139,17 @@ The receipt binds:
 - exact Parquet bytes and digest;
 - Python, pandas, PyArrow, collector-source, shared-normalizer-source, dependency-lock,
   and GitHub run context; and
-- explicit nonclaims: no signal, fillability, execution, complete-history, Level-2,
-  order-book, or queue-position authority.
+- explicit nonclaims: no commercial use, product publication, team sharing,
+  redistribution, signal, strategy, fillability, execution, complete-history,
+  Level-2, order-book, or queue-position authority.
 
 The paid token is read from `TUSHARE_TOKEN` only. This lane uses an isolated HTTPS
 transport, never includes the token in a URL, and never logs or persists vendor error
-text, request payloads, token bytes, or token hashes. The workflow scans the entire
-review artifact for the exact token bytes before upload and fails loudly if any are
-found.
+text, request payloads, token bytes, or token hashes. Before upload, the workflow scans
+both the isolated raw directory and metadata-only review directory for the raw
+environment token bytes **and** the exact `.strip()` bytes used by transport. The
+upload step is conditional on that scan succeeding, and an `always()` cleanup removes
+the raw, review, and virtual-environment directories.
 
 ## Operator commands
 
@@ -121,16 +163,19 @@ python -m scripts.collect_tushare_addons stk_premarket \
   --trade-date 2026-08-07 --ticker 000001.SZ
 ```
 
-The first real probe should be dispatched through
+No real probe may be dispatched until written vendor authorization or an institutional
+contract has been reviewed and the separate repository license variables are
+provisioned. After that gate, the first probe must use
 `.github/workflows/tushare-addons-pilot.yml` from `main`, one ticker at a time. Do not
-use a local `--execute` run as a substitute for the review artifact and main-ref
-receipt.
+use a local `--execute` run as a substitute for the metadata-only review artifact and
+main-ref receipt.
 
 ## Deliberate limitations and next gates
 
-1. **No live entitlement proof yet.** No paid endpoint was called while building this
+1. **No live access observation yet.** No paid endpoint was called while building this
    foundation. A generic `unavailable_empty_or_unentitled` hold deliberately avoids
-   persisting vendor error text; one valid review artifact is needed per endpoint.
+   persisting vendor error text. Valid rows later mean only access at request time,
+   subject to all purchase/payment/license/future-access/trial nonclaims above.
 2. **No raw microstructure.** `stk_auction` is a documented same-day auction snapshot,
    not order-wall growth, cancellation, replenishment, queue position, tick-by-tick
    trades, or Level-2 depth. It cannot support those claims.
@@ -148,11 +193,14 @@ receipt.
    gate makes an immutable schema pilot honest, but it is not the eventual before-open
    capture needed for a leak-free signal. Promotion requires a scheduled, witnessed
    premarket clock and a vendor-revision policy.
-7. **Review artifacts are not canonical publication.** No data is committed, merged,
-   scored, rendered, or granted strategy authority by this workflow. Production
-   scheduling follows only after entitlement, schema, clock, license, and storage
-   receipts are reviewed.
+7. **Review artifacts are metadata-only and not canonical publication.** Raw paid rows
+   are never uploaded. No data is committed, merged, scored, rendered, shared with a
+   team, published in a product, or granted strategy authority by this workflow.
+   Production scheduling follows only after access, schema, clock, license, sharing,
+   redistribution, and storage receipts are separately reviewed.
 8. **The auction witness has a narrow operational clock.** A queued manual workflow
    can miss the four-minute 09:26–09:29 window even when dispatched correctly. After
    the first supervised proof, a dedicated on-time local runner is more credible than
    treating generic hosted scheduling latency as capture evidence.
+9. **BSE is held.** `.BJ` collection remains blocked until the foundation owns a
+   documented BSE calendar authority and exchange-specific session receipt.

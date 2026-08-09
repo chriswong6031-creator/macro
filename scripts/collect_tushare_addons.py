@@ -3,7 +3,9 @@
 
 There is deliberately no date-range, ticker-list, or backfill interface.  The
 default mode is a dry plan which performs no network call and no write.  A caller
-must pass ``--execute`` for the single partition requested on the command line.
+must pass ``--execute`` for the single partition requested on the command line, and
+execution still fails closed unless the separately provisioned written vendor
+authorization or institutional-contract gate is satisfied.
 """
 
 from __future__ import annotations
@@ -44,7 +46,10 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute",
         action="store_true",
-        help="make at most three vendor calls and install one validated partition",
+        help=(
+            "after the separate license gate, make at most three vendor calls and "
+            "install one context-only partition"
+        ),
     )
 
 

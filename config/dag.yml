@@ -21,12 +21,15 @@ lanes:
       - id: collect_tushare_addons
         module: scripts.collect_tushare_addons
         note: >
-          Manual, main-only, review-artifact lane for exactly one purchased
-          TuShare add-on endpoint/session/ticker pilot. No schedule, repository
-          publication, ticker list, date range, or backfill surface exists. The
-          collector makes at most two exact-session trade_cal calls plus one
-          HTTPS endpoint call; schema, entitlement observation, source/runtime,
-          clock, row, and immutable Parquet receipts remain context-display-only.
+          Manual, main-only, separately license-gated lane for exactly one
+          operator-reported TuShare add-on endpoint/session/SSE-or-SZSE ticker
+          pilot. No schedule, repository publication, ticker list, date range,
+          BSE, or backfill surface exists. The collector makes at most two
+          exact-session trade_cal calls plus one HTTPS endpoint call; the clock
+          is re-observed before that final call. Only metadata receipts may be
+          uploaded—never paid Parquet/rows—and access-at-request-time, schema,
+          source/runtime, clock, and immutable-store receipts remain
+          context-display-only with no commercial/team/product/strategy authority.
 
   # ── daily.yml / collect ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml

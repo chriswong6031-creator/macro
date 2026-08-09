@@ -12,17 +12,20 @@ Every successful response is normalized and validated before the first filesyste
 mutation.  It is then installed as an immutable directory containing ``part.parquet``
 and ``receipt.json``.  The receipt binds the official TuShare documentation contract,
 sanitized request, two-exchange ``trade_cal`` observations, normalized schema, exact
-row payload, Parquet bytes, collection clock, and entitlement evidence.  A rerun with
-identical data is a no-op; a revised response for an existing partition is a loud
-keep-first contradiction.
+row payload, Parquet bytes, and the clock observed immediately before the add-on
+request.  A rerun with identical data is a no-op; a revised response for an existing
+partition is a loud keep-first contradiction.
 
 ``stk_auction_o`` and ``stk_auction_c`` are deliberately absent from the runnable
 contract.  Their state is ``blocked_pending_written_entitlement_confirmation`` even
 though TuShare documents them: documentation is not proof that this account bought
 those separate permissions.
 
-No token, token hash, request header, or raw vendor payload is persisted or logged.
-All outputs remain ``context_display_only`` and make no signal/strategy claim.
+Execution is blocked unless a separately provisioned written-vendor-authorization or
+institutional-contract gate is present.  Personal-plan pricing is not treated as a
+commercial-use grant.  No token, token hash, request header, or raw vendor payload is
+persisted or logged.  All outputs remain ``context_display_only`` and grant no
+commercial, product, team-sharing, signal, or strategy authority.
 """
 
 from __future__ import annotations
@@ -52,10 +55,16 @@ from lib import config
 DEFAULT_OUTPUT_ROOT = config.data_dir() / "tushare_addons"
 
 AUTHORITY = "context_display_only"
-PARTITION_SCHEMA_VERSION = "tushare_addon_partition.v1"
-RECEIPT_SCHEMA_VERSION = "tushare_addon_collection_receipt.v1"
+PARTITION_SCHEMA_VERSION = "tushare_addon_partition.v2"
+RECEIPT_SCHEMA_VERSION = "tushare_addon_collection_receipt.v2"
 CONTRACT_CAPTURE_DATE = "2026-08-09"
 SHANGHAI = ZoneInfo("Asia/Shanghai")
+
+LICENSE_AUTHORITY_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY"
+LICENSE_AUTHORITY_REFERENCE_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256"
+LICENSE_AUTHORITY_GATE_VALUE = (
+    "written_vendor_authorization_or_institutional_contract_verified"
+)
 
 ALLOWED_FREQUENCIES = ("1min", "5min", "15min", "30min", "60min")
 BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {
@@ -63,8 +72,11 @@ BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {
     "stk_auction_c": "blocked_pending_written_entitlement_confirmation",
 }
 JOIN_BASIS_CONTRACT: Mapping[str, object] = {
-    "schema_version": "tushare_addon_join_basis.v1",
-    "ticker_identity": "repo_canonical_SS_SZ_BJ",
+    "schema_version": "tushare_addon_join_basis.v2",
+    "ticker_identity": "repo_canonical_SS_SZ_with_BJ_pilots_blocked",
+    "exchange_calendar_scope": (
+        "SSE_and_SZSE_only_BSE_requires_documented_calendar_authority"
+    ),
     "required_nominal_history": (
         "tushare_daily_and_stk_limit_effective_date_plane_from_full_a_spine"
     ),
@@ -120,9 +132,10 @@ class EndpointContract:
     vendor_fields: tuple[str, ...]
     output_schema: tuple[SchemaField, ...]
     max_rows: int = 8_000
-    declared_entitlement: str = (
-        "operator_reported_purchased_2026-08-09_unverified_until_probe"
+    declared_access_context: str = (
+        "operator_reported_purchase_not_vendor_attested_and_not_a_license_grant"
     )
+    exchange_clock_context_urls: tuple[str, ...] = ()
 
     @property
     def document_url(self) -> str:
@@ -139,7 +152,8 @@ class EndpointContract:
             "vendor_fields": list(self.vendor_fields),
             "output_schema": [field.as_dict() for field in self.output_schema],
             "max_rows": self.max_rows,
-            "declared_entitlement": self.declared_entitlement,
+            "declared_access_context": self.declared_access_context,
+            "exchange_clock_context_urls": list(self.exchange_clock_context_urls),
         }
 
     @property
@@ -151,7 +165,7 @@ _COMMON_FIELDS = (
     SchemaField("schema_version", "string", False),
     SchemaField("authority", "string", False),
     SchemaField("trade_date", "string", False, "Asia/Shanghai exchange date"),
-    SchemaField("ticker", "string", False, "repo canonical .SS/.SZ/.BJ"),
+    SchemaField("ticker", "string", False, "repo canonical .SS/.SZ; .BJ blocked"),
     SchemaField("frequency", "string", False),
 )
 
@@ -174,12 +188,28 @@ ENDPOINTS: Mapping[str, EndpointContract] = {
         output_schema=_COMMON_FIELDS
         + (
             SchemaField("trade_time", "string", False, "ISO-8601 Asia/Shanghai"),
+            SchemaField(
+                "session_segment",
+                "string",
+                False,
+                "regular_trading_window or unclassified_post_close",
+            ),
             SchemaField("open", "float64", False, "CNY/share"),
             SchemaField("close", "float64", False, "CNY/share"),
             SchemaField("high", "float64", False, "CNY/share"),
             SchemaField("low", "float64", False, "CNY/share"),
             SchemaField("volume", "float64", False, "shares"),
             SchemaField("amount", "float64", False, "CNY"),
+        ),
+        exchange_clock_context_urls=(
+            (
+                "https://www.sse.com.cn/lawandrules/sselawsrules2025/stocks/"
+                "exchange/c/c_20260424_10816482.shtml"
+            ),
+            (
+                "https://docs.static.szse.cn/www/lawrules/rule/trade/current/"
+                "W020260424690713155663.pdf"
+            ),
         ),
     ),
     "stk_premarket": EndpointContract(
@@ -293,6 +323,29 @@ class PilotResult:
 
 
 QueryFunction = Callable[..., pd.DataFrame | None]
+ClockFunction = Callable[[], datetime]
+
+
+def _license_authority_receipt() -> dict[str, object]:
+    """Fail closed unless a separately reviewed vendor-license gate is provisioned."""
+    authority = os.environ.get(LICENSE_AUTHORITY_ENV, "").strip()
+    reference = os.environ.get(LICENSE_AUTHORITY_REFERENCE_ENV, "").strip().lower()
+    if authority != LICENSE_AUTHORITY_GATE_VALUE or not _is_sha256(reference):
+        raise CollectionHeld(
+            "written_vendor_authorization_or_institutional_contract_required"
+        )
+    return {
+        "gate_state": "satisfied_for_bounded_metadata_only_pilot",
+        "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
+        "authority_reference_sha256": reference,
+        "personal_pricing_nonclaim": "personal_pricing_is_not_a_commercial_use_grant",
+        "scope_nonclaims": [
+            "no_commercial_use_authority",
+            "no_product_publication_authority",
+            "no_team_sharing_or_redistribution_authority",
+            "no_signal_or_strategy_authority",
+        ],
+    }
 
 
 def _query_tushare_https(
@@ -316,6 +369,12 @@ def _query_tushare_https(
             headers={"User-Agent": "MastermindX-TuShare-Addon-Pilot/1"},
             allow_redirects=False,
         )
+        if (
+            response.is_redirect
+            or response.is_permanent_redirect
+            or 300 <= response.status_code < 400
+        ):
+            return None
         response.raise_for_status()
         body = response.json()
     except Exception:  # noqa: BLE001 - credential-bearing request state stays private
@@ -396,6 +455,8 @@ def normalize_request(request: PilotRequest) -> NormalizedRequest:
         raise CollectionHeld("unsupported_tushare_addon_endpoint")
     trade_day = _parse_date(request.trade_date)
     ticker = _canonical_ticker(request.ticker) if request.ticker else None
+    if ticker and ticker.endswith(".BJ"):
+        raise CollectionHeld("BSE_pilots_blocked_pending_calendar_authority")
     frequency = str(request.frequency).strip() if request.frequency else ""
 
     if endpoint == "stk_mins":
@@ -600,6 +661,8 @@ def _common_record(
     request: NormalizedRequest, raw_ticker: object, raw_trade_date: object
 ) -> dict[str, object]:
     ticker = _canonical_ticker(raw_ticker)
+    if ticker.endswith(".BJ"):
+        raise CollectionHeld("BSE_rows_blocked_pending_calendar_authority")
     if request.ticker is not None and ticker != request.ticker:
         raise CollectorIntegrityError("vendor row escaped the exact requested ticker")
     return {
@@ -609,6 +672,19 @@ def _common_record(
         "ticker": ticker,
         "frequency": request.frequency,
     }
+
+
+def _minute_session_segment(minute_clock: time) -> str:
+    if time(9, 30) <= minute_clock <= time(11, 30) or time(
+        13, 0
+    ) <= minute_clock <= time(15, 0):
+        return "regular_trading_window"
+    if time(15, 5) <= minute_clock <= time(15, 30):
+        # TuShare doc 370 does not define which minute segments it returns.  Current
+        # SSE/SZSE rules admit post-close fixed-price trading in this window, but a
+        # ticker/date-specific effective-date classifier is deliberately not inferred.
+        return "unclassified_post_close"
+    raise CollectorIntegrityError("minute bar is outside admitted A-share clocks")
 
 
 def _normalize_minute_rows(
@@ -637,13 +713,7 @@ def _normalize_minute_rows(
                 "minute bar escaped exact session/minute clock"
             )
         minute_clock = stamp.time().replace(tzinfo=None)
-        allowed_clock = time(9, 30) <= minute_clock <= time(11, 30) or time(
-            13, 0
-        ) <= minute_clock <= time(15, 0)
-        if not allowed_clock:
-            raise CollectorIntegrityError(
-                "minute bar is outside documented A-share clocks"
-            )
+        session_segment = _minute_session_segment(minute_clock)
         common = _common_record(
             request, raw["ts_code"], request.trade_date.strftime("%Y%m%d")
         )
@@ -661,6 +731,7 @@ def _normalize_minute_rows(
         common.update(
             {
                 "trade_time": stamp.isoformat(),
+                "session_segment": session_segment,
                 "open": open_,
                 "close": close,
                 "high": high,
@@ -863,6 +934,7 @@ def _receipt_without_hash(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
+    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -879,13 +951,21 @@ def _receipt_without_hash(
             **contract.contract_payload(),
             "contract_sha256": contract.contract_hash,
         },
-        "entitlement_receipt": {
-            "declaration": contract.declared_entitlement,
-            "observation": "valid_nonempty_rows_returned",
-            "observation_scope": "this_endpoint_request_only",
-            "nonclaim": "success_does_not_attest_other_endpoints_or_future_access",
+        "access_observation_receipt": {
+            "declaration": contract.declared_access_context,
+            "observation": "access_observed_at_request_time",
+            "observation_basis": "valid_nonempty_rows_returned_for_this_request",
+            "observed_at_asia_shanghai": now_cst.isoformat(),
+            "nonclaims": [
+                "not_proof_of_purchase",
+                "not_proof_of_payment",
+                "not_proof_of_license_or_commercial_use_rights",
+                "not_proof_of_future_access",
+                "not_proof_of_trial_absence",
+            ],
             "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         },
+        "license_authority_gate": dict(license_authority),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
         "request": {
             "identity": request_identity,
@@ -896,9 +976,12 @@ def _receipt_without_hash(
             "maximum_vendor_calls": 3,
             "range_or_bulk_mode": False,
         },
-        "collection_clock": {
+        "request_clock": {
             "observed_at_utc": now_cst.astimezone(timezone.utc).isoformat(),
             "observed_at_asia_shanghai": now_cst.isoformat(),
+            "observation_point": (
+                "after_trade_cal_immediately_before_addon_endpoint_request"
+            ),
             "completeness_policy": clock_policy,
         },
         "runtime_receipt": {
@@ -935,8 +1018,11 @@ def _receipt_without_hash(
         "partition_identity": request_identity,
         "nonclaims": [
             "context_only_not_signal_authority",
+            "no_commercial_use_or_product_publication_authority",
+            "no_team_sharing_or_redistribution_authority",
             "no_fillability_or_execution_claim",
             "no_complete_historical_backfill_claim",
+            "post_close_rows_are_unclassified_not_a_completeness_claim",
             "no_level2_order_book_or_queue_position",
         ],
     }
@@ -968,6 +1054,7 @@ def _validate_existing_partition(
     incoming_data_hash: str,
     incoming_source_rows_hash: str,
     incoming_calendar_hash: str,
+    incoming_license_authority: Mapping[str, object],
 ) -> dict[str, object]:
     if destination.is_symlink() or not destination.is_dir():
         raise CollectorIntegrityError(
@@ -992,8 +1079,9 @@ def _validate_existing_partition(
     schema_receipt = receipt.get("schema_receipt")
     session_receipt = receipt.get("exact_session_receipt")
     runtime_receipt = receipt.get("runtime_receipt")
-    entitlement_receipt = receipt.get("entitlement_receipt")
-    clock_receipt = receipt.get("collection_clock")
+    access_receipt = receipt.get("access_observation_receipt")
+    license_receipt = receipt.get("license_authority_gate")
+    clock_receipt = receipt.get("request_clock")
     if not all(
         isinstance(value, dict)
         for value in (
@@ -1003,7 +1091,8 @@ def _validate_existing_partition(
             schema_receipt,
             session_receipt,
             runtime_receipt,
-            entitlement_receipt,
+            access_receipt,
+            license_receipt,
             clock_receipt,
         )
     ):
@@ -1016,20 +1105,43 @@ def _validate_existing_partition(
     }
     if endpoint_contract != expected_contract:
         raise CollectorIntegrityError("immutable partition endpoint contract changed")
-    if entitlement_receipt != {
-        "declaration": contract.declared_entitlement,
-        "observation": "valid_nonempty_rows_returned",
-        "observation_scope": "this_endpoint_request_only",
-        "nonclaim": "success_does_not_attest_other_endpoints_or_future_access",
-        "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
-    }:
-        raise CollectorIntegrityError("immutable entitlement receipt changed")
+    if (
+        set(access_receipt)
+        != {
+            "declaration",
+            "observation",
+            "observation_basis",
+            "observed_at_asia_shanghai",
+            "nonclaims",
+            "blocked_unconfirmed_endpoints",
+        }
+        or access_receipt.get("declaration") != contract.declared_access_context
+        or access_receipt.get("observation") != "access_observed_at_request_time"
+        or access_receipt.get("observation_basis")
+        != "valid_nonempty_rows_returned_for_this_request"
+        or access_receipt.get("nonclaims")
+        != [
+            "not_proof_of_purchase",
+            "not_proof_of_payment",
+            "not_proof_of_license_or_commercial_use_rights",
+            "not_proof_of_future_access",
+            "not_proof_of_trial_absence",
+        ]
+        or access_receipt.get("blocked_unconfirmed_endpoints")
+        != dict(BLOCKED_UNCONFIRMED_ENDPOINTS)
+    ):
+        raise CollectorIntegrityError("immutable access observation receipt changed")
+    if license_receipt != dict(incoming_license_authority):
+        raise CollectorIntegrityError("immutable license authority gate changed")
     if receipt.get("join_basis_contract") != dict(JOIN_BASIS_CONTRACT):
         raise CollectorIntegrityError("immutable join basis contract changed")
     if receipt.get("nonclaims") != [
         "context_only_not_signal_authority",
+        "no_commercial_use_or_product_publication_authority",
+        "no_team_sharing_or_redistribution_authority",
         "no_fillability_or_execution_claim",
         "no_complete_historical_backfill_claim",
+        "post_close_rows_are_unclassified_not_a_completeness_claim",
         "no_level2_order_book_or_queue_position",
     ]:
         raise CollectorIntegrityError("immutable authority nonclaims changed")
@@ -1066,6 +1178,7 @@ def _validate_existing_partition(
         != {
             "observed_at_utc",
             "observed_at_asia_shanghai",
+            "observation_point",
             "completeness_policy",
         }
         or observed_utc.tzinfo is None
@@ -1073,6 +1186,10 @@ def _validate_existing_partition(
         or observed_utc.utcoffset() != timedelta(0)
         or observed_shanghai.utcoffset() != timedelta(hours=8)
         or observed_utc != observed_shanghai
+        or clock_receipt.get("observation_point")
+        != "after_trade_cal_immediately_before_addon_endpoint_request"
+        or access_receipt.get("observed_at_asia_shanghai")
+        != clock_receipt.get("observed_at_asia_shanghai")
     ):
         raise CollectorIntegrityError("immutable collection clock is malformed")
     try:
@@ -1150,6 +1267,7 @@ def _install_partition(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
+    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -1165,6 +1283,7 @@ def _install_partition(
             data_hash,
             source_rows_hash,
             calendar_hash,
+            license_authority,
         )
         return PilotResult(
             status="unchanged",
@@ -1196,6 +1315,7 @@ def _install_partition(
             vendor_request=vendor_request,
             calendar_observations=calendar_observations,
             calendar_hash=calendar_hash,
+            license_authority=license_authority,
             clock_policy=clock_policy,
             now_cst=now_cst,
             records=records,
@@ -1225,6 +1345,7 @@ def _install_partition(
                 data_hash,
                 source_rows_hash,
                 calendar_hash,
+                license_authority,
             )
             return PilotResult(
                 status="unchanged",
@@ -1265,7 +1386,15 @@ def pilot_plan(
         "partition_path": str(partition_path(output_root, normalized)),
         "endpoint_contract_sha256": contract.contract_hash,
         "endpoint_document_url": contract.document_url,
-        "declared_entitlement": contract.declared_entitlement,
+        "declared_access_context": contract.declared_access_context,
+        "license_authority_gate": {
+            "required_for_execute": True,
+            "state": "not_evaluated_plan_only",
+            "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
+            "personal_pricing_nonclaim": (
+                "personal_pricing_is_not_a_commercial_use_grant"
+            ),
+        },
         "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
         "maximum_vendor_calls": 3,
@@ -1279,11 +1408,22 @@ def collect_pilot(
     output_root: Path = DEFAULT_OUTPUT_ROOT,
     query_fn: QueryFunction = _query_tushare_https,
     now: datetime | None = None,
+    clock_fn: ClockFunction | None = None,
 ) -> PilotResult:
     """Collect one bounded pilot partition or fail before installing any evidence."""
     normalized = normalize_request(request)
-    now_cst = _normalized_now(now)
-    clock_policy = _validate_collection_clock(normalized, now_cst)
+    license_authority = _license_authority_receipt()
+    if now is not None and clock_fn is not None:
+        raise CollectionHeld("ambiguous_collection_clock_source")
+    if clock_fn is not None:
+        observe_clock = clock_fn
+    elif now is not None:
+        observe_clock = lambda: now
+    else:
+        observe_clock = lambda: datetime.now(timezone.utc)
+
+    initial_now_cst = _normalized_now(observe_clock())
+    _validate_collection_clock(normalized, initial_now_cst)
     if query_fn is _query_tushare_https and not tc.enabled():
         raise CollectionHeld("TUSHARE_TOKEN_absent")
     calendar_observations, calendar_hash = _official_session_receipt(
@@ -1291,6 +1431,11 @@ def collect_pilot(
     )
     contract = ENDPOINTS[normalized.endpoint]
     vendor_request = _vendor_request(normalized, contract)
+    # The two calendar calls can consume most of the four-minute auction window.
+    # Re-observe immediately before the paid add-on call; this final observation,
+    # rather than the earlier admission check, is what the receipt binds.
+    request_now_cst = _normalized_now(observe_clock())
+    clock_policy = _validate_collection_clock(normalized, request_now_cst)
     frame = _safe_query(query_fn, normalized.endpoint, **vendor_request)
     source_rows_hash = _source_rows_hash(frame, contract)
     records = _normalize_rows(frame, normalized, contract)
@@ -1301,8 +1446,9 @@ def collect_pilot(
         vendor_request=vendor_request,
         calendar_observations=calendar_observations,
         calendar_hash=calendar_hash,
+        license_authority=license_authority,
         clock_policy=clock_policy,
-        now_cst=now_cst,
+        now_cst=request_now_cst,
         records=records,
         source_rows_hash=source_rows_hash,
     )

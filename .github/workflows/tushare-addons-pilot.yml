@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       ticker:
-        description: "One A-share ticker; use repo-canonical .SS/.SZ/.BJ"
+        description: "One SSE/SZSE ticker; use repo-canonical .SS/.SZ (.BJ blocked)"
         required: true
         type: string
       frequency:
@@ -33,7 +33,7 @@ on:
           - 30min
           - 60min
       confirm_execute:
-        description: "I authorize at most three vendor calls and one review artifact"
+        description: "Request at most three calls; this does not satisfy the license gate"
         required: true
         default: false
         type: boolean
@@ -47,8 +47,14 @@ concurrency:
 
 jobs:
   pilot:
-    # Never expose the paid token to code dispatched from an arbitrary ref.
-    if: ${{ inputs.confirm_execute == true && github.ref == 'refs/heads/main' }}
+    # Never expose the paid token to code dispatched from an arbitrary ref or under
+    # personal-plan pricing alone.  These repository variables are provisioned only
+    # after written vendor authorization or an institutional contract is reviewed.
+    if: >-
+      ${{ inputs.confirm_execute == true &&
+          github.ref == 'refs/heads/main' &&
+          vars.TUSHARE_VENDOR_LICENSE_AUTHORITY == 'written_vendor_authorization_or_institutional_contract_verified' &&
+          vars.TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256 != '' }}
     runs-on: [self-hosted, macstudio-light]
     timeout-minutes: 10
     steps:
@@ -63,11 +69,13 @@ jobs:
           set -euo pipefail
           suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           venv="$RUNNER_TEMP/tushare-addons-${suffix}-venv"
-          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
+          raw="$RUNNER_TEMP/tushare-addons-${suffix}-raw"
+          review="$RUNNER_TEMP/tushare-addons-${suffix}-review"
           test ! -e "$venv"
-          test ! -e "$artifact"
+          test ! -e "$raw"
+          test ! -e "$review"
           /opt/homebrew/bin/python3.12 -m venv "$venv"
-          mkdir "$artifact"
+          mkdir "$raw" "$review"
           echo "$venv/bin" >> "$GITHUB_PATH"
 
       - name: install exact pilot dependency lock
@@ -90,6 +98,8 @@ jobs:
         id: collect
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+          TUSHARE_VENDOR_LICENSE_AUTHORITY: ${{ vars.TUSHARE_VENDOR_LICENSE_AUTHORITY }}
+          TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256: ${{ vars.TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256 }}
           TUSHARE_ADDON_DEPENDENCY_LOCK_SHA256: ${{ steps.dependency-lock.outputs.sha256 }}
           PILOT_ENDPOINT: ${{ inputs.endpoint }}
           PILOT_TRADE_DATE: ${{ inputs.trade_date }}
@@ -98,56 +108,115 @@ jobs:
         run: |
           set -euo pipefail
           suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
+          raw="$RUNNER_TEMP/tushare-addons-${suffix}-raw"
+          review="$RUNNER_TEMP/tushare-addons-${suffix}-review"
           args=(
             "$PILOT_ENDPOINT"
             --trade-date "$PILOT_TRADE_DATE"
             --ticker "$PILOT_TICKER"
-            --output-root "$artifact/partitions"
+            --output-root "$raw/partitions"
             --execute
           )
           if [[ "$PILOT_ENDPOINT" == "stk_mins" ]]; then
             args+=(--frequency "$PILOT_FREQUENCY")
           fi
           set +e
-          python -m scripts.collect_tushare_addons "${args[@]}" > "$artifact/result.json"
+          python -m scripts.collect_tushare_addons "${args[@]}" > "$review/result.json"
           code=$?
           set -e
-          if [[ ! -s "$artifact/result.json" ]]; then
-            printf '%s\n' '{"reason_code":"collector_produced_no_receipt","status":"unexpected_failure_fail_closed"}' > "$artifact/result.json"
+          if [[ ! -s "$review/result.json" ]]; then
+            printf '%s\n' '{"reason_code":"collector_produced_no_receipt","status":"unexpected_failure_fail_closed"}' > "$review/result.json"
             code=4
           fi
+          code="$(python - "$raw" "$review" "$code" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          raw = Path(sys.argv[1]).resolve()
+          review = Path(sys.argv[2]).resolve()
+          code = int(sys.argv[3])
+          result_path = review / "result.json"
+          try:
+              result = json.loads(result_path.read_text(encoding="utf-8"))
+          except (OSError, json.JSONDecodeError):
+              result = {
+                  "reason_code": "collector_result_is_not_valid_json",
+                  "status": "unexpected_failure_fail_closed",
+              }
+              code = 4
+          if code == 0:
+              partition = Path(str(result.get("partition_path", ""))).resolve()
+              try:
+                  relative_partition = partition.relative_to(raw)
+              except ValueError as exc:
+                  raise SystemExit("collector partition escaped isolated raw root") from exc
+              receipt_path = partition / "receipt.json"
+              if not receipt_path.is_file():
+                  raise SystemExit("collector receipt is absent")
+              (review / "receipt.json").write_bytes(receipt_path.read_bytes())
+              result["partition_path"] = relative_partition.as_posix()
+          result["artifact_class"] = "metadata_only_review"
+          result["raw_paid_rows_included"] = False
+          result["raw_parquet_included"] = False
+          result["sharing_authority"] = "none"
+          result_path.write_text(
+              json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          manifest = {
+              "artifact_class": "metadata_only_review",
+              "files": sorted(path.name for path in review.iterdir() if path.is_file()),
+              "raw_paid_rows_included": False,
+              "raw_parquet_included": False,
+              "sharing_authority": "none",
+          }
+          (review / "review_manifest.json").write_text(
+              json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          print(code)
+          PY
+          )"
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
 
       - name: prove review artifact contains no token
+        id: token_scan
         if: ${{ always() }}
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
         run: |
           set -euo pipefail
           suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          artifact="$RUNNER_TEMP/tushare-addons-${suffix}-artifact"
-          python - "$artifact" <<'PY'
+          raw="$RUNNER_TEMP/tushare-addons-${suffix}-raw"
+          review="$RUNNER_TEMP/tushare-addons-${suffix}-review"
+          python - "$raw" "$review" <<'PY'
           import os
           from pathlib import Path
           import sys
 
-          root = Path(sys.argv[1])
-          token = os.environ.get("TUSHARE_TOKEN", "").encode()
-          if not token:
+          raw_token = os.environ.get("TUSHARE_TOKEN", "").encode()
+          transport_token = os.environ.get("TUSHARE_TOKEN", "").strip().encode()
+          if not raw_token or not transport_token:
               raise SystemExit("TUSHARE_TOKEN is absent")
-          for path in root.rglob("*"):
-              if path.is_file() and token in path.read_bytes():
-                  raise SystemExit("credential bytes detected in review artifact")
+          needles = {raw_token, transport_token}
+          for root_arg in sys.argv[1:]:
+              root = Path(root_arg)
+              for path in root.rglob("*"):
+                  if path.is_file() and any(
+                      needle in path.read_bytes() for needle in needles
+                  ):
+                      raise SystemExit("credential bytes detected in isolated output")
           PY
+          echo "passed=true" >> "$GITHUB_OUTPUT"
 
-      - name: upload review-only pilot receipt
-        if: ${{ always() }}
+      - name: upload metadata-only pilot receipt
+        if: ${{ always() && steps.token_scan.outcome == 'success' && steps.token_scan.outputs.passed == 'true' }}
         # actions/upload-artifact v4.6.2
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: tushare-addons-pilot-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/tushare-addons-${{ github.run_id }}-${{ github.run_attempt }}-artifact
+          path: ${{ runner.temp }}/tushare-addons-${{ github.run_id }}-${{ github.run_attempt }}-review
           if-no-files-found: error
           retention-days: 30
 
@@ -158,3 +227,25 @@ jobs:
         run: |
           set -euo pipefail
           test "$COLLECT_EXIT_CODE" = "0"
+
+      - name: remove isolated paid-data and review directories
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          venv="$RUNNER_TEMP/tushare-addons-${suffix}-venv"
+          raw="$RUNNER_TEMP/tushare-addons-${suffix}-raw"
+          review="$RUNNER_TEMP/tushare-addons-${suffix}-review"
+          for path in "$venv" "$raw" "$review"; do
+            case "$path" in
+              "$RUNNER_TEMP/tushare-addons-${suffix}-venv"|\
+              "$RUNNER_TEMP/tushare-addons-${suffix}-raw"|\
+              "$RUNNER_TEMP/tushare-addons-${suffix}-review")
+                /bin/rm -rf -- "$path"
+                ;;
+              *)
+                echo "refusing cleanup outside the run-scoped TuShare paths" >&2
+                exit 1
+                ;;
+            esac
+          done
