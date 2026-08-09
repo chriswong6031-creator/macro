@@ -199,7 +199,7 @@
       'Sign in to open Market Memory',
       '登录以打开市场记忆',
       'Authenticated context is cleared when you sign out.',
-      '退出登录后，已验证的上下文将被清除。',
+      '退出登录后，此视图中的账户上下文将被清除。',
       { status: 401 }
     );
     ui.macroEpisodes.innerHTML = '';
@@ -211,7 +211,7 @@
       'Sign in to open symbol memory',
       '登录以打开个股记忆',
       'Authenticated symbol context is cleared when you sign out.',
-      '退出登录后，已验证的个股上下文将被清除。',
+      '退出登录后，此视图中的个股上下文将被清除。',
       { status: 401 }
     );
     ui.gridList.innerHTML = '';
