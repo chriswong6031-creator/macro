@@ -244,10 +244,11 @@ jobs:
     steps:
       # Same workspace-hygiene guard as ci.yml's pack job (#5108), and it must run FIRST
       # — ahead of the bound step below, not just ahead of actions/checkout. A self-hosted
-      # runner REUSES its workspace between jobs, and `merge-on-green.yml` sweeps the
-      # `render-linux` runners (an operator option for this lane) every ~10 minutes with a
-      # non-cone sparse checkout of three files, leaving `core.sparseCheckout=true` in the
-      # SAME directory. Two properties of THIS job make that worse than the pack case:
+      # runner REUSES its workspace between jobs. `merge-on-green.yml` historically
+      # swept render-linux every ~10 minutes with a three-file non-cone checkout (until
+      # its hosted reroute on 2026-08-09), so existing workspaces can retain
+      # `core.sparseCheckout=true`. Any future sparse job can do the same. Two properties
+      # of THIS job make inherited sparse state worse than the pack case:
       #
       #   * `git reset --hard` does NOT restore a path the index has marked skip-worktree,
       #     so the bound step's fetch/reset/clean would happily "refresh" a partial tree.

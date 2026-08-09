@@ -96,39 +96,29 @@ def test_the_workflow_is_event_driven_with_a_ten_minute_recovery_schedule():
 
 
 def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
-    """This asserted `runs-on == ubuntu-latest` until 2026-08-08. It was rewritten,
-    not weakened: the PROPERTY it was defending — the sweep must not wait behind a
-    saturated queue — stopped being satisfied by the hosted pool once this repository's
-    own `ci`/`fences` packs contended for it.
+    """Keep the control plane on the pool with live spare capacity.
 
-    Measured 2026-08-08 with ~100 PRs open: sweeps CREATED 03:46-04:00Z did not execute
-    until 05:46-06:28Z, a ~2 hour queue delay on a job that is a handful of API calls.
-    That is a priority inversion — the control plane queued behind the workload it
-    exists to arbitrate — and it self-reinforces, because late merges keep the backlog
-    that lengthens the queue.
-
-    The mac pool remains forbidden for the original reason (render/nightly lane, a
-    67-minute render ahead of the sweep). `render-linux` is a separate Linux pool
-    (pc-render-1..4, measured 4 idle of 4) whose default lane is the macstudio
-    `render-heavy` host, so this cannot starve rendering.
+    The 2026-08-08 self-hosted move escaped a capped hosted backlog. Enterprise raised
+    that ceiling to 180; on 2026-08-09 hosted usage was 34 while render-linux was 4/4
+    busy and sweeps queued. Routing back is the same invariant under the new capacity:
+    the merge arbiter must not wait behind render work.
     """
     job = _workflow()["jobs"]["sweep"]
     labels = json.dumps(job["runs-on"])
-    assert "ubuntu-latest" not in labels, (
-        "the hosted pool is shared with this repository's own ci/fences packs — a "
-        "~2h queue delay on the merge sweeper was measured there"
-    )
-    assert "macstudio" not in labels, "never the render/nightly mac pool"
-    assert "self-hosted" in labels and "render-linux" in labels
+    assert job["runs-on"] == "ubuntu-latest"
+    assert "self-hosted" not in labels
+    assert "render-linux" not in labels
+    assert "macstudio" not in labels
     assert int(job["timeout-minutes"]) == 15
 
 
-def test_the_sweep_needs_nothing_a_self_hosted_runner_lacks():
-    """The runner move above is valid ONLY because this job needs `python3` and a
-    network, nothing else: a sparse checkout, one `pip install pyyaml`, one `python3`
-    invocation. The integration-baseline job has its own explicit main-ref routing and
-    setup-python contract; adding setup-python to this lightweight sweep must fail HERE
-    rather than silently changing its runner requirements."""
+def test_the_hosted_sweep_keeps_a_minimal_runner_contract():
+    """The hosted route needs only the image's Python and network.
+
+    The integration-baseline job has its own routing/setup-python contract; adding a
+    setup step to this lightweight sweep must fail here rather than silently making the
+    control plane slower or stateful.
+    """
     steps = _workflow()["jobs"]["sweep"]["steps"]
     used = [str(step.get("uses") or "") for step in steps]
     assert not [entry for entry in used if entry.startswith("actions/setup-python")], (
@@ -162,8 +152,8 @@ def test_no_concurrency_group_may_serialise_this_lane():
     mid-merge sweep could finish. It achieved the opposite: `cancel-in-progress:
     false` protects only an IN-PROGRESS run, GitHub keeps exactly ONE pending run
     per group and cancels it on every new arrival, and the pending state includes
-    the wait for a runner. `ci` and `fences` share `ubuntu-latest` with this job
-    (48 and 34 queued against 8 and 1 running when this was measured), so the
+    the wait for a runner. `ci` and `fences` shared the then-capacity-limited hosted
+    pool with this job (48 and 34 queued against 8 and 1 running when measured), so the
     group was held for 25-107 minutes by a sweep that had not started, while
     triggers arriving every 50 s destroyed each other in the single pending slot.
 
@@ -238,12 +228,8 @@ def test_the_sweeper_installs_the_yaml_parser_before_it_sweeps():
     PyYAML is merely ASSUMED present and the runner image drops it, every sweep
     aborts — so the install is a step, not a hope, and it must precede the sweep.
 
-    Since the job moved off the hosted pool (2026-08-08) the install must also survive
-    a PEP 668 `externally-managed-environment` interpreter, which is what a bare
-    `pip install` hits on a modern Debian/Ubuntu self-hosted host — every other
-    self-hosted lane in this repository builds a venv for exactly that reason. A step
-    that aborts on every sweep would be a worse outage than the queue delay the move
-    repairs.
+    The import-first fallback remains useful on hosted image updates, but this test no
+    longer encodes self-hosted PEP-668 behavior as part of the runner contract.
     """
     steps = _workflow()["jobs"]["sweep"]["steps"]
     runs = [str(step.get("run") or "") for step in steps]
@@ -253,9 +239,7 @@ def test_the_sweeper_installs_the_yaml_parser_before_it_sweeps():
     assert installs[0] < sweeps[0], "the parser must be installed before the sweep runs"
     install = runs[installs[0]]
     assert "import yaml" in install, "skip the install when the runner already has it"
-    assert "--break-system-packages" in install, (
-        "a PEP 668 host must not turn the install step into a permanent sweep outage"
-    )
+    assert "python3 -m pip install" in install
 
 
 def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
