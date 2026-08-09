@@ -138,45 +138,202 @@ jobs:
 
 
 def test_workflows_cancel_superseded_pr_runs() -> None:
+    """PR runs coalesce by cancel; MAIN proofs must be allowed to conclude.
+
+    THE 2026-08-09 BASELINE LIVELOCK — a flat `cancel-in-progress: true` on these two
+    workflows made main's CI proof structurally unreachable, and 12 merge-blocked +
+    56 cap-deferred pull requests could not drain (sweep run 31311549150, 11:44:42Z:
+    "0 main commit(s) classified … main proof: NO clean name at unknown-sha").
+
+      ci.yml has no `push` trigger, so main is proven ONLY by a workflow_dispatch,
+      and every main-ref dispatch shares `ci-refs/heads/main`. Each pinned session
+      re-firing the documented `gh workflow run ci.yml --ref main` lever therefore
+      KILLED the proof already running: 31309720615 cancelled at 44 minutes by
+      31311537537, itself cancelled 4 minutes later by 31311693575.
+
+      fences.yml is the OTHER proof merge_on_green reads, and the only one that
+      triggers on push to main — but main takes a wire/nightly push every ~30-90s,
+      and each one cancelled its predecessor (5 runs between 11:40:38Z and
+      11:43:04Z). All ten runs in the sweeper's walk were `cancelled`. A run longer
+      than the gap between pushes can NEVER conclude.
+
+    So the expressions below are load-bearing, not stylistic. Reverting either to a
+    flat `true` re-closes the sweeper's base-inherited-red refresh and re-pins the
+    whole fleet — if this test is what is in your way, you are removing the fix.
+    Dedup is NOT what the expressions cost: GitHub replaces the single PENDING run
+    per group regardless of the flag, so bursts still collapse; only the kill is gone.
+    """
     ci = _yaml(WORKFLOW)
     fences = _yaml(FENCES)
-    for workflow in (ci, fences):
-        assert workflow["concurrency"]["cancel-in-progress"] is True
+    # PR events keep cancel-on-newer-push. Dispatches (ci) and main pushes (fences)
+    # do not — those are the two proof paths.
+    assert ci["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name != 'workflow_dispatch' }}"
+    ), "a main baseline dispatch must never cancel the proof already running"
+    assert fences["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name == 'pull_request' }}"
+    ), "a push to main must never cancel the fence run proving an earlier main SHA"
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
+    # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
+    # must survive every later edit to this block.
+    assert "merged" in ci["concurrency"]["group"], (
+        "a MERGED close must stay fenced into its own group, or a fast squash-merge "
+        "cancels the PR's own proof run and the merged head is unproven forever"
+    )
 
 
-def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
+def test_scope_glob_separator_semantics() -> None:
+    """`*` must not cross `/`, or a one-directory scope silently covers a subtree."""
+    match = lambda pattern, path: bool(  # noqa: E731
+        PACK._glob_to_regex(pattern).match(path)
+    )
+    assert match("engine/*", "engine/a.py")
+    assert not match("engine/*", "engine/a/b.py")
+    assert match("engine/**", "engine/a/b.py")
+    assert match("engine/", "engine/a/b.py")
+    assert match("tests/test_x*.py", "tests/test_xy.py")
+    assert not match("tests/test_x*.py", "tests/test_y.py")
+    assert match("**/conftest.py", "tests/conftest.py")
+    assert match("**/conftest.py", "conftest.py")
+
+
+def test_selection_fails_safe_toward_running_everything() -> None:
+    """Every unknown must widen the run, never narrow it.
+
+    A wasted runner-minute is cheap; a false green is not. These four are the
+    only ways scoping can be wrong, and all four must resolve to the full suite.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    scoped = [job for job in jobs if job.paths]
+
+    # 1. changed set unknowable (git failed, or main's baseline passes no ref)
+    assert len(PACK.select_jobs(jobs, None)[0]) == len(jobs)
+    # 2. a global invalidator can change what ANY job means
+    for invalidator in ("scripts/run_ci_pack.py", "tests/conftest.py",
+                        "requirements.txt", ".github/ci/legacy-jobs.yml"):
+        selected, reason = PACK.select_jobs(jobs, [invalidator])
+        assert len(selected) == len(jobs), f"{invalidator} must force a full run"
+        assert "full suite" in reason
+    # 3. an unscoped job is always-on, so an unrelated diff still runs them all
+    selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
+    assert len(selected) == len(jobs) - len(scoped)
+    assert all(not job.paths for job in selected)
+    # 4. a scoped job runs whenever its own scope matches
+    for job in scoped:
+        probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
+        hit, _ = PACK.select_jobs(jobs, [probe])
+        assert job in hit, f"{job.job_id} must run when {probe} changes"
+
+
+def test_declared_scope_must_cover_paths_the_job_itself_reads() -> None:
+    """A scope narrower than the job's own commands is a hard manifest error.
+
+    This is what makes scoping reviewable instead of trusted: a job that runs
+    `pytest tests/test_x.py` but scopes itself elsewhere would never re-run when
+    that test changed, and would report green forever.
+    """
+    findings = PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("engine/nowhere/**",),
+    )
+    assert findings and "tests/test_ci_pack.py" in findings[0]
+    # Widening to cover it clears the finding.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_ci_pack.py"}]},
+        ("tests/**",),
+    )
+    # A path that no longer exists must not be able to fail the build.
+    assert not PACK._scope_coverage_findings(
+        "demo",
+        {"steps": [{"run": "python -m pytest tests/test_deleted_long_ago.py"}]},
+        ("engine/nowhere/**",),
+    )
+
+
+def test_every_declared_scope_in_the_real_manifest_is_covered() -> None:
+    """The production manifest itself must satisfy the coverage rule."""
+    PACK.load_legacy_jobs(MANIFEST)  # raises ManifestError on any gap
+
+
+def test_packs_stay_balanced_over_the_selected_subset() -> None:
+    """Balance must be computed on the SELECTION, not the full manifest.
+
+    Otherwise a scoped run leaves whole packs empty while one pack carries the
+    work, and time-to-green gets worse instead of better.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    subset = sorted(jobs, key=lambda job: -job.weight)[:40]
+    packs = PACK.partition_jobs(subset, 4)
+    weights = [sum(job.weight for job in pack) for pack in packs]
+    assert sum(len(pack) for pack in packs) == len(subset)
+    assert max(weights) - min(weights) <= max(job.weight for job in subset)
+
+
+def test_workflow_scopes_only_pull_requests() -> None:
+    """Main's baseline must never pass --changed-from: it proves the full 173."""
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    step = next(
+        s for s in pack["steps"]
+        if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
+    )
+    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert "--changed-from" in scope_arg
+    assert "$CI_SCOPE_ARG" in str(step["run"])
+
+
+def test_pack_command_folds_to_exactly_one_shell_command() -> None:
+    """A newline in the folded scalar splits one command into two, silently.
+
+    Putting the scope expression inline across continuation lines did exactly
+    that: YAML preserves newlines for MORE-indented lines inside `>-`, so
+    `--execute` landed on its own line and the pack ran without it. Same family
+    as the `#`-in-a-folded-scalar trap, and invisible in review.
+    """
+    pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
+    for step in pack["steps"]:
+        if not isinstance(step, dict) or "run" not in step:
+            continue
+        if not str(step["run"]).lstrip().startswith('"$RUNNER_TEMP'):
+            continue
+        command = str(step["run"])
+        assert "\n" not in command, (
+            "the pack command must fold to ONE line; a newline here silently "
+            f"drops every argument after it: {command!r}"
+        )
+        assert command.rstrip().endswith("--execute")
+
+
+def test_ci_pack_is_a_few_capacity_split_jobs_not_eighty_six() -> None:
     workflow = _yaml(WORKFLOW)
     assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 on 2026-07-28 to halve time-to-green); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
+    # SHAPE is the contract: a small ordered matrix of balanced packs, never one
+    # job per legacy suite (86 VMs), and the matrix must
     # agree with the --pack-count handed to the runner or some packs' jobs
     # would execute nowhere.
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    # Pull requests stay on the hosted pool; main's proof runs on the idle self-hosted
-    # Linux pool. Asserted as a CONTRACT on both branches rather than as a literal,
-    # because the point of the expression is that the two events route differently —
-    # pinning the string would have forbidden the routing outright.
-    #
-    # Why main routes away from `ubuntu-latest` (2026-08-09): main's ci.yml proof sat
-    # `queued` 30+ minutes behind 133 queued runs while `render-linux` idled, and that
-    # one starved run blocks the whole fleet — `merge_on_green.main_proof` answers "is
-    # main green on ci-pack-N" from the newest CONCLUDED ci.yml run on main, so with no
-    # fresh proof the base-inherited-red refresh cannot fire and every pull request that
-    # inherited a since-healed red stays blocked.
+    # Live hosted pickup contradicted the expected enterprise ceiling. PR packs split
+    # between hosted and render-linux, while dispatched main proofs use render-linux.
+    # The macstudio render/nightly pool stays excluded.
     runs_on = " ".join(str(pack["runs-on"]).split())
     assert "github.event_name == 'pull_request'" in runs_on
-    assert "'ubuntu-latest'" in runs_on
-    assert '["self-hosted","render-linux"]' in runs_on
-    # The macstudio pool is the render/nightly lane and must never absorb CI packs.
+    assert "matrix.pack < 2" in runs_on
+    assert "ubuntu-latest" in runs_on
+    assert "render-linux" in runs_on
+    assert "self-hosted" in runs_on
     assert "macstudio" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
+    max_parallel = " ".join(str(pack["strategy"]["max-parallel"]).split())
+    assert "github.event_name == 'pull_request'" in max_parallel
+    assert "&& 4 || 2" in max_parallel
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
@@ -278,7 +435,22 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     assert workflow["permissions"]["checks"] == "write"
     jobs = workflow["jobs"]
     pack = jobs["fence-pack"]
-    assert pack["runs-on"] == "ubuntu-latest"
+    assert pack["runs-on"] == ["self-hosted", "render-linux"]
+    clear_idx, clear = next(
+        (idx, step)
+        for idx, step in enumerate(pack["steps"])
+        if step.get("name")
+        == "clear any sparse checkout a sibling job left in this shared workspace"
+    )
+    checkout_idx = next(
+        idx
+        for idx, step in enumerate(pack["steps"])
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert clear_idx < checkout_idx
+    assert clear["if"] == "runner.environment != 'github-hosted'"
+    assert "sparse-checkout disable" in clear["run"]
+    assert "github.workspace" in clear["run"]
     checkout = next(
         step
         for step in pack["steps"]

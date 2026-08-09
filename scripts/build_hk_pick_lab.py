@@ -46,6 +46,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 import tempfile
 import time
 import traceback
@@ -55,7 +56,10 @@ from typing import Optional
 
 import pandas as pd
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 
 log = logging.getLogger("build_hk_pick_lab")
 

@@ -43,8 +43,7 @@ from datetime import date
 from pathlib import Path
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 log = logging.getLogger("marketing_media_backfill")
 

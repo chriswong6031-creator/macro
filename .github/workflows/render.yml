@@ -144,6 +144,7 @@ on:
       - "scripts/build_live_overlay.py"
       - "scripts/build_macro_context.py"
       - "scripts/build_market_heatmap.py"
+      - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
       - "scripts/build_markets.py"
       - "scripts/build_mastermind.py"

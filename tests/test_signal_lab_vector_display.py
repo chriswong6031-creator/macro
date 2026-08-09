@@ -167,6 +167,40 @@ def test_frozen_fallback_agrees_with_the_live_artifact():
 # ---------------------------------------------------------------------------
 # 4. Degrade-safe: a missing artifact must not fabricate numbers
 # ---------------------------------------------------------------------------
+def test_build_scorecard_leaves_the_module_registry_pristine():
+    """``build_scorecard`` must resolve into a COPY, never into ``signal_lab.REGISTRY``.
+
+    ``_resolve_vector_live_stats`` / ``_resolve_dsr_provenance`` / ``_audit_source_refs``
+    all overwrite rows in place. Pointed at the module-level registry they left it
+    half-resolved for every later caller in the process — which is how the frozen-quote
+    fallback below became unobservable on 2026-08-08: once ANY earlier caller had built
+    a scorecard, the BTC row already carried LIVE figures. ``_PRISTINE_BTC_ROW`` above
+    (#5032) makes THIS FILE immune by snapshotting at collection time; it does not stop
+    the assembler from mutating module state for everyone else, so without this guard
+    the defect is merely masked. Nothing outside build_scorecard() should be able to
+    tell that it ran.
+
+    Stated as "the module row still equals the frozen quote it is DEFINED from" rather
+    than "REGISTRY == a snapshot taken here": a snapshot taken after an earlier test
+    already mutated the module would match a second (idempotent) resolve and the guard
+    would pass for the wrong reason. Order-dependence is the bug, so the check must not
+    itself be order-dependent. (Verified: this test fails when the deepcopy is removed,
+    whether it runs first in the file or last.)
+    """
+    signal_lab.build_scorecard()
+    row = next((r for r in signal_lab.REGISTRY
+                if r["name"] == signal_lab._BTC_VECTOR_ROW_NAME), None)
+    assert row is not None, "BTC Vector row missing from the Signal Lab registry"
+    frozen = signal_lab._btc_vector_copy(signal_lab._BTC_VECTOR_FROZEN)
+    assert row["why"] == frozen["why"], (
+        "build_scorecard() resolved live figures INTO signal_lab.REGISTRY — resolve on "
+        "a copy, or every later reader in this process gets a mutated registry"
+    )
+    assert row["dsr_n_trials"] == signal_lab._BTC_VECTOR_FROZEN["n_trials_declared"], (
+        "build_scorecard() overwrote the module row's dsr_n_trials in place"
+    )
+
+
 def test_missing_artifact_falls_back_to_the_frozen_quote(tmp_path, monkeypatch):
     """No artifact -> frozen quote + a build warning, never a crash or a blank."""
     monkeypatch.setattr(signal_lab.config, "data_dir", lambda: tmp_path)

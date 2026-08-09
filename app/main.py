@@ -1862,6 +1862,12 @@ app.include_router(earnings_router)
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
 
+# Market Memory is a read-only product projection over two existing context
+# engines (Brain macro analogues + Signal Episode Atlas).  The router enforces
+# site-full entitlement and carries an all-false authority block on every read.
+from app.market_memory import router as market_memory_router  # noqa: E402
+app.include_router(market_memory_router)
+
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
 # site before reading the private Research Vault bucket. These are paid product

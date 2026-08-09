@@ -28,6 +28,7 @@ Tiers
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import re
@@ -1868,18 +1869,31 @@ def build_scorecard() -> dict:
 
     # Re-render the BTC Vector card off the calibrator's own artifacts BEFORE the
     # provenance pass, so the passport stamps the same n_trials the prose quotes.
-    _resolve_vector_live_stats(REGISTRY, warnings)
+    # The three resolve passes below overwrite rows IN PLACE. Run them on a private
+    # deep copy so this assembler stays the pure one its docstring claims.
+    #
+    # Pointed at the module-level REGISTRY they left it half-resolved for every later
+    # caller in the process. That is what redded ci-pack-3 on 2026-08-08: the BTC
+    # frozen-quote fallback test compared against a row an earlier test had already
+    # rewritten with LIVE figures, so the degrade path could not be observed at all.
+    # #5032 healed that test with a collection-time pristine snapshot on the TEST
+    # side, which unblocked CI but left the mutation itself in place — so the defect
+    # is now masked rather than fixed. This is the engine-side half: nothing outside
+    # build_scorecard() should be able to tell that it ran.
+    registry = copy.deepcopy(REGISTRY)
+
+    _resolve_vector_live_stats(registry, warnings)
 
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
     # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
-    _resolve_dsr_provenance(REGISTRY)
+    _resolve_dsr_provenance(registry)
 
     # A10: audit source references for each registry row
-    _audit_source_refs(REGISTRY)
+    _audit_source_refs(registry)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}
-    for r in REGISTRY:
+    for r in registry:
         by_tier.setdefault(r["tier"], []).append(r)
 
     tiers_out = []
@@ -1893,7 +1907,7 @@ def build_scorecard() -> dict:
 
     summary = {k: len(by_tier.get(k, [])) for k in
                ("scored", "confirmer", "display", "killed", "pending")}
-    summary["total"] = len(REGISTRY)
+    summary["total"] = len(registry)
     summary["factor_survivors"] = fdr_survivors_factor
     summary["factor_total"] = len(factor_rows)
 
