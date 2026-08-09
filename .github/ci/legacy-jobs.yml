@@ -5265,6 +5265,38 @@ jobs:
       - name: washout-turn organ (depth-gated weekly cross, PIT completed-bars pin, ledger gate)
         run: python -m pytest tests/test_washout_turn.py tests/test_mtf_upturn.py tests/test_oracle_memory_analogues_step.py tests/test_stock_events.py tests/test_event_atlas.py -q
 
+  prophet-anticipation-intake:
+    # ANTICIPATION A1 (status-class admission) + §6.9 R3 (structure-anchored entry
+    # zones, wait_reset, zone-with-expiry-to-starter, the EARLY-TURN starter tier).
+    # Enumerated at BIRTH: the unrun-suite census proved an unnamed suite is genuinely
+    # never executed, and 1,135 of 1,491 suites are already dark — a new acceptance
+    # battery that nothing runs is not an acceptance battery.
+    #
+    # Its OWN job rather than a step on `unrun-vector-*` (which already carries
+    # tests/test_prophet_bridge.py): that job is documented STRUCTURALLY AT-CAP at 15
+    # minutes and has repeatedly timed out on a busy pool with no regression in the
+    # PR. Six of the cases here drive the real `build_prophet.main()` publisher end to
+    # end — ~73 s serial on a fast box, and the whole point of them is that the lane
+    # gate is exercised through the PRODUCTION caller rather than a hand-fed argument —
+    # so adding them to an at-cap job would convert a proof into an unattributable red.
+    #
+    # engine/us_early_turn.py's indicator reads ride the same suite: the module
+    # deliberately owns no arithmetic of its own (it imports confluence_tiers'
+    # StochRSI/RSI-MACD/session-anchor helpers), and one test pins that import so a
+    # local re-derivation fails immediately.
+    if: ${{ false }}
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: anticipation intake (status-class admission, era stamps, entry zones, shadow-ledger lane gate)
+        run: python -m pytest tests/test_prophet_anticipation_intake.py -q
+
   coiled-mtf-anchor-era:
     # COILED bonus/fire + mtf trend.d3 absolute session anchor (era
     # coiled-mtf-abs-session-2026-08-06, ruling research/COILED_MTF_SESSION_ANCHOR_
