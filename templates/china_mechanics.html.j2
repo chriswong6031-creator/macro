@@ -790,6 +790,9 @@ details[open] summary::before{transform:rotate(90deg)}
 .src-pboc{background:rgba(91,155,240,0.15);color:var(--info)}
 .src-politburo{background:rgba(224,160,48,0.12);color:var(--warn)}
 .src-cewc{background:rgba(224,139,69,0.12);color:var(--orange)}
+/* CJK has no case and no ascender/descender rhythm: the chip's 9.5px + tracking
+   is set for uppercase latin and reads as noise in Chinese. Bump the zh twin. */
+.event-source-chip .l-zh{font-size:10.5px;letter-spacing:0}
 .event-title{color:var(--text);line-height:1.5}
 .event-sectors{
   margin-top:3px;
@@ -1394,14 +1397,25 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
       <div class="label">{{ t('Current Impulse', '当前政策冲量') }}</div>
       <div class="val" style="color:{{ impulse_color }}">
         <span class="l-en">{{ impulse.replace('_',' ').title() }}</span>
-        <span class="l-zh">{{ td(impulse) if td is defined else impulse.replace('_',' ') }}</span>
+        {#- tr() (not td()) — td returns its own l-en/l-zh pair, which nested a
+            second, always-hidden English copy inside this zh span. -#}
+        <span class="l-zh">{{ tr(impulse) if tr is defined else impulse.replace('_',' ') }}</span>
       </div>
     </div>
     <div>
       <div class="micro" style="margin-bottom:8px">{{ t('Transmission Channels', '传导渠道') }}</div>
+      {#- Complete channel vocabulary: engine/china_policy_transmission._derive_channels
+          emits exactly rate / liquidity / stabilization / fiscal_or_structural. -#}
+      {% set channel_zh = {
+        'rate': '利率',
+        'liquidity': '流动性',
+        'stabilization': '维稳',
+        'fiscal_or_structural': '财政／结构性'
+      } %}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         {% for ch in pp.get('transmission_channel') or [] %}
-        <span style="padding:4px 10px;border-radius:6px;background:rgba(91,155,240,0.12);border:1px solid rgba(91,155,240,0.22);font-size:11px;color:var(--info)">{{ ch.replace('_',' ').title() }}</span>
+        {% set ch_en = ch.replace('_',' ').title() %}
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(91,155,240,0.12);border:1px solid rgba(91,155,240,0.22);font-size:11px;color:var(--info)">{{ t(ch_en, channel_zh.get(ch, ch_en)) }}</span>
         {% endfor %}
       </div>
       <div class="micro" style="margin-top:12px;margin-bottom:8px">{{ t('Data Freshness', '数据时效') }}</div>
@@ -2110,6 +2124,12 @@ function buildPolicyEvents(){
   const el = document.getElementById('policyEventsList');
   if(!el) return;
   const srcClass = {pboc:'src-pboc',politburo:'src-politburo',cewc:'src-cewc'};
+  // Chinese names for every source engine/china_policy_transmission._VALID_SOURCES
+  // allows. The English side stays the raw upper-cased slug it has always been.
+  const srcZh = {
+    pboc:'央行', politburo:'政治局', cewc:'中央经济工作会议', state_council:'国务院',
+    csrc:'证监会', ndrc:'发改委', mof:'财政部', other:'其他',
+  };
   const kindLabels = {
     omo_mlf:['OMO / MLF','公开市场操作'], rhetoric:['Rhetoric','政策表态'],
     rate_cut:['Rate cut','降息'], rrr_cut:['RRR cut','降准'], rate_hold:['Rate hold','利率不变'],
@@ -2119,6 +2139,12 @@ function buildPolicyEvents(){
   const now = Date.now();
   for(const e of POLICY_EVENTS){
     const sc = srcClass[e.source] || 'src-pboc';
+    const srcEn = String(e.source||'').toUpperCase();
+    const srcStr = `<span class="l-en">${srcEn}</span><span class="l-zh">${srcZh[e.source] || srcEn}</span>`;
+    // title_zh is seeded by engine/china_policy_transmission; an un-rebuilt
+    // payload has none, so fall back to the English title rather than blank.
+    const evTitleEn = e.title || '';
+    const evTitleStr = `<span class="l-en">${evTitleEn}</span><span class="l-zh">${e.title_zh || evTitleEn}</span>`;
     const kl = kindLabels[e.kind];
     const kindStr = kl ? `<span class="l-en">${kl[0]}</span><span class="l-zh">${kl[1]}</span>` : (e.kind||'').replace(/_/g,' ');
     const sectors = e.sectors.map(s=>`<span class="sector-tag">${s.replace('_',' ')}</span>`).join('');
@@ -2134,9 +2160,9 @@ function buildPolicyEvents(){
     html += `<div class="policy-event-item">
       <div class="event-ts">${e.ts}${agoStr}</div>
       <div class="event-body">
-        <span class="event-source-chip ${sc}">${e.source.toUpperCase()}</span>
+        <span class="event-source-chip ${sc}">${srcStr}</span>
         <span style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">${kindStr}</span>
-        <div class="event-title" style="margin-top:3px">${e.title}</div>
+        <div class="event-title" style="margin-top:3px">${evTitleStr}</div>
         ${sectors ? `<div class="event-sectors">${sectors}</div>` : ''}
       </div>
     </div>`;
