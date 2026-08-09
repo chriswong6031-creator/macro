@@ -399,11 +399,19 @@ jobs:
       # machinery this job already owns, one layer down — the veto-day label classifier
       # (#4547) and the canonical reclaim/divergence/200-MA filter math the §7 buy filter
       # is built from. No new job, no second venv: the install line above already
-      # satisfies both (numpy + pandas, plus pyyaml for lib.config via engine.technicals),
-      # so neither needs an importorskip and neither uses one. Synthetic only — hand-built
+      # satisfies them (numpy + pandas, plus pyyaml for lib.config via engine.technicals),
+      # so none needs an importorskip and none uses one. Synthetic only — hand-built
       # frames and planted structure, no data/ store and no network — which is why they
       # can ride a job that checks out no caches. Measured in this job's exact install
-      # string on a committed-files-only tree: 22 tests, ~2.0s combined.
+      # string on a committed-files-only tree: 44 tests, ~1.2s combined.
+      #
+      # The THIRD suite (earnings-ignition, added 2026-08-09) was dark the same way for the
+      # same reason, and an adversarial re-read of its instrument found a live anchoring
+      # defect that nothing in CI could have caught. It pins the same buy-side §7 marker
+      # stream one layer out — the derived knowability convention those markers are read
+      # through, the EDGAR-roll-aware announcement window, and the single reaction-session
+      # anchor. Its only engine import is engine.session_anchor, whose US reference index is
+      # rule-computed and touches no disk, so the no-caches property holds.
       #
       # The note that stood here — that the three darkness censuses scan tests/ ONLY,
       # so this wiring was hand-verified rather than census-verified — has been false
@@ -415,7 +423,8 @@ jobs:
         run: >
           python -m pytest
           research/prophet_us_audit/test_label_grading_battery.py
-          research/signal_engine/test_buy_filters.py -q
+          research/signal_engine/test_buy_filters.py
+          research/prophet_us_audit/test_earnings_ignition_measurement.py -q
       # The remaining prophet_us_audit guard suites, wired 2026-08-09 by the census the
       # step above was hand-verified against. All three were UNRUN from birth for the
       # same reason as their two siblings: written beside the instrument under research/

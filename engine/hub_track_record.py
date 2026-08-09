@@ -48,6 +48,20 @@ _BULLISH_STAGES = {"emerging", "early"}
 _BEARISH_STAGES = {"exhausted", "distribution"}
 _MIN_PROVEN_N = 40           # matured obs before a signal can be called "proven"
 
+# ── ACCRUAL + COVERAGE MONITOR (D20 / X3) ─────────────────────────────────────────────────
+# Both failures below are invisible BY CONSTRUCTION: `snapshot` is degrade-safe (a failed write
+# just returns 0) and `compute` only ever reports what it DID grade, never what it should have.
+# Measured on the live ledger 2026-08-08 when these were added: 7 of 22 expected snapshot dates
+# missing inside the 30d window (2026-07-09/14/22/23/24, 08-04, 08-07) with the page reading
+# fresh throughout, and matured/eligible coverage of 12.3% / 11.6% / 10.8% at 5/10/21d — none
+# of it surfaced anywhere. Neither number gates anything: they are printed, annotated, stored.
+ACCRUAL_WINDOW_D = 30        # trailing calendar-day window checked for missing snapshot dates
+COVERAGE_FLOOR_PCT = 50.0    # per-horizon matured/eligible floor below which we annotate
+
+# The staleness bound applied to BOTH legs of _fwd_rel (D21). Pinned explicitly at the call
+# site so a future change to the shared default cannot silently un-bound this grader.
+MAX_STALE_D = 7
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -93,6 +107,14 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
                 row["engine_version"] = r.get("engine_version")
             if r.get("source"):                # discovery feed (insider_cluster/activist/…) → per-source IC
                 row["source"] = r.get("source")
+            # ── PROVENANCE (D22) — all three ADDITIVE: rows written before this shipped carry
+            # none of them and must stay gradeable, so every reader treats absence as unknown.
+            if r.get("rank") is not None:      # 1-based position in the day's ranked dossier list
+                row["rank"] = r.get("rank")
+            if r.get("cohorts"):               # sections that SHOWED the name (command_top5/…)
+                row["cohorts"] = list(r.get("cohorts") or [])
+            if r.get("hero_reason"):           # why the hero gate barred a bullish-stage name
+                row["hero_reason"] = r.get("hero_reason")
             if regime:                         # macro quadrant of the snapshot day → by_regime IC
                 row["regime"] = regime
             new.append(row)
@@ -114,10 +136,18 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
 # maturation + forward returns
 # --------------------------------------------------------------------------- #
 def _fwd_rel(ticker: str, root: Path, start: str, horizon_d: int) -> float | None:
+    """Forward SPY-relative return. BOTH legs are staleness-bounded (D21): an asof-or-BEFORE
+    read with no lower bound priced the entry leg off an arbitrarily old bar whenever a name's
+    series had a hole around ``start`` (halt, collector gap, recycled symbol) while the exit
+    leg read current — a fabricated return that then entered the IC. Beyond MAX_STALE_D the
+    read is None and the row is simply NOT COVERED: excluded from grading, counted in
+    coverage_pct. Refusing to grade is the honest answer; a stale bar is not."""
     try:
         end = (pd.Timestamp(start) + pd.Timedelta(days=horizon_d)).strftime("%Y-%m-%d")
-        e0, e1 = _level_asof(ticker, root, start), _close_at(ticker, root, end)
-        b0, b1 = _level_asof(_BENCH, root, start), _close_at(_BENCH, root, end)
+        e0 = _level_asof(ticker, root, start, max_stale_days=MAX_STALE_D)
+        e1 = _close_at(ticker, root, end, max_stale_days=MAX_STALE_D)
+        b0 = _level_asof(_BENCH, root, start, max_stale_days=MAX_STALE_D)
+        b1 = _close_at(_BENCH, root, end, max_stale_days=MAX_STALE_D)
         if None in (e0, e1, b0, b1) or not e0 or not b0:
             return None
         return float((e1 / e0 - 1.0) - (b1 / b0 - 1.0))
@@ -260,6 +290,93 @@ def _by_regime(rows: list) -> dict:
     return out
 
 
+def _rows_per_date(rows: list) -> dict[str, int]:
+    """One pass over the already-loaded rows → {date: n_rows}. The ledger grows ~2.9k rows/day,
+    so every monitor below works off THIS map (a few dozen entries) rather than re-scanning."""
+    per: dict[str, int] = {}
+    for r in rows:
+        d = r.get("date")
+        if d:
+            per[str(d)] = per.get(str(d), 0) + 1
+    return per
+
+
+def _accrual_gaps(per_date: dict[str, int], today: date,
+                  window_d: int = ACCRUAL_WINDOW_D) -> dict:
+    """Expected-vs-present snapshot dates over the trailing ``window_d`` calendar days.
+
+    APPROXIMATE by construction: expected dates are pandas business days, which do NOT know
+    the NYSE holiday calendar — a market holiday inside the window reads as a gap. That is the
+    right error direction for a tripwire (over-reports, never under-reports) and it is why the
+    payload carries ``approximate: True`` and the note says so. Dates before the ledger's own
+    first snapshot are never expected, so a young ledger reports no phantom gaps."""
+    present = sorted(per_date)
+    start = pd.Timestamp(today) - pd.Timedelta(days=window_d)
+    try:
+        expected = [d.strftime("%Y-%m-%d") for d in pd.bdate_range(start, pd.Timestamp(today))]
+    except Exception:  # noqa: BLE001
+        expected = []
+    first = present[0] if present else None
+    if first:
+        expected = [d for d in expected if d >= first]
+    missing = [d for d in expected if d not in per_date]
+    return {"approximate": True, "window_days": window_d,
+            "n_expected": len(expected), "n_present": sum(1 for d in expected if d in per_date),
+            "missing_dates": missing, "n_missing": len(missing),
+            "note": ("Expected dates are pandas business days — NYSE market holidays inside the "
+                     "window are counted as gaps, so this over-reports rather than under-reports."),
+            "first_snapshot": first, "last_snapshot": present[-1] if present else None}
+
+
+def _coverage_pct(per_date: dict[str, int], horizons, today: date,
+                  matured_n: dict[str, int]) -> dict:
+    """Per-horizon matured/eligible coverage. ELIGIBLE = snapshot rows old enough that horizon h
+    has elapsed (the same age test _matured applies first); MATURED = the rows that also had
+    price coverage on both legs. Their ratio is the number the scorecard never printed: grading
+    10% of the eligible universe and grading 90% of it produce identical-looking payloads.
+    Cheap — reads the per-date counts, never the price layer."""
+    out: dict[str, dict] = {}
+    for h in horizons:
+        eligible = 0
+        for d, n in per_date.items():
+            try:
+                if (pd.Timestamp(today) - pd.Timestamp(d)).days >= h:
+                    eligible += n
+            except Exception:  # noqa: BLE001
+                continue
+        mat = int(matured_n.get(str(h), 0) or 0)
+        pct = round(100.0 * mat / eligible, 2) if eligible else None
+        out[str(h)] = {"n_eligible": eligible, "n_matured": mat, "coverage_pct": pct,
+                       "below_floor": bool(pct is not None and pct < COVERAGE_FLOOR_PCT)}
+    return out
+
+
+def _annotate_monitors(gaps: dict, coverage: dict) -> None:
+    """Line-start GitHub annotations for the two silent failures. ``print`` (never ``log.*``)
+    is load-bearing: GitHub only parses a workflow command when ``::`` starts the line, and
+    every builder here logs with a level-prefixing format, so a logged annotation is dropped
+    silently. ``flush`` matters because stdout is block-buffered when piped in CI."""
+    if gaps.get("n_missing"):
+        shown = ", ".join(gaps.get("missing_dates") or [])
+        print(f"::warning title=hub-accrual-gap::hub signal_snapshots ledger is missing "
+              f"{gaps['n_missing']} of {gaps['n_expected']} expected snapshot dates in the last "
+              f"{gaps['window_days']}d: {shown} (business-day approximation — market holidays "
+              f"read as gaps). A missing date is a permanent point-in-time hole; it cannot be "
+              f"backfilled honestly.", flush=True)
+        log.warning("hub accrual gap: %d missing dates in last %dd: %s",
+                    gaps["n_missing"], gaps["window_days"], gaps.get("missing_dates"))
+    breached = [(h, c) for h, c in sorted(coverage.items(), key=lambda kv: int(kv[0]))
+                if c.get("below_floor")]
+    if breached:
+        detail = "; ".join(f"{h}d {c['coverage_pct']}% ({c['n_matured']}/{c['n_eligible']})"
+                           for h, c in breached)
+        print(f"::warning title=hub-coverage-floor::hub track-record coverage is below the "
+              f"{COVERAGE_FLOOR_PCT}% floor at {len(breached)} horizon(s): {detail} — the graded "
+              f"sample is a small, possibly non-random slice of the eligible universe, so every "
+              f"IC and by-stage number carries a selection caveat.", flush=True)
+        log.warning("hub coverage below %.1f%% floor: %s", COVERAGE_FLOOR_PCT, detail)
+
+
 def compute(today: date | str | None = None, root: Path | None = None,
             horizons=_HORIZONS, *, rows: list | None = None, fwd_rel_fn=None,
             bench: str = _BENCH) -> dict:
@@ -308,11 +425,22 @@ def compute(today: date | str | None = None, root: Path | None = None,
                 "statistically proven. Early numbers are provisional, context-only."
                 if not any(proven.values()) else
                 f"Opportunity IC peaks at the {lead_time}d horizon (measured). Context-only.")
+        # ── monitors (D20 / X3) — computed off the per-date counts of the rows ALREADY loaded,
+        # so no second full-ledger scan. Reported + annotated; they gate nothing.
+        per_date = _rows_per_date(rows)
+        gaps = _accrual_gaps(per_date, today_dt)
+        coverage = _coverage_pct(per_date, horizons, today_dt,
+                                 {h: e["n_matured"] for h, e in out_h.items()})
+        for h, e in out_h.items():                        # per-horizon copy for the scorecard
+            e["coverage"] = coverage.get(h)
+        _annotate_monitors(gaps, coverage)
         return {
             "schema": SCHEMA, "as_of": today_dt.isoformat(), "generated_at": _now_iso(),
             "is_context_only": True, "n_snapshots": len(rows),
             "horizons": out_h, "lead_time_d": lead_time, "peak_opportunity_ic": peak_ic,
             "proven": proven, "any_matured": any_matured, "note": note, "benchmark": bench,
+            "accrual_gaps": gaps,          # expected-vs-present snapshot dates (approximate)
+            "coverage_pct": coverage,      # per-horizon matured/eligible + floor breach flag
             "disclaimer": ("An accountable scorecard of the hub's own claims — opportunity rank and "
                            f"lifecycle stage graded against realized {bench}-relative forward returns. "
                            "Until a signal matures and clears a Newey-West significance bar it is "
@@ -323,4 +451,5 @@ def compute(today: date | str | None = None, root: Path | None = None,
         return {"schema": SCHEMA, "as_of": str(today or date.today()), "generated_at": _now_iso(),
                 "is_context_only": True, "n_snapshots": 0, "horizons": {}, "lead_time_d": None,
                 "peak_opportunity_ic": None, "proven": {}, "any_matured": False,
+                "accrual_gaps": {}, "coverage_pct": {},
                 "note": f"compute error ({e}) — accruing, degrade-safe."}
