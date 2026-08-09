@@ -22,8 +22,7 @@ import sys
 from pathlib import Path
 
 _ROOT_DIR = Path(__file__).resolve().parent.parent
-if str(_ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(_ROOT_DIR))
+sys.path.insert(0, str(_ROOT_DIR))
 
 from scripts.metabolism_guard import is_paused, pause_reason  # noqa: E402
 from engine.metabolism.organism_state import build_organism_state  # noqa: E402

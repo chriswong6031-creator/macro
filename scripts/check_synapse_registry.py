@@ -29,11 +29,12 @@ import copy
 import sys
 from pathlib import Path
 
-# Allow running as a standalone script from the repo root.
+# Allow running as a standalone script from the repo root.  Unconditional: an
+# already-present root further down sys.path still loses to a foreign package
+# ahead of it, so this must pin position 0 every time (see scripts/__init__.py).
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.neuralweb.synapse import load_registry, validate_registry  # noqa: E402
 

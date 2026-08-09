@@ -90,6 +90,11 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # __all__ guard: a listed name the module never binds is a dormant
+      # AttributeError under `from m import *`. Same trigger posture as the
+      # annotation guard above — an edit to the scan runs the scan; it fires
+      # for source changes whenever ci.yml is already triggered.
+      - "tests/test_all_exports_resolve.py"
       # sys.modules leak guard. Its RUNTIME half lives in tests/conftest.py (already
       # listed at the top of this block, which triggers the full suite), so this line
       # covers the STATIC half: an edit to the scan itself must run the scan. Same
@@ -253,6 +258,11 @@ on:
       #     tests/test_signal_quality_no_leak.py pins one layer up.
       - "research/prophet_us_audit/label_grading_battery.py"
       - "research/prophet_us_audit/test_label_grading_battery.py"
+      #   * earnings-ignition cohort logic: the derived knowability convention, the
+      #     EDGAR-roll-aware announcement window, and the single reaction-session anchor
+      #     both the reaction and the forward cells hang from. Rides the same step.
+      - "research/prophet_us_audit/earnings_ignition_measurement.py"
+      - "research/prophet_us_audit/test_earnings_ignition_measurement.py"
       - "research/signal_engine/buy_filters.py"
       - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
@@ -653,6 +663,15 @@ on:
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.
       - "tests/test_prophet_government_revenue_context.py"
+      # Waves 9E/9F — shadow cross-check packets and the Prophet post-selection
+      # annotation boundary. Both suites are named here because their subjects
+      # reach OUTSIDE engine/government_revenue/**: the 9F import-boundary test
+      # walks every engine/prophet*.py transitively, and the wired seam lives in
+      # engine/prophet_bridge.py, so an edit to a Prophet module must be able to
+      # start the job that proves the boundary still holds.
+      - "tests/test_government_revenue_shadow_context.py"
+      - "tests/test_government_revenue_prophet_annotation.py"
+      - "engine/prophet_bridge.py"
       - "tests/test_sam_gov_opportunities.py"
       # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
       # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
@@ -676,6 +695,7 @@ on:
       - "tests/test_government_revenue_contracts.py"
       - "tests/test_government_revenue_entity_resolution.py"
       - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_bridge.py"
       - "tests/test_government_revenue_idv_dossiers.py"
       - "tests/test_government_revenue_neuralweb.py"
       - "tests/test_government_revenue_opportunities.py"
@@ -909,6 +929,10 @@ on:
       # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
       # adjudication by path literal, so an edit to it alone must start the contracts pack.
       - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
+      # The operator ruling tests/test_biocatalyst_fixed_cohort_deployment.py reads by
+      # path literal. Without it a PR touching only the ruling never starts
+      # biocatalyst-contracts, the job that runs the suite (#3488 shape).
+      - "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -1579,6 +1603,11 @@ on:
       - "app/deploy/macro-live-prophet.timer"
       - "app/deploy/live-setup.sh"
       - "tests/test_prophet_live_vps_lane.py"
+      # CLOSE-PASS MIRROR lane (W-L1a, #5154). Same #3488 shape as the prophet
+      # units above: test_close_pass_lane.py parses these two unit files, so a
+      # PR touching only a unit file must retrigger the suite that reads it.
+      - "app/deploy/macro-live-closepass.service"
+      - "app/deploy/macro-live-closepass.timer"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -3562,46 +3591,33 @@ jobs:
     # names are the intended required-checks set (ci-pack-0..3) for branch
     # protection; renaming or renumbering them must update that setting too.
     name: ci-pack-${{ matrix.pack }}
-    # EVERY event runs on the hosted pool. The self-hosted detour is retired.
+    # CAPACITY IS SPLIT across the hosted and existing render-linux pools.
     #
-    # History, because the reversal is the point: main's proof was moved to
-    # `["self-hosted","render-linux"]` earlier on 2026-08-09 because it sat `queued`
-    # 30+ minutes behind 133 queued runs and never started, while `pc-render-1..4`
-    # idled. That starved run blocked the whole fleet — `merge_on_green.main_proof`
-    # answers "is main green on ci-pack-N" from the newest CONCLUDED ci.yml run on
-    # main, so with no fresh proof the base-inherited-red refresh cannot fire and every
-    # armed pull request that inherited a since-healed red stays blocked.
+    # The enterprise transfer was expected to raise hosted concurrency to 180, but the
+    # live queue on 2026-08-09 disproved that assumption: roughly 95 workflows remained
+    # queued for hours while only about nine hosted jobs ran and all four render-linux
+    # runners were online. Leaving every pack on `ubuntu-latest` would take days to
+    # conclude the open merge train and would keep main's proof behind the fleet it
+    # gates. The first two PR packs stay hosted and the other two use render-linux, so
+    # both pools make progress without sending CI to the macstudio render/nightly pool.
     #
-    # That fix was correct for its constraint, and the constraint is now GONE. The
-    # repository moved to the MastermindX enterprise organization on 2026-08-09 and the
-    # hosted concurrency ceiling went from 40 to 180 concurrent jobs. The measured
-    # backlog that caused the starvation was ~195 hosted jobs; at 180 it drains in one
-    # wave, and the observed queue fell from 103 runs to 7 within minutes of the
-    # transfer. Hosted pickup is 2-3 s per job. There is no longer anything to escape.
-    #
-    # Routing back is strictly better than leaving it:
-    #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
-    #     and `merge-on-green.yml`. Main's four packs took the entire pool, which
-    #     starved the sweeper that merges every armed pull request (60 sweeps queued,
-    #     oldest 2026-08-07). Returning the packs hands all four runners back.
-    #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
-    #     runners the four packs run concurrently again, so main's proof goes back to
-    #     ~26 minutes from the ~50 the throttle cost.
-    #   * One `runs-on` for every event removes the event-dependent routing entirely,
-    #     so main's baseline and a pull request now prove the packs the SAME way.
-    #
-    # NOT the macstudio pool, unchanged: that is the render/nightly lane and is
-    # routinely saturated (CLAUDE.md — render budget is law).
-    runs-on: ubuntu-latest
+    # A dispatched main proof is control-plane work. It uses render-linux exclusively
+    # and is capped at two packs so half the four-runner pool remains available to the
+    # short merge sweeper, integration baseline, and render jobs. This restores the
+    # measured-safe #5122 arrangement for main while adding bounded PR relief.
+    runs-on: >-
+      ${{ github.event_name == 'pull_request'
+          && (matrix.pack < 2
+              && 'ubuntu-latest'
+              || fromJSON('["self-hosted","render-linux"]'))
+          || fromJSON('["self-hosted","render-linux"]') }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      # NO `max-parallel`. It existed only to stop main's four packs from taking all
-      # four `render-linux` runners and starving `merge-on-green.yml`, which shares
-      # that pool. With every event back on hosted runners there is no shared pool to
-      # protect, and throttling would only make main's proof twice as slow (~26 min
-      # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
-      # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
+      # PRs may run all four packs at once because only two target render-linux. Main's
+      # four packs all target that pool, so cap it at two and preserve two runners for
+      # the short control/render lanes that consume the proof.
+      max-parallel: ${{ github.event_name == 'pull_request' && 4 || 2 }}
       matrix:
         pack: [0, 1, 2, 3]
     steps:
@@ -3618,14 +3634,32 @@ jobs:
       # missing source file is the signature of an inherited sparse checkout, not of a
       # broken runner or a bad ref.
       #
+      # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
+      # SPARSE". It does — run 31304933108 shows checkout@v4 running
+      # `git sparse-checkout disable` itself — and the workspace was partial anyway.
+      # `disable` clears the WORKTREE-scoped flag; checkout then unsets
+      # `extensions.worktreeConfig`, and that makes the repo-scoped `core.sparseCheckout`
+      # visible, and effective, again. The config unset is the half that ends the outage.
+      # The `disable` in front of it is what re-materialises the missing paths for a job
+      # whose own checkout is skipped or conditional (render.yml) — keep both.
+      #
       # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
       - name: clear any sparse checkout a sibling job left in this shared workspace
         if: runner.environment != 'github-hosted'
         shell: bash
         run: |
           if [ -d "${{ github.workspace }}/.git" ]; then
-            git -C "${{ github.workspace }}" sparse-checkout disable || true
-            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
           fi
       - uses: actions/checkout@v4
         with:

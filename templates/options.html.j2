@@ -209,7 +209,12 @@ html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
 .oew-phead{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap;padding:var(--s3) var(--s4);border-bottom:1px solid var(--hair)}
 .oew-ph-title{font-size:14px;font-weight:700;margin:0;letter-spacing:-.01em}
 .oew-ph-sub{font-size:11.5px;color:var(--muted)}
-.oew-ph-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
+/* Wraps because the Scanner header packs a segmented control AND the CSV button
+   in here: at 375px that pair measured 319px inside a 317px header content box,
+   overhanging the padding. Most .oew-ph-right instances hold a single ? chip, so
+   the wrap only engages where the content genuinely does not fit. */
+.oew-ph-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2);
+  flex-wrap:wrap;justify-content:flex-end;min-width:0}
 .oew-pbody{padding:var(--s4)}
 .oew-pfoot{padding:10px var(--s4);border-top:1px solid var(--hair);background:var(--tile);
   font-size:11px;color:var(--muted);display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
@@ -279,15 +284,28 @@ html[data-lang="zh"] .oew-ic-lv .k{letter-spacing:.02em;text-transform:none}
 .oew .tone.buy{color:var(--up);border-color:color-mix(in srgb,var(--up) 38%,var(--hair))}
 .oew .tone.sell{color:var(--down);border-color:color-mix(in srgb,var(--down) 38%,var(--hair))}
 
-/* ── BRIEF: biggest bets ── */
+/* ── BRIEF: biggest bets.
+   The `overflow:hidden` below is CORNER-ROUNDING duty — it clips the square
+   corners of the child rows against the 1px-gap hairline grid. It is NOT an
+   overflow remedy, so the row must be made to FIT rather than be sliced: with
+   a nowrap row, `.oew-bet-r`'s nowrap chips set a min-content floor that blew
+   the auto grid track past the panel (measured 366.8px of track inside 349px
+   of panel at 375px viewport — every chip lost its right edge, and the note
+   was squeezed to one character per line). Both the row and the chip cluster
+   wrap, and every child carries min-width:0, so the cluster REFLOWS onto a
+   second line instead of being clipped. No breakpoint: chip count varies per
+   row, so the wrap has to be content-driven, not width-driven. Desktop is
+   untouched — nothing wraps until the content actually stops fitting. ── */
 .oew-bets{display:grid;gap:1px;background:var(--hair);border-radius:var(--r-ctl);overflow:hidden;border:1px solid var(--hair)}
-.oew-bet{display:flex;align-items:center;gap:var(--s3);padding:8px var(--s3);background:var(--panel);font-size:12.5px}
+.oew-bet{display:flex;align-items:center;gap:var(--s3);row-gap:7px;flex-wrap:wrap;min-width:0;
+  padding:8px var(--s3);background:var(--panel);font-size:12.5px}
 .oew-bet:hover{background:var(--tile)}
 .oew-bet-sym{font-weight:700;width:56px;flex:none}
 .oew-bet-amt{font-weight:650;width:78px;flex:none}
 .oew-bet-amt.pos{color:var(--up)}.oew-bet-amt.neg{color:var(--down)}
-.oew-bet-note{color:var(--muted);font-size:11.5px}
-.oew-bet-r{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
+.oew-bet-note{color:var(--muted);font-size:11.5px;min-width:0;overflow-wrap:anywhere}
+.oew-bet-r{margin-left:auto;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  justify-content:flex-end;min-width:0}
 
 /* ── BRIEF: names-for-tomorrow rail ── */
 .oew-rail{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}

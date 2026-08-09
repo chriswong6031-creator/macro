@@ -17,18 +17,23 @@ card. Run: python -m scripts.build_spvector
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from engine import equity_alloc as ea
-from engine.validation import backtest_core
-from lib import config
-from lib.pages import write_page
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine.validation import backtest_core  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 # Reuse the size-disciplined Plotly helpers + light palette (no edits to build_vector).
-from scripts.build_vector import _html, _plot_y, _dx, _plot_idx, _runs, PLOT, C
+from scripts.build_vector import _html, _plot_y, _dx, _plot_idx, _runs, PLOT, C  # noqa: E402
 
 COST_BPS = 3.0
 # SCENARIO ASSUMPTION — not a tax ruling. Symbolic short-term cap-gains rate
