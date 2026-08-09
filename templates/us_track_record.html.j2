@@ -238,7 +238,7 @@
       reader who saw the old numbers can reconcile them. Glance-tier wording only — the
       grid, the anchor, and the attribution split live in
       reports/us_track_ledger_era_recompute_2026-08-07.md, not on this page. -#}
-  {% if prior_era is defined and prior_era and win_rate_pct is not none %}
+{% if prior_era is defined and prior_era and win_rate_pct is not none %}
   <div class="tr-basis">
     <div class="tr-basis-hd">
       <span class="tr-basis-tag">{{ t('Measurement updated', '计量方式已更新') }}</span>
@@ -259,11 +259,11 @@
         <div class="tr-basis-row"><span class="w">{{ t('finished trades', '已完成交易') }}</span><span class="n">{{ n_outcomes if n_outcomes is not none else '—' }}</span></div>
       </div>
     </div>
-    {% if n_outcomes is not none and prior_era.n_matured is not none and n_outcomes != prior_era.n_matured %}
+{% if n_outcomes is not none and prior_era.n_matured is not none and n_outcomes != prior_era.n_matured %}
     <p class="tr-basis-ft"><span class="l-en">More than the measurement separates these two columns: {{ n_outcomes }} trades have finished now against {{ prior_era.n_matured }} on {{ prior_era.as_of }}, so part of the move is simply more results, not a different ruler.</span><span class="l-zh">两列之间的差异不止来自计量方式：现已走完 {{ n_outcomes }} 笔交易，而 {{ prior_era.as_of }} 时为 {{ prior_era.n_matured }} 笔，因此部分变化只是结果变多，并非换了尺子。</span></p>
-    {% endif %}
+{% endif %}
   </div>
-  {% endif %}
+{% endif %}
 
   <!-- ── Section 2: Record over time ── -->
   <div class="tr-section">

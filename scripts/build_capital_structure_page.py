@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_REPO_ROOT))
 _ASSETS = ("capital_structure_boot.js", "capital_structure.css", "capital_structure.js")
 
 

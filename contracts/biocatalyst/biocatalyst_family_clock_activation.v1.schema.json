@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_family_clock_activation.v1.schema.json",
+  "title": "BioCatalyst Family Clock Activation v1 (BC-M0a)",
+  "description": "The receipt of one honest entry-gate evaluation for one M0a outcome family, carried as the payload of a family_clock_activation operational record. Opening a clock means recording that the family accrues FROM NOW, bound to a frozen policy version and its exact bytes; it never means writing history. A closed clock names every blocker that stands. Nothing here ranks, scores, sizes, or names a security.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "family_id", "policy_version", "policy_sha256", "clock_state", "evaluated_at", "accrual_start_known_at", "satisfied_preconditions", "unsatisfied_preconditions", "blockers", "ineligible_source_ids", "backfill", "authority"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_family_clock_activation.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "family_id": {
+      "enum": [
+        "trial_progression_termination",
+        "endpoint_readout",
+        "timing_slip",
+        "enrollment_site_change",
+        "regulatory_outcome",
+        "financing_dilution_event",
+        "partnership_event",
+        "market_reaction",
+        "forecast_calibration"
+      ]
+    },
+    "policy_version": {"type": "string", "pattern": "^m0a\\.[0-9]{1,4}$"},
+    "policy_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "clock_state": {"enum": ["opened", "closed"]},
+    "evaluated_at": {"$ref": "#/$defs/utc_timestamp"},
+    "accrual_start_known_at": {"oneOf": [{"$ref": "#/$defs/utc_timestamp"}, {"type": "null"}]},
+    "satisfied_preconditions": {"$ref": "#/$defs/precondition_list"},
+    "unsatisfied_preconditions": {"$ref": "#/$defs/precondition_list"},
+    "blockers": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/token"}},
+    "ineligible_source_ids": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/token"}},
+    "backfill": {"const": "forbidden_no_history_recorded"},
+    "authority": {"const": "facts_and_context_only"}
+  },
+  "$defs": {
+    "token": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+    "utc_timestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"},
+    "precondition_list": {
+      "type": "array",
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"enum": ["frozen_policy_version", "eligible_source_registration", "eligible_identity_contract", "o1b_outcome_writer"]}
+    }
+  }
+}

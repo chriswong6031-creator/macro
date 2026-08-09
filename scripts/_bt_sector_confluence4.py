@@ -14,9 +14,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts._bt_sector_confluence2 import _enrich
-from scripts._bt_sector_confluence import _load, SECTORS, BENCH
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts._bt_sector_confluence2 import _enrich  # noqa: E402
+from scripts._bt_sector_confluence import _load, SECTORS, BENCH  # noqa: E402
 
 
 def _stat(sub: pd.DataFrame, col="exc63") -> tuple:

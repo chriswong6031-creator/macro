@@ -38,6 +38,11 @@
    Host contract: sector_central passes `bottoming` = theme_intel.act_now sliced to
    {bottoming_watch, dual_read_ids, recovering_ids, bottoming_authority}. Absent or
    empty → the strip self-hides. t()/tr() come from the host Jinja env. -#}
+{#- Marks are monoline icons, never emoji (doctrine §5.8). The strip borrows the
+    board's .acth-icon / .ai-bdg wrappers, so the sizing + stroke rules already
+    shipped by _us_act_now_board.html.j2 (its host) cover these two marks — no
+    icon CSS is added here. -#}
+{% from "_icons.html.j2" import icon %}
 {#- `is defined` is load-bearing: the same board include renders on us_stocks.html
     via dashboard.html.j2, where no bottoming payload is passed. Default Undefined is
     falsy so `bottoming and ...` already short-circuits, but the explicit guard keeps
@@ -71,7 +76,10 @@
   <div class="actcol act-bottom" id="ab-bottom">
     <div class="acth">
       <div class="acth-title-row">
-        <span class="acth-emoji">🔵</span>
+        {#- `coil` — converging lines then a turn up: compression resolving, which is
+            exactly what this strip watches. The five action lanes above already take
+            target / clock / accel / profits / hold. -#}
+        <span class="acth-icon">{{ icon('coil') }}</span>
         <span class="acth-name"><span class="l-en">Bottoming watch</span><span class="l-zh">筑底观察</span></span>
         <span class="acth-count">{{ _bw_rows | length }}</span>
       </div>
@@ -86,7 +94,7 @@
         {%- set _dual = (x.id in _bw_dual) or (x.cid in _bw_dual) -%}
         <a class="actitem" data-rpop href="{{ x.href }}">
           <span class="act-row-top">
-            <span class="ai-bdg">{{ '🧩' if x.kind == 'BASKET' else '🏛' }}</span>
+            <span class="ai-bdg">{{ icon('diamond') if x.kind == 'BASKET' else icon('sector') }}</span>
             <span class="act-row-name"><span class="l-en">{{ x.name | e }}</span><span class="l-zh">{{ (x.name_zh or x.name) | e }}</span></span>
             {%- if x.osc_slope is not none %}
             <span class="abw-turn" data-tip-en="Momentum is turning up from the low — a bigger number is a sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">&#8599; {{ '%.1f'|format(x.osc_slope) }}</span>

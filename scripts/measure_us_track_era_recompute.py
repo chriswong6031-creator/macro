@@ -105,6 +105,19 @@ def _row_diff(a: dict, b: dict) -> dict:
     }
 
 
+def _direction(before: object, after: object) -> str:
+    """Plain direction label for a generated comparison sentence."""
+    try:
+        left, right = float(before), float(after)
+    except (TypeError, ValueError):
+        return "unavailable"
+    if right > left:
+        return "up"
+    if right < left:
+        return "down"
+    return "unchanged"
+
+
 def _md(res: dict) -> str:
     L: list[str] = []
     A = L.append
@@ -138,11 +151,21 @@ def _md(res: dict) -> str:
         A(f"- `{k}`: **{s.get(k)} -> {n.get(k)}** overall — of which "
           f"{s.get(k)} -> {lg.get(k)} is the unfreeze and {lg.get(k)} -> {n.get(k)} is the era.")
     A("")
-    A("The proposal's §4 pre-registration measured the era arm going **up** "
-      "(`expectancy_pct` 0.94 -> 1.29) on a smaller cohort at an older panel vintage. Measured "
-      "on the real panel and the real published cohort, **it goes down** — on both legs. The "
-      "pre-registered direction did not survive the re-measurement, which is exactly the "
-      "outcome a pre-registration exists to make visible rather than negotiable.")
+    era_direction = _direction(lg.get("expectancy_pct"), n.get("expectancy_pct"))
+    unfreeze_direction = _direction(s.get("expectancy_pct"), lg.get("expectancy_pct"))
+    direction_verdict = (
+        "The pre-registered era direction did not survive the re-measurement"
+        if era_direction == "down"
+        else "The current era direction does not contradict the pre-registration"
+    )
+    A("The proposal's §4 pre-registration measured the isolated era arm going **up** "
+      "(`expectancy_pct` 0.94 -> 1.29) on a smaller cohort at an older panel vintage. "
+      f"Measured on the real panel and published cohort, the isolated era arm goes "
+      f"**{era_direction}** ({lg.get('expectancy_pct')} -> {n.get('expectancy_pct')}); "
+      f"the separately attributed unfreeze goes **{unfreeze_direction}** "
+      f"({s.get('expectancy_pct')} -> {lg.get('expectancy_pct')}). {direction_verdict}, "
+      "which is exactly the outcome a pre-registration exists to make visible rather "
+      "than negotiable.")
     A("")
     A("## 3. Era effect at row level (LEGACY vs NEW)")
     A("")
@@ -164,7 +187,7 @@ def _md(res: dict) -> str:
       "and `site/factordata/us_board_track.json` do not read `_ob_mask` and are outside this "
       "boundary.")
     A("")
-    return "\n".join(L) + "\n"
+    return "\n".join(L).rstrip() + "\n"
 
 
 def main() -> int:

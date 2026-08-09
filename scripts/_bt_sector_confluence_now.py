@@ -7,8 +7,13 @@ Run: python3 -m scripts._bt_sector_confluence_now
 from __future__ import annotations
 
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts._bt_sector_confluence import _load, _to_3b, _signals_3b, SECTORS  # noqa: E402
 
 
 def read_now(t: str) -> dict:

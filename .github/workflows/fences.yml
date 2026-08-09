@@ -31,7 +31,33 @@ concurrency:
   # these read-only fences.  This coalesces agent push bursts before they consume
   # hosted runner slots.
   group: fences-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09. On a PR it is still
+  # `true` — a newer commit obsoletes the older fence result, and coalescing agent
+  # push bursts is the whole reason this line exists. On MAIN it must be `false`,
+  # because coalescing-by-cancel there does not merely waste a run, it makes a
+  # concluded run IMPOSSIBLE.
+  #
+  # THE MEASUREMENT. This workflow is one of the two main proofs that
+  # merge_on_green.main_proof reads (MAIN_PROOF_WORKFLOWS, scripts/merge_on_green.py),
+  # and it is the only one with a `push` trigger — so it is the proof that is
+  # supposed to stay continuously fresh. But main receives wire/nightly pushes
+  # every ~30-90 seconds, and every one of them landed in `fences-refs/heads/main`
+  # and killed its predecessor: five runs between 11:40:38Z and 11:43:04Z on
+  # 2026-08-09, each cancelling the one before. Over the sweeper's 10-run walk that
+  # is not "a large minority superseded" (the 2 of 8 measured 2026-08-08) but ALL
+  # TEN — the sweep at 11:44:42Z reported main's fences proof as "NO clean name …
+  # (fences.yml's newest 10 completed run(s) on main were all cancelled)". A run
+  # that takes longer than the gap between pushes can NEVER conclude. That is
+  # structural, not load-dependent.
+  #
+  # With `false` the running fence finishes while the pending slot keeps coalescing
+  # the burst (GitHub replaces the one PENDING run per group regardless of this
+  # flag), so main gets a concluded fence proof every few minutes. Each one
+  # refreshes the sweeper's resolver, which in steady state removes the need for
+  # ci.yml baseline dispatches altogether. The cost is bounded and already handled:
+  # the concluded run may be for a main SHA one or two pushes behind the tip, and
+  # the sweeper's ancestry check accepts an older main SHA by design.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   fence-pack:

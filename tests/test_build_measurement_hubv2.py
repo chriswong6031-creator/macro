@@ -98,6 +98,13 @@ def _render_measurement_template(**overrides) -> str:
         "trial_budgets": {"available": False},
         "rule_experiments": {"available": False},
         "qledger_reliability": {"available": False},
+        # Seasonality forward record (hero line) — absent-state default.
+        "seasonality_record": {
+            "available": False,
+            "registered": 0,
+            "graded": 0,
+            "next_close": None,
+        },
     }
     context.update(overrides)
 

@@ -450,3 +450,18 @@ def test_dashboard_host_survives_an_artifact_with_no_pre_era_block():
         assert 'id="trd-btn"' in html, "the chip itself must still render"
         assert 'class="trd-basis-chip"' not in html
         assert '<div class="trd-basis">' not in html
+
+
+def test_attribution_report_keeps_unfreeze_and_era_directions_separate():
+    """Current-input accrual may move differently from the isolated era arm."""
+    from scripts.measure_us_track_era_recompute import _md
+
+    report_json = ROOT / "reports" / "us_track_ledger_era_recompute_2026-08-07.json"
+    report_md = report_json.with_suffix(".md")
+    rendered = _md(json.loads(report_json.read_text()))
+
+    assert "isolated era arm goes **down** (1.3 -> 0.78)" in rendered
+    assert "separately attributed unfreeze goes **up** (1.19 -> 1.3)" in rendered
+    assert "on both legs" not in rendered
+    assert rendered.endswith("\n") and not rendered.endswith("\n\n")
+    assert rendered == report_md.read_text()

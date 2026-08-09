@@ -84,8 +84,8 @@ Sibling of `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
 4. **SATISFIED.** The re-measurement is run **after** #4732 merges, on the real panel, and
    its output is committed alongside the recompute in one PR.
    → `scripts/recompute_us_track_ledger.py` (writes only this artifact — no snapshot append,
-   no `retro_grades.parquet` write, per §6) over the committed panel `2023-07-03..2026-08-06`
-   (777 sessions, 32 board dates, 1,555 priced tickers). Attribution measured by
+   no `retro_grades.parquet` write, per §6) over the committed panel `2023-07-05..2026-08-07`
+   (777 sessions, 34 board dates, 1,576 priced tickers). Attribution measured by
    `scripts/measure_us_track_era_recompute.py` → `reports/us_track_ledger_era_recompute_2026-08-07.md`
    + `.json`, all in this PR.
 5. ~~`tests/test_ob_mask_start_invariance.py::test_start_invariance` has its `xfail` marker
@@ -96,8 +96,8 @@ Sibling of `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
 6. **SATISFIED — and it flipped.** The direction of the move (§4) is disclosed in the PR body
    **before** anyone argues the new numbers are better.
    → The PR body opens with the disclosure. It reports the OPPOSITE of §4's pre-registered
-   direction: measured on the real cohort the move is **down**, on both legs. See the §4
-   addendum.
+   direction: the isolated era arm is **down** while the separately attributed unfreeze is
+   mixed across metrics; the overall published headline is down. See the §4 addendum.
 
 **Additionally ruled — the permanent guard. SATISFIED.** `engine.track_ledger.atomic_write`
 (the one path every ledger writer takes; house law forbids `open('w')` truncation) calls
@@ -233,39 +233,41 @@ lane is unfrozen; that is gate §0.4.
 ### §4a ADDENDUM — the re-measurement (gate §0.4, executed 2026-08-07). The sign flipped.
 
 Full report: `reports/us_track_ledger_era_recompute_2026-08-07.md`; regenerate with
-`scripts/measure_us_track_era_recompute.py`. Three arms over ONE cohort (32 board dates) and
-ONE panel (`2023-07-03..2026-08-06`, 777 sessions):
+`scripts/measure_us_track_era_recompute.py`. Three arms over ONE cohort (34 board dates) and
+ONE panel (`2023-07-05..2026-08-07`, 777 sessions):
 
 | | SHIPPED (frozen) | LEGACY grid | NEW absolute anchor |
 |---|---:|---:|---:|
 | what it is | the artifact as published, `as_of 2026-07-31` | the FULL current cohort on the pre-#4732 series-first grid | the same cohort, same prices, same rule, on the absolute anchor |
-| `n_matured` | 173 | 374 | 374 |
-| `n_board_days` | 8 | 18 | 18 |
-| `win_pct` | 63.6 | 61.5 | **59.4** |
-| `expectancy_pct` | 1.19 | 0.92 | **0.75** |
-| `profit_factor` | 1.70 | 1.49 | **1.38** |
-| `capture` | 0.71 | 0.43 | **0.38** |
-| `exp_lo_pct` | 0.21 | 0.14 | **−0.10** |
+| `n_matured` | 173 | 392 | 392 |
+| `n_board_days` | 8 | 19 | 19 |
+| `win_pct` | 63.6 | 62.5 | **59.7** |
+| `expectancy_pct` | 1.19 | 1.30 | **0.78** |
+| `profit_factor` | 1.70 | 1.71 | **1.39** |
+| `capture` | 0.71 | 0.51 | **0.38** |
+| `exp_lo_pct` | 0.21 | 0.56 | **−0.07** |
 
-SHIPPED → LEGACY is the **unfreeze** (201 episodes that matured because time passed — real
+SHIPPED → LEGACY is the **unfreeze** (219 episodes that matured because time passed — real
 new information). LEGACY → NEW is the **era**, isolated: identical boards, admissions, and
 prices; only the bucket grid differs.
 
-**Both legs move down, and so the published level moves down: `expectancy_pct` 1.19 → 0.75,
-`win_pct` 63.6 → 59.4.** §4's controlled arm measured the era going UP on a smaller cohort at
-an older panel vintage; on the real published cohort the same arm goes DOWN
-(0.92 → 0.75). An isolated-arm direction does not survive to the published level, and the
-pre-registration is what makes that legible instead of arguable.
+**The isolated era arm moves down, and the overall published level moves down:
+`expectancy_pct` 1.19 → 0.78, `win_pct` 63.6 → 59.7.** The unfreeze is a separately
+attributed leg and is mixed: expectancy rises 1.19 → 1.30 while win rate falls 63.6 → 62.5.
+§4's controlled arm measured the era going UP on a smaller cohort at an older panel
+vintage; on the real published cohort the same isolated arm goes DOWN (1.30 → 0.78). The
+pre-registered era direction does not survive, and the attribution keeps that finding
+legible instead of conflating it with ordinary accrual.
 
-Era effect at row level: **122 of 374** episodes matured in both arms had their P&L move
-(32.6%), median |Δ| 2.00 pp, max |Δ| 19.10 pp; 123 exit bars and 58 exit reasons moved. Every
+Era effect at row level: **195 of 392** episodes matured in both arms had their P&L move
+(49.7%), median |Δ| 1.60 pp, max |Δ| 30.00 pp; 201 exit bars and 74 exit reasons moved. Every
 one of those is a trade that had already closed — under the retired grid they would keep
 moving as leading history rolled off, and under the absolute anchor they are fixed.
 
-One consequence worth naming: `exp_lo_pct` is now **−0.10**, so the honest range for what a
+One consequence worth naming: `exp_lo_pct` is now **−0.07**, so the honest range for what a
 trade returns spans a loss. The dialog's `_confident` gate already reads that field and
 withholds the green accent and the "worth following" line on its own. The Track-record page's
-hero stance did NOT — it keyed only on the win-rate interval, so at `ci_lo 52.6` it would
+hero stance did NOT — it keyed only on the win-rate interval, so at `ci_lo 53.3` it would
 have printed "more winners than losers" over an average-trade range reaching below zero. That
 page now applies the same interval rule the dialog does. Not a scope expansion: the numbers
 this PR publishes are what put that branch in reach.

@@ -1,0 +1,113 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "OGE-2026-06-30-buy",
+  "ticker": "OGE",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "OGE",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "OGE",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "mixed",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Utilities",
+    "excess_spy": -0.012461850313876477,
+    "excess_sector": -0.0013775370883728488,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "DEAD_MONEY",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "The pick underperformed and matured as dead money, but the supplied process label is clean and the outcome cause remains mixed. Any remedy therefore belongs to conditioning research\u2014especially utility rotation and opportunity-cost regimes\u2014not to tighter selection gates.",
+    "root_cause": "The pick underperformed and matured as dead money, but the supplied process label is clean and the outcome cause remains mixed. Any remedy therefore belongs to conditioning research\u2014especially utility rotation and opportunity-cost regimes\u2014not to tighter selection gates.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The buy book admitted a setup whose thesis did not express efficiently, while macro-regime, utility-rotation, and path-efficiency books may have missed an unfavorable cell.",
+    "engines_credit": "No organ earns firm credit; regime, rotation, and path-efficiency books are the principal research laggards, subject to missing contemporaneous evidence.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "macro_regime",
+        "factor": "",
+        "mechanism": "An unfavorable rates, defensiveness, or benchmark-leadership regime may have reduced utility relative performance.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Similar outcomes across macro cells would weaken the regime explanation.",
+        "evidence_refs": [
+          "sector=Utilities",
+          "outcome_cause=mixed"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "market_rotation",
+        "factor": "",
+        "mechanism": "Capital may have rotated away from utilities toward stronger market groups.",
+        "evidence_status": "unknown",
+        "timing_status": "unknown",
+        "counterfactual": "Positive utility-sector relative performance would shift attention to company-specific weakness.",
+        "evidence_refs": [
+          "sector=Utilities",
+          "excess_spy negative"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "The thesis failed to produce timely movement, creating dead money and benchmark-relative opportunity cost.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "A regime-conditioned thesis horizon might have identified when utility setups were unlikely to express promptly.",
+        "evidence_refs": [
+          "terminal_state=DEAD_MONEY",
+          "process_fault=clean"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "Company-specific regulatory or operational weakness caused the result.",
+      "The benchmark comparison penalized a lower-beta defensive holding during a risk-on period.",
+      "The thesis horizon was longer than the audit window."
+    ],
+    "missing_evidence": [
+      "Rates and macro-regime snapshot at entry",
+      "Utility-sector and regulated-utility peer returns",
+      "Company-specific regulatory calendar",
+      "Expected thesis horizon",
+      "Absolute price and dividend-adjusted path"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "utility_regime_cell",
+        "feature": "Utility opportunity-cost behavior across entry-time rates and rotation regimes",
+        "measurement": "Partition historical utility setups by contemporaneous rate direction, defensive rotation, and benchmark leadership, then compare thesis-expression latency.",
+        "expected_direction": "Certain regime cells would exhibit longer latency and more dead-money outcomes.",
+        "falsifier": "Dead-money incidence and latency are stable across regime cells.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-08",
+  "asof": "2026-08-08",
+  "ts": "2026-08-08T08:12:29+00:00"
+}

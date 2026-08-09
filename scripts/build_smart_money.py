@@ -4,8 +4,8 @@ STAGE FLOW
 ----------
 1. compute_tracker()     — per-trade scorecard / leaderboard / best-worst / rotation
 2. compute_smart_money() — by-ticker consensus / most-held / trend (SM2-R10: called
-                           HERE and smartmoney.json written here; build_site.py later
-                           overwrites — that overwrite is idempotent)
+                           HERE and smartmoney.json written here; standalone
+                           build_site.py resolves this same canonical cohort)
 3. Desk assembly         — build smartmoney_desk.json (frozen interface, masterplan §4)
 4. Ledger advance        — nightly-only (COLLECT_LANE guard inside ownership_ledger.py)
 5. Template render       — current smart_money.html.j2; desk payload passed as `desk`
@@ -14,7 +14,8 @@ STAGE FLOW
 NEVER-BREAK CONTRACT: returns 0 on ANY error (mirrors build_alt_data.py). Each new
 block is wrapped in try/except with an honest 'unavailable' degradation.
 
-SM2-R10: smartmoney.json produced here; build_site.py's later write is idempotent.
+SM2-R10: smartmoney.json produced here; build_site.py independently resolves the
+  same canonical period and slugs before any standalone rewrite.
 SM2-R11: per-axis freshness stamps in the desk payload; the filing-season clock and
   filed-vs-pending grid are REQUIRED — built here and embedded in `freshness`.
 SM2-R3: no blending across axes; crowding keeps short_volume and short_interest as
@@ -22,11 +23,14 @@ SM2-R3: no blending across axes; crowding keeps short_volume and short_interest 
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import math
+import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -34,12 +38,127 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
 from lib import config  # noqa: E402
-from lib.pages import write_page  # noqa: E402
+from lib.pages import (  # noqa: E402
+    dbase_prefix,
+    externalize_css_text,
+    inject_text,
+    write_page,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("build_smart_money")
 
 _STALE = "unavailable"
+_CENSUS_SCHEMA = "institutional_13f.census_public/v1"
+_CENSUS_MAX_RAW_BYTES = 16 * 1024
+_CENSUS_MAX_ROWS = 6
+_CENSUS_RENDER_ARTIFACT_MAX_BYTES = 8 * 1024 * 1024
+_CENSUS_TOP_LEVEL_KEYS = frozenset({
+    "schema", "state", "reason", "generated_at", "identity_grain", "periods",
+    "coverage", "leaders", "sector_breadth", "freshness", "scope",
+})
+_CENSUS_COVERAGE_KEYS = frozenset({
+    "current_original_filings",
+    "baseline_original_filings",
+    "paired_filings",
+    "progress_pct",
+    "current_notice_filers",
+    "current_amendments",
+    "current_holding_filers",
+    "current_long_positions",
+    "mapped_long_positions",
+    "mapping_coverage_pct",
+    "value_unit_status",
+    "current_quality_excluded_reports",
+    "baseline_quality_excluded_reports",
+    "current_quality_excluded_lineages",
+    "baseline_quality_excluded_lineages",
+    "current_overlapping_amendment_lineages",
+    "baseline_overlapping_amendment_lineages",
+    "share_factor_security_exclusions",
+    "structural_event_security_exclusions",
+})
+_CENSUS_COUNT_COVERAGE_KEYS = _CENSUS_COVERAGE_KEYS - frozenset({
+    "progress_pct", "mapping_coverage_pct", "value_unit_status",
+})
+_CENSUS_LEADER_KEYS = frozenset({
+    "ticker", "name", "issuer", "sector", "net_increasers", "net_filer_delta",
+    "holder_delta", "paired_observations", "new_filers", "adding_filers",
+    "trimming_filers", "exiting_filers",
+})
+_CENSUS_SECTOR_KEYS = frozenset({
+    "sector", "name", "net_filer_delta", "net_increasers",
+    "paired_observations", "security_count",
+})
+_CENSUS_SOURCE_KEYS = frozenset({
+    "byte_length",
+    "kind",
+    "quality_findings",
+    "sha256",
+    "url",
+    "rolling_overlay",
+    "official_reference_url",
+    "filing_window_cutoff_at",
+    "acquisition_mode",
+    "official_source_status",
+    "expected_sha256_attested",
+})
+_CENSUS_SOURCE_PROVENANCE_KEYS = frozenset({
+    "official_reference_url",
+    "filing_window_cutoff_at",
+    "acquisition_mode",
+    "official_source_status",
+    "expected_sha256_attested",
+})
+_CENSUS_QUALITY_FINDING_KEYS = frozenset({
+    "confidential_omitted",
+    "duplicate_included_manager_sequence",
+    "included_manager_count_mismatch",
+    "rolling_overlay_catalog_only",
+    "rolling_overlay_excluded",
+    "table_entry_total_mismatch",
+    "table_value_total_mismatch",
+})
+_CENSUS_OVERLAY_KEYS = frozenset({
+    "state",
+    "generation_id",
+    "manifest_sha256",
+    "catalog_source_cutoff_at",
+    "requested_source_cutoff_at",
+    "catalog_filings_through_cutoff",
+    "catalog_only_filings",
+    "bulk_duplicate_filings_verified",
+    "latest_known",
+})
+_CENSUS_IDENTIFIER_KEYS = frozenset({
+    "resolved_cusips", "sha256", "source", "temporal_policy", "venue_policy",
+})
+_CENSUS_CLASSIFICATION_KEYS = frozenset({"source", "sha256", "temporal_policy"})
+_CENSUS_FRESHNESS_KEYS = frozenset({
+    "status",
+    "as_of",
+    "current_source",
+    "baseline_source",
+    "identifier_resolution",
+    "sector_classification",
+    "duplicate_original_lineages",
+    "orphan_amendment_lineages",
+    "relationship_deduplication",
+    "source_cutoff_at",
+    "latest_known",
+})
+_CENSUS_SCOPE_KEYS = frozenset({
+    "population",
+    "includes_passive_quant_custody",
+    "skill_weighted",
+    "comparison_basis",
+    "action_basis",
+    "reported_value_use",
+    "corporate_action_filter",
+    "materiality_threshold_pct",
+    "notices_are_zero_portfolios",
+    "authority",
+})
 
 
 # --------------------------------------------------------------------------- #
@@ -62,11 +181,666 @@ def _funddata_dir() -> Path:
     return d
 
 
+def _degraded_census(reason: str) -> dict:
+    """Small, honest public state used whenever the census boundary rejects input."""
+    return {
+        "schema": _CENSUS_SCHEMA,
+        "state": "degraded",
+        "reason": reason,
+        "generated_at": None,
+        "identity_grain": "filer",
+        "periods": {"current": None, "baseline": None},
+        "coverage": {
+            "current_original_filings": 0,
+            "baseline_original_filings": 0,
+            "paired_filings": 0,
+            "progress_pct": 0.0,
+        },
+        "leaders": {"broadening": [], "narrowing": []},
+        "sector_breadth": [],
+        "freshness": {"status": "unavailable", "as_of": None},
+    }
+
+
+def _census_object(
+    value,
+    *,
+    path: str,
+    allowed: frozenset[str],
+    required: frozenset[str] = frozenset(),
+) -> dict:
+    if type(value) is not dict:
+        raise ValueError(f"{path} must be an object")
+    unknown = set(value) - allowed
+    missing = required - set(value)
+    if unknown:
+        raise ValueError(f"{path} has unknown keys: {sorted(unknown)}")
+    if missing:
+        raise ValueError(f"{path} is missing keys: {sorted(missing)}")
+    return value
+
+
+def _census_string(
+    value,
+    *,
+    path: str,
+    nullable: bool = False,
+    allow_empty: bool = False,
+    maximum_chars: int = 4096,
+) -> str | None:
+    if value is None and nullable:
+        return None
+    if (
+        type(value) is not str
+        or (not value and not allow_empty)
+        or len(value) > maximum_chars
+    ):
+        qualifier = " or null" if nullable else ""
+        raise ValueError(f"{path} must be a bounded string{qualifier}")
+    return value
+
+
+def _census_integer(value, *, path: str, minimum: int = 0) -> int:
+    if type(value) is not int or value < minimum:
+        raise ValueError(f"{path} must be an integer >= {minimum}")
+    return value
+
+
+def _census_number(
+    value,
+    *,
+    path: str,
+    minimum: float | None = None,
+    maximum: float | None = None,
+) -> float:
+    if type(value) not in {int, float} or not math.isfinite(float(value)):
+        raise ValueError(f"{path} must be a finite number")
+    number = float(value)
+    if minimum is not None and number < minimum:
+        raise ValueError(f"{path} is below {minimum}")
+    if maximum is not None and number > maximum:
+        raise ValueError(f"{path} exceeds {maximum}")
+    return number
+
+
+def _census_bool(value, *, path: str) -> bool:
+    if type(value) is not bool:
+        raise ValueError(f"{path} must be a boolean")
+    return value
+
+
+def _census_date(value, *, path: str, nullable: bool = False) -> str | None:
+    text = _census_string(value, path=path, nullable=nullable, maximum_chars=10)
+    if text is None:
+        return None
+    try:
+        if date.fromisoformat(text).isoformat() != text:
+            raise ValueError
+    except ValueError as exc:
+        raise ValueError(f"{path} must be an ISO date") from exc
+    return text
+
+
+def _census_timestamp(
+    value,
+    *,
+    path: str,
+    nullable: bool = False,
+) -> str | None:
+    text = _census_string(value, path=path, nullable=nullable, maximum_chars=32)
+    if text is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text[:-1] + "+00:00") if text.endswith("Z") else None
+    except ValueError as exc:
+        raise ValueError(f"{path} must be an ISO UTC timestamp") from exc
+    if parsed is None or parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise ValueError(f"{path} must be an ISO UTC timestamp")
+    return text
+
+
+def _census_sha256(value, *, path: str, nullable: bool = False) -> str | None:
+    text = _census_string(value, path=path, nullable=nullable, maximum_chars=64)
+    if text is not None and re.fullmatch(r"[0-9a-f]{64}", text) is None:
+        raise ValueError(f"{path} must be a lowercase SHA-256")
+    return text
+
+
+def _validate_census_coverage(value) -> None:
+    coverage = _census_object(
+        value,
+        path="coverage",
+        allowed=_CENSUS_COVERAGE_KEYS,
+        required=frozenset({
+            "current_original_filings",
+            "baseline_original_filings",
+            "paired_filings",
+            "progress_pct",
+        }),
+    )
+    for key in _CENSUS_COUNT_COVERAGE_KEYS & set(coverage):
+        _census_integer(coverage[key], path=f"coverage.{key}")
+    _census_number(
+        coverage["progress_pct"], path="coverage.progress_pct", minimum=0, maximum=100
+    )
+    if "mapping_coverage_pct" in coverage:
+        _census_number(
+            coverage["mapping_coverage_pct"],
+            path="coverage.mapping_coverage_pct",
+            minimum=0,
+            maximum=100,
+        )
+    if "value_unit_status" in coverage:
+        _census_string(coverage["value_unit_status"], path="coverage.value_unit_status")
+
+
+def _validate_census_leader(row, *, path: str) -> None:
+    leader = _census_object(
+        row,
+        path=path,
+        allowed=_CENSUS_LEADER_KEYS,
+        required=_CENSUS_LEADER_KEYS,
+    )
+    _census_string(leader["ticker"], path=f"{path}.ticker", maximum_chars=32)
+    for key in ("name", "issuer", "sector"):
+        _census_string(
+            leader[key], path=f"{path}.{key}", allow_empty=True, maximum_chars=512
+        )
+    for key in ("net_increasers", "net_filer_delta", "holder_delta"):
+        _census_integer(leader[key], path=f"{path}.{key}", minimum=-(2**63))
+    for key in (
+        "paired_observations",
+        "new_filers",
+        "adding_filers",
+        "trimming_filers",
+        "exiting_filers",
+    ):
+        _census_integer(leader[key], path=f"{path}.{key}")
+
+
+def _validate_census_sector(row, *, path: str) -> None:
+    sector = _census_object(
+        row,
+        path=path,
+        allowed=_CENSUS_SECTOR_KEYS,
+        required=_CENSUS_SECTOR_KEYS,
+    )
+    for key in ("sector", "name"):
+        _census_string(sector[key], path=f"{path}.{key}", maximum_chars=512)
+    for key in ("net_filer_delta", "net_increasers"):
+        _census_integer(sector[key], path=f"{path}.{key}", minimum=-(2**63))
+    for key in ("paired_observations", "security_count"):
+        _census_integer(sector[key], path=f"{path}.{key}")
+
+
+def _validate_census_overlay(value, *, path: str) -> None:
+    overlay = _census_object(
+        value,
+        path=path,
+        allowed=_CENSUS_OVERLAY_KEYS,
+        required=_CENSUS_OVERLAY_KEYS,
+    )
+    state = _census_string(overlay["state"], path=f"{path}.state", maximum_chars=16)
+    if state not in {"applied", "unavailable", "disabled"}:
+        raise ValueError(f"{path}.state is invalid")
+    generation_id = _census_string(
+        overlay["generation_id"],
+        path=f"{path}.generation_id",
+        nullable=True,
+        maximum_chars=73,
+    )
+    if generation_id is not None and re.fullmatch(r"i13fgen_[0-9a-f]{64}", generation_id) is None:
+        raise ValueError(f"{path}.generation_id is invalid")
+    _census_sha256(
+        overlay["manifest_sha256"], path=f"{path}.manifest_sha256", nullable=True
+    )
+    _census_timestamp(
+        overlay["catalog_source_cutoff_at"],
+        path=f"{path}.catalog_source_cutoff_at",
+        nullable=True,
+    )
+    _census_timestamp(
+        overlay["requested_source_cutoff_at"],
+        path=f"{path}.requested_source_cutoff_at",
+    )
+    for key in (
+        "catalog_filings_through_cutoff",
+        "catalog_only_filings",
+        "bulk_duplicate_filings_verified",
+    ):
+        _census_integer(overlay[key], path=f"{path}.{key}")
+    _census_bool(overlay["latest_known"], path=f"{path}.latest_known")
+
+
+def _validate_census_source(value, *, path: str) -> None:
+    source = _census_object(
+        value,
+        path=path,
+        allowed=_CENSUS_SOURCE_KEYS,
+        required=frozenset({"byte_length", "kind", "quality_findings", "sha256", "url"}),
+    )
+    _census_integer(source["byte_length"], path=f"{path}.byte_length")
+    for key in ("kind", "url"):
+        _census_string(source[key], path=f"{path}.{key}", maximum_chars=4096)
+    _census_sha256(source["sha256"], path=f"{path}.sha256")
+    findings = _census_object(
+        source["quality_findings"],
+        path=f"{path}.quality_findings",
+        allowed=_CENSUS_QUALITY_FINDING_KEYS,
+    )
+    for key in set(findings):
+        _census_integer(findings[key], path=f"{path}.quality_findings.{key}")
+    provenance_keys = set(source) & _CENSUS_SOURCE_PROVENANCE_KEYS
+    if provenance_keys and provenance_keys != _CENSUS_SOURCE_PROVENANCE_KEYS:
+        missing = sorted(_CENSUS_SOURCE_PROVENANCE_KEYS - provenance_keys)
+        raise ValueError(f"{path} has incomplete source provenance: {missing}")
+    if provenance_keys:
+        _census_string(
+            source["official_reference_url"],
+            path=f"{path}.official_reference_url",
+            maximum_chars=4096,
+        )
+        _census_timestamp(
+            source["filing_window_cutoff_at"],
+            path=f"{path}.filing_window_cutoff_at",
+        )
+        acquisition_mode = _census_string(
+            source["acquisition_mode"],
+            path=f"{path}.acquisition_mode",
+            maximum_chars=32,
+        )
+        if acquisition_mode not in {
+            "sec_https",
+            "operator_https",
+            "operator_http",
+            "operator_file",
+        }:
+            raise ValueError(f"{path}.acquisition_mode is invalid")
+        official_status = _census_string(
+            source["official_source_status"],
+            path=f"{path}.official_source_status",
+            maximum_chars=64,
+        )
+        if official_status not in {
+            "sec_https",
+            "expected_sha256_attested",
+            "operator_supplied_unattested",
+        }:
+            raise ValueError(f"{path}.official_source_status is invalid")
+        _census_bool(
+            source["expected_sha256_attested"],
+            path=f"{path}.expected_sha256_attested",
+        )
+    if "rolling_overlay" in source:
+        _validate_census_overlay(source["rolling_overlay"], path=f"{path}.rolling_overlay")
+
+
+def _validate_census_freshness(value, *, degraded: bool) -> None:
+    required = {"as_of"}
+    if not degraded:
+        required.update({
+            "current_source",
+            "baseline_source",
+            "identifier_resolution",
+            "sector_classification",
+            "duplicate_original_lineages",
+            "orphan_amendment_lineages",
+            "relationship_deduplication",
+        })
+    freshness = _census_object(
+        value,
+        path="freshness",
+        allowed=_CENSUS_FRESHNESS_KEYS,
+        required=frozenset(required),
+    )
+    _census_timestamp(freshness["as_of"], path="freshness.as_of", nullable=degraded)
+    if "status" in freshness:
+        _census_string(freshness["status"], path="freshness.status", maximum_chars=64)
+    for key in ("current_source", "baseline_source"):
+        if key in freshness:
+            _validate_census_source(freshness[key], path=f"freshness.{key}")
+    if "identifier_resolution" in freshness:
+        resolution = _census_object(
+            freshness["identifier_resolution"],
+            path="freshness.identifier_resolution",
+            allowed=_CENSUS_IDENTIFIER_KEYS,
+            required=_CENSUS_IDENTIFIER_KEYS,
+        )
+        _census_integer(
+            resolution["resolved_cusips"],
+            path="freshness.identifier_resolution.resolved_cusips",
+        )
+        _census_sha256(
+            resolution["sha256"], path="freshness.identifier_resolution.sha256"
+        )
+        for key in ("source", "temporal_policy", "venue_policy"):
+            _census_string(
+                resolution[key], path=f"freshness.identifier_resolution.{key}"
+            )
+    if "sector_classification" in freshness:
+        classification = freshness["sector_classification"]
+        if type(classification) is str:
+            _census_string(
+                classification, path="freshness.sector_classification"
+            )
+        else:
+            classification = _census_object(
+                classification,
+                path="freshness.sector_classification",
+                allowed=_CENSUS_CLASSIFICATION_KEYS,
+                required=_CENSUS_CLASSIFICATION_KEYS,
+            )
+            _census_sha256(
+                classification["sha256"],
+                path="freshness.sector_classification.sha256",
+            )
+            for key in ("source", "temporal_policy"):
+                _census_string(
+                    classification[key],
+                    path=f"freshness.sector_classification.{key}",
+                )
+    if "relationship_deduplication" in freshness:
+        _census_string(
+            freshness["relationship_deduplication"],
+            path="freshness.relationship_deduplication",
+        )
+    for key in ("duplicate_original_lineages", "orphan_amendment_lineages"):
+        if key in freshness:
+            _census_integer(freshness[key], path=f"freshness.{key}")
+    if "source_cutoff_at" in freshness:
+        _census_timestamp(freshness["source_cutoff_at"], path="freshness.source_cutoff_at")
+    if "latest_known" in freshness:
+        _census_bool(freshness["latest_known"], path="freshness.latest_known")
+
+
+def _validate_census_scope(value) -> None:
+    scope = _census_object(
+        value,
+        path="scope",
+        allowed=_CENSUS_SCOPE_KEYS,
+        required=_CENSUS_SCOPE_KEYS,
+    )
+    for key in (
+        "population",
+        "comparison_basis",
+        "action_basis",
+        "reported_value_use",
+        "corporate_action_filter",
+        "authority",
+    ):
+        _census_string(scope[key], path=f"scope.{key}")
+    for key in (
+        "includes_passive_quant_custody",
+        "skill_weighted",
+        "notices_are_zero_portfolios",
+    ):
+        _census_bool(scope[key], path=f"scope.{key}")
+    _census_number(
+        scope["materiality_threshold_pct"],
+        path="scope.materiality_threshold_pct",
+        minimum=0,
+        maximum=100,
+    )
+
+
+def _reject_duplicate_json_keys(pairs):
+    value = {}
+    for key, child in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON key: {key}")
+        value[key] = child
+    return value
+
+
+def _reject_non_json_constant(value: str):
+    raise ValueError(f"invalid JSON numeric constant: {value}")
+
+
+def _validate_census_document(value) -> dict:
+    doc = _census_object(
+        value,
+        path="census",
+        allowed=_CENSUS_TOP_LEVEL_KEYS,
+        required=frozenset({
+            "schema",
+            "state",
+            "generated_at",
+            "identity_grain",
+            "periods",
+            "coverage",
+            "leaders",
+            "sector_breadth",
+            "freshness",
+        }),
+    )
+    if doc["schema"] != _CENSUS_SCHEMA:
+        raise ValueError("schema mismatch")
+    if doc["state"] not in {"rolling", "complete", "degraded"}:
+        raise ValueError("invalid census state")
+    degraded = doc["state"] == "degraded"
+    if doc["identity_grain"] != "filer":
+        raise ValueError("identity_grain must be filer")
+    _census_timestamp(
+        doc["generated_at"], path="generated_at", nullable=degraded
+    )
+    if "reason" in doc:
+        if not degraded:
+            raise ValueError("reason is only valid for degraded census state")
+        _census_string(doc["reason"], path="reason", maximum_chars=256)
+    elif degraded:
+        raise ValueError("degraded census state requires reason")
+
+    periods = _census_object(
+        doc["periods"],
+        path="periods",
+        allowed=frozenset({"current", "baseline"}),
+        required=frozenset({"current", "baseline"}),
+    )
+    for key in ("current", "baseline"):
+        _census_date(periods[key], path=f"periods.{key}", nullable=degraded)
+    _validate_census_coverage(doc["coverage"])
+
+    leaders = _census_object(
+        doc["leaders"],
+        path="leaders",
+        allowed=frozenset({"broadening", "narrowing"}),
+        required=frozenset({"broadening", "narrowing"}),
+    )
+    bounded_leaders: dict[str, list[dict]] = {}
+    for key in ("broadening", "narrowing"):
+        rows = leaders[key]
+        if type(rows) is not list:
+            raise ValueError(f"leaders.{key} must be an array")
+        for index, row in enumerate(rows):
+            _validate_census_leader(row, path=f"leaders.{key}[{index}]")
+        bounded_leaders[key] = rows[:_CENSUS_MAX_ROWS]
+
+    sectors = doc["sector_breadth"]
+    if type(sectors) is not list:
+        raise ValueError("sector_breadth must be an array")
+    for index, row in enumerate(sectors):
+        _validate_census_sector(row, path=f"sector_breadth[{index}]")
+    _validate_census_freshness(doc["freshness"], degraded=degraded)
+    if "scope" in doc:
+        _validate_census_scope(doc["scope"])
+    elif not degraded:
+        raise ValueError("census is missing keys: ['scope']")
+
+    bounded = dict(doc)
+    bounded["leaders"] = bounded_leaders
+    bounded["sector_breadth"] = sectors[:_CENSUS_MAX_ROWS]
+    return bounded
+
+
+def _load_institutional_census() -> dict:
+    """Load and bound the public census projection; reject everything else.
+
+    The private universal holdings plane never crosses this boundary.  Only the
+    producer's compact public projection may be embedded in the page.
+    """
+    source = config.ROOT / "data" / "institutional_13f" / "public" / "census_latest.json"
+    try:
+        with source.open("rb") as fh:
+            raw = fh.read(_CENSUS_MAX_RAW_BYTES + 1)
+        if len(raw) > _CENSUS_MAX_RAW_BYTES:
+            raise ValueError("source exceeds 16KB")
+        doc = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+            parse_constant=_reject_non_json_constant,
+        )
+        bounded = _validate_census_document(doc)
+        if len(_jdump(bounded).encode("utf-8")) > _CENSUS_MAX_RAW_BYTES:
+            raise ValueError("bounded projection exceeds 16KB")
+        return bounded
+    except FileNotFoundError:
+        log.info("institutional census source absent — publishing degraded summary")
+        return _degraded_census("source_missing")
+    except Exception as e:  # noqa: BLE001 — public boundary must fail closed
+        log.warning("institutional census source rejected — publishing degraded summary: %s", e)
+        return _degraded_census("source_rejected")
+
+
+def _publish_institutional_census() -> dict:
+    """Publish and return the one bounded census object consumed by the desk."""
+    census = _load_institutional_census()
+    try:
+        (_site_dir() / "institutional_census_summary.json").write_text(_jdump(census))
+    except Exception as e:  # noqa: BLE001
+        log.warning("write institutional census summary failed: %s", e)
+    return census
+
+
+def _load_bounded_json_object(
+    path: Path,
+    *,
+    maximum_bytes: int,
+    label: str,
+    allow_non_finite: bool = False,
+) -> dict:
+    """Read one existing public artifact without admitting unbounded or loose JSON."""
+    with path.open("rb") as fh:
+        raw = fh.read(maximum_bytes + 1)
+    if len(raw) > maximum_bytes:
+        raise ValueError(f"{label} exceeds {maximum_bytes} bytes")
+    load_kwargs = {"object_pairs_hook": _reject_duplicate_json_keys}
+    if not allow_non_finite:
+        load_kwargs["parse_constant"] = _reject_non_json_constant
+    value = json.loads(raw.decode("utf-8"), **load_kwargs)
+    if type(value) is not dict:
+        raise ValueError(f"{label} must be a JSON object")
+    return value
+
+
+def _postprocess_census_page(html: str, page_path: Path) -> str:
+    """Apply the canonical page-specific asset pipeline without a site sweep."""
+
+    from scripts.externalize_css import MIN_BYTES
+    from scripts.optimize_assets import make_optimizer
+
+    site_root = config.ROOT / "site"
+    css_root = site_root / "assets" / "css"
+    html = inject_text(html, dbase_prefix(page_path))
+
+    def make_href(
+        css: str,
+        _index: int,
+        _media: str | None,
+    ) -> str | None:
+        payload = css.encode("utf-8")
+        if len(payload) < MIN_BYTES:
+            return None
+        digest = hashlib.sha256(payload).hexdigest()[:8]
+        destination = css_root / f"{digest}.css"
+        if destination.exists():
+            if destination.read_bytes() != payload:
+                raise ValueError("content-addressed census CSS collision")
+        else:
+            css_root.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(payload)
+        return f"assets/css/{digest}.css?v={digest}"
+
+    externalized = externalize_css_text(html, make_href)
+    optimized = make_optimizer(site_root)(externalized, page_path.parent)
+    marker = '<section class="institutional-census" id="sec-census"'
+    start = optimized.index(marker)
+    end = optimized.index("</section>", start) + len("</section>")
+    census = "\n".join(line.rstrip() for line in optimized[start:end].splitlines())
+    return optimized[:start] + census + optimized[end:]
+
+
+def render_institutional_census_only() -> int:
+    """Refresh only the bounded Census block in the existing Smart-Money desk.
+
+    This lane deliberately does not call collectors, cohort resolution, scoring,
+    ledgers, or dossier builders.  Both existing public inputs are loaded and the
+    three authorized payloads are fully rendered in memory before any is replaced.
+    """
+    factordata = config.ROOT / "site" / "factordata"
+    desk_path = factordata / "smartmoney_desk.json"
+    tracker_path = factordata / "smartmoney_tracker.json"
+    summary_path = factordata / "institutional_census_summary.json"
+    page_path = config.ROOT / "site" / "smart_money.html"
+    try:
+        desk = _load_bounded_json_object(
+            desk_path,
+            maximum_bytes=_CENSUS_RENDER_ARTIFACT_MAX_BYTES,
+            label="smartmoney_desk.json",
+            # The legacy desk intentionally contains Python JSON NaN sentinels.
+            # Preserve those already-public values; the new census document is
+            # loaded independently through the strict finite-number boundary.
+            allow_non_finite=True,
+        )
+        tracker = _load_bounded_json_object(
+            tracker_path,
+            maximum_bytes=_CENSUS_RENDER_ARTIFACT_MAX_BYTES,
+            label="smartmoney_tracker.json",
+        )
+        census = _load_institutional_census()
+        census_payload = _jdump(census)
+        if len(census_payload.encode("utf-8")) > _CENSUS_MAX_RAW_BYTES:
+            raise ValueError("institutional census summary exceeds its byte ceiling")
+        updated_desk = dict(desk)
+        updated_desk["institutional_census"] = census
+        desk_payload = _jdump(updated_desk)
+        if len(desk_payload.encode("utf-8")) > _CENSUS_RENDER_ARTIFACT_MAX_BYTES:
+            raise ValueError("updated smartmoney_desk.json exceeds its byte ceiling")
+
+        env = Environment(
+            loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True
+        )
+        html = env.get_template("smart_money.html.j2").render(
+            trk=tracker,
+            generated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+            active_section="us",
+            active_page="smart_money",
+            desk=updated_desk,
+        )
+        html = _postprocess_census_page(html, page_path)
+        if len(html.encode("utf-8")) > _CENSUS_RENDER_ARTIFACT_MAX_BYTES:
+            raise ValueError("rendered smart_money.html exceeds its byte ceiling")
+
+        summary_path.write_text(census_payload)
+        desk_path.write_text(desk_payload)
+        write_page(page_path, html)
+        log.info(
+            "census render-only: wrote census summary + smartmoney_desk.json + "
+            "smart_money.html without recomputation"
+        )
+        return 0
+    except Exception as exc:  # noqa: BLE001 -- render-only lane must fail closed.
+        log.error("census render-only failed; no recomputation attempted: %s", exc)
+        return 1
+
+
 # --------------------------------------------------------------------------- #
 # Board assembly helpers (pure given resolved data)                             #
 # --------------------------------------------------------------------------- #
 
-def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
+def _build_initiations(sm: dict, tracker: dict,
+                       target_period: str | None = None,
+                       included_slugs: list[str] | set[str] | None = None
+                       ) -> list[dict]:
     """SM2-R2 neutral initiations board: new/material-add ≥ 1% book, filing_date DESC.
 
     Issuer-collapsed (if multiple funds initiate the same ticker, they appear as one
@@ -83,7 +857,7 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
     funds_cfg = (config.load().get("smart_money", {}) or {}).get("funds", {}) or {}
 
     try:
-        from engine.smart_money import _read_two, diff_snapshots, resolve_tickers
+        from engine.smart_money import _read_period_pair, diff_snapshots, resolve_tickers
         from engine.smart_money import name_ticker_map, full_cusip_map, _snapshot_filing_date
         from engine.smart_money import position_rank_and_tilt, window_dressing_flag
         name_map = name_ticker_map()
@@ -91,8 +865,11 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
     except Exception:  # noqa: BLE001
         return []
 
+    selected = set(included_slugs) if included_slugs is not None else set(funds_cfg)
     for slug, spec in funds_cfg.items():
-        prev, latest = _read_two(slug)
+        if slug not in selected:
+            continue
+        prev, latest = _read_period_pair(slug, target_period)
         if latest is None or latest.empty:
             continue
         fd = _snapshot_filing_date(latest)
@@ -194,9 +971,10 @@ def _build_grand_portfolio(sm: dict) -> list[dict]:
         trend = bt.get("trend", {})
         holders_series = trend.get("holders_series", []) if trend else []
         # QoQ holder delta
-        h_first = trend.get("holders_first", 0) if trend else 0
-        h_last = trend.get("holders_last", 0) if trend else 0
-        d_funds_qoq = (h_last - h_first) if trend else None
+        d_funds_qoq = (
+            int(holders_series[-1]) - int(holders_series[-2])
+            if len(holders_series) >= 2 else None
+        )
         # n_top10: how many current holders have this in their top-10 (approx from rank)
         holders = bt.get("holders", [])
         n_top10 = sum(1 for h in holders if (h.get("position_rank") or 99) <= 10)
@@ -466,12 +1244,36 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("write smartmoney_tracker.json failed: %s", e)
 
+    # Filing-season transition is resolved before any aggregate board is built.
+    # This gives every downstream surface one homogeneous cohort contract:
+    # complete prior-quarter baseline before strict majority, then the paired
+    # incoming-quarter reporters as the rolling main cohort.
+    clock: dict = {}
+    filing_transition: dict = {}
+    try:
+        from engine.ownership_event_wire import (filing_season_clock,
+                                                 latest_fund_filings)
+        from engine.filing_transition import build_filing_transition
+        clock = filing_season_clock(
+            funds, fund_filings=latest_fund_filings(funds))
+        filing_transition = build_filing_transition(funds, clock, tracker or {})
+    except Exception as e:  # noqa: BLE001
+        # Mixing each manager's latest quarter is a silent data-integrity failure.
+        # Keep the prior published artifact and fail this build instead of
+        # falling back to the legacy mixed-quarter behaviour.
+        log.error("filing transition preflight failed — refusing mixed books: %s", e)
+        return 1
+
     # ---- Phase 2: compute_smart_money (SM2-R10: called here) ----
     t2 = time.monotonic()
     sm = None
     try:
         from engine.smart_money import compute_smart_money
-        sm = compute_smart_money(sm_cfg)
+        sm = compute_smart_money(
+            sm_cfg,
+            target_period=filing_transition.get("canonical_period"),
+            included_slugs=filing_transition.get("canonical_slugs"),
+        )
         if not sm:
             log.info("compute_smart_money: no data — degraded desk")
     except Exception as e:  # noqa: BLE001
@@ -487,12 +1289,29 @@ def main() -> int:
     # ---- Phase 3: event wire + filing-season clock ----
     t3 = time.monotonic()
     wire: list[dict] = []
-    clock: dict = {}
     wire_13dg_activists: list[dict] = []
     try:
         from engine.ownership_event_wire import (build_wire, freshness_axes,
                                                  _13dg_rows, _13DG_LOOKBACK_ACTIVISTS)
         wire, clock = build_wire(funds)
+        # Rebuild the small transition payload from the exact clock returned with
+        # the wire, but preserve the preflight cohort atomically if files changed
+        # underneath this build. The next run will promote the newer receipt.
+        from engine.filing_transition import build_filing_transition
+        refreshed_transition = build_filing_transition(funds, clock, tracker or {})
+        preflight_contract = (
+            filing_transition.get("canonical_period"),
+            tuple(filing_transition.get("canonical_slugs") or []),
+        )
+        refreshed_contract = (
+            refreshed_transition.get("canonical_period"),
+            tuple(refreshed_transition.get("canonical_slugs") or []),
+        )
+        if refreshed_contract == preflight_contract:
+            filing_transition = refreshed_transition
+        else:
+            log.warning(
+                "filing transition changed during build; preserving atomic preflight cohort")
         freshness = freshness_axes(wire, clock)
         # Activists board keeps its own 45-day 13D/G feed (independent of main wire cap)
         try:
@@ -505,10 +1324,19 @@ def main() -> int:
         freshness = []
     phase_times["wire"] = round(time.monotonic() - t3, 2)
 
+    # Public all-filer census projection.  This is a strict, bounded boundary:
+    # private filings/holdings stay in the institutional evidence plane and only
+    # the <=16KB public summary is written to site/ and embedded in the desk.
+    institutional_census = _publish_institutional_census()
+
     # ---- Phase 4: assemble desk payload ----
     t4 = time.monotonic()
     try:
-        initiations = _build_initiations(sm or {}, tracker or {})
+        initiations = _build_initiations(
+            sm or {}, tracker or {},
+            target_period=filing_transition.get("canonical_period"),
+            included_slugs=filing_transition.get("canonical_slugs"),
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("initiations build failed: %s", e)
         initiations = []
@@ -570,17 +1398,40 @@ def main() -> int:
     # ---- Phase 4.3: per-fund intelligence (full books / conviction / theme reads) ----
     t43 = time.monotonic()
     fund_intel: dict = {}
+    fund_intel_latest: dict = {}
     fund_intel_index: dict = {}
     try:
         from engine.fund_intelligence import build_fund_intel
-        fund_intel = build_fund_intel(sm_cfg, tracker) or {}
+        active_slugs = filing_transition.get("active_slugs") or list(funds)
+        # Individual dossiers roll as soon as that manager files. Aggregate
+        # flow/consensus boards receive a separate homogeneous cohort payload.
+        fund_intel_latest = build_fund_intel(
+            sm_cfg, tracker, included_slugs=active_slugs) or {}
+        latest_periods = {
+            str((fi.get("book_meta") or {}).get("period_end") or "")
+            for fi in (fund_intel_latest.get("funds") or {}).values()
+        }
+        canonical_slugs = filing_transition.get("canonical_slugs") or active_slugs
+        can_reuse_latest = (
+            set(canonical_slugs) == set(active_slugs)
+            and latest_periods == {str(filing_transition.get("canonical_period") or "")}
+        )
+        fund_intel = (
+            fund_intel_latest if can_reuse_latest else
+            (build_fund_intel(
+                sm_cfg, tracker,
+                target_period=filing_transition.get("canonical_period"),
+                included_slugs=canonical_slugs,
+            ) or {})
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("fund_intel build failed — continuing: %s", e)
         fund_intel = {}
-    if fund_intel.get("funds"):
+        fund_intel_latest = {}
+    if fund_intel_latest.get("funds"):
         _lb_grades = {r.get("slug"): r.get("grade")
                       for r in (tracker or {}).get("leaderboard", [])}
-        for slug, fi in (fund_intel.get("funds") or {}).items():
+        for slug, fi in (fund_intel_latest.get("funds") or {}).items():
             # Per-fund JSON page payload — the 50 full books never ride in the
             # desk JSON (small pages; the dossier/template hydrates from here).
             try:
@@ -897,6 +1748,7 @@ def main() -> int:
     # ---- Phase 5: ledger advance (nightly-only) ----
     t5 = time.monotonic()
     ledger_added: dict = {}
+    manager_history: dict = {}
     try:
         from engine.ownership_ledger import advance_ledgers, ledger_summary
         # L5 cohort: the conviction-buys composite earns a forward record
@@ -906,6 +1758,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("ledger advance/summary failed: %s", e)
         ledger = {}
+    try:
+        from engine.manager_history import (advance_manager_history,
+                                            manager_history_summary)
+        _manager_history_added = advance_manager_history(
+            (follow_desk.get("memory") or {}) if follow_desk else {})
+        manager_history = manager_history_summary()
+        manager_history["added_this_run"] = _manager_history_added
+    except Exception as e:  # noqa: BLE001
+        log.warning("manager grade/excess history advance failed: %s", e)
+        manager_history = {}
     phase_times["ledger"] = round(time.monotonic() - t5, 2)
     # "boards" keeps meaning the Phase-4 board assembly only — the new v3
     # phases are timed separately and subtracted so the benchmark stays honest.
@@ -918,9 +1780,59 @@ def main() -> int:
 
     built = datetime.now(timezone.utc).isoformat()
 
+    # Typed operational receipt: distinguishes a healthy no-new-filing poll from
+    # a stale collector or an unresolved post-deadline roster.  GitHub's narrow
+    # filing-season workflow fails loudly on collection/publish errors; this
+    # artifact lets the page and production probes inspect the same state.
+    transition_health: dict = {}
+    try:
+        import pandas as pd
+        run_path = config.data_dir() / "smart_money" / "smart_money_runs.parquet"
+        collector_checked = None
+        if run_path.exists():
+            runs = pd.read_parquet(run_path)
+            if len(runs.index):
+                collector_checked = str(pd.to_datetime(runs.index).max().date())
+        receipt_path = config.data_dir() / "smart_money" / "filing_receipts.parquet"
+        receipt_count = (len(pd.read_parquet(receipt_path))
+                         if receipt_path.exists() else 0)
+        violations: list[str] = []
+        if not collector_checked:
+            violations.append("collector heartbeat unavailable")
+        else:
+            age_d = (datetime.now(timezone.utc).date()
+                     - pd.Timestamp(collector_checked).date()).days
+            if age_d > 3:
+                violations.append(f"collector heartbeat is {age_d}d old")
+        if (clock.get("quarter_state") == "window_closed"
+                and filing_transition.get("pending_count", 0) > 0):
+            violations.append(
+                f"deadline passed with {filing_transition.get('pending_count')} unresolved funds")
+        transition_health = {
+            "status": "warning" if violations else "ok",
+            "violations": violations,
+            "collector_checked": collector_checked,
+            "latest_filing_date": max(
+                (str(row.get("filing_date") or "")
+                 for row in clock.get("filed_pending", [])), default="") or None,
+            "expected_period": filing_transition.get("expected_period"),
+            "canonical_period": filing_transition.get("canonical_period"),
+            "filed_count": filing_transition.get("filed_count", 0),
+            "active_count": filing_transition.get("active_count", 0),
+            "receipt_count": receipt_count,
+            "generated_at": built,
+        }
+        quality_path = config.ROOT / "data" / "quality" / "smart_money_freshness.json"
+        quality_path.parent.mkdir(parents=True, exist_ok=True)
+        quality_path.write_text(_jdump(transition_health))
+        (_site_dir() / "smartmoney_health.json").write_text(_jdump(transition_health))
+    except Exception as e:  # noqa: BLE001
+        log.warning("smart-money transition health receipt failed: %s", e)
+
     # Freshness block (SM2-R11 required)
     freshness_block = {
         "axes": freshness,
+        "quarter_end": clock.get("quarter_end", _STALE),
         "next_deadline": clock.get("next_deadline", _STALE),
         "days_to_deadline": clock.get("days_to_deadline"),
         "quarter_state": clock.get("quarter_state", _STALE),
@@ -955,6 +1867,9 @@ def main() -> int:
     desk: dict = {
         "built": built,
         "freshness": freshness_block,
+        "filing_transition": filing_transition,
+        "institutional_census": institutional_census,
+        "transition_health": transition_health,
         "wire": wire,
         "wire_display": wire_display,
         "initiations": initiations,
@@ -966,6 +1881,7 @@ def main() -> int:
         "flow": flow,
         "fund_intel_index": fund_intel_index,
         "ledger": ledger,
+        "manager_history": manager_history,
         "follow": follow_desk,
     }
 
@@ -999,7 +1915,7 @@ def main() -> int:
     # no nav_prefix). Per-fund try/except — one bad book never kills the rest. ----
     t65 = time.monotonic()
     n_dossiers = 0
-    if ((sm_cfg.get("dossier", {}) or {}).get("enabled", True)) and fund_intel.get("funds"):
+    if ((sm_cfg.get("dossier", {}) or {}).get("enabled", True)) and fund_intel_latest.get("funds"):
         _lb_rows = {r.get("slug"): r for r in (tracker or {}).get("leaderboard", [])}
         _by_fund = (tracker or {}).get("by_fund", {}) or {}
         dossier_tpl = None
@@ -1008,7 +1924,7 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("fund_dossier template unavailable — dossiers skipped: %s", e)
         if dossier_tpl is not None:
-            for slug, fi in (fund_intel.get("funds") or {}).items():
+            for slug, fi in (fund_intel_latest.get("funds") or {}).items():
                 try:
                     html_fund = dossier_tpl.render(
                         slug=slug,
@@ -1027,7 +1943,7 @@ def main() -> int:
         # Fund directory page — own try/except, degrades to no page.
         try:
             index_rows = []
-            for slug, fi in (fund_intel.get("funds") or {}).items():
+            for slug, fi in (fund_intel_latest.get("funds") or {}).items():
                 lb = _lb_rows.get(slug) or {}
                 sc = (_by_fund.get(slug) or {}).get("scorecard") or {}
                 meta = fi.get("book_meta") or {}
@@ -1098,4 +2014,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--census-render-only"]:
+        sys.exit(render_institutional_census_only())
     sys.exit(main())

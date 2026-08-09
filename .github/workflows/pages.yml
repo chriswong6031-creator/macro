@@ -3,7 +3,7 @@ name: pages
 # served via Tencent EdgeOne (DNSPod nameservers; apex/www/admin/app all CNAME to
 # *.eo.dnse3.com — verified 2026-07-05), with the VPS Caddy (pulling main every
 # ~3 min) as origin — NOT GitHub Pages and NOT Cloudflare. GitHub Pages
-# (chriswong6031-creator.github.io/macro, no custom domain) is a live mirror that
+# (mastermindx-market-intelligence.github.io/macro, no custom domain) is a live mirror that
 # daily.yml and weekly.yml deploy on every nightly/weekly run (their deploy-pages
 # steps); this workflow only exists to re-deploy that mirror on demand. Auto-trigger
 # stays OFF: the `github-pages` environment's one-deploy-at-a-time serialization
