@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-02"
+updated: "2026-08-09"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -2333,6 +2333,46 @@ checks:
       Established by the v4 sweep finding F1: five propose-test-learn loops held
       divergent blocklists with no cross-read — a construction killed in one loop
       was invisible to the others.
+
+  - law_id: identity.stable_key_vendor_alias_boundary
+    summary: >
+      Stable universe, page, and ledger keys must not fork when a live listing
+      moves to a new vendor symbol. Every current universe key that is absent
+      from the latest listing directory must resolve through lib.ticker_aliases
+      to one currently listed vendor symbol; alias targets must be unique and
+      must not also appear as a second universe member for the same company.
+    source_ref:
+      - scripts/check_symbol_rename_drift.py
+      - lib/ticker_aliases.py
+      - tests/test_ticker_alias_boundary.py
+      - data/qledger/retired_symbol_disclosures.json
+    severity: hard
+    check_script: scripts/check_symbol_rename_drift.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: house-law-registry
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      The direct CI lane runs the live guard and tests/test_ticker_alias_boundary.py;
+      that suite pins stable-to-vendor resolution, duplicate-store prevention,
+      provider-key collapse, dead-name exclusion, disclosure minima, and the
+      committed repository boundary end to end.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The hard gate evaluates the latest tracked listing directory and current
+        universe snapshots; it does not rewrite historical filing or membership
+        symbols, which retain the identifiers known at their event time.
+      - Stale open point-in-time membership intervals are reported as warnings
+        because closing them requires separate dated membership evidence.
+      - Class-share spellings use the repository's bounded dot/dash/base-symbol
+        tolerance and do not constitute a general company-identity mapper.
+    owner_program: stable-symbol-identity
+    notes: >
+      The only supported seam fetches under the current vendor symbol and stores
+      under the permanent membership key. The guard must never mint a second
+      price store or reinterpret historical identity.
 
   - law_id: flow_continuity.statement_tape_schema
     summary: >

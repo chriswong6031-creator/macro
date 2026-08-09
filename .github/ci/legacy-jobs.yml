@@ -2279,7 +2279,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pandas pyarrow pyyaml
       - name: meta-guard selftest (synthetic assertions — gate fires on violations)
         run: python3 scripts/check_house_law_registry.py --selftest
       - name: meta-guard live check (census + wiring + selftest truth + ratchets)
@@ -2290,6 +2290,10 @@ jobs:
           git diff --exit-code docs/HOUSE_LAW_CI_GUARD_SUITE.md
       - name: claim-passport lint (no unregistered qual field reaching scored consumer)
         run: python3 scripts/check_claim_passport.py
+      - name: stable-key / live-vendor symbol alias boundary
+        run: |
+          python3 scripts/check_symbol_rename_drift.py
+          python -m pytest tests/test_ticker_alias_boundary.py -q
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
 
