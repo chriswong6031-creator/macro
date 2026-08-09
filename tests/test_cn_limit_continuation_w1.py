@@ -11,11 +11,15 @@ import pytest
 from scripts.research.cn_limit_continuation_w1 import (
     BOUNDARY_PURGE_SESSIONS,
     C_AUCTION_SELECTION_FIELDS,
+    CHINEXT_REGISTRATION_IPO_FIRST5_DATE,
     DEFAULT_CALENDAR_PATH,
+    DEFAULT_RAW_DIR,
+    DEFAULT_ZT_PATH,
     EXPECTED_CALENDAR_SESSIONS,
     EXIT_IDS,
     LIMIT_TOLERANCE,
     MAIN_REGISTRATION_IPO_FIRST5_DATE,
+    STAR_FIRST_LISTING_DATE,
     MarketCalendar,
     _book_summary,
     _build_ecology,
@@ -25,12 +29,15 @@ from scripts.research.cn_limit_continuation_w1 import (
     _no_duplicate_portfolio_book,
     _seal_state_exit,
     _vendor_descriptive_stratum,
+    _zt_inventory,
     apply_boundary_purge,
     board_era,
+    canonical_ticker,
     extract_ticker_events,
     gap_bucket,
     limit_width,
     load_market_calendar,
+    ipo_no_limit_rule,
     render_markdown,
     run_measurement,
     tolerant_at_upper,
@@ -382,7 +389,9 @@ def test_zero_volume_exit_and_lower_limit_carry_abort_without_jump():
     assert event["exits"]["tplus1_legal_open"]["exit_reason"] == "zero_volume_halt_or_no_trade"
     assert event["exits"]["seal_state_next_open"]["exit_reason"] == "zero_volume_halt_or_no_trade"
 
-    clock = MarketCalendar.from_dates(dates)
+    clock = MarketCalendar.from_dates(
+        pd.to_datetime([*dates[:2], "2026-07-01", *dates[2:]])
+    )
     carried = _fixed_exit(
         opens=np.array([10.0, 11.0, 10.0, 10.1, 10.2, 10.3]),
         closes=np.array([10.0, 11.0, 9.9, 10.1, 10.2, 10.3]),
@@ -440,6 +449,187 @@ def test_main_registration_ipo_first_five_sessions_are_quarantined():
     )
     assert old_diag["ipo_no_limit_sessions_applied"] == 1
     assert old_rows[0]["signal_date"] == str(old_dates[1].date())
+
+
+@pytest.mark.parametrize("ticker", ["001248.SZ", "001232.SZ"])
+def test_zero_volume_issue_rows_do_not_advance_main_ipo_clock_or_filtered_context(
+    ticker: str,
+):
+    dates = pd.to_datetime(
+        [
+            "2026-06-29",
+            "2026-06-30",
+            "2026-07-02",
+            "2026-07-03",
+            "2026-07-06",
+            "2026-07-07",
+            "2026-07-08",
+            "2026-07-09",
+            "2026-07-10",
+        ]
+    )
+    closes = [10.0, 10.0, 10.0, 11.0, 12.1, 13.31, 14.64, 16.10, 16.0]
+    opens = [10.0, 10.0, 10.0] + [
+        closes[i - 1] * 1.02 for i in range(3, len(closes))
+    ]
+    frame = _frame(
+        closes,
+        opens=opens,
+        highs=[max(o, c) for o, c in zip(opens, closes)],
+        lows=[min(o, c) for o, c in zip(opens, closes)],
+        volumes=[0.0, 0.0, 1_000.0, 1_000.0, 1_000.0, 1_000.0, 1_000.0, 1_000.0, 1_000.0],
+        dates=pd.DatetimeIndex(dates),
+    )
+    clock = MarketCalendar.from_dates(
+        pd.to_datetime([*dates[:2], "2026-07-01", *dates[2:]])
+    )
+    full_rows, _, full_diag = extract_ticker_events(
+        ticker,
+        frame,
+        start_date=dates.min(),
+        end_date=dates.max(),
+        min_prior_sessions=0,
+        market_calendar=clock,
+    )
+    filtered_rows, _, filtered_diag = extract_ticker_events(
+        ticker,
+        frame,
+        start_date=pd.Timestamp("2026-07-09"),
+        end_date=dates.max(),
+        min_prior_sessions=0,
+        market_calendar=clock,
+    )
+    expected_no_limit = ["2026-07-02", "2026-07-03", "2026-07-06", "2026-07-07", "2026-07-08"]
+    assert full_diag["raw_first_row_date"] == "2026-06-29"
+    assert full_diag["listing_date"] == "2026-07-02"
+    assert full_diag["raw_rows_before_first_positive_volume_session"] == 2
+    assert full_diag["ipo_no_limit_regime"] == "main_registration_first_five"
+    assert full_diag["ipo_no_limit_positive_volume_dates"] == expected_no_limit
+    assert filtered_diag["ipo_no_limit_positive_volume_dates"] == expected_no_limit
+    assert [row["signal_date"] for row in full_rows] == ["2026-07-09"]
+    assert filtered_rows == full_rows
+
+
+def test_actual_issue_price_placeholders_do_not_start_listing_clock():
+    clock = load_market_calendar(DEFAULT_CALENDAR_PATH)
+    expected = {
+        "001248.SZ": {
+            "raw_first": "2026-06-29",
+            "listing": "2026-07-02",
+            "prelisting_rows": 2,
+            "no_limit": [
+                "2026-07-02",
+                "2026-07-03",
+                "2026-07-06",
+                "2026-07-07",
+                "2026-07-08",
+            ],
+        },
+        "001232.SZ": {
+            "raw_first": "2026-08-03",
+            "listing": "2026-08-04",
+            "prelisting_rows": 1,
+            "no_limit": [
+                "2026-08-04",
+                "2026-08-05",
+                "2026-08-06",
+                "2026-08-07",
+            ],
+        },
+    }
+    for ticker, anchors in expected.items():
+        frame = pd.read_parquet(DEFAULT_RAW_DIR / f"{ticker}.parquet")
+        _, _, diag = extract_ticker_events(
+            ticker,
+            frame,
+            start_date=pd.Timestamp("2011-01-04"),
+            end_date=pd.Timestamp("2026-08-07"),
+            min_prior_sessions=0,
+            market_calendar=clock,
+        )
+        assert diag["raw_first_row_date"] == anchors["raw_first"]
+        assert diag["listing_date"] == anchors["listing"]
+        assert diag["raw_rows_before_first_positive_volume_session"] == anchors["prelisting_rows"]
+        assert diag["ipo_no_limit_positive_volume_dates"] == anchors["no_limit"]
+
+
+def test_ipo_regime_boundaries_and_pre_reform_chinext_day_two():
+    assert MAIN_REGISTRATION_IPO_FIRST5_DATE == pd.Timestamp("2023-04-10")
+    assert CHINEXT_REGISTRATION_IPO_FIRST5_DATE == pd.Timestamp("2020-08-24")
+    assert STAR_FIRST_LISTING_DATE == pd.Timestamp("2019-07-22")
+    assert ipo_no_limit_rule("main", pd.Timestamp("2023-04-07")) == (
+        "main_historical_listing_day_only",
+        1,
+    )
+    assert ipo_no_limit_rule("main", pd.Timestamp("2023-04-10")) == (
+        "main_registration_first_five",
+        5,
+    )
+    assert ipo_no_limit_rule("chinext", pd.Timestamp("2020-08-21")) == (
+        "chinext_pre_reform_listing_day_only",
+        1,
+    )
+    assert ipo_no_limit_rule("chinext", pd.Timestamp("2020-08-24")) == (
+        "chinext_registration_first_five",
+        5,
+    )
+    assert ipo_no_limit_rule("star", STAR_FIRST_LISTING_DATE) == (
+        "star_from_inception_first_five",
+        5,
+    )
+
+    dates = pd.bdate_range("2016-03-01", periods=3)
+    frame = _frame(
+        [10.0, 11.0, 11.1],
+        opens=[10.0, 10.2, 11.0],
+        highs=[10.0, 11.0, 11.2],
+        lows=[10.0, 10.2, 10.9],
+        dates=dates,
+    )
+    rows, _, diag = extract_ticker_events(
+        "300503.SZ",
+        frame,
+        start_date=dates.min(),
+        end_date=dates.max(),
+        min_prior_sessions=0,
+        market_calendar=MarketCalendar.from_dates(dates),
+    )
+    assert diag["ipo_no_limit_regime"] == "chinext_pre_reform_listing_day_only"
+    assert diag["ipo_no_limit_positive_volume_dates"] == [str(dates[0].date())]
+    assert [row["signal_date"] for row in rows] == [str(dates[1].date())]
+
+
+def test_post_reform_chinext_and_star_exclude_first_five_traded_sessions():
+    for ticker, start, width, regime in (
+        ("300857.SZ", "2020-08-24", 0.20, "chinext_registration_first_five"),
+        ("688001.SS", "2019-07-22", 0.20, "star_from_inception_first_five"),
+    ):
+        dates = pd.bdate_range(start, periods=7)
+        closes = [10.0]
+        for _ in range(5):
+            closes.append(round(closes[-1] * (1.0 + width), 2))
+        closes.append(closes[-1])
+        opens = [closes[0]] + [value * 1.02 for value in closes[:-1]]
+        frame = _frame(
+            closes,
+            opens=opens,
+            highs=[max(o, c) for o, c in zip(opens, closes)],
+            lows=[min(o, c) for o, c in zip(opens, closes)],
+            dates=dates,
+        )
+        rows, _, diag = extract_ticker_events(
+            ticker,
+            frame,
+            start_date=dates.min(),
+            end_date=dates.max(),
+            min_prior_sessions=0,
+            market_calendar=MarketCalendar.from_dates(dates),
+        )
+        assert diag["ipo_no_limit_regime"] == regime
+        assert diag["ipo_no_limit_positive_volume_dates"] == [
+            str(date.date()) for date in dates[:5]
+        ]
+        assert [row["signal_date"] for row in rows] == [str(dates[5].date())]
 
 
 def test_joint_candidate_book_holds_nonfills_as_cash_and_states_identity():
@@ -553,7 +743,7 @@ def test_vendor_stratum_excludes_clones_and_stamps_retrospective_rows(tmp_path: 
     vendor_path = tmp_path / "zt.parquet"
     pd.DataFrame(
         {
-            "ticker": ["000001.SZ", "000001.SZ", "000001.SZ"],
+            "ticker": ["600001.SH", "600001.SH", "600001.SH"],
             "date": ["2026-07-03", "2026-07-04", "2026-07-06"],
             "asof": ["2026-07-06", "2026-07-04", "2026-07-06"],
             "seal_fund_yi": [1.0, 99.0, 2.0],
@@ -564,7 +754,7 @@ def test_vendor_stratum_excludes_clones_and_stamps_retrospective_rows(tmp_path: 
     events = pd.DataFrame(
         [
             {
-                "ticker": "000001.SZ",
+                "ticker": "600001.SS",
                 "signal_date": "2026-07-03",
                 "market_scope": "main_primary",
                 "split": "vendor_tail_audit",
@@ -573,7 +763,7 @@ def test_vendor_stratum_excludes_clones_and_stamps_retrospective_rows(tmp_path: 
                 "run_cluster": "r1",
             },
             {
-                "ticker": "000001.SZ",
+                "ticker": "600001.SS",
                 "signal_date": "2026-07-06",
                 "market_scope": "main_primary",
                 "split": "vendor_tail_audit",
@@ -589,7 +779,31 @@ def test_vendor_stratum_excludes_clones_and_stamps_retrospective_rows(tmp_path: 
     assert result["valid_observed_session_rows"] == 2
     assert result["retrospectively_fetched_rows"] == 1
     assert result["joined_curated_event_rows"] == 2
+    assert result["literal_joined_curated_event_rows_sensitivity"] == 0
+    assert result["alias_recovered_join_rows"] == 2
+    assert result["sh_alias_rows_normalized"] == 2
     assert result["return_metrics"] == []
+
+
+def test_vendor_pool_identity_canonicalization_matches_procurement_census():
+    assert canonical_ticker("600000.SH") == "600000.SS"
+    assert canonical_ticker("000001.sz") == "000001.SZ"
+    raw_tickers = {path.stem for path in DEFAULT_RAW_DIR.glob("*.parquet")}
+    inventory = _zt_inventory(
+        DEFAULT_ZT_PATH,
+        raw_tickers,
+        load_market_calendar(DEFAULT_CALENDAR_PATH),
+    )
+    assert inventory["rows"] == 3920
+    assert inventory["literal_unique_tickers"] == 1770
+    assert inventory["unique_tickers"] == 1607
+    assert inventory["literal_raw_overlap_tickers"] == 514
+    assert inventory["raw_overlap_tickers"] == 580
+    assert inventory["raw_overlap_pct"] == pytest.approx(580 / 1607 * 100.0)
+    assert inventory["vendor_tickers_without_raw_ohlcv"] == 1027
+    assert inventory["valid_observed_session_rows"] == 3102
+    assert inventory["valid_observed_rows_with_raw_ohlcv"] == 1187
+    assert inventory["canonical_duplicate_ticker_date_rows"] == 0
 
 
 def test_ecology_is_causal_with_respect_to_future_dates():

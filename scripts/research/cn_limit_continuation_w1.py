@@ -43,8 +43,8 @@ sys.path.insert(0, str(ROOT))
 
 log = logging.getLogger("cn_limit_continuation_w1")
 
-SCHEMA_VERSION = "cn_limit_continuation_w1/v3"
-MODEL_VERSION = "sol_w1_complete_clock_positive_volume_self_financing_2026-08-08"
+SCHEMA_VERSION = "cn_limit_continuation_w1/v4"
+MODEL_VERSION = "sol_w1_era_aware_traded_ipo_canonical_vendor_2026-08-08"
 RECEIPT_DATE = "2026-08-08"
 AUTHORITY = "none_research_display_only"
 
@@ -60,6 +60,8 @@ END_DATE = pd.Timestamp("2026-08-07")
 CHINEXT_WIDE_DATE = pd.Timestamp("2020-08-24")
 ST_RULE_CHANGE_DATE = pd.Timestamp("2026-07-06")
 MAIN_REGISTRATION_IPO_FIRST5_DATE = pd.Timestamp("2023-04-10")
+CHINEXT_REGISTRATION_IPO_FIRST5_DATE = pd.Timestamp("2020-08-24")
+STAR_FIRST_LISTING_DATE = pd.Timestamp("2019-07-22")
 MIN_PRIOR_SESSIONS = 60
 LIMIT_TOLERANCE = 0.002
 BOUNDARY_PURGE_SESSIONS = 10
@@ -67,9 +69,13 @@ COST_GRID_BPS = (0, 30, 60, 100)
 EXPECTED_CALENDAR_SESSIONS = 3_786
 RAW_DATE_SUPPORT_CONSENSUS_MIN_NAMES = 50
 IPO_RULE_EVIDENCE = {
-    "szse_rule_3_3_15": "https://docs.static.szse.cn/www/lawrules/index/rule/W020230217564423808793.pdf",
-    "sse_first_main_registration_listings": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230404_5719112.shtml",
-    "effective_boundary": "2023-04-10",
+    "sse_main_first_five_rule": "https://www.sse.com.cn/lawandrules/sselawsrules2025/repeal/rules/c/c_20250612_10824490.shtml",
+    "sse_main_registration_onset": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230404_5719112.shtml",
+    "szse_main_first_five_rule": "https://docs.static.szse.cn/www/lawrules/rule/allrules/bussiness/W020230217564423808793.pdf",
+    "chinext_pre_reform_rule": "https://docs.static.szse.cn/www/aboutus/trends/news/W020180328462965472234.pdf",
+    "chinext_reform_mechanics": "https://www.szse.cn/www/investor/index/update/t20200807_580310.html",
+    "chinext_registration_onset": "https://www.szse.cn/aboutus/trends/news/t20200821_580924.html",
+    "star_first_listing_onset": "https://star.sse.com.cn/star/media/news/c/c_20190719_4866789.shtml",
 }
 EXIT_IDS = (
     "tplus1_legal_open",
@@ -124,6 +130,8 @@ UNTESTED_VARIANTS: tuple[str, ...] = (
     "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
     "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
     "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+    "complete official listing-date master beyond first positive-volume common-session inference",
+    "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization",
 )
 
 
@@ -137,6 +145,38 @@ def board_from_ticker(ticker: str) -> str:
     if code.startswith(("8", "4", "92")):
         return "bse"
     return "main"
+
+
+def canonical_ticker(ticker: Any) -> str:
+    """Normalize the repo's Shanghai suffix alias without changing exchange identity."""
+    value = str(ticker).strip().upper()
+    return f"{value[:-3]}.SS" if value.endswith(".SH") else value
+
+
+def ipo_no_limit_rule(
+    board: str,
+    first_positive_volume_date: pd.Timestamp | None,
+) -> tuple[str, int]:
+    """Return the era-aware no-limit regime and traded-session count.
+
+    The ordinal is applied only to positive-volume ticker observations. Raw
+    issue-price placeholders and other no-trade rows neither start nor advance
+    the listing clock.
+    """
+    if first_positive_volume_date is None:
+        return "no_positive_volume_listing_session", 0
+    listing_date = pd.Timestamp(first_positive_volume_date).normalize()
+    if board == "main":
+        if listing_date >= MAIN_REGISTRATION_IPO_FIRST5_DATE:
+            return "main_registration_first_five", 5
+        return "main_historical_listing_day_only", 1
+    if board == "chinext":
+        if listing_date >= CHINEXT_REGISTRATION_IPO_FIRST5_DATE:
+            return "chinext_registration_first_five", 5
+        return "chinext_pre_reform_listing_day_only", 1
+    if board == "star":
+        return "star_from_inception_first_five", 5
+    return "unsupported_board_no_ipo_rule", 0
 
 
 def limit_width(board: str, trade_date: pd.Timestamp) -> float:
@@ -586,14 +626,26 @@ def extract_ticker_events(
     # ChiNext's two geometries remain separate; both may be measured, never pooled.
     exdiv_suspect = finite & (np.abs(opens - prev_close) / prev_close > widths * 1.5)
     calendar_ok = calendar_positions >= 0
-    listing_date = dates[0]
-    if board in {"star", "chinext"}:
-        ipo_no_limit_sessions = 5
-    elif board == "main" and listing_date >= MAIN_REGISTRATION_IPO_FIRST5_DATE:
-        ipo_no_limit_sessions = 5
-    else:
-        ipo_no_limit_sessions = 1
-    ipo_no_limit = np.arange(len(df)) < ipo_no_limit_sessions
+    positive_volume_traded_session = positive_volume & calendar_ok
+    positive_volume_indices = np.flatnonzero(positive_volume_traded_session)
+    first_positive_volume_index = (
+        int(positive_volume_indices[0]) if len(positive_volume_indices) else None
+    )
+    listing_date = (
+        dates[first_positive_volume_index]
+        if first_positive_volume_index is not None
+        else None
+    )
+    ipo_regime, ipo_no_limit_sessions = ipo_no_limit_rule(board, listing_date)
+    traded_session_ordinal = np.full(len(df), -1, dtype=int)
+    traded_session_ordinal[positive_volume_traded_session] = np.arange(
+        int(positive_volume_traded_session.sum())
+    )
+    ipo_no_limit = (
+        positive_volume_traded_session
+        & (traded_session_ordinal >= 0)
+        & (traded_session_ordinal < ipo_no_limit_sessions)
+    )
     price_eligible_before_calendar = (
         finite & age_ok & in_window & era_ok & ~exdiv_suspect & ~ipo_no_limit
     )
@@ -844,9 +896,18 @@ def extract_ticker_events(
             ((~calendar_ok) & in_window).sum()
         ),
         "exdiv_suspect_rows": int(exdiv_suspect.sum()),
-        "listing_date": str(listing_date.date()),
+        "raw_first_row_date": str(dates[0].date()),
+        "listing_date": str(listing_date.date()) if listing_date is not None else None,
+        "listing_date_source": "first_positive_volume_common_market_session_ticker_observation",
+        "raw_rows_before_first_positive_volume_session": int(
+            first_positive_volume_index or 0
+        ),
+        "ipo_no_limit_regime": ipo_regime,
         "ipo_no_limit_sessions_applied": int(ipo_no_limit_sessions),
         "ipo_no_limit_rows_quarantined": int((ipo_no_limit & in_window).sum()),
+        "ipo_no_limit_positive_volume_dates": [
+            str(date.date()) for date in dates[ipo_no_limit]
+        ],
         "tolerant_sealed_up_rows": int(tolerant_sealed_up.sum()),
         "strict_sealed_up_rows": int(strict_sealed_up.sum()),
         "marginal_tolerant_rows": int((tolerant_sealed_up & ~strict_sealed_up).sum()),
@@ -2247,6 +2308,12 @@ def _definition_config_payload() -> dict[str, Any]:
         "main_registration_ipo_first5_date": str(
             MAIN_REGISTRATION_IPO_FIRST5_DATE.date()
         ),
+        "chinext_registration_ipo_first5_date": str(
+            CHINEXT_REGISTRATION_IPO_FIRST5_DATE.date()
+        ),
+        "star_first_listing_date": str(STAR_FIRST_LISTING_DATE.date()),
+        "ipo_listing_clock": "positive_volume_common_market_session_ordinal",
+        "vendor_ticker_identity": "uppercase_and_SH_suffix_canonicalized_to_SS",
         "ipo_rule_evidence": IPO_RULE_EVIDENCE,
         "minimum_prior_sessions": MIN_PRIOR_SESSIONS,
         "limit_tolerance": LIMIT_TOLERANCE,
@@ -2416,21 +2483,56 @@ def _load_current_st(path: Path) -> tuple[set[str], dict[str, Any]]:
     }
 
 
-def _zt_inventory(path: Path, raw_tickers: set[str]) -> dict[str, Any]:
+def _zt_inventory(
+    path: Path,
+    raw_tickers: set[str],
+    market_calendar: MarketCalendar,
+) -> dict[str, Any]:
     if not path.exists():
         return {"status": "missing", "path": str(path)}
     frame = pd.read_parquet(path, columns=["ticker", "date"])
-    tickers = set(frame["ticker"].dropna().astype(str))
-    overlap = tickers & raw_tickers
-    dates = pd.to_datetime(frame["date"], errors="coerce").dropna()
+    frame = frame.copy()
+    frame["ticker_raw"] = frame["ticker"].where(frame["ticker"].notna()).astype("string").str.strip().str.upper()
+    frame["ticker_canonical"] = frame["ticker_raw"].map(
+        lambda value: canonical_ticker(value) if pd.notna(value) else None
+    )
+    frame["date_ts"] = pd.to_datetime(frame["date"], errors="coerce").dt.normalize()
+    literal_tickers = set(frame["ticker_raw"].dropna().astype(str))
+    tickers = set(frame["ticker_canonical"].dropna().astype(str))
+    canonical_raw_tickers = {canonical_ticker(value) for value in raw_tickers}
+    literal_overlap = literal_tickers & raw_tickers
+    overlap = tickers & canonical_raw_tickers
+    dates = frame["date_ts"].dropna()
+    valid = frame[frame["date_ts"].isin(set(market_calendar.sessions))]
+    valid_raw_overlap = valid["ticker_canonical"].isin(canonical_raw_tickers)
+    alias_rows = frame["ticker_raw"].str.endswith(".SH", na=False)
+    duplicate_canonical_keys = int(
+        frame.duplicated(["ticker_canonical", "date_ts"], keep=False).sum()
+    )
     return {
-        "status": "inventory_with_valid-session-descriptive-join",
+        "status": "canonical_identity_inventory_with_valid_session_descriptive_join",
         "path": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
         "rows": int(len(frame)),
+        "literal_unique_tickers": int(len(literal_tickers)),
         "unique_tickers": int(len(tickers)),
+        "ticker_alias_rule": "uppercase; .SH is canonicalized to repo-native .SS",
+        "sh_alias_rows_normalized": int(alias_rows.sum()),
+        "sh_alias_unique_tickers_normalized": int(
+            frame.loc[alias_rows, "ticker_raw"].nunique()
+        ),
+        "literal_to_canonical_unique_name_reduction": int(
+            len(literal_tickers) - len(tickers)
+        ),
+        "canonical_duplicate_ticker_date_rows": duplicate_canonical_keys,
+        "literal_raw_overlap_tickers": int(len(literal_overlap)),
         "raw_overlap_tickers": int(len(overlap)),
         "raw_overlap_pct": float(len(overlap) / len(tickers) * 100.0) if tickers else None,
-        "vendor_tickers_without_raw_ohlcv": int(len(tickers - raw_tickers)),
+        "vendor_tickers_without_raw_ohlcv": int(len(tickers - canonical_raw_tickers)),
+        "valid_observed_session_rows": int(len(valid)),
+        "valid_observed_rows_with_raw_ohlcv": int(valid_raw_overlap.sum()),
+        "valid_observed_rows_with_raw_ohlcv_pct": (
+            float(valid_raw_overlap.mean() * 100.0) if len(valid) else None
+        ),
         "stamped_dates": int(dates.nunique()),
         "first_stamped_date": str(dates.min().date()) if len(dates) else None,
         "last_stamped_date": str(dates.max().date()) if len(dates) else None,
@@ -2456,6 +2558,10 @@ def _vendor_descriptive_stratum(
             "probability_tables": [],
         }
     frame = frame.copy()
+    frame["ticker_vendor_raw"] = frame["ticker"].where(frame["ticker"].notna()).astype("string").str.strip().str.upper()
+    frame["ticker"] = frame["ticker_vendor_raw"].map(
+        lambda value: canonical_ticker(value) if pd.notna(value) else None
+    )
     frame["date_ts"] = pd.to_datetime(frame["date"], errors="coerce").dt.normalize()
     frame["asof_ts"] = pd.to_datetime(frame["asof"], errors="coerce").dt.normalize()
     calendar_set = set(market_calendar.sessions)
@@ -2471,7 +2577,13 @@ def _vendor_descriptive_stratum(
         "same_day_stamp",
     )
     valid["signal_date"] = valid["date_ts"].dt.strftime("%Y-%m-%d")
-    valid["ticker"] = valid["ticker"].astype(str)
+    canonical_duplicate_rows = int(
+        valid.duplicated(["ticker", "signal_date"], keep=False).sum()
+    )
+    if canonical_duplicate_rows:
+        raise AssertionError(
+            f"vendor canonical identity produced {canonical_duplicate_rows} duplicate ticker/date rows"
+        )
     event_fields = events[
         [
             "ticker",
@@ -2482,8 +2594,19 @@ def _vendor_descriptive_stratum(
             "date_cluster",
             "run_cluster",
         ]
-    ]
+    ].copy()
+    event_fields["ticker"] = event_fields["ticker"].map(canonical_ticker)
     joined = event_fields.merge(valid, on=["ticker", "signal_date"], how="inner", validate="one_to_one")
+    literal_valid = valid.copy()
+    literal_valid["ticker"] = literal_valid["ticker_vendor_raw"].astype(str)
+    literal_joined = events[
+        ["ticker", "signal_date"]
+    ].merge(
+        literal_valid[["ticker", "signal_date"]],
+        on=["ticker", "signal_date"],
+        how="inner",
+        validate="one_to_one",
+    )
 
     def fixed_bucket(series: pd.Series, cuts: Sequence[float], labels: Sequence[str]) -> pd.Series:
         numeric = pd.to_numeric(series, errors="coerce")
@@ -2539,7 +2662,14 @@ def _vendor_descriptive_stratum(
             str(value.date()) for value in retrospective["date_ts"].dropna().drop_duplicates()
         ),
         "same_day_rows": int(valid["observation_class"].eq("same_day_stamp").sum()),
+        "ticker_alias_rule": "uppercase; .SH is canonicalized to repo-native .SS before join",
+        "sh_alias_rows_normalized": int(
+            valid["ticker_vendor_raw"].str.endswith(".SH", na=False).sum()
+        ),
+        "canonical_duplicate_ticker_date_rows": canonical_duplicate_rows,
+        "literal_joined_curated_event_rows_sensitivity": int(len(literal_joined)),
         "joined_curated_event_rows": int(len(joined)),
+        "alias_recovered_join_rows": int(len(joined) - len(literal_joined)),
         "seal_fund_status": "absolute_unscaled_amount_not_normalized_by_traded_value_descriptive_only",
         "probability_tables": probability_tables,
         "return_metrics": [],
@@ -2692,10 +2822,19 @@ def run_measurement(
         d
         for d in diagnostics
         if d.get("status") == "ok"
-        and board_from_ticker(str(d.get("ticker") or "")) == "main"
-        and pd.to_datetime(d.get("listing_date"), errors="coerce")
-        >= MAIN_REGISTRATION_IPO_FIRST5_DATE
+        and d.get("ipo_no_limit_regime") == "main_registration_first_five"
     ]
+    ipo_regime_files = Counter(
+        str(d.get("ipo_no_limit_regime"))
+        for d in diagnostics
+        if d.get("status") == "ok" and d.get("ipo_no_limit_regime")
+    )
+    ipo_regime_quarantined_rows = Counter()
+    for diag in diagnostics:
+        if diag.get("status") == "ok" and diag.get("ipo_no_limit_regime"):
+            ipo_regime_quarantined_rows[str(diag["ipo_no_limit_regime"])] += int(
+                diag.get("ipo_no_limit_rows_quarantined") or 0
+            )
     exit_unresolved_reason_counts: dict[str, Counter] = defaultdict(Counter)
     for exits in events.loc[
         events["entry_fill_state"].eq("official_open_candidate_fill"), "exits"
@@ -2738,11 +2877,23 @@ def run_measurement(
             ),
             "exdiv_suppression": "abs(open/prev_close-1) > 1.5*board_width",
             "ipo_no_limit_window": {
-                "main_before_2023_04_10": "first observed listing session quarantined",
-                "main_on_or_after_2023_04_10": "first five observed listing sessions quarantined",
-                "star_and_chinext": "first five observed listing sessions quarantined",
+                "clock": (
+                    "positive-volume ticker observations on exact common CN market sessions; "
+                    "zero-volume issue-price/raw placeholder rows do not start or advance the ordinal"
+                ),
+                "filter_context": "start/end filtering occurs after the full-frame listing ordinal is computed",
+                "main_before_2023_04_10": "positive-volume listing session only",
+                "main_on_or_after_2023_04_10": "first five positive-volume traded sessions",
+                "chinext_before_2020_08_24": "positive-volume listing session only under the 10 percent era",
+                "chinext_on_or_after_2020_08_24": "first five positive-volume traded sessions",
+                "star_from_2019_07_22_inception": "first five positive-volume traded sessions",
                 "boundary_evidence": IPO_RULE_EVIDENCE,
             },
+            "ipo_listing_date_truth": (
+                "inferred from the first positive-volume exact-market-session raw observation; "
+                "this is not a claim of complete official listing-master coverage"
+            ),
+            "vendor_ticker_identity": "uppercase; .SH aliases canonicalized to repo-native .SS before coverage and join",
             "primary_universe": "curated main-board non-current-ST-intersection names",
             "secondary_universe": "ChiNext 10% and 20% eras reported separately",
             "descriptive_universe": "STAR",
@@ -2820,6 +2971,21 @@ def run_measurement(
                     for d in registration_era_main_diags
                 )
             ),
+            "ipo_no_limit_clock": {
+                "ordinal": "positive-volume observations on the exact common CN market-session clock",
+                "raw_issue_price_and_zero_volume_rows_advance_clock": False,
+                "start_end_filter_applied_after_listing_context": True,
+                "files_by_regime": dict(sorted(ipo_regime_files.items())),
+                "quarantined_positive_volume_rows_by_regime": dict(
+                    sorted(ipo_regime_quarantined_rows.items())
+                ),
+                "raw_rows_before_first_positive_volume_session": int(
+                    sum(
+                        int(d.get("raw_rows_before_first_positive_volume_session") or 0)
+                        for d in diagnostics
+                    )
+                ),
+            },
             "raw_rows_off_common_cn_session_calendar": int(rows_off_common_calendar),
             "raw_rows_off_common_cn_session_calendar_in_measurement_window": int(
                 rows_off_common_calendar_in_window
@@ -2850,7 +3016,7 @@ def run_measurement(
             ),
             "read_errors": errors,
             "st_snapshot": st_inventory,
-            "zt_pool": _zt_inventory(zt_path, raw_tickers),
+            "zt_pool": _zt_inventory(zt_path, raw_tickers, market_calendar),
             "curated_slice_warning": (
                 "The local nominal OHLCV universe is a curated slice. Results do not generalise to the "
                 "full 打板 universe or to vendor-observed names without local price history."
@@ -2928,6 +3094,8 @@ def run_measurement(
             "nominal yfinance-like bars require a tolerance and corporate-action heuristic",
             "daily bars identify official opens but not queue priority, partial fills, or a 09:30 execution",
             "current ST membership is not historical membership; the family remains untested",
+            "IPO listing dates are inferred from first positive-volume common-session raw observations, not a complete official listing master",
+            "vendor identity normalization covers the explicit .SH/.SS alias only, not a complete security master",
         ],
         "UNTESTED VARIANTS": list(UNTESTED_VARIANTS),
     }
@@ -2987,8 +3155,10 @@ def render_markdown(receipt: Mapping[str, Any]) -> str:
         "sessions; a missing bar is unresolved, and lower-limit carry advances one market session at a time.",
         "- Positive finite ticker volume is mandatory for signal, next-session tradability, fill, every fixed "
         "exit, every seal-state check, and every lower-limit carry step. Zero volume is halt/no-trade, never fill.",
-        "- Main-board listings on/after 2023-04-10, plus STAR and ChiNext, quarantine their first five observed "
-        "listing sessions as no-limit IPO sessions; earlier main listings quarantine the first session.",
+        "- The IPO clock counts positive-volume observations on exact market sessions, not raw rows. Main listings "
+        "from 2023-04-10, ChiNext listings from 2020-08-24, and STAR from inception quarantine five traded sessions; "
+        "earlier main/ChiNext listings quarantine listing day only. Start/end filtering retains full listing context.",
+        "- Vendor identity is canonicalized before coverage and joining: uppercase `.SH` aliases map to the repo's `.SS` suffix.",
         "- Main board is primary; ChiNext band eras are separate secondary cohorts; STAR is descriptive; "
         "BSE/ST are untested.",
         "",
@@ -3015,7 +3185,10 @@ def render_markdown(receipt: Mapping[str, Any]) -> str:
         f"next sessions; exact-exit unresolved counts {json.dumps(zero_volume_exit_reasons, sort_keys=True)}. "
         f"Off-calendar positive-volume otherwise-eligible rows: {inventory['off_calendar_eligible_positive_volume_rows']:,}.",
         f"- Registration-era main IPO quarantine: {inventory['registration_era_main_files_first5_quarantine']:,} files and "
-        f"{inventory['registration_era_main_no_limit_rows_quarantined']:,} first-five rows; boundary 2023-04-10.",
+        f"{inventory['registration_era_main_no_limit_rows_quarantined']:,} in-window positive-volume no-limit observations; "
+        "boundary 2023-04-10.",
+        f"- IPO traded-session regimes (files): {json.dumps(inventory['ipo_no_limit_clock']['files_by_regime'], sort_keys=True)}; "
+        f"raw rows before the first positive-volume session: {inventory['ipo_no_limit_clock']['raw_rows_before_first_positive_volume_session']:,}.",
         f"- Tolerant boards: {event_inventory['tolerant_sealed_up_detected_before_purge']:,}; strict boards: "
         f"{event_inventory['strict_sealed_up_detected_before_purge']:,}; marginal tolerance rows: "
         f"{event_inventory['marginal_tolerant_events_before_purge']:,}.",
@@ -3024,6 +3197,9 @@ def render_markdown(receipt: Mapping[str, Any]) -> str:
         f"- `china_zt_pool` vendor strata use valid observed sessions only: "
         f"{len(receipt['results']['VENDOR_DESCRIPTIVE_STRATUM'].get('excluded_clone_dates', []))} clone dates "
         "are excluded, missing sessions are not imputed, and retrospective rows are explicitly stamped non-PIT.",
+        f"- Vendor alias reconciliation: {zt.get('literal_unique_tickers', 0):,} literal names become "
+        f"{zt.get('unique_tickers', 0):,} canonical names; {zt.get('raw_overlap_tickers', 0):,} overlap raw OHLCV, and "
+        f"{zt.get('valid_observed_rows_with_raw_ohlcv', 0):,}/{zt.get('valid_observed_session_rows', 0):,} valid rows have local prices.",
         f"- Content-addressed input/config fingerprint: `{provenance['combined_sha256']}`. "
         f"{provenance['zt_pool_snapshot_disclosure']}",
         "",
@@ -3211,6 +3387,8 @@ def render_markdown(receipt: Mapping[str, Any]) -> str:
         f"{len(vendor.get('excluded_clone_dates', []))} dates.",
         f"- Retrospectively fetched/not-proven-PIT rows: {vendor.get('retrospectively_fetched_rows', 0):,}; "
         f"joined curated event rows: {vendor.get('joined_curated_event_rows', 0):,}.",
+        f"- Ticker canonicalization recovered {vendor.get('alias_recovered_join_rows', 0):,} joins beyond the "
+        f"literal-suffix sensitivity ({vendor.get('literal_joined_curated_event_rows_sensitivity', 0):,} literal joins).",
         "- Absolute seal fund is unnormalised; all vendor-field verdicts remain descriptive.",
         "",
     ])
@@ -3233,6 +3411,8 @@ def render_markdown(receipt: Mapping[str, Any]) -> str:
         "the no-duplicate date-equal series is cohort expectancy, and only the separate cash-reservation proxy is self-financing.",
         "- The self-financing proxy values open positions at cost until realised exits; interim drawdown, theme concentration, "
         "capacity, and mark-to-market risk remain unmeasured.",
+        "- IPO listing dates are inferred from first positive-volume common-session raw observations; no complete official "
+        "listing-master claim is made. Vendor identity normalization is limited to the explicit `.SH`/`.SS` alias.",
         "- The 0/30/60/100 bp grid is a round-trip friction sensitivity, not a live fill model.",
         "- Date- and board-run-cluster intervals accompany pooled means; clustered names on one board-festival date "
         "are not treated as independent evidence.",
