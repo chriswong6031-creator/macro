@@ -153,20 +153,38 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2,
             # Log only the exception class so credential-bearing payload state cannot escape.
             log.warning("tushare %s request failed (%s)", api_name, type(e).__name__)
             return None
+        if not isinstance(d, dict):
+            return None
         code = d.get("code")
         if code == 0:
             # Authenticated round-trip: whatever was wrong with the credential is over.
             # Cleared on code==0 regardless of row count — an empty snapshot is a DATA
             # answer, and treating it as "still broken" would leave a healed token latched.
             _auth_error = None
-            data = d.get("data") or {}
-            cols = data.get("fields") or []
-            items = data.get("items") or []
-            if not cols:
-                if _return_empty and fields:
-                    return pd.DataFrame(columns=[part for part in fields.split(",") if part])
+            data = d.get("data")
+            # A successful empty is attested only by the vendor's real schema plus
+            # an explicit items=[] payload.  Never synthesize caller-requested
+            # columns from malformed code-0 responses: doing so can checkpoint a
+            # permanently false empty source unit.
+            if not isinstance(data, dict):
                 return None
-            df = pd.DataFrame(items, columns=cols)
+            cols = data.get("fields")
+            items = data.get("items")
+            if (
+                not isinstance(cols, list)
+                or not cols
+                or not all(isinstance(column, str) and column for column in cols)
+                or not isinstance(items, list)
+                or not all(
+                    isinstance(item, (list, tuple)) and len(item) == len(cols)
+                    for item in items
+                )
+            ):
+                return None
+            try:
+                df = pd.DataFrame(items, columns=cols)
+            except (AssertionError, TypeError, ValueError):
+                return None
             if "ts_code" in df.columns:
                 df["ts_code"] = df["ts_code"].map(norm_ticker)
             return df if len(df) or _return_empty else None

@@ -184,6 +184,26 @@ def test_successful_empty_response_can_be_distinguished_when_requested(vendor):
     assert list(empty.columns) == ["ts_code", "trade_date"]
 
 
+@pytest.mark.parametrize("malformed", [
+    {"code": 0},
+    {"code": 0, "data": None},
+    {"code": 0, "data": {}},
+    {"code": 0, "data": {"fields": [], "items": []}},
+    {"code": 0, "data": {"fields": ["ts_code"]}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": None}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": [{"ts_code": "x"}]}},
+    {"code": 0, "data": {"fields": ["ts_code"], "items": [["x", "y"]]}},
+    [],
+])
+def test_return_empty_rejects_malformed_code_zero_payloads(vendor, malformed):
+    """A code-0 shell is not evidence of a real, schema-bound empty response."""
+    vendor["body"] = malformed
+    assert tc.query(
+        "suspend_d", trade_date="20260807", _return_empty=True,
+        fields="ts_code,trade_date",
+    ) is None
+
+
 def test_rate_limit_and_entitlement_are_not_auth_errors(vendor):
     """DELIBERATELY NARROW: 40203 (throttle / above-tier) must not read as a dead credential —
     report_rc is throttled by design every single night."""

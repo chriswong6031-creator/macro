@@ -1,84 +1,84 @@
-"""Resumable, provenance-first TuShare full-A-share daily/security spine.
+"""Resumable, provenance-first TuShare full-A daily/security spine.
 
-This collector is the universe-completeness substrate for China microstructure
-research.  It deliberately does *not* score signals or claim alpha.  It builds:
+This ``context_only`` foundation builds a lifecycle-aware SH/SZ/BJ master,
+canonical/old-BSE aliases, an SSE=SZSE market-session clock, post-2016 exact-day
+``bak_basic`` universe witnesses, effective-dated names, and daily quote/limit/
+suspension/ST partitions.  It does not score signals or claim alpha.
 
-* a lifecycle-aware SH/SZ/BJ security master (listed, delisted, paused and
-  approved-but-not-yet-trading names);
-* a stable identity alias table, including Beijing Stock Exchange old-code ->
-  920-code mappings;
-* an exact market-session clock attested by equal SSE and SZSE calendars;
-* effective-dated name/ST provenance; and
-* partitioned daily, daily-basic, price-limit, suspension and exact-daily ST
-  observations.
+No request is permitted without both ``--authorization-receipt`` and a separately
+controlled ``--authorization-trust-allowlist``.  The allowlist must pin the exact
+receipt/document hashes; an institutional grant must also bind the vendor
+entitlement and delegation documents.  A token, injected query, self-authored
+receipt, or boolean flag is not an authorization substitute.  The token itself is
+read only through ``collectors.tushare_client`` and is never accepted, persisted,
+hashed, or logged by this module.
 
-Authority: ``context_only``.  The collector reads ``TUSHARE_TOKEN`` only through
-``collectors.tushare_client``.  It never accepts, writes, hashes, or logs a token.
+The default store is private and outside the repository:
+``~/.local/share/macro-dashboard/china_tushare_spine`` (override only with
+``CN_TUSHARE_SPINE_STORE`` or ``--store``).  Its principal layout is::
 
-Store layout (``data/china_tushare_spine`` by default)::
-
-    reference/source_stock_basic/{exchange}_{status}.parquet
-    reference/source_bse_mapping.parquet
-    reference/security_master.parquet
-    reference/identity_aliases.parquet
-    reference/trade_calendar/year=YYYY.parquet
-    reference/market_sessions.parquet
+    authorization_scope_receipt.json
+    authorization_trust_allowlist.json
+    reference/current_generation.json
+    reference/generations/<generation>/
+        source_{bse_mapping,stock_basic,fund_basic}/...
+        {security_master,identity_aliases,instrument_classification}.parquet
+    reference/{trade_calendar/year=YYYY,market_sessions}.parquet
+    bak_basic/year=YYYY/month=MM/part.parquet
     name_history/year=YYYY.parquet
-    {daily,daily_basic,stk_limit,suspend_d,stock_st}/
-        year=YYYY/month=MM/part.parquet
+    {daily,daily_basic,stk_limit,suspend_d,stock_st}/year=YYYY/month=MM/part.parquet
+    source_row_classification/{known_excluded,quarantined_unknown}/...
+    source_shards/{daily,daily_basic,stk_limit}/...
+    receipts/requests/<endpoint>/<unit>/<request-hash>.json
     event_daily/year=YYYY/month=MM/part.parquet
     coverage/daily_security_coverage.parquet
     collection_state.json
     completeness_manifest.json
 
-Daily partitions are monthly, atomically replaced, and keyed by source unit
-(normally one market session).  ``collection_state.json`` records successful
-empty event days as well as landed partitions, so a zero-suspension day is not
-queried forever.  Failed/unlicensed calls are never marked complete.
+Every response must have the exact requested schema and belong to the exact
+exchange/status/date/ticker request.  Each source unit satisfies
+``source = landed_A + independently_known_out_of_scope + quarantined_unknown``;
+unknown rows, name orphans, absent/tampered request or classification receipts, or
+an uncovered ticker shard block completeness.  Capped whole-market responses are
+discarded as non-authoritative probes before deterministic per-date/ticker recovery.
+That recovery is not long-horizon scalable, so the immutable operational gate is
+false and every collection path remains disabled in this foundation commit.
 
-Exact-session contract
-----------------------
-TuShare's published ``trade_cal`` contract advertises SSE and SZSE (not BSE).
-The canonical A-share session clock therefore requires exact equality between
-the SSE and SZSE calendars.  BSE dates are derived from that attested consensus
-from 2021-11-15 onward; this provenance is explicit in every manifest.
+``daily`` is unadjusted nominal price authority and retains zero-volume rows with
+``positive_volume = volume_lots > 0``.  A traded/listing-session claim must filter
+that flag.  ``stk_limit`` is exact legal-band authority.  Canonical event prices
+are integer CNY cents; OHLC must remain inside published bounds and touch/seal
+flags use integer equality.  The Decimal half-up calculator is validator-only.
 
-Positive-volume contract
-------------------------
-TuShare ``daily.vol`` is measured in lots (手).  Raw daily rows are retained,
-including anomalous zero-volume rows, and gain ``positive_volume = vol > 0``.
-Any consumer claiming a traded/listing session MUST filter that boolean; a row's
-mere presence is not a trade.  Other endpoints have no volume field and must
-join ``daily`` on ``(trade_date, ticker)`` before making a traded-universe claim.
+Usage (no implicit full-history or live authorization)::
 
-ST contract
------------
-``stock_st`` is exact daily ST/risk-warning membership but its official history
-starts 2016-01-01.  ``namechange`` supplies older effective-dated names and an
-``is_st_name`` inference, but that inference is not represented as complete
-daily ST membership.  Manifests preserve this pre-2016 gap.
-
-Usage (no implicit full-history run)::
-
-    python -m collectors.china_tushare_spine --start 20110101 --end 20260807
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
+        --authorization-receipt /private/path/tushare-authorization.json \
+        --authorization-trust-allowlist /controlled/path/tushare-grant-pins.json \
         --max-requests 50
     python -m collectors.china_tushare_spine --start 20110101 --end 20260807 \
         --dry-run
 
 The default request cap is intentionally small.  Re-running resumes incomplete
-units.  ``--allow-bulk`` is required to raise the cap above the safety ceiling
-or disable it.
+units.  ``--allow-bulk`` is required above the safety ceiling or for unlimited
+collection.  This code wave made no live vendor call and grants no permission to
+run one.  The code-reviewed trust-root hash set is deliberately empty in this
+foundation commit; a real allowlist hash requires a separate reviewed code change.
+The operational backfill gate is also deliberately false until exact ticker-range
+shards replace the combinatorial exact-date/ticker fallback.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import hashlib
 import json
 import logging
 import math
 import os
 import re
+import subprocess
 import tempfile
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -90,28 +90,65 @@ from typing import Any
 import pandas as pd
 
 from collectors import tushare_client as tc
-from lib import config
 
 log = logging.getLogger(__name__)
 
 MANIFEST_SCHEMA_VERSION = "cn_tushare_a_share_spine_manifest.v1"
-STATE_SCHEMA_VERSION = "cn_tushare_a_share_spine_state.v1"
+STATE_SCHEMA_VERSION = "cn_tushare_a_share_spine_state.v2"
+AUTHORIZATION_SCHEMA_VERSION = "cn_tushare_written_authorization.v1"
+AUTHORIZATION_TRUST_SCHEMA_VERSION = "cn_tushare_authorization_trust_allowlist.v1"
+# Deliberately empty in this foundation-only commit.  A real allowlist file can
+# become a trust root only by adding its exact SHA-256 in a reviewed code change;
+# no CLI flag or environment variable can mint a runtime pin.
+CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256: frozenset[str] = frozenset()
+# The current exact-date x ticker cap fallback is deterministic but not a
+# viable 2011-present bulk plan.  Keep every network path fail-closed until a
+# separately reviewed range-shard implementation flips this immutable gate.
+BULK_HISTORICAL_BACKFILL_READY = False
 AUTHORITY = "context_only"
 SOURCE_NAME = "tushare_pro"
 
-DEFAULT_STORE = config.data_dir() / "china_tushare_spine"
+DEFAULT_STORE = Path(os.environ.get(
+    "CN_TUSHARE_SPINE_STORE",
+    Path.home() / ".local" / "share" / "macro-dashboard" / "china_tushare_spine",
+))
 DEFAULT_ENDPOINTS = ("daily", "daily_basic", "stk_limit", "suspend_d", "stock_st")
 DAILY_ENDPOINTS = frozenset(DEFAULT_ENDPOINTS)
 EMPTY_ALLOWED_ENDPOINTS = frozenset({"suspend_d", "stock_st"})
 DENSE_ENDPOINTS = frozenset({"daily", "daily_basic", "stk_limit"})
+PIT_UNIVERSE_ENDPOINT = "bak_basic"
+FUND_REFERENCE_ENDPOINT = "fund_basic"
 
 DEFAULT_MAX_REQUESTS = 50
 SAFE_MAX_REQUESTS = 100
 ST_DAILY_START = date(2016, 1, 1)
+PIT_UNIVERSE_START = date(2016, 1, 1)
 BSE_LAUNCH = date(2021, 11, 15)
 CALENDAR_HISTORY_START = date(1991, 1, 1)
 NAME_HISTORY_START_YEAR = 1990
 NAMECHANGE_MAX_PER_RUN = 5
+SHARD_CALLS_PER_UNIT_SLICE = 8
+FUND_STATUSES = ("L", "D", "I")
+
+AUTHORIZATION_REQUIRED_SCOPE = (
+    "api_access",
+    "bulk_local_retention",
+    "quantitative_strategy_research",
+    "commercial_use",
+    "private_internal_derivatives",
+)
+AUTHORIZATION_RECORDED_SCOPE = (*AUTHORIZATION_REQUIRED_SCOPE, "redistribution", "public_derivatives")
+TUSHARE_SERVICE_AGREEMENT_URL = "https://tushare.pro/document/2?doc_id=405"
+TUSHARE_BAK_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=262"
+TUSHARE_FUND_BASIC_DOC_URL = "https://tushare.pro/document/2?doc_id=19"
+SSE_SECURITY_CODE_GUIDE_URL = (
+    "https://www.sse.com.cn/lawandrules/guide/stock/jyglywznylc/zn/"
+    "c/c_20260713_10825354.shtml"
+)
+SZSE_SECURITY_CODE_RANGE_URL = (
+    "https://www.szse.cn/marketServices/technicalservice/doc/"
+    "P020241212550140892927.pdf"
+)
 
 # A-share orders are quoted in CNY 0.01 increments.  Do not replace Decimal
 # arithmetic here with Python/NumPy round: both are ties-to-even and binary
@@ -147,8 +184,18 @@ ENDPOINT_FIELDS: dict[str, str] = {
         "list_status,list_date,delist_date,is_hs"
     ),
     "bse_mapping": "name,o_code,n_code,list_date",
+    "fund_basic": (
+        "ts_code,name,management,custodian,fund_type,found_date,due_date,list_date,"
+        "issue_date,delist_date,issue_amount,m_fee,c_fee,duration_year,p_value,min_amount,"
+        "exp_return,benchmark,status,invest_type,type,trustee,purc_startdate,redm_startdate,market"
+    ),
     "trade_cal": "exchange,cal_date,is_open,pretrade_date",
     "namechange": "ts_code,name,start_date,end_date,ann_date,change_reason",
+    "bak_basic": (
+        "trade_date,ts_code,name,industry,area,pe,float_share,total_share,total_assets,"
+        "liquid_assets,fixed_assets,reserved,reserved_pershare,eps,bvps,pb,list_date,undp,"
+        "per_undp,rev_yoy,profit_yoy,gpr,npr,holder_num"
+    ),
     "daily": (
         "ts_code,trade_date,open,high,low,close,pre_close,change,pct_chg,vol,amount"
     ),
@@ -166,6 +213,8 @@ ENDPOINT_FIELDS: dict[str, str] = {
 # Refuse to mark that unit complete rather than silently blessing truncation.
 SOURCE_ROW_CAPS: dict[str, int] = {
     "stock_basic": 6000,
+    "fund_basic": 15000,
+    "bak_basic": 7000,
     "daily": 6000,
     "daily_basic": 6000,
     "stk_limit": 5800,
@@ -182,6 +231,8 @@ KEY_COLUMNS: dict[str, list[str]] = {
     "event_daily": ["trade_date", "ticker"],
     "name_history": ["ticker", "effective_from", "name", "announced_date"],
     "trade_calendar": ["exchange", "cal_date"],
+    "bak_basic": ["trade_date", "ticker"],
+    "source_classification": ["trade_date", "source_row_ordinal"],
 }
 
 _ST_PREFIX = re.compile(r"^(?:N?\*ST|N?ST|S\*ST|SST|PT)", re.IGNORECASE)
@@ -195,6 +246,60 @@ class SpineError(RuntimeError):
 
 class RequestBudgetExhausted(SpineError):
     """Internal control-flow signal for a clean resumable stop."""
+
+
+@dataclass(frozen=True)
+class AuthorizationGrant:
+    """Out-of-band-pinned written permission; only non-sensitive evidence persists."""
+
+    receipt_sha256: str
+    grant_document_sha256: str
+    trust_allowlist_sha256: str
+    trust_entry_sha256: str
+    trust_allowlist_payload_json: str
+    vendor_entitlement_document_sha256: str | None
+    vendor_delegation_document_sha256: str | None
+    issued_on: str
+    expires_on: str
+    granted_by: str
+    scope: Mapping[str, bool]
+
+    def public_receipt(self) -> dict[str, Any]:
+        return {
+            "schema_version": AUTHORIZATION_SCHEMA_VERSION,
+            "receipt_sha256": self.receipt_sha256,
+            "grant_document_sha256": self.grant_document_sha256,
+            "trust_allowlist_sha256": self.trust_allowlist_sha256,
+            "trust_entry_sha256": self.trust_entry_sha256,
+            "vendor_entitlement_document_sha256": self.vendor_entitlement_document_sha256,
+            "vendor_delegation_document_sha256": self.vendor_delegation_document_sha256,
+            "issued_on": self.issued_on,
+            "expires_on": self.expires_on,
+            "granted_by": self.granted_by,
+            "scope": dict(self.scope),
+            "required_scope_satisfied": all(self.scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE),
+        }
+
+
+@dataclass(frozen=True)
+class VendorResponse:
+    """A schema- and request-bound response plus its persisted request receipt."""
+
+    frame: pd.DataFrame | None
+    receipt: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class NormalisedSourceUnit:
+    """Lossless classification of every source row in an exact request unit."""
+
+    landed_a: pd.DataFrame
+    known_excluded: pd.DataFrame
+    quarantined_unknown: pd.DataFrame
+
+    @property
+    def source_row_count(self) -> int:
+        return len(self.landed_a) + len(self.known_excluded) + len(self.quarantined_unknown)
 
 
 @dataclass(frozen=True)
@@ -362,9 +467,25 @@ def _board_for(code: str, source_exchange: str) -> str:
         return "bse"
     if source_exchange == "SSE" and code.startswith(("688", "689")):
         return "star"
-    if source_exchange == "SZSE" and code.startswith(("300", "301", "302")):
-        return "chinext"
+    if source_exchange == "SZSE":
+        try:
+            numeric_code = int(code)
+        except ValueError:
+            numeric_code = -1
+        # SZSE's official allocation covers 300000-309799 ChiNext shares and
+        # 309800-309999 ChiNext depositary receipts.  Do not misclassify future
+        # 303-309 families as main-board securities.
+        if 300000 <= numeric_code <= 309999:
+            return "chinext"
     return "main"
+
+
+_TUSHARE_MARKET_BY_BOARD = {
+    "main": "主板",
+    "chinext": "创业板",
+    "star": "科创板",
+    "bse": "北交所",
+}
 
 
 def canonical_identity(
@@ -416,6 +537,62 @@ def _canonical_json_bytes(value: Any) -> bytes:
                       allow_nan=False).encode("utf-8")
 
 
+def _iter_logical_strings(value: Any) -> Iterable[str]:
+    """Yield decoded scalar text so compressed columnar files cannot hide credentials."""
+    if isinstance(value, pd.DataFrame):
+        yield from _iter_logical_strings(value.attrs)
+        yield from _iter_logical_strings(value.columns)
+        yield from _iter_logical_strings(value.index)
+        for position in range(len(value.columns)):
+            series = value.iloc[:, position]
+            if isinstance(series.dtype, pd.CategoricalDtype):
+                # Unused dictionary values are serialized into Parquet too; a
+                # row-value-only scan would miss a credential hidden there.
+                yield from _iter_logical_strings(series.cat.categories)
+            yield from _iter_logical_strings(series.tolist())
+        return
+    if isinstance(value, pd.Series):
+        yield from _iter_logical_strings(value.name)
+        yield from _iter_logical_strings(value.index)
+        if isinstance(value.dtype, pd.CategoricalDtype):
+            yield from _iter_logical_strings(value.cat.categories)
+        yield from _iter_logical_strings(value.tolist())
+        return
+    if isinstance(value, pd.MultiIndex):
+        yield from _iter_logical_strings(value.names)
+        for level in value.levels:
+            yield from _iter_logical_strings(level)
+        yield from _iter_logical_strings(value.tolist())
+        return
+    if isinstance(value, pd.Index):
+        yield from _iter_logical_strings(value.name)
+        categories = getattr(value, "categories", None)
+        if categories is not None:
+            yield from _iter_logical_strings(categories)
+        yield from _iter_logical_strings(value.tolist())
+        return
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            yield str(key)
+            yield from _iter_logical_strings(item)
+        return
+    if isinstance(value, (list, tuple, set, frozenset)):
+        for item in value:
+            yield from _iter_logical_strings(item)
+        return
+    if isinstance(value, (str, bytes)):
+        yield value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value
+
+
+def _assert_configured_token_absent_logical(value: Any, *, artifact: str) -> None:
+    """Fail on decoded values before a write and again after a Parquet read."""
+    secret = tc.token()
+    if not secret:
+        return
+    if any(secret in text for text in _iter_logical_strings(value)):
+        raise SpineError(f"configured credential found in decoded artifact values: {artifact}")
+
+
 def _assert_configured_token_absent(raw: bytes, *, artifact: str) -> None:
     """Fail before hashing/receipting if configured credential bytes escaped."""
     secret = tc.token()
@@ -429,9 +606,402 @@ def _receipt_bytes(path: Path, store: Path) -> bytes:
     return raw
 
 
+def _verified_authorization_document(
+    path_value: Any,
+    expected_hash_value: Any,
+    *,
+    label: str,
+) -> str:
+    document_path = Path(str(path_value)).expanduser()
+    if not document_path.is_absolute() or not document_path.is_file():
+        raise SpineError(f"written authorization {label} must be an existing absolute file")
+    document_raw = document_path.read_bytes()
+    _assert_configured_token_absent(document_raw, artifact=f"authorization_{label}")
+    expected_hash = str(expected_hash_value or "").lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+        raise SpineError(f"written authorization {label} hash is invalid")
+    if hashlib.sha256(document_raw).hexdigest() != expected_hash:
+        raise SpineError(f"written authorization {label} hash does not match")
+    return expected_hash
+
+
+def _authorization_claim_sha256(
+    *,
+    receipt_sha256: str,
+    grant_document_sha256: str,
+    vendor_entitlement_document_sha256: str | None,
+    vendor_delegation_document_sha256: str | None,
+    issued_on: str,
+    expires_on: str,
+    granted_by: str,
+    scope: Mapping[str, bool],
+) -> str:
+    """Bind the manifest-visible authorization claims to the pinned grant entry."""
+    if (
+        not isinstance(scope, Mapping)
+        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
+        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
+    ):
+        raise SpineError("authorization claim has invalid scope values")
+    claim = {
+        "receipt_sha256": receipt_sha256,
+        "grant_document_sha256": grant_document_sha256,
+        "vendor_entitlement_document_sha256": vendor_entitlement_document_sha256,
+        "vendor_delegation_document_sha256": vendor_delegation_document_sha256,
+        "issued_on": issued_on,
+        "expires_on": expires_on,
+        "granted_by": granted_by,
+        "scope": {name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
+    }
+    return hashlib.sha256(_canonical_json_bytes(claim)).hexdigest()
+
+
+def load_authorization_grant(
+    path: Path,
+    *,
+    trust_allowlist: Path,
+    as_of: date,
+) -> AuthorizationGrant:
+    """Validate a written vendor/institution grant before any network or store write.
+
+    The JSON receipt is not an operator terms-accepted switch: it must bind to an
+    independently stored written grant whose SHA-256 matches, and its separate
+    allowlist file must itself be pinned by the immutable code-reviewed trust root.
+    Identity/path text stays outside the spine; only hashes, dates, grant class,
+    and scope booleans are copied into the manifest.
+    """
+    receipt_path = Path(path).expanduser().resolve()
+    trust_path = Path(trust_allowlist).expanduser().resolve()
+    if not receipt_path.is_file():
+        raise SpineError("written TuShare authorization receipt is absent")
+    if not trust_path.is_file() or trust_path == receipt_path:
+        raise SpineError("out-of-band TuShare authorization trust allowlist is absent")
+    raw = receipt_path.read_bytes()
+    _assert_configured_token_absent(raw, artifact="authorization_receipt")
+    trust_raw = trust_path.read_bytes()
+    _assert_configured_token_absent(trust_raw, artifact="authorization_trust_allowlist")
+    trust_allowlist_hash = hashlib.sha256(trust_raw).hexdigest()
+    if trust_allowlist_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
+        raise SpineError(
+            "authorization trust allowlist is not pinned by the code-reviewed trust root"
+        )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise SpineError("written TuShare authorization receipt is invalid JSON") from exc
+    _assert_configured_token_absent_logical(payload, artifact="authorization_receipt")
+    if not isinstance(payload, dict) or payload.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
+        raise SpineError("written TuShare authorization receipt has an unsupported schema")
+    exact_keys = {
+        "schema_version", "authorization_id", "vendor", "grantee", "grantor",
+        "granted_by", "issued_on", "expires_on", "grant_document_path",
+        "grant_document_sha256", "entitlement_chain", "scope",
+    }
+    if set(payload) != exact_keys:
+        raise SpineError("written TuShare authorization receipt fields are incomplete or unexpected")
+    for field in ("authorization_id", "vendor", "grantee", "grantor"):
+        if not isinstance(payload[field], str) or not payload[field].strip():
+            raise SpineError(f"written TuShare authorization receipt requires {field}")
+    if str(payload["vendor"]).strip().lower() not in {"tushare", "tushare pro"}:
+        raise SpineError("written authorization receipt is not for TuShare")
+    granted_by = str(payload["granted_by"]).strip().lower()
+    if granted_by not in {"vendor", "institution"}:
+        raise SpineError("written authorization must be granted by vendor or institution")
+    issued = _parse_date(payload["issued_on"])
+    expires = _parse_date(payload["expires_on"])
+    if issued > as_of or expires < as_of or expires < issued:
+        raise SpineError("written TuShare authorization is not effective on the collection date")
+    scope = payload.get("scope")
+    if not isinstance(scope, dict) or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE):
+        raise SpineError("written TuShare authorization scope is incomplete")
+    if any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE):
+        raise SpineError("written TuShare authorization scope values must be booleans")
+    missing_scope = [name for name in AUTHORIZATION_REQUIRED_SCOPE if not scope[name]]
+    if missing_scope:
+        raise SpineError(
+            "written TuShare authorization lacks required collection scope: "
+            + ",".join(missing_scope)
+        )
+    expected_hash = _verified_authorization_document(
+        payload["grant_document_path"], payload["grant_document_sha256"],
+        label="grant_document",
+    )
+    chain = payload.get("entitlement_chain")
+    chain_keys = {
+        "vendor_entitlement_document_path", "vendor_entitlement_document_sha256",
+        "vendor_delegation_document_path", "vendor_delegation_document_sha256",
+    }
+    if not isinstance(chain, dict) or set(chain) != chain_keys:
+        raise SpineError("written authorization entitlement chain is incomplete")
+    entitlement_hash: str | None = None
+    delegation_hash: str | None = None
+    if granted_by == "vendor":
+        if any(chain[name] is not None for name in chain_keys):
+            raise SpineError("direct vendor grant must not self-declare an institutional chain")
+    else:
+        entitlement_hash = _verified_authorization_document(
+            chain["vendor_entitlement_document_path"],
+            chain["vendor_entitlement_document_sha256"],
+            label="vendor_entitlement_document",
+        )
+        delegation_hash = _verified_authorization_document(
+            chain["vendor_delegation_document_path"],
+            chain["vendor_delegation_document_sha256"],
+            label="vendor_delegation_document",
+        )
+
+    try:
+        trust_payload = json.loads(trust_raw.decode("utf-8"))
+    except Exception as exc:
+        raise SpineError("authorization trust allowlist is invalid JSON") from exc
+    _assert_configured_token_absent_logical(
+        trust_payload, artifact="authorization_trust_allowlist",
+    )
+    if (
+        not isinstance(trust_payload, dict)
+        or set(trust_payload) != {"schema_version", "trusted_grants"}
+        or trust_payload.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
+        or not isinstance(trust_payload.get("trusted_grants"), list)
+        or not trust_payload["trusted_grants"]
+    ):
+        raise SpineError("authorization trust allowlist has an unsupported schema")
+    receipt_hash = hashlib.sha256(raw).hexdigest()
+    expected_entry = {
+        "receipt_sha256": receipt_hash,
+        "grant_document_sha256": expected_hash,
+        "granted_by": granted_by,
+        "vendor_entitlement_document_sha256": entitlement_hash,
+        "vendor_delegation_document_sha256": delegation_hash,
+        "authorization_claim_sha256": _authorization_claim_sha256(
+            receipt_sha256=receipt_hash,
+            grant_document_sha256=expected_hash,
+            vendor_entitlement_document_sha256=entitlement_hash,
+            vendor_delegation_document_sha256=delegation_hash,
+            issued_on=issued.isoformat(),
+            expires_on=expires.isoformat(),
+            granted_by=granted_by,
+            scope=scope,
+        ),
+    }
+    entry_keys = set(expected_entry)
+    matching_entries: list[dict[str, Any]] = []
+    for candidate in trust_payload["trusted_grants"]:
+        if not isinstance(candidate, dict) or set(candidate) != entry_keys:
+            raise SpineError("authorization trust allowlist contains a malformed grant pin")
+        for name in (
+            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
+        ):
+            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate[name] or "").lower()):
+                raise SpineError("authorization trust allowlist contains an invalid hash pin")
+        for name in (
+            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
+        ):
+            value = candidate[name]
+            if value is not None and not re.fullmatch(r"[0-9a-f]{64}", str(value).lower()):
+                raise SpineError("authorization trust allowlist contains an invalid chain hash pin")
+        canonical_candidate = {
+            **candidate,
+            "receipt_sha256": str(candidate["receipt_sha256"]).lower(),
+            "grant_document_sha256": str(candidate["grant_document_sha256"]).lower(),
+            "vendor_entitlement_document_sha256": (
+                str(candidate["vendor_entitlement_document_sha256"]).lower()
+                if candidate["vendor_entitlement_document_sha256"] is not None else None
+            ),
+            "vendor_delegation_document_sha256": (
+                str(candidate["vendor_delegation_document_sha256"]).lower()
+                if candidate["vendor_delegation_document_sha256"] is not None else None
+            ),
+        }
+        if canonical_candidate == expected_entry:
+            matching_entries.append(canonical_candidate)
+    if len(matching_entries) != 1:
+        raise SpineError(
+            "written authorization is not uniquely pinned by the out-of-band trust allowlist"
+        )
+    trust_entry_hash = hashlib.sha256(
+        _canonical_json_bytes(matching_entries[0])
+    ).hexdigest()
+    return AuthorizationGrant(
+        receipt_sha256=receipt_hash,
+        grant_document_sha256=expected_hash,
+        trust_allowlist_sha256=trust_allowlist_hash,
+        trust_entry_sha256=trust_entry_hash,
+        trust_allowlist_payload_json=trust_raw.decode("utf-8"),
+        vendor_entitlement_document_sha256=entitlement_hash,
+        vendor_delegation_document_sha256=delegation_hash,
+        issued_on=issued.isoformat(),
+        expires_on=expires.isoformat(),
+        granted_by=granted_by,
+        scope={name: bool(scope[name]) for name in AUTHORIZATION_RECORDED_SCOPE},
+    )
+
+
+def _authorization_path(store: Path) -> Path:
+    return store / "authorization_scope_receipt.json"
+
+
+def _authorization_trust_path(store: Path) -> Path:
+    return store / "authorization_trust_allowlist.json"
+
+
+def _validate_public_authorization_trust(
+    public_receipt: Mapping[str, Any], trust_raw: bytes,
+) -> None:
+    trust_hash = hashlib.sha256(trust_raw).hexdigest()
+    if (
+        trust_hash != public_receipt.get("trust_allowlist_sha256")
+        or trust_hash not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
+    ):
+        raise SpineError("authorization allowlist is not bound to the code-reviewed trust root")
+    try:
+        trust = json.loads(trust_raw.decode("utf-8"))
+    except Exception as exc:
+        raise SpineError("persisted authorization trust allowlist is unreadable") from exc
+    _assert_configured_token_absent_logical(trust, artifact="authorization_trust_allowlist")
+    if (
+        not isinstance(trust, dict)
+        or set(trust) != {"schema_version", "trusted_grants"}
+        or trust.get("schema_version") != AUTHORIZATION_TRUST_SCHEMA_VERSION
+        or not isinstance(trust.get("trusted_grants"), list)
+        or not trust["trusted_grants"]
+    ):
+        raise SpineError("persisted authorization trust allowlist has an unsupported schema")
+    expected = {
+        "receipt_sha256": public_receipt.get("receipt_sha256"),
+        "grant_document_sha256": public_receipt.get("grant_document_sha256"),
+        "granted_by": public_receipt.get("granted_by"),
+        "vendor_entitlement_document_sha256": public_receipt.get(
+            "vendor_entitlement_document_sha256"
+        ),
+        "vendor_delegation_document_sha256": public_receipt.get(
+            "vendor_delegation_document_sha256"
+        ),
+    }
+    expected["authorization_claim_sha256"] = _authorization_claim_sha256(
+        receipt_sha256=str(expected["receipt_sha256"] or ""),
+        grant_document_sha256=str(expected["grant_document_sha256"] or ""),
+        vendor_entitlement_document_sha256=expected[
+            "vendor_entitlement_document_sha256"
+        ],
+        vendor_delegation_document_sha256=expected[
+            "vendor_delegation_document_sha256"
+        ],
+        issued_on=str(public_receipt.get("issued_on") or ""),
+        expires_on=str(public_receipt.get("expires_on") or ""),
+        granted_by=str(expected["granted_by"] or ""),
+        scope=public_receipt.get("scope", {}),
+    )
+    expected_hash = hashlib.sha256(_canonical_json_bytes(expected)).hexdigest()
+    if expected_hash != public_receipt.get("trust_entry_sha256"):
+        raise SpineError("persisted authorization trust-entry hash is inconsistent")
+    matches = 0
+    for candidate in trust["trusted_grants"]:
+        if not isinstance(candidate, dict) or set(candidate) != set(expected):
+            raise SpineError("persisted authorization allowlist contains a malformed entry")
+        for name in (
+            "receipt_sha256", "grant_document_sha256", "authorization_claim_sha256",
+        ):
+            if not re.fullmatch(r"[0-9a-f]{64}", str(candidate.get(name) or "")):
+                raise SpineError("persisted authorization allowlist contains an invalid hash")
+        for name in (
+            "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
+        ):
+            item = candidate.get(name)
+            if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
+                raise SpineError("persisted authorization allowlist contains an invalid chain hash")
+        matches += int(candidate == expected)
+    if matches != 1:
+        raise SpineError("persisted authorization is not uniquely present in its pinned allowlist")
+
+
+def _persist_authorization_grant(store: Path, grant: AuthorizationGrant) -> None:
+    if grant.trust_allowlist_sha256 not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
+        raise SpineError("authorization grant is not bound to the code-reviewed trust root")
+    public = grant.public_receipt()
+    trust_raw = grant.trust_allowlist_payload_json.encode("utf-8")
+    _validate_public_authorization_trust(public, trust_raw)
+    _atomic_bytes(_authorization_trust_path(store), trust_raw)
+    _atomic_json(_authorization_path(store), public)
+
+
+def _load_persisted_authorization(store: Path) -> dict[str, Any] | None:
+    path = _authorization_path(store)
+    if not path.exists():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SpineError("persisted authorization scope receipt is unreadable") from exc
+    _assert_configured_token_absent_logical(value, artifact=path.name)
+    required = {
+        "schema_version", "receipt_sha256", "grant_document_sha256", "issued_on",
+        "trust_allowlist_sha256", "trust_entry_sha256",
+        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
+        "expires_on", "granted_by", "scope", "required_scope_satisfied",
+    }
+    if not isinstance(value, dict) or set(value) != required:
+        raise SpineError("persisted authorization scope receipt is malformed")
+    if value.get("schema_version") != AUTHORIZATION_SCHEMA_VERSION:
+        raise SpineError("persisted authorization scope receipt schema is unsupported")
+    for name in (
+        "receipt_sha256", "grant_document_sha256", "trust_allowlist_sha256",
+        "trust_entry_sha256",
+    ):
+        if not re.fullmatch(r"[0-9a-f]{64}", str(value.get(name) or "")):
+            raise SpineError("persisted authorization scope receipt contains an invalid hash")
+    for name in (
+        "vendor_entitlement_document_sha256", "vendor_delegation_document_sha256",
+    ):
+        item = value.get(name)
+        if item is not None and not re.fullmatch(r"[0-9a-f]{64}", str(item)):
+            raise SpineError("persisted authorization scope receipt contains an invalid chain hash")
+    if value["trust_allowlist_sha256"] not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256:
+        raise SpineError("persisted authorization is not bound to the code-reviewed trust root")
+    scope = value.get("scope")
+    if (
+        not isinstance(scope, dict)
+        or set(scope) != set(AUTHORIZATION_RECORDED_SCOPE)
+        or any(type(scope[name]) is not bool for name in AUTHORIZATION_RECORDED_SCOPE)
+    ):
+        raise SpineError("persisted authorization scope receipt has invalid scope values")
+    derived_scope_satisfied = all(scope[name] for name in AUTHORIZATION_REQUIRED_SCOPE)
+    if type(value.get("required_scope_satisfied")) is not bool or (
+        value["required_scope_satisfied"] != derived_scope_satisfied
+    ):
+        raise SpineError("persisted authorization scope satisfaction is inconsistent")
+    if not derived_scope_satisfied:
+        raise SpineError("persisted authorization scope receipt does not satisfy required scope")
+    issued = _parse_date(value.get("issued_on"))
+    expires = _parse_date(value.get("expires_on"))
+    if expires < issued:
+        raise SpineError("persisted authorization effective dates are inconsistent")
+    granted_by = value.get("granted_by")
+    entitlement = value.get("vendor_entitlement_document_sha256")
+    delegation = value.get("vendor_delegation_document_sha256")
+    if granted_by == "vendor":
+        if entitlement is not None or delegation is not None:
+            raise SpineError("persisted direct vendor grant contains a false delegation chain")
+    elif granted_by == "institution":
+        if entitlement is None or delegation is None:
+            raise SpineError("persisted institutional grant lacks its vendor delegation chain")
+    else:
+        raise SpineError("persisted authorization grant class is invalid")
+    trust_path = _authorization_trust_path(store)
+    if not trust_path.is_file():
+        raise SpineError("persisted authorization trust allowlist is absent")
+    trust_raw = trust_path.read_bytes()
+    _assert_configured_token_absent(trust_raw, artifact=trust_path.name)
+    _validate_public_authorization_trust(value, trust_raw)
+    return value
+
+
 def _json_safe(value: Any) -> Any:
     if value is None:
         return None
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
     if isinstance(value, (pd.Timestamp, datetime, date)):
         return value.isoformat()
     if isinstance(value, (bool, str, int)):
@@ -449,6 +1019,7 @@ def _json_safe(value: Any) -> Any:
 
 
 def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
+    _assert_configured_token_absent_logical(payload, artifact=path.name)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
@@ -464,12 +1035,35 @@ def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
             os.unlink(temporary)
 
 
+def _atomic_bytes(path: Path, raw: bytes) -> None:
+    _assert_configured_token_absent(raw, artifact=path.name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(raw)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def _atomic_parquet(path: Path, frame: pd.DataFrame) -> None:
+    _assert_configured_token_absent_logical(frame, artifact=path.name)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".parquet")
     os.close(fd)
     try:
         frame.to_parquet(temporary, index=False, compression="zstd")
+        serialized = Path(temporary).read_bytes()
+        _assert_configured_token_absent(serialized, artifact=path.name)
+        try:
+            roundtrip = pd.read_parquet(temporary)
+        except Exception as exc:
+            raise SpineError(f"serialized spine partition failed roundtrip: {path.name}") from exc
+        _assert_configured_token_absent_logical(roundtrip, artifact=path.name)
         os.replace(temporary, path)
     finally:
         if os.path.exists(temporary):
@@ -478,9 +1072,28 @@ def _atomic_parquet(path: Path, frame: pd.DataFrame) -> None:
 
 def _read_parquet_strict(path: Path) -> pd.DataFrame:
     try:
-        return pd.read_parquet(path)
+        frame = pd.read_parquet(path)
     except Exception as exc:
         raise SpineError(f"unreadable existing spine partition: {path}: {exc}") from exc
+    _assert_configured_token_absent_logical(frame, artifact=path.name)
+    return frame
+
+
+@contextlib.contextmanager
+def spine_store_lock(store: Path) -> Iterable[None]:
+    """Acquire a non-blocking process lock before any mutable store operation."""
+    target = Path(store)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = target.parent / f".{target.name}.writer.lock"
+    with lock_path.open("a+b") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise SpineError(f"another process holds the spine writer lock: {lock_path}") from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def _duplicates(frame: pd.DataFrame, keys: Sequence[str]) -> int:
@@ -595,6 +1208,7 @@ def load_state(store: Path) -> dict[str, Any]:
         state = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise SpineError(f"collection state is unreadable: {path}: {exc}") from exc
+    _assert_configured_token_absent_logical(state, artifact=path.name)
     if state.get("schema_version") != STATE_SCHEMA_VERSION or not isinstance(state.get("units"), dict):
         raise SpineError(f"collection state has an unsupported schema: {path}")
     return state
@@ -606,12 +1220,427 @@ def _unit_record(state: Mapping[str, Any], endpoint: str, unit: str) -> Mapping[
     return record if isinstance(record, dict) else None
 
 
+def _shard_coverage(
+    state: Mapping[str, Any], store: Path, endpoint: str, unit: str,
+    record: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    """Recompute a parent unit's ticker-shard coverage from terminal child receipts."""
+    if record.get("collection_method") != "per_ticker_shards":
+        return None
+    expected_count = record.get("expected_ticker_count")
+    expected_hash = record.get("expected_ticker_sha256")
+    if not isinstance(expected_count, int) or expected_count <= 0:
+        return {
+            "expected_ticker_count": expected_count,
+            "completed_ticker_count": 0,
+            "authoritative_source_row_count": 0,
+            "expected_ticker_sha256": expected_hash,
+            "observed_ticker_sha256": None,
+            "complete": False,
+        }
+    shard_endpoint = f"{endpoint}_shard"
+    prefix = f"{unit}:"
+    tickers = sorted(
+        shard_unit[len(prefix):]
+        for shard_unit in state.get("units", {}).get(shard_endpoint, {})
+        if str(shard_unit).startswith(prefix)
+        and _unit_done(state, store, shard_endpoint, str(shard_unit))
+    )
+    authoritative_source_rows = sum(
+        int((_unit_record(state, shard_endpoint, f"{unit}:{ticker}") or {}).get(
+            "source_row_count", 0,
+        ))
+        for ticker in tickers
+    )
+    observed_hash = hashlib.sha256("\n".join(tickers).encode("utf-8")).hexdigest()
+    return {
+        "expected_ticker_count": expected_count,
+        "completed_ticker_count": len(tickers),
+        "authoritative_source_row_count": authoritative_source_rows,
+        "expected_ticker_sha256": expected_hash,
+        "observed_ticker_sha256": observed_hash,
+        "complete": bool(
+            len(tickers) == expected_count
+            and isinstance(expected_hash, str)
+            and observed_hash == expected_hash
+            and authoritative_source_rows == int(record.get("source_row_count", 0))
+        ),
+    }
+
+
+def _contained_store_path(store: Path, relative: Any) -> Path:
+    raw = Path(str(relative))
+    if raw.is_absolute() or ".." in raw.parts:
+        raise SpineError("state artifact path is not store-relative")
+    root = store.resolve()
+    candidate = (root / raw).resolve(strict=False)
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise SpineError("state artifact path escapes the spine store") from exc
+    return candidate
+
+
+def _validate_private_store_path(store: Path) -> Path:
+    """Reject stageable paid-data stores anywhere inside the repository."""
+    resolved = Path(store).expanduser().resolve(strict=False)
+    repo_root = Path(__file__).resolve().parents[1]
+    legacy_ignored = (repo_root / "data" / "china_tushare_spine").resolve(strict=False)
+    try:
+        resolved.relative_to(repo_root)
+    except ValueError:
+        return resolved
+    try:
+        resolved.relative_to(legacy_ignored)
+    except ValueError as exc:
+        raise SpineError(
+            "TuShare spine store must remain outside the repository; only the exact "
+            "ignored data/china_tushare_spine containment root is permitted"
+        ) from exc
+    return resolved
+
+
+def _expected_unit_partition_path(
+    store: Path, endpoint: str, unit: str, record: Mapping[str, Any],
+) -> Path | None:
+    base = endpoint.removesuffix("_shard")
+    if endpoint.endswith("_shard"):
+        compact, ticker = unit.split(":", 1)
+        return _shard_partition(store, base, _parse_date(compact), ticker)
+    if base in DAILY_ENDPOINTS:
+        return _monthly_partition(store, base, _parse_date(unit))
+    if base == PIT_UNIVERSE_ENDPOINT:
+        return _pit_partition(store, _parse_date(unit))
+    if base == "namechange":
+        return _name_partition(store, int(unit.split(":", 1)[0]))
+    if base == "trade_cal":
+        _, compact_start, _ = unit.split(":", 2)
+        return _calendar_partition(store, _parse_date(compact_start).year)
+    relative = record.get("partition")
+    return _contained_store_path(store, relative) if relative else None
+
+
+def _unit_artifact_receipt(
+    store: Path, endpoint: str, unit: str, record: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Recompute the exact landed subset represented by one terminal state unit."""
+    base = endpoint.removesuffix("_shard")
+    expected_path = _expected_unit_partition_path(store, endpoint, unit, record)
+    recorded_relative = record.get("partition")
+    if recorded_relative:
+        recorded_path = _contained_store_path(store, recorded_relative)
+        if expected_path is not None and recorded_path != expected_path.resolve(strict=False):
+            raise SpineError(f"{endpoint}/{unit} partition path disagrees with its unit")
+        expected_path = recorded_path
+    if expected_path is None:
+        frame = pd.DataFrame()
+        relative_path = None
+    else:
+        relative_path = expected_path.resolve(strict=False).relative_to(store.resolve()).as_posix()
+        frame = _read_parquet_strict(expected_path) if expected_path.is_file() else pd.DataFrame()
+    if not frame.empty and endpoint.endswith("_shard"):
+        # Shard files are one exact raw request unit and are never shared.
+        subset = frame.copy()
+        keys = [column for column in ("trade_date", "ts_code") if column in subset.columns]
+    elif base in DAILY_ENDPOINTS | {PIT_UNIVERSE_ENDPOINT}:
+        expected_date = _parse_date(unit.split(":", 1)[0]).isoformat()
+        if not frame.empty and "trade_date" not in frame.columns:
+            raise SpineError(f"{endpoint}/{unit} artifact lacks trade_date")
+        subset = frame[
+            frame["trade_date"].map(_iso) == expected_date
+        ].copy() if not frame.empty else frame.copy()
+        keys = KEY_COLUMNS[base]
+    elif base == "trade_cal":
+        exchange, compact_start, compact_end = unit.split(":", 2)
+        start = _parse_date(compact_start).isoformat()
+        end = _parse_date(compact_end).isoformat()
+        if not frame.empty and not {"exchange", "cal_date"}.issubset(frame.columns):
+            raise SpineError(f"trade_cal/{unit} artifact lacks its selector columns")
+        subset = frame[
+            (frame["exchange"].astype(str) == exchange)
+            & (frame["cal_date"].map(_iso).between(start, end))
+        ].copy() if not frame.empty else frame.copy()
+        keys = KEY_COLUMNS["trade_calendar"]
+    elif base == "namechange":
+        subset = frame.copy()
+        keys = KEY_COLUMNS["name_history"]
+    else:
+        subset = frame.copy()
+        keys = {
+            "bse_mapping": ["o_code", "n_code"],
+            "stock_basic": ["ts_code"],
+            "fund_basic": ["ts_code"],
+        }.get(base, list(subset.columns))
+    if subset.empty:
+        duplicate_rows = 0
+    elif not keys:
+        raise SpineError(f"{endpoint}/{unit} artifact has no semantic key")
+    else:
+        duplicate_rows = _duplicates(subset, keys)
+    return {
+        "path": relative_path,
+        "unit_row_count": len(subset),
+        "unit_semantic_sha256": _frame_semantic_sha256(subset, keys),
+        "key_columns": list(keys),
+        "duplicate_key_rows": duplicate_rows,
+    }
+
+
+def _empty_unit_artifact_receipt() -> dict[str, Any]:
+    return {
+        "path": None,
+        "unit_row_count": 0,
+        "unit_semantic_sha256": hashlib.sha256(b"").hexdigest(),
+        "key_columns": [],
+        "duplicate_key_rows": 0,
+    }
+
+
+def _classification_unit_artifact_receipt(
+    store: Path,
+    endpoint: str,
+    unit: str,
+    classification: str,
+) -> dict[str, Any]:
+    base = endpoint.removesuffix("_shard")
+    if endpoint.endswith("_shard"):
+        return _empty_unit_artifact_receipt()
+    if base not in DAILY_ENDPOINTS | {PIT_UNIVERSE_ENDPOINT, "namechange"}:
+        return _empty_unit_artifact_receipt()
+    compact = unit.split(":", 1)[-1] if base == "namechange" else unit.split(":", 1)[0]
+    day = _parse_date(compact)
+    path = _classification_partition(store, classification, base, day)
+    frame = _read_parquet_strict(path) if path.is_file() else pd.DataFrame()
+    if not frame.empty and "trade_date" not in frame.columns:
+        raise SpineError(f"{classification}/{base}/{unit} artifact lacks trade_date")
+    subset = frame[
+        frame["trade_date"].map(_iso) == day.isoformat()
+    ].copy() if not frame.empty else frame.copy()
+    keys = KEY_COLUMNS["source_classification"]
+    duplicates = _duplicates(subset, keys) if not subset.empty else 0
+    return {
+        "path": path.resolve(strict=False).relative_to(store.resolve()).as_posix(),
+        "unit_row_count": len(subset),
+        "unit_semantic_sha256": _frame_semantic_sha256(subset, keys),
+        "key_columns": keys,
+        "duplicate_key_rows": duplicates,
+    }
+
+
+def _unit_artifact_receipts(
+    store: Path, endpoint: str, unit: str, record: Mapping[str, Any],
+) -> dict[str, dict[str, Any]]:
+    primary = _unit_artifact_receipt(store, endpoint, unit, record)
+    if endpoint == FUND_REFERENCE_ENDPOINT:
+        landed = _empty_unit_artifact_receipt()
+        known_excluded = primary
+    else:
+        landed = primary
+        known_excluded = _classification_unit_artifact_receipt(
+            store, endpoint, unit, "known_excluded",
+        )
+    quarantined = _classification_unit_artifact_receipt(
+        store, endpoint, unit, "quarantined_unknown",
+    )
+    return {
+        "landed_A": landed,
+        "known_excluded": known_excluded,
+        "quarantined_unknown": quarantined,
+    }
+
+
+def _unit_artifact_counts_match(
+    receipts: Mapping[str, Mapping[str, Any]], record: Mapping[str, Any],
+) -> bool:
+    expected = {
+        "landed_A": int(record.get("row_count", 0)),
+        "known_excluded": int(record.get("known_excluded_row_count", 0)),
+        "quarantined_unknown": int(record.get("quarantined_unknown_row_count", 0)),
+    }
+    return all(
+        role in receipts
+        and int(receipts[role].get("unit_row_count", -1)) == count
+        and int(receipts[role].get("duplicate_key_rows", -1)) == 0
+        for role, count in expected.items()
+    )
+
+
+_REQUEST_RECEIPT_BINDING_FIELDS = (
+    "request_id", "endpoint", "unit", "fields", "params", "request_contract_sha256",
+    "observed_at", "response_status", "response_row_count", "response_columns",
+    "response_semantic_sha256",
+    "receipt_role", "discarded_probe_row_count",
+)
+
+
+def _expected_request_params(state_endpoint: str, state_unit: str) -> dict[str, Any]:
+    endpoint = state_endpoint.removesuffix("_shard")
+    if state_endpoint.endswith("_shard"):
+        compact, ticker = state_unit.split(":", 1)
+        return {"trade_date": compact, "ts_code": _source_ts_code(ticker)}
+    if endpoint in DAILY_ENDPOINTS | {PIT_UNIVERSE_ENDPOINT}:
+        return {"trade_date": state_unit}
+    if endpoint == "stock_basic":
+        _, exchange, status = state_unit.rsplit(":", 2)
+        return {"exchange": exchange, "list_status": status}
+    if endpoint == "fund_basic":
+        _, status = state_unit.rsplit(":", 1)
+        return {"market": "E", "status": status}
+    if endpoint == "trade_cal":
+        exchange, start, end = state_unit.split(":", 2)
+        return {"exchange": exchange, "start_date": start, "end_date": end}
+    if endpoint == "namechange":
+        year, end = state_unit.split(":", 1)
+        return {"start_date": f"{year}0101", "end_date": end}
+    if endpoint == "bse_mapping":
+        return {}
+    raise SpineError(f"cannot derive request parameters for {state_endpoint}/{state_unit}")
+
+
+def _unit_request_receipts_valid(
+    state_endpoint: str, state_unit: str, record: Mapping[str, Any], store: Path,
+) -> bool:
+    receipts = record.get("request_receipts")
+    if not isinstance(receipts, list) or not receipts:
+        return False
+    expected_endpoint = state_endpoint.removesuffix("_shard")
+    try:
+        expected_params = _expected_request_params(state_endpoint, state_unit)
+    except (SpineError, ValueError):
+        return False
+    persisted_count = 0
+    authoritative_response_rows = 0
+    for embedded in receipts:
+        if not isinstance(embedded, Mapping):
+            return False
+        relative = embedded.get("path")
+        if not relative:
+            if not (
+                record.get("collection_method") == "per_ticker_shards"
+                and embedded.get("endpoint") == expected_endpoint
+                and embedded.get("unit") == state_unit
+                and embedded.get("response_status") in {"shards_complete", "shards_incomplete"}
+            ):
+                return False
+            continue
+        try:
+            path = _contained_store_path(store, relative)
+        except SpineError:
+            return False
+        if not path.is_file():
+            return False
+        try:
+            decoded = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return False
+        try:
+            _assert_configured_token_absent_logical(decoded, artifact=path.name)
+        except SpineError:
+            return False
+        if not isinstance(decoded, dict):
+            return False
+        if any(decoded.get(name) != embedded.get(name) for name in _REQUEST_RECEIPT_BINDING_FIELDS):
+            return False
+        if decoded.get("endpoint") != expected_endpoint or decoded.get("unit") != state_unit:
+            return False
+        fields = decoded.get("fields")
+        params = decoded.get("params")
+        if (
+            fields != ENDPOINT_FIELDS.get(expected_endpoint, "").split(",")
+            or not isinstance(params, dict)
+            or params != expected_params
+        ):
+            return False
+        contract = {
+            "endpoint": expected_endpoint,
+            "fields": fields,
+            "params": {str(key): _json_safe(value) for key, value in sorted(params.items())},
+            "unit": state_unit,
+        }
+        contract_hash = hashlib.sha256(_canonical_json_bytes(contract)).hexdigest()
+        canonical_path = _request_receipt_path(
+            store, expected_endpoint, state_unit, contract_hash,
+        ).resolve(strict=False)
+        response_count = decoded.get("response_row_count")
+        response_status = decoded.get("response_status")
+        response_semantic = decoded.get("response_semantic_sha256")
+        cap_probe = response_status == "non_authoritative_cap_probe"
+        if (
+            decoded.get("request_id") != contract_hash
+            or decoded.get("request_contract_sha256") != contract_hash
+            or path.stem != contract_hash
+            or path.resolve() != canonical_path
+            or response_status not in {
+                "accepted", "accepted_empty", "non_authoritative_cap_probe",
+            }
+            or not isinstance(response_count, int)
+            or response_count < 0
+            or (
+                not cap_probe
+                and (response_status == "accepted_empty") != (response_count == 0)
+            )
+            or decoded.get("response_columns") != fields
+            or not re.fullmatch(r"[0-9a-f]{64}", str(response_semantic or ""))
+            or (response_count == 0 and response_semantic != hashlib.sha256(b"").hexdigest())
+        ):
+            return False
+        if cap_probe:
+            if not (
+                record.get("collection_method") == "per_ticker_shards"
+                and decoded.get("receipt_role") == "discarded_non_authoritative_cap_probe"
+                and decoded.get("discarded_probe_row_count") == response_count
+                and response_count >= SOURCE_ROW_CAPS.get(expected_endpoint, 10**12)
+            ):
+                return False
+        else:
+            if decoded.get("receipt_role") is not None or decoded.get(
+                "discarded_probe_row_count"
+            ) is not None:
+                return False
+            authoritative_response_rows += response_count
+        persisted_count += 1
+    if persisted_count == 0:
+        return False
+    if record.get("collection_method") != "per_ticker_shards":
+        return authoritative_response_rows == int(record.get("source_row_count", 0))
+    return True
+
+
 def _unit_done(state: Mapping[str, Any], store: Path, endpoint: str, unit: str) -> bool:
     record = _unit_record(state, endpoint, unit)
     if not record or record.get("status") not in {"complete", "empty"}:
         return False
-    partition = record.get("partition")
-    return not partition or (store / str(partition)).exists()
+    request_bound = _unit_request_receipts_valid(endpoint, unit, record, store)
+    equation_holds = int(record.get("source_row_count", 0)) == sum((
+        int(record.get("landed_a_row_count", record.get("row_count", 0))),
+        int(record.get("known_excluded_row_count", 0)),
+        int(record.get("quarantined_unknown_row_count", 0)),
+    ))
+    if (
+        not record.get("source_accounting_complete")
+        or not equation_holds
+        or int(record.get("quarantined_unknown_row_count", 0)) != 0
+        or not request_bound
+    ):
+        return False
+    shard_coverage = _shard_coverage(state, store, endpoint, unit, record)
+    if shard_coverage is not None and (
+        not shard_coverage["complete"]
+        or int(shard_coverage["authoritative_source_row_count"])
+        != int(record.get("source_row_count", 0))
+    ):
+        return False
+    expected_artifacts = record.get("unit_artifact_receipts")
+    if not isinstance(expected_artifacts, Mapping):
+        return False
+    try:
+        observed_artifacts = _unit_artifact_receipts(store, endpoint, unit, record)
+    except SpineError:
+        return False
+    return bool(
+        dict(expected_artifacts) == observed_artifacts
+        and _unit_artifact_counts_match(observed_artifacts, record)
+    )
 
 
 def _set_unit(
@@ -624,14 +1653,24 @@ def _set_unit(
     observed_at: str,
     row_count: int = 0,
     source_row_count: int = 0,
-    dropped_row_count: int = 0,
+    known_excluded_row_count: int = 0,
+    quarantined_unknown_row_count: int = 0,
     unmatched_master_row_count: int = 0,
     revised_key_count: int = 0,
     partition: Path | None = None,
     reason: str | None = None,
+    request_receipts: Sequence[Mapping[str, Any]] = (),
+    collection_method: str = "whole_market",
+    generation_id: str | None = None,
+    expected_ticker_count: int | None = None,
+    expected_ticker_sha256: str | None = None,
 ) -> None:
-    if status not in {"complete", "empty", "failed"}:
+    if status not in {"complete", "empty", "failed", "collecting"}:
         raise SpineError(f"invalid state status: {status}")
+    source_accounting_complete = (
+        int(source_row_count)
+        == int(row_count) + int(known_excluded_row_count) + int(quarantined_unknown_row_count)
+    )
     endpoint_units = state.setdefault("units", {}).setdefault(endpoint, {})
     previous = endpoint_units.get(unit, {})
     record: dict[str, Any] = {
@@ -639,16 +1678,32 @@ def _set_unit(
         "observed_at": observed_at,
         "row_count": int(row_count),
         "source_row_count": int(source_row_count),
-        "dropped_row_count": int(dropped_row_count),
+        "landed_a_row_count": int(row_count),
+        "known_excluded_row_count": int(known_excluded_row_count),
+        "quarantined_unknown_row_count": int(quarantined_unknown_row_count),
+        "source_accounting_complete": source_accounting_complete,
         "unmatched_master_row_count": int(unmatched_master_row_count),
         "revised_key_count": int(revised_key_count),
         "attempts": int(previous.get("attempts", 0)) + 1,
+        "collection_method": collection_method,
+        "request_receipts": [_json_safe(dict(receipt)) for receipt in request_receipts],
     }
     if partition is not None:
         record["partition"] = partition.relative_to(store).as_posix()
     if reason:
         # Never place a vendor response or credential-bearing exception in state.
         record["reason"] = reason
+    if generation_id:
+        record["generation_id"] = generation_id
+    if expected_ticker_count is not None:
+        record["expected_ticker_count"] = int(expected_ticker_count)
+    if expected_ticker_sha256 is not None:
+        record["expected_ticker_sha256"] = expected_ticker_sha256
+    if status in {"complete", "empty"}:
+        artifacts = _unit_artifact_receipts(store, endpoint, unit, record)
+        if not _unit_artifact_counts_match(artifacts, record):
+            raise SpineError(f"{endpoint}/{unit} terminal state disagrees with landed artifact")
+        record["unit_artifact_receipts"] = artifacts
     endpoint_units[unit] = record
     _atomic_json(store / "collection_state.json", state)
 
@@ -667,14 +1722,90 @@ def _bse_alias_map(frame: pd.DataFrame) -> dict[str, str]:
         new_identity = canonical_identity(new)
         if old_identity.source_exchange != "BSE" or new_identity.source_exchange != "BSE":
             raise SpineError(f"non-BSE row in bse_mapping: {old!r} -> {new!r}")
+        if not new_identity.code.startswith("920"):
+            raise SpineError(f"BSE canonical n_code is not in the 920 family: {new!r}")
+        if old_identity.code.startswith("920"):
+            raise SpineError(f"BSE old-code alias is already a 920 code: {old!r}")
         if old in aliases and aliases[old] != new:
             raise SpineError(f"conflicting BSE alias: {old} -> {aliases[old]} / {new}")
         aliases[old] = new
     return aliases
 
 
-def _load_bse_mapping(store: Path) -> tuple[pd.DataFrame, dict[str, str]]:
-    path = store / "reference" / "source_bse_mapping.parquet"
+def _reference_generation_dir(store: Path, generation_id: str) -> Path:
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{8,96}", generation_id):
+        raise SpineError("invalid reference-generation identifier")
+    return store / "reference" / "generations" / generation_id
+
+
+def _reference_generation_semantic_sha256(store: Path, generation_id: str) -> str:
+    generation_dir = _reference_generation_dir(store, generation_id)
+    paths = sorted(generation_dir.rglob("*.parquet"))
+    if not paths:
+        raise SpineError("reference generation contains no Parquet artifacts")
+    hasher = hashlib.sha256()
+    for path in paths:
+        frame = _read_parquet_strict(path)
+        semantic = _raw_response_semantic_sha256(frame)
+        hasher.update(path.relative_to(generation_dir).as_posix().encode("utf-8"))
+        hasher.update(semantic.encode("ascii"))
+    return hasher.hexdigest()
+
+
+def _current_reference_generation(store: Path, *, required: bool = True) -> str | None:
+    pointer = store / "reference" / "current_generation.json"
+    if not pointer.exists():
+        if required:
+            raise SpineError("reference generation pointer is absent")
+        return None
+    try:
+        payload = json.loads(pointer.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SpineError("reference generation pointer is unreadable") from exc
+    _assert_configured_token_absent_logical(payload, artifact=pointer.name)
+    if set(payload) != {"generation_id", "generation_semantic_sha256"}:
+        raise SpineError("reference generation pointer is malformed")
+    generation_id = str(payload["generation_id"])
+    generation_dir = _reference_generation_dir(store, generation_id)
+    if not generation_dir.is_dir():
+        raise SpineError("reference generation pointer targets an absent generation")
+    expected_hash = str(payload["generation_semantic_sha256"])
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+        raise SpineError("reference generation pointer contains an invalid semantic hash")
+    if _reference_generation_semantic_sha256(store, generation_id) != expected_hash:
+        raise SpineError("reference generation semantic hash does not match its pointer")
+    return generation_id
+
+
+def _reference_source_path(
+    store: Path,
+    generation_id: str,
+    endpoint: str,
+    unit: str | None = None,
+) -> Path:
+    root = _reference_generation_dir(store, generation_id)
+    if endpoint == "bse_mapping":
+        return root / "source_bse_mapping.parquet"
+    if endpoint == "stock_basic" and unit:
+        exchange, status = unit.split(":", 1)
+        return root / "source_stock_basic" / f"{exchange}_{status}.parquet"
+    if endpoint == "fund_basic" and unit:
+        return root / "source_fund_basic" / f"E_{unit}.parquet"
+    raise SpineError(f"unsupported reference source path: {endpoint}/{unit}")
+
+
+def _reference_derived_path(store: Path, name: str, generation_id: str | None = None) -> Path:
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    return _reference_generation_dir(store, generation) / name
+
+
+def _load_bse_mapping(
+    store: Path, generation_id: str | None = None,
+) -> tuple[pd.DataFrame, dict[str, str]]:
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    path = _reference_source_path(store, generation, "bse_mapping")
     if not path.exists():
         raise SpineError("BSE identity mapping is absent; reference bootstrap is incomplete")
     frame = _read_parquet_strict(path)
@@ -696,13 +1827,17 @@ def _normalise_bse_mapping(frame: pd.DataFrame) -> pd.DataFrame:
     return out.sort_values(["n_code", "o_code"], kind="stable").reset_index(drop=True)
 
 
-def compile_security_master(store: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Compile security master + alias table from landed reference source units."""
-    mapping, aliases = _load_bse_mapping(store)
+def compile_security_master(
+    store: Path, generation_id: str | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compile one immutable security/reference generation before pointer promotion."""
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    mapping, aliases = _load_bse_mapping(store, generation)
     raw_frames: list[pd.DataFrame] = []
     for exchange in EXCHANGES:
         for status in LIST_STATUSES:
-            path = store / "reference" / "source_stock_basic" / f"{exchange}_{status}.parquet"
+            path = _reference_source_path(store, generation, "stock_basic", f"{exchange}:{status}")
             if not path.exists():
                 raise SpineError(f"stock_basic reference unit absent: {exchange}/{status}")
             frame = _read_parquet_strict(path)
@@ -711,7 +1846,10 @@ def compile_security_master(store: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     if not raw_frames:
         raise SpineError("stock_basic reference returned no securities")
     raw = pd.concat(raw_frames, ignore_index=True)
-    required = {"ts_code", "name", "exchange", "list_status", "list_date"}
+    required = {
+        "ts_code", "symbol", "name", "market", "exchange", "curr_type",
+        "list_status", "list_date", "delist_date",
+    }
     missing = required - set(raw.columns)
     if missing:
         raise SpineError(f"stock_basic source missing columns {sorted(missing)}")
@@ -724,6 +1862,18 @@ def compile_security_master(store: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
             raise SpineError(
                 f"stock_basic exchange disagrees with code: {item.get('ts_code')} "
                 f"({declared_exchange} != {ident.source_exchange})"
+            )
+        if str(item.get("symbol") or "").zfill(6) != ident.code:
+            raise SpineError(f"stock_basic symbol/code mismatch: {item.get('ts_code')!r}")
+        if str(item.get("curr_type") or "").upper() != "CNY":
+            raise SpineError(f"stock_basic returned a non-CNY instrument: {item.get('ts_code')!r}")
+        declared_market = str(item.get("market") or "")
+        if declared_market not in set(_TUSHARE_MARKET_BY_BOARD.values()):
+            raise SpineError(f"stock_basic returned a non-A instrument market: {item.get('market')!r}")
+        if declared_market != _TUSHARE_MARKET_BY_BOARD[ident.board]:
+            raise SpineError(
+                f"stock_basic market disagrees with official code-range board: "
+                f"{item.get('ts_code')!r} ({declared_market} != {ident.board})"
             )
         list_date = _iso(item.get("list_date"))
         if list_date is None:
@@ -797,20 +1947,86 @@ def compile_security_master(store: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     if int((conflicts > 1).sum()):
         raise SpineError("identity alias maps one alias ticker to multiple canonical tickers")
     alias_frame = alias_frame.sort_values(["alias_ticker", "alias_kind"], kind="stable").reset_index(drop=True)
-    _atomic_parquet(store / "reference" / "security_master.parquet", master)
-    _atomic_parquet(store / "reference" / "identity_aliases.parquet", alias_frame)
+
+    classification_rows: list[dict[str, Any]] = [
+        {
+            "source_ts_code": row.source_ts_code,
+            "ticker": row.ticker,
+            "security_class": "A_share",
+            "scope_classification": "known_A",
+            "classification_source": "tushare.stock_basic",
+            "effective_from": row.effective_from,
+            "effective_to": row.effective_to,
+        }
+        for row in master.itertuples(index=False)
+    ]
+    for status in FUND_STATUSES:
+        fund_path = _reference_source_path(store, generation, "fund_basic", status)
+        if not fund_path.exists():
+            raise SpineError(f"fund_basic reference unit absent: E/{status}")
+        funds = _read_parquet_strict(fund_path)
+        for item in funds.to_dict(orient="records"):
+            ident = canonical_identity(item.get("ts_code"))
+            classification_rows.append({
+                "source_ts_code": ident.source_ts_code,
+                "ticker": ident.ticker,
+                "security_class": "exchange_fund",
+                "scope_classification": "known_out_of_scope",
+                "classification_source": "tushare.fund_basic",
+                "effective_from": _iso(item.get("list_date")),
+                "effective_to": _iso(item.get("delist_date")),
+            })
+    classifications = pd.DataFrame(classification_rows).drop_duplicates(
+        ["ticker", "scope_classification"], keep="last",
+    )
+    conflicts = classifications.groupby("ticker")["scope_classification"].nunique()
+    if int((conflicts > 1).sum()):
+        sample = sorted(conflicts[conflicts > 1].index)[:10]
+        raise SpineError(f"instrument scope classification conflicts: {sample}")
+    classifications = classifications.sort_values(
+        ["scope_classification", "ticker"], kind="stable",
+    ).reset_index(drop=True)
+    _atomic_parquet(_reference_derived_path(store, "security_master.parquet", generation), master)
+    _atomic_parquet(_reference_derived_path(store, "identity_aliases.parquet", generation), alias_frame)
+    _atomic_parquet(
+        _reference_derived_path(store, "instrument_classification.parquet", generation),
+        classifications,
+    )
     return master, alias_frame
 
 
+def _promote_reference_generation(store: Path, generation_id: str) -> None:
+    generation_dir = _reference_generation_dir(store, generation_id)
+    required = (
+        "security_master.parquet", "identity_aliases.parquet", "instrument_classification.parquet",
+    )
+    if any(not (generation_dir / name).exists() for name in required):
+        raise SpineError("reference generation cannot be promoted before derived artifacts close")
+    _atomic_json(store / "reference" / "current_generation.json", {
+        "generation_id": generation_id,
+        "generation_semantic_sha256": _reference_generation_semantic_sha256(
+            store, generation_id,
+        ),
+    })
+
+
 def _normalise_calendar(frame: pd.DataFrame, exchange: str, start: date, end: date) -> pd.DataFrame:
-    needed = {"cal_date", "is_open"}
+    needed = {"exchange", "cal_date", "is_open", "pretrade_date"}
     if not needed.issubset(frame.columns):
         raise SpineError(f"trade_cal missing columns {sorted(needed - set(frame.columns))}")
     out = frame.copy()
-    out["exchange"] = exchange
+    declared = set(out["exchange"].dropna().astype(str).str.upper())
+    if declared != {exchange}:
+        raise SpineError(
+            f"trade_cal response exchange does not bind to request {exchange}: {sorted(declared)}"
+        )
+    out["exchange"] = out["exchange"].astype(str).str.upper()
     out["cal_date"] = out["cal_date"].map(_iso)
-    out["pretrade_date"] = out.get("pretrade_date", pd.Series([None] * len(out))).map(_iso)
-    out["is_open"] = pd.to_numeric(out["is_open"], errors="coerce").astype("Int64")
+    out["pretrade_date"] = out["pretrade_date"].map(_iso)
+    raw_open = out["is_open"].copy()
+    out["is_open"] = pd.to_numeric(raw_open, errors="coerce").astype("Int64")
+    if raw_open.notna().sum() != out["is_open"].notna().sum():
+        raise SpineError(f"trade_cal returned non-numeric is_open values for {exchange}")
     if out["cal_date"].isna().any() or not set(out["is_open"].dropna().astype(int)).issubset({0, 1}):
         raise SpineError(f"trade_cal returned invalid dates/is_open values for {exchange}")
     if out["is_open"].isna().any():
@@ -885,14 +2101,76 @@ def compile_market_sessions(store: Path, start: date, end: date) -> pd.DataFrame
     return sessions
 
 
-def _master_maps(store: Path) -> tuple[pd.DataFrame, dict[str, str], dict[str, dict[str, Any]]]:
-    master_path = store / "reference" / "security_master.parquet"
+def _master_maps(
+    store: Path,
+    generation_id: str | None = None,
+) -> tuple[pd.DataFrame, dict[str, str], dict[str, dict[str, Any]]]:
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    master_path = _reference_derived_path(store, "security_master.parquet", generation)
     if not master_path.exists():
         raise SpineError("security master is absent; reference bootstrap is incomplete")
     master = _read_parquet_strict(master_path)
-    _, aliases = _load_bse_mapping(store)
+    _, aliases = _load_bse_mapping(store, generation)
     lookup = {str(row["ticker"]): row for row in master.to_dict(orient="records")}
     return master, aliases, lookup
+
+
+def _pit_partition(store: Path, trade_date: date) -> Path:
+    return (
+        store / PIT_UNIVERSE_ENDPOINT / f"year={trade_date.year:04d}"
+        / f"month={trade_date.month:02d}" / "part.parquet"
+    )
+
+
+def _instrument_scope_maps(
+    store: Path, trade_date: str | date, generation_id: str | None = None,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Return independently witnessed A and out-of-scope ticker provenance."""
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    classifications = _read_parquet_strict(_reference_derived_path(
+        store, "instrument_classification.parquet", generation,
+    ))
+    known_a = {
+        str(row.ticker): str(row.classification_source)
+        for row in classifications[
+            classifications["scope_classification"] == "known_A"
+        ].itertuples(index=False)
+    }
+    known_out = {
+        str(row.ticker): str(row.classification_source)
+        for row in classifications[
+            classifications["scope_classification"] == "known_out_of_scope"
+        ].itertuples(index=False)
+    }
+    day = _parse_date(trade_date)
+    if day >= PIT_UNIVERSE_START:
+        path = _pit_partition(store, day)
+        if path.exists():
+            pit = _read_parquet_strict(path)
+            subset = pit[pit["trade_date"].astype(str) == day.isoformat()]
+            for ticker in subset.get("ticker", pd.Series(dtype=str)).astype(str):
+                known_a[ticker] = "tushare.bak_basic_exact_daily"
+    conflict = sorted(set(known_a) & set(known_out))
+    if conflict:
+        raise SpineError(f"instrument scope maps conflict: {conflict[:10]}")
+    return known_a, known_out
+
+
+def _all_known_a_tickers(store: Path, generation_id: str | None = None) -> set[str]:
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    classifications = _read_parquet_strict(_reference_derived_path(
+        store, "instrument_classification.parquet", generation,
+    ))
+    known = set(classifications.loc[
+        classifications["scope_classification"] == "known_A", "ticker",
+    ].astype(str))
+    for path in sorted((store / PIT_UNIVERSE_ENDPOINT).glob("year=*/month=*/part.parquet")):
+        frame = _read_parquet_strict(path)
+        known.update(frame.get("ticker", pd.Series(dtype=str)).astype(str))
+    return known
 
 
 def _session_map(store: Path) -> dict[str, int]:
@@ -913,17 +2191,265 @@ def _identity_columns(identity: Identity) -> dict[str, Any]:
     }
 
 
-def normalise_name_history(frame: pd.DataFrame, store: Path) -> tuple[pd.DataFrame, int]:
-    _, aliases, master_lookup = _master_maps(store)
+def _is_a_share_identity(identity: Identity) -> bool:
+    if identity.source_exchange == "SSE":
+        return identity.code.startswith("6")
+    if identity.source_exchange == "SZSE":
+        return identity.code.startswith(("0", "3"))
+    return identity.code.startswith(("43", "83", "87", "88", "920"))
+
+
+def _known_out_of_scope_code_family(identity: Identity) -> str | None:
+    """Return independent official-code provenance for exchange B shares."""
+    if identity.source_exchange == "SSE" and identity.code.startswith("900"):
+        return "SSE_security_code_900xxx_B_share"
+    if identity.source_exchange == "SZSE" and identity.code.startswith("200"):
+        return "SZSE_security_code_200xxx_B_share"
+    return None
+
+
+def _validate_response_binding(
+    endpoint: str,
+    frame: pd.DataFrame,
+    params: Mapping[str, Any],
+) -> None:
+    """Require exact returned fields and prove every row belongs to the request."""
+    expected_columns = ENDPOINT_FIELDS[endpoint].split(",")
+    if list(frame.columns) != expected_columns:
+        raise SpineError(
+            f"{endpoint} returned schema does not exactly match requested fields: "
+            f"expected={expected_columns} actual={list(frame.columns)}"
+        )
+    if endpoint == "stock_basic":
+        exchange = str(params.get("exchange") or "").upper()
+        status = str(params.get("list_status") or "").upper()
+        for item in frame.to_dict(orient="records"):
+            ident = canonical_identity(item["ts_code"])
+            if str(item["exchange"] or "").upper() != exchange or ident.source_exchange != exchange:
+                raise SpineError("stock_basic response does not bind to requested exchange")
+            if str(item["list_status"] or "").upper() != status:
+                raise SpineError("stock_basic response does not bind to requested list_status")
+            if str(item["curr_type"] or "").upper() != "CNY":
+                raise SpineError("stock_basic response contains a non-CNY instrument")
+            if str(item["symbol"] or "").zfill(6) != ident.code:
+                raise SpineError("stock_basic symbol does not match ts_code")
+            declared_market = str(item["market"] or "")
+            if declared_market not in set(_TUSHARE_MARKET_BY_BOARD.values()):
+                raise SpineError("stock_basic response contains a non-A instrument market")
+            if declared_market != _TUSHARE_MARKET_BY_BOARD[ident.board]:
+                raise SpineError("stock_basic market does not match its official board code range")
+            if not _is_a_share_identity(ident):
+                raise SpineError("stock_basic response contains a non-A code family")
+    elif endpoint == "fund_basic":
+        market = str(params.get("market") or "")
+        status = str(params.get("status") or "")
+        for item in frame.to_dict(orient="records"):
+            ident = canonical_identity(item["ts_code"])
+            if ident.source_exchange not in {"SSE", "SZSE"}:
+                raise SpineError("fund_basic response contains a non-SH/SZ venue")
+            if str(item["market"] or "") != market or str(item["status"] or "") != status:
+                raise SpineError("fund_basic response does not bind to requested market/status")
+    elif endpoint == "trade_cal":
+        exchange = str(params.get("exchange") or "").upper()
+        declared = set(frame["exchange"].dropna().astype(str).str.upper())
+        if frame.empty or declared != {exchange}:
+            raise SpineError("trade_cal response does not bind to requested exchange")
+        start = _parse_date(params["start_date"])
+        end = _parse_date(params["end_date"])
+        dates = {_parse_date(value) for value in frame["cal_date"]}
+        expected = {value.date() for value in pd.date_range(start, end, freq="D")}
+        if dates != expected:
+            raise SpineError("trade_cal response does not bind to the exact requested date range")
+    elif endpoint == "namechange":
+        start = _parse_date(params["start_date"])
+        end = _parse_date(params["end_date"])
+        for value in frame["ann_date"]:
+            if value is None or pd.isna(value) or not start <= _parse_date(value) <= end:
+                raise SpineError("namechange response announcement anchor is outside request range")
+    elif endpoint in DAILY_ENDPOINTS | {PIT_UNIVERSE_ENDPOINT}:
+        expected_date = _parse_date(params["trade_date"])
+        if any(_parse_date(value) != expected_date for value in frame["trade_date"]):
+            raise SpineError(f"{endpoint} response crossed the requested trade_date")
+        requested_code = params.get("ts_code")
+        if requested_code:
+            expected_code = _source_ts_code(requested_code)
+            if any(_source_ts_code(value) != expected_code for value in frame["ts_code"]):
+                raise SpineError(f"{endpoint} ticker shard crossed the requested ts_code")
+
+
+def _strict_numeric(
+    value: Any,
+    *,
+    field: str,
+    allow_missing: bool = True,
+    minimum: float | None = None,
+    integral: bool = False,
+    allowed: set[int] | None = None,
+) -> float | int | None:
+    if value is None or (not isinstance(value, (list, dict)) and pd.isna(value)):
+        if allow_missing:
+            return None
+        raise SpineError(f"{field} is required")
+    if isinstance(value, bool):
+        raise SpineError(f"{field} must be numeric")
+    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(parsed) or not math.isfinite(float(parsed)):
+        raise SpineError(f"{field} must be a finite numeric value")
+    number = float(parsed)
+    if minimum is not None and number < minimum:
+        raise SpineError(f"{field} must be >= {minimum}")
+    if integral:
+        if not number.is_integer():
+            raise SpineError(f"{field} must be an integer")
+        integer = int(number)
+        if allowed is not None and integer not in allowed:
+            raise SpineError(f"{field} is outside its documented domain")
+        return integer
+    return number
+
+
+def _classified_source_row(
+    item: Mapping[str, Any],
+    *,
+    ordinal: int,
+    classification: str,
+    classification_source: str,
+    expected_date: str,
+) -> dict[str, Any]:
+    return {
+        "source_row_ordinal": int(ordinal),
+        "trade_date": expected_date,
+        "raw_ts_code": str(item.get("ts_code") or ""),
+        "scope_classification": classification,
+        "classification_source": classification_source,
+        "raw_payload_json": json.dumps(
+            {str(key): _json_safe(value) for key, value in sorted(item.items())},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False,
+        ),
+    }
+
+
+def normalise_bak_basic(
+    frame: pd.DataFrame,
+    trade_date: str | date,
+    store: Path,
+    generation_id: str | None = None,
+) -> NormalisedSourceUnit:
+    """Land the official post-2016 point-in-time A-share universe witness."""
+    expected_date = _parse_date(trade_date).isoformat()
+    sessions = _session_map(store)
+    if expected_date not in sessions:
+        raise SpineError(f"off-calendar endpoint unit: bak_basic/{expected_date}")
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    master, aliases, _ = _master_maps(store, generation)
+    known_a = set(master["ticker"].astype(str))
+    rows: list[dict[str, Any]] = []
+    excluded: list[dict[str, Any]] = []
+    unknown: list[dict[str, Any]] = []
+    numeric_fields = [
+        field for field in ENDPOINT_FIELDS[PIT_UNIVERSE_ENDPOINT].split(",")
+        if field not in {"trade_date", "ts_code", "name", "industry", "area", "list_date"}
+    ]
+    for ordinal, item in enumerate(frame.to_dict(orient="records")):
+        try:
+            ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
+        except SpineError:
+            ident = None
+        code_exclusion = _known_out_of_scope_code_family(ident) if ident else None
+        if code_exclusion:
+            excluded.append(_classified_source_row(
+                item, ordinal=ordinal, classification="known_out_of_scope",
+                classification_source=code_exclusion, expected_date=expected_date,
+            ))
+            continue
+        if (
+            ident is None
+            or not _is_a_share_identity(ident)
+            or ident.ticker not in known_a
+        ):
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="bak_basic_absent_from_stock_basic_A_witness",
+                expected_date=expected_date,
+            ))
+            continue
+        row = {
+            **_identity_columns(ident),
+            "trade_date": expected_date,
+            "market_session_position": sessions[expected_date],
+            "name": str(item.get("name") or ""),
+            "industry": str(item.get("industry") or ""),
+            "area": str(item.get("area") or ""),
+            "list_date": _iso(item.get("list_date")),
+            "source": "tushare.bak_basic_exact_daily",
+        }
+        for field in numeric_fields:
+            minimum = 0.0 if field in {
+                "float_share", "total_share", "total_assets", "liquid_assets", "fixed_assets",
+                "holder_num",
+            } else None
+            row[field] = _strict_numeric(
+                item.get(field), field=f"bak_basic.{field}", allow_missing=True,
+                minimum=minimum, integral=field == "holder_num",
+            )
+        rows.append(row)
+    landed = pd.DataFrame(rows)
+    if not landed.empty and _duplicates(landed, KEY_COLUMNS["bak_basic"]):
+        raise SpineError("bak_basic response duplicated exact-date A-share keys")
+    return NormalisedSourceUnit(
+        landed_a=landed.sort_values(KEY_COLUMNS["bak_basic"], kind="stable").reset_index(drop=True)
+        if not landed.empty else landed,
+        known_excluded=pd.DataFrame(excluded, columns=[
+            "source_row_ordinal", "trade_date", "raw_ts_code", "scope_classification",
+            "classification_source", "raw_payload_json",
+        ]),
+        quarantined_unknown=pd.DataFrame(unknown),
+    )
+
+
+def normalise_name_history(
+    frame: pd.DataFrame,
+    store: Path,
+    unit_date: str | date,
+    generation_id: str | None = None,
+) -> NormalisedSourceUnit:
+    """Classify every namechange row; only independently known A names land."""
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    _, aliases, _ = _master_maps(store, generation)
+    known_a, known_out = _instrument_scope_maps(store, unit_date, generation)
+    known_a.update({
+        ticker: "tushare.bak_basic_exact_daily"
+        for ticker in _all_known_a_tickers(store, generation)
+    })
+    expected_date = _parse_date(unit_date).isoformat()
     required = {"ts_code", "name", "start_date", "end_date", "ann_date", "change_reason"}
     if not required.issubset(frame.columns) and not frame.empty:
         raise SpineError(f"namechange missing columns {sorted(required - set(frame.columns))}")
     rows: list[dict[str, Any]] = []
-    orphans = 0
-    for item in frame.to_dict(orient="records"):
-        ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
-        if ident.ticker not in master_lookup:
-            orphans += 1
+    excluded: list[dict[str, Any]] = []
+    unknown: list[dict[str, Any]] = []
+    for ordinal, item in enumerate(frame.to_dict(orient="records")):
+        try:
+            ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
+        except SpineError:
+            ident = None
+        code_exclusion = _known_out_of_scope_code_family(ident) if ident else None
+        if ident and (code_exclusion or ident.ticker in known_out):
+            excluded.append(_classified_source_row(
+                item, ordinal=ordinal, classification="known_out_of_scope",
+                classification_source=code_exclusion or known_out[ident.ticker],
+                expected_date=expected_date,
+            ))
+            continue
+        if ident is None or ident.ticker not in known_a:
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="namechange_absent_from_A_universe_witness",
+                expected_date=expected_date,
+            ))
+            continue
         name = str(item.get("name") or "")
         rows.append({
             **_identity_columns(ident),
@@ -944,7 +2470,15 @@ def normalise_name_history(frame: pd.DataFrame, store: Path) -> tuple[pd.DataFra
     out = pd.DataFrame(rows, columns=columns)
     if not out.empty and _duplicates(out, KEY_COLUMNS["name_history"]):
         raise SpineError("namechange produced duplicate effective-name keys")
-    return out, orphans
+    classification_columns = [
+        "source_row_ordinal", "trade_date", "raw_ts_code", "scope_classification",
+        "classification_source", "raw_payload_json",
+    ]
+    return NormalisedSourceUnit(
+        landed_a=out,
+        known_excluded=pd.DataFrame(excluded, columns=classification_columns),
+        quarantined_unknown=pd.DataFrame(unknown, columns=classification_columns),
+    )
 
 
 def normalise_daily_endpoint(
@@ -952,32 +2486,52 @@ def normalise_daily_endpoint(
     frame: pd.DataFrame,
     trade_date: str | date,
     store: Path,
-) -> tuple[pd.DataFrame, int]:
-    """Normalise one exact-session endpoint response and filter to the A-share master."""
+    generation_id: str | None = None,
+) -> NormalisedSourceUnit:
+    """Classify every source row, landing only independently witnessed A shares."""
     if endpoint not in DAILY_ENDPOINTS:
         raise SpineError(f"unsupported daily spine endpoint: {endpoint}")
     expected_date = _parse_date(trade_date).isoformat()
     sessions = _session_map(store)
     if expected_date not in sessions:
         raise SpineError(f"off-calendar endpoint unit: {endpoint}/{expected_date}")
-    _, aliases, master_lookup = _master_maps(store)
-    if "ts_code" not in frame.columns or "trade_date" not in frame.columns:
-        raise SpineError(f"{endpoint} missing ts_code/trade_date")
+    generation = generation_id or _current_reference_generation(store)
+    assert generation is not None
+    _, aliases, _ = _master_maps(store, generation)
+    known_a, known_out = _instrument_scope_maps(store, expected_date, generation)
 
     rows: list[dict[str, Any]] = []
-    dropped = 0
-    for item in frame.to_dict(orient="records"):
+    excluded: list[dict[str, Any]] = []
+    unknown: list[dict[str, Any]] = []
+    for ordinal, item in enumerate(frame.to_dict(orient="records")):
         source_date = _iso(item.get("trade_date"))
         if source_date != expected_date:
             raise SpineError(
                 f"{endpoint} response crossed requested session {expected_date}: {source_date}"
             )
-        ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
-        master_row = master_lookup.get(ident.ticker)
-        if master_row is None:
-            # stk_limit includes B-shares/funds by contract.  Anything not in
-            # stock_basic's A-share lifecycle is excluded and counted.
-            dropped += 1
+        try:
+            ident = canonical_identity(item.get("ts_code"), bse_aliases=aliases)
+        except SpineError:
+            ident = None
+        code_exclusion = _known_out_of_scope_code_family(ident) if ident else None
+        if code_exclusion:
+            excluded.append(_classified_source_row(
+                item, ordinal=ordinal, classification="known_out_of_scope",
+                classification_source=code_exclusion, expected_date=expected_date,
+            ))
+            continue
+        if ident is None or ident.ticker not in known_a | known_out:
+            unknown.append(_classified_source_row(
+                item, ordinal=ordinal, classification="quarantined_unknown",
+                classification_source="absent_from_stock_basic_fund_basic_and_bak_basic",
+                expected_date=expected_date,
+            ))
+            continue
+        if ident.ticker in known_out:
+            excluded.append(_classified_source_row(
+                item, ordinal=ordinal, classification="known_out_of_scope",
+                classification_source=known_out[ident.ticker], expected_date=expected_date,
+            ))
             continue
         row: dict[str, Any] = {
             **_identity_columns(ident),
@@ -986,15 +2540,15 @@ def normalise_daily_endpoint(
             "source": f"tushare.{endpoint}",
         }
         if endpoint == "daily":
-            volume = pd.to_numeric(item.get("vol"), errors="coerce")
-            if pd.notna(volume) and (not math.isfinite(float(volume)) or float(volume) < 0):
-                raise SpineError("daily.vol must be finite and non-negative")
-            amount = pd.to_numeric(item.get("amount"), errors="coerce")
-            if pd.notna(amount) and (not math.isfinite(float(amount)) or float(amount) < 0):
-                raise SpineError("daily.amount must be finite and non-negative")
+            volume = _strict_numeric(
+                item.get("vol"), field="daily.vol", allow_missing=False, minimum=0.0,
+            )
+            amount = _strict_numeric(
+                item.get("amount"), field="daily.amount", allow_missing=False, minimum=0.0,
+            )
             row["volume_lots"] = volume
             row["amount_cny_thousands"] = amount
-            row["positive_volume"] = bool(pd.notna(volume) and float(volume) > 0.0)
+            row["positive_volume"] = bool(float(volume) > 0.0)
             for column in ("open", "high", "low", "close", "pre_close"):
                 cents = _quote_price_cents(
                     item.get(column), field=f"daily.{column}",
@@ -1006,7 +2560,9 @@ def normalise_daily_endpoint(
                     if cents is not None else None
                 )
             for column in ("change", "pct_chg"):
-                row[column] = pd.to_numeric(item.get(column), errors="coerce")
+                row[column] = _strict_numeric(
+                    item.get(column), field=f"daily.{column}", allow_missing=True,
+                )
             present_ohlc = [row[f"{column}_cents"] for column in ("open", "high", "low", "close")]
             if all(value is not None for value in present_ohlc):
                 open_cents, high_cents, low_cents, close_cents = present_ohlc
@@ -1017,8 +2573,29 @@ def normalise_daily_endpoint(
             row["price_source_basis"] = "tushare.daily_unadjusted_nominal"
             row["quote_tick_cny"] = float(A_SHARE_PRICE_TICK)
         elif endpoint == "daily_basic":
-            for column in [c for c in ENDPOINT_FIELDS[endpoint].split(",") if c not in {"ts_code", "trade_date"}]:
-                row[column] = pd.to_numeric(item.get(column), errors="coerce")
+            for column in [
+                c for c in ENDPOINT_FIELDS[endpoint].split(",")
+                if c not in {"ts_code", "trade_date", "close", "limit_status"}
+            ]:
+                minimum = 0.0 if column in {
+                    "close", "turnover_rate", "turnover_rate_f", "volume_ratio", "pb", "ps",
+                    "ps_ttm", "dv_ratio", "dv_ttm", "total_share", "float_share", "free_share",
+                    "total_mv", "circ_mv",
+                } else None
+                row[column] = _strict_numeric(
+                    item.get(column), field=f"daily_basic.{column}", allow_missing=True,
+                    minimum=minimum,
+                )
+            close_cents = _quote_price_cents(
+                item.get("close"), field="daily_basic.close", allow_missing=False,
+            )
+            assert close_cents is not None
+            row["close_cents"] = close_cents
+            row["close"] = float(Decimal(close_cents) / A_SHARE_PRICE_SCALE)
+            row["limit_status"] = _strict_numeric(
+                item.get("limit_status"), field="daily_basic.limit_status", allow_missing=True,
+                integral=True, allowed=set(range(7)),
+            )
         elif endpoint == "stk_limit":
             pre_close_cents = _quote_price_cents(
                 item.get("pre_close"), field="stk_limit.pre_close",
@@ -1034,7 +2611,7 @@ def normalise_daily_endpoint(
                 item.get("down_limit"), field="stk_limit.down_limit", allow_missing=True,
             )
             if up_limit_cents is not None and not (
-                up_limit_cents >= pre_close_cents >= down_limit_cents
+                up_limit_cents > pre_close_cents >= down_limit_cents
             ):
                 raise SpineError("stk_limit upper/pre-close/lower ordering is inconsistent")
             for column, cents in (
@@ -1066,19 +2643,96 @@ def normalise_daily_endpoint(
             row["name"] = str(item.get("name") or "")
             row["st_type"] = str(item.get("type") or "")
             row["st_type_name"] = str(item.get("type_name") or "")
+            if not row["name"] or not row["st_type"] or not row["st_type_name"]:
+                raise SpineError("stock_st exact membership requires name/type/type_name")
             row["is_st"] = True
             row["st_provenance"] = "tushare.stock_st_exact_daily"
         rows.append(row)
-    out = pd.DataFrame(rows)
-    if not out.empty and _duplicates(out, KEY_COLUMNS[endpoint]):
+    landed = pd.DataFrame(rows)
+    if not landed.empty and _duplicates(landed, KEY_COLUMNS[endpoint]):
         raise SpineError(f"{endpoint} response duplicated canonical A-share keys")
-    if not out.empty:
-        out = out.sort_values(KEY_COLUMNS[endpoint], kind="stable").reset_index(drop=True)
-    return out, dropped
+    if not landed.empty:
+        landed = landed.sort_values(KEY_COLUMNS[endpoint], kind="stable").reset_index(drop=True)
+    columns = [
+        "source_row_ordinal", "trade_date", "raw_ts_code", "scope_classification",
+        "classification_source", "raw_payload_json",
+    ]
+    return NormalisedSourceUnit(
+        landed_a=landed,
+        known_excluded=pd.DataFrame(excluded, columns=columns),
+        quarantined_unknown=pd.DataFrame(unknown, columns=columns),
+    )
 
 
 def _monthly_partition(store: Path, endpoint: str, trade_date: date) -> Path:
     return store / endpoint / f"year={trade_date.year:04d}" / f"month={trade_date.month:02d}" / "part.parquet"
+
+
+def _classification_partition(
+    store: Path, classification: str, endpoint: str, trade_date: date,
+) -> Path:
+    if classification not in {"known_excluded", "quarantined_unknown"}:
+        raise SpineError("invalid source-row classification partition")
+    return (
+        store / "source_row_classification" / classification / endpoint
+        / f"year={trade_date.year:04d}" / f"month={trade_date.month:02d}" / "part.parquet"
+    )
+
+
+def _request_receipt_path(store: Path, endpoint: str, unit: str, request_id: str) -> Path:
+    safe_unit = re.sub(r"[^A-Za-z0-9_.-]", "_", unit)
+    return store / "receipts" / "requests" / endpoint / safe_unit / f"{request_id}.json"
+
+
+def _mark_non_authoritative_cap_probe(
+    store: Path, receipt: Mapping[str, Any], *, source_cap: int,
+) -> dict[str, Any]:
+    """Atomically relabel a capped whole-market response as discarded evidence.
+
+    The response proves that the source cap was reached, but its truncated rows
+    are not part of the authoritative unit equation.  Persist the role on the
+    canonical request receipt before any ticker shard is attempted so a crash
+    cannot leave the probe masquerading as an accepted authoritative response.
+    """
+    relative = receipt.get("path")
+    if not relative:
+        raise SpineError("capped response is missing its persisted request receipt")
+    path = _contained_store_path(store, relative)
+    if not path.is_file():
+        raise SpineError("capped response request receipt is absent")
+    try:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SpineError("capped response request receipt is unreadable") from exc
+    if not isinstance(decoded, dict) or any(
+        decoded.get(field) != receipt.get(field)
+        for field in _REQUEST_RECEIPT_BINDING_FIELDS
+        if field not in {"receipt_role", "discarded_probe_row_count"}
+    ):
+        raise SpineError("capped response receipt disagrees with its embedded evidence")
+    response_count = decoded.get("response_row_count")
+    if (
+        decoded.get("response_status") != "accepted"
+        or not isinstance(response_count, int)
+        or response_count < source_cap
+    ):
+        raise SpineError("only an accepted at-cap response can become a cap probe")
+    decoded.update({
+        "response_status": "non_authoritative_cap_probe",
+        "receipt_role": "discarded_non_authoritative_cap_probe",
+        "discarded_probe_row_count": response_count,
+    })
+    _atomic_json(path, decoded)
+    decoded["path"] = path.relative_to(store).as_posix()
+    return decoded
+
+
+def _shard_partition(store: Path, endpoint: str, trade_date: date, ticker: str) -> Path:
+    safe_ticker = re.sub(r"[^A-Za-z0-9_.-]", "_", ticker)
+    return (
+        store / "source_shards" / endpoint / f"year={trade_date.year:04d}"
+        / f"month={trade_date.month:02d}" / trade_date.isoformat() / f"{safe_ticker}.parquet"
+    )
 
 
 def _name_partition(store: Path, year: int) -> Path:
@@ -1096,6 +2750,14 @@ def _year_segments(start: date, end: date) -> list[tuple[int, date, date]]:
     ]
 
 
+def _raw_response_semantic_sha256(frame: pd.DataFrame) -> str:
+    rows = [
+        _canonical_json_bytes({str(key): _json_safe(value) for key, value in sorted(item.items())})
+        for item in frame.to_dict(orient="records")
+    ]
+    return hashlib.sha256(b"\n".join(sorted(rows))).hexdigest()
+
+
 class TushareAShareSpineCollector:
     """Bounded request orchestrator.  Network behavior is injectable for tests."""
 
@@ -1106,102 +2768,305 @@ class TushareAShareSpineCollector:
         query: Callable[..., pd.DataFrame | None] | None = None,
         now: Callable[[], datetime] = _utc_now,
         max_requests: int = DEFAULT_MAX_REQUESTS,
+        authorization: AuthorizationGrant | None = None,
     ) -> None:
-        self.store = Path(store)
+        if authorization is None:
+            raise SpineError("collector requires a verified written authorization grant")
+        if (
+            authorization.trust_allowlist_sha256
+            not in CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256
+        ):
+            raise SpineError("collector authorization is not bound to the code-reviewed trust root")
+        if not BULK_HISTORICAL_BACKFILL_READY:
+            raise SpineError(
+                "full-A collector is foundation-only: scalable ticker-range cap fallback "
+                "has not been code-reviewed, so live/injected collection is disabled"
+            )
+        self.store = _validate_private_store_path(Path(store))
         self.query = query or tc.query
         self.now = now
         self.max_requests = int(max_requests)
         self.requests_made = 0
         self.failures: list[dict[str, str]] = []
         self.state = load_state(self.store)
+        self.authorization = authorization
+        # Generations are immutable after atomic promotion.  Verify the pointer
+        # and every generation artifact once for this collector operation, then
+        # pass the pinned id through hot-path lookups instead of reopening the
+        # complete reference set for every endpoint/day.
+        self.reference_generation = _current_reference_generation(
+            self.store, required=False,
+        )
 
     @property
     def observed_at(self) -> str:
         return self.now().astimezone(timezone.utc).isoformat()
 
-    def _call(self, endpoint: str, **params: Any) -> pd.DataFrame | None:
+    def _call(self, endpoint: str, unit: str, **params: Any) -> VendorResponse:
         if self.max_requests and self.requests_made >= self.max_requests:
             raise RequestBudgetExhausted("request cap reached; state is resumable")
         self.requests_made += 1
+        requested_fields = ENDPOINT_FIELDS[endpoint]
+        request_contract = {
+            "endpoint": endpoint,
+            "fields": requested_fields.split(","),
+            "params": {str(key): _json_safe(value) for key, value in sorted(params.items())},
+            "unit": unit,
+        }
+        request_id = hashlib.sha256(_canonical_json_bytes(request_contract)).hexdigest()
         # _return_empty distinguishes an authenticated zero-row event day from
         # an unavailable/failed call while preserving query()'s legacy default.
-        return self.query(endpoint, fields=ENDPOINT_FIELDS[endpoint], _return_empty=True, **params)
+        frame = self.query(endpoint, fields=requested_fields, _return_empty=True, **params)
+        receipt: dict[str, Any] = {
+            "request_id": request_id,
+            "endpoint": endpoint,
+            "unit": unit,
+            "fields": requested_fields.split(","),
+            "params": request_contract["params"],
+            "request_contract_sha256": hashlib.sha256(
+                _canonical_json_bytes(request_contract)
+            ).hexdigest(),
+            "observed_at": self.observed_at,
+            "response_status": "unavailable",
+            "response_row_count": 0,
+            "response_columns": [],
+            "response_semantic_sha256": None,
+        }
+        if frame is not None:
+            try:
+                if not isinstance(frame, pd.DataFrame):
+                    raise SpineError(f"{endpoint} returned a non-DataFrame response")
+                _assert_configured_token_absent_logical(frame, artifact=f"response:{endpoint}/{unit}")
+                # Preserve what was actually returned before judging it.  A
+                # rejected schema is evidence, not a fictitious zero-row miss.
+                receipt.update({
+                    "response_status": "observed_pending_validation",
+                    "response_row_count": len(frame),
+                    "response_columns": list(frame.columns),
+                    "response_semantic_sha256": _raw_response_semantic_sha256(frame),
+                })
+                _validate_response_binding(endpoint, frame, params)
+            except SpineError:
+                receipt["response_status"] = "rejected_contract"
+                _atomic_json(_request_receipt_path(self.store, endpoint, unit, request_id), receipt)
+                raise
+            receipt.update({
+                "response_status": "accepted_empty" if frame.empty else "accepted",
+            })
+        path = _request_receipt_path(self.store, endpoint, unit, request_id)
+        _atomic_json(path, receipt)
+        receipt["path"] = path.relative_to(self.store).as_posix()
+        return VendorResponse(frame=frame, receipt=receipt)
 
-    def _mark_failed(self, endpoint: str, unit: str, reason: str) -> None:
+    def _mark_failed(
+        self,
+        endpoint: str,
+        unit: str,
+        reason: str,
+        *,
+        request_receipts: Sequence[Mapping[str, Any]] = (),
+        source_row_count: int = 0,
+        row_count: int = 0,
+        known_excluded_row_count: int = 0,
+        quarantined_unknown_row_count: int = 0,
+        unmatched_master_row_count: int = 0,
+        collection_method: str = "whole_market",
+        generation_id: str | None = None,
+    ) -> None:
         self.failures.append({"endpoint": endpoint, "unit": unit, "reason": reason})
         _set_unit(
             self.state, self.store, endpoint, unit, status="failed",
             observed_at=self.observed_at, reason=reason,
+            request_receipts=request_receipts, source_row_count=source_row_count,
+            row_count=row_count, known_excluded_row_count=known_excluded_row_count,
+            quarantined_unknown_row_count=quarantined_unknown_row_count,
+            unmatched_master_row_count=unmatched_master_row_count,
+            collection_method=collection_method, generation_id=generation_id,
         )
 
     def collect_reference(self, *, refresh: bool = False) -> bool:
-        mapping_path = self.store / "reference" / "source_bse_mapping.parquet"
-        mapping_unit = "all"
-        if refresh or not _unit_done(self.state, self.store, "bse_mapping", mapping_unit):
-            frame = self._call("bse_mapping")
+        current = self.reference_generation
+        self.reference_generation = current
+        generation_state = self.state.setdefault("reference_generation", {})
+        staging = generation_state.get("staging_id")
+        if staging and current == staging:
+            generation_state.update({"current_id": staging, "staging_id": None})
+            _atomic_json(self.store / "collection_state.json", self.state)
+            staging = None
+        if current and not refresh and not staging:
+            for name in (
+                "security_master.parquet", "identity_aliases.parquet",
+                "instrument_classification.parquet",
+            ):
+                if not _reference_derived_path(self.store, name, current).exists():
+                    raise SpineError("current reference generation is missing a derived artifact")
+            return True
+        if not staging:
+            contract_hash = hashlib.sha256(_canonical_json_bytes({
+                endpoint: ENDPOINT_FIELDS[endpoint]
+                for endpoint in ("bse_mapping", "stock_basic", "fund_basic")
+            })).hexdigest()[:12]
+            timestamp = self.now().astimezone(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            staging = f"ref-{timestamp}-{contract_hash}"
+            generation_state.update({
+                "staging_id": staging,
+                "current_id": current,
+                "started_at": self.observed_at,
+                "status": "collecting",
+            })
+            _atomic_json(self.store / "collection_state.json", self.state)
+
+        mapping_unit = f"{staging}:all"
+        mapping_path = _reference_source_path(self.store, staging, "bse_mapping")
+        if not _unit_done(self.state, self.store, "bse_mapping", mapping_unit):
+            response = self._call("bse_mapping", mapping_unit)
+            frame = response.frame
             if frame is None:
-                self._mark_failed("bse_mapping", mapping_unit, "vendor_unavailable_or_unlicensed")
+                self._mark_failed(
+                    "bse_mapping", mapping_unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=[response.receipt], generation_id=staging,
+                )
                 return False
             if len(frame) >= SOURCE_ROW_CAPS["bse_mapping"]:
-                self._mark_failed("bse_mapping", mapping_unit, "documented_source_row_cap_reached")
+                self._mark_failed(
+                    "bse_mapping", mapping_unit, "documented_source_row_cap_reached",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame), generation_id=staging,
+                )
                 return False
             normal = _normalise_bse_mapping(frame)
             if normal.empty:
-                self._mark_failed("bse_mapping", mapping_unit, "unexpected_empty_bse_identity_mapping")
+                self._mark_failed(
+                    "bse_mapping", mapping_unit, "unexpected_empty_bse_identity_mapping",
+                    request_receipts=[response.receipt], generation_id=staging,
+                )
                 return False
             _atomic_parquet(mapping_path, normal)
             _set_unit(
                 self.state, self.store, "bse_mapping", mapping_unit,
-                status="empty" if normal.empty else "complete", observed_at=self.observed_at,
+                status="complete", observed_at=self.observed_at,
                 row_count=len(normal), source_row_count=len(frame), partition=mapping_path,
+                request_receipts=[response.receipt], generation_id=staging,
             )
+
         for exchange in EXCHANGES:
             for status in LIST_STATUSES:
-                unit = f"{exchange}:{status}"
-                path = self.store / "reference" / "source_stock_basic" / f"{exchange}_{status}.parquet"
-                if not refresh and _unit_done(self.state, self.store, "stock_basic", unit):
+                source_unit = f"{exchange}:{status}"
+                unit = f"{staging}:{source_unit}"
+                path = _reference_source_path(self.store, staging, "stock_basic", source_unit)
+                if _unit_done(self.state, self.store, "stock_basic", unit):
                     continue
-                frame = self._call("stock_basic", exchange=exchange, list_status=status)
+                response = self._call(
+                    "stock_basic", unit, exchange=exchange, list_status=status,
+                )
+                frame = response.frame
                 if frame is None:
-                    self._mark_failed("stock_basic", unit, "vendor_unavailable_or_unlicensed")
+                    self._mark_failed(
+                        "stock_basic", unit, "vendor_unavailable_or_unlicensed",
+                        request_receipts=[response.receipt], generation_id=staging,
+                    )
                     continue
                 if len(frame) >= SOURCE_ROW_CAPS["stock_basic"]:
-                    self._mark_failed("stock_basic", unit, "documented_source_row_cap_reached")
+                    self._mark_failed(
+                        "stock_basic", unit, "documented_source_row_cap_reached",
+                        request_receipts=[response.receipt], source_row_count=len(frame),
+                        quarantined_unknown_row_count=len(frame), generation_id=staging,
+                    )
                     continue
-                normal = frame.copy()
-                if status == "L" and normal.empty:
-                    self._mark_failed("stock_basic", unit, "unexpected_empty_listed_exchange")
+                if status == "L" and frame.empty:
+                    self._mark_failed(
+                        "stock_basic", unit, "unexpected_empty_listed_exchange",
+                        request_receipts=[response.receipt], generation_id=staging,
+                    )
                     continue
-                if "exchange" not in normal.columns:
-                    normal["exchange"] = exchange
-                if "list_status" not in normal.columns:
-                    normal["list_status"] = status
-                _atomic_parquet(path, normal)
+                _atomic_parquet(path, frame)
                 _set_unit(
                     self.state, self.store, "stock_basic", unit,
-                    status="empty" if normal.empty else "complete", observed_at=self.observed_at,
-                    row_count=len(normal), source_row_count=len(frame), partition=path,
+                    status="empty" if frame.empty else "complete", observed_at=self.observed_at,
+                    row_count=len(frame), source_row_count=len(frame), partition=path,
+                    request_receipts=[response.receipt], generation_id=staging,
                 )
-        ready = all(
-            _unit_done(self.state, self.store, "stock_basic", f"{exchange}:{status}")
-            for exchange in EXCHANGES for status in LIST_STATUSES
-        ) and _unit_done(self.state, self.store, "bse_mapping", mapping_unit)
+
+        for status in FUND_STATUSES:
+            unit = f"{staging}:{status}"
+            path = _reference_source_path(self.store, staging, "fund_basic", status)
+            if _unit_done(self.state, self.store, "fund_basic", unit):
+                continue
+            response = self._call("fund_basic", unit, market="E", status=status)
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    "fund_basic", unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=[response.receipt], generation_id=staging,
+                )
+                continue
+            if len(frame) >= SOURCE_ROW_CAPS["fund_basic"]:
+                self._mark_failed(
+                    "fund_basic", unit, "documented_source_row_cap_reached",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame), generation_id=staging,
+                )
+                continue
+            if status == "L" and frame.empty:
+                self._mark_failed(
+                    "fund_basic", unit, "unexpected_empty_listed_exchange_funds",
+                    request_receipts=[response.receipt], generation_id=staging,
+                )
+                continue
+            _atomic_parquet(path, frame)
+            _set_unit(
+                self.state, self.store, "fund_basic", unit,
+                status="empty" if frame.empty else "complete", observed_at=self.observed_at,
+                row_count=0, source_row_count=len(frame),
+                known_excluded_row_count=len(frame), partition=path,
+                request_receipts=[response.receipt], generation_id=staging,
+            )
+
+        ready = (
+            _unit_done(self.state, self.store, "bse_mapping", mapping_unit)
+            and all(
+                _unit_done(
+                    self.state, self.store, "stock_basic",
+                    f"{staging}:{exchange}:{status}",
+                )
+                for exchange in EXCHANGES for status in LIST_STATUSES
+            )
+            and all(
+                _unit_done(self.state, self.store, "fund_basic", f"{staging}:{status}")
+                for status in FUND_STATUSES
+            )
+        )
         if ready:
-            compile_security_master(self.store)
+            compile_security_master(self.store, staging)
+            _promote_reference_generation(self.store, staging)
+            generation_state.update({
+                "current_id": staging, "staging_id": None, "status": "complete",
+                "promoted_at": self.observed_at,
+            })
+            _atomic_json(self.store / "collection_state.json", self.state)
+            self.reference_generation = staging
         return ready
 
     def collect_calendars(self, start: date, end: date) -> bool:
+        work: list[tuple[int, int, str, date, date]] = []
         for year, segment_start, segment_end in _year_segments(start, end):
             for exchange in CALENDAR_EXCHANGES:
                 unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
-                if _unit_done(self.state, self.store, "trade_cal", unit):
-                    continue
-                frame = self._call(
-                    "trade_cal", exchange=exchange, start_date=_compact(segment_start),
-                    end_date=_compact(segment_end),
+                if not _unit_done(self.state, self.store, "trade_cal", unit):
+                    retry = 1 if _unit_record(self.state, "trade_cal", unit) else 0
+                    work.append((retry, -year, exchange, segment_start, segment_end))
+        for _, _, exchange, segment_start, segment_end in sorted(work):
+                unit = f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
+                response = self._call(
+                    "trade_cal", unit, exchange=exchange,
+                    start_date=_compact(segment_start), end_date=_compact(segment_end),
                 )
+                frame = response.frame
                 if frame is None:
-                    self._mark_failed("trade_cal", unit, "vendor_unavailable_or_unlicensed")
+                    self._mark_failed(
+                        "trade_cal", unit, "vendor_unavailable_or_unlicensed",
+                        request_receipts=[response.receipt],
+                    )
                     continue
                 try:
                     normal = _normalise_calendar(frame, exchange, segment_start, segment_end)
@@ -1216,6 +3081,7 @@ class TushareAShareSpineCollector:
                     self.state, self.store, "trade_cal", unit, status="complete",
                     observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
                     revised_key_count=revised, partition=path,
+                    request_receipts=[response.receipt],
                 )
                 log.debug("trade_cal %s landed (%d partition rows)", unit, rows)
         ready = all(
@@ -1230,44 +3096,269 @@ class TushareAShareSpineCollector:
             compile_market_sessions(self.store, start, end)
         return ready
 
+    def _replace_source_classifications(
+        self,
+        endpoint: str,
+        trade_date: date,
+        normal: NormalisedSourceUnit,
+    ) -> None:
+        for classification, frame in (
+            ("known_excluded", normal.known_excluded),
+            ("quarantined_unknown", normal.quarantined_unknown),
+        ):
+            path = _classification_partition(self.store, classification, endpoint, trade_date)
+            _replace_partition_units(
+                path, frame, keys=KEY_COLUMNS["source_classification"],
+                unit_column="trade_date", units=[trade_date.isoformat()],
+            )
+
+    def collect_pit_universe(self, start: date, end: date) -> bool:
+        """Collect the official exact-day A-share list witness from 2016 onward."""
+        sessions = _read_parquet_strict(self.store / "reference" / "market_sessions.parquet")
+        lower = max(start, PIT_UNIVERSE_START)
+        dates = [
+            _parse_date(value) for value in sessions["trade_date"].astype(str)
+            if lower <= _parse_date(value) <= end
+        ]
+        work = sorted(
+            (
+                1 if _unit_record(self.state, PIT_UNIVERSE_ENDPOINT, _compact(day)) else 0,
+                -day.toordinal(), day,
+            )
+            for day in dates
+            if not _unit_done(self.state, self.store, PIT_UNIVERSE_ENDPOINT, _compact(day))
+        )
+        for _, _, trade_date in work:
+            unit = _compact(trade_date)
+            response = self._call(PIT_UNIVERSE_ENDPOINT, unit, trade_date=unit)
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    PIT_UNIVERSE_ENDPOINT, unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=[response.receipt],
+                )
+                continue
+            if len(frame) >= SOURCE_ROW_CAPS[PIT_UNIVERSE_ENDPOINT]:
+                self._mark_failed(
+                    PIT_UNIVERSE_ENDPOINT, unit, "documented_source_row_cap_reached",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame),
+                )
+                continue
+            if frame.empty:
+                self._mark_failed(
+                    PIT_UNIVERSE_ENDPOINT, unit, "unexpected_empty_open_session",
+                    request_receipts=[response.receipt],
+                )
+                continue
+            normal = normalise_bak_basic(
+                frame, trade_date, self.store, self.reference_generation,
+            )
+            self._replace_source_classifications(PIT_UNIVERSE_ENDPOINT, trade_date, normal)
+            path = _pit_partition(self.store, trade_date)
+            _replace_partition_units(
+                path, normal.landed_a, keys=KEY_COLUMNS["bak_basic"],
+                unit_column="trade_date", units=[trade_date.isoformat()],
+            )
+            if not normal.quarantined_unknown.empty:
+                self._mark_failed(
+                    PIT_UNIVERSE_ENDPOINT, unit, "quarantined_unknown_source_rows",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    row_count=len(normal.landed_a),
+                    known_excluded_row_count=len(normal.known_excluded),
+                    quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    collection_method="whole_market",
+                )
+                continue
+            _set_unit(
+                self.state, self.store, PIT_UNIVERSE_ENDPOINT, unit, status="complete",
+                observed_at=self.observed_at, row_count=len(normal.landed_a),
+                source_row_count=len(frame), partition=path,
+                known_excluded_row_count=len(normal.known_excluded),
+                request_receipts=[response.receipt],
+            )
+        expected = [_compact(day) for day in sorted(dates)]
+        return all(
+            _unit_done(self.state, self.store, PIT_UNIVERSE_ENDPOINT, unit)
+            for unit in expected
+        )
+
     def collect_name_history(self, end: date) -> None:
         years = list(range(NAME_HISTORY_START_YEAR, end.year + 1))
         years.sort(key=lambda year: (
-            1 if _unit_record(self.state, "namechange", str(year)) else 0,
+            1 if any(
+                str(unit).startswith(f"{year}:")
+                for unit in self.state.get("units", {}).get("namechange", {})
+            ) else 0,
             year,
         ))
         attempted = 0
         for year in years:
-            unit = str(year)
+            segment_end = min(end, date(year, 12, 31))
+            unit = f"{year}:{_compact(segment_end)}"
             if _unit_done(self.state, self.store, "namechange", unit):
                 continue
             if attempted >= NAMECHANGE_MAX_PER_RUN:
                 break
             attempted += 1
-            frame = self._call(
-                "namechange", start_date=f"{year:04d}0101", end_date=f"{year:04d}1231",
+            response = self._call(
+                "namechange", unit, start_date=f"{year:04d}0101",
+                end_date=_compact(segment_end),
             )
+            frame = response.frame
             if frame is None:
-                self._mark_failed("namechange", unit, "vendor_unavailable_or_unlicensed")
+                self._mark_failed(
+                    "namechange", unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=[response.receipt],
+                )
                 continue
             if len(frame) >= 6000:
-                self._mark_failed("namechange", unit, "possible_undocumented_source_row_cap")
+                self._mark_failed(
+                    "namechange", unit, "possible_undocumented_source_row_cap",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame),
+                )
                 continue
-            normal, orphans = normalise_name_history(frame, self.store)
+            normal = normalise_name_history(
+                frame, self.store, segment_end, self.reference_generation,
+            )
+            self._replace_source_classifications("namechange", segment_end, normal)
             path = _name_partition(self.store, year)
-            if normal.empty:
+            _atomic_parquet(path, normal.landed_a)
+            if not normal.quarantined_unknown.empty:
+                self._mark_failed(
+                    "namechange", unit, "namechange_orphans_absent_from_A_universe_witness",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    row_count=len(normal.landed_a),
+                    known_excluded_row_count=len(normal.known_excluded),
+                    quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    unmatched_master_row_count=len(normal.quarantined_unknown),
+                )
+                continue
+            if normal.landed_a.empty:
                 _set_unit(
                     self.state, self.store, "namechange", unit, status="empty",
                     observed_at=self.observed_at, source_row_count=len(frame),
+                    known_excluded_row_count=len(normal.known_excluded),
+                    partition=path, request_receipts=[response.receipt],
                 )
                 continue
-            rows, revised = _upsert_partition(path, normal, keys=KEY_COLUMNS["name_history"])
             _set_unit(
                 self.state, self.store, "namechange", unit, status="complete",
-                observed_at=self.observed_at, row_count=len(normal), source_row_count=len(frame),
-                unmatched_master_row_count=orphans, revised_key_count=revised, partition=path,
+                observed_at=self.observed_at, row_count=len(normal.landed_a),
+                source_row_count=len(frame),
+                known_excluded_row_count=len(normal.known_excluded),
+                unmatched_master_row_count=0, revised_key_count=0, partition=path,
+                request_receipts=[response.receipt],
             )
-            log.debug("namechange %d landed (%d partition rows)", year, rows)
+            log.debug("namechange %d landed (%d partition rows)", year, len(normal.landed_a))
+
+    def _expected_shard_tickers(self, trade_date: date) -> list[str]:
+        master, _, _ = _master_maps(self.store, self.reference_generation)
+        # bak_basic corroborates the lifecycle universe; it can never shrink it.
+        # The exact frozen union is hashed into the parent shard plan below.
+        return sorted(_eligible_tickers_with_pit(self.store, master, trade_date.isoformat()))
+
+    def _collect_daily_shards(
+        self,
+        endpoint: str,
+        trade_date: date,
+        *,
+        initial_receipts: Sequence[Mapping[str, Any]] = (),
+    ) -> tuple[pd.DataFrame | None, list[Mapping[str, Any]]]:
+        unit = _compact(trade_date)
+        # Retain authoritative persisted request evidence, but replace the
+        # ephemeral progress summary on every resume instead of growing one
+        # duplicate summary per eight-ticker slice.
+        base_receipts = [receipt for receipt in initial_receipts if receipt.get("path")]
+        tickers = self._expected_shard_tickers(trade_date)
+        if not tickers:
+            self._mark_failed(endpoint, unit, "no_independent_A_universe_for_shards")
+            return None, list(base_receipts)
+        ticker_hash = hashlib.sha256("\n".join(tickers).encode("utf-8")).hexdigest()
+        existing = _unit_record(self.state, endpoint, unit)
+        if existing and existing.get("expected_ticker_sha256") not in {None, ticker_hash}:
+            raise SpineError(f"{endpoint}/{unit} shard universe changed during collection")
+        _set_unit(
+            self.state, self.store, endpoint, unit, status="collecting",
+            observed_at=self.observed_at, request_receipts=base_receipts,
+            collection_method="per_ticker_shards", expected_ticker_count=len(tickers),
+            expected_ticker_sha256=ticker_hash,
+        )
+        shard_endpoint = f"{endpoint}_shard"
+        pending = [
+            ticker for ticker in tickers
+            if not _unit_done(self.state, self.store, shard_endpoint, f"{unit}:{ticker}")
+        ]
+        for ticker in pending[:SHARD_CALLS_PER_UNIT_SLICE]:
+            shard_unit = f"{unit}:{ticker}"
+            response = self._call(
+                endpoint, shard_unit, trade_date=unit, ts_code=_source_ts_code(ticker),
+            )
+            frame = response.frame
+            if frame is None:
+                self._mark_failed(
+                    shard_endpoint, shard_unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=[response.receipt], collection_method="per_ticker_shard",
+                )
+                continue
+            if len(frame) > 1:
+                self._mark_failed(
+                    shard_endpoint, shard_unit, "ticker_shard_returned_multiple_rows",
+                    request_receipts=[response.receipt], source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame),
+                    collection_method="per_ticker_shard",
+                )
+                continue
+            shard_path = _shard_partition(self.store, endpoint, trade_date, ticker)
+            if not frame.empty:
+                _atomic_parquet(shard_path, frame)
+            _set_unit(
+                self.state, self.store, shard_endpoint, shard_unit,
+                status="empty" if frame.empty else "complete", observed_at=self.observed_at,
+                row_count=len(frame), source_row_count=len(frame),
+                partition=shard_path if not frame.empty else None,
+                request_receipts=[response.receipt], collection_method="per_ticker_shard",
+            )
+
+        incomplete = [
+            ticker for ticker in tickers
+            if not _unit_done(self.state, self.store, shard_endpoint, f"{unit}:{ticker}")
+        ]
+        summary = {
+            "path": None,
+            "request_id": ticker_hash,
+            "endpoint": endpoint,
+            "unit": unit,
+            "response_status": "shards_incomplete" if incomplete else "shards_complete",
+            "response_row_count": 0,
+            "request_contract_sha256": ticker_hash,
+            "collection_method": "per_ticker_shards",
+            "expected_ticker_count": len(tickers),
+            "completed_ticker_count": len(tickers) - len(incomplete),
+        }
+        receipts = [*base_receipts, summary]
+        if incomplete:
+            _set_unit(
+                self.state, self.store, endpoint, unit, status="collecting",
+                observed_at=self.observed_at, request_receipts=receipts,
+                collection_method="per_ticker_shards", expected_ticker_count=len(tickers),
+                expected_ticker_sha256=ticker_hash,
+            )
+            return None, receipts
+        frames = []
+        for ticker in tickers:
+            record = _unit_record(self.state, shard_endpoint, f"{unit}:{ticker}")
+            if record and record.get("partition"):
+                frames.append(_read_parquet_strict(self.store / str(record["partition"])))
+        combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
+            columns=ENDPOINT_FIELDS[endpoint].split(",")
+        )
+        if not combined.empty:
+            combined = combined[ENDPOINT_FIELDS[endpoint].split(",")]
+        summary["response_row_count"] = len(combined)
+        summary["response_semantic_sha256"] = _raw_response_semantic_sha256(combined)
+        return combined, receipts
 
     def collect_daily(self, start: date, end: date, endpoints: Sequence[str]) -> None:
         session_path = self.store / "reference" / "market_sessions.parquet"
@@ -1292,14 +3383,52 @@ class TushareAShareSpineCollector:
         work.sort(key=lambda item: (item[0], -item[1].toordinal(), endpoints.index(item[2])))
         for _, trade_date, endpoint in work:
             unit = _compact(trade_date)
-            frame = self._call(endpoint, trade_date=unit)
-            if frame is None:
-                self._mark_failed(endpoint, unit, "vendor_unavailable_or_unlicensed")
-                continue
+            existing = _unit_record(self.state, endpoint, unit)
+            request_receipts: list[Mapping[str, Any]] = []
+            if existing and existing.get("collection_method") == "per_ticker_shards":
+                frame, request_receipts = self._collect_daily_shards(
+                    endpoint, trade_date,
+                    initial_receipts=existing.get("request_receipts", []),
+                )
+                if frame is None:
+                    continue
+                collection_method = "per_ticker_shards"
+            else:
+                response = self._call(endpoint, unit, trade_date=unit)
+                frame = response.frame
+                request_receipts = [response.receipt]
+                collection_method = "whole_market"
+                if frame is None:
+                    self._mark_failed(
+                        endpoint, unit, "vendor_unavailable_or_unlicensed",
+                        request_receipts=request_receipts,
+                    )
+                    continue
             cap = SOURCE_ROW_CAPS.get(endpoint)
             if cap is not None and len(frame) >= cap:
-                self._mark_failed(endpoint, unit, "documented_source_row_cap_reached")
-                continue
+                if endpoint not in DENSE_ENDPOINTS:
+                    self._mark_failed(
+                        endpoint, unit, "documented_source_row_cap_reached",
+                        request_receipts=request_receipts, source_row_count=len(frame),
+                        quarantined_unknown_row_count=len(frame),
+                    )
+                    continue
+                if collection_method == "whole_market":
+                    if len(request_receipts) != 1:
+                        raise SpineError(
+                            f"{endpoint}/{unit} capped whole-market probe has ambiguous receipts"
+                        )
+                    request_receipts = [
+                        _mark_non_authoritative_cap_probe(
+                            self.store, request_receipts[0], source_cap=cap,
+                        )
+                    ]
+                frame, request_receipts = self._collect_daily_shards(
+                    endpoint, trade_date, initial_receipts=request_receipts,
+                )
+                if frame is None:
+                    continue
+                collection_method = "per_ticker_shards"
             if frame.empty:
                 if endpoint not in EMPTY_ALLOWED_ENDPOINTS:
                     self._mark_failed(endpoint, unit, "unexpected_empty_open_session")
@@ -1315,29 +3444,60 @@ class TushareAShareSpineCollector:
                 _set_unit(
                     self.state, self.store, endpoint, unit, status="empty",
                     observed_at=self.observed_at, source_row_count=0,
+                    request_receipts=request_receipts, collection_method=collection_method,
                 )
                 continue
             try:
-                normal, dropped = normalise_daily_endpoint(endpoint, frame, trade_date, self.store)
+                normal = normalise_daily_endpoint(
+                    endpoint, frame, trade_date, self.store, self.reference_generation,
+                )
             except SpineError:
-                self._mark_failed(endpoint, unit, "daily_contract_failed")
+                self._mark_failed(
+                    endpoint, unit, "daily_contract_failed",
+                    request_receipts=request_receipts, source_row_count=len(frame),
+                    quarantined_unknown_row_count=len(frame),
+                    collection_method=collection_method,
+                )
                 raise
-            if normal.empty and endpoint in DENSE_ENDPOINTS:
-                self._mark_failed(endpoint, unit, "no_A_share_rows_after_identity_filter")
+            self._replace_source_classifications(endpoint, trade_date, normal)
+            if normal.landed_a.empty and endpoint in DENSE_ENDPOINTS:
+                self._mark_failed(
+                    endpoint, unit, "no_A_share_rows_after_identity_filter",
+                    request_receipts=request_receipts, source_row_count=len(frame),
+                    known_excluded_row_count=len(normal.known_excluded),
+                    quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    collection_method=collection_method,
+                )
                 continue
             path = _monthly_partition(self.store, endpoint, trade_date)
             rows, revised = _replace_partition_units(
                 path,
-                normal,
+                normal.landed_a,
                 keys=KEY_COLUMNS[endpoint],
                 unit_column="trade_date",
                 units=[trade_date.isoformat()],
             )
+            if not normal.quarantined_unknown.empty:
+                self._mark_failed(
+                    endpoint, unit, "quarantined_unknown_source_rows",
+                    request_receipts=request_receipts, source_row_count=len(frame),
+                    row_count=len(normal.landed_a),
+                    known_excluded_row_count=len(normal.known_excluded),
+                    quarantined_unknown_row_count=len(normal.quarantined_unknown),
+                    collection_method=collection_method,
+                )
+                continue
+            shard_record = _unit_record(self.state, endpoint, unit) or {}
             _set_unit(
                 self.state, self.store, endpoint, unit,
-                status="empty" if normal.empty else "complete", observed_at=self.observed_at,
-                row_count=len(normal), source_row_count=len(frame), dropped_row_count=dropped,
-                revised_key_count=revised, partition=path if not normal.empty else None,
+                status="empty" if normal.landed_a.empty else "complete", observed_at=self.observed_at,
+                row_count=len(normal.landed_a), source_row_count=len(frame),
+                known_excluded_row_count=len(normal.known_excluded),
+                quarantined_unknown_row_count=0, revised_key_count=revised,
+                partition=path if not normal.landed_a.empty else None,
+                request_receipts=request_receipts, collection_method=collection_method,
+                expected_ticker_count=shard_record.get("expected_ticker_count"),
+                expected_ticker_sha256=shard_record.get("expected_ticker_sha256"),
             )
             log.debug("%s %s landed (%d partition rows)", endpoint, unit, rows)
 
@@ -1355,6 +3515,8 @@ def _expected_endpoint_units(
     ]
     if endpoint == "stock_st":
         dates = [value for value in dates if value >= ST_DAILY_START]
+    if endpoint == PIT_UNIVERSE_ENDPOINT:
+        dates = [value for value in dates if value >= PIT_UNIVERSE_START]
     return [_compact(value) for value in sorted(dates)]
 
 
@@ -1482,6 +3644,7 @@ def build_canonical_event_substrate(
     positive_volume_rows = 0
     bounded_rows = 0
     no_published_limit_rows = 0
+    limit_status_audited_rows = 0
     for daily_path in sorted((store / "daily").glob("year=*/month=*/part.parquet")):
         daily = _read_parquet_strict(daily_path)
         if daily.empty:
@@ -1495,9 +3658,13 @@ def build_canonical_event_substrate(
         daily = daily[in_range].copy()
         relative = daily_path.relative_to(store / "daily")
         limit_path = store / "stk_limit" / relative
+        daily_basic_path = store / "daily_basic" / relative
         if not limit_path.exists():
             raise SpineError(f"canonical event substrate lacks stk_limit partition: {relative}")
+        if not daily_basic_path.exists():
+            raise SpineError(f"canonical event substrate lacks daily_basic audit partition: {relative}")
         limits = _read_parquet_strict(limit_path)
+        daily_basic = _read_parquet_strict(daily_basic_path)
         if _duplicates(daily, KEY_COLUMNS["daily"]):
             raise SpineError(f"daily partition duplicates canonical event keys: {relative}")
         if _duplicates(limits, KEY_COLUMNS["stk_limit"]):
@@ -1505,6 +3672,10 @@ def build_canonical_event_substrate(
         limits = limits[
             (limits["trade_date"].astype(str) >= start.isoformat())
             & (limits["trade_date"].astype(str) <= end.isoformat())
+        ].copy()
+        daily_basic = daily_basic[
+            (daily_basic["trade_date"].astype(str) >= start.isoformat())
+            & (daily_basic["trade_date"].astype(str) <= end.isoformat())
         ].copy()
 
         daily_columns = [
@@ -1539,6 +3710,15 @@ def build_canonical_event_substrate(
             sample = absent[["trade_date", "ticker"]].head(20).to_dict(orient="records")
             raise SpineError(f"daily keys absent from exact stk_limit source: {sample}")
         merged = merged.drop(columns="_merge")
+        if "limit_status" not in daily_basic.columns:
+            raise SpineError("daily_basic limit_status audit field is absent")
+        if "close_cents" not in daily_basic.columns:
+            raise SpineError("daily_basic exact close audit field is absent")
+        status = daily_basic[["trade_date", "ticker", "close_cents", "limit_status"]].copy()
+        status = status.rename(columns={"close_cents": "daily_basic_close_cents"})
+        merged = merged.merge(
+            status, on=["trade_date", "ticker"], how="left", validate="one_to_one",
+        )
 
         compared = merged[
             merged["pre_close_cents"].notna() & merged["limit_pre_close_cents"].notna()
@@ -1558,22 +3738,101 @@ def build_canonical_event_substrate(
             & merged["source_limits_present"].fillna(False).astype(bool)
         )
         bounded = merged["source_limits_present"].fillna(False).astype(bool)
+        outside = merged[
+            bounded & (
+                merged["open_cents"].lt(merged["down_limit_cents"])
+                | merged["open_cents"].gt(merged["up_limit_cents"])
+                | merged["high_cents"].lt(merged["down_limit_cents"])
+                | merged["high_cents"].gt(merged["up_limit_cents"])
+                | merged["low_cents"].lt(merged["down_limit_cents"])
+                | merged["low_cents"].gt(merged["up_limit_cents"])
+                | merged["close_cents"].lt(merged["down_limit_cents"])
+                | merged["close_cents"].gt(merged["up_limit_cents"])
+            )
+        ]
+        if not outside.empty:
+            sample = outside[[
+                "trade_date", "ticker", "open_cents", "high_cents", "low_cents",
+                "close_cents", "up_limit_cents", "down_limit_cents",
+            ]].head(20).to_dict(orient="records")
+            raise SpineError(f"daily OHLC breached vendor-published legal bounds: {sample}")
         merged["touched_up"] = (
             merged["event_eligible"]
-            & merged["high_cents"].ge(merged["up_limit_cents"])
+            & merged["high_cents"].eq(merged["up_limit_cents"])
         )
         merged["sealed_up"] = (
             merged["event_eligible"]
-            & merged["close_cents"].ge(merged["up_limit_cents"])
+            & merged["close_cents"].eq(merged["up_limit_cents"])
         )
         merged["touched_down"] = (
             merged["event_eligible"]
-            & merged["low_cents"].le(merged["down_limit_cents"])
+            & merged["low_cents"].eq(merged["down_limit_cents"])
         )
         merged["sealed_down"] = (
             merged["event_eligible"]
-            & merged["close_cents"].le(merged["down_limit_cents"])
+            & merged["close_cents"].eq(merged["down_limit_cents"])
         )
+        status_present = merged["limit_status"].notna()
+        close_audit_mismatch = merged[
+            merged["daily_basic_close_cents"].isna()
+            | merged["close_cents"].ne(merged["daily_basic_close_cents"])
+        ]
+        if not close_audit_mismatch.empty:
+            sample = close_audit_mismatch[[
+                "trade_date", "ticker", "close_cents", "daily_basic_close_cents",
+            ]].head(20).to_dict(orient="records")
+            raise SpineError(f"daily/daily_basic exact-close mismatch: {sample}")
+        observed_status = merged.loc[status_present, "limit_status"].astype(int)
+        status_mismatch = (
+            (observed_status.isin({2, 3})
+             != merged.loc[status_present, "sealed_up"].astype(bool))
+            | (observed_status.isin({5, 6})
+               != merged.loc[status_present, "sealed_down"].astype(bool))
+        )
+        if status_mismatch.any():
+            sample = merged.loc[status_present].loc[status_mismatch, [
+                "trade_date", "ticker", "limit_status", "sealed_up", "sealed_down",
+            ]].head(20).to_dict(orient="records")
+            raise SpineError(f"daily_basic.limit_status disagrees with exact close/limits: {sample}")
+        direction_mismatch = (
+            (observed_status.eq(0)
+             & merged.loc[status_present, "close_cents"].ne(
+                 merged.loc[status_present, "pre_close_cents"]
+             ))
+            | (observed_status.eq(1)
+               & merged.loc[status_present, "close_cents"].le(
+                   merged.loc[status_present, "pre_close_cents"]
+               ))
+            | (observed_status.eq(4)
+               & merged.loc[status_present, "close_cents"].ge(
+                   merged.loc[status_present, "pre_close_cents"]
+               ))
+        )
+        if direction_mismatch.any():
+            sample = merged.loc[status_present].loc[direction_mismatch, [
+                "trade_date", "ticker", "limit_status", "pre_close_cents", "close_cents",
+            ]].head(20).to_dict(orient="records")
+            raise SpineError(f"daily_basic.limit_status direction disagrees with exact close: {sample}")
+        one_price_up = merged[
+            status_present & merged["limit_status"].eq(3)
+            & ~(
+                merged["open_cents"].eq(merged["up_limit_cents"])
+                & merged["high_cents"].eq(merged["up_limit_cents"])
+                & merged["low_cents"].eq(merged["up_limit_cents"])
+                & merged["close_cents"].eq(merged["up_limit_cents"])
+            )
+        ]
+        one_price_down = merged[
+            status_present & merged["limit_status"].eq(6)
+            & ~(
+                merged["open_cents"].eq(merged["down_limit_cents"])
+                & merged["high_cents"].eq(merged["down_limit_cents"])
+                & merged["low_cents"].eq(merged["down_limit_cents"])
+                & merged["close_cents"].eq(merged["down_limit_cents"])
+            )
+        ]
+        if not one_price_up.empty or not one_price_down.empty:
+            raise SpineError("daily_basic one-price limit_status disagrees with OHLC")
         merged["event_price_authority"] = (
             "tushare.daily_unadjusted_plus_stk_limit_exact_daily"
         )
@@ -1596,6 +3855,7 @@ def build_canonical_event_substrate(
         positive_volume_rows += int(merged["positive_volume"].fillna(False).astype(bool).sum())
         bounded_rows += int(bounded.sum())
         no_published_limit_rows += int((~bounded).sum())
+        limit_status_audited_rows += int(status_present.sum())
 
     return {
         "ready": bool(output_receipts and event_rows),
@@ -1603,6 +3863,7 @@ def build_canonical_event_substrate(
         "positive_volume_rows": positive_volume_rows,
         "source_limit_rows": bounded_rows,
         "no_published_limit_rows": no_published_limit_rows,
+        "daily_basic_limit_status_audited_rows": limit_status_audited_rows,
         "daily_source": "tushare.daily_unadjusted_nominal",
         "limit_source": "tushare.stk_limit_exact_daily",
         "integer_price_unit": "CNY_cents",
@@ -1620,14 +3881,103 @@ def _eligible_tickers(master: pd.DataFrame, trade_date: str) -> set[str]:
     return set(eligible["ticker"].astype(str))
 
 
+def _eligible_tickers_with_pit(store: Path, master: pd.DataFrame, trade_date: str) -> set[str]:
+    lifecycle = _eligible_tickers(master, trade_date)
+    day = _parse_date(trade_date)
+    if day >= PIT_UNIVERSE_START:
+        path = _pit_partition(store, day)
+        if path.exists():
+            frame = _read_parquet_strict(path)
+            subset = frame[frame["trade_date"].astype(str) == day.isoformat()]
+            pit = set(subset.get("ticker", pd.Series(dtype=str)).astype(str))
+            return lifecycle | pit
+    return lifecycle
+
+
+def _pit_lifecycle_reconciliation(
+    store: Path,
+    master: pd.DataFrame,
+    sessions: pd.DataFrame,
+    start: date,
+    end: date,
+) -> dict[str, Any]:
+    """Prove bak_basic corroborates, rather than replaces, lifecycle eligibility."""
+    requested = [
+        value for value in sessions.get("trade_date", pd.Series(dtype=str)).astype(str)
+        if max(start, PIT_UNIVERSE_START).isoformat() <= value <= end.isoformat()
+    ]
+    missing_sessions: list[str] = []
+    missing_in_pit: list[tuple[str, str]] = []
+    extra_in_pit: list[tuple[str, str]] = []
+    lifecycle_observations = 0
+    pit_observations = 0
+    union_observations = 0
+    union_hasher = hashlib.sha256()
+    for trade_date in requested:
+        day = _parse_date(trade_date)
+        path = _pit_partition(store, day)
+        if not path.exists():
+            missing_sessions.append(trade_date)
+            continue
+        frame = _read_parquet_strict(path)
+        subset = frame[frame["trade_date"].astype(str) == trade_date]
+        pit = set(subset.get("ticker", pd.Series(dtype=str)).astype(str))
+        if not pit:
+            missing_sessions.append(trade_date)
+            continue
+        lifecycle = _eligible_tickers(master, trade_date)
+        union = lifecycle | pit
+        lifecycle_observations += len(lifecycle)
+        pit_observations += len(pit)
+        union_observations += len(union)
+        missing_in_pit.extend((trade_date, ticker) for ticker in sorted(lifecycle - pit))
+        extra_in_pit.extend((trade_date, ticker) for ticker in sorted(pit - lifecycle))
+        union_hasher.update(trade_date.encode("ascii"))
+        union_hasher.update(b"\0")
+        union_hasher.update("\n".join(sorted(union)).encode("utf-8"))
+        union_hasher.update(b"\n")
+    return {
+        "not_applicable": not requested,
+        "required_session_count": len(requested),
+        "reconciled_session_count": len(requested) - len(missing_sessions),
+        "missing_pit_session_count": len(missing_sessions),
+        "lifecycle_eligible_observation_count": lifecycle_observations,
+        "pit_observation_count": pit_observations,
+        "union_observation_count": union_observations,
+        "lifecycle_missing_from_pit_count": len(missing_in_pit),
+        "pit_missing_from_lifecycle_count": len(extra_in_pit),
+        "missing_pit_session_sample": missing_sessions[:20],
+        "lifecycle_missing_from_pit_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in missing_in_pit[:20]
+        ],
+        "pit_missing_from_lifecycle_sample": [
+            {"trade_date": trade_date, "ticker": ticker}
+            for trade_date, ticker in extra_in_pit[:20]
+        ],
+        "frozen_union_semantic_sha256": union_hasher.hexdigest(),
+        "complete": bool(
+            len(missing_sessions) == 0
+            and len(missing_in_pit) == 0
+            and len(extra_in_pit) == 0
+        ),
+    }
+
+
 def build_daily_security_coverage(
     store: Path,
     start: date,
     end: date,
     state: Mapping[str, Any],
+    generation_id: str | None = None,
 ) -> pd.DataFrame:
     """Per-session lifecycle-vs-daily coverage, without loading the full tape at once."""
-    master_path = store / "reference" / "security_master.parquet"
+    try:
+        master_path = _reference_derived_path(
+            store, "security_master.parquet", generation_id,
+        )
+    except SpineError:
+        master_path = store / "reference" / "__absent_security_master.parquet"
     session_path = store / "reference" / "market_sessions.parquet"
     columns = [
         "trade_date", "eligible_n", "daily_n", "positive_volume_n", "suspended_n",
@@ -1671,7 +4021,7 @@ def build_daily_security_coverage(
                 suspended = set(suspend_day["ticker"].astype(str))
             else:
                 suspended = set()
-            eligible = _eligible_tickers(master, trade_date)
+            eligible = _eligible_tickers_with_pit(store, master, trade_date)
             missing = eligible - actual
             unexplained = missing - suspended if suspension_known else missing
             rows.append({
@@ -1710,6 +4060,11 @@ def _json_file_receipt(path: Path, store: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     raw = _receipt_bytes(path, store)
+    try:
+        decoded = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise SpineError(f"JSON receipt source is unreadable: {path}") from exc
+    _assert_configured_token_absent_logical(decoded, artifact=path.name)
     return {
         "path": path.relative_to(store).as_posix(),
         "sha256": hashlib.sha256(raw).hexdigest(),
@@ -1717,26 +4072,231 @@ def _json_file_receipt(path: Path, store: Path) -> dict[str, Any] | None:
     }
 
 
+def _request_receipts_summary(store: Path) -> dict[str, Any]:
+    count_by_endpoint: dict[str, int] = {}
+    status_counts: dict[str, int] = {}
+    hasher = hashlib.sha256()
+    receipt_count = 0
+    discarded_probe_rows = 0
+    for path in sorted((store / "receipts" / "requests").glob("*/*/*.json")):
+        raw = _receipt_bytes(path, store)
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except Exception as exc:
+            raise SpineError(f"request receipt is unreadable: {path}") from exc
+        _assert_configured_token_absent_logical(payload, artifact=path.name)
+        endpoint = str(payload.get("endpoint") or "")
+        status = str(payload.get("response_status") or "")
+        if not endpoint or not status or not payload.get("request_contract_sha256"):
+            raise SpineError(f"request receipt is malformed: {path}")
+        count_by_endpoint[endpoint] = count_by_endpoint.get(endpoint, 0) + 1
+        status_counts[status] = status_counts.get(status, 0) + 1
+        if status == "non_authoritative_cap_probe":
+            discarded = payload.get("discarded_probe_row_count")
+            if (
+                payload.get("receipt_role") != "discarded_non_authoritative_cap_probe"
+                or not isinstance(discarded, int)
+                or discarded != payload.get("response_row_count")
+            ):
+                raise SpineError(f"cap-probe receipt is malformed: {path}")
+            discarded_probe_rows += discarded
+        hasher.update(path.relative_to(store).as_posix().encode("utf-8"))
+        hasher.update(hashlib.sha256(raw).digest())
+        receipt_count += 1
+    return {
+        "request_count": receipt_count,
+        "count_by_endpoint": dict(sorted(count_by_endpoint.items())),
+        "response_status_counts": dict(sorted(status_counts.items())),
+        "discarded_non_authoritative_probe_rows": discarded_probe_rows,
+        "semantic_sha256": hasher.hexdigest(),
+    }
+
+
+def _collector_provenance() -> dict[str, Any]:
+    module_path = Path(__file__).resolve()
+    repo_root = module_path.parents[1]
+    schema_path = repo_root / "contracts" / "cn_tushare_a_share_spine_manifest.v1.schema.json"
+    try:
+        git_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repo_root, check=True,
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        git_sha = "unavailable"
+    query_contract = {
+        "endpoint_fields": ENDPOINT_FIELDS,
+        "row_caps": SOURCE_ROW_CAPS,
+        "required_authorization_scope": AUTHORIZATION_REQUIRED_SCOPE,
+        "normalization_contract": "exact_schema_request_binding_lossless_scope_accounting_v2",
+    }
+    return {
+        "collector_git_sha": git_sha,
+        "collector_source_sha256": hashlib.sha256(module_path.read_bytes()).hexdigest(),
+        "manifest_schema_sha256": (
+            hashlib.sha256(schema_path.read_bytes()).hexdigest() if schema_path.exists() else None
+        ),
+        "endpoint_query_contract_sha256": hashlib.sha256(
+            _canonical_json_bytes(query_contract)
+        ).hexdigest(),
+    }
+
+
+def _lifecycle_edge_reconciliation(
+    store: Path, master: pd.DataFrame, start: date, end: date,
+) -> dict[str, Any]:
+    lifecycle = master.set_index("ticker") if not master.empty else pd.DataFrame()
+    before_list = 0
+    after_delist = 0
+    bse_before_launch = 0
+    pit_list_date_mismatch = 0
+    last_daily: dict[str, str] = {}
+    for path in sorted((store / "daily").glob("year=*/month=*/part.parquet")):
+        frame = _read_parquet_strict(path)
+        frame = frame[
+            (frame["trade_date"].astype(str) >= start.isoformat())
+            & (frame["trade_date"].astype(str) <= end.isoformat())
+        ]
+        for row in frame.itertuples(index=False):
+            ticker = str(row.ticker)
+            day = str(row.trade_date)
+            last_daily[ticker] = max(last_daily.get(ticker, day), day)
+            if ticker in lifecycle.index:
+                source = lifecycle.loc[ticker]
+                effective_from = source.get("effective_from")
+                effective_to = source.get("effective_to")
+                if pd.notna(effective_from) and day < str(effective_from):
+                    before_list += 1
+                if pd.notna(effective_to) and day > str(effective_to):
+                    after_delist += 1
+            if ticker.endswith(".BJ") and day < BSE_LAUNCH.isoformat():
+                bse_before_launch += 1
+    for path in sorted((store / PIT_UNIVERSE_ENDPOINT).glob("year=*/month=*/part.parquet")):
+        pit = _read_parquet_strict(path)
+        if pit.empty:
+            continue
+        for row in pit.itertuples(index=False):
+            if pd.notna(row.list_date) and str(row.list_date) and str(row.trade_date) < str(row.list_date):
+                pit_list_date_mismatch += 1
+    return {
+        "delist_date_inclusive_contract": True,
+        "daily_before_list_rows": before_list,
+        "daily_after_delist_rows": after_delist,
+        "BSE_rows_before_2021_11_15": bse_before_launch,
+        "bak_basic_rows_before_reported_list_date": pit_list_date_mismatch,
+        "last_daily_ticker_count": len(last_daily),
+        "complete": not any((before_list, after_delist, bse_before_launch, pit_list_date_mismatch)),
+    }
+
+
 def _state_unit_summary(
-    state: Mapping[str, Any], endpoint: str, expected: Sequence[str],
+    state: Mapping[str, Any], endpoint: str, expected: Sequence[str], store: Path | None = None,
 ) -> dict[str, Any]:
     records = {unit: _unit_record(state, endpoint, unit) for unit in expected}
-    complete = [unit for unit, record in records.items() if record and record.get("status") == "complete"]
-    empty = [unit for unit, record in records.items() if record and record.get("status") == "empty"]
     failed = [unit for unit, record in records.items() if record and record.get("status") == "failed"]
-    pending = sorted(set(expected) - set(complete) - set(empty))
+    accounting = []
+    for unit in expected:
+        record = records.get(unit) or {}
+        source_rows = int(record.get("source_row_count", 0))
+        landed = int(record.get("landed_a_row_count", record.get("row_count", 0)))
+        excluded = int(record.get("known_excluded_row_count", 0))
+        unknown = int(record.get("quarantined_unknown_row_count", 0))
+        equation = source_rows == landed + excluded + unknown
+        request_bound = bool(
+            store is not None
+            and _unit_request_receipts_valid(endpoint, unit, record, store)
+        )
+        artifact_bound = False
+        if store is not None and isinstance(record.get("unit_artifact_receipts"), Mapping):
+            try:
+                observed_artifacts = _unit_artifact_receipts(store, endpoint, unit, record)
+                artifact_bound = bool(
+                    dict(record["unit_artifact_receipts"]) == observed_artifacts
+                    and _unit_artifact_counts_match(observed_artifacts, record)
+                )
+            except SpineError:
+                artifact_bound = False
+        shard_coverage = (
+            _shard_coverage(state, store, endpoint, unit, record)
+            if store is not None else None
+        )
+        accounting.append({
+            "unit": unit,
+            "status": record.get("status", "pending"),
+            "source_rows": source_rows,
+            "landed_A_rows": landed,
+            "known_excluded_rows": excluded,
+            "quarantined_unknown_rows": unknown,
+            "equation_holds": equation,
+            "request_bound": request_bound,
+            "artifact_bound": artifact_bound,
+            "collection_method": record.get("collection_method", "pending"),
+            "expected_ticker_count": (
+                shard_coverage.get("expected_ticker_count") if shard_coverage else None
+            ),
+            "completed_ticker_count": (
+                shard_coverage.get("completed_ticker_count") if shard_coverage else None
+            ),
+            "expected_ticker_sha256": (
+                shard_coverage.get("expected_ticker_sha256") if shard_coverage else None
+            ),
+            "observed_ticker_sha256": (
+                shard_coverage.get("observed_ticker_sha256") if shard_coverage else None
+            ),
+            "shard_coverage_complete": (
+                shard_coverage.get("complete") if shard_coverage else None
+            ),
+            "complete": bool(
+                store is not None and _unit_done(state, store, endpoint, unit)
+            ),
+        })
+    equations_hold = all(row["equation_holds"] for row in accounting)
+    requests_bound = all(row["request_bound"] for row in accounting)
+    artifacts_bound = all(row["artifact_bound"] for row in accounting)
+    unknown_rows = sum(row["quarantined_unknown_rows"] for row in accounting)
+    complete = [
+        row["unit"] for row in accounting
+        if row["status"] == "complete" and row["complete"]
+    ]
+    empty = [
+        row["unit"] for row in accounting
+        if row["status"] == "empty" and row["complete"]
+    ]
+    incomplete = [row["unit"] for row in accounting if not row["complete"]]
+    pending = [unit for unit in incomplete if unit not in failed]
+    unmatched = sum(
+        int(record.get("unmatched_master_row_count", 0))
+        for record in records.values() if record
+    )
     return {
         "expected_units": len(expected),
         "complete_units": len(complete),
         "empty_units": len(empty),
         "failed_units": len(failed),
         "pending_units": len(pending),
-        "complete": len(complete) + len(empty) == len(expected),
-        "failed_or_pending_sample": pending[:20],
-        "unmatched_master_row_count": sum(
-            int(record.get("unmatched_master_row_count", 0))
+        "complete": bool(
+            len(complete) + len(empty) == len(expected)
+            and equations_hold and requests_bound and artifacts_bound
+            and unknown_rows == 0 and unmatched == 0
+        ),
+        "failed_or_pending_sample": incomplete[:20],
+        "source_row_count": sum(row["source_rows"] for row in accounting),
+        "landed_A_row_count": sum(row["landed_A_rows"] for row in accounting),
+        "known_excluded_row_count": sum(row["known_excluded_rows"] for row in accounting),
+        "quarantined_unknown_row_count": unknown_rows,
+        "source_accounting_equations_hold": equations_hold,
+        "all_units_request_bound": requests_bound,
+        "all_units_artifact_bound": artifacts_bound,
+        "unmatched_master_row_count": unmatched,
+        "request_receipt_count": sum(
+            sum(
+                1 for receipt in record.get("request_receipts", [])
+                if isinstance(receipt, Mapping)
+                and receipt.get("path")
+                and (store is None or (store / str(receipt["path"])).is_file())
+            )
             for record in records.values() if record
         ),
+        "unit_accounting": accounting,
     }
 
 
@@ -1754,17 +4314,27 @@ def _name_history_receipts(store: Path) -> tuple[list[dict[str, Any]], int, str]
     return receipts, total_rows, hasher.hexdigest()
 
 
-def _reference_source_receipts(store: Path) -> list[dict[str, Any]]:
+def _reference_source_receipts(
+    store: Path, generation_id: str | None = None,
+) -> list[dict[str, Any]]:
     """Hash every landed raw reference artifact before derived compilation."""
     receipts: list[dict[str, Any]] = []
+    generation = generation_id or _current_reference_generation(store, required=False)
+    if generation is None:
+        return receipts
     bse = _file_receipt(
-        store / "reference" / "source_bse_mapping.parquet",
+        _reference_source_path(store, generation, "bse_mapping"),
         store,
         ["o_code", "n_code"],
     )
     if bse is not None:
         receipts.append(bse)
-    for path in sorted((store / "reference" / "source_stock_basic").glob("*.parquet")):
+    generation_dir = _reference_generation_dir(store, generation)
+    for path in sorted((generation_dir / "source_stock_basic").glob("*.parquet")):
+        receipt = _file_receipt(path, store, ["ts_code"])
+        assert receipt is not None
+        receipts.append(receipt)
+    for path in sorted((generation_dir / "source_fund_basic").glob("*.parquet")):
         receipt = _file_receipt(path, store, ["ts_code"])
         assert receipt is not None
         receipts.append(receipt)
@@ -1785,32 +4355,54 @@ def build_completeness_manifest(
 ) -> dict[str, Any]:
     """Build and atomically publish the completeness/ore receipt."""
     state = load_state(store)
-    manifest_endpoints = tuple(dict.fromkeys((*DEFAULT_ENDPOINTS, *endpoints)))
+    manifest_endpoints = tuple(dict.fromkeys((PIT_UNIVERSE_ENDPOINT, *DEFAULT_ENDPOINTS, *endpoints)))
     generated_at = generated_at or _utc_now().isoformat()
-    master_path = store / "reference" / "security_master.parquet"
-    aliases_path = store / "reference" / "identity_aliases.parquet"
+    generation = _current_reference_generation(store, required=False)
+    master_path = (
+        _reference_derived_path(store, "security_master.parquet", generation)
+        if generation else store / "reference" / "__absent_security_master.parquet"
+    )
+    aliases_path = (
+        _reference_derived_path(store, "identity_aliases.parquet", generation)
+        if generation else store / "reference" / "__absent_identity_aliases.parquet"
+    )
+    classification_path = (
+        _reference_derived_path(store, "instrument_classification.parquet", generation)
+        if generation else store / "reference" / "__absent_instrument_classification.parquet"
+    )
     sessions_path = store / "reference" / "market_sessions.parquet"
     master = _read_parquet_strict(master_path) if master_path.exists() else pd.DataFrame()
     aliases = _read_parquet_strict(aliases_path) if aliases_path.exists() else pd.DataFrame()
     sessions = _read_parquet_strict(sessions_path) if sessions_path.exists() else pd.DataFrame()
-    stock_basic_units = [f"{exchange}:{status}" for exchange in EXCHANGES for status in LIST_STATUSES]
+    stock_basic_units = [
+        f"{generation}:{exchange}:{status}" for exchange in EXCHANGES for status in LIST_STATUSES
+    ] if generation else []
+    fund_basic_units = [f"{generation}:{status}" for status in FUND_STATUSES] if generation else []
     calendar_units = [
         f"{exchange}:{_compact(segment_start)}:{_compact(segment_end)}"
         for _, segment_start, segment_end in _year_segments(CALENDAR_HISTORY_START, end)
         for exchange in CALENDAR_EXCHANGES
     ]
-    namechange_units = [str(year) for year in range(NAME_HISTORY_START_YEAR, end.year + 1)]
+    namechange_units = [
+        f"{year}:{_compact(min(end, date(year, 12, 31)))}"
+        for year in range(NAME_HISTORY_START_YEAR, end.year + 1)
+    ]
     reference_source_units = {
-        "stock_basic": _state_unit_summary(state, "stock_basic", stock_basic_units),
-        "bse_mapping": _state_unit_summary(state, "bse_mapping", ["all"]),
-        "trade_cal": _state_unit_summary(state, "trade_cal", calendar_units),
-        "namechange": _state_unit_summary(state, "namechange", namechange_units),
+        "stock_basic": _state_unit_summary(state, "stock_basic", stock_basic_units, store),
+        "bse_mapping": _state_unit_summary(
+            state, "bse_mapping", [f"{generation}:all"] if generation else [], store,
+        ),
+        "fund_basic": _state_unit_summary(state, "fund_basic", fund_basic_units, store),
+        "trade_cal": _state_unit_summary(state, "trade_cal", calendar_units, store),
+        "namechange": _state_unit_summary(state, "namechange", namechange_units, store),
     }
-    reference_source_artifacts = _reference_source_receipts(store)
+    reference_source_artifacts = _reference_source_receipts(store, generation)
     reference_ready = bool(
         not master.empty
         and not aliases.empty
+        and classification_path.exists()
         and sessions_path.exists()
+        and generation is not None
         and all(summary["complete"] for summary in reference_source_units.values())
         and all(receipt["duplicate_key_rows"] == 0 for receipt in reference_source_artifacts)
     )
@@ -1819,19 +4411,20 @@ def build_completeness_manifest(
     endpoints_complete = True
     for endpoint in manifest_endpoints:
         expected = _expected_endpoint_units(store, start, end, endpoint)
-        records = {unit: _unit_record(state, endpoint, unit) for unit in expected}
-        complete = sorted(unit for unit, record in records.items() if record and record.get("status") == "complete")
-        empty = sorted(unit for unit, record in records.items() if record and record.get("status") == "empty")
-        failed = sorted(unit for unit, record in records.items() if record and record.get("status") == "failed")
-        pending = sorted(set(expected) - set(complete) - set(empty))
+        unit_summary = _state_unit_summary(state, endpoint, expected, store)
         partitions, totals = _partition_receipts(store, endpoint)
         daily_key_coverage = (
             _dense_key_coverage_vs_daily(store, endpoint, start, end)
             if endpoint in {"daily_basic", "stk_limit"} else None
         )
-        not_applicable = endpoint == "stock_st" and not expected and end < ST_DAILY_START
+        not_applicable = bool(
+            not expected and (
+                (endpoint == "stock_st" and end < ST_DAILY_START)
+                or (endpoint == PIT_UNIVERSE_ENDPOINT and end < PIT_UNIVERSE_START)
+            )
+        )
         endpoint_complete = (
-            (not_applicable or (bool(expected) and not pending))
+            (not_applicable or (bool(expected) and unit_summary["complete"]))
             and totals["duplicate_key_rows"] == 0
             and (daily_key_coverage is None or daily_key_coverage["complete"])
         )
@@ -1840,14 +4433,26 @@ def build_completeness_manifest(
             "required": True,
             "not_applicable": not_applicable,
             "expected_session_units": len(expected),
-            "complete_units": len(complete),
-            "empty_units": len(empty),
-            "failed_units": len(failed),
-            "pending_units": len(pending),
-            "coverage_pct": round(100.0 * (len(complete) + len(empty)) / len(expected), 6)
+            "complete_units": unit_summary["complete_units"],
+            "empty_units": unit_summary["empty_units"],
+            "failed_units": unit_summary["failed_units"],
+            "pending_units": unit_summary["pending_units"],
+            "coverage_pct": round(
+                100.0 * (unit_summary["complete_units"] + unit_summary["empty_units"])
+                / len(expected), 6,
+            )
             if expected else (100.0 if not_applicable else 0.0),
             "complete": endpoint_complete,
-            "failed_or_pending_sample": pending[:20],
+            "failed_or_pending_sample": unit_summary["failed_or_pending_sample"],
+            "source_row_count": unit_summary["source_row_count"],
+            "landed_A_row_count": unit_summary["landed_A_row_count"],
+            "known_excluded_row_count": unit_summary["known_excluded_row_count"],
+            "quarantined_unknown_row_count": unit_summary["quarantined_unknown_row_count"],
+            "source_accounting_equations_hold": unit_summary["source_accounting_equations_hold"],
+            "all_units_request_bound": unit_summary["all_units_request_bound"],
+            "all_units_artifact_bound": unit_summary["all_units_artifact_bound"],
+            "request_receipt_count": unit_summary["request_receipt_count"],
+            "unit_accounting": unit_summary["unit_accounting"],
             "daily_key_coverage": daily_key_coverage,
             "partitions": partitions,
             **totals,
@@ -1855,7 +4460,7 @@ def build_completeness_manifest(
 
     event_sources_ready = all(
         endpoint in endpoint_receipts and endpoint_receipts[endpoint]["complete"]
-        for endpoint in ("daily", "stk_limit")
+        for endpoint in ("daily", "daily_basic", "stk_limit")
     )
     canonical_event_substrate = (
         build_canonical_event_substrate(store, start, end)
@@ -1865,6 +4470,7 @@ def build_completeness_manifest(
             "positive_volume_rows": 0,
             "source_limit_rows": 0,
             "no_published_limit_rows": 0,
+            "daily_basic_limit_status_audited_rows": 0,
             "daily_source": "tushare.daily_unadjusted_nominal",
             "limit_source": "tushare.stk_limit_exact_daily",
             "integer_price_unit": "CNY_cents",
@@ -1873,7 +4479,7 @@ def build_completeness_manifest(
         }
     )
 
-    coverage = build_daily_security_coverage(store, start, end, state)
+    coverage = build_daily_security_coverage(store, start, end, state, generation)
     coverage_receipt: dict[str, Any] = {
         "completed_session_rows": len(coverage),
         "sessions_with_known_suspensions": int(coverage.get(
@@ -1906,12 +4512,35 @@ def build_completeness_manifest(
         ]
     else:
         coverage_receipt["worst_session_sample"] = []
+    coverage_receipt["artifact"] = _file_receipt(
+        store / "coverage" / "daily_security_coverage.parquet",
+        store, ["trade_date"],
+    )
 
     security_receipt = _file_receipt(master_path, store, ["ticker"])
     alias_receipt = _file_receipt(aliases_path, store, ["alias_ticker", "alias_kind"])
+    classification_receipt = _file_receipt(
+        classification_path, store, ["scope_classification", "ticker"],
+    )
     session_receipt = _file_receipt(sessions_path, store, ["trade_date"])
     name_history_partitions, name_history_rows, name_history_semantic = _name_history_receipts(store)
     state_receipt = _json_file_receipt(store / "collection_state.json", store)
+    try:
+        authorization = _load_persisted_authorization(store)
+    except SpineError:
+        # Publish an explicit incomplete receipt instead of leaving an older
+        # complete manifest as the apparent last word after auth tampering.
+        authorization = None
+    authorization_as_of = _parse_date(generated_at[:10])
+    authorization_ready = bool(
+        authorization
+        and authorization.get("required_scope_satisfied")
+        and _parse_date(authorization["issued_on"]) <= authorization_as_of
+        and _parse_date(authorization["expires_on"]) >= authorization_as_of
+    )
+    request_receipts = _request_receipts_summary(store)
+    provenance = _collector_provenance()
+    lifecycle = _lifecycle_edge_reconciliation(store, master, start, end)
     exchange_counts = (
         {str(k): int(v) for k, v in master["exchange"].value_counts().sort_index().items()}
         if not master.empty else {}
@@ -1926,24 +4555,44 @@ def build_completeness_manifest(
             (sessions["trade_date"].astype(str) >= start.isoformat())
             & (sessions["trade_date"].astype(str) <= end.isoformat())
         ).sum())
+    pit_lifecycle = _pit_lifecycle_reconciliation(store, master, sessions, start, end)
 
     manifest: dict[str, Any] = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "generated_at": generated_at,
         "authority": AUTHORITY,
         "source": SOURCE_NAME,
+        "deployment_status": (
+            "operational_backfill_gate_code_reviewed"
+            if BULK_HISTORICAL_BACKFILL_READY
+            else "foundation_only_no_live_entitlement_or_scalable_backfill"
+        ),
+        "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
+        "authorization": authorization,
+        "authorization_ready": authorization_ready,
+        "provenance": provenance,
+        "request_receipts": request_receipts,
         "collection_state": state_receipt,
         "requested_range": {"start": start.isoformat(), "end": end.isoformat()},
         "complete": bool(
-            reference_ready
+            BULK_HISTORICAL_BACKFILL_READY
+            and authorization_ready
+            and reference_ready
             and endpoints_complete
+            and pit_lifecycle["complete"]
             and coverage_receipt["complete"]
             and canonical_event_substrate["ready"]
+            and lifecycle["complete"]
         ),
         "reference": {
             "ready": reference_ready,
+            "generation_id": generation,
+            "generation_pointer": _json_file_receipt(
+                store / "reference" / "current_generation.json", store,
+            ),
             "security_master": security_receipt,
             "identity_aliases": alias_receipt,
+            "instrument_classification": classification_receipt,
             "market_sessions": session_receipt,
             "security_count": len(master),
             "identity_alias_count": len(aliases),
@@ -1960,8 +4609,10 @@ def build_completeness_manifest(
             "name_history_semantic_sha256": name_history_semantic,
         },
         "endpoints": endpoint_receipts,
+        "pit_lifecycle_reconciliation": pit_lifecycle,
         "canonical_event_substrate": canonical_event_substrate,
         "daily_security_coverage": coverage_receipt,
+        "lifecycle_edge_reconciliation": lifecycle,
         "contracts": {
             "identity": {
                 "repo_ticker_suffixes": {"SSE": ".SS", "SZSE": ".SZ", "BSE": ".BJ"},
@@ -1989,12 +4640,55 @@ def build_completeness_manifest(
                 "pre_2016_source": "tushare.namechange name inference",
                 "pre_2016_completeness": "partial_not_exact_daily_membership",
             },
+            "point_in_time_universe": {
+                "source": "tushare.bak_basic exact trade_date",
+                "exact_daily_start": PIT_UNIVERSE_START.isoformat(),
+                "pre_2016_completeness": "no_independent_daily_universe_witness",
+                "reconciliation_law": (
+                    "bak_basic corroborates lifecycle eligibility; expected daily/shard universe "
+                    "is lifecycle union PIT and post-2016 mismatches block completeness"
+                ),
+                "contract": TUSHARE_BAK_BASIC_DOC_URL,
+            },
+            "source_row_accounting": {
+                "equation": "source_rows = landed_A_rows + known_excluded_rows + quarantined_unknown_rows",
+                "completion_law": "every unit equation holds and quarantined_unknown_rows == 0",
+                "known_exclusion_source": (
+                    "independent tushare.fund_basic identities plus official SSE/SZSE "
+                    "B-share code families"
+                ),
+                "fund_contract": TUSHARE_FUND_BASIC_DOC_URL,
+                "sse_code_contract": SSE_SECURITY_CODE_GUIDE_URL,
+                "szse_code_contract": SZSE_SECURITY_CODE_RANGE_URL,
+            },
+            "authorization": {
+                "gate": (
+                    "written vendor grant or complete institution entitlement/delegation chain, "
+                    "pinned by a separately controlled out-of-band hash allowlist before first request"
+                ),
+                "service_agreement": TUSHARE_SERVICE_AGREEMENT_URL,
+                "boolean_bypass": False,
+            },
+            "cap_fallback": {
+                "endpoints": ["daily", "daily_basic", "stk_limit"],
+                "method": "resumable exact-date per-A-ticker shards with union/dedup/coverage",
+                "fair_slice_requests_per_unit": SHARD_CALLS_PER_UNIT_SLICE,
+                "long_horizon_status": (
+                    "code_reviewed_operational"
+                    if BULK_HISTORICAL_BACKFILL_READY
+                    else "unexercised_non_operational_requires_ticker_range_redesign"
+                ),
+                "range_shard_required_for_promotion": True,
+            },
             "price_basis": {
                 "daily": "unadjusted nominal OHLC; pre_close is ex-rights adjusted vendor field",
                 "pro_bar": "not called by this direct-REST collector",
             },
             "price_limit": {
-                "event_authority": "tushare.daily unadjusted quotes joined to tushare.stk_limit",
+                "event_authority": (
+                    "tushare.daily unadjusted quotes joined to tushare.stk_limit; "
+                    "touches/seals require integer-cent equality"
+                ),
                 "quote_tick_cny": str(A_SHARE_PRICE_TICK),
                 "canonical_storage": "integer CNY cents",
                 "calculated_rounding": "Decimal ROUND_HALF_UP (四舍五入), never round/np.round",
@@ -2009,17 +4703,25 @@ def build_completeness_manifest(
         },
         "data_gaps": [
             "stock_st exact daily history begins 2016-01-01; earlier namechange inference is partial",
+            "bak_basic exact PIT A-share universe witness begins 2016-01-01; pre-2016 remains a named gap",
             "TuShare trade_cal documentation does not advertise BSE; BSE sessions are derived from SSE=SZSE",
-            "a response at a documented row cap is rejected as truncated, not marked complete",
             "endpoint entitlement and sustained live throughput were not exercised in this code-only wave",
-            "provider redistribution/retention rights for a bulk cache require operator confirmation",
+            "exact-date per-ticker cap recovery is non-operational for long history; ticker-range shards are required",
             "no bitemporal vendor-revision ledger; a same-key re-fetch replaces the local materialization",
-            "collection is single-writer; no cross-process or distributed collection lock is implemented",
+            "single-host advisory writer lock is implemented; no distributed multi-host lease exists",
             "the existing Yahoo raw plane is split-adjusted and is incompatible with exact legal limit history",
         ],
         "ore_ledger": {
             "constructed": [
                 "listed+delisted+paused+approved security lifecycle by exchange/status",
+                "written authorization grant-document hash/scope/expiry gate before network",
+                "atomic immutable reference generations plus fund-based out-of-scope identities",
+                "post-2016 exact-day bak_basic PIT A-share universe witness",
+                "lossless source row accounting with unknown quarantine",
+                "request-bound exact schemas and persisted request/response receipts",
+                "deterministic but operationally gated exact-date per-ticker cap fallback",
+                "discarded cap-probe accounting and authoritative child-response row reconciliation",
+                "terminal landed/classification/request artifacts bound by recomputed semantic receipts",
                 "BSE old-code to canonical 920-code identity aliases",
                 "SSE/SZSE exact-calendar consensus with session positions",
                 "nominal daily OHLCV plus explicit positive-volume state",
@@ -2028,6 +4730,7 @@ def build_completeness_manifest(
                 "per-session lifecycle/daily/suspension completeness reconciliation",
                 "integer-cent nominal event substrate joined to vendor exact daily upper/lower limits",
                 "Decimal half-up limit validator with one-tick separation and floor rules",
+                "strict vendor-bound OHLC and integer-equality touch/seal classification",
             ],
             "not_tested": [
                 "pro_bar adjusted-price construction",
@@ -2035,12 +4738,15 @@ def build_completeness_manifest(
                 "direct BSE trade-calendar endpoint",
                 "minute, auction, order-book, seal-time or fillability history",
                 "live bulk backfill, provider throughput and purchased-addon entitlement",
+                "scalable ticker-range cap recovery and physical HTTP retry-budget accounting",
                 "historical reconciliation of calculated bounds against vendor stk_limit across all rule eras",
             ],
         },
     }
-    unsigned_bytes = _canonical_json_bytes(manifest)
-    _assert_configured_token_absent(unsigned_bytes, artifact="completeness_manifest(unsigned)")
+    stable_identity_payload = dict(manifest)
+    stable_identity_payload.pop("generated_at", None)
+    unsigned_bytes = _canonical_json_bytes(stable_identity_payload)
+    _assert_configured_token_absent(unsigned_bytes, artifact="completeness_manifest(stable_identity)")
     manifest["manifest_identity_sha256"] = hashlib.sha256(unsigned_bytes).hexdigest()
     manifest_path = store / "completeness_manifest.json"
     _atomic_json(manifest_path, manifest)
@@ -2058,15 +4764,17 @@ def collect(
     allow_bulk: bool = False,
     refresh_reference: bool = False,
     dry_run: bool = False,
+    authorization_receipt: Path | None = None,
+    authorization_trust_allowlist: Path | None = None,
     query: Callable[..., pd.DataFrame | None] | None = None,
     require_token: bool = True,
     now: Callable[[], datetime] = _utc_now,
 ) -> dict[str, Any]:
     """Run one bounded/resumable collection wave and publish a manifest.
 
-    A missing token is an honest no-op before any store write.  Tests can inject
-    ``query`` and set ``require_token=False``; production callers cannot pass a
-    token value through this API.
+    A missing token is an honest no-op before any store write.  Every real or
+    injected request path still requires a hash-bound written authorization;
+    ``require_token=False`` is not an authorization bypass.
     """
     start_date = _parse_date(start)
     end_date = _parse_date(end)
@@ -2104,38 +4812,61 @@ def collect(
             "requests_made": 0,
             "error": "TUSHARE_TOKEN is not configured; spine collection made no writes",
         }
-
-    collector = TushareAShareSpineCollector(
-        Path(store), query=query, now=now, max_requests=max_requests,
-    )
-    capped = False
-    stage = "reference"
-    try:
-        reference_ready = collector.collect_reference(refresh=refresh_reference)
-        if not reference_ready:
-            stage = "reference_incomplete"
-        else:
-            stage = "calendar"
-            calendar_ready = collector.collect_calendars(CALENDAR_HISTORY_START, end_date)
-            if not calendar_ready:
-                stage = "calendar_incomplete"
-            else:
-                stage = "name_history"
-                collector.collect_name_history(end_date)
-                stage = "daily"
-                collector.collect_daily(start_date, end_date, selected)
-                stage = "complete"
-    except RequestBudgetExhausted:
-        capped = True
-        stage = f"{stage}_request_cap"
-
-    # A manifest can be built only after the reference/session spine exists.
-    manifest: dict[str, Any] | None = None
-    if (Path(store) / "reference" / "market_sessions.parquet").exists():
-        manifest = build_completeness_manifest(
-            Path(store), start_date, end_date, selected,
-            generated_at=now().astimezone(timezone.utc).isoformat(),
+    if authorization_receipt is None or authorization_trust_allowlist is None:
+        raise SpineError(
+            "--authorization-receipt and --authorization-trust-allowlist are required "
+            "before any TuShare request"
         )
+    grant = load_authorization_grant(
+        Path(authorization_receipt), trust_allowlist=Path(authorization_trust_allowlist),
+        as_of=now().astimezone(timezone.utc).date(),
+    )
+    if not BULK_HISTORICAL_BACKFILL_READY:
+        raise SpineError(
+            "full-A collector is foundation-only: scalable ticker-range cap fallback "
+            "has not been code-reviewed, so collection is disabled before store/network use"
+        )
+
+    store_path = _validate_private_store_path(Path(store))
+    with spine_store_lock(store_path):
+        _persist_authorization_grant(store_path, grant)
+        collector = TushareAShareSpineCollector(
+            store_path, query=query, now=now, max_requests=max_requests,
+            authorization=grant,
+        )
+        capped = False
+        stage = "reference"
+        try:
+            reference_ready = collector.collect_reference(refresh=refresh_reference)
+            if not reference_ready:
+                stage = "reference_incomplete"
+            else:
+                stage = "calendar"
+                calendar_ready = collector.collect_calendars(CALENDAR_HISTORY_START, end_date)
+                if not calendar_ready:
+                    stage = "calendar_incomplete"
+                else:
+                    stage = "pit_universe"
+                    pit_ready = collector.collect_pit_universe(start_date, end_date)
+                    if not pit_ready:
+                        stage = "pit_universe_incomplete"
+                    else:
+                        stage = "name_history"
+                        collector.collect_name_history(end_date)
+                        stage = "daily"
+                        collector.collect_daily(start_date, end_date, selected)
+                        stage = "complete"
+        except RequestBudgetExhausted:
+            capped = True
+            stage = f"{stage}_request_cap"
+
+        # A manifest can be built only after the reference/session spine exists.
+        manifest: dict[str, Any] | None = None
+        if (store_path / "reference" / "market_sessions.parquet").exists():
+            manifest = build_completeness_manifest(
+                store_path, start_date, end_date, selected,
+                generated_at=now().astimezone(timezone.utc).isoformat(),
+            )
     return {
         "dry_run": False,
         "no_op": False,
@@ -2144,7 +4875,7 @@ def collect(
         "stage": stage,
         "failures": collector.failures,
         "manifest_complete": bool(manifest and manifest.get("complete")),
-        "manifest_path": str(Path(store) / "completeness_manifest.json") if manifest else None,
+        "manifest_path": str(store_path / "completeness_manifest.json") if manifest else None,
     }
 
 
@@ -2169,11 +4900,21 @@ def _main() -> None:
                         help="refresh stock_basic and BSE aliases before resuming")
     parser.add_argument("--dry-run", action="store_true",
                         help="network-free/no-write plan summary")
+    parser.add_argument(
+        "--authorization-receipt", type=Path,
+        help="JSON receipt bound to a written vendor/institution authorization grant",
+    )
+    parser.add_argument(
+        "--authorization-trust-allowlist", type=Path,
+        help="separately controlled allowlist pinning the receipt and complete grant chain",
+    )
     args = parser.parse_args()
     result = collect(
         start=args.start, end=args.end, store=args.store, endpoints=args.endpoints,
         max_requests=args.max_requests, allow_bulk=args.allow_bulk,
         refresh_reference=args.refresh_reference, dry_run=args.dry_run,
+        authorization_receipt=args.authorization_receipt,
+        authorization_trust_allowlist=args.authorization_trust_allowlist,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
