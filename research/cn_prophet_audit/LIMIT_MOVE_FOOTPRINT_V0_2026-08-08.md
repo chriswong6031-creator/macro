@@ -1,6 +1,7 @@
 # CN LIMIT-MOVE FOOTPRINT v0 — event catalog, base rates, pre-registered features
 
-**Charter:** `research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.8(f), ANTICIPATION program.
+**Charter:** `research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.8(f), ANTICIPATION program
+(PR #4972 — unmerged at measurement time; see **Feature-set freeze** under STAGE 3).
 **Instrument:** `research/cn_prophet_audit/limit_move_footprint_v0.py` ·
 **Frozen numbers:** `LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.json` · **Runtime:** ~32s ·
 **Window:** 2011-01-01 → 2026-08-07 · **Basis:** `data/china_stocks_raw` (nominal OHLCV).
@@ -71,10 +72,39 @@ whole-catalog *counts* appear, they are plain sums and are labelled as such.)
     feature was substituted.** That swap is the exact move this design exists to block.
 12. **Absolute probabilities stay small.** 3.93× on a 1.25% base rate is 4.88%. Every *stable*
     feature cell describes an event that still does not happen ~95% of the time.
-13. **Side finding, flagged not acted on:** `data/china_microstructure/limit_events.parquet` is
-    **missing pre-2026-07 history for 34 names** (14 absent entirely), carrying 1,059 of the
-    1,065-event strict-basis delta — while its own `backfill` flag reads `True` for all 3,751
-    market-days, so the flag does not surface the hole. CN data-plane repair, out of scope here.
+13. **Side finding, flagged not acted on — and UNDERCOUNTED; corrected below.**
+    `data/china_microstructure/limit_events.parquet` is missing pre-2026-07 history, carrying
+    1,059 of the 1,065-event strict-basis delta — while its own `backfill` flag reads `True` for
+    all 3,751 market-days, so the flag does not surface the hole. **This instrument measured that
+    hole as 34 names (14 absent entirely), and that figure is an undercount by construction:** the
+    cross-check intersects panel ∩ tape, so a name absent from the tape *entirely* is structurally
+    invisible to it. The true pre-heal hole, measured by PR #5059 (`claude/cn-limit-w1-dataheal`),
+    is **314 names (264 absent entirely)**. See **DATA-PLANE AS-OF** immediately below. CN
+    data-plane repair, out of scope here.
+
+---
+
+## DATA-PLANE AS-OF
+
+**DATA-PLANE AS-OF — 2026-08-08T11:43:55Z, PRE-HEAL.** Stages 1-3 (the event catalog, base rates,
+feature lifts) are computed exclusively from `data/china_stocks_raw` and are unaffected by anything
+below. Two blocks are not: `crosscheck_limit_events_tape` and `crosscheck_zt_pool` read stores that
+PR #5059 (`claude/cn-limit-w1-dataheal`, open at the time of writing) heals.
+
+(1) `data/china_microstructure/limit_events.parquet` was missing pre-2026-07 history for **314
+names (264 absent entirely)**, not the 34/14 in Summary #13 — this instrument's cross-check
+intersects panel ∩ tape and cannot see a name absent from the tape. #5059 takes the store 60,428 →
+71,463 rows / 1,578 → 1,782 tickers, so the 97.2% per-ticker exact-agree figure and the
+1,065-event delta are both stale, and both move in this instrument's favour.
+
+(2) `data/china_zt_pool/pool.parquet` stamped the RUN date, not the trade date: 11 of 47 stored
+dates were non-sessions (818 rows), each a byte-identical re-serve of the prior session. Those rows
+never joined this panel, so the **99.79% vs 91.13% 连板 agreement carrying the definition
+adjudication is UNCHANGED**; only coverage percentages move (3,846 → ~3,102 rows; match rate 24.7%
+→ ~30.6% tolerant / 12.9% → ~16.0% strict).
+
+Nothing in the definition adjudication or any base rate or lift changes on the healed plane.
+**Re-run against a post-#5059 main before quoting either cross-check block.**
 
 ---
 
@@ -121,6 +151,7 @@ score: the vendor covers the whole market, our store covers a curated slice.)
 | Ticker-days | 4,981,168 · usable after exclusions 4,843,576 |
 | Boards | main 1,243 · chinext 351 · star 242 · **bse 0** |
 | Sector coverage | 93.68% of ticker-days (`data/china_search/members.parquet`, CURRENT mapping applied to 15y of history) |
+| f4 sector-heat membership | f4's sector count uses **today's** store membership on every historical date; 250 names entered the store on 2026-08-05. (Store-entry count is an out-of-band observation of the store, not a cell this instrument computes.) Early-history sector counts are therefore taken over a smaller cohort than the row count implies. |
 | Excluded bars | zero-volume/suspension 133,781 · ex-div suspect 621 · IPO window 2,793 |
 | Pairs dropped | 22,205 total — **8,522** from the >10-calendar-day suspension rule, **13,683** from a next bar that exists but is itself excluded, plus each name's final in-window bar |
 | Usability asymmetry | A bar's usability at T+1 is a property of T+1, so conditioning on it is a filter a trader at T could not apply. Applied uniformly to numerator and denominator, so lift ratios are essentially unaffected; the base rates are rates **among usable next bars**. |
@@ -291,10 +322,17 @@ different denominator and are not the same statistic.)
 
 ## STAGE 3 — PRE-REGISTERED FOOTPRINT SET
 
-**Eight features, named in the charter before any of this ran.** Measured at the T-1 close,
-predicting a limit-up close at T. **Fit / inspect on the first 70% of trading dates (2011-01-05 →
-2021-11-25, 2,646 dates, 2.86M rows); REPORTED on the last 30% holdout only (2021-11-26 →
-2026-08-06, 1,135 dates, 1.96M rows).**
+**Feature-set freeze.** Feature set frozen at eight in code before the first result was read, per
+the §6.8(f) charter (`research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.8(f), PR #4972 —
+unmerged at measurement time; it charters "≤8 features, named before measuring" but does not
+enumerate them). **The freeze ordering is not independently checkable from committed artifacts —
+treat as a FROZEN-SET design, not a committed pre-registration.** What *is* checkable is what the
+design did under pressure: when f2 turned out to be unmeasurable on these stores, the set stayed at
+eight and **no ninth feature was substituted** (see *f2 turnover ratio — printed NULL* below).
+
+Measured at the T-1 close, predicting a limit-up close at T. **Fit / inspect on the first 70% of
+trading dates (2011-01-05 → 2021-11-25, 2,646 dates, 2.86M rows); REPORTED on the last 30% holdout
+only (2021-11-26 → 2026-08-06, 1,135 dates, 1.96M rows).**
 
 | # | Feature | Status |
 |---|---|---|
@@ -353,7 +391,12 @@ because the rest was correctly reclassified as limit closes (see the adjudicatio
 | f1 volume z20 | 3.28× | 3.40× |
 | f4 sector heat | 2.83× | 3.78× |
 | f7 dist 52w low | 2.55× | 2.90× |
-| *f5 near-limit-prev* | *56.1× (n=56)* | *75.7× (n=57) — **UNSTABLE*** |
+| *f5 near-limit-prev* | *56.1× (n=56) — **UNSTABLE*** | *75.7× (n=57) — **UNSTABLE*** |
+
+Both f5 cells carry the same UNSTABLE label: n=56/57 with no interval, per-name median 0.00, era
+control 0.00× — the f5 lifts are not evidence about the pre-registered feature under the adopted
+primary definition (93.4% of the near-limit class is absorbed by the tolerant rule: `near_limit_up`
+2,017 vs `near_limit_up_strict` 30,417).
 
 All six stable features sign-stable on both. **The per-name-first column is nearly empty here**
 (19 of 351 chinext names, 7 of 242 star names qualify): at a ~0.33% base rate a name does not
@@ -424,6 +467,11 @@ that would unblock it is Stage 4 #2.
   across an independent time block**, not a p-value — and 2015 alone carries 18.6% of main-board
   limit-ups, entirely inside the fit window.
 - **Lift is not probability.** 3.93× on a 1.25% base is **4.88%**.
+- **No day or regime control, and the buckets are not implementable as stated.** All buckets are
+  pooled across the holdout with no day/regime control; an unquantified share of every lift is
+  time-clustering rather than cross-sectional separation — f4 in particular selects hot market
+  days. Bucket boundaries are the holdout's own quantiles (not knowable at date t); per-date
+  ranking would be the implementable form.
 - **f4's effective sample is not its row count.** Sector heat takes one value per (date, sector),
   roughly 1,135 × 11 distinct values in the holdout, not 1.29M independent observations. Its
   2.39× is not peer to the per-name features.

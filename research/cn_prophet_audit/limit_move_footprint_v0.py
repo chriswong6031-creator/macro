@@ -13,17 +13,19 @@ WHAT THIS IS
                P(limit-up at T+1 | N consecutive boards at T), and the limit-down
                mirror; split by board type and by year; pooled AND per-name-first.
                These are the numbers a 打板 strategy actually lives on.  Ours.
-      STAGE 3  PRE-REGISTERED FOOTPRINT SET — exactly EIGHT features, named in the
-               charter BEFORE any of this ran (see PREREGISTERED_FEATURES below),
-               measured at the T-1 close against a limit-up at T.  Decile lift, fit
-               on the first 70% of the window, REPORTED on the last 30% holdout only.
-               Pooled and per-name-first.  A feature whose holdout lift disagrees in
-               sign with its fit-window lift is printed UNSTABLE, never averaged.
+      STAGE 3  FROZEN FOOTPRINT SET — exactly EIGHT features (see PREREGISTERED_FEATURES
+               below, and read the freeze caveat there), frozen in code before the first
+               result was read, measured at the T-1 close against a limit-up at T.
+               Decile lift, fit on the first 70% of the window, REPORTED on the last 30%
+               holdout only.  Pooled and per-name-first.  A feature whose holdout lift
+               disagrees in sign with its fit-window lift is printed UNSTABLE, never
+               averaged.
 
     The design IS the defence.  Thousands of names x a rare event is the richest
     false-discovery environment in this repo; a post-hoc feature search over it would
-    manufacture a beautiful, worthless answer.  So the feature set is frozen at eight,
-    written down first, and the holdout is never looked at until the fit window is done.
+    manufacture a beautiful, worthless answer.  So the feature set is frozen at eight
+    before any result is read, and the holdout is never looked at until the fit window
+    is done.
 
 WHAT IT IS NOT
     Not a promotion, not a gate, not a ranker, not a claim that any cell is tradeable.
@@ -94,18 +96,27 @@ WINDOW_END = pd.Timestamp("2026-08-07")       # last bar in the raw store at bui
 
 # TWO limit-close definitions, both measured, both printed.
 #
-#   STRICT (PRIMARY)  close >= round(prev_close*(1+w), 2).  The market-true rule and the
-#                     rule the committed house tape (data/china_microstructure) uses.
-#   TOLERANT          close >= limit_price * (1 - 0.002).  The build charter's "at or within
-#                     0.2% of the limit" wording, carried as a full parallel column.
+#   TOLERANT (PRIMARY)  close >= limit_price * (1 - 0.002).  The build charter's "at or within
+#                       0.2% of the limit" wording.  THE HEADLINE RULE: it drives lianban,
+#                       y_limit_up, f4, f5 and every Stage-1 / Stage-2 / Stage-3 cell.
+#   STRICT              close >= round(prev_close*(1+w), 2).  The market-true arithmetic and the
+#                       rule the committed house tape (data/china_microstructure) uses, carried
+#                       as a full parallel column and as the Stage-3 robustness target.
 #
-# The charter's tolerance was specified as a rounding cushion.  MEASURED, it is not one: on a
-# 10% board it admits every close from about +9.78% to +10.00%, which roughly DOUBLES the
-# strict event count, and it swallows most of the near-limit class the same charter asks us
-# to count separately (see near_limit_up vs near_limit_up_strict in the Stage-1 output; the
-# tolerance would starve pre-registered feature f5).  So STRICT is the
-# headline and TOLERANT rides beside it, rather than the other way round.  Deviation disclosed
-# in the report; both numbers are in the JSON for every Stage-1 and Stage-2 cell.
+# This instrument's FIRST answer was the other way round, and measurement overturned it.  The
+# first reading was that the tolerance roughly DOUBLES the strict event count and swallows most
+# of the near-limit class the same charter asks us to count separately (see near_limit_up vs
+# near_limit_up_strict in the Stage-1 output), so it had to be a widening — and STRICT was made
+# primary.  But of the marginal events (tolerant admits, strict rejects) the median sits exactly
+# at the full band and a large share price strictly ABOVE it, which no real limit-up can do: the
+# tolerance is absorbing noise in this third-party feed, not sweeping in near-limit closes.  The
+# one outside check, the independently scraped china_zt_pool vendor pool, agrees with the
+# tolerant 连板 reconstruction far more often than with the strict one.  So TOLERANT is the
+# headline and STRICT rides beside it.  See the definition_adjudication and crosscheck_zt_pool
+# blocks in the JSON for the computed evidence; the reversal is disclosed in the report.  Both
+# numbers are in the JSON for every Stage-1 and Stage-2 cell.  The cost is real and printed: the
+# tolerance also absorbs a minority of genuine near-limit closes, which is why f5's class is
+# thin and why the strict column is kept in full rather than dropped.
 LIMIT_CLOSE_TOL = 0.002
 # Charter definition: near-limit is a move >= 95% of the band (9.5% on a 10% board,
 # 19% on a 20% board) that did NOT close at the limit.
@@ -123,9 +134,14 @@ MIN_PER_NAME_COND_N = 10                       # per-name base-rate floor (condi
 N_DECILES = 10
 PARITY_SAMPLE = 25                             # tickers pinned against _detect_limit_events
 
-# THE PRE-REGISTERED SET.  Eight features, named in masterplan §6.8(f) and in the build
-# charter BEFORE this file was written.  Adding a ninth after seeing these results is
-# the exact sin this instrument exists to prevent.
+# THE FROZEN SET.  Feature set frozen at eight in code before the first result was read, per
+# the §6.8(f) charter (research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f), PR #4972 —
+# unmerged at measurement time; it charters "≤8 features, named before measuring" but does not
+# enumerate them).  The freeze ordering is not independently checkable from committed artifacts
+# — treat as a FROZEN-SET design, not a committed pre-registration.  What IS checkable and does
+# the actual work: adding a ninth after seeing these results is the exact sin this instrument
+# exists to prevent, and when f2 turned out to be unmeasurable on these stores the set stayed at
+# eight rather than substituting a ninth (see the f2 null in STAGE 3).
 PREREGISTERED_FEATURES = OrderedDict([
     ("f1_vol_z20", "volume z-score of the T-1 bar vs its own prior 20 bars"),
     ("f2_turnover_ratio", "turnover ratio (volume / shares outstanding) at T-1"),
@@ -1222,7 +1238,8 @@ def stage3(panel: pd.DataFrame) -> dict:
                 "holdout_deciles": ht,
                 "per_name_holdout": _per_name_lift(hb, feat, "y_limit_up"),
             }
-        # Robustness: same holdout, same features, the charter's TOLERANT target instead.
+        # Robustness: same holdout, same features, the STRICT target instead of the primary
+        # (tolerant) one — the house tape's rule, run as a cross-check on the headline.
         rb = {}
         for feat in PREREGISTERED_FEATURES:
             if feat not in usable.columns:
@@ -1335,28 +1352,43 @@ def main() -> int:
 
     payload = {
         "instrument": "research/cn_prophet_audit/limit_move_footprint_v0.py",
-        "charter": "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f)",
+        "charter": ("research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f) (PR #4972 — "
+                    "unmerged at measurement time; it charters '≤8 features, named before "
+                    "measuring' but does not enumerate them). Feature set frozen at eight in "
+                    "code before the first result was read; that ordering is not independently "
+                    "checkable from committed artifacts — treat as a FROZEN-SET design, not a "
+                    "committed pre-registration."),
         "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
         "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "runtime_sec": None,
         "definitions": {
-            "limit_up_close": "PRIMARY (strict): close >= round(prev_close*(1+w), 2). The "
-                              "market-true rule and the committed house tape's rule.",
-            "limit_up_close_tolerant": f"close >= round(prev_close*(1+w),2) * (1 - "
-                                       f"{LIMIT_CLOSE_TOL}) — the build charter's "
-                                       f"at-or-within-0.2% wording, measured in full and "
-                                       f"reported in parallel, NOT used as the headline.",
-            "why_strict_is_primary": (
-                "MEASURED, not assumed: the 0.2% tolerance is not a rounding cushion. On a 10% "
-                "board it admits every close from ~+9.78% to +10.00%. See "
+            "limit_up_close": f"PRIMARY (tolerant): close >= round(prev_close*(1+w),2) * (1 - "
+                              f"{LIMIT_CLOSE_TOL}) — the build charter's at-or-within-0.2% "
+                              f"wording. THE HEADLINE RULE: it drives lianban, y_limit_up, f4, "
+                              f"f5 and every Stage-1 / Stage-2 / Stage-3 cell.",
+            "limit_up_close_strict": "close >= round(prev_close*(1+w), 2). The market-true "
+                                     "arithmetic and the committed house tape's rule, measured "
+                                     "in full and carried as a parallel column and as the "
+                                     "Stage-3 robustness target, NOT used as the headline.",
+            "why_tolerant_is_primary": (
+                "MEASURED, not assumed: the 0.2% tolerance is a feed-precision cushion, not a "
+                "widening. See definition_adjudication for the computed evidence — of the "
+                "marginal events (tolerant admits, strict rejects) the median sits exactly at "
+                "the full band and a large share price strictly ABOVE it, which no real limit-up "
+                "can do, so the tolerance is absorbing noise in this third-party feed rather "
+                "than sweeping in near-limit closes. The only outside check, the independently "
+                "scraped china_zt_pool vendor pool, agrees with the tolerant 连板 reconstruction "
+                "far more often than with the strict one (see crosscheck_zt_pool). See "
                 "stage1_event_catalog.by_board for the computed consequences per board — "
-                "tolerant_over_strict_x (the event-count inflation) and near_limit_up vs "
-                "near_limit_up_strict (the near-limit class the tolerance absorbs, which is what "
-                "pre-registered feature f5 is built from). Both definitions are carried through "
-                "Stage 1 and Stage 2; Stage 3 uses strict with a tolerant-target robustness "
+                "primary_over_strict_x (the primary-to-strict event-count ratio) and "
+                "near_limit_up vs near_limit_up_strict (the near-limit class the tolerance "
+                "absorbs, which is what pre-registered feature f5 is built from, and the reason "
+                "f5's class is thin). Both definitions are carried through Stage 1 and Stage 2; "
+                "Stage 3 uses the primary (tolerant) target with a strict-target robustness "
                 "column. No figure in this note is hardcoded."),
             "near_limit_up": f"return >= {NEAR_LIMIT_FRAC} * w (9.5% on a 10% board, 19% on a "
-                             f"20% board) AND not a STRICT limit close",
+                             f"20% board) AND not a PRIMARY (tolerant) limit close. Measured "
+                             f"against the strict flag too: near_limit_up_strict.",
             "lianban_N": "consecutive limit-up closes ending on the bar; any non-limit bar, "
                          "including an excluded one, resets it to 0",
             "first_board": "lianban == 1", "continuation": "lianban >= 2",

@@ -1,18 +1,19 @@
 {
   "instrument": "research/cn_prophet_audit/limit_move_footprint_v0.py",
-  "charter": "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f)",
+  "charter": "research/PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md §6.8(f) (PR #4972 — unmerged at measurement time; it charters '≤8 features, named before measuring' but does not enumerate them). Feature set frozen at eight in code before the first result was read; that ordering is not independently checkable from committed artifacts — treat as a FROZEN-SET design, not a committed pre-registration.",
   "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
   "generated_utc": "2026-08-08T11:43:55Z",
   "runtime_sec": 32.1,
   "definitions": {
-    "limit_up_close": "PRIMARY (strict): close >= round(prev_close*(1+w), 2). The market-true rule and the committed house tape's rule.",
-    "limit_up_close_tolerant": "close >= round(prev_close*(1+w),2) * (1 - 0.002) — the build charter's at-or-within-0.2% wording, measured in full and reported in parallel, NOT used as the headline.",
-    "why_strict_is_primary": "MEASURED, not assumed: the 0.2% tolerance is not a rounding cushion. On a 10% board it admits every close from ~+9.78% to +10.00%. See stage1_event_catalog.by_board for the computed consequences per board — tolerant_over_strict_x (the event-count inflation) and near_limit_up vs near_limit_up_strict (the near-limit class the tolerance absorbs, which is what pre-registered feature f5 is built from). Both definitions are carried through Stage 1 and Stage 2; Stage 3 uses strict with a tolerant-target robustness column. No figure in this note is hardcoded.",
-    "near_limit_up": "return >= 0.95 * w (9.5% on a 10% board, 19% on a 20% board) AND not a STRICT limit close",
+    "limit_up_close": "PRIMARY (tolerant): close >= round(prev_close*(1+w),2) * (1 - 0.002) — the build charter's at-or-within-0.2% wording. THE HEADLINE RULE: it drives lianban, y_limit_up, f4, f5 and every Stage-1 / Stage-2 / Stage-3 cell.",
+    "limit_up_close_strict": "close >= round(prev_close*(1+w), 2). The market-true arithmetic and the committed house tape's rule, measured in full and carried as a parallel column and as the Stage-3 robustness target, NOT used as the headline.",
+    "why_tolerant_is_primary": "MEASURED, not assumed: the 0.2% tolerance is a feed-precision cushion, not a widening. See definition_adjudication for the computed evidence — of the marginal events (tolerant admits, strict rejects) the median sits exactly at the full band and a large share price strictly ABOVE it, which no real limit-up can do, so the tolerance is absorbing noise in this third-party feed rather than sweeping in near-limit closes. The only outside check, the independently scraped china_zt_pool vendor pool, agrees with the tolerant 连板 reconstruction far more often than with the strict one (see crosscheck_zt_pool). See stage1_event_catalog.by_board for the computed consequences per board — primary_over_strict_x (the primary-to-strict event-count ratio) and near_limit_up vs near_limit_up_strict (the near-limit class the tolerance absorbs, which is what pre-registered feature f5 is built from, and the reason f5's class is thin). Both definitions are carried through Stage 1 and Stage 2; Stage 3 uses the primary (tolerant) target with a strict-target robustness column. No figure in this note is hardcoded.",
+    "near_limit_up": "return >= 0.95 * w (9.5% on a 10% board, 19% on a 20% board) AND not a PRIMARY (tolerant) limit close. Measured against the strict flag too: near_limit_up_strict.",
     "lianban_N": "consecutive limit-up closes ending on the bar; any non-limit bar, including an excluded one, resets it to 0",
     "first_board": "lianban == 1",
     "continuation": "lianban >= 2",
-    "w": "engine.china_microstructure.limit_width_for_date — star 20%, chinext 20% on/after 2020-08-24 else 10%, main 10%, bse 30%"
+    "w": "engine.china_microstructure.limit_width_for_date — star 20%, chinext 20% on/after 2020-08-24 else 10%, main 10%, bse 30%",
+    "definitions_corrected": "2026-08-09: definitions text corrected to match the computed tolerant-primary rule; no numbers changed"
   },
   "convention_note": "Board + width resolved by engine.china_microstructure.limit_width_for_date / _board_from_ticker (imported). A SECOND implementation exists at engine/china_signals.py:37-50 (board_type) which is neither era-aware (returns 20% for a ChiNext name on any date, including before CHINEXT_WIDE_DATE 2020-08-24) nor ST-aware (never narrows to 5%). That one feeds scripts/build_china_library.py -> cn_snapshot -> data/china_pick_lab/fires.jsonl, which is why fires.jsonl carries only widths {10.0, 20.0} and never 5.0. This instrument uses the era-aware module, so its widths will not match fires.jsonl on pre-2020-08-24 ChiNext bars.",
   "definition_adjudication": {
