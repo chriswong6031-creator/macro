@@ -4,9 +4,10 @@
 There is deliberately no date-range, ticker-list, or backfill interface.  The
 default mode is a dry plan which performs no network call and no write.  A caller
 must pass both ``--execute`` and an explicit ``--output-root`` for the single
-partition requested on the command line, and execution still fails closed unless
-the separately provisioned written vendor authorization or institutional-contract
-gate is satisfied.
+partition requested on the command line, and execution still fails closed unless the
+license-authority reference is provisioned and allowlisted.  The operative basis is
+``operator_attestation_verified``, pinned to the operator-attested license recorded in
+``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md``.
 """
 
 from __future__ import annotations
@@ -92,6 +93,18 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="one repo-canonical .SS or .SZ ticker",
     )
+
+    for endpoint, description in (
+        ("stk_auction_o", "one session's 09:30 opening call-auction bar"),
+        ("stk_auction_c", "one session's 15:00 closing call-auction bar"),
+    ):
+        call_auction = subparsers.add_parser(endpoint, help=description)
+        _add_common_arguments(call_auction)
+        call_auction.add_argument(
+            "--ticker",
+            required=True,
+            help="one repo-canonical .SS or .SZ ticker",
+        )
     return parser
 
 

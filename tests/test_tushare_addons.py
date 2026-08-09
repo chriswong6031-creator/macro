@@ -18,19 +18,35 @@ ROOT = Path(__file__).resolve().parents[1]
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 HISTORICAL_NOW = datetime(2026, 8, 9, 12, tzinfo=timezone.utc)
 LICENSE_REFERENCE = "ab" * 32
+ATTESTATION_REFERENCE = "cd" * 32
+SCOPE_TERMS = [
+    "collection_into_licensed_stores_and_research_consumption",
+    "product_surfaces_ship_via_the_normal_commissioning_path",
+    "no_signal_or_strategy_authority",
+]
+# Epistemic, not contractual: no licensing statement can retire any of these.
+EPISTEMIC_NONCLAIMS = [
+    "context_only_not_signal_authority",
+    "product_surfaces_ship_via_the_normal_commissioning_path",
+    "no_fillability_or_execution_claim",
+    "no_complete_historical_backfill_claim",
+    "post_close_rows_are_unclassified_not_a_completeness_claim",
+    "no_level2_order_book_or_queue_position",
+]
 
 
 @pytest.fixture(autouse=True)
 def provision_synthetic_license_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Default every test onto the OPERATIVE basis, with a synthetic digest."""
     monkeypatch.setenv(
         addons.LICENSE_AUTHORITY_ENV,
-        addons.LICENSE_AUTHORITY_GATE_VALUE,
+        addons.OPERATOR_ATTESTATION_GATE_VALUE,
     )
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, ATTESTATION_REFERENCE)
     monkeypatch.setattr(
         addons,
-        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
-        frozenset({LICENSE_REFERENCE}),
+        "TRUSTED_OPERATOR_ATTESTATION_SHA256S",
+        frozenset({ATTESTATION_REFERENCE}),
     )
 
 
@@ -101,6 +117,24 @@ def auction_frame() -> pd.DataFrame:
     )
 
 
+def auction_oc_frame(*, trade_date: str = "20260807") -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "ts_code": "000001.SZ",
+                "trade_date": trade_date,
+                "close": 10.1,
+                "open": 10.0,
+                "high": 10.15,
+                "low": 9.95,
+                "vol": 10_000,
+                "amount": 100_500,
+                "vwap": 10.05,
+            }
+        ]
+    )
+
+
 class FakeQuery:
     def __init__(
         self,
@@ -118,13 +152,15 @@ class FakeQuery:
         self.calls.append((api_name, dict(kwargs)))
         if api_name == "trade_cal":
             exchange = str(kwargs["exchange"])
+            requested = str(kwargs["start_date"])
+            prior = pd.Timestamp(requested) - pd.Timedelta(days=1)
             return pd.DataFrame(
                 [
                     {
                         "exchange": exchange,
-                        "cal_date": str(kwargs["start_date"]),
+                        "cal_date": requested,
                         "is_open": self.open_by_exchange[exchange],
-                        "pretrade_date": "20260806",
+                        "pretrade_date": prior.strftime("%Y%m%d"),
                     }
                 ]
             )
@@ -149,7 +185,7 @@ def minute_request() -> addons.PilotRequest:
     )
 
 
-def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
+def test_plan_is_no_network_no_write_and_names_the_operative_authority(
     tmp_path: Path,
 ) -> None:
     output = tmp_path / "store"
@@ -161,20 +197,62 @@ def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
     assert plan["license_authority_gate"] == {
         "required_for_execute": True,
         "state": "not_evaluated_plan_only",
-        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
+        "operative_basis": "operator_attestation_verified",
+        "operative_authority_document": (
+            "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
+        ),
+        "dormant_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
         "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
     }
     assert not output.exists()
 
+
+def test_no_endpoint_is_blocked_unconfirmed_after_the_auction_oc_admission(
+    tmp_path: Path,
+) -> None:
+    """The o/c hold is released; the receipt key stays so readers see the state."""
+    assert dict(addons.BLOCKED_UNCONFIRMED_ENDPOINTS) == {}
+    output = tmp_path / "store"
     for endpoint in ("stk_auction_o", "stk_auction_c"):
-        with pytest.raises(addons.CollectionHeld) as held:
-            addons.pilot_plan(
-                addons.PilotRequest(endpoint=endpoint, trade_date="2026-08-07"),
-                output_root=output,
-            )
-        assert held.value.reason_code.endswith("written_entitlement_confirmation")
+        plan = addons.pilot_plan(
+            addons.PilotRequest(
+                endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+            ),
+            output_root=output,
+        )
+        assert plan["blocked_unconfirmed_endpoints"] == {}
+        assert plan["declared_access_context"] == (
+            "operator_attested_2026-08-09_takeover_doc"
+        )
     assert not output.exists()
+
+
+def test_admitted_auction_oc_contracts_pin_their_official_documents() -> None:
+    documents = {"stk_auction_o": 353, "stk_auction_c": 354}
+    for endpoint, document_id in documents.items():
+        contract = addons.ENDPOINTS[endpoint]
+        assert contract.document_id == document_id
+        assert contract.document_url.endswith(f"doc_id={document_id}")
+        assert contract.contract_source == "official_doc_page"
+        # Docs 353/354 publish this exact output field list, in this order.
+        assert contract.vendor_fields == (
+            "ts_code",
+            "trade_date",
+            "close",
+            "open",
+            "high",
+            "low",
+            "vol",
+            "amount",
+            "vwap",
+        )
+        assert contract.max_rows == 10_000
+        units = {field.name: field.unit for field in contract.output_schema}
+        # Neither doc states a unit for 成交量/成交额, so the schema must disclose
+        # the gap rather than assert shares/CNY the minute contract can assert.
+        assert "no unit" in str(units["volume"])
+        assert "no unit" in str(units["amount"])
+        assert units["close"] == "CNY/share"
 
 
 def test_licensed_default_output_root_is_gitignored() -> None:
@@ -223,25 +301,24 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
     assert (
         access["observation_basis"] == "valid_nonempty_rows_returned_for_this_request"
     )
-    assert access["nonclaims"] == [
-        "not_proof_of_purchase",
-        "not_proof_of_payment",
-        "not_proof_of_license_or_commercial_use_rights",
-        "not_proof_of_future_access",
-        "not_proof_of_trial_absence",
-    ]
+    # The licensing disclaimers were retired by the operator-attested license; the
+    # receipt now CITES the authority instead, naming its kind so a reader can weigh
+    # the basis rather than inherit a conclusion.
+    assert "nonclaims" not in access
+    assert access["license_basis"] == {
+        "authority_kind": "operator_attested_license_declaration",
+        "authority_reference_sha256": ATTESTATION_REFERENCE,
+    }
     assert receipt["license_authority_gate"] == {
-        "gate_state": "satisfied_for_bounded_metadata_only_pilot",
-        "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
-        "authority_reference_sha256": LICENSE_REFERENCE,
+        "gate_state": "satisfied_under_operator_attested_license",
+        "accepted_basis": "operator_attestation_verified",
+        "authority_kind": "operator_attested_license_declaration",
+        "authority_document": (
+            "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
+        ),
+        "authority_reference_sha256": ATTESTATION_REFERENCE,
         "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
-        "scope_nonclaims": [
-            "no_commercial_use_authority",
-            "no_product_publication_authority",
-            "no_team_sharing_or_redistribution_authority",
-            "no_signal_or_strategy_authority",
-        ],
+        "scope_terms": SCOPE_TERMS,
     }
     assert receipt["request"]["maximum_vendor_calls"] == 3
     assert receipt["request"]["range_or_bulk_mode"] is False
@@ -347,7 +424,9 @@ def test_license_gate_fails_before_vendor_call_or_partition(
     monkeypatch.delenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV)
     query = FakeQuery("stk_mins", minute_frame())
 
-    with pytest.raises(addons.CollectionHeld, match="written_vendor_authorization"):
+    with pytest.raises(
+        addons.CollectionHeld, match="license_authority_reference_required"
+    ):
         addons.collect_pilot(
             minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
         )
@@ -356,12 +435,13 @@ def test_license_gate_fails_before_vendor_call_or_partition(
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
 
 
-def test_operator_controlled_license_sha_cannot_self_attest(
+def test_env_supplied_digest_alone_cannot_open_the_gate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """The allowlist, not the environment, decides. An env var never self-attests."""
     monkeypatch.setattr(
         addons,
-        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
+        "TRUSTED_OPERATOR_ATTESTATION_SHA256S",
         frozenset(),
     )
     query = FakeQuery("stk_mins", minute_frame())
@@ -373,6 +453,250 @@ def test_operator_controlled_license_sha_cannot_self_attest(
 
     assert query.calls == []
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_dormant_vendor_allowlist_is_empty_and_still_admits_nobody(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The vendor-authorization slot stays empty; only the attested basis is live."""
+    assert addons.TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S == frozenset()
+    monkeypatch.setenv(
+        addons.LICENSE_AUTHORITY_ENV, addons.LICENSE_AUTHORITY_GATE_VALUE
+    )
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
+    query = FakeQuery("stk_mins", minute_frame())
+
+    with pytest.raises(addons.CollectionHeld, match="vendor_license_authority_not"):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_shipped_allowlist_pins_exactly_the_operator_foundation_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The live pin is the operator-authored foundation doc, by digest."""
+    monkeypatch.undo()  # drop the synthetic allowlist the autouse fixture installs
+    pinned = "ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"
+    assert addons.TRUSTED_OPERATOR_ATTESTATION_SHA256S == frozenset({pinned})
+    assert addons.OPERATOR_ATTESTATION_GATE_VALUE == "operator_attestation_verified"
+    assert addons.LICENSE_AUTHORITY_DOCUMENT == (
+        "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
+    )
+
+    # The pinned revision of that document arrives via PR #5159; this branch is based
+    # on main, where the same path still holds the pre-ruling text.  Once #5159 is in
+    # the base, this stops skipping and starts proving the pin recomputes -- and will
+    # go RED if the operative authority document is ever edited without re-pinning.
+    import hashlib
+
+    authority = ROOT / addons.LICENSE_AUTHORITY_DOCUMENT
+    if not authority.exists():
+        pytest.skip("operative authority document is not on this ref")
+    digest = hashlib.sha256(authority.read_bytes()).hexdigest()
+    if digest != pinned:
+        pytest.skip(
+            "authority document on this ref predates the operator ruling "
+            "(pinned revision lands with PR #5159)"
+        )
+    assert digest == pinned
+
+
+def test_attested_basis_grants_collection_and_keeps_epistemic_nonclaims(
+    tmp_path: Path,
+) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
+    )
+
+    assert result.status == "written"
+    receipt = json.loads(
+        (Path(result.partition_path) / "receipt.json").read_text(encoding="utf-8")
+    )
+    gate = receipt["license_authority_gate"]
+    assert gate["gate_state"] == "satisfied_under_operator_attested_license"
+    assert gate["accepted_basis"] == "operator_attestation_verified"
+    assert gate["authority_kind"] == "operator_attested_license_declaration"
+    assert gate["authority_document"] == addons.LICENSE_AUTHORITY_DOCUMENT
+    assert gate["authority_reference_sha256"] == ATTESTATION_REFERENCE
+    assert gate["scope_terms"] == SCOPE_TERMS
+
+    # Licensing statements retire licensing disclaimers only.  Everything a licence
+    # cannot speak to survives verbatim.
+    assert receipt["nonclaims"] == EPISTEMIC_NONCLAIMS
+    access = receipt["access_observation_receipt"]
+    assert access["observation"] == "access_observed_at_request_time"
+    assert access["observation_basis"] == (
+        "valid_nonempty_rows_returned_for_this_request"
+    )
+
+
+def test_unknown_attestation_digest_fails_before_vendor_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, "ef" * 32)
+    query = FakeQuery("stk_mins", minute_frame())
+
+    with pytest.raises(
+        addons.CollectionHeld, match="operator_attestation_not_out_of_band_allowlisted"
+    ):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_neither_basis_accepts_the_other_basis_allowlisted_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An allowlisted digest is scoped to its own basis, not to any basis."""
+    monkeypatch.setattr(
+        addons,
+        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
+        frozenset({LICENSE_REFERENCE}),
+    )
+    query = FakeQuery("stk_mins", minute_frame())
+
+    # Attested basis presented with the vendor-allowlisted digest.
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
+    with pytest.raises(addons.CollectionHeld, match="operator_attestation_not"):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    # Vendor basis presented with the attestation-allowlisted digest.
+    monkeypatch.setenv(
+        addons.LICENSE_AUTHORITY_ENV, addons.LICENSE_AUTHORITY_GATE_VALUE
+    )
+    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, ATTESTATION_REFERENCE)
+    with pytest.raises(addons.CollectionHeld, match="vendor_license_authority_not"):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "frequency"),
+    [
+        ("stk_auction_o", "opening_call_auction"),
+        ("stk_auction_c", "closing_call_auction"),
+    ],
+)
+def test_auction_oc_pilots_write_partitions_and_preserve_a_no_trade_auction(
+    tmp_path: Path, endpoint: str, frequency: str
+) -> None:
+    query = FakeQuery(endpoint, auction_oc_frame())
+    result = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+        ),
+        output_root=tmp_path / endpoint,
+        query_fn=query,
+        now=HISTORICAL_NOW,
+    )
+
+    assert result.status == "written"
+    assert f"by_frequency={frequency}" in result.partition_path
+    assert [call[0] for call in query.calls] == ["trade_cal", "trade_cal", endpoint]
+    endpoint_params = query.calls[-1][1]
+    assert endpoint_params["trade_date"] == "20260807"
+    assert endpoint_params["ts_code"] == "000001.SZ"
+    # ts_type is a stk_auction (doc 369) parameter and must not leak to o/c.
+    assert "ts_type" not in endpoint_params
+
+    table = pq.read_table(Path(result.partition_path) / "part.parquet")
+    assert table.schema.metadata[b"endpoint"] == endpoint.encode()
+    assert table.column("vwap").to_pylist() == [10.05]
+    assert table.column("volume").to_pylist() == [10_000.0]
+
+    # A session that draws no matched order is preserved as null prices, never
+    # fabricated and never rejected as an integrity failure.
+    empty = auction_oc_frame()
+    for column in ("open", "high", "low", "close", "vwap"):
+        empty.loc[:, column] = float("nan")
+    empty.loc[:, "vol"] = 0
+    empty.loc[:, "amount"] = 0
+    quiet = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+        ),
+        output_root=tmp_path / f"{endpoint}-quiet",
+        query_fn=FakeQuery(endpoint, empty),
+        now=HISTORICAL_NOW,
+    )
+    quiet_table = pq.read_table(Path(quiet.partition_path) / "part.parquet")
+    assert quiet_table.column("close").to_pylist() == [None]
+    assert quiet_table.column("volume").to_pylist() == [0.0]
+
+
+@pytest.mark.parametrize("endpoint", ["stk_auction_o", "stk_auction_c"])
+def test_auction_oc_rejects_incoherent_ohlc_without_writing(
+    tmp_path: Path, endpoint: str
+) -> None:
+    frame = auction_oc_frame()
+    frame.loc[:, "low"] = 99.0
+    query = FakeQuery(endpoint, frame)
+
+    with pytest.raises(addons.CollectorIntegrityError, match="OHLC"):
+        addons.collect_pilot(
+            addons.PilotRequest(
+                endpoint=endpoint, trade_date="2026-08-07", ticker="000001.SZ"
+            ),
+            output_root=tmp_path,
+            query_fn=query,
+            now=HISTORICAL_NOW,
+        )
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("endpoint", ["stk_auction_o", "stk_auction_c"])
+def test_auction_oc_has_no_hold_on_history_but_holds_an_unpublished_session(
+    tmp_path: Path, endpoint: str
+) -> None:
+    """Docs 353/354 say 每天盘后更新, so only the CURRENT session is held."""
+    request = addons.PilotRequest(
+        endpoint=endpoint, trade_date="2026-08-10", ticker="000001.SZ"
+    )
+    query = FakeQuery(endpoint, auction_oc_frame(trade_date="20260810"))
+
+    with pytest.raises(addons.CollectionHeld, match="not_yet_published"):
+        addons.collect_pilot(
+            request,
+            output_root=tmp_path,
+            query_fn=query,
+            now=datetime(2026, 8, 10, 16, 29, tzinfo=SHANGHAI),
+        )
+    assert query.calls == []
+
+    published = addons.collect_pilot(
+        request,
+        output_root=tmp_path,
+        query_fn=FakeQuery(endpoint, auction_oc_frame(trade_date="20260810")),
+        now=datetime(2026, 8, 10, 16, 30, tzinfo=SHANGHAI),
+    )
+    assert published.status == "written"
+
+    # A deep-history session is admitted with no clock objection at all.
+    historical = addons.collect_pilot(
+        addons.PilotRequest(
+            endpoint=endpoint, trade_date="2023-03-01", ticker="000001.SZ"
+        ),
+        output_root=tmp_path,
+        query_fn=FakeQuery(endpoint, auction_oc_frame(trade_date="20230301")),
+        now=datetime(2026, 8, 10, 0, 1, tzinfo=SHANGHAI),
+    )
+    assert "by_trade_date=2023-03-01" in historical.partition_path
 
 
 def test_bse_pilots_fail_before_vendor_call_or_partition(tmp_path: Path) -> None:
@@ -582,7 +906,7 @@ def test_premarket_and_auction_single_ticker_partitions(tmp_path: Path) -> None:
     assert pq.read_table(Path(auction.partition_path) / "part.parquet").num_rows == 1
 
 
-@pytest.mark.parametrize("endpoint", ["stk_mins", "stk_premarket", "stk_auction"])
+@pytest.mark.parametrize("endpoint", sorted(addons.ENDPOINTS))
 def test_all_library_pilots_require_one_ticker_before_vendor_call(
     tmp_path: Path, endpoint: str
 ) -> None:
@@ -700,6 +1024,9 @@ def test_cli_defaults_to_plan_and_has_no_range_or_backfill_surface(
     endpoint_parsers = next(
         action.choices for action in parser._actions if getattr(action, "choices", None)
     )
+    # Every admitted library contract must be reachable from the CLI, and the CLI
+    # must not offer an endpoint the library has no contract for.
+    assert set(endpoint_parsers) == set(addons.ENDPOINTS)
     for endpoint_parser in endpoint_parsers.values():
         ticker_action = next(
             action for action in endpoint_parser._actions if action.dest == "ticker"
@@ -805,6 +1132,11 @@ def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> Non
     assert "--execute" in workflow_text
     assert "--start-date" not in workflow_text
     assert "--end-date" not in workflow_text
+    # The hosted review lane is Tier-2 shaped: its job gate names only the written
+    # vendor authority, which no attestation may satisfy.  Admitting stk_auction_o /
+    # stk_auction_c to the LIBRARY under Tier 1 deliberately did not widen it, so a
+    # dispatch there still cannot reach the newly admitted endpoints.
+    assert addons.OPERATOR_ATTESTATION_GATE_VALUE not in workflow_text
     assert "stk_auction_o" not in workflow_text
     assert "stk_auction_c" not in workflow_text
     assert "part.parquet" not in workflow_text
