@@ -13,6 +13,97 @@ types**, and ChiNext is never pooled across its 2020-08-24 band change.
 
 ---
 
+## AMENDMENT 2026-08-09 — SALVAGE PROVENANCE AND M5 RE-VALIDATION
+
+*Added at salvage. **Nothing below this heading rewrites a measurement.** The original prose is
+left exactly as authored, including the places where it describes the pre-heal store in the
+present tense; this section says which store each number was measured on and what changed when
+the measurement was repeated against the healed one.*
+
+**Provenance.** The lane that produced this file completed its measurement work and staged all
+four artifacts but died on a session limit before committing. They were recovered byte-verbatim
+(SHA-256 verified) and committed unmodified as the baseline; the re-validation below is a
+second commit on top of it.
+
+### (a) M5 store vintage — the phantom-date verdict
+
+M5 is the only section that reads `data/china_zt_pool/pool.parquet`. That store has two
+vintages, and the numbers above were computed on the **first**:
+
+| | pre-heal (as originally measured) | healed (L0 lane, PR #5059) |
+|---|---|---|
+| rows | 3,920 | 3,102 |
+| dates | 47 | 36 |
+| non-session dates | 11 (all Sat/Sun, 818 rows) | 0 |
+
+**VERDICT: CLEAN — and by construction, not by luck.** The concern was that 11 phantom dates
+(non-sessions whose payload is a byte-copy of the prior session) injected fake perfect-agreement
+rows into every M5 statistic. They did not, because the clean-date filter is a **triple gate**,
+not a plain calendar join — `board_ecology_regime_v1.py::m5_zt_pool` admits a date only if it is
+**(1)** not a weekend, **(2)** not a payload-hash duplicate of any earlier date, **and (3)**
+present in our own trading calendar. Every phantom failed all three independently, so any one of
+the gates alone would have excluded it. The lane diagnosed this defect before computing anything
+(M5 §1) rather than being rescued from it.
+
+**Re-run against the healed store confirms it empirically.** Re-running the whole instrument
+with L0's healed `pool.parquet` in place:
+
+- `clean_overlap_dates` is **the identical 36-date list**, unchanged.
+- **Every M5 measurement number is identical** — undercount (pooled 2.545×, vendor-consistent
+  3.269×, names-share 30.66%), detection agreement (recall 99.79%, precision 77.85%, strict
+  52.16% / 79.11%), trade-date alignment (949/951 same-day, 99.79% vs 14.72%), the ladder-share
+  table and the 炸板 Spearman.
+- `board_ecology_series_v1.parquet` is **SHA-256 identical** (`9dcbd89c…`), and **no I1–I6 /
+  M1 / M2 / M3 / M4 / M6 value moved** — as it must be, since those read only
+  `data/china_stocks_raw`.
+- The only differences are in M5's **date-semantics diagnostic**, which correctly re-describes
+  the store it was handed: `n_dates_raw` 47 → 36, `n_weekend_dates` 11 → 0,
+  `n_payload_duplicate_dates` 11 → 0, `dropped_dates` 11 → 0, and the `asof` field on six
+  Fridays (the heal preserves the true later scrape stamp instead of collapsing it onto `date`).
+
+**The healed-store numbers are primary.** They are also, for every published figure, the same
+numbers — so no table above needed correcting.
+
+**Stale-by-vintage references, left standing deliberately:** Summary #12, M5 §1, and ORE LEDGER
+rows 5 and 9 describe the 47-date pre-heal store in the present tense. That was true when
+measured and is the historical record of the diagnosis; the regenerated JSON now self-describes
+its own vintage instead of asserting a fixed one.
+
+### (b) Cross-store caveat — PR #5059 also moved the microstructure denominators
+
+**This lane's own numbers are unaffected** (basis: `data/china_stocks_raw`), but a consumer
+comparing these instruments against the microstructure tape must use the **healed vintage of
+both**. PR #5059 rewrote `limit_events.parquet` and `limit_tape.parquet` as well as
+`pool.parquet`: events 60,428 → 71,463 rows and 1,578 → 1,782 tickers, and the rebuilt tape's
+`universe_n` rises by a **median of 186 names per market-day (max 251)**, carrying its aggregates
+with it — `sealed_up_close` 26,970 → 31,906, `limit_down_count` 11,125 → 13,315, 2015
+`limit_up_count` 7,016 → 8,398. **That is a denominator change, not a discovery.** Any breadth
+ratio computed by joining this receipt's series to a pre-heal `limit_tape` would mix two
+universes and is invalid.
+
+### (c) ORE LEDGER — confirmed present as authored
+
+The ORE LEDGER below is the original lane's, not reconstructed. It carries 12 rows and covers
+every variant the salvage brief named as a minimum: 题材/concept heat (1), volume-weighted
+ecology (2), index-return interaction (3), northbound-flow interaction (4), zt_pool-universe
+regime replication (5), intraday heat propagation (6), 炸板率 leading-vs-coincident
+decomposition (7), and regime × per-name feature crosses (8). House-discipline basics are
+likewise present as authored: no board pooling (header), Wilson-understated/THIN disclosure
+(Summary #14, COVERAGE RECEIPT), era tables on every instrument, and a coverage receipt carrying
+the binding curated-universe caveat.
+
+### (d) One code change, prose only
+
+`board_ecology_regime_v1.py` had three hardcoded sentences that asserted the pre-heal store's
+defect regardless of what was on disk — on the healed store they printed beside their own zero
+counts as a flat self-contradiction ("`date` IS A SCRAPE-RUN STAMP… 0 of 36 dates fall on a
+Saturday or Sunday"). The M5 semantics verdict is now branched on the measured counts, and two
+hardcoded `47`s are now the measured date count / vintage-neutral wording. **The counts were
+always data-driven; only these sentences were not.** No measurement path was touched, and the
+re-run after the change moved nothing but those strings.
+
+---
+
 ## DECISION SUMMARY
 
 1. **The instruments exist, are committed, and pass the mania sanity check.** Six daily

@@ -3,8 +3,8 @@
   "lane": "CN LIMIT-MOVE ALPHA — Wave 1, L2 BOARD ECOLOGY / REGIME INSTRUMENTS",
   "builds_on": "research/cn_prophet_audit/limit_move_footprint_v0.py (PR #4999)",
   "tier": "display/audit — MEASUREMENT ONLY. Nothing here ranks, sizes, gates or admits.",
-  "generated_utc": "2026-08-09T00:20:46Z",
-  "runtime_sec": 16.8,
+  "generated_utc": "2026-08-09T03:49:09Z",
+  "runtime_sec": 66.7,
   "series_artifact": "research/cn_prophet_audit/board_ecology_series_v1.parquet",
   "definitions": {
     "limit_up_close_PRIMARY": "close >= round(prev_close*(1+w), 2) * (1 - 0.002) — v0's adjudicated primary. The 0.2% is a feed-precision cushion, not a widening: v0 measured 43.4% of the marginal events moving strictly MORE than the full band, which is impossible for a real limit-up.",
@@ -20972,12 +20972,12 @@
   },
   "m5_zt_pool_crossvalidation": {
     "date_semantics": {
-      "verdict": "`date` IS A SCRAPE-RUN STAMP, NOT A TRADE DATE, from 2026-07-02 onward. 11 of 47 dates fall on a Saturday or Sunday, and 11 of those 11 carry a payload BYTE-IDENTICAL to the preceding Friday's (compared on every column except date/asof). The vendor endpoint returns the last trading day's pool; the writer stamps it with the run date. The 2026-06-15 -> 2026-06-26 block (asof 2026-07-06) is a backfill and IS trade-date stamped — it contains no weekend rows at all — and 2026-06-30 / 2026-07-01 carry asof = date + 1, i.e. a trade date scraped the next morning. So the store changed semantics mid-life.",
-      "consequence_if_ignored": "Every Friday would be counted three times and every Monday's pool would be read as a Sunday's. Nothing downstream in this file uses a weekend or duplicate row.",
-      "ownership": "the L0 lane owns the heal (a trade-date column, or de-duplication at write time). This lane only refuses to be fooled by it.",
-      "n_dates_raw": 47,
-      "n_weekend_dates": 11,
-      "n_payload_duplicate_dates": 11,
+      "verdict": "CLEAN STORE: all 36 dates are weekdays and none carries a payload duplicate of an earlier date, so `date` is a trade date throughout. This is the POST-HEAL vintage (L0 lane, PR #5059). The pre-heal store carried 47 dates of which 11 were Saturdays/Sundays re-stamping the preceding Friday (818 phantom rows); the detection below found them from the data alone and dropped them, which is why every measured number in M5 is IDENTICAL on both vintages.",
+      "consequence_if_ignored": "None on this vintage — there is nothing left to be fooled by. The detection is kept as a standing tripwire: it is what PROVES the store is clean on each run rather than assuming it.",
+      "ownership": "healed by the L0 lane (PR #5059). This lane retains the detector against a regression in the collector.",
+      "n_dates_raw": 36,
+      "n_weekend_dates": 0,
+      "n_payload_duplicate_dates": 0,
       "per_date": [
         {
           "date": "2026-06-15",
@@ -21079,25 +21079,9 @@
           "date": "2026-07-03",
           "dow": "Fri",
           "rows": 108,
-          "asof": "2026-07-03",
+          "asof": "2026-07-05",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-07-04",
-          "dow": "Sat",
-          "rows": 108,
-          "asof": "2026-07-04",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-03"
-        },
-        {
-          "date": "2026-07-05",
-          "dow": "Sun",
-          "rows": 108,
-          "asof": "2026-07-05",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-03"
         },
         {
           "date": "2026-07-06",
@@ -21127,25 +21111,9 @@
           "date": "2026-07-10",
           "dow": "Fri",
           "rows": 92,
-          "asof": "2026-07-10",
+          "asof": "2026-07-12",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-07-11",
-          "dow": "Sat",
-          "rows": 92,
-          "asof": "2026-07-11",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-10"
-        },
-        {
-          "date": "2026-07-12",
-          "dow": "Sun",
-          "rows": 92,
-          "asof": "2026-07-12",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-10"
         },
         {
           "date": "2026-07-13",
@@ -21183,25 +21151,9 @@
           "date": "2026-07-17",
           "dow": "Fri",
           "rows": 33,
-          "asof": "2026-07-17",
+          "asof": "2026-07-19",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-07-18",
-          "dow": "Sat",
-          "rows": 33,
-          "asof": "2026-07-18",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-17"
-        },
-        {
-          "date": "2026-07-19",
-          "dow": "Sun",
-          "rows": 33,
-          "asof": "2026-07-19",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-17"
         },
         {
           "date": "2026-07-20",
@@ -21231,25 +21183,9 @@
           "date": "2026-07-24",
           "dow": "Fri",
           "rows": 40,
-          "asof": "2026-07-24",
+          "asof": "2026-07-26",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-07-25",
-          "dow": "Sat",
-          "rows": 40,
-          "asof": "2026-07-25",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-24"
-        },
-        {
-          "date": "2026-07-26",
-          "dow": "Sun",
-          "rows": 40,
-          "asof": "2026-07-26",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-24"
         },
         {
           "date": "2026-07-27",
@@ -21287,25 +21223,9 @@
           "date": "2026-07-31",
           "dow": "Fri",
           "rows": 99,
-          "asof": "2026-07-31",
+          "asof": "2026-08-02",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-08-01",
-          "dow": "Sat",
-          "rows": 99,
-          "asof": "2026-08-01",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-31"
-        },
-        {
-          "date": "2026-08-02",
-          "dow": "Sun",
-          "rows": 99,
-          "asof": "2026-08-02",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-07-31"
         },
         {
           "date": "2026-08-03",
@@ -21343,17 +21263,9 @@
           "date": "2026-08-07",
           "dow": "Fri",
           "rows": 74,
-          "asof": "2026-08-07",
+          "asof": "2026-08-08",
           "is_weekend": false,
           "payload_duplicate_of": null
-        },
-        {
-          "date": "2026-08-08",
-          "dow": "Sat",
-          "rows": 74,
-          "asof": "2026-08-08",
-          "is_weekend": true,
-          "payload_duplicate_of": "2026-08-07"
         }
       ]
     },
@@ -21395,52 +21307,7 @@
       "2026-08-06",
       "2026-08-07"
     ],
-    "dropped_dates": [
-      {
-        "date": "2026-07-04",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-05",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-11",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-12",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-18",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-19",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-25",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-07-26",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-08-01",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-08-02",
-        "reason": "weekend"
-      },
-      {
-        "date": "2026-08-08",
-        "reason": "weekend"
-      }
-    ],
+    "dropped_dates": [],
     "trade_date_alignment": {
       "same_day_hits": 949,
       "prev_day_hits": 140,
@@ -22043,7 +21910,7 @@
         "vendor_names_in_our_universe": 34
       }
     ],
-    "reading": "THE NUMBER THE PROGRAM NEEDS. Our regime dials are computed on a curated large/mid-cap slice; the vendor pool is market-wide. The undercount factor is how many real limit-ups exist for each one we see. It is measured on 36 clean weekday dates and its dispersion is printed beside it, because a STABLE undercount would mean our dials are the market's dials on a different scale (safe to quantile) while an UNSTABLE one would mean the bias itself moves with the regime (not safe). 47 dates is far too short a history to replicate any regime measurement on the vendor universe — that is in the ORE LEDGER, not here."
+    "reading": "THE NUMBER THE PROGRAM NEEDS. Our regime dials are computed on a curated large/mid-cap slice; the vendor pool is market-wide. The undercount factor is how many real limit-ups exist for each one we see. It is measured on 36 clean weekday dates and its dispersion is printed beside it, because a STABLE undercount would mean our dials are the market's dials on a different scale (safe to quantile) while an UNSTABLE one would mean the bias itself moves with the regime (not safe). 36 dates is far too short a history to replicate any regime measurement on the vendor universe — that is in the ORE LEDGER, not here."
   },
   "m6_mania_sanity": {
     "why": "these dials must light up in the two known manias. If they do not, they are broken, and no conditional above is worth reading.",
@@ -22466,7 +22333,7 @@
       },
       {
         "variant": "seal-quality dials (封单量 / 首封时间 aggregated to a market level)",
-        "why_not": "we hold seal_fund_yi for 47 dates only and no first-touch time at all. v0's Stage-4 #1 collector is the unblocker.",
+        "why_not": "we hold seal_fund_yi only for the short zt_pool vendor window (tens of sessions, see M5) and no first-touch time at all. v0's Stage-4 #1 collector is the unblocker.",
         "status": "blocked on a collector"
       },
       {

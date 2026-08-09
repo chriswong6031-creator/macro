@@ -1341,8 +1341,14 @@ def m5_zt_pool(panel: pd.DataFrame, ser: pd.DataFrame) -> dict:
 
     weekend_rows = [r for r in diag if r["is_weekend"]]
     weekend_dupes = [r for r in weekend_rows if r["payload_duplicate_of"]]
-    semantics = {
-        "verdict": (
+    n_dupe_all = sum(1 for r in diag if r["payload_duplicate_of"])
+    # This store now has TWO vintages on disk (pre- and post- the L0 heal, PR #5059), so the
+    # PROSE has to describe the one actually read. A fixed string would keep asserting the
+    # phantom-date problem after the heal removed it, and would print as a flat
+    # self-contradiction beside its own zero counts. The COUNTS were always data-driven; only
+    # these sentences were not.
+    if weekend_rows or n_dupe_all:
+        verdict = (
             "`date` IS A SCRAPE-RUN STAMP, NOT A TRADE DATE, from 2026-07-02 onward. "
             f"{len(weekend_rows)} of {len(dates)} dates fall on a Saturday or Sunday, and "
             f"{len(weekend_dupes)} of those {len(weekend_rows)} carry a payload BYTE-IDENTICAL "
@@ -1351,15 +1357,33 @@ def m5_zt_pool(panel: pd.DataFrame, ser: pd.DataFrame) -> dict:
             "the run date. The 2026-06-15 -> 2026-06-26 block (asof 2026-07-06) is a backfill "
             "and IS trade-date stamped — it contains no weekend rows at all — and 2026-06-30 / "
             "2026-07-01 carry asof = date + 1, i.e. a trade date scraped the next morning. So "
-            "the store changed semantics mid-life."),
-        "consequence_if_ignored": (
+            "the store changed semantics mid-life.")
+        consequence = (
             "Every Friday would be counted three times and every Monday's pool would be read "
-            "as a Sunday's. Nothing downstream in this file uses a weekend or duplicate row."),
-        "ownership": "the L0 lane owns the heal (a trade-date column, or de-duplication at "
-                     "write time). This lane only refuses to be fooled by it.",
+            "as a Sunday's. Nothing downstream in this file uses a weekend or duplicate row.")
+        ownership = ("the L0 lane owns the heal (a trade-date column, or de-duplication at "
+                     "write time). This lane only refuses to be fooled by it.")
+    else:
+        verdict = (
+            f"CLEAN STORE: all {len(dates)} dates are weekdays and none carries a payload "
+            "duplicate of an earlier date, so `date` is a trade date throughout. This is the "
+            "POST-HEAL vintage (L0 lane, PR #5059). The pre-heal store carried 47 dates of "
+            "which 11 were Saturdays/Sundays re-stamping the preceding Friday (818 phantom "
+            "rows); the detection below found them from the data alone and dropped them, "
+            "which is why every measured number in M5 is IDENTICAL on both vintages.")
+        consequence = (
+            "None on this vintage — there is nothing left to be fooled by. The detection is "
+            "kept as a standing tripwire: it is what PROVES the store is clean on each run "
+            "rather than assuming it.")
+        ownership = ("healed by the L0 lane (PR #5059). This lane retains the detector "
+                     "against a regression in the collector.")
+    semantics = {
+        "verdict": verdict,
+        "consequence_if_ignored": consequence,
+        "ownership": ownership,
         "n_dates_raw": len(dates),
         "n_weekend_dates": len(weekend_rows),
-        "n_payload_duplicate_dates": sum(1 for r in diag if r["payload_duplicate_of"]),
+        "n_payload_duplicate_dates": n_dupe_all,
         "per_date": diag,
     }
 
@@ -1550,8 +1574,9 @@ def m5_zt_pool(panel: pd.DataFrame, ser: pd.DataFrame) -> dict:
             f"{len(pdf)} clean weekday dates and its dispersion is printed beside it, because "
             "a STABLE undercount would mean our dials are the market's dials on a different "
             "scale (safe to quantile) while an UNSTABLE one would mean the bias itself moves "
-            "with the regime (not safe). 47 dates is far too short a history to replicate any "
-            "regime measurement on the vendor universe — that is in the ORE LEDGER, not here."),
+            f"with the regime (not safe). {len(dates)} dates is far too short a history to "
+            "replicate any regime measurement on the vendor universe — that is in the ORE "
+            "LEDGER, not here."),
     }
 
 
@@ -1655,8 +1680,9 @@ ORE_LEDGER = {
                     "explicit Wave-2 join with the L1/L3 lanes.",
          "status": "Wave 2, with L1/L3"},
         {"variant": "seal-quality dials (封单量 / 首封时间 aggregated to a market level)",
-         "why_not": "we hold seal_fund_yi for 47 dates only and no first-touch time at all. "
-                    "v0's Stage-4 #1 collector is the unblocker.",
+         "why_not": "we hold seal_fund_yi only for the short zt_pool vendor window (tens of "
+                    "sessions, see M5) and no first-touch time at all. v0's Stage-4 #1 "
+                    "collector is the unblocker.",
          "status": "blocked on a collector"},
         {"variant": "limit-DOWN ecology as a regime dial (跌停 breadth, down-ladder depth)",
          "why_not": "i2_limit_down_total is BUILT and carried in the series, and net breadth "
