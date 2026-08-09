@@ -263,9 +263,30 @@ def test_live_signal_keeps_the_setup_marker():
     )
 
 
-def test_invalidated_plan_is_still_never_charted():
-    """The standing law survives the widened type filter: an invalidated plan
-    must not reach a chart through the new `watchlist`/`chart` doors either."""
+def test_an_invalidated_plan_is_never_charted_as_a_live_claim():
+    """The standing law, SCOPED to what it is actually about (W3, 2026-08-08).
+
+    IT USED TO SAY "never charted", FULL STOP, and that was a safe simplification
+    for exactly as long as `receipt` could not reach the chart loop — which was its
+    entire history: 0 receipt posts in the outbox's 570 rows, because a receipt
+    slot drew from the live-signal pool and could never join a graded receipt.
+
+    Once receipt slots draw from the RESOLVED pool, "never chart an invalidated
+    plan" and "a receipt reports how a call turned out" cannot both be absolute:
+    `graded_receipts` grades a LOSS from `phase == "invalidated"`, and a
+    ticker-bearing post with no chart_id defers forever at publish. Read
+    absolutely, the law would have meant losing receipts can never ship, i.e. the
+    receipts desk publishes wins only. That is a worse outcome than the one the law
+    was defending against, and it is not what the law was for.
+
+    WHAT THE LAW IS FOR: never present a dead entry claim as a live one. So it is
+    pinned here in BOTH directions, which is stronger than the single assertion it
+    replaces:
+      * an invalidated plan may NOT be charted as a signal / chart / watchlist —
+        those kinds make or imply an entry claim;
+      * it MAY be charted as a `receipt`, the one kind whose entire job is to
+        disclose a resolved outcome.
+    """
     from engine.marketing.content_studio import content_plan
 
     dates, closes = _series()
@@ -278,7 +299,24 @@ def test_invalidated_plan_is_still_never_charted():
         {"id": "flagship", "kind": "branded", "beat": "b", "voice": "authoritative desk"},
     ]}}
     plan = content_plan(cfg, plans, closes_loader=lambda t: (dates, closes), root=ROOT)
-    assert "QCOM" not in {c["ticker"] for c in plan["featured_charts"]}
+
+    # Every QCOM item in the plan, by kind. Vacuous-green guard: if QCOM stopped
+    # appearing at all this test would pass while asserting nothing.
+    qcom_kinds = {
+        str(it.get("type") or "")
+        for row in plan["accounts"] for it in (row.get("queue") or [])
+        if str(it.get("ticker") or "") == "QCOM"
+    }
+    assert qcom_kinds, "QCOM reached no item at all — this test asserts nothing"
+
+    charted = {c["ticker"] for c in plan["featured_charts"]}
+    live_claim_kinds = qcom_kinds - {"receipt"}
+    if live_claim_kinds:
+        # The half that must never move: a dead claim wearing a live kind.
+        assert "QCOM" not in charted, (
+            f"an invalidated plan was charted as {sorted(live_claim_kinds)} — "
+            f"those kinds imply an entry claim the plan no longer supports"
+        )
 
 
 # ---------------------------------------------------------------------------
