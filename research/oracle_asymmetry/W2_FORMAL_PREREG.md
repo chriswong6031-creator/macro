@@ -1,6 +1,6 @@
 # OTA — Member-Transmission Formal Pre-Registration (P3-style)
 
-**Program:** Oracle Turn Asymmetry. Authored by Fable 2026-07-06. **This registration merges BEFORE any registered statistic is computed** (Oracle constitution §I.3: one registered gauntlet shot; nothing auto-promotes). It confirms-or-retracts the W2 CONDITION-LIFT ([#1509](https://github.com/chriswong6031-creator/macro/pull/1509), descriptive class) under corrected machinery and a temporal split, and pre-binds the forward promotion rule that the W6 Turn Desk ledger will accrue against.
+**Program:** Oracle Turn Asymmetry. Authored by Fable 2026-07-06. **This registration merges BEFORE any registered statistic is computed** (Oracle constitution §I.3: one registered gauntlet shot; nothing auto-promotes). It confirms-or-retracts the W2 CONDITION-LIFT ([#1509](https://github.com/mastermindx-market-intelligence/macro/pull/1509), descriptive class) under corrected machinery and a temporal split, and pre-binds the forward promotion rule that the W6 Turn Desk ledger will accrue against.
 
 ## 1. Question
 Does the a15 armed-window condition (sector weekly washout × ≥2 opposite-complex outflow-onset nodes; K=10 sessions) add member-entry quality to production T1–T3 fires — confirmed under machinery that fixes every defect found in W2 review, and with a temporal holdout?

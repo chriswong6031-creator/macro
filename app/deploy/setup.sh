@@ -3,11 +3,11 @@
 # Serves the prebuilt site/ via Caddy behind Cloudflare. Safe to re-run.
 #
 # One-shot from a clean droplet (repo is public — no auth needed):
-#   curl -fsSL https://raw.githubusercontent.com/chriswong6031-creator/macro/main/app/deploy/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/main/app/deploy/setup.sh | bash
 # Or, after the repo is already cloned:  bash /opt/macro/app/deploy/setup.sh
 set -euo pipefail
 
-REPO_URL="https://github.com/chriswong6031-creator/macro.git"
+REPO_URL="https://github.com/mastermindx-market-intelligence/macro.git"
 APP_DIR="/opt/macro"
 DOMAIN="mastermind-x.com"
 

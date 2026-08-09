@@ -14,36 +14,41 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
+from pathlib import Path
 import json
 import math
+import sys
 import time
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from collectors.sec_capital_structure_companyfacts import (
     CompanyFactsIntakeError,
     _build_production_trust_context,
-)
+)  # noqa: E402
 from engine.capital_structure.companyfacts_authenticated_read import (
     CompanyFactsAuthenticatedSnapshot,
     load_authenticated_companyfacts_snapshot,
-)
+)  # noqa: E402
 from engine.capital_structure.share_count_materializer import (
     MAX_SOURCE_BATCH,
     ShareCountMaterializerError,
     compile_authenticated_companyfacts_share_count_prefix,
     validate_share_count_ledger,
-)
+)  # noqa: E402
 from engine.capital_structure.share_count_publication import (
     ShareCountPublicationError,
     ShareCountPublicationResult,
     _publish_share_count_materialization_with_production_trust,
     recover_share_count_materialization,
-)
+)  # noqa: E402
 from engine.capital_structure.source_store import (
     ContentAddressedSourceStore,
     SourceStoreVerificationError,
     build_source_stores,
-)
+)  # noqa: E402
 
 
 MAX_SOURCE_OBJECT_BYTES = 32 * 1024 * 1024

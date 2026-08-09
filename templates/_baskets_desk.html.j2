@@ -213,6 +213,34 @@
   .tape-chip.WASHED_OUT{ color:var(--warn);border-color:var(--warn); background:rgba(251,146,60,.10); }
   .tape-chip.BASING   { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.08); }
   .tape-chip.FALLING  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); }
+  /* ---- GR1 group-pulse chips + disclosed ordering rule (context tier, no score) ----
+     --gr is the same non-directional hue the basket detail read band uses: nothing in
+     this row is a buy/sell read, so it never borrows --up / --down. The ordering control
+     is a RULE over named legs, never a composite number (R-TIL-3). */
+  .desk { --gr:#8f8ae0; }
+  html[data-theme="light"] .desk, html[data-theme="light"] .gpr-ord { --gr:#5a51bd; }
+  .gpr-ord { --gr:#8f8ae0; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:0 0 11px; }
+  .gpr-ord-k { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .gpr-ord-b { font:inherit; font-size:11.5px; font-weight:640; color:var(--muted); cursor:pointer;
+    background:var(--panel2); border:1px solid var(--line); border-radius:7px; padding:3px 10px; }
+  .gpr-ord-b:hover { color:var(--text); border-color:var(--muted); }
+  .gpr-ord-b.on { color:var(--gr); border-color:color-mix(in srgb,var(--gr) 55%,var(--line));
+    background:color-mix(in srgb,var(--gr) 12%,transparent); }
+  .gpr-ord-b:focus-visible { outline:2px solid var(--gr); outline-offset:2px; }
+  .gpr-ord-rule { flex:1 1 100%; font-size:10.5px; color:var(--muted); line-height:1.45; }
+  .gpr-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px 5px; margin:5px 0 2px; }
+  .gpr-chg { font-size:9.5px; font-weight:700; letter-spacing:.03em; padding:1px 6px; border-radius:5px;
+    white-space:nowrap; border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:default; }
+  .gpr-chg.on { color:var(--gr); border-color:color-mix(in srgb,var(--gr) 50%,var(--line));
+    background:color-mix(in srgb,var(--gr) 11%,transparent); }
+  .gpr-chg .g { margin-right:3px; font-weight:800; }
+  .gpr-mv { font-size:9.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
+    padding:1px 6px; white-space:nowrap; background:var(--panel2); cursor:default; }
+  .gpr-mv b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:660; }
+  @media (max-width:680px){
+    .desk .gpr-row { gap:3px 4px; margin:4px 0 1px; }
+    .desk .gpr-chg,.desk .gpr-mv { font-size:8.5px; padding:1px 4px; }
+  }
   /* Dual-read chip: when trend DISAGREES with tape turn (FT-R1 — never merged) */
   .dual-chip { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; font-weight:700;
     letter-spacing:.03em; padding:1px 6px; border-radius:5px; border:1px solid var(--warn);
@@ -346,6 +374,9 @@
       '每个主题按趋势、广度、脉冲、宏观支持与拥挤度给出 0–100 分、趋势标签和操作结论。') }}</p>
     <div class="mctx" id="macro-ctx"></div>
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
+    {# GR1 ordering control — filled by baskets_desk.js only when the group-pulse artifact
+       is present (US board). Stays empty everywhere else. #}
+    <div id="gr-order"></div>
     {# capped at 3 rows (theme.js initShowMore row-mode); reveals 3 more rows per click. #}
     <div class="desk" id="theme-desk" data-showmore-rows="3"></div>
   </section>
