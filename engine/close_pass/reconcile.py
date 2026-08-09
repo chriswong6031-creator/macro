@@ -21,6 +21,24 @@ arithmetic is over the PROVISIONAL board's population
 (``n_confirmed + n_adjusted + n_dropped == n_total``) and folding additions in
 would break the one invariant the surface is allowed to trust.
 
+MEASURED 2026-08-07, on the real universe — read this before reading a receipt.
+The close-only pass admitted 131 names. The nightly's published buy lane carried
+79, of which 72 were also admitted here, and the nightly's own admission set
+(buyable verdicts across all four lanes) was 75 — **every one of which this pass
+also admitted, zero misses**. So the close-only gate reproduces the nightly's
+admission COMPLETELY and then over-admits about 1.7x on top of it.
+
+The extra ~56 are not gate disagreements. The published lanes are a CURATED
+subset: `lane_counts` splits the buy lane into continuation (35) and bottoming
+(44), a stage classification that comes from the per-name cycles pass, not from
+closes. So a first receipt reads "72 confirmed, 59 dropped of 131" — an
+unflattering number that is the honest one, and exactly what an integrity metric
+is for. Redefining the comparison until it flattered the lane would delete the
+finding. What it says is: membership is solved, the CARD GRID is not, and a
+card-for-card provisional board needs the lane classification a close pass
+cannot compute. That is the next wave's problem, and this number is how it will
+be known to be fixed.
+
 NO RECEIPT IS BETTER THAN A WRONG ONE (spec §7). Every path that cannot produce
 a reconciling count returns None: no provisional board that night, the two
 boards describing different sessions, a duplicate ticker on either side, or an

@@ -99,6 +99,7 @@ def collect(session: str) -> dict[str, Any]:
     """
     from engine import signal_gate  # noqa: PLC0415
     from engine.extension import extension_signals  # noqa: PLC0415
+    from lib import delisted_symbols  # noqa: PLC0415
     from scripts.build_stock_library import (  # noqa: PLC0415
         extension_panels, universe, universe_price_adjustment,
     )
@@ -112,6 +113,15 @@ def collect(session: str) -> dict[str, Any]:
     through: dict[str, str] = {}
     skipped: dict[str, int] = {}
     for ticker, close, _high, _name, _sector in uni:
+        # The nightly's B1 guard (_authority_admits): a delisted name must never
+        # enter a scoring-authority collection. The demote-map half of that guard
+        # is not reachable here — it is derived from the per-name analyze pass
+        # this lane deliberately skips — but this half is cheap and standalone,
+        # and the vintage half is covered more strictly below: the nightly
+        # demotes a frozen feed, while this pass requires TODAY's bar outright.
+        if delisted_symbols.is_delisted(ticker):
+            skipped["delisted"] = skipped.get("delisted", 0) + 1
+            continue
         if close is None or getattr(close, "empty", True):
             skipped["no_close"] = skipped.get("no_close", 0) + 1
             continue
