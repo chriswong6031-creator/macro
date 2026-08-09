@@ -241,24 +241,39 @@ riders (E1/E2/E3, all bands, main+chinext, fit+holdout) and B1-as-specified.
 
 ### §6.2 WAVE-2 ADJUDICATION (Fable, 2026-08-09 — same session, post-operator-update)
 
-**W2-B #5091 APPROVED — the weakness families null cleanly, and the null is load-bearing.**
-210 pre-registered cohorts: **0/84** break-day-close (回封) and **0/42** 龙回头 cohorts clear
-positive net-of-15bp in fit AND holdout; 23 clear overall vs ~52 expected from coin flips —
-below-chance survivorship is evidence of negative drift, not hidden edge. 龙回头 is unambiguous
-(holdout −1.37% net, date-clustered t −6.87) despite a real, monotone probability structure
-(24.6% re-board ≤5 sessions) — Wave 1's auction-pricing null REPRODUCED in a second family.
-The close-entry premise inverted: break-day closes LOSE ~1.07pp vs next-open on identical
-trades (= the −0.952% overnight gap, verified to 0.12pp), and only 0.48% of break days are
+**W2-B #5091 APPROVED CONDITIONALLY — the weakness families null cleanly; the null survived
+adversarial review; several framing claims did not and are being amended.** 210 pre-registered
+cohorts: **0/84** break-day-close (回封) and **0/42** 龙回头 cohorts clear positive
+net-of-15bp in fit AND holdout, and across ALL 210 cohorts the maximum date-clustered t is
+**1.47** (nothing at ≥2) — that t-census, not any survivor count, is the null's statement.
+(The receipt's original "23 vs ~52 coin flips ⇒ below chance" inference was REFUTED by review:
+all 23 survivors sit in the one 84-cohort T+1-open family whose coin-flip expectation is ~21 —
+at chance, not below — and the survivors are demoted by clustering, not by counting.) 龙回头
+is unambiguous (holdout −1.37% net, date-clustered t −6.87) despite a real probability
+structure — though per review the quoted "24.6% re-board ≤5 sessions" is a ROW-rate, not an
+episode probability (day-1-per-episode holdout rate is 40.3%; episode-denominator Wilson is
+2.6× wider) — Wave 1's auction-pricing null REPRODUCED in a second family. The close-entry
+premise inverted: break-day closes LOSE ~1.07pp vs next-open on identical trades, and the
+review made the mechanism claim STRONGER — on the correct paired population the overnight gap
+is **−1.0745%** (holdout), closing the arithmetic to 0.6bp (the receipt's original −0.952%
+included unfillable opens whose +9.99% mean gap diluted it). Only 0.48% of break days are
 unfillable at the open — "guaranteed fill" buys nothing. Structural findings entering the
 permanent record: **breaking the seal destroys ~80% of the ladder's edge** (回封 rate 3-4% vs
 16.5% held first board — the seal IS the signal); trapdoor asymmetry (deep >3% breaks double
-next-day limit-down to 2.73%); two lore items contradicted (no 3-6d 龙回头 sweet spot — hazard
-falls from day 1; declining pullback volume is WORSE, 22.6% vs 29.9%); the house tape's
-`lianban_count` is **hardcoded 0 on failed_up_seal rows** (silent-null trap; panel-derive N);
-strict/tolerant event overlap is only 42.7% of union. Review provenance: the builder's
-commissioned adversarial reviewer died mid-flight (scratch cleanup); the builder executed the
-checklist itself, including a **corruption-experiment lookahead proof** (corrupt all bars past
-a cut, recompute, byte-identical before it) — that standard is adopted house practice.
+next-day limit-down to 2.73%); ONE lore item contradicted (no 3-6d 龙回头 sweet spot — hazard
+falls from day 1; the second claimed contradiction — "declining pullback volume is worse" —
+was itself refuted by review as day-in-window confounding and is DEMOTED to unstable); the
+house tape's `lianban_count` is **hardcoded 0 on failed_up_seal rows** (silent-null trap;
+panel-derive N); strict/tolerant event overlap is only 42.7% of union, and tolerant SEALS are
+~28% of the shallow break band (a §9 survivor cohort is partly not a weakness cohort at all).
+Review provenance: the builder's commissioned adversarial reviewer appeared dead (scratch
+cleanup broke its rebuild) and the builder ran the checklist itself; the reviewer then
+RETURNED with 8 defects (3 headline-framing MAJORs above, a pooled-basis volz-tercile cut, and
+4 minors) — none moving the verdict, all being amended on the PR before it re-arms. Its
+verification also independently CONFIRMED the regime dial's target-date indexing (the
+builder's "mechanical" lookahead check proved less than claimed; the conclusion holds by the
+reviewer's producer-level verification). Both the corruption-experiment standard AND
+late-reviewer reconciliation are adopted house practice.
 
 **W2-A #5093 APPROVED — the causal fix failed for a measured reason, and the simple object
 won.** R2 (regime-conditioned isotonic) made things WORSE on both boards because the dial's
