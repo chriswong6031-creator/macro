@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pyarrow.parquet as pq
 import pytest
-import yaml
 
 from collectors import tushare_addons as addons
 from scripts import collect_tushare_addons as cli
@@ -1014,67 +1013,13 @@ def test_cli_failure_receipt_does_not_echo_exception_or_secret(
     }
 
 
-def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> None:
+def test_reverted_manual_pilot_infrastructure_stays_retired() -> None:
+    """The recovered collector must not resurrect #5098's retired runner lane."""
     workflow_path = ROOT / ".github/workflows/tushare-addons-pilot.yml"
-    workflow_text = workflow_path.read_text(encoding="utf-8")
-    workflow = yaml.safe_load(workflow_text)
-    job = workflow["jobs"]["pilot"]
-    assert "schedule:" not in workflow_text
-    assert "push:" not in workflow_text
-    assert "refs/heads/main" in job["if"]
-    assert "confirm_execute" in job["if"]
-    # No authorization env var may gate this lane -- the main-ref pin plus the
-    # explicit dispatch confirmation are the whole gate (operator ruling 2026-08-09).
-    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" not in workflow_text
-    assert job["permissions"] if "permissions" in job else workflow["permissions"]
-    assert "persist-credentials: false" in workflow_text
-    assert "actions/upload-artifact@ea165f" in workflow_text
-    assert "--execute" in workflow_text
-    assert "--start-date" not in workflow_text
-    assert "--end-date" not in workflow_text
-    # The hosted review lane was deliberately not widened to the newly admitted
-    # o/c endpoints: it stays a three-endpoint witness lane, and the o/c probes run
-    # locally against a gitignored root.
-    assert "stk_auction_o" not in workflow_text
-    assert "stk_auction_c" not in workflow_text
-    assert "part.parquet" not in workflow_text
-    assert 'raw_paid_rows_included"] = False' in workflow_text
-    assert 'raw_parquet_included"] = False' in workflow_text
-    assert ".strip().encode()" in workflow_text
+    lock_path = ROOT / "requirements/tushare-addons-pilot-macos-arm64-py312.lock"
+    dag_text = (ROOT / "config/dag.yml").read_text(encoding="utf-8")
 
-    steps = {step["name"]: step for step in job["steps"] if "name" in step}
-    token_scan = steps["prove review artifact contains no token"]
-    raw_cleanup = steps["remove isolated paid-data directory before upload"]
-    upload = steps["upload metadata-only pilot receipt"]
-    cleanup = steps["remove remaining isolated run directories"]
-    assert token_scan["id"] == "token_scan"
-    assert "raw_token" in token_scan["run"]
-    assert "transport_token" in token_scan["run"]
-    assert raw_cleanup["id"] == "raw_cleanup"
-    assert raw_cleanup["if"] == "${{ always() }}"
-    assert '/bin/rm -rf -- "$raw"' in raw_cleanup["run"]
-    assert 'test ! -e "$raw"' in raw_cleanup["run"]
-    assert "steps.token_scan.outcome == 'success'" in upload["if"]
-    assert "steps.token_scan.outputs.passed == 'true'" in upload["if"]
-    assert "steps.raw_cleanup.outcome == 'success'" in upload["if"]
-    assert "steps.raw_cleanup.outputs.passed == 'true'" in upload["if"]
-    assert str(upload["with"]["path"]).endswith("-review")
-    step_names = [step.get("name") for step in job["steps"]]
-    assert step_names.index("remove isolated paid-data directory before upload") < (
-        step_names.index("upload metadata-only pilot receipt")
-    )
-    assert cleanup["if"] == "${{ always() }}"
-    assert '"$raw"' in cleanup["run"]
-    assert '"$review"' in cleanup["run"]
-
-    dag = yaml.safe_load((ROOT / "config/dag.yml").read_text(encoding="utf-8"))
-    lanes = [
-        lane
-        for lane in dag["lanes"]
-        if lane["workflow"] == ".github/workflows/tushare-addons-pilot.yml"
-    ]
-    assert len(lanes) == 1
-    assert lanes[0]["job"] == "pilot"
-    assert [step["module"] for step in lanes[0]["steps"]] == [
-        "scripts.collect_tushare_addons"
-    ]
+    assert not workflow_path.exists()
+    assert not lock_path.exists()
+    assert "tushare-addons-pilot.yml" not in dag_text
+    assert "scripts.collect_tushare_addons" not in dag_text
