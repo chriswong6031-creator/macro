@@ -3,6 +3,60 @@
   "note": "Candidates land in `pending` automatically. A numbered `versions` entry is minted ONLY by exemplar_store.promote_pending(), and the writer reads ONLY the version pinned at config/marketing.yml intel.exemplar_store.active_version.",
   "pending": [
     {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "unusual_whales",
+      "created_at": "Fri Aug 07 14:57:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02820185,
+        "likes": 4447,
+        "replies": 177,
+        "retweets": 421,
+        "views": 178889
+      },
+      "post_id": "2085742006593311208",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "90% of Americans polled say groceries and food prices are a top cost concern, per CNBC",
+      "text_key": "810a3e92a87ab9e2",
+      "url": "https://x.com/unusual_whales/status/2085742006593311208"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "unusual_whales",
+      "created_at": "Sun Aug 09 19:01:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02486538,
+        "likes": 7753,
+        "replies": 183,
+        "retweets": 431,
+        "views": 336492
+      },
+      "post_id": "2086528186893074486",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "25% of bosses admit they’re losing top talent because of bad pay, per FORTUNE",
+      "text_key": "ff205e103b78b547",
+      "url": "https://x.com/unusual_whales/status/2086528186893074486"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "RyanDetrick",
+      "created_at": "Sun Aug 09 14:41:05 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.0245764,
+        "likes": 410,
+        "replies": 30,
+        "retweets": 43,
+        "views": 19653
+      },
+      "post_id": "2086462777749651549",
+      "register": "commentary",
+      "shape": "two_part",
+      "text": "Good time to remember that when the S&P 500 gains >5% in May (like 2026) the next 12 months have never been lower and gains 21% on average. \n\nYes, June/July was a sideways chop, but things are now moving higher as expected. https://t.co/9kOdnTunj1",
+      "text_key": "cae6ac302ff46bee",
+      "url": "https://x.com/RyanDetrick/status/2086462777749651549"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "RyanDetrick",
       "created_at": "Fri Jul 31 17:44:16 +0000 2026",
@@ -75,6 +129,24 @@
       "url": "https://x.com/unusual_whales/status/2083245556621529120"
     },
     {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Sat Aug 08 02:26:10 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.0208902,
+        "likes": 1675,
+        "replies": 46,
+        "retweets": 200,
+        "views": 91957
+      },
+      "post_id": "2085915440635613230",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "Gold just scored its biggest weekly gain since January 📈 📈 https://t.co/C8VNz6SklV",
+      "text_key": "5b68394156216204",
+      "url": "https://x.com/Barchart/status/2085915440635613230"
+    },
+    {
       "added": "2026-07-31T23:47:24Z",
       "author": "RyanDetrick",
       "created_at": "Fri Jul 31 20:07:33 +0000 2026",
@@ -91,6 +163,24 @@
       "text": "July tried, but finished down 0.1%.\n\nPrepare to hear a LOT about this from the bears, but down in June and July has been weak for the rest of the year historically. https://t.co/W0GKHoxQWD",
       "text_key": "d191cb81bba4bf0f",
       "url": "https://x.com/RyanDetrick/status/2083283444692341081"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Tue Aug 04 03:33:37 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.02009166,
+        "likes": 2527,
+        "replies": 86,
+        "retweets": 377,
+        "views": 148818
+      },
+      "post_id": "2084482863005565204",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "Gold is coiling and getting ready for a big move 🚨 🚨 Bollinger Bands are now the tightest since August 2025, right before Gold soared 60% over the next 5 months 🚀 🥳 https://t.co/ChRZ04t8U9",
+      "text_key": "9a856186f98ce99a",
+      "url": "https://x.com/Barchart/status/2084482863005565204"
     },
     {
       "added": "2026-07-31T23:47:24Z",
@@ -129,6 +219,60 @@
       "url": "https://x.com/RyanDetrick/status/2083185386499575890"
     },
     {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "RyanDetrick",
+      "created_at": "Sun Aug 09 16:17:23 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01885503,
+        "likes": 238,
+        "replies": 16,
+        "retweets": 22,
+        "views": 14638
+      },
+      "post_id": "2086487010550685771",
+      "register": "commentary",
+      "shape": "one_liner",
+      "text": "Another week, more jumps in 2026 and 2027 earnings estimates. https://t.co/knG8Z1WqfJ",
+      "text_key": "838ea1e7e454acde",
+      "url": "https://x.com/RyanDetrick/status/2086487010550685771"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Tue Aug 04 18:22:59 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01882093,
+        "likes": 848,
+        "replies": 35,
+        "retweets": 107,
+        "views": 52601
+      },
+      "post_id": "2084706682567880942",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "Greed returns to the Stock Market for the first time in more than 2 months 📈 🥳 https://t.co/BUI6ZMGCos",
+      "text_key": "8078ee83a5bf2e4f",
+      "url": "https://x.com/Barchart/status/2084706682567880942"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Tue Aug 04 05:57:12 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01851326,
+        "likes": 1292,
+        "replies": 37,
+        "retweets": 105,
+        "views": 77458
+      },
+      "post_id": "2084518997614108987",
+      "register": "aggregator",
+      "shape": "caption",
+      "text": "😂😂 https://t.co/b7ZrpFBMKH",
+      "text_key": "2b0abfa1e65b6955",
+      "url": "https://x.com/Barchart/status/2084518997614108987"
+    },
+    {
       "added": "2026-08-02T22:45:58Z",
       "author": "unusual_whales",
       "created_at": "Sat Aug 01 19:01:00 +0000 2026",
@@ -147,6 +291,78 @@
       "url": "https://x.com/unusual_whales/status/2083629084018721039"
     },
     {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "unusual_whales",
+      "created_at": "Thu Aug 06 18:57:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01826391,
+        "likes": 9125,
+        "replies": 240,
+        "retweets": 566,
+        "views": 543750
+      },
+      "post_id": "2085440016398872784",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "BREAKING: Japanese officials have repeatedly requested that the US. government stop its meme posting involving characters and franchises such as Mario, Pokémon and Naruto, per IGN",
+      "text_key": "581046416d823e53",
+      "url": "https://x.com/unusual_whales/status/2085440016398872784"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Sat Aug 08 00:10:13 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01777193,
+        "likes": 1372,
+        "replies": 60,
+        "retweets": 121,
+        "views": 87385
+      },
+      "post_id": "2085881229815976087",
+      "register": "aggregator",
+      "shape": "caption",
+      "text": "Stock Market hits highest level of Greed since May 📈 🥳 🤑 https://t.co/7Zba0OCJEd",
+      "text_key": "0437e241965a4de0",
+      "url": "https://x.com/Barchart/status/2085881229815976087"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "unusual_whales",
+      "created_at": "Sat Aug 08 20:01:00 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01722233,
+        "likes": 1695,
+        "replies": 128,
+        "retweets": 312,
+        "views": 123967
+      },
+      "post_id": "2086180898513588292",
+      "register": "wire",
+      "shape": "one_liner",
+      "text": "Prices of \"all food\" categories are up 29%, per CNBC",
+      "text_key": "6a930dcad58c3c45",
+      "url": "https://x.com/unusual_whales/status/2086180898513588292"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Fri Aug 07 19:13:09 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01674907,
+        "likes": 2446,
+        "replies": 71,
+        "retweets": 332,
+        "views": 170099
+      },
+      "post_id": "2085806471732724068",
+      "register": "aggregator",
+      "shape": "one_liner",
+      "text": "JUST IN 🚨: More than 72% of S&P 500 stocks are now trading above their 200-day moving average, the strongest market breadth since December 2024 📈 🥳 https://t.co/pld9aV0sv0",
+      "text_key": "4dfbaf3e6a52c7b3",
+      "url": "https://x.com/Barchart/status/2085806471732724068"
+    },
+    {
       "added": "2026-08-02T22:45:58Z",
       "author": "Barchart",
       "created_at": "Sat Aug 01 03:12:45 +0000 2026",
@@ -163,6 +379,24 @@
       "text": "Gold has closed below its 200-day moving average for 39 consecutive trading days, the longest stretch since 2022 🚨 https://t.co/ZSUlbvtlN7",
       "text_key": "872e85c2db01efc7",
       "url": "https://x.com/Barchart/status/2083390449448894894"
+    },
+    {
+      "added": "2026-08-09T22:20:21Z",
+      "author": "Barchart",
+      "created_at": "Fri Aug 07 21:10:02 +0000 2026",
+      "engagement": {
+        "interaction_rate": 0.01637098,
+        "likes": 2127,
+        "replies": 52,
+        "retweets": 234,
+        "views": 147395
+      },
+      "post_id": "2085835882624405841",
+      "register": "aggregator",
+      "shape": "caption",
+      "text": "Gold getting launched 🚀 🚀 https://t.co/krEZ74Iu2i",
+      "text_key": "815d9b414aa9c4bf",
+      "url": "https://x.com/Barchart/status/2085835882624405841"
     },
     {
       "added": "2026-07-31T23:47:24Z",
@@ -487,243 +721,9 @@
       "text": "The best reason to learn risk management:\n\nSo you do not have to make the same dollar over and over again\n\nI like to earn it, then keep it, or most of it",
       "text_key": "a4e62853bf4d551d",
       "url": "https://x.com/PeterLBrandt/status/2082601526317744539"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 16:59:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0121414,
-        "likes": 2187,
-        "replies": 111,
-        "retweets": 108,
-        "views": 198165
-      },
-      "post_id": "2083235993667490286",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "\"Nearly a third of workers admit to sabotaging their company’s AI,\" per FORTUNE",
-      "text_key": "b0047dd06f8bd2ab",
-      "url": "https://x.com/unusual_whales/status/2083235993667490286"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "PeterLBrandt",
-      "created_at": "Wed Jul 29 21:02:26 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01210509,
-        "likes": 586,
-        "replies": 57,
-        "retweets": 26,
-        "views": 55266
-      },
-      "post_id": "2082572482742222956",
-      "register": "trader",
-      "shape": "stack",
-      "text": "Dear readers.\nThese were the only charts we had back in the early 1970 unless you wanted to make your own from graph paper. I would buy these every two to four weeks and then with a fine point black pen and ruler draw in the high to low line each day\nTraders today are such wimps https://t.co/6uouuKgwTA",
-      "text_key": "6336320a60bbc93b",
-      "url": "https://x.com/PeterLBrandt/status/2082572482742222956"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "Mr_Derivatives",
-      "created_at": "Fri Jul 31 21:17:35 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01097461,
-        "likes": 274,
-        "replies": 54,
-        "retweets": 7,
-        "views": 30525
-      },
-      "post_id": "2083301069858410937",
-      "register": "trader",
-      "shape": "one_liner",
-      "text": "Like how this came right after market close. On a Friday no less. https://t.co/Nk5xRH5L7m",
-      "text_key": "00ff68d5a2a28a16",
-      "url": "https://x.com/Mr_Derivatives/status/2083301069858410937"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "alphatrends",
-      "created_at": "Tue Jul 28 13:05:19 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01095297,
-        "likes": 447,
-        "replies": 30,
-        "retweets": 24,
-        "views": 45741
-      },
-      "post_id": "2082090024288608440",
-      "register": "trader",
-      "shape": "stack",
-      "text": "Just because a market is showing relative strength does not mean it is showing absolute strength. \n\nYou cannot simply buy stocks in a sector or market because they are declining less than others.\n\nRelative strength in a downtrend can help identify where the next leaders may emerge, but it is not a buy signal on its own. \n\nEach stock and trade must still be evaluated on its own merits, with risk management as the cornerstone.",
-      "text_key": "d47509822c1a1c3f",
-      "url": "https://x.com/alphatrends/status/2082090024288608440"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "Mr_Derivatives",
-      "created_at": "Fri Jul 31 16:39:47 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.0108734,
-        "likes": 747,
-        "replies": 65,
-        "retweets": 50,
-        "views": 79276
-      },
-      "post_id": "2083231160029897021",
-      "register": "trader",
-      "shape": "stack",
-      "text": "What the….\n\nThe 30yr yield hitting levels not seen since….\n\nDrumroll plz… 🥁\n\nThe GFC. https://t.co/6VZLuUEo9t",
-      "text_key": "d7fc91c9b805e6c0",
-      "url": "https://x.com/Mr_Derivatives/status/2083231160029897021"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 21:31:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01069415,
-        "likes": 1769,
-        "replies": 163,
-        "retweets": 266,
-        "views": 205533
-      },
-      "post_id": "2083304444868100301",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "BREAKING: US national debt has reportedly surpassed $40 trillion for the first time ever, per FOX",
-      "text_key": "c50b130026b9f698",
-      "url": "https://x.com/unusual_whales/status/2083304444868100301"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "DeItaone",
-      "created_at": "Fri Jul 31 16:02:37 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01069121,
-        "likes": 3251,
-        "replies": 71,
-        "retweets": 242,
-        "views": 333358
-      },
-      "post_id": "2083221803569119269",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "- ITALY SUSPENDS EU'S SCHENGEN FREE-TRAVEL REGIME WITH SPAIN AFTER CEUTA MIGRANT CRISIS - STATEMENT",
-      "text_key": "f30c0f864c324de0",
-      "url": "https://x.com/DeItaone/status/2083221803569119269"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 23:22:04 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01050219,
-        "likes": 461,
-        "replies": 50,
-        "retweets": 48,
-        "views": 53227
-      },
-      "post_id": "2083332396691382353",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "BREAKING: FIFA has scrapped $20 billion World Cup sell-off plan following European boycott, per NYP",
-      "text_key": "b811e2e6b190278f",
-      "url": "https://x.com/unusual_whales/status/2083332396691382353"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "PeterLBrandt",
-      "created_at": "Fri Jul 31 20:52:21 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01025203,
-        "likes": 330,
-        "replies": 29,
-        "retweets": 25,
-        "views": 37456
-      },
-      "post_id": "2083294717903794463",
-      "register": "trader",
-      "shape": "one_liner",
-      "text": "The analog model for Gold calls for about a 7-fold advance from the 2016 low. Target is $7,600. But, not until the correction is over. Worst case - Gold under $3k $GC_F https://t.co/bBgfTdbekK",
-      "text_key": "978e56720ba1e7b8",
-      "url": "https://x.com/PeterLBrandt/status/2083294717903794463"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "unusual_whales",
-      "created_at": "Fri Jul 31 16:42:00 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.01014403,
-        "likes": 1907,
-        "replies": 112,
-        "retweets": 72,
-        "views": 206131
-      },
-      "post_id": "2083231715364122930",
-      "register": "wire",
-      "shape": "one_liner",
-      "text": "NEWS: Leopold Aschenbrenner's Situational Awareness has said that his hedge fund will continue operating and investing in public equities, but will stop using leverage.",
-      "text_key": "76f48b3f559e22e9",
-      "url": "https://x.com/unusual_whales/status/2083231715364122930"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "LizAnnSonders",
-      "created_at": "Mon Jul 27 13:03:03 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.00962308,
-        "likes": 559,
-        "replies": 45,
-        "retweets": 9,
-        "views": 63701
-      },
-      "post_id": "2081727065968292310",
-      "register": "macro_color",
-      "shape": "one_liner",
-      "text": "I’m on vacation starting today and I’ll be generally off X through August 7. Have a great two weeks everyone.",
-      "text_key": "d9093df75837133b",
-      "url": "https://x.com/LizAnnSonders/status/2081727065968292310"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "jam_croissant",
-      "created_at": "Thu Jul 30 20:47:08 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.00837151,
-        "likes": 275,
-        "replies": 21,
-        "retweets": 11,
-        "views": 36672
-      },
-      "post_id": "2082931017652858952",
-      "register": "macro_color",
-      "shape": "caption",
-      "text": "https://t.co/nzrP9h9ijL",
-      "text_key": "b6742051084b26fb",
-      "url": "https://x.com/jam_croissant/status/2082931017652858952"
-    },
-    {
-      "added": "2026-07-31T23:47:24Z",
-      "author": "jam_croissant",
-      "created_at": "Wed Jul 29 23:56:18 +0000 2026",
-      "engagement": {
-        "interaction_rate": 0.00752689,
-        "likes": 583,
-        "replies": 61,
-        "retweets": 83,
-        "views": 96587
-      },
-      "post_id": "2082616236555280398",
-      "register": "macro_color",
-      "shape": "stack",
-      "text": "“The Fed has not been taking the inflation \"problem\" seriously..” B/C THEY DO NOT SEE IT AS A ‘PROBLEM’. \n\nInflation has become a feature, not 🚫a bug 🐜 of the current system. It is how the USA 🇺🇸 will monetize its debt. \n\nHank Paulson’s trial balloon 🎈has already clearly laid out treasury’s plan to backstop the treasury market. This will be QE ♾️ into inflation & they know it. Any serious economist knows this only leads to 1 outcome… An inflationary loop 🔁… \n\nWarsh/Bessent ➡️ Arthur Burns 2.0",
-      "text_key": "b4d618c28203f394",
-      "url": "https://x.com/jam_croissant/status/2082616236555280398"
     }
   ],
   "schema": "marketing.x_exemplar_store/v1",
-  "updated_at": "2026-08-02T22:45:58Z",
+  "updated_at": "2026-08-09T22:20:21Z",
   "versions": []
 }
