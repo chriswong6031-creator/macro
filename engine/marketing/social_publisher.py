@@ -81,6 +81,95 @@ class BufferRateLimited(RuntimeError):
     def __init__(self, message: str, *, retry_after: str = "") -> None:
         super().__init__(message)
         self.retry_after = retry_after
+
+
+#: Error-string prefix for "Buffer refused us for the PLAN, not for the quota".
+#: One literal, read by the publisher runner through :func:`subscription_locked`
+#: so the two halves cannot drift.
+SUBSCRIPTION_LOCKED_PREFIX = "subscription_locked"
+
+#: A `Retry-After` longer than this is not a quota window — it is a lock.
+#:
+#: MEASURED (2026-08-08 audit). The Buffer subscription lapsed around 08-05 and
+#: since 2026-08-06T00:42Z EVERY publish attempt has come back 429 with
+#: `Retry-After: 1376827` — sixteen days, counting down to ~2026-08-21T23:09Z.
+#: A 24h quota allowance cannot produce that number; a plan/seat lock can, and
+#: only one of the two is fixed by waiting for the next sweep.
+#:
+#: WHY THE SPLIT MATTERS. A short 429 is transient and the runner requeues the
+#: item (`retryable=True`) so the next sweep re-picks it with every gate
+#: re-evaluated. That response is exactly WRONG for a lock: the item cannot post
+#: for another two weeks, so "retry next sweep" means requeueing 49 items every
+#: 30 minutes for a fortnight, and the copy they carry is about a tape that
+#: closed days ago. The lock therefore gets `retryable=False` and its own name.
+#:
+#: 24h is the boundary because it is the longest window the SHARED-TOKEN quota
+#: story can explain (publisher + engagement poller against one 24h allowance).
+_SUBSCRIPTION_LOCK_RETRY_AFTER_S: float = 86400.0
+
+
+def retry_after_seconds(raw: str | float | None) -> float | None:
+    """Seconds in a ``Retry-After`` value, or None when nothing parses.
+
+    RFC 9110 allows two forms and this reads both: delta-seconds (what Buffer
+    sends) and an HTTP-date (converted to a delta against now, floored at 0).
+    None means "unknown", never "zero" — an unparseable header must never be the
+    reason a lock is downgraded to a quota blip, and the caller treats None as
+    "not a lock" so the fallback is the pre-existing retryable behaviour.
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        return max(float(raw), 0.0)
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        return max(float(int(text)), 0.0)
+    except (TypeError, ValueError):
+        pass
+    try:
+        from email.utils import parsedate_to_datetime  # noqa: PLC0415
+        when = parsedate_to_datetime(text)
+    except (TypeError, ValueError, IndexError):
+        return None
+    if when is None:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return max((when - datetime.now(timezone.utc)).total_seconds(), 0.0)
+
+
+def is_subscription_lock(retry_after_s: float | None) -> bool:
+    """Is this 429's horizon too long to be a 24h quota window?"""
+    return (retry_after_s is not None
+            and retry_after_s > _SUBSCRIPTION_LOCK_RETRY_AFTER_S)
+
+
+def subscription_locked(receipt: "Receipt | None") -> bool:
+    """True when a receipt is the plan lock rather than an ordinary rate limit.
+
+    Keyed on the error prefix so ONE module owns the string shape. Deliberately
+    not keyed on ``retryable is False`` alone: every ordinary failure is
+    non-retryable too, and "the post is bad" must never read as "the plan is
+    locked".
+    """
+    return str(getattr(receipt, "error", "") or "").startswith(
+        SUBSCRIPTION_LOCKED_PREFIX + ":")
+
+
+def lock_expires_at(retry_after_s: float | None,
+                    now: datetime | None = None) -> str | None:
+    """The iso8601 UTC moment a lock's ``Retry-After`` counts down to."""
+    if retry_after_s is None:
+        return None
+    base = now or datetime.now(timezone.utc)
+    if base.tzinfo is None:
+        base = base.replace(tzinfo=timezone.utc)
+    return (base + timedelta(seconds=float(retry_after_s))).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+
+
 _HTTP_TIMEOUT_S = 15
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # a hostile/broken response must not OOM
 
@@ -220,6 +309,17 @@ class Receipt:
                 That risk grows with volume, which this change set increases: the
                 press wire's salience floor moved 70 -> 30 the same day, so the
                 wire books where it used to book nothing.
+
+                NOT EVERY 429 EARNS IT (2026-08-08). A `Retry-After` past 24h is
+                a plan lock, not a quota window — see
+                :data:`_SUBSCRIPTION_LOCK_RETRY_AFTER_S`. Those come back
+                retryable=False with a `subscription_locked:` error, because
+                requeueing a two-week lock every 30 minutes is the same
+                "recoverable" story told about an item that cannot recover.
+    retry_after_s the 429's Retry-After in seconds when the backend sent one.
+                None for every other outcome, and None also when the header was
+                absent or unparseable — the caller must read None as "unknown",
+                never as "retry immediately".
     """
     ok: bool
     external_id: str | None
@@ -228,6 +328,7 @@ class Receipt:
     backend: str
     at: str
     retryable: bool = False
+    retry_after_s: float | None = None
 
 
 @dataclass
@@ -860,16 +961,44 @@ class BufferPublisher:
             # raises this INSTEAD of the HTTPError for a 429, but a future
             # caller reaching Buffer another way may still surface the raw
             # HTTPError, so the code branch below stays as the backstop.
+            #
+            # TWO 429s, OPPOSITE ANSWERS. A short horizon is the shared-token
+            # quota and the runner should requeue; a horizon past 24h is the
+            # plan lock (see _SUBSCRIPTION_LOCK_RETRY_AFTER_S) and requeueing it
+            # is how 49 items spent a fortnight cycling every 30 minutes while
+            # their copy went stale.
+            ra_s = retry_after_seconds(getattr(exc, "retry_after", ""))
+            if is_subscription_lock(ra_s):
+                return Receipt(
+                    False, None, None,
+                    f"{SUBSCRIPTION_LOCKED_PREFIX}: {exc}",
+                    self.backend, at, retryable=False, retry_after_s=ra_s)
             return Receipt(False, None, None, f"rate_limited: {exc}",
-                           self.backend, at, retryable=True)
+                           self.backend, at, retryable=True, retry_after_s=ra_s)
         except HTTPError as exc:
             detail = ""
             try:
                 detail = exc.read(_MAX_RESPONSE_BYTES).decode("utf-8", "replace")[:300]
             except Exception:  # noqa: BLE001
                 pass
+            # Same split as the branch above. Kept in step deliberately: this is
+            # the backstop for a 429 that reaches us without passing through
+            # _transport, and a backstop that classifies differently from the
+            # primary path is a second, quieter version of the same defect.
+            ra_s = None
+            if getattr(exc, "code", None) == 429:
+                try:
+                    ra_s = retry_after_seconds(exc.headers.get("Retry-After"))
+                except Exception:  # noqa: BLE001
+                    ra_s = None
+            if is_subscription_lock(ra_s):
+                return Receipt(
+                    False, None, None,
+                    f"{SUBSCRIPTION_LOCKED_PREFIX}: http_error 429: {detail}",
+                    self.backend, at, retryable=False, retry_after_s=ra_s)
             return Receipt(False, None, None, f"http_error {exc.code}: {detail}",
-                           self.backend, at, retryable=exc.code == 429)
+                           self.backend, at, retryable=exc.code == 429,
+                           retry_after_s=ra_s)
         except URLError as exc:
             return Receipt(False, None, None, f"network_error: {exc.reason}", self.backend, at)
         except Exception as exc:  # noqa: BLE001

@@ -84,6 +84,25 @@ def _tmp_root(extra_subdirs: list[str] | None = None) -> Path:
     return d
 
 
+def _ts_ago(days: float = 0) -> str:
+    """ISO timestamp `days` before now (UTC) — NEVER hardcode a park-row `ts`.
+
+    ``scripts/metabolism_build.py:185`` auto-releases a parked_construction row
+    once ``age_days >= expiry_days`` against the REAL clock (default 30 at
+    ``_load_park_expiry_days``:164; the fixture yml here sets no override).  A
+    literal ``ts`` is therefore a scheduled red: the park blocks until the wall
+    clock walks 30 days past the literal, then auto-releases and every
+    "parked blocks the proposal" assertion inverts.  Worse, the sibling
+    discrimination tests (different sensor / different lobe / release row) go
+    silently VACUOUS on the same date — they assert ``blocked is False`` and the
+    expiry gives them that answer before the matching logic is ever reached.
+    These fixtures are hermetic in DATA (own tmp root); a relative ts makes them
+    hermetic in TIME.  Matches the in-file idiom already used by
+    TestParkExpiry::test_fresh_park_blocks.
+    """
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(timespec="seconds")
+
+
 def _armed_env() -> dict[str, str]:
     return {**os.environ, "AUTONOMY_PAUSED": "false"}
 
@@ -712,7 +731,7 @@ class TestParkedConstructionBlocksMatchingProposal:
         claims_path = d / "data" / "metabolism" / "claims.jsonl"
         park_row = {
             "schema": "metabolism.parked_construction.v1",
-            "ts": "2026-07-12T00:00:00+00:00",
+            "ts": _ts_ago(1),
             "proposal_id": "p_old_001",
             "parked_construction": {
                 "lobe": "til",
@@ -741,7 +760,7 @@ class TestParkedConstructionBlocksMatchingProposal:
         claims_path = d / "data" / "metabolism" / "claims.jsonl"
         park_row = {
             "schema": "metabolism.parked_construction.v1",
-            "ts": "2026-07-12T00:00:00+00:00",
+            "ts": _ts_ago(1),
             "proposal_id": "p_old_002",
             "parked_construction": {
                 "lobe": "til",
@@ -774,7 +793,7 @@ class TestReleaseRowUnblocks:
         # Parked row
         park_row = {
             "schema": "metabolism.parked_construction.v1",
-            "ts": "2026-07-12T00:00:00+00:00",
+            "ts": _ts_ago(1),
             "proposal_id": "p_old_003",
             "parked_construction": {
                 "lobe": "til",
@@ -786,7 +805,9 @@ class TestReleaseRowUnblocks:
         # Release row (same proposal_id, has release_grant_id)
         release_row = {
             "schema": "metabolism.parked_construction.v1",
-            "ts": "2026-07-13T00:00:00+00:00",
+            # strictly AFTER the park row above — the release must be the later
+            # event, or the unpark is not the thing being tested.
+            "ts": _ts_ago(0),
             "proposal_id": "p_old_003",
             "parked_construction": {
                 "lobe": "til",
@@ -820,7 +841,7 @@ class TestDifferentLobeNotBlocked:
         claims_path = d / "data" / "metabolism" / "claims.jsonl"
         park_row = {
             "schema": "metabolism.parked_construction.v1",
-            "ts": "2026-07-12T00:00:00+00:00",
+            "ts": _ts_ago(1),
             "proposal_id": "p_old_004",
             "parked_construction": {
                 "lobe": "til",

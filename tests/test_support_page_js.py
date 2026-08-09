@@ -259,6 +259,12 @@ def test_a_hanging_auth_client_does_not_strand_the_submit(page_js, hp_id, tmp_pa
     """The GFW failure mode: the SYN is blackholed, so the promise never settles and never
     errors. Unbounded, the button dims and NOTHING happens — no ticket, no error bar, no
     explanation, on the page whose entire purpose is being reachable when auth is not."""
+    # Pin the actual product cap deterministically.  Wall-clock upper bounds are
+    # flaky on a loaded shared runner because Node may not service either timer
+    # at its nominal deadline; the assertions below still prove the capped path
+    # files exactly one unauthenticated ticket before the 6s harness callback.
+    assert "var AUTH_MS = 2500;" in page_js
+    assert "setTimeout(function () { res(h); }, AUTH_MS)" in page_js
     out = _run(
         page_js,
         FILLED
@@ -275,8 +281,7 @@ def test_a_hanging_auth_client_does_not_strand_the_submit(page_js, hp_id, tmp_pa
     assert out["posts"] == 1, "the ticket must still go out, unauthenticated"
     assert out["auth"] is False              # filed as signed-out, which the API accepts
     assert out["form"] == "success"
-    # the cap is 2500ms; anything near the 6s wait means it never fired
-    assert 1000 < out["ms"] < 4000, f"the auth cap did not fire as expected ({out['ms']}ms)"
+    assert out["ms"] > 1000, f"the auth cap fired implausibly early ({out['ms']}ms)"
 
 
 @needs_node

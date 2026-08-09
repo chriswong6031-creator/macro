@@ -12,6 +12,7 @@ import pandas as pd
 from engine.china_inputs import (build_features, pair_ratios_snapshot,
                                  preference_check, rs_table)
 from engine.china_regime import classify
+from engine.store_guard import check_coverage_regression
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -39,6 +40,10 @@ def run() -> dict:
     p = config.data_dir() / "china_regime"
     p.mkdir(parents=True, exist_ok=True)
     store_df = regime[[c for c in regime.columns if not c.startswith("c_")]]
+    # Same class as the 2026-08-08 HK incident (see engine/store_guard.py):
+    # weekly.yml discards data/china_* writes while shipping site/ artifacts
+    # built from them — refuse a degraded recompute rather than ship the split.
+    check_coverage_regression(store_df, p / "regime_history.parquet", "china")
     store_df.to_parquet(p / "regime_history.parquet")
 
     asof = regime["quad"].last_valid_index()

@@ -339,6 +339,62 @@ sized target), the L1 continuation-side regime merge, the F3 full-universe re-ru
 forward ledger's live grading, and the collectors. Nothing in the exploration space is
 closed beyond the constructions named in the four receipts' ore ledgers.
 
+### §6.4 W3-B + W3-C ADJUDICATION (Fable, 2026-08-09, second session) — the regime axis
+joins the priced family; the paper edge is measured against the buyable book
+
+**W3-B #5142 APPROVED (amended).** The L1 continuation-side regime merge — the program's
+largest measured remaining daily-resolution effect — returns a **structured null**: 0/78
+pre-registered cells make the fillable next-open rider net-positive (the 21 THIN-clearing
+cells: max dc-t **−0.17**, 21/21 net-negative in both windows), and the declared headline
+cell (main·N=1·top dial tercile·E3) loses MORE when the dial is hot (holdout −0.961%,
+dc-t −2.54). The dial's probability claim is confirmed at ORDERING level: fillable share
+falls monotonically in the dial on 6/6 main rung×window cells (ordering violated 0/200
+global-permutation draws, 1/200 era-preserving draws) while the P(next board) hot−cold
+spread survives clustering (+9.50/+8.76 pp, clu-t 2.61/2.62, both windows). **The mechanism
+is access rationing: the auction prices the regime by removing the fills** (main N=1 holdout
+fillable 96.2→79.5% cold→hot; fillability tax 20.6→52.3%). The adversarial cycle (two
+MAJORs: a single-draw permutation null quoted to 2dp against a 5-pp null SD; an S7-class
+lookahead predicate keyed to a series that could not move) demoted all but 3/12 affirmative
+magnitudes to DIRECTION-ONLY — era composition dominates the −16.74 pp flagship (within-year
+permutation p 0.070; session bootstrap widens IID CIs ~6×, clustered t −1.64). The
+broken-board T+1-open lead concentrates dial-hot (E3 holdout +0.999 pp, t 2.70) but is a
+smaller loss, never a gain (own-book: 0 cells clear; E1/E2 sign-flip across windows, E3
+alone sign-stable). Ore ledger: 15 constructions open.
+
+**W3-C #5144 APPROVED (amended).** The onset fillability re-statement completes the
+program's fillability-honesty debt: **all 90 main-board implementable cells are net-negative
+in both windows, and every one of the 52 fit-positive paper cells flips under open-anchored
+accounting** (exemplar B1·K=1·E1: paper +0.528% → implementable −0.405%, dc-t −2.72; the
+sharpest single cell, 2014: paper +3.476% at 75.1% fillability → −0.190% implementable).
+Rate survival 0.698–0.819 (median 0.748), capture survival median 0.704; ChiNext is nearly
+untaxed (0.929) because its book barely selects boards. **Mechanism attributed: the 连板
+ladder, not the six features, drives unfillability** — B0's rungs run fillable
+99.91→93.00→83.44→71.21% with 一字 0.022→13.53% (−28.7 pp), near-monotone in P̂ for every
+ranker (B1 reverses once at K=1→3, B2 at two decile boundaries; direction and magnitude
+unaffected). The survivor book is a clean null — 0/180 (board×cell×exit) at dc-t ≥ 2 in both
+windows, and the era tables show all 8 both-window-positive combos are positive **only in
+2025**: the sign agreement is one ChiNext year, not a pattern. Review MAJOR (contained,
+fixed two-sided): U2 paper books scored 2,697 trades on 停牌 placeholder bars —
+`china_stocks_raw` encodes suspensions as zero-volume STALE-PRICE placeholder rows, not
+missing rows (133,781 in-window); the `& y_ok` mask landed, max paper move 0.055 pp, U1
+untouched, and the implementable books are proven placeholder-free (0 of 18,777 L1-parity
+trades on non-live bars). All 11 gates now carry the exit code. Ore ledger: 19.
+
+**Wave synthesis — the daily-resolution book closes end-to-end.** FIVE families measured
+and priced (next-open strength · break-day weakness · pullback weakness · window targets ·
+the regime axis), and the paper-vs-buyable gap is now a measured curve rather than a
+caveat: model confidence and regime heat both price themselves through the T+1 auction
+primarily by REMOVING THE FILLS — the two access-rationing findings (dial-hot availability
+collapse; ladder-driven 一字 share) are precisely the objects the intraday battery's minute
+bars can watch forming in real time, which sharpens (not merely survives) the case for it.
+Nothing new is promoted; nothing new is killed beyond the constructions named in the two
+receipts. **New house standard from this wave (binding on every future receipt): a
+null-headline receipt must hold its affirmative asides to the same inference standard as
+its nulls** — date-cluster or session-bootstrap every affirmative share/spread, permutation-
+null every magnitude with an era-preserving arm beside the global one, and key every verify
+predicate to a series that CAN move (S7-class defects surfaced in three consecutive waves;
+the class is now a named check in review briefs).
+
 ## §7 Forward-ledger law (from Wave 1, standing)
 
 Every probability the system emits is stamped (feature_date, predict_date, model_version, era
@@ -359,6 +415,7 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
      anchored, locked-exit-honest, regime-conditioned from day one.
   3. **Onset book fillability re-statement** — L3's B2/top-K cells put through L1's open-
      anchored accounting (the onset side never got the fillability treatment).
+     **DONE 2026-08-09 — #5144, adjudicated §6.4 (every positive paper cell flips).**
   4. **Cheap catalog constructions:** near-miss discontinuity (C12), 一字 queue-depth (C11),
      cross-band telemetry pilot (C15, post-2020 era).
   5. **Collectors (operator pre-authorized):** extend the zt_pool scrape with 首次封板时间 +
@@ -379,8 +436,9 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
   Waves 1-2 proved the auction prices tomorrow's BOARD — does it price the WINDOW? Boards
   are a window's unfillable spikes; the 6-8% days are its buyable flesh. Includes the C12
   near-miss matched comparison. Then: **L1 continuation-side regime merge** (W2-A's largest
-  measured effect), minute-bar intraday battery (post-Codex wiring), F3 full-universe re-run
-  (post-expansion).
+  measured effect) — **DONE 2026-08-09, #5142, adjudicated §6.4 (structured null; access
+  rationing measured)** — minute-bar intraday battery (post-Codex wiring), F3 full-universe
+  re-run (post-expansion).
 - **Event-taxonomy ruling (operator question, 2026-08-09 — recorded so no session re-litigates
   it):** on a 10% board the catalog decomposes as: close ≥ ~+9.78% (limit price × 0.998) =
   LIMIT-UP CLOSE (tolerant primary; the 0.2% is a feed-noise cushion, adjudicated, strict
@@ -398,6 +456,20 @@ everything; Wave-2 wires the nightly advancer at the hook point L3 identifies.
   when the forward ledger has ≥10 graded sessions.
 
 ## §9 DUAL-LANE PROTOCOL + DATA HORIZON (operator update, 2026-08-09)
+
+**AMENDED BY OPERATOR ORDER, 2026-08-09 (second session), TWICE — FINAL STATE: the Codex
+lane is ENDED ENTIRELY and this (Claude) lane is the MASTER SESSION for everything
+limit-move.** First order: the Tushare wiring transferred here (Codex wiring failed) —
+authority + plane architecture in `research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md`. Second
+order: integrate the full Codex handoff — the dual-lane protocol, including clause 1's
+analytic blindness, is DISSOLVED; the reconciliation clause 4 reserved for the operator has
+now HAPPENED. The reconciliation event, preservation receipts (five Codex branches pushed,
+dirty range-shard campaign wip-committed), construction-by-construction verdicts
+(convergent kills on daily riders + onset books across two independent stacks), the
+two-tapes ruling, the universe-truth upgrade of F3, the exact-cent taxonomy adoption, the
+two-ledger Monday grading, and the re-ranked master queue all live in
+**`research/CN_LIMIT_ALPHA_RECONCILIATION_LEDGER_2026-08-09.md`** — read it with this
+section; on conflict the reconciliation ledger wins over the paragraphs below.
 
 **Two independent lanes now work this mechanism by operator design.** A Codex session runs the
 SAME project in parallel — deliberately, for cross-comparison and reconciliation later ("fresh

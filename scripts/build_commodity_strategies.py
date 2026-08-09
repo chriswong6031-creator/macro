@@ -18,17 +18,22 @@ Run: python -m scripts.build_commodity_strategies
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine import active_commodity as Ach
-from engine import commodity_strategies as S
-from lib import config
-from lib.pages import write_page
-from scripts import _active_render as AR
-from scripts.build_strategies import _card, _detail_vm, _evaluate
-from scripts.build_vector import C
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import active_commodity as Ach  # noqa: E402
+from engine import commodity_strategies as S  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+from scripts import _active_render as AR  # noqa: E402
+from scripts.build_strategies import _card, _detail_vm, _evaluate  # noqa: E402
+from scripts.build_vector import C  # noqa: E402
 
 BACK = ("Commodity Strategies", "商品策略")
 _BACK = ("commodity_strategies.html", "Commodity Strategies", "商品策略")

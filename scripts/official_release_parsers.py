@@ -713,15 +713,12 @@ def parse_nfp_actual(body: bytes) -> dict[str, Any] | None:
     if payroll_change is None or not unemployment:
         return None
     unemployment_rate = _number(unemployment.group(1))
-    period_match = re.search(
-        r"(?:employment|unemployment rate).{0,100}?\bin\s+([A-Z][a-z]+)\b",
-        text,
-        flags=re.IGNORECASE,
-    )
-    period = (
-        _embedded_reference_period(text)
-        or (period_match.group(1).title() if period_match else None)
-    )
+    # Prefer the exact dated feed packet's explicit period.  The prior broad
+    # ``in <word>`` regex could capture the article in phrases such as
+    # ``employment in the establishment survey`` and persist ``"The"`` as a
+    # payroll reference period.  Without an explicit month+year, fail closed;
+    # the watcher retains the publication-level feed period separately.
+    period = _embedded_reference_period(text) or _period_from_month_text(text, None)
     payroll_text = f"{payroll_change / 1_000:+.0f}k"
     headline_en = (
         f"Payrolls {payroll_text}; unemployment "

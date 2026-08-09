@@ -1300,6 +1300,18 @@ def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
         intake_stats=stats,
     )
     assert len(plans) == len(buys) == N_CANDIDATES + 4
+    # HERMETICITY: `originate_plans` resolves the leader-pullback map from the REAL
+    # site/ tree (there is no injection point on this call path), so the receipt's
+    # `map_tickers` and the split between "outside the organ's universe" and "no coverage
+    # published" depend on whether site/anticipationdata/us_leader_pullback.json happens
+    # to be checked in.  Its PLAN-derived invariants do not, so those are asserted here
+    # and the key is removed from the exact-shape comparison below — which still catches
+    # any OTHER new or renamed stat.
+    receipt = stats.pop("leader_pullback_coverage")
+    assert receipt["plans"] == len(buys)
+    assert receipt["licensed"] == 0
+    assert (receipt["with_organ_state"] + receipt["outside_organ_universe"]
+            + receipt["no_coverage_published"]) == len(buys)
     assert stats == {
         "mode": "lossless",
         "reorigination_blocked": 0,
@@ -1343,6 +1355,7 @@ def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
         "wait_reset": [],
         "early_turn_starters": [],
         "leader_pullback_source": ["unavailable"],
+        # "leader_pullback_coverage" is popped and asserted above — see the note there.
     }
 
 
