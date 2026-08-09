@@ -65,6 +65,10 @@ LICENSE_AUTHORITY_REFERENCE_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256"
 LICENSE_AUTHORITY_GATE_VALUE = (
     "written_vendor_authorization_or_institutional_contract_verified"
 )
+# Deliberately empty until a vendor-signed authorization or institutional contract is
+# reviewed out of band and its exact digest is added through a normal code-review PR.
+# Environment variables alone are operator-controlled and may never self-attest rights.
+TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S: frozenset[str] = frozenset()
 
 ALLOWED_FREQUENCIES = ("1min", "5min", "15min", "30min", "60min")
 BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {
@@ -340,10 +344,13 @@ def _license_authority_receipt() -> dict[str, object]:
         raise CollectionHeld(
             "written_vendor_authorization_or_institutional_contract_required"
         )
+    if reference not in TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S:
+        raise CollectionHeld("vendor_license_authority_not_out_of_band_allowlisted")
     return {
         "gate_state": "satisfied_for_bounded_metadata_only_pilot",
         "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
         "authority_reference_sha256": reference,
+        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
         "personal_pricing_nonclaim": "personal_pricing_is_not_a_commercial_use_grant",
         "scope_nonclaims": [
             "no_commercial_use_authority",
@@ -1395,6 +1402,7 @@ def pilot_plan(
             "required_for_execute": True,
             "state": "not_evaluated_plan_only",
             "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
+            "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
             "personal_pricing_nonclaim": (
                 "personal_pricing_is_not_a_commercial_use_grant"
             ),

@@ -40,6 +40,11 @@ values are present and valid:
   `written_vendor_authorization_or_institutional_contract_verified`; and
 - `TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256` binds the reviewed authority artifact.
 
+Those values cannot self-attest permission. The referenced digest must also appear in
+the code-reviewed `TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S` out-of-band allowlist,
+which is deliberately empty in this foundation. Adding a digest requires a separate PR
+that reviews the vendor-signed authorization or institutional contract and its scope.
+
 The GitHub workflow has the same main-ref job gate through repository variables. A
 dispatch confirmation cannot substitute for it. Even after that gate is satisfied,
 this foundation grants **no** commercial-use, product-publication, team-sharing,

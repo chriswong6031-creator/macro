@@ -50,6 +50,8 @@ jobs:
     # Never expose the paid token to code dispatched from an arbitrary ref or under
     # personal-plan pricing alone.  These repository variables are provisioned only
     # after written vendor authorization or an institutional contract is reviewed.
+    # The collector separately requires that digest in its code-reviewed out-of-band
+    # allowlist, so repository variables cannot self-attest usage rights.
     if: >-
       ${{ inputs.confirm_execute == true &&
           github.ref == 'refs/heads/main' &&

@@ -27,6 +27,11 @@ def provision_synthetic_license_gate(monkeypatch: pytest.MonkeyPatch) -> None:
         addons.LICENSE_AUTHORITY_GATE_VALUE,
     )
     monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
+    monkeypatch.setattr(
+        addons,
+        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
+        frozenset({LICENSE_REFERENCE}),
+    )
 
 
 def minute_frame(*, high: float = 10.2, trade_date: str = "2026-08-07") -> pd.DataFrame:
@@ -157,6 +162,7 @@ def test_plan_is_no_network_no_write_and_blocks_unconfirmed_endpoints(
         "required_for_execute": True,
         "state": "not_evaluated_plan_only",
         "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
+        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
         "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
     }
     assert not output.exists()
@@ -228,6 +234,7 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
         "gate_state": "satisfied_for_bounded_metadata_only_pilot",
         "accepted_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
         "authority_reference_sha256": LICENSE_REFERENCE,
+        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
         "personal_pricing_nonclaim": ("personal_pricing_is_not_a_commercial_use_grant"),
         "scope_nonclaims": [
             "no_commercial_use_authority",
@@ -341,6 +348,25 @@ def test_license_gate_fails_before_vendor_call_or_partition(
     query = FakeQuery("stk_mins", minute_frame())
 
     with pytest.raises(addons.CollectionHeld, match="written_vendor_authorization"):
+        addons.collect_pilot(
+            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+        )
+
+    assert query.calls == []
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_operator_controlled_license_sha_cannot_self_attest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        addons,
+        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
+        frozenset(),
+    )
+    query = FakeQuery("stk_mins", minute_frame())
+
+    with pytest.raises(addons.CollectionHeld, match="out_of_band_allowlisted"):
         addons.collect_pilot(
             minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
         )
