@@ -352,7 +352,11 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
             return 0
         registry_path = p.parent / "defect_notices.json"
         try:
-            from engine.release_defects import is_evaluation_eligible, load_defect_notices
+            from engine.release_defects import (
+                canonical_scored_rows,
+                is_evaluation_eligible,
+                load_defect_notices,
+            )
             notices = load_defect_notices(p.parent)
             # A deployed registry that is empty or malformed cannot support a
             # trustworthy maturity count.  Legacy standalone ledgers without a
@@ -363,8 +367,9 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
             if registry_path.exists():
                 return 0
             notices = []
+            canonical_scored_rows = lambda rows: rows  # type: ignore[assignment]
             is_evaluation_eligible = lambda _row, _notices: True  # type: ignore[assignment]
-        count = 0
+        scored_rows: list[dict] = []
         with p.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -372,14 +377,15 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
                     continue
                 try:
                     row = json.loads(line)
-                    if (isinstance(row, dict)
-                            and row.get("row_type") == "scored"
-                            and row.get("release") == release
-                            and is_evaluation_eligible(row, notices)):
-                        count += 1
+                    if isinstance(row, dict) and row.get("row_type") == "scored":
+                        scored_rows.append(row)
                 except json.JSONDecodeError:
                     continue
-        return count
+        return sum(
+            1 for row in canonical_scored_rows(scored_rows)
+            if row.get("release") == release
+            and is_evaluation_eligible(row, notices)
+        )
     except Exception as exc:  # noqa: BLE001
         log.debug("_count_scored_rows failed for %s: %s", ledger_path, exc)
         return 0

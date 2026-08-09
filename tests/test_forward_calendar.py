@@ -535,3 +535,26 @@ def test_scoreboard_current_n_field_is_counted(tmp_path: Path) -> None:
         "accuracy_note" not in entry
         for entry in releases.get("top_upcoming", [])
     )
+
+
+def test_track_record_disclosure_is_scoped_to_each_release(tmp_path: Path) -> None:
+    """Claims history must not masquerade as a CPI accuracy record."""
+    from engine.forward_calendar_context import gather_forward_calendar
+
+    root = _make_root(tmp_path)
+    _write_json(
+        root / "data" / "release_forecast" / "latest.json",
+        _minimal_release_forecast([_cpi_entry(), _claims_entry()]),
+    )
+    scoreboard = _empty_scoreboard()
+    scoreboard["by_release"] = {"claims": {"n": 5}}
+    _write_json(root / "data" / "release_forecast" / "scoreboard.json", scoreboard)
+    _write_json(
+        root / "data" / "neuralweb" / "cycle_pattern_state.json",
+        _minimal_cycle_state({"up": {"1m": "PASS"}, "down": {"1m": "PASS"}}, []),
+    )
+
+    releases = gather_forward_calendar(root)["releases"]
+    cpi = next(row for row in releases["top_upcoming"] if row["name"] == "cpi")
+    assert releases["n_graded"] == 5
+    assert cpi["accuracy_note"] == "no accuracy record yet"

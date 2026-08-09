@@ -94,24 +94,31 @@ def test_hash_survives_engine_item_snapshot_and_ledger(tmp_root: Path, monkeypat
 
 
 def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
+    from engine.release_actuals import normalize_publication
+
     actual_path = tmp_root / "data" / "release_forecast" / "official_actuals.jsonl"
+    receipt = normalize_publication({
+        "type": "CPI",
+        "date": "2026-07-14",
+        "reference_period": "June 2026",
+        "data_ready": True,
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_cpi",
+        "source_url": "https://www.bls.gov/news.release/archives/cpi_test.htm",
+        "source_sha256": "b" * 64,
+        "first_seen_at": "2026-07-14T12:30:01+00:00",
+        "source_released_at": "2026-07-14T12:30:00+00:00",
+        "verified_at": "2026-07-14T12:31:00+00:00",
+        "parser": {"name": "cpi", "version": 1},
+        "actual": {
+            "headline_mom": -0.4,
+            "core_mom": 0.0,
+            "unit": "percent",
+            "reference_period": "June 2026",
+        },
+    })[0]
     actual_path.write_text(
-        json.dumps({
-            "schema": "release_actual.v1",
-            "row_type": "actual",
-            "receipt_id": "official_actual:test",
-            "release": "cpi_headline",
-            "period": "2026-06",
-            "sequence": "first",
-            "actual": -0.4,
-            "actual_raw": -0.4,
-            "actual_basis": "official_published_metric",
-            "actual_source": "official_release_document",
-            "source_url": "https://www.bls.gov/news.release/archives/cpi_test.htm",
-            "source_sha256": "b" * 64,
-            "observed_at": "2026-07-14T12:30:01+00:00",
-            "exact_target_id": "cpi_headline_mom_printed_first",
-        }) + "\n",
+        json.dumps(receipt) + "\n",
         encoding="utf-8",
     )
     projection = _projection_row(
@@ -125,7 +132,68 @@ def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
     assert len(scored) == 1
     assert scored[0]["actual"] == -0.4
     assert scored[0]["actual_source"] == "official_release_document"
-    assert scored[0]["actual_receipt_id"] == "official_actual:test"
+    assert scored[0]["actual_receipt_id"] == receipt["receipt_id"]
+
+
+def test_official_actual_receipt_supersedes_legacy_score_idempotently(
+    tmp_root: Path,
+) -> None:
+    from engine.release_actuals import normalize_publication
+
+    receipt = normalize_publication({
+        "type": "CPI",
+        "date": "2026-07-14",
+        "reference_period": "June 2026",
+        "data_ready": True,
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_cpi",
+        "source_url": "https://www.bls.gov/news.release/archives/cpi_test.htm",
+        "source_sha256": "c" * 64,
+        "first_seen_at": "2026-07-14T12:30:01+00:00",
+        "source_released_at": "2026-07-14T12:30:00+00:00",
+        "verified_at": "2026-07-14T12:31:00+00:00",
+        "parser": {"name": "cpi", "version": 1},
+        "actual": {
+            "headline_mom": -0.4,
+            "core_mom": 0.0,
+            "unit": "percent",
+            "reference_period": "June 2026",
+        },
+    })[0]
+    actual_path = tmp_root / "data" / "release_forecast" / "official_actuals.jsonl"
+    actual_path.write_text(json.dumps(receipt) + "\n", encoding="utf-8")
+
+    projection = _projection_row(
+        release="cpi_headline",
+        period="2026-06",
+        asof_night="2026-07-13",
+        release_date="2026-07-14",
+    )
+    legacy_score = {
+        **_scored_row(
+            release="cpi_headline",
+            period="2026-06",
+            asof_night="2026-07-14",
+        ),
+        "actual": -0.4225,
+        "frozen_asof_night": "2026-07-13",
+    }
+
+    corrected = _check_release_day_capture(
+        date(2026, 7, 15),
+        tmp_root,
+        [projection, legacy_score],
+    )
+
+    assert len(corrected) == 1
+    assert corrected[0]["actual"] == -0.4
+    assert corrected[0]["actual_receipt_id"] == receipt["receipt_id"]
+    assert corrected[0]["supersedes_score_receipt_ids"]
+    assert _check_release_day_capture(
+        date(2026, 7, 15),
+        tmp_root,
+        [projection, legacy_score, corrected[0]],
+    ) == []
 
 
 def test_scoreboard_primary_metrics_exclude_structured_defect(tmp_root: Path) -> None:
@@ -147,6 +215,64 @@ def test_scoreboard_primary_metrics_exclude_structured_defect(tmp_root: Path) ->
     assert board["all_forward"]["cpi_headline:champion"]["n"] == 2
     assert board["all_forward"]["cpi_headline:champion"]["excluded_n"] == 1
     assert board["evaluation_exclusions"]["by_defect"] == {"DN-T": 1}
+
+
+def test_scoreboard_canonicalizes_official_score_supersession() -> None:
+    legacy = {
+        **_scored_row(release="nfp", period="2026-07", asof_night="2026-08-07"),
+        "actual": -126.0,
+        "frozen_asof_night": "2026-08-06",
+        "frozen_projection_point": 50.0,
+    }
+    official = {
+        **legacy,
+        "asof_night": "2026-08-09",
+        "actual": 57.0,
+        "actual_basis": "official_published_metric",
+        "actual_receipt_id": "official_actual:nfp-july",
+        "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
+    }
+
+    board = _build_scoreboard([legacy, official], "2026-07-01")
+
+    assert board["by_release"]["nfp"]["n"] == 1
+    assert board["by_release"]["nfp"]["mae_ours"] == pytest.approx(7.0)
+    assert board["all_forward"]["nfp:champion"]["n"] == 1
+    assert board["score_receipts"] == {
+        "raw_n": 2,
+        "canonical_n": 1,
+        "superseded_n": 1,
+        "note": (
+            "Official actual receipts supersede same-vintage proxies and legacy "
+            "calculations for evaluation; every receipt remains in the ledger."
+        ),
+    }
+
+
+def test_append_keeps_distinct_same_day_score_receipts(tmp_root: Path) -> None:
+    ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+    base = {
+        **_scored_row(release="nfp", period="2026-07", asof_night="2026-08-09"),
+        "frozen_asof_night": "2026-08-06",
+    }
+    proxy = {
+        **base,
+        "actual": -126.0,
+        "actual_receipt_id": "same_vintage:proxy",
+        "score_receipt_id": "score:proxy",
+    }
+    official = {
+        **base,
+        "actual": 57.0,
+        "actual_basis": "official_published_metric",
+        "actual_receipt_id": "official_actual:nfp-july",
+        "score_receipt_id": "score:official",
+    }
+
+    _append_ledger_rows(ledger_path, [proxy, official])
+    _append_ledger_rows(ledger_path, [proxy, official])
+
+    assert _load_ledger(ledger_path) == [proxy, official]
 
 
 # ============================================================
@@ -262,6 +388,10 @@ class TestContract:
         assert "upcoming" in result
         assert "last_scored" in result
         assert "scoreboard_ref" in result
+        methodology = result["methodology_status"]
+        assert methodology["forecast_points_changed_by_wave1"] is False
+        assert methodology["coherent_target_refit_status"].startswith("not_started")
+        assert methodology["accuracy_claim"] == "withheld_until_clean_aligned_forward_evidence"
 
     def test_display_only_true(self, tmp_root: Path, monkeypatch):
         """display_only must always be True."""

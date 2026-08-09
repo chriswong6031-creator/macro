@@ -11794,6 +11794,7 @@ artifacts:
     consumers:
       - engine/master_brain.py
       - engine/forward_calendar_context.py
+      - engine/inflation_intelligence.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -11829,6 +11830,7 @@ artifacts:
     consumers:
       - scripts/build_release_forecast.py
       - engine/chronicle/adapters.py
+      - engine/inflation_intelligence.py
     notes: >
       MRI PR-C: append-only forward ledger for release projections and
       scored actuals. Row types: projection (nightly frozen snapshot) and

@@ -29,8 +29,6 @@ from typing import Any
 
 import pandas as pd
 
-from engine.conditions import _smooth_annual_rate
-
 SCHEMA = "inflation_intelligence.v1"
 DEFAULT_OUTPUT = Path("data/release_forecast/inflation_intelligence.json")
 DEFAULT_RADAR_LATEST = Path("data/release_forecast/latest.json")
@@ -85,6 +83,23 @@ def _parse_date(value: Any) -> date | None:
         return None
 
 
+def _parse_ledger_asof(value: Any) -> date | None:
+    """Parse a full ISO ledger day/timestamp; reject partial or numeric clocks."""
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if not isinstance(value, str):
+        return None
+    token = value.strip()
+    if len(token) < 10 or (len(token) > 10 and token[10] not in {"T", " "}):
+        return None
+    try:
+        return date.fromisoformat(token[:10])
+    except ValueError:
+        return None
+
+
 def _month_age(observation_period: str | None, as_of: date) -> int | None:
     if not observation_period:
         return None
@@ -93,6 +108,15 @@ def _month_age(observation_period: str | None, as_of: date) -> int | None:
     except Exception:  # noqa: BLE001
         return None
     return (as_of.year - period.year) * 12 + as_of.month - period.month
+
+
+def _monthly_freshness(age_months: int | None) -> str:
+    """Classify a monthly public series without treating wrapper time as freshness."""
+    if age_months is None or age_months < 0:
+        return "unknown"
+    # CPI-family releases naturally describe an earlier reference month.  Two
+    # calendar months is therefore an allowed publication lag; more is stale.
+    return "current_with_publication_lag" if age_months <= 2 else "stale"
 
 
 def _read_json(path: Path, label: str, gaps: list[str]) -> dict[str, Any] | None:
@@ -164,6 +188,8 @@ def _read_fred_series(
         "available": False,
         "path": _path_label(repo, path),
         "observation_period": None,
+        "observation_age_months": None,
+        "freshness_status": "unknown",
     }
     if not path.exists():
         gaps.append(f"fred:{series_id}:absent")
@@ -192,12 +218,19 @@ def _read_fred_series(
         if series.empty:
             gaps.append(f"fred:{series_id}:no_numeric_observations")
             return None, status
+        observation_period = str(series.index[-1].to_period("M"))
+        age_months = _month_age(observation_period, as_of)
+        freshness_status = _monthly_freshness(age_months)
         status.update(
             available=True,
             column=str(column),
             observations=len(series),
-            observation_period=str(series.index[-1].to_period("M")),
+            observation_period=observation_period,
+            observation_age_months=age_months,
+            freshness_status=freshness_status,
         )
+        if freshness_status == "stale":
+            gaps.append(f"fred:{series_id}:stale:{age_months}m")
         return series, status
     except Exception as exc:  # noqa: BLE001
         gaps.append(f"fred:{series_id}:unreadable:{type(exc).__name__}")
@@ -231,6 +264,20 @@ def _level_change(monthly: pd.Series, months: int, annualized: bool) -> float | 
     return _number((gross**exponent - 1.0) * 100.0)
 
 
+def _monthly_percent_annualized(series: pd.Series, months: int) -> float | None:
+    """Compound the latest full N-month window of raw monthly percent changes."""
+    if months < 1:
+        return None
+    monthly = _monthly_levels(series)
+    if len(monthly) < months:
+        return None
+    window = monthly.iloc[-months:]
+    if window.isna().any() or (window <= -100.0).any():
+        return None
+    gross = float((1.0 + window / 100.0).prod())
+    return _number((gross ** (12.0 / months) - 1.0) * 100.0)
+
+
 def _released_index_state(
     series: pd.Series | None,
     series_id: str,
@@ -242,6 +289,8 @@ def _released_index_state(
         "series_id": series_id,
         "label": label,
         "observation_period": None,
+        "observation_age_months": None,
+        "freshness_status": "unknown",
         "index_level": None,
         "mom_pct": None,
         "yoy_pct": None,
@@ -258,11 +307,13 @@ def _released_index_state(
     ann3 = _level_change(monthly, 3, annualized=True)
     ann6 = _level_change(monthly, 6, annualized=True)
     period = str(monthly.index[-1])
+    age_months = _month_age(period, as_of)
     return {
         **empty,
         "available": True,
         "observation_period": period,
-        "observation_age_months": _month_age(period, as_of),
+        "observation_age_months": age_months,
+        "freshness_status": _monthly_freshness(age_months),
         "index_level": _number(monthly.iloc[-1], digits=3),
         "mom_pct": _level_change(monthly, 1, annualized=False),
         "yoy_pct": _level_change(monthly, 12, annualized=False),
@@ -285,6 +336,8 @@ def _monthly_proxy_state(
         "series_id": series_id,
         "label": label,
         "observation_period": None,
+        "observation_age_months": None,
+        "freshness_status": "unknown",
         "monthly_pct": None,
         "annualized_3m_pct": None,
         "annualized_6m_pct": None,
@@ -296,16 +349,16 @@ def _monthly_proxy_state(
     clean = pd.to_numeric(series, errors="coerce").dropna().sort_index()
     if clean.empty:
         return empty
-    ann3_series = _smooth_annual_rate(clean, 3).dropna()
-    ann6_series = _smooth_annual_rate(clean, 6).dropna()
-    ann3 = _number(ann3_series.iloc[-1]) if not ann3_series.empty else None
-    ann6 = _number(ann6_series.iloc[-1]) if not ann6_series.empty else None
+    ann3 = _monthly_percent_annualized(clean, 3)
+    ann6 = _monthly_percent_annualized(clean, 6)
     period = str(clean.index[-1].to_period("M"))
+    age_months = _month_age(period, as_of)
     return {
         **empty,
         "available": True,
         "observation_period": period,
-        "observation_age_months": _month_age(period, as_of),
+        "observation_age_months": age_months,
+        "freshness_status": _monthly_freshness(age_months),
         "monthly_pct": _number(clean.iloc[-1]),
         "annualized_3m_pct": ann3,
         "annualized_6m_pct": ann6,
@@ -332,10 +385,15 @@ def _forecast_evolution(
     ledger_rows: list[dict[str, Any]],
     release_type: str,
     period: str | None,
+    cutoff_asof: date,
 ) -> dict[str, Any]:
     # One authoritative/champion projection per as-of. Shadow model rows are kept
     # in the source ledger but excluded from this path to avoid mixing model identities.
+    # The ledger can advance independently of a historical/replayed artifact build,
+    # so rows without a parseable clock or after the resolved artifact clock fail closed.
     by_asof: dict[str, dict[str, Any]] = {}
+    excluded_after_cutoff = 0
+    excluded_unparseable_asof = 0
     for row in ledger_rows:
         if row.get("release") != release_type or str(row.get("period") or "") != str(period or ""):
             continue
@@ -343,9 +401,15 @@ def _forecast_evolution(
             continue
         if row.get("model") not in (None, "", "champion"):
             continue
-        asof = str(row.get("asof_night") or row.get("asof") or "")
-        if not asof:
+        row_asof = row.get("asof_night") or row.get("asof")
+        row_date = _parse_ledger_asof(row_asof)
+        if row_date is None:
+            excluded_unparseable_asof += 1
             continue
+        if row_date > cutoff_asof:
+            excluded_after_cutoff += 1
+            continue
+        asof = row_date.isoformat()
         by_asof[asof] = {
             "asof": asof,
             "point": _number(row.get("projection_point")),
@@ -358,10 +422,19 @@ def _forecast_evolution(
             "input_completeness": _number(row.get("input_completeness")),
             "cutoff_label": row.get("cutoff_label"),
             "prediction_id": row.get("prediction_id"),
+            "model_epoch": row.get("model_epoch"),
+            "target_epoch": row.get("target_epoch"),
+            "code_receipt": row.get("code_receipt"),
+            "inputs_hash": row.get("inputs_hash"),
+            "input_snapshot_ref": row.get("input_snapshot_ref"),
         }
     points = [by_asof[key] for key in sorted(by_asof)]
     return {
         "basis": "append_only_release_radar_forward_ledger_champion_path",
+        "cutoff_asof": cutoff_asof.isoformat(),
+        "cutoff_policy": "exclude_unparseable_or_after_resolved_artifact_asof",
+        "excluded_after_cutoff": excluded_after_cutoff,
+        "excluded_unparseable_asof": excluded_unparseable_asof,
         "n_points": len(points),
         "first_asof": points[0]["asof"] if points else None,
         "last_asof": points[-1]["asof"] if points else None,
@@ -440,6 +513,7 @@ def _forecast_target(
     entry: dict[str, Any] | None,
     ledger_rows: list[dict[str, Any]],
     radar_asof: str | None,
+    evolution_cutoff: date,
 ) -> dict[str, Any]:
     if not entry:
         return {
@@ -447,12 +521,27 @@ def _forecast_target(
             "release_type": None,
             "period": None,
             "release_date": None,
+            "days_to_release": None,
+            "target": None,
+            "forecast_asof": radar_asof,
+            "model_epoch": None,
+            "target_epoch": None,
+            "code_receipt": None,
+            "inputs_hash": None,
+            "input_snapshot_ref": None,
+            "primary_forecast_basis": None,
+            "context_metrics_basis": None,
+            "basis_warning": None,
             "release_radar_projection": None,
             "combined_display_estimate": None,
             "coverage": {},
             "component_freshness": [],
             "forecast_evolution": {
                 "basis": "append_only_release_radar_forward_ledger_champion_path",
+                "cutoff_asof": evolution_cutoff.isoformat(),
+                "cutoff_policy": "exclude_unparseable_or_after_resolved_artifact_asof",
+                "excluded_after_cutoff": 0,
+                "excluded_unparseable_asof": 0,
                 "n_points": 0,
                 "first_asof": None,
                 "last_asof": None,
@@ -491,6 +580,14 @@ def _forecast_target(
                 name in {"cleveland", "consensus"} for name in inputs_used
             ),
             "n_scored_basis": combined.get("n_scored_basis"),
+            "model_epoch": combined.get("model_epoch"),
+            "target_epoch": combined.get("target_epoch"),
+            "code_receipt": combined.get("code_receipt"),
+            "inputs_hash": combined.get("inputs_hash"),
+            "input_hashes": {
+                str(key): value
+                for key, value in (combined_components.get("input_hashes") or {}).items()
+            } if isinstance(combined_components.get("input_hashes"), dict) else {},
             "display_only": True,
             "authority": False,
         }
@@ -502,12 +599,21 @@ def _forecast_target(
         "days_to_release": entry.get("days_to"),
         "target": entry.get("target"),
         "forecast_asof": radar_asof,
+        "model_epoch": entry.get("model_epoch"),
+        "target_epoch": entry.get("target_epoch"),
+        "code_receipt": entry.get("code_receipt"),
+        "inputs_hash": entry.get("inputs_hash"),
+        "primary_forecast_basis": entry.get("primary_forecast_basis"),
+        "context_metrics_basis": entry.get("context_metrics_basis"),
+        "basis_warning": entry.get("basis_warning"),
         "release_radar_projection": primary,
         "combined_display_estimate": combined_display,
         "coverage": _coverage(entry),
         "component_freshness": _component_freshness(entry, radar_asof),
         "input_snapshot_ref": entry.get("input_snapshot_ref"),
-        "forecast_evolution": _forecast_evolution(ledger_rows, release_type, period),
+        "forecast_evolution": _forecast_evolution(
+            ledger_rows, release_type, period, evolution_cutoff
+        ),
     }
 
 
@@ -535,8 +641,8 @@ def _next_release_block(
             "available": False,
             "release_date": None,
             "period": None,
-            "headline": _forecast_target(None, ledger_rows, radar_asof),
-            "core": _forecast_target(None, ledger_rows, radar_asof),
+            "headline": _forecast_target(None, ledger_rows, radar_asof, as_of),
+            "core": _forecast_target(None, ledger_rows, radar_asof, as_of),
         }, None
     release_date = min(str(entry.get("release_date")) for entry in dated)
     grouped = _entries_for_date(dated, release_date)
@@ -547,8 +653,8 @@ def _next_release_block(
         "available": bool(headline or core),
         "release_date": release_date,
         "period": period,
-        "headline": _forecast_target(headline, ledger_rows, radar_asof),
-        "core": _forecast_target(core, ledger_rows, radar_asof),
+        "headline": _forecast_target(headline, ledger_rows, radar_asof, as_of),
+        "core": _forecast_target(core, ledger_rows, radar_asof, as_of),
     }, str(period) if period is not None else None
 
 
@@ -578,8 +684,8 @@ def _current_month_pressure_block(
     }
     headline_entry = current.get("cpi_headline")
     core_entry = current.get("cpi_core")
-    headline = _forecast_target(headline_entry, ledger_rows, radar_asof)
-    core = _forecast_target(core_entry, ledger_rows, radar_asof)
+    headline = _forecast_target(headline_entry, ledger_rows, radar_asof, as_of)
+    core = _forecast_target(core_entry, ledger_rows, radar_asof, as_of)
     hpoint = None
     if headline.get("release_radar_projection"):
         hpoint = headline["release_radar_projection"].get("point")
@@ -670,6 +776,27 @@ def build_inflation_intelligence(
         entries, ledger_rows, radar_asof, resolved_asof, sticky, flexible
     )
 
+    radar_day = _parse_date(radar_asof)
+    radar_age_days = (resolved_asof - radar_day).days if radar_day is not None else None
+    freshness_reasons = set(gaps)
+    if radar_age_days is None:
+        freshness_reasons.add("release_radar_latest:asof_unavailable")
+    elif radar_age_days < 0:
+        freshness_reasons.add("release_radar_latest:asof_after_build_cutoff")
+    elif radar_age_days > 2:
+        freshness_reasons.add(f"release_radar_latest:stale:{radar_age_days}d")
+    freshness = {
+        "status": "degraded" if freshness_reasons else "current_with_publication_lag",
+        "policy": (
+            "Source observation clocks determine freshness; rebuilding this wrapper "
+            "does not refresh an underlying CPI, proxy, or forecast input."
+        ),
+        "monthly_source_max_age_months": 2,
+        "release_radar_artifact_max_age_days": 2,
+        "release_radar_artifact_age_days": radar_age_days,
+        "degraded_reasons": sorted(freshness_reasons),
+    }
+
     return {
         "schema": SCHEMA,
         "asof": resolved_asof.isoformat(),
@@ -688,6 +815,7 @@ def build_inflation_intelligence(
         "released_state": released_state,
         "next_release_forecast": next_release,
         "current_month_proxy_pressure": current_pressure,
+        "freshness": freshness,
         "source_status": {
             "fred": fred_status,
             "release_radar_latest": {

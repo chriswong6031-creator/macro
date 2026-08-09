@@ -111,6 +111,22 @@ def _payload_hash(value: object) -> str:
     canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
+
+def _score_receipt_id(row: dict) -> str:
+    """Return a stable identity for a scored receipt, including legacy rows."""
+    frozen_prediction = row.get("frozen_prediction_id") or row.get("prediction_id")
+    identity = {
+        "release": row.get("release"),
+        "period": row.get("period"),
+        "model": row.get("model"),
+        "actual": row.get("actual"),
+        "actual_receipt_id": row.get("actual_receipt_id"),
+        "actual_basis": row.get("actual_basis"),
+        "frozen_prediction_id": frozen_prediction,
+        "frozen_asof_night": row.get("frozen_asof_night"),
+    }
+    return "score:" + _payload_hash(identity)[:24]
+
 # MRI-R21: NFP v3_factor warning (trails champion; sub-naive on full 2010+ window)
 _NFP_V3_WARNING = (
     "trails champion; sub-naive on full-window backtest (2010+ MAE v3=527.9 vs naive=459.8), "
@@ -678,7 +694,16 @@ def _load_ledger(ledger_path: Path) -> list[dict]:
 def _ledger_key(row: dict) -> tuple:
     # "model" key defaults to None for champion rows (backward-compatible with pre-2b ledger rows
     # that lack the key). Shadow rows carry an explicit model string.
-    return tuple(row.get(f) for f in _LEDGER_KEY)
+    key = tuple(row.get(f) for f in _LEDGER_KEY)
+    if row.get("row_type") == "scored":
+        # Multiple immutable actual receipts may grade the same frozen forecast
+        # (for example, a same-vintage proxy followed by the official print).
+        # They must coexist even when both arrive on the same run date; receipt
+        # identity keeps re-runs idempotent while canonical evaluation selects
+        # only one grade downstream.
+        receipt_key = row.get("score_receipt_id") or row.get("actual_receipt_id")
+        return (*key, receipt_key)
+    return key
 
 
 def _append_ledger_rows(ledger_path: Path, new_rows: list[dict]) -> None:
@@ -1090,21 +1115,26 @@ def _attach_combined_to_items(
         # --- Scored errors from existing ledger ---
         defect_notices: list[dict] = []
         try:
-            from engine.release_defects import load_defect_notices, is_evaluation_eligible
+            from engine.release_defects import (
+                canonical_scored_rows,
+                is_evaluation_eligible,
+                load_defect_notices,
+            )
             defect_notices = load_defect_notices(root)
             if not defect_notices:
                 raise RuntimeError("structured defect registry absent or empty")
             scored_errors = extract_scored_errors(existing_ledger, rt, defect_notices)
+            canonical_existing_scores = canonical_scored_rows(existing_ledger)
         except Exception as exc:
             log.warning("clean ensemble evidence withheld for %s: %s", rt, exc)
             scored_errors = {}
+            canonical_existing_scores = []
             is_evaluation_eligible = lambda _row, _notices: False  # type: ignore[assignment]
 
         # n_scored_basis: number of champion scored rows for this release
         n_scored_basis = sum(
-            1 for r in existing_ledger
-            if r.get("row_type") == "scored"
-            and r.get("release") == rt
+            1 for r in canonical_existing_scores
+            if r.get("release") == rt
             and r.get("model") is None
             and is_evaluation_eligible(r, defect_notices)
         )
@@ -1726,12 +1756,19 @@ def _check_release_day_capture(
             "basis": "defect_registry_unavailable_fail_closed",
         }
 
-    # Find scored rows already in ledger — keyed on (release, period, model)
-    existing_scored_keys: set[tuple] = {
-        (r["release"], r["period"], r.get("model"))
-        for r in existing_ledger
-        if r.get("row_type") == "scored"
-    }
+    # Preserve every immutable score receipt per release/model.  A legacy score
+    # must not block a later official receipt when the values differ (the July
+    # 2026 PAYEMS cross-vintage defect is the concrete regression case).
+    existing_scores_by_key: dict[tuple[str, str, str | None], list[dict]] = {}
+    for existing_row in existing_ledger:
+        if existing_row.get("row_type") != "scored":
+            continue
+        key = (
+            str(existing_row.get("release") or ""),
+            str(existing_row.get("period") or ""),
+            existing_row.get("model"),
+        )
+        existing_scores_by_key.setdefault(key, []).append(existing_row)
 
     # Actual-value cache: one lookup per (release, period).  Metadata is kept in
     # a parallel cache so every score freezes the exact source/basis receipt.
@@ -2011,10 +2048,6 @@ def _check_release_day_capture(
             seen_release_period_for_scoring[key] = release_date_str
 
     for (release_type, period_str, model_key), release_date_str in seen_release_period_for_scoring.items():
-        # Already scored?
-        if (release_type, period_str, model_key) in existing_scored_keys:
-            continue
-
         # Release date must have passed
         try:
             release_date = date.fromisoformat(release_date_str)
@@ -2028,6 +2061,25 @@ def _check_release_day_capture(
         if actual is None:
             log.debug("catch-up: no actual for %s/%s (model=%s) as of %s",
                       release_type, period_str, model_key, asof_night)
+            continue
+
+        prior_scores = existing_scores_by_key.get(
+            (release_type, period_str, model_key), []
+        )
+        actual_receipt = _actual_receipt_cache.get((release_type, period_str), {})
+        actual_receipt_id = actual_receipt.get("actual_receipt_id")
+        if actual_receipt_id:
+            # Receipt identity, not numeric coincidence, controls idempotency.
+            # An official printed value that equals a legacy proxy still earns
+            # its own provenance receipt; canonical selection prevents a double
+            # count while the append-only ledger preserves both observations.
+            if any(
+                row.get("actual_receipt_id") == actual_receipt_id
+                for row in prior_scores
+            ):
+                continue
+        elif prior_scores:
+            # Receipt-less legacy fallbacks can never supersede a frozen score.
             continue
 
         if model_key is None:
@@ -2057,6 +2109,13 @@ def _check_release_day_capture(
 
             sr = _score_champion(release_type, period_str, release_date_str, actual,
                                  t1_proj, frozen_on_rd, is_late)
+            sr["frozen_prediction_id"] = t1_proj.get("prediction_id")
+            sr["score_receipt_id"] = _score_receipt_id(sr)
+            if prior_scores:
+                sr["supersedes_score_receipt_ids"] = [
+                    row.get("score_receipt_id") or _score_receipt_id(row)
+                    for row in prior_scores
+                ]
             scored_rows.append(sr)
             log.info(
                 "catch-up scored: %s/%s — actual=%.4f vs proj=%.4f%s%s",
@@ -2116,6 +2175,7 @@ def _check_release_day_capture(
                 "actual_observed_at": actual_receipt.get("actual_observed_at"),
                 "actual_receipt_id": actual_receipt.get("actual_receipt_id"),
                 "exact_target_id": actual_receipt.get("exact_target_id"),
+                "frozen_prediction_id": t1_shadow.get("prediction_id"),
                 "frozen_asof_night": t1_shadow.get("asof_night"),
                 "frozen_projection_point": shadow_point,
                 "frozen_projection_p10": shadow_p10,
@@ -2130,6 +2190,14 @@ def _check_release_day_capture(
                 "target_epoch": t1_shadow.get("target_epoch") or _target_epoch(release_type, str(shadow_model)),
                 "code_receipt": t1_shadow.get("code_receipt"),
             }
+            scored_shadow_row["score_receipt_id"] = _score_receipt_id(
+                scored_shadow_row
+            )
+            if prior_scores:
+                scored_shadow_row["supersedes_score_receipt_ids"] = [
+                    row.get("score_receipt_id") or _score_receipt_id(row)
+                    for row in prior_scores
+                ]
             if frozen_on_rd:
                 scored_shadow_row["frozen_on_release_day"] = True
 
@@ -2501,23 +2569,30 @@ def _build_scoreboard(
     by_shadow section keyed by (release, model). Champion (model=None) rows
     remain in by_release as before.
     """
-    all_scored = [r for r in ledger if r.get("row_type") == "scored"]
+    raw_scored_receipts = [r for r in ledger if r.get("row_type") == "scored"]
     defect_notices = _load_defect_notices(root)
     try:
-        from engine.release_defects import is_evaluation_eligible, matching_defect_ids
+        from engine.release_defects import (
+            canonical_scored_rows,
+            is_evaluation_eligible,
+            matching_defect_ids,
+        )
         if root is not None and not defect_notices:
             raise RuntimeError("structured defect registry absent or empty")
+        all_scored = canonical_scored_rows(raw_scored_receipts)
         scored = [r for r in all_scored if is_evaluation_eligible(r, defect_notices)]
         excluded_scored = [r for r in all_scored if not is_evaluation_eligible(r, defect_notices)]
     except Exception as exc:
         log.warning("defect classification unavailable; clean scoreboard withheld: %s", exc)
+        all_scored = list(raw_scored_receipts)
         scored = []
         excluded_scored = list(all_scored)
         is_evaluation_eligible = lambda _row, _notices: False  # type: ignore[assignment]
         matching_defect_ids = lambda _row, _notices: ["classification_unavailable"]  # type: ignore[assignment]
 
-    # Compact immutable-record view.  The main by_release/by_shadow maps below
-    # use clean eligible rows only; this all-forward block preserves every miss.
+    # Compact canonical-event view.  Every raw/superseded receipt remains in the
+    # append-only ledger and is counted separately below; one frozen prediction
+    # enters errors/maturity at most once.
     all_forward_groups: dict[str, dict[str, Any]] = {}
     for row in all_scored:
         model_name = str(row.get("model") or "champion")
@@ -2914,6 +2989,15 @@ def _build_scoreboard(
                     for defect_id in matching_defect_ids(row, defect_notices)
                 })
             },
+        },
+        "score_receipts": {
+            "raw_n": len(raw_scored_receipts),
+            "canonical_n": len(all_scored),
+            "superseded_n": max(0, len(raw_scored_receipts) - len(all_scored)),
+            "note": (
+                "Official actual receipts supersede same-vintage proxies and legacy "
+                "calculations for evaluation; every receipt remains in the ledger."
+            ),
         },
         "defect_notices": defect_notices,
         "block_scoreboard": block_scoreboard,  # per-block cpi_bridge MAE/bias (display-tier accrual)
@@ -3604,15 +3688,66 @@ def build(root: Path, dry_run: bool = False) -> dict:
     all_ledger_for_scoreboard = existing_ledger + scored_rows + revision_rows + reaction_rows
     scoreboard = _build_scoreboard(all_ledger_for_scoreboard, accrual_start, root=root)
 
-    # 9. Build last_scored for latest.json (most recent scored row per release_type, champion only)
-    all_scored = [r for r in existing_ledger if r.get("row_type") == "scored" and r.get("model") is None] + \
-                 [r for r in scored_rows if r.get("model") is None]
-    last_scored_by_rt: dict[str, dict] = {}
-    for row in all_scored:
-        rt = row.get("release", "")
-        if rt not in last_scored_by_rt or row.get("asof_night", "") > last_scored_by_rt[rt].get("asof_night", ""):
-            last_scored_by_rt[rt] = row
-    last_scored = list(last_scored_by_rt.values())
+    # 9. Build the latest clean score per release.  Tainted legacy rows remain
+    # available under last_scored_all_forward, but must not masquerade as the
+    # canonical current grade in the public artifact.
+    all_scored = [
+        r for r in existing_ledger + scored_rows
+        if r.get("row_type") == "scored" and r.get("model") is None
+    ]
+
+    def _latest_by_release(rows: list[dict]) -> list[dict]:
+        latest: dict[str, dict] = {}
+        for score_row in rows:
+            release_key = str(score_row.get("release") or "")
+            prior = latest.get(release_key)
+            score_stamp = (
+                str(score_row.get("asof_night") or ""),
+                str(score_row.get("actual_observed_at") or ""),
+            )
+            prior_stamp = (
+                str((prior or {}).get("asof_night") or ""),
+                str((prior or {}).get("actual_observed_at") or ""),
+            )
+            if prior is None or score_stamp > prior_stamp:
+                latest[release_key] = score_row
+        return list(latest.values())
+
+    try:
+        from engine.release_defects import evaluation_status, is_evaluation_eligible
+        last_score_notices = _load_defect_notices(root)
+        if not last_score_notices:
+            raise RuntimeError("structured defect registry absent or empty")
+        clean_scored = [
+            row for row in all_scored
+            if is_evaluation_eligible(row, last_score_notices)
+        ]
+        raw_scored_annotated = [
+            {
+                **row,
+                "score_receipt_id": row.get("score_receipt_id") or _score_receipt_id(row),
+                "evaluation": row.get("evaluation")
+                or evaluation_status(row, last_score_notices),
+            }
+            for row in all_scored
+        ]
+    except Exception as exc:
+        log.warning("last_scored clean view withheld: %s", exc)
+        clean_scored = []
+        raw_scored_annotated = [
+            {
+                **row,
+                "score_receipt_id": row.get("score_receipt_id") or _score_receipt_id(row),
+                "evaluation": {
+                    "eligible": False,
+                    "excluded_defect_ids": ["classification_unavailable"],
+                    "basis": "defect_registry_unavailable_fail_closed",
+                },
+            }
+            for row in all_scored
+        ]
+    last_scored = _latest_by_release(clean_scored)
+    last_scored_all_forward = _latest_by_release(raw_scored_annotated)
 
     # 10. Assemble latest.json artifact (schema release_forecast.v2)
     latest = {
@@ -3626,6 +3761,9 @@ def build(root: Path, dry_run: bool = False) -> dict:
         },
         "methodology_status": {
             "forecast_epoch": "legacy_cross_vintage_training_target_experimental",
+            "forecast_points_changed_by_wave1": False,
+            "coherent_target_refit_status": "not_started_requires_shadow_backfill_and_parity",
+            "next_required_step": "train_and_forward_score_new_coherent_target_shadow_slug",
             "official_actuals_ref": _OFFICIAL_ACTUALS_RELPATH,
             "canonical_target_store": "data/fred_vintage/release_targets/",
             "clean_forward_cpi_n": sum(
@@ -3639,6 +3777,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
                 "Official parsed metrics and same-vintage ALFRED receipts now define the truth spine."
             ),
         },
+        "last_scored_all_forward": last_scored_all_forward,
         "enrichments": [
             "surprise_distribution", "market_implied", "reaction_sensitivity",
             "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref",

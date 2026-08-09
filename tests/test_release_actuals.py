@@ -3,51 +3,136 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from engine.release_actuals import (
     canonical_actual,
+    load_actual_ledger,
     normalize_publication,
+    receipt_integrity_errors,
     receipts_from_payload,
     reconcile_receipts,
 )
 from scripts.reconcile_release_actuals import reconcile
 
+_CASES = {
+    "CPI": {
+        "date": "2026-07-14",
+        "reference_period": "June 2026",
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_cpi",
+        "source_url": "https://www.bls.gov/news.release/archives/cpi_07142026.htm",
+        "parser": "cpi",
+        "actual": {
+            "headline_mom": -0.4,
+            "core_mom": 0.0,
+            "unit": "percent",
+        },
+    },
+    "PPI": {
+        "date": "2026-07-15",
+        "reference_period": "June 2026",
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_ppi",
+        "source_url": "https://www.bls.gov/news.release/archives/ppi_07152026.htm",
+        "parser": "ppi",
+        "actual": {"headline_mom": 0.2, "unit": "percent"},
+    },
+    "NFP": {
+        "date": "2026-08-07",
+        "reference_period": "July 2026",
+        "publisher": "U.S. Bureau of Labor Statistics",
+        "source_id": "bls_employment",
+        "source_url": "https://www.bls.gov/news.release/archives/empsit_08072026.htm",
+        "parser": "nfp",
+        "actual": {"payroll_change": 57_000, "unit": "persons"},
+    },
+    "PCE": {
+        "date": "2026-07-30",
+        "reference_period": "June 2026",
+        "publisher": "U.S. Bureau of Economic Analysis",
+        "source_id": "bea_pce",
+        "source_url": "https://www.bea.gov/news/2026/personal-income-and-outlays-june-2026",
+        "parser": "pce",
+        "actual": {"headline_mom": -0.1, "core_mom": 0.1, "unit": "percent"},
+    },
+    "CLAIMS": {
+        "date": "2026-08-06",
+        "reference_period": "August 1, 2026",
+        "publisher": "U.S. Department of Labor",
+        "source_id": "dol_claims",
+        "source_url": "https://www.dol.gov/newsroom/releases/eta/eta20260806",
+        "parser": "claims",
+        "actual": {"initial_claims": 199_000, "unit": "persons"},
+    },
+}
+
 
 def _publication(event_type: str = "CPI") -> dict:
-    values = {
-        "CPI": {"headline_mom": -0.4, "core_mom": 0.0, "reference_period": "June 2026"},
-        "NFP": {"payroll_change": 57_000, "reference_period": "The"},
-    }
+    case = _CASES[event_type]
+    day = case["date"]
+    actual = {**case["actual"], "reference_period": case["reference_period"]}
     return {
-        "event_id": f"{event_type.lower()}:2026-07-14",
+        "event_id": f"{event_type.lower()}:{day}",
         "type": event_type,
-        "date": "2026-07-14" if event_type == "CPI" else "2026-08-07",
+        "date": day,
+        "reference_period": case["reference_period"],
         "data_ready": True,
-        "publisher": "U.S. Bureau of Labor Statistics",
-        "source_id": "bls_cpi" if event_type == "CPI" else "bls_employment",
-        "source_url": "https://www.bls.gov/news.release/archives/example.htm",
+        "publisher": case["publisher"],
+        "source_id": case["source_id"],
+        "source_url": case["source_url"],
         "source_sha256": "a" * 64,
-        "first_seen_at": "2026-07-14T12:30:01+00:00",
-        "source_released_at": "2026-07-14T12:30:00+00:00",
-        "parser": {"name": event_type.lower(), "version": 1},
-        "actual": values[event_type],
+        "first_seen_at": f"{day}T12:30:01+00:00",
+        "observed_at": f"{day}T12:30:01+00:00",
+        "source_released_at": f"{day}T12:30:00+00:00",
+        "verified_at": f"{day}T12:31:00+00:00",
+        "parser": {"name": case["parser"], "version": 1},
+        "actual": actual,
     }
 
 
-def test_cpi_normalizes_two_exact_print_targets() -> None:
-    rows = normalize_publication(_publication("CPI"))
-    assert [(row["release"], row["period"], row["actual"]) for row in rows] == [
-        ("cpi_headline", "2026-06", -0.4),
-        ("cpi_core", "2026-06", 0.0),
-    ]
+@pytest.mark.parametrize(
+    ("event_type", "expected"),
+    [
+        ("CPI", [("cpi_headline", "2026-06", -0.4), ("cpi_core", "2026-06", 0.0)]),
+        ("PPI", [("ppi_finaldemand", "2026-06", 0.2)]),
+        ("NFP", [("nfp", "2026-07", 57.0)]),
+        ("PCE", [("pce_headline", "2026-06", -0.1), ("pce_core", "2026-06", 0.1)]),
+        ("CLAIMS", [("claims", "2026-08-06", 199.0)]),
+    ],
+)
+def test_each_target_normalizes_only_from_compatible_official_source(
+    event_type: str,
+    expected: list[tuple[str, str, float]],
+) -> None:
+    rows = normalize_publication(_publication(event_type))
+    assert [(row["release"], row["period"], row["actual"]) for row in rows] == expected
     assert all(row["actual_basis"] == "official_published_metric" for row in rows)
+    assert all(row["automatic_scoring_eligible"] is True for row in rows)
+    assert all(receipt_integrity_errors(row) == [] for row in rows)
 
 
-def test_nfp_uses_event_period_and_converts_persons_to_thousands() -> None:
-    rows = normalize_publication(_publication("NFP"))
-    assert len(rows) == 1
-    assert rows[0]["period"] == "2026-07"
-    assert rows[0]["actual"] == 57.0
-    assert rows[0]["official_reference_period"] == "The"
+@pytest.mark.parametrize("event_type", list(_CASES))
+def test_agency_source_id_and_parser_contracts_fail_closed(event_type: str) -> None:
+    bad = _publication(event_type)
+    bad["source_url"] = "https://www.federalreserve.gov/not-the-publisher"
+    assert normalize_publication(bad) == []
+
+    bad = _publication(event_type)
+    bad["publisher"] = "Wrong agency"
+    assert normalize_publication(bad) == []
+
+    bad = _publication(event_type)
+    bad["source_id"] = "wrong_source"
+    assert normalize_publication(bad) == []
+
+    bad = _publication(event_type)
+    bad["parser"]["name"] = "wrong_parser"
+    assert normalize_publication(bad) == []
+
+    bad = _publication(event_type)
+    bad["parser"]["version"] = 2
+    assert normalize_publication(bad) == []
 
 
 def test_unofficial_domain_or_missing_hash_fails_closed() -> None:
@@ -57,6 +142,84 @@ def test_unofficial_domain_or_missing_hash_fails_closed() -> None:
     bad = _publication("CPI")
     bad["source_sha256"] = None
     assert normalize_publication(bad) == []
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("first_seen_at", "2026-08-07 12:30:01"),
+        ("observed_at", "2026-08-07"),
+        ("source_released_at", "not-a-time"),
+        ("verified_at", "2026-08-07T12:31:00"),
+    ],
+)
+def test_timestamps_require_full_timezone_aware_iso(field: str, value: str) -> None:
+    bad = _publication("NFP")
+    bad[field] = value
+    assert normalize_publication(bad) == []
+
+
+def test_observation_cannot_precede_source_release() -> None:
+    bad = _publication("NFP")
+    bad["source_released_at"] = "2026-08-07T14:30:46+00:00"
+    assert normalize_publication(bad) == []
+
+    bad = _publication("NFP")
+    bad["verified_at"] = "2026-08-07T12:29:59+00:00"
+    assert normalize_publication(bad) == []
+
+
+def test_malformed_or_mismatched_nfp_reference_period_fails_closed() -> None:
+    malformed = _publication("NFP")
+    malformed["actual"]["reference_period"] = "The"
+    assert normalize_publication(malformed) == []
+
+    mismatched = _publication("NFP")
+    mismatched["actual"]["reference_period"] = "June 2026"
+    assert normalize_publication(mismatched) == []
+
+
+def test_explicit_source_period_avoids_mechanical_month_minus_one() -> None:
+    delayed = _publication("PCE")
+    delayed["date"] = "2026-08-31"
+    delayed["event_id"] = "pce:2026-08-31"
+    delayed["first_seen_at"] = "2026-08-31T12:30:01+00:00"
+    delayed["observed_at"] = "2026-08-31T12:30:01+00:00"
+    delayed["source_released_at"] = "2026-08-31T12:30:00+00:00"
+    delayed["verified_at"] = "2026-08-31T12:31:00+00:00"
+    rows = normalize_publication(delayed)
+    assert {row["period"] for row in rows} == {"2026-06"}
+    assert all(
+        row["period_resolution"] == "validated_parser_and_source_reference_period"
+        for row in rows
+    )
+
+
+def test_claims_reference_week_must_match_source_and_schedule() -> None:
+    bad = _publication("CLAIMS")
+    bad["actual"]["reference_period"] = "August 8, 2026"
+    bad["reference_period"] = "August 8, 2026"
+    assert normalize_publication(bad) == []
+
+
+def test_canonical_actual_revalidates_persisted_truth() -> None:
+    valid = normalize_publication(_publication("NFP"))[0]
+    assert canonical_actual([valid], "nfp", "2026-07") == valid
+
+    malformed_period = {**valid, "official_reference_period": "The"}
+    assert "reference_period_invalid" in receipt_integrity_errors(malformed_period)
+    assert canonical_actual([malformed_period], "nfp", "2026-07") is None
+
+    early = {
+        **valid,
+        "source_released_at": "2026-08-07T14:30:46+00:00",
+    }
+    assert "observed_before_source_release" in receipt_integrity_errors(early)
+    assert canonical_actual([early], "nfp", "2026-07") is None
+
+    wrong_agency = {**valid, "source_id": "bea_pce"}
+    assert "source_id_mismatch" in receipt_integrity_errors(wrong_agency)
+    assert canonical_actual([wrong_agency], "nfp", "2026-07") is None
 
 
 def test_keep_first_and_correction_candidate() -> None:
@@ -83,3 +246,11 @@ def test_file_reconciliation_is_idempotent(tmp_path: Path) -> None:
     assert len(reconcile(str(payload_path), out)) == 2
     assert reconcile(str(payload_path), out) == []
     assert len(out.read_text(encoding="utf-8").splitlines()) == 2
+
+
+def test_committed_official_actual_ledger_contains_only_valid_truth() -> None:
+    root = Path(__file__).resolve().parents[1]
+    rows = load_actual_ledger(root / "data" / "release_forecast" / "official_actuals.jsonl")
+    assert rows
+    assert all(receipt_integrity_errors(row) == [] for row in rows)
+    assert all(row.get("official_reference_period") != "The" for row in rows)

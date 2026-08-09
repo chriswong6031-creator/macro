@@ -313,7 +313,14 @@ def extract_scored_errors(
     else:
         is_evaluation_eligible = None  # type: ignore[assignment]
 
-    for row in ledger:
+    try:
+        from engine.release_defects import canonical_scored_rows
+
+        score_rows = canonical_scored_rows(ledger)
+    except Exception:  # pragma: no cover - legacy import fallback
+        score_rows = [row for row in ledger if row.get("row_type") == "scored"]
+
+    for row in score_rows:
         if row.get("row_type") != "scored":
             continue
         if row.get("release") != release_type:

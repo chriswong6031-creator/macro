@@ -110,50 +110,132 @@ def _last(s: pd.Series | None) -> float | None:
 
 
 def _smooth_annual_rate(s: pd.Series, smooth_months: int) -> pd.Series:
-    """Return the exact trailing-``N`` annualized rate from monthly % changes.
+    """Smooth an ALREADY-annualized monthly rate over N distinct monthly prints.
 
-    The stored ``STICKCPIM157SFRBATL`` / ``FLEXCPIM157SFRBATL`` inputs are
-    monthly percent changes (values such as ``0.25`` mean +0.25% MoM), despite
-    the misleading old comment that treated them as already annualized.  The
-    correct trailing-N annualized rate is::
+    The Atlanta-Fed sticky/flexible CPI inputs (FRED STICKCPIM157SFRBATL /
+    FLEXCPIM157SFRBATL) are published as 'Percent Change at Annual Rate' — i.e.
+    ALREADY annual-rate (~2-6%). They must NOT be re-annualized (a prior version
+    applied ((1+x/100)**12-1)*100, which turned 3.2% into ~46%). The daily feature
+    frame carries each month's value forward-filled, so we de-duplicate to the actual
+    monthly observations, take the rolling mean, then re-broadcast onto the daily
+    index — units unchanged."""
+    monthly = s.dropna()
+    # collapse consecutive identical ffilled values to one print per monthly change
+    distinct = monthly[monthly.ne(monthly.shift())]
+    sm = distinct.rolling(smooth_months, min_periods=1).mean()
+    return sm.reindex(s.index).ffill()
 
-        100 * (prod(1 + monthly_pct / 100) ** (12 / N) - 1)
 
-    ``conditions_frame`` carries monthly observations across a daily index.  We
-    therefore take one observation per calendar month rather than de-duplicating
-    by value: two adjacent months can legitimately print the same rate.  A full
-    N-month window is required; partial windows remain null.  The monthly result
-    is then mapped back to every row in its calendar month so callers retain the
-    original index shape.
+_ATLANTA_FED_INFLATION_SERIES = {
+    "sticky": ("STICKCPIM157SFRBATL", "sticky_cpi"),
+    "flexible": ("FLEXCPIM157SFRBATL", "flex_cpi"),
+}
 
-    This helper is intentionally named for backward compatibility with the site
-    builder and existing conditions snapshot.
+
+def annualized_monthly_percent_windows(
+    values: pd.Series | pd.DataFrame | None,
+    window_months: int,
+    *,
+    value_column: str | None = None,
+) -> pd.Series:
+    """Compound exact, contiguous monthly-percent observations at an annual rate.
+
+    This is deliberately a raw-month transform, not a daily-feature transform.
+    Every source month must appear exactly once; an input containing multiple rows
+    in a calendar month is rejected as non-monthly so a forward-filled daily frame
+    cannot manufacture observations.  Missing calendar months remain null and a
+    full ``window_months`` run is required before a value is emitted.  Equal prints
+    in adjacent months are retained because identity is the source month, not a
+    change in value.
     """
-    if smooth_months < 1:
-        raise ValueError("smooth_months must be >= 1")
+    if window_months < 1:
+        raise ValueError("window_months must be >= 1")
+    if values is None or len(values) == 0:
+        return pd.Series(dtype=float)
 
-    clean = pd.to_numeric(s, errors="coerce").dropna().sort_index()
-    out = pd.Series(np.nan, index=s.index, dtype=float)
-    if clean.empty:
-        return out
+    if isinstance(values, pd.DataFrame):
+        if value_column is not None and value_column in values.columns:
+            raw = values[value_column]
+        elif value_column is None and len(values.columns) == 1:
+            raw = values.iloc[:, 0]
+        else:
+            return pd.Series(dtype=float)
+    else:
+        raw = values
 
-    # One actual monthly print per month. ``last`` preserves a legitimate repeated
-    # value in adjacent months, unlike value-change de-duplication.
+    dates = pd.to_datetime(raw.index, errors="coerce")
+    valid_dates = ~pd.isna(dates)
+    if not valid_dates.any():
+        return pd.Series(dtype=float)
+    clean = pd.Series(
+        pd.to_numeric(raw.to_numpy()[valid_dates], errors="coerce"),
+        index=pd.DatetimeIndex(dates[valid_dates]),
+        dtype=float,
+    ).replace([np.inf, -np.inf], np.nan).sort_index()
+
     periods = clean.index.to_period("M")
-    monthly = clean.groupby(periods).last().astype(float)
-    full_index = pd.period_range(monthly.index.min(), monthly.index.max(), freq="M")
-    monthly = monthly.reindex(full_index)
+    # The raw FRED store has one observation per source period.  Refuse a daily or
+    # otherwise expanded input instead of guessing which row was the real print.
+    if periods.duplicated(keep=False).any():
+        return pd.Series(dtype=float)
+
+    monthly = pd.Series(clean.to_numpy(), index=periods, dtype=float)
+    full_periods = pd.period_range(monthly.index.min(), monthly.index.max(), freq="M")
+    monthly = monthly.reindex(full_periods)
     gross = (1.0 + monthly / 100.0).where(monthly > -100.0)
-    compounded = gross.rolling(smooth_months, min_periods=smooth_months).apply(
+    compounded = gross.rolling(window_months, min_periods=window_months).apply(
         np.prod, raw=True
     )
-    annualized = (compounded.pow(12.0 / smooth_months) - 1.0) * 100.0
+    annualized = (compounded.pow(12.0 / window_months) - 1.0) * 100.0
+    annualized.index = annualized.index.to_timestamp(how="start")
+    return annualized
 
-    # Map by calendar month instead of reindexing on month-end timestamps.  This
-    # works for both native monthly Series and daily forward-filled feature frames.
-    annualized_by_period = annualized.to_dict()
-    mapped = [annualized_by_period.get(period) for period in s.index.to_period("M")]
-    return pd.Series(mapped, index=s.index, dtype=float)
+
+def raw_atlanta_inflation_history(
+    window_months: int,
+    *,
+    reader=None,
+    as_of: pd.Timestamp | str | None = None,
+) -> dict[str, pd.Series]:
+    """Load and transform the two raw Atlanta-Fed monthly inflation series.
+
+    Each lobe is independent and fail-open for the overall dashboard: an absent or
+    malformed source yields an empty series for that lobe, never a feature-frame or
+    cross-series fallback.
+    """
+    read = reader or store.read
+    out: dict[str, pd.Series] = {}
+    for name, (series_id, column) in _ATLANTA_FED_INFLATION_SERIES.items():
+        try:
+            raw = read("fred", series_id)
+            if raw is not None and as_of is not None:
+                cutoff = pd.Timestamp(as_of)
+                if cutoff.tzinfo is not None:
+                    cutoff = cutoff.tz_convert(None)
+                raw_dates = pd.DatetimeIndex(pd.to_datetime(raw.index, errors="coerce"))
+                if raw_dates.tz is not None:
+                    raw_dates = raw_dates.tz_convert(None)
+                raw = raw.loc[(~raw_dates.isna()) & (raw_dates <= cutoff)]
+            out[name] = annualized_monthly_percent_windows(
+                raw, window_months, value_column=column
+            )
+        except Exception:  # noqa: BLE001 -- optional display source must degrade safely
+            log.warning("raw inflation display source unavailable: %s", series_id, exc_info=True)
+            out[name] = pd.Series(dtype=float)
+    return out
+
+
+def _latest_exact_window(series: pd.Series | None) -> float | None:
+    """Return only the current source period's value; never borrow an older window."""
+    if series is None or series.empty or pd.isna(series.iloc[-1]):
+        return None
+    return float(series.iloc[-1])
+
+
+def _latest_source_month(series: pd.Series | None) -> str | None:
+    if series is None or series.empty:
+        return None
+    return pd.Timestamp(series.index[-1]).strftime("%Y-%m")
 
 
 # --- conditions time series (for charts + alerts) ----------------------------
@@ -665,23 +747,42 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         labor["read"] = ("labor cooling" if cooling_votes >= 2 else
                          ("labor firm" if firm_votes >= 2 else "labor mixed"))
 
-    # inflation nowcast: persistent (sticky) vs transitory (flexible)
+    # Display-only inflation read: exact compounding of raw monthly source prints.
+    # Do not use the forward-filled feature-frame columns here; those remain intact
+    # for the established conditions axes, alerts, regimes, and backtests.
     sm = cfg["inflation_nowcast"]["smooth_months"]
-    sticky = _col(f, "sticky_cpi")
-    flex = _col(f, "flex_cpi")
-    inflation = {}
-    if sticky is not None:
-        sa = _smooth_annual_rate(sticky, sm)
-        inflation["sticky_ann"] = _last(sa)
-        prev = sa.dropna()
+    raw_inflation = raw_atlanta_inflation_history(
+        sm, as_of=(f.index.max() if len(f.index) else None)
+    )
+    sticky_ann = raw_inflation["sticky"]
+    flexible_ann = raw_inflation["flexible"]
+    inflation = {
+        "sticky_ann": _latest_exact_window(sticky_ann),
+        "flexible_ann": _latest_exact_window(flexible_ann),
+        "window_months": sm,
+        "basis": "exact_contiguous_monthly_percent_compounding_annualized",
+        "source": "Federal Reserve Bank of Atlanta via FRED",
+        "source_units": "percent_change_from_month_ago",
+        "output_units": "percent_change_at_annual_rate",
+        "source_series": {
+            "sticky": {
+                "id": _ATLANTA_FED_INFLATION_SERIES["sticky"][0],
+                "observation_month": _latest_source_month(sticky_ann),
+            },
+            "flexible": {
+                "id": _ATLANTA_FED_INFLATION_SERIES["flexible"][0],
+                "observation_month": _latest_source_month(flexible_ann),
+            },
+        },
+    }
+    if len(sticky_ann) > sm and pd.notna(sticky_ann.iloc[-1]) \
+            and pd.notna(sticky_ann.iloc[-1 - sm]):
         inflation["sticky_trend"] = (
-            "accelerating" if len(prev) > 70 and prev.iloc[-1] > prev.iloc[-65] else "cooling")
-    if flex is not None:
-        inflation["flexible_ann"] = _last(_smooth_annual_rate(flex, sm))
+            "accelerating" if sticky_ann.iloc[-1] > sticky_ann.iloc[-1 - sm] else "cooling"
+        )
     inflation["median_cpi"] = _last(_col(f, "median_cpi"))
     inflation["umich_1y_exp"] = _last(_col(f, "umich_infl_exp"))
-    if "sticky_ann" in inflation and "flexible_ann" in inflation \
-            and inflation["sticky_ann"] is not None and inflation["flexible_ann"] is not None:
+    if inflation["sticky_ann"] is not None and inflation["flexible_ann"] is not None:
         inflation["read"] = (
             "persistent (sticky-led)" if inflation["sticky_ann"] >= inflation["flexible_ann"]
             else "transitory (flexible-led)")

@@ -1960,6 +1960,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "macro_weather": ["macro-snapshots-latest"],
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
+    "inflation_intelligence": ["inflation-intelligence"],
     "thematic_state": ["theme-state"],
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],

@@ -750,6 +750,7 @@ def _inflation_intelligence_null(gap: str | None = None) -> dict:
         "released_state": None,
         "next_release_forecast": None,
         "current_month_proxy_pressure": None,
+        "freshness": None,
         "source_status": None,
         "gaps": [gap] if gap else [],
         "display_only": True,
@@ -768,7 +769,7 @@ def _compact_inflation_metrics(value: Any) -> dict | None:
         "available", "series_id", "label", "observation_period",
         "observation_age_months", "index_level", "mom_pct", "yoy_pct",
         "monthly_pct", "annualized_3m_pct", "annualized_6m_pct",
-        "acceleration_3m_minus_6m_pp", "revision_basis",
+        "acceleration_3m_minus_6m_pp", "revision_basis", "freshness_status",
     )
     return {key: _clean(value.get(key)) for key in keys if key in value}
 
@@ -831,14 +832,23 @@ def _compact_inflation_target(value: Any) -> dict | None:
             combined.get("inputs_used")
             if isinstance(combined.get("inputs_used"), list) else []
         )
+        combined_input_hashes = (
+            combined.get("input_hashes")
+            if isinstance(combined.get("input_hashes"), dict) else {}
+        )
         combined = {
             key: _clean(combined.get(key))
             for key in (
                 "point", "p10", "p25", "p50", "p75", "p90",
                 "includes_external_benchmark", "n_scored_basis",
+                "model_epoch", "target_epoch", "code_receipt", "inputs_hash",
             )
         }
         combined["inputs_used"] = [str(item) for item in combined_inputs[:12]]
+        combined["input_hashes"] = {
+            str(key): _clean(item)
+            for key, item in list(combined_input_hashes.items())[:12]
+        }
         combined.update(display_only=True, authority=False)
     else:
         combined = None
@@ -849,7 +859,11 @@ def _compact_inflation_target(value: Any) -> dict | None:
     if isinstance(evolution, dict):
         evolution = {
             key: _clean(evolution.get(key))
-            for key in ("basis", "n_points", "first_asof", "last_asof")
+            for key in (
+                "basis", "cutoff_asof", "cutoff_policy",
+                "excluded_after_cutoff", "excluded_unparseable_asof",
+                "n_points", "first_asof", "last_asof",
+            )
         }
     else:
         evolution = None
@@ -862,6 +876,13 @@ def _compact_inflation_target(value: Any) -> dict | None:
         "days_to_release": _clean(value.get("days_to_release")),
         "target": _clean(value.get("target")),
         "forecast_asof": _clean(value.get("forecast_asof")),
+        "model_epoch": _clean(value.get("model_epoch")),
+        "target_epoch": _clean(value.get("target_epoch")),
+        "code_receipt": _clean(value.get("code_receipt")),
+        "inputs_hash": _clean(value.get("inputs_hash")),
+        "primary_forecast_basis": _clean(value.get("primary_forecast_basis")),
+        "context_metrics_basis": _clean(value.get("context_metrics_basis")),
+        "basis_warning": _clean(value.get("basis_warning")),
         "release_radar_projection": projection,
         "combined_display_estimate": combined,
         "coverage": coverage,
@@ -912,6 +933,12 @@ def _compose_inflation_intelligence(root: "Path | str | None" = None) -> dict:
         if isinstance(pressure.get("underlying_proxy_mix"), dict) else {}
     )
     source_gaps = state.get("gaps") if isinstance(state.get("gaps"), list) else []
+    raw_freshness = state.get("freshness") if isinstance(state.get("freshness"), dict) else {}
+    freshness_reasons = (
+        raw_freshness.get("degraded_reasons")
+        if isinstance(raw_freshness.get("degraded_reasons"), list)
+        else []
+    )
 
     out = _inflation_intelligence_null()
     out.update({
@@ -962,6 +989,22 @@ def _compose_inflation_intelligence(root: "Path | str | None" = None) -> dict:
                 "sticky": _compact_inflation_metrics(proxy_mix.get("sticky")),
                 "flexible": _compact_inflation_metrics(proxy_mix.get("flexible")),
             },
+        },
+        "freshness": {
+            "status": _clean(raw_freshness.get("status")),
+            "policy": _clean(raw_freshness.get("policy")),
+            "monthly_source_max_age_months": _clean(
+                raw_freshness.get("monthly_source_max_age_months")
+            ),
+            "release_radar_artifact_max_age_days": _clean(
+                raw_freshness.get("release_radar_artifact_max_age_days")
+            ),
+            "release_radar_artifact_age_days": _clean(
+                raw_freshness.get("release_radar_artifact_age_days")
+            ),
+            "degraded_reasons": [
+                str(reason) for reason in freshness_reasons[:25]
+            ],
         },
         "source_status": state.get("source_status") if isinstance(state.get("source_status"), dict) else None,
         "gaps": [str(gap) for gap in source_gaps[:25]],

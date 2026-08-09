@@ -63,6 +63,13 @@ def _entry(
         },
         "confidence": 0.4,
         "input_completeness": 0.9,
+        "model_epoch": f"champion-model:{release_type}",
+        "target_epoch": f"coherent-target:{release_type}",
+        "code_receipt": "git:0123456789abcdef",
+        "inputs_hash": f"sha256:champion-inputs:{release_type}:{period}",
+        "primary_forecast_basis": "combined_v1_benchmark_augmented",
+        "context_metrics_basis": "champion_legacy_target_v1",
+        "basis_warning": "Combined point and champion context use different bases.",
         "coverage_flags": {
             "weight_coverage": 1.0,
             "fresh_proxy_coverage": 0.75,
@@ -82,8 +89,16 @@ def _entry(
             "p10": point - 0.2,
             "p90": point + 0.2,
             "n_scored_basis": 1,
+            "model_epoch": f"combined-model:{release_type}",
+            "target_epoch": f"combined-target:{release_type}",
+            "code_receipt": "git:combined012345",
+            "inputs_hash": f"sha256:combined:{release_type}:{period}",
             "combined_components": {
                 "inputs_used": ["champion", "cpi_bridge", "cleveland"],
+                "input_hashes": {
+                    "champion": f"sha256:champion:{release_type}:{period}",
+                    "cpi_bridge": f"sha256:bridge:{release_type}:{period}",
+                },
             },
         },
     }
@@ -168,6 +183,11 @@ def _fixture(root: Path) -> None:
             "projection_point": 0.1,
             "projection_p10": -0.1,
             "projection_p90": 0.3,
+            "model_epoch": "champion-model:cpi_headline",
+            "target_epoch": "coherent-target:cpi_headline",
+            "code_receipt": "git:ledger-0801",
+            "inputs_hash": "sha256:ledger-inputs-0801",
+            "input_snapshot_ref": "snapshots/ledger-0801.json",
         },
         {
             "row_type": "projection",
@@ -184,6 +204,11 @@ def _fixture(root: Path) -> None:
             "period": "2026-07",
             "projection_point": 0.22,
             "prediction_id": "latest-same-day",
+            "model_epoch": "champion-model:cpi_headline",
+            "target_epoch": "coherent-target:cpi_headline",
+            "code_receipt": "git:ledger-0805",
+            "inputs_hash": "sha256:ledger-inputs-0805",
+            "input_snapshot_ref": "snapshots/ledger-0805.json",
         },
         # A shadow model must not contaminate the champion evolution path.
         {
@@ -208,6 +233,36 @@ def _fixture(root: Path) -> None:
             "period": "2026-08",
             "projection_point": 0.4,
         },
+        # The append-only ledger may be newer than a historical artifact build.
+        # Later and unparseable clocks must fail closed for each matching target.
+        {
+            "row_type": "projection",
+            "asof_night": "2026-08-09",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "projection_point": 8.9,
+        },
+        {
+            "row_type": "projection",
+            "asof_night": "not-a-date",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "projection_point": 7.7,
+        },
+        {
+            "row_type": "projection",
+            "asof_night": "2026-08",
+            "release": "cpi_headline",
+            "period": "2026-07",
+            "projection_point": 7.6,
+        },
+        {
+            "row_type": "projection",
+            "asof_night": "2026-08-09",
+            "release": "cpi_headline",
+            "period": "2026-08",
+            "projection_point": 6.6,
+        },
     ])
 
 
@@ -229,6 +284,8 @@ def test_contract_separates_three_inflation_clocks(tmp_path: Path) -> None:
     assert state["next_release_forecast"]["period"] == "2026-07"
     assert state["next_release_forecast"]["release_date"] == "2026-08-12"
     assert state["current_month_proxy_pressure"]["period"] == "2026-08"
+    assert state["freshness"]["status"] == "current_with_publication_lag"
+    assert "rebuilding this wrapper" in state["freshness"]["policy"]
 
     rendered = json.dumps(state).lower()
     assert "current cpi" not in rendered
@@ -259,7 +316,68 @@ def test_forecast_evolution_is_append_order_deduped_and_shadow_free(tmp_path: Pa
     assert [point["asof"] for point in evolution["points"]] == ["2026-08-01", "2026-08-05"]
     assert evolution["points"][-1]["point"] == pytest.approx(0.22)
     assert evolution["points"][-1]["prediction_id"] == "latest-same-day"
+    assert evolution["points"][-1]["code_receipt"] == "git:ledger-0805"
+    assert evolution["points"][-1]["inputs_hash"] == "sha256:ledger-inputs-0805"
     assert all(point["point"] != 9.9 for point in evolution["points"])
+    assert all(point["point"] not in {7.6, 7.7, 8.9} for point in evolution["points"])
+    assert evolution["cutoff_asof"] == _AS_OF
+    assert evolution["excluded_after_cutoff"] == 1
+    assert evolution["excluded_unparseable_asof"] == 2
+
+
+def test_forecast_evolution_uses_artifact_or_explicit_historical_cutoff(
+    tmp_path: Path,
+) -> None:
+    _fixture(tmp_path)
+
+    # With no caller override, the Release Radar artifact asof is authoritative.
+    artifact_clock = build_inflation_intelligence(tmp_path)
+    evolution = artifact_clock["next_release_forecast"]["headline"]["forecast_evolution"]
+    assert artifact_clock["asof"] == _AS_OF
+    assert evolution["cutoff_asof"] == _AS_OF
+    assert evolution["last_asof"] == "2026-08-05"
+
+    # A replay resolved to an earlier day may not see rows appended afterward.
+    historical = build_inflation_intelligence(tmp_path, as_of="2026-08-03")
+    historical_evolution = historical["next_release_forecast"]["headline"][
+        "forecast_evolution"
+    ]
+    assert [point["asof"] for point in historical_evolution["points"]] == [
+        "2026-08-01"
+    ]
+    assert historical_evolution["cutoff_asof"] == "2026-08-03"
+    assert historical_evolution["last_asof"] == "2026-08-01"
+    assert historical_evolution["excluded_after_cutoff"] == 3
+
+    pressure_evolution = artifact_clock["current_month_proxy_pressure"][
+        "headline_model_pressure"
+    ]["forecast_evolution"]
+    assert [point["asof"] for point in pressure_evolution["points"]] == ["2026-08-05"]
+    assert pressure_evolution["excluded_after_cutoff"] == 1
+
+
+def test_forecast_provenance_and_combined_basis_are_preserved(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    state = build_inflation_intelligence(tmp_path, as_of=_AS_OF)
+    target = state["next_release_forecast"]["headline"]
+
+    assert target["model_epoch"] == "champion-model:cpi_headline"
+    assert target["target_epoch"] == "coherent-target:cpi_headline"
+    assert target["code_receipt"] == "git:0123456789abcdef"
+    assert target["inputs_hash"] == "sha256:champion-inputs:cpi_headline:2026-07"
+    assert target["input_snapshot_ref"] == "snapshots/cpi_headline_2026-07.json"
+    assert target["primary_forecast_basis"] == "combined_v1_benchmark_augmented"
+    assert target["context_metrics_basis"] == "champion_legacy_target_v1"
+    assert target["basis_warning"].startswith("Combined point")
+
+    combined = target["combined_display_estimate"]
+    assert combined["model_epoch"] == "combined-model:cpi_headline"
+    assert combined["target_epoch"] == "combined-target:cpi_headline"
+    assert combined["code_receipt"] == "git:combined012345"
+    assert combined["inputs_hash"] == "sha256:combined:cpi_headline:2026-07"
+    assert combined["input_hashes"]["cpi_bridge"] == (
+        "sha256:bridge:cpi_headline:2026-07"
+    )
 
 
 def test_component_freshness_and_coverage_are_explicit(tmp_path: Path) -> None:
@@ -302,6 +420,37 @@ def test_malformed_ledger_row_is_quarantined_not_fatal(tmp_path: Path) -> None:
     assert status["available"] is True
     assert status["malformed_rows"] == 1
     assert any("malformed_rows:1" in gap for gap in state["gaps"])
+
+
+def test_fresh_wrapper_does_not_hide_stale_underlying_monthly_sources(
+    tmp_path: Path,
+) -> None:
+    for series_id, column in (
+        ("CPIAUCSL", "headline_cpi"),
+        ("CPILFESL", "core_cpi"),
+        ("STICKCPIM157SFRBATL", "sticky_cpi"),
+        ("FLEXCPIM157SFRBATL", "flex_cpi"),
+    ):
+        _write_series(tmp_path, series_id, column, [100.0, 101.0, 102.0])
+    _write_json(
+        tmp_path / "data" / "release_forecast" / "latest.json",
+        {"schema": "release_forecast.v2", "asof": f"{_AS_OF}T02:00:00Z", "upcoming": []},
+    )
+    _write_jsonl(
+        tmp_path / "data" / "release_forecast" / "forward_ledger.jsonl",
+        [],
+    )
+
+    state = build_inflation_intelligence(tmp_path, as_of=_AS_OF)
+
+    assert state["asof"] == _AS_OF
+    assert state["freshness"]["status"] == "degraded"
+    assert any(
+        reason.startswith("fred:CPIAUCSL:stale:")
+        for reason in state["freshness"]["degraded_reasons"]
+    )
+    assert state["released_state"]["headline"]["freshness_status"] == "stale"
+    assert state["source_status"]["fred"]["headline"]["freshness_status"] == "stale"
 
 
 def test_cli_writes_requested_output(tmp_path: Path) -> None:

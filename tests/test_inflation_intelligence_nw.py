@@ -19,6 +19,13 @@ def _target(release_type: str, *, point: float) -> dict:
         "days_to_release": 3,
         "target": "mom_pct",
         "forecast_asof": "2026-08-09",
+        "model_epoch": "champion_v3",
+        "target_epoch": "coherent_release_target_v1",
+        "code_receipt": "git:0123456789abcdef",
+        "inputs_hash": "sha256:champion-inputs",
+        "primary_forecast_basis": "combined_v1_benchmark_augmented",
+        "context_metrics_basis": "champion_legacy_target_v1",
+        "basis_warning": "Combined point and champion context use different bases.",
         "release_radar_projection": {
             "point": point,
             "p10": point - 0.1,
@@ -35,6 +42,14 @@ def _target(release_type: str, *, point: float) -> dict:
             "inputs_used": ["release_radar", "cleveland"],
             "includes_external_benchmark": True,
             "n_scored_basis": 8,
+            "model_epoch": "combined_v1",
+            "target_epoch": "coherent_combined_target_v1",
+            "code_receipt": "git:combined012345",
+            "inputs_hash": "sha256:combined-inputs",
+            "input_hashes": {
+                "champion": "sha256:champion-inputs",
+                "cleveland": "sha256:cleveland-input",
+            },
             # Deliberately hostile inputs: consumers must overwrite these.
             "display_only": False,
             "authority": True,
@@ -64,6 +79,10 @@ def _target(release_type: str, *, point: float) -> dict:
         "component_freshness": [{"component": f"component-{i}"} for i in range(50)],
         "forecast_evolution": {
             "basis": "append_only_release_radar_forward_ledger_champion_path",
+            "cutoff_asof": "2026-08-09",
+            "cutoff_policy": "exclude_unparseable_or_after_resolved_artifact_asof",
+            "excluded_after_cutoff": 2,
+            "excluded_unparseable_asof": 1,
             "n_points": 50,
             "first_asof": "2026-06-20",
             "last_asof": "2026-08-09",
@@ -140,6 +159,14 @@ def _artifact() -> dict:
                 "flexible": sticky,
             },
         },
+        "freshness": {
+            "status": "degraded",
+            "policy": "Source clocks, not wrapper time, determine freshness.",
+            "monthly_source_max_age_months": 2,
+            "release_radar_artifact_max_age_days": 2,
+            "release_radar_artifact_age_days": 0,
+            "degraded_reasons": ["fred:FLEXCPIM157SFRBATL:stale:3m"],
+        },
         "source_status": {
             "release_radar_latest": {"available": True, "asof": "2026-08-09"},
             "release_radar_forward_ledger": {"available": True, "rows_read": 50},
@@ -175,17 +202,43 @@ def test_world_state_inflation_lobe_is_bounded_and_authority_false(tmp_path: Pat
     headline = lobe["next_release_forecast"]["headline"]
     assert headline["release_radar_projection"]["point"] == 0.23
     assert headline["input_snapshot_ref"] == "sha256:input-snapshot"
+    assert headline["model_epoch"] == "champion_v3"
+    assert headline["target_epoch"] == "coherent_release_target_v1"
+    assert headline["code_receipt"] == "git:0123456789abcdef"
+    assert headline["inputs_hash"] == "sha256:champion-inputs"
+    assert headline["primary_forecast_basis"] == "combined_v1_benchmark_augmented"
+    assert headline["context_metrics_basis"] == "champion_legacy_target_v1"
+    assert headline["basis_warning"].startswith("Combined point")
     assert headline["combined_display_estimate"]["authority"] is False
+    assert headline["combined_display_estimate"]["model_epoch"] == "combined_v1"
+    assert headline["combined_display_estimate"]["target_epoch"] == (
+        "coherent_combined_target_v1"
+    )
+    assert headline["combined_display_estimate"]["code_receipt"] == (
+        "git:combined012345"
+    )
+    assert headline["combined_display_estimate"]["inputs_hash"] == (
+        "sha256:combined-inputs"
+    )
+    assert headline["combined_display_estimate"]["input_hashes"]["cleveland"] == (
+        "sha256:cleveland-input"
+    )
     assert headline["coverage"]["bridge_weight_basis"].endswith("fixed_approximation")
     assert "evolves monthly" in headline["coverage"]["bridge_weight_basis_warning"]
     assert headline["coverage"]["bridge_known_scope_mismatches"][0]["series"] == "SERIES-0"
     assert len(headline["coverage"]["bridge_known_scope_mismatches"]) == 8
     assert "points" not in headline["forecast_evolution"]
+    assert headline["forecast_evolution"]["cutoff_asof"] == "2026-08-09"
+    assert headline["forecast_evolution"]["excluded_after_cutoff"] == 2
     assert "component_freshness" not in headline
     current_pressure = lobe["current_month_proxy_pressure"]
     assert current_pressure["pressure_direction"] == "upward_price_pressure"
     assert "evolves monthly" in current_pressure["coverage"]["bridge_weight_basis_warning"]
     assert len(current_pressure["coverage"]["bridge_known_scope_mismatches"]) == 8
+    assert lobe["freshness"]["status"] == "degraded"
+    assert lobe["freshness"]["degraded_reasons"] == [
+        "fred:FLEXCPIM157SFRBATL:stale:3m"
+    ]
 
 
 def test_world_state_build_wires_null_safe_inflation_lobe(tmp_path: Path) -> None:
@@ -204,6 +257,7 @@ def test_world_state_build_wires_null_safe_inflation_lobe(tmp_path: Path) -> Non
 def test_mastermind_inflation_lobe_is_registered_bounded_and_fresh(tmp_path: Path) -> None:
     from engine.neuralweb.mastermind_context import (
         LOBE_SUMMARIZERS,
+        _LOBE_TO_ARTIFACT_IDS,
         _build_freshness,
         _summarize_inflation_intelligence,
     )
@@ -213,6 +267,7 @@ def test_mastermind_inflation_lobe_is_registered_bounded_and_fresh(tmp_path: Pat
 
     assert gap is None
     assert LOBE_SUMMARIZERS["inflation_intelligence"] is _summarize_inflation_intelligence
+    assert _LOBE_TO_ARTIFACT_IDS["inflation_intelligence"] == ["inflation-intelligence"]
     _assert_authority_false(lobe)
     assert "official CPI observation" in lobe["standing_law"]
     assert lobe["next_release_forecast"]["headline"]["input_snapshot_ref"] == "sha256:input-snapshot"

@@ -435,6 +435,23 @@ class TestExtractScoredErrors:
         assert abs(errors["champion"][0] - (0.4 - 0.28)) < 1e-9
         assert abs(errors["champion"][1] - (-0.1 - 0.05)) < 1e-9
 
+    def test_official_actual_supersession_contributes_one_error(self):
+        legacy = {
+            **self._scored_champion_row("nfp", "2026-07", -126.0, 50.0),
+            "frozen_asof_night": "2026-08-06",
+        }
+        official = {
+            **legacy,
+            "actual": 57.0,
+            "actual_basis": "official_published_metric",
+            "actual_receipt_id": "official_actual:nfp-july",
+            "frozen_prediction_id": "NFP:2026-07:first:2026-08-06:v1",
+        }
+
+        errors = extract_scored_errors([legacy, official], "nfp")
+
+        assert errors["champion"] == [7.0]
+
     def test_shadow_errors_extracted(self):
         ledger = [
             self._scored_shadow_row("cpi_headline", "2026-03", "v3_factor", 0.4, 0.30),

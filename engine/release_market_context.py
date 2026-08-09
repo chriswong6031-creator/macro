@@ -299,13 +299,23 @@ def _market_title_matches_target(release_type: str, title: object) -> bool:
     The legacy event-key taxonomy groups headline and core CPI under
     ``cpi_print``.  The human-readable title is therefore a required secondary
     identity check: a Core CPI contract must never become a headline benchmark,
-    and an ambiguous headline-only event must never become a core benchmark.
+    and a YoY or unit-ambiguous contract must never become a MoM benchmark.
     """
     if release_type not in {"cpi_headline", "cpi_core"}:
         return True
     normalized = str(title or "").strip().lower()
+    is_mom = any(
+        token in normalized
+        for token in ("mom", "m/m", "month over month", "month-over-month", "monthly")
+    )
+    is_yoy = any(
+        token in normalized
+        for token in ("yoy", "y/y", "year over year", "year-over-year", "annual")
+    )
+    if "cpi" not in normalized or not is_mom or is_yoy:
+        return False
     if release_type == "cpi_core":
-        return "core" in normalized and "cpi" in normalized
+        return "core" in normalized
     return "core" not in normalized
 
 

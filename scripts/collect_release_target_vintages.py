@@ -145,7 +145,7 @@ def collect_release_target_vintages(
                 output_path,
                 " (dry run)" if dry_run else "",
             )
-        except Exception as exc:  # noqa: BLE001 - one series must not erase the rest
+        except Exception as exc:
             failed += 1
             receipt["series"][series_id] = {
                 "status": "failed",
@@ -191,11 +191,10 @@ def _normalize_series_ids(series_ids: Sequence[str]) -> tuple[str, ...]:
 
 def _atomic_write_parquet(frame: pd.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    handle = tempfile.NamedTemporaryFile(
+    with tempfile.NamedTemporaryFile(
         prefix=f".{path.stem}.", suffix=".parquet", dir=path.parent, delete=False
-    )
-    temp_path = Path(handle.name)
-    handle.close()
+    ) as handle:
+        temp_path = Path(handle.name)
     try:
         frame.to_parquet(temp_path, index=False)
         os.replace(temp_path, path)
@@ -205,11 +204,10 @@ def _atomic_write_parquet(frame: pd.DataFrame, path: Path) -> None:
 
 def _atomic_write_json(payload: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    handle = tempfile.NamedTemporaryFile(
+    with tempfile.NamedTemporaryFile(
         prefix=f".{path.stem}.", suffix=".json", dir=path.parent, delete=False
-    )
-    temp_path = Path(handle.name)
-    handle.close()
+    ) as handle:
+        temp_path = Path(handle.name)
     try:
         temp_path.write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"

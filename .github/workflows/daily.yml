@@ -4548,6 +4548,7 @@ jobs:
         # the broad output_type=4 PIT feature store and never replace it.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        timeout-minutes: 20
         run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
       - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
         # Converts verified BLS/BEA/DOL publication facts from the VPS live

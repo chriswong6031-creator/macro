@@ -16,6 +16,13 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+_ACTUAL_BASIS_RANK = {
+    "official_published_metric": 300,
+    "same_release_vintage_published_proxy": 200,
+    "official_initial_level": 150,
+    "legacy_cross_vintage_level_change": 0,
+}
+
 
 def load_defect_notices(path_or_root: str | Path | None) -> list[dict[str, Any]]:
     """Load notices from a repo root, notice file, or release-forecast directory.
@@ -76,9 +83,7 @@ def _matches_selector(row: dict[str, Any], selector: dict[str, Any]) -> bool:
 
     if selector.get("actual_source_missing") is True and row.get("actual_source"):
         return False
-    if not _in(selector.get("actual_sources"), row.get("actual_source")):
-        return False
-    return True
+    return _in(selector.get("actual_sources"), row.get("actual_source"))
 
 
 def matching_defect_ids(
@@ -115,3 +120,55 @@ def is_evaluation_eligible(
     row: dict[str, Any], notices: Iterable[dict[str, Any]]
 ) -> bool:
     return not matching_defect_ids(row, notices)
+
+
+def _frozen_score_key(row: dict[str, Any]) -> tuple[str, ...] | None:
+    """Identity of one frozen forecast grade across later actual receipts.
+
+    Minimal legacy/test rows can lack the period or frozen forecast date.  Such
+    rows do not contain enough evidence to prove that they grade the same frozen
+    prediction, so callers must keep them distinct rather than collapsing them
+    on a tuple of empty strings.
+    """
+    # Existing production score rows predate frozen_prediction_id and epochs.
+    # Always use the backward-compatible projection identity so an official
+    # correction collapses with the legacy row it supersedes.
+    release = str(row.get("release") or "")
+    period = str(row.get("period") or "")
+    frozen_asof = str(row.get("frozen_asof_night") or "")
+    if not release or not period or not frozen_asof:
+        return None
+    return (release, period, str(row.get("model") or "champion"), frozen_asof)
+
+
+def _actual_receipt_rank(row: dict[str, Any]) -> int:
+    basis = str(row.get("actual_basis") or "")
+    if basis in _ACTUAL_BASIS_RANK:
+        return _ACTUAL_BASIS_RANK[basis]
+    if row.get("actual_receipt_id"):
+        return 100
+    return 0
+
+
+def canonical_scored_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Select one actual receipt per frozen forecast without mutating the ledger.
+
+    Official published metrics outrank same-release-vintage proxies, which
+    outrank receipt-less legacy calculations.  Ties keep the first append, so a
+    later row can never silently rewrite an equally authoritative keep-first
+    receipt.  Non-scored rows are ignored.
+    """
+    chosen: dict[tuple[str, ...], tuple[int, int, dict[str, Any]]] = {}
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or row.get("row_type") != "scored":
+            continue
+        frozen_key = _frozen_score_key(row)
+        # A receipt without a complete frozen identity cannot safely supersede
+        # another row.  The append index makes the key unique while preserving
+        # deterministic ordering.
+        key = frozen_key or ("incomplete_frozen_identity", str(index))
+        rank = _actual_receipt_rank(row)
+        prior = chosen.get(key)
+        if prior is None or rank > prior[0]:
+            chosen[key] = (rank, index, row)
+    return [item[2] for item in sorted(chosen.values(), key=lambda item: item[1])]

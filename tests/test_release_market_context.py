@@ -231,21 +231,21 @@ class TestMarketImpliedBenchmark:
         rows = [
             {
                 "snapshot_date": _SNAP_FRESH, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "US CPI August 2026",
+                "event_key": "cpi_print", "event_title": "US CPI MoM August 2026",
                 "end_date": "2026-08-13", "outcome": "0.2–0.3%", "prob": 0.55,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
                 "liquidity": 2000.0, "open_interest": 1500.0, "mkt_volume24hr": 800.0,
             },
             {
                 "snapshot_date": _SNAP_FRESH, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "US CPI August 2026",
+                "event_key": "cpi_print", "event_title": "US CPI MoM August 2026",
                 "end_date": "2026-08-13", "outcome": ">0.3%", "prob": 0.30,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
                 "liquidity": 2000.0, "open_interest": 1500.0, "mkt_volume24hr": 200.0,
             },
             {
                 "snapshot_date": _SNAP_FRESH, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "US CPI August 2026",
+                "event_key": "cpi_print", "event_title": "US CPI MoM August 2026",
                 "end_date": "2026-08-13", "outcome": "<0.2%", "prob": 0.15,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
                 "liquidity": 2000.0, "open_interest": 1500.0, "mkt_volume24hr": 200.0,
@@ -265,14 +265,14 @@ class TestMarketImpliedBenchmark:
         rows = [
             {
                 "snapshot_date": _SNAP_OLDER, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "CPI Old",
+                "event_key": "cpi_print", "event_title": "CPI MoM Old",
                 "end_date": "2026-08-13", "outcome": "low", "prob": 0.9,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
                 "open_interest": None, "mkt_volume24hr": None,
             },
             {
                 "snapshot_date": _SNAP_FRESH, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "CPI New",
+                "event_key": "cpi_print", "event_title": "CPI MoM New",
                 "end_date": "2026-08-13", "outcome": "high", "prob": 0.7,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
                 "open_interest": None, "mkt_volume24hr": None,
@@ -282,7 +282,7 @@ class TestMarketImpliedBenchmark:
         result = get_market_implied_benchmark("cpi_headline", "2026-08-13", p)
         assert result is not None
         assert result["asof"] == _SNAP_FRESH
-        assert result["event_title"] == "CPI New"
+        assert result["event_title"] == "CPI MoM New"
 
     def test_nfp_event_key_used(self, tmp_path: Path):
         """NFP release type uses nfp_print event_key."""
@@ -305,7 +305,7 @@ class TestMarketImpliedBenchmark:
         rows = [
             {
                 "snapshot_date": _SNAP_FRESH, "source": "polymarket",
-                "event_key": "cpi_print", "event_title": "CPI",
+                "event_key": "cpi_print", "event_title": "CPI MoM",
                 "end_date": "2026-08-13", "outcome": "inline", "prob": 0.6,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
                 "open_interest": None, "mkt_volume24hr": None,
@@ -340,7 +340,7 @@ class TestMarketImpliedBenchmark:
         assert core is not None
         assert core["event_title"].startswith("Core CPI")
 
-    def test_ambiguous_headline_cpi_market_never_attaches_to_core(self, tmp_path: Path):
+    def test_unit_ambiguous_cpi_market_attaches_to_neither_target(self, tmp_path: Path):
         rows = [{
             "snapshot_date": _SNAP_FRESH,
             "source": "polymarket",
@@ -362,7 +362,28 @@ class TestMarketImpliedBenchmark:
         ) is None
         assert get_market_implied_benchmark(
             "cpi_headline", "2026-08-13", path
-        ) is not None
+        ) is None
+
+    def test_core_cpi_yoy_market_never_attaches_to_mom_target(self, tmp_path: Path):
+        rows = [{
+            "snapshot_date": _SNAP_FRESH,
+            "source": "polymarket",
+            "event_key": "cpi_print",
+            "event_title": "Core CPI YoY - July 2026",
+            "end_date": "2026-08-13",
+            "outcome": "2.7%",
+            "prob": 0.6,
+            "volume24hr": None,
+            "volume_total": None,
+            "liquidity": None,
+            "open_interest": None,
+            "mkt_volume24hr": None,
+        }]
+        path = _make_snapshots_parquet(tmp_path, rows)
+
+        assert get_market_implied_benchmark(
+            "cpi_core", "2026-08-13", path
+        ) is None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

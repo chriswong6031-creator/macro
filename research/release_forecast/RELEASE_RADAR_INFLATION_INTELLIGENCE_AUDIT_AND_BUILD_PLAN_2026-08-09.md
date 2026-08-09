@@ -94,11 +94,13 @@ real-time vintages, annual seasonal revisions or benchmarking could create a tar
 that no agency ever published.
 
 The defect is observable, not theoretical. Repository diagnostics produced a -899
-thousand synthetic PAYEMS change where a same-vintage reconstruction for the July
-2026 employment release produces +57 thousand, matching the metric captured by the
-official parser. CPI cross-vintage latent changes can sometimes round to the same
-one-decimal number BLS published; that coincidence does not make the independently
-selected denominators a valid release-time contract.
+thousand synthetic PAYEMS change for one recent release while the coherent-vintage
+path produced a radically different result. The corresponding live NFP receipt was
+not accepted as truth: its reference period was malformed and its observation clock
+preceded the claimed source-release clock, so it was removed and scoring now fails
+closed. CPI cross-vintage latent changes can sometimes round to the same one-decimal
+number BLS published; that coincidence does not make the independently selected
+denominators a valid release-time contract.
 
 Contract now enforced for all new target receipts:
 
@@ -129,8 +131,10 @@ could remain past-due/unscored when credentials or same-night publication timing
 
 Wave 1 adds a one-way reconciler:
 
-- accepts only HTTPS BLS, BEA, and DOL domains;
-- validates event type, event-derived reference period, metric, numeric unit, and SHA-256;
+- binds CPI/PPI/NFP to BLS, PCE to BEA, and claims to DOL with allowlisted HTTPS
+  hosts and parser/source contracts;
+- validates event type, explicitly parsed reference period, metric, numeric unit,
+  SHA-256, timezone-aware clocks, and source-release → observed → verified ordering;
 - scales persons to thousands for NFP/claims;
 - appends a keep-first `release_actual.v1` receipt;
 - preserves later differing facts as non-scoring `correction_candidate` rows;
@@ -163,9 +167,11 @@ New rows freeze:
 - exact actual basis/source receipt;
 - evaluation status and matched defect IDs.
 
-The primary scoreboard and ensemble evidence use only clean, comparable rows.
-`all_forward` still reports the immutable full record and excluded counts. Nothing is
-deleted or silently rewritten.
+The primary scoreboard and ensemble evidence use only clean, comparable rows. If a
+better actual receipt arrives, the producer appends an immutable superseding score
+receipt; one canonical score per frozen prediction is then selected consistently for
+the scoreboard, ensemble weights, and maturity. `all_forward` still reports the
+immutable full receipt stream and excluded counts. Nothing is silently rewritten.
 
 ### 5. Two source-scope/unit errors were material
 
@@ -198,9 +204,10 @@ table weights/effects and its component denominator is rebuilt consistently.
 
 The legacy prediction-market taxonomy used one `cpi_print` event key for both headline
 and core CPI. A live core-CPI contract could therefore appear as headline context. The
-reader now requires a secondary title/target match: a title containing “Core CPI” can
-only attach to core, and an ambiguous/headline CPI title can never attach to core. A
-mismatch fails closed to null rather than borrowing another target's distribution.
+reader now requires both a secondary title/target match and an explicit metric basis:
+a title containing “Core CPI” can only attach to core, and only MoM contracts can
+provide MoM context. Core/headline, MoM/YoY, or ambiguous mismatches fail closed to
+null rather than borrowing another target's distribution.
 
 ## The two-system inflation architecture
 
@@ -248,8 +255,11 @@ Supported series: CPIAUCSL, CPILFESL, PCEPI, PCEPILFE, PPIFIS, PPIFES, PAYEMS.
 - `scripts/reconcile_release_actuals.py`
 - `data/release_forecast/official_actuals.jsonl`
 
-The seed ledger contains verified current BLS/BEA/DOL receipts. Nightly reconciliation
-keeps it advancing without giving the live watcher write authority over model data.
+The seed ledger contains only receipts that pass the current BLS/BEA/DOL source,
+period, parser, unit, and timestamp-causality contracts. Nightly reconciliation keeps
+it advancing without giving the live watcher write authority over model data. A
+previous malformed NFP receipt was deliberately removed rather than guessed into a
+reference period.
 
 ### Honest evaluation and provenance
 
@@ -262,6 +272,11 @@ keeps it advancing without giving the live watcher write authority over model da
 - explicit `primary_forecast_basis` disclosing that `combined_v1` is
   benchmark-augmented.
 
+The Release Radar card now labels that basis “Model + benchmark blend,” names
+Cleveland when present, and suppresses expectation/skew/surprise context when its
+basis does not match the displayed point. Legacy champion-only artifacts retain the
+original “ours” label.
+
 ### Persistent inflation context
 
 - `engine/inflation_intelligence.py`;
@@ -270,8 +285,18 @@ keeps it advancing without giving the live watcher write authority over model da
 - additive, null-safe Neural Web context plumbing;
 - nightly scheduling after Release Radar and before downstream context joins.
 
+The existing Macro Signals “Inflation right now” display also now reads the raw
+monthly Atlanta Fed series and compounds complete, consecutive 3-month windows. It no
+longer annualizes a business-day-forward-filled feature frame or displays a monthly
+percent change as though it were an annual rate.
+
 Every authority flag is false. The artifact may describe and answer context questions;
 it may not rank, score, gate, size, escalate, or trade.
+
+Wave 1 deliberately leaves every forecast point and fitted coefficient unchanged.
+The coherent target store is used for truth and future scoring substrate; refitting a
+new shadow slug requires historical backfill, parity evidence, and a separately frozen
+target epoch.
 
 ## Data-source inventory and acquisition policy
 

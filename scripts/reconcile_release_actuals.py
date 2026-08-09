@@ -32,7 +32,7 @@ def _read_payload(source: str, timeout: float = 10.0) -> dict[str, Any]:
     else:
         value = json.loads(Path(source).read_text(encoding="utf-8"))
     if not isinstance(value, dict):
-        raise ValueError("release publication payload is not an object")
+        raise TypeError("release publication payload is not an object")
     return value
 
 
@@ -67,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         rows = reconcile(args.source, args.out, timeout=args.timeout, dry_run=args.dry_run)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI boundary reports a safe failure
         print(f"release actual reconciliation failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
     print(f"release actual reconciliation: {len(rows)} new receipt(s)")
