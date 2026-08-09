@@ -10,10 +10,15 @@ Run:  python -m scripts.seed_cn_hk_stocks
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
 
-from collectors.china_stock_prices import ChinaStockPriceAdapter
-from collectors.hk_stock_prices import HkStockPriceAdapter
-from lib import store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.china_stock_prices import ChinaStockPriceAdapter  # noqa: E402
+from collectors.hk_stock_prices import HkStockPriceAdapter  # noqa: E402
+from lib import store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_cn_hk")

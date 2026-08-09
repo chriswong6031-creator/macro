@@ -73,9 +73,18 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 598, (
-        f"Expected 598 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 604, (
+        f"Expected 604 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Polygon intraday price cache registered the receipt-bound H+60 input"
+        " consumed by the outcome builder = 603->604);"
+        " (Polygon intraday price receipt registered the causal cache sidecar"
+        " consumed by H+60 accrual = 602->603);"
+        " (Dated live-flow PIT event stage registered as the episode builder's"
+        " critical R2 source = 601->602);"
+        " (Options signal episode durable-stage checkpoint = 600->601);"
+        " (Options signal episodes registered the immutable PIT decision ledger"
+        " and append-only H+60 outcome ledger = 598->600);"
         " (Prophet-US W1-D added us-basket-turn + us-basket-turn-ledger — the US"
         " washout-lifecycle organ, port of china_basket_turn = 595->597;"
         " Biopharma Seasonality program watch then registered"

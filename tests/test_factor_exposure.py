@@ -132,7 +132,6 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
     if out is None:                                      # no store in this env — skip
         return
     b = out["betas"]
-    factor_keys = [f["key"] for f in out["factors"]]
     # at least ONE cached crypto name must be modeled (BTC-USD is the deepest series and
     # is also the `btc` factor source, so it is present whenever the emit is)
     present = [t for t in fe.CRYPTO_NAMES if t in b]
@@ -150,23 +149,74 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
         #     Threshold 0.5 is loose: the real coins run ~0.9–1.1, COIN/ETFs ~0.9.
         assert rec.get("btc") is not None, f"{t} has no btc beta"
         assert rec["btc"] > 0.5, f"{t} btc beta {rec['btc']} unexpectedly low for a crypto name"
-        # btc sits among the TOP-2 |beta| non-market loadings. Not strictly #1: the
-        # ETH-side names carry a large negative usd loading (crypto weakens on a strong
-        # dollar) that can edge out btc — an honest read, so the check allows a co-leader.
-        others = sorted((abs(rec[k]) for k in factor_keys
-                         if k not in ("mkt", "btc") and rec.get(k) is not None), reverse=True)
-        second = others[1] if len(others) > 1 else 0.0
-        # Co-leader BAND, not strict ordering: on 251-day rolling betas the
-        # ETH-side names flap the order by hundredths (ETHA 2026-08-08: size
-        # 1.014 vs btc 0.984 — a 3% margin), and strict >= reds the pack on
-        # pure data drift. A name still reads as the crypto bet when btc sits
-        # within 10% of the second-ranked loading; a genuinely equity-dominated
-        # name (btc far down the order) still fails.
-        assert abs(rec["btc"]) >= second * 0.90, \
-            f"{t}: btc beta not within 10% of the top-2 non-market loadings ({rec})"
+        # NO RANK OR CO-LEADER-BAND PIN HERE — deliberately, and this is the second
+        # attempt at it.  #3538 required btc in the TOP-2 non-market loadings; #5032
+        # loosened that to a 10% co-leader band (`btc >= second * 0.90`) after the top-2
+        # form rotted.  MEASURED: replaying compute_exposure(asof=…) across 2026, the 0.90
+        # band is red on 10 of 27 (asof × name) windows — every reading Jan-Apr 2026, with
+        # ETHA's ratio as low as 0.358 (btc 0.730 vs growth 3.004 / size 2.041) — so it
+        # passes today by 7 points on a quantity measured between 0.358 and 2.890.  Both
+        # forms pin the ORDER of a 251-day ROLLING regression on live prices, and that
+        # order is a reading, not an invariant: ETHA's btc rank was 3 (Jan/Mar/Apr), 3
+        # (May), 4 (Jun), 2 (Jul), 3 (Aug).  Any threshold on it is a scheduled red.
+        # Evidence table: PR #5036.  The claim both forms were reaching for — "a
+        # spot-crypto name reads btc-heavy" — is pinned where it is actually decidable, on
+        # a constructed book: `test_crypto_shaped_holding_reads_btc_heavy` below.  Do not
+        # re-add a live ordering assertion in any form.
 
     # BTC-USD specifically: it IS the btc factor series → its btc beta must be ≈1
     # (self-consistency, the same check SPY→mkt gets in the sibling test)
     if "BTC-USD" in b and b["BTC-USD"].get("btc") is not None:
         assert abs(b["BTC-USD"]["btc"] - 1.0) < 0.2, \
             f"BTC-USD btc beta {b['BTC-USD']['btc']} should be ~1 (it is the btc factor)"
+
+
+def test_crypto_shaped_holding_reads_btc_heavy():
+    """A spot-crypto holding must attribute to `btc`, not smear across equity factors.
+
+    The hermetic half of `test_compute_exposure_covers_crypto_with_sane_shape`, and the
+    replacement for the two live ordering pins that rotted there (#3538's top-2, #5032's
+    10% band).  That test can only assert what a live rolling window happens to produce;
+    here the book is CONSTRUCTED — one unit of the crypto factor plus a tape sleeve — so
+    "btc-heavy" is a decidable property of the estimator instead of a reading of this
+    quarter's data, and it cannot drift.
+
+    Fails if the sequential orthogonalization (btc is 8th in FACTOR_ORDER, so its column
+    is btc ⟂ {mkt, growth, size, rates, usd, oil, china}) leaks the crypto move into an
+    equity factor, or mangles a near-pure-crypto name into NaNs — the two failures the
+    live ordering assertions were actually trying to catch.
+    """
+    rng = np.random.default_rng(6)
+    n = 1500                                            # ~6y daily: enough that the residual
+    keys = fe.FACTOR_ORDER                              # betas are signal, not sampling noise
+    mkt = rng.normal(0, 0.010, n)
+    btc = 0.6 * mkt + rng.normal(0, 0.025, n)           # crypto: some tape, mostly its own bet
+    cols = {}
+    for j, k in enumerate(keys):
+        if k == "mkt":
+            cols[k] = mkt
+        elif k == "btc":
+            cols[k] = btc
+        else:                                           # equity/macro factors: tape + own sleeve
+            cols[k] = (0.4 + 0.1 * j) * mkt + rng.normal(0, 0.010, n)
+    F = pd.DataFrame(cols, index=_idx(n))
+
+    # spot-ETH-ETF shaped: beta 1 to the crypto factor, 0.4 to the tape, thin idio
+    r = 1.0 * btc + 0.4 * mkt + rng.normal(0, 0.004, n)
+    px = pd.DataFrame({"ETHZ": (1 + r).cumprod()}, index=_idx(n))
+    rec = fe.stock_betas(px, F, window=n, min_obs=200, max_abs=5.0)["betas"]["ETHZ"]
+
+    assert all(rec[k] is not None for k in keys), f"NaN loading in a crypto-shaped book: {rec}"
+    assert abs(rec["btc"] - 1.0) < 0.05, f"btc loading not recovered: {rec['btc']}"
+    others = {k: abs(rec[k]) for k in keys if k not in ("mkt", "btc")}
+    worst = max(others, key=others.get)
+    # DOMINATES, not merely leads: outside the tape the constructed exposure is btc-only, so
+    # a comparable equity loading means the peel leaked.  3× is the honest bar — a high-vol
+    # asset regressed on a low-variance orthogonal column carries real sampling noise (~0.07
+    # here), so demanding ~0 would be pinning the RNG.  Measured across 12 seeds: btc
+    # recovered to 1.000 ± 0.006 and dominance 6.7×–18.1×, so 3× is not a lucky margin.
+    assert abs(rec["btc"]) > 3 * others[worst], (
+        f"crypto exposure smeared into equity factors: btc={rec['btc']} vs "
+        f"{worst}={rec[worst]} (all: { {k: rec[k] for k in keys} })"
+    )
+    assert rec["idio_vol"] is not None and rec["idio_vol"] > 0.0

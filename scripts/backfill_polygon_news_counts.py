@@ -23,11 +23,15 @@ import argparse
 import json
 import logging
 import os
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 log = logging.getLogger(__name__)
 
@@ -225,7 +229,6 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     import sys  # noqa: PLC0415
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from lib import config  # noqa: PLC0415
 
     out_dir = config.data_dir() / "narrative"

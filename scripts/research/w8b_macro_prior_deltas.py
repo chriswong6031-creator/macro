@@ -20,8 +20,12 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
 
-import engine.theme_scoring as ts
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
+
+import engine.theme_scoring as ts  # noqa: E402
 
 
 # W8b-ADDED baskets (the five new entries) — used to annotate the table.
