@@ -14,8 +14,12 @@ from lib import config, store
 from engine import china_standout_track as t
 
 
-def _mk_ohlc(dates, closes, *, flat_at=None):
-    """Build an OHLC frame; ``flat_at`` (index int) forces a locked-limit bar (h==l==c)."""
+def _mk_ohlc(dates, closes, *, flat_at=None, with_open=False):
+    """Build an OHLC frame; ``flat_at`` (index int) forces a locked-limit bar (h==l==c).
+
+    ``with_open`` adds an `open` column inside [low, high] — the real china_stocks store
+    carries one, so this is what the LIVE entry path actually reads.
+    """
     closes = np.asarray(closes, dtype=float)
     df = pd.DataFrame({
         "close": closes,
@@ -23,8 +27,11 @@ def _mk_ohlc(dates, closes, *, flat_at=None):
         "low": closes * 0.99,
         "volume": np.full(len(closes), 1e6),
     }, index=pd.DatetimeIndex(dates, name="Date"))
+    if with_open:
+        df.insert(0, "open", closes * 0.995)
     if flat_at is not None:
-        df.iloc[flat_at, [df.columns.get_loc("high"), df.columns.get_loc("low")]] = closes[flat_at]
+        cols = ["high", "low"] + (["open"] if with_open else [])
+        df.iloc[flat_at, [df.columns.get_loc(c) for c in cols]] = closes[flat_at]
     return df
 
 
@@ -685,23 +692,57 @@ def test_own_market_regime_is_null_with_note(cn_store):
 # Scope-5: fill_basis provenance column
 # ---------------------------------------------------------------------------
 
-def test_fill_basis_column_always_t1_hl2(cn_store):
-    """fill_basis is always 't1_hl2' on new rows and after grade() write-back."""
+def test_fill_basis_is_pending_at_birth_then_the_basis_actually_used(cn_store):
+    """fill_basis reports what HAPPENED, never the ENTRY_BASIS constant.
+
+    REWRITTEN 2026-08-08 (300363.SZ case study). This test used to assert
+    ``fill_basis == 't1_hl2'`` on a row the moment it was appended — which is the
+    false-provenance defect written down as a contract. At append time T+1 has not
+    printed, so no basis has happened yet and the honest value is null; the CN ledger
+    published "t1_hl2" for two entries (16.30, then 17.52) that were the raw open and
+    were neither the 08-06 HL2 of 17.38 nor each other.
+    """
     tmp_path, dates = cn_store
     rows = [{"ticker": "699050.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
     t.append_board(rows, asof=str(dates[0].date()))
     df = pd.read_parquet(t._store_path())
-    assert str(df.iloc[0]["fill_basis"]) == "t1_hl2", (
-        f"fill_basis must be 't1_hl2', got {df.iloc[0]['fill_basis']!r}"
+    born = df.iloc[0]["fill_basis"]
+    assert born is None or pd.isna(born), (
+        f"fill_basis must be NULL at birth (T+1 has not printed), got {born!r}"
     )
-    # Also present after grade() runs on live price data
+    assert df.iloc[0]["basis_used"] is None or pd.isna(df.iloc[0]["basis_used"])
+
+    # After grade(), on a store with no `open` column, the documented HL2 proxy is what
+    # actually fired — so that is what the column must say.
     closes = 10.0 * (1.01 ** np.arange(len(dates)))
     store.upsert("china_stocks", "699050.SS", _mk_ohlc(dates, closes))
     store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
     t.grade()
     df2 = pd.read_parquet(t._store_path())
-    assert str(df2.iloc[0]["fill_basis"]) == "t1_hl2"
+    assert str(df2.iloc[0]["fill_basis"]) == t.BASIS_T1_HL2
+    assert str(df2.iloc[0]["basis_used"]) == t.BASIS_T1_HL2
+
+
+def test_fill_basis_says_t1_open_when_the_open_is_what_fired(cn_store):
+    """The store DOES carry `open` for most CN names — so t1_open is the common truth.
+
+    The constant-string provenance made this case indistinguishable from an HL2 fill.
+    """
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "699051.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    closes = 10.0 * (1.01 ** np.arange(len(dates)))
+    df = _mk_ohlc(dates, closes, with_open=True)
+    store.upsert("china_stocks", "699051.SS", df)
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
+    t.grade()
+    out = pd.read_parquet(t._store_path())
+    assert str(out.iloc[0]["basis_used"]) == t.BASIS_T1_OPEN
+    assert str(out.iloc[0]["fill_basis"]) == t.BASIS_T1_OPEN, (
+        "fill_basis and basis_used are stamped from one source and must never drift"
+    )
 
 
 # ---------------------------------------------------------------------------
