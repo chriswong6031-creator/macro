@@ -34,13 +34,18 @@ import argparse
 import copy
 import json
 import logging
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
-from engine import live_overlay, live_quotes, market_state, market_drivers, risk_radar
-from lib import config
-from lib import store as store_mod
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import live_overlay, live_quotes, market_state, market_drivers, risk_radar  # noqa: E402
+from lib import config  # noqa: E402
+from lib import store as store_mod  # noqa: E402
 
 log = logging.getLogger("risk_state_build")
 
