@@ -475,7 +475,7 @@ a{color:var(--link)}
             <div class="fact"><div class="k">{{ t('Retail long/short ratio','散户账户多空比') }} {{ qmark('Contrarian context only. ' ~ leverage.okx_ls_pctile ~ '%ile · z ' ~ leverage.okx_ls_z ~ '. A crowded long is not a buy signal.','仅作反向背景参考。' ~ leverage.okx_ls_pctile ~ ' 百分位 · 标准分 ' ~ leverage.okx_ls_z ~ '。多头拥挤不等于买入信号。') }}</div><div class="v">{{ leverage.okx_ls_ratio }}×</div></div>
             {% endif %}
             {% if leverage.okx_taker_buy is not none %}
-            <div class="fact"><div class="k">{{ t('Taker buy share','主动买盘占比') }} {{ qmark('Share of aggressive OKX volume crossing the offer. Context only; not a standalone trade signal.','OKX 主动成交量中向上吃单的占比。仅作背景，不是独立交易信号。') }}</div><div class="v">{{ "%.1f%%"|format(leverage.okx_taker_buy*100) }}</div></div>
+            <div class="fact"><div class="k">{{ t('Taker buy share','主动买盘占比') }} {{ qmark('Share of aggressive OKX volume crossing the offer. Context only; not a standalone trade signal.','OKX 主动成交量中向上吃单的占比。仅供参考，不是独立交易信号。') }}</div><div class="v">{{ "%.1f%%"|format(leverage.okx_taker_buy*100) }}</div></div>
             {% endif %}
           </div>
           {% if charts.etf_flow %}<div class="chart-card" style="margin-top:14px"><div class="chart-title">{{ t('ETF net flow','ETF 净流量') }}</div>{{ charts.etf_flow|safe }}</div>{% endif %}

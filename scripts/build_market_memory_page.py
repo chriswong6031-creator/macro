@@ -15,11 +15,10 @@ from jinja2 import Environment, FileSystemLoader, Undefined
 
 log = logging.getLogger("build_market_memory_page")
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    # Direct execution sets sys.path[0] to scripts/, but render_to_site imports
-    # the repository-owned lib.pages writer. Keep documented module and direct
-    # CLI invocations equivalent.
-    sys.path.insert(0, str(_REPO_ROOT))
+# Direct execution sets sys.path[0] to scripts/, but render_to_site imports the
+# repository-owned lib.pages writer. Keep documented module and direct CLI
+# invocations equivalent, even when the root already appears later on sys.path.
+sys.path.insert(0, str(_REPO_ROOT))
 
 
 def render(root: Path) -> str:

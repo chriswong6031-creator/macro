@@ -68,8 +68,24 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    # Same-repository PRs and main are trusted inputs and this fast static proof must
+    # not queue behind multi-hour hosted CI packs. The CI matrix deliberately leaves
+    # half of render-linux free for short control-plane work like this; fork PRs still
+    # take the hosted fallback jobs below.
+    runs-on: [self-hosted, render-linux]
     steps:
+      # render-linux workspaces are shared across jobs. A prior sparse render can
+      # leave scripts/ and tests/ absent even though checkout itself reports
+      # success, so clear that inherited state before actions/checkout inspects
+      # the existing repository.
+      - name: clear any sparse checkout a sibling job left in this shared workspace
+        if: runner.environment != 'github-hosted'
+        shell: bash
+        run: |
+          if [ -d "${{ github.workspace }}/.git" ]; then
+            git -C "${{ github.workspace }}" sparse-checkout disable || true
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+          fi
       - uses: actions/checkout@v4
         with:
           # The repository keeps generated site releases in Git. The fences
@@ -77,6 +93,9 @@ jobs:
           filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
+        # The light Mac already provides Python 3.12. setup-python tries to create
+        # /Users/runner on that self-hosted account and fails before any guard runs.
+        if: runner.environment == 'github-hosted'
         with:
           python-version: "3.12"
       # jinja2/markupsafe are for the chat-nav guard below, which RENDERS
@@ -85,7 +104,10 @@ jobs:
       # skip, and the --selftest path additionally imports lib.pages (which pulls
       # lib.config → pyyaml).
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 markupsafe
+        run: |
+          python3 -m venv "$RUNNER_TEMP/fence-venv"
+          "$RUNNER_TEMP/fence-venv/bin/pip" install pytest pyyaml jinja2 markupsafe
+          echo "$RUNNER_TEMP/fence-venv/bin" >> "$GITHUB_PATH"
 
       - name: self-mod-fence selftest (all four cases proven)
         id: self_mod_selftest
@@ -114,7 +136,7 @@ jobs:
       - name: self-mod-fence test suite
         id: self_mod_tests
         continue-on-error: true
-        run: python -m pytest tests/test_self_mod_fence.py -q
+        run: python3 -m pytest tests/test_self_mod_fence.py -q
 
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         id: capability_selftest

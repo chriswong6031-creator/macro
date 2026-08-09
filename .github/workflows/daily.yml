@@ -4573,9 +4573,22 @@ jobs:
         # Fail-open: missing source → gaps[] + null block, always exits 0.
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         run: python -m scripts.build_liquidity_plumbing || echo "::warning::build_liquidity_plumbing failed (non-fatal — last committed artifact stands)"
+      - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
+        # Full ALFRED output_type=2 matrices let the target engine select current
+        # and prior levels from ONE release-date vintage.  They are additive to
+        # the broad output_type=4 PIT feature store and never replace it.
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        timeout-minutes: 20
+        run: python -m scripts.collect_release_target_vintages || echo "::warning::release target vintage collection failed (non-fatal — existing coherent stores stand)"
+      - name: Release Radar official-actual reconciliation (truth substrate, non-fatal)
+        # Converts verified BLS/BEA/DOL publication facts from the VPS live
+        # sidecar into keep-first, source-hashed actual receipts.  No forecast is
+        # originated here; the following producer prefers these receipts when grading.
+        run: python -m scripts.reconcile_release_actuals || echo "::warning::official release actual reconciliation failed (non-fatal — same-vintage fallback remains)"
       - name: MRI release forecast producer (display-only, non-fatal)
         # MRI PR-C: nightly projection for CPI (headline + core) and NFP.
-        # Emits data/release_forecast/latest.json (schema release_forecast.v1),
+        # Emits data/release_forecast/latest.json (schema release_forecast.v2),
         # site/macrodata/release_forecast.json (display copy),
         # data/release_forecast/forward_ledger.jsonl (append-only),
         # data/release_forecast/scoreboard.json (forward accrual only).
@@ -4583,6 +4596,13 @@ jobs:
         # display_only=True; all authority booleans False (MRI-R7). Fail-open.
         # Outputs covered by 'git add data/' and 'git add site/' below.
         run: python -m scripts.build_release_forecast || echo "::warning::build_release_forecast failed (non-fatal — last committed artifact stands)"
+      - name: Inflation intelligence lobe (context-only, non-fatal)
+        if: always()
+        # Separates the latest released CPI state, the next BLS-print forecast,
+        # and current-month proxy pressure.  It is a deterministic adapter over
+        # persisted inputs: display_only=true, authority=false, and no Prophet,
+        # ranking, gating, sizing, or trading consumer.
+        run: python -m scripts.build_inflation_intelligence || echo "::warning::build_inflation_intelligence failed (non-fatal — last committed artifact stands)"
       - name: forward path board (RIC W7 P5, display-only, non-fatal)
         if: always()   # deterministic join over committed artifacts — build whatever exists
         # RIC W7 P5: deterministic Forward Path board (rates_command.v1). Deliberately

@@ -74,6 +74,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger(__name__)
 
 # Stdlib zoneinfo — repo convention (engine/options_flow.py, live_flow_poller.py).

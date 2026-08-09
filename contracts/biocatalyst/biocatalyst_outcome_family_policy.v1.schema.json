@@ -122,7 +122,7 @@
         "activation_record_contract": {"const": "biocatalyst_family_clock_activation.v1"},
         "activation_record_kind": {"const": "family_clock_activation"},
         "clock_state_authority": {"const": "activation_receipt_not_this_file"},
-        "source_eligibility_rule": {"const": "required_source_ids_must_all_be_production_ingest_allowed"},
+        "source_eligibility_rule": {"const": "required_source_ids_must_be_rights_allowed_and_any_runtime_universe_controls_armed"},
         "source_registry_file": {"const": "config/biocatalyst_sources.yml"},
         "backfill": {"const": "forbidden_no_history_recorded"},
         "accrual_start_rule": {"const": "known_at_of_the_activation_never_earlier"},

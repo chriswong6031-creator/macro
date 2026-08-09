@@ -7,8 +7,10 @@ Every fixture here is synthetic and injected through an explicit `data_root` /
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date
 from pathlib import Path
+from types import ModuleType
 
 import pandas as pd
 import pytest
@@ -436,16 +438,29 @@ def test_activity_constants_match_the_masterplan_and_group_pulse():
     assert glo.ACTIVITY_VOLUME_RATIO == 1.5
     assert glo.ACTIVITY_LOOKBACK_D == 63
     resolved = glo._activity_constants()
-    try:
-        from engine import group_pulse  # noqa: F401
-    except ImportError:
-        assert resolved == (1.5, 1.5, 63)
-    else:
-        assert resolved == (
-            float(group_pulse.ACTIVITY_Z),
-            float(group_pulse.ACTIVITY_VOLUME_RATIO),
-            int(group_pulse.ACTIVITY_LOOKBACK_D),
-        ), "group_linked_outsiders and group_pulse must share one activity rule"
+    assert resolved == (1.5, 1.5, 63)
+
+
+def test_activity_constants_use_group_pulse_when_present(monkeypatch):
+    """The independently reviewed GR0 module becomes canonical when it lands."""
+
+    group_pulse = ModuleType("engine.group_pulse")
+    group_pulse.ACTIVITY_Z = 2.0
+    group_pulse.ACTIVITY_VOLUME_RATIO = 3.0
+    group_pulse.ACTIVITY_LOOKBACK_D = 42
+    monkeypatch.setitem(sys.modules, "engine.group_pulse", group_pulse)
+    assert glo._activity_constants() == (2.0, 3.0, 42)
+
+
+def test_activity_constants_do_not_hide_a_present_modules_broken_dependency(monkeypatch):
+    """Only absent GR0 is optional; a defect inside a present GR0 stays loud."""
+
+    def _broken_import(_name: str):
+        raise ModuleNotFoundError("No module named 'inner_dependency'", name="inner_dependency")
+
+    monkeypatch.setattr(glo, "import_module", _broken_import)
+    with pytest.raises(ModuleNotFoundError, match="inner_dependency"):
+        glo._activity_constants()
 
 
 @pytest.mark.parametrize(

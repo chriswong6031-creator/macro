@@ -11,14 +11,19 @@ NO wiring. Report + registry only.
 from __future__ import annotations
 import json
 import pathlib
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.validation import (
     newey_west_tstat, benjamini_hochberg, deflated_sharpe, ret_moments,
-)
-from engine.trial_ledger import TrialLedger
+)  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 ROSTER = pathlib.Path("data/hk_connect_roster/roster.parquet")
 CLOSES = pathlib.Path("data/hk_search/closes_deep.parquet")
