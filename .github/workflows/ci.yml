@@ -1579,6 +1579,11 @@ on:
       - "app/deploy/macro-live-prophet.timer"
       - "app/deploy/live-setup.sh"
       - "tests/test_prophet_live_vps_lane.py"
+      # CLOSE-PASS MIRROR lane (W-L1a, #5154). Same #3488 shape as the prophet
+      # units above: test_close_pass_lane.py parses these two unit files, so a
+      # PR touching only a unit file must retrigger the suite that reads it.
+      - "app/deploy/macro-live-closepass.service"
+      - "app/deploy/macro-live-closepass.timer"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
