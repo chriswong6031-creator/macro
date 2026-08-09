@@ -8,6 +8,14 @@ only. Replay basis: `data/hk_stocks/{0700,9988}.HK.parquet` through 2026-08-07; 
 slice exists locally (terminal HK JSONs dated Jul 25), so replayed dates can differ from what
 production served — itself a finding (see §4).
 
+**2026-08-09 cross-repo revalidation:** on charting-app `origin/master`
+`f50c6eaa804cc393312825020ed4d665d6cc077f`, the structural anchors remain: user-facing sells
+derive from `sell_confirms` with `structure_break`, and `early_dots`, `bear_block`, and
+`monthly_os_dwell` still exist. The grid finding is historical, not current: `confluence.py`
+now uses the session-grid `_resample_3d` path and explicitly identifies `resample("3B")` as the
+old bug. This receipt documents the audited 2026-08-08 state and supplies no current signal,
+exit, position, or Prophet authority.
+
 ## 1. Tencent 2026-07-24 SELL — verdict: a trailing structure stop, not an oracle sell
 
 - The MACD-RSI cross-down (`CS`) is **no longer emitted** to the user stream

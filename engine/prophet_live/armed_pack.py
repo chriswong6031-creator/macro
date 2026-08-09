@@ -104,8 +104,9 @@ from engine import signal_gate
 # The interval contract lives in a stdlib-only sibling so the pandas-free */5 lane
 # can read it too; re-exported here because this is where callers expect it.
 from engine.prophet_live.interval import (  # noqa: F401
-    STATES, in_probed_band, interval_contains, lower_edge, membership_anchor,
-    membership_mismatches, self_check,
+    ADJUSTED, DEFAULT_PACK_ADJUSTMENT, STATES, UNADJUSTED, in_probed_band,
+    interval_contains, lower_edge, membership_anchor, membership_mismatches,
+    self_check,
 )
 
 log = logging.getLogger(__name__)
@@ -710,17 +711,33 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
              universe_n: int, wanted_n: int, gate_calls: int,
              build_seconds: float, skipped: dict[str, int],
              edges_checked: int = 0, probe_seconds: dict[str, float] | None = None,
+             price_adjustment: dict[str, str] | None = None,
              now: datetime | None = None) -> dict[str, Any]:
-    """The published ``prophet_live.armed/v1`` payload."""
+    """The published ``prophet_live.armed/v1`` payload.
+
+    ``price_adjustment`` is ``{ticker: basis}`` from
+    :func:`scripts.build_stock_library.universe_price_adjustment` — the adjustment
+    family of the close series each name's edges were probed on (W-L0 gate 3). Every
+    edge in this pack is a price ON that series, and the */5 evaluator compares it to a
+    RAW vendor print, so the pack has to say which one it is rather than leave the
+    consumer to infer it. The payload states the DOMINANT family once and marks only
+    the names that differ, because the exceptions — the breadth-cache names, which
+    accrue raw closes between rebuilds — are the minority and a per-name string on
+    every one of ~2,900 entries would say the same thing 2,700 times.
+    """
     ts = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     states: dict[str, int] = {}
     for e in names.values():
         states[e.get("state", "dormant")] = states.get(e.get("state", "dormant"), 0) + 1
     probed_n = sum(1 for e in names.values() if e.get("probed"))
     armed_n = sum(1 for e in names.values() if _is_armed(e))
+    adj_counts = _stamp_price_adjustment(names, price_adjustment)
     return {
         "schema": SCHEMA,
         "as_of": as_of,
+        # The basis the edges below are prices on. A name whose series is on a
+        # DIFFERENT basis carries its own `price_adjustment`; absent means this one.
+        "price_adjustment": DEFAULT_PACK_ADJUSTMENT,
         "built_at": ts.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "band_pct": float(cfg["band_pct"]),
         "grid_points": int(cfg["grid_points"]),
@@ -764,8 +781,35 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
             "probe_scope": "two_sided_for_buyable__up_only_for_rest",
             "probe_order": "buyable__eligible__bars_to_cross__hist_d2__ticker",
             "skipped": {k: int(v) for k, v in sorted(skipped.items()) if v},
+            # Population per price basis, so a consumer can size the exception rather
+            # than discover it name by name. `unknown` counts names the universe map
+            # did not carry — the honest answer when a group failed to load, and NOT
+            # folded into the adjusted count.
+            "price_adjustment_counts": adj_counts,
         },
     }
+
+
+def _stamp_price_adjustment(names: dict[str, dict[str, Any]],
+                            by_ticker: dict[str, str] | None) -> dict[str, int]:
+    """Mark the off-default names in place; return the per-basis population.
+
+    Called by :func:`assemble` only. With no map (an ad-hoc build, a test) every name
+    is counted ``unknown`` and NOTHING is stamped: a pack that cannot see its own
+    provenance must not claim the default basis per name — the top-level field already
+    states the store's dominant family, and inventing per-name agreement with it would
+    turn a missing map into a positive assertion.
+    """
+    counts: dict[str, int] = {}
+    for tkr, entry in names.items():
+        basis = (by_ticker or {}).get(tkr)
+        if not basis:
+            counts["unknown"] = counts.get("unknown", 0) + 1
+            continue
+        counts[basis] = counts.get(basis, 0) + 1
+        if basis != DEFAULT_PACK_ADJUSTMENT:
+            entry["price_adjustment"] = basis
+    return dict(sorted(counts.items()))
 
 
 def as_of_date(closes: Iterable[pd.Series]) -> str | None:

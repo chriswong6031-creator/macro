@@ -105,6 +105,13 @@ the shipping. Falsifier language stays off user surfaces; "validated" wording st
   32.6→33.7–33.9%; per-name-first precision IMPROVES 7.4→8.8–10.0%. Gate pressure: 60.4% of
   tier-reachable name-days vetoed.
 
+**2026-08-09 evidence revalidation:** §6.1 is a historical evidence ledger, not a current
+system census. The plan corpus has expanded since the lateness receipt. A current-main replay
+still reproduces the gate algebra with zero equality mismatches, but the unpinned Yahoo universe
+expanded from 713 to 732 graded names and changed the aggregate/named-exhibit output. Preserve
+the recorded measurements as display-tier history; they cannot promote a gate/rank/Prophet
+change without a source-manifest-pinned rerun and the separate authority gauntlet.
+
 ### §6.2 WAVE A — the selection inversion (ships now; two parallel builder PRs, disjoint files)
 
 **A1 `patience-admission` (`engine/prophet_bridge.py`, `scripts/build_prophet.py`):**
@@ -263,49 +270,36 @@ variant (pre-report volume/darkpool/GEX anomaly — the SPCX shape) is a differe
 construction and remains open for a chained session, as does the Earnings Intelligence
 group-reaction angle.
 
-**(f) CN WINNER CHAIN + LIMIT-MOVE FOOTPRINT (operator 2026-08-08, third wave).** (1) 300363.SZ
-full-chain case study — detection organs → #1 rank decomposition → Mastermind Portfolio AI
-ingestion (5% half-tier add at 17.03, +20% limit day, sold next day) → exit; solidify the
-load-bearing organs so the chain repeats; extends the prior `missing-300363` session's work
-(#4877 census, #4964 PIT latch), never duplicates it; the 2-session signal-skew discrepancy
-rides along unresolved-or-resolved, not hidden. (2) Limit-move footprint v0 — event catalog
-(limit-up/down + near-limit closes, board-type width 10%/20%) from CN daily stores; base-rate
-tables FIRST (first-board continuation by era/sector/cap — the 连板 dynamics); then a SMALL
-pre-registered footprint set (≤8 features, named before measuring) with time-split holdout,
-per-name-first beside pooled — the false-discovery risk in thousands-of-names × rare-events
-space is the program's main enemy and is designed against, not hoped away. Data-gap receipt
-(closing-auction imbalance, 封单, intraday first-touch) lands as COLLECTOR PROPOSALS, not
-builds. Same hypothesis class as §6.8(e): anticipatory-flow footprints before discrete
-events; mechanism-agnostic wording, A7 bounds, display-tier until gauntleted.
+**(f) CN WINNER CHAIN + LIMIT-MOVE FOOTPRINT (operator 2026-08-08, third wave; re-audited
+2026-08-09).** (1) The 300363 case is retained only as an outcome-selected pipeline forensic:
+contradictory same-date stores, missing common run identity, mutable ledger provenance, and no
+execution receipt. Its exact price, return, legal-band, fillability, score, and rank claims are
+quarantined and have zero candidate, rank, gate, Prophet, Neural Web, or trading authority.
+(2) The limit-move construction space remains open, but exact event measurement must start from
+the canonical full-A substrate: authorized TuShare unadjusted `daily`, same-key vendor
+`stk_limit`, point-in-time security/session state, and a promoted manifest. False-discovery,
+fillability, and collector-proposal constraints still bind after that substrate exists.
 
-**§6.8(f)(2) FIRST RUN VERDICT (2026-08-08, PR #4999): POSITIVE, sign-stable, era-controlled.**
-Base rates: P(next board | 连板 N) main 16.5%(N=1)→72.8%(N=6), ChiNext 16.8%→78.8%(N=5) —
-a first board alone is a **13× lift** over the 1.27% unconditional. Holdout lifts (main,
-base 1.245%), sign-stable on ALL three boards AND the ChiNext band-era control: run-up
-3.93× · dist-52w-low 3.27× · gap 3.07× · vol-z 2.58× · **sector heat 2.39×** (the cohort
-thesis) · consec-up 2.33×. The pre-registration mechanism fired correctly: f5 near-limit-prev
-(the most discovery-looking feature) printed UNSTABLE; f2 turnover a printed null (no share
-counts). Definitional integrity: the 0.2% tolerance vindicated by measurement (marginal
-events median exactly 100.000% of band = feed noise; vendor 连板 agreement 99.79% tolerant
-vs 91.13% strict). BINDING CAVEAT: 1,842-name curated store vs ~5,400 market — the 打板 game
-lives largely in omitted names; nothing here is market-wide. LICENSED next (display-tier):
-CN limit-continuation context chips (连板 N + the six stable features) on CN surfaces;
-v1 = combined-feature calibration behind §6.6 discipline. COLLECTOR PROPOSALS to operator:
-封单 order-wall (47 dates already held), closing-auction imbalance, first-touch timing.
-Data-plane defect flagged for the CN owner: china_microstructure limit_events missing
-pre-2026-07 history for 34 names while `backfill=True` claims completeness.
+**§6.8(f)(2) LEGACY FIRST RUN — `STOP_SHIP_UNVALIDATED` (2026-08-09 re-audit).** The former
+positive verdict and every exact-board count, continuation/base rate, feature lift, tolerant
+agreement rate, legal-band classification, return, and strategy license are withdrawn. The
+Wave-0 input was Yahoo-adjusted `data/china_stocks`, so a reconstructed percentage/tolerance
+band cannot establish nominal CNY ticks or an exchange limit event. The current authoritative
+receipt is `research/cn_limit_alpha_sol/W2_BAND_PROGRESS_SUBSTRATE_RECEIPT_2026-08-08.md`:
+`BLOCKED_SUBSTRATE_NO_STRATEGY_MEASUREMENT`.
+
+Reopening requires one-to-one TuShare `daily`/`stk_limit` joins with exact integer-cent
+previous-close parity, OHLC containment inside the vendor interval, and legal event predicates
+`high_cents == up_limit_cents` (touch) and `close_cents == up_limit_cents` (seal). Missing
+limits, unknown rule/lifecycle state, mixed generations, adjusted prices, tolerant returns, or
+`>=` comparisons fail closed. No CN context chip, probability, score, rank input, Prophet fact,
+Neural Web fact, or live surface is licensed by the legacy run.
 
 **(g) v2-vs-v3 RULING (operator question 2026-08-08: "does 300363 mean v2 > v3?").** NO
-reversion. v3's re-ordering was measured on hundreds of episodes and cut losses; 300363 is
-n=1, and re-weighting to capture a known winner is the outcome-audition kill. Under v3 the
-name loses the #1 SLOT, not visibility (reversal_member + washout channels survive intact;
-it still scores the top band). The actual lesson: a single GLOBAL entry ladder is too blunt —
-`partial` inside a washout-reversal cohort is EARLY; `partial` chasing a late trend is what
-v3's measurement punished. The board already stamps `species_id` (cn_washout) → the clean
-design is a SPECIES-CONDITIONAL entry ladder (per-species values, per-cohort measurement,
-§6.6 revision rules), which reconciles v3's loss reduction with v2's winner capture. Gate:
-a full-board v2-vs-v3 counterfactual replay over the whole episode history measuring BOTH
-loser rate AND top-slot winner capture — chartered for the chain, before any ladder change.
+reversion and no species/weight change may follow from an outcome-selected case. The stored
+plumbing discrepancies can motivate a pre-registered full-board comparison only after the
+canonical substrate and immutable run/entry receipts pass. Selection quality, outcome returns,
+and exact legal-band events must remain separate evidence families; none may promote another.
 
 ### §6.9 THE RESIDUAL-LATENESS ATTACK + AUTONOMOUS RUN ORDER (operator 2026-08-08, overnight full-auto grant)
 
@@ -314,8 +308,9 @@ hard over the prior 2 sessions at admission. Decomposed, US lateness = (1) the s
 labels `bounce_wait` only AFTER the first impulse; (2) nothing admits on the EARLIEST
 mechanical evidence (the dot signature); (3) the 3D confluence confirms 10-20% late; (4) EOD
 cadence floor = signal at close T, actionable T+1; (5) entry = asof close, no zones. CN's
-"robustness" is (1)+(5) solved plus species machinery — not clairvoyance: 300363 was admitted
-ON its +13.6% ignition bar, then rode the CONTINUATION. **The systematic answer is not
+"robustness" is (1)+(5) solved plus species machinery — not clairvoyance. The legacy 300363
+adjusted-price account cannot establish exact entry timing or legal-band continuation and is
+not evidence for this claim. **The systematic answer is not
 predicting before evidence exists — it is entering on the EARLIEST evidence tier at starter
 size with structure zones, and letting confirmation ADD.** Three compressions ship it:
 EARLY-TURN starter tier (dot signature engine-side, context-conditioned), structure-anchored

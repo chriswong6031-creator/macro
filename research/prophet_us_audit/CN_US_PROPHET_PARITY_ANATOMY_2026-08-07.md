@@ -4,6 +4,13 @@
 figure out why CN is so good"). Anatomy only — no gate/rank change follows from this file.
 Measured by an Opus review lane; sibling receipt: `ENTRY_LATENESS_FORENSIC_2026-08-07.md`.
 
+**2026-08-09 revalidation boundary:** the code/store comparison below is retained as a frozen
+2026-08-07 selection-anatomy receipt, not a description of current live main after subsequent
+ANTICIPATION changes. It is measurement/display context only and cannot change a population,
+score, rank, gate, Prophet plan, or Neural Web claim. The outcome-selected 300363 price/return
+and legal-band account has been withdrawn because its CN price input was Yahoo-adjusted; that
+case supplies no authority to this cross-market comparison.
+
 ## Headline
 
 The two systems share ONE indicator engine, ONE tier vocabulary, and a BYTE-IDENTICAL
@@ -72,22 +79,17 @@ with no alarm.
 measured lead is partly a grading-basis difference; the two ledgers' "days to move" are not
 directly comparable.
 
-## 300363.SZ receipt (the operator's CN example)
+## 300363.SZ post-selection receipt — `STOP_SHIP_UNVALIDATED_QUANTITATIVE_EXHIBIT`
 
-`china_standouts.json track_ledger.extra_records[0]` (def `cn_prophet_v2`): entered **rank 1
-on 2026-08-05 at 17.52, T2, stage `early`**; peak 20.44 = **+16.7% in 2 sessions** (full 20%
-ChiNext limit day 08-07). Signal-time state: `washout_2w=True`, `reversal_member=True`
-(sector rank 27/150), `rev_z 0.6718` (CORRECTED 2026-08-08: the 2.17 first cited here was
-`legacy_setup`, not rev_z — see CASE_300363_FULL_CHAIN_2026-08-08.md), `off_high −39.9%`,
-`potential 85 (primed)`,
-`alpha_entry=pullback`, conviction 85. That is the CN anatomy in one row: deep base + washout
-fired + sector-reversal cohort + theme channel, THEN a T2 — bought in the base, not after
-confirmation. US's washout organ (#4924, the CN port) is merged and DARK; `reversal_member`
-has no US rank channel.
+The earlier exact entry, peak, return, legal-limit, score, and rank-counterfactual figures are
+withdrawn. `data/china_stocks` is a Yahoo `auto_adjust=True` plane and cannot establish nominal
+CNY ticks or an exchange legal-band event. Exact revalidation requires authorized TuShare
+unadjusted `daily` joined one-to-one with vendor `stk_limit`, followed by bounded integer-cent
+checks and `high_cents == up_limit_cents` / `close_cents == up_limit_cents` equality.
 
-**Discrepancy flagged (do not build on this row without resolving):** the same 08-05 shadow
-parquet row (`data/china_prophet_rank/candidates.parquet`) records `not_raw_eligible`,
-`buyable=False`, `entry_status=await_confluence`, `score_rank 367` — contradicting `rk:1`.
-A 2-session run-vs-signal-bar skew demonstrably exists in the CN lane (`signal_asof 08-06` vs
-`signal_bar_asof 08-04`). CN's bookkeeping carries the same signal-date incoherence class the
-US lateness forensic measured. CN is the better SELECTOR, not a clean bookkeeper.
+One qualitative lineage warning remains useful: same-date candidate/shadow and board stores
+carried contradictory eligibility views, and their keep-first records were not bound to one
+common run identity. That is a bookkeeping defect hypothesis only. The name was selected after
+its outcome was known, no execution receipt was found, and neither the stored row nor this case
+can establish that CN is a better selector or authorize a US/HK port. See
+`research/cn_prophet_audit/CASE_300363_FULL_CHAIN_2026-08-08.md` for the binding quarantine.

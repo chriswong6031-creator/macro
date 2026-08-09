@@ -11,6 +11,12 @@ the ANTICIPATION program session; bases and caveats preserved verbatim. Sibling 
 median 1.000000, std ≤7.6e-08). 18 plans unpriced (no series in either store), listed in the
 lane transcript.
 
+**2026-08-09 revalidation boundary:** this remains a frozen historical receipt, not a current
+plan-corpus census. The same query now finds 124 plans at/after the cutoff rather than 96, and
+no committed replay instrument reconstructs this table from a pinned plan/price manifest.
+The original figures are retained as measurement context only; they do not authorize a current
+gate, rank, Prophet plan, or claim of superiority.
+
 ## 1. The four measured lateness sources
 
 ### (a) Signal timing — picks fire after the move has started

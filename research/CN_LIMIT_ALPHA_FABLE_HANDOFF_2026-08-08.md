@@ -1,5 +1,15 @@
 # CN LIMIT-MOVE ALPHA — Fable orchestrator handoff — 2026-08-08
 
+> **2026-08-09 STOP-SHIP re-audit.** Every Wave-0 exact-board, continuation-rate,
+> feature-lift, headline multiplier, tolerant vendor-agreement, and 300363
+> price/return/legal-band claim is withdrawn.
+> The input was the Yahoo-adjusted `data/china_stocks` plane, which cannot establish nominal
+> CNY ticks or exchange legal bands. Until an authorized, complete TuShare unadjusted `daily`
+> + vendor `stk_limit` plane passes the canonical manifest and bounded integer-cent equality
+> gates, the only admissible verdict is `BLOCKED_SUBSTRATE_NO_STRATEGY_MEASUREMENT`.
+> Nothing in this handoff has candidate, ranking, sizing, gating, Prophet, Neural Web, or
+> trading authority; outcome-selected examples remain context-only ore.
+
 **To:** a fresh Fable-led session (operator-ordered frontier orchestration; you plan, adjudicate,
 and brainstorm — Opus builders execute measurements/backtests; you never grind token-heavy
 tests in your own loop). FABLE-WHY: creative: operator-ordered open-ended strategy invention
@@ -52,35 +62,37 @@ bathwater. Mechanism, mandatory:
 
 **Receipts (all committed):**
 - `research/cn_prophet_audit/LIMIT_MOVE_FOOTPRINT_V0_2026-08-08.{md,json}` + script (PR #4999)
-  — the v0 instrument. POSITIVE: P(next board | 连板 N): main 16.5%(1)→72.8%(6), ChiNext
-  16.8→78.8%(5); unconditional next-bar ~1.27% ⇒ first board alone = 13× lift. Six features
-  sign-stable on holdout across all three boards + band-era control: 5d run-up 3.93× ·
-  52w-low distance 3.27× · gap 3.07× · vol-z 2.58× · sector limit-heat 2.39× · consec-up
-  2.33×. Near-limit-prev printed UNSTABLE (honest); turnover NULL (no share counts).
-  Definitional ruling: 0.2% band tolerance vindicated (yfinance feed noise; median marginal
-  event = exactly 100.000% of band). **Binding limit: 1,842-name curated store vs ~5,400
-  market — the 打板 game lives heavily in the omitted small/ST names.**
-- `research/cn_prophet_audit/CASE_300363_FULL_CHAIN_2026-08-08.md` — a rerating winner's full
-  anatomy: washout species + reversal_member cohort (the #1 margin) + T2 at ticks=0; the +20%
-  day was a LOCKED board (unfillable when earned — fillability is a first-class constraint);
-  dual-run keep-first latch defect; entry-price mutation blocker (healed, PR #5000).
+  — legacy Wave-0 instrument, now `SUBSTRATE_INVALID_DIAGNOSTIC_ONLY`. Its event keys,
+  transition/return tables, legal-band classifications, and verdict are not admissible market
+  findings because the Yahoo plane is split-adjusted. It may be used only to audit detector
+  engineering; it cannot supply a probability, lift, feature, strategy, or promotion claim.
+- `research/cn_prophet_audit/CASE_300363_FULL_CHAIN_2026-08-08.md` — post-selection pipeline
+  forensic only. All exact price, return, legal-board, fillability, score, and rank claims are
+  quarantined. The remaining ore is store/run lineage, missing execution receipts, and mutable
+  ledger provenance; none authorizes selection or a port.
+- `research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md` and
+  `research/cn_limit_alpha_sol/W2_BAND_PROGRESS_SUBSTRATE_RECEIPT_2026-08-08.md` — canonical
+  replacement contract and present truth: foundation-only, no live vendor authority, and
+  `BLOCKED_SUBSTRATE_NO_STRATEGY_MEASUREMENT`.
 - ANTICIPATION receipts for method idioms: zone mechanics (−4.97pp entry location, PR #5007),
   §6.6 revision rules, era stamps, forward-ledger law.
 
 **Data + machinery inventory:**
-- `data/china_stocks/*.parquet` daily OHLCV (~1,842 names; the curated universe).
+- `data/china_stocks/*.parquet` is a curated Yahoo `auto_adjust=True` OHLCV plane. It may
+  support non-legal-band diagnostics but is forbidden for exact limit-event or strategy
+  measurement. The replacement substrate is authorized TuShare unadjusted `daily` joined to
+  same-key vendor `stk_limit`; current repository receipts say that plane is not ready.
 - `data/china_pick_lab/fires.jsonl` — limit machinery already modeled: `limit_width`,
   `limit_state` (open/locked), `fillable`, `t_plus_one_risk`. READ ITS EMITTER first.
 - `engine/china_microstructure` — house limit-width/board-type conventions (10%/20%, ST 5%,
   new-listing exemptions). `data/china_microstructure/limit_events.parquet` — KNOWN DEFECT:
   34 names missing pre-2026-07 history while `backfill=True` claims completeness (data-plane
   heal is fair game for a wave).
-- **`china_zt_pool`** — an independent vendor scrape of the daily limit-up pool (99.79%
-  agreement with tolerant 连板). Ground truth + possibly richer fields (check for 炸板/seal
-  metadata). We hold **47 dates of 封单 order-wall data** — small but real; a collector
-  extension is PRE-AUTHORIZED by the operator ("if needed we can build additional data
-  context") and was the v0's top proposal alongside closing-auction imbalance and first-touch
-  time.
+- **`china_zt_pool`** — an independent vendor scrape that may become a reconciliation witness
+  or richer metadata source. It is not legal-band ground truth and no tolerant agreement rate
+  is admissible until exact keys are reconciled against the canonical TuShare event plane.
+  A small 封单 order-wall sample exists; any collector extension remains data context only and
+  requires its own provenance/licensing receipt.
 - CN board machinery for features: `engine/china_basket_turn.py` (washout lifecycle),
   `china_board_rank.py` (species_id, reversal_member, theme_timing), `setup_tier.py`
   (ripening), `subsector_confluence.py` CN half (THS-concept confluence — the 题材 mapping!).
@@ -91,14 +103,15 @@ bathwater. Mechanism, mandatory:
 ## §3 First-principles decomposition (my brainstorm — the blinded subagent must NOT see §3-§4)
 
 **Mechanism taxonomy (different physics ⇒ different footprints ⇒ separate models):**
-(a) NEWS/RERATING boards — a repricing event too big for the band (300363 class). Footprint
+(a) NEWS/RERATING boards — a repricing event too big for the band. The quarantined 300363
+outcome-selected anecdote may motivate constructions but supplies no quantitative evidence. Footprint
 family: pre-event accumulation (vol-z, run-up), sector/theme heat, washout-maturity of the
 base it launches from. Continuation physics: distance-to-fair-value proxy (how much rerate is
 "left"), measured by post-event drift in comparable US/HK names when a cross-listed or
 sector-parallel exists (BABA/9988-style pairs; the US tape prices the same news instantly —
 **a cross-market oracle for how many boards the rerate "should" take"** — likely novel, test it).
 (b) THEME/CASCADE boards (题材接力) — leaders seal, followers chase in relay tiers. Footprint:
-sector limit-heat (already 2.39×), leader's board count, the follower's rank within the
+sector limit-heat, leader's board count, the follower's rank within the
 concept (THS confluence machinery maps this). Second-order: relay EXHAUSTS when follower
 quality degrades (later movers are junkier) — a measurable quality-gradient clock.
 (c) MOMENTUM/GAME boards (打板 games) — reflexive, driven by the board ecology itself.
@@ -124,11 +137,11 @@ tradable set is {pre-seal entries, seal-break (开板) re-entries, next-open ent
 backtest must price entries at a fillable moment (fires.jsonl idiom) — expectancy computed on
 unfillable fills is fiction, and this is where most retail 打板 backtests lie.
 
-**Portfolio construction (the operator's spreading math):** onset plays are lottery-like
-(5-10% × capped +10/20%) — Kelly-fractional spreading across the daily candidate set;
-continuation plays are the compounding engine (72.8% at high boards but crowded/unfillable —
-the sweet spot is boards 1-3 where probability 16-52% meets fillability). Model the JOINT
-book: onset candidates + continuation riders + the regime gate deciding exposure.
+**Portfolio construction (the operator's spreading hypothesis):** onset plays may be
+lottery-like and continuation may differ by ladder state, but no probability, legal cap,
+fillability, or Kelly input is validated yet. Construction work may model a joint onset /
+continuation / regime book only after the canonical substrate gate; no sizing ships from the
+legacy receipt.
 
 ## §4 Strategy shapes to seed the space (test the strongest, not the first)
 
@@ -139,10 +152,11 @@ S2 ONSET PORTFOLIO: daily top-K by the six-feature probability (calibrated, hold
 near close BEFORE any board (the 9.5%/19% near-limit shadow as same-day confirmation),
 spread thin. Needs the calibation wave first.
 S3 THEME RELAY: leader-board detection → follower ranking via THS-concept machinery →
-follower entries while fillable. The 300363 receipts + subsector_confluence are the scaffold.
+follower entries while fillable. `subsector_confluence` is a construction scaffold; the
+quarantined 300363 case is not evidence for it.
 S4 REGIME GATE over everything: board-ecology instruments (first-board count, ceiling count,
-realized continuation) as an on/off/size dial — the 2015-vs-2011 base-rate swing (7.9%→24.2%)
-says regime dominates any per-name feature.
+realized continuation) as an on/off/size hypothesis. The legacy era rates are withdrawn; a
+regime conclusion requires the canonical point-in-time full-A plane.
 S5 CROSS-MARKET RERATE ORACLE: for dual-context names/sectors, use the uncapped market's
 instant repricing to estimate boards-remaining. Novel; measure before believing.
 

@@ -1560,11 +1560,11 @@ def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
 
 def nowcast_history(f: "pd.DataFrame") -> dict:
     """Per-metric historical mini-charts for the Macro-nowcast hover popovers.
-    Reuses the SAME transforms the dashboard headline numbers use (raw level for
-    WEI/GDPNow, the annualized-smoothed monthly print for sticky/flexible CPI) so
-    the last charted point matches the displayed value. Returns SVG + key stats
-    keyed by metric; metrics absent from the feature frame are simply omitted."""
-    from engine.conditions import _smooth_annual_rate
+    Reuses the SAME transforms the dashboard headline numbers use: raw level for
+    WEI/GDPNow and exact contiguous raw-month compounding for sticky/flexible CPI.
+    The inflation history never derives monthly observations from the forward-filled
+    feature frame. Returns SVG + key stats keyed by metric; absent inputs are omitted."""
+    from engine.conditions import raw_atlanta_inflation_history
     sm = config.load()["engine"]["conditions"]["inflation_nowcast"]["smooth_months"]
     out: dict[str, dict] = {}
 
@@ -1588,10 +1588,21 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
                 return "cooling", "good"
         return "flat", "flat"
 
-    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps, monthly=False):
+    def pack(name, raw, color, baseline, keep, per_year, kind, lookback, eps,
+             monthly=False, contiguous=False):
         if raw is None:
             return
-        s = raw.dropna()
+        s = raw
+        if contiguous:
+            # Do not show an older valid print as current or connect a chart across
+            # a missing raw-month window. Keep only the latest uninterrupted run.
+            if s.empty or pd.isna(s.iloc[-1]):
+                return
+            missing = np.flatnonzero(s.isna().to_numpy())
+            if len(missing):
+                s = s.iloc[missing[-1] + 1:]
+        else:
+            s = s.dropna()
         if monthly:                       # collapse ffilled daily rows to monthly prints
             s = s[s.ne(s.shift())]
         s = s.iloc[-keep:]
@@ -1610,14 +1621,13 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     # GDPNow window stops short of the 2020 COVID -32%→+37% whipsaw, which would
     # otherwise squash all post-pandemic detail into a flat line.
     pack("gdpnow", col("gdpnow"), "var(--link)", 0.0, 20, 4, "growth", 1, 0.10, monthly=True)
-    sticky = col("sticky_cpi")
-    flex = col("flex_cpi")
-    if sticky is not None:
-        pack("sticky", _smooth_annual_rate(sticky, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.10, monthly=True)
-    if flex is not None:
-        pack("flexible", _smooth_annual_rate(flex, sm), "var(--orange)", 2.0, 10, 12,
-             "inflation", 3, 0.30, monthly=True)
+    inflation = raw_atlanta_inflation_history(
+        sm, as_of=(f.index.max() if len(f.index) else None)
+    )
+    pack("sticky", inflation["sticky"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.10, contiguous=True)
+    pack("flexible", inflation["flexible"], "var(--orange)", 2.0, 10, 12,
+         "inflation", 3, 0.30, contiguous=True)
     return out
 
 
@@ -4471,6 +4481,31 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                      _n_flagged, len(_buy_rows), len(_walls), len(_ivr))
     except Exception as _oce:  # noqa: BLE001 — additive, never fatal
         log.warning("options context board attach failed (%s)", _oce)
+    # W-L1 board state (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §7). The nightly
+    # build stamps its OWN receipt: how many of last evening's provisional picks came
+    # through the overnight pass unchanged, how many moved, how many left the board.
+    # lib/board_state.py is the only interpreter of the contract and refuses anything it
+    # will not vouch for — an unreconciled count set emits no receipt at all rather than a
+    # wrong one, and the per-card `Adjusted` marks are fenced on the receipt in the
+    # template, so they are published together or not at all.
+    # DISPLAY-ONLY: nothing here reorders, re-ranks or re-admits a card (A7).
+    try:
+        from lib.board_state import board_state_view as _bsv
+        _bs_view = _bsv(doc.get("board_state"))
+        if _bs_view:
+            doc["board_state_view"] = _bs_view
+            log.info("W-L1 board state: note=%s counts=%s/%s adj=%s dropped=%s",
+                     _bs_view.get("note"), _bs_view.get("n_confirmed"),
+                     _bs_view.get("n_total"), _bs_view.get("n_adjusted"),
+                     _bs_view.get("n_dropped"))
+        elif doc.get("board_state"):
+            # A payload that arrived and was REFUSED is worth one line in the Actions
+            # summary: it means the producer and this contract have drifted.
+            print("::warning title=wl1-board-state::board_state payload present but "
+                  "refused by lib.board_state (unknown enum, or counts do not reconcile) "
+                  "— no receipt rendered", flush=True)
+    except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+        log.warning("W-L1 board state attach failed (%s)", _bse)
     return doc
 
 
@@ -6385,6 +6420,17 @@ def main() -> int:
         log.info("wrote %s", site / "market_structure.html")
     except Exception as _msp_e:  # noqa: BLE001 — additive; never break main build
         log.warning("market_structure.html render failed (%s); page skipped", _msp_e)
+
+    # Market Memory — data-free authenticated shell over existing macro analogue
+    # and Signal Episode Atlas APIs.  The page never republishes analytical data.
+    try:
+        import scripts.build_market_memory_page as _mmp
+        _mmp_html = _mmp.render(config.ROOT)
+        write_page(site / "market_memory.html", _mmp_html)
+        _tmark("market_memory")
+        log.info("wrote %s", site / "market_memory.html")
+    except Exception as _mmp_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("market_memory.html render failed (%s); page skipped", _mmp_e)
 
     # D10 — free daily movers page + og:image card
     # Must run AFTER sp500_heatmap.json and themes_heatmap.json are written above.

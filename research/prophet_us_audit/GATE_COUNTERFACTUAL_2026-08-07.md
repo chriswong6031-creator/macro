@@ -1,6 +1,14 @@
 # Prophet US — admission-gate counterfactual replay
 
-**MEASUREMENT ONLY — no engine, config, gate or board change follows from this file. Display tier under house epistemics; a null here blocks nothing**  
+> **2026-08-09 revalidation:** current-main gate reconstruction still passes its equality
+> control (zero LIVE / not-topped / FRESH4 mismatches across 139,948 sampled cells). The full
+> output is not byte-reproducible, however: the live local Yahoo inventory moved from 741 files
+> / 713 graded names to 751 / 732, and previously absent exhibit names became available. The
+> historical tables below remain a frozen display-tier receipt, not current cohort evidence.
+> Do not regenerate or promote their rates until the instrument binds an immutable universe and
+> source-content manifest; the equality PASS validates gate algebra, not metric stability.
+
+**MEASUREMENT ONLY — no engine, config, gate or board change follows from this file. Display tier under house epistemics; a null here blocks nothing**
 Frozen pin `REPRO_ASOF = 2026-08-06` · window `2025-11-17 → 2026-08-06` (180 sessions) · runtime 58.4s · generated from `research/prophet_us_audit/gate_counterfactual_replay.py`
 
 ## 0. Equality gate (this instrument vs the engine)
