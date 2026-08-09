@@ -37,6 +37,10 @@ _MAPPING_CLASSES = (
     "model_estimate",
     "unmapped",
 )
+# The two classes that carry an evidenced listed-issuer attribution rather than
+# a rule-based guess.  They are the reason the workspace exists, and the display
+# cap must never be the thing that removes one.
+_ATTRIBUTION_GRADE_MAPPING_CLASSES = frozenset({"official", "reviewed"})
 _DEGRADED_FRESHNESS_STATES = {
     "partial", "stale", "failed", "blocked", "unavailable",
 }
@@ -197,23 +201,49 @@ def is_valid_procurement_workspace(value: Any) -> bool:
         return False
 
 
-def _is_valid_award_event(event: Any) -> bool:
-    """Accept only a complete, contract-valid receipt-bound award-change row."""
+def _award_event_rejection_reason(event: Any) -> str | None:
+    """Return why a row is not a publishable award event, or None when it is.
+
+    A silent rejection count cannot be diagnosed: the whole reason this gate
+    existed for months while dropping every reviewed issuer impact is that the
+    workspace recorded ``rejected: N`` and never said what failed.  The reason
+    is deliberately a bounded ``schema:<path>:<keyword>`` locator rather than
+    the raw jsonschema message, because the message embeds the offending
+    instance and this string is published inside the public workspace.
+    """
     if not isinstance(event, dict):
-        return False
-    if (
-        event.get("contract") != EVENT_CONTRACT
-        or event.get("kind") != "award_change"
-        or event.get("opportunity") is not None
-        or event.get("recompete") is not None
-        or not isinstance(event.get("award_change"), dict)
-    ):
-        return False
+        return "row_is_not_an_object"
+    if event.get("contract") != EVENT_CONTRACT:
+        return "contract_is_not_" + EVENT_CONTRACT
+    if event.get("kind") != "award_change":
+        return "kind_is_not_award_change"
+    if event.get("opportunity") is not None:
+        return "opportunity_must_be_null_on_an_award_change"
+    if event.get("recompete") is not None:
+        return "recompete_must_be_null_on_an_award_change"
+    if not isinstance(event.get("award_change"), dict):
+        return "award_change_block_is_missing"
     # A schema-valid event can still be unusable as a deterministic identity if
     # it cannot be represented as canonical JSON.  Never coerce it in place.
     if _canonical_event(event) is None:
-        return False
-    return not any(_award_event_validator().iter_errors(event))
+        return "event_is_not_canonical_json"
+    errors = sorted(
+        _award_event_validator().iter_errors(event),
+        key=lambda error: (
+            [str(part) for part in error.absolute_path],
+            str(error.validator),
+        ),
+    )
+    if not errors:
+        return None
+    first = errors[0]
+    path = ".".join(str(part) for part in first.absolute_path) or "<root>"
+    return f"schema:{path}:{first.validator}"[:200]
+
+
+def _is_valid_award_event(event: Any) -> bool:
+    """Accept only a complete, contract-valid receipt-bound award-change row."""
+    return _award_event_rejection_reason(event) is None
 
 
 def _event_rows(value: Any) -> list[Any]:
@@ -274,20 +304,29 @@ def _validated_award_events(value: Any) -> tuple[list[dict[str, Any]], dict[str,
     rows = _event_rows(value)
     validated: list[dict[str, Any]] = []
     rejected = 0
+    first_rejection_reason: str | None = None
     for row in rows:
-        if not _is_valid_award_event(row):
+        reason = _award_event_rejection_reason(row)
+        if reason is not None:
             rejected += 1
+            if first_rejection_reason is None:
+                first_rejection_reason = reason
             continue
         # The workspace never owns the source event object.  In particular, a
         # later cap/sort/dedupe must not mutate the award-event projection that
         # may be shared with another governed consumer.
         validated.append(copy.deepcopy(row))
     accepted, dedupe = _dedupe_exact_event_ids(validated)
+    if first_rejection_reason is None and dedupe["invalid_rows"]:
+        first_rejection_reason = "event_id_or_canonical_form_is_unusable"
+    if first_rejection_reason is None and dedupe["conflicted_rows"]:
+        first_rejection_reason = "contradictory_payloads_claim_one_event_id"
     return accepted, {
         "input": len(rows),
         "validated": len(validated),
         "accepted_after_exact_id_dedupe": len(accepted),
         "rejected": rejected + dedupe["invalid_rows"] + dedupe["conflicted_rows"],
+        "first_rejection_reason": first_rejection_reason,
         "exact_id_duplicates": dedupe["exact_duplicates"],
         "conflicted_ids": dedupe["conflicted_ids"],
         "conflicted_rows": dedupe["conflicted_rows"],
@@ -302,11 +341,23 @@ def _event_priority_score(event: dict[str, Any]) -> float:
     return score if math.isfinite(score) else 0.0
 
 
-def _event_sort_key(event: dict[str, Any]) -> tuple[float, int, str]:
-    """One global stable order, applied only after all event lanes are merged."""
+def _event_sort_key(event: dict[str, Any]) -> tuple[int, float, int, str]:
+    """One global stable order, applied only after all event lanes are merged.
+
+    The leading key keeps attribution-grade rows — the reviewed and official
+    issuer mappings — ahead of everything else.  Those rows are vastly
+    outnumbered and their priority scores tie against hundreds of unmapped ones,
+    so survival used to rest entirely on a ``known_at`` tiebreak: a collection
+    that merely stamped unmapped rows later would have silently truncated every
+    reviewed issuer impact out of the window.  This is selection for a bounded
+    display window, not a signal rank.  Every other class keeps the previous
+    behavior exactly, including the deliberate property that a high-priority
+    award action displaces a lower-priority legacy watch across lanes.
+    """
     known_at = _stamp((event.get("change") or {}).get("known_at"))
     known_value = int(known_at.value) if known_at is not None else -1
     return (
+        0 if _mapping_class(event) in _ATTRIBUTION_GRADE_MAPPING_CLASSES else 1,
         -_event_priority_score(event),
         -known_value,
         str(event.get("event_id") or ""),
@@ -368,6 +419,12 @@ def _coverage_breakdown(
         identifier: {
             "available_before_cap": int(before.get(identifier, 0)),
             "visible": int(after.get(identifier, 0)),
+            # Always emitted, including as an explicit 0.  An absent key would
+            # read the same as "nothing was dropped" while actually meaning
+            # "this generation never measured it".
+            "truncated_by_cap": max(
+                0, int(before.get(identifier, 0)) - int(after.get(identifier, 0))
+            ),
         }
         for identifier in identifiers
     }
