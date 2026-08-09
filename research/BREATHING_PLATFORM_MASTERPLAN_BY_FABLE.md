@@ -272,7 +272,9 @@ widening it: append-semantics probes + de-tautologized G0.1 + CI pin (gate
 (§0-3); prophet surface in the sentinel + engine W2 native rows (§0-4);
 dormant honesty (§0-5); conservative first-pass default. NOT in scope: the
 confluence PIT latch — open PR #4964 owns it (cite, don't duplicate). Also
-file the November DST cron race (`daily.yml:10-11`) with the nightly owners.
+file the November DST cron race (`daily.yml:10-11`) with the nightly owners
+(filed → FIXED 2026-08-08, PR #5035: DST cron pair + fail-open `et_gate` regime
+gate; 18:30-ET anchor now holds through the 2026-11-01 flip with no manual edit).
 
 **W-L1 — EVENING SLA.** The close-pass provisional board (§3-2) on the idle
 mac pool; publish via R2 → VPS. Alongside: emit per-source `elapsed_sec` from

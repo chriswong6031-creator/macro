@@ -72,12 +72,16 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import pandas as pd
 
-from lib import nyse_calendar
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import nyse_calendar  # noqa: E402
 from scripts.migrate_polygon_gex_session_stamps import (
     GROUP,
     KEEP,
@@ -90,7 +94,7 @@ from scripts.migrate_polygon_gex_session_stamps import (
     _verify_cross_section,
     already_migrated,
     assert_store_is_session_clean,
-)
+)  # noqa: E402
 
 MANIFEST = ROOT / "docs" / "polygon_gex_session_stamp_migration.json"
 COMPLETION_MANIFEST = ROOT / "docs" / "polygon_gex_session_stamp_completion.json"

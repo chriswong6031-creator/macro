@@ -7,13 +7,15 @@ Two halves:
    column 0), an 84% run must NOT, bands are computed from the marks, and dark
    telemetry (no start stamp) is loud instead of silently recording nothing.
 
-2. WIRING — .github/workflows/daily.yml: every self-hosted job with a
-   ``timeout-minutes`` carries the job-start mark as its FIRST step and the
-   ``if: always()`` finish step LAST (bar the delivery tail below), and the
-   finish step's cap argument equals the job's actual ``timeout-minutes``. This
-   is the anti-drift pin: raising a cap without updating the finish arg would
-   silently rescale the 85% tripwire (the same stale-label class that produced
-   the tech_lab 8-day outage).
+2. WIRING — .github/workflows/daily.yml AND .github/workflows/asia-close.yml:
+   every instrumentable self-hosted job carries the job-start mark as its FIRST
+   step and the ``if: always()`` finish step LAST (bar the delivery tail below),
+   and the finish step's cap argument equals the job's actual
+   ``timeout-minutes``. This is the anti-drift pin: raising a cap without
+   updating the finish arg would silently rescale the 85% tripwire (the same
+   stale-label class that produced the tech_lab 8-day outage). asia-close joined
+   the scan for W-L4 gate 1: its ``asia`` job spends 46.1m of adapter wall-clock
+   (55 sources, measured 2026-08-09) in no timings band on any job.
 
 3. PERSISTENCE — the row has to survive the night it is most needed. `always()`
    is not enough on its own: a timeout-cancel gives the whole remaining
@@ -44,10 +46,35 @@ from scripts import nightly_timings_report as ntr
 
 ROOT = Path(__file__).resolve().parent.parent
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
+ASIA = ROOT / ".github" / "workflows" / "asia-close.yml"
 FINISH_SH = ROOT / "scripts" / "ci" / "nightly_timings_finish.sh"
+
+#: Every workflow whose self-hosted jobs carry the W2 wiring. The wiring tests are
+#: parametrised over this tuple rather than duplicated per file, so a new nightly
+#: lane opts in by adding its path here — and until it does, its jobs are simply
+#: unscanned rather than silently "passing".
+INSTRUMENTED_WORKFLOWS = (DAILY, ASIA)
 
 START_STEP_NAME = "timings — job start mark (W2)"
 FINISH_STEP_NAME = "timings ledger + 85% budget tripwire (W2)"
+
+#: The instrumented job set, pinned BY NAME per workflow.
+#:
+#: ``_instrumented()`` is a PREDICATE, and a predicate that stops matching reads
+#: exactly like a clean run: every assertion below iterates the jobs it returns,
+#: so narrowing it to nothing would turn the whole wiring suite green while the
+#: nightly went dark. That is the same shape as the tech_lab outage this module
+#: exists to prevent — a tripwire that is quiet because it can no longer see.
+#: These sets are the floor: they may grow when a lane is instrumented, and a
+#: SHRINK is a defect until the name is deleted here on purpose.
+DAILY_INSTRUMENTED_JOBS = frozenset({
+    "active_build_map", "capital_structure", "causal", "collect", "collect_tail",
+    "cortex", "engine", "factor_panel", "factor_series", "ledger_heartbeat",
+    "oracle_offrender", "standout_audit_us", "stock_briefs", "tech_lab_offrender",
+    "us_prophet_ledgers", "us_scan_tier",
+})
+ASIA_INSTRUMENTED_JOBS = frozenset({"asia"})
+EXPECTED_INSTRUMENTED = {DAILY: DAILY_INSTRUMENTED_JOBS, ASIA: ASIA_INSTRUMENTED_JOBS}
 
 #: The ONLY steps allowed to follow the finish step, and only because they are
 #: pure artifact DELIVERY: no engine work happens in them, so the timings row
@@ -427,6 +454,261 @@ def test_attribution_emits_no_workflow_annotation(env, clock, capsys):
     assert not [l for l in out.splitlines() if l.startswith("::")], out
 
 
+# ---------------------------------------------------------------------------
+# W-L4 gate 1 — the asia-close lane (.github/workflows/asia-close.yml, job `asia`)
+#
+# The asia job was the last uninstrumented nightly: `python -m scripts.collect
+# --group asia` is 55 sources and 46.1m of adapter wall-clock (measured
+# 2026-08-09) that sat in no timings band on any job. Instrumenting it puts a
+# SECOND writer's bands over the SAME cumulative data/run_status.json, so the
+# tests below are about scoping: what the asia bands may claim, what they must
+# refuse, and what they must show rather than silently absorb.
+#
+# Same fixture law as the block above — hermetic in DATA, not in TIME: every
+# stamp is derived from the `clock` fixture's live base epoch, and the `env`
+# fixture keeps nt.DEFAULT_RUN_STATUS pointed away from the repo's real file.
+# ---------------------------------------------------------------------------
+
+#: The `asia` job's band layout exactly as wired in asia-close.yml, with the
+#: measured 2026-08-09 shape where one exists (the collect batch summed 2767.0s
+#: of adapter wall-clock). The last band runs to `now`.
+ASIA_BAND_PLAN = (
+    ("collectors", 2880.0),
+    ("collect-commit-push", 180.0),
+    ("build-china", 2160.0),
+    ("builders-parallel", 1500.0),
+    ("tail-desks", 900.0),
+    ("commit-publish", 600.0),
+)
+ASIA_STARTUP = 420.0
+#: 55 sources × 50.3s = 2766.5s = 46.1m — the real batch's total, spread evenly.
+ASIA_BATCH_N = 55
+ASIA_BATCH_SEC = 50.3
+
+
+@pytest.fixture
+def asia_env(env, monkeypatch):
+    """The asia-close job's identity. GITHUB_JOB names the ledger file AND the
+    runner-temp state stamps, so a fixture written for `asia` has to be read back
+    under the same job name the workflow will actually set."""
+    monkeypatch.setenv("GITHUB_JOB", "asia")
+    monkeypatch.setenv("GITHUB_WORKFLOW", "asia-close")
+    return env
+
+
+def _asia_shaped_run(env, clock, plan=ASIA_BAND_PLAN, *, startup=ASIA_STARTUP):
+    """Lay the asia job's bands out ending at ``clock``.
+
+    Returns ``(job_start, {band: (start, end)})`` so a test can place a
+    run_status write at an instant inside a NAMED band instead of counting
+    offsets — the band a source is charged to is the whole subject here."""
+    job_start = clock - (startup + sum(sec for _band, sec in plan))
+    nt.start_path().parent.mkdir(parents=True, exist_ok=True)
+    nt.start_path().write_text(str(job_start))
+    windows: dict[str, tuple[float, float]] = {}
+    t = job_start + startup
+    for band, sec in plan:
+        nt.cmd_mark(band, now=t)
+        windows[band] = (t, t + sec)
+        t += sec
+    return job_start, windows
+
+
+def _asia_batch(wrote_at: str) -> dict:
+    """The 55-source `collect --group asia` batch: one write, one stamp."""
+    return {f"china_src_{i:02d}": {"elapsed_sec": ASIA_BATCH_SEC, "checked_at": wrote_at}
+            for i in range(ASIA_BATCH_N)}
+
+
+def test_asia_bands_charge_only_the_asia_batch(asia_env, clock):
+    """Cross-lane scoping, in the shape the two lanes really have.
+
+    data/run_status.json is ONE cumulative store: scripts/collect.py reads the
+    existing status and merges only THIS run's results in, and lib/store.py
+    write_status full-overwrites the file — so a lane's sources PERSIST with
+    their old `checked_at` while another lane writes. Measured 2026-08-09: 186
+    sources in the file, 126 stamped by daily's collect an hour earlier and 55 by
+    asia's single collect batch. `FetchResult` carries no lane/group field, so
+    band-window containment is the only scoping mechanism that exists without
+    changing the collect write path — and nightly_timings is deliberately
+    read-only w.r.t. run_status. If it leaked, asia's very first ledger row would
+    charge 126 US adapters to a band where none of them ran."""
+    job_start, windows = _asia_shaped_run(asia_env, clock)
+    asia_write = _stamp(windows["collectors"][0] + 900.0)
+    daily_write = _stamp(job_start - 3 * 3600)      # daily's collect, hours earlier
+    sources = _asia_batch(asia_write)
+    sources.update({f"us_src_{i:03d}": {"elapsed_sec": 90.0, "checked_at": daily_write}
+                    for i in range(126)})
+    row = nt.cmd_finish(165.0, asia_env / "ledger", now=clock,
+                        run_status_path=_run_status(asia_env, sources))
+
+    assert row["job"] == "asia" and row["workflow"] == "asia-close"
+    attribution = row["source_attribution"]
+    assert attribution["recorded"] == 181
+    assert attribution["matched"] == ASIA_BATCH_N
+    assert attribution["unmatched"] == 126, "the daily batch must be counted, not folded in"
+    assert attribution["undated"] == 0
+    # exactly one band absorbed anything, and it is the collect band
+    assert [b["band"] for b in attribution["bands"]] == ["collectors"]
+    band = attribution["bands"][0]
+    assert band["n_sources"] == ASIA_BATCH_N
+    assert set(band["sources"]) == {f"china_src_{i:02d}" for i in range(ASIA_BATCH_N)}
+    assert band["attributed_sec"] == pytest.approx(2766.5, abs=0.05)   # 46.1m
+    charged = {n for b in attribution["bands"] for n in b["sources"]}
+    assert not [n for n in charged if n.startswith("us_src_")], (
+        "a foreign lane's persisted rows were charged to an asia band")
+
+
+def test_a_daily_shaped_run_does_not_absorb_the_asia_batch(env, clock):
+    """The reverse direction of the same law, and it needs its own test: the two
+    jobs OVERLAP in wall-clock (asia's collect landed 06:14 while daily's lane was
+    still writing), so "asia started later" is not what keeps them apart — the
+    band windows are. Here daily's collect job has already closed its last band
+    when asia's batch lands, and its row must stay clean."""
+    daily_end = clock - 3600.0            # daily's collect finished an hour ago
+    job_start = _collect_shaped_run(env, daily_end, startup=300.0, collectors=1200.0)
+    sources = {"fred": {"elapsed_sec": 127.0, "checked_at": _stamp(job_start + 400)}}
+    sources.update(_asia_batch(_stamp(daily_end + 1800.0)))   # asia writes 30m later
+    row = nt.cmd_finish(240.0, env / "ledger", now=daily_end,
+                        run_status_path=_run_status(env, sources))
+
+    attribution = row["source_attribution"]
+    assert attribution["recorded"] == 1 + ASIA_BATCH_N
+    assert attribution["matched"] == 1
+    assert attribution["unmatched"] == ASIA_BATCH_N
+    charged = {n for b in attribution["bands"] for n in b["sources"]}
+    assert charged == {"fred"}
+
+
+def test_a_foreign_write_inside_an_asia_band_stays_visible(asia_env, clock):
+    """The DECLARED limit, pinned so it stays declared instead of pretending.
+
+    The lanes genuinely overlap: on 2026-08-09 daily's tape_flow band wrote
+    `tape_flow_etf-history` at 06:25:18 with elapsed_sec=1236.9 (20.6m) — AFTER
+    asia's collect batch, i.e. inside one of asia's build bands, where no adapter
+    of asia's runs at all. Band-window containment cannot tell that apart from
+    asia's own work, because run_status rows carry no lane marker.
+
+    So the contract is visibility, not correctness: the write lands in the band
+    that contains it AND shows up as its own single-source entry in that band's
+    `batches` list, which is exactly how a reader spots 20.6m of US adapter time
+    in a CN band. What must NOT happen is it drifting into `collectors` (the band
+    whose total is the thing W-L4 is trying to argue about) or vanishing into a
+    total with no trace."""
+    _job_start, windows = _asia_shaped_run(asia_env, clock)
+    asia_write_at = windows["collectors"][0] + 900.0
+    foreign_at = windows["build-china"][0] + 600.0
+    sources = _asia_batch(_stamp(asia_write_at))
+    sources["tape_flow_etf-history"] = {"elapsed_sec": 1236.9,
+                                        "checked_at": _stamp(foreign_at)}
+    row = nt.cmd_finish(165.0, asia_env / "ledger", now=clock,
+                        run_status_path=_run_status(asia_env, sources))
+    by_band = {b["band"]: b for b in row["source_attribution"]["bands"]}
+
+    # it is NOT in the collect band, and the collect band's total is untouched
+    assert "tape_flow_etf-history" not in by_band["collectors"]["sources"]
+    assert by_band["collectors"]["n_sources"] == ASIA_BATCH_N
+    assert by_band["collectors"]["attributed_sec"] == pytest.approx(2766.5, abs=0.05)
+    # it IS in build-china, alone, and the batch list names the write that carried it
+    assert by_band["build-china"]["sources"] == {"tape_flow_etf-history": 1236.9}
+    assert by_band["build-china"]["batches"] == [{"checked_at": nt._iso(foreign_at), "n": 1}]
+    assert by_band["collectors"]["batches"] == [{"checked_at": nt._iso(asia_write_at),
+                                                 "n": ASIA_BATCH_N}]
+    # and the contamination is loud enough to read off the band line: 20.6m of
+    # "adapter" time in a band where asia runs no adapters
+    assert by_band["build-china"]["residue_sec"] == pytest.approx(2160.0 - 1236.9, abs=0.05)
+
+
+def test_every_asia_band_publishes_its_residue_exactly(asia_env, clock):
+    """Gate 2 on the new job: `attributed_sec + residue_sec == band_sec`, exactly,
+    for every band that absorbed anything — including the negative case.
+
+    Two edges are pinned deliberately:
+      * a band with NO sources gets no attribution row at all, so no residue is
+        invented for it; its duration is still published in `bands`, which is
+        where a reader learns the band existed and explained nothing.
+      * `collectors` runs pure-REST sources in concurrent host-groups, so summed
+        adapter wall-clock can EXCEED the band. The negative remainder is a
+        published fact about concurrency — it must not be clamped to zero, which
+        would quietly convert an overlap measurement into a fake clean total."""
+    plan = (("collectors", 600.0),              # overlap: summed adapter > band
+            ("collect-commit-push", 180.0),     # no sources at all
+            ("build-china", 1200.0),
+            ("builders-parallel", 900.0))       # no sources at all
+    _job_start, windows = _asia_shaped_run(asia_env, clock, plan)
+    sources = {
+        "china_stocks": {"elapsed_sec": 500.0,
+                         "checked_at": _stamp(windows["collectors"][0] + 60.0)},
+        "china_filings": {"elapsed_sec": 450.0,
+                          "checked_at": _stamp(windows["collectors"][0] + 60.0)},
+        "china_library": {"elapsed_sec": 300.0,
+                          "checked_at": _stamp(windows["build-china"][0] + 120.0)},
+    }
+    row = nt.cmd_finish(165.0, asia_env / "ledger", now=clock,
+                        run_status_path=_run_status(asia_env, sources))
+    attribution = row["source_attribution"]
+    by_band = {b["band"]: b for b in attribution["bands"]}
+    band_sec = {b["band"]: b["seconds"] for b in row["bands"]}
+
+    # the identity, on every band that has an attribution row
+    for band in attribution["bands"]:
+        assert round(band["attributed_sec"] + band["residue_sec"], 6) == band["band_sec"], band
+        assert band["band_sec"] == band_sec[band["band"]], (
+            f"{band['band']}: attribution reconciles against a different total than `bands` "
+            "publishes — the two boundary computations have drifted")
+    # negative residue: published, signed, not clamped
+    assert by_band["collectors"]["attributed_sec"] == 950.0
+    assert by_band["collectors"]["residue_sec"] == -350.0
+    assert by_band["build-china"]["residue_sec"] == 900.0
+    # zero-source bands: duration published, NO attribution row, no phantom residue
+    assert set(by_band) == {"collectors", "build-china"}
+    for empty in ("startup", "collect-commit-push", "builders-parallel"):
+        assert empty in band_sec, f"{empty}: the band's own duration was lost"
+        assert empty not in by_band, f"{empty}: residue invented for a band with no sources"
+    assert band_sec["collect-commit-push"] == 180 and band_sec["builders-parallel"] == 900
+
+
+def test_an_untimed_asia_source_is_null_never_zero(asia_env, clock, capsys):
+    """NULL, never 0 — carried into the new lane before it can happen there.
+
+    The real 2026-08-09 asia batch had ZERO nulls (55 sources, 55 timed), so this
+    is the guard for the first night one appears, not a description of today.
+    scripts/collect.py keys `timings` by REGISTRY KEY and the status row by
+    `FetchResult.source`, so any key/source mismatch in a CN/HK adapter lands
+    untimed — and 0 would make the slowest unknown in the lane read as its
+    fastest source, in the exact table W-L4 uses to decide what moves off the
+    nightly path. A measured 0.0 is a different fact and must survive as one."""
+    _job_start, windows = _asia_shaped_run(asia_env, clock)
+    wrote_at = _stamp(windows["collectors"][0] + 900.0)
+    sources = {
+        "china_filings": {"elapsed_sec": 555.8, "checked_at": wrote_at},   # the real slowest
+        "hk_cbbc_sld": {"status": "ok", "checked_at": wrote_at},           # key absent
+        "china_flow_accrual": {"elapsed_sec": None, "checked_at": wrote_at},  # explicit null
+        "hk_shortsell": {"elapsed_sec": 0.0, "checked_at": wrote_at},      # MEASURED zero
+    }
+    row = nt.cmd_finish(165.0, asia_env / "ledger", now=clock,
+                        run_status_path=_run_status(asia_env, sources))
+    attribution = row["source_attribution"]
+    band = attribution["bands"][0]
+
+    assert band["sources"]["hk_cbbc_sld"] is None
+    assert band["sources"]["china_flow_accrual"] is None
+    assert band["sources"]["hk_shortsell"] == 0.0
+    assert isinstance(band["sources"]["hk_shortsell"], float), "a measured 0.0 became a null"
+    assert band["n_null_elapsed"] == 2
+    assert band["attributed_sec"] == 555.8, "a null must contribute nothing, not 0-as-a-measurement"
+    assert attribution["null_elapsed"] == ["china_flow_accrual", "hk_cbbc_sld"]
+
+    # printed, not hidden — attribution_lines is what cmd_finish emits to the job log
+    out = capsys.readouterr().out
+    assert "NO elapsed measurement" in out
+    assert "china_flow_accrual" in out and "hk_cbbc_sld" in out
+    printed = "\n".join(nt.attribution_lines(attribution))
+    assert "china_flow_accrual" in printed and "hk_cbbc_sld" in printed
+    # the untimed pair is named; the measured zero is NOT called a missing measurement
+    assert "hk_shortsell" not in printed.split("NO elapsed measurement")[-1]
+
+
 def test_report_sources_view_names_targets_residue_and_nulls(env, clock):
     """The reader for the new data: without it the evidence has no consumer."""
     job_start = _collect_shaped_run(env, clock, startup=300.0, collectors=1200.0)
@@ -479,21 +761,40 @@ def test_backfill_seeds_only_instrumented_jobs(env, tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# wiring — daily.yml
+# wiring — daily.yml + asia-close.yml
 # ---------------------------------------------------------------------------
 
+def _jobs(workflow: Path) -> dict:
+    return yaml.safe_load(workflow.read_text(encoding="utf-8"))["jobs"]
+
+
 def _daily_jobs() -> dict:
-    return yaml.safe_load(DAILY.read_text(encoding="utf-8"))["jobs"]
+    return _jobs(DAILY)
 
 
-def _instrumented() -> dict[str, dict]:
+def _has_checkout(spec: dict) -> bool:
+    """Does the job check the repo out at all?
+
+    STRUCTURAL, not a name allowlist. ``scripts/nightly_timings.py`` and
+    ``scripts/ci/nightly_timings_finish.sh`` are repo files: a job with no
+    ``actions/checkout`` has neither in its workspace, so it cannot be
+    instrumented without giving it a checkout — see the ``gate`` exemption test
+    below for the live instance. Verified 2026-08-09: all 16 instrumented
+    daily.yml jobs DO check out, so adding this clause changes that set by
+    nothing (pinned by name in EXPECTED_INSTRUMENTED).
+    """
+    return any(str(step.get("uses", "")).startswith("actions/checkout")
+               for step in (spec.get("steps") or []))
+
+
+def _instrumented(workflow: Path = DAILY) -> dict[str, dict]:
     out = {}
-    for key, spec in _daily_jobs().items():
+    for key, spec in _jobs(workflow).items():
         if not isinstance(spec, dict):
             continue
         runs_on = spec.get("runs-on")
         if isinstance(runs_on, list) and "self-hosted" in runs_on \
-           and spec.get("timeout-minutes") is not None:
+           and spec.get("timeout-minutes") is not None and _has_checkout(spec):
             out[key] = spec
     return out
 
@@ -506,9 +807,32 @@ def _finish_index(spec: dict) -> int:
     return -1
 
 
-def test_every_self_hosted_job_is_instrumented():
-    jobs = _instrumented()
-    assert jobs, "daily.yml parse found no self-hosted jobs — wiring test is broken"
+@pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)
+def test_instrumented_job_set_is_pinned_by_name(workflow):
+    """The anti-blinding pin. Every wiring assertion below iterates
+    ``_instrumented()``; a predicate change that stops matching would empty that
+    loop and turn this whole file green while the nightly lost its telemetry —
+    a suite that exempts everything passes for the wrong reason.
+
+    So the set is asserted by NAME, not by count alone: adding a lane means
+    adding it here deliberately, and a job dropping out of the predicate is a
+    failure with the missing name printed rather than a silent -1."""
+    found = set(_instrumented(workflow))
+    expected = EXPECTED_INSTRUMENTED[workflow]
+    assert found == expected, (
+        f"{workflow.name}: instrumented-job set drifted — "
+        f"{len(found)} found vs {len(expected)} pinned.\n"
+        f"  no longer matched (telemetry would go dark, unscanned): "
+        f"{sorted(expected - found) or '—'}\n"
+        f"  newly matched (wire it up, then add the name here): "
+        f"{sorted(found - expected) or '—'}"
+    )
+
+
+@pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)
+def test_every_self_hosted_job_is_instrumented(workflow):
+    jobs = _instrumented(workflow)
+    assert jobs, f"{workflow.name} parse found no self-hosted jobs — wiring test is broken"
     missing = []
     for key, spec in jobs.items():
         steps = spec["steps"]
@@ -527,18 +851,28 @@ def test_every_self_hosted_job_is_instrumented():
                 f"{key}: steps run after the finish step that are not pure delivery: {strays}"
             )
     assert not missing, (
-        "W2 telemetry wiring gap — a self-hosted daily.yml job is missing its timings steps "
+        f"W2 telemetry wiring gap — a self-hosted {workflow.name} job is missing its timings steps "
         "(add the job-start mark as the FIRST step and nightly_timings_finish.sh as the LAST):\n"
         + "\n".join(f"  {m}" for m in missing)
     )
 
 
-def test_finish_cap_argument_matches_timeout_minutes():
+@pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)
+def test_finish_cap_argument_matches_timeout_minutes(workflow):
     """The anti-drift pin: cap raises must update the finish arg in the same edit,
     or the 85% tripwire silently rescales against a stale cap."""
     bad = []
-    for key, spec in _instrumented().items():
-        finish = spec["steps"][_finish_index(spec)]
+    for key, spec in _instrumented(workflow).items():
+        idx = _finish_index(spec)
+        if idx < 0:
+            # `steps[-1]` is a real step, so indexing it here would report the cap
+            # as "drifted" and quote the job's LAST step's script — blaming a step
+            # that is innocent for a finish step that does not exist. Name the
+            # actual defect instead; test_every_self_hosted_job_is_instrumented
+            # covers the same case from the wiring side.
+            bad.append(f"{key}: no {FINISH_STEP_NAME!r} step at all — nothing carries the cap arg")
+            continue
+        finish = spec["steps"][idx]
         run = finish.get("run", "")
         expected = f"bash scripts/ci/nightly_timings_finish.sh {spec['timeout-minutes']}"
         if run.strip() != expected:
@@ -574,7 +908,7 @@ def test_finish_step_is_not_stranded_behind_the_pages_artifact_upload():
     Any job that uploads a pages artifact must write its timings row FIRST.
     """
     offenders = []
-    for key, spec in _instrumented().items():
+    for key, spec in _instrumented(DAILY).items():
         steps = spec["steps"]
         uploads = [i for i, s in enumerate(steps)
                    if str(s.get("uses", "")).startswith("actions/upload-pages-artifact")]
@@ -625,26 +959,28 @@ def test_finish_script_annotations_start_the_line():
         )
 
 
-def test_start_mark_writes_the_path_the_reader_expects():
+@pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)
+def test_start_mark_writes_the_path_the_reader_expects(workflow):
     """The shell stamp and the Python reader must agree on the state filename."""
-    for key, spec in _instrumented().items():
+    for key, spec in _instrumented(workflow).items():
         run = spec["steps"][0].get("run", "")
         assert 'nightly-timings-${GITHUB_RUN_ID}-${GITHUB_JOB}-start' in run, (
-            f"{key}: job-start mark writes an unexpected path: {run!r} — "
+            f"{workflow.name}:{key}: job-start mark writes an unexpected path: {run!r} — "
             "scripts/nightly_timings.py start_path() would never find it (dark telemetry)"
         )
         assert "${RUNNER_TEMP}" in run
 
 
-def test_band_marks_use_the_cli(env):
+@pytest.mark.parametrize("workflow", INSTRUMENTED_WORKFLOWS, ids=lambda p: p.name)
+def test_band_marks_use_the_cli(workflow):
     """Every band-mark step goes through the mark subcommand (state-file contract)."""
-    for key, spec in _instrumented().items():
+    for key, spec in _instrumented(workflow).items():
         for step in spec["steps"]:
             name = step.get("name") or ""
             if name.startswith("timings band — "):
                 run = step.get("run", "").strip()
                 assert run.startswith("python3 scripts/nightly_timings.py mark --band "), (
-                    f"{key}: {name!r} runs {run!r}"
+                    f"{workflow.name}:{key}: {name!r} runs {run!r}"
                 )
 
 
@@ -653,4 +989,31 @@ def test_publish_job_carries_no_timings_wrapper():
     would be an invented number; it must stay uninstrumented until it gets one."""
     steps = _daily_jobs()["publish"].get("steps") or []
     for step in steps:
+        assert "timings" not in (step.get("name") or ""), step
+
+
+def test_asia_gate_job_carries_no_timings_wrapper():
+    """asia-close's `gate` job is self-hosted WITH a timeout-minutes and still must
+    stay uninstrumented — for a structural reason, not a preference.
+
+    `gate` has NO `actions/checkout`: its single step is a heredoc'd
+    GitHub-API-plus-clock decision run by /opt/homebrew/bin/python3.12. So
+    scripts/nightly_timings.py and scripts/ci/nightly_timings_finish.sh do not
+    EXIST in its workspace — instrumenting it means giving a checkout to the one
+    job whose whole purpose is to be cheap enough to fire on seven cron slots a
+    day and no-op six of them (it holds a runner slot out of only three on this
+    box). That is why `_has_checkout` is part of the predicate instead of a
+    name allowlist: the exemption is a property of the job, and it lapses
+    automatically the day `gate` checks the repo out.
+
+    The same reasoning that keeps it out of the wiring scan keeps timings steps
+    out of the job: a mark/finish step here would fail every run (file not
+    found), which the `|| echo` swallows into a permanent non-fatal warning."""
+    gate = _jobs(ASIA)["gate"]
+    assert not _has_checkout(gate), (
+        "asia-close `gate` now checks out the repo — the structural exemption above "
+        "has lapsed. Instrument it (mark + finish, cap = its timeout-minutes) and add "
+        "'gate' to ASIA_INSTRUMENTED_JOBS, or delete the checkout."
+    )
+    for step in gate.get("steps") or []:
         assert "timings" not in (step.get("name") or ""), step
