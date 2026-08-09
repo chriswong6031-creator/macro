@@ -41,6 +41,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from engine.prophet_integrity import effective_public_plan_date
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Content type catalogue
 # ─────────────────────────────────────────────────────────────────────────────
@@ -478,7 +480,7 @@ def is_postable_signal(plan: dict, *, today: str | None = None) -> bool:
         conf = 0.0
     if conf < _MIN_CONFIDENCE:
         return False
-    age = _signal_age_days(plan.get("_signal_date"), today=today)
+    age = _signal_age_days(effective_public_plan_date(plan), today=today)
     if age is None or age < 0 or age > _MAX_SIGNAL_AGE_DAYS:
         return False
     return True
@@ -1341,7 +1343,7 @@ def _alarm_on_starved_receipts(
     for plan in plans or []:
         if not isinstance(plan, dict) or not _is_resolved(plan):
             continue
-        age = _age_days(plan.get("_signal_date"), today=today)
+        age = _age_days(effective_public_plan_date(plan), today=today)
         if age is not None and age > window_days:
             missed.append(age)
     if not missed:
@@ -3836,8 +3838,7 @@ def content_plan(
                 # Neutral marker_source tokens only (no indicator vocabulary).
                 marker_source = "latest"
                 marker_index = len(closes) - 1
-                signal_date = str(
-                    (plan_match or {}).get("_signal_date", ""))[:10]
+                signal_date = effective_public_plan_date(plan_match or {}) or ""
                 if signal_date and signal_date in dates:
                     marker_index = dates.index(signal_date)
                     marker_source = "signal_date"

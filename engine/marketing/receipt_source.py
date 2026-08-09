@@ -32,6 +32,8 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Callable
 
+from engine.prophet_integrity import effective_public_plan_date
+
 
 #: How far back a RESOLVED plan may be and still be worth a receipt post.
 #:
@@ -162,7 +164,7 @@ def graded_receipts(
         if not ticker:
             continue
 
-        signal_date_raw = plan.get("_signal_date")
+        signal_date_raw = effective_public_plan_date(plan)
         age = _age_days(signal_date_raw, today=today)
         if age is None or age < 0 or age > max_age_days:
             continue

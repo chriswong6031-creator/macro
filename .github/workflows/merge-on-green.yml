@@ -36,7 +36,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read          # read integration-baseline workflow-run state
+  actions: write         # READ the integration-baseline / ci / fences workflow-run
+                         # state, and WRITE one `workflow_dispatch` of ci.yml on main.
+                         # The write half is new (2026-08-08) and is load-bearing: the
+                         # base-inherited-red refresh can only tell an inherited red
+                         # from a real one against a RECENT proof of main, ci.yml has
+                         # no `push` trigger, and the nightly/wire lanes push ~24
+                         # `[skip ci]` commits per 2 hours — so main's proof was
+                         # measured 12 HOURS stale while 48 pull requests sat armed,
+                         # waiting for a human to run `gh workflow run ci.yml --ref
+                         # main`. The sweeper now orders that baseline itself when its
+                         # proof is too old to answer the reds it just saw.
   contents: write        # squash-merge, delete the merged head ref, and merge
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
@@ -154,6 +164,12 @@ jobs:
           # On the fallback the merge still lands and the VPS's 3-minute pull of
           # main plus the nightly scope=all re-render still deliver it — degraded,
           # not broken, which is why the fallback is allowed to exist at all.
+          #
+          # This is also the token that dispatches the main baseline (see the
+          # `actions: write` note above), and the PAT is preferred there for the same
+          # anti-recursion reason. On the GITHUB_TOKEN fallback the dispatch degrades
+          # the same way the merge does: worst case main keeps being proven only by a
+          # human dispatch, which is exactly the status quo this repairs — never worse.
           MERGE_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
           # The head the workflow_run that woke this sweep concluded on. The sweeper
           # now evaluates at most MAX_PULLS_PER_SWEEP pull requests per run (the
