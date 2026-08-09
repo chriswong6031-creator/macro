@@ -1,4 +1,5 @@
 {% import "_prophet_card.html.j2" as pv %}
+{% import "_prophet_receipts.html.j2" as pvr %}
 {% import "_decision_card.html.j2" as dc %}
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
@@ -15139,6 +15140,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {% include "_us_act_now_board.html.j2" %}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
+    {# §6.9 R5 — the "passed on tonight" shelf's styles. Emitted ONCE, beside the card
+       styles it sits under; the shelf itself renders far below, inside #us-standouts. #}
+    {{ pvr.pvr_css() }}
 {#- ══════════════════════════════════════════════════════════════════════════════════
     PROPHET LIVE P1 — "Forming today" strip (research/PROPHET_LIVE_P1_DESIGN_SPEC.md).
 
@@ -15999,6 +16003,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% endfor %}
       {% endif %}
       </div>{# end .nbgrid #}
+      {# ═══ PASSED ON TONIGHT (ANTICIPATION §6.9 R5) — the per-name "why not" shelf.
+           BELOW the plans, never between them: the cards are what to act on, this is the
+           accounting for everything the same intake looked at and put down. A closed
+           <details>, so it costs the board one line until the reader asks.
+           Context comes from build_site's `us_prophet_refusals`, derived from the SAME
+           us_standouts generation these cards render from — see _us_prophet_refusals in
+           scripts/build_site.py for why it cannot read the published prophet index.
+           Renders NOTHING when the context is absent or empty (every non-US board, and
+           any night on which nothing was passed on). #}
+      {{ pvr.pvr_shelf(us_prophet_refusals) }}
       {# ═══ RAN LANE (G0.4) — names whose cross fired 3–15 sessions ago with the trend
            still intact. Before this, a name VANISHED the day its cross went stale, so a
            theme could run for weeks with nothing on the board to show for it (§1.3).
