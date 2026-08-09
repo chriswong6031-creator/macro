@@ -1,6 +1,31 @@
 # Legacy CI job manifest executed by scripts/run_ci_pack.py.
 # This file is deliberately outside .github/workflows so GitHub does not
 # publish one skipped check run for every logical job on every PR.
+#
+# ---------------------------------------------------------------------------
+# OPTIONAL `paths:` — the changed-path scope (2026-08-09)
+#
+# A job may declare `paths:` (a list of repo-relative globs). On PULL REQUESTS
+# it then runs only when the diff touches one of them. A job with NO `paths:`
+# runs on every pull request, so declaring a scope is opt-in and can only ever
+# remove work — never add it.
+#
+# Main's baseline and every workflow_dispatch run the FULL manifest: ci.yml
+# passes `--changed-from` only for `pull_request`. That asymmetry is the safety
+# net for the one thing static scoping cannot see (a test importing a module the
+# job's commands never name), so a missed dependency reds main instead of
+# shipping a green PR.
+#
+# Glob semantics (scripts/run_ci_pack.py::_glob_to_regex):
+#     *   does NOT cross `/`      engine/*   -> engine/a.py, not engine/a/b.py
+#     **  crosses `/`             engine/**  -> everything under engine/
+#     trailing `/` is a prefix    engine/    == engine/**
+#
+# A declared scope MUST cover every repo path the job's own commands name, or
+# the manifest fails to load. Widening is always the safe fix. If a job cannot
+# be confidently bounded (a repo-wide lint, a full-tree guard), leave it
+# unscoped — always-on is correct, not lazy.
+# ---------------------------------------------------------------------------
 jobs:
   inline-js:
     if: ${{ false }}

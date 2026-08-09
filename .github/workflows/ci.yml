@@ -3570,13 +3570,33 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
+      # `--changed-from` is passed ONLY on pull requests, so a legacy job that
+      # declares a `paths:` scope runs only when the diff can reach it. Main's
+      # baseline and every workflow_dispatch omit the flag and therefore run all
+      # 173 jobs — that asymmetry is the safety net for the one failure mode
+      # static scoping cannot catch (an implicit import a job's commands never
+      # name), which surfaces as a red main rather than a green PR that shipped
+      # a break. A job with no scope always runs, on every event.
+      #
+      # The scope flag is built in `env`, NOT inline in the folded scalar. A
+      # more-indented continuation line inside `>-` keeps its newline instead of
+      # folding to a space, which put `--execute` on its own line and silently
+      # split one command into two. Same family as the `#`-in-a-folded-scalar
+      # trap: no `#` may appear here either, and every line of the command must
+      # sit at the SAME indent so folding joins them with spaces.
+      #
+      # `$CI_SCOPE_ARG` is intentionally unquoted: it word-splits into
+      # `--changed-from <branch>` on a pull request and disappears entirely on
+      # every other event, which is what keeps main's baseline running all 173.
       - name: validate and run legacy CI pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.base_ref) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
           --pack-count 4
+          $CI_SCOPE_ARG
           --execute
