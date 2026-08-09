@@ -759,7 +759,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2 fastapi httpx
+        # app.main mounts app.market_memory, whose authenticated stock-data
+        # reader imports requests at module scope.  Keep the serving-boundary
+        # lane's isolated environment closed over that production import.
+        run: pip install pytest pyyaml jinja2 fastapi httpx requests
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
@@ -3673,7 +3676,8 @@ jobs:
         # HAPPY path is exercised too (the code degrades if they're absent, but CI
         # proves the real stamp path as well). pyyaml closes the Brain gateway's
         # Fundamental Forensics package import in this isolated environment.
-        run: pip install pytest fastapi httpx pypdf reportlab pyyaml
+        # requests closes app.main's eager app.market_memory import.
+        run: pip install pytest fastapi httpx pypdf reportlab pyyaml requests
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
