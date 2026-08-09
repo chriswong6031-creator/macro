@@ -17,7 +17,6 @@ from pathlib import Path
 from threading import BoundedSemaphore, Lock
 from typing import Any
 
-import requests
 import yaml
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi import Path as ApiPath
@@ -238,12 +237,16 @@ def _reject_duplicate_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def _fetch_stock_record(base: str, symbol: str) -> dict[str, Any]:
+    try:
+        import requests as http
+    except ImportError as exc:
+        raise _SymbolDataError("stockdata HTTP client is unavailable") from exc
     deadline = time.monotonic() + _SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS
     url = _stockdata_url(base, symbol)
     expected_origin = _origin_tuple(urllib.parse.urlsplit(url))
     _require_public_hostname(expected_origin[1])
     try:
-        response = requests.get(
+        response = http.get(
             url,
             headers={
                 "Accept": "application/json",
@@ -302,7 +305,7 @@ def _fetch_stock_record(base: str, symbol: str) -> dict[str, Any]:
             body = b"".join(chunks)
     except _SymbolDataError:
         raise
-    except requests.RequestException as exc:
+    except http.RequestException as exc:
         raise _SymbolDataError("stockdata source unavailable") from exc
 
     def reject_nonfinite(token: str) -> None:
