@@ -5105,10 +5105,12 @@ jobs:
       # so the state machine guarding the event triad was never once executed by
       # CI.  That is how the 2026-08-06 `ledger_write_failed` persistence break
       # reached production: the lobe looked green because its on-point guards
-      # were invisible, not because they passed.  Measured on origin/main under
-      # this job's exact dependency set: 270 passed in 19s.
-      - name: award-event spine, candidate/projection, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+      # were invisible, not because they passed.  Candidate API/projection tests
+      # now run in the dedicated bounded job below: their large deterministic
+      # fixtures grew beyond this legacy lane's original eight-minute budget,
+      # and keeping them here made the entire ownership lane time out.
+      - name: award-event spine, candidates, entity + workspace contracts
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same
@@ -5146,6 +5148,33 @@ jobs:
         run: |
           python3 scripts/check_government_revenue_amount_semantics.py --selftest
           python3 scripts/check_government_revenue_amount_semantics.py
+      # Unrun backfill 2026-08-09: the SBIR/STTR progression evidence lane
+      # (Wave 10 rail 3, #5012) landed named by no run: step — the unrun-suite
+      # gate reds main on it.  It belongs HERE because the suite drives
+      # collectors/sbir_awards.py and engine/government_revenue/sbir_progression.py,
+      # the same federal-award collector family as the SAM.gov/USAspending steps
+      # above, under the same jsonschema-bearing install line.
+      - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        run: python -m pytest tests/test_sbir_awards.py -q
+
+  unrun-government-revenue-candidate-projection:
+    # The candidate API/projection fixtures exercise the full contract and are
+    # intentionally isolated from the broad ownership lane above.  They were
+    # the long pole in the old eight-minute job; a separate bounded lane keeps
+    # both failure domains visible instead of masking every Government Revenue
+    # suite behind one timeout.
+    if: ${{ false }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install candidate contract dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      - name: candidate API + projection contract fixtures
+        run: python -m pytest tests/test_government_revenue_candidate_api.py tests/test_government_revenue_candidate_projection.py -q
 
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.

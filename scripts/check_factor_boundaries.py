@@ -41,12 +41,13 @@ THREE CHECKS
       scripts/build_site.py
       engine/neuralweb/cortex.py
       engine/neuralweb/ask_brain.py
-      engine/inflation_intelligence.py                 (all-false state producer)
-      engine/neuralweb/world_state.py                  (all-false lobe builder)
       engine/sector_intelligence/contracts.py      (enforcement-only validator)
       engine/biocatalyst/sector_packet.py          (facts-only packet state builder)
       docs/research/                                 (research docs; prefix match)
       scripts/check_factor_boundaries.py             (this file — for selftest)
+    Emit-only paths (dict-key/call-keyword writes pass; every read still fails):
+      engine/inflation_intelligence.py
+      engine/neuralweb/world_state.py
 
 (c) Forbidden field name guard (rank/score/recommendation):
     FAIL if the state builder or shadow script emit fields named
@@ -79,6 +80,7 @@ AST data-flow tracing is deferred to a later wave.
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 import textwrap
@@ -132,13 +134,6 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "scripts/build_site.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/ask_brain.py",
-    # Release Radar inflation state builders (#5153): the producer emits a fixed
-    # all-false descriptive authority mirror, and World State writes the same
-    # constant mirror onto both its null and bounded context lobes. Neither reads
-    # source `allowed_actions` nor branches on the field, so it cannot become a
-    # behavior wire (same RUL-NW9 state-builder warrant as the factor producer).
-    "engine/inflation_intelligence.py",
-    "engine/neuralweb/world_state.py",
     # Sector-intelligence contract enforcement may inspect allowed_actions only
     # to reject grants above the declared authority cap. It never uses the field
     # as a runtime behavior switch.
@@ -179,6 +174,16 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "engine/china_cycle_phase.py",
     "docs/research/",
 ]
+
+# These producers may EMIT a fixed descriptive ``allowed_actions`` mirror, but
+# must never read the field or branch on it.  They intentionally remain outside
+# the whole-file allowlist above.  Check (b) permits only AST-proven mapping-key
+# and keyword-argument writes at these paths, so a future ``payload.get(...)``
+# or ``payload[... ]`` reference still fails closed.
+_ALLOWED_ACTIONS_EMIT_ONLY_PATHS: frozenset[str] = frozenset({
+    "engine/inflation_intelligence.py",
+    "engine/neuralweb/world_state.py",
+})
 
 # ---------------------------------------------------------------------------
 # Forbidden field names in state-builder and shadow script (check-c)
@@ -347,6 +352,58 @@ def _is_allowlisted_for_allowed_actions(rel_path: str) -> bool:
     return False
 
 
+def _allowed_actions_emission_spans(
+    source: str,
+) -> dict[int, tuple[tuple[int, int], ...]]:
+    """Return exact source spans that AST-prove an ``allowed_actions`` write.
+
+    Only the key token is exempted.  The value subtree and every other token on
+    the same line remain visible to check (b), so
+    ``{"allowed_actions": source["allowed_actions"]}`` still fails.  Parse
+    failure returns no spans and therefore fails closed.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return {}
+
+    spans: dict[int, list[tuple[int, int]]] = {}
+
+    def add_node_span(node: ast.AST) -> None:
+        if not all(hasattr(node, attr) for attr in ("lineno", "col_offset", "end_lineno", "end_col_offset")):
+            return
+        if node.lineno != node.end_lineno:
+            return
+        spans.setdefault(node.lineno, []).append((node.col_offset, node.end_col_offset))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            for key in node.keys:
+                if (
+                    isinstance(key, ast.Constant)
+                    and key.value == "allowed_actions"
+                ):
+                    add_node_span(key)
+        elif (
+            isinstance(node, ast.Subscript)
+            and isinstance(node.ctx, ast.Store)
+            and isinstance(node.slice, ast.Constant)
+            and node.slice.value == "allowed_actions"
+        ):
+            add_node_span(node.slice)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "update"
+        ):
+            for keyword in node.keywords:
+                if keyword.arg == "allowed_actions" and hasattr(keyword, "lineno"):
+                    spans.setdefault(keyword.lineno, []).append(
+                        (keyword.col_offset, keyword.col_offset + len("allowed_actions"))
+                    )
+    return {line: tuple(ranges) for line, ranges in spans.items()}
+
+
 # ---------------------------------------------------------------------------
 # Violation data structure
 # ---------------------------------------------------------------------------
@@ -420,7 +477,7 @@ def _check_a(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
 
 
 def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Violation]:
-    """FAIL if 'allowed_actions' appears outside the allowlist."""
+    """FAIL if 'allowed_actions' appears outside its read/emission boundary."""
     violations: list[Violation] = []
     _TOKEN = "allowed_actions"
 
@@ -441,10 +498,25 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
             continue
         if _is_allowlisted_for_allowed_actions(rel_path):
             continue
+        emission_spans = (
+            _allowed_actions_emission_spans(source)
+            if rel_path in _ALLOWED_ACTIONS_EMIT_ONLY_PATHS
+            else {}
+        )
         # Found the token in a non-allowlisted file — find line numbers
         lines = source.splitlines()
         for i, line in enumerate(lines, start=1):
             if _TOKEN in line:
+                occurrences = tuple(re.finditer(_TOKEN, line))
+                allowed_ranges = emission_spans.get(i, ())
+                if occurrences and all(
+                    any(
+                        start <= occurrence.start() and occurrence.end() <= end
+                        for start, end in allowed_ranges
+                    )
+                    for occurrence in occurrences
+                ):
+                    continue
                 violations.append(Violation(
                     check="b",
                     module=rel_path,
@@ -617,6 +689,38 @@ def _run_selftest(root: Path) -> int:
         )
     else:
         print("  [OK] check-b-enforcement: contract validator is enforcement-only")
+
+    # --- (b emit-only): approved producer writes pass, reads on the same line red --
+    synthetic_b_emit = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': {'may_rank': False}}\n"
+            "payload.update(allowed_actions={'may_trade': False})\n"
+        ),
+    }
+    if _check_b(root, extra_files=synthetic_b_emit):
+        errors.append("SELFTEST FAIL (b-emit): approved descriptive emissions were rejected")
+    else:
+        print("  [OK] check-b-emit: exact descriptive emission spans permitted")
+
+    synthetic_b_mixed = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': source['allowed_actions']}\n"
+        ),
+    }
+    if not _check_b(root, extra_files=synthetic_b_mixed):
+        errors.append("SELFTEST FAIL (b-mixed): same-line behavioral read was hidden by key emission")
+    else:
+        print("  [OK] check-b-mixed: same-line read remains a violation")
+
+    synthetic_b_parse = {
+        "engine/neuralweb/world_state.py": (
+            "payload = {'allowed_actions': {'may_rank': False}\n"
+        ),
+    }
+    if not _check_b(root, extra_files=synthetic_b_parse):
+        errors.append("SELFTEST FAIL (b-parse): malformed emitter source did not fail closed")
+    else:
+        print("  [OK] check-b-parse: malformed emitter source fails closed")
 
     # --- (c): forbidden field in state builder (colon form) --
     synthetic_c = {
