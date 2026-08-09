@@ -32,7 +32,7 @@ the whole module skipping.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -1196,13 +1196,19 @@ def test_the_filing_lanes_receive_the_tickers_the_plan_already_claimed(
     monkeypatch.setattr(insider_feed, "candidates", _spy("insider", []), raising=False)
     monkeypatch.setattr(house_picks, "house_picks", lambda *a, **k: [], raising=False)
 
+    # The date family is DECLARED, relative to today: effective_public_plan_date
+    # (#5071) withholds a basis-less plan from every public reader, and a plan
+    # the postability gate withholds claims no tickers — which is this test's
+    # subject, not its point. A literal date would also age past the 21-day
+    # signal window and turn this into a clock bomb.
+    sig = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
     plans = [{"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL",
               "entry": 120.0, "invalidation": 100.0, "targets": [150.0],
               "trigger": 125.0, "phase": "triggered_pre_t1",
               "recommended_action": "hold", "management_confidence": 66.0,
-              "_signal_date": "2026-07-28",
+              "_signal_date": sig,
               "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-              "signal_date": "2026-07-28"}]
+              "signal_date": sig}]
     plan = content_plan(_lane_cfg(), plans, closes_loader=None, root=tmp_path)
 
     assert "congress" in seen and "insider" in seen, (
