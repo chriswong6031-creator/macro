@@ -135,6 +135,10 @@ on:
       - "tests/test_optimize_assets.py"
       - "tests/test_asset_stamp_lane_order.py"
       - "tests/test_asset_stamp_refresh.py"
+      # closing-bell duplicate-render dedup contract. The SUBJECT (the guard + stamp
+      # heredocs) already reaches CI via ".github/workflows/**"; this line is the other
+      # direction, so an edit to the test alone still runs the job that executes it.
+      - "tests/test_closingbell_dedup_contract.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
       # data-base shim guard: every builder must write site/**/*.html through
