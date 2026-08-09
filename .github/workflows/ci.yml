@@ -1019,6 +1019,14 @@ on:
       # discovery for all THREE darkness guards, so a regression here re-blinds
       # every one of them at once — which is what tests/ scoping did until #4693.
       - "tests/test_audit_unrun_tests.py"
+      # The census's two EXCEPTION files, added 2026-08-09 when the bare run was
+      # armed as a gate. These are not decoration: the whole point of a waiver is
+      # that it is reviewed, and a PR that adds a row to either file while starting
+      # no job would be exactly the "exception nobody checked" this gate exists to
+      # prevent. check_ci_trigger_closure.py reds without them (the suite opens both
+      # by path), which is the guard closing its own loop.
+      - "config/unrun_test_baseline.json"
+      - "config/unrun_test_waivers.yml"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
