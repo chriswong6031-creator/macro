@@ -237,6 +237,55 @@ OVERLAP_NOTE = (
     "same-name overlapping starts) rather than leaving it as prose."
 )
 
+TRUNCATION_NOTE = (
+    "CENSORING (amendment A1). The priced book contains COMPLETE windows only: the holding "
+    "chain T+1..T+H and the exit bar T+H+1 must all exist. v1 priced an incomplete window by "
+    "force-closing at the last available CLOSE — a mark-to-market at the edge of the store or "
+    "of an exchange closure — while the rate tables dropped the same rows and the benchmark "
+    "excluded them, so three parts of one file disagreed about the same window. Truncated "
+    "trades are now COUNTED and reported in their own block (the_book.truncated_windows), "
+    "never pooled into a headline. Root cause is receipted in coverage.exchange_closures."
+)
+
+AMENDMENTS_AFTER_FIRST_RUN = [
+    {"id": "A1", "trigger": "commissioned adversarial review, BLOCKER",
+     "change": ("Truncated forward windows are removed from the PRICED book and reported "
+                "separately. Previously they were force-closed at the last available close "
+                "and pooled into every headline, while the rate tables and the benchmark both "
+                "excluded them."),
+     "why_not_pre_registered": ("The pre-registration fixed the exit RULE but not the "
+                                "censoring of windows the rule cannot complete. That gap is "
+                                "the defect."),
+     "root_cause": (f"the forward chain reuses v0's {MAX_PAIR_GAP_DAYS}-calendar-day pair "
+                    "rule as its step rule, so exchange closures longer than that truncate "
+                    "market-wide. Documented explicitly (coverage.exchange_closures) rather "
+                    "than changed, because changing the step rule would move every outcome "
+                    "denominator the review verified as exact.")},
+    {"id": "A2", "trigger": "commissioned adversarial review, BLOCKER",
+     "change": ("The benchmark leg is built for ALL THREE exit rules, not just fixed-H, by "
+                "applying the same peak rule to the unconditional cohort under the same "
+                "censoring. Cells that still have no benchmark are labelled "
+                "CONTROL-NOT-BUILT and counted separately from cells that failed one."),
+     "why_not_pre_registered": ("The benchmark leg itself was already post-hoc; building it "
+                                "for one variant and reporting the others as 'dying against "
+                                "the drift control' conflated untested with failed.")},
+    {"id": "A3", "trigger": "commissioned adversarial review, BLOCKER",
+     "change": ("C12 arm populations are counted BEFORE the matching-support filter, and an "
+                "arm voided by the fit-window floor is printed as voided with its true "
+                "population instead of silently reporting zero.")},
+    {"id": "A4", "trigger": "commissioned adversarial review, SHOULD-FIX",
+     "change": ("Cut receipts print the realised OOS share beside the fit-window share; the "
+                "false 'ties' explanation of an over-sized top decile is replaced with the "
+                "measured cause (fit->holdout distribution shift).")},
+    {"id": "A5", "trigger": "commissioned adversarial review, SHOULD-FIX",
+     "change": ("Every excess cell prints the signal's expectancy on the EXCESS's own dates "
+                "beside the full-sample figure, plus what the dropped dates were worth.")},
+    {"id": "A6", "trigger": "commissioned adversarial review, SHOULD-FIX",
+     "change": ("The i5 dial verdict now FAILS on a missing comparison and includes the "
+                "forward-window difference in its predicate; the target-date-indexing claim "
+                "is scoped as INHERITED from W2-A's producer-level verification.")},
+]
+
 DECISION_BAR = (
     f"A (signal, H, board) cell CLEARS only if its DATE-EQUAL-WEIGHTED net expectancy (after "
     f"a {ROUND_TRIP_COST * 1e4:.0f} bp round trip) is positive AND its date-clustered t is "
@@ -301,9 +350,19 @@ PRE_REGISTRATION = {
             "foresight premium is a number. Untriggered entries take the fixed-H exit."),
     },
     "overlap_treatment": {"choice": OVERLAP_CHOICE, "note": OVERLAP_NOTE},
+    "amendments_after_first_run": AMENDMENTS_AFTER_FIRST_RUN,
+    "amendment_disclosure": (
+        "Everything above this key was fixed before the first run. AMENDMENTS_AFTER_FIRST_RUN "
+        "lists every change made after a commissioned adversarial review, each with what it "
+        "changed and why it was not pre-registered. No pre-registered threshold, band edge, "
+        "signal or decision bar was moved; the amendments fix censoring, controls and "
+        "receipts. The pre-registered CLEARS verdict is still reported unchanged."),
     "honesty_gates": [
-        "date-clustered t beside per-trade stats on every book cell; the per-trade t is never "
-        "printed alone and never carries a claim",
+        "date-clustered t beside per-trade stats on every BOOK cell; the per-trade t is never "
+        "printed alone and never carries a claim. SCOPE: this gate is BOOK-ONLY. Rate tables "
+        "carry Wilson intervals on overlapping rows (see overlap_treatment), and the feature "
+        "lift ratios and C12 ratios are POINT ESTIMATES with no interval or test at all — "
+        "they are labelled as such where they appear and no significance is claimed for them.",
         "row / date / name / episode denominators printed separately, never conflated",
         "no below-chance or coin-flip inference ACROSS families — multiplicity is stated "
         "per family with its expected false-positive count",
@@ -544,7 +603,15 @@ def load_regime_dial() -> tuple[pd.DataFrame | None, dict]:
         checks.append({"board": str(board), "rows": int(len(g)),
                        "max_abs_diff_vs_TRAILING_ma5": _r(md, 9),
                        "max_abs_diff_vs_FORWARD_ma5": _r(mdf, 6)})
-    ok = all((c["max_abs_diff_vs_TRAILING_ma5"] or 0.0) < 1e-9 for c in checks)
+    # AMENDMENT A6. v1's predicate read `(x or 0.0) < 1e-9`, so a MISSING comparison (None)
+    # became 0.0 and PASSED — a check that cannot fail. It now requires the trailing diff to
+    # be present and ~0 AND the forward diff to be present and materially different.
+    ok = bool(checks) and all(
+        c["max_abs_diff_vs_TRAILING_ma5"] is not None
+        and c["max_abs_diff_vs_TRAILING_ma5"] < 1e-9
+        and c["max_abs_diff_vs_FORWARD_ma5"] is not None
+        and c["max_abs_diff_vs_FORWARD_ma5"] > 1e-6
+        for c in checks)
     return d[["date", "board", "i5_realized_continuation",
               "i5_realized_continuation_ma5", "i5_pairs_n"]], {
         "available": True,
@@ -557,11 +624,20 @@ def load_regime_dial() -> tuple[pd.DataFrame | None, dict]:
                      "SPLIT is enforced on the population, not on the dial."),
         "lookahead_check": {
             "claim": "the dial at T is known at T's close",
+            "what_is_MEASURED_here": ("only that ma5 is a TRAILING window — it reproduces a "
+                                      "trailing mean to float precision and disagrees with a "
+                                      "forward one."),
+            "what_is_INHERITED_not_measured_here": (
+                "that i5 is indexed by the TARGET date (the session the continuation printed "
+                "on) and so uses no bar after T. That is a property of the PRODUCER "
+                "(board_ecology_regime_v1.py) verified at producer level by W2-A and re-read "
+                "in its source by this lane; it is NOT re-derived from the parquet here, "
+                "because the parquet no longer carries the pairs it was built from."),
             "mechanical": checks,
             "verdict": ("PASS — reproduces the TRAILING window to float precision and "
                         "disagrees with a forward window." if ok else
-                        "FAIL — the ma5 does not reproduce a trailing window; do not read "
-                        "any regime cell below."),
+                        "FAIL — the trailing-window property is not established (missing or "
+                        "non-zero comparison); do not read any regime cell below."),
         },
         "terciles": ("cut points computed on the FIT window only, per raw board, then applied "
                      "unchanged to the holdout."),
@@ -692,7 +768,75 @@ def _forward_windows(A: dict) -> dict:
         out[f"cum_{H}"] = np.where(ok, cum, np.nan)
         out[f"peak_{H}"] = np.where(ok, peak, np.nan)
         out[f"win_ok_{H}"] = ok
+        # BOOK completeness is one bar STRICTER than window completeness: the holding chain
+        # runs T+1..T+H and the exit is the OPEN of T+H+1. Amendment A1 makes this the
+        # censor for the priced book instead of force-closing at a mark-to-market close.
+        out[f"book_ok_{H}"] = run_fwd >= H + 1
         out[f"oo_{H}"] = np.where(run_fwd >= H + 1, oo, np.nan)
+    return out
+
+
+def _universe_book(A: dict, W: dict, unfill: np.ndarray) -> dict:
+    """Vectorised UNIVERSE book — all three exit rules, on every live bar. Amendment A2.
+
+    The v1 benchmark priced only the fixed-H exit, so the peak variants — 7 of the 11 cells
+    that cleared the pre-registered bar — had no control at all and were reported as "dying
+    against the drift control" when in truth they were never tested. This computes the SAME
+    peak rule on the unconditional cohort.
+
+    Exactly mirrors ``book_trades`` under the amended censoring, with ONE disclosed
+    difference: the universe leg does not roll a locked exit. It instead REQUIRES the
+    scheduled exit bar to be sellable and counts the bars that fails on, which bounds the
+    difference with a printed number (the signal leg's roll rate is 0.00-0.55% on every cell
+    that matters). ``_universe_book`` values are carried onto the signal rows so the loop and
+    this array can be pinned against each other — see book_parity_receipt.
+    """
+    n, o, h, c, w = A["n"], A["o"], A["h"], A["c"], A["width"]
+    lim_dn = A["lim_dn"]
+    with np.errstate(invalid="ignore"):
+        sellable = ~(np.isfinite(lim_dn) & (o <= lim_dn * (1.0 + LIMIT_CLOSE_TOL)))
+    out = {}
+    for H in HORIZONS:
+        K = H + 1                       # exit-bar offset: bar i+K is the open of T+H+1
+        O = np.full((n, K + 1), np.nan)
+        HI = np.full((n, K + 1), np.nan)
+        SELL = np.zeros((n, K + 1), dtype=bool)
+        for k in range(1, K + 1):
+            O[:n - k, k] = o[k:]
+            HI[:n - k, k] = h[k:]
+            SELL[:n - k, k] = sellable[k:]
+        entry = O[:, 1]
+        with np.errstate(invalid="ignore"):
+            trig_px = c * (1.0 + PEAK_TRIGGER_FRAC * w)
+            trg = HI[:, 1:H + 1] >= trig_px[:, None]
+        trg = np.where(np.isfinite(HI[:, 1:H + 1]), trg, False)
+        has_trig = trg.any(axis=1)
+        first_k = np.argmax(trg, axis=1) + 1        # meaningful only where has_trig
+
+        kgrid = np.arange(K + 1)[None, :]
+        want = (kgrid > first_k[:, None]) & SELL & (kgrid >= 1)
+        best_o = np.where(want, O, -np.inf).max(axis=1)
+        first_idx = np.argmax(want, axis=1)
+        first_o = np.take_along_axis(O, first_idx[:, None], axis=1)[:, 0]
+        any_after = want.any(axis=1)
+
+        # valid = complete holding chain, fillable entry, finite entry, sellable fixed exit.
+        # The fixed exit must be sellable for ALL variants because an untriggered row falls
+        # back to it, so every variant carries the identical censoring.
+        valid = (W[f"book_ok_{H}"] & ~unfill & np.isfinite(entry) & (entry > 0)
+                 & SELL[:, K] & np.isfinite(O[:, K]))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r_fixed = O[:, K] / entry - 1.0
+            r_best = np.where(has_trig & any_after, best_o / entry - 1.0, r_fixed)
+            r_first = np.where(has_trig & any_after, first_o / entry - 1.0, r_fixed)
+        out[f"ub_valid_{H}"] = valid
+        out[f"ub_fixedH_{H}"] = np.where(valid, r_fixed, np.nan)
+        out[f"ub_peak_best_{H}"] = np.where(valid, r_best, np.nan)
+        out[f"ub_peak_first_{H}"] = np.where(valid, r_first, np.nan)
+        out[f"ub_trig_{H}"] = has_trig & valid
+        # the bound on the one disclosed difference vs the signal leg
+        out[f"ub_exit_unsellable_{H}"] = int(
+            (W[f"book_ok_{H}"] & ~unfill & np.isfinite(O[:, K]) & ~SELL[:, K]).sum())
     return out
 
 
@@ -704,6 +848,7 @@ ROW_COLS = ["date", "ticker", "board", "bkey", "is_board", "is_bigday", "is_near
 
 
 BKEYS = ["main", "star", "chinext_10pct_pre2020", "chinext_20pct_post2020"]
+BOOK_VARIANTS = ["fixedH", "peak_best", "peak_first"]
 BENCH_DAY0 = int(WINDOW_START.to_datetime64().astype("datetime64[D]").astype(np.int64))
 BENCH_DAYS = int(WINDOW_END.to_datetime64().astype("datetime64[D]").astype(np.int64)) \
     - BENCH_DAY0 + 2
@@ -745,23 +890,27 @@ def process_ticker(ticker: str, A: dict, board: str,
         nxt_o >= nxt_lim_up * (1.0 - LIMIT_CLOSE_TOL))
 
     # THE BENCHMARK ACCUMULATOR — every live bar of every name whose T+1 open was fillable,
-    # summed per (session, board key). This is the control the whole book is read against:
-    # a positive expectancy on a board that drifted up is not an edge, it is the board.
+    # summed per (session, board key), for ALL THREE exit rules (amendment A2). This is the
+    # control the whole book is read against: a positive expectancy on a board that drifted
+    # up is not an edge, it is the board.
+    U = _universe_book(A, W, unfill)
     if bench_acc is not None:
         code = _bkey_code(board, A["idx"])
         di = A["days"] - BENCH_DAY0
-        base_ok = live & ~unfill & (di >= 0) & (di < BENCH_DAYS)
+        in_range = (di >= 0) & (di < BENCH_DAYS)
         for H in HORIZONS:
-            v = W[f"oo_{H}"]
-            m = base_ok & np.isfinite(v)
-            if not bool(m.any()):
-                continue
-            for kcode in range(len(BKEYS)):
-                mm = m & (code == kcode)
-                if not bool(mm.any()):
+            bench_acc["exit_unsellable"][H] += U[f"ub_exit_unsellable_{H}"]
+            for var in BOOK_VARIANTS:
+                v = U[f"ub_{var}_{H}"]
+                m = live & in_range & np.isfinite(v)
+                if not bool(m.any()):
                     continue
-                np.add.at(bench_acc["sum"][kcode][H], di[mm], v[mm])
-                np.add.at(bench_acc["cnt"][kcode][H], di[mm], 1)
+                for kcode in range(len(BKEYS)):
+                    mm = m & (code == kcode)
+                    if not bool(mm.any()):
+                        continue
+                    np.add.at(bench_acc["sum"][kcode][var][H], di[mm], v[mm])
+                    np.add.at(bench_acc["cnt"][kcode][var][H], di[mm], 1)
 
     is_board = live & lu
     is_bigday = live & ~lu & np.isfinite(ret) & (ret >= BIGDAY_FRAC * w)
@@ -797,10 +946,16 @@ def process_ticker(ticker: str, A: dict, board: str,
         "f8_consec_up_days": A["f8"][sel].astype(np.int16),
         "bar_i": sel.astype(np.int32),
     }
+    frame["run_fwd"] = W["run_fwd"][sel].astype(np.int16)
     for H in HORIZONS:
         frame[f"win_ok_{H}"] = W[f"win_ok_{H}"][sel]
+        frame[f"book_ok_{H}"] = W[f"book_ok_{H}"][sel]
         frame[f"cum_{H}"] = W[f"cum_{H}"][sel].astype(np.float32)
         frame[f"peak_{H}"] = W[f"peak_{H}"][sel].astype(np.float32)
+        # carried so the reviewed Python loop and the vectorised universe book can be pinned
+        # against each other on identical rows (book_parity_receipt)
+        for var in BOOK_VARIANTS:
+            frame[f"ub_{var}_{H}"] = U[f"ub_{var}_{H}"][sel].astype(np.float32)
     stats["n_bars"] = n
     return pd.DataFrame(frame), stats
 
@@ -809,7 +964,13 @@ def process_ticker(ticker: str, A: dict, board: str,
 
 TRADE_COLS = ["date", "ticker", "bkey", "signal", "H", "variant", "entry_px", "exit_px",
               "ret", "hold_sessions", "rolls", "forced_close", "roll_extra_loss",
-              "triggered"]
+              "triggered", "complete_window"]
+
+HOLD_SESSIONS_NOTE = (
+    "hold_sessions counts bars from the ENTRY bar to the EXIT bar inclusive, so a complete "
+    "fixed-H trade reports H+1, not H (entry at T+1, exit at the open of T+H+1). It is "
+    "therefore NOT comparable to L1's hold_sessions, which counted exit_bar - entry_bar."
+)
 
 
 def _make_walkers(A: dict):
@@ -882,7 +1043,7 @@ def book_trades(ticker: str, A: dict, rows: pd.DataFrame) -> list[tuple]:
                 else np.nan
             out.append((rec.date, ticker, rec.bkey, rec.signal, H, "fixedH", entry_px, px,
                         px / entry_px - 1.0, int(b_exit - e + 1), rolls,
-                        bool(forced or not ok), extra, False))
+                        bool(forced or not ok), extra, False, bool(ok)))
 
             # (2) the O3-framing book: first bar in the window whose HIGH reaches 1.5w above
             #     close[T], then sell into the best / first fillable open after it.
@@ -896,18 +1057,23 @@ def book_trades(ticker: str, A: dict, rows: pd.DataFrame) -> list[tuple]:
                     break
                 b, steps = nb, steps + 1
             if j < 0:
-                # no trigger: the peak book falls back to the fixed-H exit, same trade
+                # no trigger: the peak book falls back to the fixed-H exit, same trade — and
+                # therefore inherits that exit's locked-exit ROLL, which is the one path on
+                # which a peak trade can settle later than bar e+H. Measured: 10 such trades
+                # in the whole study, all in truncated or rolled windows, all excluded from
+                # the priced book by amendment A1.
                 out.append((rec.date, ticker, rec.bkey, rec.signal, H, "peak_best", entry_px,
                             px, px / entry_px - 1.0, int(b_exit - e + 1), rolls,
-                            bool(forced or not ok), extra, False))
+                            bool(forced or not ok), extra, False, bool(ok)))
                 out.append((rec.date, ticker, rec.bkey, rec.signal, H, "peak_first", entry_px,
                             px, px / entry_px - 1.0, int(b_exit - e + 1), rolls,
-                            bool(forced or not ok), extra, False))
+                            bool(forced or not ok), extra, False, bool(ok)))
                 continue
             # candidate exits: opens of the bars after the trigger, out to the fixed-H exit
             # bar e+H (= T+H+1) inclusive.  The chain is contiguous in index, so the number of
-            # candidate bars is exactly (e + H) - j.  Never longer: the peak book must not be
-            # allowed to hold one session past the fixed-H book it is compared against.
+            # candidate bars is exactly (e + H) - j.  On the TRIGGERED path the peak book can
+            # never hold past e+H; the untriggered fallback above is the only exception and
+            # it is excluded from the priced book.
             cands, cur2 = [], j
             remaining = H - (j - e)
             for _ in range(max(0, remaining)):
@@ -923,17 +1089,17 @@ def book_trades(ticker: str, A: dict, rows: pd.DataFrame) -> list[tuple]:
                 fb = cands[-1] if cands else j
                 out.append((rec.date, ticker, rec.bkey, rec.signal, H, "peak_best", entry_px,
                             float(c[fb]), float(c[fb]) / entry_px - 1.0, int(fb - e + 1), 0,
-                            True, np.nan, True))
+                            True, np.nan, True, bool(ok)))
                 out.append((rec.date, ticker, rec.bkey, rec.signal, H, "peak_first", entry_px,
                             float(c[fb]), float(c[fb]) / entry_px - 1.0, int(fb - e + 1), 0,
-                            True, np.nan, True))
+                            True, np.nan, True, bool(ok)))
                 continue
             b_best = max(fillable, key=lambda b2: o[b2])
             b_first = fillable[0]
             for label, b2 in (("peak_best", b_best), ("peak_first", b_first)):
                 out.append((rec.date, ticker, rec.bkey, rec.signal, H, label, entry_px,
                             float(o[b2]), float(o[b2]) / entry_px - 1.0, int(b2 - e + 1), 0,
-                            False, np.nan, True))
+                            False, np.nan, True, bool(ok)))
     return out
 
 
@@ -954,10 +1120,16 @@ def build(verbose: bool = True):
     frames = []
     popstats = {"rows_board": 0, "rows_bigday": 0, "rows_nearmiss": 0}
     bench_acc = {
-        "sum": [{H: np.zeros(BENCH_DAYS, dtype=np.float64) for H in HORIZONS}
-                for _ in BKEYS],
-        "cnt": [{H: np.zeros(BENCH_DAYS, dtype=np.int64) for H in HORIZONS} for _ in BKEYS],
+        "sum": [{v: {H: np.zeros(BENCH_DAYS, dtype=np.float64) for H in HORIZONS}
+                 for v in BOOK_VARIANTS} for _ in BKEYS],
+        "cnt": [{v: {H: np.zeros(BENCH_DAYS, dtype=np.int64) for H in HORIZONS}
+                 for v in BOOK_VARIANTS} for _ in BKEYS],
+        "exit_unsellable": {H: 0 for H in HORIZONS},
     }
+    # AMENDMENT A1 root-cause receipt: the forward chain reuses v0's 10-calendar-day pair
+    # rule, so an exchange closure longer than 10 days truncates every name at once. These
+    # are the closures, counted from the tape rather than asserted.
+    closure_acc = {}
 
     for i, p in enumerate(files):
         ticker = p.stem
@@ -988,6 +1160,17 @@ def build(verbose: bool = True):
         slot[0] += int(usable.sum())
         slot[1] += int((usable & np.r_[A["lu"][1:], False]).sum())
 
+        # closures: consecutive live bars more than MAX_PAIR_GAP_DAYS apart, keyed by the
+        # date of the EARLIER bar — the session on which every open window truncates.
+        if len(days) > 1:
+            gp = days[1:] - days[:-1]
+            brk = live[:-1] & live[1:] & (gp > MAX_PAIR_GAP_DAYS)
+            if bool(brk.any()):
+                for d, g in zip(A["idx"][:-1][brk], gp[brk]):
+                    slot2 = closure_acc.setdefault(d, [0, int(g)])
+                    slot2[0] += 1
+                    slot2[1] = max(slot2[1], int(g))
+
         rows, st = process_ticker(ticker, A, board, bench_acc)
         for k in popstats:
             popstats[k] += st[k]
@@ -1002,19 +1185,37 @@ def build(verbose: bool = True):
 
     bench_rows = []
     for kcode, bk in enumerate(BKEYS):
-        for H in HORIZONS:
-            cnt = bench_acc["cnt"][kcode][H]
-            m = cnt > 0
-            if not bool(m.any()):
-                continue
-            di = np.where(m)[0]
-            bench_rows.append(pd.DataFrame({
-                "date": pd.to_datetime(di + BENCH_DAY0, unit="D"),
-                "bkey": bk, "H": H,
-                "bench_gross": bench_acc["sum"][kcode][H][m] / cnt[m],
-                "bench_names": cnt[m]}))
+        for var in BOOK_VARIANTS:
+            for H in HORIZONS:
+                cnt = bench_acc["cnt"][kcode][var][H]
+                m = cnt > 0
+                if not bool(m.any()):
+                    continue
+                di = np.where(m)[0]
+                bench_rows.append(pd.DataFrame({
+                    "date": pd.to_datetime(di + BENCH_DAY0, unit="D"),
+                    "bkey": bk, "variant": var, "H": H,
+                    "bench_gross": bench_acc["sum"][kcode][var][H][m] / cnt[m],
+                    "bench_names": cnt[m]}))
     bench = pd.concat(bench_rows, ignore_index=True)
     bench["bench_net"] = (1.0 + bench["bench_gross"]) * (1.0 - ROUND_TRIP_COST) - 1.0
+
+    closures = sorted(closure_acc.items())
+    closure_receipt = {
+        "why": ("AMENDMENT A1 root cause, MEASURED. The forward chain reuses v0's "
+                f"{MAX_PAIR_GAP_DAYS}-calendar-day T->T+1 pair rule as its step rule, so any "
+                "exchange closure longer than that truncates every open window at once, "
+                "market-wide. Chinese New Year and the National Day holiday do exactly this. "
+                "The truncated windows were being PRICED in the v1 book (force-closed at the "
+                "last available close, a mark-to-market at the store's edge) while the rate "
+                "tables dropped them — the defect this amendment fixes."),
+        "closure_sessions": len(closures),
+        "names_affected_total": int(sum(v[0] for _d, v in closures)),
+        "top_closures": [{"last_session_before_closure": d.strftime("%Y-%m-%d"),
+                          "names_truncated": v[0], "gap_calendar_days": v[1]}
+                         for d, v in sorted(closures, key=lambda kv: -kv[1][0])[:20]],
+        "all_closure_dates": [d.strftime("%Y-%m-%d") for d, _v in closures],
+    }
 
     rows = pd.concat(frames, ignore_index=True)
     rows["sector"] = rows["ticker"].map(sector_map).fillna("UNKNOWN")
@@ -1064,6 +1265,31 @@ def build(verbose: bool = True):
         "window": [WINDOW_START.strftime("%Y-%m-%d"), WINDOW_END.strftime("%Y-%m-%d")],
         "excluded_bars": agg, "universe_gap": gapmeta,
         "returned": "rows only — per-ticker arrays are rebuilt on demand by the book pass",
+        "benchmark_exit_unsellable": {str(H): int(v) for H, v
+                                      in bench_acc["exit_unsellable"].items()},
+        "exchange_closures": closure_receipt,
+        "window_truncation_by_horizon": [
+            {"H": H,
+             "rows": int(len(rows)),
+             "window_complete_run_fwd_ge_H": int((rows["run_fwd"] >= H).sum()),
+             "book_complete_run_fwd_ge_H_plus_1": int((rows["run_fwd"] >= H + 1).sum()),
+             "truncated_for_the_BOOK": int((rows["run_fwd"] < H + 1).sum()),
+             "truncated_for_the_BOOK_pct": _r(
+                 100.0 * float((rows["run_fwd"] < H + 1).mean()))}
+            for H in HORIZONS],
+        "st_cohort_bound": (
+            "ST/*ST is excluded from a SINGLE snapshot (asof "
+            f"{ST_STORE_COVERAGE_DATE:%Y-%m-%d}), of which only "
+            f"{len(st_set & {p.stem for p in files})} name is present in this store. There is "
+            "no ST membership HISTORY, so a name that was ST at some point in the past and is "
+            "not ST today carries this instrument's 10% (or 20%) band on bars where the real "
+            "band was 5%. On those bars w is overstated, every w-scaled threshold is too high "
+            "(O1/O2/O3 UNDERcount), the limit price is too far away (the name is scored "
+            "non-board and fillable when it may have been sealed at 5%), and the sellable / "
+            "unfillable judgements are wrong. The bound is the ST population share of the "
+            "A-share market on any historical date — of order 2-5% of listings — and it "
+            "cannot be measured from this store. v0 made the same exclusion and this lane "
+            "does not relitigate it; the consequence is disclosed rather than patched."),
         "population_rows": {
             "A_board_days": popstats["rows_board"],
             "C_big_day_nonboard": popstats["rows_bigday"],
@@ -1282,13 +1508,26 @@ def attach_conditioners(rows: pd.DataFrame, dial: pd.DataFrame | None) -> dict:
             na = g.index[~np.isfinite(g[feat].to_numpy(dtype="float64"))]
             rows.loc[na, col] = f"{feat}_NA"
             gg = rows.loc[g.index, col]
+            sp = (g["split"] == "fit").to_numpy()
+            v = g[feat].to_numpy(dtype="float64")
+            ties = float((v[np.isfinite(v)] == cut).mean()) if np.isfinite(cut) else 0.0
             receipt["cuts"].append({
                 "feature": feat, "bkey": bk, "fit_cut_value": _r(cut, 6),
                 "realised_top_decile_share_pct": _r(100.0 * float((gg == "top_decile").mean())),
+                # AMENDMENT A4. The v1 receipt blamed an over-sized top decile on ties. That
+                # is measurably false — exact ties at the cut are printed here and are ~0 for
+                # every continuous feature. The real cause is DISTRIBUTION SHIFT: the cut is
+                # frozen on the fit window, so a feature whose distribution moves puts more
+                # (or less) than a tenth of the holdout above it. That is the intended
+                # behaviour of a frozen cut, and the realised OOS share is the number to read.
+                "realised_top_decile_share_FIT_pct": _r(
+                    100.0 * float((gg.to_numpy()[sp] == "top_decile").mean())) if sp.any()
+                else None,
+                "realised_top_decile_share_HOLDOUT_pct": _r(
+                    100.0 * float((gg.to_numpy()[~sp] == "top_decile").mean()))
+                if (~sp).any() else None,
+                "exact_ties_at_the_cut_pct": _r(100.0 * ties, 4),
                 "NA_share_pct": _r(100.0 * float((gg == f"{feat}_NA").mean())),
-                "tie_note": ("share can exceed 10% when the feature is heavily tied at the "
-                             "cut (v0's value-quantile correction: ties share a bucket rather "
-                             "than being split across quantiles)"),
             })
     rows["regime_lvl"] = "regime_NA"
     if dial is not None:
@@ -1309,9 +1548,16 @@ def attach_conditioners(rows: pd.DataFrame, dial: pd.DataFrame | None) -> dict:
                            np.where(v <= lo, "regime_cold",
                                     np.where(v <= hi, "regime_mid", "regime_hot")))
             rows.loc[g.index, "regime_lvl"] = lvl
+            sp = (g["split"] == "fit").to_numpy()
             receipt["regime"][b] = {
                 "fit_tercile_cuts": [_r(lo, 5), _r(hi, 5)],
                 "NA_share_pct": _r(100.0 * float((lvl == "regime_NA").mean())),
+                # A4 again: frozen terciles do NOT stay thirds out of sample, and the shift is
+                # large enough here to matter to any regime reading.
+                "regime_hot_share_FIT_pct": _r(
+                    100.0 * float((lvl[sp] == "regime_hot").mean())) if sp.any() else None,
+                "regime_hot_share_HOLDOUT_pct": _r(
+                    100.0 * float((lvl[~sp] == "regime_hot").mean())) if (~sp).any() else None,
             }
     receipt["NA_note"] = ("Every *_NA level is a DATA-AVAILABILITY SLICE (rolling warm-up, "
                           "missing sector map, dial not yet warm), never a conditioner. No "
@@ -1322,6 +1568,14 @@ def attach_conditioners(rows: pd.DataFrame, dial: pd.DataFrame | None) -> dict:
 def outcome_tables(rows: pd.DataFrame) -> dict:
     """P(outcome) by ladder N / feature top decile / regime / era, per board key, fit vs holdout."""
     res = {"population": "A — every live tolerant limit-up close (board day) at T",
+           "interval_scope": (
+               "Every rate cell carries a Wilson 95% interval. Those intervals assume "
+               "INDEPENDENT rows and these rows are not independent — see "
+               "pre_registration.overlap_treatment: windows from the same name on consecutive "
+               "board days share bars, and a theme wave puts many names behind one session. "
+               "n_dates and n_names are printed on every cell for that reason. Read the "
+               "Wilson interval as a width indication, not as a test. The date-clustered "
+               "standard error is a BOOK-only gate and is not applied to these tables."),
            "by_ladder_N": [], "by_feature": [], "by_regime": [], "by_era6": []}
     A = rows[rows["is_board"]]
     for bk, gb in A.groupby("bkey", sort=True):
@@ -1401,6 +1655,12 @@ def feature_lift(res: dict) -> dict:
     return {
         "definition": ("lift_x = P(outcome | feature in the fit-window top decile) / "
                        "P(outcome | rest). NA levels are excluded from both legs."),
+        "inference_scope": (
+            "lift_x is a POINT ESTIMATE. It carries no confidence interval and no test, and "
+            "none is claimed for it. The only stability evidence offered is stable_sign — "
+            "whether the fit and holdout lifts fall on the same side of 1 — which is a sign "
+            "agreement across two windows, not a significance statement. The component rates "
+            "carry their own Wilson intervals in outcome_tables under the caveat there."),
         "reading": ("The decision comparison: a lift that is large for P_board_T1 and ~1 for "
                     "O1/O2 says the feature ranks the unbuyable spike and nothing else."),
         "rows": out,
@@ -1455,10 +1715,23 @@ def c12_matched(rows: pd.DataFrame) -> dict:
     # f3 quintile edges: FIT window, per bkey, on the POOLED matched population so both arms
     # are binned by identical edges (a per-arm cut would make the cells non-comparable).
     pop["f3_q"] = "f3_NA"
-    edges = []
+    edges, voided = [], []
     for bk, g in pop.groupby("bkey", sort=True):
         fit = g.loc[(g["split"] == "fit").to_numpy(), "f3_runup_5"].dropna()
         if len(fit) < 200:
+            # AMENDMENT A3. v1 skipped this board key silently: every row kept f3_q="f3_NA",
+            # was filtered out before the population counts were taken, and the receipt then
+            # asserted a near-miss population of ZERO for a board key that HAS one. The arm is
+            # now printed as voided, with its true population.
+            voided.append({
+                "bkey": bk,
+                "reason": f"fit-window f3 support {len(fit)} < 200 — no quintile edges cut",
+                "near_miss_rows_that_EXIST_but_are_unmatched":
+                    int((g["pop"] == "B_near_miss_untouched").sum()),
+                "sealed_rows_that_EXIST_but_are_unmatched":
+                    int((g["pop"] == "A_sealed").sum()),
+                "consequence": "this board key contributes NO C12 comparison, in either window",
+            })
             continue
         qs = [float(fit.quantile(q)) for q in (0.2, 0.4, 0.6, 0.8)]
         v = g["f3_runup_5"].to_numpy(dtype="float64")
@@ -1481,10 +1754,27 @@ def c12_matched(rows: pd.DataFrame) -> dict:
             weights[cellkey] = len(b)
             per_cell[cellkey] = (_outcome_cells(a), _outcome_cells(b), len(a), len(b))
         tot_w = sum(weights.values())
+        # A3: totals are taken on g (BEFORE the f3_NA / support filters), so "in support" and
+        # "total" cannot silently agree by construction.
+        n_b_all = int((g["pop"] == "B_near_miss_untouched").sum())
+        n_a_all = int((g["pop"] == "A_sealed").sum())
+        # S5: the matching variable is near-vacuous when the weight piles into one level.
+        w0 = sum(v for k, v in weights.items() if int(k[0]) == 0)
         rec = {"bkey": bk, "split": split, "matched_cells": len(per_cell),
                "near_miss_rows_in_support": tot_w,
-               "near_miss_rows_total": int((gb["pop"] == "B_near_miss_untouched").sum()),
+               "near_miss_rows_total_BEFORE_support_filter": n_b_all,
+               "near_miss_rows_dropped_by_support_or_f3_NA": n_b_all - tot_w,
                "sealed_rows_in_support": int(sum(v[2] for v in per_cell.values())),
+               "sealed_rows_total_BEFORE_support_filter": n_a_all,
+               "prior_N0_share_of_near_miss_weight_pct": _r(
+                   100.0 * w0 / tot_w) if tot_w else None,
+               "matching_caveat": (
+                   "prior ladder N is one of two matching variables and its weight is "
+                   "concentrated at N=0 (share printed above). Where that share is near 100% "
+                   "the match on prior N is effectively VACUOUS and the comparison is "
+                   "carried almost entirely by the f3 quintile. Stated rather than implied."),
+               "thin_cells": int(sum(1 for v in per_cell.values()
+                                     if min(v[2], v[3]) < THIN_CELL_N)),
                "outcomes": {}}
         for oc in C12_OUTCOMES:
             num_a = num_b = 0.0
@@ -1500,11 +1790,16 @@ def c12_matched(rows: pd.DataFrame) -> dict:
             if wsum <= 0:
                 continue
             a_std, b_std = num_a / wsum, num_b / wsum
+            # S5: this is the near-miss WEIGHT actually used for THIS outcome (cells whose
+            # rate was None for it are dropped from both arms), not a row denominator.
             rec["outcomes"][oc] = {
                 "near_miss_pct": _r(b_std), "sealed_standardised_pct": _r(a_std),
                 "delta_pp": _r(b_std - a_std),
                 "ratio_x": _r(b_std / a_std, 3) if a_std else None,
-                "weight_rows": int(wsum),
+                "near_miss_weight_used_for_this_outcome": int(wsum),
+                "cells_used": int(sum(1 for ck2, (ca2, cb2, _x, _y) in per_cell.items()
+                                      if ca2[oc]["rate_pct"] is not None
+                                      and cb2[oc]["rate_pct"] is not None)),
             }
         agg.append(rec)
         for ck, (ca, cb, na, nb) in sorted(per_cell.items(), key=lambda kv: str(kv[0])):
@@ -1536,7 +1831,11 @@ def c12_matched(rows: pd.DataFrame) -> dict:
                             "and whatever stopped the name short are not separated and this "
                             "lane does not claim to separate them."),
         },
+        "inference_scope": ("ratio_x and delta_pp are POINT ESTIMATES. No interval and no "
+                            "test is attached to them and none is claimed. Cell-level "
+                            "thinness is flagged per cell and counted per board key."),
         "f3_quintile_edges": edges,
+        "arms_voided_by_the_fit_window_floor": voided,
         "standardised": agg,
         "per_cell": rows_out,
     }
@@ -1608,20 +1907,32 @@ def _book_cell(g: pd.DataFrame) -> dict:
 
 BENCH_NOTE = (
     "THE BENCHMARK LEG (an addition by this lane, beyond the brief's letter, disclosed as "
-    "such). A positive expectancy is not an edge if the board it was earned on drifted up. "
-    "The control is the IDENTICAL trade — buy the open of T+1, sell the open of T+H+1, same "
-    "fillability censor — taken on EVERY live name of the SAME board key, aggregated per "
-    "session. excess_net is the date-equal-weighted (signal mean net - universe mean net) on "
-    "the sessions the signal actually fired, and excess_t is its date-clustered t. It is "
-    "computed ONLY for the fixedH variant, where the holding bars are exactly the benchmark's; "
-    "the peak variants exit early by construction and have no bar-matched control, so theirs "
-    "is left null rather than approximated."
+    "such; amendment A2 extended it to every exit rule). A positive expectancy is not an edge "
+    "if the board it was earned on drifted up. The control is the IDENTICAL trade — same "
+    "entry (open of T+1, fillable only), same EXIT RULE (fixed-H, peak-best or peak-first), "
+    "same complete-window censoring — taken on EVERY live name of the SAME board key and "
+    "aggregated per session. excess_net is the date-equal-weighted (signal mean net - "
+    "universe mean net) on the sessions the signal actually fired, and excess_t is its "
+    "date-clustered t. ONE difference remains and is disclosed rather than hidden: the "
+    "universe leg does not ROLL a locked exit, it requires the scheduled exit bar to be "
+    "sellable and drops the bars that fail. The count of dropped bars is printed "
+    "(benchmark_leg.exit_unsellable_bars) and the signal leg's own roll rate is printed on "
+    "every cell, which bounds the residual from both sides."
 )
 
 
-def bench_excess(g: pd.DataFrame, bench: pd.DataFrame, H: int, bkey: str) -> dict:
-    """Date-clustered excess of one book cell over the same-session universe return."""
-    b = bench[(bench["H"] == H) & (bench["bkey"] == bkey)].set_index("date")["bench_net"]
+def bench_excess(g: pd.DataFrame, bench: pd.DataFrame, H: int, bkey: str,
+                 variant: str) -> dict:
+    """Date-clustered excess of one book cell over the same-session universe return.
+
+    S2's correction: the excess is computed on the dates where a benchmark exists, which can
+    be a SUBSET of the cell's own dates. Reporting the cell's full-sample expectancy beside an
+    excess measured on a different date set invites exactly the wrong comparison, so the
+    signal's expectancy ON THE EXCESS'S OWN DATES is printed too, along with what the dropped
+    dates were worth.
+    """
+    b = bench[(bench["H"] == H) & (bench["bkey"] == bkey)
+              & (bench["variant"] == variant)].set_index("date")["bench_net"]
     x = g["ret"].to_numpy(dtype="float64")
     fin = np.isfinite(x)
     if not fin.any():
@@ -1631,15 +1942,19 @@ def bench_excess(g: pd.DataFrame, bench: pd.DataFrame, H: int, bkey: str) -> dic
     bm = b.reindex(dm.index)
     ok = bm.notna().to_numpy()
     if ok.sum() < 2:
-        return {"excess_dates": int(ok.sum())}
+        return {"excess_dates": int(ok.sum()),
+                "excess_status": "NOT TESTABLE — fewer than 2 dates carry a benchmark"}
     ex = dm.to_numpy()[ok] - bm.to_numpy()[ok]
     se = float(ex.std(ddof=1)) / np.sqrt(ex.size)
+    drop = dm.to_numpy()[~ok]
     return {
         "excess_dates": int(ex.size),
         "bench_net_pct_on_signal_dates": _r(100.0 * float(bm.to_numpy()[ok].mean()), 3),
+        "signal_net_pct_on_excess_dates": _r(100.0 * float(dm.to_numpy()[ok].mean()), 3),
         "excess_net_pct": _r(100.0 * float(ex.mean()), 3),
         "excess_t": _r(float(ex.mean()) / se, 2) if se > 0 else None,
         "dates_missing_benchmark": int((~ok).sum()),
+        "dropped_dates_signal_net_pct": _r(100.0 * float(drop.mean()), 3) if drop.size else None,
     }
 
 
@@ -1651,15 +1966,28 @@ def the_book(trades: pd.DataFrame, bench: pd.DataFrame) -> dict:
                          f"{ROUND_TRIP_COST * 1e4:.0f} bp round trip. SLIPPAGE IS NOT "
                          f"MODELLED — fills are assumed at the printed open, which is "
                          f"optimistic for exactly these names."),
-           "rows": [], "verdict": {}}
+           "rows": [], "truncated_windows": [], "verdict": {}}
     res["benchmark"] = BENCH_NOTE
-    for (sig, H, var, bk, split), g in trades.groupby(
+    res["hold_sessions_note"] = HOLD_SESSIONS_NOTE
+    res["censoring"] = TRUNCATION_NOTE
+    priced = trades[trades["complete_window"]]
+    trunc = trades[~trades["complete_window"]]
+    for (sig, H, var, bk, split), g in priced.groupby(
             ["signal", "H", "variant", "bkey", "split"], sort=True):
         rec = {"signal": sig, "H": int(H), "variant": var, "bkey": bk, "split": split}
         rec.update(_book_cell(g))
-        if var == "fixedH":
-            rec.update(bench_excess(g, bench, int(H), bk))
+        rec.update(bench_excess(g, bench, int(H), bk, var))
         res["rows"].append(rec)
+    # TRUNCATED windows — counted and shown, NEVER headline, never pooled with the priced
+    # book. These are the trades whose holding chain ran off the end of an exchange closure
+    # or the store; v1 priced them at a mark-to-market last close, which is what amendment
+    # A1 removes.
+    for (sig, H, var, bk, split), g in trunc.groupby(
+            ["signal", "H", "variant", "bkey", "split"], sort=True):
+        rec = {"signal": sig, "H": int(H), "variant": var, "bkey": bk, "split": split,
+               "EXCLUDED_FROM_THE_PRICED_BOOK": True}
+        rec.update(_book_cell(g))
+        res["truncated_windows"].append(rec)
     # the decision bar, applied
     idx = {(r["signal"], r["H"], r["variant"], r["bkey"], r["split"]): r for r in res["rows"]}
     clears = []
@@ -1678,6 +2006,7 @@ def the_book(trades: pd.DataFrame, bench: pd.DataFrame) -> dict:
               h.get("n_dates", 0) >= BOOK_MIN_DATES
         exf, exh = f.get("excess_net_pct"), h.get("excess_net_pct")
         eft, eht = f.get("excess_t"), h.get("excess_t")
+        testable = exf is not None and exh is not None
         clears.append({"signal": sig, "H": int(H), "variant": var, "bkey": bk,
                        "fit_net_pct": f.get("date_eq_weight_net_pct"),
                        "fit_t": f.get("date_clustered_t"), "fit_dates": f.get("n_dates"),
@@ -1688,20 +2017,32 @@ def the_book(trades: pd.DataFrame, bench: pd.DataFrame) -> dict:
                        "holdout_mean_per_trade_net_pct": h.get("mean_net_pct"),
                        "fit_excess_net_pct": exf, "fit_excess_t": eft,
                        "holdout_excess_net_pct": exh, "holdout_excess_t": eht,
+                       "benchmark_status": ("TESTED" if testable else
+                                            "CONTROL-NOT-BUILT — untested"),
                        "CLEARS": bool(okf and okh),
                        "CLEARS_vs_BENCHMARK": bool(
-                           okf and okh and exf is not None and exh is not None
+                           okf and okh and testable
                            and exf > 0 and exh > 0 and (eft or -9) >= BOOK_T_BAR
                            and (eht or -9) >= BOOK_T_BAR),
                        "positive_on_BOTH_weightings": bool(
                            okf and okh
                            and (f.get("mean_net_pct") or -1) > 0
                            and (h.get("mean_net_pct") or -1) > 0)})
+    cl = [c for c in clears if c["CLEARS"]]
     res["verdict"] = {
         "cells_evaluated": len(clears),
-        "cells_clearing": int(sum(1 for c in clears if c["CLEARS"])),
+        "cells_clearing": len(cl),
         "cells_clearing_vs_benchmark": int(sum(1 for c in clears
                                                if c["CLEARS_vs_BENCHMARK"])),
+        # B2's correction: "did not survive the control" and "was never given one" are
+        # different facts and are counted separately. In v1 all 66 peak cells were untested
+        # and were reported as having failed.
+        "clearing_cells_benchmark_TESTED": int(sum(1 for c in cl
+                                                   if c["benchmark_status"] == "TESTED")),
+        "clearing_cells_benchmark_NOT_BUILT": int(sum(1 for c in cl
+                                                      if c["benchmark_status"] != "TESTED")),
+        "cells_benchmark_NOT_BUILT_total": int(sum(1 for c in clears
+                                                   if c["benchmark_status"] != "TESTED")),
         "post_hoc_disclosure": (
             "CLEARS is the PRE-REGISTERED bar and is reported unchanged. "
             "CLEARS_vs_BENCHMARK and positive_on_BOTH_weightings are POST-HOC controls added "
@@ -1711,7 +2052,7 @@ def the_book(trades: pd.DataFrame, bench: pd.DataFrame) -> dict:
             "folded into the bar, because moving a pre-registered bar after seeing the "
             "results is the exact failure this design exists to prevent. Read CLEARS as the "
             "registered result and the two controls as what survives scrutiny."),
-        "clearing": [c for c in clears if c["CLEARS"]],
+        "clearing": cl,
         "all_cells": clears,
     }
     return res
@@ -1738,6 +2079,45 @@ def overlap_receipt(sig_rows: pd.DataFrame) -> dict:
                                     "conservative proxy for 10 SESSIONS, so this share is an "
                                     "upper bound on the true session overlap."),
             "rows": out}
+
+
+def book_parity_receipt(trades: pd.DataFrame, rows: pd.DataFrame) -> dict:
+    """Pin the Python entry-book loop against the vectorised universe book (amendment A2).
+
+    The benchmark leg now prices the SAME peak rule as the signal book, but through a
+    completely different implementation — an array kernel instead of a bar-walking loop. If
+    the two disagree, the excess is measuring an implementation difference rather than an
+    edge, so the disagreement is measured on the rows where they must agree exactly:
+    complete windows with no locked-exit roll.
+    """
+    key = rows.set_index(["ticker", "date"])
+    out, worst = [], 0.0
+    for (H, var), g in trades.groupby(["H", "variant"], sort=True):
+        g = g[g["complete_window"] & (g["rolls"] == 0)]
+        if not len(g):
+            continue
+        col = f"ub_{var}_{H}"
+        want = key[col].reindex(
+            pd.MultiIndex.from_arrays([g["ticker"], g["date"]])).to_numpy(dtype="float64")
+        got = g["ret"].to_numpy(dtype="float64")
+        both = np.isfinite(want) & np.isfinite(got)
+        d = float(np.abs(want[both] - got[both]).max()) if both.any() else float("nan")
+        if np.isfinite(d):
+            worst = max(worst, d)
+        out.append({"H": int(H), "variant": var, "rows_compared": int(both.sum()),
+                    "rows_without_a_vectorised_value": int((~np.isfinite(want)).sum()),
+                    "max_abs_diff": _r(d, 9)})
+    return {
+        "why": ("The universe benchmark and the signal book must price the same rule. They "
+                "are independent implementations (array kernel vs bar-walking loop), so "
+                "agreement is evidence and disagreement would invalidate every excess."),
+        "scope": "complete windows with zero locked-exit rolls — where the two must agree exactly",
+        "by_cell": out,
+        "max_abs_diff_overall": _r(worst, 9),
+        "verdict": ("PASS — the loop and the vectorised universe book agree to float32 "
+                    "precision on every comparable trade." if worst < 1e-6 else
+                    "FAIL — the two implementations disagree; every excess below is suspect."),
+    }
 
 
 def multiplicity(res_tables: dict, book: dict, c12: dict) -> dict:
@@ -1897,19 +2277,29 @@ def main() -> int:
     book = the_book(trades, bench)
     avail = entry_availability(rows)
     overlap = overlap_receipt(sig_rows)
+    parity_book = book_parity_receipt(trades, rows)
     bench_summary = {
         "definition": BENCH_NOTE,
+        "exit_unsellable_bars_dropped": meta["benchmark_exit_unsellable"],
+        "exit_unsellable_note": ("universe bars whose scheduled fixed-H exit open was at or "
+                                 "below the limit-down price and were therefore dropped from "
+                                 "the benchmark. This is the ONE remaining difference from "
+                                 "the signal leg, which rolls instead; the signal leg's roll "
+                                 "rate is printed on every book cell."),
         "levels": [
-            {"bkey": bk, "H": int(H), "split": sp, "sessions": int(len(g)),
+            {"bkey": bk, "variant": var, "H": int(H), "split": sp, "sessions": int(len(g)),
              "mean_names_per_session": _r(float(g["bench_names"].mean()), 1),
              "universe_mean_net_pct": _r(100.0 * float(g["bench_net"].mean()), 3)}
-            for (bk, H, sp), g in bench.assign(
+            for (bk, var, H, sp), g in bench.assign(
                 split=np.where(bench["date"] < SPLIT_DATE, "fit", "holdout")).groupby(
-                    ["bkey", "H", "split"], sort=True)],
+                    ["bkey", "variant", "H", "split"], sort=True)],
     }
-    print(f"      trades={len(trades):,}  clearing cells="
+    print(f"      trades={len(trades):,} (priced "
+          f"{int(trades['complete_window'].sum()):,} / truncated "
+          f"{int((~trades['complete_window']).sum()):,})  clears="
           f"{book['verdict']['cells_clearing']}  vs-benchmark="
-          f"{book['verdict']['cells_clearing_vs_benchmark']}", flush=True)
+          f"{book['verdict']['cells_clearing_vs_benchmark']}  "
+          f"book-parity {parity_book['verdict'][:4]}", flush=True)
 
     print("[8/8] writing ...", flush=True)
     payload = {
@@ -1925,6 +2315,7 @@ def main() -> int:
         "regime_dial": dial_meta,
         "conditioner_cuts": cut_receipt,
         "lookahead_checks": {"corruption_experiment": corruption, "f4_date_locality": f4chk},
+        "book_implementation_parity": parity_book,
         "outcome_tables": tables,
         "feature_lift_board_vs_window": lift,
         "o3_minus_o2_gap": gap,
