@@ -630,8 +630,11 @@
             {%- endif %}
           </td>
           <td>
-            <div class="cmd-read">{{ d.read }}</div>
-            {%- if d.falsifier %}<div class="cmd-fals">⚠ {{ d.falsifier[:80] }}</div>{%- endif %}
+            {#- read_zh is composed in engine/china_intel_hub._read_for; .get() so an
+                older command.json without the zh key degrades to the English. #}
+            <div class="cmd-read">{{ t(d.read, d.get('read_zh') or d.read) }}</div>
+            {#- Same independent per-language truncation as .disc-reason below. #}
+            {%- if d.falsifier %}<div class="cmd-fals">⚠ {{ t(d.falsifier[:80], (d.get('falsifier_zh') or d.falsifier)[:40]) }}</div>{%- endif %}
           </td>
         </tr>
       {%- endfor %}
@@ -682,7 +685,7 @@
               {%- if _traj2.get('off_high_pct') is not none %}&nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj2.get('off_high_pct')) }}%H</span>{%- endif %}
               {%- endif %}
             </td>
-            <td><div class="cmd-read">{{ d.read }}</div></td>
+            <td><div class="cmd-read">{{ t(d.read, d.get('read_zh') or d.read) }}</div></td>
           </tr>
         {%- endfor %}
         </tbody>
@@ -703,7 +706,9 @@
     <div class="disc-card {{ 'off-desk' if c.off_desk }}">
       <div class="disc-ticker">{{ c.ticker }}</div>
       <div class="disc-name">{{ c.name[:22] }}</div>
-      <div class="disc-reason">{{ (c.reason or '')[:80] }}</div>
+      {#- Each language is truncated on its OWN budget: 80 latin glyphs ≈ 40 CJK
+          glyph widths, so clipping the zh at the en length would overflow the card. #}
+      <div class="disc-reason">{{ t((c.reason or '')[:80], (c.get('reason_zh') or c.reason or '')[:40]) }}</div>
       <div class="disc-meta">
         <span class="lane-chip">{{ t((_LANE_EN.get(c.source) or c.source), (_LANE_ZH.get(c.source) or c.source)) }}</span>
         {%- if c.experimental %}<span class="exp-chip">{{ t('Experimental','实验性') }}</span>{%- endif %}
@@ -730,9 +735,11 @@
     {%- if _an.query %}
     <div class="analogs-query">
       {%- set _aq = _an.query %}
-      {%- if _aq.quad %}<span class="aq-chip">{{ t('Quad','象限') }}: {{ _aq.quad_name or _aq.quad }}</span>{%- endif %}
-      {%- if _aq.liquidity %}<span class="aq-chip">{{ t('Liquidity','流动性') }}: {{ _aq.liquidity }}</span>{%- endif %}
-      {%- if _aq.cycle %}<span class="aq-chip">{{ t('Cycle','周期') }}: {{ _aq.cycle }}</span>{%- endif %}
+      {#- Values go through td() (glossary), same as the regime chips at L340/L364 —
+          the LABEL alone through t() left `Stagflation`/`contracting`/`mid` in English. #}
+      {%- if _aq.quad %}<span class="aq-chip">{{ t('Quad','象限') }}: {{ td(_aq.quad_name or _aq.quad) }}</span>{%- endif %}
+      {%- if _aq.liquidity %}<span class="aq-chip">{{ t('Liquidity','流动性') }}: {{ td(_aq.liquidity) }}</span>{%- endif %}
+      {%- if _aq.cycle %}<span class="aq-chip">{{ t('Cycle','周期') }}: {{ td(_aq.cycle) }}</span>{%- endif %}
     </div>
     {%- endif %}
     {%- if _an.fan %}
