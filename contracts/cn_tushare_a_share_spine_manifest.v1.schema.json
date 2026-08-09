@@ -20,6 +20,7 @@
     "complete",
     "reference",
     "endpoints",
+    "range_campaigns",
     "pit_lifecycle_reconciliation",
     "canonical_event_substrate",
     "daily_security_coverage",
@@ -37,6 +38,7 @@
     "deployment_status": {
       "enum": [
         "foundation_only_no_live_entitlement_or_scalable_backfill",
+        "foundation_only_range_shards_synthetic_no_live_canary",
         "operational_backfill_gate_code_reviewed"
       ]
     },
@@ -75,6 +77,7 @@
         "stock_st": {"$ref": "#/$defs/endpointReceipt"}
       }
     },
+    "range_campaigns": {"$ref": "#/$defs/rangeCampaigns"},
     "pit_lifecycle_reconciliation": {"$ref": "#/$defs/pitLifecycleReconciliation"},
     "canonical_event_substrate": {"$ref": "#/$defs/eventSubstrate"},
     "daily_security_coverage": {"$ref": "#/$defs/dailySecurityCoverage"},
@@ -102,7 +105,7 @@
         "point_in_time_universe": {"type": "object", "minProperties": 1},
         "source_row_accounting": {"type": "object", "minProperties": 1},
         "authorization": {"type": "object", "minProperties": 1},
-        "cap_fallback": {"type": "object", "minProperties": 1},
+        "cap_fallback": {"$ref": "#/$defs/capFallbackContract"},
         "price_basis": {"type": "object", "minProperties": 1},
         "price_limit": {"type": "object", "minProperties": 1}
       }
