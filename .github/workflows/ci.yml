@@ -135,6 +135,10 @@ on:
       - "tests/test_optimize_assets.py"
       - "tests/test_asset_stamp_lane_order.py"
       - "tests/test_asset_stamp_refresh.py"
+      # closing-bell duplicate-render dedup contract. The SUBJECT (the guard + stamp
+      # heredocs) already reaches CI via ".github/workflows/**"; this line is the other
+      # direction, so an edit to the test alone still runs the job that executes it.
+      - "tests/test_closingbell_dedup_contract.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
       # data-base shim guard: every builder must write site/**/*.html through
@@ -618,6 +622,13 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # Full-A TuShare spine (#5116), wired into china-native-collectors. The
+      # collector and its suite are already reachable through collectors/** and
+      # tests/**; the MANIFEST SCHEMA is not, and it is the one subject the suite
+      # actually opens (Draft202012Validator over the emitted manifest). Without
+      # this entry a PR that edits only the schema — the exact edit that can break
+      # the spine's fail-closed contract — never starts the job that would catch it.
+      - "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json"
       # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
       # builder/fence/UI suites and the federal-award collector suites, plus
       # the one subject file no broad glob matches — engine/government_revenue/**
@@ -2775,6 +2786,23 @@ on:
       - "tests/test_release_cpi_bridge.py"
       - "tests/test_release_publications_live_client.py"
       - "tests/test_release_radar_date_selection.py"
+      - "tests/test_inflation_intelligence.py"
+      - "tests/test_inflation_intelligence_nw.py"
+      - "tests/test_inflation_units.py"
+      - "tests/test_release_actuals.py"
+      - "tests/test_release_defects.py"
+      - "tests/test_release_target_truth.py"
+      - "engine/inflation_intelligence.py"
+      - "engine/neuralweb/ask_brain.py"
+      - "engine/neuralweb/cortex.py"
+      - "engine/neuralweb/mastermind_context.py"
+      - "engine/neuralweb/world_state.py"
+      - "engine/release_actuals.py"
+      - "engine/release_defects.py"
+      - "engine/release_target_truth.py"
+      - "scripts/build_inflation_intelligence.py"
+      - "scripts/collect_release_target_vintages.py"
+      - "scripts/reconcile_release_actuals.py"
       # unrun-brain-desks
       - "tests/test_admin_brief_gate.py"
       - "tests/test_ai_desk_panel.py"

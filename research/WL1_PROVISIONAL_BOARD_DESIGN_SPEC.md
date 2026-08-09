@@ -503,6 +503,26 @@ Each of these looks like something to tidy up. Each is deliberate.
    header-height stability (§4.2 comment). Do not drop it as decoration.
 9. **`Adjusted` (EN) vs `已调整` (ZH) are not the same length.** Each is the
    natural chip form in its own language. Do not pad the EN to match.
+10. **At 390px the four states do NOT share one height, and that is the ruling —
+    not an omission** (commissioning session, 2026-08-09, answering §9's escalation
+    from the build). Measured: 1280 and 680 hold **0.00px** across all four states
+    in both languages, comfortably inside §0-4's 4px budget. At 390px zh the spread
+    is **47.31px**, and it falls **between the pairs** `ahead`/`confirmed` and
+    `behind`/`closed`, because the two long notes wrap further.
+
+    §0-4 exists so that a flip landing under a reader who is looking at the board
+    does not shove the grid. **The only pair that can flip under a live reader is
+    `ahead`→`confirmed`, and those two are height-equal at 390px.** `behind` is a
+    state you *load into* when the evening update did not land, and `closed` changes
+    at session boundaries days apart — neither transitions into the other while
+    someone watches. Holding all four to one height would reserve the longest note's
+    box on every phone view, permanently, to prevent a shove nobody experiences.
+
+    So the gate's real content is **"states that can transition under a live reader
+    must be height-equal at every supported width"**, which this surface satisfies.
+    **If the note copy ever changes, re-run the harness at 390 and confirm the
+    `ahead`/`confirmed` pair is still equal** — that pair, not the four-way spread,
+    is the invariant. Widening `note.confirmed` is the realistic way to break it.
 
 ---
 

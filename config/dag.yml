@@ -1110,11 +1110,30 @@ lanes:
                    data/treasury/tga.parquet,
                    data/treasury_auctions/auctions.parquet]
           outputs: [data/neuralweb/liquidity_plumbing.json]
+      - id: collect_release_target_vintages
+        module: scripts.collect_release_target_vintages
+        note: >
+          non-fatal; canonical Release Radar truth substrate. Collects ALFRED
+          output_type=2 full-vintage matrices for CPI, PCE, PPI, and PAYEMS so
+          each target can be reconstructed from current and prior levels active
+          in the SAME release-date vintage. Missing credentials or a failed
+          series leave the last-good stores untouched.
+          inputs: [FRED_API_KEY]
+          outputs: [data/fred_vintage/release_targets/manifest.json]
+      - id: reconcile_release_actuals
+        module: scripts.reconcile_release_actuals
+        note: >
+          non-fatal; imports deterministic facts from the official-publication
+          live sidecar into an append-only, keep-first, source-hashed actual
+          ledger. Later differing documents are correction candidates and are
+          not automatically eligible for scoring.
+          inputs: [site/live/release_publications.json]
+          outputs: [data/release_forecast/official_actuals.jsonl]
       - id: build_release_forecast
         module: scripts.build_release_forecast
         note: >
           non-fatal; MRI PR-C nightly producer (macro-release-intel program).
-          Emits the release_forecast.v1 artifact: CPI (headline + core) and NFP
+          Emits the release_forecast.v2 artifact: CPI (headline + core) and NFP
           projections, Cleveland nowcast benchmark enrichment, policy_backdrop
           join (fed_stance/gap_bp/implied_cuts_12m/next_fomc/guidance_direction
           from persisted regime artifacts — no LLM calls). Runs AFTER collect
@@ -1122,12 +1141,30 @@ lanes:
           display_only=True; all authority booleans False (MRI-R7).
           Ledger is append-only (MRI-R8); idempotent per asof_night.
           inputs: [data/fred_vintage/vintages.parquet,
+                   data/fred_vintage/release_targets/manifest.json,
+                   data/release_forecast/official_actuals.jsonl,
+                   data/release_forecast/defect_notices.json,
                    data/cleveland_nowcast/nowcast.parquet,
                    data/regime/latest.json]
           outputs: [data/release_forecast/latest.json,
                     data/release_forecast/forward_ledger.jsonl,
                     data/release_forecast/scoreboard.json,
                     site/macrodata/release_forecast.json]
+      - id: build_inflation_intelligence
+        module: scripts.build_inflation_intelligence
+        note: >
+          non-fatal; deterministic context-only inflation lobe. Keeps latest
+          released CPI state, next-release Radar forecast, and current-month
+          proxy pressure as three separate clocks, with explicit freshness,
+          coverage, revision basis, and forecast evolution. display_only=True;
+          authority=False; no score, rank, gate, size, escalation, or trade use.
+          inputs: [data/fred/CPIAUCSL.parquet,
+                   data/fred/CPILFESL.parquet,
+                   data/fred/STICKCPIM157SFRBATL.parquet,
+                   data/fred/FLEXCPIM157SFRBATL.parquet,
+                   data/release_forecast/latest.json,
+                   data/release_forecast/forward_ledger.jsonl]
+          outputs: [data/release_forecast/inflation_intelligence.json]
       - id: build_rates_command
         module: scripts.build_rates_command
         note: >

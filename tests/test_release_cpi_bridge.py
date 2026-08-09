@@ -339,6 +339,8 @@ class TestMissingSourceGraceDegradation:
         )
         assert mom is None
         assert prov["status"] == "absent"
+        assert prov["scope_matches_block_id"] is False
+        assert "includes shelter" in prov["scope_warning"]
 
     def test_pipeline_both_absent_returns_none(self):
         """If no PPIFIS/PPIFES vintages, core_goods_pipeline returns (None, prov)."""
@@ -500,6 +502,8 @@ class TestBlockDirection:
         prev = known["CUSR0000SASLE"].iloc[-2]
         expected = (last / prev - 1) * 100
         assert abs(mom - expected) < 1e-6, f"Expected {expected}, got {mom}"
+        assert prov["source_series_label"] == "Services Less Energy Services"
+        assert prov["scope_matches_block_id"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -682,6 +686,18 @@ def _block(payload: dict, name: str) -> dict:
 
 class TestPartialLegDisclosureOnShippedShape:
     """A one-leg block must disclose itself in what _attach_shadows_to_items EMITS."""
+
+    def test_known_scope_and_weight_approximations_ship(self, tmp_path, monkeypatch):
+        """Stable legacy IDs must not hide the actual source/weight contract."""
+        _write_vintages(tmp_path, ["CPIAUCSL"])
+
+        payload = _shipped_bridge(tmp_path, monkeypatch)
+
+        mismatch = payload["known_scope_mismatches"][0]
+        assert mismatch["series"] == "CUSR0000SASLE"
+        assert "includes shelter" in mismatch["warning"]
+        assert payload["weight_basis"].endswith("fixed_approximation")
+        assert "evolves monthly" in payload["weight_basis_warning"]
 
     def test_one_leg_pipeline_is_disclosed_on_the_shipped_shadow(self, tmp_path, monkeypatch):
         """PPIFIS present, PPIFES absent → degradation visible on the shipped payload."""
