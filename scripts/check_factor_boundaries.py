@@ -864,11 +864,13 @@ def _run_selftest(root: Path) -> int:
     else:
         print("  [OK] check-b-enforcement: contract validator is enforcement-only")
 
-    # --- (b emit-only): approved producer writes pass, reads on the same line red --
+    # --- (b emit-only): only the producer's exact fixed mirror passes --
     synthetic_b_emit = {
         "engine/neuralweb/world_state.py": (
-            "payload = {'allowed_actions': {'may_rank': False}}\n"
-            "payload.update(allowed_actions={'may_trade': False})\n"
+            "def _inflation_intelligence_null():\n"
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}\n"
         ),
     }
     if _check_b(root, extra_files=synthetic_b_emit):
@@ -878,7 +880,11 @@ def _run_selftest(root: Path) -> int:
 
     synthetic_b_mixed = {
         "engine/neuralweb/world_state.py": (
-            "payload = {'allowed_actions': source['allowed_actions']}\n"
+            "def _inflation_intelligence_null():\n"
+            "    return {'allowed_actions': {"
+            "'may_rank': False, 'may_score': False, 'may_size': False, "
+            "'may_gate': False, 'may_escalate': False, 'may_trade': False}}; "
+            "observed = source['allowed_actions']\n"
         ),
     }
     if not _check_b(root, extra_files=synthetic_b_mixed):
