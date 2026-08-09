@@ -1,7 +1,7 @@
 # Hong Kong · Canada · International — Dashboard Overhaul
 
-The US ([macro#331](https://github.com/chriswong6031-creator/macro/pull/331)) and China
-([macro#340](https://github.com/chriswong6031-creator/macro/pull/340)) overhauls put the deep
+The US ([macro#331](https://github.com/mastermindx-market-intelligence/macro/pull/331)) and China
+([macro#340](https://github.com/mastermindx-market-intelligence/macro/pull/340)) overhauls put the deep
 work in the **shared** engine (`engine/stock_score.py`): the entry-axis dilution fix, the bounded
 technical confirmer tilts, the anticipation risk-shape tilt, the quality-durability fix, and the
 honesty notes all fire for **every** market via `conviction_profile(rec, market)`. So overhauling
