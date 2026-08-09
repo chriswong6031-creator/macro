@@ -485,6 +485,72 @@ def test_queue_content_id_excludes_delivery_clock_but_detects_data_mutation() ->
     assert not is_valid_candidate_queue(mutated)
 
 
+# --- Identity basis on the candidate --------------------------------------
+#
+# An action-rail candidate can only be exact-linked through the award's
+# recipient of record. The link is exact, and the candidate says so out loud
+# rather than letting a reader assume the transaction named its own recipient.
+
+
+def test_candidate_carries_the_award_level_basis_in_provenance_and_limitations() -> None:
+    event = _award_event()
+    event["listed_company_impacts"][0]["identity_basis"] = "award_level_recipient_at_collection"
+
+    candidate = build_candidate_observations(
+        _payload(event), _graph(), generated_at=GENERATED_AT
+    )[0]
+
+    assert candidate["issuer_resolution_ref"]["identity_basis"] == (
+        "award_level_recipient_at_collection"
+    )
+    assert candidate["coverage"]["exact_link_status"] == "exact_linked"
+    assert any(
+        "award's recipient of record as collected" in limitation
+        for limitation in candidate["limitations"]
+    )
+    assert is_valid_candidate_payload(candidate)
+
+
+def test_transaction_asserted_basis_carries_no_award_level_limitation() -> None:
+    event = _award_event()
+    event["listed_company_impacts"][0]["identity_basis"] = "source_record_recipient"
+
+    candidate = build_candidate_observations(
+        _payload(event), _graph(), generated_at=GENERATED_AT
+    )[0]
+
+    assert candidate["issuer_resolution_ref"]["identity_basis"] == "source_record_recipient"
+    assert not any(
+        "recipient of record as collected" in limitation
+        for limitation in candidate["limitations"]
+    )
+    assert is_valid_candidate_payload(candidate)
+
+
+def test_unnamed_basis_is_carried_as_null_and_an_unreadable_one_fails_closed() -> None:
+    unnamed = build_candidate_observations(
+        _payload(_award_event()), _graph(), generated_at=GENERATED_AT
+    )[0]
+    assert unnamed["issuer_resolution_ref"]["identity_basis"] is None
+    assert is_valid_candidate_payload(unnamed)
+
+    event = _award_event()
+    event["listed_company_impacts"][0]["identity_basis"] = "trust_me"
+    assert build_candidate_observations(
+        _payload(event), _graph(), generated_at=GENERATED_AT
+    ) == []
+
+
+def test_candidate_contract_rejects_an_invented_identity_basis() -> None:
+    event = _award_event()
+    event["listed_company_impacts"][0]["identity_basis"] = "award_level_recipient_at_collection"
+    candidate = build_candidate_observations(
+        _payload(event), _graph(), generated_at=GENERATED_AT
+    )[0]
+
+    invented = deepcopy(candidate)
+    invented["issuer_resolution_ref"]["identity_basis"] = "whatever"
+    assert not is_valid_candidate_payload(invented)
 # ---------------------------------------------------------------------------
 # The snapshot rail's admitted families.
 #
