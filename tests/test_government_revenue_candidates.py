@@ -204,22 +204,48 @@ def _payload(event: dict | None = None) -> dict:
     }
 
 
-def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None:
+def test_current_committed_truth_projects_a_consistent_queue() -> None:
+    """Live probe over the committed inputs, consistency-form.
+
+    Snapshot literals here ("21 rows", "[PLTR]", "unavailable") turned every
+    legitimate data advance into a scheduled red: the 2026-08-08 award-event
+    activation flipped availability to "not_observed" with no defect anywhere.
+    Every expectation below is derived from the same committed inputs the
+    builder consumes, so the probe follows the truth it audits while still
+    biting on real inconsistency: a wrong backlog universe, a reviewed issuer
+    presented as unmapped, an availability claim contradicting the builder's
+    registered derivation, or a candidate manufactured without any visible
+    award-change event.
+    """
     latest = json.loads((ROOT / "data/government_revenue/latest.json").read_text(encoding="utf-8"))
     graph = json.loads((ROOT / "data/government_revenue/recipient_entity_graph.json").read_text(encoding="utf-8"))
 
     queue = build_candidate_queue(latest, graph, generated_at=GENERATED_AT)
 
-    assert queue["counts"]["total"] == 0
-    assert queue["counts"]["mapping_needed"] == 21
-    assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
-    assert queue["coverage"]["reviewed_issuer_company_count"] == 1
-    assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
-    assert next(
-        row for row in queue["mapping_backlog"] if row["ticker"] == "PLTR"
-    )["mapping_state"] == "partial_identifier_coverage"
-    assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
+    universe = {row["ticker"] for row in latest.get("companies", [])}
+    reviewed = {
+        company["ticker"]
+        for company in graph.get("companies", [])
+        if company.get("verification_state") == "reviewed"
+    }
+    assert universe, "committed latest.json lost its discovery companies"
+    assert {row["ticker"] for row in queue["mapping_backlog"]} == universe
+    assert queue["counts"]["mapping_needed"] == len(queue["mapping_backlog"])
+    assert queue["coverage"]["reviewed_issuer_tickers"] == sorted(reviewed & universe)
+    assert queue["coverage"]["reviewed_issuer_company_count"] == len(reviewed & universe)
+    for row in queue["mapping_backlog"]:
+        if row["ticker"] in reviewed:
+            assert row["mapping_state"] != "mapping_needed"
+        else:
+            assert row["mapping_state"] == "mapping_needed"
+        assert row["issuer_attribution"] == "not_asserted"
+    total = queue["counts"]["total"]
+    award_status = queue["freshness"]["award_events_status"]
+    assert queue["freshness"]["exact_candidate_availability"] == (
+        "available" if total else ("not_observed" if award_status == "ok" else "unavailable")
+    )
+    if queue["coverage"]["award_change_events_visible"] == 0:
+        assert total == 0
     assert is_valid_candidate_queue(queue)
 
 

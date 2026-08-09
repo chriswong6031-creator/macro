@@ -107,8 +107,20 @@ def _candidate_projection_with_one_candidate(
     monkeypatch.setattr(projection, "build_candidate_queue", queue)
 
 
-def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tmp_path: Path) -> None:
+def test_current_fixture_projects_an_honest_queue_and_byte_identical_twins(tmp_path: Path) -> None:
+    """Live probe over the committed fixture, consistency-form.
+
+    The prior snapshot literals ("21", "degraded", ledger == b"") turned every
+    legitimate data advance into a scheduled red — the 2026-08-08 award-event
+    activation flipped source_health to "ok" with no defect anywhere.  Each
+    expectation is now the builder's own registered derivation or a writer
+    honesty invariant, so the probe follows legitimate truth while still biting
+    on a wrong aggregate, mismatched twins, or a ledger append with nothing to
+    append.
+    """
     root = _fixture_root(tmp_path)
+    ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
+    ledger_before = ledger_path.read_bytes() if ledger_path.exists() else b""
 
     result = projection.project_candidate_artifacts(root, generated_at=FROZEN_AT)
 
@@ -119,15 +131,20 @@ def test_current_fixture_projects_honest_empty_queue_and_byte_identical_twins(tm
         (root / "data/government_revenue/candidate_projection_status.json").read_text(encoding="utf-8")
     )
     assert result["status"] == "ok"
-    assert result["candidate_count"] == 0
-    assert result["mapping_backlog_count"] == 21
-    assert queue["counts"]["total"] == 0
-    assert queue["counts"]["mapping_needed"] == 21
+    assert result["mapping_backlog_count"] == len(queue["mapping_backlog"])
+    assert queue["counts"]["mapping_needed"] == len(queue["mapping_backlog"])
     assert queue_path.read_bytes() == public_path.read_bytes()
-    assert (root / "data/government_revenue/candidate_ledger.jsonl").read_bytes() == b""
     assert status["status"] == "ok"
-    assert status["candidate_count"] == 0
-    assert status["source_health"]["status"] == "degraded"
+    assert status["candidate_count"] == queue["counts"]["total"]
+    assert result["candidate_count"] == queue["counts"]["total"]
+    if queue["counts"]["total"] == 0:
+        assert ledger_path.read_bytes() == ledger_before
+    health = status["source_health"]
+    assert health["status"] == (
+        "ok"
+        if health["award_events_status"] == "ok" and health["recipient_graph_status"] == "ready"
+        else "degraded"
+    )
 
 
 def test_same_frozen_run_is_idempotent_and_one_sided_twin_is_remediated(tmp_path: Path) -> None:
