@@ -4792,6 +4792,23 @@ jobs:
       # ship green (#3488: a guard the guarded change cannot trigger is not a guard).
       - name: china THS concept baskets — collector, PIT seeding, page-weight split
         run: python -m pytest tests/test_baskets_china_ths.py -q
+      # The queryable PIT membership store the THS lane above feeds
+      # (engine/basket_membership_pit.py, CN Prophet §5 W-C). Named by NO workflow before
+      # this: `grep -rn test_basket_membership_pit .github/` returned nothing and there is
+      # no catch-all `pytest tests/` in this repo, so the keep-first / asof / basis-flag
+      # pins were dark in BOTH CI lenses while engine/** PRs went green past them. Its own
+      # step, so a red names which contract broke — the store's semantics here...
+      - name: CN basket PIT membership store — keep-first, asof, basis flag
+        run: python -m pytest tests/test_basket_membership_pit.py -q
+      # ...versus the LANE GATE on the path production takes. Both halves of that gate
+      # shipped dead (fixed 2026-08-09): the resolver defaulted to
+      # os.environ.get("CN_LANE", "asia") so an unset variable WAS the asia lane, and the
+      # gate behind it refused only a named non-asia lane. The store is keep-FIRST per
+      # snapshot_date and content-deduped, so the first lane to stamp a date owns that
+      # snapshot forever — an unrun guard here is scheduling order picking a published PIT
+      # answer. Every test in this file drives the real entry point with only CN_LANE set.
+      - name: CN membership-PIT lane gate — fail-closed, on the production call path
+        run: python -m pytest tests/test_cn_membership_pit_lane_gate.py -q
 
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.
