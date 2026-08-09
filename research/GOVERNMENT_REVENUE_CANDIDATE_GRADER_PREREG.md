@@ -24,6 +24,9 @@ adversarial audit of the instrument. It adds two necessary preconditions to ever
 coverage floor on the paired placebo delta, and a floor on independent draws) and refuses a
 degenerate one-observation interval; the kill condition is renamed accordingly and its new id is
 stated with the rule itself in §7.3 — deliberately not here, for the reason given just above.
+It also amends §1, fencing the family to the ACTION source rail (§7.6.4), because sibling
+PR #5085 admits snapshot-rail balance-change events into the same candidate family and this
+grader would otherwise have pooled two different measurement units into one graded cohort.
 §7.6 states each change, its evidence, and — because this is an amendment to a
 registered evaluation rule — the proof that the amendment window is still open. **No
 threshold value moved.** The pre-registration's §9 amendment law is unchanged and is now
@@ -72,6 +75,18 @@ A candidate enters the family iff, from issuance-time fields only:
   `award_ceiling_change` is a different economic claim (a ceiling moves no money) and
   abstains as `ceiling_change_out_of_family`; `option_exercise` and `new_award` abstain as
   `family_mismatch`;
+- **`source_event.source_rail` is exactly `usaspending_award_action`** — the family is fenced to the
+  ACTION rail, and the fence is fail-closed: an absent, null, non-string, or differently-cased
+  rail abstains as `family_rail_mismatch`. The candidate contract admits **both** the action
+  rail and `usaspending_award_snapshot` into `award_obligation_change`, and they are not the
+  same number. The action rail emits a `transaction_delta` — money that moved in one recorded
+  action. The snapshot rail emits a delta obtained by **differencing `award_cumulative`
+  balances** between two observations of the same award, in which a restatement, a late-posted
+  correction, and a genuine new obligation are indistinguishable, and whose magnitude is not
+  the size of any event. Pooling the two into one graded cohort is the amount-class conflation,
+  reaching the family through the RAIL rather than through the family name. See §7.6.4. The
+  snapshot rail is not rejected as evidence — it is a **different measurement** and needs its
+  own preregistration, with its own horizons and its own N, before anything grades it;
 - `source_event.event_type != "deobligation"` and `transmission_direction == "possible_positive"`;
 - `coverage.exact_link_status == "exact_linked"` — an exact reviewed issuer path, never a
   discovery-name or fuzzy match;
@@ -563,7 +578,53 @@ point passes. 2.0.0's own remedy was reintroduced as its own defect.
 `verdict_inputs_unavailable`. This is a rule about what may be *emitted*, and it applies to
 every statistic in the report, not only to the verdict inputs.
 
-#### 7.6.4 Non-evaluation repairs shipped in the same change (recorded, not registered)
+#### 7.6.4 The family is fenced to the action rail (§1)
+
+This is an **admission-rule** amendment, made in the same window and for the same reason: it
+must land before the first issuance row, because after that the cohort would already contain
+the two units it exists to keep apart.
+
+*The admitting event.* Sibling PR #5085 admits snapshot-rail
+`reported_obligation_balance_changed` events into the `award_obligation_change` **candidate**
+family. That is correct at display tier and is not in question here. Its side effect is: §1
+gated GRV-FA1 on the family name with **no rail restriction**, so this grader — registered as
+positive funded-**ACTION** acceleration — would have begun issuing on snapshot-derived
+cumulative-balance deltas. Verified in this repository at this PR's base:
+`engine/government_revenue/candidates.py` admits `source_rail in {"usaspending_award_snapshot",
+"usaspending_award_action"}` into the family, `engine/government_revenue/award_events.py`
+stamps `usaspending_award_snapshot` on snapshot-mode events, and `admit` accepted such a
+candidate.
+
+*Why a fence and not a filter.* `source_rail` says what KIND OF NUMBER produced the candidate.
+`transaction_delta` (action rail) is money that moved in one recorded action.
+`award_cumulative`-differenced delta (snapshot rail) is the change between two observations of
+a running balance: a restatement, a late-posted correction, and a genuine new obligation are
+indistinguishable in it, and its magnitude is not the size of any event. §5 forbids pooling
+amount classes inside one graded cohort; a cohort mixing these two has no single unit, so its
+pooled mean measures nothing and the registered δ\* = +3.0pp does not describe it.
+
+*The rule.* A candidate whose `source_event.source_rail` is not exactly
+`usaspending_award_action` abstains as **`family_rail_mismatch`** — a named abstention row in
+the same append-only log, counted in the abstention rate, with the batch continuing, exactly as
+`mapping_missing` behaves. It is never an exception and never a silent filter. The test is
+`!=` against the ONE registered rail rather than a blocklist of known snapshot rails, because a
+blocklist admits every rail a later ingest adds — which is precisely how the snapshot rail
+reached this family.
+
+*What is explicitly NOT done.* No second registered family is created here for the snapshot
+rail. Registering a family as a side effect of fixing another one is how an unowned measurement
+acquires a horizon nobody chose; the snapshot rail gets its own deliberate preregistration, or
+it gets nothing.
+
+*Amendment window, re-verified for this clause.* Because this clause landed after the rest of
+4.0.0, the §7.6 window test was re-run against the amended tree before it was written:
+`data/government_revenue/candidate_ledger.jsonl` is still **0 bytes**, no
+`candidate_issuance_log.jsonl` exists under `data/`, and the grader still has no caller. No
+candidate has ever been admitted by this instrument, so no admission rule here was narrowed
+against an observed outcome — and #5085's four snapshot obligation candidates, which `admit`
+accepted before this clause, had never been graded.
+
+#### 7.6.5 Non-evaluation repairs shipped in the same change (recorded, not registered)
 
 These fix the instrument's *measurement* rather than its decision rule. They are listed so the
 amendment is a complete account of what moved:
@@ -711,6 +772,7 @@ originate or escalate a grade here.
 | 4.0.0 §5 | 2026-08-08 | a **non-finite close is a missing bar**; the canonical serializer refuses `NaN`/`Infinity` | `NaN <= 0` is `False`, so the accessor passed every NaN and inf. A NaN entry bar made `nan > 0 == False` and graded the row a **MISS** — a null endpoint scored as a loss, reading as resolved with full coverage — and the emitted report carried a bare `NaN` literal, which RFC 8259 forbids: it round-tripped in Python and was unparseable to conforming readers. |
 | 4.0.0 §4 | 2026-08-08 | entry requires a calendar covering `known_at`; exit maturity is **strict** against `as_of`; the **session-list prefix digest** is frozen on the row (`calendar_revised` refusal); the placebo takes `as_of`; `regrade_diff` gains calendar and deletion axes | `first_index_after` returns 0 for a day the calendar never covered, so a trimmed panel filled rows on POST-issuance bars. A date-granular `as_of` consumed the exit close ~20h before the US close. A vendor revision keeps the same `calendar_id` and re-cut frozen windows, which the diff attributed to the price vintage. The placebo had no `as_of` at all. A vanished grade produced no drift row. |
 | 4.0.0 §8 | 2026-08-08 | the correction allowlist is enforced in `parse_issuance_log`, `append_issuance_rows`, and `cohort_rows` | A hand-built superseding row rewriting `known_at`/`ticker`/`horizons` passed all four log-side gates; the allowlist lived only in `build_correction_row`. |
+| 4.0.0 §1 | 2026-08-08 | the family is **fenced to the action rail**: `source_event.source_rail` must be exactly `usaspending_award_action`, fail-closed, else `family_rail_mismatch` | Sibling PR #5085 admits snapshot-rail `reported_obligation_balance_changed` events into the `award_obligation_change` **candidate** family — correct at display tier. §1 gated only on the family name, so this grader, registered for funded-**ACTION** acceleration, would have begun issuing on `award_cumulative`-differenced balance deltas: a restatement, a late correction and a genuine obligation are indistinguishable in that number and its magnitude is not the size of any event. Two measurement units in one graded cohort is the amount-class conflation, arriving through the rail rather than the family name. Verified at this PR's base: `candidates.py` admits both rails and `admit` accepted such a candidate. No second family is registered for the snapshot rail — that is a deliberate future preregistration, not a ride-along. |
 | 4.0.0 §1 | 2026-08-08 | an unmapped issuer **abstains** as `mapping_missing` with a null ticker | `admit` had no ticker check, so an unmapped issuer was admitted and then raised inside the row builder: batch-fatal on the first one, with no abstention row and no printed null. The reviewed graph carries unmapped issuers today. |
 | 4.0.0 §5 | 2026-08-08 | empty cohorts report coverage `empty`, monthly buckets carry per-month coverage, `verdict.inputs.coverage` cites the verdict basis | `0 == 0` reported COMPLETE coverage on the lobe's actual zero-candidate state; every monthly bucket repeated the cohort-wide coverage; and the verdict printed the cohort's coverage beside numbers computed over a different denominator. |
 | 3.0.0 §11 | 2026-08-07 | **disclosure-label layer registered**: earnings-window and subsequent-filings labels, their two PIT clamps, and the `unavailable` / `none_in_window` split | Wave 9G's build list asks for "earnings-window and subsequent-filings outcome labels where available" and 1.0.0/2.0.0 shipped neither — the word `earnings` did not appear in the instrument, the registration, or the suite. Registered pre-observation (log still absent, ledger still 0 bytes) and deliberately **outside** the decision rule, so §7's N = 545 continues to describe the statistic it was derived for. |

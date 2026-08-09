@@ -76,7 +76,7 @@ prevents each one is named so a future edit cannot quietly remove it:
    superseding row cannot be graded.  Supersession may lower coverage; it may
    never delete a number.  Below the registered verdict coverage floor no
    verdict fires at all.
-10bis. **A null endpoint is not a loss, and a degenerate interval is not an
+10. **A null endpoint is not a loss, and a degenerate interval is not an
    interval.**  ``NaN <= 0`` is ``False``, so every non-finite close sailed
    through the panel accessor: a NaN entry bar produced ``nan > 0 == False`` and
    graded as a **MISS** — trap 2 inverted, a null scored as a loss — while the
@@ -104,13 +104,22 @@ prevents each one is named so a future edit cannot quietly remove it:
    where the record is: :func:`parse_issuance_log`,
    :func:`append_issuance_rows`, and :func:`cohort_rows`.
 
-13. **An unmapped issuer is an abstention, not an exception.**  ``admit`` had no
+13. **A family name is not a measurement unit.**  ``admit`` gated on
+   ``candidate_family == "award_obligation_change"`` with no rail restriction,
+   and the candidate contract admits BOTH the action rail and the snapshot rail
+   into that family.  A family registered as positive funded-ACTION acceleration
+   would therefore have begun issuing on snapshot-derived cumulative-balance
+   deltas — a different measurement unit pooled into one graded cohort.  The
+   family is fenced to :data:`GRV_FA1_SOURCE_RAIL`; anything else is
+   ``family_rail_mismatch``.
+
+14. **An unmapped issuer is an abstention, not an exception.**  ``admit`` had no
    ticker check, so an issuer the recipient graph could not map was ADMITTED and
    then raised inside the row builder — batch-fatal on the first one, no
    abstention row, no printed null.  The reviewed graph in this repository
    carries unmapped issuers today.  ``mapping_missing`` is now emitted.
 
-14. **Absence of data reads as absence of event.**  The disclosure labels
+15. **Absence of data reads as absence of event.**  The disclosure labels
    (earnings windows and subsequent filings) would, in the natural
    implementation, return an empty list for an issuer no calendar covers — so
    every issuer with the WORST data would score as the cleanest window.
@@ -202,7 +211,33 @@ ABSTENTION_REASONS = (
     # currently carries unmapped issuers, and a batch that raises on the first
     # one issues nothing at all and prints no null.
     "mapping_missing",
+    # A candidate in the right FAMILY but on the wrong SOURCE RAIL.  The
+    # candidate contract admits both the action rail and the snapshot rail into
+    # ``award_obligation_change``; this family measures only the first.  See
+    # :data:`GRV_FA1_SOURCE_RAIL`.
+    "family_rail_mismatch",
 )
+
+#: The ONE source rail GRV-FA1 grades, and the reason it is a fence rather than
+#: a filter.
+#:
+#: A candidate's ``source_rail`` says what KIND OF NUMBER produced it.  The
+#: action rail emits a ``transaction_delta`` — money that moved in a single
+#: recorded action.  The snapshot rail emits a delta derived by differencing
+#: ``award_cumulative`` balances between two observations of the same award: a
+#: restatement, a late-posted correction, and a genuine new obligation all look
+#: identical in it, and its magnitude is not the size of any event.
+#:
+#: GRV-FA1 is registered as positive funded-**ACTION** acceleration.  §1 gated
+#: only on ``candidate_family == "award_obligation_change"``, and the candidate
+#: contract admits BOTH rails into that family, so the family would have begun
+#: issuing on snapshot-derived balance deltas — two different measurement units
+#: pooled into one graded cohort, which is the amount-class conflation the
+#: doctrine forbids, arriving through the rail rather than through the family
+#: name.  The snapshot rail is not worthless and is not rejected as evidence: it
+#: is a DIFFERENT measurement and needs its own preregistration, with its own
+#: horizons and its own N, before anything grades it.
+GRV_FA1_SOURCE_RAIL = "usaspending_award_action"
 
 COVERAGE_KINDS = ("identity", "event", "outcome")
 
@@ -786,6 +821,14 @@ def admit(candidate: Mapping[str, Any], *, family: PreregisteredFamily) -> Admis
         return AdmissionDecision(False, "ceiling_change_out_of_family")
     if candidate_family != "award_obligation_change":
         return AdmissionDecision(False, "family_mismatch")
+    if _text(source_event.get("source_rail")) != GRV_FA1_SOURCE_RAIL:
+        # FAIL-CLOSED, and the phrasing is the point: an absent, null, or
+        # non-string rail is not evidence of an action-rail event, so it
+        # abstains. Compared with ``!=`` against the ONE registered rail rather
+        # than with a blocklist of known snapshot rails — a blocklist admits
+        # every rail a later ingest adds, which is exactly how this reached the
+        # family in the first place.
+        return AdmissionDecision(False, "family_rail_mismatch")
     if source_event.get("event_type") == "deobligation":
         return AdmissionDecision(False, "deobligation")
     if candidate.get("transmission_direction") != "possible_positive":

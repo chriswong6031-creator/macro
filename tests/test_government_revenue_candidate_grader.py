@@ -2956,3 +2956,120 @@ def test_a_disclosure_learned_after_the_exit_still_labels_the_window(calendar):
     assert "the same leak ``grade_row`` prevents on the price side" not in source, (
         "the docstring claims a clamp the code does not apply"
     )
+
+
+def _snapshot_rail_candidate(calendar, **overrides):
+    """PR #5085's shape: a snapshot-rail obligation candidate.
+
+    #5085 admits ``reported_obligation_balance_changed`` events into the
+    ``award_obligation_change`` candidate family — correctly, at display tier.
+    ``engine/government_revenue/award_events.py`` stamps
+    ``source_rail = "usaspending_award_snapshot"`` on them, and
+    ``candidates.py`` admits both rails into the family.
+    """
+    payload = _candidate(
+        calendar,
+        candidate_id="grc1-000000000000000000000085",
+        observation_id="gro1-000000000000000000000085",
+        event_id="evt-snapshot-1",
+    )
+    payload["source_event"] = {
+        **payload["source_event"],
+        "event_type": "reported_obligation_balance_changed",
+        "source_rail": "usaspending_award_snapshot",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_the_family_is_fenced_to_the_action_rail(calendar):
+    """F17. A family NAME is not a measurement unit.
+
+    §1 gated GRV-FA1 on ``candidate_family == "award_obligation_change"`` with no
+    rail restriction, and the candidate contract admits BOTH rails into that
+    family. So a family registered as positive funded-**ACTION** acceleration
+    would have begun issuing on snapshot-rail deltas.
+
+    Those are not the same number. The action rail emits a
+    ``transaction_delta`` — money that moved in one recorded action. The
+    snapshot rail emits a delta obtained by differencing ``award_cumulative``
+    balances between two observations, in which a restatement, a late-posted
+    correction and a genuine new obligation are indistinguishable and the
+    magnitude is not the size of any event. Pooling them is the amount-class
+    conflation, arriving through the rail rather than through the family name.
+    """
+    snapshot = _snapshot_rail_candidate(calendar)
+    decision = grader.admit(snapshot, family=GRV_FA1)
+
+    assert decision.admitted is False, (
+        "a snapshot-rail cumulative-balance delta was admitted into a cohort registered "
+        "for transaction-delta funded actions"
+    )
+    assert decision.reason == "family_rail_mismatch"
+    assert "family_rail_mismatch" in grader.ABSTENTION_REASONS
+
+    # It is an ABSTENTION ROW, so the batch continues and the refusal is counted
+    # — the same shape as `mapping_missing`, never a raise.
+    row = _issue(snapshot, calendar)
+    assert row["row_kind"] == "abstention"
+    assert row["abstention_reason"] == "family_rail_mismatch"
+
+    report = _report(
+        calendar,
+        _log([_row(calendar), row]),
+        _panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+    )
+    assert report["admission"]["considered"] == 2
+    assert report["admission"]["issued"] == 1
+    assert report["admission"]["abstention_reasons"] == {"family_rail_mismatch": 1}
+    assert report["outcome_by_horizon"]["h63"]["cohort"]["issued_n"] == 1, (
+        "an abstention never enters the graded cohort's denominator"
+    )
+
+
+def test_the_action_rail_still_issues(calendar):
+    """F17, positive control: the fence is a fence, not a wall."""
+    decision = grader.admit(_candidate(calendar), family=GRV_FA1)
+    assert decision.admitted is True and decision.reason is None
+    assert _row(calendar)["row_kind"] == "issuance"
+
+
+@pytest.mark.parametrize(
+    "rail",
+    [None, "", "   ", 7, "usaspending_award_snapshot", "USASPENDING_AWARD_ACTION"],
+    ids=["absent", "empty", "blank", "not-a-string", "snapshot", "wrong-case"],
+)
+def test_an_unstated_source_rail_fails_closed(calendar, rail):
+    """F17. Absence of evidence of an action rail is not evidence of one.
+
+    Tested against the ONE registered rail rather than against a blocklist of
+    known snapshot rails: a blocklist admits every rail a later ingest adds,
+    which is exactly how the snapshot rail reached this family.
+    """
+    payload = _candidate(calendar)
+    source_event = dict(payload["source_event"])
+    if rail is None:
+        source_event.pop("source_rail")
+    else:
+        source_event["source_rail"] = rail
+    payload["source_event"] = source_event
+
+    decision = grader.admit(payload, family=GRV_FA1)
+    assert decision.admitted is False, f"source_rail={rail!r} was admitted"
+    assert decision.reason == "family_rail_mismatch"
+
+
+def test_the_registered_rail_is_stated_in_the_preregistration():
+    """F17. An admission rule that lives only in code is not registered.
+
+    §1's other admission rules are prose plus a literal in ``admit``; the rail
+    fence is held to the same standard rather than being a constant nobody can
+    be held to.
+    """
+    text = PREREG_PATH.read_text(encoding="utf-8")
+    assert grader.GRV_FA1_SOURCE_RAIL == "usaspending_award_action"
+    assert f"`{grader.GRV_FA1_SOURCE_RAIL}`" in text
+    assert "`usaspending_award_snapshot`" in text, (
+        "the rail that is fenced OUT must be named, or the fence is unreviewable"
+    )
+    assert "family_rail_mismatch" in text
