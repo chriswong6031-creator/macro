@@ -492,9 +492,14 @@ def test_r2_history_wins_over_committed_fallback(tmp_path):
     ])
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
+    # NOW-relative: the asserted "ready" flips to "stale" 14 days after the
+    # newest call date, so a pinned date is a scheduled red (see the EC-grid
+    # test above — its 2026-07-25 pin fired 2026-08-09).
+    _fresh = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=2)).date().isoformat()
+    _old = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=93)).date().isoformat()
     pd.DataFrame([
-        _call("LIVE", "Live", "Hardware", "2026-07-30", 25, 5, 30),
-        _call("LIVE", "Live", "Hardware", "2026-04-30", 20, 2, 22),
+        _call("LIVE", "Live", "Hardware", _fresh, 25, 5, 30),
+        _call("LIVE", "Live", "Hardware", _old, 20, 2, 22),
     ]).to_parquet(live, index=False)
     _write_transport_manifest(tmp_path)
 
@@ -800,11 +805,21 @@ def test_ec_grid_fail_open_missing_seed(tmp_path: Path):
 
 
 def test_ec_grid_uses_history_for_usa_when_region_seed_is_absent(tmp_path: Path):
-    """A transported call archive must also unblank the EC industry grid."""
+    """A transported call archive must also unblank the EC industry grid.
+
+    Dates are NOW-relative: `data_status` turns "stale" when the newest call is
+    >14 days old, so a pinned date here is a wall-clock time bomb — the original
+    2026-07-25 pin crossed the horizon at 2026-08-09T00:00Z and redded ci-pack-0
+    fleet-wide. Matches the file's relative-date idiom (see the staleness test
+    that builds its 15-day-old case from Timestamp.now).
+    """
+    _d = lambda days: (  # noqa: E731 — tiny local date helper
+        pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)
+    ).date().isoformat()
     calls = [
-        _call("AAA", "Alpha", "Software", "2026-07-25", 24, 4, 28),
-        _call("BBB", "Beta", "Banks", "2026-07-24", 12, -2, 10),
-        _call("AAA", "Alpha", "Software", "2026-04-18", 20, 2, 22),
+        _call("AAA", "Alpha", "Software", _d(2), 24, 4, 28),
+        _call("BBB", "Beta", "Banks", _d(3), 12, -2, 10),
+        _call("AAA", "Alpha", "Software", _d(100), 20, 2, 22),
     ]
     p = tmp_path / "data" / "earnings_calls" / "history.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
