@@ -25,6 +25,7 @@ import sys
 import threading
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -283,7 +284,14 @@ def test_grant_monthly_pass_sets_30d_window(wired):
     row = state["upserts"][-1]
     assert row["tier"] == "essential" and row["status"] == "active" and row["source"] == "comp"
     assert row["current_period_end"] is not None   # a real end date ~+30d
-    assert row["current_period_end"][:4] in ("2026", "2027")
+    # Measure the WINDOW, never the year string.  The row is written by
+    # admin/entitlements.py:443 through _iso_in (:197-201) = now + _PASS_DAYS,
+    # so a year assertion is both a scheduled red (it fails once
+    # year(now+30d) >= 2028, i.e. 2027-12-02 UTC) and too loose to see the bug
+    # it exists to catch: an annual 365-day window also lands in "2027".
+    end = datetime.fromisoformat(row["current_period_end"])
+    age_days = (end - datetime.now(timezone.utc)).total_seconds() / 86400
+    assert 29.5 < age_days < 30.5, f"monthly pass window is {age_days:.2f}d, expected ~30"
 
 
 def test_grant_annual_pass_sets_far_window(wired):

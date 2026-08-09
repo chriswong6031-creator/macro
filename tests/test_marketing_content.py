@@ -940,6 +940,29 @@ def test_v3_logo_cache_whiten_writes_file(tmp_path):
     assert result is not None and result.startswith("data:image/png;base64,")
 
 
+def test_card_path_logo_resolvers_are_cache_only_under_pytest(tmp_path, monkeypatch):
+    """Pins tests/conftest.py::_hermetic_logo_resolvers_cache_only. The real
+    resolvers pass fetch=True into logo_cache (chart_render.py:1732,1745); the
+    hermetic wrapper must route every card-path resolution through the
+    fetch=False shorthands, so a cache miss is None with NO fetch attempt and
+    no write. The spy records the fetch kwarg — if someone removes the conftest
+    fixture, the recorded fetch flips to True and this goes red (fail-soft None
+    would otherwise swallow the regression silently)."""
+    import engine.marketing.chart_render as cr
+    from engine.marketing import logo_cache as lc
+    calls = []
+
+    def _spy(ticker, root, **kw):
+        calls.append((ticker, kw.get("fetch", True)))
+        return None
+
+    monkeypatch.setattr(lc, "white_logo_datauri", _spy)
+    monkeypatch.setattr(lc, "color_logo_datauri", _spy)
+    assert cr.resolve_logo("ZZZQ", tmp_path) is None
+    assert cr.resolve_color_logo("ZZZQ", tmp_path) is None
+    assert calls == [("ZZZQ", False), ("ZZZQ", False)], calls
+
+
 def test_v3_mastermind_brand_weight_900():
     """MASTERMIND wordmark must use font-weight 900 (prominent brand lockup)."""
     from engine.marketing.chart_render import render_chart_v2

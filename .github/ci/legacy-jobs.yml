@@ -1041,6 +1041,14 @@ jobs:
       # (jinja2) and imports build_china_library (pandas/pyarrow), and it is the only
       # guard tying the template's English wording to the regex
       # scripts/freshness_sentinel.py parses.
+      #
+      # Also the two Act-Now hover-card icon suites (doctrine §5.8, emoji are not UI
+      # icons). test_intl_act_now_board_icons.py renders the China partial, canada.html.j2
+      # and hk.html.j2 through the harnesses already in this step
+      # (test_china_stocks_w1c_render, test_canada_build) plus test_hk_board_ui, so this
+      # is its natural home. test_act_now_board_icons.py — the US original it is modelled
+      # on — was referenced NOWHERE under .github/ and had never been run by CI; it is
+      # wired here in the same edit, since there is no tests/-wide sweep in this repo.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1125,7 +1133,11 @@ jobs:
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
+          tests/test_intl_act_now_board_icons.py
+          tests/test_act_now_board_icons.py
           tests/test_china_delayed_board_disclosure.py
+          tests/test_china_zt_pool_dates.py
+          tests/test_drip_append_only.py
           tests/test_cn_calendar.py
           tests/test_china_stocks_copy_w09.py
           tests/test_china_board_track_render.py
@@ -1410,6 +1422,18 @@ jobs:
       # above already carry pandas + requests for exactly that client.
       - name: china full-A spine collector + manifest contract (#5116)
         run: python -m pytest tests/test_china_tushare_spine.py -q
+      # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
+      # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
+      # hole: none of the three lanes named its suite in any run: step, so 144
+      # offline tests covering technical execution fences, immutable receipts,
+      # the minutes manifest and the chips M2/M4 aggregation would run dark.
+      # This is the #5116 spine's natural home: every suite is a China-native
+      # collector over collectors/tushare_client, and the dependency step above
+      # already carries the measured import closure (pandas, pyarrow,
+      # jsonschema, requests and pyyaml). Lane B imports Lane A's endpoint
+      # contract at collection time, so the three suites remain one atomic step.
+      - name: china tushare takeover suites — addons gate + minutes plane + chips (A/B/C)
+        run: python -m pytest tests/test_tushare_addons.py tests/test_tushare_minutes_plane.py tests/test_tushare_chips_distribution.py -q
 
   china-board-breadth:
     if: ${{ false }}
@@ -1897,6 +1921,14 @@ jobs:
       # line-start ::warning (masterplan §0.2 acceptance gate).
       - name: nightly runtime telemetry (W2 wiring + 85% tripwire behavior)
         run: python -m pytest tests/test_nightly_timings.py -q
+      # Fourth layer, same family: daily.yml's schedule is a DST cron PAIR and the
+      # root et_gate job keeps exactly one firing. The suite EXTRACTS the inline gate
+      # script out of the live workflow and executes it against instants either side
+      # of both DST flips, then pins the cron pair to the script's constants and that
+      # every job still reaches the gate. A drifted gate skips the sole authoritative
+      # nightly with nothing going red — the same silent class as the two above.
+      - name: daily ET regime gate (DST pair disambiguator + wiring pins)
+        run: python -m pytest tests/test_daily_et_gate.py -q
 
   push-retry-policy:
     if: ${{ false }}

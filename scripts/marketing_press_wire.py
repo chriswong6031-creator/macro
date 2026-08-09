@@ -829,6 +829,68 @@ def _write_github_output(key: str, value: str) -> None:
 # One tick
 # ─────────────────────────────────────────────────────────────────────────────
 
+def reap_outbox(root: Path | str, *, now: datetime,
+                dry_run: bool = False) -> dict[str, int]:
+    """Retire everything in the outbox that can no longer be posted. Fail-soft.
+
+    WHY THIS LANE OWNS IT (operator 2026-08-08). Every outbox reaper in the
+    estate is called from the PUBLISH sweep or the nightly emit. With
+    ``MARKETING_PUBLISH_ENABLED`` off — which is where the switch sits today —
+    the publish sweep does not run, so nothing expires and nothing is COMMITTED:
+    the operator opens the admin queue and reads 36 items, most of them about a
+    tape that closed days ago, each one offering an Approve button. "i don't
+    want to review so many posts per day."
+
+    This lane ticks every ~5 minutes, is independent of the send switch (it
+    reads ``MARKETING_OUTBOX_ENABLED``, the QUEUE switch), and already stages
+    and commits ``data/marketing/outbox`` — see the workflow's `git add` step
+    and `tests/test_marketing_press_wire.py`. Hanging the reap here is what makes
+    an expiry PERSIST without an armed publisher.
+
+    Three reapers, each already the canonical writer for its own class:
+
+      * ``outbox.expire_stale_planned``     planned items past their 36h slot
+      * ``outbox.expire_stale_wire``        fast-lane items past their idle TTL
+      * ``outbox.expire_dead_session_items`` the day-word law: a same-day tape
+        kind on a non-trading day, and any due item whose day words the clock
+        says are now false
+
+    NEVER POSTS, NEVER CALLS THE NETWORK. Three ledger folds and some
+    `transition` writes, nothing else. Idempotent by construction: everything it
+    touches leaves the `queued`/`approved` set, so the next tick sees nothing to
+    do. A real ``--dry-run`` writes nothing at all.
+    """
+    tally = {"planned": 0, "wire": 0, "session": 0}
+    if dry_run:
+        print("press-wire reap: dry-run, no expiry written", flush=True)
+        return tally
+    try:
+        from engine.marketing import outbox as _outbox  # noqa: PLC0415
+
+        tally["planned"] = int(
+            (_outbox.expire_stale_planned(root, now=now,
+                                          actor="press_wire_reap") or {})
+            .get("expired") or 0)
+        tally["wire"] = int(
+            (_outbox.expire_stale_wire(root, now=now,
+                                       actor="press_wire_reap") or {})
+            .get("expired") or 0)
+        session = _outbox.expire_dead_session_items(
+            root, now=now, actor="press_wire_reap") or {}
+        tally["session"] = int(session.get("expired") or 0)
+        total = sum(tally.values())
+        if total:
+            print(f"press-wire reap: retired {total} outbox item(s) "
+                  f"planned={tally['planned']} wire={tally['wire']} "
+                  f"session={tally['session']} {session.get('by_reason') or {}}",
+                  flush=True)
+    except Exception as exc:  # noqa: BLE001
+        # Housekeeping must never cost the lane its poll or its commit.
+        print(f"::warning title=press-wire-reap::outbox reap failed "
+              f"(continuing): {type(exc).__name__}: {exc}", flush=True)
+    return tally
+
+
 def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False) -> int:
     """One Actions press-wire pass. Never raises; 0 unless genuinely broken."""
     root = Path(root)
@@ -842,6 +904,13 @@ def run(root: Path | str, *, now: datetime | None = None, dry_run: bool = False)
         print(f"::notice title=press-wire-standdown::{ENV_DAEMON_ACTIVE} is set - "
               "the VPS daemon owns this lane, Actions polls nothing", flush=True)
         return 0
+
+    # 0. REAP FIRST, before anything that can stand this run down. Placed ahead
+    #    of the press-config check on purpose: a missing press_sources.yml
+    #    returns 0 below, and an outbox rotting behind a disarmed publisher must
+    #    not also depend on the press lane being configured. After the daemon
+    #    stand-down, though — two writers on one ledger is what that guard is for.
+    reap_outbox(root, now=ts, dry_run=dry_run)
 
     marketing_cfg = load_yaml(root / "config" / "marketing.yml")
     press_cfg = load_yaml(root / "config" / "press_sources.yml")
