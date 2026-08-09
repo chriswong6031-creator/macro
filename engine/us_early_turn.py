@@ -92,8 +92,36 @@ WASHOUT_MATURE_STATES = frozenset({"WASHED_OUT", "BASING", "TURNING"})
 #: V already happened.
 WASHOUT_CONTEXT_STATES = WASHOUT_MATURE_STATES | frozenset({"CONFIRMED"})
 
+#: us_leader_pullback states that read as LEADER-PULLBACK context — the organ's own
+#: vocabulary for "uptrend intact + controlled reset": an OPEN pullback episode in a
+#: high-RS leader (top-quartile RS and a 52-week high at the open, above the 200dMA and
+#: inside the 5-20% depth band on every bar thereafter).  PULLBACK is the retrace itself;
+#: RESET_TURN is that same episode after its daily oscillator reset and turned.
+#:
+#: RESUMED is deliberately NOT here, for exactly the reason CONFIRMED is absent from
+#: :data:`WASHOUT_MATURE_STATES`: price has already left the top of the entry zone, so
+#: the starter window is the thing that already opened and admitting it would quietly
+#: turn the starter tier into a momentum tier.  LEADER is absent because it is the state
+#: for a leader with NO qualifying pullback in progress — an intact uptrend with nothing
+#: to reset into is a chase licence, not a starter licence.  NONE covers nothing.
+LEADER_PULLBACK_CONTEXT_STATES = frozenset({"PULLBACK", "RESET_TURN"})
+
+#: The EXHAUSTIVE context vocabulary.  Every licensing context an EARLY-TURN row can
+#: disclose is one of these two names; ``context_sources`` on the emitted row is an
+#: ordered subset of this tuple and can never carry anything else.
+CONTEXT_WASHOUT = "washout"
+CONTEXT_LEADER_PULLBACK = "leader_pullback"
+CONTEXT_SOURCES: tuple[str, ...] = (CONTEXT_WASHOUT, CONTEXT_LEADER_PULLBACK)
+#: Plain-word label per context, used in the emitted ``reason``.
+_CONTEXT_LABELS = {
+    CONTEXT_WASHOUT: "washout-mature basket",
+    CONTEXT_LEADER_PULLBACK: "leader pullback",
+}
+
 _BASKET_ARTIFACT = ("basketdata", "us_basket_turn.json")
 _MEMBERSHIP = ("baskets", "membership.json")
+_LEADER_ARTIFACT = ("anticipationdata", "us_leader_pullback.json")
+_LEADER_SCHEMA = "us_leader_pullback.v0"
 _NON_US_PREFIXES = ("cn_", "hk_", "ca_")
 
 
@@ -401,53 +429,132 @@ def basket_turn_context(ticker: str,
 
 
 # ---------------------------------------------------------------------------
-# Context (b) — leader pullback.  SEAM, not a stub with an opinion.
+# Context (b) — leader pullback, from the us_leader_pullback organ (#5007)
 # ---------------------------------------------------------------------------
 
+def load_leader_pullback_states(
+    site_root: Path | None = None
+) -> dict[str, dict[str, Any]]:
+    """``{TICKER: <us_leader_pullback.latest() row>}`` — the organ's coverage this run.
+
+    WHY A MAP AND NOT A PER-NAME CALL.  ``engine.us_leader_pullback`` writes no file by
+    design, and its state needs ``rs_pct`` — a PIT CROSS-SECTIONAL percentile the organ
+    refuses to reach for itself, precisely so a single-name call can never leak one.  A
+    per-name series therefore cannot produce a state, and an RS read invented here would
+    be a second answer to the question that lane measures (the ADAM/NVDA/AVGO receipts
+    showed how sensitive it is to WHERE in the pullback it is taken).  So coverage
+    arrives as a per-run MAP, published by whoever holds the cross-section — exactly the
+    shape :func:`load_basket_turn_membership` gives the washout half.
+
+    Accepts ``{"schema": ..., "states": {TICKER: row}}`` or a bare ``{TICKER: row}``.
+
+    Returns ``{}`` on ANY absence — no artifact, unreadable JSON, wrong schema.  No
+    nightly builder publishes this artifact yet, so on a live run today this returns
+    ``{}``, every name reads NOT leader-context, and :func:`leader_pullback_context`
+    says so by name.  That is the fail-closed direction: a starter class is a licence,
+    and a licence that cannot be resolved is not granted.
+    """
+    site = Path(site_root) if site_root else _repo_root() / "site"
+    path = site.joinpath(*_LEADER_ARTIFACT)
+    if not path.exists():
+        log.info("us_early_turn: leader-pullback coverage unavailable (%s)", path)
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("us_early_turn: leader-pullback coverage unreadable (%s)", exc)
+        return {}
+    if not isinstance(payload, Mapping):
+        return {}
+    schema = str(payload.get("schema") or "")
+    if schema and not schema.startswith(_LEADER_SCHEMA.rsplit(".", 1)[0]):
+        log.warning("us_early_turn: leader-pullback coverage has schema %s, expected %s",
+                    schema, _LEADER_SCHEMA)
+        return {}
+    raw = payload.get("states") if "states" in payload else payload
+    if not isinstance(raw, Mapping):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for ticker, row in raw.items():
+        key = str(ticker or "").strip().upper()
+        if key and isinstance(row, Mapping):
+            out[key] = dict(row)
+    return out
+
+
 def leader_pullback_context(ticker: str, price_history: Any = None,
-                            asof: str | None = None) -> dict[str, Any]:
-    """Leader-pullback context for one ticker, from the organ that owns it.
+                            asof: str | None = None, *,
+                            states: Mapping[str, Mapping[str, Any]] | None = None,
+                            ) -> dict[str, Any]:
+    """Leader-pullback context for one ticker, from the organ that owns it (#5007).
 
-    TODO(#5007): ``engine/us_leader_pullback.py`` is the chartered backend (R4 — the
-    RS-leader universe, controlled retrace, daily stoch reset, resumption print, and
-    the receipt that measured the ZONE reproducing at 7.26% → 2.29% entry-vs-low).  It
-    had not merged when this shipped, so this function resolves it OPTIONALLY and
-    returns a NAMED null when it is absent.  It deliberately does NOT approximate the
-    organ locally: an RS-leader read invented here would be a second answer to a
-    question another lane is measuring, and the ADAM/NVDA/AVGO receipts already showed
-    how sensitive that read is to where in the pullback it is taken.
+    ``leader_pullback`` is true when the organ's state for the name is in
+    :data:`LEADER_PULLBACK_CONTEXT_STATES` — an OPEN, controlled pullback episode in a
+    high-RS leader, before the resumption print.  The state is read exactly as the organ
+    published it: v0 constants, ungauntleted, and carrying that lane's two known v0
+    limitations (an RS percentile measured AT the low is depressed by the pullback
+    itself; the ADAM two-leg timing case).  Neither is tuned here — this is a CONSUMER.
 
-    Until it lands, the EARLY-TURN tier admits on WASHOUT context only, and says so.
+    CONTEXT, NOT ADMISSION.  The organ's own replay graded RESET_TURN a NULL as a
+    standalone signal and RETAINED it as a confluence input; licensing a signature that
+    fired on its own evidence is exactly that role.  Nothing here originates a signal.
+
+    ``price_history`` is accepted for call-shape compatibility and deliberately NOT read
+    — see :func:`load_leader_pullback_states` for why a per-name series cannot produce
+    this state.  ``asof`` IS read, as a PIT guard: an organ row dated after the caller's
+    price basis is refused rather than used, because a context computed on bars the plan
+    could not see is a lookahead no downstream test would catch.
+
+    Fails CLOSED on every absence, each with its own named reason: no coverage
+    published, ticker outside the organ's universe, a row the organ itself nulled, or a
+    row that postdates ``asof``.  A name the organ does not cover is NOT leader-context.
     """
     out: dict[str, Any] = {
-        "leader_pullback": False, "state": None,
-        "source": "engine.us_leader_pullback", "reason": None,
+        "leader_pullback": False, "state": None, "pullback_high": None,
+        "days_in_state": None, "construction_era": None, "state_asof": None,
+        "context_states": sorted(LEADER_PULLBACK_CONTEXT_STATES),
+        "source": "unavailable", "reason": None,
     }
+    key = str(ticker or "").strip().upper()
     try:
-        from engine import us_leader_pullback  # noqa: PLC0415
-    except ImportError:
-        out["source"] = "unavailable"
-        out["reason"] = (
-            "engine.us_leader_pullback has not merged (#5007) — EARLY-TURN admits on "
-            "washout context only")
-        return out
-    try:
-        resolver = getattr(us_leader_pullback, "pullback_context", None)
-        if resolver is None:
-            out["source"] = "unavailable"
-            out["reason"] = "engine.us_leader_pullback exposes no pullback_context()"
-            return out
-        ctx = resolver(ticker, price_history=price_history, asof=asof) or {}
-        out.update({
-            "leader_pullback": bool(ctx.get("leader_pullback")
-                                    or ctx.get("state") in ("Continuation", "Ready")),
-            "state": ctx.get("state"),
-            "reason": ctx.get("reason"),
-            "pullback_high": ctx.get("pullback_high"),
-        })
+        coverage = load_leader_pullback_states() if states is None else states
     except Exception as exc:  # noqa: BLE001 — context is never fatal
         out["source"] = "error"
-        out["reason"] = f"leader-pullback context failed: {exc}"
+        out["reason"] = f"leader-pullback coverage failed: {exc}"
+        return out
+    if not coverage:
+        out["reason"] = ("the leader-pullback organ published no coverage for this run "
+                         "— EARLY-TURN admits on washout context only")
+        return out
+    row = coverage.get(key)
+    if not isinstance(row, Mapping):
+        out["reason"] = "ticker is outside the leader-pullback organ's universe"
+        return out
+
+    state_asof = row.get("asof")
+    out["state_asof"] = state_asof
+    out["construction_era"] = row.get("construction_era")
+    if asof and state_asof and str(state_asof) > str(asof):
+        out["reason"] = (f"leader-pullback state is dated {state_asof}, after the price "
+                         f"basis {asof} — refused as a lookahead")
+        return out
+
+    state = row.get("state")
+    if state is None:
+        out["reason"] = (f"the organ nulled this name: "
+                         f"{row.get('null_reason') or 'no state emitted'}")
+        return out
+
+    state = str(state).upper()
+    out.update({
+        "leader_pullback": state in LEADER_PULLBACK_CONTEXT_STATES,
+        "state": state,
+        "pullback_high": row.get("pullback_high"),
+        "days_in_state": row.get("days_in_state"),
+        "source": "us_leader_pullback",
+        "reason": None if state in LEADER_PULLBACK_CONTEXT_STATES else (
+            f"organ state {state} is not an open controlled pullback"),
+    })
     return out
 
 
@@ -514,15 +621,24 @@ def assess_early_turn(
     *,
     asof: str | None = None,
     membership: Mapping[str, Mapping[str, Any]] | None = None,
+    leader_states: Mapping[str, Mapping[str, Any]] | None = None,
     board_row: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Does this name qualify for the EARLY-TURN starter class?
 
     ``fired`` requires BOTH a mechanical signature (daily OR 2D) and a licensing
-    CONTEXT (washout-mature basket membership, or leader-pullback once #5007 lands).
-    A naked signature never fires: the §6.8(b) order was explicit that four anecdotes do
-    not carry the promotion and only the conditional table would, so the unconditioned
-    variant is not shipped even as a display chip.
+    CONTEXT — washout-mature basket membership OR leader-pullback (§6.9, both backends
+    live).  Which one licensed the row is DISCLOSED on it: ``context_sources`` is an
+    ordered subset of :data:`CONTEXT_SOURCES`, empty when nothing licensed it and
+    carrying BOTH names when a name is at once a washed-out basket member and a leader
+    in a controlled retrace.  A naked signature never fires: the §6.8(b) order was
+    explicit that four anecdotes do not carry the promotion and only the conditional
+    table would, so the unconditioned variant is not shipped even as a display chip.
+
+    ``membership`` and ``leader_states`` are the per-run context maps, loaded ONCE by
+    the caller.  ``leader_states=None`` makes the leader half resolve its own coverage
+    (and fail closed when there is none), so the two contexts are symmetrical from here
+    down: neither can broaden the candidate set, and neither fires on its own.
 
     The board row is consulted ONLY as corroborating washout context (its bottoming
     lane), never as the signature — the whole point is a read the board's own state
@@ -533,7 +649,8 @@ def assess_early_turn(
     daily = turn_signature(price_history, asof=asof, timeframe=TF_DAILY)
     two_day = turn_signature(price_history, asof=asof, timeframe=TF_2D)
     washout = basket_turn_context(ticker, membership)
-    leader = leader_pullback_context(ticker, price_history=price_history, asof=asof)
+    leader = leader_pullback_context(ticker, price_history=price_history, asof=asof,
+                                     states=leader_states)
 
     board_washout = False
     board_reason = None
@@ -543,13 +660,20 @@ def assess_early_turn(
             board_reason = "board lane=bottoming"
 
     signature_fired = bool(daily.get("fired") or two_day.get("fired"))
-    context_fired = bool(washout.get("washout_mature") or leader.get("leader_pullback"))
+    # Ordered by CONTEXT_SOURCES so the disclosure is stable across runs, and BOTH names
+    # survive when both licensed the row — "washout" alone would hide the second read.
+    context_sources = [
+        name for name, present in (
+            (CONTEXT_WASHOUT, bool(washout.get("washout_mature"))),
+            (CONTEXT_LEADER_PULLBACK, bool(leader.get("leader_pullback"))),
+        ) if present
+    ]
+    context_fired = bool(context_sources)
     fired = signature_fired and context_fired
 
     if fired:
-        reason = "signature + " + (
-            "washout-mature basket" if washout.get("washout_mature")
-            else "leader pullback")
+        reason = "signature + " + " + ".join(
+            _CONTEXT_LABELS[name] for name in context_sources)
     elif signature_fired:
         reason = ("signature fired but no licensing context — a naked dot is not a "
                   "starter admission")
@@ -564,6 +688,8 @@ def assess_early_turn(
         "fired": fired,
         "signature_fired": signature_fired,
         "context_fired": context_fired,
+        # The per-name context disclosure: an ordered subset of CONTEXT_SOURCES.
+        "context_sources": context_sources,
         "signature_timeframes": [
             tf for tf, sig in ((TF_DAILY, daily), (TF_2D, two_day)) if sig.get("fired")
         ],
