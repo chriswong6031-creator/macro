@@ -59,6 +59,7 @@ AUTHORITY = {
 }
 
 SCHEMA = "event_atlas.v1"
+LIVE_STATE_SCHEMA = "event_atlas.live_state.v1"
 
 # ---------------------------------------------------------------------------
 # Frozen constants
@@ -561,6 +562,7 @@ def _live_state_inner(
 
     daily = pd.to_numeric(close, errors="coerce").dropna().sort_index()
     out: dict[str, Any] = {
+        "schema": LIVE_STATE_SCHEMA,
         "ticker": ticker,
         "as_of": str(daily.index[-1].date()),
         "taxonomy_version": se.TAXONOMY_VERSION,
