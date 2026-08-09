@@ -18,6 +18,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine import smart_money as sm
 
 
+def test_receipt_metadata_enriches_legacy_snapshot_after_close():
+    snapshot = pd.DataFrame([{
+        "cusip": "ABC", "issuer": "Alpha", "shares": 10.0,
+        "value_usd": 1000.0, "period_end": "2026-06-30",
+        "filing_date": "2026-08-04",
+    }])
+    enriched = sm._apply_receipt_metadata(snapshot, {
+        "accepted_at": "20260804160001",
+        "filing_date": "2026-08-04",
+        "accession": "0000000000-26-000001",
+        "form": "13F-HR",
+        "source_index_url": "https://www.sec.gov/example/index.json",
+        "observed_at": "2026-08-04T20:05:00+00:00",
+    })
+    assert enriched["available_date"].iloc[0] == "2026-08-05"
+    assert enriched["accession"].iloc[0] == "0000000000-26-000001"
+    assert "accession" not in snapshot.columns
+
+
 # --------------------------------------------------------------------------- #
 # issuer_key                                                                     #
 # --------------------------------------------------------------------------- #
@@ -154,6 +173,48 @@ def test_overlap_stats_does_not_double_count_share_classes(tmp_path, monkeypatch
     assert "GOOG" in by_ticker, "Alias GOOG must be in by_ticker"
     assert by_ticker["GOOG"] is by_ticker["GOOGL"], (
         "GOOG and GOOGL must point to the same canonical by_ticker record")
+
+
+def test_accumulation_pending_funds_are_not_synthetic_exits(monkeypatch):
+    """Only a target-quarter reporter can create a target-quarter zero."""
+    import engine.smart_money as _sm
+
+    def snap(ticker: str) -> pd.DataFrame:
+        return pd.DataFrame([{
+            "cusip": ticker, "issuer": ticker, "sh_type": "SH",
+            "shares": 10.0, "value_usd": 100.0,
+        }])
+
+    history = {}
+    for slug in ("a", "b", "c", "d"):
+        history[slug] = [
+            ("2025-12-31", "2026-02-14", snap("AAPL")),
+            ("2026-03-31", "2026-05-15", snap("AAPL")),
+        ]
+    # A reports Q2 and keeps AAPL. B reports Q2 but omits it: one true exit.
+    history["a"].append(("2026-06-30", "2026-08-01", snap("AAPL")))
+    history["b"].append(("2026-06-30", "2026-08-02", snap("MSFT")))
+    monkeypatch.setattr(_sm, "_read_all", lambda slug: history[slug])
+    monkeypatch.setattr(
+        _sm, "resolve_tickers",
+        lambda frame, _names, _cusips: frame.assign(ticker=frame["cusip"]),
+    )
+
+    baseline = _sm._accumulation(
+        {s: {} for s in history}, {}, {},
+        target_period="2026-03-31", included_slugs=set(history),
+    )["AAPL"]
+    assert baseline["to_period"] == "2026-03-31"
+    assert baseline["holders_last"] == 4
+
+    incoming = _sm._accumulation(
+        {s: {} for s in history}, {}, {},
+        target_period="2026-06-30", included_slugs={"a", "b"},
+    )["AAPL"]
+    assert incoming["holders_first"] == 2
+    assert incoming["holders_last"] == 1
+    assert incoming["holders_delta"] == -1
+    # C and D are pending and cannot change the paired-reporter result.
 
 
 def test_position_rank_and_tilt():

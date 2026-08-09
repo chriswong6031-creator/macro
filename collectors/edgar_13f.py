@@ -1,7 +1,7 @@
 """SEC 13F-HR collector — quarterly institutional ("super-investor") holdings.
 
 Every institutional manager with >$100M in 13(f) securities must file a Form
-13F-HR within 45 days of quarter-end, listing each US-listed long position
+13F-HR within 45 days of quarter-end, listing each reportable US-listed long position
 (CUSIP, issuer, market value, shares). It is FREE and keyless from SEC EDGAR —
 squarely on our SEC-native stack (collectors/edgar.py) — so a Dataroma /
 WhaleWisdom-style "who owns this" context layer needs no paid vendor.
@@ -14,8 +14,9 @@ data/smart_money/<slug>/<period_end>.parquet — mirroring collectors/holdings.p
 engine/smart_money.py then diffs consecutive quarters into new/add/trim/exit.
 
 HONESTY (surfaced in the UI disclaimer): 13F is QUARTERLY with a ~45-day lag
-(amendments after that) — a stale, partial picture of LONG-ONLY US equity stakes
->= $100M, with no shorts, no options detail, no non-US/private positions. CUSIPs
+(amendments after that) — a stale, partial picture of reported LONG-ONLY positions
+from managers above the $100M filing threshold, with no shorts, no options detail,
+no non-US/private positions. CUSIPs
 are name-matched to our ticker universe (no free CUSIP master), so some lines are
 unresolved and hidden. This is CONTEXT on who holds a name, never a buy list or a
 real-time signal, and it is NEVER wired into any score/allocation.
@@ -23,15 +24,17 @@ real-time signal, and it is NEVER wired into any score/allocation.
 from __future__ import annotations
 
 import logging
+import hashlib
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
 from collectors import edgar
 from collectors.base import Adapter
 from lib import config
+from lib.filing_value_units import infer_13f_value_multiplier
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +47,37 @@ SUBMISSIONS = "https://data.sec.gov/submissions/CIK{:010d}.json"
 # the absolute $ display depends on this; pct-of-portfolio and share deltas — what
 # the engine actually ranks on — are scale-invariant within a fund-quarter.)
 _DOLLARS_FROM = date(2022, 12, 31)
+
+
+def acceptance_available_date(accepted_at: str | None,
+                              filing_date: str | None) -> str:
+    """First calendar date on which a filing can be traded without look-ahead.
+
+    Numeric EDGAR acceptance timestamps are Eastern wall time; timezone-aware
+    submissions-API timestamps are converted to Eastern. An acceptance at or
+    after the 4pm cash close cannot use that day's close, so it rolls one day;
+    price loaders then snap weekends/holidays to the next available session.
+    Legacy filings without an acceptance timestamp fall back to ``filing_date``.
+    """
+    raw = str(accepted_at or "").strip()
+    if not raw:
+        return str(filing_date or "")
+    try:
+        if raw.isdigit() and len(raw) >= 14:
+            stamp = datetime.strptime(raw[:14], "%Y%m%d%H%M%S")
+        else:
+            parsed = pd.Timestamp(raw)
+            # The submissions API currently emits ISO timestamps in UTC (Z),
+            # while older/numeric EDGAR values are wall-clock Eastern.  Convert
+            # aware values before applying the 4pm US cash-close boundary.
+            if parsed.tzinfo is not None:
+                parsed = parsed.tz_convert("America/New_York")
+            stamp = parsed.to_pydatetime()
+        if stamp.hour >= 16:
+            stamp += pd.Timedelta(days=1)
+        return stamp.date().isoformat()
+    except (TypeError, ValueError):
+        return str(filing_date or "")
 
 
 def _ua() -> str:
@@ -141,7 +175,11 @@ def parse_information_table(xml_text: str) -> pd.DataFrame:
 
 
 def value_to_dollars(value_raw: float, period_end: date) -> float:
-    """Apply the thousands->dollars convention by period end."""
+    """Legacy scalar helper retained for callers/tests.
+
+    New collection uses the filing-level inference in ``_finalize`` because a
+    few post-2023 filers still submit values in the old thousands unit.
+    """
     return value_raw * (1.0 if period_end >= _DOLLARS_FROM else 1000.0)
 
 
@@ -169,6 +207,8 @@ class Edgar13FAdapter(Adapter):
         if full_history:
             keep = max(keep, int(self.cfg.get("backfill_quarters", 8)))
         processed, wrote, errors, written = 0, 0, [], 0
+        self._receipt_rows: list[dict] = []
+        self._observed_at = datetime.now(timezone.utc).isoformat()
         for slug, spec in funds.items():
             try:
                 n = self._fetch_fund(slug, spec, keep)
@@ -185,6 +225,7 @@ class Edgar13FAdapter(Adapter):
         # disk, so written==0 is expected and must NOT trip the breaker.
         if processed == 0:
             raise RuntimeError(f"all 13F funds failed: {errors[:5]}")
+        self._write_receipts()
         log.info("13f: %d/%d funds processed, %d wrote new (%d snapshots)",
                  processed, len(funds), wrote, written)
         s = pd.DataFrame({"funds_ok": [processed]}, index=[pd.Timestamp(date.today())])
@@ -195,6 +236,23 @@ class Edgar13FAdapter(Adapter):
         cik = int(spec["cik"])
         name = spec.get("name", slug)
         originals, amendments = self._list_13f(cik)
+        notices = getattr(self, "_last_notices", [])
+        if hasattr(self, "_receipt_rows"):
+            for filing in [*originals, *amendments, *notices]:
+                acc_nodash = str(filing.get("accession") or "").replace("-", "")
+                self._receipt_rows.append({
+                    "slug": slug,
+                    "fund_name": name,
+                    "cik": cik,
+                    "form": filing.get("form"),
+                    "accession": filing.get("accession"),
+                    "period_end": filing.get("period_end"),
+                    "filing_date": filing.get("filing_date"),
+                    "accepted_at": filing.get("accepted_at"),
+                    "source_index_url": (
+                        f"{ARCHIVES}/{cik}/{acc_nodash}/index.json" if acc_nodash else None),
+                    "observed_at": getattr(self, "_observed_at", None),
+                })
         if not originals:
             log.info("13f %s (CIK %d): no 13F-HR filings", slug, cik)
             return 0
@@ -250,29 +308,40 @@ class Edgar13FAdapter(Adapter):
         data = _get_json(SUBMISSIONS.format(cik), edgar._cfg()["retries"])
         time.sleep(0.12)
         if not data:
-            return [], []
+            # A submissions fetch failure is not evidence that a configured fund
+            # has no filings.  Raise so the fund counts as errored and an all-CIK
+            # SEC outage trips the adapter breaker instead of reporting 50/50 OK.
+            raise RuntimeError(f"SEC submissions unavailable for CIK {cik}")
         recent = (data.get("filings", {}) or {}).get("recent", {}) or {}
         forms = recent.get("form", [])
         accs = recent.get("accessionNumber", [])
         reps = recent.get("reportDate", [])
         fils = recent.get("filingDate", [])
+        accepts = recent.get("acceptanceDateTime", [])
         originals: list[dict] = []
         amendments: list[dict] = []
+        notices: list[dict] = []
         for i, form in enumerate(forms):
-            if form not in ("13F-HR", "13F-HR/A"):
+            if form not in ("13F-HR", "13F-HR/A", "13F-NT", "13F-NT/A"):
                 continue
             entry = {
                 "accession": accs[i],
                 "period_end": reps[i],
                 "filing_date": fils[i] if i < len(fils) else "",
+                "accepted_at": accepts[i] if i < len(accepts) else "",
+                "form": form,
             }
             if form == "13F-HR":
                 originals.append(entry)
-            else:
+            elif form == "13F-HR/A":
                 amendments.append(entry)
+            else:
+                notices.append(entry)
         # newest-first by period_end (filings feed is already newest-first, but sort to be safe)
         originals = sorted(originals, key=lambda r: r["period_end"], reverse=True)
         amendments = sorted(amendments, key=lambda r: r["period_end"], reverse=True)
+        self._last_notices = sorted(
+            notices, key=lambda r: r["period_end"], reverse=True)
         return originals, amendments
 
     def _fetch_filing(self, cik: int, slug: str, name: str, f: dict) -> pd.DataFrame | None:
@@ -287,27 +356,78 @@ class Edgar13FAdapter(Adapter):
         # prefer the obvious info-table filenames; fall back to scanning every xml
         pref = [n for n in xmls if re.search(r"(info.?table|form13f|13flist)", n, re.I)]
         for fname in (pref + [n for n in xmls if n not in pref]):
-            html = self._get_text(f"{base}/{fname}")
+            source_url = f"{base}/{fname}"
+            html = self._get_text(source_url)
             if not html:
                 continue
             df = parse_information_table(html)
             if not df.empty:
-                return self._finalize(df, cik, slug, name, f)
+                source_hash = hashlib.sha256(html.encode("utf-8")).hexdigest()
+                return self._finalize(
+                    df, cik, slug, name, f,
+                    source_url=source_url, source_hash=source_hash,
+                )
         log.info("13f %s %s: no info table among %d xml files", slug, f["period_end"], len(xmls))
         return None
 
     def _finalize(self, df: pd.DataFrame, cik: int, slug: str, name: str,
-                  f: dict) -> pd.DataFrame:
+                  f: dict, source_url: str | None = None,
+                  source_hash: str | None = None) -> pd.DataFrame:
         pe = pd.to_datetime(f["period_end"]).date()
         df = df.copy()
-        df["value_usd"] = df["value_raw"].apply(lambda v: value_to_dollars(v, pe))
+        multiplier, unit_reason = infer_13f_value_multiplier(df, pe)
+        df["value_reported"] = df["value_raw"]
+        df["value_usd"] = df["value_raw"] * multiplier
+        df["value_multiplier"] = multiplier
+        df["value_unit_inference"] = unit_reason
         df["fund_slug"] = slug
         df["fund_name"] = name
         df["fund_cik"] = cik
         df["period_end"] = f["period_end"]
         df["filing_date"] = f.get("filing_date", "")
+        df["accepted_at"] = f.get("accepted_at", "")
+        df["available_date"] = acceptance_available_date(
+            f.get("accepted_at"), f.get("filing_date"))
+        df["accession"] = f.get("accession", "")
+        df["form"] = f.get("form", "13F-HR")
+        df["source_url"] = source_url
+        df["source_sha256"] = source_hash
+        df["parser_version"] = "edgar-13f-xml-v3"
+        df["fetched_at"] = datetime.now(timezone.utc).isoformat()
         df["as_of"] = f["period_end"]
         return df.drop(columns=["value_raw"])
+
+    def _write_receipts(self) -> None:
+        """Append accession-keyed filing receipts, including notices.
+
+        Snapshot holdings stay immutable by period.  This separate evidence log
+        preserves acceptance/provenance for already-present snapshots and records
+        13F-NT notices without pretending that a notice is a holdings report.
+        """
+        rows = getattr(self, "_receipt_rows", [])
+        if not rows:
+            return
+        path = self.dir / "filing_receipts.parquet"
+        incoming = pd.DataFrame.from_records(rows)
+        incoming = incoming[incoming["accession"].notna()].drop_duplicates(
+            subset=["accession"], keep="first")
+        if incoming.empty:
+            return
+        if path.exists():
+            try:
+                existing = pd.read_parquet(path)
+            except Exception:  # noqa: BLE001
+                existing = pd.DataFrame()
+        else:
+            existing = pd.DataFrame()
+        if not existing.empty:
+            known = set(existing["accession"].astype(str))
+            incoming = incoming[~incoming["accession"].astype(str).isin(known)]
+            if incoming.empty:
+                return
+            incoming = pd.concat([existing, incoming], ignore_index=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        incoming.to_parquet(path, index=False)
 
     def _get_text(self, url: str) -> str | None:
         import requests

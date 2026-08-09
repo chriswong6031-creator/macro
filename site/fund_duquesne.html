@@ -33,10 +33,199 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Duquesne Family Office (Druckenmiller) — Fund Dossier — 13F Ownership</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=79f699db">
-<link rel="stylesheet" href="assets/css/d57cff12.css?v=d57cff12">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
+  
+/* ---- core tokens (mirrors the desk page so the visual language matches) ---- */
+.fd { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
+.fd .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
+.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px;
+         padding:0 5px; border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
+.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
+.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
+.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
+.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
+.grade.na { color:var(--muted); }
+html[data-theme="dark"] .grade.A { color:#3fc07e; }
+html[data-theme="dark"] .grade.C { color:#e0a93a; }
+html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+
+/* ---- pills / chips ---- */
+.tier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+        letter-spacing:.05em; text-transform:uppercase; }
+.tier.elevated { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.tier.moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.tier.low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.tier.conv-high { color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.35); }
+.tier.conv-moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.tier.conv-low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.act-pill { font:600 9px/1 var(--numf); padding:3px 6px; border-radius:5px; border:1px solid var(--line);
+            color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
+.act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
+.chip-fresh { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+              border-radius:100px; font:600 10.5px/1.6 var(--numf); letter-spacing:.03em;
+              white-space:nowrap; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
+.t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
+.stylepill { font:600 10px/1 var(--numf); letter-spacing:.08em; text-transform:uppercase;
+             padding:4px 9px; border-radius:99px; border:1px solid var(--line);
+             color:var(--muted); background:var(--panel2); }
+.rel-chip { font:600 10px/1 var(--numf); letter-spacing:.05em; text-transform:uppercase;
+            padding:4px 9px; border-radius:99px; border:1px solid var(--line); }
+.rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
+.rel-chip.stable { color:var(--muted); background:var(--panel2); }
+.rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
+
+/* ---- hero header ---- */
+.fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
+.fd-crumb a { color:var(--muted); }
+.fd-crumb a:hover { color:var(--link); }
+.fd-hero { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+           padding:20px 22px; display:flex; align-items:flex-start; justify-content:space-between;
+           gap:18px; flex-wrap:wrap; }
+.fd-hero .eyebrow { font:600 11px/1 var(--numf); letter-spacing:.14em; text-transform:uppercase;
+                    color:var(--muted); margin-bottom:8px; }
+.fd-hero h1 { font-size:clamp(22px,3vw,30px); margin:.1em 0 .3em; letter-spacing:-.01em; }
+.fd-hero .pillrow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.fd-hero .metacol { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
+@media(max-width:760px){ .fd-hero .metacol { align-items:flex-start; } }
+
+/* ---- KPI strip (.cg-stats idiom from the congress desk) ---- */
+.fd-stats { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:12px 0 4px; }
+@media(max-width:960px){ .fd-stats { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:560px){ .fd-stats { grid-template-columns:repeat(2,1fr); } }
+.fd-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.fd-stat .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.fd-stat .v { font-size:22px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:6px;
+              font-family:var(--numf); }
+.fd-stat .s { font-size:10.5px; color:var(--muted); margin-top:3px; }
+
+/* ---- core lean hero card ---- */
+.lean-hero { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--info);
+             border-radius:14px; padding:18px 20px; margin-top:12px; }
+.lean-hero .eyebrow { font:600 10.5px/1 var(--numf); letter-spacing:.14em; text-transform:uppercase;
+                      color:var(--info); margin-bottom:8px; }
+.lean-narr { font-size:15.5px; line-height:1.55; max-width:900px; }
+.lean-chips { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+@media(max-width:960px){ .lean-chips { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:600px){ .lean-chips { grid-template-columns:1fr; } }
+.lean-chip { border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:10px 12px; }
+.lean-chip .lc-h { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.lean-chip .lc-name { font-weight:700; font-size:13px; }
+.lean-chip .lc-pp { font:700 13px/1 var(--numf); color:var(--up); white-space:nowrap; }
+.lean-chip .lc-sub { font-size:10.5px; color:var(--muted); margin-top:3px; }
+.lean-chip .lc-tks { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; align-items:center; }
+.lean-chip .lc-tk { font:700 11px/1 var(--numf); display:inline-flex; align-items:center; gap:4px; }
+.lean-note { font-size:11px; color:var(--muted); margin-top:12px; border-top:1px solid var(--line); padding-top:9px; }
+
+/* ---- ticker logos (nvstly CDN, eager, onerror→hide) ---- */
+.tklogo { width:16px; height:16px; border-radius:4px; vertical-align:-3px; }
+
+/* ---- section headers / cards (desk idiom) ---- */
+.sm-sec { margin:34px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.sm-sec::after { content:''; flex:1; height:1px; background:var(--line); align-self:center; }
+.sm-sec h2 { font-size:17px; margin:0; }
+.sm-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+.sm-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:14px 16px; margin-top:10px; overflow-x:auto; }
+.banner { font-size:11.5px; color:var(--muted); background:var(--panel2); border:1px solid var(--line);
+          border-left:3px solid var(--info); border-radius:9px; padding:8px 12px; margin:8px 0 4px;
+          line-height:1.55; }
+.disc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+        border-radius:10px; padding:11px 14px; margin:14px 0 4px; font-size:12px;
+        line-height:1.55; color:var(--muted); }
+.cnt { font-size:11.5px; color:var(--muted); margin:6px 0 2px; }
+
+/* ---- tables ---- */
+table.sm-t { width:100%; border-collapse:collapse; font-size:12.3px; margin-top:6px; }
+table.sm-t th { text-align:right; font:600 9.5px/1.25 var(--numf); letter-spacing:.05em;
+                text-transform:uppercase; color:var(--muted); padding:6px 8px 7px;
+                border-bottom:1px solid var(--line); white-space:nowrap; }
+table.sm-t th.l, table.sm-t td.l { text-align:left; }
+table.sm-t td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+table.sm-t tbody tr:hover { background:var(--panel2); }
+table.sm-t td .tk { font:700 12.3px/1 var(--numf); }
+table.sm-t .rk { color:var(--muted); font-family:var(--numf); }
+table.sm-t th.sortable { cursor:pointer; user-select:none; }
+table.sm-t th.sortable:hover { color:var(--text); }
+table.sm-t th.sorted { color:var(--text); }
+.sort-ind { opacity:.7; font-weight:400; }
+.sub { font-size:10.5px; color:var(--muted); }
+.sub2 { opacity:.72; font-weight:500; }
+.spark { font-family:var(--numf); font-size:11px; letter-spacing:1px; color:var(--info); }
+
+/* ---- sector exposure bars ---- */
+.fd-2col { display:grid; grid-template-columns:1.25fr 1fr; gap:16px; }
+@media(max-width:860px){ .fd-2col { grid-template-columns:1fr; } }
+.sxrow { display:grid; grid-template-columns:150px 1fr 58px 74px; gap:9px; align-items:center;
+         padding:4px 0; font-size:12px; }
+@media(max-width:560px){ .sxrow { grid-template-columns:110px 1fr 50px 64px; } }
+.sxrow .sx-name { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sbar { position:relative; height:8px; background:var(--panel2); border:1px solid var(--line);
+        border-radius:99px; overflow:hidden; }
+.sbar i { position:absolute; left:0; top:0; height:100%; border-radius:99px; background:var(--info); opacity:.75; }
+.rotchips { display:flex; flex-wrap:wrap; gap:7px; margin-top:6px; }
+.rotchip { font:600 10.5px/1 var(--numf); padding:4px 9px; border-radius:99px; border:1px solid var(--line);
+           background:var(--panel2); display:inline-flex; gap:5px; align-items:center; }
+.rotchip.into { color:var(--up); border-color:rgba(69,184,115,.4); }
+.rotchip.outof { color:var(--down); border-color:rgba(224,100,100,.4); }
+.qh-mini { font-size:11.5px; }
+.qh-mini td { padding:4px 6px; border-top:1px solid var(--line); white-space:nowrap; }
+.qh-mini td.l { text-align:left; }
+
+/* ---- rotation detail ---- */
+.rot-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
+.rot-h { font:600 9.5px/1 var(--numf); letter-spacing:.1em; text-transform:uppercase;
+         color:var(--muted); margin:4px 0 2px; }
+.rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
+.mini { width:100%; border-collapse:collapse; font-size:12px; }
+.mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+.mini td.l { text-align:left; }
+.mini .tk { font:700 12px/1 var(--numf); }
+
+</style>
 
 
 
@@ -63,7 +252,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -274,10 +463,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -342,12 +531,12 @@
       <span class="rel-chip deteriorating"><span class="l-en">Reliability deteriorating</span><span class="l-zh">可靠性走弱</span></span>
       
       
-      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#11</b></span><span class="ftier fade" data-tip-en="Fade score 36.4" data-tip-zh="淡出分 36.4"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></div>
+      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#10</b></span><span class="ftier fade" data-tip-en="Fade score 37.4" data-tip-zh="淡出分 37.4"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">披露日</span> <b class="num">2026-05-15</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-08-08 14:57 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-08-09 03:14 UTC</span></span>
     <a class="chip-fresh" href="funddata/duquesne.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>
@@ -358,7 +547,7 @@
 <div class="fd-stats">
   <div class="fd-stat">
     <div class="k"><span class="l-en">Book</span><span class="l-zh">持仓规模</span></div>
-    <div class="v">$3M</div>
+    <div class="v">$3.4B</div>
     <div class="s"><span class="l-en">long US listed only</span><span class="l-zh">仅美股多头</span></div>
   </div>
   <div class="fd-stat">
@@ -1038,7 +1227,7 @@
           data-ticker="NTRA"
           data-issuer="Natera Inc"
           data-pct="18.14"
-          data-val="612691.0"
+          data-val="612691000.0"
           data-act="add"
           data-chg="22.0"
           data-streak="1"
@@ -1049,7 +1238,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NTRA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NTRA</span></td>
         <td class="l mut">Natera Inc</td>
         <td class="num"><b>18.1%</b></td>
-        <td class="num">$612691</td>
+        <td class="num">$613M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+22%</td>
         <td class="num">1q</td>
@@ -1095,7 +1284,7 @@
           data-ticker="EWZ"
           data-issuer="Ishares Inc"
           data-pct="8.71"
-          data-val="294228.0"
+          data-val="294228000.0"
           data-act="hold"
           data-chg="-1.5"
           data-streak="0"
@@ -1106,7 +1295,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/EWZ.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">EWZ</span></td>
         <td class="l mut">Ishares Inc</td>
         <td class="num"><b>8.7%</b></td>
-        <td class="num">$294228</td>
+        <td class="num">$294M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">-2%</td>
         <td class="num">—</td>
@@ -1152,7 +1341,7 @@
           data-ticker="INSM"
           data-issuer="Insmed Inc"
           data-pct="5.59"
-          data-val="188717.0"
+          data-val="188717000.0"
           data-act="trim"
           data-chg="-22.1"
           data-streak="0"
@@ -1163,7 +1352,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/INSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">INSM</span></td>
         <td class="l mut">Insmed Inc</td>
         <td class="num"><b>5.6%</b></td>
-        <td class="num">$188717</td>
+        <td class="num">$189M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-22%</td>
         <td class="num">—</td>
@@ -1209,7 +1398,7 @@
           data-ticker="TSM"
           data-issuer="Taiwan Semiconductor Manufac"
           data-pct="4.96"
-          data-val="167380.0"
+          data-val="167380000.0"
           data-act="hold"
           data-chg="-8.8"
           data-streak="0"
@@ -1220,7 +1409,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSM</span></td>
         <td class="l mut">Taiwan Semiconductor Manufac</td>
         <td class="num"><b>5.0%</b></td>
-        <td class="num">$167380</td>
+        <td class="num">$167M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">-9%</td>
         <td class="num">—</td>
@@ -1266,7 +1455,7 @@
           data-ticker="RSP"
           data-issuer="Invesco Exchange Traded Fd T"
           data-pct="4.67"
-          data-val="157566.0"
+          data-val="157566000.0"
           data-act="trim"
           data-chg="-30.1"
           data-streak="0"
@@ -1277,7 +1466,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/RSP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">RSP</span></td>
         <td class="l mut">Invesco Exchange Traded Fd T</td>
         <td class="num"><b>4.7%</b></td>
-        <td class="num">$157566</td>
+        <td class="num">$158M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-30%</td>
         <td class="num">—</td>
@@ -1323,7 +1512,7 @@
           data-ticker="YPF"
           data-issuer="Ypf Sociedad Anonima"
           data-pct="4.43"
-          data-val="149566.0"
+          data-val="149566000.0"
           data-act="add"
           data-chg="433.1"
           data-streak="2"
@@ -1334,7 +1523,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/YPF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">YPF</span></td>
         <td class="l mut">Ypf Sociedad Anonima</td>
         <td class="num"><b>4.4%</b></td>
-        <td class="num">$149566</td>
+        <td class="num">$150M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+433%</td>
         <td class="num">2q</td>
@@ -1380,7 +1569,7 @@
           data-ticker="AA"
           data-issuer="Alcoa Corp"
           data-pct="2.93"
-          data-val="99057.0"
+          data-val="99057000.0"
           data-act="hold"
           data-chg="8.5"
           data-streak="0"
@@ -1391,7 +1580,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AA</span></td>
         <td class="l mut">Alcoa Corp</td>
         <td class="num"><b>2.9%</b></td>
-        <td class="num">$99057</td>
+        <td class="num">$99M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+8%</td>
         <td class="num">—</td>
@@ -1437,7 +1626,7 @@
           data-ticker="SE"
           data-issuer="Sea Ltd"
           data-pct="2.7"
-          data-val="91083.0"
+          data-val="91083000.0"
           data-act="add"
           data-chg="16.5"
           data-streak="2"
@@ -1448,7 +1637,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SE</span></td>
         <td class="l mut">Sea Ltd</td>
         <td class="num"><b>2.7%</b></td>
-        <td class="num">$91083</td>
+        <td class="num">$91M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+16%</td>
         <td class="num">2q</td>
@@ -1494,7 +1683,7 @@
           data-ticker="STM"
           data-issuer="Stmicroelectronics N V"
           data-pct="2.67"
-          data-val="90275.0"
+          data-val="90275000.0"
           data-act="add"
           data-chg="237.8"
           data-streak="2"
@@ -1505,7 +1694,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/STM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">STM</span></td>
         <td class="l mut">Stmicroelectronics N V</td>
         <td class="num"><b>2.7%</b></td>
-        <td class="num">$90275</td>
+        <td class="num">$90M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+238%</td>
         <td class="num">2q</td>
@@ -1551,7 +1740,7 @@
           data-ticker="WWD"
           data-issuer="Woodward Inc"
           data-pct="2.24"
-          data-val="75648.0"
+          data-val="75648000.0"
           data-act="trim"
           data-chg="-64.2"
           data-streak="0"
@@ -1562,7 +1751,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WWD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WWD</span></td>
         <td class="l mut">Woodward Inc</td>
         <td class="num"><b>2.2%</b></td>
-        <td class="num">$75648</td>
+        <td class="num">$76M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-64%</td>
         <td class="num">—</td>
@@ -1608,7 +1797,7 @@
           data-ticker="TEVA"
           data-issuer="Teva Pharmaceutical Inds Ltd"
           data-pct="2.12"
-          data-val="71604.0"
+          data-val="71604000.0"
           data-act="trim"
           data-chg="-59.5"
           data-streak="0"
@@ -1619,7 +1808,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TEVA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TEVA</span></td>
         <td class="l mut">Teva Pharmaceutical Inds Ltd</td>
         <td class="num"><b>2.1%</b></td>
-        <td class="num">$71604</td>
+        <td class="num">$72M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-60%</td>
         <td class="num">—</td>
@@ -1665,7 +1854,7 @@
           data-ticker="ROKU"
           data-issuer="Roku Inc"
           data-pct="2.1"
-          data-val="70983.0"
+          data-val="70983000.0"
           data-act="add"
           data-chg="28.7"
           data-streak="1"
@@ -1676,7 +1865,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ROKU.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ROKU</span></td>
         <td class="l mut">Roku Inc</td>
         <td class="num"><b>2.1%</b></td>
-        <td class="num">$70983</td>
+        <td class="num">$71M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+29%</td>
         <td class="num">1q</td>
@@ -1722,7 +1911,7 @@
           data-ticker="AVGO"
           data-issuer="Broadcom Inc"
           data-pct="1.8"
-          data-val="60650.0"
+          data-val="60650000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -1733,7 +1922,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AVGO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AVGO</span></td>
         <td class="l mut">Broadcom Inc</td>
         <td class="num"><b>1.8%</b></td>
-        <td class="num">$60650</td>
+        <td class="num">$61M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -1779,7 +1968,7 @@
           data-ticker="SPY"
           data-issuer="State Str Spdr S&amp;P 500 Etf T"
           data-pct="1.73"
-          data-val="58531.0"
+          data-val="58531000.0"
           data-act="hold"
           data-chg="0.0"
           data-streak="0"
@@ -1790,7 +1979,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPY.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SPY</span></td>
         <td class="l mut">State Str Spdr S&amp;p 500 Etf T</td>
         <td class="num"><b>1.7%</b></td>
-        <td class="num">$58531</td>
+        <td class="num">$59M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+0%</td>
         <td class="num">—</td>
@@ -1836,7 +2025,7 @@
           data-ticker="AMZN"
           data-issuer="Amazon Com Inc"
           data-pct="1.52"
-          data-val="51193.0"
+          data-val="51193000.0"
           data-act="trim"
           data-chg="-70.7"
           data-streak="0"
@@ -1847,7 +2036,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AMZN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AMZN</span></td>
         <td class="l mut">Amazon Com Inc</td>
         <td class="num"><b>1.5%</b></td>
-        <td class="num">$51193</td>
+        <td class="num">$51M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-71%</td>
         <td class="num">—</td>
@@ -1893,7 +2082,7 @@
           data-ticker="CPNG"
           data-issuer="Coupang Inc"
           data-pct="1.49"
-          data-val="50362.0"
+          data-val="50362000.0"
           data-act="trim"
           data-chg="-60.6"
           data-streak="0"
@@ -1904,7 +2093,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CPNG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CPNG</span></td>
         <td class="l mut">Coupang Inc</td>
         <td class="num"><b>1.5%</b></td>
-        <td class="num">$50362</td>
+        <td class="num">$50M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-61%</td>
         <td class="num">—</td>
@@ -1950,7 +2139,7 @@
           data-ticker="OPCH"
           data-issuer="Option Care Health Inc"
           data-pct="1.49"
-          data-val="50301.0"
+          data-val="50301000.0"
           data-act="hold"
           data-chg="7.0"
           data-streak="0"
@@ -1961,7 +2150,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/OPCH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">OPCH</span></td>
         <td class="l mut">Option Care Health Inc</td>
         <td class="num"><b>1.5%</b></td>
-        <td class="num">$50301</td>
+        <td class="num">$50M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+7%</td>
         <td class="num">—</td>
@@ -2007,7 +2196,7 @@
           data-ticker="CRH"
           data-issuer="Crh Plc"
           data-pct="1.18"
-          data-val="39689.0"
+          data-val="39689000.0"
           data-act="trim"
           data-chg="-20.5"
           data-streak="0"
@@ -2018,7 +2207,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CRH</span></td>
         <td class="l mut">Crh Plc</td>
         <td class="num"><b>1.2%</b></td>
-        <td class="num">$39689</td>
+        <td class="num">$40M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-20%</td>
         <td class="num">—</td>
@@ -2064,7 +2253,7 @@
           data-ticker="FIGR"
           data-issuer="Figure Technology Solutio"
           data-pct="1.16"
-          data-val="39057.0"
+          data-val="39057000.0"
           data-act="trim"
           data-chg="-25.3"
           data-streak="0"
@@ -2075,7 +2264,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FIGR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FIGR</span></td>
         <td class="l mut">Figure Technology Solutio</td>
         <td class="num"><b>1.2%</b></td>
-        <td class="num">$39057</td>
+        <td class="num">$39M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-25%</td>
         <td class="num">—</td>
@@ -2121,7 +2310,7 @@
           data-ticker="ARGT"
           data-issuer="Global X Fds"
           data-pct="1.07"
-          data-val="36152.0"
+          data-val="36152000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2132,7 +2321,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ARGT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ARGT</span></td>
         <td class="l mut">Global X Fds</td>
         <td class="num"><b>1.1%</b></td>
-        <td class="num">$36152</td>
+        <td class="num">$36M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2178,7 +2367,7 @@
           data-ticker="CAI"
           data-issuer="Caris Life Sciences Inc"
           data-pct="1.0"
-          data-val="33873.0"
+          data-val="33873000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2189,7 +2378,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CAI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CAI</span></td>
         <td class="l mut">Caris Life Sciences Inc</td>
         <td class="num"><b>1.0%</b></td>
-        <td class="num">$33873</td>
+        <td class="num">$34M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2235,7 +2424,7 @@
           data-ticker="QSR"
           data-issuer="Restaurant Brands Intl Inc"
           data-pct="0.99"
-          data-val="33583.0"
+          data-val="33583000.0"
           data-act="trim"
           data-chg="-62.4"
           data-streak="0"
@@ -2246,7 +2435,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/QSR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">QSR</span></td>
         <td class="l mut">Restaurant Brands Intl Inc</td>
         <td class="num"><b>1.0%</b></td>
-        <td class="num">$33583</td>
+        <td class="num">$34M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-62%</td>
         <td class="num">—</td>
@@ -2292,7 +2481,7 @@
           data-ticker="RVMD"
           data-issuer="Revolution Medicines Inc"
           data-pct="0.91"
-          data-val="30717.0"
+          data-val="30717000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2303,7 +2492,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/RVMD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">RVMD</span></td>
         <td class="l mut">Revolution Medicines Inc</td>
         <td class="num"><b>0.9%</b></td>
-        <td class="num">$30717</td>
+        <td class="num">$31M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2349,7 +2538,7 @@
           data-ticker="LSCC"
           data-issuer="Lattice Semiconductor Corp"
           data-pct="0.89"
-          data-val="29974.0"
+          data-val="29974000.0"
           data-act="trim"
           data-chg="-65.1"
           data-streak="0"
@@ -2360,7 +2549,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LSCC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LSCC</span></td>
         <td class="l mut">Lattice Semiconductor Corp</td>
         <td class="num"><b>0.9%</b></td>
-        <td class="num">$29974</td>
+        <td class="num">$30M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-65%</td>
         <td class="num">—</td>
@@ -2406,7 +2595,7 @@
           data-ticker="SNDK"
           data-issuer="Sandisk Corp"
           data-pct="0.72"
-          data-val="24241.0"
+          data-val="24241000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2417,7 +2606,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SNDK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SNDK</span></td>
         <td class="l mut">Sandisk Corp</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$24241</td>
+        <td class="num">$24M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2463,7 +2652,7 @@
           data-ticker="UAL"
           data-issuer="United Airls Hldgs Inc"
           data-pct="0.72"
-          data-val="24168.0"
+          data-val="24168000.0"
           data-act="trim"
           data-chg="-24.7"
           data-streak="0"
@@ -2474,7 +2663,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/UAL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">UAL</span></td>
         <td class="l mut">United Airls Hldgs Inc</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$24168</td>
+        <td class="num">$24M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-25%</td>
         <td class="num">—</td>
@@ -2520,7 +2709,7 @@
           data-ticker="HUM"
           data-issuer="Humana Inc"
           data-pct="0.71"
-          data-val="23842.0"
+          data-val="23842000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2531,7 +2720,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/HUM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">HUM</span></td>
         <td class="l mut">Humana Inc</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$23842</td>
+        <td class="num">$24M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2577,7 +2766,7 @@
           data-ticker="WAB"
           data-issuer="Wabtec"
           data-pct="0.7"
-          data-val="23715.0"
+          data-val="23715000.0"
           data-act="trim"
           data-chg="-68.4"
           data-streak="0"
@@ -2588,7 +2777,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WAB.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WAB</span></td>
         <td class="l mut">Wabtec</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$23715</td>
+        <td class="num">$24M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-68%</td>
         <td class="num">—</td>
@@ -2634,7 +2823,7 @@
           data-ticker="TWLO"
           data-issuer="Twilio Inc"
           data-pct="0.68"
-          data-val="22869.0"
+          data-val="22869000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2645,7 +2834,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TWLO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TWLO</span></td>
         <td class="l mut">Twilio Inc</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$22869</td>
+        <td class="num">$23M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2691,7 +2880,7 @@
           data-ticker="JBL"
           data-issuer="Jabil Inc"
           data-pct="0.65"
-          data-val="21835.0"
+          data-val="21835000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2702,7 +2891,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/JBL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">JBL</span></td>
         <td class="l mut">Jabil Inc</td>
         <td class="num"><b>0.7%</b></td>
-        <td class="num">$21835</td>
+        <td class="num">$22M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2748,7 +2937,7 @@
           data-ticker="SCCO"
           data-issuer="Southern Copper Corp"
           data-pct="0.62"
-          data-val="20964.0"
+          data-val="20964000.0"
           data-act="hold"
           data-chg="0.8"
           data-streak="0"
@@ -2759,7 +2948,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SCCO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SCCO</span></td>
         <td class="l mut">Southern Copper Corp</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$20964</td>
+        <td class="num">$21M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+1%</td>
         <td class="num">—</td>
@@ -2805,7 +2994,7 @@
           data-ticker="GSG"
           data-issuer="Ishares S&amp;P Gsci Commodity-"
           data-pct="0.61"
-          data-val="20737.0"
+          data-val="20737000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2816,7 +3005,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GSG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GSG</span></td>
         <td class="l mut">Ishares S&amp;p Gsci Commodity-</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$20737</td>
+        <td class="num">$21M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2862,7 +3051,7 @@
           data-ticker="LIN"
           data-issuer="Linde Plc"
           data-pct="0.6"
-          data-val="20425.0"
+          data-val="20425000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -2873,7 +3062,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LIN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LIN</span></td>
         <td class="l mut">Linde Plc</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$20425</td>
+        <td class="num">$20M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -2919,7 +3108,7 @@
           data-ticker="IWM"
           data-issuer="Ishares Tr"
           data-pct="0.58"
-          data-val="19592.0"
+          data-val="19592000.0"
           data-act="trim"
           data-chg="-65.0"
           data-streak="0"
@@ -2930,7 +3119,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/IWM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">IWM</span></td>
         <td class="l mut">Ishares Tr</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$19592</td>
+        <td class="num">$20M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-65%</td>
         <td class="num">—</td>
@@ -2976,7 +3165,7 @@
           data-ticker="CLF"
           data-issuer="Cleveland-Cliffs Inc New"
           data-pct="0.58"
-          data-val="19549.0"
+          data-val="19549000.0"
           data-act="add"
           data-chg="32.5"
           data-streak="1"
@@ -2987,7 +3176,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CLF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CLF</span></td>
         <td class="l mut">Cleveland-Cliffs Inc New</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$19549</td>
+        <td class="num">$20M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+32%</td>
         <td class="num">1q</td>
@@ -3033,7 +3222,7 @@
           data-ticker="NUVB"
           data-issuer="Nuvation Bio Inc"
           data-pct="0.58"
-          data-val="19476.0"
+          data-val="19476000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3044,7 +3233,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NUVB.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NUVB</span></td>
         <td class="l mut">Nuvation Bio Inc</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$19476</td>
+        <td class="num">$19M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3090,7 +3279,7 @@
           data-ticker="BE"
           data-issuer="Bloom Energy Corp"
           data-pct="0.55"
-          data-val="18470.0"
+          data-val="18470000.0"
           data-act="trim"
           data-chg="-81.6"
           data-streak="0"
@@ -3101,7 +3290,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BE</span></td>
         <td class="l mut">Bloom Energy Corp</td>
         <td class="num"><b>0.6%</b></td>
-        <td class="num">$18470</td>
+        <td class="num">$18M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-82%</td>
         <td class="num">—</td>
@@ -3147,7 +3336,7 @@
           data-ticker="INTC"
           data-issuer="Intel Corp"
           data-pct="0.54"
-          data-val="18155.0"
+          data-val="18155000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3158,7 +3347,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/INTC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">INTC</span></td>
         <td class="l mut">Intel Corp</td>
         <td class="num"><b>0.5%</b></td>
-        <td class="num">$18155</td>
+        <td class="num">$18M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3204,7 +3393,7 @@
           data-ticker="BLTE"
           data-issuer="Belite Bio Inc Sponsored"
           data-pct="0.5"
-          data-val="16917.0"
+          data-val="16917000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3215,7 +3404,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BLTE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BLTE</span></td>
         <td class="l mut">Belite Bio Inc Sponsored</td>
         <td class="num"><b>0.5%</b></td>
-        <td class="num">$16917</td>
+        <td class="num">$17M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3261,7 +3450,7 @@
           data-ticker="PTGX"
           data-issuer="Protagonist Therapeutics Inc"
           data-pct="0.5"
-          data-val="16832.0"
+          data-val="16832000.0"
           data-act="hold"
           data-chg="0.0"
           data-streak="0"
@@ -3272,7 +3461,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PTGX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PTGX</span></td>
         <td class="l mut">Protagonist Therapeutics Inc</td>
         <td class="num"><b>0.5%</b></td>
-        <td class="num">$16832</td>
+        <td class="num">$17M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+0%</td>
         <td class="num">—</td>
@@ -3318,7 +3507,7 @@
           data-ticker="U"
           data-issuer="Unity Software Inc"
           data-pct="0.48"
-          data-val="16209.0"
+          data-val="16209000.0"
           data-act="add"
           data-chg="80.2"
           data-streak="1"
@@ -3329,7 +3518,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/U.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">U</span></td>
         <td class="l mut">Unity Software Inc</td>
         <td class="num"><b>0.5%</b></td>
-        <td class="num">$16209</td>
+        <td class="num">$16M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+80%</td>
         <td class="num">1q</td>
@@ -3375,7 +3564,7 @@
           data-ticker="ARM"
           data-issuer="Arm Holdings Plc"
           data-pct="0.48"
-          data-val="16142.0"
+          data-val="16142000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3386,7 +3575,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ARM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ARM</span></td>
         <td class="l mut">Arm Holdings Plc</td>
         <td class="num"><b>0.5%</b></td>
-        <td class="num">$16142</td>
+        <td class="num">$16M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3432,7 +3621,7 @@
           data-ticker="OLMA"
           data-issuer="Olema Pharmaceuticals Inc"
           data-pct="0.44"
-          data-val="14714.0"
+          data-val="14714000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3443,7 +3632,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/OLMA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">OLMA</span></td>
         <td class="l mut">Olema Pharmaceuticals Inc</td>
         <td class="num"><b>0.4%</b></td>
-        <td class="num">$14714</td>
+        <td class="num">$15M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3489,7 +3678,7 @@
           data-ticker="Q"
           data-issuer="Qnity Electronics Inc"
           data-pct="0.43"
-          data-val="14498.0"
+          data-val="14498000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3500,7 +3689,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/Q.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">Q</span></td>
         <td class="l mut">Qnity Electronics Inc</td>
         <td class="num"><b>0.4%</b></td>
-        <td class="num">$14498</td>
+        <td class="num">$14M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3546,7 +3735,7 @@
           data-ticker="ADMA"
           data-issuer="Adma Biologics Inc"
           data-pct="0.41"
-          data-val="13926.0"
+          data-val="13926000.0"
           data-act="add"
           data-chg="512.9"
           data-streak="2"
@@ -3557,7 +3746,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADMA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADMA</span></td>
         <td class="l mut">Adma Biologics Inc</td>
         <td class="num"><b>0.4%</b></td>
-        <td class="num">$13926</td>
+        <td class="num">$14M</td>
         <td><span class="act-pill add">add</span></td>
         <td class="num">+513%</td>
         <td class="num">2q</td>
@@ -3603,7 +3792,7 @@
           data-ticker="XENE"
           data-issuer="Xenon Pharmaceuticals Inc"
           data-pct="0.41"
-          data-val="13875.0"
+          data-val="13875000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3614,7 +3803,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/XENE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">XENE</span></td>
         <td class="l mut">Xenon Pharmaceuticals Inc</td>
         <td class="num"><b>0.4%</b></td>
-        <td class="num">$13875</td>
+        <td class="num">$14M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3660,7 +3849,7 @@
           data-ticker="DAKT"
           data-issuer="Daktronics Inc"
           data-pct="0.33"
-          data-val="11000.0"
+          data-val="11000000.0"
           data-act="trim"
           data-chg="-34.0"
           data-streak="0"
@@ -3671,7 +3860,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DAKT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DAKT</span></td>
         <td class="l mut">Daktronics Inc</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$11000</td>
+        <td class="num">$11M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-34%</td>
         <td class="num">—</td>
@@ -3717,7 +3906,7 @@
           data-ticker="NET"
           data-issuer="Cloudflare Inc"
           data-pct="0.32"
-          data-val="10840.0"
+          data-val="10840000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3728,7 +3917,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NET.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NET</span></td>
         <td class="l mut">Cloudflare Inc</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$10840</td>
+        <td class="num">$11M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3774,7 +3963,7 @@
           data-ticker="VIST"
           data-issuer="Vista Energy S.A.B. De C.V."
           data-pct="0.3"
-          data-val="10166.0"
+          data-val="10166000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3785,7 +3974,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/VIST.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">VIST</span></td>
         <td class="l mut">Vista Energy S.a.b. De C.v.</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$10166</td>
+        <td class="num">$10M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3831,7 +4020,7 @@
           data-ticker="TWST"
           data-issuer="Twist Bioscience Corp"
           data-pct="0.29"
-          data-val="9789.0"
+          data-val="9789000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3842,7 +4031,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TWST.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TWST</span></td>
         <td class="l mut">Twist Bioscience Corp</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$9789</td>
+        <td class="num">$10M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3888,7 +4077,7 @@
           data-ticker="COHR"
           data-issuer="Coherent Corp"
           data-pct="0.29"
-          data-val="9624.0"
+          data-val="9624000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3899,7 +4088,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/COHR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">COHR</span></td>
         <td class="l mut">Coherent Corp</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$9624</td>
+        <td class="num">$10M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -3945,7 +4134,7 @@
           data-ticker="CLS"
           data-issuer="Celestica Inc"
           data-pct="0.28"
-          data-val="9373.0"
+          data-val="9373000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -3956,7 +4145,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CLS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CLS</span></td>
         <td class="l mut">Celestica Inc</td>
         <td class="num"><b>0.3%</b></td>
-        <td class="num">$9373</td>
+        <td class="num">$9M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4002,7 +4191,7 @@
           data-ticker="STUB"
           data-issuer="Stubhub Hldgs Inc"
           data-pct="0.25"
-          data-val="8531.0"
+          data-val="8531000.0"
           data-act="trim"
           data-chg="-40.7"
           data-streak="0"
@@ -4013,7 +4202,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/STUB.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">STUB</span></td>
         <td class="l mut">Stubhub Hldgs Inc</td>
         <td class="num"><b>0.2%</b></td>
-        <td class="num">$8531</td>
+        <td class="num">$9M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-41%</td>
         <td class="num">—</td>
@@ -4059,7 +4248,7 @@
           data-ticker="DBVT"
           data-issuer="Dbv Technologies S A Sponsored"
           data-pct="0.24"
-          data-val="8008.0"
+          data-val="8008000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -4070,7 +4259,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DBVT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DBVT</span></td>
         <td class="l mut">Dbv Technologies S A Sponsored</td>
         <td class="num"><b>0.2%</b></td>
-        <td class="num">$8008</td>
+        <td class="num">$8M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4116,7 +4305,7 @@
           data-ticker="MU"
           data-issuer="Micron Technology Inc"
           data-pct="0.23"
-          data-val="7905.0"
+          data-val="7905000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -4127,7 +4316,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MU.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MU</span></td>
         <td class="l mut">Micron Technology Inc</td>
         <td class="num"><b>0.2%</b></td>
-        <td class="num">$7905</td>
+        <td class="num">$8M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4173,7 +4362,7 @@
           data-ticker="SATS"
           data-issuer="Echostar Corp"
           data-pct="0.21"
-          data-val="7114.0"
+          data-val="7114000.0"
           data-act="hold"
           data-chg="0.0"
           data-streak="0"
@@ -4184,7 +4373,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SATS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SATS</span></td>
         <td class="l mut">Echostar Corp</td>
         <td class="num"><b>0.2%</b></td>
-        <td class="num">$7114</td>
+        <td class="num">$7M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+0%</td>
         <td class="num">—</td>
@@ -4230,7 +4419,7 @@
           data-ticker="ALM"
           data-issuer="Almonty Inds Inc"
           data-pct="0.2"
-          data-val="6804.0"
+          data-val="6804000.0"
           data-act="hold"
           data-chg="0.0"
           data-streak="0"
@@ -4241,7 +4430,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ALM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ALM</span></td>
         <td class="l mut">Almonty Inds Inc</td>
         <td class="num"><b>0.2%</b></td>
-        <td class="num">$6804</td>
+        <td class="num">$7M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+0%</td>
         <td class="num">—</td>
@@ -4287,7 +4476,7 @@
           data-ticker="PCT"
           data-issuer="Purecycle Technologies Inc"
           data-pct="0.15"
-          data-val="4999.0"
+          data-val="4999000.0"
           data-act="trim"
           data-chg="-66.5"
           data-streak="0"
@@ -4298,7 +4487,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PCT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PCT</span></td>
         <td class="l mut">Purecycle Technologies Inc</td>
         <td class="num"><b>0.1%</b></td>
-        <td class="num">$4999</td>
+        <td class="num">$5M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-66%</td>
         <td class="num">—</td>
@@ -4344,7 +4533,7 @@
           data-ticker="LITE"
           data-issuer="Lumentum Hldgs Inc"
           data-pct="0.14"
-          data-val="4893.0"
+          data-val="4893000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -4355,7 +4544,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LITE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LITE</span></td>
         <td class="l mut">Lumentum Hldgs Inc</td>
         <td class="num"><b>0.1%</b></td>
-        <td class="num">$4893</td>
+        <td class="num">$5M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4401,7 +4590,7 @@
           data-ticker="MELI"
           data-issuer="Mercadolibre  Inc"
           data-pct="0.14"
-          data-val="4782.0"
+          data-val="4782000.0"
           data-act="trim"
           data-chg="-94.1"
           data-streak="0"
@@ -4412,7 +4601,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MELI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MELI</span></td>
         <td class="l mut">Mercadolibre  Inc</td>
         <td class="num"><b>0.1%</b></td>
-        <td class="num">$4782</td>
+        <td class="num">$5M</td>
         <td><span class="act-pill trim">trim</span></td>
         <td class="num">-94%</td>
         <td class="num">—</td>
@@ -4458,7 +4647,7 @@
           data-ticker="SOLS"
           data-issuer="Solstice Advanced Matls Inc"
           data-pct="0.14"
-          data-val="4762.0"
+          data-val="4762000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -4469,7 +4658,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SOLS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SOLS</span></td>
         <td class="l mut">Solstice Advanced Matls Inc</td>
         <td class="num"><b>0.1%</b></td>
-        <td class="num">$4762</td>
+        <td class="num">$5M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4515,7 +4704,7 @@
           data-ticker="WLK"
           data-issuer="Westlake Corporation"
           data-pct="0.07"
-          data-val="2476.0"
+          data-val="2476000.0"
           data-act="new"
           data-chg=""
           data-streak="1"
@@ -4526,7 +4715,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WLK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WLK</span></td>
         <td class="l mut">Westlake Corporation</td>
         <td class="num"><b>0.1%</b></td>
-        <td class="num">$2476</td>
+        <td class="num">$2M</td>
         <td><span class="act-pill new">new</span></td>
         <td class="num">—</td>
         <td class="num">1q</td>
@@ -4572,7 +4761,7 @@
           data-ticker="WVE"
           data-issuer="Wave Life Sciences Ltd"
           data-pct="0.04"
-          data-val="1254.0"
+          data-val="1254000.0"
           data-act="hold"
           data-chg="0.0"
           data-streak="0"
@@ -4583,7 +4772,7 @@
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WVE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WVE</span></td>
         <td class="l mut">Wave Life Sciences Ltd</td>
         <td class="num"><b>0.0%</b></td>
-        <td class="num">$1254</td>
+        <td class="num">$1M</td>
         <td><span class="act-pill hold">hold</span></td>
         <td class="num">+0%</td>
         <td class="num">—</td>
@@ -5038,7 +5227,7 @@
 
 <div class="disc" id="fd-caveats">
   <b><span class="l-en">Caveats</span><span class="l-zh">注意事项</span></b> —
-  <span class="l-en">13F = quarterly, ~45-day lag, long-only US listed ≥$100M. No shorts, no cash, no non-US positions. This desk is context — ownership is never a directional signal here.</span><span class="l-zh">13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅为背景参考——持仓数据在此永远不是方向性信号。</span>
+  <span class="l-en">13F = quarterly, ~45-day lag, reported long positions from managers with at least $100M in Section 13(f) securities. No shorts, no cash, no non-US positions. This desk is context — ownership is never a directional signal here.</span><span class="l-zh">13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅为背景参考——持仓数据在此永远不是方向性信号。</span>
   <span class="l-en">Grades and reliability are descriptive ranks within a curated survivor cohort — they measure what filings did after their filing dates, not a manager-selection edge. Conviction and core-lean reads are descriptive composites earning a forward record via the pre-registered ledger (L5); sector/theme classification applies the current map to history.</span><span class="l-zh">评级与可靠性为精选幸存者队列中的描述性排名——衡量披露日之后持仓的表现，而非经理选择能力。信念分与核心倾向为描述性综合指标，通过预注册账本（L5）积累前瞻记录；行业/主题分类将当前映射应用于历史。</span>
 </div>
 
@@ -5098,7 +5287,6 @@
 })();
 </script>
 
-<script src="theme.js?v=8df4ebee" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
+<script src="theme.js"></script>
 </body>
 </html>

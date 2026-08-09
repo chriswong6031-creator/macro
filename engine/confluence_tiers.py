@@ -15,6 +15,13 @@ Tier table (research/signal_engine/TIERED_CASCADE.md, 110 held-out US names):
   T3    0.60    2D MACD-RSI PROJECTED<=1-2d & 3D StochRSI already crossed 42.3%   (the early prediction)
   T4    0.40    2D MACD-RSI PROJECTED & 2D StochRSI crossed & ABOVE-200MA 43.1%   (earliest; anti-falling-knife)
 
+Temporal provenance is tier-native and never borrowed from the §7 marker by accident:
+``tier_event_date`` is the immutable close that fired T1/T2, while projected T3/T4 carry
+null there; ``tier_observed_date`` is the daily session whose close produced this verdict.
+The two are equal only for a same-session fire.  ``tier_observation_provisional`` names
+forming T1 and projected T3/T4 without changing the incumbent calibrated ``provisional``
+badge (which remains T3-only and has downstream display behaviour).
+
 The gradient is GENTLE (~5pp master->earliest) so the earlier tiers get REAL weight, not
 token. `sub` = the StochRSI cross came from DEEP oversold (<20) vs a SHALLOW cross (>20).
 The assessment found shallow crosses are NOT lower quality (lower stop-out, calmer pullback),
@@ -143,6 +150,9 @@ WEIGHTS = {"T1": 0.9, "T2": 1.0, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
           "provisional": False, "htf": {"s1": False, "s2": False},
+          # Native temporal contract. A blank has no tier, therefore no tier dates.
+          "tier_event_date": None, "tier_observed_date": None,
+          "tier_observation_provisional": False,
           "hist_d2": None, "hist_d3": None,
           # ── warmup disclosure (2026-08-05) ────────────────────────────────────────────
           # `bars`         daily bars the cascade actually read (None = never got that far)
@@ -320,15 +330,69 @@ def _ticks_since(known, when) -> int | None:
         return None
 
 
+def _session_iso(value, sessions: pd.Index) -> str | None:
+    """Return ``value`` as an ISO date only when it is an observed input session.
+
+    This is deliberately stricter than date parsing.  A malformed value, weekend,
+    future date, or marker date from a different tape/era returns null rather than
+    creating apparently precise tier provenance.
+    """
+    if value is None or sessions is None or len(sessions) == 0:
+        return None
+    try:
+        stamp = pd.Timestamp(value)
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(stamp):
+        return None
+    if stamp.tzinfo is not None:
+        stamp = stamp.tz_localize(None)
+    stamp = stamp.normalize()
+    try:
+        idx = pd.DatetimeIndex(sessions)
+        if idx.tz is not None:
+            idx = idx.tz_localize(None)
+        idx = idx.normalize()
+        if int(idx.get_indexer([stamp])[0]) < 0:
+            return None
+    except (TypeError, ValueError):
+        return None
+    return str(stamp.date())
+
+
+def _tier_dates(
+    tier: str | None,
+    observed_date: str | None,
+    *,
+    t1_event_date: str | None = None,
+    t2_event_date: str | None = None,
+) -> dict:
+    """Return the additive tier-native temporal contract.
+
+    T1 is the §7 master and may use its explicitly supplied knowability close. T2 is
+    the cascade's own confirmed 2D-cross close. T3/T4 are projections: the observation
+    is real, but no event has fired, so their event date is null by construction.
+    """
+    event_date = (t1_event_date if tier == "T1"
+                  else t2_event_date if tier == "T2" else None)
+    return {
+        "tier_event_date": event_date,
+        "tier_observed_date": observed_date if tier else None,
+        "tier_observation_provisional": tier in ("T3", "T4"),
+    }
+
+
 def cascade(daily_close: pd.Series, *, take_active: bool = False,
-            take_date=None, market: str = "US",
+            take_date=None, take_event_date=None, market: str = "US",
             event_latch=None, latch_key: str | None = None) -> dict:
     """Grade a close series into the weighted tier cascade. The board is ONLY "about to cross"
     (T3/T4, projected) + "JUST crossed" (T1/T2, within FRESH_TICKS on the signal's own TF) —
     never a name that crossed several ticks ago and has been rising. T1 = `take_active` (the
     validated master from signal_quality) but ONLY while its arrow is <= FRESH_TICKS 3D-ticks
     old AND the 3D momentum is still constructive (not-topped). `take_date` = the §7 buy
-    marker's date (used to age the take in 3D ticks; falls back to the raw 3D cross).
+    marker's legacy bucket-open date (used only to age the take in 3D ticks; falls back
+    to the raw 3D cross). ``take_event_date`` is that marker's separately emitted
+    knowability close and is provenance only — it never changes tiering or freshness.
     ``market`` picks the reference session calendar the 2D/3D buckets are anchored to (US
     default; signal_gate infers it from the ticker suffix — session_anchor R3). Highest
     active tier wins. Returns {tier, weight, sub, eligible, bars_to_cross, asof, not_topped,
@@ -345,14 +409,18 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         if not isinstance(c.index, pd.DatetimeIndex):
             c = c.copy(); c.index = pd.to_datetime(c.index)
         n_bars = len(c)
+        di = c.index
+        observed_date = _session_iso(di[-1], di) if n_bars else None
+        t1_event_date = _session_iso(take_event_date, di)
         if n_bars < MIN_HISTORY:
             v = dict(_BLANK, bars=n_bars, young_history=True, above200=None,
                      null_legs=_null_legs(n_bars),
                      veto_legs_null=_veto_legs_null(n_bars))
             if take_active:               # thin history: trust the §7 marker (can't tick-age it)
-                v.update(tier="T1", weight=WEIGHTS["T1"], eligible=True)
+                v.update(tier="T1", weight=WEIGHTS["T1"], eligible=True,
+                         **_tier_dates("T1", observed_date,
+                                       t1_event_date=t1_event_date))
             return v
-        di = c.index
         last = len(di) - 1
         young = n_bars < YOUNG_HISTORY_BARS
         nulls = _null_legs(n_bars)
@@ -498,6 +566,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         t1_fresh = bool(take_active and t1_ticks is not None and t1_ticks <= FRESH_TICKS)
 
         idx2 = np.where(t2_buy.to_numpy())[0]
+        t2_event_date = _session_iso(di[int(idx2[-1])], di) if len(idx2) else None
         t2_ticks = _ticks_since(smk, di[int(idx2[-1])]) if len(idx2) else None
         t2_active = bool(t2_ticks is not None and t2_ticks <= FRESH_TICKS and long_bias)
         # T3 = 2D MACD projected <=1-2d AND 3D stoch already crossed (ABOUT TO cross — anticipation)
@@ -551,6 +620,8 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "bars": n_bars, "young_history": young,
             "above200": above200_pub, "null_legs": nulls,
             "veto_legs_null": veto_nulls, "anchor_era": ANCHOR_ERA,
+            **_tier_dates(tier, observed_date, t1_event_date=t1_event_date,
+                          t2_event_date=t2_event_date),
         }
     except Exception:
         # Crash path: "not evaluated" must be distinguishable from "passed" — the blank's

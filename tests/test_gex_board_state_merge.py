@@ -15,6 +15,7 @@ Run: python -m pytest tests/test_gex_board_state_merge.py -q
 from __future__ import annotations
 
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -23,6 +24,9 @@ from scripts.build_gex_board import (  # noqa: E402
     _compute_and_write_gex_state,
     _merge_gex_state_fields,
 )
+
+
+SESSION = date(2026, 7, 31)
 
 
 # A model shaped enough for engine.gex_state.compute_gex_state to succeed —
@@ -49,12 +53,12 @@ def _model(**overrides):
 class TestComputeAndWriteReturnsTheStateItWrites:
     def test_returns_none_and_writes_nothing_for_a_thin_no_options_model(self, tmp_path):
         model = _model(summary={"tier": "no_options", "spot": None})
-        out = _compute_and_write_gex_state(model, "ZZZZ", tmp_path)
+        out = _compute_and_write_gex_state(model, "ZZZZ", tmp_path, SESSION)
         assert out is None
         assert not (tmp_path / "ZZZZ.json").exists()
 
     def test_returns_the_written_dict_for_a_real_model(self, tmp_path):
-        state = _compute_and_write_gex_state(_model(), "SPY", tmp_path)
+        state = _compute_and_write_gex_state(_model(), "SPY", tmp_path, SESSION)
         assert state is not None
         assert state["schema"] == "options_structure.gex_state/v1"
         assert "oi_delta_clusters" in state  # BACK-COMPAT: always present
@@ -118,7 +122,7 @@ class TestMergeGexStateFields:
         gex_state artifact, then fold its output into the SAME model that
         becomes site/gex/<KEY>.json — one compute_gex_state call, two writes."""
         model = _model()
-        state = _compute_and_write_gex_state(model, "SPY", tmp_path)
+        state = _compute_and_write_gex_state(model, "SPY", tmp_path, SESSION)
         _merge_gex_state_fields(model, state)
         # oi_delta_clusters is BACK-COMPAT-always-present on the gex_state side,
         # so it must now also be readable as gx.oi_delta_clusters (the payload
