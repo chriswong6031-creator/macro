@@ -46,6 +46,38 @@ JSON_PATH   = SITE_DIR / "microstructure.json"
 # For nightly incremental: scan this many trailing sessions per ticker (avoids re-reading all)
 NIGHTLY_LOOKBACK = 10
 
+# STORE-NEWCOMER BACKFILL (2026-08-08 heal)
+# ----------------------------------------
+# The historical store is built once by scripts/backfill_china_limit_tape.py; this builder only
+# ever appends a ~20-day window.  So a ticker whose parquet lands in data/china_stocks_raw AFTER
+# that one-shot run could only ever receive a 20-day tail — and none at all if it had no limit
+# event inside it.  Measured 2026-08-08: the raw store grew 1,592 -> 1,842 names on 2026-08-05
+# and 314 names (264 of them with no row whatsoever) were left with no pre-2026-07 history, while
+# limit_tape's own `backfill` flag read True for all 3,751 market-days — it is a per-MARKET-DAY
+# column and can never express a per-NAME hole.  A newcomer's FULL history is therefore detected
+# here and appended to limit_events, capped so the nightly budget cannot blow out.
+# The tape is deliberately NOT re-aggregated from it: its historical rows carry the universe that
+# produced them (`universe_n`), and rebuilding 15 years of aggregates nightly is off-budget — the
+# annotation below tells the operator to re-run the one-shot backfill instead.
+NEWCOMER_SCAN_CAP = 250
+
+
+def _known_event_tickers() -> set[str]:
+    """Tickers that already have at least one row in limit_events.
+
+    An EMPTY result means the store is missing or unreadable, not that every name is new: the
+    caller must not read that as 1,800 newcomers and full-scan the world.  Cold start belongs to
+    scripts/backfill_china_limit_tape.py.
+    """
+    if not EVENTS_PATH.exists():
+        return set()
+    try:
+        col = pd.read_parquet(EVENTS_PATH, columns=["ticker"])["ticker"]
+        return set(col.astype(str).unique())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Could not read %s for newcomer detection: %s", EVENTS_PATH, exc)
+        return set()
+
 
 def _load_existing_dates(path: Path) -> set[str]:
     """Return set of date strings already in a parquet store."""
@@ -109,6 +141,7 @@ def build_increment(target_date: Optional[str] = None) -> dict:
     Returns a dict with status, counts, and data_gaps.
     """
     from engine.china_microstructure import (
+        LIMIT_TAPE_START_DATE,
         _board_from_ticker,
         _load_st_set,
         _detect_limit_events,
@@ -158,8 +191,14 @@ def build_increment(target_date: Optional[str] = None) -> dict:
     lookback_start = scan_date - pd.Timedelta(days=NIGHTLY_LOOKBACK * 2)  # ~2 weeks to cover gaps
 
     all_events: list[dict] = []
+    history_events: list[dict] = []       # store-newcomers' pre-window history (events store only)
+    newcomers: list[str] = []
+    deferred = 0                          # newcomers over the per-run cap
     universe_n_by_date: dict[str, int] = {}
     ipo_excluded_by_date: dict[str, int] = {}
+
+    known_tickers = _known_event_tickers()
+    window_floor = lookback_start.strftime("%Y-%m-%d")
 
     for fp in raw_files:
         ticker = Path(fp).stem
@@ -179,14 +218,28 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         if df_recent.empty:
             continue
 
+        # A name with NO row in limit_events never had its history scanned (it entered the raw
+        # store after the one-shot backfill).  Scan it from the tape floor instead of the window,
+        # then split: the window part feeds the tape exactly as before, the rest is history that
+        # only the events store receives.
+        unscanned = bool(known_tickers) and ticker not in known_tickers
+        is_newcomer = unscanned and len(newcomers) < NEWCOMER_SCAN_CAP
+        if unscanned and not is_newcomer:
+            deferred += 1                     # over the per-run cap; picked up by a later run
+        scan_from = LIMIT_TAPE_START_DATE if is_newcomer else lookback_start
+
         # But pass full df for context (prev_close for first bar)
         events, ipo_excl, _ = _detect_limit_events(
             ticker=ticker,
             df=df,
             board=board,
             st_set=st_set,
-            start_date=lookback_start,
+            start_date=scan_from,
         )
+        if is_newcomer:
+            newcomers.append(ticker)
+            history_events.extend(e for e in events if e["date"] < window_floor)
+            events = [e for e in events if e["date"] >= window_floor]
         all_events.extend(events)
 
         for ts in df_recent.index:
@@ -222,6 +275,41 @@ def build_increment(target_date: Optional[str] = None) -> dict:
     if not events_df.empty:
         _append_parquet(events_df, EVENTS_PATH, ["date", "ticker", "event"])
         log.info("Appended %d event rows", len(events_df))
+
+    # Store-newcomers: their pre-window history goes to the EVENTS store only (see the
+    # NEWCOMER_SCAN_CAP note at the top — the tape's historical rows keep the universe that
+    # produced them, and re-aggregating 15 years nightly is off-budget).
+    newcomer_gap: dict = {}
+    if newcomers:
+        if history_events:
+            hist_df = pd.DataFrame(history_events)
+            hist_df["date"] = pd.to_datetime(hist_df["date"])
+            _append_parquet(hist_df, EVENTS_PATH, ["date", "ticker", "event"])
+        newcomer_gap = {
+            "tickers": sorted(newcomers),
+            "history_events_backfilled": len(history_events),
+            "deferred_over_cap": deferred,
+            "tape_note": ("limit_tape aggregates for those dates predate these names "
+                          "(universe_n is the universe that produced each row); re-run "
+                          "scripts/backfill_china_limit_tape.py to rebuild the tape on the "
+                          "full universe."),
+        }
+        # Bare print, flushed: a logger's prefixing format would stop GitHub parsing this.
+        print(
+            f"::warning title=cn-limit-newcomer-backfill::{len(newcomers)} ticker(s) present in "
+            f"data/china_stocks_raw had no limit_events history; {len(history_events)} pre-window "
+            f"event(s) backfilled from {LIMIT_TAPE_START_DATE.date()}"
+            + (f"; {deferred} more deferred over the per-run cap" if deferred else "")
+            + ". limit_tape aggregates for those dates predate these names — re-run "
+              "scripts/backfill_china_limit_tape.py to rebuild the tape on the full universe.",
+            flush=True,
+        )
+        log.warning("newcomer backfill: %d ticker(s), %d history events, %d deferred",
+                    len(newcomers), len(history_events), deferred)
+        data_gaps.append(
+            f"limit_events: {len(newcomers)} store-newcomer(s) backfilled from history; "
+            f"limit_tape aggregates for pre-window dates exclude them"
+        )
 
     # Read back the full tape for the latest row
     latest_tape_row: dict = {}
@@ -284,6 +372,9 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         "latest_aggregate": latest_tape_row,
         "name_packets": name_packets,
         "data_gaps": data_gaps,
+        # Queryable per-name coverage record: which names were still missing their history at
+        # this build, so a hole is never silent even between the one-shot backfill's runs.
+        "newcomer_backfill": newcomer_gap,
         "metadata": {
             "st_flags_current_only": True,
             "st_flags_note": (
@@ -302,6 +393,8 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         "as_of": scan_date_str,
         "tape_rows": len(tape_df),
         "event_rows": len(events_df),
+        "newcomer_tickers": len(newcomers),
+        "newcomer_history_events": len(history_events),
         "name_packets": len(name_packets),
         "data_gaps": data_gaps,
     }

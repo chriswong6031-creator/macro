@@ -999,6 +999,9 @@ jobs:
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
           tests/test_china_delayed_board_disclosure.py
+          tests/test_china_zt_pool_dates.py
+          tests/test_china_limit_events_coverage.py
+          tests/test_drip_append_only.py
           tests/test_cn_calendar.py
           tests/test_china_stocks_copy_w09.py
           tests/test_china_board_track_render.py
