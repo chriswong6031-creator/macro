@@ -159,7 +159,23 @@ def test_ci_pack_is_a_few_hosted_jobs_not_eighty_six() -> None:
     matrix = pack["strategy"]["matrix"]["pack"]
     assert matrix == list(range(len(matrix)))
     assert 2 <= len(matrix) <= 8
-    assert pack["runs-on"] == "ubuntu-latest"
+    # Pull requests stay on the hosted pool; main's proof runs on the idle self-hosted
+    # Linux pool. Asserted as a CONTRACT on both branches rather than as a literal,
+    # because the point of the expression is that the two events route differently —
+    # pinning the string would have forbidden the routing outright.
+    #
+    # Why main routes away from `ubuntu-latest` (2026-08-09): main's ci.yml proof sat
+    # `queued` 30+ minutes behind 133 queued runs while `render-linux` idled, and that
+    # one starved run blocks the whole fleet — `merge_on_green.main_proof` answers "is
+    # main green on ci-pack-N" from the newest CONCLUDED ci.yml run on main, so with no
+    # fresh proof the base-inherited-red refresh cannot fire and every pull request that
+    # inherited a since-healed red stays blocked.
+    runs_on = " ".join(str(pack["runs-on"]).split())
+    assert "github.event_name == 'pull_request'" in runs_on
+    assert "'ubuntu-latest'" in runs_on
+    assert '["self-hosted","render-linux"]' in runs_on
+    # The macstudio pool is the render/nightly lane and must never absorb CI packs.
+    assert "macstudio" not in runs_on
     assert pack["strategy"]["fail-fast"] is False
     assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
