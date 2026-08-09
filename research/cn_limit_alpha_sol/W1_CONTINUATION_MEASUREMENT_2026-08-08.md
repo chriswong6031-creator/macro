@@ -2,9 +2,9 @@
 
 **Receipt date:** 2026-08-08
 **Authority:** `none_research_display_only`
-**Model/definition:** `sol_w1_complete_clock_positive_volume_self_financing_2026-08-08`
+**Model/definition:** `sol_w1_era_aware_traded_ipo_canonical_vendor_2026-08-08`
 
-> Curated-slice warning: this receipt does not describe the full 打板 universe. The vendor pool has 1,770 distinct tickers, but only 514 (29.04%) overlap the local nominal OHLCV slice.
+> Curated-slice warning: this receipt does not describe the full 打板 universe. The vendor pool has 1,607 distinct tickers, but only 580 (36.09%) overlap the local nominal OHLCV slice.
 
 ## Frozen contract
 
@@ -13,7 +13,8 @@
 - `C-POSTGAP`: realised auction gap conditions next-board probability only. There is deliberately no daily-OHLCV return claim because 09:30/first-five-minute execution is absent.
 - T+1 exits begin no earlier than D+2 for a D+1-open entry. Every exit resolves on exact market sessions; a missing bar is unresolved, and lower-limit carry advances one market session at a time.
 - Positive finite ticker volume is mandatory for signal, next-session tradability, fill, every fixed exit, every seal-state check, and every lower-limit carry step. Zero volume is halt/no-trade, never fill.
-- Main-board listings on/after 2023-04-10, plus STAR and ChiNext, quarantine their first five observed listing sessions as no-limit IPO sessions; earlier main listings quarantine the first session.
+- The IPO clock counts positive-volume observations on exact market sessions, not raw rows. Main listings from 2023-04-10, ChiNext listings from 2020-08-24, and STAR from inception quarantine five traded sessions; earlier main/ChiNext listings quarantine listing day only. Start/end filtering retains full listing context.
+- Vendor identity is canonicalized before coverage and joining: uppercase `.SH` aliases map to the repo's `.SS` suffix.
 - Main board is primary; ChiNext band eras are separate secondary cohorts; STAR is descriptive; BSE/ST are untested.
 
 ## Data and event inventory
@@ -24,11 +25,13 @@
 - 2014-12-25 raw support: 983 names, 894 with positive volume. The clock anchor has 3,780 positive-volume sessions and 6 nonpositive placeholders; its index, not volume, defines the clock.
 - Zero/missing-volume census: 277,152 raw rows total, 133,854 in-window; 133,107 otherwise price-eligible rows and 1 tolerant board-price rows were reclassified.
 - Zero-volume downstream states: 456 next sessions; exact-exit unresolved counts {"seal_state_next_open": 342, "tplus1_legal_close": 268, "tplus1_legal_open": 265, "tplus2_close": 370, "tplus4_close": 524}. Off-calendar positive-volume otherwise-eligible rows: 0.
-- Registration-era main IPO quarantine: 41 files and 205 first-five rows; boundary 2023-04-10.
+- Registration-era main IPO quarantine: 41 files and 204 in-window positive-volume no-limit observations; boundary 2023-04-10.
+- IPO traded-session regimes (files): {"chinext_pre_reform_listing_day_only": 233, "chinext_registration_first_five": 120, "main_historical_listing_day_only": 1204, "main_registration_first_five": 41, "star_from_inception_first_five": 243}; raw rows before the first positive-volume session: 450,434.
 - Tolerant boards: 55,631; strict boards: 29,351; marginal tolerance rows: 26,280.
 - Measured after boundary purge: 55,140 signals, 3,699 date clusters, 44,177 board-run clusters.
 - `china_zt_pool` vendor strata use valid observed sessions only: 11 clone dates are excluded, missing sessions are not imputed, and retrospective rows are explicitly stamped non-PIT.
-- Content-addressed input/config fingerprint: `fc96e25406d29a8473221defd973323449335e87f3a77b793ef0d506c1ee3136`. The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated.
+- Vendor alias reconciliation: 1,770 literal names become 1,607 canonical names; 580 overlap raw OHLCV, and 1,187/3,102 valid rows have local prices.
+- Content-addressed input/config fingerprint: `7924ccc8295c23d835c851e0e26a5f73ee09f1bba9d109e813e8f4270a5db76d`. The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated.
 
 ## Construction verdicts
 
@@ -269,7 +272,8 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 ## Vendor descriptive stratum
 
 - Valid observed-session rows: 3,102; excluded clone rows: 818 across 11 dates.
-- Retrospectively fetched/not-proven-PIT rows: 1,205; joined curated event rows: 933.
+- Retrospectively fetched/not-proven-PIT rows: 1,205; joined curated event rows: 1,156.
+- Ticker canonicalization recovered 223 joins beyond the literal-suffix sensitivity (933 literal joins).
 - Absolute seal fund is unnormalised; all vendor-field verdicts remain descriptive.
 
 ## ORE coverage ledger
@@ -287,6 +291,7 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 - `historical_replay_after_common_prior` is labelled replay, never unseen test.
 - `EVENT_LEVEL_CANDIDATE_ROW_EXPECTANCY_NOT_A_PORTFOLIO_RETURN` is the exact label for cash-zero signal rows; the no-duplicate date-equal series is cohort expectancy, and only the separate cash-reservation proxy is self-financing.
 - The self-financing proxy values open positions at cost until realised exits; interim drawdown, theme concentration, capacity, and mark-to-market risk remain unmeasured.
+- IPO listing dates are inferred from first positive-volume common-session raw observations; no complete official listing-master claim is made. Vendor identity normalization is limited to the explicit `.SH`/`.SS` alias.
 - The 0/30/60/100 bp grid is a round-trip friction sensitivity, not a live fill model.
 - Date- and board-run-cluster intervals accompany pooled means; clustered names on one board-festival date are not treated as independent evidence.
 - No construction receives ranking, sizing, gating, or trading authority.
@@ -313,3 +318,5 @@ This table is printed separately so the pooled 2011–2019 train average cannot 
 - active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions
 - N>=3 continuation riders beyond explicitly exploratory descriptive cells
 - capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy
+- complete official listing-date master beyond first positive-volume common-session inference
+- vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization

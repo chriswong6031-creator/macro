@@ -1,6 +1,6 @@
 {
-  "schema": "cn_limit_continuation_w1/v3",
-  "model_version": "sol_w1_complete_clock_positive_volume_self_financing_2026-08-08",
+  "schema": "cn_limit_continuation_w1/v4",
+  "model_version": "sol_w1_era_aware_traded_ipo_canonical_vendor_2026-08-08",
   "receipt_date": "2026-08-08",
   "authority": "none_research_display_only",
   "construction_contract": {
@@ -14,15 +14,25 @@
     "ladder_adjacency": "primary 连板 increments only across adjacent common CN market sessions and resets after a missing/halted bar",
     "exdiv_suppression": "abs(open/prev_close-1) > 1.5*board_width",
     "ipo_no_limit_window": {
-      "main_before_2023_04_10": "first observed listing session quarantined",
-      "main_on_or_after_2023_04_10": "first five observed listing sessions quarantined",
-      "star_and_chinext": "first five observed listing sessions quarantined",
+      "clock": "positive-volume ticker observations on exact common CN market sessions; zero-volume issue-price/raw placeholder rows do not start or advance the ordinal",
+      "filter_context": "start/end filtering occurs after the full-frame listing ordinal is computed",
+      "main_before_2023_04_10": "positive-volume listing session only",
+      "main_on_or_after_2023_04_10": "first five positive-volume traded sessions",
+      "chinext_before_2020_08_24": "positive-volume listing session only under the 10 percent era",
+      "chinext_on_or_after_2020_08_24": "first five positive-volume traded sessions",
+      "star_from_2019_07_22_inception": "first five positive-volume traded sessions",
       "boundary_evidence": {
-        "szse_rule_3_3_15": "https://docs.static.szse.cn/www/lawrules/index/rule/W020230217564423808793.pdf",
-        "sse_first_main_registration_listings": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230404_5719112.shtml",
-        "effective_boundary": "2023-04-10"
+        "sse_main_first_five_rule": "https://www.sse.com.cn/lawandrules/sselawsrules2025/repeal/rules/c/c_20250612_10824490.shtml",
+        "sse_main_registration_onset": "https://www.sse.com.cn/aboutus/mediacenter/hotandd/c/c_20230404_5719112.shtml",
+        "szse_main_first_five_rule": "https://docs.static.szse.cn/www/lawrules/rule/allrules/bussiness/W020230217564423808793.pdf",
+        "chinext_pre_reform_rule": "https://docs.static.szse.cn/www/aboutus/trends/news/W020180328462965472234.pdf",
+        "chinext_reform_mechanics": "https://www.szse.cn/www/investor/index/update/t20200807_580310.html",
+        "chinext_registration_onset": "https://www.szse.cn/aboutus/trends/news/t20200821_580924.html",
+        "star_first_listing_onset": "https://star.sse.com.cn/star/media/news/c/c_20190719_4866789.shtml"
       }
     },
+    "ipo_listing_date_truth": "inferred from the first positive-volume exact-market-session raw observation; this is not a claim of complete official listing-master coverage",
+    "vendor_ticker_identity": "uppercase; .SH aliases canonicalized to repo-native .SS before coverage and join",
     "primary_universe": "curated main-board non-current-ST-intersection names",
     "secondary_universe": "ChiNext 10% and 20% eras reported separately",
     "descriptive_universe": "STAR",
@@ -140,7 +150,27 @@
     "zero_volume_tolerant_board_price_rows_reclassified": 1,
     "off_calendar_eligible_positive_volume_rows": 0,
     "registration_era_main_files_first5_quarantine": 41,
-    "registration_era_main_no_limit_rows_quarantined": 205,
+    "registration_era_main_no_limit_rows_quarantined": 204,
+    "ipo_no_limit_clock": {
+      "ordinal": "positive-volume observations on the exact common CN market-session clock",
+      "raw_issue_price_and_zero_volume_rows_advance_clock": false,
+      "start_end_filter_applied_after_listing_context": true,
+      "files_by_regime": {
+        "chinext_pre_reform_listing_day_only": 233,
+        "chinext_registration_first_five": 120,
+        "main_historical_listing_day_only": 1204,
+        "main_registration_first_five": 41,
+        "star_from_inception_first_five": 243
+      },
+      "quarantined_positive_volume_rows_by_regime": {
+        "chinext_pre_reform_listing_day_only": 182,
+        "chinext_registration_first_five": 596,
+        "main_historical_listing_day_only": 439,
+        "main_registration_first_five": 204,
+        "star_from_inception_first_five": 1215
+      },
+      "raw_rows_before_first_positive_volume_session": 450434
+    },
     "raw_rows_off_common_cn_session_calendar": 448596,
     "raw_rows_off_common_cn_session_calendar_in_measurement_window": 0,
     "raw_first_session": "1990-12-19",
@@ -180,14 +210,14 @@
     },
     "input_provenance": {
       "algorithm": "sha256_content_addressed_v2",
-      "combined_sha256": "fc96e25406d29a8473221defd973323449335e87f3a77b793ef0d506c1ee3136",
+      "combined_sha256": "7924ccc8295c23d835c851e0e26a5f73ee09f1bba9d109e813e8f4270a5db76d",
       "components": {
         "raw_ohlcv_content_sha256": "65ebca929e9a3ff470233994cb5af7446ad584c74a8f066c89d8afd0d7a1e1df",
         "calendar_content_sha256": "53f8c51526e675e14d3591f2971accb0f57a9851e525c1e8cf052acf33d26623",
         "st_snapshot_content_sha256": "e7bfdd62b9b8c4e93823d9a5b49c98f690f3a1a704aaf48717578977cea51fcd",
         "zt_pool_content_sha256": "83e0b2633263e6bfde9ad0ea1febac0c6589c34386bb7c5d678e0b0a862c265f",
-        "runner_content_sha256": "c537ba4dcc8f17a6bedbaf9ac2718f1821811957850ef54944f3c7609f3b4e81",
-        "definition_config_sha256": "cb5e3e807af16f67361ded556a6975883183f48250422fc5670fd6cd7de27e3a"
+        "runner_content_sha256": "bcc88be97c113b6b76cda3571177b122cc5858c7d2ef48d8ec273c7bf12ef25a",
+        "definition_config_sha256": "c1269bb79eb666d012ae5b7c54924cc057a85993b5508742de229f812717bf8d"
       },
       "zt_pool_snapshot_disclosure": "The hash covers the exact worktree file consumed; clone sessions remain present in this snapshot but are excluded by observed-calendar identity. No claim is made that a separate repaired data commit is integrated."
     },
@@ -202,13 +232,23 @@
       ]
     },
     "zt_pool": {
-      "status": "inventory_with_valid-session-descriptive-join",
+      "status": "canonical_identity_inventory_with_valid_session_descriptive_join",
       "path": "data/china_zt_pool/pool.parquet",
       "rows": 3920,
-      "unique_tickers": 1770,
-      "raw_overlap_tickers": 514,
-      "raw_overlap_pct": 29.039548022598872,
-      "vendor_tickers_without_raw_ohlcv": 1256,
+      "literal_unique_tickers": 1770,
+      "unique_tickers": 1607,
+      "ticker_alias_rule": "uppercase; .SH is canonicalized to repo-native .SS",
+      "sh_alias_rows_normalized": 457,
+      "sh_alias_unique_tickers_normalized": 308,
+      "literal_to_canonical_unique_name_reduction": 163,
+      "canonical_duplicate_ticker_date_rows": 0,
+      "literal_raw_overlap_tickers": 514,
+      "raw_overlap_tickers": 580,
+      "raw_overlap_pct": 36.092097075295584,
+      "vendor_tickers_without_raw_ohlcv": 1027,
+      "valid_observed_session_rows": 3102,
+      "valid_observed_rows_with_raw_ohlcv": 1187,
+      "valid_observed_rows_with_raw_ohlcv_pct": 38.26563507414571,
       "stamped_dates": 47,
       "first_stamped_date": "2026-06-15",
       "last_stamped_date": "2026-08-08",
@@ -176069,7 +176109,12 @@
         "2026-07-01"
       ],
       "same_day_rows": 1897,
-      "joined_curated_event_rows": 933,
+      "ticker_alias_rule": "uppercase; .SH is canonicalized to repo-native .SS before join",
+      "sh_alias_rows_normalized": 457,
+      "canonical_duplicate_ticker_date_rows": 0,
+      "literal_joined_curated_event_rows_sensitivity": 933,
+      "joined_curated_event_rows": 1156,
+      "alias_recovered_join_rows": 223,
       "seal_fund_status": "absolute_unscaled_amount_not_normalized_by_traded_value_descriptive_only",
       "probability_tables": [
         {
@@ -176256,26 +176301,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 121,
-            "mean": 0.17355371900826447,
+            "n": 215,
+            "mean": 0.17209302325581396,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.0297798566135955,
+              "se": 0.02391709915331601,
               "ci95": [
-                0.11518520004561729,
-                0.23192223797091166
+                0.12521550891531458,
+                0.21897053759631335
               ]
             },
             "run_cluster": {
-              "clusters": 116,
-              "se": 0.03311924825590768,
+              "clusters": 202,
+              "se": 0.02755436698439632,
               "ci95": [
-                0.10863999242668541,
-                0.2384674455898435
+                0.11808646396639717,
+                0.22609958254523077
               ]
             }
           },
@@ -176286,26 +176331,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 53,
-            "mean": 0.2641509433962264,
+            "n": 95,
+            "mean": 0.30526315789473685,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.06464879250382137,
+              "se": 0.052112795295607035,
               "ci95": [
-                0.13743931008873653,
-                0.39086257670371627
+                0.20312207911534708,
+                0.4074042366741266
               ]
             },
             "run_cluster": {
-              "clusters": 44,
-              "se": 0.08675093021869777,
+              "clusters": 76,
+              "se": 0.05955147512228739,
               "ci95": [
-                0.09411912016757878,
-                0.43418276662487404
+                0.18854226665505358,
+                0.4219840491344201
               ]
             }
           },
@@ -176316,26 +176361,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 81,
-            "mean": 0.12345679012345678,
+            "n": 152,
+            "mean": 0.15789473684210525,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.04893914145577444,
+              "se": 0.04096481367981899,
               "ci95": [
-                0.027536072870138886,
-                0.2193775073767747
+                0.07760370202966003,
+                0.23818577165455046
               ]
             },
             "run_cluster": {
-              "clusters": 77,
-              "se": 0.03492682700491299,
+              "clusters": 141,
+              "se": 0.030831232926274654,
               "ci95": [
-                0.055000209193827324,
-                0.19191337105308626
+                0.09746552030660693,
+                0.21832395337760357
               ]
             }
           },
@@ -176436,26 +176481,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 3,
-            "mean": 0.3333333333333333,
+            "n": 12,
+            "mean": 0.25,
             "median": 0.0,
             "p10": 0.0,
-            "p90": 0.8,
+            "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 7,
+              "se": 0.09001028747788696,
               "ci95": [
-                null,
-                null
+                0.07357983654334155,
+                0.42642016345665845
               ]
             },
             "run_cluster": {
-              "clusters": 3,
-              "se": 0.3333333333333333,
+              "clusters": 12,
+              "se": 0.13055824196677338,
               "ci95": [
                 0.0,
-                0.9866666666666666
+                0.5058941542548758
               ]
             }
           },
@@ -176466,26 +176511,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 1,
+            "n": 5,
             "mean": 0.0,
             "median": 0.0,
             "p10": 0.0,
             "p90": 0.0,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 5,
+              "se": 0.0,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.0
               ]
             },
             "run_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 5,
+              "se": 0.0,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.0
               ]
             }
           },
@@ -176496,14 +176541,14 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 4,
+            "n": 7,
             "mean": 0.0,
             "median": 0.0,
             "p10": 0.0,
             "p90": 0.0,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 2,
+              "clusters": 5,
               "se": 0.0,
               "ci95": [
                 0.0,
@@ -176511,7 +176556,7 @@
               ]
             },
             "run_cluster": {
-              "clusters": 4,
+              "clusters": 7,
               "se": 0.0,
               "ci95": [
                 0.0,
@@ -176796,26 +176841,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 68,
-            "mean": 0.19117647058823528,
+            "n": 124,
+            "mean": 0.22580645161290322,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.03937376175710461,
+              "se": 0.0526283136679982,
               "ci95": [
-                0.11400389754431026,
-                0.2683490436321603
+                0.12265495682362675,
+                0.3289579464021797
               ]
             },
             "run_cluster": {
-              "clusters": 67,
-              "se": 0.04733393355879726,
+              "clusters": 117,
+              "se": 0.03660688963966448,
               "ci95": [
-                0.09840196081299266,
-                0.2839509803634779
+                0.15405694791916086,
+                0.2975559553066456
               ]
             }
           },
@@ -176826,26 +176871,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 88,
-            "mean": 0.14772727272727273,
+            "n": 177,
+            "mean": 0.1638418079096045,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.0380897619849366,
+              "se": 0.048345395251567586,
               "ci95": [
-                0.07307133923679701,
-                0.22238320621774846
+                0.06908483321653204,
+                0.258598782602677
               ]
             },
             "run_cluster": {
-              "clusters": 83,
-              "se": 0.03838609179723684,
+              "clusters": 163,
+              "se": 0.029814832162924222,
               "ci95": [
-                0.07249053280468852,
-                0.22296401264985694
+                0.10540473687027303,
+                0.222278878948936
               ]
             }
           },
@@ -176856,26 +176901,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 99,
-            "mean": 0.1919191919191919,
+            "n": 161,
+            "mean": 0.20496894409937888,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.04830307311320359,
+              "se": 0.04724455642275643,
               "ci95": [
-                0.09724516861731287,
-                0.28659321522107095
+                0.11236961351077629,
+                0.29756827468798147
               ]
             },
             "run_cluster": {
-              "clusters": 88,
-              "se": 0.05456963175900283,
+              "clusters": 140,
+              "se": 0.04198524662953755,
               "ci95": [
-                0.08496271367154636,
-                0.29887567016683747
+                0.12267786070548528,
+                0.2872600274932725
               ]
             }
           },
@@ -176976,26 +177021,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 3,
-            "mean": 0.3333333333333333,
+            "n": 6,
+            "mean": 0.16666666666666666,
             "median": 0.0,
             "p10": 0.0,
-            "p90": 0.8,
+            "p90": 0.5,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 2,
-              "se": 0.22222222222222224,
+              "clusters": 5,
+              "se": 0.13888888888888892,
               "ci95": [
                 0.0,
-                0.768888888888889
+                0.438888888888889
               ]
             },
             "run_cluster": {
-              "clusters": 3,
-              "se": 0.3333333333333333,
+              "clusters": 6,
+              "se": 0.16666666666666666,
               "ci95": [
                 0.0,
-                0.9866666666666666
+                0.4933333333333333
               ]
             }
           },
@@ -177006,26 +177051,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 3,
-            "mean": 0.0,
+            "n": 9,
+            "mean": 0.1111111111111111,
             "median": 0.0,
             "p10": 0.0,
-            "p90": 0.0,
+            "p90": 0.20000000000000018,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 2,
-              "se": 0.0,
+              "clusters": 6,
+              "se": 0.1047565601757848,
               "ci95": [
                 0.0,
-                0.0
+                0.3164339690556493
               ]
             },
             "run_cluster": {
-              "clusters": 3,
-              "se": 0.0,
+              "clusters": 9,
+              "se": 0.1111111111111111,
               "ci95": [
                 0.0,
-                0.0
+                0.3288888888888889
               ]
             }
           },
@@ -177036,26 +177081,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 2,
-            "mean": 0.0,
+            "n": 9,
+            "mean": 0.1111111111111111,
             "median": 0.0,
             "p10": 0.0,
-            "p90": 0.0,
+            "p90": 0.20000000000000018,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 6,
+              "se": 0.08970815863992566,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.28693910204536544
               ]
             },
             "run_cluster": {
-              "clusters": 2,
-              "se": 0.0,
+              "clusters": 9,
+              "se": 0.1111111111111111,
               "ci95": [
                 0.0,
-                0.0
+                0.3288888888888889
               ]
             }
           },
@@ -177336,26 +177381,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 133,
-            "mean": 0.13533834586466165,
+            "n": 233,
+            "mean": 0.15879828326180256,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.0335941118918696,
+              "se": 0.028837557064312243,
               "ci95": [
-                0.06949388655659723,
-                0.20118280517272608
+                0.10227667141575057,
+                0.21531989510785454
               ]
             },
             "run_cluster": {
-              "clusters": 126,
-              "se": 0.02986786265487877,
+              "clusters": 217,
+              "se": 0.025447685647724372,
               "ci95": [
-                0.07679733506109926,
-                0.19387935666822403
+                0.1089208193922628,
+                0.20867574713134235
               ]
             }
           },
@@ -177366,26 +177411,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 13,
-            "mean": 0.23076923076923078,
+            "n": 22,
+            "mean": 0.22727272727272727,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 9,
-              "se": 0.13750236732097337,
+              "clusters": 11,
+              "se": 0.10765236088403653,
               "ci95": [
-                0.0,
-                0.5002738707183385
+                0.016274099940015663,
+                0.43827135460543887
               ]
             },
             "run_cluster": {
-              "clusters": 12,
-              "se": 0.11227021278704305,
+              "clusters": 20,
+              "se": 0.0829160397594965,
               "ci95": [
-                0.010719613706626413,
-                0.4508188478318351
+                0.06475728934411412,
+                0.3897881652013404
               ]
             }
           },
@@ -177396,26 +177441,26 @@
           "market_scope": "main_primary",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 109,
-            "mean": 0.22018348623853212,
+            "n": 207,
+            "mean": 0.2318840579710145,
             "median": 0.0,
             "p10": 0.0,
             "p90": 1.0,
             "positive_rate": null,
             "date_cluster": {
               "clusters": 11,
-              "se": 0.06847588960068411,
+              "se": 0.04374934025466053,
               "ci95": [
-                0.08597074262119125,
-                0.354396229855873
+                0.14613535107187986,
+                0.31763276487014913
               ]
             },
             "run_cluster": {
-              "clusters": 96,
-              "se": 0.050985408452998586,
+              "clusters": 178,
+              "se": 0.03642404843865355,
               "ci95": [
-                0.1202520856706549,
-                0.3201148868064093
+                0.16049292303125354,
+                0.3032751929107754
               ]
             }
           },
@@ -177516,26 +177561,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 6,
-            "mean": 0.0,
+            "n": 17,
+            "mean": 0.11764705882352941,
             "median": 0.0,
             "p10": 0.0,
-            "p90": 0.0,
+            "p90": 0.40000000000000036,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 2,
-              "se": 0.0,
+              "clusters": 9,
+              "se": 0.07956596738800635,
               "ci95": [
                 0.0,
-                0.0
+                0.27359635490402184
               ]
             },
             "run_cluster": {
-              "clusters": 6,
-              "se": 0.0,
+              "clusters": 17,
+              "se": 0.08054743492723031,
               "ci95": [
                 0.0,
-                0.0
+                0.2755200312809008
               ]
             }
           },
@@ -177546,26 +177591,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 1,
+            "n": 4,
             "mean": 0.0,
             "median": 0.0,
             "p10": 0.0,
             "p90": 0.0,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 4,
+              "se": 0.0,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.0
               ]
             },
             "run_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 4,
+              "se": 0.0,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.0
               ]
             }
           },
@@ -177576,26 +177621,26 @@
           "market_scope": "star_descriptive",
           "observation_class": "retrospectively_fetched_not_proven_PIT",
           "metric": {
-            "n": 1,
-            "mean": 1.0,
-            "median": 1.0,
-            "p10": 1.0,
-            "p90": 1.0,
+            "n": 3,
+            "mean": 0.3333333333333333,
+            "median": 0.0,
+            "p10": 0.0,
+            "p90": 0.8,
             "positive_rate": null,
             "date_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 3,
+              "se": 0.3333333333333333,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.9866666666666666
               ]
             },
             "run_cluster": {
-              "clusters": 1,
-              "se": null,
+              "clusters": 3,
+              "se": 0.3333333333333333,
               "ci95": [
-                null,
-                null
+                0.0,
+                0.9866666666666666
               ]
             }
           },
@@ -177753,7 +177798,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -177808,7 +177855,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -177916,6 +177965,8 @@
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
           "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization",
           "daily mark-to-market NAV and portfolio-level MFE/MAE",
           "theme/sector exposure caps and cross-name factor dependence",
           "auction capacity, queue priority, and partial fills",
@@ -177958,7 +178009,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -177995,7 +178048,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178032,7 +178087,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178068,7 +178125,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178100,7 +178159,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178132,7 +178193,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178164,7 +178227,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178196,7 +178261,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178228,7 +178295,9 @@
           "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+          "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
         ]
       }
     },
@@ -178261,6 +178330,8 @@
           "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
           "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
           "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+          "complete official listing-date master beyond first positive-volume common-session inference",
+          "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization",
           "normalised seal fund divided by contemporaneous traded value",
           "true PIT vendor capture before the retrospective fetch window",
           "zero-event session confirmation from an independent complete vendor response",
@@ -178312,7 +178383,9 @@
     "vendor fields are descriptive only on valid observed sessions; clone dates are excluded and missing sessions are not imputed",
     "nominal yfinance-like bars require a tolerance and corporate-action heuristic",
     "daily bars identify official opens but not queue priority, partial fills, or a 09:30 execution",
-    "current ST membership is not historical membership; the family remains untested"
+    "current ST membership is not historical membership; the family remains untested",
+    "IPO listing dates are inferred from first positive-volume common-session raw observations, not a complete official listing master",
+    "vendor identity normalization covers the explicit .SH/.SS alias only, not a complete security master"
   ],
   "UNTESTED VARIANTS": [
     "full-market small-cap universe: zt_pool names without local nominal OHLCV are outside this curated slice",
@@ -178334,6 +178407,8 @@
     "strict first-touch and intraday seal-path sensitivity beyond the measured strict sealed-close sensitivity",
     "active-ceiling, 3-session acceleration, and leader-failure-shock ecology constructions",
     "N>=3 continuation riders beyond explicitly exploratory descriptive cells",
-    "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy"
+    "capital/theme/capacity-complete portfolio simulation beyond the frozen self-financing cash-reservation proxy",
+    "complete official listing-date master beyond first positive-volume common-session inference",
+    "vendor security-master identity beyond the explicit .SH to .SS suffix canonicalization"
   ]
 }
