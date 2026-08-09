@@ -342,6 +342,66 @@ def validate_candidate_projection_inputs(
     )
 
 
+def _observation_key(row: Mapping[str, Any], *, label: str) -> tuple[str, str]:
+    """Return one candidate observation's graph-independent identity.
+
+    ``observation_id`` folds in the reviewed-graph digest, so it moves whenever
+    the graph is re-curated -- a re-serialized or merely extended graph made
+    every frozen row re-present as unseen, and the append-only writer then
+    refused the whole projection, permanently.  What actually identifies an
+    observation is the hypothesis and the moment it became knowable:
+    ``candidate_id`` (family, issuer, event) is stable across every later graph
+    generation, and ``known_at`` is what distinguishes a genuine re-observation
+    from a restatement.  Both halves are load-bearing: keying on
+    ``candidate_id`` alone would collapse the published observation history --
+    ``/candidate/{id}/history`` -- to its first row forever.
+    """
+    return (
+        _require_text(row.get("candidate_id"), label=f"{label} candidate_id"),
+        _require_text(row.get("known_at"), label=f"{label} known_at"),
+    )
+
+
+def _ledger_by_observation_key(ledger: LedgerSnapshot) -> dict[tuple[str, str], dict[str, Any]]:
+    """Index immutable history by graph-independent observation identity."""
+    return {
+        _observation_key(row, label="candidate ledger row"): row
+        for row in ledger.observations
+    }
+
+
+def _latest_ledger_observations(ledger: LedgerSnapshot) -> dict[str, dict[str, Any]]:
+    """Index the most recent recorded observation of each candidate."""
+    latest: dict[str, dict[str, Any]] = {}
+    for row in sorted(
+        ledger.observations,
+        key=lambda value: (str(value.get("known_at") or ""), str(value.get("observation_id") or "")),
+    ):
+        latest[row["candidate_id"]] = row
+    return latest
+
+
+def _bound_ledger_observation(
+    row: Mapping[str, Any],
+    *,
+    by_observation_key: Mapping[tuple[str, str], dict[str, Any]],
+    latest_by_candidate: Mapping[str, dict[str, Any]],
+    label: str,
+) -> dict[str, Any] | None:
+    """Return the immutable row a projected candidate must publish.
+
+    Normally that is the observation with this exact clock.  A re-curation can
+    also hand the current run a clock the ledger never recorded and cannot
+    record -- one that moved *behind* the frozen writer clock, which the
+    anti-backfill law will not append.  History is the authority there, so the
+    already-recorded observation of the same hypothesis is published rather than
+    failing the run over a graph edit.
+    """
+    candidate_id, _known_at = _observation_key(row, label=label)
+    exact = by_observation_key.get((candidate_id, _known_at))
+    return exact if exact is not None else latest_by_candidate.get(candidate_id)
+
+
 def _ledger_from_bytes(raw: bytes, *, label: str) -> LedgerSnapshot:
     if not raw:
         return LedgerSnapshot(raw=b"", observations=())
@@ -354,6 +414,7 @@ def _ledger_from_bytes(raw: bytes, *, label: str) -> LedgerSnapshot:
         raise CandidateProjectionError(f"{label} contains an empty JSONL row")
     observations: list[dict[str, Any]] = []
     observation_ids: set[str] = set()
+    observation_keys: set[tuple[str, str]] = set()
     for index, line in enumerate(lines, start=1):
         try:
             value = json.loads(line.decode("utf-8"))
@@ -367,6 +428,13 @@ def _ledger_from_bytes(raw: bytes, *, label: str) -> LedgerSnapshot:
         if observation_id in observation_ids:
             raise CandidateProjectionError(f"{label} has a duplicate observation_id")
         observation_ids.add(observation_id)
+        # One row per hypothesis per moment it was knowable.  A candidate may be
+        # observed many times -- that history is a published surface -- but a
+        # re-serialized reviewed graph is not one of those moments.
+        observation_key = _observation_key(value, label=f"{label} row {index}")
+        if observation_key in observation_keys:
+            raise CandidateProjectionError(f"{label} has a duplicate candidate observation")
+        observation_keys.add(observation_key)
         observations.append(value)
     return LedgerSnapshot(raw=raw, observations=tuple(observations))
 
@@ -568,8 +636,17 @@ def _assert_candidate_source_binding(
     queue: Mapping[str, Any],
     *,
     inputs: CandidateProjectionInputs,
+    issued_observation_ids: frozenset[str] = frozenset(),
 ) -> None:
-    """Bind exact rows and backlog provenance to this complete source view."""
+    """Bind exact rows and backlog provenance to this complete source view.
+
+    A candidate frozen into the ledger by an earlier generation keeps the
+    reviewed-graph generation it was issued under: the ledger is append-only, so
+    re-binding it to today's digest would be rewriting history rather than
+    recording it.  ``issued_observation_ids`` names exactly those rows.  Every
+    row this generation introduces -- and the queue document, its source content
+    IDs, and the whole mapping backlog -- stays bound to the current graph.
+    """
     source_content_ids = queue.get("source_content_ids")
     required_content_ids = {
         f"latest-sha256:{inputs.latest_sha256}",
@@ -588,16 +665,24 @@ def _assert_candidate_source_binding(
         for index, row in enumerate(rows, start=1):
             resolution = row.get("issuer_resolution_ref") if isinstance(row, Mapping) else None
             artifact_ids = row.get("artifact_content_ids") if isinstance(row, Mapping) else None
-            if (
-                not isinstance(resolution, Mapping)
-                or resolution.get("graph_id") != inputs.recipient_graph_id
-                or resolution.get("graph_digest") != inputs.recipient_graph_digest
-                or not isinstance(artifact_ids, list)
-                or f"graph-sha256:{inputs.recipient_graph_digest}" not in artifact_ids
-            ):
-                raise CandidateProjectionError(
-                    f"candidate queue {collection_name} row {index} is detached from the reviewed graph"
+            label = f"candidate queue {collection_name} row {index}"
+            detached = f"{label} is detached from the reviewed graph"
+            if not isinstance(resolution, Mapping) or not isinstance(artifact_ids, list):
+                raise CandidateProjectionError(detached)
+            if row.get("observation_id") in issued_observation_ids:
+                graph_id = _require_text(resolution.get("graph_id"), label=f"{label} graph_id")
+                graph_digest = _require_text(
+                    resolution.get("graph_digest"), label=f"{label} graph_digest"
                 )
+            else:
+                graph_id = inputs.recipient_graph_id
+                graph_digest = inputs.recipient_graph_digest
+            if (
+                resolution.get("graph_id") != graph_id
+                or resolution.get("graph_digest") != graph_digest
+                or f"graph-sha256:{graph_digest}" not in artifact_ids
+            ):
+                raise CandidateProjectionError(detached)
     for index, row in enumerate(queue.get("mapping_backlog") or [], start=1):
         artifact_ids = row.get("source_artifact_content_ids") if isinstance(row, Mapping) else None
         if (
@@ -611,10 +696,9 @@ def _assert_candidate_source_binding(
 
 
 def _assert_queue_ledger_binding(queue: Mapping[str, Any], ledger: LedgerSnapshot) -> None:
-    """Ensure every projected exact observation exactly matches immutable history."""
-    ledger_by_observation_id = {
-        row["observation_id"]: row for row in ledger.observations
-    }
+    """Ensure every projected exact candidate exactly matches immutable history."""
+    by_observation_key = _ledger_by_observation_key(ledger)
+    latest_by_candidate = _latest_ledger_observations(ledger)
     for collection_name in ("candidates", "recently_matured"):
         rows = queue.get(collection_name, [])
         if not isinstance(rows, list):
@@ -624,11 +708,12 @@ def _assert_queue_ledger_binding(queue: Mapping[str, Any], ledger: LedgerSnapsho
                 raise CandidateProjectionError(
                     f"candidate queue {collection_name} row {index} violates the candidate contract"
                 )
-            observation_id = _require_text(
-                row.get("observation_id"),
-                label=f"candidate queue {collection_name} row {index} observation_id",
+            ledger_row = _bound_ledger_observation(
+                row,
+                by_observation_key=by_observation_key,
+                latest_by_candidate=latest_by_candidate,
+                label=f"candidate queue {collection_name} row {index}",
             )
-            ledger_row = ledger_by_observation_id.get(observation_id)
             if ledger_row is None:
                 raise CandidateProjectionError(
                     f"candidate queue {collection_name} is not bound to the candidate ledger"
@@ -642,19 +727,20 @@ def _assert_queue_ledger_binding(queue: Mapping[str, Any], ledger: LedgerSnapsho
 def _queue_bound_to_immutable_ledger(
     queue: Mapping[str, Any], ledger: LedgerSnapshot
 ) -> tuple[dict[str, Any], str]:
-    """Replace current rows with their immutable observations and re-address queue.
+    """Replace current rows with their immutable issuance rows and re-address queue.
 
-    Candidate observations contain ``generated_at``.  The observation ID does
-    not; therefore a later run can rediscover a known observation with a new
-    envelope clock.  The ledger is the historical authority for that ID, so
-    the current queue must retain the ledger row rather than silently retime
-    it.  New IDs are already present in ``ledger`` because the caller appended
+    Candidate observations contain ``generated_at``, and their
+    ``observation_id`` additionally folds in the reviewed-graph digest.  A later
+    run therefore rediscovers a known candidate with a new envelope clock and,
+    after any curation edit, a new observation identity as well.  The ledger is
+    the historical authority for the *candidate*, so the current queue retains
+    the issuance row rather than silently retiming or re-issuing it.  First-seen
+    candidates are already present in ``ledger`` because the caller appended
     their canonical rows first.
     """
     bound = deepcopy(dict(queue))
-    ledger_by_observation_id = {
-        row["observation_id"]: row for row in ledger.observations
-    }
+    by_observation_key = _ledger_by_observation_key(ledger)
+    latest_by_candidate = _latest_ledger_observations(ledger)
     for collection_name in ("candidates", "recently_matured"):
         rows = bound.get(collection_name, [])
         if not isinstance(rows, list):
@@ -665,11 +751,12 @@ def _queue_bound_to_immutable_ledger(
                 raise CandidateProjectionError(
                     f"candidate queue {collection_name} row {index} is invalid"
                 )
-            observation_id = _require_text(
-                row.get("observation_id"),
-                label=f"candidate queue {collection_name} row {index} observation_id",
+            ledger_row = _bound_ledger_observation(
+                row,
+                by_observation_key=by_observation_key,
+                latest_by_candidate=latest_by_candidate,
+                label=f"candidate queue {collection_name} row {index}",
             )
-            ledger_row = ledger_by_observation_id.get(observation_id)
             if ledger_row is None:
                 raise CandidateProjectionError(
                     f"candidate queue {collection_name} is not bound to the candidate ledger"
@@ -886,7 +973,17 @@ def verify_candidate_artifacts(
         or state.get("recipient_graph_digest") != inputs.recipient_graph_digest
     ):
         raise CandidateProjectionError("candidate projection state source binding mismatch")
-    _assert_candidate_source_binding(queue, inputs=inputs)
+    # Rows the persisted generation did not append were issued under an earlier
+    # reviewed-graph generation and keep it.  ``_validate_ledger_state_binding``
+    # has already proved this prefix against the ledger's own bytes.
+    _assert_candidate_source_binding(
+        queue,
+        inputs=inputs,
+        issued_observation_ids=frozenset(
+            row["observation_id"]
+            for row in ledger.observations[: state["ledger"]["prior_line_count"]]
+        ),
+    )
     _assert_queue_ledger_binding(queue, ledger)
     counts = queue.get("counts")
     candidates = queue.get("candidates")
@@ -947,8 +1044,19 @@ def project_candidate_artifacts(
     inputs = validate_candidate_projection_inputs(root, generated_at=generated_at)
     prior, prior_state = _load_prior_ledger_and_state(root)
     observations, queue, queue_content_id, source_health = _current_projection(inputs)
-    existing_ids = {row["observation_id"] for row in prior.observations}
-    appended = [row for row in observations if row["observation_id"] not in existing_ids]
+    # An observation is new when its hypothesis and its knowable moment are new --
+    # never merely because the reviewed graph was re-curated underneath it.  A
+    # candidate already in the ledger stays exactly where it is, so a graph edit
+    # cannot re-present frozen history as unseen and then have it refused by the
+    # anti-backfill gate below for being older than the run that published it.
+    seen_observations = set(_ledger_by_observation_key(prior))
+    issued_candidate_ids = {row["candidate_id"] for row in prior.observations}
+    unseen = [
+        row
+        for row in observations
+        if _observation_key(row, label="current candidate observation") not in seen_observations
+    ]
+    appended = unseen
     if prior_state is not None:
         prior_frozen_at = _instant(
             prior_state.get("generated_at"),
@@ -959,27 +1067,43 @@ def project_candidate_artifacts(
             raise CandidateProjectionError(
                 "candidate projection generated_at cannot move backward"
             )
-        historical_append_ids = [
-            _require_text(
-                row.get("observation_id"),
-                label="new candidate observation id",
-            )
-            for row in appended
-            if _instant(
-                row.get("known_at"),
-                label="new candidate observation known_at",
-            )
+        historical = [
+            row
+            for row in unseen
+            if _instant(row.get("known_at"), label="new candidate observation known_at")
             <= prior_frozen_at
+        ]
+        # A hypothesis this ledger has never issued must be forward of the frozen
+        # clock: publishing it now would be a backfill.  A *re*-observation of an
+        # already-issued candidate that is not forward is simply not recorded --
+        # its moment is already in the ledger's history, and refusing the run over
+        # it would wedge publication on a curation edit rather than prevent one.
+        historical_append_ids = [
+            _require_text(row.get("observation_id"), label="new candidate observation id")
+            for row in historical
+            if row["candidate_id"] not in issued_candidate_ids
         ]
         if historical_append_ids:
             raise CandidateProjectionError(
                 "new candidate observation is not forward of the prior frozen "
                 "generated_at clock: " + ", ".join(sorted(historical_append_ids))
             )
+        historical_keys = {
+            _observation_key(row, label="current candidate observation") for row in historical
+        }
+        appended = [
+            row
+            for row in unseen
+            if _observation_key(row, label="current candidate observation") not in historical_keys
+        ]
     append_raw = b"".join(_canonical_bytes(row) + b"\n" for row in appended)
     ledger = _ledger_from_bytes(prior.raw + append_raw, label="next candidate ledger")
     queue, queue_content_id = _queue_bound_to_immutable_ledger(queue, ledger)
-    _assert_candidate_source_binding(queue, inputs=inputs)
+    _assert_candidate_source_binding(
+        queue,
+        inputs=inputs,
+        issued_observation_ids=frozenset(row["observation_id"] for row in prior.observations),
+    )
     queue_raw = _canonical_bytes(queue)
     state = _ledger_state(
         inputs=inputs,
