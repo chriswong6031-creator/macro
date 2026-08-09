@@ -126,6 +126,16 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         data_gaps.append("china_stocks_raw: directory empty or missing")
         return {"status": "error", "data_gaps": data_gaps}
 
+    # A nightly increment is not a substitute for a full-universe reconstruction. Surface
+    # newly added/removed nominal files until the completeness generation is rebuilt.
+    try:
+        from scripts.backfill_china_limit_tape import validate_completeness_manifest
+
+        for defect in validate_completeness_manifest():
+            data_gaps.append(f"china_microstructure completeness: {defect}")
+    except Exception as exc:  # noqa: BLE001
+        data_gaps.append(f"china_microstructure completeness check failed: {exc}")
+
     # Determine the target date (latest common date in raw store)
     if target_date:
         scan_date = pd.Timestamp(target_date)
@@ -210,6 +220,7 @@ def build_increment(target_date: Optional[str] = None) -> dict:
         events_df.assign(date=lambda x: x["date"].dt.strftime("%Y-%m-%d")) if not events_df.empty else events_df,
         universe_n_by_date,
         ipo_excluded_by_date,
+        backfill=False,
     )
     if not tape_df.empty:
         tape_df["date"] = pd.to_datetime(tape_df["date"])
