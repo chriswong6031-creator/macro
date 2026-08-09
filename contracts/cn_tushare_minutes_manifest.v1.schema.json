@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/cn_tushare_minutes_manifest.v1.schema.json",
+  "title": "CN TuShare bulk historical minute-bar plane coverage manifest v1",
+  "description": "Versioned manifest written beside manifest/coverage.parquet by collectors/tushare_minutes_plane.write_manifest. The manifest is the ledger's cover sheet: it binds the coverage artifact's digest, the pinned stk_mins endpoint contract, the corporate-action basis, the shared-pool rate budget, the operator license authority, the TP-0 probe reference, and the sampled reconciliation result. coverageRow describes one row of the sibling Parquet ledger.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "authority",
+    "source",
+    "endpoint",
+    "store_root",
+    "provenance",
+    "rate_budget",
+    "corporate_action_basis",
+    "license_authority_gate",
+    "tp0_probe_reference",
+    "plan_summary",
+    "coverage",
+    "reconciliation",
+    "nonclaims",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "cn_tushare_minutes_manifest.v1"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"const": "context_display_only"},
+    "source": {"const": "tushare_pro"},
+    "endpoint": {"const": "stk_mins"},
+    "store_root": {"type": "string", "minLength": 1},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "rate_budget": {"$ref": "#/$defs/rateBudget"},
+    "corporate_action_basis": {"$ref": "#/$defs/corporateActionBasis"},
+    "license_authority_gate": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/licenseAuthorityGate"}]
+    },
+    "tp0_probe_reference": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/tp0ProbeReference"}]
+    },
+    "plan_summary": {
+      "oneOf": [{"type": "null"}, {"type": "object", "minProperties": 1}]
+    },
+    "coverage": {"$ref": "#/$defs/coverageSummary"},
+    "reconciliation": {"$ref": "#/$defs/reconciliation"},
+    "nonclaims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "manifest_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "counter": {"type": "integer", "minimum": 0},
+    "counterMap": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/counter"}
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plane_source_sha256",
+        "base_contract_sha256",
+        "partition_schema_sha256",
+        "coverage_row_schema_version"
+      ],
+      "properties": {
+        "plane_source_sha256": {"$ref": "#/$defs/sha256"},
+        "base_contract_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "digest of the stk_mins EndpointContract owned by collectors/tushare_addons; this plane extends that contract and never forks it"
+        },
+        "partition_schema_sha256": {"$ref": "#/$defs/sha256"},
+        "coverage_row_schema_version": {"const": "cn_tushare_minutes_coverage_row.v1"}
+      }
+    },
+    "rateBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shared_premium_pool_calls_per_minute",
+        "plane_governor_calls_per_minute",
+        "client_throttle_seconds",
+        "client_throttle_source",
+        "client_floor_calls_per_minute",
+        "effective_calls_per_minute",
+        "concurrency",
+        "budget_note"
+      ],
+      "properties": {
+        "shared_premium_pool_calls_per_minute": {"const": 300},
+        "plane_governor_calls_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240,
+          "description": "margined under the shared 300/min premium pool so nightly incrementals never starve"
+        },
+        "client_throttle_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "client_throttle_source": {"const": "collectors.tushare_client"},
+        "client_floor_calls_per_minute": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "60 / the shared client's own per-endpoint throttle; stacks UNDER the governor"
+        },
+        "effective_calls_per_minute": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "min(governor ceiling, client floor) — the only honest pacing figure"
+        },
+        "concurrency": {"const": "sequential_only"},
+        "budget_note": {"type": "string", "minLength": 1}
+      }
+    },
+    "corporateActionBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "minute_price_basis",
+        "adjustment_performed",
+        "nominal_daily_authority",
+        "reconciliation_anchor",
+        "forbidden_reconciliation_basis",
+        "forbidden_basis_reason",
+        "vendor_revision_policy"
+      ],
+      "properties": {
+        "schema_version": {"const": "cn_tushare_minutes_corporate_action_basis.v1"},
+        "minute_price_basis": {
+          "const": "tushare_stk_mins_vendor_served_nominal_intraday_unadjusted"
+        },
+        "adjustment_performed": {
+          "const": "none_this_plane_publishes_no_adjustment_factor"
+        },
+        "nominal_daily_authority": {
+          "const": "tushare_daily_and_stk_limit_effective_date_plane_from_full_a_spine"
+        },
+        "reconciliation_anchor": {
+          "const": "same_day_nominal_daily_bars_from_the_spine"
+        },
+        "forbidden_reconciliation_basis": {
+          "const": "china_stocks_raw_yahoo_split_adjusted_plane"
+        },
+        "forbidden_basis_reason": {"type": "string", "minLength": 1},
+        "vendor_revision_policy": {
+          "const": "keep_first_immutable_partitions_revisions_recorded_as_contradictions"
+        }
+      }
+    },
+    "licenseAuthorityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_state",
+        "accepted_basis",
+        "authority_document",
+        "authority_sha256",
+        "authority_statement",
+        "trust_anchor",
+        "scope"
+      ],
+      "properties": {
+        "gate_state": {"const": "satisfied_operator_license_authority_verified"},
+        "accepted_basis": {"const": "operator_attestation_verified"},
+        "authority_document": {"type": "string", "minLength": 1},
+        "authority_sha256": {"$ref": "#/$defs/sha256"},
+        "authority_statement": {"type": "string", "minLength": 1},
+        "trust_anchor": {"const": "code_reviewed_out_of_band_sha256_allowlist"},
+        "scope": {"type": "string", "minLength": 1}
+      }
+    },
+    "tp0ProbeReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_path",
+        "receipt_sha256",
+        "probe_contract_sha256",
+        "plane_base_contract_sha256",
+        "contract_agrees",
+        "observed_at_asia_shanghai",
+        "receipt_count"
+      ],
+      "properties": {
+        "receipt_path": {"type": "string", "minLength": 1},
+        "receipt_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+        "probe_contract_sha256": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        },
+        "plane_base_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "contract_agrees": {
+          "type": "boolean",
+          "description": "false means the probe witnessed a DIFFERENT stk_mins contract than the one this plane normalizes against; treat the store as unproven until reconciled"
+        },
+        "observed_at_asia_shanghai": {"type": ["string", "null"]},
+        "receipt_count": {"$ref": "#/$defs/counter"}
+      }
+    },
+    "coverageSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact",
+        "partition_count",
+        "status_counts",
+        "row_count",
+        "semantic_sha256"
+      ],
+      "properties": {
+        "artifact": {"$ref": "#/$defs/fileReceipt"},
+        "partition_count": {"$ref": "#/$defs/counter"},
+        "status_counts": {"$ref": "#/$defs/counterMap"},
+        "row_count": {"$ref": "#/$defs/counter"},
+        "semantic_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "rows"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"$ref": "#/$defs/counter"},
+        "rows": {"$ref": "#/$defs/counter"}
+      }
+    },
+    "reconciliation": {
+      "description": "Sampled minute-aggregate vs NOMINAL daily gate. An absent daily plane is reported as unavailable with passed=null — never as a pass.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "note"],
+          "properties": {
+            "status": {"const": "not_run"},
+            "note": {"type": "string", "minLength": 1}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "passed", "required_basis"],
+          "properties": {
+            "status": {
+              "enum": [
+                "no_partitions_in_store",
+                "unavailable_no_daily_reference_plane"
+              ]
+            },
+            "passed": {"type": "null"},
+            "required_basis": {"const": "tushare.daily_unadjusted_nominal"},
+            "note": {"type": "string"},
+            "partition_count": {"$ref": "#/$defs/counter"}
+          }
+        },
+        {"$ref": "#/$defs/executedReconciliation"}
+      ]
+    },
+    "executedReconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "required_basis",
+        "forbidden_bases",
+        "unit_conversions",
+        "partition_count",
+        "session_count_in_store",
+        "comparable_session_count",
+        "sample_size_requested",
+        "sample_size_checked",
+        "sample_seed",
+        "sample_sha256",
+        "failure_count",
+        "failures",
+        "results_sha256",
+        "passed",
+        "aggregation_note"
+      ],
+      "properties": {
+        "status": {"const": "executed"},
+        "required_basis": {"const": "tushare.daily_unadjusted_nominal"},
+        "forbidden_bases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "unit_conversions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "daily_volume_lots_to_shares",
+            "daily_amount_thousands_to_cny"
+          ],
+          "properties": {
+            "daily_volume_lots_to_shares": {"const": 100},
+            "daily_amount_thousands_to_cny": {"const": 1000}
+          }
+        },
+        "partition_count": {"$ref": "#/$defs/counter"},
+        "session_count_in_store": {"$ref": "#/$defs/counter"},
+        "comparable_session_count": {"$ref": "#/$defs/counter"},
+        "sample_size_requested": {"$ref": "#/$defs/counter"},
+        "sample_size_checked": {"$ref": "#/$defs/counter"},
+        "sample_seed": {"type": "string", "minLength": 1},
+        "sample_sha256": {"$ref": "#/$defs/sha256"},
+        "failure_count": {"$ref": "#/$defs/counter"},
+        "failures": {"type": "array", "items": {"type": "object"}},
+        "results_sha256": {"$ref": "#/$defs/sha256"},
+        "passed": {"type": "boolean"},
+        "aggregation_note": {"type": "string", "minLength": 1}
+      }
+    },
+    "coverageRow": {
+      "description": "One row of manifest/coverage.parquet: the resumable unit is a (frequency, ticker, year) partition.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "frequency",
+        "ticker",
+        "year",
+        "status",
+        "request_sha256",
+        "chunk_count",
+        "planned_session_count",
+        "row_count",
+        "observed_session_count",
+        "first_bar",
+        "last_bar",
+        "zero_volume_rows",
+        "inconsistent_rows",
+        "post_close_rows",
+        "receipt_sha256",
+        "partition_path",
+        "observed_at_utc",
+        "contradiction_reason"
+      ],
+      "properties": {
+        "schema_version": {"const": "cn_tushare_minutes_coverage_row.v1"},
+        "frequency": {"enum": ["1min", "5min", "15min", "30min", "60min"]},
+        "ticker": {"type": "string", "pattern": "^[0-9]{6}\\.(SS|SZ)$"},
+        "year": {"type": "integer", "minimum": 1990, "maximum": 2100},
+        "status": {
+          "enum": ["planned", "fetched", "contradiction"],
+          "description": "contradiction is terminal for the automated path: a partition that raised is never silently re-fetched over first evidence"
+        },
+        "request_sha256": {"$ref": "#/$defs/sha256"},
+        "chunk_count": {"$ref": "#/$defs/counter"},
+        "planned_session_count": {"$ref": "#/$defs/counter"},
+        "row_count": {"type": ["integer", "null"], "minimum": 0},
+        "observed_session_count": {"type": ["integer", "null"], "minimum": 0},
+        "first_bar": {"type": ["string", "null"]},
+        "last_bar": {"type": ["string", "null"]},
+        "zero_volume_rows": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "retained, never dropped; a suspended interval prints a zero-volume stale-price bar"
+        },
+        "inconsistent_rows": {"type": ["integer", "null"], "minimum": 0},
+        "post_close_rows": {"type": ["integer", "null"], "minimum": 0},
+        "receipt_sha256": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        },
+        "partition_path": {"type": "string", "minLength": 1},
+        "observed_at_utc": {"type": ["string", "null"]},
+        "contradiction_reason": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
