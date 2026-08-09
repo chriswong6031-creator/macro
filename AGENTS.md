@@ -176,6 +176,27 @@ is the merge's evidence — watch it to conclusion. `--admin` remains only for t
 spurious Workers X, docs-only pull requests that trigger no pack checks, and
 genuine wedges — never to outrun CI.
 
+**A `merge-blocked` backlog means main is UNPROVEN, not that the pull requests are
+bad (#5037, 2026-08-08).** The sweeper's base-inherited-red refresh — the mechanism
+that drains an armed backlog once main is healed — can only tell an inherited red
+from a real one against a RECENT proof of main. `ci.yml` has no `push` trigger, so
+main is proven ONLY by a `workflow_dispatch`, while the nightly/wire lanes push ~24
+`[skip ci]` commits per 2 hours — so any commit-window heuristic ages out in ~100
+minutes. Measured 2026-08-08: main's newest proof sat **117 commits / 12 HOURS**
+back, the refresh resolved zero pack names, and 61 pull requests sat armed with 60
+of them red on `ci-pack-2`/`ci-pack-3` that main's own last run had proven green.
+Three properties now hold and must not be regressed: the proof is resolved from the
+newest completed `ci.yml`/`fences.yml` **RUN on main** (velocity-independent, and
+cheaper than the walk it replaced); a refresh additionally requires that proof to
+**POSTDATE** the pull request's failing checks (correctness — a green that predates
+your red does not excuse it — and the loop guard, because `update-branch`'s
+422-on-current-head does NOT prevent loops when main moves every few minutes); and
+the sweeper **dispatches its own main baseline** when its proof is too stale to
+answer the reds it just saw. **Diagnose a fresh backlog from the sweep log first:** a
+summary reading `0 main commit(s) classified`, or a proof set carrying no
+`ci-pack-*`, means the refresh path is closed no matter how green main is. Operator
+lever unchanged: `gh workflow run ci.yml --ref main`.
+
 ### Waiting on CI without jamming every other session
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
