@@ -431,6 +431,11 @@ CANDIDATE_SOURCE_MODULES = frozenset({
     "engine.government_revenue.subaward_dossiers",
     "engine.government_revenue.budget_program",
     "engine.government_revenue.metrics",
+    # A display-only evidence projection today, but it reads the recipient graph
+    # and constructs a new Government Revenue rail from raw SBIR observations.
+    # Keep it on the source side of this fail-closed boundary unless/until the
+    # architecture gives non-candidate evidence builders their own class.
+    "engine.government_revenue.sbir_progression",
 })
 
 #: The sanctioned annotate-only seam: selectors that may only decorate a row
@@ -442,6 +447,9 @@ ANNOTATION_SEAM_MODULES = frozenset({
     "engine.government_revenue.shadow_context",
     "engine.government_revenue.market_context",
     "engine.government_revenue.point_in_time",
+    # Semantic labels/refusals only: this module cannot read observations or
+    # construct a candidate and is safe on the annotate-only side.
+    "engine.government_revenue.amount_semantics",
 })
 
 def _prophet_modules() -> tuple[str, ...]:
@@ -753,13 +761,29 @@ def _write_standouts(root: Path) -> Path:
             "ticker": ticker,
             "dir": "up",
             "conviction": {"score": score, "band": "neutral", "drivers": ["momentum"], "cautions": []},
-            "entry_signal": {"act_level": 3, "spot": spot, "chase_above": spot + 1, "atr_pct": 2.0},
+            "entry_signal": {
+                "act_level": 3,
+                # Current Prophet admission is status/class based.  Keep this
+                # integration fixture on an admitted class so the wired-seam
+                # assertion cannot become vacuous as the originator evolves.
+                "status": "partial",
+                "spot": spot,
+                "chase_above": spot + 1,
+                "atr_pct": 2.0,
+            },
             "hold": {"anchor": "2026-08-03", "invalidation": spot - 8},
         }
 
     path.write_text(
         json.dumps({
             "as_of": "2026-08-03",
+            "staleness": {
+                "price_through": "2026-08-03",
+                "delayed": False,
+                "unknown": False,
+                "basis": "panel_majority",
+                "inputs": {"panel": {"mixed_vintage": False}},
+            },
             "gate_go": True,
             "buy": [_buy("NOC", 82, 610.0), _buy("LMT", 75, 500.0)],
         }),
