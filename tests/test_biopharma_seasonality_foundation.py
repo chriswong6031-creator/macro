@@ -1,6 +1,7 @@
 """Contract and multiplicity tests for the clean-room seasonality foundation."""
 from __future__ import annotations
 
+import importlib
 import json
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -38,7 +39,10 @@ from engine.seasonality.contracts import (
     validate_bitemporal_event_v2,
     validate_source_temporal,
 )
-from engine.seasonality.foundation import build_methodology_manifest
+from engine.seasonality.foundation import (
+    SELECTION_CONTROL_SYMBOLS,
+    build_methodology_manifest,
+)
 from engine.seasonality.multiplicity import benjamini_yekutieli, max_t_adjusted_p_values
 from scripts.build_biopharma_seasonality import build
 
@@ -227,6 +231,30 @@ def test_methodology_manifest_admits_no_live_forecasts():
     assert manifest["availability"]["live_screener"] is False
     assert manifest["availability"]["live_event_graph"] is False
     assert manifest["authority"]["may_rank"] is False
+
+
+def test_every_declared_selection_control_resolves_to_a_defined_symbol():
+    """A declared control that no symbol implements is a claim about nothing.
+
+    The manifest shipped ``spa_reality_check`` for months while
+    ``engine/validation.py`` defined ``reality_check`` and ``spa_test`` and no
+    such name at all — a public statement about a correction that could not run.
+    Two halves are pinned so the pair cannot drift apart again: the map is TOTAL
+    over the declared list (neither side may grow alone), and every dotted target
+    still imports.
+    """
+    manifest = build_methodology_manifest(date(2026, 8, 1))
+    declared = manifest["validation"]["selection_controls"]
+    assert len(declared) == len(set(declared)), f"duplicate selection control: {declared}"
+    assert set(declared) == set(SELECTION_CONTROL_SYMBOLS)
+
+    for control, dotted in SELECTION_CONTROL_SYMBOLS.items():
+        module_name, _, symbol = dotted.rpartition(".")
+        assert module_name, f"{control}: {dotted!r} is not a dotted path"
+        module = importlib.import_module(module_name)
+        resolved = getattr(module, symbol, None)
+        assert resolved is not None, f"{control}: {dotted} does not exist"
+        assert callable(resolved), f"{control}: {dotted} is not callable"
 
 
 def test_build_writes_public_methodology_manifest(tmp_path):

@@ -12,6 +12,19 @@ from datetime import date
 
 METHODOLOGY_SCHEMA = "biopharma_seasonality.methodology.v1"
 
+#: Every selection control the manifest declares, mapped to the symbol that
+#: implements it.  A control named here but implemented nowhere is the same
+#: failure the manifest exists to prevent — a claim about what runs that nothing
+#: runs — so CI asserts this map stays TOTAL over
+#: ``validation.selection_controls`` and that every target still resolves.
+SELECTION_CONTROL_SYMBOLS = {
+    "trial_ledger": "engine.trial_ledger.TrialLedger",
+    "benjamini_yekutieli": "engine.seasonality.multiplicity.benjamini_yekutieli",
+    "joint_max_t": "engine.seasonality.multiplicity.max_t_adjusted_p_values",
+    "reality_check": "engine.validation.reality_check",
+    "spa_test": "engine.validation.spa_test",
+}
+
 
 def build_methodology_manifest(as_of: date | None = None) -> dict:
     """Describe the live foundation without implying a live forecast exists."""
@@ -97,7 +110,13 @@ def build_methodology_manifest(as_of: date | None = None) -> dict:
         },
         "validation": {
             "independence_unit": "year_or_event_cluster",
-            "selection_controls": ["trial_ledger", "benjamini_yekutieli", "joint_max_t", "spa_reality_check"],
+            "selection_controls": [
+                "trial_ledger",
+                "benjamini_yekutieli",
+                "joint_max_t",
+                "reality_check",
+                "spa_test",
+            ],
             "out_of_sample": ["chronological_walk_forward", "purge_embargo", "issuer_holdout", "untouched_epoch_holdout"],
             "calibration": ["brier", "log_score", "crps", "reliability", "forward_ledger"],
         },

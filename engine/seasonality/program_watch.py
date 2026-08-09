@@ -56,6 +56,18 @@ VALIDATION_PATH = "engine/validation.py"
 SYNAPSE_PATH = "config/synapse.yml"
 DAILY_WORKFLOW_PATH = ".github/workflows/daily.yml"
 
+#: Where the nightly ORDER is described in prose rather than executed.  The
+#: daily-order follow-up has two acceptable outcomes — reorder, or decide the lag
+#: is fine and say so — and only the second one leaves a readable trace.
+DAG_PATH = "config/dag.yml"
+
+#: The explicit decision record for that second outcome.  Fail-closed: an ABSENT
+#: token means undecided, not decided-and-undocumented, so the follow-up stays
+#: ``open`` until somebody writes the reason down.  Deleting the token re-opens
+#: the tripwire, which is the point — the order is only settled while the
+#: rationale is still in the tree.
+DAG_ORDER_DECISION_TOKEN = "seasonality_one_night_lag_accepted"
+
 #: A BioCatalyst seasonality event-projection schema is matched on BOTH tokens
 #: rather than on one exact filename: the producer session owns the naming, and
 #: a watch that hardcoded today's guess would report ``waiting`` forever after
@@ -812,13 +824,45 @@ def _sub_daily_order(root: Path) -> dict[str, Any]:
         }
     p_line = text[: prophet.start()].count("\n") + 1
     s_line = text[: seasonality.start()].count("\n") + 1
+    if p_line >= s_line:
+        return {
+            "key": key,
+            "state": "closed",
+            "detail": (
+                f"{DAILY_WORKFLOW_PATH}: build_prophet first invoked at line {p_line}, "
+                f"build_stock_seasonality first invoked at line {s_line} (comments excluded; "
+                "line order, which is only an ordering guarantee inside one sequential job)"
+            ),
+            "prompt": prompt,
+        }
+    # Prophet-first. The follow-up asked for a DECISION, not for one particular
+    # order, so a documented "the lag is fine" closes it just as a reorder would.
+    # The decision record is the token in config/dag.yml — and it is read through
+    # the same comment strip as the workflow scan, for the same reason: a token
+    # sitting in a ``#`` comment is prose about the decision, not the decision.
+    dag_raw, dag_err = _read_text(root / DAG_PATH)
+    decided = dag_raw is not None and DAG_ORDER_DECISION_TOKEN in _strip_comments_keep_lines(dag_raw)
+    if decided:
+        return {
+            "key": key,
+            "state": "closed",
+            "detail": (
+                f"{DAILY_WORKFLOW_PATH}: build_prophet first at line {p_line}, "
+                f"build_stock_seasonality at line {s_line} — prophet-first is a documented "
+                f"decision: {DAG_PATH} carries {DAG_ORDER_DECISION_TOKEN} (one-night lag "
+                "accepted; complete-year window family changes only at rollover)"
+            ),
+            "prompt": prompt,
+        }
     return {
         "key": key,
-        "state": "open" if p_line < s_line else "closed",
+        "state": "open",
         "detail": (
             f"{DAILY_WORKFLOW_PATH}: build_prophet first invoked at line {p_line}, "
             f"build_stock_seasonality first invoked at line {s_line} (comments excluded; "
-            "line order, which is only an ordering guarantee inside one sequential job)"
+            "line order, which is only an ordering guarantee inside one sequential job); "
+            f"{DAG_PATH} carries no {DAG_ORDER_DECISION_TOKEN} decision record"
+            + (f" ({dag_err})" if dag_raw is None else "")
         ),
         "prompt": prompt,
     }
