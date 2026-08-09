@@ -406,13 +406,14 @@ Market Memory owns:
 
 The options program owns:
 
+- the append-only `options.signal_episode/v1` per-print/per-campaign ledger and its durable date-keyed raw stage;
 - option-event/candidate definition;
 - candidate selection;
 - contract selection;
 - entry/exit and trade-management logic;
 - mark/cost convention;
 - horizon declaration;
-- later outcome/label records;
+- later H+60 and executable option outcome/label records;
 - evaluation of whether the candidate process adds value.
 
 It must import/consume `AsKnownAtReader`; it must not build another macro/news/options state history.
@@ -834,7 +835,7 @@ Wave 1 owned additions, kept in the current Neural Web read namespace:
 - `app/market_memory.py` v2 routes — authenticated requested-as-of read; no label co-mingling.
 - `tests/test_market_memory_pit.py` — vintage, identity, cutoff, missingness, one-writer, and immutability fixtures.
 
-Options integration extends the existing one-writer paths. `scripts/stamp_options_state.py` may append nullable `market_memory_context_id`, packet hash, cutoff/basis, source refs, and missingness receipt to the existing event/stamp row. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, or another board ledger.
+Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. `scripts/stamp_options_state.py` may append nullable `market_memory_context_id`, packet hash, cutoff/basis, source refs, and missingness receipt to the existing event/stamp row. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
 ### 11.2 Wave 1 acceptance tests
 
