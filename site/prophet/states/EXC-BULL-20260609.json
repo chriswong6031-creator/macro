@@ -4,9 +4,9 @@
   "asof": "2026-08-08",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 50.2,
+  "management_confidence": 50.7,
   "raw_confidence": 51.3,
-  "delta_vs_base": -9.8,
+  "delta_vs_base": -9.3,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
