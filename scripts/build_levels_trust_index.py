@@ -25,8 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from lib.config import data_dir  # noqa: E402
 from engine.levels_trust_index import compute_trust_index, MIN_SESSIONS  # noqa: E402

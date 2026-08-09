@@ -14,8 +14,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
+from pathlib import Path
 
-from collectors import edgar_deadname_prices as dp
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors import edgar_deadname_prices as dp  # noqa: E402
 
 
 def main() -> None:

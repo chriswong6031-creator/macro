@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_manifest_rotation_receipt.v1.schema.json",
+  "title": "BioCatalyst Fixed-Cohort Manifest Rotation Receipt v1",
+  "description": "One immutable record of a fixed-cohort active-manifest rotation or rollback. It binds the outgoing and incoming manifest identities, their exact file digests, the named human actor, and the known time. It authorizes nothing else: it is not a collection run, a source enablement, an outcome-family clock, or a publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "rotation_kind",
+    "previous_cohort_id",
+    "previous_manifest_sha256",
+    "next_cohort_id",
+    "next_manifest_sha256",
+    "actor",
+    "known_time",
+    "config_root",
+    "active_pointer_path",
+    "manifest_path",
+    "membership_authority",
+    "authority",
+    "ruling_ref",
+    "prohibited_uses",
+    "hash_scope",
+    "receipt_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_manifest_rotation_receipt.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "rotation_kind": {"enum": ["rotation", "rollback"]},
+    "previous_cohort_id": {
+      "oneOf": [{"$ref": "#/$defs/cohortId"}, {"type": "null"}]
+    },
+    "previous_manifest_sha256": {
+      "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+    },
+    "next_cohort_id": {"$ref": "#/$defs/cohortId"},
+    "next_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "actor": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,63}$"},
+    "known_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+    },
+    "config_root": {"$ref": "#/$defs/absolutePath"},
+    "active_pointer_path": {"$ref": "#/$defs/absolutePath"},
+    "manifest_path": {"$ref": "#/$defs/absolutePath"},
+    "membership_authority": {"const": "fixed_cohort_only"},
+    "authority": {"const": "facts_and_context_only"},
+    "ruling_ref": {
+      "const": "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
+    },
+    "prohibited_uses": {
+      "const": [
+        "dynamic_cohort_expansion",
+        "live_ingestion",
+        "identity_mapping",
+        "scoring",
+        "prediction",
+        "prophet_authority",
+        "neural_web_authority",
+        "ranking",
+        "sizing",
+        "alerts"
+      ]
+    },
+    "hash_scope": {
+      "const": "canonical_payload_excluding_receipt_payload_sha256"
+    },
+    "receipt_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "cohortId": {
+      "type": "string",
+      "pattern": "^ctgov_fixed_cohort_[a-f0-9]{24}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 512,
+      "pattern": "^/[^\\u0000-\\u001f\\u007f]*$"
+    }
+  }
+}
