@@ -1,7 +1,7 @@
 {
-  "generated_utc": "2026-08-09T08:29:38Z",
+  "generated_utc": "2026-08-09T16:58:54Z",
   "base_sha": "fd9751d580db48d03eaaa108a8b5cf21534fad59",
-  "head_sha": "94885d03871c35934635e515a5af437625d4d873",
+  "head_sha": "d644b07afc87fca25680b1fcee1bb8038afa8abe",
   "head_selection_era": "anticipation-v1-2026-08-08",
   "head_entry_value": {
     "bounce_wait": 1.0,
@@ -66,7 +66,7 @@
         "status": "partial"
       }
     ],
-    "annotation": "::warning title=featured-ext-z-unknown::us_prophet_v1: extension reading unknown on 69/69 scored rows (100%) \u2014 the featured lane is publishing rows whose chase-risk check has no input (ext_unknown: true). Check the extension panel's newest row: a partial price advance leaves a sparse last session and extension_signals reads one global .iloc[-1].",
+    "annotation": "::warning title=featured-ext-z-unknown::us_prophet_v1: extension reading unknown on 69/69 scored rows (100%) \u2014 the featured lane is publishing rows whose chase-risk check has no input (ext_unknown: true). Check the extension-anchor warnings and the panel staleness receipt: the coverage- and age-bounded reader may have withheld the panel, or these names may lack resolvable own history.",
     "committed_featured_count": 0
   },
   "proof_2_ladder_reorder": {
