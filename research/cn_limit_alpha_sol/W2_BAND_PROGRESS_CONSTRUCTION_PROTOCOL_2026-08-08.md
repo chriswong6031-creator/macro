@@ -1,11 +1,11 @@
 # CN limit-move alpha — Wave-2 band-progress construction protocol
 
 **Frozen:** 2026-08-08 (America/Vancouver), before any Wave-2 band-progress
-measurement  
+measurement
 **Authority:** research/display context only; no ranking, sizing, gating, Prophet,
-Neural Web, or live-trading authority  
+Neural Web, or live-trading authority
 **Construction family:** partial-band progress, exact upper-band touches followed by
-retreat, and sealed closes  
+retreat, and sealed closes
 **Independence boundary:** no `claude/cn-limit-w1-*` result, receipt, branch, ref, or
 worktree may be inspected
 
