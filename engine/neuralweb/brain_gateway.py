@@ -6112,7 +6112,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "list_factor_contradictions": ("Checking for factor conflicts", "排查因子矛盾"),
     "explain_factor_context":     ("Explaining factor context",     "解读因子背景"),
     "read_cycle_pattern_state":   ("Reading the market cycle",      "读取市场周期"),
-    "read_inflation_intelligence": ("Reading inflation conditions", "读取通胀环境"),
+    "read_inflation_intelligence": ("Reading the inflation picture", "查看通胀全貌"),
     "read_mechanism_pathways":    ("Tracing cause and effect",      "梳理因果路径"),
     "read_theme_state":           ("Checking the theme dashboard",  "查看主题面板"),
     "read_theme_thesis":          ("Reading the theme thesis",      "读取主题论点"),
