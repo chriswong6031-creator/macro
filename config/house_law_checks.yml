@@ -1092,8 +1092,14 @@ checks:
       - Literal-path scan; does not catch dynamically constructed paths.
       - Inline _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES exempts allowed_actions
         readers; editing that list silently widens the exemption.
+      - Two exact inflation-state producers have AST-proven emit-only spans;
+        dynamically constructed key writes are intentionally rejected.
     owner_program: factor-intelligence
-    notes: null
+    notes: >
+      Inflation Intelligence and World State may emit fixed all-false
+      allowed_actions mirrors, but remain outside the reader allowlist. Mixed
+      key-plus-read lines, subscript/get reads, behavioral branches, adjacent
+      paths, and malformed source are mutation-tested to remain hard failures.
 
   - law_id: nw.dag_conformance
     summary: >

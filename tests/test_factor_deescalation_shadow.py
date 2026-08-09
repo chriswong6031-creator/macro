@@ -414,6 +414,14 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert any(v.check == "b" and "alert_triage" in v.module for v in viols)
 
+    def test_engine_world_state_not_allowlisted(self) -> None:
+        """World State may emit the mirror, but every read remains forbidden."""
+        synthetic = {
+            "engine/neuralweb/world_state.py": "x = state['allowed_actions']\n",
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.check == "b" for v in viols)
+
     @pytest.mark.parametrize(
         "state_builder",
         [
@@ -421,19 +429,64 @@ class TestCheckB:
             "engine/neuralweb/world_state.py",
         ],
     )
-    def test_inflation_state_builders_allowlisted_as_all_false_mirrors(
+    def test_inflation_builders_may_emit_all_false_authority_mirror(
         self, state_builder: str
     ) -> None:
-        """Inflation builders may emit the fixed descriptive authority mirror."""
         synthetic = {
             state_builder: (
-                "payload = {'allowed_actions': {\n"
-                "    'may_rank': False, 'may_score': False, 'may_trade': False,\n"
-                "}}\n"
+                "payload = {'allowed_actions': {'may_rank': False}}\n"
+                "payload.update(allowed_actions={'may_trade': False})\n"
+                "payload['allowed_actions'] = {'may_score': False}\n"
             ),
         }
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert not any(v.check == "b" for v in viols)
+
+    @pytest.mark.parametrize(
+        "state_builder",
+        [
+            "engine/inflation_intelligence.py",
+            "engine/neuralweb/world_state.py",
+        ],
+    )
+    @pytest.mark.parametrize(
+        "read",
+        [
+            "actions = payload.get('allowed_actions', {})\n",
+            "actions = payload['allowed_actions']\n",
+            "if payload['allowed_actions']:\n    raise RuntimeError\n",
+            "payload = {'allowed_actions': source['allowed_actions']}\n",
+        ],
+    )
+    def test_inflation_emit_only_builders_still_reject_reads(
+        self, state_builder: str, read: str
+    ) -> None:
+        synthetic = {state_builder: read}
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.check == "b" for v in viols)
+
+    @pytest.mark.parametrize(
+        "unapproved_path",
+        [
+            "engine/other_state.py",
+            "engine/neuralweb/world_state.py.backdoor.py",
+        ],
+    )
+    def test_emit_only_path_match_is_exact(self, unapproved_path: str) -> None:
+        synthetic = {
+            unapproved_path: "payload = {'allowed_actions': {'may_rank': False}}\n",
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.check == "b" for v in viols)
+
+    def test_emit_only_parse_failure_fails_closed(self) -> None:
+        synthetic = {
+            "engine/neuralweb/world_state.py": (
+                "payload = {'allowed_actions': {'may_rank': False}\n"
+            ),
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert any(v.check == "b" for v in viols)
 
     def test_state_builder_allowlisted(self) -> None:
         synthetic = {
