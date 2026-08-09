@@ -24,10 +24,14 @@ import logging
 import sys
 
 import pandas as pd
+from pathlib import Path
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from lib import config  # noqa: E402
 from collectors.edgar_share_quality import (
-    apply_share_quality, build_reference, suspicious_tickers)
+    apply_share_quality, build_reference, suspicious_tickers)  # noqa: E402
 
 log = logging.getLogger(__name__)
 

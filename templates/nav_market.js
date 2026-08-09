@@ -232,8 +232,8 @@
             '行业情报', '板块、主题与轮动一页读']
         ], '市场总览'],
         ['Signals & strategy', [
-          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'sector_central.html#confluence', 'confluence',
-            '子行业汇聚', '现可入场的子行业 · 两道确认的选股'],
+          ['Subsector Confluence', 'Entry-ready subsectors and stocks to review', 'sector_central.html#confluence', 'confluence',
+            '子行业汇聚', '可关注的子行业与个股'],
           ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy',
             '策略', '战术记分卡与仓位'],
           ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert',
