@@ -316,6 +316,54 @@ class TestMarketImpliedBenchmark:
         assert result is not None
         assert set(result.keys()) >= {"source", "event_key", "event_title", "implied", "prob_top", "asof"}
 
+    def test_core_cpi_market_never_attaches_to_headline(self, tmp_path: Path):
+        rows = [{
+            "snapshot_date": _SNAP_FRESH,
+            "source": "polymarket",
+            "event_key": "cpi_print",
+            "event_title": "Core CPI MoM - July 2026",
+            "end_date": "2026-08-13",
+            "outcome": "0.2%",
+            "prob": 0.6,
+            "volume24hr": None,
+            "volume_total": None,
+            "liquidity": None,
+            "open_interest": None,
+            "mkt_volume24hr": None,
+        }]
+        path = _make_snapshots_parquet(tmp_path, rows)
+
+        assert get_market_implied_benchmark(
+            "cpi_headline", "2026-08-13", path
+        ) is None
+        core = get_market_implied_benchmark("cpi_core", "2026-08-13", path)
+        assert core is not None
+        assert core["event_title"].startswith("Core CPI")
+
+    def test_ambiguous_headline_cpi_market_never_attaches_to_core(self, tmp_path: Path):
+        rows = [{
+            "snapshot_date": _SNAP_FRESH,
+            "source": "polymarket",
+            "event_key": "cpi_print",
+            "event_title": "US CPI August 2026",
+            "end_date": "2026-08-13",
+            "outcome": "0.2%",
+            "prob": 0.6,
+            "volume24hr": None,
+            "volume_total": None,
+            "liquidity": None,
+            "open_interest": None,
+            "mkt_volume24hr": None,
+        }]
+        path = _make_snapshots_parquet(tmp_path, rows)
+
+        assert get_market_implied_benchmark(
+            "cpi_core", "2026-08-13", path
+        ) is None
+        assert get_market_implied_benchmark(
+            "cpi_headline", "2026-08-13", path
+        ) is not None
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. get_reaction_sensitivity

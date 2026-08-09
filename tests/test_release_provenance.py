@@ -285,6 +285,24 @@ class TestComputeCoverageFlags:
         result = compute_coverage_flags(proj, ledger_path=ledger)
         assert result["model_maturity"] == 2
 
+    def test_model_maturity_fails_closed_when_present_registry_is_empty(self, tmp_path):
+        from engine.release_provenance import compute_coverage_flags
+
+        ledger = tmp_path / "forward_ledger.jsonl"
+        ledger.write_text(
+            json.dumps({"row_type": "scored", "release": "cpi_headline"}) + "\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "defect_notices.json").write_text(
+            json.dumps({"notices": []}),
+            encoding="utf-8",
+        )
+        result = compute_coverage_flags(
+            _make_projection(release="cpi_headline"),
+            ledger_path=ledger,
+        )
+        assert result["model_maturity"] == 0
+
     def test_model_maturity_only_matching_release(self, tmp_path):
         from engine.release_provenance import compute_coverage_flags
         ledger = tmp_path / "ledger.jsonl"

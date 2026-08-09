@@ -110,20 +110,50 @@ def _last(s: pd.Series | None) -> float | None:
 
 
 def _smooth_annual_rate(s: pd.Series, smooth_months: int) -> pd.Series:
-    """Smooth an ALREADY-annualized monthly rate over N distinct monthly prints.
+    """Return the exact trailing-``N`` annualized rate from monthly % changes.
 
-    The Atlanta-Fed sticky/flexible CPI inputs (FRED STICKCPIM157SFRBATL /
-    FLEXCPIM157SFRBATL) are published as 'Percent Change at Annual Rate' — i.e.
-    ALREADY annual-rate (~2-6%). They must NOT be re-annualized (a prior version
-    applied ((1+x/100)**12-1)*100, which turned 3.2% into ~46%). The daily feature
-    frame carries each month's value forward-filled, so we de-duplicate to the actual
-    monthly observations, take the rolling mean, then re-broadcast onto the daily
-    index — units unchanged."""
-    monthly = s.dropna()
-    # collapse consecutive identical ffilled values to one print per monthly change
-    distinct = monthly[monthly.ne(monthly.shift())]
-    sm = distinct.rolling(smooth_months, min_periods=1).mean()
-    return sm.reindex(s.index).ffill()
+    The stored ``STICKCPIM157SFRBATL`` / ``FLEXCPIM157SFRBATL`` inputs are
+    monthly percent changes (values such as ``0.25`` mean +0.25% MoM), despite
+    the misleading old comment that treated them as already annualized.  The
+    correct trailing-N annualized rate is::
+
+        100 * (prod(1 + monthly_pct / 100) ** (12 / N) - 1)
+
+    ``conditions_frame`` carries monthly observations across a daily index.  We
+    therefore take one observation per calendar month rather than de-duplicating
+    by value: two adjacent months can legitimately print the same rate.  A full
+    N-month window is required; partial windows remain null.  The monthly result
+    is then mapped back to every row in its calendar month so callers retain the
+    original index shape.
+
+    This helper is intentionally named for backward compatibility with the site
+    builder and existing conditions snapshot.
+    """
+    if smooth_months < 1:
+        raise ValueError("smooth_months must be >= 1")
+
+    clean = pd.to_numeric(s, errors="coerce").dropna().sort_index()
+    out = pd.Series(np.nan, index=s.index, dtype=float)
+    if clean.empty:
+        return out
+
+    # One actual monthly print per month. ``last`` preserves a legitimate repeated
+    # value in adjacent months, unlike value-change de-duplication.
+    periods = clean.index.to_period("M")
+    monthly = clean.groupby(periods).last().astype(float)
+    full_index = pd.period_range(monthly.index.min(), monthly.index.max(), freq="M")
+    monthly = monthly.reindex(full_index)
+    gross = (1.0 + monthly / 100.0).where(monthly > -100.0)
+    compounded = gross.rolling(smooth_months, min_periods=smooth_months).apply(
+        np.prod, raw=True
+    )
+    annualized = (compounded.pow(12.0 / smooth_months) - 1.0) * 100.0
+
+    # Map by calendar month instead of reindexing on month-end timestamps.  This
+    # works for both native monthly Series and daily forward-filled feature frames.
+    annualized_by_period = annualized.to_dict()
+    mapped = [annualized_by_period.get(period) for period in s.index.to_period("M")]
+    return pd.Series(mapped, index=s.index, dtype=float)
 
 
 # --- conditions time series (for charts + alerts) ----------------------------

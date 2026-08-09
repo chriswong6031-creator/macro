@@ -15,7 +15,6 @@ docstringed, pure numpy/pandas).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 from pathlib import Path
@@ -351,6 +350,20 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
         p = Path(ledger_path)
         if not p.exists():
             return 0
+        registry_path = p.parent / "defect_notices.json"
+        try:
+            from engine.release_defects import is_evaluation_eligible, load_defect_notices
+            notices = load_defect_notices(p.parent)
+            # A deployed registry that is empty or malformed cannot support a
+            # trustworthy maturity count.  Legacy standalone ledgers without a
+            # registry keep their historical counting behavior for compatibility.
+            if registry_path.exists() and not notices:
+                return 0
+        except Exception:
+            if registry_path.exists():
+                return 0
+            notices = []
+            is_evaluation_eligible = lambda _row, _notices: True  # type: ignore[assignment]
         count = 0
         with p.open("r", encoding="utf-8") as fh:
             for line in fh:
@@ -361,7 +374,8 @@ def _count_scored_rows(projection: dict, ledger_path: str | Path | None) -> int:
                     row = json.loads(line)
                     if (isinstance(row, dict)
                             and row.get("row_type") == "scored"
-                            and row.get("release") == release):
+                            and row.get("release") == release
+                            and is_evaluation_eligible(row, notices)):
                         count += 1
                 except json.JSONDecodeError:
                     continue

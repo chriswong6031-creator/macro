@@ -29,6 +29,7 @@ _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO))
 
 from scripts.build_release_forecast import (
+    _attach_provenance,
     _append_ledger_rows,
     _build_projection_ledger_rows,
     _build_scoreboard,
@@ -44,6 +45,108 @@ from scripts.build_release_forecast import (
     _run_projection,
     _wilson,
 )
+
+
+def test_hash_survives_engine_item_snapshot_and_ledger(tmp_root: Path, monkeypatch) -> None:
+    import scripts.build_release_forecast as producer
+
+    expected_hash = "a" * 64
+    monkeypatch.setattr(
+        producer,
+        "_run_projection",
+        lambda *args, **kwargs: {
+            "point": 0.2,
+            "p10": 0.0,
+            "p25": 0.1,
+            "p50": 0.2,
+            "p75": 0.3,
+            "p90": 0.4,
+            "confidence": 0.5,
+            "input_completeness": 1.0,
+            "inputs_hash": expected_hash,
+            "input_manifest": {"x": 1.0},
+            "benchmark_set": {},
+            "surprise_skew": {},
+            "pit_provenance": {"vintaged_legs": ["x"]},
+        },
+    )
+    items = _build_upcoming_block(
+        date(2026, 8, 9),
+        tmp_root,
+        [{
+            "release_type": "cpi_headline",
+            "release": "cpi",
+            "period": "2026-07",
+            "release_date": "2026-08-12",
+            "regime_axis": "inflation",
+        }],
+        {},
+    )
+    assert items[0]["inputs_hash"] == expected_hash
+
+    snapshots = tmp_root / "data" / "release_forecast" / "input_snapshots"
+    ledger = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+    _attach_provenance(items, ledger, snapshots, asof_day=date(2026, 8, 9))
+    snapshot = json.loads(next(snapshots.glob("*.json")).read_text(encoding="utf-8"))
+    assert snapshot["inputs_hash"] == expected_hash
+    rows = _build_projection_ledger_rows(date(2026, 8, 9), items, {})
+    assert rows[0]["inputs_hash"] == expected_hash
+
+
+def test_capture_prefers_official_actual_receipt(tmp_root: Path) -> None:
+    actual_path = tmp_root / "data" / "release_forecast" / "official_actuals.jsonl"
+    actual_path.write_text(
+        json.dumps({
+            "schema": "release_actual.v1",
+            "row_type": "actual",
+            "receipt_id": "official_actual:test",
+            "release": "cpi_headline",
+            "period": "2026-06",
+            "sequence": "first",
+            "actual": -0.4,
+            "actual_raw": -0.4,
+            "actual_basis": "official_published_metric",
+            "actual_source": "official_release_document",
+            "source_url": "https://www.bls.gov/news.release/archives/cpi_test.htm",
+            "source_sha256": "b" * 64,
+            "observed_at": "2026-07-14T12:30:01+00:00",
+            "exact_target_id": "cpi_headline_mom_printed_first",
+        }) + "\n",
+        encoding="utf-8",
+    )
+    projection = _projection_row(
+        release="cpi_headline",
+        period="2026-06",
+        asof_night="2026-07-13",
+        release_date="2026-07-14",
+    )
+    projection["target_epoch"] = "coherent_release_target_v1"
+    scored = _check_release_day_capture(date(2026, 7, 14), tmp_root, [projection])
+    assert len(scored) == 1
+    assert scored[0]["actual"] == -0.4
+    assert scored[0]["actual_source"] == "official_release_document"
+    assert scored[0]["actual_receipt_id"] == "official_actual:test"
+
+
+def test_scoreboard_primary_metrics_exclude_structured_defect(tmp_root: Path) -> None:
+    notice_path = tmp_root / "data" / "release_forecast" / "defect_notices.json"
+    notice_path.write_text(json.dumps({"notices": [{
+        "id": "DN-T",
+        "evaluation_excluded": True,
+        "selector": {"row_types": ["scored"], "target_epochs": ["legacy"]},
+    }]}), encoding="utf-8")
+    tainted = {**_scored_row(), "target_epoch": "legacy"}
+    clean = {
+        **_scored_row(period="2026-07", asof_night="2026-08-12"),
+        "target_epoch": "coherent",
+        "actual": 0.2,
+        "frozen_projection_point": 0.1,
+    }
+    board = _build_scoreboard([tainted, clean], "2026-07-01", root=tmp_root)
+    assert board["by_release"]["cpi_headline"]["n"] == 1
+    assert board["all_forward"]["cpi_headline:champion"]["n"] == 2
+    assert board["all_forward"]["cpi_headline:champion"]["excluded_n"] == 1
+    assert board["evaluation_exclusions"]["by_defect"] == {"DN-T": 1}
 
 
 # ============================================================

@@ -186,14 +186,17 @@ def _gather_releases(root: Path) -> dict:
         if not isinstance(data, dict):
             return _absent("release_forecast/latest.json not found or malformed")
 
-        # Read n_graded from scoreboard
+        # Scoreboard rows use ``n``.  Accept the historical ``n_graded`` alias
+        # so old fixtures/artifacts remain readable, but never silently report
+        # a zero track record because producer and reader used different names.
         n_graded = 0
         sb_path = root / "data" / "release_forecast" / "scoreboard.json"
         sb = _read_json(sb_path)
         if isinstance(sb, dict):
             by_rel = sb.get("by_release") or {}
             n_graded = sum(
-                v.get("n_graded", 0) if isinstance(v, dict) else 0
+                (v.get("n") if v.get("n") is not None else v.get("n_graded", 0))
+                if isinstance(v, dict) else 0
                 for v in by_rel.values()
             )
 

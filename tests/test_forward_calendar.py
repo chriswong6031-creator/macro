@@ -507,3 +507,31 @@ def test_scoreboard_n_graded_note(tmp_path: Path) -> None:
     assert cpi.get("accuracy_note") == "no accuracy record yet", (
         f"expected accuracy_note on n_graded=0 entry: {cpi}"
     )
+
+
+def test_scoreboard_current_n_field_is_counted(tmp_path: Path) -> None:
+    """The producer's current ``n`` field must reach the calendar disclosure."""
+    from engine.forward_calendar_context import gather_forward_calendar
+
+    root = _make_root(tmp_path)
+    _write_json(
+        root / "data" / "release_forecast" / "latest.json",
+        _minimal_release_forecast([_cpi_entry()]),
+    )
+    scoreboard = _empty_scoreboard()
+    scoreboard["by_release"] = {
+        "cpi_headline": {"n": 2},
+        "cpi_core": {"n": 1},
+    }
+    _write_json(root / "data" / "release_forecast" / "scoreboard.json", scoreboard)
+    _write_json(
+        root / "data" / "neuralweb" / "cycle_pattern_state.json",
+        _minimal_cycle_state({"up": {}, "down": {}}, []),
+    )
+
+    releases = gather_forward_calendar(root)["releases"]
+    assert releases["n_graded"] == 3
+    assert all(
+        "accuracy_note" not in entry
+        for entry in releases.get("top_upcoming", [])
+    )
