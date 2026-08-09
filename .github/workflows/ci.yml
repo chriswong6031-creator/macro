@@ -663,6 +663,15 @@ on:
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.
       - "tests/test_prophet_government_revenue_context.py"
+      # Waves 9E/9F — shadow cross-check packets and the Prophet post-selection
+      # annotation boundary. Both suites are named here because their subjects
+      # reach OUTSIDE engine/government_revenue/**: the 9F import-boundary test
+      # walks every engine/prophet*.py transitively, and the wired seam lives in
+      # engine/prophet_bridge.py, so an edit to a Prophet module must be able to
+      # start the job that proves the boundary still holds.
+      - "tests/test_government_revenue_shadow_context.py"
+      - "tests/test_government_revenue_prophet_annotation.py"
+      - "engine/prophet_bridge.py"
       - "tests/test_sam_gov_opportunities.py"
       # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
       # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.

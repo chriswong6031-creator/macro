@@ -5078,6 +5078,20 @@ jobs:
       # fails CLOSED and every payload reads invalid (the 2026-08-03 staging pass).
       - name: prophet ↔ government-revenue context bridge
         run: python -m pytest tests/test_prophet_government_revenue_context.py -q
+      # Waves 9E + 9F: the shadow cross-check packet and the Prophet
+      # post-selection annotation — the two seams that connect the lobe to the
+      # rest of the platform without giving it signal authority. Both suites
+      # carry byte-identity proofs (the candidate queue's wire bytes across four
+      # shadow states; Prophet's decision projection with the adapter on/off) and
+      # a TRANSITIVE import-boundary walk proving no Prophet module can reach a
+      # govrev candidate SOURCE. They belong in THIS job because both read the
+      # jsonschema-validated candidate contract, and the live probes read the
+      # committed data/{baskets/ohlcv,yahoo,regime,us_prophet_rank} stores plus
+      # data/government_revenue/candidate_queue.json — all tracked, so the probes
+      # exercise real artifacts here rather than degrading to fixtures. Measured
+      # locally under this job's exact dependency set: 103 passed in ~7s.
+      - name: waves 9E/9F — shadow context packets + prophet annotation boundary
+        run: python -m pytest tests/test_government_revenue_shadow_context.py tests/test_government_revenue_prophet_annotation.py -q
       - name: workspace / dossier / briefcase UI contracts
         run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
       - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
