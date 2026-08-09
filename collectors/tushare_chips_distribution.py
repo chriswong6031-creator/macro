@@ -40,20 +40,17 @@ would make the second ticker collected for a date a keep-first contradiction aga
 Re-collecting an existing partition with identical rows is a no-op; with different rows it
 raises rather than overwriting.
 
-LICENSING is settled by the operator's own statement in
-``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md`` (§License and authority gate):
-Mastermind holds licensing rights to TuShare under an exclusive partnership agreement running
-to 2035, confirmed and not requiring reconfirmation. Receipts therefore CITE that statement
-instead of carrying purchase/payment/license nonclaims. Lane A's shared gate is not importable
-from this lane yet, so the citation is made at module level and written into every receipt; the
-integration PR that lands the shared gate should route through it.
+This collector is operator-ordered under
+``research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md``. Receipts carry that instruction as plain
+collection provenance. The module embeds no extra authorization environment gate and reaches no
+legal conclusion; execution still requires ``TUSHARE_TOKEN`` plus every technical bound below.
 
-What survives in every receipt is EPISTEMIC, and none of it is about licensing: access is
-attested only for the exact request that returned rows, no completeness is claimed across
-tickers or dates, the distribution semantics are pinned to the official doc page (or marked as
-observed-and-pending if a future contract capture has to come from a probe), and nothing here
-carries rank/size/gate authority — promotion runs the normal gauntlet. Raw distribution rows
-stay in the private store; the DERIVED aggregates below are the research-facing surface.
+What survives in every receipt is EPISTEMIC: access is observed only for the exact request that
+returned rows, no completeness is claimed across tickers or dates, the distribution semantics
+are pinned to the official doc page (or marked as observed-and-pending if a future contract
+capture has to come from a probe), and nothing here carries rank/size/gate authority — promotion
+runs the normal gauntlet. Raw distribution rows stay in the private store; the DERIVED
+aggregates below are the research-facing surface.
 
 GATED: every entry point no-ops unless ``TUSHARE_TOKEN`` is set. No token, request header, or
 raw vendor payload is ever logged or persisted — vendor error text is untrusted and can echo a
@@ -62,6 +59,7 @@ request, so failures are reported by reason CODE only.
 DISPLAY/CONTEXT-ONLY. This is a context plane, not a signal: promotion of any feature derived
 here to rank/size/gate authority goes through the normal gauntlet.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -91,24 +89,16 @@ log = logging.getLogger("tushare_chips_distribution")
 
 DEFAULT_OUTPUT_ROOT = config.data_dir() / "china_chips_distribution"
 
-# EPISTEMIC tier only — display/context until a feature is gauntleted. Not a license status.
+# EPISTEMIC tier only — display/context until a feature is gauntleted.
 AUTHORITY = "context_display_only"
 PARTITION_SCHEMA_VERSION = "china_chips_distribution_partition.v1"
 RECEIPT_SCHEMA_VERSION = "china_chips_distribution_collection_receipt.v1"
 
-# --- Operator license statement (module-level citation; see the docstring) ------------------
-LICENSE_STATEMENT_MODE = "operator_attestation_verified"
-LICENSE_STATEMENT_DOCUMENT = "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-LICENSE_STATEMENT_SHA256 = (
-    "ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"
-)
-LICENSE_STATEMENT_SUMMARY = (
-    "exclusive TuShare partnership agreement to 2035; confirmed, no reconfirmation required"
-)
-# The wiring/architecture authority for this plane (separate from the license question).
-PLANE_AUTHORITY_DOCUMENT = "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md"
-PLANE_AUTHORITY_SHA256 = (
-    "f981b094388570cef0fd479eb4e3354e13ad2181b234475a15eb9f2fb001454f"
+# --- Operator-ordered collection provenance (plain instruction, not a legal conclusion) -----
+COLLECTION_PROVENANCE_MODE = "operator_ordered_wiring"
+COLLECTION_PROVENANCE_DOCUMENT = "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md"
+COLLECTION_PROVENANCE_SHA256 = (
+    "18bd19ea22a0bcb47a5ce8b983ba64ecacc8d706ae329578d1e6d2d6e7e7594d"
 )
 
 # --- Vendor contract, pinned from the official doc page ------------------------------------
@@ -188,9 +178,14 @@ class CollectionResult:
 # canonical hashing / provenance helpers
 # ---------------------------------------------------------------------------------------
 
+
 def _json_bytes(value: object) -> bytes:
     return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
     ).encode("utf-8")
 
 
@@ -255,16 +250,14 @@ def endpoint_contract() -> dict[str, object]:
     return {**payload, "contract_sha256": canonical_hash(payload)}
 
 
-def _license_statement_receipt() -> dict[str, object]:
-    """Cite the operator's license statement. Deliberately carries NO license nonclaims."""
+def _collection_provenance_receipt() -> dict[str, object]:
+    """Record the operator's collection instruction without making a legal conclusion."""
     return {
-        "mode": LICENSE_STATEMENT_MODE,
-        "statement_document": LICENSE_STATEMENT_DOCUMENT,
-        "statement_document_sha256": LICENSE_STATEMENT_SHA256,
-        "statement_summary": LICENSE_STATEMENT_SUMMARY,
-        "plane_authority_document": PLANE_AUTHORITY_DOCUMENT,
-        "plane_authority_document_sha256": PLANE_AUTHORITY_SHA256,
-        "gate_implementation": "module_level_citation_shared_gate_not_yet_importable",
+        "mode": COLLECTION_PROVENANCE_MODE,
+        "authority_document": COLLECTION_PROVENANCE_DOCUMENT,
+        "authority_document_sha256": COLLECTION_PROVENANCE_SHA256,
+        "scope": "private_collection_and_in_repo_research",
+        "legal_conclusion": "none_embedded_in_collection_receipt",
     }
 
 
@@ -300,6 +293,7 @@ def arrow_schema() -> pa.Schema:
 # ---------------------------------------------------------------------------------------
 # request / response normalization
 # ---------------------------------------------------------------------------------------
+
 
 def canonical_ticker(raw: object) -> str:
     """Vendor ts_code -> this repo's suffix convention, validated as an A-share code."""
@@ -344,7 +338,9 @@ def _exact_price(value: object) -> Decimal:
         raise CollectorIntegrityError("vendor price level is not positive")
     if -parsed.as_tuple().exponent > PRICE_DECIMAL_SCALE:
         # Rounding here would silently move a price level off the vendor's grid.
-        raise CollectorIntegrityError("vendor price level exceeds the pinned decimal scale")
+        raise CollectorIntegrityError(
+            "vendor price level exceeds the pinned decimal scale"
+        )
     # Pad to exactly the pinned scale. Excess precision was already REJECTED above, so this
     # only appends trailing zeros and can never round a level away. It is load-bearing for
     # keep-first: Parquet returns decimals at the column's scale, so an unpadded in-memory
@@ -389,9 +385,13 @@ def normalize_rows(
     missing = sorted(set(VENDOR_FIELDS) - set(frame.columns))
     extra = sorted(set(frame.columns) - set(VENDOR_FIELDS))
     if missing or extra:
-        raise CollectorIntegrityError("cyq_chips response schema differs from the pinned fields")
+        raise CollectorIntegrityError(
+            "cyq_chips response schema differs from the pinned fields"
+        )
     if len(frame) > VENDOR_MAX_ROWS:
-        raise CollectorIntegrityError("cyq_chips response exceeds the documented row cap")
+        raise CollectorIntegrityError(
+            "cyq_chips response exceeds the documented row cap"
+        )
     expected_compact = trade_day.strftime("%Y%m%d")
     records: list[dict[str, object]] = []
     for raw in frame.to_dict(orient="records"):
@@ -432,9 +432,8 @@ def normalize_rows(
 # aggregation contract — the research-facing surface (pure, no I/O)
 # ---------------------------------------------------------------------------------------
 
-def levels_from_rows(
-    rows: Iterable[Mapping[str, object]]
-) -> list[tuple[float, float]]:
+
+def levels_from_rows(rows: Iterable[Mapping[str, object]]) -> list[tuple[float, float]]:
     """``[{price, percent}, ...]`` -> ``[(price, share_fraction), ...]`` sorted by price.
 
     This is the ONE place the documented percentage points become 0-1 share fractions, so a
@@ -467,7 +466,11 @@ def concentration_share(
     "no chips are clustered near the close" are opposite readings and must not share a value.
     """
     total = sum(share for _, share in levels)
-    if ref_price is None or not math.isfinite(float(ref_price)) or float(ref_price) <= 0:
+    if (
+        ref_price is None
+        or not math.isfinite(float(ref_price))
+        or float(ref_price) <= 0
+    ):
         return None
     if total <= 0:
         return None
@@ -488,7 +491,11 @@ def winner_shares(
     arbitrarily into one side is how a winner-rate quietly disagrees with cyq_perf's own.
     """
     total = sum(share for _, share in levels)
-    if ref_price is None or not math.isfinite(float(ref_price)) or float(ref_price) <= 0:
+    if (
+        ref_price is None
+        or not math.isfinite(float(ref_price))
+        or float(ref_price) <= 0
+    ):
         return {"winner_share": None, "loser_share": None, "at_cost_share": None}
     if total <= 0:
         return {"winner_share": None, "loser_share": None, "at_cost_share": None}
@@ -504,7 +511,7 @@ def winner_shares(
 
 
 def distribution_entropy(
-    levels: Sequence[tuple[float, float]]
+    levels: Sequence[tuple[float, float]],
 ) -> dict[str, float | int | None]:
     """Shannon entropy (nats) of the chip mass across price levels, plus its normalization.
 
@@ -581,6 +588,7 @@ def summarize_distribution(
 # partition install (keep-first immutable)
 # ---------------------------------------------------------------------------------------
 
+
 def partition_path(root: Path, ticker: str, trade_day: date) -> Path:
     return Path(root) / f"by_trade_date={trade_day.isoformat()}" / f"by_ticker={ticker}"
 
@@ -619,7 +627,7 @@ def _receipt_without_hash(
     return {
         "receipt_schema_version": RECEIPT_SCHEMA_VERSION,
         "authority": AUTHORITY,
-        "license_statement": _license_statement_receipt(),
+        "collection_provenance": _collection_provenance_receipt(),
         "endpoint_contract": endpoint_contract(),
         "access_observation_receipt": {
             "observation": "access_observed_at_request_time",
@@ -662,8 +670,8 @@ def _receipt_without_hash(
             "percent_unit": PERCENT_UNIT,
         },
         "partition_identity": identity,
-        # EPISTEMIC nonclaims only. The licensing question is settled by the operator's
-        # statement cited above, so purchase/payment/license/sharing nonclaims are gone.
+        # EPISTEMIC nonclaims only. Collection provenance records the operator's instruction;
+        # it does not alter what these rows can support.
         "nonclaims": [
             "context_only_not_signal_rank_size_or_gate_authority",
             "access_attested_only_for_this_exact_request",
@@ -677,14 +685,18 @@ def _load_receipt(path: Path) -> dict[str, object]:
     try:
         receipt = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise CollectorIntegrityError("immutable partition receipt is unreadable") from exc
+        raise CollectorIntegrityError(
+            "immutable partition receipt is unreadable"
+        ) from exc
     if not isinstance(receipt, dict):
         raise CollectorIntegrityError("immutable partition receipt is not an object")
     declared = receipt.get("receipt_sha256")
     body = dict(receipt)
     body.pop("receipt_sha256", None)
     if not _is_sha256(declared) or canonical_hash(body) != declared:
-        raise CollectorIntegrityError("immutable partition receipt hash does not recompute")
+        raise CollectorIntegrityError(
+            "immutable partition receipt hash does not recompute"
+        )
     return receipt
 
 
@@ -700,8 +712,13 @@ def _validate_existing_partition(
         raise CollectorIntegrityError("immutable partition path is not a directory")
     if any(child.is_symlink() for child in destination.iterdir()):
         raise CollectorIntegrityError("immutable partition bundle contains a symlink")
-    if {child.name for child in destination.iterdir()} != {"part.parquet", "receipt.json"}:
-        raise CollectorIntegrityError("immutable partition bundle is partial or has extra files")
+    if {child.name for child in destination.iterdir()} != {
+        "part.parquet",
+        "receipt.json",
+    }:
+        raise CollectorIntegrityError(
+            "immutable partition bundle is partial or has extra files"
+        )
     receipt = _load_receipt(destination / "receipt.json")
     if (
         receipt.get("receipt_schema_version") != RECEIPT_SCHEMA_VERSION
@@ -710,9 +727,13 @@ def _validate_existing_partition(
         raise CollectorIntegrityError("immutable partition receipt authority changed")
     if receipt.get("endpoint_contract") != endpoint_contract():
         raise CollectorIntegrityError("immutable partition endpoint contract changed")
-    if receipt.get("license_statement") != _license_statement_receipt():
-        raise CollectorIntegrityError("immutable partition license statement changed")
-    identity = {"endpoint": ENDPOINT, "ticker": ticker, "trade_date": trade_day.isoformat()}
+    if receipt.get("collection_provenance") != _collection_provenance_receipt():
+        raise CollectorIntegrityError("immutable collection provenance changed")
+    identity = {
+        "endpoint": ENDPOINT,
+        "ticker": ticker,
+        "trade_date": trade_day.isoformat(),
+    }
     if receipt.get("partition_identity") != identity:
         raise CollectorIntegrityError("immutable partition identity changed")
     data_receipt = receipt.get("data_receipt")
@@ -728,10 +749,14 @@ def _validate_existing_partition(
     except Exception as exc:  # unreadable bytes are themselves an integrity fact
         raise CollectorIntegrityError("immutable Parquet part is unreadable") from exc
     if table.schema != arrow_schema():
-        raise CollectorIntegrityError("immutable Parquet schema contradicts the contract")
+        raise CollectorIntegrityError(
+            "immutable Parquet schema contradicts the contract"
+        )
     stored_hash = canonical_hash(_canonical_rows(table.to_pylist()))
     if data_receipt.get("normalized_rows_sha256") != stored_hash:
-        raise CollectorIntegrityError("immutable normalized rows contradict the receipt")
+        raise CollectorIntegrityError(
+            "immutable normalized rows contradict the receipt"
+        )
     if incoming_data_hash != stored_hash:
         raise CollectorIntegrityError("keep-first immutable partition contradiction")
     return receipt
@@ -776,7 +801,10 @@ def _install_partition(
         parquet_path = stage / "part.parquet"
         table = pa.Table.from_pylist(list(records), schema=arrow_schema())
         pq.write_table(
-            table, parquet_path, compression="zstd", use_dictionary=False,
+            table,
+            parquet_path,
+            compression="zstd",
+            use_dictionary=False,
             write_statistics=True,
         )
         receipt = _receipt_without_hash(
@@ -855,12 +883,16 @@ def _fetch(
         try:
             frame, resolved = tc.snapshot_by_date(ENDPOINT, ts_code=code)
         except Exception:  # noqa: BLE001 — never surface vendor/client exception text
-            raise CollectionHeld("tushare_query_failed_without_persisted_payload") from None
+            raise CollectionHeld(
+                "tushare_query_failed_without_persisted_payload"
+            ) from None
         if frame is None or resolved is None or frame.empty:
             raise CollectionHeld("cyq_chips_unavailable_empty_or_unentitled")
         return frame.copy(), parse_trade_date(resolved)
     try:
-        frame = query_fn(ENDPOINT, ts_code=code, trade_date=trade_day.strftime("%Y%m%d"))
+        frame = query_fn(
+            ENDPOINT, ts_code=code, trade_date=trade_day.strftime("%Y%m%d")
+        )
     except Exception:  # noqa: BLE001
         raise CollectionHeld("tushare_query_failed_without_persisted_payload") from None
     if frame is None or not isinstance(frame, pd.DataFrame) or frame.empty:
@@ -882,12 +914,18 @@ def collect(
     canonical = canonical_ticker(ticker)
     trade_day = parse_trade_date(trade_date) if trade_date is not None else None
     frame, resolved = _fetch(query_fn, canonical, trade_day)
-    source_rows = [
-        {field: _jsonable(raw.get(field)) for field in VENDOR_FIELDS}
-        for raw in frame.to_dict(orient="records")
-    ] if set(VENDOR_FIELDS) <= set(frame.columns) else None
+    source_rows = (
+        [
+            {field: _jsonable(raw.get(field)) for field in VENDOR_FIELDS}
+            for raw in frame.to_dict(orient="records")
+        ]
+        if set(VENDOR_FIELDS) <= set(frame.columns)
+        else None
+    )
     if source_rows is None:
-        raise CollectorIntegrityError("cyq_chips response schema differs from the pinned fields")
+        raise CollectorIntegrityError(
+            "cyq_chips response schema differs from the pinned fields"
+        )
     source_rows.sort(key=_json_bytes)
     records = normalize_rows(frame, canonical, resolved)
     mass = sum(float(row["percent"]) for row in records)
@@ -903,9 +941,13 @@ def collect(
     )
 
 
-def read_partition(root: Path, ticker: str, trade_date: date | str) -> list[dict[str, object]]:
+def read_partition(
+    root: Path, ticker: str, trade_date: date | str
+) -> list[dict[str, object]]:
     """Raw distribution rows back out of the private store (research/aggregation input)."""
-    path = partition_path(Path(root), canonical_ticker(ticker), parse_trade_date(trade_date))
+    path = partition_path(
+        Path(root), canonical_ticker(ticker), parse_trade_date(trade_date)
+    )
     return pq.ParquetFile(path / "part.parquet").read().to_pylist()
 
 
@@ -947,9 +989,15 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     import argparse
 
-    parser = argparse.ArgumentParser(description="Collect cyq_chips distributions (gated).")
-    parser.add_argument("tickers", nargs="+", help="Repo-convention tickers, e.g. 600519.SS")
-    parser.add_argument("--trade-date", default=None, help="YYYY-MM-DD (default: latest)")
+    parser = argparse.ArgumentParser(
+        description="Collect cyq_chips distributions (gated)."
+    )
+    parser.add_argument(
+        "tickers", nargs="+", help="Repo-convention tickers, e.g. 600519.SS"
+    )
+    parser.add_argument(
+        "--trade-date", default=None, help="YYYY-MM-DD (default: latest)"
+    )
     args = parser.parse_args()
     return 0 if refresh(args.tickers, trade_date=args.trade_date) else 1
 
