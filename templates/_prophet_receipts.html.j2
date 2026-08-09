@@ -1,0 +1,194 @@
+{# ═══ PASSED-ON-TONIGHT SHELF — ANTICIPATION §6.9 R5 per-name "why not" receipts.
+
+   THE PROBLEM THIS SOLVES. The board above shows the names that BECAME plans. On the
+   2026-08-09 artifact the same intake looked at 79 buy-lane names and put down 25 of
+   them, and the surface said NOTHING about any of them — so a reader who followed a
+   name last week and does not see it tonight could not tell whether it was rejected,
+   forgotten, or never looked at. This shelf is the answer, in the reader's words.
+
+   THE STANCE IS "WATCH", NOT "CHASE". Every line here is written so the honest action
+   is inaction: the lede says watch and don't chase, and each group names ONE thing the
+   name is waiting on. Verdict-style language about a name being thrown out is never
+   front-facing (operator ruling 2026-07-27) and no internal token — a status slug, a
+   tier name, a gate name — appears in any string this partial can emit. The copy is
+   not composed here at all:
+   it comes verbatim from `pvr_copy` below, which mirrors engine.prophet_bridge's
+   REFUSAL_COPY, and tests/test_prophet_whynot_receipts.py pins the two equal so the
+   dashboard shelf and the published receipts can never word the same refusal
+   differently.
+
+   TIER DISCIPLINE (doctrine). Glance tier = the group line + the count. A name fails
+   MORE THAN ONE gate 14 times out of 25 on the live board, and the headline is only the
+   most actionable of them — so the FULL blocker set rides each chip's Tier-2 hover
+   (data-tip-en / data-tip-zh). Nothing is hidden, and nothing technical is promoted.
+   NO `title=` attribute anywhere: translated text in `title=` is CI-guarded here.
+
+   CONTRACT — ONE argument, `cx`, exactly as engine.prophet_bridge.refusal_receipts
+   returns it:
+     considered  int   buy-lane rows the intake looked at
+     planned     int   considered − passed
+     passed      int   names passed on tonight (the rows below)
+     unmapped    int   rows whose headline is the fail-closed generic line
+     groups      [{reason, en, zh, near, n, names:[{ticker, name, score, why:[code…]}]}]
+   Groups arrive pre-ordered and pre-sorted; this partial NEVER re-orders, re-groups or
+   re-counts them — `g.n` is the TRUE member count while `g.names` may be capped, which
+   is how an overflowing group discloses itself instead of quietly shrinking.
+
+   DEGRADES SILENTLY. No `cx`, or a `cx` with no groups, renders the empty string: the
+   panel above must look exactly as it does today on a night when nothing was passed on
+   (and on every non-US board, which does not pass this context at all). #}
+{% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
+
+{# Reason code → (EN, ZH). MIRROR of engine.prophet_bridge.REFUSAL_COPY — the engine is
+   the source of truth and the test pins these byte-equal. It is duplicated here (rather
+   than threaded through the view-model) because a chip's hover must be able to word EVERY
+   code in a row's `why` list, including codes that head no group tonight, and the
+   receipts contract ships codes rather than pre-worded strings. Add a code in ONE place
+   and the test fails until it is added in the other. #}
+{% set pvr_copy = {
+  'plan_not_built': ["Cleared every check — no entry plan came together tonight", '各项检查都通过 — 但今晚没能形成完整计划'],
+  'already_open':   ['Already has a plan running', '已有在跑的计划'],
+  'not_ready':      ["Setting up, but the entry hasn't come", '形态在走，入场点还没到'],
+  'ran_too_far':    ['Ran too far — waiting for a pullback', '涨得太急 — 等回调'],
+  'stood_down':     ['Standing aside for now', '暂时回避'],
+  'grade_low':      ['Signal too weak to act on', '信号强度不足以行动'],
+  'conviction_low': ['No setup yet', '暂无买点'],
+  'pointing_down':  ['Still heading down', '方向仍朝下'],
+  'no_trigger':     ['No entry trigger yet', '还没有入场触发'],
+  'unknown':        ['Held back for another reason', '另有原因，暂未纳入']
+} %}
+
+{% macro pvr_css() %}
+<style>
+{# Quiet by construction: the shelf is a closed <details> under a hairline, so it costs
+   the board one 12.5px line until the reader asks for it. The only accents are the
+   group rails — muted for the general cohort, --pv-wait for the NEAR cohort (the names
+   with one identifiable thing between them and a plan), which is the same WAIT hue the
+   cards above use for "not yet". Motion is the caret rotation and one hover colour,
+   both ≤.16s, so no reduced-motion kill block is owed. #}
+.pvr{margin:16px 0 0;border-top:1px solid var(--line);padding-top:10px}
+.pvr-sum{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;padding:4px 0;color:var(--text);border-radius:6px}
+.pvr-sum::-webkit-details-marker{display:none}
+.pvr-sum:hover .pvr-hd{color:var(--pv-wait)}
+.pvr-sum:focus-visible{outline:2px solid var(--pv-wait);outline-offset:3px}
+.pvr-hd{font-size:12.5px;font-weight:700;letter-spacing:.02em;transition:color .12s}
+.pvr-stat{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pvr-caret{margin-left:auto;width:7px;height:7px;flex:none;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);transition:transform .16s}
+.pvr[open] .pvr-caret{transform:rotate(225deg) translate(-2px,-2px)}
+.pvr-lede{margin:9px 0 13px;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:62ch}
+.pvr-list{list-style:none;margin:0;padding:0;display:grid;gap:13px}
+.pvr-g{position:relative;padding:3px 0 3px 12px}
+.pvr-g::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:2px;border-radius:2px;background:color-mix(in srgb,var(--muted) 52%,transparent)}
+.pvr-g.is-near::before{background:var(--pv-wait)}
+.pvr-gh{display:flex;align-items:baseline;gap:10px}
+.pvr-why{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.35}
+.pvr-n{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto;flex:none;opacity:.75}
+.pvr-tks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.pvr-tk{font:600 10.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.03em;padding:0 5px;min-width:34px;text-align:center;border-radius:4px;background:color-mix(in srgb,var(--muted) 12%,transparent);border:1px solid color-mix(in srgb,var(--muted) 26%,transparent);color:var(--muted)}
+.pvr-g.is-near .pvr-tk{color:var(--text);border-color:color-mix(in srgb,var(--pv-wait) 40%,transparent)}
+{# The open-plan line sits between the groups and the footnote, quieter than a group
+   heading and louder than the stamp — it is accounting, not an instruction. #}
+.pvr-open{margin:14px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:62ch}
+.pvr-ft{margin:9px 0 0;font-size:10.5px;color:var(--muted);opacity:.8}
+{# The era clause is the one hoverable thing in the footnote, so it says so quietly: a
+   dotted underline is the house's "there is a receipt here" tell, and `cursor:help` is
+   already global on [data-tip-en] (theme.css). No colour — the footnote must stay the
+   quietest line on the shelf. #}
+.pvr-era{border-bottom:1px dotted color-mix(in srgb,var(--muted) 55%,transparent)}
+html[data-theme="light"] .pvr-g::before{background:color-mix(in srgb,var(--muted) 70%,transparent)}
+{# SPECIFICITY, not decoration — this line is load-bearing. `html[data-theme="light"]
+   .pvr-g::before` scores (0,2,2) and OUTRANKS `.pvr-g.is-near::before` at (0,2,1), so
+   without an explicit light twin the near rail silently renders muted-grey in light mode
+   and the shelf loses its only piece of visual hierarchy. Verified by computed style:
+   before this rule every rail returned the same rgb in light. Doctrine §5.8 — light is a
+   design target, not a token swap. #}
+html[data-theme="light"] .pvr-g.is-near::before{background:var(--pv-wait)}
+html[data-theme="light"] .pvr-tk{background:#fff;border-color:color-mix(in srgb,var(--muted) 38%,transparent);color:color-mix(in srgb,var(--text) 70%,var(--muted))}
+html[data-theme="light"] .pvr-g.is-near .pvr-tk{color:var(--text)}
+@media (max-width:640px){.pvr-why{font-size:12px}}
+</style>
+{% endmacro %}
+
+{% macro pvr_shelf(cx) %}
+{%- if cx and cx.groups %}
+<details class="pvr">
+  <summary class="pvr-sum">
+    <span class="pvr-hd">{{ t('Passed on tonight', '今晚未纳入') }}</span>
+    {#- The stat is the shelf's whole claim in four characters: of everything looked at,
+       this many were DECLINED. `declined`, never `passed` — `passed` includes the rows
+       that cleared every gate and already hold a live plan, and headlining those as
+       passed-on states something false (see the arithmetic note in
+       engine.prophet_bridge.refusal_receipts). Both figures come from the receipts dict —
+       never re-derived from `groups|length`, which would silently disagree with the
+       engine whenever a group is capped. The groups drawn below sum to exactly this
+       number, so a reader who adds them up gets the headline back. #}
+    <span class="pvr-stat"><span class="l-en">{{ cx.declined }} of {{ cx.considered }}</span><span class="l-zh">{{ cx.declined }} / {{ cx.considered }} 只</span></span>
+    <span class="pvr-caret" aria-hidden="true"></span>
+  </summary>
+  <p class="pvr-lede">{{ t("Watch — don't chase. Each rejoins the board when its setup completes.", '观望，不要追。形态走完，它们会自己回到榜上。') }}</p>
+  <ul class="pvr-list">
+    {#- `already_open` is deliberately NOT a group here. Those rows cleared every gate and
+        are being acted on right now — the reader finds them as CARDS above, so listing 48
+        tickers under a "why not" heading would spend the shelf's largest block, its lead
+        position and its attention rail on the one cohort that needs no explanation. It
+        gets one calm line below the groups instead (doctrine's demotion rule). The engine
+        still returns it, so the published receipts stay lossless. #}
+    {%- for g in cx.groups if g.reason != 'already_open' %}
+    <li class="pvr-g{{ ' is-near' if g.near else '' }}">
+      <div class="pvr-gh"><span class="pvr-why">{{ t(g.en, g.zh) }}</span><span class="pvr-n">{{ g.n }}</span></div>
+      <div class="pvr-tks">
+        {%- for nm in g.names %}
+        {#- FULL blocker disclosure, Tier 2. The headline above is only the most
+            actionable of this row's reasons; the hover lists every one of them in the
+            same specificity order, so the reader can always get from the group line to
+            the whole picture. A code with no copy entry falls back to the generic line
+            rather than printing a raw slug — same fail-closed rule the engine applies. #}
+        {%- set _rs_en = [] %}{% set _rs_zh = [] %}
+        {%- for _c in (nm.why or ['unknown']) %}
+          {%- set _cp = pvr_copy.get(_c) or pvr_copy['unknown'] %}
+          {%- set _ = _rs_en.append(_cp[0]) %}{% set _ = _rs_zh.append(_cp[1]) %}
+        {%- endfor %}
+        <span class="pvr-tk" data-tip-en="{{ nm.name }} — what's holding it back tonight: {{ _rs_en|join('; ') }}." data-tip-zh="{{ nm.name }} — 今晚未纳入的原因：{{ _rs_zh|join('；') }}。">{{ nm.ticker }}</span>
+        {%- endfor %}
+      </div>
+    </li>
+    {%- endfor %}
+  </ul>
+  {#- The open-plan cohort, in one line and no chips. It answers the same question the
+      groups above answer — "why isn't this name a new plan tonight?" — but its answer is
+      "it already is one, look up", so it needs a count and a direction, not a ticker
+      wall. Rendered only when there are any: build_prophet's call site has this cohort,
+      build_site's has it whenever last night's plans are still open, and a first-ever run
+      has none. #}
+  {%- if cx.open_now %}
+  <p class="pvr-open">
+    <span class="l-en">{{ cx.open_now }} more already have a plan running — they're on the board above.</span>
+    <span class="l-zh">另有 {{ cx.open_now }} 只已有在跑的计划 — 就在上方榜单里。</span>
+  </p>
+  {%- endif %}
+  {# ONE footnote, merged (doctrine Law 4): the shelf is a nightly re-draw, not a
+     standing verdict — a name here tonight is expected to move, and that is the point of
+     the lede. The ERA rides the same line rather than earning a second stamp.
+
+     ERA TIERING (doctrine Law 2 + Law 5). `cx.era` is the chartered literal
+     `anticipation-v1-2026-08-08` — a machine identifier, which is exactly the thing Law 2
+     bars from the glance tier. So Tier 1 gets the honest PLAIN-WORD form ("same selection
+     rules since 8 Aug 2026", read off the literal by engine._refusal_era) and the literal
+     itself rides the Tier-2 hover, which is the doctrine's own sanctioned home for a
+     provenance receipt. Fail-soft: an era string that stops parsing yields an empty
+     `era_since_*` and the clause simply drops — never a wrong date. #}
+  <p class="pvr-ft">
+    {{- t('Re-drawn nightly', '每晚重绘') -}}
+    {%- if cx.era %}
+    <span class="pvr-era" data-tip-en="Selection rules in force: {{ cx.era }}. This shelf reports the rules, it never changes them." data-tip-zh="当前选股规则：{{ cx.era }}。本栏只呈现筛选结果，不参与筛选。">
+      {%- if cx.era_since_en -%}
+      <span class="l-en"> · same selection rules since {{ cx.era_since_en }}</span><span class="l-zh"> · 选股规则自 {{ cx.era_since_zh }} 起未变</span>
+      {%- else -%}
+      {{ t(' · selection rules unchanged', ' · 选股规则未变') }}
+      {%- endif -%}
+    </span>
+    {%- endif -%}
+  </p>
+</details>
+{%- endif -%}
+{% endmacro %}

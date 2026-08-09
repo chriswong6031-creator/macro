@@ -224,6 +224,112 @@ _KNOWN_REFUSED_STATUSES = frozenset({
     "topping", "exit", "avoid", "blocked",
 })
 
+# ── ANTICIPATION §6.9 R5 — per-name "why not" receipts ────────────────────────────────
+#
+# THE SPECIFICITY RULE — the whole reason this is not "report the first failing gate".
+# :func:`select_candidates` SHORT-CIRCUITS: it ``continue``s at the first refusal, because
+# admission only needs ONE gate to say no.  Its order is
+# ``no_entry_signal → direction → band_low → tier → status``, and ``intake_stats`` counts
+# the refusals that way — as AGGREGATE tallies with no ticker attached, which is why the
+# per-name surface cannot be read off ``intake_stats`` and derives its own row-level view
+# through the SAME admission helpers instead.
+#
+# Measured on the committed 2026-08-07 board: **8 of the 25 refused rows fail MORE THAN
+# ONE gate**, and **every ``extended``/``topping`` row also carries ``band == 'low'``.
+# Because the band is tested BEFORE the status, a first-failing-gate receipt labels every
+# anti-chase name "No setup yet" and the ran-too-far story — the exact thing the shelf
+# exists to tell — becomes invisible on the surface.
+#
+# So the receipt evaluates EVERY gate without short-circuiting and then picks the
+# headline by :data:`REFUSAL_ORDER`, which is a MOST-ACTIONABLE-FIRST order, NOT gate
+# order.  Nothing is hidden by that choice: every other failing code rides the row's
+# ``why`` list and is disclosed on the chip's Tier-2 hover.  Do not "repair" this into
+# gate order — that is the defect, not the design.
+REFUSAL_ORDER = (
+    "plan_not_built",   # cleared every gate; only the plan build itself failed
+    "already_open",     # cleared every gate; the name already has a live plan
+    "not_ready",        # the patience statuses that are ALMOST admitted
+    "ran_too_far",      # the anti-chase refusal — must outrank the band it co-occurs with
+    "stood_down",       # an explicit avoid/exit/blocked stance
+    "grade_low",        # the tier cascade graded it below the actionable set
+    "conviction_low",   # the board's own `band == 'low'`
+    "pointing_down",    # tone refused by ruling (§6.7 A1)
+    "no_trigger",       # no entry signal on the row at all
+    "unknown",          # fail-closed generic — an unmapped/renamed status word
+)
+
+#: Refused ``entry_signal.status`` → receipt code.  Every word here is a member of
+#: :data:`_KNOWN_REFUSED_STATUSES` (the test pins the two key sets equal); anything else
+#: falls through to ``"unknown"`` in :func:`refusal_receipts`, which is the FAIL-CLOSED
+#: path: a renamed or newly minted status word must never drop the row from the shelf and
+#: must never raise inside a render.
+REFUSAL_STATUS_MAP = {
+    "extended": "ran_too_far",
+    "topping": "ran_too_far",
+    "buy_soon": "not_ready",
+    "await_confluence": "not_ready",
+    "watch": "not_ready",
+    "blocked": "stood_down",
+    "exit": "stood_down",
+    "avoid": "stood_down",
+}
+
+#: code → (EN, ZH).  The ONE place this feature's user-facing wording lives, so the
+#: dashboard shelf and the published receipts can never word the same refusal
+#: differently.
+#:
+#: ``conviction_low`` deliberately reuses the BOARD'S OWN public band name for
+#: ``band == 'low'`` ("No setup" / "暂无买点") rather than coining a second phrase for the
+#: same fact — one word through the whole flow.  ``stood_down`` uses the doctrine's own
+#: ratified stance verb ("Stand aside", DESIGN_DOCTRINE §2 Law 1) for the same reason: an
+#: interface teaches its vocabulary by repeating it.  No internal token — a status slug, a
+#: tier name, a gate name — appears in any string here: the reader is told what is true
+#: about the stock, never which branch of our code said so.
+REFUSAL_COPY = {
+    "plan_not_built": ("Cleared every check — no entry plan came together tonight",
+                       "各项检查都通过 — 但今晚没能形成完整计划"),
+    "already_open":   ("Already has a plan running",
+                       "已有在跑的计划"),
+    "not_ready":      ("Setting up, but the entry hasn't come",
+                       "形态在走，入场点还没到"),
+    "ran_too_far":    ("Ran too far — waiting for a pullback",
+                       "涨得太急 — 等回调"),
+    "stood_down":     ("Standing aside for now",
+                       "暂时回避"),
+    "grade_low":      ("Signal too weak to act on",
+                       "信号强度不足以行动"),
+    "conviction_low": ("No setup yet",
+                       "暂无买点"),
+    "pointing_down":  ("Still heading down",
+                       "方向仍朝下"),
+    "no_trigger":     ("No entry trigger yet",
+                       "还没有入场触发"),
+    "unknown":        ("Held back for another reason",
+                       "另有原因，暂未纳入"),
+}
+
+#: The "one identifiable thing stands between this name and a plan" cohort.  The shelf
+#: paints these rails with the WAIT hue so the reader's eye lands on the names that are
+#: closest to rejoining the board, instead of treating a 25-name list as flat.
+REFUSAL_NEAR = frozenset({"plan_not_built", "already_open", "not_ready"})
+
+#: Per-group ticker cap.  The group's ``n`` always reports the TRUE count, so an
+#: overflow is DISCLOSED by the arithmetic rather than silently truncated away.
+REFUSAL_NAMES_CAP = 14
+
+#: Direction suffixes :func:`plan_key` appends.  ``refusal_receipts`` accepts either a
+#: bare ticker set (build_site reads tickers out of the published index) or the
+#: ``<TICKER>-<DIRECTION>`` key set (build_prophet already holds ``active_keys``), so it
+#: strips ONLY these two suffixes — a blind rsplit on "-" would turn the plain ticker
+#: ``BRK-B`` into ``BRK`` and hand a different company someone else's open plan.
+_REFUSAL_KEY_SUFFIXES = ("-BULL", "-BEAR")
+
+#: Month names for the era's plain-word "in force since" line.  The era literal itself is
+#: a Tier-2 receipt (DESIGN_DOCTRINE §2 Law 5: plain words at a glance, the identifier on
+#: hover), so Tier 1 needs the date in a form a reader actually reads.
+_REFUSAL_MONTHS_EN = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
 #: The selection rule this run's plans were originated under.  Stamped on every plan
 #: and on index.json so a later side-by-side can separate eras without guessing from
 #: dates (the #4942 era-stamp pattern).  CHARTERED LITERAL — §6.2 fixed this string and
@@ -912,6 +1018,213 @@ def select_candidates(
     # by lossless origination and is deliberately not ported.
     selected.sort(key=_selection_sort_key)
     return selected if n is None else selected[:n]
+
+
+def _refusal_open_tickers(open_keys: Iterable[str] | None) -> frozenset[str]:
+    """Normalise an open-plan key set to the TICKERS it covers.
+
+    Accepts both shapes the two call sites hold: build_prophet passes the
+    ``<TICKER>-<DIRECTION>`` keys from ``open_plan_keys`` verbatim, build_site passes
+    bare tickers read out of the published index.  Both forms are kept, so a caller that
+    mixes them still matches.  See :data:`_REFUSAL_KEY_SUFFIXES` for why the direction is
+    stripped by an exact suffix rather than by splitting on the last hyphen.
+    """
+    out: set[str] = set()
+    for raw in open_keys or ():
+        key = str(raw or "").strip().upper()
+        if not key:
+            continue
+        out.add(key)
+        for suffix in _REFUSAL_KEY_SUFFIXES:
+            if key.endswith(suffix):
+                out.add(key[: -len(suffix)])
+                break
+    return frozenset(out)
+
+
+def _refusal_codes(row: Mapping[str, Any]) -> list[str]:
+    """EVERY admission gate this board row fails, in :data:`REFUSAL_ORDER` order.
+
+    The gates are the same five :func:`select_candidates` applies, evaluated with NO
+    short-circuit — see the SPECIFICITY RULE note above :data:`REFUSAL_ORDER` for the
+    measured reason a first-failing-gate answer is the wrong one.  An empty list means
+    the row cleared admission; what happens to it then is the caller's call, because
+    only the caller knows whether a plan was actually originated for it.
+    """
+    codes: list[str] = []
+    if not row.get("entry_signal"):
+        codes.append("no_trigger")
+    tone = str(row.get("dir", "up") or "up").strip().lower()
+    if tone not in ADMITTED_DIRECTIONS:
+        codes.append("pointing_down")
+    conviction = row.get("conviction")
+    if isinstance(conviction, Mapping) and conviction.get("band", "") == "low":
+        codes.append("conviction_low")
+    signal = row.get("signal")
+    if isinstance(signal, Mapping):
+        tier = signal.get("tier_cascade")
+        if tier is not None and tier not in ("T1", "T2", "T3"):
+            codes.append("grade_low")
+    if row.get("entry_signal"):
+        # The status gate, read through the SAME two helpers admission reads it through,
+        # so the shelf can never disagree with the gate about what a row's status is.
+        #
+        # FAIL-CLOSED, and deliberately not guarded on `status` being truthy: a row that
+        # carries an entry_signal with no readable status word is REFUSED by
+        # `admission_class` (it returns None), so the receipt must say so too. Reporting
+        # nothing there would let a row the intake refused vanish from the shelf that
+        # exists to account for exactly those rows. Measured on the committed
+        # 2026-08-07 board: zero rows are in that state, so this costs nothing today and
+        # is the difference between an honest shelf and a silent hole the day it happens.
+        status = entry_status(row)
+        if admission_class(status) is None:
+            codes.append(REFUSAL_STATUS_MAP.get(status, "unknown"))
+    order = {code: i for i, code in enumerate(REFUSAL_ORDER)}
+    return sorted(set(codes), key=lambda c: order.get(c, len(REFUSAL_ORDER)))
+
+
+def _refusal_era() -> dict[str, str]:
+    """The selection era as a Tier-1 date plus its Tier-2 identifier.
+
+    :data:`SELECTION_ERA` is a CHARTERED LITERAL carrying its own start date, so the
+    "in force since" line is READ off it rather than maintained as a second source that
+    could drift.  Fail-soft: an era string that stops matching the shape yields empty
+    date strings and the shelf simply prints its footnote without the clause — never a
+    wrong date, and never a raised exception inside a render.
+    """
+    match = re.search(r"(\d{4})-(\d{2})-(\d{2})\s*$", SELECTION_ERA)
+    if not match:
+        return {"era": SELECTION_ERA, "era_since_en": "", "era_since_zh": ""}
+    year, month, day = (int(g) for g in match.groups())
+    if not 1 <= month <= 12:
+        return {"era": SELECTION_ERA, "era_since_en": "", "era_since_zh": ""}
+    return {
+        "era": SELECTION_ERA,
+        "era_since_en": f"{day} {_REFUSAL_MONTHS_EN[month - 1]} {year}",
+        "era_since_zh": f"{year}年{month}月{day}日",
+    }
+
+
+def refusal_receipts(
+    standouts: Mapping[str, Any] | None,
+    open_keys: Iterable[str] | None = (),
+    originated_tickers: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Per-name "why not" receipts for every buy-lane row the intake did NOT plan.
+
+    ANTICIPATION §6.9 R5.  ONE function, TWO call sites, so the macro dashboard shelf and
+    the published ``site/prophet/index.json`` receipts can never drift:
+
+      * ``scripts/build_site.py`` renders the shelf from the SAME
+        ``site/factordata/us_standouts.json`` generation the board above it renders from.
+        It deliberately does NOT read ``site/prophet/index.json`` for the reason list:
+        ``build_site`` runs BEFORE ``build_prophet`` in daily.yml, and ``render.yml``
+        never runs ``build_prophet`` at all — so SSR-ing the published receipts would
+        print LAST NIGHT'S refusals underneath TONIGHT'S cards and claim a name was
+        passed on when tonight's run planned it.  Reading last night's index for the
+        OPEN-PLAN keys only is safe, and is all it does: open plans persist across
+        nights, while every refusal REASON comes from tonight's board rows.
+      * ``scripts/build_prophet.py`` publishes the same structure into the intake block
+        additively, for the Terminal rider.
+
+    WHY NOT ``intake_stats``:  #5105's lossless disclosure records refusals as AGGREGATE
+    tallies (``refused_status`` / ``refused_band_low`` / ``refused_tier`` …) and
+    ``continue``s past the row — no ticker is retained, so "why isn't this name on the
+    board?" is unanswerable from it.  This function is the per-name layer over the SAME
+    gate, reading status through :func:`entry_status` / :func:`admission_class` so the two
+    can never disagree; it adds no second gate and no second vocabulary.
+
+    ``open_keys`` — open-plan identities (``<TICKER>-<DIRECTION>`` keys or bare tickers).
+    ``originated_tickers`` — ``None`` means "this call site does not know what was
+    originated tonight" (build_site's case: it knows the gate, not the origination run),
+    and then a row that cleared every gate and holds no open plan produces NO receipt at
+    all rather than an invented one.  When a set IS passed (build_prophet's case), a
+    cleared row missing from it is disclosed as ``plan_not_built``.
+
+    Returns ``{"considered", "planned", "passed", "groups", "unmapped", "era",
+    "era_since_en", "era_since_zh"}``.  ``passed`` is the number of names passed on;
+    ``planned`` is the remainder of the considered set.  Groups follow
+    :data:`REFUSAL_ORDER`, empties omitted; names sort by the board's own priority score
+    descending, then ticker ascending; ``why`` is the row's FULL failing set with the
+    headline first.  Display tier throughout — this reports the gate, it never moves it.
+    """
+    buys = (standouts or {}).get("buy") or []
+    if not isinstance(buys, list):
+        buys = []
+    open_tickers = _refusal_open_tickers(open_keys)
+    originated = (
+        None if originated_tickers is None
+        else {str(t or "").strip().upper() for t in originated_tickers}
+    )
+
+    rows: list[dict[str, Any]] = []
+    for row in buys:
+        if not isinstance(row, Mapping):
+            continue
+        ticker = str(row.get("ticker") or "").strip()
+        codes = _refusal_codes(row)
+        if not codes:
+            # Cleared every gate.  It is either already running, or it should have become
+            # a plan tonight and did not — and if this call site cannot tell the two
+            # apart it says nothing rather than guessing.
+            key = ticker.upper()
+            if key and key in open_tickers:
+                codes = ["already_open"]
+            elif originated is not None and key and key not in originated:
+                codes = ["plan_not_built"]
+            else:
+                continue
+        score = (row.get("prophet") or {}).get("score")
+        rows.append({
+            "ticker": ticker,
+            "name": str(row.get("name") or ticker),
+            "score": score if isinstance(score, (int, float)) else 0,
+            "why": codes,
+        })
+
+    groups: list[dict[str, Any]] = []
+    for code in REFUSAL_ORDER:
+        members = sorted(
+            (r for r in rows if r["why"][0] == code),
+            key=lambda r: (-float(r["score"] or 0), r["ticker"]),
+        )
+        if not members:
+            continue
+        en, zh = REFUSAL_COPY[code]
+        groups.append({
+            "reason": code,
+            "en": en,
+            "zh": zh,
+            "near": code in REFUSAL_NEAR,
+            # TRUE count, always — the cap below trims what is DRAWN, never what is
+            # counted, so an overflowing group discloses itself instead of lying small.
+            "n": len(members),
+            "names": members[:REFUSAL_NAMES_CAP],
+        })
+
+    # AN OPEN PLAN IS NOT A REFUSAL.  ``already_open`` rows cleared every gate and are
+    # being acted on right now — they are on the cards above, not passed on — so counting
+    # them as "passed on" states something false at a glance.  Measured on the committed
+    # board through build_site's call site: 48 of the 73 receipted rows are open plans, so
+    # the undivided figure reads "we put down 73 of 79" when the honest sentence is "we
+    # declined 25 and are already trading 48".  ``passed`` stays the LOSSLESS total (every
+    # row that earned a receipt, which the published artifact needs); ``declined`` is the
+    # figure a surface should headline, and the two are kept apart here rather than in a
+    # template so both call sites inherit the same arithmetic.
+    open_now = sum(1 for r in rows if r["why"][0] == "already_open")
+    return {
+        "considered": len(buys),
+        "planned": len(buys) - len(rows),
+        "passed": len(rows),
+        "open_now": open_now,
+        "declined": len(rows) - open_now,
+        "groups": groups,
+        # A non-zero `unmapped` is the vocabulary-drift alarm: the ladder minted or
+        # renamed a status word and the copy table has not caught up.  The rows still
+        # render, under the honest generic line.
+        "unmapped": sum(1 for r in rows if r["why"][0] == "unknown"),
+        **_refusal_era(),
+    }
 
 
 def legacy_admitted(standouts: dict) -> list[dict]:
