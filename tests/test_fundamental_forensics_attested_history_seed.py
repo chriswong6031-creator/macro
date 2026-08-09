@@ -111,6 +111,7 @@ def _exercise_full_seed(monkeypatch, tmp_path, *, fail_stage: str | None = None)
         "retrieval_kwargs": [],
         "conversion_clocks": [],
         "packet_clocks": [],
+        "stages": [],
     }
 
     class FakeSubmissionsCollector:
@@ -322,6 +323,7 @@ def _exercise_full_seed(monkeypatch, tmp_path, *, fail_stage: str | None = None)
             readonly_store=readonly,
             now=lambda: next(clocks),
             dependency_lock_digest="d" * 64,
+            on_stage=calls["stages"].append,
         )
     except Exception as exc:  # returned so failure assertions remain precise
         error = exc
@@ -605,6 +607,159 @@ def test_main_rejects_equal_parent_keys_before_lock_or_store_io(monkeypatch, tmp
     ) == 1
     assert not (tmp_path / "work").exists()
     assert not (tmp_path / "output").exists()
+
+
+def test_seed_stage_markers_reach_every_phase_of_the_graph(monkeypatch, tmp_path):
+    """A stage marker that never fires localises nothing.
+
+    ``on_stage`` is diagnostics-only, so nothing else in the suite would notice
+    if the deep markers went dead or drifted out of graph order. This pins that
+    each one is actually reached on the success path — including the acquire
+    and preflight phases the operator most needs distinguished.
+    """
+    _seed, calls, receipt, error, _output = _exercise_full_seed(monkeypatch, tmp_path)
+    assert error is None and receipt is not None
+    assert calls["stages"] == [
+        "storage-control-probe",
+        "acquire-submissions",
+        "acquire-filing",
+        "acquire-companyfacts",
+        "source-snapshot",
+        "base-candidate",
+        "preflight",
+        "review-artifacts",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("fail_stage", "expected_last"),
+    [("after_source", "source-snapshot"), ("after_base", "base-candidate")],
+)
+def test_seed_stage_markers_stop_at_the_phase_that_failed(
+    monkeypatch, tmp_path, fail_stage, expected_last
+):
+    """The last marker names the phase to look at — that is the whole point."""
+    _seed, calls, receipt, error, _output = _exercise_full_seed(
+        monkeypatch, tmp_path, fail_stage=fail_stage
+    )
+    assert receipt is None and error is not None
+    assert calls["stages"][-1] == expected_last
+    assert "preflight" not in calls["stages"]
+    assert "review-artifacts" not in calls["stages"]
+
+
+def _seed_argv(tmp_path) -> list[str]:
+    return [
+        "--enable-aapl-seed",
+        "--work-dir",
+        str(tmp_path / "work"),
+        "--output-dir",
+        str(tmp_path / "output"),
+        "--sec-user-agent",
+        "MastermindX data@mastermind-x.com",
+    ]
+
+
+def _sole_annotation(captured_stdout: str) -> str:
+    """The one workflow command in the output — proving it can start a line.
+
+    ``capsys``, never ``caplog``: an annotation routed through a logger is
+    prefixed by the formatter and GitHub silently drops it, so the defect this
+    pins is a line that does not START with ``::``.
+    """
+    lines = [line for line in captured_stdout.splitlines() if line.startswith("::")]
+    assert len(lines) == 1, f"expected exactly one annotation, got {lines!r}"
+    return lines[0]
+
+
+def test_main_surfaces_the_value_free_boundary_message_and_its_stage(
+    monkeypatch, tmp_path, capsys
+):
+    """The 2026-08-09 production failure must now describe itself.
+
+    The seed's ``::error`` is the ONLY operator-facing artifact a failing run
+    produces — RUNNER_TEMP is wiped between jobs and no artifact is emitted
+    before full success. It used to say "inspect the protected runner
+    diagnostics", which have never existed, while discarding an already-safe
+    sentence. Here the four absent GitHub secrets are reproduced by clearing the
+    six env vars they feed (R2_ATTESTED_HISTORY_{ENDPOINT,BUCKET} each feed a
+    seed AND a read-only name), so ``validate_production_environment_boundary``
+    fails on its very first check exactly as it did in CI.
+    """
+    seed = _seed_module()
+    _production_environment(monkeypatch, seed)
+    for name in (
+        "FF_ATTESTED_R2_SEED_ENDPOINT",
+        "FF_ATTESTED_R2_SEED_BUCKET",
+        "FF_ATTESTED_R2_READONLY_ENDPOINT",
+        "FF_ATTESTED_R2_READONLY_BUCKET",
+        "FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID",
+        "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(
+        seed,
+        "build_seed_store",
+        lambda **_kwargs: pytest.fail("store initialization happened after rejected boundary"),
+    )
+
+    assert seed.main(_seed_argv(tmp_path)) == 1
+
+    out = capsys.readouterr().out
+    line = _sole_annotation(out)
+    assert line.startswith("::")
+    assert line.startswith("::error title=fundamental_forensics_attested_history_seed::")
+    assert "dedicated attested-history parent credentials are unavailable" in line
+    assert "environment-boundary" in line
+    assert "protected runner diagnostics" not in out
+    assert "Traceback" not in out
+    assert not (tmp_path / "work").exists()
+    assert not (tmp_path / "output").exists()
+
+
+def test_main_suppresses_every_detail_of_a_non_seed_exception(monkeypatch, tmp_path, capsys):
+    """The half of the fix that keeps it from becoming a leak.
+
+    A store/credential path can raise a botocore ``ClientError`` (or any other
+    type) whose message carries the R2 endpoint, the bucket, or a local source
+    path. Only the CLASS name and the static stage may cross the boundary.
+    ``RuntimeError`` is deliberate: it is the PARENT of
+    ``AttestedHistorySeedError``, so a handler matching too loosely would print
+    this message verbatim.
+    """
+    seed = _seed_module()
+    _production_environment(monkeypatch, seed)
+    endpoint_host = "deadbeefdeadbeefdeadbeefdeadbeef.r2.cloudflarestorage.com"
+    bucket = "private-bucket"
+    payload = f"https://{endpoint_host}/{bucket}"
+
+    def _explode(**_kwargs):
+        raise RuntimeError(payload)
+
+    monkeypatch.setattr(seed, "build_seed_store", _explode)
+
+    assert seed.main(_seed_argv(tmp_path)) == 1
+
+    out = capsys.readouterr().out
+    line = _sole_annotation(out)
+    assert line.startswith("::")
+    assert line.startswith("::error title=fundamental_forensics_attested_history_seed::")
+    assert "RuntimeError" in line
+    assert "writer-store" in line
+    assert endpoint_host not in out
+    assert bucket not in out
+    assert payload not in out
+    assert "Traceback" not in out
+    # No fragment of the secret-shaped message survives anywhere in the output.
+    leaked = sorted(
+        {
+            payload[start:stop]
+            for start in range(len(payload))
+            for stop in range(start + 8, len(payload) + 1)
+            if payload[start:stop] in out
+        }
+    )
+    assert leaked == [], f"annotation leaked message fragments: {leaked!r}"
 
 
 def test_provenance_clocks_preserve_subseconds_and_fail_on_backdating():

@@ -18,37 +18,22 @@ row payload, Parquet bytes, and the clock observed immediately before the add-on
 request.  A rerun with identical data is a no-op; a revised response for an existing
 partition is a loud keep-first contradiction.
 
-``stk_auction_o`` and ``stk_auction_c`` were previously held at
-``blocked_pending_written_entitlement_confirmation``.  They are admitted here against
-their official TuShare contracts (docs 353/354) under the dated operator attestation
-described below, which enumerates them as separately purchased permissions.  The
-admission is an *entitlement claim*, not an observation: only a probe receipt can
-record ``access_observed_at_request_time``.
+``stk_auction_o`` and ``stk_auction_c`` are admitted against their official TuShare
+contracts (docs 353/354).  Admission is not an observation: only a collection receipt
+records ``access_observed_at_request_time``, and it means only that valid rows came
+back for that exact request at that exact clock.
 
-The OPERATIVE authority is the operator-attested TuShare license recorded in
-``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md`` (operator ruling,
-2026-08-09: licensing rights held through an exclusive partnership agreement to 2035,
-confirmed and not requiring reconfirmation).  Execution is blocked unless
-``TUSHARE_VENDOR_LICENSE_AUTHORITY`` names an accepted basis and
-``TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256`` references a digest on that basis's
-code-reviewed allowlist:
-
-* ``operator_attestation_verified`` - pinned to the digest of that foundation
-  document.  This is the live path.
-* ``written_vendor_authorization_or_institutional_contract_verified`` - dormant, with
-  a deliberately empty allowlist, kept as the slot for a vendor-countersigned
-  instrument should one ever be provisioned.
-
-Because the attested license is an authority artifact authored inside this repo, each
-receipt records the authority's KIND and digest rather than asserting a conclusion, so
-a later reader can weigh the basis.  Licensing statements retire licensing disclaimers
-only: every EPISTEMIC nonclaim survives untouched, because no license can make the
-data say more than it says.  ``access_observed_at_request_time`` still means only that
-valid rows came back for that exact request at that exact clock.
+This wiring is operator-ordered; the provenance reference is
+``research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md``.  Execution requires a configured
+``TUSHARE_TOKEN`` and nothing else -- there is no separate authorization gate here.
+The fences that DO bind every ``--execute`` run are technical: the two-exchange
+``trade_cal`` session check, the per-endpoint collection clocks, the documented row
+cap, exact-session and exact-ticker containment, full schema and domain validation,
+and keep-first immutability.  None of them can be waived by an environment variable.
 
 No token, token hash, request header, or raw vendor payload is persisted or logged.
-All outputs remain ``context_display_only``; product surfaces ship through the normal
-commissioning path, and nothing here confers signal or strategy authority.
+All outputs remain ``context_display_only``; nothing here confers signal or strategy
+authority, which is settled at the gauntlet rather than at a collector.
 """
 
 from __future__ import annotations
@@ -83,44 +68,18 @@ RECEIPT_SCHEMA_VERSION = "tushare_addon_collection_receipt.v2"
 CONTRACT_CAPTURE_DATE = "2026-08-09"
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
-LICENSE_AUTHORITY_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY"
-LICENSE_AUTHORITY_REFERENCE_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256"
-LICENSE_AUTHORITY_GATE_VALUE = (
-    "written_vendor_authorization_or_institutional_contract_verified"
-)
-# DORMANT slot, deliberately empty: reserved for a vendor-signed authorization or
-# institutional contract, reviewed out of band, with its exact digest added through a
-# normal code-review PR.  Kept because a vendor-countersigned instrument is a different
-# and stronger artifact than any in-repo declaration, and it should have somewhere to
-# land.  Environment variables alone are operator-controlled and never self-attest.
-TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S: frozenset[str] = frozenset()
-
-# The OPERATIVE authority (operator ruling, 2026-08-09).  The digest below is the
-# SHA-256 of the operator-authored research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_
-# 2026-08-09.md, whose "License and authority gate" section states that Mastermind
-# holds licensing rights to TuShare through an exclusive partnership agreement to
-# 2035, confirmed and not requiring reconfirmation.  That document -- not this
-# module, and not an environment variable -- is what the receipt cites.
-#
-# REVIEWER NOTE, deliberately left in the source: this is an authority artifact
-# authored INSIDE this repo, so the gate it opens is only ever as good as that
-# document.  The receipt therefore records the authority's KIND
-# (`operator_attested_license_declaration`) alongside its digest, so a later reader
-# can weigh the basis instead of inheriting a conclusion.  A vendor-countersigned
-# instrument, if one is ever provisioned, belongs in the dormant Tier-2 allowlist
-# above, which stays empty.
-OPERATOR_ATTESTATION_GATE_VALUE = "operator_attestation_verified"
-LICENSE_AUTHORITY_DOCUMENT = (
-    "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-)
-TRUSTED_OPERATOR_ATTESTATION_SHA256S: frozenset[str] = frozenset(
-    {"ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"}
-)
+# Operator-ordered wiring (2026-08-09).  Recorded in every receipt as plain
+# provenance: it says WHO asked for this collector to exist and WHERE that order is
+# written down.  It asserts nothing about licensing in either direction.
+COLLECTION_PROVENANCE: Mapping[str, str] = {
+    "basis": "operator_ordered_wiring",
+    "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
+}
 
 ALLOWED_FREQUENCIES = ("1min", "5min", "15min", "30min", "60min")
-# Emptied 2026-08-09: stk_auction_o/stk_auction_c moved to the admitted contracts
-# under the dated operator attestation.  The key stays in every receipt so a reader
-# can tell "nothing is currently held" from "this receipt predates the field".
+# Emptied 2026-08-09: stk_auction_o/stk_auction_c moved to the admitted contracts.
+# The key stays in every receipt so a reader can tell "nothing is currently held"
+# from "this receipt predates the field".
 BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {}
 JOIN_BASIS_CONTRACT: Mapping[str, object] = {
     "schema_version": "tushare_addon_join_basis.v2",
@@ -192,9 +151,7 @@ class EndpointContract:
     vendor_fields: tuple[str, ...]
     output_schema: tuple[SchemaField, ...]
     max_rows: int = 8_000
-    declared_access_context: str = (
-        "operator_reported_purchase_not_vendor_attested_and_not_a_license_grant"
-    )
+    declared_access_context: str = "operator_reported_purchase"
     exchange_clock_context_urls: tuple[str, ...] = ()
     contract_source: str = "official_doc_page"
 
@@ -448,51 +405,6 @@ class PilotResult:
 
 QueryFunction = Callable[..., pd.DataFrame | None]
 ClockFunction = Callable[[], datetime]
-
-
-# Collection and research consumption are covered by the attested license; product
-# surfaces are not blocked, they simply ship through the normal commissioning path.
-# `no_signal_or_strategy_authority` is NOT a licensing term and does not move with
-# one: it is the repo's standing epistemic law (a collector never confers signal
-# authority; promotion happens at the gauntlet), so it stays under every basis.
-_LICENSE_SCOPE_TERMS = [
-    "collection_into_licensed_stores_and_research_consumption",
-    "product_surfaces_ship_via_the_normal_commissioning_path",
-    "no_signal_or_strategy_authority",
-]
-
-
-def _license_authority_receipt() -> dict[str, object]:
-    """Fail closed unless a code-reviewed authority artifact is referenced."""
-    authority = os.environ.get(LICENSE_AUTHORITY_ENV, "").strip()
-    reference = os.environ.get(LICENSE_AUTHORITY_REFERENCE_ENV, "").strip().lower()
-    if not _is_sha256(reference) or authority not in {
-        LICENSE_AUTHORITY_GATE_VALUE,
-        OPERATOR_ATTESTATION_GATE_VALUE,
-    }:
-        raise CollectionHeld("license_authority_reference_required")
-    if authority == OPERATOR_ATTESTATION_GATE_VALUE:
-        if reference not in TRUSTED_OPERATOR_ATTESTATION_SHA256S:
-            raise CollectionHeld("operator_attestation_not_out_of_band_allowlisted")
-        return {
-            "gate_state": "satisfied_under_operator_attested_license",
-            "accepted_basis": OPERATOR_ATTESTATION_GATE_VALUE,
-            "authority_kind": "operator_attested_license_declaration",
-            "authority_document": LICENSE_AUTHORITY_DOCUMENT,
-            "authority_reference_sha256": reference,
-            "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-            "scope_terms": list(_LICENSE_SCOPE_TERMS),
-        }
-    if reference not in TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S:
-        raise CollectionHeld("vendor_license_authority_not_out_of_band_allowlisted")
-    return {
-        "gate_state": "satisfied_under_written_vendor_authorization",
-        "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
-        "authority_kind": "written_vendor_authorization_or_institutional_contract",
-        "authority_reference_sha256": reference,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "scope_terms": list(_LICENSE_SCOPE_TERMS),
-    }
 
 
 def _query_tushare_https(
@@ -1119,7 +1031,6 @@ def _receipt_without_hash(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
-    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -1136,25 +1047,21 @@ def _receipt_without_hash(
             **contract.contract_payload(),
             "contract_sha256": contract.contract_hash,
         },
-        # The purchase/payment/license/future-access/trial nonclaims that stood here
-        # are superseded by the operator-attested license (2026-08-09); the receipt
-        # cites that authority instead of disclaiming it.  What remains is the
-        # EPISTEMIC half, which no licensing statement can answer: this observation
-        # still only says rows came back for this exact request, at this clock.
+        # Purely EPISTEMIC: what this observation can and cannot support.  It says
+        # rows came back for this exact request, at this clock, and nothing more --
+        # not that they will come back again, and not that the day is complete.
         "access_observation_receipt": {
             "declaration": contract.declared_access_context,
             "observation": "access_observed_at_request_time",
             "observation_basis": "valid_nonempty_rows_returned_for_this_request",
             "observed_at_asia_shanghai": now_cst.isoformat(),
-            "license_basis": {
-                "authority_kind": license_authority.get("authority_kind"),
-                "authority_reference_sha256": license_authority.get(
-                    "authority_reference_sha256"
-                ),
-            },
+            "nonclaims": [
+                "not_proof_of_future_access",
+                "not_a_completeness_claim_for_the_session",
+            ],
             "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         },
-        "license_authority_gate": dict(license_authority),
+        "collection_provenance": dict(COLLECTION_PROVENANCE),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
         "request": {
             "identity": request_identity,
@@ -1205,12 +1112,10 @@ def _receipt_without_hash(
             "parquet_sha256": parquet_hash,
         },
         "partition_identity": request_identity,
-        # Every entry below is EPISTEMIC, not contractual: each states something the
-        # data itself cannot support, so a licensing statement cannot retire any of
-        # them.  They are kept verbatim.
+        # Every entry below is EPISTEMIC: each states something the data itself
+        # cannot support, regardless of who ordered the collection.
         "nonclaims": [
             "context_only_not_signal_authority",
-            "product_surfaces_ship_via_the_normal_commissioning_path",
             "no_fillability_or_execution_claim",
             "no_complete_historical_backfill_claim",
             "post_close_rows_are_unclassified_not_a_completeness_claim",
@@ -1245,7 +1150,6 @@ def _validate_existing_partition(
     incoming_data_hash: str,
     incoming_source_rows_hash: str,
     incoming_calendar_hash: str,
-    incoming_license_authority: Mapping[str, object],
 ) -> dict[str, object]:
     if destination.is_symlink() or not destination.is_dir():
         raise CollectorIntegrityError(
@@ -1271,7 +1175,6 @@ def _validate_existing_partition(
     session_receipt = receipt.get("exact_session_receipt")
     runtime_receipt = receipt.get("runtime_receipt")
     access_receipt = receipt.get("access_observation_receipt")
-    license_receipt = receipt.get("license_authority_gate")
     clock_receipt = receipt.get("request_clock")
     if not all(
         isinstance(value, dict)
@@ -1283,7 +1186,6 @@ def _validate_existing_partition(
             session_receipt,
             runtime_receipt,
             access_receipt,
-            license_receipt,
             clock_receipt,
         )
     ):
@@ -1303,31 +1205,28 @@ def _validate_existing_partition(
             "observation",
             "observation_basis",
             "observed_at_asia_shanghai",
-            "license_basis",
+            "nonclaims",
             "blocked_unconfirmed_endpoints",
         }
         or access_receipt.get("declaration") != contract.declared_access_context
         or access_receipt.get("observation") != "access_observed_at_request_time"
         or access_receipt.get("observation_basis")
         != "valid_nonempty_rows_returned_for_this_request"
-        or access_receipt.get("license_basis")
-        != {
-            "authority_kind": incoming_license_authority.get("authority_kind"),
-            "authority_reference_sha256": incoming_license_authority.get(
-                "authority_reference_sha256"
-            ),
-        }
+        or access_receipt.get("nonclaims")
+        != [
+            "not_proof_of_future_access",
+            "not_a_completeness_claim_for_the_session",
+        ]
         or access_receipt.get("blocked_unconfirmed_endpoints")
         != dict(BLOCKED_UNCONFIRMED_ENDPOINTS)
     ):
         raise CollectorIntegrityError("immutable access observation receipt changed")
-    if license_receipt != dict(incoming_license_authority):
-        raise CollectorIntegrityError("immutable license authority gate changed")
+    if receipt.get("collection_provenance") != dict(COLLECTION_PROVENANCE):
+        raise CollectorIntegrityError("immutable collection provenance changed")
     if receipt.get("join_basis_contract") != dict(JOIN_BASIS_CONTRACT):
         raise CollectorIntegrityError("immutable join basis contract changed")
     if receipt.get("nonclaims") != [
         "context_only_not_signal_authority",
-        "product_surfaces_ship_via_the_normal_commissioning_path",
         "no_fillability_or_execution_claim",
         "no_complete_historical_backfill_claim",
         "post_close_rows_are_unclassified_not_a_completeness_claim",
@@ -1456,7 +1355,6 @@ def _install_partition(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
-    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -1472,7 +1370,6 @@ def _install_partition(
             data_hash,
             source_rows_hash,
             calendar_hash,
-            license_authority,
         )
         return PilotResult(
             status="unchanged",
@@ -1504,7 +1401,6 @@ def _install_partition(
             vendor_request=vendor_request,
             calendar_observations=calendar_observations,
             calendar_hash=calendar_hash,
-            license_authority=license_authority,
             clock_policy=clock_policy,
             now_cst=now_cst,
             records=records,
@@ -1534,7 +1430,6 @@ def _install_partition(
                 data_hash,
                 source_rows_hash,
                 calendar_hash,
-                license_authority,
             )
             return PilotResult(
                 status="unchanged",
@@ -1576,13 +1471,18 @@ def pilot_plan(
         "endpoint_contract_sha256": contract.contract_hash,
         "endpoint_document_url": contract.document_url,
         "declared_access_context": contract.declared_access_context,
-        "license_authority_gate": {
-            "required_for_execute": True,
-            "state": "not_evaluated_plan_only",
-            "operative_basis": OPERATOR_ATTESTATION_GATE_VALUE,
-            "operative_authority_document": LICENSE_AUTHORITY_DOCUMENT,
-            "dormant_basis": LICENSE_AUTHORITY_GATE_VALUE,
-            "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
+        "collection_provenance": dict(COLLECTION_PROVENANCE),
+        "execute_requirements": {
+            "tushare_token_configured": True,
+            "explicit_output_root": True,
+            "technical_fences": [
+                "two_exchange_trade_cal_session_agreement",
+                "per_endpoint_collection_clock",
+                "documented_row_cap",
+                "exact_session_and_ticker_containment",
+                "schema_and_domain_validation",
+                "keep_first_immutability",
+            ],
         },
         "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
@@ -1601,7 +1501,6 @@ def collect_pilot(
 ) -> PilotResult:
     """Collect one bounded pilot partition or fail before installing any evidence."""
     normalized = normalize_request(request)
-    license_authority = _license_authority_receipt()
     if now is not None and clock_fn is not None:
         raise CollectionHeld("ambiguous_collection_clock_source")
     if clock_fn is not None:
@@ -1635,7 +1534,6 @@ def collect_pilot(
         vendor_request=vendor_request,
         calendar_observations=calendar_observations,
         calendar_hash=calendar_hash,
-        license_authority=license_authority,
         clock_policy=clock_policy,
         now_cst=request_now_cst,
         records=records,
@@ -1647,14 +1545,10 @@ __all__ = [
     "ALLOWED_FREQUENCIES",
     "AUTHORITY",
     "BLOCKED_UNCONFIRMED_ENDPOINTS",
+    "COLLECTION_PROVENANCE",
     "DEFAULT_OUTPUT_ROOT",
     "ENDPOINTS",
     "JOIN_BASIS_CONTRACT",
-    "LICENSE_AUTHORITY_DOCUMENT",
-    "LICENSE_AUTHORITY_GATE_VALUE",
-    "OPERATOR_ATTESTATION_GATE_VALUE",
-    "TRUSTED_OPERATOR_ATTESTATION_SHA256S",
-    "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
     "CollectionHeld",
     "CollectorIntegrityError",
     "EndpointContract",

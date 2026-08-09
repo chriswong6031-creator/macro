@@ -667,3 +667,254 @@ def test_v2_event_and_workspace_contracts_validate_and_authority_is_display_only
         award_event_freshness={"status": "ok", "records_visible": len(events)},
     )
     workspace_validator.validate(workspace)
+
+
+# --- Action-rail identity attached under a named basis ---------------------
+
+
+def _award_level_action(**overrides):
+    """An action rail row exactly as the collector now writes it.
+
+    The transactions endpoint asserts no recipient, so the row's own
+    ``recipient_*`` fields are null and the award's recipient of record is
+    attached on its own columns, declared in the row's presence manifest.
+    """
+    row = _action(
+        recipient_name=None,
+        recipient_uei=None,
+        award_recipient_uei="UEI-001",
+        award_recipient_name="Example Defense Systems",
+        award_recipient_identity_basis="award_level_recipient_at_collection",
+        award_recipient_known_at="2026-01-10T12:00:00Z",
+        source_field_presence=json.dumps(
+            sorted(
+                [
+                    "action_id",
+                    "source_action_id",
+                    "action_date",
+                    "effective_at",
+                    "federal_action_obligation",
+                    "action_type_description",
+                    "description",
+                    "awarding_agency",
+                    "award_recipient_uei",
+                    "award_recipient_name",
+                    "award_recipient_identity_basis",
+                    "award_recipient_known_at",
+                ]
+            )
+        ),
+    )
+    row.update(overrides)
+    return row
+
+
+def test_award_level_identity_is_an_exact_identifier_and_carries_its_basis():
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    resolution = {
+        **_resolution("AAA"),
+        "identity_basis": "award_level_recipient_at_collection",
+        "identity_basis_known_at": "2026-01-10T12:00:00Z",
+    }
+
+    events = _events(
+        actions=[_award_level_action(recipient_resolution=resolution)],
+        companies=companies,
+    )
+
+    impacts = events[0]["listed_company_impacts"]
+    assert [item["ticker"] for item in impacts] == ["AAA"]
+    # The exact identifier reconciles against the resolution's own external ids,
+    # so no missing/mismatched-identifier conflict withholds the impact.
+    assert events[0]["evidence"]["conflicts"] == []
+    # ...and the basis travels onto the impact itself.
+    assert impacts[0]["identity_basis"] == "award_level_recipient_at_collection"
+
+
+def test_populated_award_identity_with_a_false_manifest_entry_is_skipped():
+    """The silent-skip that would ship this identity dark.
+
+    The reader consults ``source_field_presence`` before believing any source
+    field. A column populated by the collector but never declared in the
+    manifest is invisible here -- the row reads as having no exact identifier at
+    all, the resolution's identifier has nothing to reconcile against, and the
+    impact is withheld with ``missing_source_exact_identifier``. The failure is
+    silent: the column is right there in the parquet.
+    """
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    resolution = {
+        **_resolution("AAA"),
+        "identity_basis": "award_level_recipient_at_collection",
+    }
+    undeclared = _award_level_action(
+        recipient_resolution=resolution,
+        source_field_presence=json.dumps(["action_id", "source_action_id"]),
+    )
+    assert undeclared["award_recipient_uei"] == "UEI-001"
+
+    events = _events(actions=[undeclared], companies=companies)
+
+    assert events[0]["listed_company_impacts"] == []
+    assert "missing_source_exact_identifier" in {
+        conflict["code"] for conflict in events[0]["evidence"]["conflicts"]
+    }
+
+    declared = _events(
+        actions=[_award_level_action(recipient_resolution=resolution)],
+        companies=companies,
+    )
+    assert [item["ticker"] for item in declared[0]["listed_company_impacts"]] == ["AAA"]
+
+
+def test_transaction_asserted_identity_is_not_joined_with_the_award_level_one():
+    """A row that names its own recipient keeps that identity alone.
+
+    Reading both would put two sam_uei values on one observation the moment a
+    novation moved the award, and ``source_exact_identifier_conflict`` would
+    withhold an impact that resolves correctly today.
+    """
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    row = _award_level_action(
+        recipient_uei="UEI-001",
+        award_recipient_uei="UEI-SOMEONE-ELSE",
+        recipient_resolution={
+            **_resolution("AAA"),
+            "identity_basis": "source_record_recipient",
+        },
+    )
+    row["source_field_presence"] = json.dumps(
+        sorted([*json.loads(row["source_field_presence"]), "recipient_uei"])
+    )
+
+    events = _events(actions=[row], companies=companies)
+
+    impacts = events[0]["listed_company_impacts"]
+    assert [item["ticker"] for item in impacts] == ["AAA"]
+    assert events[0]["evidence"]["conflicts"] == []
+    assert impacts[0]["identity_basis"] == "source_record_recipient"
+
+
+def test_impact_basis_is_never_invented_for_an_unnamed_resolution():
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    events = _events(
+        [_snapshot(generated_unique_award_id="LEGACY", award_id="LEGACY", recipient_resolution=_resolution("AAA"))],
+        companies=companies,
+    )
+    impacts = events[0]["listed_company_impacts"]
+    assert [item["ticker"] for item in impacts] == ["AAA"]
+    assert impacts[0]["identity_basis"] is None
+
+    unknown = _events(
+        [
+            _snapshot(
+                generated_unique_award_id="UNKNOWN-BASIS",
+                award_id="UNKNOWN-BASIS",
+                recipient_resolution={**_resolution("AAA"), "identity_basis": "vibes"},
+            )
+        ],
+        companies=companies,
+    )
+    assert unknown[0]["listed_company_impacts"][0]["identity_basis"] is None
+
+
+def test_award_level_impact_satisfies_the_v2_event_contract():
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    events = _events(
+        actions=[
+            _award_level_action(
+                recipient_resolution={
+                    **_resolution("AAA"),
+                    "identity_basis": "award_level_recipient_at_collection",
+                }
+            )
+        ],
+        companies=companies,
+    )
+    schema = json.loads(EVENT_SCHEMA_PATH.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    for event in events:
+        validator.validate(event)
+    assert events[0]["listed_company_impacts"][0]["identity_basis"] == "award_level_recipient_at_collection"
+
+    invented = copy.deepcopy(events[0])
+    invented["listed_company_impacts"][0]["identity_basis"] = "made_up"
+    assert list(validator.iter_errors(invented))
+def test_compound_value_move_keeps_the_ceiling_delta_it_strictly_contains():
+    """A second moving field may not delete the first field's semantic.
+
+    ``award_value_changed`` is a ``ceiling_changed`` with a current-value move
+    beside it.  The amount facts used to stop at the first computable delta, so
+    the ceiling component of a compound move was never published at all and the
+    contained change became unreadable downstream.
+    """
+    snapshots = [
+        _snapshot(
+            known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z",
+            source_receipt_id="a", snapshot_content_sha256="a" * 64,
+            current_award_amount=100.0, potential_award_amount=250.0,
+        ),
+        _snapshot(
+            known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z",
+            source_receipt_id="b", snapshot_content_sha256="b" * 64,
+            current_award_amount=150.0, potential_award_amount=400.0,
+        ),
+    ]
+
+    events = _type(_events(snapshots), "award_value_changed")
+
+    assert len(events) == 1
+    event = events[0]
+    amounts = {fact["id"]: fact for fact in event["amounts"]}
+    # The lead amount is unchanged: this is additive, not a re-pointing.
+    assert event["primary_amount_id"] == "delta_current_award_amount"
+    assert amounts["delta_current_award_amount"]["value"] == 50.0
+    assert amounts["delta_potential_award_amount"]["value"] == 150.0
+    assert amounts["delta_potential_award_amount"]["source_ref"] == amounts["delta_current_award_amount"]["source_ref"]
+    # ... and the containment is machine-readable rather than inferred.
+    assert event["award_change"]["secondary_types"] == ["ceiling_changed", "current_value_changed"]
+
+
+def test_lone_ceiling_and_lone_current_moves_still_publish_one_delta_each():
+    """Control for the test above: the non-compound cases are untouched."""
+    ceiling_only = [
+        _snapshot(known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z", source_receipt_id="a", snapshot_content_sha256="a" * 64),
+        _snapshot(known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z", source_receipt_id="b", snapshot_content_sha256="b" * 64, potential_award_amount=400.0),
+    ]
+
+    events = _type(_events(ceiling_only), "ceiling_changed")
+
+    assert len(events) == 1
+    assert events[0]["primary_amount_id"] == "delta_potential_award_amount"
+    assert [fact["id"] for fact in events[0]["amounts"] if fact["id"].startswith("delta_")] == ["delta_potential_award_amount"]
+    assert events[0]["award_change"]["secondary_types"] == []
+
+
+def test_delta_amount_semantics_name_the_quantity_not_only_the_derivation():
+    """A cumulative balance's move and a single transaction are not the same unit.
+
+    Both rails used to publish every delta as ``derived_from_official_before_
+    after``, which says how the number was produced but not what it measures --
+    so nothing downstream could refuse to add a running total's movement to the
+    transactions that moved it.
+    """
+    snapshots = [
+        _snapshot(known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z", source_receipt_id="a", snapshot_content_sha256="a" * 64, total_obligated_amount=20.0),
+        _snapshot(known_at="2026-01-02T00:00:00Z", effective_at="2026-01-02T00:00:00Z", source_receipt_id="b", snapshot_content_sha256="b" * 64, total_obligated_amount=55.0),
+    ]
+    actions = [
+        _action(action_id="ACT-REV", action_content_sha256="1" * 64, federal_action_obligation=40.0),
+        _action(action_id="ACT-REV", action_content_sha256="2" * 64, known_at="2026-01-11T12:00:00Z", federal_action_obligation=75.0),
+    ]
+
+    balance_move = _type(_events(snapshots), "reported_obligation_balance_changed")
+    revision = _type(_events(actions=actions), "action_revised")
+
+    assert len(balance_move) == 1 and len(revision) == 1
+    snapshot_amount = next(fact for fact in balance_move[0]["amounts"] if fact["id"] == "delta_total_obligated_amount")
+    action_amount = next(fact for fact in revision[0]["amounts"] if fact["id"] == "delta_federal_action_obligation")
+    assert snapshot_amount["semantic"] == "award_cumulative_delta_derived_from_official_before_after"
+    assert action_amount["semantic"] == "transaction_delta_derived_from_official_before_after"
+    assert snapshot_amount["semantic"] != action_amount["semantic"]
+    # Equal magnitudes, different quantities: the labels are the only thing that
+    # keeps a downstream consumer from adding them together.
+    assert snapshot_amount["value"] == action_amount["value"] == 35.0

@@ -1,221 +1,152 @@
 # TuShare add-on live entitlement probes — TP-0 witness (2026-08-09)
 
-**Capture clock:** 2026-08-09, two sequential passes at ~22:2x–22:33 and ~22:38–22:41
-Asia/Shanghai (14:2x–14:41 UTC), Mac Studio, local `--execute` runs against
-`https://api.tushare.pro`. The second pass re-ran every probe under the exact gate
-configuration this PR ships; both passes returned identical verdicts.
+**Capture clock:** 2026-08-09 23:00–23:02 Asia/Shanghai, plus one re-run at
+2026-08-10 00:37 (see P3). Mac Studio, local `--execute` runs against
+`https://api.tushare.pro`.
 
-**Authority basis used:** `TUSHARE_VENDOR_LICENSE_AUTHORITY=operator_attestation_verified`
-with `TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256=ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb`,
-the digest of the operator-authored `research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md`
-carrying the 2026-08-09 license ruling.
+**Provenance:** operator-ordered wiring, `research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md`.
+Execution required a configured `TUSHARE_TOKEN` and nothing else.
 
-**Headline: TP-0 is BLOCKED, not answered.** Every probe reached the vendor and was
-refused at the credential layer. No endpoint's access, schema, or history depth was
-observed. Nothing here upgrades any endpoint's access context, and no partition,
-receipt, or byte of paid data was written.
+**Headline: TP-0 is ANSWERED. All six probes returned rows and every response matched
+its pinned contract exactly.** Six immutable partitions were written under a gitignored
+root; no raw row, price, or token appears in this document or anywhere in git.
 
-## Per-probe result — every probe is `PENDING_CREDENTIAL_REFRESH`
+## Per-probe result
 
-| # | Endpoint | Ticker | Session | State | Access observed | Rows | Schema vs contract |
-|---|---|---|---|---|---|---|---|
-| P1 | `stk_mins` (1min) | 600519.SS | 2026-08-07 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P2 | `stk_premarket` | 000001.SZ | 2026-08-07 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P3 | `stk_auction_o` | 000001.SZ | 2026-08-07 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P4 | `stk_auction_o` | 000001.SZ | 2023-03-01 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P5 | `stk_auction_c` | 000001.SZ | 2026-08-07 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P6 | `stk_auction_c` | 000001.SZ | 2023-03-01 | `PENDING_CREDENTIAL_REFRESH` | no | — | unverified |
-| P7 | `stk_auction` (realtime) | 000001.SZ | current | `PENDING_CREDENTIAL_REFRESH` **+ window** | not attempted | — | unverified |
+| # | Endpoint | Ticker | Session | Access observed | Rows | Schema vs contract |
+|---|---|---|---|---|---|---|
+| P1 | `stk_mins` (1min) | 600519.SS | 2026-08-07 | **yes** | **241** | conforms |
+| P2 | `stk_premarket` | 000001.SZ | 2026-08-07 | **yes** | 1 | conforms |
+| P3 | `stk_auction_o` | 000001.SZ | 2026-08-07 | **yes** | 1 | conforms |
+| P4 | `stk_auction_o` | 000001.SZ | 2023-03-01 | **yes** | 1 | conforms |
+| P5 | `stk_auction_c` | 000001.SZ | 2026-08-07 | **yes** | 1 | conforms |
+| P6 | `stk_auction_c` | 000001.SZ | 2023-03-01 | **yes** | 1 | conforms |
+| P7 | `stk_auction` (realtime) | — | — | **pending** | — | — |
 
-Every one of P1–P6 held at the collector's generic
-`trade_cal_unavailable_empty_or_unentitled` reason code — the hold fires on the FIRST
-calendar call, so no add-on endpoint was ever reached and no per-endpoint conclusion is
-available for any of them.
+`conforms` is a strict verdict, not a glance: the collector refuses to write unless the
+response column set **exactly equals** the contract's documented field list (no missing
+field, no extra field, no duplicate), the row count is inside the documented cap, every
+value passes its type/domain check, and every row stays inside the exact requested
+session and ticker. A written partition is therefore proof of conformance.
 
-**P7 has a second, independent blocker.** `stk_auction` (doc 369) is same-day capture
-only and the collector clock must satisfy `09:26 <= t < 09:30` Asia/Shanghai. The next
-occurrence is **Monday 2026-08-10, 09:26–09:29 Asia/Shanghai**. Even with a working
-credential it cannot be witnessed before then, so refreshing the token unblocks P1–P6
-immediately but leaves P7 waiting on the clock.
+One honest limit on that verdict: the request sends `fields=<contract list>`, so the
+vendor returns exactly what was asked for. Conformance proves **every documented field
+is served and correctly typed**; it does not prove the endpoint serves no *additional*
+undocumented field.
 
-Vendor traffic spent: 12 collector `trade_cal` calls across two passes (the second pass
-re-ran under the shipped gate configuration) plus 2 transient diagnostic calls — 14
-total. Both passes returned byte-identical verdicts. **Probing then STOPPED**: no probe
-was retried after its hold, and no further calls were made once the cause was isolated.
+**P1's 241 rows** is a complete A-share session at 1-minute resolution (240 bars plus
+the boundary bar) — consistent with a full, unsuspended day for 600519.SS.
 
-## Re-run recipe (one command per probe, after the token is refreshed)
+**P3 needed one re-run.** Its first attempt held at
+`trade_cal_unavailable_empty_or_unentitled`, which fires on the *first* calendar call.
+That was transient, not a refusal: P5 issued the identical `trade_cal` request for the
+same session seconds later and succeeded, and P4 had already proved `stk_auction_o`
+entitled. The single re-run succeeded. No other probe was retried.
 
-Set the gate once, then run any subset. `--output-root` must point inside a gitignored
-`data/tushare_addons/` root; `--execute` is required or the CLI only plans.
+**P7 (`stk_auction`, realtime, doc 369) remains pending by clock, not by entitlement.**
+It is same-day capture only, inside 09:26–09:29 Asia/Shanghai. Next window is Monday
+2026-08-10.
 
-```bash
-export TUSHARE_VENDOR_LICENSE_AUTHORITY=operator_attestation_verified
-export TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256=ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb
-ROOT="$PWD/data/tushare_addons"
+Vendor traffic for this witness: 7 collector runs × 3 calls, minus the run that stopped
+at its first calendar call — 19 calls total. Sequential, no retry-hammering.
 
-# P1
-python -m scripts.collect_tushare_addons stk_mins \
-  --trade-date 2026-08-07 --ticker 600519.SS --frequency 1min \
-  --output-root "$ROOT" --execute
-# P2
-python -m scripts.collect_tushare_addons stk_premarket \
-  --trade-date 2026-08-07 --ticker 000001.SZ --output-root "$ROOT" --execute
-# P3 / P4 — recent session, then deep history for the backfill-depth answer
-python -m scripts.collect_tushare_addons stk_auction_o \
-  --trade-date 2026-08-07 --ticker 000001.SZ --output-root "$ROOT" --execute
-python -m scripts.collect_tushare_addons stk_auction_o \
-  --trade-date 2023-03-01 --ticker 000001.SZ --output-root "$ROOT" --execute
-# P5 / P6
-python -m scripts.collect_tushare_addons stk_auction_c \
-  --trade-date 2026-08-07 --ticker 000001.SZ --output-root "$ROOT" --execute
-python -m scripts.collect_tushare_addons stk_auction_c \
-  --trade-date 2023-03-01 --ticker 000001.SZ --output-root "$ROOT" --execute
-# P7 — ONLY inside 09:26-09:29 Asia/Shanghai on the requested day
-python -m scripts.collect_tushare_addons stk_auction \
-  --trade-date "$(TZ=Asia/Shanghai date +%F)" --ticker 000001.SZ \
-  --output-root "$ROOT" --execute
-```
+## o/c history depth — the §8.5 question, ANSWERED
 
-The token is read from `TUSHARE_TOKEN` only and must never be echoed, logged, or
-committed. A `held_fail_closed` result writes nothing, so a re-run after a failure is
-always safe.
+**`stk_auction_o` and `stk_auction_c` both serve deep history.** A 2023-03-01 session
+(≈3.4 years back) returned a valid, contract-conforming row for both endpoints, and the
+recent 2026-08-07 session did the same. Combined with docs 353/354 accepting
+`start_date`/`end_date` and capping at 10,000 rows per request, the backfill shape a
+bulk lane needs is confirmed available.
 
-## Cause: credential rejection, NOT an entitlement gap
+**Consequence for the §8.5 realtime 09:25 collector: `stk_auction_o` supersedes it for
+every historical and backfill purpose.** The o/c plane is strictly better evidence for
+research — it is published after the close, immutable, auditable, and re-fetchable for
+any past session, whereas the realtime snapshot exists only if a collector happened to
+be running inside a four-minute window on that specific morning.
 
-The collector's fail-closed reason code (`..._unavailable_empty_or_unentitled`) is
-deliberately generic and does not persist vendor error text, so the cause was isolated
-with a transient out-of-band diagnostic that printed HTTP status and the numeric vendor
-code only:
+What `stk_auction_o` does **not** replace is the realtime need itself: it is
+`每天盘后更新` (published after that session's close), so it cannot tell you at 09:27
+what the auction is doing *right now*. Retire the §8.5 collector only if the consumer
+is research/backfill; keep a realtime path if any consumer needs the read intraday,
+before the after-close publication.
 
-- `trade_cal` → HTTP 200, no redirect, **vendor code 40101**
-- `stk_auction_o` → HTTP 200, no redirect, **vendor code 40101**
+## Unit resolution — the 100× hazard is closed
 
-`40101` is the AUTH-class code this repo already documents in
-`collectors/tushare_client.py` (`_AUTH_CODES = frozenset({40101})`, "the token VALUE is
-rejected, so every endpoint fails identically and no amount of retrying or waiting
-helps"). It is deliberately distinguished there from `40203`, which is the
-rate-limit/entitlement code. **The observed code is the credential one, not the
-permission one.**
+Docs 353/354 give 成交量 and 成交额 with **no unit**, and TuShare is inconsistent across
+its own planes (`daily` reports volume in 手, the minute plane in 股), so a guessed unit
+is a silent 100× error in any turnover or participation figure.
 
-**Independently corroborated.** The Lane C session reached the same conclusion
-account-wide from this host by a disjoint route: `cyq_chips` (premium) and a control
-`trade_cal` (regular, unlimited tier) both returned 40101 through the same `.env`
-token. Two lanes, different endpoints, same signature — the credential is dead, not the
-entitlement.
+Resolved empirically by internal consistency — `amount / (vol × vwap)`, a dimensionless
+ratio that needs no external reference and exposes no value:
 
-The decisive discriminator: `trade_cal` is a REGULAR-tier endpoint that the operator
-attestation records as 常规数据无上限 (unlimited). It fails identically to the premium
-add-on. An entitlement gap cannot make a regular endpoint the account indisputably
-holds return 40101. Therefore:
-
-- **No conclusion may be drawn about `stk_mins`, `stk_premarket`, `stk_auction_o`, or
-  `stk_auction_c` access.** Their declared access context is unchanged and no
-  `access_observed_at_request_time` observation exists anywhere in the store. The
-  licensing question and the *does the credential work right now* question are
-  independent: the operator ruling answers the first, and this witness reports that the
-  second is currently NO.
-- This is the same failure signature as the 2026-07-27 → 2026-08-06 dark period recorded
-  in `tushare_client.py`. It has recurred.
-
-Ruled out locally, so the fault is not on this side:
-
-| Hypothesis | Check | Result |
+| Partition | n | median `amount/(vol × price)` |
 |---|---|---|
-| Token missing | env presence | present |
-| Token mangled by shell sourcing | raw vs file bytes | identical; 56 chars, hex-only, no CR, no quotes |
-| Transport/TLS failure | HTTP status | 200, JSON parsed |
-| Redirect swallowed by `allow_redirects=False` | `is_redirect` | False |
-| Wrong date / closed session | n/a | never reached — auth precedes calendar semantics |
-| Tier-1 gate misconfigured | reason code | gate PASSED; failure is downstream at the vendor call |
+| `stk_auction_o` 2026-08-07 | 1 | 0.9995 |
+| `stk_auction_o` 2023-03-01 | 1 | 1.0000 |
+| `stk_auction_c` 2026-08-07 | 1 | 0.9996 |
+| `stk_auction_c` 2023-03-01 | 1 | 1.0001 |
+| `stk_mins` 2026-08-07 (control) | 240 | 1.0000 |
 
-**Operator action required:** re-issue or refresh `TUSHARE_TOKEN` (the value in the
-project `.env` is rejected as of 2026-08-09 22:41 Asia/Shanghai). P1–P6 then re-run in
-under a minute via the recipe above; P7 additionally waits for its Monday window. The
-GitHub Actions secret may hold a different value — nightly-lane freshness is being
-checked separately, and a working CI secret would make "sync `.env` from the secret"
-the fix rather than "re-issue the token".
+**Verdict: `vol` is in shares (股) and `amount` is in CNY (元)** — the same convention as
+the minute plane, which serves as the control at exactly 1.0000. Lots (手) would have
+produced ~100; 千元 would have produced ~0.01.
 
-Nothing else in Lane A is blocked: the gate, contracts, CLI, store lines, and tests all
-ship without a live credential, and the sequencing law is satisfied precisely because
-the probe receipts do NOT exist — no bulk backfill can start until they do.
+The contract deliberately still records `vendor-reported; docs 353/354 state no unit`,
+because a contract's job is to state what the **document** specifies, not what we
+inferred. The measurement lives here, with its method, so a consuming lane can adopt it
+knowingly. Promoting the measured unit into the contract text is a reasonable follow-up
+— it would change the contract digest, so it belongs in its own reviewed change.
 
-## What DID get proved
+## Receipt digests
 
-1. **The attested-license gate works end to end.** Every run passed
-   `_license_authority_receipt()` under `operator_attestation_verified` and failed
-   downstream at the vendor call. Under the previous single-basis gate they would have
-   held at the license check and never reached the network, so the fact that the failure
-   is a *vendor* refusal is itself the proof that the new basis opens the path. The
-   dormant vendor-authorization allowlist remains empty and unreachable.
-2. **Fail-closed holds leave no residue.** `data/tushare_addons/` contains zero files
-   after six held `--execute` runs: the collector mutates nothing before clock, calendar,
-   schema, and row checks all pass.
-3. **No vendor error text, token byte, or raw row entered the repo.** The diagnostic that
-   recovered code 40101 ran out of band in a scratchpad and printed a numeric code only.
+Digests only — no rows, prices, or vendor payloads. Full receipts live beside each
+`part.parquet` under the gitignored `data/tushare_addons/` root.
 
-## History-depth question: UNANSWERED
+| Endpoint | Session | Rows | `normalized_rows_sha256` | `parquet_sha256` |
+|---|---|---|---|---|
+| `stk_mins` | 2026-08-07 | 241 | `5e5b39c028809db0…` | `d6ec8b3388587003…` |
+| `stk_premarket` | 2026-08-07 | 1 | `8537815f8500531f…` | `c027be4c768c978f…` |
+| `stk_auction_o` | 2026-08-07 | 1 | `b833a43c5e864d7f…` | `8091d3c2cea1dc18…` |
+| `stk_auction_o` | 2023-03-01 | 1 | `5ad542f5fc1d86ae…` | `c3df5f78dc35555a…` |
+| `stk_auction_c` | 2026-08-07 | 1 | `917e594625568e92…` | `1110befb78efa875…` |
+| `stk_auction_c` | 2023-03-01 | 1 | `d4499eacd41cab1c…` | `09142b3e986adcd9…` |
 
-The takeover doc's §"Sequencing law" asks whether `stk_auction_o` supersedes the §8.5
-realtime 09:25 auction-snapshot collector. That question needs the P3/P4 pair (recent
-session + deep-history 2023-03-01) to return rows. Both were refused at the credential
-layer, so **the supersession question stays open** and the §8.5 collector must not be
-retired or descoped on the strength of this witness.
+Pinned endpoint contracts (field list, row cap, document, units):
 
-What the official documents (captured 2026-08-09, pinned in the contracts) claim, still
-unverified by observation:
-
-- doc 353 `stk_auction_o` — 股票开盘9:30集合竞价数据，每天盘后更新; ≤10,000 rows/request;
-  input accepts `trade_date` **and** `start_date`/`end_date`, which is what a backfill
-  would need. Requires separate permission authorization.
-- doc 354 `stk_auction_c` — 股票收盘15:00集合竞价数据，每天盘后更新; same limits and inputs.
-
-Neither page states a history start date, so depth is a probe question either way.
-
-## Contract digests pinned by this PR
-
-No collection receipt was minted (nothing was collected), so the digests below are the
-endpoint-contract hashes — the deterministic record of exactly what field list, row cap,
-document, and unit disclosure this PR admitted.
-
-| Endpoint | Doc | `contract_source` | `contract_sha256` |
-|---|---|---|---|
-| `stk_mins` | 370 | `official_doc_page` | `94f20769dc4f4420ce322e835a2ac0b40a7d4eddec7197c9812749704574a445` |
-| `stk_premarket` | 329 | `official_doc_page` | `33ac554cdba4b6af0330a4c387bd86d83e7312efa6b568adf0185748f4dc4358` |
-| `stk_auction` | 369 | `official_doc_page` | `fb40afded9a7448fcab5e8314627bf910089d998e74d559f0e2fb63848feb1a1` |
-| `stk_auction_o` | 353 | `official_doc_page` | `0c265b905832052d1eb0bb1d64bd6902ced51dc55acf7d472a191bd3ed2b3297` |
-| `stk_auction_c` | 354 | `official_doc_page` | `fb151f3d4b7eb82621c7ce8cadee19af05388fa4384717adb3786c0f238cfa60` |
+| Endpoint | Doc | `contract_sha256` |
+|---|---|---|
+| `stk_mins` | 370 | `87a30ddbee314da58a16efb50daf96c7cf0ea1a07d6231642e2927904fac6122` |
+| `stk_premarket` | 329 | `2c6db4c2fbbe89155911879fc17fff200e9bb28d0642f646c917d19338d33f93` |
+| `stk_auction` | 369 | `dde1c22b52869ec3d6fffb5f5bd7479485904c62a1a158c9104a33a64d46b107` |
+| `stk_auction_o` | 353 | `0c265b905832052d1eb0bb1d64bd6902ced51dc55acf7d472a191bd3ed2b3297` |
+| `stk_auction_c` | 354 | `fb151f3d4b7eb82621c7ce8cadee19af05388fa4384717adb3786c0f238cfa60` |
 
 The o/c field lists were read off the live doc pages
 ([353](https://tushare.pro/document/2?doc_id=353),
-[354](https://tushare.pro/document/2?doc_id=354)), which were reachable from this
-environment — nothing was inferred from a probe response, and nothing was invented. The
-three pre-existing digests changed in this PR only because `contract_source` was added
-to every contract payload; the field lists of `stk_mins`, `stk_premarket`, and
-`stk_auction` are byte-for-byte untouched.
+[354](https://tushare.pro/document/2?doc_id=354)) before any probe ran, so the schema
+verdict above is a genuine test of the response against an independently sourced
+contract — not a contract reverse-engineered from the response.
 
-## Open item for Lane B / Lane C
+## Earlier credential outage (resolved)
 
-Docs 353/354 give 成交量 and 成交额 with **no unit**. TuShare is inconsistent here across
-its own planes (`daily` reports volume in 手, the minute plane in 股), so the o/c schema
-records the unit as `vendor-reported; docs 353/354 state no unit` rather than asserting
-one. Any turnover ratio, participation rate, or float-normalized figure derived from
-these two columns must first resolve the unit against a same-session reference — a
-guessed unit is a silent 100× error.
+An earlier pass of these same probes, run 2026-08-09 22:2x–22:41 Asia/Shanghai, was
+refused at the credential layer: vendor code **40101** (the AUTH-class "token value
+rejected" code documented in `collectors/tushare_client.py`) on the regular-tier
+`trade_cal` control as well as on the add-ons. Lane C observed the same signature
+account-wide by a disjoint route. The token was refreshed and every probe above then
+succeeded. Recorded because the same signature will recur: 40101 on a regular-tier
+endpoint means a dead credential, never an entitlement gap, and no amount of retrying
+helps.
 
 ## What this witness does and does not say
 
-It records **refusals, not entitlements**. Licensing is settled elsewhere — by the
-operator ruling in `research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md`, which
-this PR pins as the authority — and nothing here adds to or subtracts from it. What this
-document reports is narrower and purely operational: as of 2026-08-09 22:41
-Asia/Shanghai the configured credential is rejected, so no endpoint has an access
-observation, no schema has been confirmed against its contract, and the o/c history
-depth is unmeasured.
+It establishes **access at request time** for five endpoint/session pairs and the
+schema conformance of each response. It does not claim future access: a working
+credential today is not a guarantee for tomorrow, and the outage above is the proof.
 
-The epistemic limits survive a working credential too, and are worth restating because
-they are what the eventual receipts will and will not support: a non-empty response
-proves access **at that request time** and nothing about future access; a short
-minute-day may be suspension or vendor coverage rather than a complete session; and
-none of these endpoints carry Level-2, order-book, or queue-position information. No
-signal or strategy authority is created here — promotion happens at the gauntlet, not
-at a collector.
+The remaining epistemic limits are unchanged by a successful probe. A non-empty
+minute-day may still be short because of suspension or vendor coverage rather than
+being complete — P1's 241 rows are evidence for that one ticker-day, not a coverage
+guarantee. None of these endpoints carry Level-2, order-book, or queue-position
+information. No signal or strategy authority is created by a collector; promotion
+happens at the gauntlet.

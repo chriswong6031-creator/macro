@@ -4,18 +4,22 @@
 There is deliberately no date-range, ticker-list, or backfill interface.  The
 default mode is a dry plan which performs no network call and no write.  A caller
 must pass both ``--execute`` and an explicit ``--output-root`` for the single
-partition requested on the command line, and execution still fails closed unless the
-license-authority reference is provisioned and allowlisted.  The operative basis is
-``operator_attestation_verified``, pinned to the operator-attested license recorded in
-``research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md``.
+partition requested on the command line, and execution requires a configured
+``TUSHARE_TOKEN``.  Every other fence is technical and cannot be waived: the
+two-exchange ``trade_cal`` session check, the per-endpoint collection clock, the
+documented row cap, schema validation, and keep-first immutability.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from collectors.tushare_addons import (
     ALLOWED_FREQUENCIES,
@@ -51,10 +55,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute",
         action="store_true",
-        help=(
-            "after the separate license gate, make at most three vendor calls and "
-            "install one context-only partition"
-        ),
+        help=("make at most three vendor calls and install one context-only partition"),
     )
 
 

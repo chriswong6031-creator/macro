@@ -90,6 +90,11 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # __all__ guard: a listed name the module never binds is a dormant
+      # AttributeError under `from m import *`. Same trigger posture as the
+      # annotation guard above — an edit to the scan runs the scan; it fires
+      # for source changes whenever ci.yml is already triggered.
+      - "tests/test_all_exports_resolve.py"
       # sys.modules leak guard. Its RUNTIME half lives in tests/conftest.py (already
       # listed at the top of this block, which triggers the full suite), so this line
       # covers the STATIC half: an edit to the scan itself must run the scan. Same
@@ -182,6 +187,14 @@ on:
       - "templates/research_report.html.j2"
       - "templates/research_index.html.j2"
       - "tests/test_research_pages.py"
+      # Authorized competitor-history Wave 0: strict contracts + synthetic replay/R2
+      # inventory tests and an aggregate-only receipt. The private history and targeted
+      # restore plan stay outside the repository; tests/** is deliberately not broad.
+      - "contracts/research/momoedge_oracle_*.schema.json"
+      - "contracts/research/momoedge_theta_remote_inventory_aggregate.v1.schema.json"
+      - "scripts/research/momoedge_oracle_history_replay.py"
+      - "tests/test_momoedge_oracle_history_replay.py"
+      - "research/momoedge/history_replay_wave0_receipt.json"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -253,6 +266,11 @@ on:
       #     tests/test_signal_quality_no_leak.py pins one layer up.
       - "research/prophet_us_audit/label_grading_battery.py"
       - "research/prophet_us_audit/test_label_grading_battery.py"
+      #   * earnings-ignition cohort logic: the derived knowability convention, the
+      #     EDGAR-roll-aware announcement window, and the single reaction-session anchor
+      #     both the reaction and the forward cells hang from. Rides the same step.
+      - "research/prophet_us_audit/earnings_ignition_measurement.py"
+      - "research/prophet_us_audit/test_earnings_ignition_measurement.py"
       - "research/signal_engine/buy_filters.py"
       - "research/signal_engine/test_buy_filters.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
@@ -653,6 +671,15 @@ on:
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.
       - "tests/test_prophet_government_revenue_context.py"
+      # Waves 9E/9F — shadow cross-check packets and the Prophet post-selection
+      # annotation boundary. Both suites are named here because their subjects
+      # reach OUTSIDE engine/government_revenue/**: the 9F import-boundary test
+      # walks every engine/prophet*.py transitively, and the wired seam lives in
+      # engine/prophet_bridge.py, so an edit to a Prophet module must be able to
+      # start the job that proves the boundary still holds.
+      - "tests/test_government_revenue_shadow_context.py"
+      - "tests/test_government_revenue_prophet_annotation.py"
+      - "engine/prophet_bridge.py"
       - "tests/test_sam_gov_opportunities.py"
       # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
       # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
@@ -676,6 +703,7 @@ on:
       - "tests/test_government_revenue_contracts.py"
       - "tests/test_government_revenue_entity_resolution.py"
       - "tests/test_government_revenue_freshness.py"
+      - "tests/test_government_revenue_idv_bridge.py"
       - "tests/test_government_revenue_idv_dossiers.py"
       - "tests/test_government_revenue_neuralweb.py"
       - "tests/test_government_revenue_opportunities.py"
@@ -909,6 +937,10 @@ on:
       # Same idiom as the line above: tests/test_biocatalyst_acceptance_v2.py reads this
       # adjudication by path literal, so an edit to it alone must start the contracts pack.
       - "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md"
+      # The operator ruling tests/test_biocatalyst_fixed_cohort_deployment.py reads by
+      # path literal. Without it a PR touching only the ruling never starts
+      # biocatalyst-contracts, the job that runs the suite (#3488 shape).
+      - "research/BIOCATALYST_OPERATOR_RULING_2026-08-07.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -947,6 +979,10 @@ on:
       - "scripts/nightly_timings_report.py"
       - "scripts/ci/nightly_timings_finish.sh"
       - "tests/test_nightly_timings.py"
+      # W-L0 daily ET regime gate, run in the same dag-conformance job. The gate's
+      # subject is .github/workflows/daily.yml (already covered above); this entry is
+      # the other half — a PR editing only the gate's test must reach its own guard.
+      - "tests/test_daily_et_gate.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
@@ -1579,6 +1615,11 @@ on:
       - "app/deploy/macro-live-prophet.timer"
       - "app/deploy/live-setup.sh"
       - "tests/test_prophet_live_vps_lane.py"
+      # CLOSE-PASS MIRROR lane (W-L1a, #5154). Same #3488 shape as the prophet
+      # units above: test_close_pass_lane.py parses these two unit files, so a
+      # PR touching only a unit file must retrigger the suite that reads it.
+      - "app/deploy/macro-live-closepass.service"
+      - "app/deploy/macro-live-closepass.timer"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -3618,14 +3659,32 @@ jobs:
       # missing source file is the signature of an inherited sparse checkout, not of a
       # broken runner or a bad ref.
       #
+      # DO NOT DELETE THE `config --unset-all` LINE BECAUSE CHECKOUT "ALREADY DISABLES
+      # SPARSE". It does — run 31304933108 shows checkout@v4 running
+      # `git sparse-checkout disable` itself — and the workspace was partial anyway.
+      # `disable` clears the WORKTREE-scoped flag; checkout then unsets
+      # `extensions.worktreeConfig`, and that makes the repo-scoped `core.sparseCheckout`
+      # visible, and effective, again. The config unset is the half that ends the outage.
+      # The `disable` in front of it is what re-materialises the missing paths for a job
+      # whose own checkout is skipped or conditional (render.yml) — keep both.
+      #
       # Hosted runners get a fresh VM per job and cannot hit this, hence the guard.
       - name: clear any sparse checkout a sibling job left in this shared workspace
         if: runner.environment != 'github-hosted'
         shell: bash
         run: |
           if [ -d "${{ github.workspace }}/.git" ]; then
-            git -C "${{ github.workspace }}" sparse-checkout disable || true
-            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
+            git -C "${{ github.workspace }}" sparse-checkout disable || echo "::warning title=sparse-clear::sparse-checkout disable failed — this workspace may still hold a partial tree"
+            # `--unset-all` exits 5 when there is nothing to unset: that is the normal
+            # clean case and must never fail the job. Exit 0 means this workspace really
+            # WAS poisoned, which is worth one line in the run summary.
+            rc=0
+            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || rc=$?
+            if [ "$rc" = 0 ]; then
+              echo "::notice title=sparse-clear::cleared an inherited core.sparseCheckout in this shared workspace"
+            elif [ "$rc" != 5 ]; then
+              echo "::warning title=sparse-clear::core.sparseCheckout unset exited $rc — this workspace may still be sparse"
+            fi
           fi
       - uses: actions/checkout@v4
         with:

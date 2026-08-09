@@ -1,0 +1,284 @@
+{
+  "authority": {
+    "automatic_training": false,
+    "neural_web": "none",
+    "prophet": "none",
+    "signal_origination": false,
+    "tier": "research_only"
+  },
+  "capital_constrained_metrics": {
+    "blocker_codes": [
+      "position_sizes_unavailable",
+      "portfolio_capital_unavailable",
+      "issue_timestamps_unavailable",
+      "close_dates_incomplete",
+      "temporal_correction_overlays_unresolved",
+      "commissions_slippage_and_spreads_unavailable",
+      "overlap_allocation_policy_unavailable"
+    ],
+    "identification_state": "not_identifiable_from_source",
+    "proxy_metrics": []
+  },
+  "cohort_policy": {
+    "basis": "observed_instrument_format_frontiers",
+    "first_observed_option_issue": "2025-09-24",
+    "inferred": true,
+    "last_observed_underlying_issue": "2026-05-06",
+    "true_engine_version_claimed": false
+  },
+  "cohorts": [
+    {
+      "cohort_id": "pre_option_format",
+      "direction_counts": {
+        "BEAR": 6,
+        "BULL": 3
+      },
+      "first_issue_date": "2023-10-09",
+      "instrument_counts": {
+        "option": 0,
+        "underlying": 9
+      },
+      "last_issue_date": "2025-01-08",
+      "record_count": 9
+    },
+    {
+      "cohort_id": "mixed_format_transition",
+      "direction_counts": {
+        "BEAR": 14,
+        "BULL": 63
+      },
+      "first_issue_date": "2025-09-24",
+      "instrument_counts": {
+        "option": 58,
+        "underlying": 19
+      },
+      "last_issue_date": "2026-05-06",
+      "record_count": 77
+    },
+    {
+      "cohort_id": "post_underlying_format",
+      "direction_counts": {
+        "BEAR": 19,
+        "BULL": 52
+      },
+      "first_issue_date": "2026-05-07",
+      "instrument_counts": {
+        "option": 71,
+        "underlying": 0
+      },
+      "last_issue_date": "2026-07-20",
+      "record_count": 71
+    }
+  ],
+  "data_availability": [
+    {
+      "available_at_ready": false,
+      "blocker_codes": [
+        "issue_timestamp_unknown",
+        "intraday_price_archive_unmapped",
+        "historical_adjustment_vintage_unavailable"
+      ],
+      "exact_issue_date_records": 104,
+      "family": "price_technical",
+      "record_count": 157,
+      "state": "partial_retro",
+      "supporting_counts": {
+        "exact_issue_date_records": 104,
+        "ticker_files": 58
+      },
+      "within_day_ready": false
+    },
+    {
+      "available_at_ready": false,
+      "blocker_codes": [
+        "issue_timestamp_unknown",
+        "within_day_regime_state_unavailable",
+        "per_feature_release_availability_not_materialized"
+      ],
+      "exact_issue_date_records": 148,
+      "family": "macro_regime",
+      "record_count": 157,
+      "state": "partial_pit",
+      "supporting_counts": {
+        "combined_exact_issue_records": 148,
+        "pit_daily_exact_issue_records": 141,
+        "recent_accrual_exact_issue_records": 7
+      },
+      "within_day_ready": false
+    },
+    {
+      "available_at_ready": true,
+      "blocker_codes": [
+        "historical_per_print_nbbo_sparse",
+        "daily_backfill_is_magnitude_only",
+        "campaign_history_not_available_for_full_record",
+        "signed_direction_is_soft"
+      ],
+      "exact_issue_date_records": 2,
+      "family": "options_flow_campaign",
+      "record_count": 157,
+      "state": "partial_pit",
+      "supporting_counts": {
+        "daily_aggregate_exact_issue_records": 79,
+        "daily_aggregate_ticker_files": 50,
+        "per_print_exact_issue_records": 2
+      },
+      "within_day_ready": true
+    },
+    {
+      "available_at_ready": false,
+      "blocker_codes": [
+        "thetadata_local_store_unresolved",
+        "theta_r2_selective_restore_pending",
+        "theta_remote_yearfile_rows_unverified",
+        "historical_chain_cutoff_snapshots_sparse",
+        "open_interest_requires_prior_session",
+        "issue_day_eod_not_known_before_close",
+        "historical_intraday_theta_source_unavailable",
+        "within_day_gex_vintage_unavailable"
+      ],
+      "exact_issue_date_records": 18,
+      "family": "gex_vol_oi",
+      "record_count": 157,
+      "state": "candidate_only",
+      "supporting_counts": {
+        "dislocation_exact_issue_records": 18,
+        "polygon_gex_exact_issue_records": 11,
+        "polygon_gex_ticker_files": 50,
+        "theta_eod_yearfile_records": 0,
+        "theta_greeks_yearfile_records": 0,
+        "theta_oi_yearfile_records": 0,
+        "theta_r2_all_tiers_available_root_count": 53,
+        "theta_r2_all_tiers_available_root_year_pairs": 56,
+        "theta_r2_candidate_issue_records": 100,
+        "theta_r2_current_available_bytes": 1805789204,
+        "theta_r2_current_available_objects": 168,
+        "theta_r2_eod_available_objects": 56,
+        "theta_r2_greeks_available_objects": 56,
+        "theta_r2_oi_available_objects": 56,
+        "theta_r2_required_root_year_pairs": 100
+      },
+      "within_day_ready": false
+    },
+    {
+      "available_at_ready": true,
+      "blocker_codes": [
+        "timestamped_entity_news_history_sparse",
+        "alt_data_vintage_history_sparse",
+        "issue_timestamp_unknown"
+      ],
+      "exact_issue_date_records": 2,
+      "family": "news_alt_data",
+      "record_count": 157,
+      "state": "candidate_only",
+      "supporting_counts": {
+        "combined_exact_issue_records": 2,
+        "daily_alt_exact_issue_records": 2,
+        "timestamped_news_exact_issue_records": 0
+      },
+      "within_day_ready": false
+    }
+  ],
+  "decision_layers": {
+    "contract_construction_records": 129,
+    "management_records": 157,
+    "management_with_close_date": 139,
+    "management_without_close_date": 18,
+    "selection_records": 157
+  },
+  "displayed_additive_metrics": {
+    "headline_definition": "SUM OF PER-TRADE RETURNS",
+    "headline_minus_reconstructed_pct": -0.3,
+    "headline_total_alpha_pct": 1249.5,
+    "headline_win_rate_pct": 65.6,
+    "headline_wins": 103,
+    "option_records": 129,
+    "option_return_observed_records": 124,
+    "reconstructed_visible_option_sum_pct": 7206.6,
+    "reconstructed_visible_underlying_mean_pct": 7.96051,
+    "reconstructed_visible_underlying_sum_pct": 1249.8,
+    "reconstruction_is_track_record": false,
+    "visible_return_class_counts": {
+      "negative": 53,
+      "positive": 100,
+      "zero": 4
+    }
+  },
+  "generated_at": "2026-08-09T04:22:33.861975Z",
+  "input": {
+    "authorization_validated": true,
+    "captured_at": "2026-08-09T03:27:52.187Z",
+    "record_count": 157,
+    "schema": "momoedge.oracle_history_authorized/v1",
+    "sha256": "6e266eb5283158d8372c27a9d3f51f043cb097d52baf07b0a720518c5c42d097"
+  },
+  "issue_time": {
+    "cutoff_ids": [
+      "market_open",
+      "mid_session",
+      "market_close_boundary"
+    ],
+    "date_only_records": 157,
+    "exact_timestamp_records": 0,
+    "sensitivity_only": true,
+    "timezone": "America/New_York"
+  },
+  "privacy": {
+    "authorization_image_included": false,
+    "authorization_payload_included": false,
+    "private_runtime_artifacts_committed": false,
+    "raw_records_included": false,
+    "ticker_values_included": false
+  },
+  "record_range": {
+    "first_issue_date": "2023-10-09",
+    "last_issue_date": "2026-07-20",
+    "unique_issue_dates": 92
+  },
+  "runtime_outputs": {
+    "feature_receipt_count": 2355,
+    "private_output_in_repo_allowed": false,
+    "private_output_required": true,
+    "replay_case_count": 157
+  },
+  "schema": "momoedge.oracle_history_replay_wave0_receipt/v1",
+  "status_disagreements": {
+    "both_values_retained": true,
+    "count": 2,
+    "pairs": [
+      {
+        "count": 2,
+        "detail_status": "EXPIRED",
+        "table_status": "INVALIDATED"
+      }
+    ]
+  },
+  "temporal_source_quality": {
+    "clean_records": 137,
+    "correction_overlay_required_records": 20,
+    "corrections_applied": 0,
+    "expiry_return_replay_excluded_option_records": 5,
+    "holding_interval_after_option_expiration_records": 1,
+    "issue_close_days_held_year_conflict_records": 2,
+    "max_holding_interval_beyond_option_expiration_days": 28,
+    "missing_close_date_records": 18,
+    "overlap_replay_excluded_records": 20,
+    "raw_values_retained": true
+  },
+  "theta_data_plane": {
+    "candidate_issue_records": 100,
+    "current_available_bytes": 1805789204,
+    "current_available_objects": 168,
+    "current_available_root_count": 53,
+    "current_prefix_only": true,
+    "inventory_method": "targeted_head_object_current_keys",
+    "issue_day_eod_policy": "prior_session_only_when_issue_time_unknown",
+    "legacy_old_prefix_probed": false,
+    "local_state": "unresolved",
+    "manifest_last_modified": "2026-08-07T08:02:54Z",
+    "object_content_downloaded": false,
+    "r2_state": "available_candidate",
+    "required_root_year_pairs": 100,
+    "selective_restore_state": "planned_not_executed"
+  }
+}

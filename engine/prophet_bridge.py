@@ -224,6 +224,112 @@ _KNOWN_REFUSED_STATUSES = frozenset({
     "topping", "exit", "avoid", "blocked",
 })
 
+# ── ANTICIPATION §6.9 R5 — per-name "why not" receipts ────────────────────────────────
+#
+# THE SPECIFICITY RULE — the whole reason this is not "report the first failing gate".
+# :func:`select_candidates` SHORT-CIRCUITS: it ``continue``s at the first refusal, because
+# admission only needs ONE gate to say no.  Its order is
+# ``no_entry_signal → direction → band_low → tier → status``, and ``intake_stats`` counts
+# the refusals that way — as AGGREGATE tallies with no ticker attached, which is why the
+# per-name surface cannot be read off ``intake_stats`` and derives its own row-level view
+# through the SAME admission helpers instead.
+#
+# Measured on the committed 2026-08-07 board: **8 of the 25 refused rows fail MORE THAN
+# ONE gate**, and **every ``extended``/``topping`` row also carries ``band == 'low'``.
+# Because the band is tested BEFORE the status, a first-failing-gate receipt labels every
+# anti-chase name "No setup yet" and the ran-too-far story — the exact thing the shelf
+# exists to tell — becomes invisible on the surface.
+#
+# So the receipt evaluates EVERY gate without short-circuiting and then picks the
+# headline by :data:`REFUSAL_ORDER`, which is a MOST-ACTIONABLE-FIRST order, NOT gate
+# order.  Nothing is hidden by that choice: every other failing code rides the row's
+# ``why`` list and is disclosed on the chip's Tier-2 hover.  Do not "repair" this into
+# gate order — that is the defect, not the design.
+REFUSAL_ORDER = (
+    "plan_not_built",   # cleared every gate; only the plan build itself failed
+    "already_open",     # cleared every gate; the name already has a live plan
+    "not_ready",        # the patience statuses that are ALMOST admitted
+    "ran_too_far",      # the anti-chase refusal — must outrank the band it co-occurs with
+    "stood_down",       # an explicit avoid/exit/blocked stance
+    "grade_low",        # the tier cascade graded it below the actionable set
+    "conviction_low",   # the board's own `band == 'low'`
+    "pointing_down",    # tone refused by ruling (§6.7 A1)
+    "no_trigger",       # no entry signal on the row at all
+    "unknown",          # fail-closed generic — an unmapped/renamed status word
+)
+
+#: Refused ``entry_signal.status`` → receipt code.  Every word here is a member of
+#: :data:`_KNOWN_REFUSED_STATUSES` (the test pins the two key sets equal); anything else
+#: falls through to ``"unknown"`` in :func:`refusal_receipts`, which is the FAIL-CLOSED
+#: path: a renamed or newly minted status word must never drop the row from the shelf and
+#: must never raise inside a render.
+REFUSAL_STATUS_MAP = {
+    "extended": "ran_too_far",
+    "topping": "ran_too_far",
+    "buy_soon": "not_ready",
+    "await_confluence": "not_ready",
+    "watch": "not_ready",
+    "blocked": "stood_down",
+    "exit": "stood_down",
+    "avoid": "stood_down",
+}
+
+#: code → (EN, ZH).  The ONE place this feature's user-facing wording lives, so the
+#: dashboard shelf and the published receipts can never word the same refusal
+#: differently.
+#:
+#: ``conviction_low`` deliberately reuses the BOARD'S OWN public band name for
+#: ``band == 'low'`` ("No setup" / "暂无买点") rather than coining a second phrase for the
+#: same fact — one word through the whole flow.  ``stood_down`` uses the doctrine's own
+#: ratified stance verb ("Stand aside", DESIGN_DOCTRINE §2 Law 1) for the same reason: an
+#: interface teaches its vocabulary by repeating it.  No internal token — a status slug, a
+#: tier name, a gate name — appears in any string here: the reader is told what is true
+#: about the stock, never which branch of our code said so.
+REFUSAL_COPY = {
+    "plan_not_built": ("Cleared every check — no entry plan came together tonight",
+                       "各项检查都通过 — 但今晚没能形成完整计划"),
+    "already_open":   ("Already has a plan running",
+                       "已有在跑的计划"),
+    "not_ready":      ("Setting up, but the entry hasn't come",
+                       "形态在走，入场点还没到"),
+    "ran_too_far":    ("Ran too far — waiting for a pullback",
+                       "涨得太急 — 等回调"),
+    "stood_down":     ("Standing aside for now",
+                       "暂时回避"),
+    "grade_low":      ("Signal too weak to act on",
+                       "信号强度不足以行动"),
+    "conviction_low": ("No setup yet",
+                       "暂无买点"),
+    "pointing_down":  ("Still heading down",
+                       "方向仍朝下"),
+    "no_trigger":     ("No entry trigger yet",
+                       "还没有入场触发"),
+    "unknown":        ("Held back for another reason",
+                       "另有原因，暂未纳入"),
+}
+
+#: The "one identifiable thing stands between this name and a plan" cohort.  The shelf
+#: paints these rails with the WAIT hue so the reader's eye lands on the names that are
+#: closest to rejoining the board, instead of treating a 25-name list as flat.
+REFUSAL_NEAR = frozenset({"plan_not_built", "already_open", "not_ready"})
+
+#: Per-group ticker cap.  The group's ``n`` always reports the TRUE count, so an
+#: overflow is DISCLOSED by the arithmetic rather than silently truncated away.
+REFUSAL_NAMES_CAP = 14
+
+#: Direction suffixes :func:`plan_key` appends.  ``refusal_receipts`` accepts either a
+#: bare ticker set (build_site reads tickers out of the published index) or the
+#: ``<TICKER>-<DIRECTION>`` key set (build_prophet already holds ``active_keys``), so it
+#: strips ONLY these two suffixes — a blind rsplit on "-" would turn the plain ticker
+#: ``BRK-B`` into ``BRK`` and hand a different company someone else's open plan.
+_REFUSAL_KEY_SUFFIXES = ("-BULL", "-BEAR")
+
+#: Month names for the era's plain-word "in force since" line.  The era literal itself is
+#: a Tier-2 receipt (DESIGN_DOCTRINE §2 Law 5: plain words at a glance, the identifier on
+#: hover), so Tier 1 needs the date in a form a reader actually reads.
+_REFUSAL_MONTHS_EN = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
 #: The selection rule this run's plans were originated under.  Stamped on every plan
 #: and on index.json so a later side-by-side can separate eras without guessing from
 #: dates (the #4942 era-stamp pattern).  CHARTERED LITERAL — §6.2 fixed this string and
@@ -914,6 +1020,213 @@ def select_candidates(
     return selected if n is None else selected[:n]
 
 
+def _refusal_open_tickers(open_keys: Iterable[str] | None) -> frozenset[str]:
+    """Normalise an open-plan key set to the TICKERS it covers.
+
+    Accepts both shapes the two call sites hold: build_prophet passes the
+    ``<TICKER>-<DIRECTION>`` keys from ``open_plan_keys`` verbatim, build_site passes
+    bare tickers read out of the published index.  Both forms are kept, so a caller that
+    mixes them still matches.  See :data:`_REFUSAL_KEY_SUFFIXES` for why the direction is
+    stripped by an exact suffix rather than by splitting on the last hyphen.
+    """
+    out: set[str] = set()
+    for raw in open_keys or ():
+        key = str(raw or "").strip().upper()
+        if not key:
+            continue
+        out.add(key)
+        for suffix in _REFUSAL_KEY_SUFFIXES:
+            if key.endswith(suffix):
+                out.add(key[: -len(suffix)])
+                break
+    return frozenset(out)
+
+
+def _refusal_codes(row: Mapping[str, Any]) -> list[str]:
+    """EVERY admission gate this board row fails, in :data:`REFUSAL_ORDER` order.
+
+    The gates are the same five :func:`select_candidates` applies, evaluated with NO
+    short-circuit — see the SPECIFICITY RULE note above :data:`REFUSAL_ORDER` for the
+    measured reason a first-failing-gate answer is the wrong one.  An empty list means
+    the row cleared admission; what happens to it then is the caller's call, because
+    only the caller knows whether a plan was actually originated for it.
+    """
+    codes: list[str] = []
+    if not row.get("entry_signal"):
+        codes.append("no_trigger")
+    tone = str(row.get("dir", "up") or "up").strip().lower()
+    if tone not in ADMITTED_DIRECTIONS:
+        codes.append("pointing_down")
+    conviction = row.get("conviction")
+    if isinstance(conviction, Mapping) and conviction.get("band", "") == "low":
+        codes.append("conviction_low")
+    signal = row.get("signal")
+    if isinstance(signal, Mapping):
+        tier = signal.get("tier_cascade")
+        if tier is not None and tier not in ("T1", "T2", "T3"):
+            codes.append("grade_low")
+    if row.get("entry_signal"):
+        # The status gate, read through the SAME two helpers admission reads it through,
+        # so the shelf can never disagree with the gate about what a row's status is.
+        #
+        # FAIL-CLOSED, and deliberately not guarded on `status` being truthy: a row that
+        # carries an entry_signal with no readable status word is REFUSED by
+        # `admission_class` (it returns None), so the receipt must say so too. Reporting
+        # nothing there would let a row the intake refused vanish from the shelf that
+        # exists to account for exactly those rows. Measured on the committed
+        # 2026-08-07 board: zero rows are in that state, so this costs nothing today and
+        # is the difference between an honest shelf and a silent hole the day it happens.
+        status = entry_status(row)
+        if admission_class(status) is None:
+            codes.append(REFUSAL_STATUS_MAP.get(status, "unknown"))
+    order = {code: i for i, code in enumerate(REFUSAL_ORDER)}
+    return sorted(set(codes), key=lambda c: order.get(c, len(REFUSAL_ORDER)))
+
+
+def _refusal_era() -> dict[str, str]:
+    """The selection era as a Tier-1 date plus its Tier-2 identifier.
+
+    :data:`SELECTION_ERA` is a CHARTERED LITERAL carrying its own start date, so the
+    "in force since" line is READ off it rather than maintained as a second source that
+    could drift.  Fail-soft: an era string that stops matching the shape yields empty
+    date strings and the shelf simply prints its footnote without the clause — never a
+    wrong date, and never a raised exception inside a render.
+    """
+    match = re.search(r"(\d{4})-(\d{2})-(\d{2})\s*$", SELECTION_ERA)
+    if not match:
+        return {"era": SELECTION_ERA, "era_since_en": "", "era_since_zh": ""}
+    year, month, day = (int(g) for g in match.groups())
+    if not 1 <= month <= 12:
+        return {"era": SELECTION_ERA, "era_since_en": "", "era_since_zh": ""}
+    return {
+        "era": SELECTION_ERA,
+        "era_since_en": f"{day} {_REFUSAL_MONTHS_EN[month - 1]} {year}",
+        "era_since_zh": f"{year}年{month}月{day}日",
+    }
+
+
+def refusal_receipts(
+    standouts: Mapping[str, Any] | None,
+    open_keys: Iterable[str] | None = (),
+    originated_tickers: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Per-name "why not" receipts for every buy-lane row the intake did NOT plan.
+
+    ANTICIPATION §6.9 R5.  ONE function, TWO call sites, so the macro dashboard shelf and
+    the published ``site/prophet/index.json`` receipts can never drift:
+
+      * ``scripts/build_site.py`` renders the shelf from the SAME
+        ``site/factordata/us_standouts.json`` generation the board above it renders from.
+        It deliberately does NOT read ``site/prophet/index.json`` for the reason list:
+        ``build_site`` runs BEFORE ``build_prophet`` in daily.yml, and ``render.yml``
+        never runs ``build_prophet`` at all — so SSR-ing the published receipts would
+        print LAST NIGHT'S refusals underneath TONIGHT'S cards and claim a name was
+        passed on when tonight's run planned it.  Reading last night's index for the
+        OPEN-PLAN keys only is safe, and is all it does: open plans persist across
+        nights, while every refusal REASON comes from tonight's board rows.
+      * ``scripts/build_prophet.py`` publishes the same structure into the intake block
+        additively, for the Terminal rider.
+
+    WHY NOT ``intake_stats``:  #5105's lossless disclosure records refusals as AGGREGATE
+    tallies (``refused_status`` / ``refused_band_low`` / ``refused_tier`` …) and
+    ``continue``s past the row — no ticker is retained, so "why isn't this name on the
+    board?" is unanswerable from it.  This function is the per-name layer over the SAME
+    gate, reading status through :func:`entry_status` / :func:`admission_class` so the two
+    can never disagree; it adds no second gate and no second vocabulary.
+
+    ``open_keys`` — open-plan identities (``<TICKER>-<DIRECTION>`` keys or bare tickers).
+    ``originated_tickers`` — ``None`` means "this call site does not know what was
+    originated tonight" (build_site's case: it knows the gate, not the origination run),
+    and then a row that cleared every gate and holds no open plan produces NO receipt at
+    all rather than an invented one.  When a set IS passed (build_prophet's case), a
+    cleared row missing from it is disclosed as ``plan_not_built``.
+
+    Returns ``{"considered", "planned", "passed", "groups", "unmapped", "era",
+    "era_since_en", "era_since_zh"}``.  ``passed`` is the number of names passed on;
+    ``planned`` is the remainder of the considered set.  Groups follow
+    :data:`REFUSAL_ORDER`, empties omitted; names sort by the board's own priority score
+    descending, then ticker ascending; ``why`` is the row's FULL failing set with the
+    headline first.  Display tier throughout — this reports the gate, it never moves it.
+    """
+    buys = (standouts or {}).get("buy") or []
+    if not isinstance(buys, list):
+        buys = []
+    open_tickers = _refusal_open_tickers(open_keys)
+    originated = (
+        None if originated_tickers is None
+        else {str(t or "").strip().upper() for t in originated_tickers}
+    )
+
+    rows: list[dict[str, Any]] = []
+    for row in buys:
+        if not isinstance(row, Mapping):
+            continue
+        ticker = str(row.get("ticker") or "").strip()
+        codes = _refusal_codes(row)
+        if not codes:
+            # Cleared every gate.  It is either already running, or it should have become
+            # a plan tonight and did not — and if this call site cannot tell the two
+            # apart it says nothing rather than guessing.
+            key = ticker.upper()
+            if key and key in open_tickers:
+                codes = ["already_open"]
+            elif originated is not None and key and key not in originated:
+                codes = ["plan_not_built"]
+            else:
+                continue
+        score = (row.get("prophet") or {}).get("score")
+        rows.append({
+            "ticker": ticker,
+            "name": str(row.get("name") or ticker),
+            "score": score if isinstance(score, (int, float)) else 0,
+            "why": codes,
+        })
+
+    groups: list[dict[str, Any]] = []
+    for code in REFUSAL_ORDER:
+        members = sorted(
+            (r for r in rows if r["why"][0] == code),
+            key=lambda r: (-float(r["score"] or 0), r["ticker"]),
+        )
+        if not members:
+            continue
+        en, zh = REFUSAL_COPY[code]
+        groups.append({
+            "reason": code,
+            "en": en,
+            "zh": zh,
+            "near": code in REFUSAL_NEAR,
+            # TRUE count, always — the cap below trims what is DRAWN, never what is
+            # counted, so an overflowing group discloses itself instead of lying small.
+            "n": len(members),
+            "names": members[:REFUSAL_NAMES_CAP],
+        })
+
+    # AN OPEN PLAN IS NOT A REFUSAL.  ``already_open`` rows cleared every gate and are
+    # being acted on right now — they are on the cards above, not passed on — so counting
+    # them as "passed on" states something false at a glance.  Measured on the committed
+    # board through build_site's call site: 48 of the 73 receipted rows are open plans, so
+    # the undivided figure reads "we put down 73 of 79" when the honest sentence is "we
+    # declined 25 and are already trading 48".  ``passed`` stays the LOSSLESS total (every
+    # row that earned a receipt, which the published artifact needs); ``declined`` is the
+    # figure a surface should headline, and the two are kept apart here rather than in a
+    # template so both call sites inherit the same arithmetic.
+    open_now = sum(1 for r in rows if r["why"][0] == "already_open")
+    return {
+        "considered": len(buys),
+        "planned": len(buys) - len(rows),
+        "passed": len(rows),
+        "open_now": open_now,
+        "declined": len(rows) - open_now,
+        "groups": groups,
+        # A non-zero `unmapped` is the vocabulary-drift alarm: the ladder minted or
+        # renamed a status word and the copy table has not caught up.  The rows still
+        # render, under the honest generic line.
+        "unmapped": sum(1 for r in rows if r["why"][0] == "unknown"),
+        **_refusal_era(),
+    }
+
+
 def legacy_admitted(standouts: dict) -> list[dict]:
     """The PRE-ANTICIPATION gate, frozen verbatim — shadow ledger only, ZERO authority.
 
@@ -1342,6 +1655,124 @@ ZONE_CONVERSION_WASHOUT = "washout"
 ZONE_CONVERSION_PULLBACK = "pullback"
 
 
+# ---------------------------------------------------------------------------
+# ZONE-BASIS COPY — plain-word EN/ZH for every token the payload can carry
+# ---------------------------------------------------------------------------
+# `entry_zone` is whitelisted onto the published `index.json` row (the Terminal and the
+# showcase read that file, not the per-plan JSON), so every string in it is USER-VISIBLE
+# copy, not an internal note.
+#
+# THE DEFECT THIS FIXES.  The leader-pullback branch below used to interpolate the
+# ORGAN'S OWN STATE ENUM straight into the sentence —
+#
+#     f"leader pullback ({leader_pullback.get('state') or 'reset'}) — reset band, ..."
+#
+# which renders as "leader pullback (RESET_TURN) — …" the moment the organ's coverage is
+# actually published.  It never surfaced before because nothing published
+# `site/anticipationdata/us_leader_pullback.json`, so `is_leader_pullback` was False on
+# every production row and the branch was unreachable.  Shipping the publisher makes it
+# reachable, so the copy has to be plain words first.
+#
+# The same audit applies to `conversion_evidence`, which carried a MODULE NAME and two
+# more raw states ("us_basket_turn washout/turning membership") and a board slug
+# ("board lane=bottoming").
+#
+# HOUSE LAW (docs/DESIGN_DOCTRINE.md, glance tier): no raw enum tokens, no internal state
+# or study names, no untranslated stats, no falsifier/refutation vocabulary. ZH is written
+# as ZH, not as a gloss of the English clause order.
+# `tests/test_prophet_zone_basis_copy.py` enumerates every reachable branch and fails on a
+# raw token, a missing ZH half, or falsifier vocabulary.
+
+#: Organ state (engine.us_leader_pullback) → plain words. Only PULLBACK and RESET_TURN can
+#: reach here (`us_early_turn.LEADER_PULLBACK_CONTEXT_STATES`), but the map is EXHAUSTIVE
+#: over the organ's vocabulary so a future context-set widening cannot leak a token: an
+#: unmapped state falls back to the generic phrase, never to the enum.
+ZONE_LEADER_STATE_COPY: dict[str, dict[str, str]] = {
+    "PULLBACK": {
+        "en": "a market leader in a controlled pullback",
+        "zh": "强势股正在有序回踩",
+    },
+    "RESET_TURN": {
+        "en": "a market leader whose pullback has just turned back up",
+        "zh": "强势股回踩后刚刚重新走强",
+    },
+    "RESUMED": {
+        "en": "a market leader that has already resumed its advance",
+        "zh": "强势股已经重拾升势",
+    },
+    "LEADER": {
+        "en": "a market leader with no pullback under way",
+        "zh": "强势股目前没有回踩",
+    },
+    "NONE": {
+        "en": "a market leader in a controlled pullback",
+        "zh": "强势股正在有序回踩",
+    },
+}
+#: Used when the organ named no state at all — never the word "None", never an enum.
+ZONE_LEADER_STATE_FALLBACK = {
+    "en": "a market leader in a controlled pullback",
+    "zh": "强势股正在有序回踩",
+}
+
+#: Band provenance → plain words. Keys are the exact strings `_reset_band_or_board` and
+#: `engine.us_early_turn.reset_band` can return; an unknown string is REPLACED by the
+#: generic phrase rather than passed through, so a new band source cannot ship raw.
+ZONE_BAND_BASIS_COPY: dict[str, dict[str, str]] = {
+    "entry ladder reset band": {
+        "en": "the pullback band the entry ladder already showed",
+        "zh": "入场阶梯原本给出的回踩区间",
+    },
+    "MA10/MA20 reset": {
+        "en": "the 10- and 20-day average band under the price",
+        "zh": "价格下方的 10 日与 20 日均线区间",
+    },
+    "1-2x ATR band (price already under both short MAs)": {
+        "en": "one to two average daily ranges below the price, since it is already "
+              "under both short averages",
+        "zh": "价格已跌破两条短期均线，区间取其下方一到两个日均波幅",
+    },
+    "board band (reset band unresolved)": {
+        "en": "the band already on the board, because a pullback band could not be drawn",
+        "zh": "沿用看板已有区间，因为无法画出回踩区间",
+    },
+}
+ZONE_BAND_BASIS_FALLBACK = {
+    "en": "the band already on the board",
+    "zh": "看板已有的区间",
+}
+
+#: Conversion evidence → plain words. The first key replaces a string that named an
+#: internal module AND two raw organ states.
+ZONE_CONVERSION_EVIDENCE_COPY: dict[str, dict[str, str]] = {
+    "group_washout": {
+        "en": "its group has already sold off hard and is starting to turn",
+        "zh": "所属板块已经深度回落，并开始转向",
+    },
+    "board_bottoming": {
+        "en": "the board reads this as a name coming off a low",
+        "zh": "看板把它归入低位回升的一类",
+    },
+    "no_washout": {
+        "en": "nothing here says this name has sold off hard first",
+        "zh": "没有迹象显示该股先经历过深度回落",
+    },
+}
+
+
+def _copy(table: Mapping[str, Mapping[str, str]], key: Any,
+          fallback: Mapping[str, str]) -> tuple[str, str]:
+    """``(en, zh)`` for ``key``; the fallback PHRASE for anything unmapped.
+
+    Never returns the key.  That is the whole point: a token this table has not been
+    taught is a token the reader must not see.
+    """
+    row = table.get(str(key or "").strip().upper()) or table.get(str(key or "").strip())
+    if not isinstance(row, Mapping):
+        row = fallback
+    return str(row.get("en") or fallback["en"]), str(row.get("zh") or fallback["zh"])
+
+
 def _zone_expiry_sessions(row: Mapping[str, Any]) -> int:
     """Sessions the zone stays live: the ladder's own window, floored."""
     es = row.get("entry_signal")
@@ -1369,8 +1800,8 @@ def _add_business_days(start: str, n: int) -> str | None:
 
 
 def zone_conversion_class(row: Mapping[str, Any],
-                          washout_context: bool = False) -> tuple[str, str]:
-    """``(conversion_class, evidence)`` — is this name V-risk or a plain pullback?
+                          washout_context: bool = False) -> tuple[str, str, str]:
+    """``(conversion_class, evidence_en, evidence_zh)`` — V-risk, or a plain pullback?
 
     Washout evidence, in the order it is trusted: the ``us_basket_turn`` organ's own
     state for a basket this ticker is an active member of (passed in by the caller as
@@ -1384,12 +1815,23 @@ def zone_conversion_class(row: Mapping[str, Any],
     conditioning on it would have made 46 of 47 plans convert, which is a conversion
     rule with no class in it.  The organ state (8/79) and the board lane (34/79
     bottoming vs 35 continuation) are the reads that actually split the population.
+
+    The evidence half is USER-VISIBLE COPY and ships as an EN/ZH pair: it used to name an
+    internal module and two raw organ states ("us_basket_turn washout/turning membership")
+    and a board slug ("board lane=bottoming").  The machine-readable half is the returned
+    ``conversion_class``, which is what any caller should branch on.
     """
     if washout_context:
-        return ZONE_CONVERSION_WASHOUT, "us_basket_turn washout/turning membership"
+        return (ZONE_CONVERSION_WASHOUT,
+                *_copy(ZONE_CONVERSION_EVIDENCE_COPY, "group_washout",
+                       ZONE_CONVERSION_EVIDENCE_COPY["group_washout"]))
     if str(row.get("lane") or "").strip().lower() == "bottoming":
-        return ZONE_CONVERSION_WASHOUT, "board lane=bottoming"
-    return ZONE_CONVERSION_PULLBACK, "no washout evidence on this row"
+        return (ZONE_CONVERSION_WASHOUT,
+                *_copy(ZONE_CONVERSION_EVIDENCE_COPY, "board_bottoming",
+                       ZONE_CONVERSION_EVIDENCE_COPY["board_bottoming"]))
+    return (ZONE_CONVERSION_PULLBACK,
+            *_copy(ZONE_CONVERSION_EVIDENCE_COPY, "no_washout",
+                   ZONE_CONVERSION_EVIDENCE_COPY["no_washout"]))
 
 
 def build_entry_zone(
@@ -1440,13 +1882,19 @@ def build_entry_zone(
             log.info("prophet_bridge: reset band unavailable (%s)", exc)
         return current_low, current_high, "board band (reset band unresolved)"
 
+    # Every `basis`/`basis_zh` below is USER-VISIBLE COPY on the published index row.
+    # `band_basis` is the raw provenance string `_reset_band_or_board` returns; it is
+    # NEVER interpolated directly — `_copy` maps it to plain words in both languages, and
+    # an unmapped source falls back to a phrase rather than passing through.
     if both_extended:
         zone_class = ZONE_CLASS_WAIT_RESET
         stance = ZONE_STANCE_WAIT
         low, high, band_basis = _reset_band_or_board(low, high)
-        basis = (
-            "daily and 3-day reads both stretched — reset band only, no entry at the "
-            f"last print ({band_basis})")
+        band_en, band_zh = _copy(ZONE_BAND_BASIS_COPY, band_basis,
+                                 ZONE_BAND_BASIS_FALLBACK)
+        basis = (f"the daily and 3-day readings are both stretched, so this plan only "
+                 f"buys a pullback — {band_en}")
+        basis_zh = f"日线与三日读数都已拉伸，因此本计划只在回踩时买入——{band_zh}"
         chase_above = entry
     elif is_leader_pullback:
         # §6.8(b) ZONE LAW, ADAM acceptance case #2: a Continuation/Ready leader
@@ -1464,22 +1912,35 @@ def build_entry_zone(
             chase_above = None
         if chase_above is None:
             chase_above = high if high is not None else entry
-        basis = (
-            f"leader pullback ({(leader_pullback or {}).get('state') or 'reset'}) — "
-            f"reset band, chase line at the pullback high ({band_basis})")
+        # THE RAW-TOKEN SEAM. `leader_pullback["state"]` is the organ's own enum
+        # (PULLBACK / RESET_TURN); it used to be interpolated verbatim and would have
+        # rendered "leader pullback (RESET_TURN)" the night the coverage publisher went
+        # live. It is mapped, never printed.
+        state_en, state_zh = _copy(ZONE_LEADER_STATE_COPY,
+                                   (leader_pullback or {}).get("state"),
+                                   ZONE_LEADER_STATE_FALLBACK)
+        band_en, band_zh = _copy(ZONE_BAND_BASIS_COPY, band_basis,
+                                 ZONE_BAND_BASIS_FALLBACK)
+        basis = (f"{state_en} — wait for the pullback band and do not pay up past the "
+                 f"pullback high ({band_en})")
+        basis_zh = f"{state_zh}——在回踩区间等待，不要追过回踩前的高点（{band_zh}）"
     elif klass == ADMISSION_CLASS_PATIENCE:
         zone_class = ZONE_CLASS_RESET_BAND
         stance = ZONE_STANCE_WAIT
-        basis = "MA10/MA20 reset band below the last print (entry ladder)"
+        basis = ("the 10- and 20-day average band under the last price, from the entry "
+                 "ladder")
+        basis_zh = "最新价下方的 10 日与 20 日均线区间，来自入场阶梯"
     else:
         zone_class = ZONE_CLASS_ACCUMULATE
         stance = ZONE_STANCE_ACCUMULATE
-        basis = "cycle-low anchored accumulate band (entry ladder)"
+        basis = "the build-in band anchored at the cycle low, from the entry ladder"
+        basis_zh = "以本轮低点为锚的分批建仓区间，来自入场阶梯"
 
     if early_turn:
         stance = ZONE_STANCE_STARTER
 
-    conversion_class, conversion_evidence = zone_conversion_class(row, washout_context)
+    conversion_class, conversion_evidence, conversion_evidence_zh = zone_conversion_class(
+        row, washout_context)
     sessions = _zone_expiry_sessions(row)
 
     def _px(value: Any) -> float | None:
@@ -1503,12 +1964,17 @@ def build_entry_zone(
         "pct_from_entry": pct_from_entry,
         "zone_class": zone_class,
         "stance": stance,
+        # Plain-word copy, bilingual by construction — the EN and ZH halves are written
+        # in the same branch so they can never desync (the house law every other
+        # EN/ZH pair on this payload follows).
         "basis": basis,
+        "basis_zh": basis_zh,
         "price_basis_date": price_basis_date,
         "expiry_sessions": sessions,
         "expiry_date": _add_business_days(price_basis_date, sessions),
         "conversion_class": conversion_class,
         "conversion_evidence": conversion_evidence,
+        "conversion_evidence_zh": conversion_evidence_zh,
         "converts_on_expiry": conversion_class == ZONE_CONVERSION_WASHOUT,
         # Nullable and NAMED: a starved extension read and an honest "not stretched"
         # must never be indistinguishable.  A name whose price store cannot support the
@@ -3347,6 +3813,24 @@ def originate_plans(
                  "EARLY-TURN admits nothing this run", e)
         _turn_membership = {}
 
+    # The LEADER half of the same intake, resolved ONCE for the same reasons — and for
+    # one more.  `assess_early_turn` falls back to loading the artifact ITSELF when no
+    # map is passed, so leaving this out re-read (and re-parsed) a ~700-name JSON file
+    # once per candidate.  Loading it here also pins the whole run to ONE snapshot of the
+    # organ's coverage, which is what makes the per-plan `state_asof` disclosure mean
+    # something.  The publisher is `scripts/build_leader_pullback_coverage.py`, scheduled
+    # BEFORE build_prophet in config/dag.yml; an empty map is the fail-closed direction
+    # and `leader_pullback_context` names that absence on every row it declines.
+    try:
+        from engine.us_early_turn import load_leader_pullback_states  # noqa: PLC0415
+        _leader_states = load_leader_pullback_states()
+    except Exception as e:  # noqa: BLE001
+        log.info("prophet_bridge: leader-pullback coverage unavailable (%s); "
+                 "EARLY-TURN admits on washout context only this run", e)
+        _leader_states = {}
+    log.info("prophet_bridge: EARLY-TURN context maps — washout %d tickers, "
+             "leader-pullback %d tickers", len(_turn_membership), len(_leader_states))
+
     plans: list[dict] = []
     stale_basis_skipped: list[str] = []
     early_turn_plans: list[str] = []
@@ -3471,7 +3955,8 @@ def originate_plans(
             extension = us_early_turn.extension_state(ph, price_basis_date)
             early = us_early_turn.assess_early_turn(
                 ticker, ph, asof=price_basis_date,
-                membership=_turn_membership, board_row=b)
+                membership=_turn_membership, leader_states=_leader_states,
+                board_row=b)
         except Exception as e:  # noqa: BLE001 — display context never breaks a plan
             log.info("prophet_bridge: early-turn read unavailable for %s (%s)", ticker, e)
             extension = None
@@ -3857,5 +4342,62 @@ def originate_plans(
             str((p.get("early_turn") or {}).get("leader_pullback_source"))
             for p in plans
         })
+        # THE RECEIPT FOR AN HONEST ZERO.  "No leader-pullback admissions" has two
+        # completely different causes — the organ covered these names and none of them is
+        # in an open controlled pullback, or the organ covered NONE of them — and a bare
+        # zero cannot tell them apart.  Measured 2026-08-09 on the committed 2026-08-07
+        # board: 0 admissions either way, but 54/54 candidates read "no coverage" before
+        # the publisher and 26/54 carried a real organ state after it, the other 28 being
+        # names the deck store does not carry at all.  Printed, never inferred.
+        _leader_ctx = [(p.get("entry_zone") or {}).get("leader_pullback") or {}
+                       for p in plans]
+        intake_stats["leader_pullback_coverage"] = {
+            "map_tickers": len(_leader_states),
+            "plans": len(plans),
+            "with_organ_state": sum(1 for c in _leader_ctx if c.get("state")),
+            "outside_organ_universe": sum(
+                1 for c in _leader_ctx
+                if not c.get("state") and "outside" in str(c.get("reason") or "")),
+            "no_coverage_published": sum(
+                1 for c in _leader_ctx
+                if "published no coverage" in str(c.get("reason") or "")),
+            "licensed": sum(1 for c in _leader_ctx if c.get("leader_pullback")),
+        }
 
-    return plans
+    # ── W9F: Government Revenue post-selection annotation (display/context) ────
+    # Runs HERE and nowhere earlier: selection, ordering, sizing, and gating are
+    # complete and `plans` is final, so the adapter's only possible effect is to
+    # hang evidence off a plan that already exists. It derives its universe FROM
+    # this list, so there is no path by which procurement evidence influences
+    # WHICH names are in it, and it fingerprints the decision projection before
+    # and after its own work — a pass that moved any decision field discards
+    # itself. Fail-open at every layer; a raise here would cost the nightly its
+    # plans for an annotation, which is never the right trade.
+    return _annotate_with_government_revenue(plans, asof)
+
+
+def _annotate_with_government_revenue(plans: list[dict], asof: str) -> list[dict]:
+    """Attach Government Revenue annotation to plans Prophet ALREADY selected.
+
+    Separate function so the post-selection boundary is visible in a stack trace
+    and monkeypatchable in the byte-identity suite.  Today's candidate radar is
+    legitimately empty (Wave 9C: it stays empty until a real post-baseline
+    eligible event exists), so this is provably inert in production until the
+    first exact candidate lands — and `tests/test_government_revenue_prophet_
+    annotation.py` pins that inertness against the committed artifact.
+    """
+    if not plans:
+        return plans
+    try:
+        from engine.government_revenue.prophet_annotation import (  # noqa: PLC0415
+            annotate_plans_from_repo,
+        )
+
+        return annotate_plans_from_repo(
+            plans,
+            repo_root=Path(__file__).resolve().parents[1],
+            generated_at=f"{asof}T00:00:00+00:00",
+        )
+    except Exception as exc:  # noqa: BLE001 — annotation never costs Prophet its plans
+        log.warning("prophet_bridge: government-revenue annotation skipped (%s)", exc)
+        return plans

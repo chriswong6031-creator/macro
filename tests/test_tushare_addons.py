@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pyarrow.parquet as pq
 import pytest
-import yaml
 
 from collectors import tushare_addons as addons
 from scripts import collect_tushare_addons as cli
@@ -17,37 +16,25 @@ from scripts import collect_tushare_addons as cli
 ROOT = Path(__file__).resolve().parents[1]
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 HISTORICAL_NOW = datetime(2026, 8, 9, 12, tzinfo=timezone.utc)
-LICENSE_REFERENCE = "ab" * 32
-ATTESTATION_REFERENCE = "cd" * 32
-SCOPE_TERMS = [
-    "collection_into_licensed_stores_and_research_consumption",
-    "product_surfaces_ship_via_the_normal_commissioning_path",
-    "no_signal_or_strategy_authority",
-]
-# Epistemic, not contractual: no licensing statement can retire any of these.
+# Each entry states something the data itself cannot support, regardless of who
+# ordered the collection.
 EPISTEMIC_NONCLAIMS = [
     "context_only_not_signal_authority",
-    "product_surfaces_ship_via_the_normal_commissioning_path",
     "no_fillability_or_execution_claim",
     "no_complete_historical_backfill_claim",
     "post_close_rows_are_unclassified_not_a_completeness_claim",
     "no_level2_order_book_or_queue_position",
 ]
+ACCESS_NONCLAIMS = [
+    "not_proof_of_future_access",
+    "not_a_completeness_claim_for_the_session",
+]
 
 
 @pytest.fixture(autouse=True)
-def provision_synthetic_license_gate(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Default every test onto the OPERATIVE basis, with a synthetic digest."""
-    monkeypatch.setenv(
-        addons.LICENSE_AUTHORITY_ENV,
-        addons.OPERATOR_ATTESTATION_GATE_VALUE,
-    )
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, ATTESTATION_REFERENCE)
-    monkeypatch.setattr(
-        addons,
-        "TRUSTED_OPERATOR_ATTESTATION_SHA256S",
-        frozenset({ATTESTATION_REFERENCE}),
-    )
+def configured_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A configured TUSHARE_TOKEN is the only execution prerequisite."""
+    monkeypatch.setenv("TUSHARE_TOKEN", "synthetic-test-token")
 
 
 def minute_frame(*, high: float = 10.2, trade_date: str = "2026-08-07") -> pd.DataFrame:
@@ -194,16 +181,19 @@ def test_plan_is_no_network_no_write_and_names_the_operative_authority(
     assert plan["maximum_vendor_calls"] == 3
     assert plan["range_or_bulk_mode"] is False
     assert plan["request"]["ticker"] == "600519.SS"
-    assert plan["license_authority_gate"] == {
-        "required_for_execute": True,
-        "state": "not_evaluated_plan_only",
-        "operative_basis": "operator_attestation_verified",
-        "operative_authority_document": (
-            "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-        ),
-        "dormant_basis": addons.LICENSE_AUTHORITY_GATE_VALUE,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
+    assert plan["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
     }
+    assert plan["execute_requirements"]["tushare_token_configured"] is True
+    assert plan["execute_requirements"]["technical_fences"] == [
+        "two_exchange_trade_cal_session_agreement",
+        "per_endpoint_collection_clock",
+        "documented_row_cap",
+        "exact_session_and_ticker_containment",
+        "schema_and_domain_validation",
+        "keep_first_immutability",
+    ]
     assert not output.exists()
 
 
@@ -255,7 +245,7 @@ def test_admitted_auction_oc_contracts_pin_their_official_documents() -> None:
         assert units["close"] == "CNY/share"
 
 
-def test_licensed_default_output_root_is_gitignored() -> None:
+def test_default_output_root_is_gitignored() -> None:
     expected = ROOT / "data/tushare_addons"
     assert Path(addons.DEFAULT_OUTPUT_ROOT).resolve() == expected.resolve()
     ignored = subprocess.run(
@@ -301,25 +291,12 @@ def test_minute_pilot_writes_provenance_receipt_without_secret(
     assert (
         access["observation_basis"] == "valid_nonempty_rows_returned_for_this_request"
     )
-    # The licensing disclaimers were retired by the operator-attested license; the
-    # receipt now CITES the authority instead, naming its kind so a reader can weigh
-    # the basis rather than inherit a conclusion.
-    assert "nonclaims" not in access
-    assert access["license_basis"] == {
-        "authority_kind": "operator_attested_license_declaration",
-        "authority_reference_sha256": ATTESTATION_REFERENCE,
+    assert access["nonclaims"] == ACCESS_NONCLAIMS
+    assert receipt["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
     }
-    assert receipt["license_authority_gate"] == {
-        "gate_state": "satisfied_under_operator_attested_license",
-        "accepted_basis": "operator_attestation_verified",
-        "authority_kind": "operator_attested_license_declaration",
-        "authority_document": (
-            "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-        ),
-        "authority_reference_sha256": ATTESTATION_REFERENCE,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "scope_terms": SCOPE_TERMS,
-    }
+    assert receipt["nonclaims"] == EPISTEMIC_NONCLAIMS
     assert receipt["request"]["maximum_vendor_calls"] == 3
     assert receipt["request"]["range_or_bulk_mode"] is False
     assert receipt["request"]["vendor_request_without_token"]["transport"] == "HTTPS"
@@ -417,97 +394,33 @@ def test_rehashed_authority_tamper_is_still_rejected(tmp_path: Path) -> None:
         )
 
 
-def test_license_gate_fails_before_vendor_call_or_partition(
+def test_execution_requires_a_configured_token_and_makes_no_call_without_one(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv(addons.LICENSE_AUTHORITY_ENV)
-    monkeypatch.delenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV)
-    query = FakeQuery("stk_mins", minute_frame())
+    """Token presence is the only execution prerequisite -- and it fails closed."""
+    monkeypatch.delenv("TUSHARE_TOKEN", raising=False)
 
-    with pytest.raises(
-        addons.CollectionHeld, match="license_authority_reference_required"
+    with pytest.raises(addons.CollectionHeld, match="TUSHARE_TOKEN_absent"):
+        addons.collect_pilot(minute_request(), output_root=tmp_path, now=HISTORICAL_NOW)
+
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_no_authorization_env_var_gates_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No env var may gate this collector: only the technical fences bind.
+
+    The pilot foundation once carried a separate authorization gate. It was
+    removed by operator ruling (2026-08-09), so a run with a configured token and
+    a hostile environment must still collect normally.
+    """
+    for stale in (
+        "TUSHARE_VENDOR_LICENSE_AUTHORITY",
+        "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256",
     ):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
+        monkeypatch.setenv(stale, "definitely-not-a-valid-value")
 
-    assert query.calls == []
-    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
-
-
-def test_env_supplied_digest_alone_cannot_open_the_gate(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The allowlist, not the environment, decides. An env var never self-attests."""
-    monkeypatch.setattr(
-        addons,
-        "TRUSTED_OPERATOR_ATTESTATION_SHA256S",
-        frozenset(),
-    )
-    query = FakeQuery("stk_mins", minute_frame())
-
-    with pytest.raises(addons.CollectionHeld, match="out_of_band_allowlisted"):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
-
-    assert query.calls == []
-    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
-
-
-def test_dormant_vendor_allowlist_is_empty_and_still_admits_nobody(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The vendor-authorization slot stays empty; only the attested basis is live."""
-    assert addons.TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S == frozenset()
-    monkeypatch.setenv(
-        addons.LICENSE_AUTHORITY_ENV, addons.LICENSE_AUTHORITY_GATE_VALUE
-    )
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
-    query = FakeQuery("stk_mins", minute_frame())
-
-    with pytest.raises(addons.CollectionHeld, match="vendor_license_authority_not"):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
-
-    assert query.calls == []
-    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
-
-
-def test_shipped_allowlist_pins_exactly_the_operator_foundation_digest(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """The live pin is the operator-authored foundation doc, by digest."""
-    monkeypatch.undo()  # drop the synthetic allowlist the autouse fixture installs
-    pinned = "ad48d044c8a763435f232fa81f44908817d04b28eb9bc9e6175e2c06fd6265fb"
-    assert addons.TRUSTED_OPERATOR_ATTESTATION_SHA256S == frozenset({pinned})
-    assert addons.OPERATOR_ATTESTATION_GATE_VALUE == "operator_attestation_verified"
-    assert addons.LICENSE_AUTHORITY_DOCUMENT == (
-        "research/TUSHARE_ADDONS_COLLECTOR_FOUNDATION_2026-08-09.md"
-    )
-
-    # The pinned revision of that document arrives via PR #5159; this branch is based
-    # on main, where the same path still holds the pre-ruling text.  Once #5159 is in
-    # the base, this stops skipping and starts proving the pin recomputes -- and will
-    # go RED if the operative authority document is ever edited without re-pinning.
-    import hashlib
-
-    authority = ROOT / addons.LICENSE_AUTHORITY_DOCUMENT
-    if not authority.exists():
-        pytest.skip("operative authority document is not on this ref")
-    digest = hashlib.sha256(authority.read_bytes()).hexdigest()
-    if digest != pinned:
-        pytest.skip(
-            "authority document on this ref predates the operator ruling "
-            "(pinned revision lands with PR #5159)"
-        )
-    assert digest == pinned
-
-
-def test_attested_basis_grants_collection_and_keeps_epistemic_nonclaims(
-    tmp_path: Path,
-) -> None:
     result = addons.collect_pilot(
         minute_request(),
         output_root=tmp_path,
@@ -516,74 +429,59 @@ def test_attested_basis_grants_collection_and_keeps_epistemic_nonclaims(
     )
 
     assert result.status == "written"
+    source = (ROOT / "collectors/tushare_addons.py").read_text(encoding="utf-8")
+    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" not in source
+    assert "allowlist" not in source.lower()
+
+
+def test_receipt_records_plain_provenance_and_epistemic_nonclaims_only(
+    tmp_path: Path,
+) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
+    )
     receipt = json.loads(
         (Path(result.partition_path) / "receipt.json").read_text(encoding="utf-8")
     )
-    gate = receipt["license_authority_gate"]
-    assert gate["gate_state"] == "satisfied_under_operator_attested_license"
-    assert gate["accepted_basis"] == "operator_attestation_verified"
-    assert gate["authority_kind"] == "operator_attested_license_declaration"
-    assert gate["authority_document"] == addons.LICENSE_AUTHORITY_DOCUMENT
-    assert gate["authority_reference_sha256"] == ATTESTATION_REFERENCE
-    assert gate["scope_terms"] == SCOPE_TERMS
 
-    # Licensing statements retire licensing disclaimers only.  Everything a licence
-    # cannot speak to survives verbatim.
+    assert receipt["collection_provenance"] == {
+        "basis": "operator_ordered_wiring",
+        "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
+    }
     assert receipt["nonclaims"] == EPISTEMIC_NONCLAIMS
     access = receipt["access_observation_receipt"]
     assert access["observation"] == "access_observed_at_request_time"
-    assert access["observation_basis"] == (
-        "valid_nonempty_rows_returned_for_this_request"
+    assert access["nonclaims"] == ACCESS_NONCLAIMS
+    # No licensing conclusion is asserted in either direction.
+    blob = json.dumps(receipt, ensure_ascii=False).lower()
+    assert "license" not in blob
+    assert "attestation" not in blob
+
+
+def test_altered_provenance_is_a_keep_first_contradiction(tmp_path: Path) -> None:
+    result = addons.collect_pilot(
+        minute_request(),
+        output_root=tmp_path,
+        query_fn=FakeQuery("stk_mins", minute_frame()),
+        now=HISTORICAL_NOW,
     )
+    receipt_path = Path(result.partition_path) / "receipt.json"
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["collection_provenance"] = {"basis": "self_authorized", "reference": "x"}
+    receipt.pop("receipt_sha256")
+    receipt["receipt_sha256"] = addons.canonical_hash(receipt)
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True), encoding="utf-8")
 
-
-def test_unknown_attestation_digest_fails_before_vendor_call(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, "ef" * 32)
-    query = FakeQuery("stk_mins", minute_frame())
-
-    with pytest.raises(
-        addons.CollectionHeld, match="operator_attestation_not_out_of_band_allowlisted"
-    ):
+    with pytest.raises(addons.CollectorIntegrityError, match="provenance"):
         addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
+            minute_request(),
+            output_root=tmp_path,
+            query_fn=FakeQuery("stk_mins", minute_frame()),
+            now=HISTORICAL_NOW,
         )
-
-    assert query.calls == []
-    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
-
-
-def test_neither_basis_accepts_the_other_basis_allowlisted_digest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """An allowlisted digest is scoped to its own basis, not to any basis."""
-    monkeypatch.setattr(
-        addons,
-        "TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S",
-        frozenset({LICENSE_REFERENCE}),
-    )
-    query = FakeQuery("stk_mins", minute_frame())
-
-    # Attested basis presented with the vendor-allowlisted digest.
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, LICENSE_REFERENCE)
-    with pytest.raises(addons.CollectionHeld, match="operator_attestation_not"):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
-
-    # Vendor basis presented with the attestation-allowlisted digest.
-    monkeypatch.setenv(
-        addons.LICENSE_AUTHORITY_ENV, addons.LICENSE_AUTHORITY_GATE_VALUE
-    )
-    monkeypatch.setenv(addons.LICENSE_AUTHORITY_REFERENCE_ENV, ATTESTATION_REFERENCE)
-    with pytest.raises(addons.CollectionHeld, match="vendor_license_authority_not"):
-        addons.collect_pilot(
-            minute_request(), output_root=tmp_path, query_fn=query, now=HISTORICAL_NOW
-        )
-
-    assert query.calls == []
-    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.parametrize(
@@ -1115,68 +1013,13 @@ def test_cli_failure_receipt_does_not_echo_exception_or_secret(
     }
 
 
-def test_manual_workflow_is_main_only_review_only_and_registered_in_dag() -> None:
+def test_reverted_manual_pilot_infrastructure_stays_retired() -> None:
+    """The recovered collector must not resurrect #5098's retired runner lane."""
     workflow_path = ROOT / ".github/workflows/tushare-addons-pilot.yml"
-    workflow_text = workflow_path.read_text(encoding="utf-8")
-    workflow = yaml.safe_load(workflow_text)
-    job = workflow["jobs"]["pilot"]
-    assert "schedule:" not in workflow_text
-    assert "push:" not in workflow_text
-    assert "refs/heads/main" in job["if"]
-    assert "confirm_execute" in job["if"]
-    assert "TUSHARE_VENDOR_LICENSE_AUTHORITY" in job["if"]
-    assert addons.LICENSE_AUTHORITY_GATE_VALUE in job["if"]
-    assert job["permissions"] if "permissions" in job else workflow["permissions"]
-    assert "persist-credentials: false" in workflow_text
-    assert "actions/upload-artifact@ea165f" in workflow_text
-    assert "--execute" in workflow_text
-    assert "--start-date" not in workflow_text
-    assert "--end-date" not in workflow_text
-    # The hosted review lane is Tier-2 shaped: its job gate names only the written
-    # vendor authority, which no attestation may satisfy.  Admitting stk_auction_o /
-    # stk_auction_c to the LIBRARY under Tier 1 deliberately did not widen it, so a
-    # dispatch there still cannot reach the newly admitted endpoints.
-    assert addons.OPERATOR_ATTESTATION_GATE_VALUE not in workflow_text
-    assert "stk_auction_o" not in workflow_text
-    assert "stk_auction_c" not in workflow_text
-    assert "part.parquet" not in workflow_text
-    assert 'raw_paid_rows_included"] = False' in workflow_text
-    assert 'raw_parquet_included"] = False' in workflow_text
-    assert ".strip().encode()" in workflow_text
+    lock_path = ROOT / "requirements/tushare-addons-pilot-macos-arm64-py312.lock"
+    dag_text = (ROOT / "config/dag.yml").read_text(encoding="utf-8")
 
-    steps = {step["name"]: step for step in job["steps"] if "name" in step}
-    token_scan = steps["prove review artifact contains no token"]
-    raw_cleanup = steps["remove isolated paid-data directory before upload"]
-    upload = steps["upload metadata-only pilot receipt"]
-    cleanup = steps["remove remaining isolated run directories"]
-    assert token_scan["id"] == "token_scan"
-    assert "raw_token" in token_scan["run"]
-    assert "transport_token" in token_scan["run"]
-    assert raw_cleanup["id"] == "raw_cleanup"
-    assert raw_cleanup["if"] == "${{ always() }}"
-    assert '/bin/rm -rf -- "$raw"' in raw_cleanup["run"]
-    assert 'test ! -e "$raw"' in raw_cleanup["run"]
-    assert "steps.token_scan.outcome == 'success'" in upload["if"]
-    assert "steps.token_scan.outputs.passed == 'true'" in upload["if"]
-    assert "steps.raw_cleanup.outcome == 'success'" in upload["if"]
-    assert "steps.raw_cleanup.outputs.passed == 'true'" in upload["if"]
-    assert str(upload["with"]["path"]).endswith("-review")
-    step_names = [step.get("name") for step in job["steps"]]
-    assert step_names.index("remove isolated paid-data directory before upload") < (
-        step_names.index("upload metadata-only pilot receipt")
-    )
-    assert cleanup["if"] == "${{ always() }}"
-    assert '"$raw"' in cleanup["run"]
-    assert '"$review"' in cleanup["run"]
-
-    dag = yaml.safe_load((ROOT / "config/dag.yml").read_text(encoding="utf-8"))
-    lanes = [
-        lane
-        for lane in dag["lanes"]
-        if lane["workflow"] == ".github/workflows/tushare-addons-pilot.yml"
-    ]
-    assert len(lanes) == 1
-    assert lanes[0]["job"] == "pilot"
-    assert [step["module"] for step in lanes[0]["steps"]] == [
-        "scripts.collect_tushare_addons"
-    ]
+    assert not workflow_path.exists()
+    assert not lock_path.exists()
+    assert "tushare-addons-pilot.yml" not in dag_text
+    assert "scripts.collect_tushare_addons" not in dag_text

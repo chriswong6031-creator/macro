@@ -924,7 +924,7 @@
       <td class="l"><b>{{ td(c.name) }}</b></td>
       <td class="sm">
         {% if c.above200 %}{{ t('above trend','趋势上方') }}{% else %}{{ t('below trend','趋势下方') }}{% endif %}
-        {{ help('RSI(14): ' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ ' · 50d: ' ~ ('above' if c.above50 else 'below'), 'RSI(14): ' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ ' · 50日: ' ~ ('上方' if c.above50 else '下方')) }}
+        {{ help('Momentum: ' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ '/100 · 50-day: ' ~ ('above' if c.above50 else 'below'), '动量：' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ '/100 · 50 日线：' ~ ('上方' if c.above50 else '下方')) }}
       </td>
       <td class="{{ 'pos' if c.mom_60d_pct > 0 else 'neg' }}">{{ '%+.1f'|format(c.mom_60d_pct) }}%</td>
       <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ '%+.1f'|format(c.off_52w_high_pct) }}%</td>
@@ -1134,7 +1134,7 @@
     {% set CN = DL.catalyst_narrative %}
     <div class="dlx-row">
       <span class="dlx-lbl">{{ t('Catalyst cross-check', '催化交叉验证') }}
-        {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
+        {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供参考 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
       </span>
       <span class="dlx-val"><span class="{{ 'dlx-dis' if CN.agreement != 'corroborates' }}">{% if CN.agreement != 'corroborates' %}⚠ {% endif %}{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
         · {{ t('catalyst reads', '催化解读') }} <b><span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></b>
@@ -1147,7 +1147,7 @@
     {% set GR = DL.geo_reversibility %}
     <div class="dlx-row">
       <span class="dlx-lbl">{{ t('Geopolitical read', '地缘解读') }}
-        {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
+        {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供参考 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
       </span>
       <span class="dlx-val"><span class="{{ 'dlx-dis' if GR.agreement != 'corroborates' }}">{% if GR.agreement != 'corroborates' %}⚠ {% endif %}{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
         · {{ t('reads', '解读为') }} <b><span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span></b>

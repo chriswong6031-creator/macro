@@ -299,6 +299,10 @@
         "relation_semantic": {"enum": ["official", "reviewed", "deterministic_inference", "model_estimate"]},
         "match_method": {"type": ["string", "null"]},
         "resolution_state": {"enum": ["confirmed", "reviewed", null]},
+        "identity_basis": {
+          "description": "Named basis for the exact recipient identity behind this impact. 'source_record_recipient' is the observation's own recipient fields; 'award_level_recipient_at_collection' is the award's recipient of record attached to an observation that asserted none of its own, on the award's retrieval clock. Null when the resolution artifact predates the named bases.",
+          "enum": ["source_record_recipient", "award_level_recipient_at_collection", null]
+        },
         "ownership_path": {"type": "array", "items": {"$ref": "#/$defs/ownershipEdge"}},
         "confidence": {"enum": ["high", "medium", "low", "unavailable"]},
         "stance": {"enum": ["act", "get_ready", "watch_dont_chase", "protect_gains", "stand_aside", "ignore"]},
@@ -321,7 +325,7 @@
         "from_id": {"type": ["string", "null"]},
         "to_id": {"type": ["string", "null"]},
         "relation": {"type": ["string", "null"]},
-        "relationship": {"enum": ["wholly_owned", "majority_owned", "partial_owned", "joint_venture", null]},
+        "relationship": {"enum": ["issuer_legal_entity", "wholly_owned", "majority_owned", "partial_owned", "joint_venture", null]},
         "child_entity_id": {"type": ["string", "null"]},
         "parent_entity_id": {"type": ["string", "null"]},
         "parent_company_id": {"type": ["string", "null"]},

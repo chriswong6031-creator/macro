@@ -30,6 +30,30 @@ def test_append_snapshot_is_append_only_keep_last(tmp_path):
     assert n == 1                                                         # latest-day row count
 
 
+def test_replace_dates_retires_a_row_that_left_the_slice(tmp_path):
+    """For a store whose per-date slice is a COMPLETE SET (the 涨停板 pool), a re-collect must
+    replace that date wholesale — keep-last alone can correct a row but never retire one."""
+    p = tmp_path / "pool.parquet"
+    _drip.append_snapshot(p, [{"date": "2026-08-06", "ticker": "A", "v": 1}], "date")
+    _drip.append_snapshot(p, [{"date": "2026-08-07", "ticker": "A", "v": 1},
+                              {"date": "2026-08-07", "ticker": "B", "v": 2}], "date")
+    # the final pool for 08-07 no longer holds B (its seal broke after the partial scrape)
+    _drip.append_snapshot(p, [{"date": "2026-08-07", "ticker": "A", "v": 9}], "date",
+                          replace_dates=True)
+    full = pd.read_parquet(p)
+    day = full[full["date"] == "2026-08-07"]
+    assert set(day["ticker"]) == {"A"} and day["v"].iloc[0] == 9      # B retired, A freshest
+    assert len(full[full["date"] == "2026-08-06"]) == 1               # other dates untouched
+
+
+def test_replace_dates_defaults_off_so_per_name_drips_still_accumulate(tmp_path):
+    """margin_detail / LHB arrive a few names at a time — replacing their date would delete rows."""
+    p = tmp_path / "detail.parquet"
+    _drip.append_snapshot(p, [{"date": "2026-08-07", "ticker": "A", "v": 1}], "date")
+    _drip.append_snapshot(p, [{"date": "2026-08-07", "ticker": "B", "v": 2}], "date")
+    assert set(pd.read_parquet(p)["ticker"]) == {"A", "B"}
+
+
 def test_latest_snapshot_returns_newest_day(tmp_path):
     df = pd.DataFrame({"date": ["2026-06-30", "2026-07-01", "2026-07-01"],
                        "ticker": ["A", "A", "B"], "v": [1, 10, 20]})

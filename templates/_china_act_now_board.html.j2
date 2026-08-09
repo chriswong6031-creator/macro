@@ -1,5 +1,6 @@
 {% import "_decision_card.html.j2" as dc %}
 {% import "_lens.html.j2" as lens %}
+{% from "_icons.html.j2" import icon %}
   <!-- ===================== ACT-NOW v2 — FOUR-LANE BOARD (W8-R3) ===================== -->
   {# act_now_v2: assembled by engine/china_act_now.assemble_act_now() in build_china.py.
      Sectors + themes co-exist as typed rows (THEME / SECTOR / BASKET chips).
@@ -20,6 +21,19 @@
   .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
   .anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
   .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
+  /* Hover-card mark — monoline (doctrine §5.8, emoji are not UI icons). The mark
+     draws from templates/_icons.html.j2 (24×24, stroke=currentColor) so it inherits
+     the tile's ink: .row-pop-mark is --link for sectors, --up for the theme variant,
+     which is where the sector/theme colour split already lives.
+     NO bare `.ic-svg {}` rule here on purpose: hosts scope their own copies (e.g.
+     sector_central.html.j2 under #si-confluence) and a global rule shipped from a
+     panel would fight its host. Explicit selectors only.
+     .row-pop-mark is deliberately NOT scoped to #act-now — theme.js clones the hover
+     card onto document.body, so an id-scoped rule would style the hidden source and
+     miss the card the reader actually sees. */
+  .row-pop-mark .ic-svg { fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round; }
+  .row-pop-mark .ic-svg { width:17px; height:17px; display:block; }
   </style>
   <div class="panel span12 anv2-board" id="act-now">
     {{ dc.dc_css() }}
@@ -143,7 +157,7 @@
           no-Leadership-word test was protecting against. -#}
       {{ dc.dc_card({
         'kind': 'theme' if _is_theme else 'sector',
-        'mark': '◆' if _is_theme else '🏛',
+        'mark': icon('diamond') if _is_theme else icon('sector'),
         'tone': _rptag_cls,
         'eyebrow': ('Theme basket','主题篮子') if _is_theme
                    else (('Sector pulse · ' ~ row.id, '板块脉搏 · ' ~ row.id) if row.id else ('Sector pulse','板块脉搏')),

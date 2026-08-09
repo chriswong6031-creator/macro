@@ -755,8 +755,15 @@ class TestLiveConformance:
         )
         assert projection_job["uses"] == "./.github/workflows/government-revenue-live.yml"
         assert projection_job["with"] == {"projection_only": True}
+        # et_gate leads the list since 2026-08-08: it is the DST cron pair's regime
+        # disambiguator, not a data dependency (tests/test_daily_et_gate.py owns its
+        # meaning). engine carries `if: always()`, which severs the skip propagation
+        # that gates capital_structure and government_revenue_projection above, so it
+        # is the one lane here that has to name the gate directly. The property this
+        # line exists for is unchanged: engine still waits on collect AND on the
+        # procurement generation, so its checkout cannot race that lane.
         assert daily["jobs"]["engine"]["needs"] == [
-            "collect", "government_revenue_projection"
+            "et_gate", "collect", "government_revenue_projection"
         ]
 
 
