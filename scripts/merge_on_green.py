@@ -195,12 +195,16 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 try:  # imported as `scripts.merge_on_green` (the test pack, and any other caller)
     from scripts.gh_path_filter import NEGATION_PREFIX, matching_patterns
@@ -1440,15 +1444,17 @@ def ensure_integration_baseline(repo: str, token: str, baseline_state: str) -> s
 MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
 MAIN_BASELINE_WORKFLOW = MAIN_PROOF_WORKFLOWS[0]
 #: How many completed runs to look back through, per workflow, for one that CONCLUDED.
-#: `status=completed` includes `cancelled`, and `fences.yml` runs on every push to main
-#: under `concurrency: fences-<ref>` with `cancel-in-progress: true` — so on a branch
-#: taking ~24 commits per 2 hours a large minority of its runs are superseded rather
-#: than judged (measured 2026-08-08: 2 of the newest 8). A cancelled run publishes no
-#: verdict, and reading `per_page=1` would let one zero out the whole proof roughly a
-#: quarter of the time, re-creating the intermittently-inert mechanism this function
-#: exists to end. The same shape already burned this file once: `integration_baseline_state`
-#: latched the breaker red for 8.5h on a cancelled newest run. 10 is one request either
-#: way — the walk costs nothing extra.
+#: `status=completed` includes `cancelled`, and until 2026-08-09 `fences.yml` cancelled
+#: newest-wins on every push to main — ~24 commits per 2 hours meant a large minority
+#: of its runs were superseded rather than judged (2 of the newest 8 on 2026-08-08;
+#: ALL TEN during the 11:40Z push burst of 2026-08-09, which zeroed the whole fences
+#: proof and helped pin the fleet). #5136 exempts main pushes from the cancel, so a
+#: fences run on main now CONCLUDES — but the walk stays: older cancelled runs remain
+#: in the listing, operators and timeouts still cancel, and reading `per_page=1` would
+#: let any one of them zero out the whole proof, re-creating the intermittently-inert
+#: mechanism this function exists to end. The same shape already burned this file once:
+#: `integration_baseline_state` latched the breaker red for 8.5h on a cancelled newest
+#: run. 10 is one request either way — the walk costs nothing extra.
 MAIN_PROOF_RUN_WALK = 10
 #: Above this age, main's proof is too old to answer today's reds and the sweep orders a
 #: fresh one (see `ensure_main_baseline`). Three hours is chosen against the two clocks
@@ -1463,21 +1469,29 @@ MAIN_PROOF_MAX_AGE_HOURS = 3
 #: Sweeps overlap by design (merge-on-green.yml carries no `concurrency:` block, and
 #: `ci`/`fences`/`integration-baseline` completions can wake three within seconds), so
 #: "is one already running?" is a read-then-write race that all of them can win. That
-#: race is not merely wasteful here: ci.yml runs under
-#: `group: ci-${{ pull_request.number || github.ref }}` + `cancel-in-progress: true`,
-#: so a dispatch on main lands in `ci-refs/heads/main` and a SECOND dispatch CANCELS
-#: THE FIRST — discarding up to 34 minutes of a 4-job run and leaving the proof stale
-#: another full cycle. Two `cancelled` `workflow_dispatch` runs on main, 53 minutes
-#: apart, are already in the record (31148430602, 31151246743 — 2026-08-07).
+#: race used to be catastrophic rather than wasteful: ci.yml ran every ref under
+#: `cancel-in-progress: true`, so a dispatch on main landed in `ci-refs/heads/main`
+#: and a SECOND dispatch CANCELLED THE FIRST — 31148430602/31151246743 (2026-08-07,
+#: 53 minutes apart), then the 2026-08-09 cascade (31309720615 killed 44 minutes
+#: in-progress by 31311537537, itself killed while still queued by 31311693575),
+#: where armed-PR sessions pulling the documented lever faster than a 30-45 minute
+#: run can conclude meant NO main proof ever concluded at all. The operator call an
+#: earlier revision of this comment declined to make unilaterally has now been made
+#: (2026-08-09, #5136): ci.yml keeps `cancel-in-progress` FALSE for every
+#: `workflow_dispatch` (and fences.yml for everything but `pull_request` events), so
+#: a raced dispatch can no longer kill a RUNNING proof — the loser lands in the
+#: group's single pending slot, the same shape integration-baseline already has
+#: (see INTEGRATION_BASELINE_MIN_INTERVAL_MINUTES).
 #:
-#: 30 minutes is just under a run's own 30-34 minute duration, so in the normal case the
-#: newest run is still in flight and the status check answers first; the interval is what
-#: covers the two gaps that check cannot: the seconds between a dispatch and the new run
-#: becoming visible in the API, and racing sweeps that all read the pre-dispatch state.
-#: It is a rate BOUND, not a lock — three sweeps inside the same second can still all
-#: dispatch, because a stateless level-triggered reconciler has nowhere to hold a lock.
-#: Changing ci.yml's concurrency would close that fully and is an operator call with a
-#: much larger blast radius; this file does not make it unilaterally.
+#: The interval therefore remains load-bearing, but against the smaller harms: a
+#: raced dispatch overwrites the QUEUED run, discarding its accumulated queue
+#: position (the re-pinned ref SHA is at least as fresh, so correctness is
+#: unharmed), and every dispatch spends quota. 30 minutes is just under a run's own
+#: 30-34 minute duration, so in the normal case the newest run is still in flight
+#: and the status check answers first; the interval covers the two gaps that check
+#: cannot: the seconds between a dispatch and the new run becoming visible in the
+#: API, and racing sweeps that all read the pre-dispatch state. It is a rate BOUND,
+#: not a lock — a stateless level-triggered reconciler has nowhere to hold a lock.
 MAIN_BASELINE_MIN_INTERVAL_MINUTES = 30
 #: What counts as main PROVING a name, which is NOT the same question `CLEAN_CONCLUSIONS`
 #: answers. That set's own comment says membership means "did not fail" and NEVER
@@ -1842,8 +1856,10 @@ def ensure_main_baseline(
       * those two left `requested`, `waiting` and `pending` entirely unchecked;
       * they were a read-then-write race between overlapping sweeps (this workflow
         deliberately carries no `concurrency:` block, and three wake-ups can arrive
-        within seconds), and a raced dispatch does not merely waste a run — ci.yml's
-        `cancel-in-progress: true` group means the second dispatch CANCELS THE FIRST;
+        within seconds); until 2026-08-09 a raced dispatch even CANCELLED the
+        in-flight proof (ci.yml then cancelled newest-wins on every ref — #5136
+        exempts dispatches, so the racing loser merely overwrites the queued
+        pending slot);
       * they could not see the window between a successful dispatch and the new run
         becoming visible in the API.
 

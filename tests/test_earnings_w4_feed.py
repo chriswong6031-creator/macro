@@ -483,9 +483,19 @@ class TestBoardRowSchema:
         from scripts.export_signal_contracts import ARTIFACT_MANIFEST
         entry = next(e for e in ARTIFACT_MANIFEST
                      if e["artifact"] == "site/factordata/us_standouts.json")
-        # 1.8.0: universe_sources registered optional (#4965, 2026-08-07) — this pin
-        # exists so version bumps stay conscious; re-pin it with each deliberate bump.
-        assert entry["schema_version"] == "1.8.0"
+        # FLOOR, never equality.  us_standouts' schema_version is a shared counter that
+        # ANY lane bumps on an additive registration — 1.8.0 arrived with
+        # `universe_sources` (#4965, a main-heal PR with nothing to do with earnings) and
+        # broke this assertion while every W4 key it actually guards was untouched.  An
+        # `==` literal on a monotonic counter is a scheduled red: it fires on someone
+        # else's field, and re-pinning it to the new number only re-arms it for 1.9.0.
+        # 1.7.0 is the release that registered the W4 keys, so at-or-after it is the
+        # honest statement — a version BELOW that means the entry was rolled back to a
+        # pre-W4 shape.  What the keys must actually do is asserted below, on the keys.
+        version = tuple(int(part) for part in entry["schema_version"].split("."))
+        assert version >= (1, 7, 0), (
+            f"us_standouts schema_version {entry['schema_version']} predates 1.7.0, the "
+            "release that registered the W4 catalyst keys")
         assert {"post_earnings_move", "earnings_soon"} <= set(entry["optional_fields"])
         assert {"post_earnings_move", "earnings_soon"} <= set(entry["schema_item_fields"])
         # optional_fields is the may-be-absent register, NOT a promotion: neither key

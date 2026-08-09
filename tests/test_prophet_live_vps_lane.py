@@ -782,7 +782,13 @@ def test_live_setup_installs_arms_and_funds_the_prophet_lane():
     """A fresh provision must not need a second manual step to arm the lane, and the
     lane's one extra dependency must be in the venv it runs from."""
     assert "macro-live-prophet.service macro-live-prophet.timer" in LIVE_SETUP
-    assert "macro-live-prophet.timer >/dev/null" in LIVE_SETUP
+    # Matched inside the `enable --now` BLOCK rather than as the line-final
+    # `macro-live-prophet.timer >/dev/null`: that spelling only held while this
+    # lane happened to be last in the list, and it broke the day a sibling lane
+    # (macro-live-closepass, W-L1a) was armed after it — a test failing because
+    # something else was added correctly is a test pinned to the wrong thing.
+    enable_block = LIVE_SETUP.split("systemctl enable --now")[1].split("\n\n")[0]
+    assert "macro-live-prophet.timer" in enable_block
     pip = next(ln for ln in LIVE_SETUP.splitlines() if "pip\" install -q pandas" in ln)
     assert "boto3" in pip
 
