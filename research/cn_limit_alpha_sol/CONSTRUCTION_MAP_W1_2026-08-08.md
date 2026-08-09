@@ -53,8 +53,10 @@ The current store audit found two wider data defects that also precede strategy 
 
 - the historical event tape's visible 34-name gap is only a symptom. The original backfill scanned
   1,587 raw files; the current store has 1,842. Of the 255 later additions, 241 have pre-July events
-  missing from the tape—11,042 recomputable rows—and 204 of those names have no stored event at
-  all, so a “late first event” audit cannot see them;
+  missing from the tape—11,043 recomputable rows—and 204 of those names have no stored event at
+  all, so a “late first event” audit cannot see them. The aggregate tape also omits 35 observed
+  trading sessions with zero detected events because it seeds dates from event rows rather than the
+  market-session population;
 - `china_zt_pool` contains weekend rows stamped with the requested Saturday/Sunday date even when
   the vendor returned Friday's pool. Day-of-week and weekend-fermentation tests are forbidden until
   session identity is validated and those clones are quarantined.
