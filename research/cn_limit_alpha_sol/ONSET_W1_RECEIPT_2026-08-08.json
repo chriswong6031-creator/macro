@@ -344,12 +344,13 @@
       "below_ma200_x_vol",
       "reversal_x_vol"
     ],
-    "future_entry_calendar": "frozen_2026_08_10_seed_only_recurring_authoritative_calendar_unbuilt_fail_closed",
+    "future_entry_calendar": "official_sse_szse_2026_tracked_fail_closed_outside_attested_year",
     "horizons_next_open": [
       1,
       3,
       5
     ],
+    "ipo_no_limit_clock": "first_positive_volume_observed_market_session; legacy main and pre-2020-08-24 ChiNext listing session only; STAR and registration-era ChiNext/main first five",
     "limit_definition_primary": "tolerant_close_ge_round2_prev_x_1_plus_width_x_0.998",
     "limit_definition_sensitivity": "strict_close_ge_round2_prev_x_1_plus_width",
     "max_lower_limit_carry_sessions": 20,
@@ -410,7 +411,7 @@
       ]
     }
   },
-  "config_hash": "0cbd01b655ecb23206fd70a515a7cb7ef3404fc63cfea02dd11bc78a8fbb4348",
+  "config_hash": "65a9af85c580acc5cf34d62a4e81ea9762046a8c60c24b80003cb4a9b888cb66",
   "date_block_bootstrap": {
     "main_locked_replay": {
       "block_sessions": 10,
@@ -632,11 +633,14 @@
       "event_state",
       "fill_decided_at",
       "grade_kind",
+      "grade_observed_session",
       "graded_at",
       "horizon",
+      "ledger_schema_version",
       "limit_definition",
       "model_version",
       "signal_date",
+      "source_hash",
       "ticker"
     ],
     "execution_grade_required": [
@@ -649,24 +653,27 @@
       "exit_state",
       "fill_decided_at",
       "grade_kind",
+      "grade_observed_session",
       "graded_at",
       "gross_return",
       "horizon",
+      "ledger_schema_version",
       "limit_definition",
       "model_version",
       "net_return_bps_grid",
       "realized_exit_session",
       "scheduled_exit_session",
       "signal_date",
+      "source_hash",
       "ticker"
     ],
     "expected_model_versions": [
-      "cn-onset-w1-sol-2026-08-08.v1:O1_five_axis",
-      "cn-onset-w1-sol-2026-08-08.v1:O1_fixed_equal_rank_blend",
-      "cn-onset-w1-sol-2026-08-08.v1:O3_washout_transition"
+      "cn-onset-w1-sol-2026-08-08.v2:O1_five_axis",
+      "cn-onset-w1-sol-2026-08-08.v2:O1_fixed_equal_rank_blend",
+      "cn-onset-w1-sol-2026-08-08.v2:O3_washout_transition"
     ],
-    "future_entry_calendar": "FROZEN_2026_08_10_SEED_ONLY_RECURRING_AUTHORITY_UNBUILT_FAIL_CLOSED",
-    "grade_calendar": "exact_observed_market_session_index_required_by_helper",
+    "future_entry_calendar": "OFFICIAL_SSE_SZSE_2026_TRACKED_FAIL_CLOSED_OUTSIDE_ATTESTED_YEAR",
+    "grade_calendar": "official_exact_session_clock_plus_latest_complete_nominal_raw_support",
     "grade_key": [
       "signal_date",
       "ticker",
@@ -677,11 +684,11 @@
       "horizon"
     ],
     "grade_semantics": "one_event_grade_per_probability; execution_return_grades_per_horizon_selected_orders_only; selected_unfilled_gross_is_null_and_book_contribution_is_zero",
-    "grader_integration": "UNBUILT_UNTESTED_NO_FABRICATED_GRADES",
-    "implementation_status": "CONTRACT_AND_ONE_HONEST_SEED_ONLY",
+    "grader_integration": "BUILT:event_all_probabilities;execution_selected_only_H1_H3_H5",
+    "implementation_status": "PRODUCTION_FORWARD_ONLY_CONTEXT_DISPLAY_LEDGER_BUILT",
     "jsonl_max_snapshot_sessions": 10,
     "keep_first_mutation_policy": "contradiction_raises_integrity_error",
-    "normalized_monthly_parquet_partitions": "UNBUILT_UNTESTED",
+    "normalized_monthly_parquet_partitions": "BUILT:data/cn_limit_alpha/forward/{probabilities,grades}/YYYY-MM/YYYY-MM-DD.parquet",
     "pre_entry_fillability": "unknown_pending",
     "probability_key": [
       "signal_date",
@@ -713,16 +720,16 @@
       "universe_id",
       "universe_size"
     ],
-    "production_runner_contract": "UNBUILT_MUST_LOAD_FROZEN_PARAMETERS_WITH_DYNAMIC_LATEST_COMPLETE_OBSERVED_SESSION_NEVER_REFIT_OR_IMPORT_FROZEN_RESEARCH_BUILDERS",
+    "production_runner_contract": "BUILT:receipt_parameters_only_dynamic_latest_complete_no_refit_no_research_import",
     "prospective_seed_entry_session": "2026-08-10",
     "prospective_seed_rows": 5352,
     "prospective_seed_signal_date": "2026-08-07",
-    "recurring_nightly_advancer": "UNBUILT_UNTESTED",
-    "required_caller_lane": "nightly",
+    "recurring_nightly_advancer": "BUILT:scripts.advance_cn_limit_alpha_ledger",
+    "required_caller_lane": "CN_LANE=asia_via_engine.ledger_lane.asia_advance_enabled",
     "retrospective_rows_seeded": 0,
     "seed_jsonl_bytes": 6128240,
     "stable_prediction_identity": "signal_date+ticker+model_version+limit_definition+entry_rule; entry_session_is_immutable_payload",
-    "storage_mode": "JSONL_CAPPED_TEN_SESSION_BRIDGE",
+    "storage_mode": "IMMUTABLE_DAILY_PARQUET_PARTS_GROUPED_BY_MONTH",
     "terminal_three_way_fillability": [
       "fillable_daily_proxy",
       "missing_halted_no_fill",
@@ -29386,8 +29393,9 @@
     "H3/H5 returns are overlapping event-cohort diagnostics, not capital books; a fixed-capital multi-session sleeve remains unbuilt",
     "H1 fixed-sleeve returns are attributed to entry cohorts; any lower-limit carry count must be read beside the compounding proxy",
     "forward seed is one honest ungraded snapshot, not prospective performance history",
-    "recurring nightly probability advancement and grading are not wired; helpers only enforce the contract when called",
-    "frozen research builders stop at 2026-08-07 and are forbidden as a recurring runner; a future runner must load frozen parameters against a dynamically discovered latest-complete observed session without refitting"
+    "the tracked official future-session authority covers 2026 only; advancement stops before any prediction or grade requires a 2027 session",
+    "new probability snapshots fail closed unless ST/risk-warning membership is attested for the exact signal session; the frozen seed bootstraps without reopening its stamped population",
+    "fillability, limit events, and exits remain daily-bar proxies; auction queue position, partial fills, intraday wall dynamics, and capacity are untested"
   ],
   "models": {
     "O1_five_axis": {
@@ -30076,14 +30084,10 @@
       },
       "measured": "fixed-L2 logistic over five D-1 name-local axes; tolerant D first-board; exact-calendar missing as competing zero; D-open queue rule; forced-daily top-K; H1/H3/H5 exact opens",
       "remaining_untested": [
-        "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
         "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
         "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
         "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
         "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-        "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-        "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-        "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
         "pre-close and intraday near-limit onset entries",
         "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
         "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -30093,7 +30097,8 @@
         "tree/boosting, survival/hazard, nested feature selection, and family-wise promotion tests",
         "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
         "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
-        "prospective calibration beyond the single honest seed; ten graded sessions are still required"
+        "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+        "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session"
       ],
       "verdict": "NO_GO_FOR_THIS_FIXED_L2_FILLABLE_TRADE_RULE_CONTEXT_MODEL_RETAINED"
     },
@@ -30119,14 +30124,10 @@
       },
       "measured": "equal 20% train-frozen percentile ranks for the five O1 axes, main-calibration probability map, sequential fixed-20-sleeve H1 book; H5 is event-cohort diagnostic only",
       "remaining_untested": [
-        "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
         "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
         "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
         "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
         "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-        "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-        "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-        "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
         "pre-close and intraday near-limit onset entries",
         "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
         "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -30136,7 +30137,8 @@
         "tree/boosting, survival/hazard, nested feature selection, and family-wise promotion tests",
         "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
         "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
-        "prospective calibration beyond the single honest seed; ten graded sessions are still required"
+        "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+        "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session"
       ],
       "verdict": "KILL_THIS_FIXED_EQUAL_RANK_H1_BOOK_ONLY_H5_EVENT_SEAM_NONPORTFOLIO_AND_VENDOR_UNSTABLE"
     },
@@ -30151,14 +30153,10 @@
       "measured": "train-frozen single-feature deciles; both runup_5 and gap_pct have elevated lowest and highest locked-replay deciles",
       "remaining_untested": [
         "two-archetype washout-versus-momentum mixture with separately frozen gates",
-        "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
         "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
         "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
         "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
         "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-        "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-        "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-        "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
         "pre-close and intraday near-limit onset entries",
         "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
         "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -30168,7 +30166,8 @@
         "tree/boosting, survival/hazard, nested feature selection, and family-wise promotion tests",
         "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
         "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
-        "prospective calibration beyond the single honest seed; ten graded sessions are still required"
+        "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+        "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session"
       ],
       "verdict": "ORE_SEAM_RETAINED_NOT_A_TRADE_RULE_TWO_ARCHETYPE_MIXTURE_UNTESTED"
     },
@@ -30192,14 +30191,10 @@
       "remaining_untested": [
         "alternative washout horizons and nonlinear transition bins",
         "point-in-time reversal membership and catalyst-conditioned base transition",
-        "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
         "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
         "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
         "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
         "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-        "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-        "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-        "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
         "pre-close and intraday near-limit onset entries",
         "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
         "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -30209,7 +30204,8 @@
         "tree/boosting, survival/hazard, nested feature selection, and family-wise promotion tests",
         "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
         "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
-        "prospective calibration beyond the single honest seed; ten graded sessions are still required"
+        "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+        "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session"
       ],
       "verdict": "KILL_THIS_FIXED_O3_CHALLENGER_ONLY"
     }
@@ -30256,7 +30252,7 @@
     "rule": "last_10_common_sessions_removed_from_each_preceding_block"
   },
   "receipt_date": "2026-08-08",
-  "receipt_hash": "39546d7a48cd68bf333126677bdee8db885d15cecf3e3bd9dde64d123422186e",
+  "receipt_hash": "89d4e46d0d3723349930d24c4673f473abb5b43b7c187cc8e00c367f7598dc3b",
   "schema_version": "cn_onset_wave1_receipt.v1",
   "source_receipt": {
     "calendar_anchor_support": {
@@ -30365,6 +30361,7 @@
     "files_error": 0,
     "files_read": 1841,
     "files_thin": 1,
+    "ipo_no_limit_traded_sessions_excluded": 3451,
     "panel_mib": 321.46,
     "panel_nbytes": 337073108,
     "raw_nonpositive_or_missing_volume_rows_all_discovered": 277152,
@@ -30375,7 +30372,7 @@
     "raw_ticker_hashes_count": 1841,
     "raw_zero_volume_rows_all_discovered": 277152,
     "raw_zero_volume_rows_analysis_window": 133854,
-    "source_manifest_hash": "cbdc15461d0f5c93ddda27af876f7c6bc60e28deeeb0be6dbf5195b498016b9d",
+    "source_manifest_hash": "dcf7724b674cbf5e30278421439d8d6d508d17b0db294c3bfef2efb032ae5c9a",
     "target_invalid_corporate_action": 101,
     "target_invalid_price_missing": 0,
     "target_missing_absent": 1,
@@ -30384,18 +30381,21 @@
     "target_zero_volume_missing": 11553,
     "zero_volume_signal_rows_excluded": 242323,
     "zt_pool_universe_limit": {
-      "matches_task_pin": true,
-      "missing_ohlcv": 1256,
-      "overlap_pct": 29.04,
-      "raw_overlap": 514,
-      "status": "quantified_universe_limit",
-      "task_pinned_expected": {
-        "missing_ohlcv": 1256,
-        "overlap_pct": 29.04,
-        "raw_overlap": 514,
-        "zt_pool_distinct_tickers": 1770
+      "canonicalized_expected": {
+        "missing_ohlcv": 1027,
+        "overlap_pct": 36.09,
+        "raw_overlap": 580,
+        "zt_pool_distinct_tickers": 1607,
+        "zt_pool_literal_ticker_values": 1770
       },
-      "zt_pool_distinct_tickers": 1770
+      "matches_canonicalized_expected": true,
+      "missing_ohlcv": 1027,
+      "overlap_pct": 36.09,
+      "raw_overlap": 580,
+      "status": "quantified_universe_limit",
+      "ticker_alias_rule": "uppercase_and_SH_to_SS",
+      "zt_pool_distinct_tickers": 1607,
+      "zt_pool_literal_ticker_values": 1770
     }
   },
   "univariate_frozen_deciles": {
@@ -33111,14 +33111,10 @@
     }
   },
   "untested_variants": [
-    "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
     "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
     "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
     "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
     "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-    "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-    "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-    "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
     "pre-close and intraday near-limit onset entries",
     "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
     "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -33128,6 +33124,7 @@
     "tree/boosting, survival/hazard, nested feature selection, and family-wise promotion tests",
     "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
     "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
-    "prospective calibration beyond the single honest seed; ten graded sessions are still required"
+    "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+    "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session"
   ]
 }

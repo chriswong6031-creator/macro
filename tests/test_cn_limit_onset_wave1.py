@@ -26,6 +26,42 @@ def _frame(days: np.ndarray) -> pd.DataFrame:
     }, index=pd.DatetimeIndex(days.astype("datetime64[D]"), name="Date"))
 
 
+def test_ipo_clock_uses_positive_volume_sessions_not_prelisting_rows():
+    days = pd.to_datetime([
+        "2026-06-29", "2026-06-30", "2026-07-02", "2026-07-03",
+        "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09",
+    ]).to_numpy(dtype="datetime64[D]").astype(np.int32)
+    positive = np.asarray([False, False, True, True, True, True, True, True])
+    mask = mod.ipo_no_limit_mask("main", days, positive)
+    assert np.flatnonzero(mask).tolist() == [2, 3, 4, 5, 6]
+
+
+def test_ipo_clock_is_era_specific_for_chinext_and_star():
+    pre_days = pd.bdate_range("2019-01-02", periods=7).to_numpy(
+        dtype="datetime64[D]"
+    ).astype(np.int32)
+    post_days = pd.bdate_range("2020-08-24", periods=7).to_numpy(
+        dtype="datetime64[D]"
+    ).astype(np.int32)
+    positive = np.ones(7, dtype=bool)
+    assert np.flatnonzero(mod.ipo_no_limit_mask("chinext", pre_days, positive)).tolist() == [0]
+    assert np.flatnonzero(mod.ipo_no_limit_mask("chinext", post_days, positive)).tolist() == [0, 1, 2, 3, 4]
+    assert np.flatnonzero(mod.ipo_no_limit_mask("star", post_days, positive)).tolist() == [0, 1, 2, 3, 4]
+
+
+def test_legacy_main_listing_day_is_never_an_ordinary_ten_percent_session():
+    days = pd.bdate_range("2023-04-03", periods=4).to_numpy(
+        dtype="datetime64[D]"
+    ).astype(np.int32)
+    positive = np.ones(4, dtype=bool)
+    assert np.flatnonzero(mod.ipo_no_limit_mask("main", days, positive)).tolist() == [0]
+
+
+def test_zt_ticker_alias_is_canonicalized():
+    assert mod.canonical_ticker("600000.SH") == "600000.SS"
+    assert mod.canonical_ticker("000001.SZ") == "000001.SZ"
+
+
 def test_missing_exact_D_remains_competing_zero_and_never_jumps_to_resumption():
     calendar = _calendar()
     target = int(calendar[130])
@@ -346,10 +382,13 @@ def _probability_snapshot(
 
 
 def _event_grade(row: dict) -> dict:
+    source_hash = mod.canonical_hash({"fixture": "event-grade"})
     return {
         **{key: row[key] for key in mod.PROBABILITY_KEY},
         "entry_session": row["entry_session"], "grade_kind": "event", "horizon": "EVENT_D",
         "graded_at": "2026-08-10T16:00:00+08:00",
+        "grade_observed_session": "2026-08-10",
+        "ledger_schema_version": "cn_limit_alpha_grade.v2", "source_hash": source_hash,
         "fill_decided_at": "2026-08-10T09:31:00+08:00",
         "entry_fill_state": "missing_halted_no_fill", "event_state": "missing_halted_non_event",
         "event_outcome": False, "authority": "context_display_only",
@@ -357,10 +396,13 @@ def _event_grade(row: dict) -> dict:
 
 
 def _execution_grade(row: dict) -> dict:
+    source_hash = mod.canonical_hash({"fixture": "execution-grade"})
     return {
         **{key: row[key] for key in mod.PROBABILITY_KEY},
         "entry_session": row["entry_session"], "grade_kind": "execution_return",
         "horizon": "H1_next_open", "graded_at": "2026-08-11T16:00:00+08:00",
+        "grade_observed_session": "2026-08-11",
+        "ledger_schema_version": "cn_limit_alpha_grade.v2", "source_hash": source_hash,
         "fill_decided_at": "2026-08-10T09:31:00+08:00",
         "entry_fill_state": "missing_halted_no_fill",
         "scheduled_exit_session": "2026-08-11", "realized_exit_session": None,

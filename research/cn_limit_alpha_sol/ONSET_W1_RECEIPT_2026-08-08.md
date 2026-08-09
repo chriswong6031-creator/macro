@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-08
 **Authority:** context / display / audit only — no rank, sizing, gate, or trade recommendation
-**Receipt hash:** `39546d7a48cd68bf333126677bdee8db885d15cecf3e3bd9dde64d123422186e`
+**Receipt hash:** `89d4e46d0d3723349930d24c4673f473abb5b43b7c187cc8e00c367f7598dc3b`
 
 ## Verdict
 
@@ -13,18 +13,18 @@
 - This verdict closes only the measured construction; its remaining variants are preserved below.
 
 - **Adjudication rule:** positive Brier improvement in main replay+vendor and positive lower 2.5% month-block bound for top20 H1/60bp in main replay, main vendor, and ChiNext-20 transport
-- `chinext20_replay_top20_H1_60bp_max_drawdown`: **-74.656%**
-- `chinext20_replay_top20_H1_60bp_mean`: **0.568%**
-- `chinext20_replay_top20_H1_60bp_month_block_p2_5`: **-0.402%**
-- `chinext20_replay_top20_H1_60bp_month_block_p97_5`: **2.291%**
-- `main_replay_top20_H1_60bp_max_drawdown`: **-83.526%**
 - `main_replay_top20_H1_60bp_mean`: **-0.288%**
 - `main_replay_top20_H1_60bp_month_block_p2_5`: **-0.412%**
 - `main_replay_top20_H1_60bp_month_block_p97_5`: **-0.164%**
-- `main_vendor_top20_H1_60bp_max_drawdown`: **-54.628%**
+- `main_replay_top20_H1_60bp_max_drawdown`: **-83.526%**
 - `main_vendor_top20_H1_60bp_mean`: **-1.115%**
 - `main_vendor_top20_H1_60bp_month_block_p2_5`: **-3.000%**
 - `main_vendor_top20_H1_60bp_month_block_p97_5`: **2.815%**
+- `main_vendor_top20_H1_60bp_max_drawdown`: **-54.628%**
+- `chinext20_replay_top20_H1_60bp_mean`: **0.568%**
+- `chinext20_replay_top20_H1_60bp_month_block_p2_5`: **-0.402%**
+- `chinext20_replay_top20_H1_60bp_month_block_p97_5`: **2.291%**
+- `chinext20_replay_top20_H1_60bp_max_drawdown`: **-74.656%**
 
 ### O1_fixed_equal_rank_blend
 
@@ -33,22 +33,22 @@
 - This verdict closes only the measured construction; its remaining variants are preserved below.
 
 - **Adjudication rule:** strategy verdict uses sequential no-duplicate fixed-sleeve H1 only; H5 cannot support a portfolio claim
-- `main_replay_EVENT_COHORT_top20_H5_30bp_max_drawdown`: **-84.604%**
-- `main_replay_EVENT_COHORT_top20_H5_30bp_mean`: **0.111%**
-- `main_replay_EVENT_COHORT_top20_H5_30bp_month_block_p2_5`: **-0.635%**
-- `main_replay_EVENT_COHORT_top20_H5_30bp_month_block_p97_5`: **0.880%**
-- `main_replay_top20_H1_60bp_max_drawdown`: **-73.230%**
 - `main_replay_top20_H1_60bp_mean`: **-0.220%**
 - `main_replay_top20_H1_60bp_month_block_p2_5`: **-0.349%**
 - `main_replay_top20_H1_60bp_month_block_p97_5`: **-0.104%**
-- `main_vendor_EVENT_COHORT_top20_H5_30bp_max_drawdown`: **-79.148%**
-- `main_vendor_EVENT_COHORT_top20_H5_30bp_mean`: **-2.695%**
-- `main_vendor_EVENT_COHORT_top20_H5_30bp_month_block_p2_5`: **-5.178%**
-- `main_vendor_EVENT_COHORT_top20_H5_30bp_month_block_p97_5`: **1.272%**
-- `main_vendor_top20_H1_60bp_max_drawdown`: **-33.228%**
+- `main_replay_top20_H1_60bp_max_drawdown`: **-73.230%**
 - `main_vendor_top20_H1_60bp_mean`: **-0.462%**
 - `main_vendor_top20_H1_60bp_month_block_p2_5`: **-1.555%**
 - `main_vendor_top20_H1_60bp_month_block_p97_5`: **1.202%**
+- `main_vendor_top20_H1_60bp_max_drawdown`: **-33.228%**
+- `main_replay_EVENT_COHORT_top20_H5_30bp_mean`: **0.111%**
+- `main_replay_EVENT_COHORT_top20_H5_30bp_month_block_p2_5`: **-0.635%**
+- `main_replay_EVENT_COHORT_top20_H5_30bp_month_block_p97_5`: **0.880%**
+- `main_replay_EVENT_COHORT_top20_H5_30bp_max_drawdown`: **-84.604%**
+- `main_vendor_EVENT_COHORT_top20_H5_30bp_mean`: **-2.695%**
+- `main_vendor_EVENT_COHORT_top20_H5_30bp_month_block_p2_5`: **-5.178%**
+- `main_vendor_EVENT_COHORT_top20_H5_30bp_month_block_p97_5`: **1.272%**
+- `main_vendor_EVENT_COHORT_top20_H5_30bp_max_drawdown`: **-79.148%**
 
 ### O1_univariate_U_shape_ore
 
@@ -56,10 +56,10 @@
 - **Measured construction:** train-frozen single-feature deciles; both runup_5 and gap_pct have elevated lowest and highest locked-replay deciles
 - This verdict closes only the measured construction; its remaining variants are preserved below.
 
-- `gap_pct_bin0_lift`: **2.235×**
-- `gap_pct_bin9_lift`: **2.369×**
 - `runup_5_bin0_lift`: **1.413×**
 - `runup_5_bin9_lift`: **3.294×**
+- `gap_pct_bin0_lift`: **2.235×**
+- `gap_pct_bin9_lift`: **2.369×**
 
 ### O3_washout_transition
 
@@ -68,18 +68,18 @@
 - This verdict closes only the measured construction; its remaining variants are preserved below.
 
 - **Adjudication rule:** lower Brier than O1 plus positive lower 2.5% month-block bound for top20 H1/60bp in main replay, main vendor, and ChiNext-20 transport
-- `chinext20_replay_top20_H1_60bp_max_drawdown`: **-83.823%**
-- `chinext20_replay_top20_H1_60bp_mean`: **-0.266%**
-- `chinext20_replay_top20_H1_60bp_month_block_p2_5`: **-0.457%**
-- `chinext20_replay_top20_H1_60bp_month_block_p97_5`: **-0.055%**
-- `main_replay_top20_H1_60bp_max_drawdown`: **-77.905%**
 - `main_replay_top20_H1_60bp_mean`: **-0.240%**
 - `main_replay_top20_H1_60bp_month_block_p2_5`: **-0.408%**
 - `main_replay_top20_H1_60bp_month_block_p97_5`: **-0.084%**
-- `main_vendor_top20_H1_60bp_max_drawdown`: **-52.594%**
+- `main_replay_top20_H1_60bp_max_drawdown`: **-77.905%**
 - `main_vendor_top20_H1_60bp_mean`: **-0.978%**
 - `main_vendor_top20_H1_60bp_month_block_p2_5`: **-2.863%**
 - `main_vendor_top20_H1_60bp_month_block_p97_5`: **3.511%**
+- `main_vendor_top20_H1_60bp_max_drawdown`: **-52.594%**
+- `chinext20_replay_top20_H1_60bp_mean`: **-0.266%**
+- `chinext20_replay_top20_H1_60bp_month_block_p2_5`: **-0.457%**
+- `chinext20_replay_top20_H1_60bp_month_block_p97_5`: **-0.055%**
+- `chinext20_replay_top20_H1_60bp_max_drawdown`: **-83.823%**
 
 ## Frozen clock and denominator
 
@@ -96,26 +96,27 @@
 - Observed clock: `data/china_stocks_raw/600519.SS.parquet` with **3,786** sessions from 2011 through 2026-08-07; completeness anchors present: **true**.
 - Clock consensus: the >=50-name raw-index support set has **3,786** sessions and is set-identical to 600519 (**0** missing / **0** extra). 600519 itself has positive volume on **3,780** sessions and zero/missing volume on **6** genuine sessions; reference volume is explicitly not a market-clock filter.
 - Volume census across **1,842** discovered files: the frozen 2011+ analysis window contains **4,985,020** raw rows, including **133,854** exact zero-volume rows and **133,854** nonpositive/missing-volume rows. The lifetime files contain **6,767,465** rows / **277,152** zero-volume placeholders; that pre-2011 tail is outside this analysis. Zero-volume D−1 signal rows excluded: **242,323**; zero-volume D targets retained as missing/no-fill: **11,553**.
+- IPO no-limit clock: first positive-volume observed market session, never raw row ordinal. Excluded **3,451** traded sessions under the era-specific listing-day/first-five rules. An authoritative historical listing master remains unbuilt.
 - The current-ST snapshot contains **100** names, but only **1** exists in nominal raw. Former-ST history remains unavailable.
 - Full candidate denominator: **4,555,042** rows; panel footprint **321.5 MiB**.
 - D−1 session rows lacking at least one frozen feature: **669,058**; they are excluded by the predeclared complete-case eligibility rule, not by a future outcome.
 - D states: observed positive-volume **4,543,387**; missing/halted/zero-volume **11,554** (absent **1**, zero-volume **11,553**, invalid-price **0**); invalid corporate-action proxy **101**.
-- Quantified universe limit: zt_pool has **1,770** distinct names; only **514** overlap nominal OHLCV (**29.04%**); **1,256** are missing OHLCV.
-- Source manifest hash: `cbdc15461d0f5c93ddda27af876f7c6bc60e28deeeb0be6dbf5195b498016b9d`.
+- Quantified universe limit: zt_pool contains **1,770** literal ticker values but **1,607** economic names after canonicalizing `.SH→.SS`; **580** overlap nominal OHLCV (**36.09%**), while **1,027** are missing OHLCV.
+- Source manifest hash: `dcf7724b674cbf5e30278421439d8d6d508d17b0db294c3bfef2efb032ae5c9a`.
 
 ## Board / era base ladder
 
 | Board era | Block | N | Tolerant rate | Strict rate | Missing/halted D |
 |---|---|---:|---:|---:|---:|
-| chinext_10 | calibration_2020_2023 | 33,556 | 2.009% | 1.094% | 0.027% |
+| main_10 | train_2011_2019 | 1,743,707 | 0.775% | 0.401% | 0.504% |
+| main_10 | calibration_2020_2023 | 1,098,095 | 1.052% | 0.570% | 0.034% |
+| main_10 | historical_replay_after_common_prior | 691,536 | 1.089% | 0.569% | 0.126% |
+| main_10 | vendor_audit | 46,952 | 2.038% | 1.063% | 0.004% |
 | chinext_10 | train_2011_2019 | 242,392 | 1.338% | 0.727% | 0.397% |
+| chinext_10 | calibration_2020_2023 | 33,556 | 2.009% | 1.094% | 0.027% |
 | chinext_20 | calibration_2020_2023 | 213,544 | 0.240% | 0.126% | 0.019% |
 | chinext_20 | historical_replay_after_common_prior | 189,731 | 0.376% | 0.194% | 0.053% |
 | chinext_20 | vendor_audit | 13,465 | 0.438% | 0.260% | 0.007% |
-| main_10 | calibration_2020_2023 | 1,098,095 | 1.052% | 0.570% | 0.034% |
-| main_10 | historical_replay_after_common_prior | 691,536 | 1.089% | 0.569% | 0.126% |
-| main_10 | train_2011_2019 | 1,743,707 | 0.775% | 0.401% | 0.504% |
-| main_10 | vendor_audit | 46,952 | 2.038% | 1.063% | 0.004% |
 | star_20 | calibration_2020_2023 | 99,836 | 0.157% | 0.074% | 0.007% |
 | star_20 | historical_replay_after_common_prior | 125,386 | 0.346% | 0.178% | 0.299% |
 | star_20 | vendor_audit | 9,003 | 0.666% | 0.333% | 0.033% |
@@ -234,12 +235,11 @@ The fixed equal-rank top-20 H5/30bp **event-cohort diagnostic** has a replay-onl
 - Every eligible name is emitted, including unselected/no-fire rows. Fillability is `unknown_pending` until the D auction.
 - Terminal fillability is exactly three-way: `fillable_daily_proxy`, `queue_required_no_fill`, or `missing_halted_no_fill`.
 - Probability identity is stable across calendar corrections: `signal_date+ticker+model_version+limit_definition+entry_rule`; `entry_session` is immutable payload. A corrected entry date therefore raises a keep-first mutation instead of appending a duplicate.
-- Probability and grade helpers are separate and reject non-nightly caller labels, non-context authority, non-finite/boundary probabilities, an unexpected model family, malformed existing stores, or a non-recomputable universe ID.
+- The production writer is gated by `CN_LANE=asia` through `engine.ledger_lane.asia_advance_enabled`; probability and grade stores remain physically separate, immutable, context/display-only, and keep-first.
 - Event grades are full-population (`EVENT_D`, one per probability). Execution/return grades are separate per H1/H3/H5 and permitted only for selected orders; an unfilled order has `gross_return=null`, null conditional net returns, an explicit terminal no-fill state, and `book_contribution_return=0`—never a fabricated flat trade.
-- The one Aug-10 entry session is frozen by the construction map. Recurring advancement fails closed until an authoritative annual SSE/SZSE calendar is wired; grading requires the exact observed market-session index.
-- JSONL is a capped **10-session bridge**: this seed is **5.84 MiB**, implying about **58.44 MiB** at the cap. Normalized monthly Parquet probability/grade partitions remain unbuilt.
-- **No recurring nightly advancer or grader is wired in this packet.** This is a contract plus one honest seed only; there are no fabricated grades and no claim of recurring advancement.
-- A future production runner must load these frozen fitted parameters, discover a dynamic latest-complete observed session, and fail closed on future-calendar ambiguity. It must not import the analysis-end-pinned research builders or refit nightly.
+- The production runner loads only receipt-declared frozen parameters, discovers the dynamic latest-complete observed session, never refits, and never imports the analysis-end-pinned research builder.
+- The tracked official SSE/SZSE calendar covers 2026 and fails closed outside that attested year. New snapshots also require exact-session ST/risk-warning attestation.
+- Probabilities and grades are immutable daily Parquet parts grouped by month. Event grades cover every probability; execution grades exist only for selected H1/H3/H5 orders. The seed remains honestly ungraded—no result was fabricated.
 - Retrospective rows seeded as prospective history: **0**.
 
 ## Limitations
@@ -257,19 +257,16 @@ The fixed equal-rank top-20 H5/30bp **event-cohort diagnostic** has a replay-onl
 - H3/H5 returns are overlapping event-cohort diagnostics, not capital books; a fixed-capital multi-session sleeve remains unbuilt
 - H1 fixed-sleeve returns are attributed to entry cohorts; any lower-limit carry count must be read beside the compounding proxy
 - forward seed is one honest ungraded snapshot, not prospective performance history
-- recurring nightly probability advancement and grading are not wired; helpers only enforce the contract when called
-- frozen research builders stop at 2026-08-07 and are forbidden as a recurring runner; a future runner must load frozen parameters against a dynamically discovered latest-complete observed session without refitting
+- the tracked official future-session authority covers 2026 only; advancement stops before any prediction or grade requires a 2027 session
+- new probability snapshots fail closed unless ST/risk-warning membership is attested for the exact signal session; the frozen seed bootstraps without reopening its stamped population
+- fillability, limit events, and exits remain daily-bar proxies; auction queue position, partial fills, intraday wall dynamics, and capacity are untested
 
 ## UNTESTED VARIANTS
 
-- recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built
 - probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names
 - point-in-time regime-conditioned exposure or a lagged-ecology probability offset
 - two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes
 - fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution
-- authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement
-- normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge
-- a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path
 - pre-close and intraday near-limit onset entries
 - actual auction queue depth, order priority, partial fills, and first-5-minute execution
 - historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV
@@ -280,3 +277,4 @@ The fixed equal-rank top-20 H5/30bp **event-cohort diagnostic** has a replay-onl
 - live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence
 - exit at close, trailing stops, close-seal state machines, and limit-down release reversal
 - prospective calibration beyond the single honest seed; ten graded sessions are still required
+- authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session

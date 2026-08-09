@@ -1,0 +1,168 @@
+{
+  "asof": "2026-07-26",
+  "authority": "descriptive_research_inventory_only",
+  "identity_rule": "uppercase_and_SH_to_SS",
+  "limitations": [
+    "current market cap is joined to 36 observed pool dates inside a 39-session official window and is descriptive, not point-in-time alpha evidence",
+    "the pool omits three genuine sessions; appearance rates are observed-date descriptive and missing dates are not zero-imputed",
+    "historical delisted, ST, listing, suspension, share-count, and float states are not supplied by this receipt",
+    "BSE is inventoried but must use a separate 30-percent-band model",
+    "pool membership says at least one appearance, not frequency-adjusted or investable return"
+  ],
+  "receipt_hash": "05ce77fe198442e2dcb5fe698d0e9a85842639b6069d772ae51c14ef50cd7a8d",
+  "schema_version": "cn_limit_universe_coverage.v1",
+  "sources": {
+    "official_calendar": "data/cn_limit_alpha/reference/cn_exchange_calendar_2026.json",
+    "official_calendar_sha256": "98a66903769a70fb7c5b4f301dfa8207d949a2cebd1c4300f1b676ab5a3969f3",
+    "raw_directory": "data/china_stocks_raw",
+    "raw_membership_sha256": "77885dfd4d958daea7bc12b9a98db1dfb6d01493e4d747a806bb30c46c453d29",
+    "session_reference": "data/china_stocks_raw/600519.SS.parquet",
+    "session_reference_sha256": "53f8c51526e675e14d3591f2971accb0f57a9851e525c1e8cf052acf33d26623",
+    "valuation": "data/tushare/valuation.parquet",
+    "valuation_sha256": "7964f2cf147a517aa1878c9897d4d998eed09e2e8ebf376a7c722cd6f12b8fae",
+    "zt_pool": "data/china_zt_pool/pool.parquet",
+    "zt_pool_sha256": "0b0f4d795a2381842e4865d8bedcbfcb08097ccc91a74c181237da6f6fc4e08f"
+  },
+  "universe": {
+    "bse_names": 329,
+    "coverage_buckets": {
+      "lt_100_yi": {
+        "names": 3839,
+        "raw_names": 422,
+        "raw_share": 0.109924
+      },
+      "lt_20_yi": {
+        "names": 653,
+        "raw_names": 0,
+        "raw_share": 0.0
+      },
+      "lt_30_yi": {
+        "names": 1455,
+        "raw_names": 1,
+        "raw_share": 0.000687
+      },
+      "lt_50_yi": {
+        "names": 2622,
+        "raw_names": 19,
+        "raw_share": 0.007246
+      },
+      "lt_80_yi": {
+        "names": 3500,
+        "raw_names": 227,
+        "raw_share": 0.064857
+      }
+    },
+    "omitted_shsz_median_total_mv_yi": 37.8538167,
+    "raw_bse_overlap": 0,
+    "raw_median_total_mv_yi": 187.69917957,
+    "raw_names": 1842,
+    "raw_shsz_overlap": 1838,
+    "raw_shsz_share": 0.353666,
+    "raw_valuation_overlap": 1838,
+    "shsz_names": 5197,
+    "top_cap_decile": {
+      "names": 553,
+      "raw_names": 553,
+      "raw_share": 1.0
+    },
+    "valuation_names": 5526
+  },
+  "untested_variants": [
+    "point-in-time cap and float incidence by board, rule era, liquidity, and listing age",
+    "full-universe onset and continuation reruns",
+    "observability-propensity weighting and matched-overlap sensitivity",
+    "delisted-name and historical ST completeness"
+  ],
+  "valuation_trade_date": "20260724",
+  "zt_pool": {
+    "appearance_by_current_cap": [
+      {
+        "appearance_share": 0.103365,
+        "lower_yi_inclusive": 0,
+        "names": 416,
+        "upper_yi_exclusive": 20,
+        "zt_pool_names": 43
+      },
+      {
+        "appearance_share": 0.263089,
+        "lower_yi_inclusive": 20,
+        "names": 764,
+        "upper_yi_exclusive": 30,
+        "zt_pool_names": 201
+      },
+      {
+        "appearance_share": 0.322467,
+        "lower_yi_inclusive": 30,
+        "names": 1135,
+        "upper_yi_exclusive": 50,
+        "zt_pool_names": 366
+      },
+      {
+        "appearance_share": 0.338052,
+        "lower_yi_inclusive": 50,
+        "names": 1201,
+        "upper_yi_exclusive": 100,
+        "zt_pool_names": 406
+      },
+      {
+        "appearance_share": 0.342932,
+        "lower_yi_inclusive": 100,
+        "names": 764,
+        "upper_yi_exclusive": 200,
+        "zt_pool_names": 262
+      },
+      {
+        "appearance_share": 0.350943,
+        "lower_yi_inclusive": 200,
+        "names": 530,
+        "upper_yi_exclusive": 500,
+        "zt_pool_names": 186
+      },
+      {
+        "appearance_share": 0.340206,
+        "lower_yi_inclusive": 500,
+        "names": 194,
+        "upper_yi_exclusive": 1000,
+        "zt_pool_names": 66
+      },
+      {
+        "appearance_share": 0.253886,
+        "lower_yi_inclusive": 1000,
+        "names": 193,
+        "upper_yi_exclusive": null,
+        "zt_pool_names": 49
+      }
+    ],
+    "below_200_yi_event_row_share_all_rows": 0.79626,
+    "below_200_yi_event_rows": 2470,
+    "below_200_yi_share_of_valuation_matched_rows": 0.80013,
+    "below_500_yi_event_row_share_all_rows": 0.922631,
+    "below_500_yi_event_rows": 2862,
+    "below_500_yi_share_of_valuation_matched_rows": 0.927114,
+    "economic_names": 1607,
+    "first_session": "2026-06-15",
+    "hit_name_median_total_mv_yi": 66.12849449999999,
+    "last_session": "2026-08-07",
+    "literal_ticker_values": 1770,
+    "missing_official_sessions": [
+      "2026-06-29",
+      "2026-07-09",
+      "2026-07-22"
+    ],
+    "observed_pool_sessions": 36,
+    "off_session_pool_dates": [],
+    "official_calendar_sessions_in_window": 39,
+    "raw_event_row_share": 0.382656,
+    "raw_event_rows": 1187,
+    "raw_name_overlap": 580,
+    "raw_name_overlap_share": 0.360921,
+    "raw_share_among_below_200_yi_rows": 0.230769,
+    "raw_share_among_below_500_yi_rows": 0.334731,
+    "reference_ticker_sessions_in_window": 39,
+    "reference_ticker_set_equal_official_calendar": true,
+    "rows": 3102,
+    "session_coverage_scope": "observed_pool_dates_only_missing_sessions_not_zero_imputed",
+    "valuation_matched_rows": 3087,
+    "valuation_unmatched_rows": 15
+  }
+}

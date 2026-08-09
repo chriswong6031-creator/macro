@@ -46,7 +46,7 @@ OUT_JSON = ROOT / "research" / "cn_limit_alpha_sol" / "ONSET_W1_RECEIPT_2026-08-
 OUT_MD = ROOT / "research" / "cn_limit_alpha_sol" / "ONSET_W1_RECEIPT_2026-08-08.md"
 OUT_SEED = ROOT / "research" / "cn_limit_alpha_sol" / "ONSET_W1_FORWARD_SEED_2026-08-08.jsonl"
 
-MODEL_VERSION = "cn-onset-w1-sol-2026-08-08.v1"
+MODEL_VERSION = "cn-onset-w1-sol-2026-08-08.v2"
 FORWARD_MODEL_NAMES = (
     "O1_five_axis", "O1_fixed_equal_rank_blend", "O3_washout_transition",
 )
@@ -69,6 +69,10 @@ COST_BPS = (0, 30, 60, 100)
 MAX_LOWER_CARRY = 20
 PURGE_SESSIONS = 10
 BATCH_ROWS = 100_000
+
+CHINEXT_REGISTRATION_FIRST5_DATE = "2020-08-24"
+STAR_FIRST_LISTING_DATE = "2019-07-22"
+MAIN_REGISTRATION_FIRST5_DATE = "2023-04-10"
 
 FEATURE_NAMES = (
     "vol_z20",
@@ -125,11 +129,15 @@ CONFIG = {
     "analysis_as_of": ANALYSIS_END,
     "observed_session_clock": "600519.SS_index_complete_2011_plus_anchor_pinned",
     "session_clock_validation": "set_identical_to_raw_index_support_at_least_50_names_no_volume_filter",
-    "future_entry_calendar": "frozen_2026_08_10_seed_only_recurring_authoritative_calendar_unbuilt_fail_closed",
+    "future_entry_calendar": "official_sse_szse_2026_tracked_fail_closed_outside_attested_year",
     "entry_clock": "score_after_D_minus_1_close_order_D_open",
     "outcome_clock": "exact_common_calendar_successor_D",
     "missing_target_primary": "event_zero_no_fill_cash_zero",
     "candidate_eligibility": "active_nonboard_exact_D_minus_1_bar_all_five_axes_complete_no_future_outcome_filter",
+    "ipo_no_limit_clock": (
+        "first_positive_volume_observed_market_session; legacy main and pre-2020-08-24 "
+        "ChiNext listing session only; STAR and registration-era ChiNext/main first five"
+    ),
     "limit_definition_primary": "tolerant_close_ge_round2_prev_x_1_plus_width_x_0.998",
     "limit_definition_sensitivity": "strict_close_ge_round2_prev_x_1_plus_width",
     "queue_rule": "D_open_ge_upper_limit_x_0.998_is_no_fill",
@@ -156,14 +164,10 @@ CONFIG = {
 }
 
 UNTESTED_VARIANTS = [
-    "recurring nightly probability advancement and grading integration; only contract helpers and one honest seed are built",
     "probability or expected-edge thresholds that permit cash/no-trade days instead of forcing daily top-K names",
     "point-in-time regime-conditioned exposure or a lagged-ecology probability offset",
     "two-archetype washout-versus-momentum mixture for the observed run-up/gap U-shapes",
     "fixed-capital multi-session sleeve allocation for H3/H5 with exit-date PnL attribution",
-    "authoritative annual SSE/SZSE future-session calendar for recurring ledger advancement",
-    "normalized monthly Parquet probability/grade partitions beyond the capped ten-session JSONL bridge",
-    "a production forward runner that loads frozen fitted parameters, discovers the dynamic latest-complete observed session, and never refits nightly or imports the frozen research panel/calendar path",
     "pre-close and intraday near-limit onset entries",
     "actual auction queue depth, order priority, partial fills, and first-5-minute execution",
     "historically complete ST membership, BSE, delisted names, and missing small-cap OHLCV",
@@ -174,6 +178,7 @@ UNTESTED_VARIANTS = [
     "live slippage, commissions, stamp duty, capacity, theme caps, and book-level dependence",
     "exit at close, trailing stops, close-seal state machines, and limit-down release reversal",
     "prospective calibration beyond the single honest seed; ten graded sessions are still required",
+    "authoritative point-in-time listing master; the research packet infers listing from the first positive-volume observed market session",
 ]
 
 
@@ -217,6 +222,12 @@ def board_from_ticker(ticker: str) -> str:
     return "main"
 
 
+def canonical_ticker(ticker: str) -> str:
+    """Normalize Shanghai's vendor `.SH` alias to the repository's `.SS` identity."""
+    value = str(ticker).strip().upper()
+    return f"{value[:-3]}.SS" if value.endswith(".SH") else value
+
+
 def width_for(board: str, day_values: np.ndarray) -> np.ndarray:
     if board == "star":
         return np.full(len(day_values), 0.20, dtype=np.float64)
@@ -233,6 +244,52 @@ def era_code_for(board: str, day_values: np.ndarray) -> np.ndarray:
     if board == "chinext":
         return np.where(day_values >= _day("2020-08-24"), 2, 1).astype(np.uint8)
     return np.full(len(day_values), 3, dtype=np.uint8)
+
+
+def ipo_no_limit_mask(
+    board: str,
+    day_values: np.ndarray,
+    positive_volume: np.ndarray,
+    market_session: np.ndarray | None = None,
+) -> np.ndarray:
+    """Return the legally ineligible IPO sessions on a traded-session clock.
+
+    Raw vendor files sometimes contain zero-volume issue-price placeholders before the official
+    listing session.  They are not trading days and therefore cannot consume any part of an IPO
+    no-limit window.  The historical rule is also era-specific: pre-reform ChiNext and legacy
+    main-board listings exclude only the listing session, while STAR, registration-era ChiNext,
+    and registration-era main-board listings exclude their first five traded sessions.
+
+    The research store does not yet carry an authoritative point-in-time listing master, so the
+    first positive-volume observed market session is used as the listing-session proxy and this
+    limitation remains explicit in the receipt.
+    """
+    days = np.asarray(day_values, dtype=np.int32)
+    volume_ok = np.asarray(positive_volume, dtype=bool)
+    session_ok = (
+        np.ones(len(days), dtype=bool)
+        if market_session is None
+        else np.asarray(market_session, dtype=bool)
+    )
+    if len(days) != len(volume_ok) or len(days) != len(session_ok):
+        raise IntegrityError("IPO clock arrays must have identical length")
+    traded = volume_ok & session_ok
+    traded_idx = np.flatnonzero(traded)
+    mask = np.zeros(len(days), dtype=bool)
+    if len(traded_idx) == 0:
+        return mask
+
+    listing_day = int(days[traded_idx[0]])
+    if board == "star":
+        window = 5 if listing_day >= _day(STAR_FIRST_LISTING_DATE) else 1
+    elif board == "chinext":
+        window = 5 if listing_day >= _day(CHINEXT_REGISTRATION_FIRST5_DATE) else 1
+    elif board == "main":
+        window = 5 if listing_day >= _day(MAIN_REGISTRATION_FIRST5_DATE) else 1
+    else:
+        window = 1
+    mask[traded_idx[:window]] = True
+    return mask
 
 
 def consecutive_up(close: np.ndarray) -> np.ndarray:
@@ -400,7 +457,8 @@ def extract_ticker(
              "missing_target": 0, "missing_target_absent": 0,
              "missing_target_zero_volume": 0, "missing_target_invalid_price": 0,
              "invalid_target": 0, "observed_target": 0,
-             "zero_volume_signal_rows_excluded": 0}
+             "zero_volume_signal_rows_excluded": 0,
+             "ipo_no_limit_traded_sessions_excluded": 0}
     required = {"open", "close", "high", "low", "volume"}
     if frame.empty or not required.issubset(frame.columns):
         return _empty_chunk(), None, stats
@@ -417,14 +475,16 @@ def extract_ticker(
     cal_pos = np.searchsorted(calendar_days, raw_days)
     signal_is_session = (cal_pos < len(calendar_days)) & (calendar_days[np.minimum(cal_pos, len(calendar_days) - 1)] == raw_days)
     feature_ok = np.isfinite(features).all(axis=1)
-    ipo_window = 5 if board in {"chinext", "star"} else (1 if raw_days[0] < _day("2014-01-01") else 0)
-    row_no = np.arange(len(frame))
+    ipo_no_limit = ipo_no_limit_mask(
+        board, raw_days, limits["positive_volume"], signal_is_session
+    )
     eligible_signal = (signal_is_session & feature_ok & limits["valid"]
-                       & (row_no >= ipo_window) & ~limits["tolerant"] & ~limits["exdiv"])
+                       & ~ipo_no_limit & ~limits["tolerant"] & ~limits["exdiv"])
     stats["feature_incomplete"] = int((signal_is_session & ~feature_ok).sum())
     stats["zero_volume_signal_rows_excluded"] = int(
         (signal_is_session & ~limits["positive_volume"]).sum()
     )
+    stats["ipo_no_limit_traded_sessions_excluded"] = int(ipo_no_limit.sum())
 
     # Every eligible D-1 close creates a candidate at its exact calendar successor D, whether or
     # not this ticker prints a D bar.  This is the load-bearing no-resolution-conditioning rule.
@@ -584,15 +644,18 @@ def load_current_st() -> set[str]:
 
 
 def source_overlap(raw_files: Sequence[Path]) -> dict:
-    raw = {p.stem for p in raw_files}
+    raw = {canonical_ticker(p.stem) for p in raw_files}
     if not ZT_POOL.exists():
         return {"zt_pool_distinct_tickers": 0, "raw_overlap": 0, "missing_ohlcv": 0,
                 "overlap_pct": None, "status": "zt_pool_missing"}
     pool = pd.read_parquet(ZT_POOL, columns=["ticker"])
-    zt = set(pool["ticker"].astype(str))
+    literal = set(pool["ticker"].astype(str))
+    zt = {canonical_ticker(ticker) for ticker in literal}
     overlap = len(zt & raw)
     return {"zt_pool_distinct_tickers": len(zt), "raw_overlap": overlap,
             "missing_ohlcv": len(zt - raw), "overlap_pct": round(100.0 * overlap / len(zt), 2) if zt else None,
+            "zt_pool_literal_ticker_values": len(literal),
+            "ticker_alias_rule": "uppercase_and_SH_to_SS",
             "status": "quantified_universe_limit"}
 
 
@@ -661,6 +724,7 @@ def build_panel() -> tuple[Panel, list[dict], dict]:
         "raw_zero_volume_rows_analysis_window": 0,
         "raw_nonpositive_or_missing_volume_rows_analysis_window": 0,
         "zero_volume_signal_rows_excluded": 0,
+        "ipo_no_limit_traded_sessions_excluded": 0,
         "target_missing_absent": 0, "target_zero_volume_missing": 0,
         "target_invalid_price_missing": 0,
         "calendar_anchor_support": {
@@ -720,6 +784,9 @@ def build_panel() -> tuple[Panel, list[dict], dict]:
             stats["target_missing_halted"] += local["missing_target"]
             stats["target_invalid_corporate_action"] += local["invalid_target"]
             stats["zero_volume_signal_rows_excluded"] += local["zero_volume_signal_rows_excluded"]
+            stats["ipo_no_limit_traded_sessions_excluded"] += local[
+                "ipo_no_limit_traded_sessions_excluded"
+            ]
             stats["target_missing_absent"] += local["missing_target_absent"]
             stats["target_zero_volume_missing"] += local["missing_target_zero_volume"]
             stats["target_invalid_price_missing"] += local["missing_target_invalid_price"]
@@ -1505,7 +1572,8 @@ PROBABILITY_REQUIRED = {
     "authority",
 }
 GRADE_COMMON_REQUIRED = {
-    *GRADE_KEY, "entry_session", "graded_at", "authority", "event_outcome",
+    *GRADE_KEY, "entry_session", "graded_at", "grade_observed_session", "authority",
+    "event_outcome", "ledger_schema_version", "source_hash",
 }
 EVENT_GRADE_REQUIRED = {
     *GRADE_COMMON_REQUIRED, "fill_decided_at", "entry_fill_state", "event_state",
@@ -2252,18 +2320,19 @@ def build_receipt(panel: Panel, latest_rows: list[dict], source_stats: dict,
             "event_grade_required": sorted(EVENT_GRADE_REQUIRED),
             "execution_grade_required": sorted(EXECUTION_GRADE_REQUIRED),
             "expected_model_versions": sorted(EXPECTED_FORWARD_MODEL_VERSIONS),
-            "required_caller_lane": "nightly", "append_grade_separation": True,
-            "implementation_status": "CONTRACT_AND_ONE_HONEST_SEED_ONLY",
-            "recurring_nightly_advancer": "UNBUILT_UNTESTED",
-            "grader_integration": "UNBUILT_UNTESTED_NO_FABRICATED_GRADES",
-            "production_runner_contract": "UNBUILT_MUST_LOAD_FROZEN_PARAMETERS_WITH_DYNAMIC_LATEST_COMPLETE_OBSERVED_SESSION_NEVER_REFIT_OR_IMPORT_FROZEN_RESEARCH_BUILDERS",
-            "future_entry_calendar": "FROZEN_2026_08_10_SEED_ONLY_RECURRING_AUTHORITY_UNBUILT_FAIL_CLOSED",
-            "grade_calendar": "exact_observed_market_session_index_required_by_helper",
-            "storage_mode": "JSONL_CAPPED_TEN_SESSION_BRIDGE",
+            "required_caller_lane": "CN_LANE=asia_via_engine.ledger_lane.asia_advance_enabled",
+            "append_grade_separation": True,
+            "implementation_status": "PRODUCTION_FORWARD_ONLY_CONTEXT_DISPLAY_LEDGER_BUILT",
+            "recurring_nightly_advancer": "BUILT:scripts.advance_cn_limit_alpha_ledger",
+            "grader_integration": "BUILT:event_all_probabilities;execution_selected_only_H1_H3_H5",
+            "production_runner_contract": "BUILT:receipt_parameters_only_dynamic_latest_complete_no_refit_no_research_import",
+            "future_entry_calendar": "OFFICIAL_SSE_SZSE_2026_TRACKED_FAIL_CLOSED_OUTSIDE_ATTESTED_YEAR",
+            "grade_calendar": "official_exact_session_clock_plus_latest_complete_nominal_raw_support",
+            "storage_mode": "IMMUTABLE_DAILY_PARQUET_PARTS_GROUPED_BY_MONTH",
             "jsonl_max_snapshot_sessions": LEDGER_JSONL_MAX_SESSIONS,
             "seed_jsonl_bytes": seed_jsonl_bytes,
             "estimated_ten_session_jsonl_bytes": seed_jsonl_bytes * LEDGER_JSONL_MAX_SESSIONS,
-            "normalized_monthly_parquet_partitions": "UNBUILT_UNTESTED",
+            "normalized_monthly_parquet_partitions": "BUILT:data/cn_limit_alpha/forward/{probabilities,grades}/YYYY-MM/YYYY-MM-DD.parquet",
             "keep_first_mutation_policy": "contradiction_raises_integrity_error",
             "stable_prediction_identity": "signal_date+ticker+model_version+limit_definition+entry_rule; entry_session_is_immutable_payload",
             "grade_semantics": "one_event_grade_per_probability; execution_return_grades_per_horizon_selected_orders_only; selected_unfilled_gross_is_null_and_book_contribution_is_zero",
@@ -2352,8 +2421,9 @@ def build_receipt(panel: Panel, latest_rows: list[dict], source_stats: dict,
             "H3/H5 returns are overlapping event-cohort diagnostics, not capital books; a fixed-capital multi-session sleeve remains unbuilt",
             "H1 fixed-sleeve returns are attributed to entry cohorts; any lower-limit carry count must be read beside the compounding proxy",
             "forward seed is one honest ungraded snapshot, not prospective performance history",
-            "recurring nightly probability advancement and grading are not wired; helpers only enforce the contract when called",
-            "frozen research builders stop at 2026-08-07 and are forbidden as a recurring runner; a future runner must load frozen parameters against a dynamically discovered latest-complete observed session without refitting",
+            "the tracked official future-session authority covers 2026 only; advancement stops before any prediction or grade requires a 2027 session",
+            "new probability snapshots fail closed unless ST/risk-warning membership is attested for the exact signal session; the frozen seed bootstraps without reopening its stamped population",
+            "fillability, limit events, and exits remain daily-bar proxies; auction queue position, partial fills, intraday wall dynamics, and capacity are untested",
         ],
         "untested_variants": UNTESTED_VARIANTS,
     }
@@ -2420,11 +2490,12 @@ def render_markdown(receipt: dict) -> str:
         f"- Observed clock: `{source['calendar_receipt']['source']}` with **{source['calendar_receipt']['sessions_2011_through_as_of']:,}** sessions from 2011 through {ANALYSIS_END}; completeness anchors present: **{str(source['calendar_receipt']['all_completeness_anchors_present']).lower()}**.",
         f"- Clock consensus: the >=50-name raw-index support set has **{source['calendar_consensus_validation']['consensus_sessions']:,}** sessions and is set-identical to 600519 (**{source['calendar_consensus_validation']['missing_from_600519_reference']}** missing / **{source['calendar_consensus_validation']['extra_in_600519_reference']}** extra). 600519 itself has positive volume on **{source['calendar_consensus_validation']['reference_positive_volume_sessions']:,}** sessions and zero/missing volume on **{source['calendar_consensus_validation']['reference_zero_or_missing_volume_sessions']:,}** genuine sessions; reference volume is explicitly not a market-clock filter.",
         f"- Volume census across **{source['files_census_read']:,}** discovered files: the frozen 2011+ analysis window contains **{source['raw_rows_censused_analysis_window']:,}** raw rows, including **{source['raw_zero_volume_rows_analysis_window']:,}** exact zero-volume rows and **{source['raw_nonpositive_or_missing_volume_rows_analysis_window']:,}** nonpositive/missing-volume rows. The lifetime files contain **{source['raw_rows_censused_all_discovered']:,}** rows / **{source['raw_zero_volume_rows_all_discovered']:,}** zero-volume placeholders; that pre-2011 tail is outside this analysis. Zero-volume D−1 signal rows excluded: **{source['zero_volume_signal_rows_excluded']:,}**; zero-volume D targets retained as missing/no-fill: **{source['target_zero_volume_missing']:,}**.",
+        f"- IPO no-limit clock: first positive-volume observed market session, never raw row ordinal. Excluded **{source['ipo_no_limit_traded_sessions_excluded']:,}** traded sessions under the era-specific listing-day/first-five rules. An authoritative historical listing master remains unbuilt.",
         f"- The current-ST snapshot contains **{source['current_st_snapshot_names']:,}** names, but only **{source['files_current_st_excluded']:,}** exists in nominal raw. Former-ST history remains unavailable.",
         f"- Full candidate denominator: **{source['candidate_rows']:,}** rows; panel footprint **{source['panel_mib']:.1f} MiB**.",
         f"- D−1 session rows lacking at least one frozen feature: **{source['feature_incomplete_rows']:,}**; they are excluded by the predeclared complete-case eligibility rule, not by a future outcome.",
         f"- D states: observed positive-volume **{source['candidate_rows_by_target_state']['observed']:,}**; missing/halted/zero-volume **{source['candidate_rows_by_target_state']['missing_halted']:,}** (absent **{source['target_missing_absent']:,}**, zero-volume **{source['target_zero_volume_missing']:,}**, invalid-price **{source['target_invalid_price_missing']:,}**); invalid corporate-action proxy **{source['candidate_rows_by_target_state']['invalid_corporate_action']:,}**.",
-        f"- Quantified universe limit: zt_pool has **{overlap['zt_pool_distinct_tickers']:,}** distinct names; only **{overlap['raw_overlap']:,}** overlap nominal OHLCV (**{overlap['overlap_pct']:.2f}%**); **{overlap['missing_ohlcv']:,}** are missing OHLCV.",
+        f"- Quantified universe limit: zt_pool contains **{overlap['zt_pool_literal_ticker_values']:,}** literal ticker values but **{overlap['zt_pool_distinct_tickers']:,}** economic names after canonicalizing `.SH→.SS`; **{overlap['raw_overlap']:,}** overlap nominal OHLCV (**{overlap['overlap_pct']:.2f}%**), while **{overlap['missing_ohlcv']:,}** are missing OHLCV.",
         f"- Source manifest hash: `{source['source_manifest_hash']}`.",
         "",
         "## Board / era base ladder",
@@ -2585,12 +2656,11 @@ def render_markdown(receipt: dict) -> str:
         "- Every eligible name is emitted, including unselected/no-fire rows. Fillability is `unknown_pending` until the D auction.",
         "- Terminal fillability is exactly three-way: `fillable_daily_proxy`, `queue_required_no_fill`, or `missing_halted_no_fill`.",
         "- Probability identity is stable across calendar corrections: `signal_date+ticker+model_version+limit_definition+entry_rule`; `entry_session` is immutable payload. A corrected entry date therefore raises a keep-first mutation instead of appending a duplicate.",
-        "- Probability and grade helpers are separate and reject non-nightly caller labels, non-context authority, non-finite/boundary probabilities, an unexpected model family, malformed existing stores, or a non-recomputable universe ID.",
+        "- The production writer is gated by `CN_LANE=asia` through `engine.ledger_lane.asia_advance_enabled`; probability and grade stores remain physically separate, immutable, context/display-only, and keep-first.",
         "- Event grades are full-population (`EVENT_D`, one per probability). Execution/return grades are separate per H1/H3/H5 and permitted only for selected orders; an unfilled order has `gross_return=null`, null conditional net returns, an explicit terminal no-fill state, and `book_contribution_return=0`—never a fabricated flat trade.",
-        "- The one Aug-10 entry session is frozen by the construction map. Recurring advancement fails closed until an authoritative annual SSE/SZSE calendar is wired; grading requires the exact observed market-session index.",
-        f"- JSONL is a capped **{ledger['jsonl_max_snapshot_sessions']}-session bridge**: this seed is **{ledger['seed_jsonl_bytes'] / 1024 / 1024:.2f} MiB**, implying about **{ledger['estimated_ten_session_jsonl_bytes'] / 1024 / 1024:.2f} MiB** at the cap. Normalized monthly Parquet probability/grade partitions remain unbuilt.",
-        "- **No recurring nightly advancer or grader is wired in this packet.** This is a contract plus one honest seed only; there are no fabricated grades and no claim of recurring advancement.",
-        "- A future production runner must load these frozen fitted parameters, discover a dynamic latest-complete observed session, and fail closed on future-calendar ambiguity. It must not import the analysis-end-pinned research builders or refit nightly.",
+        "- The production runner loads only receipt-declared frozen parameters, discovers the dynamic latest-complete observed session, never refits, and never imports the analysis-end-pinned research builder.",
+        "- The tracked official SSE/SZSE calendar covers 2026 and fails closed outside that attested year. New snapshots also require exact-session ST/risk-warning attestation.",
+        "- Probabilities and grades are immutable daily Parquet parts grouped by month. Event grades cover every probability; execution grades exist only for selected H1/H3/H5 orders. The seed remains honestly ungraded—no result was fabricated.",
         "- Retrospective rows seeded as prospective history: **0**.",
         "", "## Limitations", "",
     ])
@@ -2621,9 +2691,19 @@ def run(out_json: Path = OUT_JSON, out_md: Path = OUT_MD, out_seed: Path = OUT_S
     calendar = load_calendar()
     panel, latest, source = build_panel()
     overlap = source["zt_pool_universe_limit"]
-    overlap["task_pinned_expected"] = {"zt_pool_distinct_tickers": 1770, "raw_overlap": 514,
-                                       "missing_ohlcv": 1256, "overlap_pct": 29.04}
-    overlap["matches_task_pin"] = all(overlap.get(k) == v for k, v in overlap["task_pinned_expected"].items())
+    overlap["canonicalized_expected"] = {
+        "zt_pool_literal_ticker_values": 1770,
+        "zt_pool_distinct_tickers": 1607,
+        "raw_overlap": 580,
+        "missing_ohlcv": 1027,
+        "overlap_pct": 36.09,
+    }
+    overlap["matches_canonicalized_expected"] = all(
+        overlap.get(key) == value
+        for key, value in overlap["canonicalized_expected"].items()
+    )
+    if not overlap["matches_canonicalized_expected"]:
+        raise IntegrityError("canonicalized zt_pool/raw universe overlap changed")
     receipt, seed = build_receipt(panel, latest, source, calendar)
     atomic_write_text(out_json, json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2,
                                            allow_nan=False) + "\n")
