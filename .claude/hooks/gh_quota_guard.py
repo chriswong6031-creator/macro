@@ -25,13 +25,43 @@ worse than a missed warning.
      at 45s took 4,488 -> 0 in under an hour.
   3. `--paginate` against check-runs/jobs. ~130 checks is several pages per poll,
      and one page already answers "is it still running".
+  4. Re-dispatching a main PROOF workflow (ci.yml / fences.yml /
+     integration-baseline.yml) while one is already in flight on main
+     (2026-08-09). This one is not about request count, it is about the same
+     reflex: a pinned session re-firing the documented recovery lever. Until
+     that day every main dispatch of ci.yml landed in `ci-refs/heads/main` with
+     a flat `cancel-in-progress: true`, so the second dispatch did not queue —
+     it KILLED the first. Measured: run 31309720615 was cancelled 44 minutes in
+     by dispatch 31311537537, itself cancelled 4 minutes later by 31311693575,
+     while 12 merge-blocked + 56 cap-deferred pull requests waited on a proof
+     that could therefore never conclude. The workflows are fixed (the flag is
+     event-conditional as of the same day), so a race is now merely wasteful
+     rather than destructive — but the reflex is what opened the wound, and a
+     run already holding a runner is the fastest proof available. Allowed when
+     the in-flight run is an orphan (queued > 40 min), and fail-OPEN on any
+     probe error: this guard is anti-waste, and a fail-closed deny would wedge
+     the very recovery lever it protects.
 """
+import datetime as dt
 import json
+import os
 import re
+import subprocess
 import sys
 
 MIN_SLEEP = 90       # seconds between gh polls in a loop
 MIN_WATCH_INTERVAL = 60
+#: A queued run older than this is presumed orphaned (GitHub has scheduled runs that
+#: never start — see the "queued run can be ORPHANED" note). Re-dispatching over one
+#: is the mercy kill, so the guard must not stand in its way. Well above a run's own
+#: 30-34 minute duration, so a healthy in-flight proof never trips it.
+ORPHANED_QUEUE_MINUTES = 40
+#: One `gh run list` call. Bounded so a hung probe cannot hang the harness.
+PROBE_TIMEOUT_S = 20
+#: The workflows whose runs on main ARE main's proof (merge_on_green.MAIN_PROOF_WORKFLOWS
+#: plus the circuit breaker's baseline). Dispatching any of them over a live one is the
+#: shape this guard exists to stop.
+PROOF_WORKFLOWS = ("ci.yml", "fences.yml", "integration-baseline.yml")
 
 REMEDY = (
     "Poll on a slow cadence and check the pool first:\n"
@@ -89,6 +119,112 @@ PAGINATE_RE = re.compile(CMD_POS + r"gh\s+api\b[^|;&]*--paginate\b[^|;&]*"
 # same, other argument order
 PAGINATE_RE2 = re.compile(CMD_POS + r"gh\s+api\b[^|;&]*(?:check-runs|/jobs|check_runs)"
                           r"[^|;&]*--paginate\b")
+# `gh workflow run <workflow> [--ref <ref>]` — the main-proof dispatch (shape 4).
+WORKFLOW_RUN_RE = re.compile(CMD_POS + r"gh\s+workflow\s+run\b(?P<args>[^;&|\n]*)")
+REF_RE = re.compile(r"(?:--ref|(?<!\w)-r)[=\s]+(\S+)")
+# gh flags that consume the NEXT token, so it is not mistaken for the workflow name.
+VALUE_FLAGS = {"--ref", "-r", "--repo", "-R", "--field", "-f", "--raw-field", "-F",
+               "--json", "--jq", "-q", "--template", "-t", "--input"}
+MAIN_REFS = {"main", "refs/heads/main", "origin/main"}
+
+
+def dispatch_target(args: str):
+    """(workflow basename, ref or None) for a `gh workflow run` argument string."""
+    ref_m = REF_RE.search(args)
+    ref = ref_m.group(1).strip("\"'") if ref_m else None
+    tokens = args.split()
+    skip = False
+    workflow = None
+    for tok in tokens:
+        if skip:
+            skip = False
+            continue
+        if tok.startswith("-"):
+            if "=" not in tok and tok in VALUE_FLAGS:
+                skip = True
+            continue
+        workflow = os.path.basename(tok.strip("\"'"))
+        break
+    return workflow, ref
+
+
+def warn(msg: str):
+    """Loud, but never a deny. Stdout is the harness's decision channel — an ALLOW
+    must print nothing there — so the fail-open notice goes to stderr."""
+    print(f"GH QUOTA GUARD (fail-open): {msg}", file=sys.stderr, flush=True)
+
+
+def main_runs(workflow: str):
+    """Newest runs of `workflow` on main, or None when the probe cannot answer.
+
+    ONE REST call. None means "unknown", which the caller turns into an allow —
+    never into a deny (see the fail-open note in the module docstring).
+    """
+    try:
+        proc = subprocess.run(
+            ["gh", "run", "list", "--workflow", workflow, "--branch", "main",
+             "--limit", "20", "--json", "status,createdAt,databaseId,url"],
+            capture_output=True, timeout=PROBE_TIMEOUT_S,
+        )
+    except Exception as exc:                      # gh missing, timeout, anything
+        warn(f"could not probe {workflow} runs on main ({exc.__class__.__name__})")
+        return None
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", errors="replace").strip()[:200]
+        warn(f"`gh run list` failed for {workflow} (exit {proc.returncode}): {detail}")
+        return None
+    try:
+        data = json.loads(proc.stdout.decode("utf-8", errors="replace") or "[]")
+    except Exception:
+        warn(f"unparseable `gh run list` output for {workflow}")
+        return None
+    return data if isinstance(data, list) else None
+
+
+def age_minutes(stamp):
+    try:
+        when = dt.datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except Exception:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=dt.timezone.utc)
+    return (dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 60.0
+
+
+def live_proof_reason(workflow: str):
+    """Deny reason when a proof run of `workflow` is already live on main."""
+    runs = main_runs(workflow)
+    if runs is None:
+        return None                               # unknown -> allow
+    in_flight = [r for r in runs
+                 if isinstance(r, dict) and (r.get("status") or "") != "completed"]
+    if not in_flight:
+        return None
+    newest = max(in_flight, key=lambda r: str(r.get("createdAt") or ""))
+    status = newest.get("status") or "?"
+    age = age_minutes(newest.get("createdAt"))
+    if status == "queued" and age is not None and age > ORPHANED_QUEUE_MINUTES:
+        return None                               # orphaned-queue mercy kill
+    run_id = newest.get("databaseId") or "<id>"
+    url = newest.get("url") or ""
+    aged = f"{age:.0f} min" if age is not None else "unknown age"
+    return (
+        f"MAIN PROOF ALREADY IN FLIGHT: {workflow} run {run_id} is {status} on main "
+        f"({aged}). {url}\n\n"
+        "Do not re-dispatch it. This is the 2026-08-09 livelock: main-ref dispatches "
+        "share one concurrency group, and a re-dispatch USED TO CANCEL the in-flight "
+        "proof — run 31309720615 died at 44 minutes to dispatch 31311537537, which "
+        "died 4 minutes later to 31311693575, so no proof ever concluded and 12 "
+        "merge-blocked + 56 cap-deferred pull requests could not drain. The workflows "
+        "now fence dispatches out of the cancel path, so a second dispatch no longer "
+        "kills the first — it is simply waste, and the run already holding a runner is "
+        "the fastest proof you can get.\n\n"
+        f"Watch the one that is running instead:\n"
+        f"  gh run watch {run_id} --interval 60\n"
+        f"A ci.yml run here takes 30-34 minutes. Re-dispatch only after it CONCLUDES, "
+        f"or if it has sat `queued` more than {ORPHANED_QUEUE_MINUTES} minutes (an "
+        "orphaned queue slot, which this guard already lets through)."
+    )
 
 
 def allow():
@@ -152,6 +288,20 @@ def check(raw: str):
             "already answers 'is it still running'. Drop --paginate, or ask the run "
             "endpoint for a single status.\n\n" + REMEDY
         )
+
+    # 4. dispatching a main proof workflow over one that is already in flight.
+    # Probed LAST and only on an exact match, so the one REST call this guard
+    # spends is never spent on an unrelated command line.
+    for m in WORKFLOW_RUN_RE.finditer(cmd):
+        workflow, ref = dispatch_target(m.group("args"))
+        if workflow not in PROOF_WORKFLOWS:
+            continue
+        # No --ref means gh targets the default branch, which is main here.
+        if ref is not None and ref not in MAIN_REFS:
+            continue
+        reason = live_proof_reason(workflow)
+        if reason:
+            return reason
 
     return None
 

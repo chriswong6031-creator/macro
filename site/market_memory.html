@@ -1,8 +1,8 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -30,16 +30,44 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Mastermind Chat</title>
+<title>Market Memory — MastermindX</title>
+
+
+
+<meta name="description" content="Compare today&#39;s macro state and a symbol&#39;s current setup with recomputed historical episodes — context, not a forecast.">
+<link rel="canonical" href="https://www.mastermind-x.com/market_memory.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="Market Memory — Historical Market Context | MastermindX">
+<meta property="og:description" content="Compare today&#39;s macro state and a symbol&#39;s current setup with recomputed historical episodes — context, not a forecast.">
+<meta property="og:url" content="https://www.mastermind-x.com/market_memory.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Market Memory — Historical Market Context | MastermindX">
+<meta name="twitter:description" content="Compare today&#39;s macro state and a symbol&#39;s current setup with recomputed historical episodes — context, not a forecast.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+</style>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=79f699db">
+<link rel="stylesheet" href="market_memory.css?v=3915b3d3">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="stylesheet" href="chat.css?v=0340e5d9">
 <link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
 </head>
-<body>
+<body class="mm-page">
+
+
+
 
 <nav class="site-nav">
 
@@ -47,7 +75,7 @@
 
     <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
     <div class="nav-links">
-    
+
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
@@ -72,24 +100,24 @@
       </svg>
       <span class="brand-word">MASTERMINDX</span>
     </a>
-    
+
     <div class="nav-dd">
       <a class="nav-link" href="macro.html"><span class="menu-icon menu-icon-flag menu-icon-us" aria-hidden="true"></span><span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
-        
+
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-        
+
         <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
-        
+
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
         <a href="sector_central.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
-        
+
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -106,7 +134,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
-        
+
         <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Gated board · cycle map · whole-market rotation · theme baskets — one page</span><span class="l-zh">门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览</span></span></a>
         <a href="sector_central_china.html#confluence"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
@@ -153,7 +181,7 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
-        
+
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -183,7 +211,7 @@
         <a href="bonds.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
       </div>
     </div>
-    
+
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega mega-menu" role="menu">
@@ -192,9 +220,9 @@
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
-              
+
               <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
-              
+
               <a class="mega-item nm-feat" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M17 11V6M24 11V6M31 11V6M17 37v5M24 37v5M31 37v5M11 17H6M11 24H6M11 31H6M37 17h5M37 24h5M37 31h5"/><rect x="11" y="11" width="26" height="26" rx="5"/><path class="accent" d="m15 29 4-4 3.5 2.5 3.5-5.5"/><circle class="soft-fill" cx="26" cy="22" r="2.4"/><path class="ghost" d="m28 20.5 6-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Bot</span><span class="l-zh">Mastermind 交易机器人</span><span class="nm-tier">PRO</span></span><span class="item-desc d"><span class="l-en">The AI’s own paper account — every trade explained</span><span class="l-zh">AI 自己的模拟账户，每笔交易都附理由</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
@@ -256,7 +284,7 @@
       </div>
     </div>
   </div>
-  
+
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
@@ -269,7 +297,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    
+
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
@@ -282,831 +310,92 @@
   </div>
 </nav>
 
-<!-- ── main chat shell ────────────────────────────────────────────────────── -->
-<div id="chat-shell">
-
-  <!-- left: thread rail -->
-  <div id="thread-rail">
-    <div id="thread-rail-head">
-      <h2><span class="l-en">Threads</span><span class="l-zh">对话</span></h2>
-      <button id="new-thread-btn" type="button">
-        <span class="l-en">+ New</span><span class="l-zh">+ 新建</span>
-      </button>
+<main class="mm-shell">
+  <header class="mm-hero">
+    <div class="mm-hero-copy">
+      <p class="mm-kicker"><span class="l-en">Historical context · Neural Web memory</span><span class="l-zh">历史语境 · 智脑记忆</span></p>
+      <h1><span class="l-en">Market Memory</span><span class="l-zh">市场记忆</span></h1>
+      <p class="mm-deck"><span class="l-en">Put today beside comparable episodes — then inspect both the rhyme and the difference.</span><span class="l-zh">将今天与可比历史片段并排 — 同时审视相似之处与关键差异。</span></p>
     </div>
-    <div id="thread-list">
-      <div id="thread-empty">
-        <span class="l-en">No threads yet</span><span class="l-zh">暂无对话</span>
+    <div class="mm-authority" aria-label="Authority boundary">
+      <span class="mm-authority-mark" aria-hidden="true">A0</span>
+      <div>
+        <strong><span class="l-en">Context only</span><span class="l-zh">仅作语境</span></strong>
+        <span><span class="l-en">No ranking · no gating · no sizing · no Prophet training authority</span><span class="l-zh">不排名 · 不设闸 · 不定仓 · 无 Prophet 训练权限</span></span>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- center: messages + composer -->
-  <div id="chat-main" class="is-empty">
+  <section class="mm-readline" aria-label="How to read this page">
+    <span class="mm-readline-glyph" aria-hidden="true">↳</span>
+    <div>
+      <strong><span class="l-en">Two memory lenses, one evidence boundary</span><span class="l-zh">两种记忆视角，同一证据边界</span></strong>
+      <span><span class="l-en">Macro episodes compare the whole tape. Symbol receipts compare the current event class with the same stock, its cohort, and the wider library.</span><span class="l-zh">宏观片段比较整体市场；个股凭据则把当前事件类别与本股、同类组及全体样本进行比较。</span></span>
+    </div>
+  </section>
 
-    <!-- auth gate — shown when signed out -->
-    <div id="auth-gate" style="display:none">
-      <div class="brain-orb" aria-hidden="true"><span>◈</span></div>
-      <h1 class="gate-title"><span class="l-en">Ask the Mastermind</span><span class="l-zh">向操盘大脑提问</span></h1>
-      <p class="gate-sub">
-        <span class="l-en">One brain across every dashboard and the Terminal. It reads your signals, regimes and flow — and explains what they show. Sign in to begin.</span>
-        <span class="l-zh">贯通所有看板与终端的同一个大脑。它读取你的信号、周期与资金流，并解释其含义。登录即可开始。</span>
-      </p>
-      <div class="glass-card">
-        <ul class="tier-list">
-          <li>
-            <span class="tier-name"><span class="l-en">Free</span><span class="l-zh">免费</span></span>
-            <span class="tier-desc"><span class="l-en">5 fast messages / week</span><span class="l-zh">每周 5 条快速消息</span></span>
-          </li>
-          <li>
-            <span class="tier-name"><span class="l-en">Trial</span><span class="l-zh">试用</span></span>
-            <span class="tier-desc"><span class="l-en">25 fast + 3 pro / trial period</span><span class="l-zh">试用期 25 条快速 + 3 条专业</span></span>
-          </li>
-          <li>
-            <span class="tier-name"><span class="l-en">Insider</span><span class="l-zh">会员</span></span>
-            <span class="tier-desc"><span class="l-en">300 fast + 10 pro / month</span><span class="l-zh">每月 300 条快速 + 10 条专业</span></span>
-          </li>
-          <li>
-            <span class="tier-name"><span class="l-en">Pro</span><span class="l-zh">专业</span></span>
-            <span class="tier-desc"><span class="l-en">1000 fast + 150 pro / month</span><span class="l-zh">每月 1000 条快速 + 150 条专业</span></span>
-          </li>
-        </ul>
-        <button class="sign-in-btn" id="auth-gate-btn" type="button">
-          <span class="l-en">Sign in to start</span><span class="l-zh">登录以开始</span>
-        </button>
+  <section class="mm-section" aria-labelledby="mm-macro-title">
+    <div class="mm-section-head">
+      <div>
+        <p class="mm-kicker"><span class="l-en">Lens 01 · Whole-market state</span><span class="l-zh">视角 01 · 整体市场状态</span></p>
+        <h2 id="mm-macro-title"><span class="l-en">When did the tape look like this?</span><span class="l-zh">何时的市场曾与今天相似？</span></h2>
+        <p><span class="l-en">Growth, inflation, curve, VIX, breadth, liquidity and cycle — retrieved together.</span><span class="l-zh">增长、通胀、曲线、VIX、市场广度、流动性与周期 — 联合检索。</span></p>
       </div>
+      <div class="mm-state-pill is-loading" id="mm-macro-state" aria-live="polite"><span class="l-en">Loading memory</span><span class="l-zh">正在加载记忆</span></div>
     </div>
-
-    <!-- 402 upgrade card -->
-    <div id="upgrade-card">
-      <strong><span class="l-en">Quota reached</span><span class="l-zh">配额已用尽</span></strong> —
-      <span class="l-en">upgrade your plan to keep chatting.</span>
-      <span class="l-zh">升级套餐以继续对话。</span>
-      <a href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看套餐</span></a>
+    <div class="mm-query" id="mm-macro-query">
+      <div class="mm-skeleton mm-skeleton-query"></div>
     </div>
+    <div class="mm-episode-list" id="mm-macro-episodes" aria-live="polite">
+      <div class="mm-skeleton"></div><div class="mm-skeleton"></div><div class="mm-skeleton"></div>
+    </div>
+    <p class="mm-footnote" id="mm-macro-note"><span class="l-en">Current release: macro states are recomputed today from later-complete/currently available history, not a requested-as-of record of what Mastermind knew then. Distances retrieve dated rhymes; forward paths are observed outcomes, not odds for today.</span><span class="l-zh">当前版本：宏观状态按今日可得且事后完整的历史重新计算，并非 Mastermind 在历史时点当时已知内容的指定时点记录。距离仅用于检索历史相似片段；后续路径是已发生的结果，并非今天的概率。</span></p>
+  </section>
 
-    <!-- message area -->
-    <div id="msg-list" role="log" aria-live="polite" aria-label="Chat messages">
-      <!-- empty state -->
-      <div id="empty-state">
-        <div class="brain-orb" aria-hidden="true"><span>◈</span></div>
-        <h2><span class="l-en">What do you want to know?</span><span class="l-zh">你想了解什么？</span></h2>
-        <p>
-          <span class="l-en">Ask about any dashboard, signal, or what a panel is showing — the brain reads the data and explains it. Research context only.</span>
-          <span class="l-zh">询问任意看板、信号或面板内容 — 大脑读取数据并为你解释。仅供研究参考。</span>
-        </p>
-        <div class="prompt-grid" id="prompt-grid">
-          <button class="prompt-btn" type="button" data-prompt-en="What is the current US macro regime and what does it mean for equities?" data-prompt-zh="目前美国宏观周期是什么阶段？对股票意味着什么？">
-            <span class="prompt-ic">🇺🇸</span>
-            <span class="prompt-en">What is the US macro regime right now?</span>
-            <span class="prompt-zh">当前美国宏观周期处于什么阶段？</span>
-          </button>
-          <button class="prompt-btn" type="button" data-prompt-en="Which thematic baskets are showing the strongest momentum right now?" data-prompt-zh="当前哪些主题篮子动量最强？">
-            <span class="prompt-ic">🧺</span>
-            <span class="prompt-en">Which thematic baskets have strongest momentum?</span>
-            <span class="prompt-zh">哪些主题篮子当前动量最强？</span>
-          </button>
-          <button class="prompt-btn" type="button" data-prompt-en="What is the dollar doing and how is it affecting other assets?" data-prompt-zh="美元走势如何？对其他资产有何影响？">
-            <span class="prompt-ic">💱</span>
-            <span class="prompt-en">What is the dollar doing and how does it affect other assets?</span>
-            <span class="prompt-zh">美元走势如何？如何影响其他资产？</span>
-          </button>
-          <button class="prompt-btn" type="button" data-prompt-en="Where does Bitcoin sit in its market cycle right now?" data-prompt-zh="比特币目前处于市场周期的哪个位置？">
-            <span class="prompt-ic">₿</span>
-            <span class="prompt-en">Where is Bitcoin in its cycle?</span>
-            <span class="prompt-zh">比特币目前处于周期何处？</span>
-          </button>
+  <section class="mm-section" aria-labelledby="mm-symbol-title">
+    <div class="mm-section-head mm-symbol-head">
+      <div>
+        <p class="mm-kicker"><span class="l-en">Lens 02 · Symbol episode memory</span><span class="l-zh">视角 02 · 个股片段记忆</span></p>
+        <h2 id="mm-symbol-title"><span class="l-en">What followed this setup before?</span><span class="l-zh">类似形态过去如何演变？</span></h2>
+        <p><span class="l-en">One frozen event taxonomy, with name history shrunk toward cohort evidence when the sample is thin.</span><span class="l-zh">采用同一固定事件分类；当个股样本较少时，结果向同类组证据收缩。</span></p>
+      </div>
+      <form class="mm-search" id="mm-symbol-form" role="search">
+        <label for="mm-symbol-input"><span class="l-en">Ticker</span><span class="l-zh">代码</span></label>
+        <div class="mm-search-row">
+          <input id="mm-symbol-input" name="ticker" type="search" maxlength="20" autocomplete="off" spellcheck="false" value="AAPL" aria-describedby="mm-symbol-hint">
+          <button type="submit"><span class="l-en">Open memory</span><span class="l-zh">打开记忆</span></button>
         </div>
-      </div>
+        <span id="mm-symbol-hint"><span class="l-en">Try AAPL, NVDA, SPY or BTC-USD</span><span class="l-zh">可尝试 AAPL、NVDA、SPY 或 BTC-USD</span></span>
+      </form>
     </div>
-
-    <!-- composer -->
-    <div id="composer-wrap">
-      <div id="composer-top">
-        <div id="lane-toggle" role="group">
-          <button class="lane-btn active" data-lane="fast" type="button">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M13.9 2 5 13.6h4.9L8.6 22l8.8-11.9h-4.9z"/></svg> <span class="l-en">Fast</span><span class="l-zh">快速</span>
-          </button>
-          <button class="lane-btn" data-lane="pro" type="button">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M12 2.3 20.5 9 12 21.7 3.5 9z"/><path d="M3.5 9h17M12 2.3 9.1 9 12 21.7 14.9 9z" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".4"/></svg> <span class="l-en">Pro</span><span class="l-zh">专业</span>
-          </button>
-        </div>
-        <div id="quota-info">
-          <span id="quota-fast" class="quota-chip" style="display:none"></span>
-          <span id="quota-pro" class="quota-chip" style="display:none"></span>
-        </div>
-        <!-- Deep Research toggle (W6b) — shown only when pro quota limit > 0 -->
-        <div id="research-toggle" role="group" aria-label="Deep Research mode">
-          <button id="research-btn" type="button" aria-pressed="false">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 5.2h14.4"/><path d="M8 10.1 12 13.9l4-3.8"/><path d="M8 15.3 12 19.1l4-3.8"/></svg> <span class="l-en">Deep Research</span><span class="l-zh">深度研究</span>
-          </button>
-          <span id="research-progress">
-            <span class="l-en">researching…</span><span class="l-zh">深度研究中…</span>
-          </span>
-        </div>
-        <span id="sym-ctx-label" style="font-size:12px;color:var(--muted);display:none">
-          <span class="l-en">Symbol context:</span><span class="l-zh">标的上下文：</span>
-          <strong id="sym-ctx-name" style="color:var(--link)"></strong>
-          <button id="sym-ctx-clear" type="button" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:0 0 0 4px">×</button>
-        </span>
-      </div>
-      <div id="composer-row">
-        <textarea id="msg-input" rows="1" maxlength="2000"
-          placeholder="Ask about any dashboard…"
-          data-ph-zh="就任何看板提问…"
-          aria-label="Message input"></textarea>
-        <button id="send-btn" type="button" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
-          </svg>
-        </button>
-      </div>
+    <div class="mm-symbol-summary" id="mm-symbol-summary" aria-live="polite">
+      <div class="mm-skeleton mm-skeleton-query"></div>
     </div>
-
-    <!-- footer disclaimer -->
-    <div id="chat-footer">
-      <span class="l-en">Research context only — not investment advice. Always verify against the underlying dashboards.</span>
-      <span class="l-zh">仅供研究参考，非投资建议。请始终对照底层看板核实。</span>
+    <div class="mm-grid-list" id="mm-grid-list">
+      <div class="mm-skeleton"></div><div class="mm-skeleton"></div><div class="mm-skeleton"></div>
     </div>
-  </div>
+    <p class="mm-footnote"><span class="l-en">Current release: recomputed historical price episodes under today’s taxonomy and current membership (survivor-biased), not a requested-as-of production snapshot. The PIT contract is frozen; temporal materialization must pass Wave 1 before training use.</span><span class="l-zh">当前版本：按现行分类与当前成分重算历史价格事件（存在幸存者偏差），并非指定历史时点的生产快照。PIT 合约已冻结；时间物化必须通过第一阶段后方可用于训练。</span></p>
+  </section>
 
-  <!-- right: symbol context card -->
-  <div id="ctx-panel">
-    <div id="ctx-sym-head"></div>
-    <canvas id="ctx-chart"></canvas>
-    <div id="ctx-anns"></div>
-  </div>
-
-</div>
+  <section class="mm-honesty" aria-labelledby="mm-honesty-title">
+    <div>
+      <p class="mm-kicker"><span class="l-en">Coverage truth</span><span class="l-zh">覆盖真相</span></p>
+      <h2 id="mm-honesty-title"><span class="l-en">What exists now — and what must earn history</span><span class="l-zh">现有能力 — 以及必须先建立历史的部分</span></h2>
+    </div>
+    <div class="mm-honesty-grid">
+      <article>
+        <span class="mm-check" aria-hidden="true">✓</span>
+        <div><strong><span class="l-en">Live now</span><span class="l-zh">现已可用</span></strong><p><span class="l-en">Macro-state analogues and per-symbol technical episode receipts, both from existing Mastermind engines.</span><span class="l-zh">宏观状态类比与个股技术事件凭据，均来自既有 Mastermind 引擎。</span></p></div>
+      </article>
+      <article>
+        <span class="mm-clock" aria-hidden="true">◷</span>
+        <div><strong><span class="l-en">Temporal capture first</span><span class="l-zh">先建立时间证据</span></strong><p><span class="l-en">Options surfaces, dark pool, intraday, revisions, earnings and news need point-in-time vintages before replay or training claims.</span><span class="l-zh">期权曲面、暗池、盘中数据、修订、财报与新闻必须先具备时点版本，才可用于回放或训练。</span></p></div>
+      </article>
+    </div>
+  </section>
+</main>
 
 <script src="theme.js?v=f8abb176" defer></script>
-<script>
-(function () {
-  'use strict';
-
-  /* ── state ─────────────────────────────────────────────────────────────── */
-  var lane = 'fast';
-  var threadId = null;
-  var streaming = false;
-  var ctxSymbol = null;  // active ticker context
-  var quotas = { fast: null, pro: null };  // {remaining, limit, period}
-  var annotations = [];  // [{type, price, label}]
-  var researchMode = false;  // Deep Research toggle (W6b)
-
-  /* ── DOM refs ───────────────────────────────────────────────────────────── */
-  var shell = document.getElementById('chat-shell');
-  var authGate = document.getElementById('auth-gate');
-  var msgList = document.getElementById('msg-list');
-  var emptyState = document.getElementById('empty-state');
-  var upgradeCard = document.getElementById('upgrade-card');
-  var msgInput = document.getElementById('msg-input');
-  var sendBtn = document.getElementById('send-btn');
-  var threadList = document.getElementById('thread-list');
-  var threadEmpty = document.getElementById('thread-empty');
-  var newThreadBtn = document.getElementById('new-thread-btn');
-  var quotaFast = document.getElementById('quota-fast');
-  var quotaPro = document.getElementById('quota-pro');
-  var symCtxLabel = document.getElementById('sym-ctx-label');
-  var symCtxName = document.getElementById('sym-ctx-name');
-  var symCtxClear = document.getElementById('sym-ctx-clear');
-  var ctxPanel = document.getElementById('ctx-panel');
-  var ctxSymHead = document.getElementById('ctx-sym-head');
-  var ctxAnns = document.getElementById('ctx-anns');
-  /* Deep Research (W6b) */
-  var researchToggle = document.getElementById('research-toggle');
-  var researchBtn = document.getElementById('research-btn');
-  var researchProgress = document.getElementById('research-progress');
-
-  /* Lane marks for script-written chrome (the meters). Same drawing as the composer's
-     buttons above and as the widget's — one depth family across both surfaces. */
-  var LANE_MARK = {
-    fast: '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M13.9 2 5 13.6h4.9L8.6 22l8.8-11.9h-4.9z"/></svg>',
-    pro: '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M12 2.3 20.5 9 12 21.7 3.5 9z"/><path d="M3.5 9h17M12 2.3 9.1 9 12 21.7 14.9 9z" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".4"/></svg>'
-  };
-
-  /* ── helpers ────────────────────────────────────────────────────────────── */
-  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
-  function L(en, zh) { return lang() === 'zh' ? zh : en; }
-
-  /* HTML-escape so arbitrary server text never injects markup */
-  function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  /* Minimal markdown-lite: paragraphs, bold, lists — nothing else */
-  function renderMd(text) {
-    if (!text) return '';
-    var lines = text.split('\n');
-    var out = [], inList = false;
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      var liMatch = /^[\-\*]\s+(.*)/.exec(line) || /^\d+\.\s+(.*)/.exec(line);
-      if (liMatch) {
-        if (!inList) { out.push('<ul>'); inList = true; }
-        out.push('<li>' + boldify(esc(liMatch[1])) + '</li>');
-      } else {
-        if (inList) { out.push('</ul>'); inList = false; }
-        var t = line.trim();
-        if (t) out.push('<p>' + boldify(esc(t)) + '</p>');
-      }
-    }
-    if (inList) out.push('</ul>');
-    return out.join('');
-  }
-  function boldify(s) {
-    /* **bold** and *italic* */
-    return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  }
-
-  /* Map known artifact paths to friendly page links */
-  function citationLink(cite) {
-    var MAP = {
-      'macro_context': 'macro_context.html',
-      'us_stocks': 'us_stocks.html',
-      'macro': 'macro.html',
-      /* baskets.html is a redirect stub since the Sector Intelligence merge —
-         cite the workspace's action lanes directly rather than sending a
-         reader through the bounce. */
-      'baskets': 'sector_central.html#actnow-section',
-      'china': 'china.html',
-      'hk': 'hk.html',
-      'commodities': 'commodities.html',
-      'forex': 'forex.html',
-      'crossasset': 'crossasset.html',
-      'factors': 'factors.html',
-      'vector': 'vector.html',
-      'committee': 'committee.html',
-      'cycle': 'cycle.html',
-      /* OIP W1.6-B: gex.html is a redirect stub now — cite the workspace's
-         Ticker mode directly rather than sending a reader through the bounce. */
-      'gex': 'options.html#ticker'
-    };
-    var slug = cite.replace(/\.json$/, '').replace(/^.*\//, '');
-    for (var k in MAP) {
-      if (slug.indexOf(k) !== -1) return MAP[k];
-    }
-    return null;
-  }
-
-  /* ── auth wiring ────────────────────────────────────────────────────────── */
-  function showAuthGate(on) {
-    authGate.style.display = on ? 'flex' : 'none';
-    document.getElementById('composer-wrap').style.display = on ? 'none' : '';
-    msgList.style.display = on ? 'none' : '';
-    document.getElementById('chat-footer').style.display = on ? 'none' : '';
-    /* Show the chat-history rail only when signed in (the auth hero owns the width when out). */
-    document.getElementById('thread-rail').style.display = on ? 'none' : '';
-  }
-
-  var _authed = false;
-  function onAuthState(user) {
-    _authed = !!user;
-    showAuthGate(!user);
-    if (user) {
-      loadThreads();
-      loadQuotas();
-      checkSymParam();
-    }
-  }
-
-  if (window.MDXAuth) {
-    document.getElementById('auth-gate-btn').addEventListener('click', function () {
-      window.MDXAuth.open('signin');
-    });
-    window.MDXAuth.onChange(onAuthState);
-  } else {
-    /* theme.js not yet ready — wait */
-    window.addEventListener('load', function () {
-      if (window.MDXAuth) {
-        document.getElementById('auth-gate-btn').addEventListener('click', function () {
-          window.MDXAuth.open('signin');
-        });
-        window.MDXAuth.onChange(onAuthState);
-      } else {
-        showAuthGate(false);  /* no auth configured — degrade open */
-      }
-    });
-  }
-
-  /* ── gateway auth ─────────────────────────────────────────────────────────
-     The Brain gateway authenticates with Authorization: Bearer <supabase token>,
-     NOT the session cookie. Attach it to every /api/brain/* call, or the gateway
-     401s even while signed in and the page bounces back to sign-in (a login loop). */
-  function withAuth(headers) {
-    headers = headers || {};
-    if (!(window.MDXAuth && window.MDXAuth.client)) return Promise.resolve(headers);
-    return window.MDXAuth.client()
-      .then(function (sb) { return sb.auth.getSession(); })
-      .then(function (res) {
-        var tok = res && res.data && res.data.session && res.data.session.access_token;
-        if (tok) headers['Authorization'] = 'Bearer ' + tok;
-        return headers;
-      })
-      .catch(function () { return headers; });
-  }
-
-  /* ── quota display ──────────────────────────────────────────────────────── */
-  function loadQuotas() {
-    withAuth().then(function (h) {
-      return fetch('/api/brain/me', { headers: h, credentials: 'include' });
-    })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) return;
-        quotas.fast = d.quotas && d.quotas.fast;
-        quotas.pro = d.quotas && d.quotas.pro;
-        renderQuotas();
-        /* Deep Research toggle (W6b): show when pro quota limit > 0 */
-        if (quotas.pro && quotas.pro.limit > 0) {
-          researchToggle.classList.add('visible');
-        } else {
-          researchToggle.classList.remove('visible');
-          /* also reset research mode if it was on and pro is gone */
-          if (researchMode) setResearchMode(false);
-        }
-      }).catch(function () {});
-  }
-  function renderQuotas() {
-    function chipText(q) {
-      if (!q) return '';
-      return q.remaining + ' / ' + q.limit + ' ' + q.period;
-    }
-    function chipClass(q) {
-      if (!q) return 'quota-chip';
-      if (q.remaining === 0) return 'quota-chip empty';
-      if (q.remaining <= Math.ceil(q.limit * 0.1)) return 'quota-chip warn';
-      return 'quota-chip';
-    }
-    if (quotas.fast) {
-      quotaFast.innerHTML = LANE_MARK.fast + ' ' + esc(chipText(quotas.fast));
-      quotaFast.className = chipClass(quotas.fast);
-      quotaFast.style.display = '';
-    }
-    if (quotas.pro) {
-      quotaPro.innerHTML = LANE_MARK.pro + ' ' + esc(chipText(quotas.pro));
-      quotaPro.className = chipClass(quotas.pro);
-      quotaPro.style.display = '';
-    }
-  }
-
-  /* ── deep research toggle (W6b) ─────────────────────────────────────────── */
-  function setResearchMode(on) {
-    researchMode = !!on;
-    researchBtn.classList.toggle('active', researchMode);
-    researchBtn.setAttribute('aria-pressed', researchMode ? 'true' : 'false');
-    /* When research is on, force pro lane */
-    if (researchMode) {
-      lane = 'pro';
-      document.querySelectorAll('.lane-btn').forEach(function (b) {
-        b.classList.toggle('active', b.dataset.lane === 'pro');
-      });
-    }
-  }
-  researchBtn.addEventListener('click', function () {
-    if (streaming) return;
-    setResearchMode(!researchMode);
-  });
-
-  /* ── threads ────────────────────────────────────────────────────────────── */
-  function loadThreads() {
-    withAuth().then(function (h) {
-      return fetch('/api/brain/threads', { headers: h, credentials: 'include' });
-    })
-      .then(function (r) { return r.ok ? r.json() : { threads: [] }; })
-      .then(function (d) {
-        var threads = (d && d.threads) || [];
-        renderThreads(threads);
-      }).catch(function () {});
-  }
-  function renderThreads(threads) {
-    /* Keep the chat-history rail visible (ChatGPT/Claude-style) — it shows past
-       conversations and the New-chat button; empty is fine for a first-time user. */
-    if (!threads.length) {
-      threadEmpty.style.display = '';
-      return;
-    }
-    threadEmpty.style.display = 'none';
-    threadList.innerHTML = '';
-    threads.forEach(function (t) {
-      var div = document.createElement('div');
-      div.className = 'thread-item' + (t.id === threadId ? ' active' : '');
-      div.dataset.id = t.id;
-      var date = '';
-      try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
-      div.innerHTML = '<div class="thread-title">' + esc(t.title || L('Untitled', '无标题')) + '</div>'
-        + '<div class="thread-meta">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
-      div.addEventListener('click', function () { openThread(t.id); });
-      threadList.appendChild(div);
-    });
-  }
-  function openThread(id) {
-    threadId = id;
-    document.querySelectorAll('.thread-item').forEach(function (el) {
-      el.classList.toggle('active', el.dataset.id === id);
-    });
-    withAuth().then(function (h) {
-      return fetch('/api/brain/threads/' + id, { headers: h, credentials: 'include' });
-    })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) return;
-        clearMessages();
-        (d.messages || []).forEach(function (m) {
-          appendMessage(m.role, m.content, []);
-        });
-      }).catch(function () {});
-  }
-  newThreadBtn.addEventListener('click', function () {
-    threadId = null;
-    document.querySelectorAll('.thread-item').forEach(function (el) {
-      el.classList.remove('active');
-    });
-    clearMessages();
-  });
-
-  /* ── messages ───────────────────────────────────────────────────────────── */
-  function clearMessages() {
-    /* remove all .msg children; keep #empty-state and #upgrade-card */
-    var kids = Array.prototype.slice.call(msgList.children);
-    kids.forEach(function (k) {
-      if (k.id !== 'empty-state' && k.id !== 'upgrade-card') msgList.removeChild(k);
-    });
-    emptyState.style.display = '';
-    upgradeCard.style.display = 'none';
-    document.getElementById('chat-main').classList.add('is-empty');
-    annotations = [];
-    renderAnnotations();
-  }
-  function appendMessage(role, content, citations) {
-    emptyState.style.display = 'none';
-    document.getElementById('chat-main').classList.remove('is-empty');
-    var div = document.createElement('div');
-    div.className = 'msg ' + role;
-    var bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    /* Always escape/render through the safe pipeline — never set innerHTML to raw content */
-    bubble.innerHTML = role === 'user' ? '<p>' + esc(content) + '</p>' : renderMd(content);
-    div.appendChild(bubble);
-    if (citations && citations.length) {
-      var cc = document.createElement('div');
-      cc.className = 'msg-citations';
-      citations.forEach(function (c) {
-        var href = citationLink(c);
-        var chip = document.createElement(href ? 'a' : 'span');
-        chip.className = 'cite-chip';
-        chip.textContent = c.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
-        if (href) { chip.href = href; }
-        cc.appendChild(chip);
-      });
-      div.appendChild(cc);
-    }
-    msgList.appendChild(div);
-    msgList.scrollTop = msgList.scrollHeight;
-    return bubble;
-  }
-  function appendTyping() {
-    emptyState.style.display = 'none';
-    var div = document.createElement('div');
-    div.className = 'msg assistant';
-    div.id = 'typing-msg';
-    var bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.innerHTML = '<span class="typing-dot"><span></span><span></span><span></span></span>';
-    div.appendChild(bubble);
-    msgList.appendChild(div);
-    msgList.scrollTop = msgList.scrollHeight;
-    return bubble;
-  }
-  function appendToolMsg(name) {
-    var div = document.createElement('div');
-    div.className = 'msg assistant';
-    var d = document.createElement('div');
-    d.className = 'msg-tool';
-    d.textContent = L('Checking: ', '查询：') + name;
-    div.appendChild(d);
-    msgList.appendChild(div);
-    msgList.scrollTop = msgList.scrollHeight;
-  }
-  function appendError(txt) {
-    var div = document.createElement('div');
-    div.className = 'msg assistant';
-    var d = document.createElement('div');
-    d.className = 'msg-bubble err-msg';
-    d.textContent = txt;
-    div.appendChild(d);
-    msgList.appendChild(div);
-    msgList.scrollTop = msgList.scrollHeight;
-  }
-
-  /* ── context symbol ─────────────────────────────────────────────────────── */
-  function checkSymParam() {
-    var m = /[?&]symbol=([A-Z0-9._:%-]+)/i.exec(location.search);
-    if (m) setCtxSymbol(decodeURIComponent(m[1]).toUpperCase());
-  }
-  function setCtxSymbol(sym) {
-    ctxSymbol = sym || null;
-    if (sym) {
-      symCtxName.textContent = sym;
-      symCtxLabel.style.display = '';
-      ctxSymHead.textContent = sym;
-      /* ctx panel visible on wide screens */
-      ctxPanel.classList.add('has-sym');
-    } else {
-      symCtxLabel.style.display = 'none';
-      ctxPanel.classList.remove('has-sym');
-      ctxAnns.innerHTML = '';
-    }
-  }
-  symCtxClear.addEventListener('click', function () { setCtxSymbol(null); });
-
-  /* @TICKER detection in composer */
-  msgInput.addEventListener('input', function () {
-    var m = /@([A-Z]{1,6})/.exec(msgInput.value.toUpperCase());
-    if (m) setCtxSymbol(m[1]);
-  });
-
-  /* ── annotation rendering ───────────────────────────────────────────────── */
-  function renderAnnotations() {
-    if (!ctxAnns) return;
-    ctxAnns.innerHTML = '';
-    if (!annotations.length) return;
-    annotations.forEach(function (a) {
-      var div = document.createElement('div');
-      div.className = 'ctx-ann';
-      div.innerHTML = '<span class="ctx-ann-price">$' + esc(String(a.price)) + '</span>'
-        + '<span class="ctx-ann-lbl">' + esc(a.label || a.type) + '</span>';
-      ctxAnns.appendChild(div);
-    });
-  }
-
-  /* ── lane toggle ────────────────────────────────────────────────────────── */
-  document.querySelectorAll('.lane-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      lane = btn.dataset.lane;
-      document.querySelectorAll('.lane-btn').forEach(function (b) {
-        b.classList.toggle('active', b.dataset.lane === lane);
-      });
-      /* Deep Research runs on Pro (the gateway forces it), so Fast and a lit research
-         toggle are the same contradiction setResearchMode already avoids in reverse. */
-      if (lane === 'fast' && researchMode) setResearchMode(false);
-    });
-  });
-
-  /* ── suggested prompts ──────────────────────────────────────────────────── */
-  document.querySelectorAll('.prompt-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var txt = lang() === 'zh'
-        ? (btn.dataset.promptZh || btn.dataset.promptEn)
-        : btn.dataset.promptEn;
-      if (txt) {
-        msgInput.value = txt;
-        autoResize();
-        sendBtn.disabled = false;
-        send();
-      }
-    });
-  });
-
-  /* ── composer ───────────────────────────────────────────────────────────── */
-  function autoResize() {
-    msgInput.style.height = 'auto';
-    msgInput.style.height = Math.min(180, msgInput.scrollHeight) + 'px';
-  }
-  msgInput.addEventListener('input', function () {
-    autoResize();
-    sendBtn.disabled = !msgInput.value.trim() || streaming;
-  });
-  msgInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!sendBtn.disabled) send();
-    }
-  });
-
-  /* lang-aware placeholder */
-  function syncPlaceholder() {
-    msgInput.placeholder = lang() === 'zh'
-      ? (msgInput.getAttribute('data-ph-zh') || msgInput.placeholder)
-      : 'Ask about any dashboard…';
-  }
-  syncPlaceholder();
-  document.addEventListener('langchange', syncPlaceholder);
-
-  /* ── send & SSE ─────────────────────────────────────────────────────────── */
-  document.getElementById('send-btn').addEventListener('click', send);
-
-  function send() {
-    var text = msgInput.value.trim();
-    if (!text || streaming) return;
-    if (!_authed && window.MDXAuth && window.MDXAuth.enabled()) {
-      window.MDXAuth.open('signin');
-      return;
-    }
-
-    /* user bubble — pass raw text; appendMessage escapes internally */
-    appendMessage('user', text, []);
-    msgInput.value = '';
-    autoResize();
-    sendBtn.disabled = true;
-    streaming = true;
-    upgradeCard.style.display = 'none';
-
-    /* start typing indicator */
-    var typingBubble = appendTyping();
-    var replyBubble = null;
-    var replyText = '';
-
-    /* Show research progress affordance */
-    if (researchMode) {
-      researchProgress.classList.add('visible');
-      researchBtn.disabled = true;
-    }
-
-    var body = JSON.stringify({
-      message: text,
-      lane: researchMode ? 'pro' : lane,
-      mode: researchMode ? 'research' : 'chat',
-      thread_id: threadId || undefined,
-      context: ctxSymbol ? { symbol: ctxSymbol, page: 'chat' } : { page: 'chat' }
-    });
-
-    withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
-      return fetch('/api/brain/stream', {
-        method: 'POST',
-        headers: h,
-        credentials: 'include',
-        body: body
-      });
-    }).then(function (res) {
-      if (res.status === 401) {
-        /* session expired mid-stream — clear and re-prompt sign-in */
-        var typing = document.getElementById('typing-msg');
-        if (typing) msgList.removeChild(typing);
-        streaming = false;
-        sendBtn.disabled = !msgInput.value.trim();
-        if (window.MDXAuth && window.MDXAuth.enabled()) {
-          window.MDXAuth.open('signin');
-        }
-        return;
-      }
-      if (res.status === 402) {
-        /* quota exhausted — including research mode 402 */
-        return res.json().then(function (d) {
-          var typing = document.getElementById('typing-msg');
-          if (typing) msgList.removeChild(typing);
-          upgradeCard.style.display = '';
-          streaming = false;
-          sendBtn.disabled = !msgInput.value.trim();
-          researchProgress.classList.remove('visible');
-          researchBtn.disabled = false;
-        }).catch(function () {
-          var typing = document.getElementById('typing-msg');
-          if (typing) msgList.removeChild(typing);
-          upgradeCard.style.display = '';
-          streaming = false;
-          sendBtn.disabled = !msgInput.value.trim();
-          researchProgress.classList.remove('visible');
-          researchBtn.disabled = false;
-        });
-      }
-      if (!res.ok) {
-        return res.text().then(function () {
-          var typing = document.getElementById('typing-msg');
-          if (typing) msgList.removeChild(typing);
-          appendError(L('Something went wrong. Please try again.', '出错了，请重试。'));
-          streaming = false;
-          sendBtn.disabled = !msgInput.value.trim();
-          researchProgress.classList.remove('visible');
-          researchBtn.disabled = false;
-        });
-      }
-
-      var reader = res.body.getReader();
-      var decoder = new TextDecoder();
-      var buf = '';
-
-      function read() {
-        reader.read().then(function (chunk) {
-          if (chunk.done) {
-            finishStream();
-            return;
-          }
-          buf += decoder.decode(chunk.value, { stream: true });
-          var parts = buf.split('\n\n');
-          buf = parts.pop();  /* last partial event */
-          parts.forEach(function (part) {
-            part.split('\n').forEach(function (line) {
-              if (!line.startsWith('data: ')) return;
-              var raw = line.slice(6).trim();
-              if (!raw) return;
-              var ev;
-              try { ev = JSON.parse(raw); } catch (e) { return; }
-              handleEvent(ev);
-            });
-          });
-          read();
-        }).catch(function () {
-          finishStream();
-        });
-      }
-
-      function handleEvent(ev) {
-        if (ev.type === 'meta') {
-          threadId = ev.thread_id || threadId;
-          if (ev.quota) {
-            if (ev.lane === 'fast') quotas.fast = ev.quota;
-            else quotas.pro = ev.quota;
-            renderQuotas();
-          }
-        } else if (ev.type === 'delta') {
-          if (!replyBubble) {
-            /* swap typing indicator for real bubble */
-            var typing = document.getElementById('typing-msg');
-            if (typing) msgList.removeChild(typing);
-            var msgDiv = document.createElement('div');
-            msgDiv.className = 'msg assistant';
-            replyBubble = document.createElement('div');
-            replyBubble.className = 'msg-bubble';
-            msgDiv.appendChild(replyBubble);
-            msgList.appendChild(msgDiv);
-          }
-          replyText += ev.text;
-          replyBubble.innerHTML = renderMd(replyText);
-          msgList.scrollTop = msgList.scrollHeight;
-        } else if (ev.type === 'tool') {
-          appendToolMsg(ev.name);
-        } else if (ev.type === 'annotate') {
-          if (ev.annotations) {
-            annotations = annotations.concat(ev.annotations);
-            renderAnnotations();
-          }
-        } else if (ev.type === 'command') {
-          /* Chart-command bus (W6b): dashboard ignores command events (no chart controller here).
-             Unknown event types are silently ignored per contract. */
-        } else if (ev.type === 'done') {
-          if (ev.quota) {
-            if (lane === 'fast') quotas.fast = ev.quota;
-            else quotas.pro = ev.quota;
-            renderQuotas();
-          }
-          if (ev.citations && ev.citations.length && replyBubble) {
-            var par = replyBubble.parentNode;
-            if (par) {
-              var cc = document.createElement('div');
-              cc.className = 'msg-citations';
-              ev.citations.forEach(function (c) {
-                var href = citationLink(c);
-                var chip = document.createElement(href ? 'a' : 'span');
-                chip.className = 'cite-chip';
-                chip.textContent = c.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
-                if (href) chip.href = href;
-                cc.appendChild(chip);
-              });
-              par.appendChild(cc);
-            }
-          }
-          /* bilingual probation chip — shown when backend flags is_context_only */
-          if (ev.is_context_only && replyBubble) {
-            var par2 = replyBubble.parentNode;
-            if (par2) {
-              var chip2 = document.createElement('div');
-              chip2.className = 'msg-meta';
-              chip2.style.cssText = 'margin-top:4px;font-style:italic;';
-              chip2.innerHTML = '<span class="l-en">Research context — not investment advice</span>'
-                + '<span class="l-zh">仅供研究参考，非投资建议</span>';
-              par2.appendChild(chip2);
-            }
-          }
-        }
-      }
-
-      function finishStream() {
-        var typing = document.getElementById('typing-msg');
-        if (typing) msgList.removeChild(typing);
-        streaming = false;
-        sendBtn.disabled = !msgInput.value.trim();
-        /* Reset research progress affordance */
-        researchProgress.classList.remove('visible');
-        researchBtn.disabled = false;
-        loadThreads();
-        loadQuotas();
-      }
-
-      read();
-    }).catch(function () {
-      var typing = document.getElementById('typing-msg');
-      if (typing) msgList.removeChild(typing);
-      appendError(L('Network error. Please check your connection and try again.', '网络错误，请检查连接后重试。'));
-      streaming = false;
-      sendBtn.disabled = !msgInput.value.trim();
-      researchProgress.classList.remove('visible');
-      researchBtn.disabled = false;
-    });
-  }
-
-})();
-</script>
-
+<script src="market_memory.js?v=e3e4d8d3" defer></script>
 </body>
 </html>
