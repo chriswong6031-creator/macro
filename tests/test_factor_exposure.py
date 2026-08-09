@@ -16,6 +16,13 @@ def _idx(n: int):
     return pd.date_range("2018-01-01", periods=n, freq="B")
 
 
+# The one entry in fe.CRYPTO_NAMES that is an operating COMPANY rather than a direct
+# crypto vehicle: an exchange whose equity carries real small-cap/rates exposure of its
+# own, so its btc loading need not be the single best-identified one. Coins and spot
+# ETFs get no such allowance. (See test_compute_exposure_covers_crypto_with_sane_shape.)
+CRYPTO_OPERATING_COMPANIES = {"COIN"}
+
+
 def test_orthogonalize_removes_collinearity():
     rng = np.random.default_rng(0)
     n = 600
@@ -127,16 +134,51 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
     tagged 'Crypto' (not 'ETF'), and read the honest way — btc-heavy with a real
     idiosyncratic-vol sleeve (crypto is its own bet, low R² on equity factors is correct).
     Would fail if crypto were dropped from the universe, mis-tagged, or if the
-    orthogonalization mangled a near-pure-crypto name into NaNs."""
+    orthogonalization mangled a near-pure-crypto name into NaNs.
+
+    "btc is the leading non-market exposure" is measured by IDENTIFICATION STRENGTH
+    (|beta| / se), not by which point estimate happens to print largest. This test used
+    to rank raw |beta| and demanded btc land in the top 2; that over-pinned. |beta| ranks
+    on a 252-day rolling covariance reorder on noise, because the loadings competing with
+    btc are estimated far less precisely than btc is. On 2026-08-08 data ETHA reads btc
+    +0.984 ± 0.079 (t≈12.6) against size +1.014 ± 0.242 (t≈4.2): size takes the |beta|
+    rank by 0.03 — a z of +0.12 against no difference at all — while btc is three times
+    better identified. Refitting every 10 trading days over 17 months, btc fell outside
+    the top-2 |beta| in 34/37 windows for ETHA and in 14/37 for BTC-USD, the btc factor's
+    OWN series. An assertion the factor's defining series violates 38% of the time is not
+    an engine invariant, so it was replaced rather than widened.
+
+    By t-statistic the same claim is rock solid, and it splits the sleeve along a real
+    line. The DIRECT crypto vehicles — the coins themselves and the spot ETFs — ranked btc
+    #1 of the eight non-market loadings in 37/37 windows each (BTC-USD, ETH-USD, ETHA,
+    IBIT), so they are held to rank #1. COIN is the one operating COMPANY in the set: an
+    exchange whose equity carries genuine small-cap/rates exposure of its own, and it sat
+    at #2 in 15 of those 37 windows, so it is allowed a single stronger loading. The
+    smallest btc |t| anywhere in the sweep was 5.5, so the floor below is 3.0.
+
+    Both halves still fire on the defects that matter — a broken or stale btc factor, a
+    crypto name mis-joined to the wrong price series, crypto dropped from the universe,
+    or an orthogonalization that mangles the sleeve. Each was verified by mutation; the
+    rank-#1 half is what catches a vehicle quietly re-pointed at an equity that keeps a
+    plausible-looking btc beta above the 0.5 floor.
+
+    se is reconstructed from the SHIPPED emit alone — `idio_vol` and `factor_vol_ann` are
+    both annualized, so the annualization cancels and |t_k| = |beta_k|·sqrt(n)·vol_k/idio.
+    That keeps the test on the client's contract, and pins those two fields' scaling."""
     out = fe.compute_exposure()
     if out is None:                                      # no store in this env — skip
         return
     b = out["betas"]
     factor_keys = [f["key"] for f in out["factors"]]
+    assert "btc" in factor_keys, "btc factor missing from the emitted factor set"
     # at least ONE cached crypto name must be modeled (BTC-USD is the deepest series and
     # is also the `btc` factor source, so it is present whenever the emit is)
     present = [t for t in fe.CRYPTO_NAMES if t in b]
     assert present, "no crypto names in emit despite cached BTC-USD/ETH-USD/COIN series"
+
+    fvol = out["factor_vol_ann"]
+    non_mkt = [k for k in factor_keys if k != "mkt"]
+    assert fvol.get("btc"), "emit carries no annualized btc factor vol — cannot identify the sleeve"
 
     for t in present:
         rec = b[t]
@@ -150,20 +192,24 @@ def test_compute_exposure_covers_crypto_with_sane_shape():
         #     Threshold 0.5 is loose: the real coins run ~0.9–1.1, COIN/ETFs ~0.9.
         assert rec.get("btc") is not None, f"{t} has no btc beta"
         assert rec["btc"] > 0.5, f"{t} btc beta {rec['btc']} unexpectedly low for a crypto name"
-        # btc sits among the TOP-2 |beta| non-market loadings. Not strictly #1: the
-        # ETH-side names carry a large negative usd loading (crypto weakens on a strong
-        # dollar) that can edge out btc — an honest read, so the check allows a co-leader.
-        others = sorted((abs(rec[k]) for k in factor_keys
-                         if k not in ("mkt", "btc") and rec.get(k) is not None), reverse=True)
-        second = others[1] if len(others) > 1 else 0.0
-        # Co-leader BAND, not strict ordering: on 251-day rolling betas the
-        # ETH-side names flap the order by hundredths (ETHA 2026-08-08: size
-        # 1.014 vs btc 0.984 — a 3% margin), and strict >= reds the pack on
-        # pure data drift. A name still reads as the crypto bet when btc sits
-        # within 10% of the second-ranked loading; a genuinely equity-dominated
-        # name (btc far down the order) still fails.
-        assert abs(rec["btc"]) >= second * 0.90, \
-            f"{t}: btc beta not within 10% of the top-2 non-market loadings ({rec})"
+        # (d) btc is the LEADING non-market exposure, by identification strength rather
+        #     than by raw magnitude — the claim the old top-2 |beta| check was reaching
+        #     for, measured with the statistic that actually supports it (see docstring).
+        tstat = {k: abs(rec[k]) * np.sqrt(rec["n"]) * fvol[k] / rec["idio_vol"]
+                 for k in non_mkt if rec.get(k) is not None and fvol.get(k)}
+        assert "btc" in tstat, f"{t}: btc loading is not identifiable ({rec})"
+        stronger = sorted((k for k in tstat if k != "btc" and tstat[k] > tstat["btc"]),
+                          key=lambda k: -tstat[k])
+        # Direct crypto vehicles (coins + spot ETFs) must read btc FIRST; COIN is an
+        # operating company and may carry one better-identified equity loading.
+        allowed = 1 if t in CRYPTO_OPERATING_COMPANIES else 0
+        assert len(stronger) <= allowed, (
+            f"{t}: btc is only the #{len(stronger) + 1} best-identified non-market loading — "
+            f"{', '.join(f'{k} t={tstat[k]:.1f}' for k in stronger)} vs btc t={tstat['btc']:.1f}; "
+            f"the crypto sleeve is not reading as a crypto bet ({rec})")
+        assert tstat["btc"] > 3.0, (
+            f"{t}: btc loading is statistically indistinguishable from noise "
+            f"(t={tstat['btc']:.2f}); floor is 3.0, the observed 17-month minimum is 5.5 ({rec})")
 
     # BTC-USD specifically: it IS the btc factor series → its btc beta must be ≈1
     # (self-consistency, the same check SPY→mkt gets in the sibling test)
