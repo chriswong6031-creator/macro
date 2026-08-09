@@ -5,6 +5,7 @@
   'use strict';
   var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
   var DATA = null;
+  var collapseSeq = 0;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function num(x, d) { return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
@@ -62,9 +63,10 @@
   }
   function cardDeck(items) {
     if (items.length <= 10) return '<div class="cards">' + items.map(cardHTML).join('') + '</div>';
+    var regionId = 'sc-card-region-' + (++collapseSeq);
     return '<div class="sc-card-collapse sc-card-collapsed" data-mobile-limit="10" data-desktop-rows="3" data-total="' + items.length + '">'
-      + '<div class="cards">' + items.map(cardHTML).join('') + '</div>'
-      + '<button class="sc-more sc-card-more" type="button"></button></div>';
+      + '<div class="cards" id="' + regionId + '">' + items.map(cardHTML).join('') + '</div>'
+      + '<button class="sc-more sc-card-more" type="button" aria-expanded="false" aria-controls="' + regionId + '"></button></div>';
   }
   function gridCols(grid) {
     if (!grid) return 1;
@@ -81,6 +83,7 @@
     var open = !box.classList.contains('sc-card-collapsed');
     cards.forEach(function (card, i) { card.classList.toggle('sc-card-hidden', !open && i >= limit); });
     btn.style.display = cards.length > limit ? '' : 'none';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.innerHTML = open
       ? '<span class="l-en">See fewer ▴</span><span class="l-zh">收起 ▴</span>'
       : '<span class="l-en">See more (' + (cards.length - limit) + ') ▾</span><span class="l-zh">展开更多 (' + (cards.length - limit) + ') ▾</span>';
@@ -94,8 +97,10 @@
      about names they had no way to reach. */
   function rowCollapse(tableHTML, total, cap) {
     if (total <= cap) return tableHTML;
-    return '<div class="sc-row-collapse sc-rows-collapsed" data-cap="' + cap + '">' + tableHTML
-      + '<button class="sc-more sc-row-more" type="button"></button></div>';
+    var regionId = 'sc-row-region-' + (++collapseSeq);
+    var controlledTable = tableHTML.replace('<table ', '<table id="' + regionId + '" ');
+    return '<div class="sc-row-collapse sc-rows-collapsed" data-cap="' + cap + '">' + controlledTable
+      + '<button class="sc-more sc-row-more" type="button" aria-expanded="false" aria-controls="' + regionId + '"></button></div>';
   }
   function updateRowCollapse(box) {
     var rows = Array.prototype.slice.call(box.querySelectorAll('tbody tr'));
@@ -116,6 +121,7 @@
       tr.classList.toggle('sc-card-hidden', hide);
     });
     cats.forEach(function (g) { g.tr.classList.toggle('sc-card-hidden', g.n === 0); });
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.innerHTML = open
       ? '<span class="l-en">See fewer ▴</span><span class="l-zh">收起 ▴</span>'
       : '<span class="l-en">See all ' + total + ' ▾</span><span class="l-zh">展开全部 ' + total + ' ▾</span>';
