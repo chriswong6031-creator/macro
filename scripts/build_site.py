@@ -6356,6 +6356,17 @@ def main() -> int:
     except Exception as _msp_e:  # noqa: BLE001 — additive; never break main build
         log.warning("market_structure.html render failed (%s); page skipped", _msp_e)
 
+    # Market Memory — data-free authenticated shell over existing macro analogue
+    # and Signal Episode Atlas APIs.  The page never republishes analytical data.
+    try:
+        import scripts.build_market_memory_page as _mmp
+        _mmp_html = _mmp.render(config.ROOT)
+        write_page(site / "market_memory.html", _mmp_html)
+        _tmark("market_memory")
+        log.info("wrote %s", site / "market_memory.html")
+    except Exception as _mmp_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("market_memory.html render failed (%s); page skipped", _mmp_e)
+
     # D10 — free daily movers page + og:image card
     # Must run AFTER sp500_heatmap.json and themes_heatmap.json are written above.
     try:

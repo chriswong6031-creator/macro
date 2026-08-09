@@ -1,0 +1,112 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Memory — MastermindX</title>
+{% set seo_title = "Market Memory — Historical Market Context | MastermindX" %}
+{% set seo_desc = "Compare today's macro state and a symbol's current setup with audited historical episodes — context, not a forecast." %}
+{% set seo_path = "market_memory.html" %}
+{% include "_seo_head.html.j2" %}
+{% include "_interfonts.html.j2" %}
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="market_memory.css">
+</head>
+<body class="mm-page">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+<main class="mm-shell">
+  <header class="mm-hero">
+    <div class="mm-hero-copy">
+      <p class="mm-kicker">{{ t('Historical context · Neural Web memory', '历史语境 · 智脑记忆') }}</p>
+      <h1>{{ t('Market Memory', '市场记忆') }}</h1>
+      <p class="mm-deck">{{ t('Put today beside comparable episodes — then inspect both the rhyme and the difference.', '将今天与可比历史片段并排 — 同时审视相似之处与关键差异。') }}</p>
+    </div>
+    <div class="mm-authority" aria-label="Authority boundary">
+      <span class="mm-authority-mark" aria-hidden="true">A0</span>
+      <div>
+        <strong>{{ t('Context only', '仅作语境') }}</strong>
+        <span>{{ t('No ranking · no gating · no sizing · no Prophet training authority', '不排名 · 不设闸 · 不定仓 · 无 Prophet 训练权限') }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="mm-readline" aria-label="How to read this page">
+    <span class="mm-readline-glyph" aria-hidden="true">↳</span>
+    <div>
+      <strong>{{ t('Two memory lenses, one evidence boundary', '两种记忆视角，同一证据边界') }}</strong>
+      <span>{{ t('Macro episodes compare the whole tape. Symbol receipts compare the current event class with the same stock, its cohort, and the wider library.', '宏观片段比较整体市场；个股凭据则把当前事件类别与本股、同类组及全体样本进行比较。') }}</span>
+    </div>
+  </section>
+
+  <section class="mm-section" aria-labelledby="mm-macro-title">
+    <div class="mm-section-head">
+      <div>
+        <p class="mm-kicker">{{ t('Lens 01 · Whole-market state', '视角 01 · 整体市场状态') }}</p>
+        <h2 id="mm-macro-title">{{ t('When did the tape look like this?', '何时的市场曾与今天相似？') }}</h2>
+        <p>{{ t('Growth, inflation, curve, VIX, breadth, liquidity and cycle — retrieved together.', '增长、通胀、曲线、VIX、市场广度、流动性与周期 — 联合检索。') }}</p>
+      </div>
+      <div class="mm-state-pill is-loading" id="mm-macro-state" aria-live="polite">{{ t('Loading memory', '正在加载记忆') }}</div>
+    </div>
+    <div class="mm-query" id="mm-macro-query">
+      <div class="mm-skeleton mm-skeleton-query"></div>
+    </div>
+    <div class="mm-episode-list" id="mm-macro-episodes" aria-live="polite">
+      <div class="mm-skeleton"></div><div class="mm-skeleton"></div><div class="mm-skeleton"></div>
+    </div>
+    <p class="mm-footnote" id="mm-macro-note">{{ t('Distances retrieve dated rhymes. Forward paths are observed outcomes, not odds for today.', '距离仅用于检索历史相似片段；后续路径是已发生的结果，并非今天的概率。') }}</p>
+  </section>
+
+  <section class="mm-section" aria-labelledby="mm-symbol-title">
+    <div class="mm-section-head mm-symbol-head">
+      <div>
+        <p class="mm-kicker">{{ t('Lens 02 · Symbol episode memory', '视角 02 · 个股片段记忆') }}</p>
+        <h2 id="mm-symbol-title">{{ t('What followed this setup before?', '类似形态过去如何演变？') }}</h2>
+        <p>{{ t('One frozen event taxonomy, with name history shrunk toward cohort evidence when the sample is thin.', '采用同一固定事件分类；当个股样本较少时，结果向同类组证据收缩。') }}</p>
+      </div>
+      <form class="mm-search" id="mm-symbol-form" role="search">
+        <label for="mm-symbol-input">{{ t('Ticker', '代码') }}</label>
+        <div class="mm-search-row">
+          <input id="mm-symbol-input" name="ticker" type="search" maxlength="20" autocomplete="off" spellcheck="false" value="AAPL" aria-describedby="mm-symbol-hint">
+          <button type="submit">{{ t('Open memory', '打开记忆') }}</button>
+        </div>
+        <span id="mm-symbol-hint">{{ t('Try AAPL, NVDA, SPY or BTC-USD', '可尝试 AAPL、NVDA、SPY 或 BTC-USD') }}</span>
+      </form>
+    </div>
+    <div class="mm-symbol-summary" id="mm-symbol-summary" aria-live="polite">
+      <div class="mm-skeleton mm-skeleton-query"></div>
+    </div>
+    <div class="mm-grid-list" id="mm-grid-list">
+      <div class="mm-skeleton"></div><div class="mm-skeleton"></div><div class="mm-skeleton"></div>
+    </div>
+    <p class="mm-footnote">{{ t('Current release: recomputed historical price episodes under today’s taxonomy and current membership (survivor-biased), not a requested-as-of production snapshot. The PIT contract is frozen; temporal materialization must pass Wave 1 before training use.', '当前版本：按现行分类与当前成分重算历史价格事件（存在幸存者偏差），并非指定历史时点的生产快照。PIT 合约已冻结；时间物化必须通过第一阶段后方可用于训练。') }}</p>
+  </section>
+
+  <section class="mm-honesty" aria-labelledby="mm-honesty-title">
+    <div>
+      <p class="mm-kicker">{{ t('Coverage truth', '覆盖真相') }}</p>
+      <h2 id="mm-honesty-title">{{ t('What exists now — and what must earn history', '现有能力 — 以及必须先建立历史的部分') }}</h2>
+    </div>
+    <div class="mm-honesty-grid">
+      <article>
+        <span class="mm-check" aria-hidden="true">✓</span>
+        <div><strong>{{ t('Live now', '现已可用') }}</strong><p>{{ t('Macro-state analogues and per-symbol technical episode receipts, both from existing Mastermind engines.', '宏观状态类比与个股技术事件凭据，均来自既有 Mastermind 引擎。') }}</p></div>
+      </article>
+      <article>
+        <span class="mm-clock" aria-hidden="true">◷</span>
+        <div><strong>{{ t('Temporal capture first', '先建立时间证据') }}</strong><p>{{ t('Options surfaces, dark pool, intraday, revisions, earnings and news need point-in-time vintages before replay or training claims.', '期权曲面、暗池、盘中数据、修订、财报与新闻必须先具备时点版本，才可用于回放或训练。') }}</p></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<script src="theme.js" defer></script>
+<script src="market_memory.js" defer></script>
+</body>
+</html>
