@@ -106,6 +106,11 @@ _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "reasons", "state", "above
                  # the knowability-anchored twin of fresh_bars (bucket LAST session, not
                  # its OPEN label). Display-tier: it feeds the shown age, never a gate.
                  "fresh_bars_knowable", "ticks",
+                 # Cascade-native provenance. Never substitute `last.date`: T2/T3/T4 can
+                 # coexist with an unrelated §7 marker. T3/T4 are observations without a
+                 # fired event, so their event date is null and the provisional bit is true.
+                 "tier_event_date", "tier_observed_date",
+                 "tier_observation_provisional",
                  "provisional", "htf_s1", "htf_s2", "young_history", "history_bars",
                  # the bucketing era this verdict was graded under (R5) — a cohort label like
                  # young_history, so it travels the same way. `veto_legs_null` is deliberately
@@ -180,6 +185,43 @@ def _knowable_bars(daily_close, marker, *, market_of: str) -> int | None:
             return None
         return int((idx > pd.Timestamp(session)).sum())
     except Exception:  # noqa: BLE001 — an additive disclosure never breaks the gate
+        return None
+
+
+def _emitted_marker_event_date(daily_close, marker) -> str | None:
+    """Validate an explicitly emitted marker ``signal_date`` against this input tape.
+
+    Used only for the forming-T1 path that signal_gate promotes after cascade() returns
+    no native tier. There is intentionally no fallback to the legacy bucket-open
+    ``marker['date']``: a missing or invalid knowability close stays null.
+    """
+    if not marker or "signal_date" not in marker or marker.get("signal_date") is None:
+        return None
+    try:
+        stamp = pd.Timestamp(marker["signal_date"])
+        if pd.isna(stamp):
+            return None
+        if stamp.tzinfo is not None:
+            stamp = stamp.tz_localize(None)
+        stamp = stamp.normalize()
+        idx = pd.DatetimeIndex(getattr(daily_close, "index", []))
+        if idx.tz is not None:
+            idx = idx.tz_localize(None)
+        if int(idx.normalize().get_indexer([stamp])[0]) < 0:
+            return None
+        return str(stamp.date())
+    except (TypeError, ValueError):
+        return None
+
+
+def _observed_session_date(daily_close) -> str | None:
+    """The final observed session in the exact tape handed to gate(), or null."""
+    try:
+        idx = pd.DatetimeIndex(getattr(daily_close, "index", []))
+        if len(idx) == 0:
+            return None
+        return str(pd.Timestamp(idx[-1]).date())
+    except (TypeError, ValueError):
         return None
 
 
@@ -278,6 +320,11 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
     last_m = v.get("last")
     is_buy = bool(last_m and last_m.get("type") in _BUY_TYPES)   # take OR forming 'pending'
     take_date = last_m.get("date") if is_buy else None           # age the arrow by its OWN date
+    # The event date is a separate clock: the bucket's knowability close emitted by §7.
+    # Pass it only when the producer supplied the field, preserving narrow monkeypatched
+    # cascade signatures and legacy callers that predate the date family.
+    _event_kw = ({"take_event_date": last_m.get("signal_date")}
+                 if is_buy and "signal_date" in last_m else {})
     v["fresh_bars"] = _bars_since(daily_close, last_m) if is_buy else None
     # ...and the same count anchored on the bar the marker's bucket actually CLOSED on.
     # `fresh_bars` counts from the bucket's OPEN label, so it ages a signal by up to two
@@ -299,7 +346,8 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
     _latch_kw = ({"event_latch": event_latch, "latch_key": ticker}
                  if event_latch is not None else {})
     casc = confluence_tiers.cascade(daily_close, take_active=take_active,
-                                    take_date=take_date, market=market, **_latch_kw)
+                                    take_date=take_date, market=market,
+                                    **_event_kw, **_latch_kw)
     topped = not casc.get("not_topped", True)
     tier_c = casc.get("tier")
     ticks = casc.get("ticks")
@@ -345,7 +393,24 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True, event_latch=Non
                 v["near_miss_reason"] = "not_topped_veto"
             else:
                 v["near_miss_reason"] = "freshness_expired"
+    tier_event_date = casc.get("tier_event_date")
+    tier_observed_date = casc.get("tier_observed_date")
+    tier_observation_provisional = bool(casc.get("tier_observation_provisional"))
+    if tier_c == "T1" and casc.get("tier") != "T1":
+        # signal_gate's forming-master promotion is the one T1 path cascade() cannot name:
+        # it deliberately receives take_active=False until the buy filter clears. The
+        # marker's emitted close is authoritative; its confirmation is still pending.
+        tier_event_date = _emitted_marker_event_date(daily_close, last_m)
+        tier_observed_date = _observed_session_date(daily_close)
+        tier_observation_provisional = True
+    elif tier_c is None:
+        tier_event_date = None
+        tier_observed_date = None
+        tier_observation_provisional = False
     v["tier_cascade"] = tier_c
+    v["tier_event_date"] = tier_event_date
+    v["tier_observed_date"] = tier_observed_date
+    v["tier_observation_provisional"] = tier_observation_provisional
     v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
     v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
     v["bars_to_cross"] = casc.get("bars_to_cross")

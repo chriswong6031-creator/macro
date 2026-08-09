@@ -545,7 +545,20 @@ def _build_momoedge_block(repo: Path) -> dict:
     # data/prophet/ledger.jsonl
     ledger_path = repo / "data" / "prophet" / "ledger.jsonl"
     if ledger_path.exists():
-        rows = _read_jsonl_tail(ledger_path, n=100)
+        try:
+            from engine.prophet_integrity import load_effective_ledger  # noqa: PLC0415
+
+            projection = load_effective_ledger(repo)
+            rows = [
+                row for row in projection.rows
+                if str(row.get("id") or "") not in projection.quarantined_ids
+            ][-100:]
+        except Exception as exc:  # noqa: BLE001
+            rows = []
+            gaps.append(_data_gap(
+                "prophet_ledger",
+                f"effective ledger correction projection unavailable: {exc}",
+            ))
         open_count = sum(1 for r in rows if r.get("outcome") is None)
         closed_count = sum(1 for r in rows if r.get("outcome") is not None)
         outcome_mix: dict[str, int] = {}

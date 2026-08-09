@@ -9,10 +9,23 @@ Two halves:
 
 2. WIRING — .github/workflows/daily.yml: every self-hosted job with a
    ``timeout-minutes`` carries the job-start mark as its FIRST step and the
-   ``if: always()`` finish step as its LAST, and the finish step's cap argument
-   equals the job's actual ``timeout-minutes``. This is the anti-drift pin:
-   raising a cap without updating the finish arg would silently rescale the 85%
-   tripwire (the same stale-label class that produced the tech_lab 8-day outage).
+   ``if: always()`` finish step LAST (bar the delivery tail below), and the
+   finish step's cap argument equals the job's actual ``timeout-minutes``. This
+   is the anti-drift pin: raising a cap without updating the finish arg would
+   silently rescale the 85% tripwire (the same stale-label class that produced
+   the tech_lab 8-day outage).
+
+3. PERSISTENCE — the row has to survive the night it is most needed. `always()`
+   is not enough on its own: a timeout-cancel gives the whole remaining
+   always() tail one ~5-minute grace window, so a finish step parked behind a
+   heavy delivery step never gets scheduled. That is exactly what happened to
+   the engine job (run 31067383446, 2026-08-06: cancelled at 200m cap + 5m
+   grace, `upload pages artifact` ended `failure` at the wall, and the finish
+   step never appeared in the step list at all) — 15 of 16 jobs had native rows
+   and engine had a single `backfill-gh-api` one, leaving the 85% tripwire dark
+   for the one job whose creep caused the Jul31-Aug6 outage. The tests below
+   pin the ordering that fixes it and the loudness of every early exit in
+   scripts/ci/nightly_timings_finish.sh.
 
 Run: .venv/bin/python -m pytest tests/test_nightly_timings.py -q
 """
@@ -20,6 +33,7 @@ Run: .venv/bin/python -m pytest tests/test_nightly_timings.py -q
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -30,9 +44,20 @@ from scripts import nightly_timings_report as ntr
 
 ROOT = Path(__file__).resolve().parent.parent
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
+FINISH_SH = ROOT / "scripts" / "ci" / "nightly_timings_finish.sh"
 
 START_STEP_NAME = "timings — job start mark (W2)"
 FINISH_STEP_NAME = "timings ledger + 85% budget tripwire (W2)"
+
+#: The ONLY steps allowed to follow the finish step, and only because they are
+#: pure artifact DELIVERY: no engine work happens in them, so the timings row
+#: loses nothing by being written first, and a cancel night sacrifices them
+#: anyway. Add to this set only with the same reasoning written down — anything
+#: else scheduled after the finish step re-creates the silent-loss shape.
+DELIVERY_TAIL_STEPS = frozenset({
+    "strip heavy per-ticker stores from the Pages artifact (served from R2 now)",
+    "upload pages artifact",
+})
 
 
 @pytest.fixture
@@ -179,6 +204,14 @@ def _instrumented() -> dict[str, dict]:
     return out
 
 
+def _finish_index(spec: dict) -> int:
+    """Index of the job's finish step, or -1 when it has none."""
+    for i, step in enumerate(spec["steps"]):
+        if step.get("name") == FINISH_STEP_NAME:
+            return i
+    return -1
+
+
 def test_every_self_hosted_job_is_instrumented():
     jobs = _instrumented()
     assert jobs, "daily.yml parse found no self-hosted jobs — wiring test is broken"
@@ -187,8 +220,18 @@ def test_every_self_hosted_job_is_instrumented():
         steps = spec["steps"]
         if steps[0].get("name") != START_STEP_NAME:
             missing.append(f"{key}: first step is {steps[0].get('name')!r}, not the job-start mark")
-        if steps[-1].get("name") != FINISH_STEP_NAME:
-            missing.append(f"{key}: last step is {steps[-1].get('name')!r}, not the finish/tripwire")
+        idx = _finish_index(spec)
+        if idx < 0:
+            missing.append(f"{key}: no {FINISH_STEP_NAME!r} step at all")
+            continue
+        # Last, or followed ONLY by the declared delivery tail. The finish step
+        # is where it is so it beats the grace window, not so it can be buried.
+        tail = [s.get("name") for s in steps[idx + 1:]]
+        strays = [n for n in tail if n not in DELIVERY_TAIL_STEPS]
+        if strays:
+            missing.append(
+                f"{key}: steps run after the finish step that are not pure delivery: {strays}"
+            )
     assert not missing, (
         "W2 telemetry wiring gap — a self-hosted daily.yml job is missing its timings steps "
         "(add the job-start mark as the FIRST step and nightly_timings_finish.sh as the LAST):\n"
@@ -201,13 +244,91 @@ def test_finish_cap_argument_matches_timeout_minutes():
     or the 85% tripwire silently rescales against a stale cap."""
     bad = []
     for key, spec in _instrumented().items():
-        run = spec["steps"][-1].get("run", "")
+        finish = spec["steps"][_finish_index(spec)]
+        run = finish.get("run", "")
         expected = f"bash scripts/ci/nightly_timings_finish.sh {spec['timeout-minutes']}"
         if run.strip() != expected:
             bad.append(f"{key}: timeout-minutes={spec['timeout-minutes']} but finish step runs {run.strip()!r}")
-        if spec["steps"][-1].get("if") != "always()":
+        # Exactly always(), never `always() && <condition>`: a conditioned finish
+        # step is a tripwire that goes dark on the nights it is needed. (The
+        # trailing YAML comment on the engine step is stripped by the parser.)
+        if finish.get("if") != "always()":
             bad.append(f"{key}: finish step must be if: always() so a cap-cancel night still records")
     assert not bad, "finish step drifted from the job cap:\n" + "\n".join(f"  {b}" for b in bad)
+
+
+def test_finish_step_is_not_stranded_behind_the_pages_artifact_upload():
+    """THE persistence pin — the defect this test exists to make un-revertable.
+
+    `if: always()` buys the step the right to run after a cancel; it does not
+    buy it TIME. The runner force-terminates a cancelled job ~5 minutes in, and
+    every remaining always() step shares that one window. The engine job spent
+    it on `upload pages artifact` — a multi-thousand-file upload that fails on a
+    cancel night anyway — and the finish step behind it was never scheduled.
+
+    Evidence, GH jobs API for run 31067383446 (daily, 2026-08-06):
+        engine  conclusion=cancelled  started 10:05:45Z  completed 13:30:46Z
+        (= 205.0m = the 200m cap + exactly 5m of grace)
+        117 commit engine outputs .......................... success
+        121 strip heavy per-ticker stores ................... success
+        122 upload pages artifact ........................... FAILURE
+        <no step 123 — the finish/tripwire step never ran>
+    Consequence: data/ops/nightly_timings/engine.jsonl held ONE row, and its
+    `source` was `backfill-gh-api` — reconstructed by hand from the API, not
+    written by the job — while all 15 sibling jobs carried native rows.
+
+    Any job that uploads a pages artifact must write its timings row FIRST.
+    """
+    offenders = []
+    for key, spec in _instrumented().items():
+        steps = spec["steps"]
+        uploads = [i for i, s in enumerate(steps)
+                   if str(s.get("uses", "")).startswith("actions/upload-pages-artifact")]
+        if not uploads:
+            continue
+        idx = _finish_index(spec)
+        if idx > min(uploads):
+            offenders.append(
+                f"{key}: finish step is at index {idx}, behind the pages-artifact upload "
+                f"at index {min(uploads)} — on a cap-cancel night it will not be scheduled "
+                f"and the night's row (and its 85% tripwire) is lost"
+            )
+    assert not offenders, "\n".join(offenders)
+
+
+# ---------------------------------------------------------------------------
+# wiring — scripts/ci/nightly_timings_finish.sh (non-fatal must not mean silent)
+# ---------------------------------------------------------------------------
+
+def test_every_loss_path_in_the_finish_script_announces_itself():
+    """Telemetry is allowed to fail the night; it is not allowed to fail QUIETLY.
+
+    Every early `exit 0` in the wrapper drops that night's row, and each one was
+    reachable while the ledger sat empty for three nights with a clean-looking
+    job log. Each must emit a titled workflow annotation so the loss shows up in
+    the Actions summary instead of only in a diff nobody runs."""
+    src = FINISH_SH.read_text(encoding="utf-8")
+    for slug in ("nightly timings finish failed", "nightly timings row missing",
+                 "nightly timings not staged", "nightly timings commit failed",
+                 "nightly timings push lost"):
+        assert f"::warning title={slug}::" in src, (
+            f"loss path {slug!r} lost its annotation — a silent exit 0 is the defect"
+        )
+
+
+def test_finish_script_annotations_start_the_line():
+    """House law: GitHub parses `::` only at column 0 of the emitted line, so the
+    annotation must be the FIRST thing echoed (never behind a prefix, never
+    through a logger). A prefixed call reviews as an alarm and produces nothing —
+    it shipped dead five times before #3587 swept it."""
+    src = FINISH_SH.read_text(encoding="utf-8")
+    emitters = re.findall(r'^\s*echo "([^"]*::(?:warning|error|notice)[^"]*)"',
+                          src, flags=re.MULTILINE)
+    assert emitters, "no annotation emitters found — the scan regex has drifted"
+    for text in emitters:
+        assert text.startswith("::"), (
+            f"annotation is not at column 0 of the echoed string: {text!r}"
+        )
 
 
 def test_start_mark_writes_the_path_the_reader_expects():

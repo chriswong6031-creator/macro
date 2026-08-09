@@ -1,11 +1,13 @@
 """tests/test_prophet_bridge_order_invariance.py — the bridge intake is order-invariant.
 
-`engine.prophet_bridge.select_candidates` reads `us_standouts.json["buy"]` and returns the
-plans the Prophet lane will originate. Its sort key was `(-score, -act_level)`, which is NOT a
+`engine.prophet_bridge.select_candidates` reads `us_standouts.json["buy"]` and returns a
+ranked candidate sample (or the full ordering with ``n=None``). Its sort key was
+`(-score, -act_level)`, which is NOT a
 total order: any two rows tied on both legs were left in the ARTIFACT's incoming order by
 Python's stable sort. That made the intake silently producer-dependent — a board re-emitted
-with `buy[]` in a different order could originate a DIFFERENT set of plans, with different
-plan IDs, on identical data. The fix appends `ticker` as the final key.
+with `buy[]` in a different order could produce a DIFFERENT sample on identical data. The
+fix appends `ticker` as the final key. Live origination now requests ``n=None`` and is
+lossless, but deterministic order remains a contract for rank display and research slices.
 
 Everything here shuffles the INPUT and asserts the OUTPUT does not move; the source itself
 contains no shuffling. Three things are pinned:
@@ -53,7 +55,16 @@ def _buy(ticker: str, *, score: int, act_level: int, band: str = "neutral",
 
 
 def _standouts(buys: list[dict], *, gate_go: bool = True) -> dict:
-    return {"as_of": "2026-07-31", "gate_go": gate_go, "buy": buys}
+    return {
+        "as_of": "2026-07-31",
+        "staleness": {
+            "price_through": "2026-07-31", "delayed": False, "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
+        "gate_go": gate_go,
+        "buy": buys,
+    }
 
 
 # Nine rows with distinct scores — the uncontested head of the board.
