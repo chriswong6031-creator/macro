@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T13:28:40.932451+00:00",
+  "generated_at": "2026-08-08T20:00:17.030301+00:00",
   "grade_horizons": [
     5,
     21,
@@ -99,18 +99,18 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 1814,
+        "n_obs": 1824,
         "n_dates": 36,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "wilson_ci_low": null,
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 624,
+        "n_obs": 629,
         "n_dates": 25,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "wilson_ci_low": null,
         "state": "GRADED"
       }
@@ -135,18 +135,18 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 1814,
+        "n_obs": 1824,
         "n_dates": 36,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "wilson_ci_low": null,
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 624,
+        "n_obs": 629,
         "n_dates": 25,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "wilson_ci_low": null,
         "state": "GRADED"
       }
@@ -309,18 +309,18 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 1814,
+        "n_obs": 1824,
         "n_dates": 36,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "wilson_ci_low": null,
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 624,
+        "n_obs": 629,
         "n_dates": 25,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "wilson_ci_low": null,
         "state": "GRADED"
       }
@@ -345,18 +345,18 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 1814,
+        "n_obs": 1824,
         "n_dates": 36,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "wilson_ci_low": null,
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 624,
+        "n_obs": 629,
         "n_dates": 25,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "wilson_ci_low": null,
         "state": "GRADED"
       }
@@ -536,22 +536,22 @@
       }
     },
     "_meta": {
-      "n_placebo_claims": 920,
+      "n_placebo_claims": 924,
       "n_covered_events": 39,
       "n_fallback_events": 39,
       "fallback_rate": 0.5
     }
   },
   "counts": {
-    "n_claims": 41775,
-    "n_grades": 46961,
-    "n_placebo": 920,
+    "n_claims": 42134,
+    "n_grades": 46991,
+    "n_placebo": 924,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 44181
+      "next_bar": 44211
     },
-    "n_claims_unstamped_regime": 5825
+    "n_claims_unstamped_regime": 5845
   },
   "ladder_states": {
     "altdata": {
@@ -1019,7 +1019,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-08T13:29:05.900549+00:00",
+  "ladder_states_at": "2026-08-08T20:00:42.318491+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1167,7 +1167,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "ready": false,
         "approaching": true,
         "projected_ready_date": null,
@@ -1178,7 +1178,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "ready": false,
         "approaching": true,
         "projected_ready_date": null,
@@ -1202,7 +1202,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.003191,
+        "excess_mean": -0.002861,
         "ready": false,
         "approaching": true,
         "projected_ready_date": null,
@@ -1213,7 +1213,7 @@
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.053072,
+        "excess_mean": -0.052992,
         "ready": false,
         "approaching": true,
         "projected_ready_date": null,
@@ -1817,13 +1817,13 @@
         "wilson_ci_low_5d": null
       },
       "cn_importance_v0": {
-        "challenger_excess_mean_5d": -0.003191,
+        "challenger_excess_mean_5d": -0.002861,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 36,
         "wilson_ci_low_5d": null
       },
       "cn_importance_v0_pit": {
-        "challenger_excess_mean_5d": -0.003191,
+        "challenger_excess_mean_5d": -0.002861,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 36,
         "wilson_ci_low_5d": null
@@ -1926,5 +1926,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-08T13:29:44.150077+00:00"
+  "promotion_readiness_at": "2026-08-08T20:01:20.975150+00:00"
 }
