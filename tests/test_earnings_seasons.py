@@ -531,14 +531,24 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
     """The owned score producer can advance Stage beyond the import cutoff."""
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
+    # NOW-relative, same reason as the two fixtures de-bombed above: this asserts
+    # status == "ready", which flips to "stale" once the newest call is >14 days old.
+    # Its 2026-07-31 pin was the THIRD bomb in this file and was still armed after the
+    # 2026-08-09 heal — it was due to fire 2026-08-15 (verified: reds `'stale' ==
+    # 'ready'` under a +6d clock).  The prior quarter is derived FROM the fresh
+    # timestamp so `qoq_eligible_tickers` stays 1 across year boundaries — a fixed
+    # ~95-day offset breaks in January, when now-95d lands two quarters back.
+    _fresh_ts = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=2)
+    _prior_ts = (_fresh_ts.tz_localize(None).to_period("Q") - 1).end_time
+    _fresh = _fresh_ts.date().isoformat()
     pd.DataFrame([
-        _call("AAA", "Alpha", "Software", "2026-04-30", 20, 2, 22),
+        _call("AAA", "Alpha", "Software", _prior_ts.date().isoformat(), 20, 2, 22),
     ]).to_parquet(live, index=False)
     pd.DataFrame([{
         "ticker": "AAA",
-        "quarter": "Q3",
-        "year": 2026,
-        "call_date": "2026-07-31",
+        "quarter": f"Q{_fresh_ts.quarter}",
+        "year": int(_fresh_ts.year),
+        "call_date": _fresh,
         "sentiment": 2 / 3,
         "performance": 7.5,
         "confidence": 0.9,
@@ -553,7 +563,7 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
 
     assert len(frame) == 2
     assert frame.attrs["source_tier"] == "r2_history_plus_score_overlay"
-    assert frame["call_dt"].max().date().isoformat() == "2026-07-31"
+    assert frame["call_dt"].max().date().isoformat() == _fresh
     health = eq.earnings_intelligence_health(root=tmp_path, frame=frame, write=False)
     assert health["status"] == "ready"
     assert health["checks"]["has_full_history"] is True
