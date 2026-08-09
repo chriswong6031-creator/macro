@@ -492,6 +492,21 @@ Acceptance fixture:
 
 The same law applies to final EOD dark-pool aggregates, short-volume files, revised macro releases, earnings transcripts, and delayed vendor classifications.
 
+### 6.5 Unknown issue time is an interval, never a guessed timestamp
+
+Some historical call ledgers expose an issue date, entry/contract, and later close/outcome but omit the issue time. Market Memory must not invent an intraday timestamp from row order, close time, option mark, or surrounding market movement.
+
+Wave 1 adds these receipt fields:
+
+- `event_time_precision`: `exact`, `minute`, `session`, `date`, or `interval`;
+- `event_time_lower_bound` and `event_time_upper_bound`;
+- `timestamp_inferred`: always `false` for admissible replay evidence;
+- `cutoff_scenario`: a named sensitivity cutoff such as `session_open`, `mid_session`, or `session_close`.
+
+If only the date is known, replay emits multiple context packets across declared within-day cutoffs. They share the same uncertainty receipt and are compared as a sensitivity set; none is promoted as the actual decision-time state. Any conclusion that changes across plausible cutoffs is timestamp-sensitive and must abstain from a point claim.
+
+Each scenario reconstructs only what was available by that cutoff across macro/regime, technicals, breadth, options flow/campaign context, GEX/volatility/OI, news/catalysts, and alternative data. Later close, exit, premium outcome, realized P&L, and H+60 labels are forbidden from all scenario packets. The options program owns the per-contract episode and matured H+60 outcome; Market Memory owns only the referenced context reconstruction.
+
 ---
 
 ## 7. Upgraded Mastermind cognitive architecture
@@ -839,6 +854,10 @@ Options integration extends the existing one-writer paths. `scripts/stamp_option
 14. outcome append after horizon leaves original context hash unchanged;
 15. requested-as-of API and product copy distinguish operational vs reconstructed;
 16. no Market Memory artifact can rank, gate, size, trade, or train Prophet.
+17. date-only event fixture preserves lower/upper time bounds and never emits an inferred exact time;
+18. date-only event fixture produces declared open/mid-session/close cutoff packets as one sensitivity set;
+19. macro/regime, technicals, breadth, options flow/campaign, GEX/vol/OI, news/catalysts, and alt-data coverage is explicit at every cutoff;
+20. issue-time context cannot contain close, exit, realized P&L, premium outcome, or H+60 fields.
 
 ---
 
@@ -858,7 +877,8 @@ Options integration extends the existing one-writer paths. `scripts/stamp_option
 - append-only source receipts and vintages;
 - actual-output snapshot capture begins immediately;
 - as-known-at feature projection;
-- macro and one options-source availability pilot;
+- macro/regime, technical, breadth, and one options-source availability pilot;
+- date/session timestamp-uncertainty envelope plus multi-cutoff sensitivity replay;
 - temporal-integrity fixture suite;
 - authenticated requested-as-of API.
 
