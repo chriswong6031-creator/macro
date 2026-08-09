@@ -242,7 +242,9 @@ _STUB_PLANS = [
     {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
      "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
      "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 66.0, "_signal_date": "2026-07-28"},
+     "management_confidence": 66.0, "_signal_date": "2026-07-28",
+     "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+     "signal_date": "2026-07-28"},
 ]
 
 

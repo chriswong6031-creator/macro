@@ -149,6 +149,14 @@ _CYCLE_PATTERN_STANDING_LAW = (
     "position_sizing are forbidden consumers."
 )
 
+_INFLATION_INTELLIGENCE_STANDING_LAW = (
+    "inflation_intelligence is DISPLAY/CONTEXT ONLY. released_state is latest-local "
+    "official CPI index history (not original-release vintage), next_release_forecast "
+    "is a Release Radar forecast, and current_month_proxy_pressure is an in-progress "
+    "model/proxy rather than an official CPI observation. Nothing here may originate, "
+    "score, rank, gate, size, escalate, or execute a signal or trade."
+)
+
 _THEMATIC_STATE_STANDING_LAW = (
     "thematic_state is DISPLAY/CONTEXT ONLY (TIL W5). "
     "Nothing here may originate a signal, raise a score, gate, size, or rank. "
@@ -831,6 +839,28 @@ def _summarize_cycle_pattern(repo: Path) -> tuple[dict, str | None]:
     }
     if state.get("degraded_notes"):
         lobe["degraded_notes"] = state["degraded_notes"]
+    return lobe, None
+
+
+def _summarize_inflation_intelligence(repo: Path) -> tuple[dict, str | None]:
+    """Compact released/next-print/current-pressure inflation context.
+
+    Reads only ``data/release_forecast/inflation_intelligence.json``. Forecast
+    evolution is reduced to count/first/last so the append-only path cannot grow
+    this bridge without bound. The full artifact remains available through the
+    ``read_inflation_intelligence`` cortex tool.
+    """
+    path = repo / "data" / "release_forecast" / "inflation_intelligence.json"
+    state = _read_json(path)
+    if not isinstance(state, dict) or not state:
+        return {}, "data/release_forecast/inflation_intelligence.json absent or unreadable"
+
+    # Reuse the World State projection so both shared contexts keep exactly the
+    # same bounded fields and all-false authority contract.
+    from engine.neuralweb.world_state import _compose_inflation_intelligence  # noqa: PLC0415
+
+    lobe = _compose_inflation_intelligence(root=repo)
+    lobe["standing_law"] = _INFLATION_INTELLIGENCE_STANDING_LAW
     return lobe, None
 
 
@@ -1902,6 +1932,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "macro_weather": _summarize_macro_weather,
     "claim_reliability": _summarize_claim_reliability,
     "cycle_pattern": _summarize_cycle_pattern,
+    "inflation_intelligence": _summarize_inflation_intelligence,
     "thematic_state": _summarize_thematic_state,
     "mastermind_ai": _summarize_mastermind_ai,
     "risk_radar_reliability": _summarize_risk_radar_reliability,
@@ -1929,6 +1960,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "macro_weather": ["macro-snapshots-latest"],
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
+    "inflation_intelligence": ["inflation-intelligence"],
     "thematic_state": ["theme-state"],
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],
@@ -2759,6 +2791,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
             lobes.get("claim_reliability", {}).get("as_of"),
             False,
         ),
+        "inflation_intelligence": (
+            lobes.get("inflation_intelligence", {}).get("as_of"),
+            False,
+        ),
         "government_revenue": (
             lobes.get("government_revenue", {}).get("asof"),
             False,
@@ -2853,6 +2889,7 @@ def build_context(
         "data/neuralweb/cortex/memo.json",
         "data/neuralweb/cortex/probation.json",
         "data/neuralweb/cycle_pattern_state.json",
+        "data/release_forecast/inflation_intelligence.json",
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",
