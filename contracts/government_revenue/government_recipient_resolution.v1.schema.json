@@ -36,6 +36,14 @@
         }
       }
     },
+    "identity_basis": {
+      "description": "Named basis for the exact identifiers this resolution consumed. 'source_record_recipient' is the observation's own recipient fields. 'award_level_recipient_at_collection' is the award's recipient of record attached to an observation that asserted none of its own; it is a claim about the award as collected, never a claim the observation made. Null when the record carried no exact identifier at all.",
+      "enum": ["source_record_recipient", "award_level_recipient_at_collection", null]
+    },
+    "identity_basis_known_at": {
+      "description": "Clock on which the identity named by identity_basis was retrieved. For an award-level basis this is the award record's retrieval clock, never the observation's effective time.",
+      "$ref": "#/$defs/nullableTemporal"
+    },
     "event_effective_at": {"$ref": "#/$defs/nullableTemporal"},
     "record_known_at": {"$ref": "#/$defs/nullableTemporal"},
     "analysis_as_of": {"$ref": "#/$defs/nullableTemporal"},

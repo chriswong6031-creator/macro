@@ -759,3 +759,127 @@ def test_canonically_ordered_reviewed_graph_keeps_its_pre_canonicalization_diges
 
     assert _graph_row_order_canonical(graph) == json.loads(encoded)
     assert _digest(graph) == sha256(encoded.encode("utf-8")).hexdigest()
+
+
+# --- Action-rail identity under a named basis ------------------------------
+#
+# The USAspending transactions rail carries no recipient identity of its own
+# (35,140/35,140 null UEIs on the accrued action ledger), so an action can only
+# be exact-linked through the award it belongs to. The collector attaches that
+# award's recipient of record on separate ``award_recipient_*`` columns; the
+# resolver may consume it, but only under a name and only for a namespace the
+# observation itself left empty.
+
+
+def _action_record(**changes):
+    """An action-rail observation: a real action id, and NO recipient identity."""
+    row = {
+        "source_award_key": "award-1",
+        "source_action_id": "action-77",
+        "recipient_name": None,
+        "recipient_uei": None,
+        "effective_at": "2026-06-15",
+        "known_at": "2026-06-16T12:00:00+00:00",
+        "amount": 100.0,
+        "source_url": "https://api.usaspending.gov/api/v2/transactions/",
+    }
+    row.update(changes)
+    return row
+
+
+def test_action_without_any_identity_stays_unresolved():
+    resolved = resolve_recipient(_action_record(), _graph(), as_of="2026-06-30")
+
+    assert resolved["resolution_state"] == "unresolved"
+    assert resolved["reason_codes"] == ["missing_exact_identifier"]
+    # No identifier of any kind means no basis to name -- not a default one.
+    assert resolved["identity_basis"] is None
+
+
+def test_award_level_uei_resolves_an_action_under_its_own_named_basis():
+    resolved = resolve_recipient(
+        _action_record(
+            award_recipient_uei="UEI-LMT-123",
+            award_recipient_name="LOCKHEED MARTIN SERVICES, LLC",
+            award_recipient_identity_basis="award_level_recipient_at_collection",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["resolution_state"] == "confirmed"
+    assert resolved["resolution_rule"] == "exact_uei"
+    assert resolved["issuer"] == {"company_id": "central:LMT", "ticker": "LMT"}
+    # The link is exact, and it is named for what it actually is.
+    assert resolved["identity_basis"] == "award_level_recipient_at_collection"
+    # The identity clock is the award record's retrieval clock -- never the
+    # transaction's effective time. Attaching today's recipient to a January
+    # transaction is the point-in-time hazard this name exists to disclose.
+    assert resolved["identity_basis_known_at"] == "2026-06-16T09:30:00+00:00"
+    assert resolved["identity_basis_known_at"] != resolved["event_effective_at"]
+    assert resolved["event_effective_at"].startswith("2026-06-15")
+    assert {"namespace": "sam_uei", "value": "UEI-LMT-123"} in resolved["source_recipient"]["external_ids"]
+
+
+def test_observations_own_identity_is_never_overruled_or_joined_by_the_awards():
+    """A transaction that names its recipient keeps that identity, alone.
+
+    Unioning the two would make one observation carry two sam_uei values the
+    moment a novation moved the award, and the duplicate-identifier guard would
+    fail the whole row closed -- deleting a link that works today.
+    """
+    resolved = resolve_recipient(
+        _action_record(
+            recipient_uei="UEI-LMT-123",
+            award_recipient_uei="UEI-SOMEONE-ELSE",
+            award_recipient_identity_basis="award_level_recipient_at_collection",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["resolution_state"] == "confirmed"
+    assert resolved["identity_basis"] == "source_record_recipient"
+    values = {item["value"] for item in resolved["source_recipient"]["external_ids"]}
+    assert values == {"UEI-LMT-123"}
+
+
+def test_award_level_basis_is_disclosed_even_when_another_namespace_matched():
+    """Disclosure is one-directional: any award-level identifier names the row."""
+    resolved = resolve_recipient(
+        _action_record(
+            recipient_cage="1abc2",
+            award_recipient_uei="UEI-UNKNOWN-TO-GRAPH",
+            award_recipient_known_at="2026-06-16T09:30:00+00:00",
+        ),
+        _graph(),
+        as_of="2026-06-30",
+    )
+
+    assert resolved["issuer"]["company_id"] == "central:BA"
+    assert resolved["identity_basis"] == "award_level_recipient_at_collection"
+
+
+def test_named_basis_fields_satisfy_the_resolution_contract():
+    validator = Draft202012Validator(
+        _schema("government_recipient_resolution.v1.schema.json"),
+        format_checker=FormatChecker(),
+    )
+    validator.validate(
+        resolve_recipient(
+            _action_record(
+                award_recipient_uei="UEI-LMT-123",
+                award_recipient_known_at="2026-06-16T09:30:00+00:00",
+            ),
+            _graph(),
+            as_of="2026-06-30",
+        )
+    )
+    validator.validate(resolve_recipient(_action_record(), _graph(), as_of="2026-06-30"))
+    validator.validate(resolve_recipient(_record(), _graph(), as_of="2026-06-30"))
+
+    invented = resolve_recipient(_record(), _graph(), as_of="2026-06-30")
+    invented["identity_basis"] = "whatever_we_felt_like"
+    assert list(validator.iter_errors(invented))

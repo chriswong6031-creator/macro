@@ -188,6 +188,19 @@ _EXACT_IDENTIFIER_FIELDS: dict[str, tuple[str, ...]] = {
         "recipient_id",
     ),
 }
+#: Award-level identity attached to an observation by the collector under its
+#: own provenance (``collectors/usaspending_awards.py``).  Read only for a
+#: namespace the observation itself left empty, exactly as the resolver does:
+#: a row that names its own recipient must keep its own identity, and an
+#: award-level value must never join it into a self-contradicting pair.
+_AWARD_LEVEL_IDENTIFIER_FIELDS: dict[str, tuple[str, ...]] = {
+    "sam_uei": ("award_recipient_uei",),
+}
+#: The named bases an exact link may rest on; mirrors
+#: ``engine.government_revenue.entity_resolution``.
+IDENTITY_BASIS_SOURCE_RECORD = "source_record_recipient"
+IDENTITY_BASIS_AWARD_LEVEL = "award_level_recipient_at_collection"
+IDENTITY_BASES = (IDENTITY_BASIS_SOURCE_RECORD, IDENTITY_BASIS_AWARD_LEVEL)
 _EXACT_IDENTIFIER_NAMESPACE_ALIASES = {
     "uei": "sam_uei",
     "recipient_uei": "sam_uei",
@@ -998,19 +1011,36 @@ def _identifier_value(namespace: str, value: Any) -> str | None:
     return rendered.upper()
 
 
+def _namespace_values(
+    row: Mapping[str, Any], namespace: str, fields: Iterable[str]
+) -> set[str]:
+    values: set[str] = set()
+    for field in fields:
+        # A field the source response never carried is not this row's claim,
+        # even when the column exists and holds a carried-forward value.  This
+        # presence check is what makes a populated column with no manifest entry
+        # invisible here -- the exact way an attached identity ships dark.
+        if _field_presence_value(row, field) is False:
+            continue
+        raw = row.get(field)
+        candidates = raw if isinstance(raw, (list, tuple, set, frozenset)) else [raw]
+        for candidate in candidates:
+            normalized = _identifier_value(namespace, candidate)
+            if normalized:
+                values.add(normalized)
+    return values
+
+
 def _row_exact_identifiers(row: Mapping[str, Any]) -> dict[str, set[str]]:
     result: dict[str, set[str]] = {}
     for namespace, fields in _EXACT_IDENTIFIER_FIELDS.items():
-        values: set[str] = set()
-        for field in fields:
-            if _field_presence_value(row, field) is False:
-                continue
-            raw = row.get(field)
-            candidates = raw if isinstance(raw, (list, tuple, set, frozenset)) else [raw]
-            for candidate in candidates:
-                normalized = _identifier_value(namespace, candidate)
-                if normalized:
-                    values.add(normalized)
+        values = _namespace_values(row, namespace, fields)
+        if values:
+            result[namespace] = values
+    for namespace, fields in _AWARD_LEVEL_IDENTIFIER_FIELDS.items():
+        if namespace in result:
+            continue
+        values = _namespace_values(row, namespace, fields)
         if values:
             result[namespace] = values
     return result
@@ -1160,6 +1190,19 @@ def _recipient_resolution(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
     return None
 
 
+def _resolution_identity_basis(resolution: Mapping[str, Any]) -> str | None:
+    """Return the resolution's declared identity basis, or None if unnamed.
+
+    An unnamed basis is not upgraded to a default.  A resolution artifact
+    written before the basis existed says nothing about which identity it used,
+    and inventing ``source_record_recipient`` for it would assert exactly the
+    thing the ruling requires be disclosed rather than assumed.
+    """
+
+    basis = _text(resolution.get("identity_basis"))
+    return basis if basis in IDENTITY_BASES else None
+
+
 def _resolved_issuer_impact(
     row: Mapping[str, Any],
     company_index: Mapping[str, Mapping[str, Any]],
@@ -1258,6 +1301,11 @@ def _impact(
         "company_name": _clean(_first(company, ("company_name", "name", "issuer_name")) or resolution.get("issuer", {}).get("name")),
         "issuer_company_id": _clean(resolution.get("issuer", {}).get("company_id")),
         "resolution_state": resolution_state,
+        # The basis travels with the impact, not only with the resolution: a
+        # consumer that reads listed_company_impacts and nothing else must still
+        # be able to tell an award-level attachment from a transaction-asserted
+        # identity.
+        "identity_basis": _resolution_identity_basis(resolution),
         "relation_semantic": "reviewed",
         "confidence": confidence,
         "stance": "watch_dont_chase",

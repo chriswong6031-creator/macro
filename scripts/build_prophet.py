@@ -2035,6 +2035,10 @@ def main() -> None:
             "wait_reset": intake_stats.get("wait_reset", []),
             "early_turn_starters": intake_stats.get("early_turn_starters", []),
             "leader_pullback_source": intake_stats.get("leader_pullback_source", []),
+            # The receipt that separates "the organ saw these names and none qualified"
+            # from "the organ saw none of them" — a bare zero admission count cannot.
+            "leader_pullback_coverage": intake_stats.get(
+                "leader_pullback_coverage", {}),
             # ── §6.5 comparison contract: the OLD gate, still accruing ───────────
             "legacy_shadow": {
                 "admitted": len(shadow_rows),
