@@ -4,7 +4,6 @@
  "grandfathered": [
   "scripts/research/test_run_w4_controls_fingerprints.py",
   "tests/test_accounting_quality.py",
-  "tests/test_act_now_board_icons.py",
   "tests/test_active_alloc.py",
   "tests/test_activist.py",
   "tests/test_adaptive_trend_signals.py",
@@ -292,7 +291,6 @@
   "tests/test_dol_certs_collector.py",
   "tests/test_donor.py",
   "tests/test_drift.py",
-  "tests/test_drip_append_only.py",
   "tests/test_dual_basis_store.py",
   "tests/test_dump_gate_fires.py",
   "tests/test_earnings_blackout.py",
@@ -914,7 +912,6 @@
   "tests/test_tsa_throughput.py",
   "tests/test_turning_point.py",
   "tests/test_tushare.py",
-  "tests/test_tushare_addons.py",
   "tests/test_tushare_freshness.py",
   "tests/test_tushare_freshness_tripwire.py",
   "tests/test_uid_verify_cache.py",

@@ -4027,6 +4027,8 @@ jobs:
         run: pip install pytest pyyaml jinja2
       - name: W3 receipt supply + ticker allocation + volume caps + wire fan-out
         run: python -m pytest tests/test_marketing_receipt_supply.py tests/test_marketing_ticker_allocator.py tests/test_marketing_w3_volume_caps.py tests/test_marketing_wire_fanout.py -q
+      - name: W5 session-language and durable retirement law
+        run: python -m pytest tests/test_marketing_w5_session_language.py -q
       - name: marketing engine unit tests
         # test_marketing_sentinel is co-run (2026-07-23): the Sentinel W1 gate suite
         # was never whitelisted and rotted red on main via a local-vs-UTC clock
