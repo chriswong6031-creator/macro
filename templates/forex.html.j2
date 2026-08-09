@@ -255,7 +255,7 @@ html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 
   <div class="brand">💱 Forex <span class="gn">Vector</span></div>
   <p class="lead">
     <span class="l-en">How the dollar is moving and what it's pushing on — context, not trade calls.</span>
-    <span class="l-zh">美元走势及其连锁影响 — 仅作背景，非交易建议。</span>
+    <span class="l-zh">美元走势及其连锁影响 — 仅供参考，非交易建议。</span>
   </p>
 
   {# =====================================================================
@@ -644,7 +644,7 @@ html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 
   <div class="section-h">
     <h2>{{ t('The pairs', '货币对') }}</h2>
     {# D6: subtitle #}
-    <span class="sh-sub"><span class="l-en">Leans are context, not trade calls.</span><span class="l-zh">倾向仅作背景，非交易建议。</span></span>
+    <span class="sh-sub"><span class="l-en">Leans are context, not trade calls.</span><span class="l-zh">倾向仅供参考，非交易建议。</span></span>
   </div>
   {# Pair nicknames (B1.5) #}
   {% set _nick_map = {
@@ -698,7 +698,7 @@ html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 
           <span class="l-en">{{ _action_en }}</span><span class="l-zh">{{ _action_zh }}</span>
           <div class="tip-pop">
             <div class="l-en">Model lean {{ c.score|round|int }} of ±100, confidence {{ (c.confidence*100)|round|int }}% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向{{ c.score|round|int }}（±100范围），信心{{ (c.confidence*100)|round|int }}% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-zh">模型倾向{{ c.score|round|int }}（±100范围），信心{{ (c.confidence*100)|round|int }}% — 基于历史数据测算，仅供参考。</div>
           </div>
         </span>
         {% if not (c.reliable | default(false)) %}<span class="less-tested"><span class="l-en">less tested</span><span class="l-zh">检验不足</span></span>{% endif %}
@@ -945,7 +945,7 @@ html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 
   <div class="card" style="margin-top:28px">
     <div class="honesty-note">
       <span class="l-en">This page describes today's currency backdrop. It moves with markets and does not predict them; nothing here is a trade recommendation. Pair reads are measured on past data and shown for context.</span>
-      <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅作背景参考。</span>
+      <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅供参考。</span>
     </div>
     <div class="meta-foot">{{ t('As of', '截至') }} {{ as_of }} · {{ t('built', '构建于') }} {{ built }} · {{ t('Data', '数据') }} {{ cal_span }}
     {% if not cot_ok %} · <span class="flag info">ℹ {{ t('Futures-market positioning data temporarily unavailable.', '期货市场持仓数据暂不可用。') }}</span>{% endif %}</div>
