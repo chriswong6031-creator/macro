@@ -614,6 +614,13 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # Full-A TuShare spine (#5116), wired into china-native-collectors. The
+      # collector and its suite are already reachable through collectors/** and
+      # tests/**; the MANIFEST SCHEMA is not, and it is the one subject the suite
+      # actually opens (Draft202012Validator over the emitted manifest). Without
+      # this entry a PR that edits only the schema — the exact edit that can break
+      # the spine's fail-closed contract — never starts the job that would catch it.
+      - "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json"
       # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
       # builder/fence/UI suites and the federal-award collector suites, plus
       # the one subject file no broad glob matches — engine/government_revenue/**
