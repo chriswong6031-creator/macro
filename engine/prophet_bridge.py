@@ -3858,4 +3858,40 @@ def originate_plans(
             for p in plans
         })
 
-    return plans
+    # ── W9F: Government Revenue post-selection annotation (display/context) ────
+    # Runs HERE and nowhere earlier: selection, ordering, sizing, and gating are
+    # complete and `plans` is final, so the adapter's only possible effect is to
+    # hang evidence off a plan that already exists. It derives its universe FROM
+    # this list, so there is no path by which procurement evidence influences
+    # WHICH names are in it, and it fingerprints the decision projection before
+    # and after its own work — a pass that moved any decision field discards
+    # itself. Fail-open at every layer; a raise here would cost the nightly its
+    # plans for an annotation, which is never the right trade.
+    return _annotate_with_government_revenue(plans, asof)
+
+
+def _annotate_with_government_revenue(plans: list[dict], asof: str) -> list[dict]:
+    """Attach Government Revenue annotation to plans Prophet ALREADY selected.
+
+    Separate function so the post-selection boundary is visible in a stack trace
+    and monkeypatchable in the byte-identity suite.  Today's candidate radar is
+    legitimately empty (Wave 9C: it stays empty until a real post-baseline
+    eligible event exists), so this is provably inert in production until the
+    first exact candidate lands — and `tests/test_government_revenue_prophet_
+    annotation.py` pins that inertness against the committed artifact.
+    """
+    if not plans:
+        return plans
+    try:
+        from engine.government_revenue.prophet_annotation import (  # noqa: PLC0415
+            annotate_plans_from_repo,
+        )
+
+        return annotate_plans_from_repo(
+            plans,
+            repo_root=Path(__file__).resolve().parents[1],
+            generated_at=f"{asof}T00:00:00+00:00",
+        )
+    except Exception as exc:  # noqa: BLE001 — annotation never costs Prophet its plans
+        log.warning("prophet_bridge: government-revenue annotation skipped (%s)", exc)
+        return plans
