@@ -8,8 +8,11 @@ Coverage:
   5.  Geometry: ATR fallback when no price history available.
   6.  ID stability: same ticker/direction/formation_date always produces same ID.
   7.  Duplicate suppression: plan already in existing_ids is not re-originated.
-  8.  Candidate selection gate_go=True: requires act_level >= 2.
-  9.  Candidate selection gate_go=False: OR logic (act_level>=2 OR score>=60).
+  8.  Candidate selection: act_level no longer gates admission (ANTICIPATION A1).
+  9.  Candidate selection: gate_go no longer changes admission (A1) — the
+      caution-mode score escape went with the act-level gate.  Full A1 coverage
+      (admission matrix, lag guard, shadow ledger, caps) is in
+      tests/test_prophet_anticipation_a1.py.
   10. Candidate selection: band="low" always excluded.
   11. Candidate selection: entry_signal null → excluded.
   12. Candidate selection: dir!="up" → excluded (BEAR universe not yet).
@@ -143,11 +146,16 @@ def _make_buy(
     chase_above: float | None = 105.0,
     atr_pct: float = 2.0,
     anchor: str | None = "2026-07-02",
+    status: str = "partial",
+    sector: str | None = None,
+    signal_asof: str | None = None,
 ) -> dict:
     return {
         "ticker": ticker,
         "dir": dir_,
         "state": "TURN SIGNALED",
+        **({"sector": sector} if sector is not None else {}),
+        **({"signal_asof": signal_asof} if signal_asof is not None else {}),
         "conviction": {
             "score": score,
             "band": band,
@@ -157,7 +165,7 @@ def _make_buy(
         },
         "entry_signal": {
             "act_level": act_level,
-            "status": "partial",
+            "status": status,
             "spot": spot,
             "stop": spot * 0.95,
             "chase_above": chase_above,
@@ -638,30 +646,38 @@ def test_invalid_candidate_is_itemised_while_every_valid_survivor_originates(tmp
 # 8–13. Candidate selection
 # ---------------------------------------------------------------------------
 
-def test_selection_gate_go_true_requires_act_level_2():
-    """gate_go=True: only act_level >= 2 passes."""
+def test_act_level_no_longer_gates_admission():
+    """ANTICIPATION A1: act_level is not an admission input at all any more.
+
+    Both rows carry an admitted status; the act_level 1 row used to be refused by
+    both gate modes and is now admitted on its status alone.
+    """
     buys = [
-        _make_buy("HIGH_ACT", score=80, act_level=3),
-        _make_buy("LOW_ACT",  score=90, act_level=1),
+        _make_buy("HIGH_ACT", score=80, act_level=3, status="buy_now"),
+        _make_buy("LOW_ACT",  score=10, act_level=1, status="hold"),
     ]
-    result = select_candidates({"gate_go": True, "buy": buys, "as_of": "2026-07-02"})
-    tickers = [b["ticker"] for b in result]
-    assert "HIGH_ACT" in tickers
-    assert "LOW_ACT" not in tickers
+    for gate_go in (True, False):
+        result = select_candidates(
+            {"gate_go": gate_go, "buy": buys, "as_of": "2026-07-02"})
+        tickers = [b["ticker"] for b in result]
+        assert tickers == ["HIGH_ACT", "LOW_ACT"] or set(tickers) == {
+            "HIGH_ACT", "LOW_ACT"}, f"gate_go={gate_go}: {tickers}"
 
 
-def test_selection_gate_go_false_or_logic():
-    """gate_go=False: act_level>=2 OR score>=60 passes."""
+def test_gate_go_no_longer_changes_admission():
+    """The caution-mode `score >= 60` escape is gone with the act-level gate.
+
+    A `buy_soon` row with score 90 used to be admitted in BOTH modes (act_level 2);
+    it is now refused in both, because `buy_soon` is outside the status class.
+    """
     buys = [
-        _make_buy("HIGH_SCORE", score=65, act_level=1),  # passes via score
-        _make_buy("HIGH_ACT",   score=40, act_level=3),  # passes via act_level
-        _make_buy("NEITHER",    score=50, act_level=1),  # excluded
+        _make_buy("SOON", score=90, act_level=2, status="buy_soon"),
+        _make_buy("WAIT", score=10, act_level=0, status="bounce_wait", dir_="caution"),
     ]
-    result = select_candidates({"gate_go": False, "buy": buys, "as_of": "2026-07-02"})
-    tickers = [b["ticker"] for b in result]
-    assert "HIGH_SCORE" in tickers
-    assert "HIGH_ACT" in tickers
-    assert "NEITHER" not in tickers
+    for gate_go in (True, False):
+        result = select_candidates(
+            {"gate_go": gate_go, "buy": buys, "as_of": "2026-07-02"})
+        assert [b["ticker"] for b in result] == ["WAIT"], f"gate_go={gate_go}"
 
 
 def test_selection_low_band_excluded():
@@ -1284,6 +1300,18 @@ def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
         intake_stats=stats,
     )
     assert len(plans) == len(buys) == N_CANDIDATES + 4
+    # HERMETICITY: `originate_plans` resolves the leader-pullback map from the REAL
+    # site/ tree (there is no injection point on this call path), so the receipt's
+    # `map_tickers` and the split between "outside the organ's universe" and "no coverage
+    # published" depend on whether site/anticipationdata/us_leader_pullback.json happens
+    # to be checked in.  Its PLAN-derived invariants do not, so those are asserted here
+    # and the key is removed from the exact-shape comparison below — which still catches
+    # any OTHER new or renamed stat.
+    receipt = stats.pop("leader_pullback_coverage")
+    assert receipt["plans"] == len(buys)
+    assert receipt["licensed"] == 0
+    assert (receipt["with_organ_state"] + receipt["outside_organ_universe"]
+            + receipt["no_coverage_published"]) == len(buys)
     assert stats == {
         "mode": "lossless",
         "reorigination_blocked": 0,
@@ -1300,6 +1328,34 @@ def test_originate_plans_does_not_truncate_at_n_candidates(tmp_path):
         "unaccounted": 0,
         "lossless": True,
         "all_survivors_originated": True,
+        # ── ANTICIPATION A1 / §6.9 R3 disclosure ──────────────────────────────
+        # Exact equality is deliberate: every disposition key must be enumerated
+        # here, so a new refusal path that ships without a disclosure fails.
+        "selection_era": "anticipation-v1-2026-08-08",
+        "admitted_statuses": ["bounce_wait", "buy_now", "hold", "partial",
+                              "wait_pullback"],
+        "admitted_directions": ["caution", "up"],
+        "buy_rows": len(buys),
+        "admitted_by_class": {"patience": 0, "confirmation": len(buys)},
+        "originated_by_class": {
+            "patience": 0, "confirmation": len(buys), "early_turn_starter": 0},
+        "unknown_status": 0,
+        "unknown_status_values": [],
+        "refused_status": {},
+        "refused_direction": {},
+        "refused_no_entry_signal": 0,
+        "refused_band_low": 0,
+        "refused_tier": {},
+        "stale_basis_max": 3,
+        "stale_basis_skipped": [],
+        "zone_class_counts": {
+            "accumulate": len(buys), "reset_band": 0, "wait_reset": 0},
+        "zone_conversion_classes": {"washout": 0, "pullback": len(buys)},
+        "zone_extension_unavailable": len(buys),
+        "wait_reset": [],
+        "early_turn_starters": [],
+        "leader_pullback_source": ["unavailable"],
+        # "leader_pullback_coverage" is popped and asserted above — see the note there.
     }
 
 

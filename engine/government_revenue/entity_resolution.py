@@ -155,6 +155,27 @@ _IDENTIFIER_LADDER = (
         "exact_source_id",
     ),
 )
+#: The two bases on which an exact identifier may reach this resolver.
+#:
+#: ``source_record_recipient`` is the status quo: the observation's own
+#: recipient fields, asserted by the response that produced the row.
+#:
+#: ``award_level_recipient_at_collection`` is the named attachment the
+#: action-rail identity ruling permits.  The USAspending transactions rail
+#: carries no recipient identity at all, so an action can only be exact-linked
+#: through the award it belongs to; the collector attaches that award's
+#: recipient of record on separate columns with its own retrieval clock
+#: (``award_recipient_*``).  Consuming it here is legitimate only *under the
+#: name*: the claim being made is "the award's recipient of record as
+#: collected", never "the transaction asserted this recipient".
+IDENTITY_BASIS_SOURCE_RECORD = "source_record_recipient"
+IDENTITY_BASIS_AWARD_LEVEL = "award_level_recipient_at_collection"
+#: Award-level identity fields, consulted only for a namespace the observation
+#: itself left empty.  The record's own identity always wins: a transaction that
+#: names its recipient is never overruled, or even joined, by the award's.
+_AWARD_LEVEL_IDENTIFIER_LADDER = (
+    ("sam_uei", ("award_recipient_uei",), "exact_uei"),
+)
 _NAMESPACE_ALIASES = {
     "uei": "sam_uei",
     "recipient_uei": "sam_uei",
@@ -445,9 +466,49 @@ def _intervals_overlap(left: Mapping[str, Any], right: Mapping[str, Any]) -> boo
     return left_start <= right_upper and right_start <= left_upper
 
 
+def _graph_row_order_canonical(value: Any) -> Any:
+    """Return ``value`` with every row collection in one deterministic order.
+
+    A reviewed-graph collection is a *set* of rows: ``evidence``, ``companies``,
+    ``identifiers`` and their siblings carry identity in a row field, never in a
+    list index.  Lists of scalars are left exactly as written -- ``evidence_refs``
+    and ``claim_scopes`` are row data, and re-ordering row data is not this
+    function's business.
+    """
+    if isinstance(value, Mapping):
+        return {key: _graph_row_order_canonical(child) for key, child in value.items()}
+    if isinstance(value, (list, tuple)):
+        rows = [_graph_row_order_canonical(child) for child in value]
+        if rows and all(isinstance(row, dict) for row in rows):
+            rows.sort(
+                key=lambda row: json.dumps(
+                    row, sort_keys=True, default=str, separators=(",", ":")
+                )
+            )
+        return rows
+    return value
+
+
 def _graph_fingerprint(graph: Mapping[str, Any]) -> str:
-    """Hash the reviewed graph only; source-record identity is deliberately separate."""
-    encoded = json.dumps(graph, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+    """Hash the reviewed graph only; source-record identity is deliberately separate.
+
+    Row order is serialization, not content.  While this digest moved on it, a
+    curator re-serializing the file -- or appending a row that happens to sort
+    before an existing one -- restated every identity downstream that quotes the
+    digest, which is every candidate ``observation_id``.  That turned a null edit
+    into a whole ledger of unseen observations carrying old clocks, and the
+    append-only writer then refused to publish, permanently.
+
+    Canonicalizing row order is byte-identical for a document whose collections
+    are already in canonical order, so landing this recipe does not move any
+    digest already stored in a projection state, coverage receipt, or queue.
+    """
+    encoded = json.dumps(
+        _graph_row_order_canonical(graph),
+        sort_keys=True,
+        default=str,
+        separators=(",", ":"),
+    ).encode("utf-8")
     return sha256(encoded).hexdigest()
 
 
@@ -1104,24 +1165,83 @@ def _identifier_pairs_from_override(row: Mapping[str, Any]) -> set[tuple[str, st
     return pairs
 
 
-def _record_identifier_pairs(record: Mapping[str, Any]) -> list[tuple[str, str, str]]:
-    out: list[tuple[str, str, str]] = []
+def _ladder_values(record: Mapping[str, Any], field_names: Iterable[str]) -> list[Any]:
+    values: list[Any] = []
+    for field in field_names:
+        value = record.get(field)
+        if isinstance(value, (list, tuple, set)):
+            values.extend(value)
+        else:
+            values.append(value)
+    return values
+
+
+def _record_identifier_entries(
+    record: Mapping[str, Any],
+) -> list[tuple[str, str, str, str]]:
+    """Return every exact identifier with the basis it was asserted on.
+
+    The record's own identity is read first.  An award-level identity is read
+    only for a namespace the record left empty, so a transaction that names its
+    own recipient is neither overruled nor joined by the award's recipient of
+    record -- the two would otherwise read as one source contradicting itself
+    whenever a novation moved the award, and fail the whole observation closed.
+    """
+    out: list[tuple[str, str, str, str]] = []
     seen: set[tuple[str, str]] = set()
     for namespace, field_names, rule in _IDENTIFIER_LADDER:
-        values: list[Any] = []
-        for field in field_names:
-            value = record.get(field)
-            if isinstance(value, (list, tuple, set)):
-                values.extend(value)
-            else:
-                values.append(value)
-        for value in values:
+        for value in _ladder_values(record, field_names):
             normalized = _normal_identifier(namespace, value)
             pair = (namespace, normalized or "")
             if normalized and pair not in seen:
                 seen.add(pair)
-                out.append((namespace, normalized, rule))
+                out.append((namespace, normalized, rule, IDENTITY_BASIS_SOURCE_RECORD))
+    asserted = {namespace for namespace, _value, _rule, _basis in out}
+    for namespace, field_names, rule in _AWARD_LEVEL_IDENTIFIER_LADDER:
+        if namespace in asserted:
+            continue
+        for value in _ladder_values(record, field_names):
+            normalized = _normal_identifier(namespace, value)
+            pair = (namespace, normalized or "")
+            if normalized and pair not in seen:
+                seen.add(pair)
+                out.append((namespace, normalized, rule, IDENTITY_BASIS_AWARD_LEVEL))
     return out
+
+
+def _record_identifier_pairs(record: Mapping[str, Any]) -> list[tuple[str, str, str]]:
+    return [
+        (namespace, value, rule)
+        for namespace, value, rule, _basis in _record_identifier_entries(record)
+    ]
+
+
+def _record_identity_basis(record: Mapping[str, Any]) -> str | None:
+    """Name the weakest basis any of this record's exact identifiers rests on.
+
+    Disclosure is deliberately one-directional: as soon as a single identifier
+    is an award-level attachment, the whole resolution is labelled that way.
+    Over-disclosing costs a reader nothing; under-disclosing would let an
+    award-level claim be read as transaction-asserted.
+    """
+    entries = _record_identifier_entries(record)
+    if not entries:
+        return None
+    if any(basis == IDENTITY_BASIS_AWARD_LEVEL for *_rest, basis in entries):
+        return IDENTITY_BASIS_AWARD_LEVEL
+    return IDENTITY_BASIS_SOURCE_RECORD
+
+
+def _identity_basis_known_at(record: Mapping[str, Any]) -> datetime | None:
+    """Return the clock on which this record's identity claim was retrieved.
+
+    For an award-level attachment that is the award record's own retrieval
+    clock, never the transaction's effective time: the honest claim is about
+    what the award's recipient of record was when it was collected.
+    """
+    if _record_identity_basis(record) == IDENTITY_BASIS_AWARD_LEVEL:
+        return _timestamp(record.get("award_recipient_known_at"))
+    return _timestamp(record.get("known_at") or record.get("first_seen_at"))
 
 
 def _source_recipient(record: Mapping[str, Any]) -> dict[str, Any]:
@@ -1731,6 +1851,10 @@ def _result(
         "record_key": _text(record.get("_global_dedupe_key")) or source_record_key(record),
         "source_identity_stable": _source_identity_is_stable(record),
         "source_recipient": _source_recipient(record),
+        # Name the basis on every result, not only the successful ones: a reader
+        # of an ``unresolved`` row still needs to know which identity was tried.
+        "identity_basis": _record_identity_basis(record),
+        "identity_basis_known_at": _iso(_identity_basis_known_at(record)),
         "event_effective_at": _iso(effective_at),
         "record_known_at": _iso(record_known_at),
         "analysis_as_of": _iso(analysis_as_of),

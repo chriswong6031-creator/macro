@@ -148,6 +148,110 @@ Rules (disclosed on-surface): a basket-day is ACTIVE when `activity_share ≥ 0.
 
 `sympathy.ratio` is THE "do earnings move together in this basket" stat. It ships with N everywhere, floors enforced, null below floor.
 
+### 4.4 `group_linked_outsiders.v1` (per basket, nightly; `site/basketdata/linked_outsiders.json`)
+
+FROZEN 2026-08-08 at GR3 build, exactly as shipped in `engine/group_linked_outsiders.py`.
+One object per basket_id; a basket with no edges still gets an object with `outsiders: []`.
+
+```json
+{
+  "schema": "group_linked_outsiders.v1", "authority": "context_only",
+  "generated_at": "<iso8601>", "basket_id": "ai_infra", "as_of": "2026-08-07",
+  "n_outsiders": 8, "n_confirming": 2, "n_with_tape": 7,
+  "edge_window_months": 24,
+  "outsiders": [
+    {"ticker": "TSM", "name": "<registrant name>",
+     "linked_members": [{"member": "NVDA", "relationship": "supply_agreement",
+                         "filed_at": "YYYY-MM-DD", "accession": "...", "form": "8-K", "item": "1.01"}],
+     "edge_n": 2, "last_filed_at": "YYYY-MM-DD",
+     "state": "confirming|active_divergent|quiet|unavailable",
+     "move_spy_adj": 0.012, "active": true}
+  ],
+  "basis": "counterparties disclosed in 8-K Item 1.01/2.03 material-agreement filings within 24 months, resolved by unique near-verbatim registrant-name match; states describe today's tape, not a forecast",
+  "coverage_warnings": []
+}
+```
+
+Unknown keys are contract violations (G0-1); every count carries its n.
+
+**HONESTY RULING (binding on this and every later wave).** We publish the agreement
+type the filing actually discloses and nothing more. The relationship vocabulary is
+CLOSED — `supply_agreement`, `purchase_agreement`, `collaboration`, `license`,
+`financing`, `merger_related`, `disclosed_agreement` — and the words **customer,
+supplier, partner, competitor are banned** at every tier, in the artifact and on any
+surface built from it. An 8-K Item 1.01 grounds that two companies signed an
+agreement; it does not ground which side is the customer. Jodie.ai's "outside
+confirmation" asserts those roles; we decline to, and say why on the surface. A
+CI-registered test asserts the emitted vocabulary carries none of the four words.
+
+**EDGE ADMISSION.** An 8-K row is a candidate when its `items` names Item 1.01 or
+2.03, `filing_date` falls within the trailing 24 months of `as_of`, `counterparty`
+is non-empty, and the filer is an active member of ≥1 basket. Both directions count
+— an outsider's own 8-K naming a member creates the same edge whenever that filer
+itself resolves to a member.
+
+**RESOLVER (strict; no scorer exists to loosen).** `normalize_legal_name`,
+`strip_legal_suffix`, and `name_match_tier` are IMPORTED from
+`engine.government_revenue.issuer_graph_expansion`, never forked. Registrant names
+come from the committed SEC company_tickers snapshot at
+`data/symbol_directory/cik_map/<YYYY-MM-DD>.parquet` (newest by filename date).
+Admission is exactly the govrev tiering: verbatim, or a one-sided legal-suffix
+difference. No substring, no edit distance, no abbreviation guessing. Exactly one
+surviving registrant ticker → admitted; more than one → `ambiguous_tie`; none →
+`no_registrant_match`; the filer itself → `self_reference`. Every rejection is
+written to the ledger with its reason — a candidate is never silently dropped.
+Known cost of strictness, accepted: a dual-class registrant whose tickers share one
+title (GOOGL/GOOG → "Alphabet Inc.") rejects as `ambiguous_tie`, and two different
+legal designators on one core ("… Company Ltd." vs "… CO LTD") do not match. Both
+are refusals to guess, not defects.
+
+**RELATIONSHIP SUBTYPE.** Deterministic keyword rules over the row's agreement text,
+evaluated in a fixed order (merger_related → financing → license → collaboration →
+supply_agreement → purchase_agreement), then the item-code fallback (Item 2.03
+without 1.01 → `financing`), else `disclosed_agreement`. Order is load-bearing: a
+merger agreement mentions "purchase". The full table lives in the module docstring.
+
+**OUTSIDER SET.** Resolved counterparties linked by ≥1 admitted edge to ≥1 active
+member of that basket, minus the basket's own members; ordered by (edge_n desc,
+last_filed_at desc, ticker asc) and capped at 12, with the pre-cap count disclosed in
+`coverage_warnings` whenever the cap binds. No silent truncation.
+
+**STATE (a description of today's tape, never a forecast).** `active` mirrors §4.2's
+member-activity rule and imports group_pulse's constants when that module is present
+(z ≥ 1.5 vs own trailing 63 sessions, OR volume ≥ 1.5× own 63-session median).
+Basket sign comes from `pulse.json` written earlier in the same run.
+`confirming` = active AND sign(move_spy_adj) == basket sign AND sign ≠ "mixed";
+`active_divergent` = active otherwise (including every active outsider of a mixed
+basket); `quiet` = tape readable, not active; `unavailable` = no usable tape, or no
+basket direction. An outsider with no tape STAYS LISTED — the disclosed relationship
+is a fact independent of whether the ticker prints today. A tape whose newest bar is
+>7 calendar days stale reads `unavailable`, never `quiet`: a delisted name must not
+publish an old session's move as today's. A missing `pulse.json` degrades every state
+to `unavailable` with a coverage warning and never crashes the nightly.
+
+**EDGE LEDGER** — `data/group_pulse/linked_outsider_edges.parquet`, append-only,
+advanced only in the nightly lane (`engine.ledger_lane.nightly_advance_enabled`).
+Columns: `member_ticker, outsider_ticker, relationship, accession, form, item,
+filed_at, extracted_name_raw, admitted, reject_reason, advanced_at`. Rows are facts
+and immutable once written; a re-run over identical inputs appends nothing and leaves
+the file byte-identical (G0-4).
+
+**MEASURED SOURCE YIELD AT FREEZE (2026-08-08) — the wave ships INERT.** The
+committed `data/edgar/material_8k_events.parquet` holds 50,667 rows, 9,343 with Item
+1.01/2.03, 1,972 of those inside the 24-month window — and **0 with a non-null
+`counterparty`**, across every committed revision back to 2026-07-31. So every basket
+publishes `outsiders: []` today, with the reason stated in `coverage_warnings` rather
+than an unexplained empty list. The cause is upstream and structural, not a defect in
+this engine: `collectors/edgar_8k.enrich_contract_amounts` computes
+`counterparty = _parse_counterparty(text) if ok else None`, so a counterparty is only
+extracted from a filing whose primary document ALSO yielded a parseable dollar amount
+— and all 207 filings the enrichment lane has read recorded `extraction_ok=False`,
+because material-agreement 8-Ks routinely put the dollar figure in an EX-10 exhibit
+the primary-document fetch never reads. **GR3b (not in this wave):** ungate the name
+leg from the dollar leg and extend the fetch to exhibits. The engine, the resolver,
+and the ledger are proven against synthetic fixtures and against the real registrant
+snapshot, so the artifact fills in with no rule change the night the column populates.
+
 ## §5 Waves
 
 **GR0 — group pulse plane** (opus builder, fresh worktree): `engine/group_pulse.py` assembler + episode ledger + `coiled.washout_ctx` date-exposure extension + capitulation→20dma-reclaim pairing primitive + sign-agreement field added to `group_flow.py` + nightly wiring + tests + CI registration. US 48 baskets. Gates: G0-1..6, G0-10.
@@ -156,7 +260,7 @@ Rules (disclosed on-surface): a basket-day is ACTIVE when `activity_share ≥ 0.
 
 **GR2 — group earnings pulse** (opus builder, parallel with GR0): `engine/group_earnings.py` per §4.3 — clock, beat rollup, guidance generalization, revision breadth, drift, sympathy ledger (`data/group_pulse/sympathy.parquet`, nightly-advanced, append-only closed rows). Tests + CI registration. Gates: G0-1, G0-3, G0-4, G0-5, G0-6, G0-10.
 
-**GR3 — outside confirmation** (follow-on): generalize issuer-evidence relationship extraction beyond govrev scope; per-basket filing-linked outsiders with confirm/not-confirm state + receipts. Off-render-path collection; nightly join only. Separate contract `group_linked_outsiders.v1` to be frozen at wave start.
+**GR3 — outside confirmation** (BUILT 2026-08-08, `engine/group_linked_outsiders.py`): generalize issuer-evidence relationship extraction beyond govrev scope; per-basket filing-linked outsiders with confirm/not-confirm state + receipts. Off-render-path collection; nightly join only. Contract `group_linked_outsiders.v1` FROZEN at §4.4 — including the honesty ruling (disclosed agreement types, never an inferred Customer/Supplier label) and the measured source-yield finding: the wave ships inert because the collector's `counterparty` column is empty, and **GR3b** must ungate the name leg from the dollar leg in `collectors/edgar_8k.py` before this surface carries anything.
 
 **GR4 — radar/rotation integration + zh sweep + glossary**: fold basket state-change events into Turn Desk artifacts (no parallel surface); `docs/site_semantics/` glossary rows for every new stat; regional twins (CN/HK) after US proves.
 

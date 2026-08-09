@@ -26,6 +26,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from collections.abc import Iterable
 from datetime import date, timedelta
 from decimal import Decimal
@@ -33,9 +34,15 @@ from io import BytesIO
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
 import pandas as pd
 
-from engine.prophet_integrity import (
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.prophet_integrity import (  # noqa: E402
     LEDGER_CORRECTION_SCHEMA,
     PLAN_CORRECTION_SCHEMA,
     PlanCorrectionError,
@@ -44,7 +51,7 @@ from engine.prophet_integrity import (
     validate_ledger_correction,
     validate_plan_correction,
 )
-from lib.nyse_calendar import last_session_on_or_before, sessions_between
+from lib.nyse_calendar import last_session_on_or_before, sessions_between  # noqa: E402
 
 PRICE_DIRS = (
     Path("data/baskets/ohlcv"),

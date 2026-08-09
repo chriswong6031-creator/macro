@@ -87,6 +87,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger(__name__)
 
 
@@ -255,7 +258,6 @@ def _load_serving_cohorts(flow_dir: Path, bucket: str, cfg: dict) -> pd.DataFram
     Raises ValueError if any frame is mixed-source (load_cohort guard).
     Returns empty DataFrame if no cohort data available (trainer logs and exits).
     """
-    sys.path.insert(0, str(_repo_root()))
     from scripts.ops_flow_cohorts import load_cohort
 
     frames: list[pd.DataFrame] = []
@@ -300,7 +302,6 @@ def _load_serving_cohorts(flow_dir: Path, bucket: str, cfg: dict) -> pd.DataFram
 
 def _load_eod_proxy(flow_dir: Path) -> pd.DataFrame:
     """Load eod_proxy cohort (priors only — NEVER in calibration/OOS, amendment §3.1)."""
-    sys.path.insert(0, str(_repo_root()))
     from scripts.ops_flow_cohorts import load_cohort
 
     path = flow_dir / "cohort_eod_proxy.parquet"
@@ -351,7 +352,6 @@ def _build_features(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
     - NO outcome/grade-derived features permitted (FS-R9 / amendment §3.4).
     - NO tape-signed direction features (FS-R6).
     """
-    sys.path.insert(0, str(_repo_root()))
     from lib.flow_score import build_interaction_features
     # dte_X_premium_z is in feature_cols only when dte_interaction is enabled for
     # this bucket (set by _feature_columns).  Pass dte_interaction_enabled=True so

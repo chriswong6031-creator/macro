@@ -28,7 +28,11 @@ import argparse
 import json
 import sys
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 
 # ---------------------------------------------------------------------------

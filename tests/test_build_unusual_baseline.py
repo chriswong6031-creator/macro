@@ -34,6 +34,23 @@ from scripts.build_unusual_baseline import (
 
 # ── fixture helpers ────────────────────────────────────────────────────────────
 
+def _days_ago(days: int) -> str:
+    """ISO date `days` before today (UTC) — NEVER hardcode a session date.
+
+    ``scripts/build_unusual_baseline.py:99-104`` scans ONLY the current-year and
+    prior-year parquets (``{today.year, today.year-1}.parquet``, a RAM-LAW read
+    bound), so a fixture pinned to a literal year is a scheduled red: from
+    2028-01-01 UTC the ``2026.parquet`` store this file used to write became
+    invisible, ``sessions_used`` collapsed to 0, and three tests went red while
+    three more went silently VACUOUS (they assert a null result, which the
+    empty store hands them before the gate under test is ever reached).
+    Walking back from today also makes the dates real calendar days — the old
+    ``2026-07-{i}`` form emitted invalid days (07-32..07-35) that pandas
+    silently coerced to NaT, so the nominal +5-session margin was really +1.
+    """
+    return (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).date().isoformat()
+
+
 def _write_eod_parquet(eod_dir: Path, root: str, year: int, rows: list[dict]) -> None:
     """Write a minimal EOD parquet for (root, year)."""
     d = eod_dir / root.upper()
@@ -42,18 +59,32 @@ def _write_eod_parquet(eod_dir: Path, root: str, year: int, rows: list[dict]) ->
     df.to_parquet(d / f"{year}.parquet", index=False)
 
 
+def _write_eod_store(eod_dir: Path, root: str, rows: list[dict]) -> None:
+    """Write rows into one parquet per calendar year present in their dates.
+
+    The year is derived from the rows, never assumed: a relative-dated window
+    straddles two year files every Dec/Jan, and the producer reads them per
+    year (build_unusual_baseline.py:104).
+    """
+    by_year: dict[int, list[dict]] = {}
+    for r in rows:
+        by_year.setdefault(int(str(r["date"])[:4]), []).append(r)
+    for year, year_rows in by_year.items():
+        _write_eod_parquet(eod_dir, root, year, year_rows)
+
+
 def _make_store(tmp_path: Path, root: str, n_sessions: int,
                 vol_per_session: float = 1_000_000.0) -> Path:
     """Create a minimal EOD store with n_sessions of synthetic data.
 
     Each session has vol_per_session volume (uniform) across a single contract row.
-    Dates are YYYY-07-01 through YYYY-07-{n_sessions} for simplicity.
+    Dates walk back one calendar day at a time from today (see _days_ago).
     """
     store = tmp_path / "theta_store"
     eod_dir = store / "eod"
     rows = []
     for i in range(1, n_sessions + 1):
-        day = f"2026-07-{i:02d}"
+        day = _days_ago(i)
         rows.append({
             "date":       day,
             "root":       root.upper(),
@@ -67,7 +98,7 @@ def _make_store(tmp_path: Path, root: str, n_sessions: int,
             "volume":     int(vol_per_session),
             "count":      500,
         })
-    _write_eod_parquet(eod_dir, root, 2026, rows)
+    _write_eod_store(eod_dir, root, rows)
     return store
 
 
@@ -204,15 +235,17 @@ def test_compute_null_when_post_load_volume_sparse(tmp_path):
     root = "SPY"
     store = tmp_path / "theta_store"
     eod_dir = store / "eod"
-    d = eod_dir / root
-    d.mkdir(parents=True, exist_ok=True)
 
     # Enough date entries to pass the date-scan gate.
     n_date_entries = MIN_SESSIONS + 2
 
     rows = []
     for i in range(1, n_date_entries + 1):
-        day = f"2026-07-{i:02d}"
+        # Relative for the same reason as _make_store: a pinned year makes this
+        # store invisible to the producer's {year, year-1} scan, and the test
+        # then passes on "0 sessions available" instead of the post-load n_ok
+        # gate it is written to pin.
+        day = _days_ago(i)
         # Only the first (MIN_SESSIONS - 1) rows carry real volume; the rest have
         # zero volume so they are filtered out by the volume-load step.
         vol = 500_000 if i < MIN_SESSIONS else 0
@@ -225,7 +258,7 @@ def test_compute_null_when_post_load_volume_sparse(tmp_path):
             "volume":     vol,
         })
 
-    pd.DataFrame(rows).to_parquet(d / "2026.parquet", index=False)
+    _write_eod_store(eod_dir, root, rows)
 
     result = compute_root_baseline(store, root)
 

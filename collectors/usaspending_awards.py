@@ -38,6 +38,10 @@ AWARDS_URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
 TRANSACTIONS_URL = "https://api.usaspending.gov/api/v2/transactions/"
 AWARD_DETAIL_URL = "https://api.usaspending.gov/api/v2/awards/{award_id}/"
 CONTRACT_TYPES = ["A", "B", "C", "D"]
+# Measured ceiling, not a guess: see ``recipient_query_terms``.  A 10-term
+# recipient_search_text body is rejected with a retry-proof HTTP 503; 9 is the
+# largest observed success, so the collector queries at most 8 terms per entity.
+MAX_RECIPIENT_QUERY_TERMS = 8
 AWARD_FIELDS = [
     "Award ID",
     "Recipient Name",
@@ -241,6 +245,15 @@ AWARD_ACTION_VERSION_COLUMNS = [
     "piid",
     "recipient_name",
     "recipient_uei",
+    # Award-level recipient identity, attached under its own provenance and its
+    # own clock.  See ``AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS`` and
+    # ``_award_recipient_identity`` below: these are deliberately NOT the
+    # transaction's own ``recipient_*`` fields, and nothing may widen one into
+    # the other.
+    "award_recipient_uei",
+    "award_recipient_name",
+    "award_recipient_identity_basis",
+    "award_recipient_known_at",
     "action_id",
     "source_action_id",
     "action_date",
@@ -305,6 +318,21 @@ AWARD_EVENT_SNAPSHOT_STATE_FIELDS = tuple(
         "coverage_scope",
     }
 )
+#: The named basis under which an action row may carry the award's recipient of
+#: record.  The transactions rail never asserts a recipient identity of its own
+#: (35,140/35,140 null UEIs on the accrued ledger), so an action can only be
+#: exact-linked through the award it belongs to.  Attaching that identity is
+#: legitimate ONLY as a distinct, provenance-named claim on its own clock: "the
+#: award's recipient of record as collected", never "the transaction said so".
+AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS = "award_level_recipient_at_collection"
+#: The four action columns that carry it.  They are deliberately excluded from
+#: the state fields below.
+AWARD_RECIPIENT_IDENTITY_COLUMNS: tuple[str, ...] = (
+    "award_recipient_uei",
+    "award_recipient_name",
+    "award_recipient_identity_basis",
+    "award_recipient_known_at",
+)
 AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
     column
     for column in AWARD_ACTION_VERSION_COLUMNS
@@ -321,8 +349,32 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
         "receipt_verified",
         "event_eligible",
         "coverage_scope",
+        # The award-level identity is attached from a DIFFERENT rail on a
+        # DIFFERENT clock; the transaction never asserted it.  Letting it into
+        # the state hash would (a) make an award-level novation manufacture a
+        # fake revision of an action the source never re-issued, and (b) rewrite
+        # every accrued row's ``event_state_sha256`` the moment the column
+        # joined the canonical list -- a rewrite of history for a schema
+        # addition.  Excluded on both counts.
+        *AWARD_RECIPIENT_IDENTITY_COLUMNS,
     }
 )
+
+#: Canonical event-ledger columns that joined their list AFTER the projection
+#: generation binding was already written to a committed store.  The binding
+#: hashes the column list along with the rows, so an accrued store that predates
+#: an addition cannot reproduce the current-schema digest even when not one byte
+#: of it has changed.  ``award_event_projection_generation_matches`` consults
+#: this registry to tell that schema addition apart from a torn or tampered
+#: pair; see its docstring for exactly how narrow the allowance is.
+#:
+#: Append here whenever a column joins one of the two canonical lists.  Entries
+#: may be retired only once no committed store predates them, which in practice
+#: means after a full receipt-bound baseline has rewritten the ledger.
+AWARD_EVENT_PROJECTION_SCHEMA_ADDITIONS: dict[str, tuple[str, ...]] = {
+    "award_event_snapshots": (),
+    "award_action_versions": AWARD_RECIPIENT_IDENTITY_COLUMNS,
+}
 
 # Columns of the three legacy ledgers that carry numbers.  Everything else in
 # AWARD_COLUMNS/ACTION_COLUMNS/SNAPSHOT_COLUMNS carries strings but is nullable:
@@ -333,13 +385,18 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
 # repaired *is* a column joining a canonical list without the accrued store
 # following: a copied literal would drift again on the next added column, while
 # this numeric set is small, fixed, and auditable by eye.
-_NUMERIC_LEDGER_COLS = (
+NUMERIC_LEDGER_COLUMNS = (
     "total_obligated",
     "total_outlays",
     "current_award_amount",
     "potential_award_amount",
     "federal_action_obligation",
 )
+# Historical private spelling.  ``engine.government_revenue.amount_semantics``
+# DERIVES the set of fields that must carry a declared semantic class from the
+# public name below plus ``AWARD_EVENT_NUMBER_COLUMNS``, so a number column that
+# joins a canonical list without a class fails that module's coverage guard.
+_NUMERIC_LEDGER_COLS = NUMERIC_LEDGER_COLUMNS
 _OBJECT_COLS = tuple(
     column
     for column in dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])
@@ -460,6 +517,52 @@ def _bool_or_none(value: Any) -> bool | None:
     return None
 
 
+def recipient_query_terms(entity: Any, ticker: str) -> tuple[list[str], list[str]]:
+    """Return the ordered recipient-name terms this entity is actually queried with.
+
+    ``recipient_search_text`` is a *contiguous substring* filter, not an unordered
+    token match: probes against the live endpoint on 2026-08-07 returned 10 rows
+    for the interior substring ``"OCKHEED MARTI"`` and 0 rows for the reordered
+    tokens ``"MARTIN LOCKHEED"``.  A single legal-name string therefore misses any
+    issuer whose award rows carry a differently spelled operating-subsidiary name —
+    ``"BWX TECHNOLOGIES"`` matched nothing while ``"BWXT NUCLEAR OPERATIONS GROUP"``
+    matched four awards.  ``recipient_aliases`` already exists in the entity map and
+    is already published downstream, so the discovery rail reads the whole list; the
+    endpoint ORs every entry inside one request, so an alias list costs no extra
+    requests (verified: ``["BWXT", "AEROVIRONMENT"]`` returned both families).
+
+    The list is capped because an over-long term list is *not* merely slow — it is
+    rejected.  Measured 2026-08-07 against the live endpoint: a 10-term real-name
+    body returned HTTP 503 with an empty body in under a second, identically on
+    6/6 repeats, while the same body at 9 terms returned 200; dropping any single
+    term from the failing 10 restored 200.  The cliff is not a clean function of
+    body bytes or term count (20 synthetic two-word terms passed; 8 real terms plus
+    four two-character terms failed), so the cap sits one below the smallest
+    observed failure.  A 503 here is retry-proof, so an uncapped list would blank
+    the entity entirely rather than degrade it.  Terms past the cap are returned
+    separately so the caller can disclose them instead of dropping them silently.
+    """
+    seen: set[str] = set()
+    terms: list[str] = []
+    entity_map = entity if isinstance(entity, dict) else {}
+    raw_aliases = entity_map.get("recipient_aliases")
+    candidates: list[Any] = [entity_map.get("recipient_search_text")]
+    if isinstance(raw_aliases, (list, tuple)):
+        candidates.extend(raw_aliases)
+    for candidate in candidates:
+        text = _text(candidate)
+        if not text:
+            continue
+        key = text.upper()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(text)
+    if not terms:
+        terms = [_text(entity_map.get("name")) or str(ticker)]
+    return terms[:MAX_RECIPIENT_QUERY_TERMS], terms[MAX_RECIPIENT_QUERY_TERMS:]
+
+
 def award_event_coverage_manifest(
     entities: dict[str, Any],
     *,
@@ -478,18 +581,18 @@ def award_event_coverage_manifest(
     eligible universe and collection contract had not changed.
     """
 
-    entity_queries: list[dict[str, str]] = []
+    entity_queries: list[dict[str, Any]] = []
     for raw_ticker, raw_entity in sorted(entities.items(), key=lambda item: str(item[0]).upper()):
         ticker = str(raw_ticker).upper()
         entity = raw_entity if isinstance(raw_entity, dict) else {}
-        query = _text(
-            entity.get("recipient_search_text")
-            or entity.get("name")
-            or ticker
-        ) or ticker
+        # The manifest records the terms the collector actually sends, not the
+        # single primary string: a coverage contract that named less than the
+        # query would let an alias edit change the universe without rebaselining.
+        terms, _dropped = recipient_query_terms(entity, ticker)
         entity_queries.append({
             "ticker": ticker,
-            "recipient_search_text": query,
+            "recipient_search_text": terms[0],
+            "recipient_query_terms": list(terms),
         })
     return {
         "schema_version": AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA,
@@ -846,6 +949,40 @@ def _award_event_ledger_generation(
     return len(records), hasher.hexdigest()
 
 
+def _award_event_projection_binding(
+    *,
+    snapshot_columns: list[str],
+    snapshot_count: int,
+    snapshot_digest: str,
+    action_columns: list[str],
+    action_count: int,
+    action_digest: str,
+) -> dict[str, str | int]:
+    """Combine two ledger generations into the one immutable pair binding."""
+    combined_payload = {
+        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
+        "award_event_snapshots": {
+            "columns": snapshot_columns,
+            "row_count": snapshot_count,
+            "semantic_sha256": snapshot_digest,
+        },
+        "award_action_versions": {
+            "columns": action_columns,
+            "row_count": action_count,
+            "semantic_sha256": action_digest,
+        },
+    }
+    combined_digest = _sha256_json(combined_payload)
+    return {
+        "projection_generation_id": f"award-event-{combined_digest[:24]}",
+        "award_event_snapshots_semantic_sha256": snapshot_digest,
+        "award_event_snapshots_row_count": snapshot_count,
+        "award_action_versions_semantic_sha256": action_digest,
+        "award_action_versions_row_count": action_count,
+        "projection_semantic_sha256": combined_digest,
+    }
+
+
 def award_event_projection_generation(
     award_event_snapshots: pd.DataFrame,
     award_action_versions: pd.DataFrame,
@@ -868,28 +1005,61 @@ def award_event_projection_generation(
         ledger="award_action_versions",
         columns=AWARD_ACTION_VERSION_COLUMNS,
     )
-    combined_payload = {
-        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
-        "award_event_snapshots": {
-            "columns": AWARD_EVENT_SNAPSHOT_COLUMNS,
-            "row_count": snapshot_count,
-            "semantic_sha256": snapshot_digest,
-        },
-        "award_action_versions": {
-            "columns": AWARD_ACTION_VERSION_COLUMNS,
-            "row_count": action_count,
-            "semantic_sha256": action_digest,
-        },
-    }
-    combined_digest = _sha256_json(combined_payload)
-    return {
-        "projection_generation_id": f"award-event-{combined_digest[:24]}",
-        "award_event_snapshots_semantic_sha256": snapshot_digest,
-        "award_event_snapshots_row_count": snapshot_count,
-        "award_action_versions_semantic_sha256": action_digest,
-        "award_action_versions_row_count": action_count,
-        "projection_semantic_sha256": combined_digest,
-    }
+    return _award_event_projection_binding(
+        snapshot_columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        snapshot_count=snapshot_count,
+        snapshot_digest=snapshot_digest,
+        action_columns=AWARD_ACTION_VERSION_COLUMNS,
+        action_count=action_count,
+        action_digest=action_digest,
+    )
+
+
+def _pre_addition_columns(
+    frame: pd.DataFrame,
+    *,
+    ledger: str,
+    columns: list[str],
+) -> list[str] | None:
+    """Return the ledger's column list as it stood before the newest additions.
+
+    ``None`` when the frame is not a pre-addition store: either the ledger has
+    no registered additions, or the frame actually carries a value in one of
+    them.  A column with data in it is never dropped from a verification.
+    """
+    additions = AWARD_EVENT_PROJECTION_SCHEMA_ADDITIONS.get(ledger) or ()
+    if not additions:
+        return None
+    for column in additions:
+        if column in frame.columns and bool(frame[column].notna().any()):
+            return None
+    return [column for column in columns if column not in set(additions)]
+
+
+def _ledger_generation_matches(
+    state: dict,
+    frame: pd.DataFrame,
+    *,
+    ledger: str,
+    columns: list[str],
+    count_field: str,
+    digest_field: str,
+) -> list[str] | None:
+    """Return the column list under which this ledger reproduces its binding."""
+    candidates = [columns]
+    pre_addition = _pre_addition_columns(frame, ledger=ledger, columns=columns)
+    if pre_addition is not None:
+        candidates.append(pre_addition)
+    for candidate in candidates:
+        try:
+            count, digest = _award_event_ledger_generation(
+                frame, ledger=ledger, columns=candidate
+            )
+        except (TypeError, ValueError):
+            continue
+        if state.get(count_field) == count and state.get(digest_field) == digest:
+            return candidate
+    return None
 
 
 def award_event_projection_generation_matches(
@@ -897,7 +1067,24 @@ def award_event_projection_generation_matches(
     award_event_snapshots: pd.DataFrame,
     award_action_versions: pd.DataFrame,
 ) -> bool:
-    """Return whether a loaded ledger pair exactly matches its state binding."""
+    """Return whether a loaded ledger pair matches its state binding.
+
+    The binding hashes each ledger's *column list* along with its rows, so a
+    canonical column added after the binding was written makes the exact
+    recomputation disagree with a store that is otherwise untouched.  That is a
+    schema addition, not a torn pair, and it must not read as tampering: the
+    live publish lane refuses to serve a mismatched bundle and ``persist()``
+    refuses to replace a mismatched generation, so treating an addition as a
+    mismatch would brick both the moment a column joined the canonical list.
+
+    The fallback is deliberately narrow.  It only accepts a store whose rows
+    reproduce the binding **exactly** under the column list that existed when
+    the binding was written, and only while every newly added column is still
+    empty in that store.  A row that changed, a row that vanished, a partial
+    write, or a store that already carries values in the new columns all still
+    fail: the fallback proves the stored bytes ARE the bound bytes, which is the
+    property the refusal exists to check.
+    """
     if not isinstance(state, dict):
         return False
     try:
@@ -906,8 +1093,48 @@ def award_event_projection_generation_matches(
             award_action_versions,
         )
     except (TypeError, ValueError):
+        generation = None
+    if generation is not None and all(
+        state.get(field) == generation[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    ):
+        return True
+
+    snapshot_columns = _ledger_generation_matches(
+        state,
+        award_event_snapshots,
+        ledger="award_event_snapshots",
+        columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        count_field="award_event_snapshots_row_count",
+        digest_field="award_event_snapshots_semantic_sha256",
+    )
+    action_columns = _ledger_generation_matches(
+        state,
+        award_action_versions,
+        ledger="award_action_versions",
+        columns=AWARD_ACTION_VERSION_COLUMNS,
+        count_field="award_action_versions_row_count",
+        digest_field="award_action_versions_semantic_sha256",
+    )
+    if snapshot_columns is None or action_columns is None:
         return False
-    return all(state.get(field) == generation[field] for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS)
+    if snapshot_columns == AWARD_EVENT_SNAPSHOT_COLUMNS and action_columns == AWARD_ACTION_VERSION_COLUMNS:
+        # Both ledgers matched under the current schema, so the exact branch
+        # above already ruled; anything reaching here disagreed on the combined
+        # digest and is not a schema-addition case.
+        return False
+    binding = _award_event_projection_binding(
+        snapshot_columns=snapshot_columns,
+        snapshot_count=int(state["award_event_snapshots_row_count"]),
+        snapshot_digest=str(state["award_event_snapshots_semantic_sha256"]),
+        action_columns=action_columns,
+        action_count=int(state["award_action_versions_row_count"]),
+        action_digest=str(state["award_action_versions_semantic_sha256"]),
+    )
+    return all(
+        state.get(field) == binding[field]
+        for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+    )
 
 
 def _receipt_binding(receipt: dict | None, *, rail: str) -> tuple[str, str, str]:
@@ -929,7 +1156,20 @@ def _receipt_binding(receipt: dict | None, *, rail: str) -> tuple[str, str, str]
 
 
 def _event_identity_from_award(award: dict) -> dict[str, Any]:
-    """Keep procedure-bound award identity without importing fuzzy recipient data."""
+    """Keep procedure-bound award identity; recipient identity is never widened here.
+
+    The row's own ``recipient_name``/``recipient_uei`` mean exactly one thing:
+    what THIS source response asserted about THIS observation.  Nothing in this
+    function may populate them from the award record, because an award-level
+    value copied onto a transaction would silently answer "who did this
+    transaction pay?" with today's recipient of record.
+
+    The rule since the action-rail identity ruling is *attach, never widen*: the
+    award's recipient of record is carried on separate, provenance-named columns
+    (:func:`_award_recipient_identity`) that declare their own basis and their
+    own retrieval clock, so a reader can always tell a transaction-asserted
+    identity from an award-level one attached at collection time.
+    """
     generated = _text(award.get("generated_award_id"))
     award_id = _text(award.get("award_id"))
     award_key = _text(award.get("award_key")) or _award_key(generated, award_id)
@@ -941,6 +1181,45 @@ def _event_identity_from_award(award: dict) -> dict[str, Any]:
         "award_id": award_id,
         "piid": award_id,
     }
+
+
+def _award_recipient_identity(award: dict, observed_at: str) -> dict[str, Any]:
+    """Attach the award's recipient of record as a distinct, named identity.
+
+    ``award`` is the enriched award record in scope at the action call site: its
+    ``recipient_uei``/``recipient_name`` come from the award-detail response
+    (:func:`enrich_award`) or, when detail was unavailable, from the award-search
+    result (:func:`normalize_award`).  Either way it is an *award-level* fact
+    retrieved on the award's own clock.
+
+    Two things make the claim honest rather than a widening:
+
+    * ``award_recipient_identity_basis`` names the basis
+      (``award_level_recipient_at_collection``), so no downstream consumer can
+      mistake it for something the transaction asserted; and
+    * ``award_recipient_known_at`` is the award record's retrieval clock, NOT the
+      transaction's effective time.  Stamping today's recipient with a January
+      action date is the point-in-time hazard the old boundary guarded against;
+      carrying the retrieval clock keeps the claim "the award's recipient of
+      record as collected", which is a true statement about today.
+
+    An award with neither a name nor a UEI attaches nothing at all -- a basis
+    label with no identity behind it would be provenance for a fact that does
+    not exist.
+    """
+    uei = _text(award.get("recipient_uei"))
+    name = _text(award.get("recipient_name"))
+    if not uei and not name:
+        return {}
+    identity: dict[str, Any] = {
+        "award_recipient_identity_basis": AWARD_LEVEL_RECIPIENT_IDENTITY_BASIS,
+        "award_recipient_known_at": _text(award.get("known_at")) or _text(observed_at),
+    }
+    if uei:
+        identity["award_recipient_uei"] = uei
+    if name:
+        identity["award_recipient_name"] = name
+    return identity
 
 
 def normalize_award_event_snapshot(
@@ -1051,6 +1330,15 @@ def normalize_award_event_action(
 
     Rows without a source-issued action/transaction ID remain available to the
     legacy context table but are intentionally excluded from the event spine.
+
+    The ``recipient_*`` probes below read only ``raw`` -- the transactions
+    payload -- and USAspending does not put a recipient identity there, so they
+    almost never fire.  The award's recipient of record is attached separately
+    by :func:`_award_recipient_identity` under its own basis and clock, and both
+    the column and its ``source_field_presence`` entry are written: a populated
+    column with no manifest entry is skipped by the award-event reader
+    (``engine/government_revenue/award_events.py``), which is exactly how this
+    identity would ship dark.
     """
     if not isinstance(raw, dict):
         return None
@@ -1061,6 +1349,9 @@ def normalize_award_event_action(
     row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
     row.update(_event_identity_from_award(award))
     present: set[str] = {"action_id", "source_action_id"}
+    award_identity = _award_recipient_identity(award, observed_at)
+    row.update(award_identity)
+    present.update(award_identity)
     row["action_id"] = action_id
     row["source_action_id"] = action_id
     recipient = raw.get("recipient")
@@ -2263,13 +2554,36 @@ class UsaspendingAwardsCollector:
     award-detail/action work remains a top-award sample.  Those limits are not a
     proxy for full-corpus coverage: every rail records its own denominator,
     pagination outcome, and last-good timestamp in ``ingest_status.json``.
+
+    ``page_size`` is the endpoint's documented maximum and ``max_pages`` stays at
+    two because the two knobs cost differently.  Measured 2026-08-07 against the
+    live endpoint over the full configured 21-issuer universe, 1826-day window:
+
+    ==========================  ========  ======  =======  ======================
+    configuration               requests  rows    wall     entities source-exhausted
+    ==========================  ========  ======  =======  ======================
+    page_size=50,  max_pages=2  40        1,958   78.3 s   2 (BWXT, IRDM)
+    page_size=100, max_pages=2  40        3,766   78.3 s   4 (+AVAV, GE)
+    ==========================  ========  ======  =======  ======================
+
+    Doubling the page therefore buys +92% of the bounded sample and two more
+    genuinely exhausted issuers for zero extra requests and no measurable wall
+    time — pagination cost here is per-request, not per-row.  Raising
+    ``max_pages`` is the knob that is *not* affordable: the same window holds
+    195,400 contract awards across these 21 issuers (``spending_by_award_count``,
+    LMT alone 70,535), so exhaustion needs 1,965 pages at this page size, and
+    deep pages are measurably slower than shallow ones (LMT pages 1-12 took
+    100.2 s, 8.35 s/page).  That is hours against a ~67 min render budget, so
+    ``source_exhausted`` stays unreachable and the awards rail keeps reporting
+    ``truncated_by_safety_cap`` — a fully retrieved declared cap is a complete
+    bounded sample, never corpus completion.
     """
 
     def __init__(
         self,
         root: Path | None = None,
         session: requests.Session | None = None,
-        page_size: int = 50,
+        page_size: int = 100,
         max_pages: int = 2,
         max_action_awards_per_entity: int = 8,
         action_page_size: int = 5000,
@@ -2485,9 +2799,21 @@ class UsaspendingAwardsCollector:
             )
         )
         state = "complete" if complete else ("failed" if pages_succeeded == 0 else "partial")
+        # A configured query that returns nothing at all and terminates on
+        # hasNext=false scores the collector's *strongest* completeness signal —
+        # complete / source_exhausted / bounded_sample_complete — which is exactly
+        # how BWXT's dead ``"BWX TECHNOLOGIES"`` alias sat invisible: no error row,
+        # no failed rail, an entity simply missing from the parquet.  Zero stays a
+        # permitted answer, so this flags rather than fails: the state arithmetic is
+        # untouched (an empty exhausted query *is* exhausted) and the run gains a
+        # distinct reason the caller turns into a visible error row.
+        zero_rows_for_configured_query = bool(complete and accepted_records == 0)
+        if zero_rows_for_configured_query:
+            reason = "zero_rows_for_configured_query"
         return rows, {
             "state": state,
             "reason": reason or "pagination_not_started",
+            "zero_rows_for_configured_query": zero_rows_for_configured_query,
             "pages": {
                 "requested": pages_requested,
                 "succeeded": pages_succeeded,
@@ -2513,7 +2839,8 @@ class UsaspendingAwardsCollector:
         observed_at: str,
         run_id: str,
     ) -> tuple[list[dict], dict, list[dict]]:
-        query = entity.get("recipient_search_text") or entity.get("name") or ticker
+        terms, dropped_terms = recipient_query_terms(entity, ticker)
+
         def body_for_page(page: int) -> dict:
             return {
                 "subawards": False,
@@ -2523,13 +2850,13 @@ class UsaspendingAwardsCollector:
                 "sort": "Award Amount",
                 "filters": {
                     "time_period": [{"start_date": start_date, "end_date": end_date}],
-                    "recipient_search_text": [query],
+                    "recipient_search_text": list(terms),
                     "award_type_codes": CONTRACT_TYPES,
                 },
                 "fields": AWARD_FIELDS,
             }
 
-        return self._fetch_post_pages(
+        rows, meta, receipts = self._fetch_post_pages(
             rail="awards",
             endpoint=AWARDS_URL,
             body_for_page=body_for_page,
@@ -2538,6 +2865,9 @@ class UsaspendingAwardsCollector:
             observed_at=observed_at,
             run_id=run_id,
         )
+        meta["recipient_query_terms"] = list(terms)
+        meta["recipient_query_terms_dropped"] = list(dropped_terms)
+        return rows, meta, receipts
 
     def fetch_awards(self, ticker: str, entity: dict, start_date: str, end_date: str) -> list[dict]:
         """Compatibility wrapper for callers that only need source rows."""
@@ -2563,6 +2893,7 @@ class UsaspendingAwardsCollector:
             return [], {
                 "state": "not_requested",
                 "reason": "missing_generated_award_id",
+                "zero_rows_for_configured_query": False,
                 "pages": {"requested": 0, "succeeded": 0, "safety_cap": self.max_action_pages},
                 "records": {"raw": 0, "accepted": 0},
                 "has_next": None,
@@ -2708,6 +3039,8 @@ class UsaspendingAwardsCollector:
         award_truncated_entities = 0
         award_unresolved_has_next = 0
         award_missing_has_next = 0
+        award_zero_row_entities = 0
+        award_query_terms_dropped_entities = 0
         award_normalization_failures = 0
         award_rejected_without_key = 0
         detail_attempted = 0
@@ -2766,6 +3099,54 @@ class UsaspendingAwardsCollector:
                     award_source_exhausted_entities += 1
                 if award_meta.get("truncated_by_safety_cap") is True:
                     award_truncated_entities += 1
+                query_terms = [
+                    str(term) for term in (award_meta.get("recipient_query_terms") or [])
+                ]
+                dropped_terms = [
+                    str(term)
+                    for term in (award_meta.get("recipient_query_terms_dropped") or [])
+                ]
+                if dropped_terms:
+                    # Never drop a configured alias silently: the query really did
+                    # ask for less than the entity map declares.
+                    award_query_terms_dropped_entities += 1
+                    errors.append({
+                        "ticker": ticker,
+                        "stage": "awards",
+                        "reason": "recipient_query_terms_truncated",
+                        "error": (
+                            f"entity declares more than {MAX_RECIPIENT_QUERY_TERMS} recipient query "
+                            f"terms; queried {len(query_terms)} and dropped: {', '.join(dropped_terms)}"
+                        ),
+                    })
+                    print(
+                        "::warning title=government-revenue-recipient-query-truncated::"
+                        f"{ticker} declares more recipient query terms than the measured "
+                        f"safety cap of {MAX_RECIPIENT_QUERY_TERMS}; dropped "
+                        f"{len(dropped_terms)}: {', '.join(dropped_terms)}",
+                        flush=True,
+                    )
+                if award_meta.get("zero_rows_for_configured_query") is True:
+                    # Exhausted-and-empty is a permitted answer, but it must never
+                    # be indistinguishable from an alias that matches nothing.
+                    award_zero_row_entities += 1
+                    errors.append({
+                        "ticker": ticker,
+                        "stage": "awards",
+                        "reason": "zero_rows_for_configured_query",
+                        "error": (
+                            "configured recipient query returned zero awards and reported "
+                            "hasNext=false; verify the recipient names before reading this "
+                            f"as a true zero (queried: {', '.join(query_terms) or 'none'})"
+                        ),
+                    })
+                    print(
+                        "::warning title=government-revenue-zero-award-rows::"
+                        f"{ticker} returned zero USAspending awards for its configured "
+                        f"recipient query ({', '.join(query_terms) or 'none'}); this reads as "
+                        "source-exhausted and may instead be a dead recipient-name mapping",
+                        flush=True,
+                    )
                 award_state = str(award_meta.get("state") or "failed")
                 if award_state == "complete":
                     award_complete_entities += 1
@@ -3330,6 +3711,12 @@ class UsaspendingAwardsCollector:
                     "queries_bounded_sample_complete": award_bounded_complete_entities,
                     "queries_source_exhausted": award_source_exhausted_entities,
                     "queries_truncated_by_safety_cap": award_truncated_entities,
+                    # An entity whose configured query returned nothing at all still
+                    # counts as complete/exhausted above; this is the denominator that
+                    # separates "the source has none" from "the mapping matches none".
+                    "queries_zero_rows_for_configured_query": award_zero_row_entities,
+                    "queries_recipient_terms_truncated": award_query_terms_dropped_entities,
+                    "recipient_query_terms_safety_cap": MAX_RECIPIENT_QUERY_TERMS,
                     "normalization_failures": award_normalization_failures,
                     "records_rejected_without_identity": award_rejected_without_key,
                 },
