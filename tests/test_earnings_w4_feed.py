@@ -483,7 +483,9 @@ class TestBoardRowSchema:
         from scripts.export_signal_contracts import ARTIFACT_MANIFEST
         entry = next(e for e in ARTIFACT_MANIFEST
                      if e["artifact"] == "site/factordata/us_standouts.json")
-        assert entry["schema_version"] == "1.7.0"
+        # 1.8.0: universe_sources registered optional (#4965, 2026-08-07) — this pin
+        # exists so version bumps stay conscious; re-pin it with each deliberate bump.
+        assert entry["schema_version"] == "1.8.0"
         assert {"post_earnings_move", "earnings_soon"} <= set(entry["optional_fields"])
         assert {"post_earnings_move", "earnings_soon"} <= set(entry["schema_item_fields"])
         # optional_fields is the may-be-absent register, NOT a promotion: neither key
