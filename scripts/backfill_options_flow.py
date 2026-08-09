@@ -53,6 +53,7 @@ import glob
 import logging
 import os
 import re
+import sys
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -60,9 +61,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from engine.options_flow import sign_volume
-from engine.options_universe import gex_symbols
-from lib import config, procutil, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.options_flow import sign_volume  # noqa: E402
+from engine.options_universe import gex_symbols  # noqa: E402
+from lib import config, procutil, store  # noqa: E402
 
 log = logging.getLogger(__name__)
 

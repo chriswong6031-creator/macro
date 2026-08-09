@@ -2009,7 +2009,7 @@ wikipedia:                        # keyless retail-attention axis (Wikimedia RES
   pageviews_url: https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/{article}/daily/{start}/{end}
   article: Bitcoin
   earliest: "2015070100"          # first day Wikimedia serves daily per-article views
-  user_agent: "macro-dashboard research (chriswong6031-creator) macro-dashboard@users.noreply.github.com"
+  user_agent: "macro-dashboard research (mastermindx-market-intelligence) macro-dashboard@users.noreply.github.com"
   retries: 3
 
 mempool:
@@ -3342,7 +3342,7 @@ notify:
   # public base URL of the published site (e.g. https://user.github.io/repo).
   # When set, alert pings deep-link to the exact scorecard panel on macro.html.
   # Leave blank to send alerts without a link.
-  site_url: "https://chriswong6031-creator.github.io/macro"
+  site_url: "https://mastermindx-market-intelligence.github.io/macro"
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:

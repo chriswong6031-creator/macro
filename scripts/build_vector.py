@@ -1568,28 +1568,6 @@ def _market_stocks_state(market: str) -> dict:
         return {"label": "", "n_setups": 0}
 
 
-def _regime_change_ccs(alerts: list[dict], run_date: str | None = None) -> set[str]:
-    """Return the set of market CCs (e.g. 'US') with a regime-label-change alert
-    within the past 7 days. Cross-references the home alert feed — no new detection.
-    Mapping: transition_state_change / growth_confidence_floor / inflation_confidence_floor
-    rules fire on the US macro dashboard; gex_flip_cross is also US-market-level."""
-    _US_RULES = frozenset({"transition_state_change", "growth_confidence_floor",
-                           "inflation_confidence_floor", "gex_flip_cross"})
-    ccs: set[str] = set()
-    cutoff = (pd.Timestamp(run_date) if run_date
-              else pd.Timestamp.utcnow().tz_localize(None)) - pd.Timedelta(days=7)
-    for a in alerts:
-        ts = pd.Timestamp(a.get("ts", "1970-01-01"))
-        if ts.tzinfo is not None:
-            ts = ts.tz_localize(None)
-        if ts < cutoff:
-            continue
-        rule = a.get("type", "")
-        if rule in _US_RULES:
-            ccs.add("US")
-    return ccs
-
-
 def _standout_tickers(market: str = "us") -> list[str]:
     """Return up to 3 top-ranked standout tickers from the committed factordata artifact.
     Reads site/factordata/{market}_standouts.json (display-tier, committed artifact).
@@ -2659,22 +2637,6 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 }
 .go-tx{display:inline}
 
-/* ===== regime-change badge on market cards ===== */
-.regime-changed{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;
- background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
- color:var(--warn);margin-left:6px;vertical-align:middle;white-space:nowrap}
-.regime-changed .l-zh{display:none}
-html[data-lang="zh"] .regime-changed .l-en{display:none}
-html[data-lang="zh"] .regime-changed .l-zh{display:inline}
-/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
-   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
-.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
-.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
-.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
-.regime-drift .l-zh{display:none}
-html[data-lang="zh"] .regime-drift .l-en{display:none}
-html[data-lang="zh"] .regime-drift .l-zh{display:inline}
-
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
 
@@ -2862,11 +2824,28 @@ def _regime_dynamics(cc: str, d: dict) -> dict:
         g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
     except Exception:  # noqa: BLE001
         return empty
-    if len(g) < 30 or len(i) < 30:
+    # A null TIP is not a gap to compact — it is a MISSING CURRENT READING, and the two
+    # must not be conflated. Compaction alone anchors `pairs[-1]` on the last CLEAN day,
+    # so HK (whose `i` has been null since 2026-07-28) would publish an 11-day-stale
+    # endpoint AS today's direction, with nothing on the card saying so — the same lie as
+    # coercing the gap to 0.0, which renders a confident rdir="stable". No current
+    # reading, no verdict: disclose null, exactly like a market with no timeline at all
+    # (JP/KR/TW/GB/EZ already render that way). Writers route through `pd.isna`, so a gap
+    # always arrives as None, never NaN.
+    if not (g and i and g[-1] is not None and i[-1] is not None):
         return empty
-    N = min(20, len(g) - 1)                       # ~1 month of trading days
-    g_now, i_now = g[-1], i[-1]
-    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    # Collection gaps commit as nulls in the timeline series; a null endpoint
+    # would TypeError here and a null-holed window would misstate the drift.
+    # The trajectory math needs ALIGNED g/i readings, so keep only paired
+    # non-null days — dropping gap days just widens the calendar span of the
+    # ~1-month window, and the 30-reading coverage floor now counts clean pairs.
+    pairs = [(gv, iv) for gv, iv in zip(g, i) if gv is not None and iv is not None]
+    if len(pairs) < 30:
+        return empty
+    N = min(20, len(pairs) - 1)                   # ~1 month of trading days
+    g_now, i_now = pairs[-1]
+    g_then, i_then = pairs[-1 - N]
+    dg, di = g_now - g_then, i_now - i_then
     dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
     ts = (tr[-1] if tr else "STABLE") or "STABLE"
     quad = (d.get("quad") or "").upper()
@@ -2975,10 +2954,8 @@ def _g_legend(blob):
 
 
 def _g_markets(blob, us_n, cn_n, hk_n,
-               regime_changed_ccs: "set[str] | None" = None,
                standout_tickers: "dict[str, list[str]] | None" = None):
     by = {m["cc"]: m for m in blob}
-    _regime_changed = regime_changed_ccs or set()
     _tickers = standout_tickers or {}
     # Each entry: (href, ic, ten, tzh, ten_s, tzh_s, sen, szh)
     # ten_s/tzh_s = short label shown on mobile; ten/tzh = full label shown on desktop
@@ -3018,29 +2995,10 @@ def _g_markets(blob, us_n, cn_n, hk_n,
             btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
                         '<span class="sb-tx"><b><span class="sb-full">' + _bi(ten, tzh) + '</span><span class="sb-mini">' + _bi(ten_s, tzh_s) + '</span></b><em>' + em_html + '</em></span>'
                         '<span class="sb-go" aria-hidden="true">→</span></a>')
-        # regime-change badge on card header
-        changed_badge = (
-            '<span class="regime-changed">'
-            '<span class="l-en">changed</span>'
-            '<span class="l-zh">已切换</span>'
-            '</span>'
-        ) if cc in _regime_changed else ""
-        # regime TRAJECTORY badge — the label is never shown without its direction; a
-        # deteriorating "Goldilocks" and a firming one are opposite trades. From rdir.
-        _rd = m.get("rdir")
-        if _rd == "deteriorating":
-            drift_badge = ('<span class="regime-drift det">↘ '
-                           + _bi(m.get("rtoward_en") or "cooling", m.get("rtoward_zh") or "转弱") + '</span>')
-        elif _rd == "improving":
-            drift_badge = ('<span class="regime-drift imp">↗ '
-                           + _bi(m.get("rtoward_en") or "firming", m.get("rtoward_zh") or "转强") + '</span>')
-        else:
-            drift_badge = ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
-                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
-                     + changed_badge + drift_badge + '</div>'
+                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span></div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
             '<div class="nav mk reveal">' + "".join(cards) + '</div>')
@@ -3397,7 +3355,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
     # --- new hub sections ---
-    regime_ccs = _regime_change_ccs(alerts)
     _tickers: dict[str, list[str]] = {}
     for _mkt, _key in (("US", "us"), ("CN", "china"), ("HK", "hk")):
         _t = _standout_tickers(_key)
@@ -3405,9 +3362,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             _tickers[_mkt] = _t
     latest_rpt = _latest_report_data()
     # --- end new hub sections ---
-    markets = _g_markets(blob, us_n, cn_n, hk_n,
-                         regime_changed_ccs=regime_ccs,
-                         standout_tickers=_tickers)
+    markets = _g_markets(blob, us_n, cn_n, hk_n, standout_tickers=_tickers)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
                          latest_report=latest_rpt, ipo=ipo)
     alerts_html = _g_alerts(alerts)

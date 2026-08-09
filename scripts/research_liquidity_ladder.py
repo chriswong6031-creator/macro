@@ -30,12 +30,16 @@ import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
-from engine.cycles import cycle_state, early_signals, ladder_state, mtf_snapshot
-from scripts.research_liquidity_gate import EXP_THR, ROC_4W, net_liquidity
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.cycles import cycle_state, early_signals, ladder_state, mtf_snapshot  # noqa: E402
+from scripts.research_liquidity_gate import EXP_THR, ROC_4W, net_liquidity  # noqa: E402
 from scripts.research_trend_gate import (
     ROOT, asset_class, fwd_drawdown, fwd_return, load_panel,
-)
+)  # noqa: E402
 
 BUY_STATES = ("FRESH BUY", "TURN SIGNALED")   # the green "buy" calls users act on
 WINDOW = 600          # trailing window the ladder math needs (matches calibrate_ladder)

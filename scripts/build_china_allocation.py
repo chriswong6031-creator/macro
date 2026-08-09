@@ -18,14 +18,19 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import plotly.graph_objects as go
 
-from engine import china_allocation as ca
-from lib import config
-from lib.pages import write_page
-from scripts.build_vector import _html, PLOT, C
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import china_allocation as ca  # noqa: E402
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+from scripts.build_vector import _html, PLOT, C  # noqa: E402
 
 log = logging.getLogger(__name__)
 

@@ -49,6 +49,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger("marketing_learning_nightly")
 
 
@@ -98,7 +101,6 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s")
-    sys.path.insert(0, str(_code_root()))
 
     from engine.marketing import health_monitor as _health  # noqa: PLC0415
     from engine.marketing import labels as _labels  # noqa: PLC0415

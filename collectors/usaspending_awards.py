@@ -38,6 +38,10 @@ AWARDS_URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
 TRANSACTIONS_URL = "https://api.usaspending.gov/api/v2/transactions/"
 AWARD_DETAIL_URL = "https://api.usaspending.gov/api/v2/awards/{award_id}/"
 CONTRACT_TYPES = ["A", "B", "C", "D"]
+# Measured ceiling, not a guess: see ``recipient_query_terms``.  A 10-term
+# recipient_search_text body is rejected with a retry-proof HTTP 503; 9 is the
+# largest observed success, so the collector queries at most 8 terms per entity.
+MAX_RECIPIENT_QUERY_TERMS = 8
 AWARD_FIELDS = [
     "Award ID",
     "Recipient Name",
@@ -333,13 +337,18 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
 # repaired *is* a column joining a canonical list without the accrued store
 # following: a copied literal would drift again on the next added column, while
 # this numeric set is small, fixed, and auditable by eye.
-_NUMERIC_LEDGER_COLS = (
+NUMERIC_LEDGER_COLUMNS = (
     "total_obligated",
     "total_outlays",
     "current_award_amount",
     "potential_award_amount",
     "federal_action_obligation",
 )
+# Historical private spelling.  ``engine.government_revenue.amount_semantics``
+# DERIVES the set of fields that must carry a declared semantic class from the
+# public name below plus ``AWARD_EVENT_NUMBER_COLUMNS``, so a number column that
+# joins a canonical list without a class fails that module's coverage guard.
+_NUMERIC_LEDGER_COLS = NUMERIC_LEDGER_COLUMNS
 _OBJECT_COLS = tuple(
     column
     for column in dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])
@@ -460,6 +469,52 @@ def _bool_or_none(value: Any) -> bool | None:
     return None
 
 
+def recipient_query_terms(entity: Any, ticker: str) -> tuple[list[str], list[str]]:
+    """Return the ordered recipient-name terms this entity is actually queried with.
+
+    ``recipient_search_text`` is a *contiguous substring* filter, not an unordered
+    token match: probes against the live endpoint on 2026-08-07 returned 10 rows
+    for the interior substring ``"OCKHEED MARTI"`` and 0 rows for the reordered
+    tokens ``"MARTIN LOCKHEED"``.  A single legal-name string therefore misses any
+    issuer whose award rows carry a differently spelled operating-subsidiary name —
+    ``"BWX TECHNOLOGIES"`` matched nothing while ``"BWXT NUCLEAR OPERATIONS GROUP"``
+    matched four awards.  ``recipient_aliases`` already exists in the entity map and
+    is already published downstream, so the discovery rail reads the whole list; the
+    endpoint ORs every entry inside one request, so an alias list costs no extra
+    requests (verified: ``["BWXT", "AEROVIRONMENT"]`` returned both families).
+
+    The list is capped because an over-long term list is *not* merely slow — it is
+    rejected.  Measured 2026-08-07 against the live endpoint: a 10-term real-name
+    body returned HTTP 503 with an empty body in under a second, identically on
+    6/6 repeats, while the same body at 9 terms returned 200; dropping any single
+    term from the failing 10 restored 200.  The cliff is not a clean function of
+    body bytes or term count (20 synthetic two-word terms passed; 8 real terms plus
+    four two-character terms failed), so the cap sits one below the smallest
+    observed failure.  A 503 here is retry-proof, so an uncapped list would blank
+    the entity entirely rather than degrade it.  Terms past the cap are returned
+    separately so the caller can disclose them instead of dropping them silently.
+    """
+    seen: set[str] = set()
+    terms: list[str] = []
+    entity_map = entity if isinstance(entity, dict) else {}
+    raw_aliases = entity_map.get("recipient_aliases")
+    candidates: list[Any] = [entity_map.get("recipient_search_text")]
+    if isinstance(raw_aliases, (list, tuple)):
+        candidates.extend(raw_aliases)
+    for candidate in candidates:
+        text = _text(candidate)
+        if not text:
+            continue
+        key = text.upper()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(text)
+    if not terms:
+        terms = [_text(entity_map.get("name")) or str(ticker)]
+    return terms[:MAX_RECIPIENT_QUERY_TERMS], terms[MAX_RECIPIENT_QUERY_TERMS:]
+
+
 def award_event_coverage_manifest(
     entities: dict[str, Any],
     *,
@@ -478,18 +533,18 @@ def award_event_coverage_manifest(
     eligible universe and collection contract had not changed.
     """
 
-    entity_queries: list[dict[str, str]] = []
+    entity_queries: list[dict[str, Any]] = []
     for raw_ticker, raw_entity in sorted(entities.items(), key=lambda item: str(item[0]).upper()):
         ticker = str(raw_ticker).upper()
         entity = raw_entity if isinstance(raw_entity, dict) else {}
-        query = _text(
-            entity.get("recipient_search_text")
-            or entity.get("name")
-            or ticker
-        ) or ticker
+        # The manifest records the terms the collector actually sends, not the
+        # single primary string: a coverage contract that named less than the
+        # query would let an alias edit change the universe without rebaselining.
+        terms, _dropped = recipient_query_terms(entity, ticker)
         entity_queries.append({
             "ticker": ticker,
-            "recipient_search_text": query,
+            "recipient_search_text": terms[0],
+            "recipient_query_terms": list(terms),
         })
     return {
         "schema_version": AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA,
@@ -2263,13 +2318,36 @@ class UsaspendingAwardsCollector:
     award-detail/action work remains a top-award sample.  Those limits are not a
     proxy for full-corpus coverage: every rail records its own denominator,
     pagination outcome, and last-good timestamp in ``ingest_status.json``.
+
+    ``page_size`` is the endpoint's documented maximum and ``max_pages`` stays at
+    two because the two knobs cost differently.  Measured 2026-08-07 against the
+    live endpoint over the full configured 21-issuer universe, 1826-day window:
+
+    ==========================  ========  ======  =======  ======================
+    configuration               requests  rows    wall     entities source-exhausted
+    ==========================  ========  ======  =======  ======================
+    page_size=50,  max_pages=2  40        1,958   78.3 s   2 (BWXT, IRDM)
+    page_size=100, max_pages=2  40        3,766   78.3 s   4 (+AVAV, GE)
+    ==========================  ========  ======  =======  ======================
+
+    Doubling the page therefore buys +92% of the bounded sample and two more
+    genuinely exhausted issuers for zero extra requests and no measurable wall
+    time — pagination cost here is per-request, not per-row.  Raising
+    ``max_pages`` is the knob that is *not* affordable: the same window holds
+    195,400 contract awards across these 21 issuers (``spending_by_award_count``,
+    LMT alone 70,535), so exhaustion needs 1,965 pages at this page size, and
+    deep pages are measurably slower than shallow ones (LMT pages 1-12 took
+    100.2 s, 8.35 s/page).  That is hours against a ~67 min render budget, so
+    ``source_exhausted`` stays unreachable and the awards rail keeps reporting
+    ``truncated_by_safety_cap`` — a fully retrieved declared cap is a complete
+    bounded sample, never corpus completion.
     """
 
     def __init__(
         self,
         root: Path | None = None,
         session: requests.Session | None = None,
-        page_size: int = 50,
+        page_size: int = 100,
         max_pages: int = 2,
         max_action_awards_per_entity: int = 8,
         action_page_size: int = 5000,
@@ -2485,9 +2563,21 @@ class UsaspendingAwardsCollector:
             )
         )
         state = "complete" if complete else ("failed" if pages_succeeded == 0 else "partial")
+        # A configured query that returns nothing at all and terminates on
+        # hasNext=false scores the collector's *strongest* completeness signal —
+        # complete / source_exhausted / bounded_sample_complete — which is exactly
+        # how BWXT's dead ``"BWX TECHNOLOGIES"`` alias sat invisible: no error row,
+        # no failed rail, an entity simply missing from the parquet.  Zero stays a
+        # permitted answer, so this flags rather than fails: the state arithmetic is
+        # untouched (an empty exhausted query *is* exhausted) and the run gains a
+        # distinct reason the caller turns into a visible error row.
+        zero_rows_for_configured_query = bool(complete and accepted_records == 0)
+        if zero_rows_for_configured_query:
+            reason = "zero_rows_for_configured_query"
         return rows, {
             "state": state,
             "reason": reason or "pagination_not_started",
+            "zero_rows_for_configured_query": zero_rows_for_configured_query,
             "pages": {
                 "requested": pages_requested,
                 "succeeded": pages_succeeded,
@@ -2513,7 +2603,8 @@ class UsaspendingAwardsCollector:
         observed_at: str,
         run_id: str,
     ) -> tuple[list[dict], dict, list[dict]]:
-        query = entity.get("recipient_search_text") or entity.get("name") or ticker
+        terms, dropped_terms = recipient_query_terms(entity, ticker)
+
         def body_for_page(page: int) -> dict:
             return {
                 "subawards": False,
@@ -2523,13 +2614,13 @@ class UsaspendingAwardsCollector:
                 "sort": "Award Amount",
                 "filters": {
                     "time_period": [{"start_date": start_date, "end_date": end_date}],
-                    "recipient_search_text": [query],
+                    "recipient_search_text": list(terms),
                     "award_type_codes": CONTRACT_TYPES,
                 },
                 "fields": AWARD_FIELDS,
             }
 
-        return self._fetch_post_pages(
+        rows, meta, receipts = self._fetch_post_pages(
             rail="awards",
             endpoint=AWARDS_URL,
             body_for_page=body_for_page,
@@ -2538,6 +2629,9 @@ class UsaspendingAwardsCollector:
             observed_at=observed_at,
             run_id=run_id,
         )
+        meta["recipient_query_terms"] = list(terms)
+        meta["recipient_query_terms_dropped"] = list(dropped_terms)
+        return rows, meta, receipts
 
     def fetch_awards(self, ticker: str, entity: dict, start_date: str, end_date: str) -> list[dict]:
         """Compatibility wrapper for callers that only need source rows."""
@@ -2563,6 +2657,7 @@ class UsaspendingAwardsCollector:
             return [], {
                 "state": "not_requested",
                 "reason": "missing_generated_award_id",
+                "zero_rows_for_configured_query": False,
                 "pages": {"requested": 0, "succeeded": 0, "safety_cap": self.max_action_pages},
                 "records": {"raw": 0, "accepted": 0},
                 "has_next": None,
@@ -2708,6 +2803,8 @@ class UsaspendingAwardsCollector:
         award_truncated_entities = 0
         award_unresolved_has_next = 0
         award_missing_has_next = 0
+        award_zero_row_entities = 0
+        award_query_terms_dropped_entities = 0
         award_normalization_failures = 0
         award_rejected_without_key = 0
         detail_attempted = 0
@@ -2766,6 +2863,54 @@ class UsaspendingAwardsCollector:
                     award_source_exhausted_entities += 1
                 if award_meta.get("truncated_by_safety_cap") is True:
                     award_truncated_entities += 1
+                query_terms = [
+                    str(term) for term in (award_meta.get("recipient_query_terms") or [])
+                ]
+                dropped_terms = [
+                    str(term)
+                    for term in (award_meta.get("recipient_query_terms_dropped") or [])
+                ]
+                if dropped_terms:
+                    # Never drop a configured alias silently: the query really did
+                    # ask for less than the entity map declares.
+                    award_query_terms_dropped_entities += 1
+                    errors.append({
+                        "ticker": ticker,
+                        "stage": "awards",
+                        "reason": "recipient_query_terms_truncated",
+                        "error": (
+                            f"entity declares more than {MAX_RECIPIENT_QUERY_TERMS} recipient query "
+                            f"terms; queried {len(query_terms)} and dropped: {', '.join(dropped_terms)}"
+                        ),
+                    })
+                    print(
+                        "::warning title=government-revenue-recipient-query-truncated::"
+                        f"{ticker} declares more recipient query terms than the measured "
+                        f"safety cap of {MAX_RECIPIENT_QUERY_TERMS}; dropped "
+                        f"{len(dropped_terms)}: {', '.join(dropped_terms)}",
+                        flush=True,
+                    )
+                if award_meta.get("zero_rows_for_configured_query") is True:
+                    # Exhausted-and-empty is a permitted answer, but it must never
+                    # be indistinguishable from an alias that matches nothing.
+                    award_zero_row_entities += 1
+                    errors.append({
+                        "ticker": ticker,
+                        "stage": "awards",
+                        "reason": "zero_rows_for_configured_query",
+                        "error": (
+                            "configured recipient query returned zero awards and reported "
+                            "hasNext=false; verify the recipient names before reading this "
+                            f"as a true zero (queried: {', '.join(query_terms) or 'none'})"
+                        ),
+                    })
+                    print(
+                        "::warning title=government-revenue-zero-award-rows::"
+                        f"{ticker} returned zero USAspending awards for its configured "
+                        f"recipient query ({', '.join(query_terms) or 'none'}); this reads as "
+                        "source-exhausted and may instead be a dead recipient-name mapping",
+                        flush=True,
+                    )
                 award_state = str(award_meta.get("state") or "failed")
                 if award_state == "complete":
                     award_complete_entities += 1
@@ -3330,6 +3475,12 @@ class UsaspendingAwardsCollector:
                     "queries_bounded_sample_complete": award_bounded_complete_entities,
                     "queries_source_exhausted": award_source_exhausted_entities,
                     "queries_truncated_by_safety_cap": award_truncated_entities,
+                    # An entity whose configured query returned nothing at all still
+                    # counts as complete/exhausted above; this is the denominator that
+                    # separates "the source has none" from "the mapping matches none".
+                    "queries_zero_rows_for_configured_query": award_zero_row_entities,
+                    "queries_recipient_terms_truncated": award_query_terms_dropped_entities,
+                    "recipient_query_terms_safety_cap": MAX_RECIPIENT_QUERY_TERMS,
                     "normalization_failures": award_normalization_failures,
                     "records_rejected_without_identity": award_rejected_without_key,
                 },

@@ -34,12 +34,15 @@ Selection admission, the sort key, the geometry and the id are the CHAMPION'S, c
 through ``engine.prophet_bridge`` with modified inputs:
 
   * admission + champion order -> :func:`prophet_bridge.select_candidates` called with
-    ``n = len(buy)`` so the cap is a no-op.  The result is the admitted population in
-    champion order; every selection policy is a re-ordering, a restriction or a
-    re-capping OF THAT LIST.  The Arena never re-implements the filter.
+    ``n=None``.  The result is the admitted population in
+    champion order; C0 and the closure-grain C6 retain that full population, while
+    registered selection challengers may re-order, restrict or explicitly re-cap it.
+    The Arena never re-implements the filter.
   * geometry (invalidation / T1 / T2 / R)   -> :func:`prophet_bridge.compute_geometry`
   * plan id                                 -> ``prophet_bridge._make_id``
   * ticker+direction identity               -> :func:`prophet_bridge.plan_key`
+  * run/price clocks                        -> ``_resolve_origination_clocks``
+  * tier-native signal dates                -> ``_resolve_candidate_signal_dates``
   * the horizon leash                       -> ``prophet_bridge._load_stage_tilt_inputs``
                                                / ``_compute_stage_tilt`` (so a shadow
                                                plan on a Stage-2 ∩ EC-positive name
@@ -50,8 +53,8 @@ through ``engine.prophet_bridge`` with modified inputs:
 DELIBERATE SCOPE OMISSION: shadow plans carry no option contract and no thesis prose.
 The live forward ledger's ``option_result_pct`` is null on all 16 closed rows — options
 are not part of the ruler — and thesis strings cannot change an outcome.  Resolving
-either for 7 policies × 12 plans would spend render budget on fields the measurement
-never reads.
+either for every policy plan would spend render budget on fields the measurement never
+reads.
 
 THE RULER (one function, both sides)
 ------------------------------------
@@ -65,23 +68,25 @@ CONVENTION PINS (mirrored from scripts/build_prophet.py::_determine_outcome, L48
   1. CLOSE-based, never touch-based.  Triggers compare daily CLOSES; an intraday spike
      through T1 that closes below it does not close the plan (build_prophet.py L519:
      "conservative (may miss intraday crosses)").
-  2. STRICTLY AFTER signal_date.  ``closes.index > sig_ts`` — the signal day's own
-     close is excluded because the plan was not live yet (L541).
+  2. STRICTLY AFTER the plan's price clock.  ``closes.index > clock_ts`` — the close
+     whose price became ``entry`` is excluded because the plan was not live before it.
+     No position exists until ``trigger`` confirms; an unconfirmed trigger that reaches
+     the horizon closes ``NO_ENTRY`` with null P&L, exactly like the live ruler.
   3. SAME-DAY PRECEDENCE IS WORST-CASE-FIRST: invalidation, then T2, then T1 (L566-581).
      A bar that is simultaneously below invalidation and above T2 records INVALIDATED.
   4. FIRST-TRIGGER-CLOSES.  The scan breaks on the first bar that trips anything; a plan
      that touches T1 and later T2 is recorded T1_HIT forever (L502-506).
-  5. EXPIRY IS CHECKED LAST WITHIN THE BAR, on CALENDAR days: ``(ts - sig_ts).days >=
+  5. EXPIRY IS CHECKED LAST WITHIN THE BAR, on CALENDAR days: ``(ts - clock_ts).days >=
      horizon_days`` (L599).  Not sessions — the 9 EXPIRED champion rows carry
      days_held 45/45/45/45/45/45/45/46/47.
   6. ``stock_result_pct = (close_price / entry - 1) * 100`` rounded to 4 (L611-612).
-  7. ``days_held = close_date - signal_date`` in calendar days (L621).
-  8. A frame that ends before signal_date + horizon leaves the plan OPEN indefinitely.
+  7. ``days_held = close_date - price_basis_date`` in calendar days (L621).
+  8. A frame that ends before price_basis_date + horizon leaves the plan OPEN indefinitely.
      That is correct behaviour, not a missed expiry (L509-511).
 
   ARENA-ADDED (C6 only, and the one convention with no champion line to mirror):
   9. The 21-session time stop is evaluated AFTER the three price triggers and BEFORE
-     the calendar expiry check.  "21st session" counts POST-SIGNAL BARS in the same
+     the calendar expiry check.  "21st session" counts POST-ENTRY-CLOCK BARS in the same
      frame the replay walks (1-based), NOT calendar days — the rule is about how long
      dead money is held, and sessions are the unit a holder experiences.  A bar that
      is both the 21st session and past the calendar horizon records ``time_stopped``,
@@ -90,7 +95,10 @@ CONVENTION PINS (mirrored from scripts/build_prophet.py::_determine_outcome, L48
 
 FORWARD LEDGERS (house law)
 ---------------------------
-``data/prophet_arena/<policy>.jsonl`` — one file per policy, append-only, keep-first.
+``data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl`` — one file per policy,
+append-only, keep-first.  The top-level v1 ledgers are sealed evidence from the retired
+formation-clock/no-trigger harness.  They remain byte-for-byte readable but are never
+advanced, graded or included in the active scoreboard.
 NIGHTLY IS THE SOLE ADVANCER: every append is gated on
 ``engine.ledger_lane.nightly_advance_enabled()`` (COLLECT_LANE=nightly).  A non-nightly
 run computes and returns everything and writes NOTHING.
@@ -125,20 +133,28 @@ log = logging.getLogger(__name__)
 # --------------------------------------------------------------------------- #
 # Schema / constants — FROZEN at registration.                                 #
 # --------------------------------------------------------------------------- #
-LEDGER_SCHEMA = "prophet_arena.ledger/v1"
+LEGACY_LEDGER_SCHEMA = "prophet_arena.ledger/v1"
+LEDGER_SCHEMA = "prophet_arena.ledger/v2"
+LEDGER_ERA = "price_basis_trigger_v2"
+TEMPORAL_CONTRACT = "price_basis+trigger+tier_dates/v1"
 SCOREBOARD_SCHEMA = "prophet_arena.scoreboard/v1"
 REGISTRATION_DOC = "research/PROPHET_ARENA_REGISTRATION.md"
 
 #: Closed shadow plans a policy needs before its record is read as a headline.
 HEADLINE_MIN_CLOSED = 20
 
-#: C4 — dispersion states and caps.
+#: Frozen 2026-08-05 challenger-book size.  This is NOT the live champion's cap:
+#: C0 is lossless as of 2026-08-08.  Selection challengers remain on their explicitly
+#: registered 12-row book so their prospective ledgers do not change mid-experiment.
+REGISTERED_CHALLENGER_CAP = 12
+
+#: C4 — dispersion states and caps, frozen at registration.
 DISPERSION_LEAN_IN = "lean_in"
-DISPERSION_CAP_LEAN_IN = pb.N_CANDIDATES        # 12 — the champion cap
+DISPERSION_CAP_LEAN_IN = REGISTERED_CHALLENGER_CAP
 DISPERSION_CAP_OTHERWISE = 6                    # the pre-2026-07-28 cap
 DISPERSION_MAX_STALE_SESSIONS = 5
 
-#: C3 — slots inside the 12-cap reserved for Door W names when Door W supplies them.
+#: C3 — slots inside its registered 12-row challenger book reserved for Door W names.
 DOOR_W_RESERVED_SLOTS = 4
 
 #: C5 — full alignment on the SEA taxonomy axis.  ``align_class`` counts how many of the
@@ -150,12 +166,12 @@ ALIGN_FULL_CLASS = 2
 #: compare them to the same number — that would admit a 2-of-3 name as "fully aligned".
 ALIGN_FULL_NOW = 3
 
-#: C6 — the no-progress time stop, in POST-SIGNAL SESSIONS (see CONVENTION PIN 9).
+#: C6 — the no-progress time stop, in POST-ENTRY-CLOCK SESSIONS (CONVENTION PIN 9).
 TIME_STOP_SESSIONS = 21
 OUTCOME_TIME_STOPPED = "time_stopped"
 
 #: Outcomes the champion's own ledger can record (mirrored by the replay).
-CHAMPION_OUTCOMES = ("T1_HIT", "T2_HIT", "INVALIDATED", "EXPIRED")
+CHAMPION_OUTCOMES = ("T1_HIT", "T2_HIT", "INVALIDATED", "EXPIRED", "NO_ENTRY")
 
 # WIN DEFINITION (see _stats): a win is a POSITIVE stock result, never a target label.
 # The champion's single T1_HIT is its only positive row, and an EXPIRED row that happens
@@ -218,22 +234,6 @@ POLICIES: tuple[Policy, ...] = (
         ),
     ),
     Policy(
-        key="C2_stage_ran_preferred",
-        label_en="already-moving names first",
-        label_zh="优先已启动个股",
-        grain="selection",
-        time_stop_sessions=None,
-        rationale=(
-            "Rows the board stages as 'ran' (engine.us_board_rank.STAGE_RAN, entry status "
-            "extended/topping/hold) are admitted and lifted above the rest. The STAGE_RAN "
-            "shelf graded a 14.5% loser rate against 27.6% for the rest of the buy lane "
-            "(n=55) with no half-split flip, yet the board's own stage order ranks 'ran' "
-            "BELOW live and setting_up. REGISTERED DEVIATION: this policy WIDENS the pool "
-            "rather than only re-ordering it, because the champion's act_level gate and "
-            "the stage-ran population are structurally disjoint — see stage_ran_widened()."
-        ),
-    ),
-    Policy(
         key="C3_door_w_union",
         label_en="washout turns added",
         label_zh="纳入超跌转折",
@@ -256,13 +256,14 @@ POLICIES: tuple[Policy, ...] = (
         grain="selection",
         time_stop_sessions=None,
         rationale=(
-            "Champion selection, champion order — but the nightly cap is 12 when "
-            "data/dispersion/regime.json reads state 'lean_in' and 6 otherwise. The dial "
+            "Champion admission and order, re-sliced into the challenger's frozen 12-row "
+            "book when data/dispersion/regime.json reads state 'lean_in' and 6 otherwise. "
+            "The dial "
             "prints 'Selection pays — high dispersion' every night and has ZERO pick-chain "
             "consumers: prophet_bridge, build_prophet and us_board_rank contain no "
             "reference to it at all, and its one sizing consumer is clamped to a no-op in "
             "production. This is the cheapest possible test of whether it should size the "
-            "book."
+            "challenger book. C0 itself remains lossless."
         ),
     ),
     Policy(
@@ -277,8 +278,8 @@ POLICIES: tuple[Policy, ...] = (
             "first read calls misalignment a negative marker against a pooled washout edge "
             "of +0.23pp (13w excess) — see the registration for exactly how much of that "
             "is published and how much is reproducible-but-unpublished. Intake ignores "
-            "alignment entirely today. A restriction frees cap slots, so this policy can "
-            "also reach rows the champion's cap cut."
+            "alignment entirely today. The gate is measured inside this challenger's "
+            "registered 12-row book; C0 itself remains lossless."
         ),
     ),
     Policy(
@@ -296,11 +297,64 @@ POLICIES: tuple[Policy, ...] = (
             "compared PER-PLAN PAIRED, never as two cohorts."
         ),
     ),
+    Policy(
+        key="C7_buy_soon_admitted",
+        label_en="almost-ready entries admitted",
+        label_zh="纳入「即将买入」档",
+        grain="selection",
+        time_stop_sessions=None,
+        rationale=(
+            "SUCCESSOR to C2_stage_ran_preferred (retired 2026-08-09). The A1 status class "
+            "refuses buy_soon outright on the CN loser ledger (CN entry statuses graded worst-"
+            "first: buy_soon 46.7% loser rate), while the US entry-ladder battery graded "
+            "buy_soon the best NON-THIN US cell: +3.19pp per-name median excess at H=10, n=31, "
+            "9.7% loser rate, #1 in ranked_non_thin_by_per_name_median. Two retrospective "
+            "reads, one cell, opposite verdicts — the kind of question a prospective shadow "
+            "record exists to answer. Admission-only: the probe relaxes the status leg for "
+            "buy_soon rows alone; tone, band, tier, entry-signal presence and the champion's "
+            "own ordering are untouched, so a buy_soon row must earn its slot by score."
+        ),
+    ),
 )
 
 POLICY_KEYS: tuple[str, ...] = tuple(p.key for p in POLICIES)
 CHAMPION_KEY = "C0_champion_mirror"
 _POLICY_BY_KEY: dict[str, Policy] = {p.key: p for p in POLICIES}
+
+
+@dataclass(frozen=True)
+class RetiredPolicy:
+    """A key whose accrual STOPPED.  The ledger file is sealed in place — kept on disk,
+    never advanced, its open stamps never graded — mirroring the sealed v1 era."""
+
+    key: str
+    label_en: str
+    label_zh: str
+    retired: str      # date
+    reason: str
+    successor: str | None
+
+
+RETIRED_POLICIES: tuple[RetiredPolicy, ...] = (
+    RetiredPolicy(
+        key="C2_stage_ran_preferred",
+        label_en="already-moving names first",
+        label_zh="优先已启动个股",
+        retired="2026-08-09",
+        reason=(
+            "the champion's admission moved from an act-level threshold to a status class "
+            "(ANTICIPATION A1, 2026-08-09), which makes this policy's frozen widening — "
+            "patching act_level, an input admission no longer reads — unable to admit "
+            "anything; the status class itself now admits hold, the status that carried 47 "
+            "of the 55 rows behind this policy's evidence, so the champion absorbed the "
+            "bulk of the thesis and the leftover cells (extended n=8, topping n=0) are too "
+            "thin to re-register today"
+        ),
+        successor="C7_buy_soon_admitted",
+    ),
+)
+
+RETIRED_POLICY_KEYS: tuple[str, ...] = tuple(p.key for p in RETIRED_POLICIES)
 
 
 # --------------------------------------------------------------------------- #
@@ -323,6 +377,12 @@ def arena_dir(repo_root: Path | None = None) -> Path:
 
 
 def ledger_path(policy_key: str, repo_root: Path | None = None) -> Path:
+    """The active v2 ledger; sealed top-level v1 ledgers are never returned here."""
+    return arena_dir(repo_root) / LEDGER_ERA / f"{policy_key}.jsonl"
+
+
+def legacy_ledger_path(policy_key: str, repo_root: Path | None = None) -> Path:
+    """The sealed pre-price-clock ledger, retained read-only for audit disclosure."""
     return arena_dir(repo_root) / f"{policy_key}.jsonl"
 
 
@@ -412,15 +472,19 @@ def replay_closure(
     filters in :func:`grade_open_plans`).
 
     ``time_stop_sessions`` is the ONLY knob.  None reproduces the champion exactly.  An
-    int adds CONVENTION PIN 9: a plan whose close is below entry at that post-signal
+    int adds CONVENTION PIN 9: a plan whose close is below entry at that post-clock
     session closes there as ``time_stopped``.
 
     Every convention here is pinned to a line of ``scripts/build_prophet.py`` in this
     module's docstring; read that block before changing anything in this function.
     """
     entry = plan.get("entry")
-    signal_date_str = plan.get("signal_date") or plan.get("_signal_date")
-    if entry is None or signal_date_str is None or closes is None or not len(closes):
+    # The live ruler starts at the close whose price supplied ``entry``.  A tier event
+    # may precede that close, while T3 deliberately has no signal_date at all.  Reading
+    # signal_date here would therefore either scan pre-origination bars or make every
+    # valid T3 shadow immortal.  ``plan_clock_date`` also retains the legacy fallback.
+    clock_date_str = pb.plan_clock_date(plan)
+    if entry is None or clock_date_str is None or closes is None or not len(closes):
         return None
 
     direction = plan.get("direction", "BULL")
@@ -429,14 +493,15 @@ def replay_closure(
     t1 = targets[0] if len(targets) > 0 else None
     t2 = targets[1] if len(targets) > 1 else None
     horizon_days = plan.get("horizon_days", pb.HORIZON_DAYS_DEFAULT)
+    trigger = plan.get("trigger")
 
     try:
-        sig_ts = pd.Timestamp(signal_date_str)
+        clock_ts = pd.Timestamp(clock_date_str)
     except Exception:  # noqa: BLE001
         return None
 
-    # PIN 2 — strictly after the signal day.
-    after = closes[closes.index > sig_ts]
+    # PIN 2 — strictly after the entry-price clock.
+    after = closes[closes.index > clock_ts]
     if not len(after):
         return None
 
@@ -444,6 +509,9 @@ def replay_closure(
     close_ts = None
     close_price: float | None = None
     sessions_held: int | None = None
+    # Legacy rows with no trigger predate the contract and are treated as confirmed at
+    # the clock.  A present trigger must print before any P&L-bearing outcome can exist.
+    triggered = trigger is None
 
     for session_idx, (ts, raw) in enumerate(after.items(), start=1):
         try:
@@ -452,7 +520,22 @@ def replay_closure(
             continue
         if not math.isfinite(px):
             continue
-        days = (ts - sig_ts).days
+        days = (ts - clock_ts).days
+
+        if not triggered:
+            if direction == "BULL":
+                triggered = px >= float(trigger)
+            else:
+                triggered = px <= float(trigger)
+            if not triggered:
+                if days >= horizon_days:
+                    outcome = "NO_ENTRY"
+                    close_ts = ts
+                    close_price = None
+                    sessions_held = session_idx
+                    break
+                continue
+            # The confirmation bar is itself eligible for stop/target evaluation.
 
         # PIN 3 — worst case first, then T2, then T1.  PIN 4 — first trigger closes.
         if direction == "BULL":
@@ -485,26 +568,28 @@ def replay_closure(
             sessions_held = session_idx
             break
 
-    if outcome is None or close_ts is None or close_price is None:
+    if outcome is None or close_ts is None:
         return None
 
     # PIN 6 — signed percent against the plan's entry.
     stock_result_pct: float | None = None
-    if entry and float(entry) > 0:
+    if close_price is not None and entry and float(entry) > 0:
         stock_result_pct = round((close_price / float(entry) - 1.0) * 100.0, 4)
 
     # PIN 7 — calendar days held.
     close_date = close_ts.date()
     days_held: int | None = None
     try:
-        days_held = (close_date - sig_ts.date()).days
+        days_held = (close_date - clock_ts.date()).days
     except Exception:  # noqa: BLE001
         days_held = None
 
     return {
         "outcome": outcome,
         "close_date": close_date.isoformat(),
-        "close_price": round(float(close_price), 4),
+        "close_price": (
+            round(float(close_price), 4) if close_price is not None else None
+        ),
         "stock_result_pct": stock_result_pct,
         "days_held": days_held,
         "sessions_held": sessions_held,
@@ -522,75 +607,39 @@ def _act_level(row: dict) -> int:
         return 0
 
 
-def _is_stage_ran(row: dict) -> bool:
-    """True when the board stages this row as 'ran' (C2's evidence leg).
+def buy_soon_widened(standouts: dict, probe_status: str = "hold") -> list[dict]:
+    """The champion's admitted pool WITH buy_soon rows admitted — champion order, uncapped.
 
-    Reads the row's own ``stage`` field — stamped by ``engine.us_board_rank`` — and falls
-    back to the entry status bucket that produces it, so a pre-stage artifact still
-    classifies.  Both legs use us_board_rank's own constants; nothing is re-spelled here.
+    C7's one-leg relaxation, the same probe idiom C2 used against the act_level gate
+    (retired 2026-08-09 — see the registration doc): a COPY of the artifact is built in
+    which only the buy_soon rows' entry status is lifted to an admitted value, and
+    ``pb.select_candidates`` judges the copy — so tone, band, tier, entry-signal presence
+    and the champion's ordering all remain the champion's own code.  The rows returned are
+    the ORIGINAL, unpatched dicts; the patch is an admission probe, never plan material.
+
+    ``probe_status`` is mechanically irrelevant to selection today — admission class is
+    receipts-only and the sort key never reads status — and the invariance is test-pinned
+    so a future class-dependent selection change re-opens this choice loudly rather than
+    silently.  It must name an ADMITTED status; anything else is a construction error.
     """
-    try:
-        from engine import us_board_rank as ubr  # noqa: PLC0415
-    except Exception:  # noqa: BLE001
-        return str(row.get("stage") or "") == "ran"
-    if str(row.get("stage") or "") == ubr.STAGE_RAN:
-        return True
-    status = str((row.get("entry_signal") or {}).get("status") or "")
-    return status in ubr._RAN_STATUSES
-
-
-def stage_ran_widened(standouts: dict) -> list[dict]:
-    """Stage-ran buy rows that clear every champion filter EXCEPT the act_level gate.
-
-    WHY THIS EXISTS (measured, 2026-08-05 artifact — the finding that shaped C2).
-    ``stage_for`` returns STAGE_RAN only for entry statuses extended/topping/hold, and
-    ``act_level`` is derived from urgency (``entry_signal._ACT_LEVEL``), where only
-    "now" (3) and "imminent" (2) clear the champion's ``act_level >= 2`` gate.  On the
-    2026-07-31 artifact the two populations were exactly disjoint: 25 admitted rows, all
-    stage "live"; all 17 stage-ran rows carried act_level 0 or 1, none reached the
-    caution-mode ``score >= 60`` escape, and 12 of the 17 were band "low" anyway.
-
-    So a policy that merely RE-ORDERS the admitted pool by stage-ran evidence would sort
-    a set that structurally cannot contain a stage-ran row — a null by construction, and
-    worse, one that would read as "no effect" rather than "never tested".  The measurement
-    C2 exists to probe (the STAGE_RAN shelf's 14.5% loser rate against 27.6% for the rest
-    of the buy lane) is defined ON THOSE EXCLUDED ROWS, so C2 must widen the pool to reach
-    them.  This is a registered deviation from the literal "same filters" wording; see
-    ``research/PROPHET_ARENA_REGISTRATION.md`` §C2.
-
-    The widening relaxes ONE leg and reuses the champion's code for all the others: a
-    COPY of the artifact is built in which only the stage-ran rows' act_level is lifted to
-    the admission threshold, and ``select_candidates`` judges it.  Band, direction,
-    entry-signal presence and the gate_go mode are therefore still the champion's own.
-    The rows returned are the ORIGINAL, unpatched dicts — the patch is an admission probe,
-    never something a shadow plan is built from.
-    """
+    if probe_status not in pb.ADMITTED_STATUSES:
+        raise ValueError(f"probe_status must be an admitted status, got {probe_status!r}")
     buys = standouts.get("buy") or []
-    ran_tickers = {str(r.get("ticker")) for r in buys if _is_stage_ran(r)}
-    if not ran_tickers:
-        return []
+    originals: dict[str, dict] = {str(r.get("ticker")): r for r in buys}
     patched: list[dict] = []
     for row in buys:
-        if str(row.get("ticker")) in ran_tickers and (row.get("entry_signal") or {}):
+        if pb.entry_status(row) == "buy_soon":
             probe = dict(row)
             es = dict(row.get("entry_signal") or {})
-            try:
-                es["act_level"] = max(int(es.get("act_level") or 0), 2)
-            except (TypeError, ValueError):
-                es["act_level"] = 2
+            es["status"] = probe_status
             probe["entry_signal"] = es
             patched.append(probe)
         else:
             patched.append(row)
     shadow = dict(standouts)
     shadow["buy"] = patched
-    admitted = pb.select_candidates(shadow, n=max(len(patched), 1))
-    originals = {str(r.get("ticker")): r for r in buys}
-    return [
-        originals[str(r.get("ticker"))]
-        for r in admitted
-        if str(r.get("ticker")) in ran_tickers and str(r.get("ticker")) in originals
-    ]
+    admitted = pb.select_candidates(shadow, n=None)
+    return [originals[str(r.get("ticker"))] for r in admitted]
 
 
 def read_dispersion_state(
@@ -598,7 +647,8 @@ def read_dispersion_state(
 ) -> tuple[int, dict]:
     """C4's cap plus the receipt saying WHICH mode fired.
 
-    Returns ``(cap, receipt)``.  Fails OPEN to the champion cap on every unhappy path —
+    Returns ``(cap, receipt)``.  Fails OPEN to C4's registered lean-in cap on every
+    unhappy path —
     absent file, unreadable JSON, null state, or a state older than
     ``DISPERSION_MAX_STALE_SESSIONS``.  The mode is always recorded, so "the cap was 12"
     never has to be guessed between "lean_in fired" and "the dial was missing".
@@ -847,20 +897,18 @@ def door_w_rows(
 def admitted_pool(standouts: dict) -> list[dict]:
     """The champion's ADMITTED population, in champion order, uncapped.
 
-    ``select_candidates`` bundles filter + sort + cap; calling it with ``n`` = the number
-    of buy rows makes the cap a no-op and hands back exactly the admitted set the live
-    path would have capped.  The Arena therefore never re-implements the admission rule —
-    a change to the champion's filter propagates to every policy automatically.
+    ``select_candidates(..., n=None)`` is the same lossless ordering consumed by live
+    ``originate_plans``.  The Arena therefore never re-implements the admission rule: a
+    change to the champion's filter propagates to every policy automatically.
     """
-    buys = standouts.get("buy") or []
-    return pb.select_candidates(standouts, n=max(len(buys), 1))
+    return pb.select_candidates(standouts, n=None)
 
 
 def select_for_policy(
     policy_key: str,
     standouts: dict,
     *,
-    cap: int = pb.N_CANDIDATES,
+    cap: int = REGISTERED_CHALLENGER_CAP,
     door_rows: list[dict] | None = None,
     atlas: "AtlasGate | None" = None,
     dispersion_cap: int | None = None,
@@ -871,10 +919,17 @@ def select_for_policy(
     :func:`originate_shadow_plans`, exactly as they do on the live path.
     """
     pool = admitted_pool(standouts)
-    receipts: dict[str, Any] = {"admitted": len(pool), "cap": cap}
+    is_lossless_mirror = policy_key in (CHAMPION_KEY, "C6_time_stop_21")
+    receipts: dict[str, Any] = {
+        "admitted": len(pool),
+        "cap": None if is_lossless_mirror else cap,
+        "cap_applied": not is_lossless_mirror,
+    }
 
     if policy_key == "C0_champion_mirror":
-        return pool[:cap], receipts
+        receipts["selection_basis"] = "lossless live champion mirror"
+        receipts["truncated"] = 0
+        return pool, receipts
 
     if policy_key == "C1_buy_soon_first":
         # act_level==2 first, the CHAMPION'S OWN sort key within each group. The secondary
@@ -886,28 +941,6 @@ def select_for_policy(
         )
         receipts["act_level_2"] = sum(1 for r in pool if _act_level(r) == 2)
         receipts["lifted"] = sum(1 for r in rows[:cap] if _act_level(r) == 2)
-        return rows[:cap], receipts
-
-    if policy_key == "C2_stage_ran_preferred":
-        # POOL-WIDENING, not just re-ordering — see stage_ran_widened() for the measured
-        # reason the literal "same filters" version is a null by construction.
-        pool_tickers = {str(r.get("ticker")) for r in pool}
-        extra = [
-            r for r in stage_ran_widened(standouts)
-            if str(r.get("ticker")) not in pool_tickers
-        ]
-        combined = pool + extra
-        rows = sorted(
-            combined,
-            key=lambda r: (0 if _is_stage_ran(r) else 1, pb._selection_sort_key(r)),
-        )
-        receipts["stage_ran_in_champion_pool"] = sum(1 for r in pool if _is_stage_ran(r))
-        receipts["stage_ran_admitted_by_widening"] = len(extra)
-        receipts["stage_ran_selected"] = sum(1 for r in rows[:cap] if _is_stage_ran(r))
-        receipts["widening"] = (
-            "the act_level gate is relaxed for stage-ran rows only; band, direction, "
-            "entry-signal presence and the gate mode stay the champion's"
-        )
         return rows[:cap], receipts
 
     if policy_key == "C3_door_w_union":
@@ -965,8 +998,30 @@ def select_for_policy(
     if policy_key == "C6_time_stop_21":
         # CLOSURE-grain: the plan SET is C0's by construction. Its validity pin is that
         # equality, and its comparison against C0 is per-plan paired.
-        receipts["selection_basis"] = "identical to C0 by construction"
-        return pool[:cap], receipts
+        receipts["selection_basis"] = "identical to lossless C0 by construction"
+        receipts["truncated"] = 0
+        return pool, receipts
+
+    if policy_key == "C7_buy_soon_admitted":
+        # ONE-LEG WIDENING, champion order — see buy_soon_widened() and the registration.
+        widened = buy_soon_widened(standouts)
+        pool_tickers = {str(r.get("ticker")) for r in pool}
+        rows = widened[:cap]
+        receipts["admitted_with_widening"] = len(widened)
+        receipts["buy_soon_in_board"] = sum(
+            1 for r in (standouts.get("buy") or []) if pb.entry_status(r) == "buy_soon"
+        )
+        receipts["buy_soon_admitted_by_widening"] = sum(
+            1 for r in widened if str(r.get("ticker")) not in pool_tickers
+        )
+        receipts["buy_soon_selected"] = sum(
+            1 for r in rows if str(r.get("ticker")) not in pool_tickers
+        )
+        receipts["widening"] = (
+            "the status-class gate is relaxed for buy_soon rows only; tone, band, tier, "
+            "entry-signal presence and the champion's own ordering stay the champion's"
+        )
+        return rows, receipts
 
     raise ValueError(f"unknown policy key: {policy_key!r}")
 
@@ -980,15 +1035,24 @@ def originate_shadow_plans(
     *,
     asof: str,
     standouts_asof: str,
+    price_through: Any,
+    source_delayed: Any,
+    source_unknown: Any,
+    source_basis: Any,
     existing_ids: set[str],
     active_keys: set[str] | None,
     prices: PriceCache,
     tilt_inputs: dict | None = None,
+    panel_mixed_vintage: bool = False,
 ) -> tuple[list[dict], dict]:
     """Shadow plans for one policy's rows, using the bridge's geometry and id.
 
     Mirrors ``prophet_bridge.originate_plans``' skip ladder in order — duplicate id, open
     ticker+direction key, missing spot — so C0's emitted ids can equal the live path's.
+
+    Clock and tier-date provenance are not challenger knobs.  Every policy calls the
+    same fail-closed bridge resolvers as live origination, so C0/C6 can differ from the
+    champion only by their registered policy and never because Arena guessed a date.
 
     ASYMMETRY, DELIBERATE: a champion-pool row whose geometry comes back null is still
     originated, because the live path originates it too (``validate_trade_plan`` does not
@@ -996,32 +1060,85 @@ def originate_shadow_plans(
     null is SKIPPED AND COUNTED, per the policy's own registration — a synthesized row
     with no invalidation is not a plan, it is a ticker.
     """
+    recorded_at, price_basis_date, clock_errors = pb._resolve_origination_clocks(
+        price_through=price_through,
+        recorded_asof=asof,
+        panel_mixed_vintage=panel_mixed_vintage,
+        source_delayed=source_delayed,
+        source_unknown=source_unknown,
+        source_basis=source_basis,
+    )
+
     plans: list[dict] = []
     receipts: dict[str, Any] = {
         "offered": len(rows),
         "skipped_duplicate_id": 0,
         "skipped_open_plan": 0,
+        "skipped_clock_provenance": 0,
         "skipped_no_spot": 0,
         "skipped_door_w_no_geometry": 0,
         "skipped_door_w_tickers": [],
+        "recorded_at": recorded_at,
+        "price_basis_date": price_basis_date,
+        "clock_errors": list(clock_errors),
+        "validation_failures": [],
     }
     seen_ids: set[str] = set()
 
+    def _record_failure(
+        *, ticker: str | None, plan_id: str | None, errors: list[str]
+    ) -> None:
+        receipts["validation_failures"].append({
+            "ticker": ticker,
+            "id": plan_id,
+            "stage": "clock_provenance",
+            "errors": [str(error) for error in errors],
+        })
+
     for row in rows:
-        ticker = str(row.get("ticker") or "")
+        ticker = str(row.get("ticker") or "").strip().upper()
         if not ticker:
+            _record_failure(
+                ticker=None, plan_id=None, errors=["ticker is required"]
+            )
             continue
         direction = "BULL"
         hold = row.get("hold") or {}
         anchor = hold.get("anchor")
-        signal_date = anchor if anchor else standouts_asof
-        plan_id = pb._make_id(ticker, direction, signal_date)
+        raw_formation_date = anchor if anchor else standouts_asof
+        formation_date = pb._normalise_iso_date(raw_formation_date)
+        if formation_date is None:
+            _record_failure(
+                ticker=ticker,
+                plan_id=None,
+                errors=[
+                    f"formation_date {raw_formation_date!r} is not an ISO-8601 date"
+                ],
+            )
+            continue
+        plan_id = pb._make_id(ticker, direction, formation_date)
 
         if plan_id in existing_ids or plan_id in seen_ids:
             receipts["skipped_duplicate_id"] += 1
             continue
         if active_keys and pb.plan_key(ticker, direction) in active_keys:
             receipts["skipped_open_plan"] += 1
+            continue
+        # Match the live two-pass ladder: once a policy survivor claims this immutable
+        # identity, a later duplicate cannot replace it merely because validation fails.
+        seen_ids.add(plan_id)
+
+        signal_dates, signal_clock_errors = pb._resolve_candidate_signal_dates(
+            row,
+            formation_date=formation_date,
+            price_basis_date=price_basis_date,
+        )
+        temporal_errors = [*clock_errors, *signal_clock_errors]
+        if temporal_errors:
+            receipts["skipped_clock_provenance"] += 1
+            _record_failure(
+                ticker=ticker, plan_id=plan_id, errors=temporal_errors
+            )
             continue
 
         es = row.get("entry_signal") or {}
@@ -1042,7 +1159,7 @@ def originate_shadow_plans(
             atr_pct=float(atr_pct) if atr_pct else None,
             hold_invalidation=hold.get("invalidation"),
             price_history=history,
-            asof=standouts_asof,
+            asof=price_basis_date,
         )
 
         is_door_w = row.get("_arena_source") == "door_w"
@@ -1055,7 +1172,9 @@ def originate_shadow_plans(
         if tilt_inputs is not None:
             try:
                 horizon_days, _tilt = pb._compute_stage_tilt(
-                    ticker=ticker, signal_date=signal_date, tilt_inputs=tilt_inputs
+                    ticker=ticker,
+                    entry_date=price_basis_date,
+                    tilt_inputs=tilt_inputs,
                 )
             except Exception as e:  # noqa: BLE001 — a tilt failure is leash 1.0, never fatal
                 log.debug("prophet_arena: tilt failed for %s (%s)", ticker, e)
@@ -1076,8 +1195,18 @@ def originate_shadow_plans(
             "horizon_days": horizon_days,
             "min_hold_days": pb.MIN_HOLD_DAYS_DEFAULT,
             "tranche": 1,
-            "signal_date": signal_date,
-            "_signal_date": signal_date,
+            "formation_date": formation_date,
+            "signal_date": signal_dates["signal_date"],
+            "confirmed_date": signal_dates["confirmed_date"],
+            "observed_date": signal_dates["observed_date"],
+            "signal_tier": signal_dates["signal_tier"],
+            "signal_date_basis": signal_dates["signal_date_basis"],
+            "signal_provisional": signal_dates["signal_provisional"],
+            "source_marker_date": signal_dates["source_marker_date"],
+            "price_basis_date": price_basis_date,
+            "entry_date": price_basis_date,
+            "recorded_at": recorded_at,
+            "_signal_date": signal_dates["signal_date"],
             "_r_unit": geo["r_unit"],
             "authority_tier": "display",
             "_arena_policy": policy_key,
@@ -1086,9 +1215,9 @@ def originate_shadow_plans(
         if is_door_w:
             plan["_arena_door_w"] = row.get("_arena_door_w")
         plans.append(plan)
-        seen_ids.add(plan_id)
 
     receipts["originated"] = len(plans)
+    receipts["validation_failed"] = len(receipts["validation_failures"])
     receipts["skipped_door_w_tickers"] = sorted(receipts["skipped_door_w_tickers"])
     return plans, receipts
 
@@ -1098,6 +1227,7 @@ def originate_shadow_plans(
 # --------------------------------------------------------------------------- #
 _LEDGER_HEADER = (
     "# prophet_arena forward ledger — schema " + LEDGER_SCHEMA + "\n"
+    "# active era " + LEDGER_ERA + "; temporal contract " + TEMPORAL_CONTRACT + "\n"
     "# One policy per file. kind=open is the origination stamp, kind=close the graded\n"
     "# outcome. Append-only, keep-first on (policy, id, kind). Nightly is the SOLE\n"
     "# advancer. SHADOW TIER: nothing here has ever changed a live plan, and the live\n"
@@ -1133,6 +1263,55 @@ def read_ledger(policy_key: str, root: Path | None = None) -> list[dict]:
     except Exception as e:  # noqa: BLE001
         log.warning("prophet_arena: ledger read failed for %s (%s)", policy_key, e)
     return rows
+
+
+def sealed_legacy_summary(root: Path | None = None) -> dict:
+    """Counts from the sealed v1 files for disclosure only; never returns grade data.
+
+    RETIRED keys are counted too.  A key leaving :data:`POLICIES` stops its accrual; it
+    does not un-write the v1 era it already sat through, and dropping its rows here would
+    silently shrink a disclosed audit total the day a policy retires.
+    """
+    by_policy: dict[str, dict[str, int]] = {}
+    total_open = total_close = total_other = 0
+    for policy_key in (*POLICY_KEYS, *RETIRED_POLICY_KEYS):
+        counts = {"open": 0, "close": 0, "other": 0}
+        path = legacy_ledger_path(policy_key, root)
+        if path.exists():
+            try:
+                for line in path.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except Exception:  # noqa: BLE001 — disclosure remains best-effort
+                        counts["other"] += 1
+                        continue
+                    kind = str(row.get("kind") or "")
+                    if kind in ("open", "close"):
+                        counts[kind] += 1
+                    else:
+                        counts["other"] += 1
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "prophet_arena: sealed legacy count failed for %s (%s)",
+                    policy_key,
+                    exc,
+                )
+        by_policy[policy_key] = counts
+        total_open += counts["open"]
+        total_close += counts["close"]
+        total_other += counts["other"]
+    return {
+        "schema": LEGACY_LEDGER_SCHEMA,
+        "path": "data/prophet_arena/<policy>.jsonl",
+        "open_rows": total_open,
+        "close_rows": total_close,
+        "other_or_corrupt_rows": total_other,
+        "by_policy": by_policy,
+        "status": "sealed_read_only_excluded",
+    }
 
 
 def ledger_state(policy_key: str, root: Path | None = None) -> dict[str, dict]:
@@ -1196,14 +1375,26 @@ def open_row(policy_key: str, plan: dict, *, arena_night: str) -> dict:
     """The origination stamp for one shadow plan."""
     return {
         "schema": LEDGER_SCHEMA,
+        "temporal_contract": TEMPORAL_CONTRACT,
         "kind": "open",
         "policy": policy_key,
         "id": plan["id"],
         "asset": plan.get("asset"),
         "direction": plan.get("direction"),
+        "formation_date": plan.get("formation_date"),
         "signal_date": plan.get("signal_date"),
+        "confirmed_date": plan.get("confirmed_date"),
+        "observed_date": plan.get("observed_date"),
+        "signal_tier": plan.get("signal_tier"),
+        "signal_date_basis": plan.get("signal_date_basis"),
+        "signal_provisional": plan.get("signal_provisional"),
+        "source_marker_date": plan.get("source_marker_date"),
+        "price_basis_date": plan.get("price_basis_date"),
+        "entry_date": plan.get("entry_date"),
+        "recorded_at": plan.get("recorded_at"),
         "arena_night": arena_night,
         "entry": plan.get("entry"),
+        "trigger": plan.get("trigger"),
         "invalidation": plan.get("invalidation"),
         "targets": plan.get("targets") or [],
         "horizon_days": plan.get("horizon_days"),
@@ -1215,11 +1406,23 @@ def close_row(policy_key: str, plan: dict, verdict: dict, *, asof: str) -> dict:
     """The graded closure row for one shadow plan."""
     return {
         "schema": LEDGER_SCHEMA,
+        "temporal_contract": TEMPORAL_CONTRACT,
         "kind": "close",
         "policy": policy_key,
         "id": plan["id"],
         "asset": plan.get("asset"),
+        "formation_date": plan.get("formation_date"),
         "signal_date": plan.get("signal_date"),
+        "confirmed_date": plan.get("confirmed_date"),
+        "observed_date": plan.get("observed_date"),
+        "signal_tier": plan.get("signal_tier"),
+        "signal_date_basis": plan.get("signal_date_basis"),
+        "signal_provisional": plan.get("signal_provisional"),
+        "source_marker_date": plan.get("source_marker_date"),
+        "price_basis_date": plan.get("price_basis_date"),
+        "entry_date": plan.get("entry_date"),
+        "recorded_at": plan.get("recorded_at"),
+        "trigger": plan.get("trigger"),
         "close_date": verdict.get("close_date"),
         "outcome": verdict.get("outcome"),
         "stock_result_pct": verdict.get("stock_result_pct"),
@@ -1258,10 +1461,21 @@ def grade_open_plans(
             "asset": stamp.get("asset"),
             "direction": stamp.get("direction") or "BULL",
             "entry": stamp.get("entry"),
+            "trigger": stamp.get("trigger"),
             "invalidation": stamp.get("invalidation"),
             "targets": stamp.get("targets") or [],
             "horizon_days": stamp.get("horizon_days") or pb.HORIZON_DAYS_DEFAULT,
+            "formation_date": stamp.get("formation_date"),
             "signal_date": stamp.get("signal_date"),
+            "confirmed_date": stamp.get("confirmed_date"),
+            "observed_date": stamp.get("observed_date"),
+            "signal_tier": stamp.get("signal_tier"),
+            "signal_date_basis": stamp.get("signal_date_basis"),
+            "signal_provisional": stamp.get("signal_provisional"),
+            "source_marker_date": stamp.get("source_marker_date"),
+            "price_basis_date": stamp.get("price_basis_date"),
+            "entry_date": stamp.get("entry_date"),
+            "recorded_at": stamp.get("recorded_at"),
         }
         verdict = replay_closure(
             plan, pit, time_stop_sessions=policy.time_stop_sessions
@@ -1396,6 +1610,30 @@ def _paired_vs_champion(record: dict, champion: dict) -> dict:
     }
 
 
+def _retired_block(policy: RetiredPolicy, root: Path | None) -> dict:
+    """One sealed key's disclosure: who it was, why it stopped, what it accrued.
+
+    The counts come from :func:`read_ledger` — the SAME reader every active policy is
+    folded by, keep-first and all — so a sealed record is never re-counted by a second,
+    subtly different parser.  ``ledger_present`` separates "sealed at zero" from "the
+    file is not on this root at all", which is what a fresh temporary root looks like.
+    """
+    rows = read_ledger(policy.key, root)
+    return {
+        "policy": policy.key,
+        "label": policy.label_en,
+        "label_zh": policy.label_zh,
+        "retired": policy.retired,
+        "reason": policy.reason,
+        "successor": policy.successor,
+        "sealed": True,
+        "ledger_path": f"data/prophet_arena/{LEDGER_ERA}/{policy.key}.jsonl",
+        "ledger_present": ledger_path(policy.key, root).exists(),
+        "opens": sum(1 for r in rows if str(r.get("kind") or "") == "open"),
+        "closes": sum(1 for r in rows if str(r.get("kind") or "") == "close"),
+    }
+
+
 def build_scoreboard(
     *,
     asof: str,
@@ -1406,6 +1644,7 @@ def build_scoreboard(
     """The whole-arena scoreboard.  Display tier, authority all false, plain words."""
     records = {key: _policy_record(key, root) for key in POLICY_KEYS}
     champion = records[CHAMPION_KEY]
+    sealed_legacy = sealed_legacy_summary(root)
 
     policies: list[dict] = []
     for policy in POLICIES:
@@ -1481,23 +1720,42 @@ def build_scoreboard(
             "may_escalate": False,
         },
         "registration": REGISTRATION_DOC,
+        "ledger_era": LEDGER_ERA,
+        "temporal_contract": TEMPORAL_CONTRACT,
+        "historical_boundary": {
+            "active_path": f"data/prophet_arena/{LEDGER_ERA}/<policy>.jsonl",
+            "active_schema": LEDGER_SCHEMA,
+            "sealed_prior": sealed_legacy,
+            "reason": (
+                "v1 open rows did not persist price_basis_date, trigger or tier-native "
+                "date provenance; their formation-clock outcomes cannot be repaired by "
+                "guessing and are excluded from every active grade and summary"
+            ),
+        },
         "standing_line": STANDING_LINE_EN,
         "standing_line_zh": STANDING_LINE_ZH,
         "headline_min_closed": HEADLINE_MIN_CLOSED,
         "harness_validity": checks,
         "policies": policies,
+        # A retired key stays VISIBLE with its sealed count. Deleting the block would
+        # make a policy that once traded look like one that never existed, which is the
+        # same disclosure failure the sealed v1 era is kept on disk to avoid.
+        "retired_policies": [_retired_block(p, root) for p in RETIRED_POLICIES],
         "tonight": tonight or {},
         "note": (
             "Each policy is a frozen way of choosing which plans to start, or when to "
             "close them, run beside the live rule on the same nights and scored by the "
-            "same closure rules. Nothing here has ever changed a live plan. Records start "
-            "empty and fill one night at a time — there is no backfill, so a small count "
-            "means young, not weak. " + STANDING_LINE_EN + "."
+            "same closure rules. Nothing here has ever changed a live plan. The active "
+            "price-basis/trigger era starts empty and fills one night at a time; the sealed "
+            "formation-clock era remains audit-visible but is excluded, never rewritten. "
+            "There is no backfill, so a small count means young, not weak. "
+            + STANDING_LINE_EN + "."
         ),
         "note_zh": (
             "每条策略都是一种已冻结的选股或离场规则，与实盘规则在同一批交易夜并行运行，"
-            "并以相同的平仓规则评分。此处的任何结果都从未改变过实盘计划。记录从零开始逐夜累积，"
-            "没有回填 — 样本少代表时间短，而非结论弱。" + STANDING_LINE_ZH + "。"
+            "并以相同的平仓规则评分。此处的任何结果都从未改变过实盘计划。当前价基准/触发器时代"
+            "从零开始逐夜累积；旧形成日期时钟记录只保留作审计并完全排除，绝不改写。没有回填 — "
+            "样本少代表时间短，而非结论弱。" + STANDING_LINE_ZH + "。"
         ),
     }
     return scoreboard
@@ -1545,6 +1803,12 @@ def run_arena(
     """
     root = repo_root if repo_root is not None else _repo_root()
     standouts_asof = standouts.get("as_of", asof)
+    staleness = standouts.get("staleness") or {}
+    panel_mixed_vintage = bool(
+        staleness.get("inputs", {}).get("panel", {}).get(
+            "mixed_vintage"
+        )
+    )
     prices = PriceCache(root)
 
     # Shared, once-per-run policy inputs. Every one fails open with a receipt.
@@ -1564,6 +1828,11 @@ def run_arena(
     tonight: dict[str, Any] = {
         "asof": asof,
         "standouts_as_of": standouts_asof,
+        "price_through": staleness.get("price_through"),
+        "source_delayed": staleness.get("delayed"),
+        "source_unknown": staleness.get("unknown"),
+        "source_basis": staleness.get("basis"),
+        "panel_mixed_vintage": panel_mixed_vintage,
         "gate_go": standouts.get("gate_go"),
         "dispersion": dispersion_receipt,
         "door_w": door_disclosure,
@@ -1575,7 +1844,9 @@ def run_arena(
         rows, sel_receipts = select_for_policy(
             policy.key,
             standouts,
-            cap=pb.N_CANDIDATES,
+            # C0/C6 deliberately ignore this frozen challenger cap and return the full
+            # live population. Selection challengers retain their registered sample.
+            cap=REGISTERED_CHALLENGER_CAP,
             door_rows=doors,
             atlas=atlas,
             dispersion_cap=dispersion_cap,
@@ -1585,10 +1856,15 @@ def run_arena(
             rows,
             asof=asof,
             standouts_asof=standouts_asof,
+            price_through=staleness.get("price_through"),
+            source_delayed=staleness.get("delayed"),
+            source_unknown=staleness.get("unknown"),
+            source_basis=staleness.get("basis"),
             existing_ids=set(existing_ids),
             active_keys=active_keys,
             prices=prices,
             tilt_inputs=tilt_inputs,
+            panel_mixed_vintage=panel_mixed_vintage,
         )
         ids = sorted(p["id"] for p in plans)
         tonight["policies"][policy.key] = {

@@ -1,9 +1,9 @@
 {
   "hn": {
-    "calls": 22,
-    "hits": 16,
-    "cred": 0.62069,
-    "last_resolved": "2026-08-07",
+    "calls": 55,
+    "hits": 40,
+    "cred": 0.677419,
+    "last_resolved": "2026-08-08",
     "accruing": true
   }
 }
