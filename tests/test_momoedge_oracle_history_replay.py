@@ -194,6 +194,31 @@ def test_tracked_receipt_is_aggregate_only_and_has_no_signal_authority() -> None
     }
     assert receipt["authority"]["prophet"] == "none"
     assert receipt["authority"]["neural_web"] == "none"
+    assert receipt["temporal_source_quality"] == {
+        "raw_values_retained": True,
+        "corrections_applied": 0,
+        "clean_records": 137,
+        "missing_close_date_records": 18,
+        "issue_close_days_held_year_conflict_records": 2,
+        "holding_interval_after_option_expiration_records": 1,
+        "max_holding_interval_beyond_option_expiration_days": 28,
+        "correction_overlay_required_records": 20,
+        "overlap_replay_excluded_records": 20,
+        "expiry_return_replay_excluded_option_records": 5,
+    }
+    theta = receipt["theta_data_plane"]
+    assert theta["local_state"] == "unresolved"
+    assert theta["r2_state"] == "available_candidate"
+    assert theta["current_available_root_count"] == 53
+    assert theta["current_available_objects"] == 168
+    assert theta["candidate_issue_records"] == 100
+    assert theta["object_content_downloaded"] is False
+    gex = next(
+        row for row in receipt["data_availability"] if row["family"] == "gex_vol_oi"
+    )
+    assert "thetadata_local_store_unresolved" in gex["blocker_codes"]
+    assert "theta_r2_selective_restore_pending" in gex["blocker_codes"]
+    assert "thetadata_store_unresolved" not in gex["blocker_codes"]
     assert "table_row" not in text
     assert "permission_receipt_image_sha256" not in text
 
