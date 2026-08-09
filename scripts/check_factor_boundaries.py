@@ -614,7 +614,10 @@ def _constant_string_value(node: ast.AST) -> str | None:
     return None
 
 
-def _protected_emitter_mutation_lines(source: str) -> list[int]:
+def _protected_emitter_mutation_lines(
+    rel_path: str,
+    source: str,
+) -> list[int]:
     """Return repository-wide writes that can replace a fixed emitter.
 
     The fixed-emission proof is local to its producer, but Python modules are
@@ -630,19 +633,85 @@ def _protected_emitter_mutation_lines(source: str) -> list[int]:
     protected = frozenset().union(
         *_ALLOWED_ACTIONS_FIXED_DICT_EMITTERS.values()
     )
-    setter_aliases = {"setattr", "delattr"}
+    executable_surfaces = {"__code__", "__defaults__", "__kwdefaults__"}
+    setter_aliases = {"setattr", "delattr", "__setattr__", "__delattr__"}
+    emitter_aliases = set(protected)
     for node in ast.walk(tree):
         if not isinstance(node, ast.alias):
             continue
-        if node.name.rsplit(".", maxsplit=1)[-1] in setter_aliases:
+        imported_name = node.name.rsplit(".", maxsplit=1)[-1]
+        bound_name = node.asname or node.name.split(".", maxsplit=1)[0]
+        if imported_name in setter_aliases:
             setter_aliases.add(node.asname or node.name.split(".", maxsplit=1)[0])
+        if imported_name in protected:
+            emitter_aliases.add(bound_name)
+
+    def is_emitter_reference(node: ast.AST) -> bool:
+        return (
+            isinstance(node, ast.Name)
+            and node.id in emitter_aliases
+        ) or (
+            isinstance(node, ast.Attribute)
+            and node.attr in protected
+        )
+
+    # Follow ordinary local aliases to a fixed point.  This covers both setter
+    # aliases and function-object aliases without granting arbitrary data-flow
+    # assumptions to unrelated callables.
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+                continue
+            value = node.value
+            source_name = (
+                value.id
+                if isinstance(value, ast.Name)
+                else value.attr
+                if isinstance(value, ast.Attribute)
+                else None
+            )
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                if not isinstance(target, ast.Name):
+                    continue
+                if source_name in setter_aliases and target.id not in setter_aliases:
+                    setter_aliases.add(target.id)
+                    changed = True
+                if is_emitter_reference(value) and target.id not in emitter_aliases:
+                    emitter_aliases.add(target.id)
+                    changed = True
 
     lines: set[int] = set()
     for node in ast.walk(tree):
         if (
+            rel_path != "scripts/check_factor_boundaries.py"
+            and _constant_string_value(node) in protected
+        ):
+            lines.add(node.lineno)
+        if isinstance(node, ast.keyword) and node.arg in protected:
+            lines.add(node.lineno)
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr in protected
+            and (
+                isinstance(node.ctx, (ast.Store, ast.Del))
+                or rel_path not in _ALLOWED_ACTIONS_FIXED_EMISSION_PATHS
+            )
+        ):
+            lines.add(node.lineno)
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr == "__name__"
+            and is_emitter_reference(node.value)
+        ):
+            lines.add(node.lineno)
+        if (
             isinstance(node, ast.Attribute)
             and isinstance(node.ctx, (ast.Store, ast.Del))
-            and node.attr in protected
+            and node.attr in executable_surfaces
+            and is_emitter_reference(node.value)
         ):
             lines.add(node.lineno)
         if (
@@ -660,9 +729,13 @@ def _protected_emitter_mutation_lines(source: str) -> list[int]:
             if isinstance(node.func, ast.Attribute)
             else None
         )
-        if (
-            function_name in setter_aliases
-            and _constant_string_value(node.args[1]) in protected
+        target_name = _constant_string_value(node.args[1])
+        if function_name in setter_aliases and (
+            target_name in protected
+            or (
+                target_name in executable_surfaces
+                and is_emitter_reference(node.args[0])
+            )
         ):
             lines.add(node.lineno)
     return sorted(lines)
@@ -841,7 +914,7 @@ def _check_b(root: Path, extra_files: dict[str, str] | None = None) -> list[Viol
                 continue
 
     for rel_path, source in file_iter:
-        for line_no in _protected_emitter_mutation_lines(source):
+        for line_no in _protected_emitter_mutation_lines(rel_path, source):
             violations.append(Violation(
                 check="b",
                 module=rel_path,

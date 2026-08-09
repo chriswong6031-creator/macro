@@ -668,6 +668,17 @@ class TestCheckB:
                 "import engine.neuralweb.world_state as m\n"
                 "m._inflation_intelligence_null = evil\n"
             ),
+            (
+                "import importlib\n"
+                "module = importlib.import_module(__name__)\n"
+                "module.__setattr__("
+                "_inflation_intelligence_null.__name__, evil)\n"
+            ),
+            (
+                "module = __import__(__name__)\n"
+                "type(module).__setattr__(module, "
+                "_inflation_intelligence_null.__name__, evil)\n"
+            ),
         ],
     )
     def test_redteam_rejects_aliased_reflective_emitter_rebinding(
@@ -684,7 +695,77 @@ class TestCheckB:
         }
         assert _check_b(REPO_ROOT, extra_files=synthetic)
 
-    def test_redteam_rejects_cross_module_fixed_emitter_rebinding(self) -> None:
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "ws._inflation_intelligence_null = evil\n",
+            (
+                "setter = setattr\n"
+                "setter(ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "import builtins\n"
+                "setter = builtins.setattr\n"
+                "setter(ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "ws.__dict__.update("
+                "{'_inflation_intelligence_null': evil})\n"
+            ),
+            "ws.__dict__.update(_inflation_intelligence_null=evil)\n",
+            (
+                "type(ws).__setattr__("
+                "ws, '_inflation_intelligence_null', evil)\n"
+            ),
+            (
+                "ws._inflation_intelligence_null.__code__ = "
+                "evil.__code__\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "fn.__code__ = evil.__code__\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "fn.__defaults__ = (evil,)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setattr(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setter = setattr\n"
+                "setter(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "type(fn).__setattr__(fn, '__code__', evil.__code__)\n"
+            ),
+            (
+                "fn = ws._inflation_intelligence_null\n"
+                "setattr(fn, '__defaults__', (evil,))\n"
+            ),
+            (
+                "setattr(ws, ws._inflation_intelligence_null.__name__, evil)\n"
+            ),
+            (
+                "vars(ws)[ws._inflation_intelligence_null.__name__] = evil\n"
+            ),
+            (
+                "target = ws._inflation_intelligence_null\n"
+                "target.__globals__[target.__name__] = evil\n"
+            ),
+            (
+                "import operator\n"
+                "operator.setitem(ws.__dict__, "
+                "ws._inflation_intelligence_null.__name__, evil)\n"
+            ),
+        ],
+    )
+    def test_redteam_rejects_cross_module_fixed_emitter_rebinding(
+        self, mutation: str
+    ) -> None:
         synthetic = {
             "engine/neuralweb/world_state.py": (
                 "def _inflation_intelligence_null():\n"
@@ -694,7 +775,7 @@ class TestCheckB:
             ),
             "engine/backdoor.py": (
                 "import engine.neuralweb.world_state as ws\n"
-                "ws._inflation_intelligence_null = evil\n"
+                + mutation
             ),
         }
         violations = _check_b(REPO_ROOT, extra_files=synthetic)
