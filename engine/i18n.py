@@ -69,19 +69,61 @@ def prettify(slug: str) -> str:
     return " ".join(out)
 
 
+def _lex_lookup(en: str) -> str | None:
+    """Glossary lookup that tolerates the slug forms the engines actually emit.
+
+    A LEX key is written the way a reader sees it (``"targeted support"``), while
+    the runtime value handed to `tr`/`td` is very often the machine slug that
+    produced it (``"targeted_support"``). Matching only the raw string means the
+    pair misses and the ENGLISH falls straight through into the zh column — a
+    silent leak, because nothing raises and the page still renders. (Shipped
+    exactly that way on the China Mechanics policy tape: 当前政策冲量 read
+    "Targeted support" in Chinese mode.)
+
+    So try, in order: the raw string, its stripped form, the separator-normalised
+    forms (``_``/``-`` → space), their lowercase twins, and finally `prettify`'s
+    label and its lowercase twin. Every probe past the first two can only fire
+    where today's lookup already MISSES, so no working lookup can change answer.
+
+    Returns None when nothing matches — callers keep owning their own fallback.
+    """
+    if not isinstance(en, str):
+        return None
+    s = en.strip()
+    if not s:
+        return None
+    spaced = s.replace("_", " ")
+    dashed = s.replace("-", " ")
+    both = spaced.replace("-", " ")
+    pretty = prettify(s)
+    seen: set[str] = set()
+    for cand in (
+        en, s, spaced, dashed, both,
+        s.lower(), spaced.lower(), dashed.lower(), both.lower(),
+        pretty, pretty.lower() if isinstance(pretty, str) else pretty,
+    ):
+        if not isinstance(cand, str) or cand in seen:
+            continue
+        seen.add(cand)
+        hit = LEX.get(cand)
+        if hit is not None:
+            return hit
+    return None
+
+
 def tr(en: str) -> str:
     """Canonical Chinese for a finite-vocab English label, else the English."""
     if en is None:
         return en
     if not isinstance(en, str):  # dynamic callers may pass ints/None-likes; pass through
         return en
-    hit = LEX.get(en, LEX.get(en.strip()))
+    hit = _lex_lookup(en)
     if hit is not None:
         return hit
     # Unknown term: a raw slug reads as broken in BOTH languages, so prettify
     # before falling through to the English. (A prettified EN label in the zh
     # column is the existing, accepted fallback for unglossed vocabulary.)
-    return LEX.get(prettify(en), prettify(en))
+    return prettify(en)
 
 
 def td(en: str) -> Markup:
