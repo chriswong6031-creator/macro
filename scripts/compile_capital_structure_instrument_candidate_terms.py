@@ -15,23 +15,27 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 from typing import Any
 
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from engine.capital_structure.instrument_candidates import (
     candidate_term_id_for,
     compile_candidate_term_records,
     validate_candidate_term_structure,
-)
+)  # noqa: E402
 from engine.capital_structure.source_ledger_io import (
     read_source_ledger,
     source_ledger_path,
-)
-from engine.capital_structure.source_store import build_source_stores
-from scripts.compile_capital_structure_document_terms import _source_reader_for_store
+)  # noqa: E402
+from engine.capital_structure.source_store import build_source_stores  # noqa: E402
+from scripts.compile_capital_structure_document_terms import _source_reader_for_store  # noqa: E402
 
 
 DOCUMENT_TERM_COLUMNS = [

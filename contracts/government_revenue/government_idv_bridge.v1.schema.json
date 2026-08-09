@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_idv_bridge.v1.schema.json",
+  "title": "Government Revenue Exact IDV Child Bridge v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "schema_version", "content_id", "status", "as_of", "generated_at", "authority", "clocks", "baseline", "last_good", "source_bindings", "join_policy", "collection_universe", "counts", "omissions", "disclosure", "limitations", "bridges", "awards"],
+  "properties": {
+    "contract": {"const": "government_idv_bridge.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^gribr1-[a-f0-9]{24}$"},
+    "status": {"enum": ["observed", "unavailable"]},
+    "as_of": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "clocks": {"$ref": "#/$defs/generationClocks"},
+    "baseline": {"$ref": "#/$defs/baseline"},
+    "last_good": {"$ref": "#/$defs/lastGood"},
+    "source_bindings": {"$ref": "#/$defs/sourceBindings"},
+    "join_policy": {"$ref": "#/$defs/joinPolicy"},
+    "collection_universe": {"$ref": "#/$defs/collectionUniverse"},
+    "counts": {"$ref": "#/$defs/counts"},
+    "omissions": {"type": "array", "maxItems": 6, "items": {"$ref": "#/$defs/omission"}},
+    "disclosure": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "limitations": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "bridges": {"type": "array", "maxItems": 4000, "items": {"$ref": "#/$defs/bridge"}},
+    "awards": {"type": "array", "maxItems": 4000, "items": {"$ref": "#/$defs/award"}}
+  },
+  "$defs": {
+    "nullableText": {"type": ["string", "null"], "maxLength": 2000},
+    "nullableDate": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
+    "nullableInstant": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "generatedIdv": {"type": "string", "pattern": "^CONT_IDV_[A-Za-z0-9_]+$", "maxLength": 1000},
+    "sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-f0-9]{64}$"}]},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true}, "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false}, "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    },
+    "generationClocks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_effective_at", "source_observed_at", "observed_at", "known_at"],
+      "properties": {
+        "source_effective_at": {"$ref": "#/$defs/nullableDate"},
+        "source_observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "known_at": {"$ref": "#/$defs/nullableInstant"}
+      }
+    },
+    "rowClocks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_effective_date", "source_observed_at", "observed_at", "known_at", "first_seen_at"],
+      "properties": {
+        "source_effective_date": {"$ref": "#/$defs/nullableDate"},
+        "source_observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "first_seen_at": {"$ref": "#/$defs/nullableInstant"}
+      }
+    },
+    "baseline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "history_synthesized", "prior_content_id", "prior_known_at", "reason"],
+      "properties": {
+        "status": {"enum": ["first_baseline", "continuing"]},
+        "history_synthesized": {"const": false},
+        "prior_content_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^gribr1-[a-f0-9]{24}$"}]},
+        "prior_known_at": {"$ref": "#/$defs/nullableInstant"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "lastGood": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "content_id", "known_at", "counts", "reason"],
+      "properties": {
+        "status": {"enum": ["retained", "none"]},
+        "content_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^gribr1-[a-f0-9]{24}$"}]},
+        "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "counts": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}]},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "sourceBindings": {
+      "type": "object", "additionalProperties": false,
+      "required": ["idv_content_id", "idv_source_status", "idv_freshness_status", "idv_selection_manifest_id", "prime_content_id", "prime_as_of"],
+      "properties": {
+        "idv_content_id": {"type": "string", "pattern": "^griv1-[a-f0-9]{24}$"},
+        "idv_source_status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "idv_freshness_status": {"enum": ["ok", "partial", "stale", "unavailable", "failed"]},
+        "idv_selection_manifest_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^idvsel1-[a-f0-9]{24}$"}]},
+        "prime_content_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "prime_as_of": {"$ref": "#/$defs/nullableDate"}
+      }
+    },
+    "joinPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity_bases", "semantic_similarity_join", "name_join", "piid_only_join", "reason"],
+      "properties": {
+        "identity_bases": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["enumerated_child_award", "prime_award_record_is_the_vehicle", "source_native_parent_tuple", "verified_child_count_without_enumeration"]}},
+        "semantic_similarity_join": {"const": false},
+        "name_join": {"const": false},
+        "piid_only_join": {"const": false},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "collectionUniverse": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "selected_parent_count", "selected_parent_ids", "enumerable_parent_count", "count_only_parent_count", "zero_child_parent_count", "enumerated_child_count", "prime_award_count", "prime_awards_naming_a_parent_vehicle", "prime_awards_asserting_no_parent_vehicle", "reason"],
+      "properties": {
+        "status": {"enum": ["verified", "unavailable"]},
+        "selected_parent_count": {"type": "integer", "minimum": 0, "maximum": 80},
+        "selected_parent_ids": {"type": "array", "maxItems": 80, "uniqueItems": true, "items": {"$ref": "#/$defs/generatedIdv"}},
+        "enumerable_parent_count": {"type": "integer", "minimum": 0},
+        "count_only_parent_count": {"type": "integer", "minimum": 0},
+        "zero_child_parent_count": {"type": "integer", "minimum": 0},
+        "enumerated_child_count": {"type": "integer", "minimum": 0},
+        "prime_award_count": {"type": "integer", "minimum": 0},
+        "prime_awards_naming_a_parent_vehicle": {"type": "integer", "minimum": 0},
+        "prime_awards_asserting_no_parent_vehicle": {"type": "integer", "minimum": 0},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["vehicle_membership", "task_order", "count_only", "bridged", "bridged_award_count", "abstained"],
+      "properties": {
+        "vehicle_membership": {"type": "integer", "minimum": 0},
+        "task_order": {"type": "integer", "minimum": 0},
+        "count_only": {"type": "integer", "minimum": 0},
+        "bridged": {"type": "integer", "minimum": 0},
+        "bridged_award_count": {"type": "integer", "minimum": 0},
+        "abstained": {"type": "integer", "minimum": 0}
+      }
+    },
+    "omission": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "count", "reason"],
+      "properties": {
+        "code": {"enum": ["enumerated_child_outside_prime_dossier", "exhausted_enumeration_omits_named_child", "prime_award_asserts_no_parent_vehicle", "prime_award_identity_not_decomposable", "prime_parent_tuple_outside_collection_universe", "prime_vehicle_outside_collection_universe"]},
+        "count": {"type": "integer", "minimum": 1},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "bridgeIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["idv_generated_award_id", "bridged_generated_award_id", "relationship_depth", "parent_piid", "child_piid"],
+      "properties": {
+        "idv_generated_award_id": {"$ref": "#/$defs/generatedIdv"},
+        "bridged_generated_award_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^CONT_(?:AWD|IDV)_[A-Za-z0-9_]+$", "maxLength": 1000}]},
+        "relationship_depth": {"oneOf": [{"type": "null"}, {"enum": ["direct_child", "grandchild_award"]}]},
+        "parent_piid": {"$ref": "#/$defs/nullableText"},
+        "child_piid": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["basis", "relationship_key", "receipt_id", "response_sha256", "parent_collection_state", "parent_count_verified", "parent_reported_child_count", "parent_source_exhausted", "source_proof"],
+      "properties": {
+        "basis": {"enum": ["enumerated_child_award", "prime_award_record_is_the_vehicle", "source_native_parent_tuple", "verified_child_count_without_enumeration"]},
+        "relationship_key": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^idvrel:[a-f0-9]{32}$"}]},
+        "receipt_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 400},
+        "response_sha256": {"$ref": "#/$defs/sha256"},
+        "parent_collection_state": {"enum": ["zero", "complete", "high_count_count_only", "run_cap_count_only"]},
+        "parent_count_verified": {"const": true},
+        "parent_reported_child_count": {"type": ["integer", "null"], "minimum": 0},
+        "parent_source_exhausted": {"type": "boolean"},
+        "source_proof": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "bridge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["bridge_key", "state", "award_key", "identity", "evidence", "clocks", "limitations"],
+      "properties": {
+        "bridge_key": {"type": "string", "pattern": "^idvbr:[a-f0-9]{32}$"},
+        "state": {"enum": ["vehicle_membership", "task_order", "count_only"]},
+        "award_key": {"type": ["string", "null"], "minLength": 1, "maxLength": 1000},
+        "identity": {"$ref": "#/$defs/bridgeIdentity"},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "clocks": {"$ref": "#/$defs/rowClocks"},
+        "limitations": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}
+      }
+    },
+    "award": {
+      "type": "object", "additionalProperties": false,
+      "required": ["award_key", "bridge_keys", "bridge_count", "states"],
+      "properties": {
+        "award_key": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "bridge_keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^idvbr:[a-f0-9]{32}$"}},
+        "bridge_count": {"type": "integer", "minimum": 1},
+        "states": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["vehicle_membership", "task_order"]}}
+      }
+    }
+  }
+}

@@ -10,18 +10,18 @@ Two rules give the evaluation its teeth:
 
 * It owns exactly the two preconditions it can evaluate from evidence —
   ``o1b_outcome_writer`` (the writer contract and record kind exist) and
-  ``eligible_source_registration`` (every source the gate names is registered
-  and production-ingest-allowed).  It both clears and raises those two.
+  ``eligible_source_registration`` (every source the gate names is registered,
+  production-ingest-allowed, and has any repository-declared runtime/universe
+  controls armed).  It both clears and raises those two.
   ``frozen_policy_version`` and ``eligible_identity_contract`` are a FLOOR: the
   frozen policy declares them, this module has no evidence that would clear
   them, and so it never does.
-* It re-derives source eligibility on every run, so a family whose required
-  sources are not production-ingest-allowed CANNOT be opened by editing the
-  policy file.  A gate that says "satisfied" over an ineligible source is a
-  fabricated clock, and a clock that accrues nothing is worse than a closed one:
-  it would later be read as evidence of accrual that never happened.  A family
-  that names NO source is not evidence of eligibility either; its declared state
-  stands.
+* It re-derives source eligibility on every run.  Rights permission alone is
+  not a live collection path: an operator-armed source whose committed runtime
+  switch is off or whose committed universe is empty remains ineligible.  A
+  gate that says "satisfied" over such a source is a fabricated clock, and a
+  clock that accrues nothing is worse than a closed one.  A family that names
+  NO source is not evidence of eligibility either; its declared state stands.
 
 Opening a clock means recording that a family accrues FROM NOW, bound to a
 frozen policy version and to that policy's exact bytes.  It never means writing
@@ -63,7 +63,15 @@ PRECONDITIONS: tuple[str, ...] = (
 )
 
 WRITER_ABSENT_BLOCKER = "o1b_outcome_writer_absent"
-INELIGIBLE_SOURCE_BLOCKER = "required_source_not_production_ingest_allowed"
+INELIGIBLE_SOURCE_BLOCKER = "required_source_not_activation_eligible"
+
+# These controls are part of the bounded source registry, not process
+# environment guesses.  A future operator activation must advance the reviewed
+# registry evidence (or provide a separately reviewed activation receipt)
+# before a family clock can accrue.
+_SOURCE_CONTROL_BY_ID = {
+    "clinicaltrials_gov_record_history": "b2_history_canary",
+}
 
 CLOCK_OPENED = "opened"
 CLOCK_CLOSED = "closed"
@@ -116,17 +124,42 @@ def load_yaml_document(path: Path | str) -> tuple[dict[str, Any], str]:
     return document, sha256(raw).hexdigest()
 
 
-def source_is_eligible(source_id: Any, sources: Mapping[str, Any]) -> bool:
-    """Return True only for a registered, production-ingest-allowed source.
+def source_is_eligible(
+    source_id: Any,
+    sources: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Any] | None = None,
+) -> bool:
+    """Return True only for a registered source with an active collection path.
 
     An unknown source id is ineligible: the registry is the authority, and a
-    source it does not carry has no reviewed rights state at all.
+    source it does not carry has no reviewed rights state at all.  For a source
+    with an operator-armed runtime/universe control, rights permission is
+    necessary but not sufficient: both committed defaults must also be armed.
     """
 
     registration = sources.get(source_id) if isinstance(source_id, str) else None
     if not isinstance(registration, Mapping):
         return False
-    return registration.get("production_ingest_allowed") is True
+    if registration.get("production_ingest_allowed") is not True:
+        return False
+
+    control_id = _SOURCE_CONTROL_BY_ID.get(str(source_id))
+    if control_id is None:
+        return True
+    control = (
+        source_registry.get(control_id)
+        if isinstance(source_registry, Mapping)
+        else None
+    )
+    if not isinstance(control, Mapping):
+        return False
+    allowlist = control.get("default_allowlist")
+    return (
+        control.get("default_enabled") is True
+        and isinstance(allowlist, list)
+        and bool(allowlist)
+    )
 
 
 def evaluate_family_clock(
@@ -135,6 +168,7 @@ def evaluate_family_clock(
     sources: Mapping[str, Any],
     *,
     writer_available: bool,
+    source_registry: Mapping[str, Any] | None = None,
 ) -> FamilyClockDecision:
     """Evaluate one family's entry gate honestly, from evidence."""
 
@@ -158,15 +192,17 @@ def evaluate_family_clock(
         blockers.add(WRITER_ABSENT_BLOCKER)
 
     # Evidence 2 — source eligibility, recomputed from the registry on every
-    # run.  A gate hand-edited to look clear cannot open a family whose sources
-    # cannot be read; a family with NO named source is not evidence of
-    # eligibility either, so its declared state stands.
+    # run.  A rights-reviewed but dark operator-armed source still cannot be
+    # read, and a family with NO named source is not evidence of eligibility
+    # either, so its declared state stands.
     required_source_ids = tuple(gate.get("required_source_ids") or ())
     ineligible = tuple(
         sorted(
             str(source_id)
             for source_id in required_source_ids
-            if not source_is_eligible(source_id, sources)
+            if not source_is_eligible(
+                source_id, sources, source_registry=source_registry
+            )
         )
     )
     if ineligible:
@@ -200,9 +236,19 @@ def evaluate_family_clocks(
     families = policy.get("families")
     if not isinstance(families, Mapping) or not families:
         raise FamilyClockError("FAMILY_CLOCK_POLICY_INVALID")
+    source_registry: Mapping[str, Any] | None = None
+    source_rows = sources
+    registered_rows = sources.get("sources")
+    if isinstance(registered_rows, Mapping):
+        source_registry = sources
+        source_rows = registered_rows
     return tuple(
         evaluate_family_clock(
-            family_id, families[family_id], sources, writer_available=writer_available
+            family_id,
+            families[family_id],
+            source_rows,
+            writer_available=writer_available,
+            source_registry=source_registry,
         )
         for family_id in sorted(families)
     )

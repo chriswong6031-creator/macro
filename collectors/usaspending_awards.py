@@ -337,13 +337,18 @@ AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
 # repaired *is* a column joining a canonical list without the accrued store
 # following: a copied literal would drift again on the next added column, while
 # this numeric set is small, fixed, and auditable by eye.
-_NUMERIC_LEDGER_COLS = (
+NUMERIC_LEDGER_COLUMNS = (
     "total_obligated",
     "total_outlays",
     "current_award_amount",
     "potential_award_amount",
     "federal_action_obligation",
 )
+# Historical private spelling.  ``engine.government_revenue.amount_semantics``
+# DERIVES the set of fields that must carry a declared semantic class from the
+# public name below plus ``AWARD_EVENT_NUMBER_COLUMNS``, so a number column that
+# joins a canonical list without a class fails that module's coverage guard.
+_NUMERIC_LEDGER_COLS = NUMERIC_LEDGER_COLUMNS
 _OBJECT_COLS = tuple(
     column
     for column in dict.fromkeys([*AWARD_COLUMNS, *ACTION_COLUMNS, *SNAPSHOT_COLUMNS])

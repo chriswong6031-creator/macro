@@ -41,17 +41,22 @@ from __future__ import annotations
 
 import json
 import pathlib
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.validation import (
     benjamini_hochberg,
     deflated_sharpe,
     newey_west_tstat,
     ret_moments,
-)
-from engine.trial_ledger import TrialLedger
+)  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 # ── Trial ledger declared BEFORE any computation (prereg law) ─────────────────
 FAMILY = "china_policy_events"

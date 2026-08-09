@@ -15,12 +15,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine import equity_alloc as ea
-from engine.validation import backtest_core, deflated_sharpe, ret_moments
-from engine.trial_ledger import TrialLedger
-from collectors.fred import load_vintages
-from lib import config, store
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from engine.validation import backtest_core, deflated_sharpe, ret_moments  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
+from collectors.fred import load_vintages  # noqa: E402
+from lib import config, store  # noqa: E402
 
 COST_BPS = 3.0
 CRISES = {"dotcom": ("2000-03-01", "2002-10-31"), "GFC": ("2007-10-01", "2009-06-30"),
