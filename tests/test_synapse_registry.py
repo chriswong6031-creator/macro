@@ -135,6 +135,7 @@ _VALID_CADENCES = {
     "daily-engine", "collect", "asia-close", "intraday", "weekly", "on-demand",
     "nightly-cortex", "nightly-factor-panel",
     "theta-ops-nightly",  # theta-ops launchd lane (mirror of engine/neuralweb/synapse.py)
+    "nightly-sec",  # filing-forensics-sec.yml scheduled lane (mirror of engine/neuralweb/synapse.py)
 }
 _VALID_STORAGES = {"git", "r2", "gitignored-local", "git+r2"}
 _VALID_FORMATS = {"json", "parquet", "jsonl", "js", "other"}

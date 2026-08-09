@@ -50,6 +50,28 @@ _FRIDAY = "2026-07-24"     # Friday
 _FIXED_NOW = datetime(2026, 7, 29, 6, 0, 0, tzinfo=timezone.utc)
 
 
+def _fresh_signal_date() -> str:
+    """A signal date the eligibility gates always accept — NEVER a literal.
+
+    ``plan_account`` / ``content_plan`` are called below without ``today=``, so
+    ``engine/marketing/content_studio.py:483-485`` measures the plan's signal
+    age against the REAL clock and drops anything older than
+    ``_MAX_SIGNAL_AGE_DAYS`` = 21 (:442).  A pinned ``_YESTERDAY`` is therefore
+    a scheduled red: it hit 21 days on 2026-08-19 and the D1 slot silently
+    emptied, which also disarms the "guard is vacuous" half of the cooldown
+    test.  One day old also clears the TIGHTER 10-day copywriter gate
+    (``engine/marketing/copywriter.py:257``) that the old 12-day fixture
+    already violated.
+
+    Deliberately NOT _TODAY / _YESTERDAY / _FRIDAY: those three are
+    weekday-pinned and load-bearing for the cooldown session math above.
+    A function rather than a module constant, per the house ``_days_ago``
+    pattern — a constant is frozen at IMPORT time, and the gate reads the clock
+    at CALL time.
+    """
+    return (datetime.now(timezone.utc) - timedelta(days=1)).date().isoformat()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures — a synthetic outbox under tmp_path (items.jsonl + status_ledger.jsonl)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -259,9 +281,9 @@ def test_cooled_ticker_is_not_planned_but_an_override_brings_it_back(tmp_path):
         "id": "LKFN-BULL", "asset": "LKFN", "direction": "BULL",
         "entry": 60.0, "targets": [70.0], "phase": "triggered_pre_t1",
         "recommended_action": "hold", "management_confidence": 70.0,
-        "_signal_date": _YESTERDAY,
+        "_signal_date": _fresh_signal_date(),
         "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-        "signal_date": _YESTERDAY,
+        "signal_date": _fresh_signal_date(),
     }]
 
     cooled = plan_account(account, plans, n_days=1, per_day=6,
@@ -738,20 +760,27 @@ _STUB_ACCOUNTS = [
      "voice": "dry, receipts-forward"},
 ]
 
-_STUB_PLANS = [
-    {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
-     "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
-     "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 66.0, "_signal_date": _YESTERDAY,
-     "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-     "signal_date": _YESTERDAY},
-    {"id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL", "entry": 82.0,
-     "invalidation": 75.0, "targets": [95.0], "trigger": 84.0,
-     "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 61.0, "_signal_date": _YESTERDAY,
-     "signal_date_basis": "tier_event_date", "signal_tier": "T1",
-     "signal_date": _YESTERDAY},
-]
+def _stub_plans() -> list[dict]:
+    """The two stub signal plans, dated at CALL time (see _fresh_signal_date).
+
+    A module-level list would freeze the signal date at import, which is the
+    same defect one level up: the studio's 21-day and copywriter's 10-day
+    signal-age gates read the clock when content_plan runs.
+    """
+    return [
+        {"id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL", "entry": 120.0,
+         "invalidation": 100.0, "targets": [150.0, 180.0], "trigger": 125.0,
+         "phase": "triggered_pre_t1", "recommended_action": "hold",
+         "management_confidence": 66.0, "_signal_date": _fresh_signal_date(),
+         "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+         "signal_date": _fresh_signal_date()},
+        {"id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL", "entry": 82.0,
+         "invalidation": 75.0, "targets": [95.0], "trigger": 84.0,
+         "phase": "triggered_pre_t1", "recommended_action": "hold",
+         "management_confidence": 61.0, "_signal_date": _fresh_signal_date(),
+         "signal_date_basis": "tier_event_date", "signal_tier": "T1",
+         "signal_date": _fresh_signal_date()},
+    ]
 
 
 def _arm_stub_writer(monkeypatch, *, drop_ticker: str | None = None):
@@ -789,7 +818,7 @@ def test_dropped_posts_leave_the_queue_and_are_never_template_filled(
     from engine.marketing.content_studio import content_plan
 
     _arm_stub_writer(monkeypatch, drop_ticker="SBUX")
-    plan = content_plan(_stub_cfg(), _STUB_PLANS, closes_loader=None, root=tmp_path)
+    plan = content_plan(_stub_cfg(), _stub_plans(), closes_loader=None, root=tmp_path)
 
     d1 = [i for a in plan["accounts"] for i in a["queue"]
           if str(i.get("slot", "")).startswith("D1-")]
@@ -809,7 +838,7 @@ def test_plan_report_prints_the_selection_funnel(monkeypatch, tmp_path):
     from engine.marketing.content_studio import content_plan
 
     _arm_stub_writer(monkeypatch)
-    plan = content_plan(_stub_cfg(), _STUB_PLANS, closes_loader=None, root=tmp_path)
+    plan = content_plan(_stub_cfg(), _stub_plans(), closes_loader=None, root=tmp_path)
 
     sel = plan["content"]["selection"]
     for key in ("supply", "after_cooldown", "after_budget", "cooled_tickers",
@@ -844,7 +873,7 @@ def test_sibling_texts_reach_later_desks(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cw, "write_posts_llm_v2", _stub, raising=False)
     monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
-    content_plan(_stub_cfg(), _STUB_PLANS, closes_loader=None, root=tmp_path)
+    content_plan(_stub_cfg(), _stub_plans(), closes_loader=None, root=tmp_path)
 
     assert seen, "no PLTR context reached the writer"
     assert any(s for s in seen), (
@@ -855,7 +884,7 @@ def test_shapes_and_angles_are_stamped_on_planned_items(monkeypatch, tmp_path):
     from engine.marketing.content_studio import content_plan, SHAPES, ANGLES
 
     _arm_stub_writer(monkeypatch)
-    plan = content_plan(_stub_cfg(), _STUB_PLANS, closes_loader=None, root=tmp_path)
+    plan = content_plan(_stub_cfg(), _stub_plans(), closes_loader=None, root=tmp_path)
 
     planned = [i for a in plan["accounts"] for i in a["queue"]
                if str(i.get("slot", "")).startswith("D1-")

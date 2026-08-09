@@ -138,13 +138,50 @@ jobs:
 
 
 def test_workflows_cancel_superseded_pr_runs() -> None:
+    """PR runs coalesce by cancel; MAIN proofs must be allowed to conclude.
+
+    THE 2026-08-09 BASELINE LIVELOCK — a flat `cancel-in-progress: true` on these two
+    workflows made main's CI proof structurally unreachable, and 12 merge-blocked +
+    56 cap-deferred pull requests could not drain (sweep run 31311549150, 11:44:42Z:
+    "0 main commit(s) classified … main proof: NO clean name at unknown-sha").
+
+      ci.yml has no `push` trigger, so main is proven ONLY by a workflow_dispatch,
+      and every main-ref dispatch shares `ci-refs/heads/main`. Each pinned session
+      re-firing the documented `gh workflow run ci.yml --ref main` lever therefore
+      KILLED the proof already running: 31309720615 cancelled at 44 minutes by
+      31311537537, itself cancelled 4 minutes later by 31311693575.
+
+      fences.yml is the OTHER proof merge_on_green reads, and the only one that
+      triggers on push to main — but main takes a wire/nightly push every ~30-90s,
+      and each one cancelled its predecessor (5 runs between 11:40:38Z and
+      11:43:04Z). All ten runs in the sweeper's walk were `cancelled`. A run longer
+      than the gap between pushes can NEVER conclude.
+
+    So the expressions below are load-bearing, not stylistic. Reverting either to a
+    flat `true` re-closes the sweeper's base-inherited-red refresh and re-pins the
+    whole fleet — if this test is what is in your way, you are removing the fix.
+    Dedup is NOT what the expressions cost: GitHub replaces the single PENDING run
+    per group regardless of the flag, so bursts still collapse; only the kill is gone.
+    """
     ci = _yaml(WORKFLOW)
     fences = _yaml(FENCES)
-    for workflow in (ci, fences):
-        assert workflow["concurrency"]["cancel-in-progress"] is True
+    # PR events keep cancel-on-newer-push. Dispatches (ci) and main pushes (fences)
+    # do not — those are the two proof paths.
+    assert ci["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name != 'workflow_dispatch' }}"
+    ), "a main baseline dispatch must never cancel the proof already running"
+    assert fences["concurrency"]["cancel-in-progress"] == (
+        "${{ github.event_name == 'pull_request' }}"
+    ), "a push to main must never cancel the fence run proving an earlier main SHA"
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
+    # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
+    # must survive every later edit to this block.
+    assert "merged" in ci["concurrency"]["group"], (
+        "a MERGED close must stay fenced into its own group, or a fast squash-merge "
+        "cancels the PR's own proof run and the merged head is unproven forever"
+    )
 
 
 def test_scope_glob_separator_semantics() -> None:
@@ -411,6 +448,12 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     workflow = _yaml(FENCES)
     assert workflow["permissions"]["checks"] == "write"
     jobs = workflow["jobs"]
+    assert set(jobs) == {
+        "fence-pack",
+        "fork-self-mod-fence",
+        "fork-capability-broker",
+        "fork-grader-manifest",
+    }
     pack = jobs["fence-pack"]
     assert pack["runs-on"] == "ubuntu-latest"
     checkout = next(
@@ -440,6 +483,7 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     ):
         fallback = jobs[job_id]
         assert "head.repo.full_name != github.repository" in fallback["if"]
+        assert fallback["runs-on"] == "ubuntu-latest"
         assert context in fallback["name"]
         assert f"fork-{context}-unused" in fallback["name"]
 

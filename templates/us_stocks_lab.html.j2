@@ -742,7 +742,7 @@
     {% if t0.as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ t0.as_of }}</p>{% endif %}
     <p class="beta-sub">{{ t("Stocks washed out on the slow frame, first daily up-tick today. Watch — don't chase.", '慢框架超跌、当日日线首现回升的股票。观察为主，勿追高。') }}</p>
     <div class="sb-note">
-      {{ t('T0 = 3-day-frame StochRSI under 30 with a same-day daily StochRSI up-cross (RSI14/Stoch14/3/3). Beta — an early, unproven flag; not a buy signal.', 'T0 = 3日框架StochRSI低于30且当日日线StochRSI上穿（RSI14/Stoch14/3/3）。测试版 — 早期且未经验证的提示，并非买入信号。') }}
+      {{ t('T0 = washed out on the slower frame and turning up on the same day. Beta — an early, unproven flag; not a buy signal.', 'T0 = 在较慢的周期上已经跌透，当天在日线上开始转上来。测试中 — 早期提示，未经验证，不是买入信号。') }}
     </div>
 
     {% if not t0.present %}

@@ -80,6 +80,20 @@ _ACTIVITY_WORDS: dict[str, str] = {
     # "failed" is exactly the confusion that let three good posts be discarded
     # on 2026-07-30 without anyone noticing they were recoverable.
     "rate_limited": "waiting out a Buffer rate limit (will retry)",
+    # The 2026-08-08 plan lock. Plain words, and deliberately NOT "rate limited":
+    # the Buffer subscription lapsed on ~08-05 and every send since has come back
+    # 429 with a sixteen-day Retry-After, which the old wording reported as "will
+    # retry" for two solid days. What the operator has to do is renew, and the
+    # panel has to be able to say so.
+    "skipped_subscription_locked": "held — the Buffer plan is locked (renew to post)",
+    "rate_limited_exhausted": "stopped retrying after repeated rate limits",
+    "expired_planned": "retired before dispatch — too old for its slot",
+    # The lock's two STAMPS, not counters. _activity_ledger renders numbers only,
+    # so these never reach the loss ledger — they are labelled anyway so the
+    # words already exist the day a panel does show them, and so the counter
+    # guard stays strict rather than growing a per-key exemption.
+    "buffer_locked_until": "the Buffer plan unlocks around",
+    "last_lock_seen_at": "the lock was last seen at",
     "quarantined": "pulled at dispatch",
     "skipped_no_channel": "no channel wired for that desk",
     "skipped_halt": "desk halted by the learning tripwire",
@@ -183,6 +197,15 @@ _LOSS_COUNTERS = frozenset({
     # A post the desk wrote and nobody sent is a loss like any other — it is
     # only invisible because it died before the dispatch loop rather than in it.
     "expired_wire",
+    # Same rule, the planned lane's half of it (the publisher now runs
+    # outbox.expire_stale_planned on every sweep, not only at plan time).
+    "expired_planned",
+    # A post parked at `failed` after N rate-limited sweeps is a post nobody will
+    # send without a human. `skipped_subscription_locked` is NOT here — those
+    # items are untouched and post the day the plan renews, exactly like
+    # `rate_limited`, and charging them as losses would report a two-week outage
+    # as thousands of destroyed posts.
+    "rate_limited_exhausted",
     # The approval desk's four post-costing outcomes. `desk_approved` is
     # deliberately NOT here (it is work done, and those posts go on to be
     # counted as posted or as a dispatch-gate loss) and neither is

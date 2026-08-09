@@ -1939,9 +1939,17 @@ class TestBriefTriggerFork:
         """
         from engine.marketing.outbox import BRIEF_TRIGGER, _rejection_reason
 
+        # The gate is a per-family BUDGET since W3 (2026-08-08), not a boolean
+        # owner, and `pct:` ships a budget of 2. This test is about the TRIGGER
+        # fork, not about the budget's size, so it pins the budget at 1 — the
+        # pre-W3 number — and lets the shipped table be pinned where it belongs
+        # (tests/test_marketing_wire_fanout.py). Without this the anchor below
+        # sits UNDER budget, every trigger passes, and the test would go green
+        # for the one reason it exists to rule out: a guard that stopped biting.
         ctx = {
             "ids": set(),
             "day_counts": {},
+            "fanout_budgets": {"pct": 1},
             "fact_anchors": {("2026-08-03", "pct:breaking:MU:8.2"): "ob-parent"},
             "recent_texts_by_account": {},
         }

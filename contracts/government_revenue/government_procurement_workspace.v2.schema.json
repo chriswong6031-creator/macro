@@ -239,12 +239,13 @@
         "entities": {
           "type": "array", "items": {
             "type": "object", "additionalProperties": false,
-            "required": ["ticker", "recipient_search_text", "recipient_query_terms"],
+            "required": ["ticker", "recipient_search_text"],
             "properties": {
               "ticker": {"type": "string"},
               "recipient_search_text": {"type": "string"},
               "recipient_query_terms": {
-                "type": "array", "minItems": 1, "items": {"type": "string"}
+                "type": "array", "minItems": 1, "items": {"type": "string"},
+                "description": "Terms actually sent to the discovery rail. Producer-required: the collector always emits this (pinned by tests/test_usaspending_awards.py) and its appearance in the manifest triggers the one-time forward-event rebaseline. Schema-optional because canonical vintages committed before the field existed must stay readable; requiredness may return only after the committed store's manifest carries it."
               }
             }
           }
@@ -352,7 +353,8 @@
       "required": ["available_before_cap", "visible"],
       "properties": {
         "available_before_cap": {"type": "integer", "minimum": 0},
-        "visible": {"type": "integer", "minimum": 0}
+        "visible": {"type": "integer", "minimum": 0},
+        "truncated_by_cap": {"type": "integer", "minimum": 0}
       }
     },
     "kindCoverage": {
@@ -391,7 +393,8 @@
         "conflicted_ids": {"type": "integer", "minimum": 0}, "conflicted_rows": {"type": "integer", "minimum": 0},
         "dropped_by_global_identity_conflict": {"type": "integer", "minimum": 0},
         "available_before_cap": {"type": "integer", "minimum": 0},
-        "visible": {"type": "integer", "minimum": 0}, "truncated": {"type": "integer", "minimum": 0}
+        "visible": {"type": "integer", "minimum": 0}, "truncated": {"type": "integer", "minimum": 0},
+        "first_rejection_reason": {"type": ["string", "null"], "maxLength": 200}
       }
     },
     "exactIdDedupe": {

@@ -293,6 +293,32 @@ _RELEASE_EVENT_KEYS: dict[str, str] = {
 }
 
 
+def _market_title_matches_target(release_type: str, title: object) -> bool:
+    """Prevent one CPI-family event from being attached to a different target.
+
+    The legacy event-key taxonomy groups headline and core CPI under
+    ``cpi_print``.  The human-readable title is therefore a required secondary
+    identity check: a Core CPI contract must never become a headline benchmark,
+    and a YoY or unit-ambiguous contract must never become a MoM benchmark.
+    """
+    if release_type not in {"cpi_headline", "cpi_core"}:
+        return True
+    normalized = str(title or "").strip().lower()
+    is_mom = any(
+        token in normalized
+        for token in ("mom", "m/m", "month over month", "month-over-month", "monthly")
+    )
+    is_yoy = any(
+        token in normalized
+        for token in ("yoy", "y/y", "year over year", "year-over-year", "annual")
+    )
+    if "cpi" not in normalized or not is_mom or is_yoy:
+        return False
+    if release_type == "cpi_core":
+        return "core" in normalized
+    return "core" not in normalized
+
+
 # Kalshi bracket-ladder store (collectors/kalshi_releases.py, #1876).
 # Summary rows carry implied_median per (asof_date, release_type, period).
 _KALSHI_RELEASE_MAP = {
@@ -396,6 +422,18 @@ def get_market_implied_benchmark(
         sub = df[mask]
         if sub.empty:
             return None
+
+        # ``cpi_print`` historically contains both headline and core markets.
+        # Fail closed on title/target mismatch instead of silently borrowing the
+        # other target's distribution.
+        if release_type in {"cpi_headline", "cpi_core"}:
+            sub = sub[
+                sub["event_title"].map(
+                    lambda title: _market_title_matches_target(release_type, title)
+                )
+            ]
+            if sub.empty:
+                return None
 
         # Latest snapshot_date
         latest_snapshot = str(sub["snapshot_date"].max())

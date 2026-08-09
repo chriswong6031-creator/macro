@@ -59,7 +59,10 @@ cadence:
   # 30-min ladder step leaves after publish.post_jitter_max_min = 7, so every post
   # would have missed its next rung and run at half cadence; and `light` (0.34)
   # resolves to 2 posts on a weekend, far under the operator's 10/day floor.
-  posts_per_day: 20
+  # OPERATOR ORDER 2026-08-08: 20-30 posts/day/account -- raised 20 -> 30 in
+  # step with sentinel.ramp.account_overrides.mastermind_news, for the same
+  # reason the block above states: the spec must never be the throttle.
+  posts_per_day: 30
   min_spacing_min: 20
   jitter_min: 3
   weekend_shape: medium
