@@ -1,0 +1,687 @@
+{
+  "authoritative_substrate": {
+    "all_canonical_schema_gates_pass": false,
+    "contract_ready_for_row_attestation": false,
+    "contract_snapshot_commit": "b2548fdc095",
+    "contract_snapshot_has_readiness_authority": false,
+    "contract_snapshot_status": "SHAPE_ONLY_NO_READINESS_AUTHORITY_PENDING_REMEDIATION",
+    "gates": {
+      "attested_market_sessions": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "bse_calendar_provenance",
+          "calendar_provenance",
+          "market_session_position",
+          "trade_date"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/reference/market_sessions.parquet"
+      },
+      "canonical_event_daily": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "board",
+          "calculated_limit_role",
+          "close_cents",
+          "down_limit_cents",
+          "event_eligible",
+          "event_price_authority",
+          "exchange",
+          "high_cents",
+          "limit_pre_close_cents",
+          "low_cents",
+          "market_session_position",
+          "open_cents",
+          "positive_volume",
+          "pre_close_cents",
+          "sealed_down",
+          "sealed_up",
+          "security_id",
+          "source_limits_present",
+          "source_ts_code",
+          "ticker",
+          "touched_down",
+          "touched_up",
+          "trade_date",
+          "up_limit_cents",
+          "volume_lots"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/event_daily"
+      },
+      "daily_security_coverage": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "daily_n",
+          "eligible_n",
+          "positive_volume_n",
+          "suspended_n",
+          "trade_date",
+          "unexpected_daily_n",
+          "unexplained_missing_n"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/coverage/daily_security_coverage.parquet"
+      },
+      "effective_dated_security_master": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "board",
+          "delist_date",
+          "effective_from",
+          "effective_to",
+          "exchange",
+          "list_date",
+          "list_status",
+          "security_id",
+          "source_ts_code",
+          "ticker"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/reference/security_master.parquet"
+      },
+      "exact_daily_stock_st_from_2016": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "is_st",
+          "security_id",
+          "st_provenance",
+          "ticker",
+          "trade_date"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/stock_st"
+      },
+      "tushare_unadjusted_daily": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "board",
+          "close_cents",
+          "exchange",
+          "high_cents",
+          "low_cents",
+          "market_session_position",
+          "open_cents",
+          "positive_volume",
+          "pre_close_cents",
+          "price_source_basis",
+          "security_id",
+          "source_ts_code",
+          "ticker",
+          "trade_date",
+          "volume_lots"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/daily"
+      },
+      "tushare_vendor_stk_limit": {
+        "columns": [],
+        "exists": false,
+        "missing_columns": [
+          "board",
+          "down_limit_cents",
+          "exchange",
+          "limit_price_source",
+          "market_session_position",
+          "pre_close_cents",
+          "security_id",
+          "source_limits_present",
+          "source_ts_code",
+          "ticker",
+          "trade_date",
+          "up_limit_cents"
+        ],
+        "pass": false,
+        "path": "data/china_tushare_spine/stk_limit"
+      }
+    },
+    "generation_binding": {
+      "available_in_snapshot_v1": false,
+      "law": "correct paths and hashes are insufficient unless they belong to one promoted generation",
+      "pass": false,
+      "required": true,
+      "required_evidence": [
+        "one promoted_generation_id in the manifest",
+        "every input/reference/partition receipt bound to that generation",
+        "consumer re-attestation that no mixed-vintage plane is present"
+      ]
+    },
+    "layout_binding": {
+      "bindings": {
+        "calendar": {
+          "actual": "data/china_tushare_spine/reference/market_sessions.parquet",
+          "expected": "data/china_tushare_spine/reference/market_sessions.parquet",
+          "pass": true
+        },
+        "coverage": {
+          "actual": "data/china_tushare_spine/coverage/daily_security_coverage.parquet",
+          "expected": "data/china_tushare_spine/coverage/daily_security_coverage.parquet",
+          "pass": true
+        },
+        "daily": {
+          "actual": "data/china_tushare_spine/daily",
+          "expected": "data/china_tushare_spine/daily",
+          "pass": true
+        },
+        "event_daily": {
+          "actual": "data/china_tushare_spine/event_daily",
+          "expected": "data/china_tushare_spine/event_daily",
+          "pass": true
+        },
+        "limits": {
+          "actual": "data/china_tushare_spine/stk_limit",
+          "expected": "data/china_tushare_spine/stk_limit",
+          "pass": true
+        },
+        "manifest": {
+          "actual": "data/china_tushare_spine/completeness_manifest.json",
+          "expected": "data/china_tushare_spine/completeness_manifest.json",
+          "pass": true
+        },
+        "security_master": {
+          "actual": "data/china_tushare_spine/reference/security_master.parquet",
+          "expected": "data/china_tushare_spine/reference/security_master.parquet",
+          "pass": true
+        },
+        "stock_st": {
+          "actual": "data/china_tushare_spine/stock_st",
+          "expected": "data/china_tushare_spine/stock_st",
+          "pass": true
+        }
+      },
+      "law": "all consumed planes must resolve to the frozen relative layout under one spine root",
+      "pass": true
+    },
+    "manifest": {
+      "exists": false,
+      "file_receipts": [],
+      "identity_valid": false,
+      "manifest_sha256": null,
+      "pass": false,
+      "path": "data/china_tushare_spine/completeness_manifest.json",
+      "schema_binding": {
+        "expected_path": "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json",
+        "expected_sha256": "a43c4a133aee3aed571c9fb630c5154a826d24872f6ce107b1016cf6fc36ce02",
+        "pass": false,
+        "path_matches": true,
+        "sha256_matches": false
+      },
+      "schema_exists": false,
+      "schema_path": "contracts/cn_tushare_a_share_spine_manifest.v1.schema.json",
+      "schema_sha256": null,
+      "schema_valid": false,
+      "semantic_checks": {}
+    },
+    "manifest_gate_pass": false,
+    "measurement_overlay": {
+      "law": "missing eligibility/rule fields remain blockers; this adapter does not infer them",
+      "missing_columns": [
+        "corporate_action_reference_known",
+        "ipo_no_limit_state_known",
+        "no_limit",
+        "rule_cohort",
+        "session_eligible",
+        "st_membership_state",
+        "st_provenance"
+      ],
+      "pass": false,
+      "required_columns": [
+        "corporate_action_reference_known",
+        "ipo_no_limit_state_known",
+        "no_limit",
+        "rule_cohort",
+        "session_eligible",
+        "st_membership_state",
+        "st_provenance"
+      ]
+    },
+    "partition_contract": "{daily,stk_limit,event_daily}/year=YYYY/month=MM/part.parquet",
+    "ready_for_measurement": false,
+    "row_level_measurement_gates_pass": false,
+    "row_level_measurement_gates_pending": [
+      "event_daily unique ticker/date keys re-attested by the consumer",
+      "all input hashes bound to one promoted generation identity",
+      "integer-cent OHLC ordering, inclusive vendor-bound containment, exact-equality event flags, and daily/limit previous-close equality re-attested",
+      "positive_volume and source_limits_present restricted exactly",
+      "event_daily market_session_position joined one-to-one to market_sessions",
+      "effective security lifecycle expanded to a dense exact-session eligibility state",
+      "rule cohort and IPO no-limit state materialized rather than ratio-inferred",
+      "historical ST state joined with pre-2016 uncertainty quarantined",
+      "corporate-action reference state materialized rather than inferred",
+      "daily security coverage hash and counts re-attested against event/master rows",
+      "exact successor and exit horizon support"
+    ],
+    "row_level_measurement_gates_run": false,
+    "shape_ready_for_row_attestation": false,
+    "store": "data/china_tushare_spine"
+  },
+  "authority": "none_research_display_context_only",
+  "blocker": "the b2548fdc095 v1 contract is a schema-shape snapshot only and is pending a remediated promoted spine authority; the selected spine partitions, references, coverage, or pinned-schema complete manifest are absent/incomplete; event_daily lacks frozen measurement eligibility/rule fields: corporate_action_reference_known, ipo_no_limit_state_known, no_limit, rule_cohort, session_eligible, st_membership_state, st_provenance; snapshot v1 cannot prove that every input hash belongs to one promoted generation; consumer-side row re-attestation has not run",
+  "blockers": [
+    "the b2548fdc095 v1 contract is a schema-shape snapshot only and is pending a remediated promoted spine authority",
+    "the selected spine partitions, references, coverage, or pinned-schema complete manifest are absent/incomplete",
+    "event_daily lacks frozen measurement eligibility/rule fields: corporate_action_reference_known, ipo_no_limit_state_known, no_limit, rule_cohort, session_eligible, st_membership_state, st_provenance",
+    "snapshot v1 cannot prove that every input hash belongs to one promoted generation",
+    "consumer-side row re-attestation has not run"
+  ],
+  "construction_protocol": {
+    "bootstrap": {
+      "date_clusters": true,
+      "repetitions": 1000,
+      "run_clusters": true,
+      "seed": 20260808
+    },
+    "construction_ids": [
+      "S_STRICT",
+      "S_TOL_ONLY",
+      "TF_TOL_ONLY",
+      "TF_CP_095_100",
+      "TF_CP_080_095",
+      "TF_CP_060_080",
+      "TF_CP_LT060",
+      "NT_H_095_100",
+      "NT_H_080_095",
+      "NT_H_060_080",
+      "NT_H_040_060",
+      "NT_C_095_100",
+      "NT_C_080_095",
+      "NT_C_060_080",
+      "NT_C_040_060"
+    ],
+    "cost_bps_round_trip": [
+      0,
+      30,
+      60,
+      100
+    ],
+    "daily_bars_can_claim_path_order": false,
+    "entry_clock": "D close information to D+1 reported-open daily_tradability_proxy",
+    "exact_touch_predicate": "high_cents == up_limit_cents after bound validation",
+    "exits": [
+      "E1_OPEN_D+2",
+      "E1_CLOSE_D+2",
+      "E3_CLOSE_D+4"
+    ],
+    "frozen_before_measurement": true,
+    "out_of_vendor_bounds_policy": "quarantine_no_classification",
+    "outcome_measurement_observed_before_corrections": false,
+    "path": "research/cn_limit_alpha_sol/W2_BAND_PROGRESS_CONSTRUCTION_PROTOCOL_2026-08-08.md",
+    "premeasurement_contract_corrections": [
+      {
+        "change": "replace placeholder input seams with the frozen china_tushare_spine v1 event_daily, reference, coverage, and manifest contract",
+        "date": "2026-08-09",
+        "id": "canonical_full_a_v1_binding",
+        "outcome_measurement_observed_before_change": false
+      },
+      {
+        "change": "classify exact seals/touches only by close_cents/high_cents equality to the vendor up_limit_cents after quarantining OHLC outside vendor bounds",
+        "date": "2026-08-09",
+        "id": "bounded_integer_cent_event_equality",
+        "outcome_measurement_observed_before_change": false
+      }
+    ],
+    "sha256": "a92d8df22fef944af2ad739f233cd8504ef9e735d7436c62688c54b2256b31ac",
+    "strict_seal_predicate": "close_cents == up_limit_cents after bound validation",
+    "tolerant_close_is_legal_seal": false
+  },
+  "fill_metrics_emitted": false,
+  "instrument": {
+    "path": "scripts/research/cn_limit_band_progress_w2.py",
+    "sha256": "187bb807f014c809bb2d15ff38883a166429318c6b4b804e3ff9fb8a9a8e38fc"
+  },
+  "legacy_substrate_diagnostic": {
+    "authority": "SUBSTRATE_INVALID_DIAGNOSTIC_ONLY",
+    "changed_event_key_examples": [
+      {
+        "close": 8.527027130126953,
+        "date": "2000-04-05",
+        "half_up_upper": 8.53,
+        "high": 8.527027130126953,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000029.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.25,
+        "date": "2014-02-20",
+        "half_up_upper": 8.53,
+        "high": 8.524999618530273,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": false,
+        "ticker": "000032.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 4.064284801483154,
+        "date": "2014-07-16",
+        "half_up_upper": 4.13,
+        "high": 4.128571033477783,
+        "legacy_upper": 4.12,
+        "previous_close": 3.75,
+        "strict_half_up": false,
+        "strict_legacy": false,
+        "ticker": "000034.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.529999732971191,
+        "date": "2016-12-07",
+        "half_up_upper": 8.53,
+        "high": 8.529999732971191,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000035.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 18.427776336669922,
+        "date": "2015-06-29",
+        "half_up_upper": 18.43,
+        "high": 18.427776336669922,
+        "legacy_upper": 18.42,
+        "previous_close": 16.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000039.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 6.329999923706055,
+        "date": "2018-11-15",
+        "half_up_upper": 6.33,
+        "high": 6.329999923706055,
+        "legacy_upper": 6.32,
+        "previous_close": 5.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000058.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.09000015258789,
+        "date": "2023-11-15",
+        "half_up_upper": 8.53,
+        "high": 8.520000457763672,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": false,
+        "ticker": "000058.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 13.9399995803833,
+        "date": "2014-10-08",
+        "half_up_upper": 14.03,
+        "high": 14.029999732971191,
+        "legacy_upper": 14.02,
+        "previous_close": 12.75,
+        "strict_half_up": false,
+        "strict_legacy": false,
+        "ticker": "000061.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 14.029999732971191,
+        "date": "2024-08-21",
+        "half_up_upper": 14.03,
+        "high": 14.029999732971191,
+        "legacy_upper": 14.02,
+        "previous_close": 12.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000062.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 11.829999923706055,
+        "date": "2023-10-11",
+        "half_up_upper": 11.83,
+        "high": 11.829999923706055,
+        "legacy_upper": 11.82,
+        "previous_close": 10.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000066.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 27.229999542236328,
+        "date": "2021-11-25",
+        "half_up_upper": 27.23,
+        "high": 27.229999542236328,
+        "legacy_upper": 27.22,
+        "previous_close": 24.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000400.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.529999732971191,
+        "date": "2021-06-28",
+        "half_up_upper": 8.53,
+        "high": 8.529999732971191,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000422.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 11.829999923706055,
+        "date": "2021-08-12",
+        "half_up_upper": 11.83,
+        "high": 11.829999923706055,
+        "legacy_upper": 11.82,
+        "previous_close": 10.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000422.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 4.125,
+        "date": "2007-09-13",
+        "half_up_upper": 4.13,
+        "high": 4.125,
+        "legacy_upper": 4.12,
+        "previous_close": 3.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000425.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 6.329999923706055,
+        "date": "2007-02-28",
+        "half_up_upper": 6.33,
+        "high": 6.329999923706055,
+        "legacy_upper": 6.32,
+        "previous_close": 5.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000429.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 20.6299991607666,
+        "date": "2014-08-26",
+        "half_up_upper": 20.63,
+        "high": 20.6299991607666,
+        "legacy_upper": 20.62,
+        "previous_close": 18.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000503.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 11.829999923706055,
+        "date": "2022-11-10",
+        "half_up_upper": 11.83,
+        "high": 11.829999923706055,
+        "legacy_upper": 11.82,
+        "previous_close": 10.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000503.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.529999732971191,
+        "date": "2016-07-06",
+        "half_up_upper": 8.53,
+        "high": 8.529999732971191,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000506.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 8.529999732971191,
+        "date": "2010-01-08",
+        "half_up_upper": 8.53,
+        "high": 8.529999732971191,
+        "legacy_upper": 8.52,
+        "previous_close": 7.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000534.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      },
+      {
+        "close": 4.125,
+        "date": "2013-07-11",
+        "half_up_upper": 4.13,
+        "high": 4.125,
+        "legacy_upper": 4.12,
+        "previous_close": 3.75,
+        "strict_half_up": false,
+        "strict_legacy": true,
+        "ticker": "000539.SZ",
+        "touch_half_up": false,
+        "touch_legacy": true,
+        "width": 0.1
+      }
+    ],
+    "counts": {
+      "current_st_files_excluded": 1,
+      "eligible_prior_close_not_exact_cent_at_1e_9_cny": 6254390,
+      "eligible_prior_close_off_cny_0_01_tick": 2732956,
+      "eligible_width_heuristic_rows": 6480328,
+      "exact_touch_added_by_half_up": 0,
+      "exact_touch_half_up": 67119,
+      "exact_touch_legacy": 67382,
+      "exact_touch_removed_by_half_up": 263,
+      "files_failed": 0,
+      "files_read": 1841,
+      "half_up_vs_legacy_upper_price_diff_rows": 23322,
+      "prior_close_not_exact_cent_at_1e_9_cny": 6526249,
+      "prior_close_off_cny_0_01_tick": 2914968,
+      "rows": 6760225,
+      "rows_with_prior_close": 6758384,
+      "strict_seal_added_by_half_up": 0,
+      "strict_seal_half_up": 43360,
+      "strict_seal_legacy": 43521,
+      "strict_seal_removed_by_half_up": 161,
+      "tolerant_close_half_up": 80551,
+      "tolerant_close_legacy": 80555,
+      "tolerant_close_symmetric_diff": 4
+    },
+    "failed_files": [],
+    "files_discovered": 1842,
+    "raw_metadata_fingerprint": "8139699646c9a09cc0e232c63badb0d5f445fb4e6796e2d1cbbdfa14b12b5c6a",
+    "scope_limitations": [
+      "current ST-snapshot intersections excluded across all history",
+      "board width inferred from ticker/date only",
+      "historical ST, IPO no-limit, and exact corporate-action rules are not reconstructed",
+      "vector half-up comparison is diagnostic; vendor stk_limit is the future authority"
+    ],
+    "status": "audited_invalid_plane",
+    "tick_alignment_epsilon_cny": 1e-05,
+    "warning": "Yahoo raw remains split-adjusted; these are detector-engineering counts only. No transition, return, fill, or strategy metric was computed."
+  },
+  "next_action": "land a remediated full-A TuShare spine contract with one promoted-generation identity, materialize the missing rule/lifecycle eligibility overlay without inference, pin the new schema/commit, re-attest every row-level gate, then execute the deterministic measurement",
+  "ore_ledger": {
+    "law": "A blocked or adverse exact construction cannot close the family; untested variants remain explicit and append-only.",
+    "untested_variants": [
+      "first-touch, first-seal, last-seal, break/reseal, sealed duration, and path order",
+      "wall growth, depletion, replenishment, cancellation, queue rank, partial fills, and signed flow",
+      "opening-auction imbalance and post-09:25 decisions with true 09:30 execution",
+      "early failed-seal absorption versus late demand exhaustion",
+      "closing-auction-only seals and post-close fixed-price execution",
+      "upper-then-lower versus lower-then-upper intraday traversal",
+      "multi-step cadence words and flexible 3/5/10-session first-passage paths",
+      "T+1 inventory vintages, volume-at-price, free float, unlocks, and queue elasticity",
+      "PIT theme topology, spectator substitution, and failed-leader redistribution",
+      "ladder topology, hysteresis, and regime interactions",
+      "availability-safe LHB, block sponsorship, and catalyst classes",
+      "full-universe delisted-name, historical ST, IPO, suspension, and corporate-action truth",
+      "board-local nonlinear models, threshold/cash portfolios, and nested confirmation",
+      "live fees, slippage, rejection, capacity, sector caps, and mark-to-market drawdown",
+      "at least ten prospective graded sessions and every authority-promotion gauntlet"
+    ]
+  },
+  "receipt_date": "2026-08-08",
+  "return_metrics_emitted": false,
+  "schema_version": "cn_limit_band_progress_w2_substrate/v2",
+  "status": "BLOCKED_SUBSTRATE",
+  "strategy_metrics_emitted": false,
+  "transition_rates_emitted": false,
+  "verdict": "BLOCKED_SUBSTRATE_NO_STRATEGY_MEASUREMENT"
+}

@@ -22,8 +22,13 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from scripts._bt_verify_uplift import build_panel, DEFENSIVE, HOR, ERAS
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts._bt_verify_uplift import build_panel, DEFENSIVE, HOR, ERAS  # noqa: E402
 
 RNG = np.random.default_rng(7)
 

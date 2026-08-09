@@ -5,7 +5,7 @@
   "description": "The frozen common outcome envelope, known-at clock semantics, censoring and terminality grammar, correction grammar, and per-family entry gate for the nine BioCatalyst outcome families. This contract extends biocatalyst_outcome_policy.v1 (config/biocatalyst_outcomes.yml); it does not restate or contradict it. It is policy only: every family's clock is closed, and satisfying an entry gate is a separate, later act.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_id", "schema", "schema_version", "policy_version", "effective_at", "owner", "state", "extends", "outcome_envelope", "known_at_clock", "censoring", "correction_grammar", "family_registration", "families"],
+  "required": ["contract_id", "schema", "schema_version", "policy_version", "effective_at", "owner", "state", "extends", "outcome_envelope", "known_at_clock", "censoring", "correction_grammar", "family_registration", "clock_activation", "families"],
   "properties": {
     "contract_id": {"const": "biocatalyst_outcome_family_policy.v1"},
     "schema": {"const": "biocatalyst_outcome_family_policy.v1"},
@@ -110,7 +110,23 @@
         "model_may_register": {"const": false},
         "unsatisfied_precondition_behavior": {"const": "clock_stays_closed"},
         "writer_contract": {"const": "biocatalyst_outcome_record.v1"},
-        "writer_contract_state": {"const": "not_built_deferred_to_bc_o1b"}
+        "writer_contract_state": {"enum": ["not_built_deferred_to_bc_o1b", "built_in_bc_o1b"]}
+      }
+    },
+    "clock_activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluator_module", "activation_record_contract", "activation_record_kind", "clock_state_authority", "source_eligibility_rule", "source_registry_file", "backfill", "accrual_start_rule", "model_may_open_a_clock"],
+      "properties": {
+        "evaluator_module": {"const": "engine.biocatalyst.family_clock"},
+        "activation_record_contract": {"const": "biocatalyst_family_clock_activation.v1"},
+        "activation_record_kind": {"const": "family_clock_activation"},
+        "clock_state_authority": {"const": "activation_receipt_not_this_file"},
+        "source_eligibility_rule": {"const": "required_source_ids_must_be_rights_allowed_and_any_runtime_universe_controls_armed"},
+        "source_registry_file": {"const": "config/biocatalyst_sources.yml"},
+        "backfill": {"const": "forbidden_no_history_recorded"},
+        "accrual_start_rule": {"const": "known_at_of_the_activation_never_earlier"},
+        "model_may_open_a_clock": {"const": false}
       }
     },
     "families": {

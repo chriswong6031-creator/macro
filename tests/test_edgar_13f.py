@@ -62,6 +62,18 @@ def test_value_units_thousands_vs_dollars():
     assert e13.value_to_dollars(1500.0, date(2026, 3, 31)) == 1500.0
 
 
+def test_acceptance_available_date_rolls_after_close():
+    assert e13.acceptance_available_date(
+        "20260804155959", "2026-08-04") == "2026-08-04"
+    assert e13.acceptance_available_date(
+        "20260804160000", "2026-08-04") == "2026-08-05"
+    assert e13.acceptance_available_date(
+        "2026-07-21T16:02:33.000Z", "2026-07-21") == "2026-07-21"
+    assert e13.acceptance_available_date(
+        "2026-05-14T22:16:46.000Z", "2026-05-15") == "2026-05-15"
+    assert e13.acceptance_available_date(None, "2026-08-04") == "2026-08-04"
+
+
 def test_norm_handles_possessive_connective_abbrev():
     assert sm._norm("Moody's Corp") == "MOODYS"
     assert sm._norm("Bank of America Corp") == "BANK AMERICA"
@@ -272,6 +284,10 @@ _SUBMISSIONS_WITH_AMENDMENTS = {
                 "2025-11-14",
                 "2025-11-13",
             ],
+            "acceptanceDateTime": [
+                "20260520120000", "20260515160000", "20260218120000",
+                "20260214150000", "20251114120000", "20251113120000",
+            ],
         }
     },
 }
@@ -300,6 +316,19 @@ def test_list_13f_separates_originals_and_amendments():
     # 13F-NT must NOT appear in either list
     all_periods = orig_periods + amend_periods
     assert "2025-09-30" not in amend_periods  # Q3 has no amendment
+    assert originals[0]["accepted_at"] == "20260515160000"
+    assert originals[0]["form"] == "13F-HR"
+    assert adapter._last_notices[0]["form"] == "13F-NT"
+
+
+def test_list_13f_fetch_failure_is_not_silent_empty_success():
+    from collectors import edgar as _edgar  # noqa: PLC0415
+    adapter = e13.Edgar13FAdapter.__new__(e13.Edgar13FAdapter)
+    with mock.patch("collectors.edgar_13f._get_json", return_value=None), \
+         mock.patch.object(_edgar, "_cfg", return_value={"retries": 3}), \
+         mock.patch("collectors.edgar_13f.time.sleep"):
+        with pytest.raises(RuntimeError, match="submissions unavailable"):
+            adapter._list_13f(1234567)
 
 
 def test_amendment_file_naming_and_pathing(tmp_path):
@@ -334,6 +363,13 @@ def test_amendment_file_naming_and_pathing(tmp_path):
     amend_file = fund_dir / "amendments" / "2026-03-31__2026-05-20.parquet"
     assert amend_file.exists(), f"amendment file not found at {amend_file}"
     assert written == 2  # original + amendment both written
+    snap = pd.read_parquet(fund_dir / "2026-03-31.parquet")
+    assert snap["accession"].iloc[0] == "0001234567-26-000005"
+    assert snap["source_sha256"].iloc[0]
+    assert snap["parser_version"].iloc[0] == "edgar-13f-xml-v3"
+    assert set(snap["value_multiplier"]) == {1.0}
+    assert snap["value_reported"].sum() == 3500.0
+    assert snap["available_date"].iloc[0] == "2026-05-15"
 
 
 def test_amendment_immutability_skip(tmp_path):

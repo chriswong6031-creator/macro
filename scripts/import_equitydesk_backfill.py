@@ -87,8 +87,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT_DEFAULT = _SCRIPT_DIR.parent
-if str(_REPO_ROOT_DEFAULT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT_DEFAULT))
+sys.path.insert(0, str(_REPO_ROOT_DEFAULT))
 
 
 # ---------------------------------------------------------------------------

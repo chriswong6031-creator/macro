@@ -634,7 +634,13 @@ wire:
   #
   # marketing.yml `breaking.flagship_top_k_per_day` OVERRIDES this key when it is
   # present — the volume decision may sit beside the desk roster it governs.
-  flagship_top_k_per_day: 10
+  #
+  # 10 -> 20 (operator order 2026-08-08, 20-30 posts/day per account) so the two
+  # homes read the same number. Only the guard direction is asymmetric
+  # (tests/test_marketing_news_arming.py refuses a marketing.yml value BELOW this
+  # one), so leaving 10 here would not have thrown — it would just have left a
+  # stale ceiling in the historical home for the next reader to believe.
+  flagship_top_k_per_day: 20
   # THE FLOOR WAS EXACTLY THE CEILING OF ONE CLASS, AND THAT IS WHY THIS WIRE
   # ONLY EVER POSTED BEA PRINTS (2026-07-31).
   #

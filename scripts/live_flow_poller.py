@@ -14,17 +14,15 @@ Config block 'live_flow:' in config.yml:
   state_retention_days: 5 # local day_state files kept (newest N sessions; current day never pruned)
 
 Usage:
-  # Single cycle (smoke / testing)
-  python -m scripts.live_flow_poller --once --date 2026-07-02 --roots SPY QQQ KRE
+  # Import/entrypoint smoke only; does not fetch, stage, or publish
+  python -m scripts.live_flow_poller --help
 
-  # Single cycle with short retention (state-wipe smoke)
-  python -m scripts.live_flow_poller --once --date 2026-07-02 --roots SPY QQQ --retention-hours 96
-
-  # Continuous loop (RTH only — exits outside 09:25–16:05 ET on weekdays)
+  # Production launchd command (RTH only — exits outside 09:25–16:05 ET)
   python -m scripts.live_flow_poller --rth-only
 
-  # Override session date (market closed)
-  python -m scripts.live_flow_poller --date 2026-07-02 --once
+  Historical ``--once --date`` is not a smoke test. It conflicts with exact
+  PIT clock admission and can overwrite live/current or replay objects. Use the
+  isolated unit fixtures documented in ops/LIVE_FLOW_RUNBOOK.md instead.
 
 INERT semantics: root failures → skip + log, never abort the cycle.
 NEVER raise max_concurrent above 2 without explicit Fable adjudication.
@@ -40,22 +38,48 @@ New R2 objects emitted each cycle (live_flow/ prefix):
 from __future__ import annotations
 
 import argparse
+import fcntl
 import gc
+import hashlib
 import json
 import logging
 import os
 import re
 import resource
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.session_digest import session_window_et  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 log = logging.getLogger(__name__)
+
+
+def _reject_duplicate_object_pairs(pairs):
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError(f"duplicate JSON object key {key!r}")
+        obj[key] = value
+    return obj
+
+
+def _strict_json_loads(value):
+    return json.loads(
+        value,
+        object_pairs_hook=_reject_duplicate_object_pairs,
+        parse_constant=lambda token: (_ for _ in ()).throw(
+            ValueError(f"non-standard JSON constant {token}")
+        ),
+    )
 
 # ── constants ─────────────────────────────────────────────────────────────────
 # Stdlib zoneinfo (repo convention, e.g. engine/options_flow.py) — no pytz dependency.
@@ -70,6 +94,8 @@ R2_PREFIX = "live_flow/"
 # Out/state dirs (gitignored)
 OUT_DIR   = "live_flow_out"
 STATE_DIR = "live_flow_state"
+EVENT_STAGE_SCHEMA = "live_flow.event_stage/v1"
+EVENT_STAGE_RETAIN_SESSIONS = 64
 
 # Top tickers to publish per cycle (by day gross premium)
 TOP_TICKERS_N = 40
@@ -227,16 +253,449 @@ def _pinned_publish_enabled() -> bool:
 
 # ── output paths ─────────────────────────────────────────────────────────────
 
+def _fsync_directory(path: Path) -> None:
+    """Persist directory contents and metadata before claiming durability."""
+    directory_fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
+def _ensure_directory_durable(path: Path) -> Path:
+    """Create each missing component and durably link it from its parent."""
+    missing: list[Path] = []
+    cursor = path
+    while not cursor.exists():
+        missing.append(cursor)
+        parent = cursor.parent
+        if parent == cursor:
+            raise RuntimeError(f"cannot find existing parent for directory: {path}")
+        cursor = parent
+    if not cursor.is_dir():
+        raise RuntimeError(f"directory parent is not a directory: {cursor}")
+    for directory in reversed(missing):
+        try:
+            directory.mkdir()
+        except FileExistsError:
+            if not directory.is_dir():
+                raise
+        _fsync_directory(directory)
+        _fsync_directory(directory.parent)
+    return path
+
+
 def _out_dir() -> Path:
     p = config.data_dir() / OUT_DIR
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    return _ensure_directory_durable(p)
 
 
 def _state_dir() -> Path:
     p = config.data_dir() / STATE_DIR
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    return _ensure_directory_durable(p)
+
+
+def _utc_now_iso(now_fn=None) -> str:
+    """Return an aware UTC clock without discarding sub-second ordering."""
+    value = (now_fn or (lambda: datetime.now(timezone.utc)))()
+    if getattr(value, "tzinfo", None) is None:
+        raise RuntimeError("poller clock must be a timezone-aware datetime")
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _event_stage_path(session_date: str) -> Path:
+    override = os.environ.get("LIVE_FLOW_EVENT_STAGE_DIR")
+    root = Path(override) if override else _state_dir() / "events"
+    _ensure_directory_durable(root)
+    return root / f"{session_date}.jsonl"
+
+
+def _event_dates_index_path() -> Path:
+    return _event_stage_path("1970-01-01").parent / "dates.json"
+
+
+def _event_publish_receipts_path() -> Path:
+    return _event_stage_path("1970-01-01").parent / "published.json"
+
+
+def _load_event_publish_receipts() -> dict[str, dict[str, object]]:
+    path = _event_publish_receipts_path()
+    if not path.exists():
+        return {}
+    try:
+        payload = _strict_json_loads(path.read_text())
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(f"corrupt event-stage publication receipts: {path}") from exc
+    if not isinstance(payload, dict) or set(payload) != {"schema", "objects"}:
+        raise RuntimeError(f"invalid event-stage publication receipt envelope: {path}")
+    if payload.get("schema") != "live_flow.event_publications/v1":
+        raise RuntimeError(f"wrong event-stage publication receipt schema: {path}")
+    objects = payload.get("objects")
+    if not isinstance(objects, dict):
+        raise RuntimeError(f"invalid event-stage publication receipt objects: {path}")
+    for session, receipt in objects.items():
+        try:
+            parsed_session = date.fromisoformat(session) if type(session) is str else None
+        except ValueError as exc:
+            raise RuntimeError(
+                f"invalid published event session in {path}: {session}"
+            ) from exc
+        if (
+            parsed_session is None
+            or parsed_session.isoformat() != session
+            or not nyse_calendar.is_session(parsed_session)
+        ):
+            raise RuntimeError(f"invalid published event session in {path}: {session}")
+        if not isinstance(receipt, dict) or set(receipt) != {"bytes", "sha256"}:
+            raise RuntimeError(f"invalid published event receipt for {session}")
+        if type(receipt["bytes"]) is not int or receipt["bytes"] <= 0:
+            raise RuntimeError(f"invalid published event byte count for {session}")
+        if type(receipt["sha256"]) is not str or not re.fullmatch(
+            r"[a-f0-9]{64}", receipt["sha256"],
+        ):
+            raise RuntimeError(f"invalid published event digest for {session}")
+    return objects
+
+
+def _atomic_write_json(path: Path, payload: dict) -> Path:
+    _ensure_directory_durable(path.parent)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, sort_keys=True) + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
+    _fsync_directory(path.parent)
+    return path
+
+
+def _write_event_publish_receipts(objects: dict[str, dict[str, object]]) -> Path:
+    return _atomic_write_json(
+        _event_publish_receipts_path(),
+        {
+            "schema": "live_flow.event_publications/v1",
+            "objects": {key: objects[key] for key in sorted(objects)},
+        },
+    )
+
+
+def _write_event_dates_index(sessions: set[str] | None = None) -> Path:
+    path = _event_dates_index_path()
+    proven = sessions if sessions is not None else set(_load_event_publish_receipts())
+    payload = {
+        "schema": "live_flow.event_dates/v1",
+        "sessions": sorted(proven)[-EVENT_STAGE_RETAIN_SESSIONS:],
+    }
+    return _atomic_write_json(path, payload)
+
+
+def _event_inside_regular_session(session_date: str, event: dict) -> bool:
+    try:
+        event_dt = datetime.fromisoformat(str(event.get("ts") or "").replace("Z", "+00:00"))
+        session = date.fromisoformat(session_date)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("event staging requires a valid session and event timestamp") from exc
+    if event_dt.tzinfo is None:
+        raise RuntimeError("event staging requires a timezone-aware event timestamp")
+    if not nyse_calendar.is_session(session):
+        raise RuntimeError(f"event staging date is not an NYSE session: {session_date}")
+    open_et, close_et = session_window_et(session)
+    event_utc = event_dt.astimezone(timezone.utc)
+    return open_et.astimezone(timezone.utc) <= event_utc < close_et.astimezone(timezone.utc)
+
+
+def _partition_learning_stage_events(
+    session_date: str, events: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """Split display events from the strict [open, close) learning source."""
+    eligible: list[dict] = []
+    display_only: list[dict] = []
+    for event in events:
+        (eligible if _event_inside_regular_session(session_date, event) else display_only).append(event)
+    return eligible, display_only
+
+
+def _prepare_event_stage_batch(session_date: str, events: list[dict]) -> list[dict]:
+    """Validate a whole batch before opening/creating its durable stage file."""
+    prepared: list[dict] = []
+    seen_ids: set[str] = set()
+    for source in events:
+        event = dict(source)
+        try:
+            json.dumps(event, allow_nan=False)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("event staging requires strict finite JSON facts") from exc
+        raw_event_id = event.get("id")
+        if (
+            type(raw_event_id) is not str
+            or not raw_event_id
+            or raw_event_id != raw_event_id.strip()
+        ):
+            raise RuntimeError("event staging requires a normalized string id")
+        event_id = raw_event_id
+        if not event.get("observed_at") or not event.get("decision_at"):
+            raise RuntimeError("event staging requires id, observed_at, and decision_at")
+        if event_id in seen_ids:
+            raise RuntimeError(f"duplicate event id in one staging batch: {event_id}")
+        seen_ids.add(event_id)
+        try:
+            event_dt = datetime.fromisoformat(
+                str(event.get("ts") or "").replace("Z", "+00:00")
+            )
+            observed_dt = datetime.fromisoformat(
+                str(event.get("observed_at") or "").replace("Z", "+00:00")
+            )
+            decision_dt = datetime.fromisoformat(
+                str(event.get("decision_at") or "").replace("Z", "+00:00")
+            )
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("event staging requires timezone-aware causal clocks") from exc
+        if any(value.tzinfo is None for value in (event_dt, observed_dt, decision_dt)):
+            raise RuntimeError("event staging requires timezone-aware causal clocks")
+        if not (event_dt <= observed_dt <= decision_dt):
+            raise RuntimeError("event staging clock order must be event <= observed <= decision")
+        event_session = event_dt.astimezone(ET).date().isoformat()
+        if event_session != session_date:
+            raise RuntimeError(
+                f"event {event_id} belongs to {event_session}, not stage {session_date}"
+            )
+        if not _event_inside_regular_session(session_date, event):
+            raise RuntimeError(
+                f"event {event_id} is outside the regular-session learning window"
+            )
+        if any(
+            value.astimezone(ET).date().isoformat() != session_date
+            for value in (observed_dt, decision_dt)
+        ):
+            raise RuntimeError(
+                f"event {event_id} decision clocks leave stage date {session_date}"
+            )
+        prepared.append({
+            key: value for key, value in event.items()
+            if key not in (
+                "available_at", "published_at", "source_snapshot_asof", "anchor_strategy",
+            )
+        })
+    return prepared
+
+
+def _parse_event_stage_bytes(
+    session_date: str,
+    raw: bytes,
+    *,
+    path: Path,
+    require_complete: bool,
+) -> tuple[dict[str, dict], dict[str, str]]:
+    """Parse a stage as an ordered per-event state machine, failing closed."""
+    if raw and not raw.endswith(b"\n"):
+        raise RuntimeError(f"torn live-flow event stage: {path}")
+    if require_complete and not raw:
+        raise RuntimeError(f"empty live-flow event stage: {path}")
+    decisions: dict[str, dict] = {}
+    available: dict[str, str] = {}
+    for lineno, line in enumerate(raw.splitlines(), start=1):
+        try:
+            receipt = _strict_json_loads(line)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(f"malformed event stage {path}:{lineno}") from exc
+        if not isinstance(receipt, dict) or receipt.get("schema") != EVENT_STAGE_SCHEMA:
+            raise RuntimeError(f"wrong event-stage schema {path}:{lineno}")
+        raw_event_id = receipt.get("event_id")
+        if (
+            type(raw_event_id) is not str
+            or not raw_event_id
+            or raw_event_id != raw_event_id.strip()
+        ):
+            raise RuntimeError(f"invalid event id {path}:{lineno}")
+        event_id = raw_event_id
+        kind = receipt.get("kind")
+        if kind == "decision":
+            if set(receipt) != {"schema", "kind", "event_id", "event"}:
+                raise RuntimeError(f"invalid decision receipt shape {path}:{lineno}")
+            event = receipt.get("event")
+            if not isinstance(event, dict) or event.get("id") != event_id:
+                raise RuntimeError(f"invalid decision receipt {path}:{lineno}")
+            if event_id in decisions:
+                raise RuntimeError(f"duplicate staged decision {event_id}")
+            normalized = _prepare_event_stage_batch(session_date, [event])[0]
+            if normalized != event:
+                raise RuntimeError(f"decision receipt contains non-durable fields {event_id}")
+            decisions[event_id] = event
+        elif kind == "availability":
+            if set(receipt) != {"schema", "kind", "event_id", "available_at"}:
+                raise RuntimeError(f"invalid availability receipt shape {path}:{lineno}")
+            if event_id not in decisions:
+                raise RuntimeError(
+                    f"availability receipt precedes decision {event_id} at {path}:{lineno}"
+                )
+            if event_id in available:
+                raise RuntimeError(f"duplicate staged availability {event_id}")
+            stamp = str(receipt.get("available_at") or "")
+            try:
+                available_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+                decision_dt = datetime.fromisoformat(
+                    str(decisions[event_id].get("decision_at") or "").replace("Z", "+00:00")
+                )
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError(f"invalid staged clock for {event_id}") from exc
+            if available_dt.tzinfo is None or decision_dt.tzinfo is None:
+                raise RuntimeError(f"staged clocks must be timezone-aware for {event_id}")
+            if available_dt < decision_dt:
+                raise RuntimeError(f"staged availability predates decision for {event_id}")
+            if available_dt.astimezone(ET).date().isoformat() != session_date:
+                raise RuntimeError(
+                    f"staged availability leaves session date for {event_id}"
+                )
+            available[event_id] = stamp
+        else:
+            raise RuntimeError(f"unknown event-stage receipt {path}:{lineno}")
+    missing = set(decisions) - set(available)
+    if require_complete and missing:
+        raise RuntimeError(f"event stage has decisions without availability: {sorted(missing)}")
+    return decisions, available
+
+
+def _stage_raw_events(
+    session_date: str,
+    events: list[dict],
+    *,
+    now_fn=None,
+) -> list[dict]:
+    """Durably stage decision events before retention and assign availability.
+
+    A decision record is fsynced first. Only then is ``available_at`` observed and
+    an availability receipt appended+fsynced. Thus available_at never means fetch
+    completion or sequential-processing completion. The date-keyed append ledger
+    is the durable source consumed by nightly; ``feed_current`` is only a display.
+    """
+    if not events:
+        return []
+    clock = now_fn or (lambda: datetime.now(timezone.utc))
+    prepared = _prepare_event_stage_batch(session_date, events)
+    path = _event_stage_path(session_date)
+    admission_checked = False
+    if not path.exists():
+        admission_stamp = _utc_now_iso(clock)
+        admission_dt = datetime.fromisoformat(admission_stamp.replace("Z", "+00:00"))
+        if admission_dt.astimezone(ET).date().isoformat() != session_date:
+            raise RuntimeError(f"event staging clock is outside session date {session_date}")
+        admission_checked = True
+    with path.open("a+b") as fh:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            fh.seek(0)
+            raw = fh.read()
+            decisions, available = _parse_event_stage_bytes(
+                session_date, raw, path=path, require_complete=False,
+            )
+            # An empty file means this call is creating the first durable source
+            # receipt (including recovery from a crash that left only an empty
+            # pathname). The directory entry must be fsynced after the decision
+            # file fsync and before available_at is observed; otherwise a power
+            # loss can retain day_state/emitted_ids while losing the source name.
+            needs_directory_fsync = not raw
+
+            # Resolve every replay/conflict before appending the first byte, so a
+            # bad event later in the batch cannot leave earlier events half-staged.
+            resolved: list[tuple[str, dict, bool]] = []
+            for candidate in prepared:
+                event_id = str(candidate["id"])
+                durable_event = candidate
+                prior = decisions.get(event_id)
+                if prior is not None:
+                    # A crash can occur after the first decision receipt is fsynced but
+                    # before day_state is committed. The next cycle then re-fetches the
+                    # same source event with later observation/processing clocks. Preserve
+                    # the first durable clocks and compare every causal payload field; a
+                    # clock-only replay is idempotent, while feature drift still fails shut.
+                    replay_payload = dict(durable_event)
+                    for clock_field in ("observed_at", "decision_at"):
+                        replay_payload[clock_field] = prior.get(clock_field)
+                    if json.dumps(prior, sort_keys=True) != json.dumps(replay_payload, sort_keys=True):
+                        raise RuntimeError(f"staged event drift for {event_id}")
+                    durable_event = prior
+                resolved.append((event_id, durable_event, prior is None))
+
+            if (
+                not admission_checked
+                and any(event_id not in available for event_id, _event, _new in resolved)
+            ):
+                # Reject a stale-session invocation before appending the first
+                # new decision. This clock is only an admission guard; durable
+                # availability is observed again after the decision fsync.
+                admission_stamp = _utc_now_iso(clock)
+                admission_dt = datetime.fromisoformat(
+                    admission_stamp.replace("Z", "+00:00")
+                )
+                if admission_dt.astimezone(ET).date().isoformat() != session_date:
+                    raise RuntimeError(
+                        f"event staging clock is outside session date {session_date}"
+                    )
+
+            enriched: list[dict] = []
+            for event_id, durable_event, needs_decision in resolved:
+                if needs_decision:
+                    receipt = {
+                        "schema": EVENT_STAGE_SCHEMA,
+                        "kind": "decision",
+                        "event_id": event_id,
+                        "event": durable_event,
+                    }
+                    fh.seek(0, os.SEEK_END)
+                    fh.write(json.dumps(
+                        receipt, sort_keys=True, separators=(",", ":"), allow_nan=False,
+                    ).encode() + b"\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                    if needs_directory_fsync:
+                        _fsync_directory(path.parent)
+                        needs_directory_fsync = False
+                    decisions[event_id] = durable_event
+                stamp = available.get(event_id)
+                if stamp is None:
+                    stamp = _utc_now_iso(clock)
+                    stamp_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+                    decision_dt = datetime.fromisoformat(
+                        str(durable_event.get("decision_at") or "").replace("Z", "+00:00")
+                    )
+                    if stamp_dt < decision_dt:
+                        raise RuntimeError(
+                            f"durable availability predates decision for {event_id}"
+                        )
+                    if stamp_dt.astimezone(ET).date().isoformat() != session_date:
+                        raise RuntimeError(
+                            f"durable availability leaves session date for {event_id}"
+                        )
+                    receipt = {
+                        "schema": EVENT_STAGE_SCHEMA,
+                        "kind": "availability",
+                        "event_id": event_id,
+                        "available_at": stamp,
+                    }
+                    fh.write(json.dumps(
+                        receipt, sort_keys=True, separators=(",", ":"), allow_nan=False,
+                    ).encode() + b"\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                    available[event_id] = stamp
+                enriched_event = dict(durable_event)
+                enriched_event["available_at"] = stamp
+                enriched_event["published_at"] = None
+                enriched_event["source_snapshot_asof"] = stamp
+                enriched_event["anchor_strategy"] = "durable_available_at"
+                enriched.append(enriched_event)
+            # Reconfirm the complete visible prefix at the transaction boundary,
+            # even when every receipt came from a prior attempt.  A failed fsync
+            # can leave bytes visible in page cache; replay must not clear the
+            # pending-learning WAL merely because those unconfirmed bytes parse.
+            # The parent sync also closes the analogous first-create case where
+            # the decision file fsync succeeded but linking its pathname did not.
+            fh.flush()
+            os.fsync(fh.fileno())
+            _fsync_directory(path.parent)
+            return enriched
+        finally:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
 
 
 # ── universe resolver ─────────────────────────────────────────────────────────
@@ -447,20 +906,33 @@ def _oi_store() -> Path | None:
 
 
 def _load_oi_prev(root: str, session_date: str) -> object | None:
-    """Load t-1 OI from thetadata_eod; returns None gracefully."""
+    """Load the latest pre-session OI from thetadata_eod; returns None gracefully.
+
+    The exact source date is attached as ``DataFrame.attrs['oi_vintage']`` so the
+    live event can retain point-in-time provenance.  The frame remains the return
+    value for backward compatibility with existing callers and tests.
+    """
     try:
         from engine import thetadata_store as ts
+        from lib import nyse_calendar
         store = _oi_store()
         if store is None:
             return None
-        d_prev = datetime.strptime(session_date, "%Y-%m-%d").date() - timedelta(days=1)
+        session = datetime.strptime(session_date, "%Y-%m-%d").date()
+        d_prev = nyse_calendar.last_session_on_or_before(
+            session - timedelta(days=1)
+        )
         for _ in range(5):
             chain = ts.chain(str(d_prev), root.upper(), store=store)
             if not chain.empty and "open_interest" in chain.columns:
                 cols = [c for c in ("expiration", "strike", "right", "open_interest")
                         if c in chain.columns]
-                return chain[cols].dropna(subset=["open_interest"])
-            d_prev -= timedelta(days=1)
+                out = chain[cols].dropna(subset=["open_interest"])
+                out.attrs["oi_vintage"] = d_prev.isoformat()
+                return out
+            d_prev = nyse_calendar.last_session_on_or_before(
+                d_prev - timedelta(days=1)
+            )
         return None
     except Exception as e:  # noqa: BLE001
         log.debug("poller: oi_prev failed for %s: %s", root, e)
@@ -534,36 +1006,54 @@ def _load_prev_close(root: str, session_date: str) -> float | None:
 
 def _load_day_state(session_date: str) -> dict:
     p = _state_dir() / f"day_state_{session_date}.json"
+    stage_path = _event_stage_path(session_date)
+    stage_has_rows = stage_path.exists() and stage_path.stat().st_size > 0
     if not p.exists():
+        if stage_has_rows:
+            raise RuntimeError(
+                f"day_state is missing for {session_date} while a learning stage exists"
+            )
         return {}
     try:
-        raw = json.loads(p.read_text())
+        raw = _strict_json_loads(p.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise RuntimeError("day_state root must be an object")
         # Item 2: version check — discard day_state written by an older schema version.
         # full_day mode re-accumulates from zero so nothing is lost.
         # time_window mode also resets here; one full-day cycle follows before windowed
         # increments resume (watermarks start empty and full-day pull is safe).
         from engine.live_flow import DAY_STATE_VERSION  # noqa: PLC0415
         stored_ver = raw.get("schema_version", 1)
+        if type(stored_ver) is not int:
+            raise RuntimeError("day_state schema_version must be an exact integer")
         if stored_ver < DAY_STATE_VERSION:
+            if stage_has_rows:
+                raise RuntimeError(
+                    "stale day_state cannot be discarded while this session has a learning stage"
+                )
             log.info(
                 "poller: day_state schema_version=%d < current=%d — discarding stale state "
                 "(full_day mode will re-accumulate from zero this cycle)",
                 stored_ver, DAY_STATE_VERSION,
             )
             return {}
+        if stored_ver != DAY_STATE_VERSION:
+            raise RuntimeError(
+                f"day_state schema_version={stored_ver} is newer than supported "
+                f"{DAY_STATE_VERSION}"
+            )
         # emitted_ids is serialised as a list
         raw["emitted_ids"] = set(raw.get("emitted_ids", []))
-        # contract_vol and notability_history stored with string keys (JSON constraint);
-        # restore to tuple keys for engine compatibility
+        # Per-contract state is root-scoped in v5. A legacy three-part key is
+        # never coerced because that would reintroduce cross-ticker contamination.
         def _restore_key(k: str):
-            # 3-tuple contract keys: (exp:str, strike:float, right:str)
             try:
                 parts = json.loads(k)
-                if isinstance(parts, list) and len(parts) == 3:
-                    return (str(parts[0]), float(parts[1]), str(parts[2]))
+                if isinstance(parts, list) and len(parts) == 4:
+                    return (str(parts[0]), str(parts[1]), float(parts[2]), str(parts[3]))
             except Exception:  # noqa: BLE001
                 pass
-            return k
+            raise RuntimeError(f"invalid root-scoped contract state key: {k!r}")
 
         def _restore_seq_key(k: str):
             # seen_sequences keys are now 4-tuples: (root:str, exp:str, strike:float, right:str)
@@ -575,7 +1065,7 @@ def _load_day_state(session_date: str) -> dict:
                     return (str(parts[0]), str(parts[1]), float(parts[2]), str(parts[3]))
             except Exception:  # noqa: BLE001
                 pass
-            return k
+            raise RuntimeError(f"invalid root-scoped sequence state key: {k!r}")
         raw["contract_vol"] = {
             _restore_key(k): v for k, v in raw.get("contract_vol", {}).items()
         }
@@ -591,10 +1081,21 @@ def _load_day_state(session_date: str) -> dict:
                          "root_top_contracts", "sweep_clusters"):
             if tide_key not in raw:
                 raw[tide_key] = {}
+        if not isinstance(raw.get("all_events", []), list):
+            raise RuntimeError("day_state all_events must be a list")
+        if not isinstance(raw.get("pending_learning_events", []), list):
+            raise RuntimeError("day_state pending_learning_events must be a list")
+        if not isinstance(raw.get("cycle_watermarks", {}), dict):
+            raise RuntimeError("day_state cycle_watermarks must be an object")
+        raw.setdefault("pending_learning_events", [])
+        raw.setdefault("cycle_watermarks", {})
         return raw
     except Exception as e:  # noqa: BLE001
-        log.warning("poller: could not load day state: %s", e)
-        return {}
+        # Once a state pathname exists, corruption is never equivalent to an
+        # empty session. In particular, the vulnerable transaction interval has
+        # a durable pending WAL but intentionally no stage yet; fail-open here
+        # would refetch and recluster the same prints under new event IDs.
+        raise RuntimeError(f"cannot recover day_state for {session_date}") from e
 
 
 def _state_key(k) -> str:
@@ -604,15 +1105,32 @@ def _state_key(k) -> str:
     return str(k)
 
 
-def _save_day_state(session_date: str, state: dict) -> None:
+def _state_json_default(value):
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            raise TypeError("naive datetime is not valid durable state")
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    item = getattr(value, "item", None)
+    if callable(item):
+        scalar = item()
+        if type(scalar) in (str, int, float, bool) or scalar is None:
+            return scalar
+    raise TypeError(f"unsupported day_state value: {type(value).__name__}")
+
+
+def _save_day_state(session_date: str, state: dict) -> Path:
     p = _state_dir() / f"day_state_{session_date}.json"
-    try:
+    lock_path = p.with_suffix(p.suffix + ".lock")
+    with lock_path.open("a+b") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         from engine.live_flow import DAY_STATE_VERSION as _DSV  # noqa: PLC0415
         raw: dict = {}
         raw["schema_version"] = _DSV   # Item 2: stamp version for forward-compat checks
         raw["emitted_ids"] = list(state.get("emitted_ids", set()))
         raw["all_events"]  = state.get("all_events", [])
         raw["root_gross_today"] = state.get("root_gross_today", {})
+        raw["pending_learning_events"] = state.get("pending_learning_events", [])
+        raw["cycle_watermarks"] = state.get("cycle_watermarks", {})
         # Tuple-keyed dicts → string-keyed for JSON serialisation
         raw["contract_vol"]      = {_state_key(k): v
                                     for k, v in state.get("contract_vol", {}).items()}
@@ -626,7 +1144,13 @@ def _save_day_state(session_date: str, state: dict) -> None:
                          "root_top_contracts", "sweep_clusters"):
             raw[tide_key] = state.get(tide_key, {})
 
-        serialised = json.dumps(raw, default=str)
+        serialised = json.dumps(
+            raw,
+            default=_state_json_default,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ) + "\n"
 
         # Size guard: warn if day-state exceeds threshold
         byte_count = len(serialised.encode())
@@ -638,11 +1162,117 @@ def _save_day_state(session_date: str, state: dict) -> None:
                 DAY_STATE_SIZE_WARN_BYTES // (1024 * 1024),
             )
 
-        tmp = p.with_suffix(".tmp.json")
-        tmp.write_text(serialised)
-        tmp.rename(p)
-    except Exception as e:  # noqa: BLE001
-        log.warning("poller: could not save day state: %s", e)
+        encoded = serialised.encode("utf-8")
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{p.name}.", suffix=".tmp", dir=p.parent,
+        )
+        tmp = Path(tmp_name)
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(encoded)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp, p)
+            _fsync_directory(p.parent)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
+        fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+    return p
+
+
+def _drain_pending_learning_events(
+    session_date: str,
+    state: dict,
+    *,
+    event_stager,
+    cutoff_ts: str | None = None,
+) -> tuple[dict, list[dict]]:
+    """Idempotently stage the durable cycle WAL, then durably clear it.
+
+    The first state save owns the engine accumulators and fixed decision clocks.
+    A crash at any later boundary can only replay the same semantic event IDs and
+    clocks into the append-only stage; it can never re-run an earlier print
+    through the clustering engine under a new event identity.
+    """
+    pending = state.get("pending_learning_events", [])
+    if not isinstance(pending, list):
+        raise RuntimeError("pending learning WAL must be a list")
+    if not pending:
+        return state, []
+    if event_stager is None:
+        raise RuntimeError("pending learning WAL requires a durable event stager")
+
+    durable_fields = {
+        "available_at", "published_at", "source_snapshot_asof", "anchor_strategy",
+    }
+    pending_ids: list[str] = []
+    for event in pending:
+        event_id = event.get("id") if isinstance(event, dict) else None
+        if (
+            type(event_id) is not str
+            or not event_id
+            or event_id != event_id.strip()
+        ):
+            raise RuntimeError("pending learning WAL contains an invalid event id")
+        if durable_fields.intersection(event):
+            raise RuntimeError("pending learning WAL contains post-durability fields")
+        pending_ids.append(event_id)
+    if len(set(pending_ids)) != len(pending_ids):
+        raise RuntimeError("pending learning WAL contains duplicate event ids")
+
+    staged = list(event_stager(session_date, [dict(event) for event in pending]))
+    if len(staged) != len(pending):
+        raise RuntimeError("event stager did not reconcile every pending learning event")
+    staged_ids: list[str] = []
+    for pending_event, staged_event in zip(pending, staged, strict=True):
+        staged_id = staged_event.get("id") if isinstance(staged_event, dict) else None
+        if (
+            type(staged_id) is not str
+            or not staged_id
+            or staged_id != staged_id.strip()
+        ):
+            raise RuntimeError("staged learning event has an invalid id")
+        staged_ids.append(staged_id)
+        staged_decision = {
+            key: value for key, value in staged_event.items() if key not in durable_fields
+        }
+        if staged_decision != pending_event:
+            raise RuntimeError(
+                f"event stager changed pending decision payload: {pending_event['id']}"
+            )
+    if staged_ids != pending_ids or len(set(staged_ids)) != len(staged_ids):
+        raise RuntimeError("event stager did not preserve pending event identities")
+
+    existing_events = list(state.get("all_events", []))
+    by_id: dict[str, dict] = {}
+    for event in existing_events:
+        event_id = event.get("id") if isinstance(event, dict) else None
+        if type(event_id) is not str or not event_id:
+            raise RuntimeError("day_state all_events contains an invalid event id")
+        prior = by_id.get(event_id)
+        if prior is not None and prior != event:
+            raise RuntimeError(f"day_state contains conflicting event payloads: {event_id}")
+        by_id[event_id] = event
+    for event in staged:
+        event_id = event.get("id") if isinstance(event, dict) else None
+        if type(event_id) is not str or not event_id:
+            raise RuntimeError("staged learning event has an invalid id")
+        prior = by_id.get(event_id)
+        if prior is not None and prior != event:
+            raise RuntimeError(f"staged event conflicts with day_state payload: {event_id}")
+        if prior is None:
+            existing_events.append(event)
+            by_id[event_id] = event
+    if cutoff_ts is not None:
+        from engine.live_flow import trim_events  # noqa: PLC0415
+        existing_events = trim_events(existing_events, cutoff_ts)
+
+    cleared = dict(state)
+    cleared["all_events"] = existing_events
+    cleared["pending_learning_events"] = []
+    _save_day_state(session_date, cleared)
+    return cleared, staged
 
 
 # ── day-state retention sweep ────────────────────────────────────────────────
@@ -651,6 +1281,39 @@ def _save_day_state(session_date: str, state: dict) -> None:
 
 DAY_STATE_RETENTION_DAYS_DEFAULT = 5
 _DAY_STATE_RE = re.compile(r"^day_state_(\d{4}-\d{2}-\d{2})(?:\.tmp)?\.json$")
+
+
+def _stale_pending_learning_sessions(current_session: str) -> list[str]:
+    """Return retained prior sessions with an undrained durable learning WAL.
+
+    This scan intentionally precedes retention pruning. A process death near the
+    close can leave exact decision clocks in yesterday's state but no availability
+    receipt; deleting or silently skipping that state would erase the only proof
+    that the batch existed. Prior-date WALs require reviewed quarantine/recovery
+    and are never backdated with a clock from a later exchange date.
+    """
+    stale: list[str] = []
+    for path in sorted(_state_dir().glob("day_state_*.json")):
+        match = _DAY_STATE_RE.fullmatch(path.name)
+        if match is None:
+            continue
+        session = match.group(1)
+        if session == current_session:
+            continue
+        try:
+            payload = _strict_json_loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                f"cannot inspect retained prior day_state for stranded WAL: {path}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"retained prior day_state is not an object: {path}")
+        pending = payload.get("pending_learning_events", [])
+        if not isinstance(pending, list):
+            raise RuntimeError(f"retained prior day_state has invalid pending WAL: {path}")
+        if pending:
+            stale.append(session)
+    return stale
 
 
 def _select_prunable_day_states(
@@ -776,6 +1439,213 @@ def _upload_r2(s3, bucket: str, local_path: Path, r2_key: str) -> bool:
         return False
 
 
+def _publish_event_stage(s3, bucket: str, session_date: str) -> bool:
+    """Serialize publication-receipt/index mutation across process overlap."""
+    stage_root = _event_stage_path(session_date).parent
+    lock_path = stage_root / "publish.lock"
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        try:
+            return _publish_event_stage_locked(s3, bucket, session_date)
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+
+def _publish_event_stage_locked(s3, bucket: str, session_date: str) -> bool:
+    """Publish/retry local stages, then advertise only proven remote sessions.
+
+    Proven closed sessions are immutable.  Their stored byte count is therefore
+    a cheap unchanged-prefix fast path; only the current, never-proven, or
+    size-changed stages are read, parsed, and hashed each poll.  After the R2
+    dates index succeeds, proven local stages and receipts are retained to the
+    same bounded catch-up window while R2 remains the longer-lived archive.
+    """
+    stage_root = _event_stage_path(session_date).parent
+    current_path = stage_root / f"{session_date}.jsonl"
+    current_required = current_path.exists()
+    try:
+        published = _load_event_publish_receipts()
+    except RuntimeError as exc:
+        log.warning("poller: refusing event index publish: %s", exc)
+        return False
+
+    local_sessions = sorted(
+        candidate.stem for candidate in stage_root.glob("????-??-??.jsonl")
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", candidate.stem)
+    )
+    local_receipts: dict[str, dict[str, object]] = {}
+    local_payloads: dict[str, bytes] = {}
+    rejected_sessions: set[str] = set()
+    for candidate in local_sessions:
+        local_path = stage_root / f"{candidate}.jsonl"
+        prior_receipt = published.get(candidate)
+        try:
+            local_size = local_path.stat().st_size
+        except OSError as exc:
+            log.warning("poller: event stage unreadable for %s: %s", candidate, exc)
+            rejected_sessions.add(candidate)
+            continue
+        if (
+            candidate != session_date
+            and prior_receipt is not None
+            and prior_receipt.get("bytes") == local_size
+        ):
+            local_receipts[candidate] = dict(prior_receipt)
+            continue
+        try:
+            raw = local_path.read_bytes()
+        except OSError as exc:
+            log.warning("poller: event stage unreadable for %s: %s", candidate, exc)
+            rejected_sessions.add(candidate)
+            continue
+        if not raw or not raw.endswith(b"\n"):
+            log.warning("poller: refusing empty/torn event stage publish for %s", candidate)
+            rejected_sessions.add(candidate)
+            continue
+        try:
+            _parse_event_stage_bytes(
+                candidate, raw, path=local_path, require_complete=True,
+            )
+        except RuntimeError as exc:
+            log.warning("poller: refusing invalid event stage publish for %s: %s", candidate, exc)
+            rejected_sessions.add(candidate)
+            continue
+        receipt = {
+            "bytes": len(raw),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+        }
+        prior_receipt = published.get(candidate)
+        if prior_receipt is not None:
+            prior_bytes = int(prior_receipt["bytes"])
+            if len(raw) < prior_bytes:
+                log.warning("poller: refusing event-stage shrink for %s", candidate)
+                rejected_sessions.add(candidate)
+                continue
+            if len(raw) == prior_bytes:
+                if receipt["sha256"] != prior_receipt["sha256"]:
+                    log.warning("poller: refusing same-size event-stage rewrite for %s", candidate)
+                    rejected_sessions.add(candidate)
+                    continue
+            else:
+                prior_prefix = raw[:prior_bytes]
+                if (
+                    not prior_prefix.endswith(b"\n")
+                    or hashlib.sha256(prior_prefix).hexdigest() != prior_receipt["sha256"]
+                ):
+                    log.warning("poller: refusing changed event-stage prefix for %s", candidate)
+                    rejected_sessions.add(candidate)
+                    continue
+        local_receipts[candidate] = receipt
+        local_payloads[candidate] = raw
+
+    # Retry every never-proven or valid append extension. Equal proven bytes do
+    # not need another PUT; upload candidates use immutable snapshots below.
+    candidates = [
+        value for value in local_sessions
+        if value in local_receipts and published.get(value) != local_receipts[value]
+    ]
+    current_ok = (
+        session_date not in rejected_sessions
+        and published.get(session_date) is not None
+        and published.get(session_date) == local_receipts.get(session_date)
+    )
+    any_success = False
+    for candidate in candidates:
+        receipt = local_receipts.get(candidate)
+        raw = local_payloads.get(candidate)
+        if receipt is None or raw is None:
+            continue
+        snapshot_path: Path | None = None
+        try:
+            fd, snapshot_name = tempfile.mkstemp(
+                dir=stage_root,
+                prefix=f".publish-{candidate}-",
+                suffix=".jsonl",
+            )
+            snapshot_path = Path(snapshot_name)
+            with os.fdopen(fd, "wb") as snapshot:
+                snapshot.write(raw)
+                snapshot.flush()
+                os.fsync(snapshot.fileno())
+            ok = _upload_r2(
+                s3, bucket, snapshot_path,
+                R2_PREFIX + f"events/{candidate}.jsonl",
+            )
+        except OSError as exc:
+            log.warning("poller: event-stage snapshot failed for %s: %s", candidate, exc)
+            ok = False
+        finally:
+            if snapshot_path is not None:
+                try:
+                    snapshot_path.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    log.warning(
+                        "poller: event-stage snapshot cleanup failed for %s: %s",
+                        candidate, exc,
+                    )
+        if ok:
+            published[candidate] = receipt
+            any_success = True
+        if candidate == session_date:
+            current_ok = ok
+
+    if not published:
+        return False
+
+    historical_candidates_ok = all(
+        candidate not in rejected_sessions
+        and published.get(candidate) == local_receipts.get(candidate)
+        for candidate in local_sessions
+    )
+
+    try:
+        _write_event_publish_receipts(published)
+        dates_index = _write_event_dates_index(set(published))
+    except (OSError, RuntimeError) as exc:
+        log.warning("poller: event publication receipt/index write failed: %s", exc)
+        return False
+    index_ok = _upload_r2(
+        s3, bucket, dates_index, R2_PREFIX + "events/dates.json",
+    )
+    if index_ok:
+        retained_sessions = set(sorted(published)[-EVENT_STAGE_RETAIN_SESSIONS:])
+        for candidate in local_sessions:
+            if (
+                candidate in published
+                and candidate not in retained_sessions
+                and candidate not in rejected_sessions
+                and local_receipts.get(candidate) == published.get(candidate)
+            ):
+                try:
+                    (stage_root / f"{candidate}.jsonl").unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    log.warning(
+                        "poller: could not prune proven event stage %s: %s",
+                        candidate, exc,
+                    )
+        remaining_local_sessions = {
+            path.stem for path in stage_root.glob("????-??-??.jsonl")
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", path.stem)
+        }
+        receipt_keep_sessions = retained_sessions | (
+            set(published) & remaining_local_sessions
+        )
+        retained_receipts = {
+            key: published[key] for key in sorted(receipt_keep_sessions)
+        }
+        try:
+            _write_event_publish_receipts(retained_receipts)
+        except (OSError, RuntimeError) as exc:
+            log.warning("poller: event receipt retention write failed: %s", exc)
+            return False
+    requested_stage_ok = current_ok if current_required else historical_candidates_ok
+    return requested_stage_ok and index_ok
+
+
 def _list_archive_keys(s3, bucket: str) -> list[str]:
     """List all keys under live_flow/archive/."""
     try:
@@ -889,7 +1759,8 @@ def _session_date(override: str | None = None) -> str:
     """Return session date as YYYY-MM-DD.
 
     Uses America/New_York to determine the current date during market hours.
-    --date override for closed-market smokes.
+    ``--date`` is retained only for legacy diagnostics; it is unsafe as a live
+    smoke because this combined poller mutates current/replay output surfaces.
     """
     if override:
         return override
@@ -908,6 +1779,7 @@ def run_cycle(
     cycle_watermarks: dict,   # FIX 2: {root: {"ts": str, "seq": float}} — mutated in place
     forced_full_day: bool = False,  # True when --date override forces full_day regardless of probe
     unusual_baseline: dict | None = None,  # flow.unusual_baseline/v1 artifact; None = fall back to heuristic
+    event_stager=None,
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
@@ -925,8 +1797,11 @@ def run_cycle(
     import pandas as pd
 
     max_w = _max_concurrent(cfg)
-    etf_floor  = int(cfg.get("etf_floor",  1_000_000))
-    name_floor = int(cfg.get("name_floor",  250_000))
+    etf_floor = cfg.get("etf_floor", 1_000_000)
+    name_floor = cfg.get("name_floor", 250_000)
+    for label, value in (("etf_floor", etf_floor), ("name_floor", name_floor)):
+        if type(value) is not int or value < 0:
+            raise ValueError(f"{label} must be an exact non-negative integer")
 
     etf_anchors = [a.upper() for a in (cfg.get("etf_anchors") or [])]
     if not etf_anchors:
@@ -935,7 +1810,6 @@ def run_cycle(
     else:
         etf_anchors_set = set(etf_anchors)
 
-    batch_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     cycle_t0 = time.perf_counter()
 
     # FIX 2 — compute per-root start_time for time_window mode
@@ -960,7 +1834,10 @@ def run_cycle(
         except Exception:  # noqa: BLE001
             return RTH_OPEN
 
+    if day_state.get("pending_learning_events"):
+        raise RuntimeError("pending learning WAL must be drained before a new fetch cycle")
     all_events: list[dict]  = list(day_state.get("all_events", []))
+    pending_learning_events: list[dict] = []
     root_gross: dict        = dict(day_state.get("root_gross_today", {}))
     emitted_ids: set[str]   = set(day_state.get("emitted_ids", set()))
     contract_vol: dict      = dict(day_state.get("contract_vol", {}))
@@ -1009,18 +1886,23 @@ def run_cycle(
         }
         for fut in as_completed(futs):
             r, calls_df, puts_df = fut.result()
-            fetch_results[r] = (calls_df, puts_df)
+            # This is the first honest clock at which the fetched root payload is
+            # available to the poller.  A cycle-start timestamp would predate the
+            # network response and create false point-in-time provenance.
+            observed_at = _utc_now_iso()
+            fetch_results[r] = (calls_df, puts_df, observed_at)
             requests_count += 2  # two calls per root (call + put)
 
     # Process each root
     for root in roots:
-        calls_df, puts_df = fetch_results.get(root, (None, None))
+        calls_df, puts_df, observed_at = fetch_results.get(root, (None, None, None))
         if calls_df is None and puts_df is None:
             log.debug("poller: skip %s (both legs failed)", root)
             continue
 
-        # FIX 2 — advance per-root watermark from trade_timestamp in returned rows
-        # (done before the engine call so a crash mid-root doesn't lose the watermark)
+        # Derive, but do not yet commit, the fetched-root watermark. It advances
+        # only after process_batch succeeds and its state has been merged.
+        candidate_watermark = dict(cycle_watermarks.get(root, {}))
         for df_part in (calls_df, puts_df):
             if df_part is not None and not df_part.empty and "trade_timestamp" in df_part.columns:
                 try:
@@ -1031,13 +1913,12 @@ def run_cycle(
                         max_seq_val = float(pd.to_numeric(
                             df_part["sequence"], errors="coerce").dropna().max())
                     if max_ts and str(max_ts) not in ("NaT", "nan", ""):
-                        wm_cur = cycle_watermarks.get(root, {})
-                        cur_ts  = wm_cur.get("ts")
+                        cur_ts  = candidate_watermark.get("ts")
                         if cur_ts is None or str(max_ts) > cur_ts:
                             wm_new = {"ts": str(max_ts)}
                             if max_seq_val is not None and not (max_seq_val != max_seq_val):
                                 wm_new["seq"] = max_seq_val
-                            cycle_watermarks[root] = wm_new
+                            candidate_watermark = wm_new
                 except Exception as e:  # noqa: BLE001
                     log.debug("poller: watermark advance failed for %s: %s", root, e)
 
@@ -1069,11 +1950,17 @@ def run_cycle(
 
         try:
             oi_prev = _load_oi_prev(root, session_date)
+            oi_vintage = None
+            if oi_prev is not None:
+                try:
+                    oi_vintage = oi_prev.attrs.get("oi_vintage")
+                except Exception:  # noqa: BLE001 - provenance absence is an honest null
+                    oi_vintage = None
             result  = lf.process_batch(
                 calls_df=calls_df,
                 puts_df=puts_df,
                 session_date=session_date,
-                batch_ts=batch_ts,
+                batch_ts=observed_at,
                 prior_state=prior,
                 oi_prev=oi_prev,
                 baselines=baselines,
@@ -1081,6 +1968,7 @@ def run_cycle(
                 name_floor=name_floor,
                 etf_anchors=list(etf_anchors_set),
                 prev_close=prev_close,
+                oi_vintage=oi_vintage,
             )
         except Exception as e:  # noqa: BLE001
             log.warning("poller: engine failed for %s: %s", root, e)
@@ -1103,10 +1991,33 @@ def run_cycle(
         root_expiries_acc   = state_out.get("root_expiries", root_expiries_acc)
         root_top_contr      = state_out.get("root_top_contracts", root_top_contr)
         sweep_clusters_acc  = state_out.get("sweep_clusters", sweep_clusters_acc)
+        if candidate_watermark:
+            cycle_watermarks[root] = candidate_watermark
 
-        # Accumulate new events
-        for ev in result.get("events", []):
-            all_events.append(ev)
+        # Decision completion is later than fetch observation. Durably stage the
+        # events before they can enter the capped/retained display feed.
+        new_events = list(result.get("events", []))
+        if new_events:
+            decision_at = _utc_now_iso()
+            for ev in new_events:
+                ev["decision_at"] = decision_at
+            learning_events, display_only_events = _partition_learning_stage_events(
+                session_date, new_events,
+            )
+            if display_only_events:
+                all_events.extend(display_only_events)
+                meta_notes.append(
+                    "pit_learning_stage_excluded_outside_rth="
+                    f"{len(display_only_events)}"
+                )
+            if learning_events:
+                if event_stager is None:
+                    # Production persists this exact post-cycle state + fixed-clock
+                    # batch as a WAL before any event-stage write. Tests may still
+                    # inject a stager to exercise the pure cycle synchronously.
+                    pending_learning_events.extend(learning_events)
+                else:
+                    all_events.extend(event_stager(session_date, learning_events))
 
         # Heat rows
         heat_rows.extend(result.get("heat", []))
@@ -1141,7 +2052,7 @@ def run_cycle(
 
         # Item 8 — free per-root frames after processing to cap intraday memory growth.
         del calls_df, puts_df, result
-        fetch_results[root] = (None, None)  # release DataFrame references
+        fetch_results[root] = (None, None, None)  # release DataFrame references
 
     # Periodic GC after processing all roots (Item 8)
     gc.collect()
@@ -1233,9 +2144,12 @@ def run_cycle(
             seen_notes.add(note)
             notes.append(note)
 
+    # The cumulative snapshot clock is taken only after all event processing, so
+    # it can never predate an event's first-availability receipt.
+    payload_asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     feed_payload = {
         "schema":       "live_flow.feed/v1",
-        "asof":         batch_ts,
+        "asof":         payload_asof,
         "session_date": session_date,
         "session_pct":  _session_pct(),
         "baseline_note": {
@@ -1248,14 +2162,14 @@ def run_cycle(
 
     heat_payload = {
         "schema":       "live_flow.heat/v1",
-        "asof":         batch_ts,
+        "asof":         payload_asof,
         "session_date": session_date,
         "groups":       agg_heat,
     }
 
     meta_payload = {
         "schema":                "live_flow.meta/v1",
-        "asof":                  batch_ts,
+        "asof":                  payload_asof,
         "cadence_sec_target":    int(cfg.get("cadence_sec", 120)),
         "cadence_sec_measured":  round(cycle_sec, 1),
         "universe_n":            len(roots),
@@ -1305,6 +2219,7 @@ def run_cycle(
         "root_expiries":       root_expiries_acc,
         "root_top_contracts":  root_top_contr,
         "sweep_clusters":      sweep_clusters_acc,
+        "pending_learning_events": pending_learning_events,
     }
 
     return feed_payload, heat_payload, meta_payload, updated_state, tide_day_state
@@ -1442,14 +2357,17 @@ def _within_rth() -> bool:
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     parser = argparse.ArgumentParser(description="Live options-flow poller")
-    parser.add_argument("--once",  action="store_true", help="Single cycle then exit")
+    parser.add_argument(
+        "--once", action="store_true",
+        help="Run one mutating live-output cycle; not a smoke test",
+    )
     parser.add_argument("--date",  metavar="YYYY-MM-DD",
-                        help="Session date override (market-closed smokes)")
+                        help="Legacy diagnostic override; unsafe for smoke/PIT staging")
     parser.add_argument("--roots", nargs="+", metavar="ROOT",
                         help="Subset of roots (default: full universe)")
     parser.add_argument("--retention-hours", type=int, default=None,
                         metavar="N",
-                        help="Override retention_hours from config (smoke aid, e.g. 96)")
+                        help="Override retention_hours for controlled diagnostics")
     parser.add_argument("--rth-only", action="store_true",
                         help="Exit cleanly outside 09:25-16:05 ET on weekdays "
                              "(use with launchd StartCalendarInterval)")
@@ -1461,22 +2379,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
-    # --rth-only: exit immediately if outside RTH (launchd fires at 09:25, daemon must
-    # self-exit at 16:05; StartCalendarInterval fires again next day at 09:25).
-    if args.rth_only and not _within_rth():
-        log.info("poller: --rth-only outside RTH window — exiting cleanly")
-        return 0
-
-    # Check terminal reachable — startup probe uses a tolerant 15s default so a
-    # slow-starting ThetaTerminal doesn't abort the poller unnecessarily.
-    # Override via THETA_CONNECT_TIMEOUT env (same variable that controls the
-    # per-root retry timeout in thetadata.py).
-    from collectors import thetadata as td
-    startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
-    if not td.reachable(connect_timeout=startup_timeout):
-        log.error("poller: Theta Terminal not reachable — abort")
-        return 1
-
     cfg = _cfg()
 
     # --retention-hours CLI override
@@ -1487,6 +2389,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     session_date = _session_date(args.date)
     log.info("poller: session_date=%s once=%s", session_date, args.once)
 
+    # Recover the transaction seam before any network dependency or RTH exit.
+    # A same-session restart can durably stage the exact pending decisions without
+    # Theta. A prior-session WAL cannot acquire an honest later-date availability
+    # clock, so surface it and stop before retention can erase the evidence.
+    try:
+        stale_pending = _stale_pending_learning_sessions(session_date)
+        if stale_pending:
+            log.error(
+                "poller: stranded prior-session learning WAL requires reviewed "
+                "recovery: %s",
+                ",".join(stale_pending),
+            )
+            return 1
+        day_state = _load_day_state(session_date)
+        if day_state.get("pending_learning_events"):
+            cutoff = (
+                datetime.now(timezone.utc)
+                - timedelta(hours=int(cfg.get("retention_hours", 24)))
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            day_state, _ = _drain_pending_learning_events(
+                session_date,
+                day_state,
+                event_stager=_stage_raw_events,
+                cutoff_ts=cutoff,
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.error("poller: startup learning-WAL recovery failed: %s", exc, exc_info=True)
+        return 1
+
+    # The clean outside-RTH exit remains zero, so launchd's SuccessfulExit=false
+    # policy will not respawn it. Crash/Theta failures are nonzero and retry after
+    # ThrottleInterval, allowing a same-session WAL to drain on the next launch.
+    if args.rth_only and not _within_rth():
+        log.info("poller: --rth-only outside RTH window — exiting cleanly")
+        return 0
+
+    # Check terminal reachable only after local WAL recovery. Startup uses a
+    # tolerant 15s default so a slow-starting ThetaTerminal does not abort the
+    # poller unnecessarily.
+    from collectors import thetadata as td
+    startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
+    if not td.reachable(connect_timeout=startup_timeout):
+        log.error("poller: Theta Terminal not reachable — abort")
+        return 1
+
     # Resolve universe
     if args.roots:
         roots = [r.upper() for r in args.roots]
@@ -1494,8 +2441,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         roots = _resolve_universe(cfg)
     log.info("poller: universe=%d roots", len(roots))
 
-    # FIX 2 — historical smokes (--date override) must use full_day:
-    # time-windowed pulls anchored to a live clock make no sense on a past session.
+    # A historical --date override is not a supported smoke, but retain the
+    # legacy diagnostic's full-day semantics: a live-clock window on a past
+    # session would be nonsensical and less safe.
     if args.date:
         delta_mode = "full_day"
         log.info("poller: delta_mode=full_day (forced — historical --date override)")
@@ -1524,13 +2472,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         log.warning("poller: R2_BUCKET not set — uploads will be skipped")
         s3 = None
 
-    # Retention sweep — prune day_state files older than state_retention_days
-    # sessions (default 5); the current session's file is never touched.
+    # Retention runs only after the stale-WAL scan above proves no prior session
+    # owns an undrained transaction.
     _prune_day_states(session_date, cfg)
 
-    # Day state (persist emitted_ids, contract_vol, etc.)
-    day_state  = _load_day_state(session_date)
-    watermarks: dict = {}
+    watermarks: dict = dict(day_state.get("cycle_watermarks", {}))
     last_archive_write = 0.0
     # M-XP(a): session date whose Flow-Surface retention sweep has already succeeded.
     # The sweep is a once-per-session R2 listing + delete, not a per-cycle cost; it stays
@@ -1544,10 +2490,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     last_archive_prune_date: str | None = None
 
     # T-lane write gate: a MANUAL/BACKDATED run must never rewrite settled history.
-    # `--date` is the runbook's documented smoke recipe (§Manual single-cycle smoke: --once
-    # --date <past session> --roots SPY QQQ KRE NVDA XLF), which polls a HANDFUL of roots.
-    # Its tide payload is a valid-looking partial of that past session, and the archive key is
-    # derived from session_date — so an ungated smoke would overwrite the settled
+    # The runbook explicitly forbids using `--date` as a smoke. Keep this older
+    # defense in depth because such a run can still poll only a handful of roots;
+    # its tide payload is a valid-looking partial of that past session, and the archive key is
+    # derived from session_date — so an ungated invocation would overwrite the settled
     # live_flow/tide/<that date>.json with a 5-root fragment, undetectably (schema valid,
     # date correct; roots_polled lives only in meta.json, which the archive does not carry).
     # Live sessions never pass --date: session_date comes from the ET clock.
@@ -1607,6 +2553,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                  cycle_n, session_date, delta_mode, len(cycle_roots))
 
         try:
+            # Drain a crash-recovered post-cycle WAL before fetching any print.
+            # Idempotent stage replay preserves its first decision clocks.
+            if day_state.get("pending_learning_events"):
+                cutoff = (
+                    datetime.now(timezone.utc)
+                    - timedelta(hours=int(cfg.get("retention_hours", 24)))
+                ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                day_state, _ = _drain_pending_learning_events(
+                    session_date,
+                    day_state,
+                    event_stager=_stage_raw_events,
+                    cutoff_ts=cutoff,
+                )
+                watermarks = dict(day_state.get("cycle_watermarks", {}))
             feed, heat, meta, updated_state, tide_day_state = run_cycle(
                 roots=cycle_roots,
                 session_date=session_date,
@@ -1617,19 +2577,42 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 cycle_watermarks=watermarks,
                 forced_full_day=bool(args.date),
                 unusual_baseline=unusual_baseline,
+                event_stager=None,
             )
+            # Transaction boundary: the post-cycle engine state and exact fixed-clock
+            # events become durable together before the append-only learning stage.
+            updated_state["cycle_watermarks"] = dict(watermarks)
+            _save_day_state(session_date, updated_state)
+            cutoff = (
+                datetime.now(timezone.utc)
+                - timedelta(hours=int(cfg.get("retention_hours", 24)))
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            day_state, _ = _drain_pending_learning_events(
+                session_date,
+                updated_state,
+                event_stager=_stage_raw_events,
+                cutoff_ts=cutoff,
+            )
+            # The cumulative display envelope is published only after durable
+            # availability receipts exist for every newly admitted learning event.
+            committed_asof = _utc_now_iso()
+            feed["events"] = list(day_state.get("all_events", []))
+            feed["asof"] = committed_asof
+            heat["asof"] = committed_asof
+            meta["asof"] = committed_asof
         except Exception as e:  # noqa: BLE001
             log.error("poller: cycle #%d unhandled error: %s", cycle_n, e, exc_info=True)
+            # Restore the last durable transaction. If it owns a pending event WAL,
+            # the next loop drains that exact batch before any new fetch.
+            try:
+                day_state = _load_day_state(session_date)
+                watermarks = dict(day_state.get("cycle_watermarks", {}))
+            except Exception:
+                log.error("poller: durable day_state recovery failed", exc_info=True)
             if args.once:
                 return 1
             time.sleep(cadence)
             continue
-
-        day_state = updated_state
-        _save_day_state(session_date, {
-            k: (list(v) if isinstance(v, set) else v)
-            for k, v in day_state.items()
-        })
 
         # Write legacy JSON
         feed_path = _write_json("feed_current.json", feed)
@@ -1845,6 +2828,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
         # Upload to R2
         if s3:
+            # Durable, date-keyed source comes first. feed_current is capped display
+            # state and is never the learning source. A failed stage upload leaves
+            # published_at null and the nightly consumer checkpoint unchanged.
+            _publish_event_stage(s3, bucket, session_date)
             _upload_r2(s3, bucket, feed_path, R2_PREFIX + "feed_current.json")
             _upload_r2(s3, bucket, heat_path, R2_PREFIX + "heat_current.json")
             _upload_r2(s3, bucket, meta_path, R2_PREFIX + "meta.json")

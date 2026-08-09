@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edgarSubmission xmlns="http://www.sec.gov/edgar/thirteenffiler" xmlns:com="http://www.sec.gov/edgar/common">
+  <headerData>
+    <submissionType>13F-HR/A</submissionType>
+    <filerInfo>
+      <filer><credentials><cik>0001792167</cik></credentials></filer>
+      <periodOfReport>12-31-2025</periodOfReport>
+    </filerInfo>
+  </headerData>
+  <formData>
+    <coverPage>
+      <reportCalendarOrQuarter>12-31-2025</reportCalendarOrQuarter>
+      <isAmendment>true</isAmendment>
+      <amendmentNo>2</amendmentNo>
+      <amendmentInfo>
+        <amendmentType>NEW HOLDINGS</amendmentType>
+        <confDeniedExpired>true</confDeniedExpired>
+        <dateDeniedExpired>08-01-2026</dateDeniedExpired>
+        <dateReported>08-07-2026</dateReported>
+        <reasonForNonConfidentiality>Order expired</reasonForNonConfidentiality>
+      </amendmentInfo>
+      <filingManager>
+        <name>Meeder Advisory Services, Inc.</name>
+        <address>
+          <com:street1>6125 Memorial Drive</com:street1>
+          <com:city>Dublin</com:city>
+          <com:stateOrCountry>OH</com:stateOrCountry>
+          <com:zipCode>43017</com:zipCode>
+        </address>
+      </filingManager>
+      <reportType>13F COMBINATION REPORT</reportType>
+      <form13FFileNumber>028-23090</form13FFileNumber>
+      <crdNumber>000106814</crdNumber>
+      <secFileNumber>801-40023</secFileNumber>
+      <otherManagersInfo>
+        <otherManager>
+          <cik>0001527166</cik>
+          <form13FFileNumber>028-15025</form13FFileNumber>
+          <crdNumber>000111128</crdNumber>
+          <secFileNumber>801-52462</secFileNumber>
+          <name>Carlyle Group Inc.</name>
+        </otherManager>
+      </otherManagersInfo>
+      <provideInfoForInstruction5>Y</provideInfoForInstruction5>
+      <additionalInformation>Fixture combination report.</additionalInformation>
+    </coverPage>
+    <summaryPage>
+      <otherIncludedManagersCount>2</otherIncludedManagersCount>
+      <tableEntryTotal>2</tableEntryTotal>
+      <tableValueTotal>3000</tableValueTotal>
+      <isConfidentialOmitted>false</isConfidentialOmitted>
+      <otherManagers2Info>
+        <otherManager2>
+          <sequenceNumber>1</sequenceNumber>
+          <otherManager>
+            <cik>0001327354</cik>
+            <form13FFileNumber>028-11406</form13FFileNumber>
+            <crdNumber>000110841</crdNumber>
+            <secFileNumber>801-58237</secFileNumber>
+            <name>Allspring Funds Management, LLC</name>
+          </otherManager>
+        </otherManager2>
+        <otherManager2>
+          <sequenceNumber>1</sequenceNumber>
+          <otherManager>
+            <name>Allspring Funds Management, LLC for another account</name>
+          </otherManager>
+        </otherManager2>
+      </otherManagers2Info>
+    </summaryPage>
+  </formData>
+</edgarSubmission>

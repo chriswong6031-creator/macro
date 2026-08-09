@@ -75,3 +75,8 @@ data/marketing/x_intel/corpus.jsonl merge=union
 # deliberately NOT union-merged. They are whole-file documents with a single
 # writer (this lane's own concurrency group) where last-wins is correct; a
 # union-merged JSON document is a syntax error, not a merge.
+
+# Eight-hex CSS files are byte-exact post-render artifacts. Their source Jinja
+# intentionally retains indentation-only lines, so whitespace checks belong to
+# the templates rather than to these content-addressed projections.
+site/assets/css/????????.css whitespace=-trailing-space,-blank-at-eof

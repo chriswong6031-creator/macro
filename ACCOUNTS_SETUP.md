@@ -51,7 +51,7 @@ Project: `https://fsldfzlxyavsuwqbceod.supabase.co` (dashboard → that project)
    - **Redirect URLs (add each):**
      - `https://mastermind-x.com/**`
      - `https://app.mastermind-x.com/**` (Terminal — shared SSO session)
-     - `https://chriswong6031-creator.github.io/macro/**` (Pages mirror)
+     - `https://mastermindx-market-intelligence.github.io/macro/**` (Pages mirror)
      - any other subdomain where sign-in is *initiated*
      - for local testing: `http://localhost:*/**`
    - OAuth + the implicit flow return to the page the user started on, so the page's

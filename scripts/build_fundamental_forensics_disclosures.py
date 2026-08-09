@@ -16,16 +16,20 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from engine.fundamental_forensics.disclosure_projection import (
     DisclosureProjectionError,
     build_disclosure_projection,
     write_disclosure_projection,
-)
-from lib import config
-from scripts.build_fundamental_forensics import _metadata
+)  # noqa: E402
+from lib import config  # noqa: E402
+from scripts.build_fundamental_forensics import _metadata  # noqa: E402
 
 
 log = logging.getLogger("build_fundamental_forensics_disclosures")

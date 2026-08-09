@@ -25,13 +25,18 @@ Run (needs the deep panel first):
 from __future__ import annotations
 
 import argparse
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
-from engine.china_sector_pathway import _position
-from engine.validation import benjamini_hochberg, ic_summary, rank_ic
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.china_sector_pathway import _position  # noqa: E402
+from engine.validation import benjamini_hochberg, ic_summary, rank_ic  # noqa: E402
+from lib import config  # noqa: E402
 
 DEEP = "data/china_search/closes_deep.parquet"
 MEMBERS = "data/china_search/members.parquet"

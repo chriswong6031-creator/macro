@@ -682,8 +682,8 @@ def chat(message: str, history=None, root=None) -> dict:
             "est_cost_usd": est_cost}
 
 
-_WAKE_CMD = ["gh", "workflow", "run", "daily.yml", "-R", "chriswong6031-creator/macro"]
-_WAKE_HINT = "run: gh workflow run daily.yml -R chriswong6031-creator/macro"
+_WAKE_CMD = ["gh", "workflow", "run", "daily.yml", "-R", "mastermindx-market-intelligence/macro"]
+_WAKE_HINT = "run: gh workflow run daily.yml -R mastermindx-market-intelligence/macro"
 
 
 def wake() -> dict:
