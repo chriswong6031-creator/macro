@@ -26,14 +26,19 @@ Usage: .venv/bin/python -m scripts.research_liquidity_orthogonality
 from __future__ import annotations
 
 import os
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
-from scripts.research_liquidity_gate import EXP_THR, MOM_LB, START, _col
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts.research_liquidity_gate import EXP_THR, MOM_LB, START, _col  # noqa: E402
 from scripts.research_trend_gate import (
     ROOT, STEP, asset_class, fwd_return, load_panel,
-)
+)  # noqa: E402
 
 LAG_BD = 3
 ROC_4W = 20

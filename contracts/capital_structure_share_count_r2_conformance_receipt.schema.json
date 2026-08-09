@@ -86,7 +86,7 @@
       "additionalProperties": false,
       "required": ["repository", "workflow_ref", "run_id", "run_attempt", "commit_sha", "event_name", "actor"],
       "properties": {
-        "repository": {"const": "chriswong6031-creator/macro"},
+        "repository": {"const": "mastermindx-market-intelligence/macro"},
         "workflow_ref": {
           "type": "string",
           "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/\\.github/workflows/capital-share-count-r2-conformance\\.yml@refs/heads/main$"

@@ -164,6 +164,54 @@ locally in 06-2026 (`_SERIES_MEMO`) — the fix hoists the memo into
 attribution + trim is the follow-on lane (profiled serially; washout-turn
 (#4657) and the per-name loop are the candidates).
 
+**W3 PRODUCTION-VERIFIED 2026-08-08 (#4848 merged 08-07 08:20Z).** The trim's
+PR body carried local cProfile numbers only; these are the nightly's own rows
+from `data/nightly_timings/build_site.jsonl`, i.e. the ledger the same PR
+shipped grading its own fix:
+
+| build_site | 08-05 | 08-06 | → | 08-07 23:03Z | 08-08 07:01Z | 08-08 15:34Z |
+|---|---|---|---|---|---|---|
+| **TOTAL** | **61.3m** | **57.4m** | | **23.9m** | **24.9m** | **22.6m** |
+| `subsector_rotation` | (12.6m local) | | | 0.2m | 0.2m | 0.2m |
+| `stock_library` | (20.8m local) | | | 19.9m | 21.1m | 15.9m |
+
+The step now runs at **~38% of its 08-05 cost**, and the engine job that
+carried it concluded **126.1m success** (run 31254922905, 08-08 14:24→16:30Z)
+against the ~205m hard-cancels of 08-05/08-06. Attribute carefully — the job
+total is NOT one lane's win: #4986 (merged 08-08 11:49Z) moved the Filing
+Forensics SEC spine off the render path in the same window. What is directly
+attributable to #4848 is the `subsector_rotation` section, which the ledger
+now records at **0.2m/night** against the 12.6m the first instrumented
+(pre-fix) run measured on the same host — the sign and size the 706s → 27s
+cProfile before/after predicted. Cross-environment caveat: 12.6m is a local
+capture and 0.2m is production, so treat the section's own before/after as
+the cProfile pair; the ledger rows confirm the fix held in production.
+
+**Re-measure caution — a trim that was already delivered by somebody else
+(tech_lab law, second firing).** `stock_library` is now 70–88% of the step and
+the obvious next target. The 08-06/08-07 serial profile of it found a clear #1
+hotspot: `confluence_tiers._tf_bars` ran
+`resample().apply(lambda x: x.dropna().index.max())`, a pure-Python groupby
+(`_aggregate_series_pure_python`, 13.6M lambda calls, ~1600s of a 3400s
+capture). That code **no longer exists on main**. PR #4732 (`2a0c5e27184`,
+merged 2026-08-07 07:11Z) rewrote `_tf_bars` as one vectorized groupby over
+absolute session-calendar bucket ids — for CORRECTNESS, not speed (bin edges
+had been anchored to the series' FIRST timestamp, flipping the tier on 13/232
+names; `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`
+R1–R3) — and deleted the Python-level apply from the hot path as a side
+effect. A correctness lane silently collected the perf win, and a profile
+captured on a base one commit older would have sent this workstream to
+re-optimise code that was already gone.
+
+Two consequences, both load-bearing: (1) the three ledger rows above ALL
+postdate #4732, so 15.9–21.1m is what stock_library costs *after* that fix —
+the 21.1m → 15.9m spread between the 08-08 07:01Z and 15:34Z runs is
+**unattributed run-to-run variance** (differing host load / cache warmth on a
+shared builder), NOT a landed trim, and must not be read as one. (2) The only
+survivor of that `resample().apply` pattern is
+`engine/entry_primitives.py:796`. Any further stock_library trim must be
+profiled against CURRENT main; the 08-06 capture is void.
+
 **W4 — Disk program on the M1.** Execute the ranked plan (operator sudo
 required for ranks 0/3): TM snapshots ~80G → `tmutil disable` decision →
 macOS Install Data 12G → `git gc` runner-1's 29G `.git` → theta store 60G to

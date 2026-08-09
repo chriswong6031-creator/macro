@@ -73,8 +73,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:  # pragma: no cover - import bootstrap
-    sys.path.insert(0, _CODE_ROOT)
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.marketing import exemplar_store as xs  # noqa: E402
 from engine.marketing import x_intel as xi  # noqa: E402

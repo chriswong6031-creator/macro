@@ -3058,7 +3058,7 @@ BioCatalyst owns domain extraction from those objects.
 
 ### 17.2 Capital Structure Intelligence
 
-[PR 4175](https://github.com/chriswong6031-creator/macro/pull/4175) merged the [Capital Structure Intelligence docket](CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md) during this investigation. It is a planning reference, not an implemented data plane. Wave 0 still needs to freeze and implement executable schemas, producers, stores, cadences, and one-writer registrations before BioCatalyst can consume live capital projections.
+[PR 4175](https://github.com/mastermindx-market-intelligence/macro/pull/4175) merged the [Capital Structure Intelligence docket](CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md) during this investigation. It is a planning reference, not an implemented data plane. Wave 0 still needs to freeze and implement executable schemas, producers, stores, cadences, and one-writer registrations before BioCatalyst can consume live capital projections.
 
 That plane owns:
 

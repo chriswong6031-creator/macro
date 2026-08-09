@@ -26,13 +26,18 @@ Usage: .venv/bin/python -m scripts.research_liquidity_gate
 from __future__ import annotations
 
 import os
+import sys
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from scripts.research_trend_gate import (
     ROOT, STEP, asset_class, fwd_drawdown, fwd_return, load_panel,
-)
+)  # noqa: E402
 
 MOM_LB = 126
 LAG_BD = 3            # business-day lag on the liquidity series (release delay + safety)
