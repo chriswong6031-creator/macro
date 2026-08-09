@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/research/momoedge_oracle_replay_receipt.v1.schema.json",
+  "title": "Aggregate-only MomoEdge Oracle forensic replay receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generated_at",
+    "input",
+    "record_range",
+    "issue_time",
+    "cohort_policy",
+    "cohorts",
+    "decision_layers",
+    "displayed_additive_metrics",
+    "capital_constrained_metrics",
+    "status_disagreements",
+    "temporal_source_quality",
+    "theta_data_plane",
+    "data_availability",
+    "runtime_outputs",
+    "privacy",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "momoedge.oracle_history_replay_wave0_receipt/v1"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "input": {"$ref": "#/$defs/input"},
+    "record_range": {"$ref": "#/$defs/recordRange"},
+    "issue_time": {"$ref": "#/$defs/issueTime"},
+    "cohort_policy": {"$ref": "#/$defs/cohortPolicy"},
+    "cohorts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/cohort"}
+    },
+    "decision_layers": {"$ref": "#/$defs/decisionLayers"},
+    "displayed_additive_metrics": {"$ref": "#/$defs/additiveMetrics"},
+    "capital_constrained_metrics": {"$ref": "#/$defs/capitalMetrics"},
+    "status_disagreements": {"$ref": "#/$defs/statusDisagreements"},
+    "temporal_source_quality": {"$ref": "#/$defs/temporalSourceQuality"},
+    "theta_data_plane": {"$ref": "#/$defs/thetaDataPlane"},
+    "data_availability": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {"$ref": "#/$defs/dataAvailability"}
+    },
+    "runtime_outputs": {"$ref": "#/$defs/runtimeOutputs"},
+    "privacy": {"$ref": "#/$defs/privacy"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0},
+    "dateOrNull": {
+      "oneOf": [
+        {"type": "string", "format": "date"},
+        {"type": "null"}
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "sha256", "captured_at", "authorization_validated", "record_count"],
+      "properties": {
+        "schema": {"const": "momoedge.oracle_history_authorized/v1"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "authorization_validated": {"const": true},
+        "record_count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "recordRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_issue_date", "last_issue_date", "unique_issue_dates"],
+      "properties": {
+        "first_issue_date": {"type": "string", "format": "date"},
+        "last_issue_date": {"type": "string", "format": "date"},
+        "unique_issue_dates": {"$ref": "#/$defs/count"}
+      }
+    },
+    "issueTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact_timestamp_records", "date_only_records", "timezone", "cutoff_ids", "sensitivity_only"],
+      "properties": {
+        "exact_timestamp_records": {"const": 0},
+        "date_only_records": {"$ref": "#/$defs/count"},
+        "timezone": {"const": "America/New_York"},
+        "cutoff_ids": {
+          "const": ["market_open", "mid_session", "market_close_boundary"]
+        },
+        "sensitivity_only": {"const": true}
+      }
+    },
+    "cohortPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "first_observed_option_issue", "last_observed_underlying_issue", "inferred", "true_engine_version_claimed"],
+      "properties": {
+        "basis": {"const": "observed_instrument_format_frontiers"},
+        "first_observed_option_issue": {"$ref": "#/$defs/dateOrNull"},
+        "last_observed_underlying_issue": {"$ref": "#/$defs/dateOrNull"},
+        "inferred": {"const": true},
+        "true_engine_version_claimed": {"const": false}
+      }
+    },
+    "instrumentCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["underlying", "option"],
+      "properties": {
+        "underlying": {"$ref": "#/$defs/count"},
+        "option": {"$ref": "#/$defs/count"}
+      }
+    },
+    "directionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["BULL", "BEAR"],
+      "properties": {
+        "BULL": {"$ref": "#/$defs/count"},
+        "BEAR": {"$ref": "#/$defs/count"}
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cohort_id", "first_issue_date", "last_issue_date", "record_count", "instrument_counts", "direction_counts"],
+      "properties": {
+        "cohort_id": {"enum": ["pre_option_format", "mixed_format_transition", "post_underlying_format"]},
+        "first_issue_date": {"type": "string", "format": "date"},
+        "last_issue_date": {"type": "string", "format": "date"},
+        "record_count": {"$ref": "#/$defs/count"},
+        "instrument_counts": {"$ref": "#/$defs/instrumentCounts"},
+        "direction_counts": {"$ref": "#/$defs/directionCounts"}
+      }
+    },
+    "decisionLayers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection_records", "contract_construction_records", "management_records", "management_with_close_date", "management_without_close_date"],
+      "properties": {
+        "selection_records": {"$ref": "#/$defs/count"},
+        "contract_construction_records": {"$ref": "#/$defs/count"},
+        "management_records": {"$ref": "#/$defs/count"},
+        "management_with_close_date": {"$ref": "#/$defs/count"},
+        "management_without_close_date": {"$ref": "#/$defs/count"}
+      }
+    },
+    "returnClassCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positive", "zero", "negative"],
+      "properties": {
+        "positive": {"$ref": "#/$defs/count"},
+        "zero": {"$ref": "#/$defs/count"},
+        "negative": {"$ref": "#/$defs/count"}
+      }
+    },
+    "additiveMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headline_definition",
+        "headline_total_alpha_pct",
+        "reconstructed_visible_underlying_sum_pct",
+        "headline_minus_reconstructed_pct",
+        "reconstructed_visible_underlying_mean_pct",
+        "headline_win_rate_pct",
+        "headline_wins",
+        "visible_return_class_counts",
+        "option_records",
+        "option_return_observed_records",
+        "reconstructed_visible_option_sum_pct",
+        "reconstruction_is_track_record"
+      ],
+      "properties": {
+        "headline_definition": {"type": "string", "minLength": 1, "maxLength": 500},
+        "headline_total_alpha_pct": {"type": "number"},
+        "reconstructed_visible_underlying_sum_pct": {"type": "number"},
+        "headline_minus_reconstructed_pct": {"type": "number"},
+        "reconstructed_visible_underlying_mean_pct": {"type": "number"},
+        "headline_win_rate_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "headline_wins": {"$ref": "#/$defs/count"},
+        "visible_return_class_counts": {"$ref": "#/$defs/returnClassCounts"},
+        "option_records": {"$ref": "#/$defs/count"},
+        "option_return_observed_records": {"$ref": "#/$defs/count"},
+        "reconstructed_visible_option_sum_pct": {"type": "number"},
+        "reconstruction_is_track_record": {"const": false}
+      }
+    },
+    "capitalProxy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "return_basis", "max_slots", "same_day_policy", "eligible_records", "accepted_records", "skipped_no_slot", "excluded_incomplete", "excluded_temporal_quality", "fixed_initial_capital_return_pct"],
+      "properties": {
+        "state": {"const": "research_proxy_not_track_record"},
+        "return_basis": {"enum": ["underlying", "reported_instrument"]},
+        "max_slots": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "same_day_policy": {"enum": ["close_before_issue", "issue_before_close"]},
+        "eligible_records": {"$ref": "#/$defs/count"},
+        "accepted_records": {"$ref": "#/$defs/count"},
+        "skipped_no_slot": {"$ref": "#/$defs/count"},
+        "excluded_incomplete": {"$ref": "#/$defs/count"},
+        "excluded_temporal_quality": {"$ref": "#/$defs/count"},
+        "fixed_initial_capital_return_pct": {"type": "number"}
+      }
+    },
+    "capitalMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identification_state", "blocker_codes", "proxy_metrics"],
+      "properties": {
+        "identification_state": {"const": "not_identifiable_from_source"},
+        "blocker_codes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,100}$"}
+        },
+        "proxy_metrics": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {"$ref": "#/$defs/capitalProxy"}
+        }
+      }
+    },
+    "statusPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table_status", "detail_status", "count"],
+      "properties": {
+        "table_status": {"type": "string", "minLength": 1, "maxLength": 100},
+        "detail_status": {"type": "string", "minLength": 1, "maxLength": 100},
+        "count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "statusDisagreements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "pairs", "both_values_retained"],
+      "properties": {
+        "count": {"$ref": "#/$defs/count"},
+        "pairs": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/statusPair"}},
+        "both_values_retained": {"const": true}
+      }
+    },
+    "temporalSourceQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_values_retained",
+        "corrections_applied",
+        "clean_records",
+        "missing_close_date_records",
+        "issue_close_days_held_year_conflict_records",
+        "holding_interval_after_option_expiration_records",
+        "max_holding_interval_beyond_option_expiration_days",
+        "correction_overlay_required_records",
+        "overlap_replay_excluded_records",
+        "expiry_return_replay_excluded_option_records"
+      ],
+      "properties": {
+        "raw_values_retained": {"const": true},
+        "corrections_applied": {"const": 0},
+        "clean_records": {"$ref": "#/$defs/count"},
+        "missing_close_date_records": {"$ref": "#/$defs/count"},
+        "issue_close_days_held_year_conflict_records": {"$ref": "#/$defs/count"},
+        "holding_interval_after_option_expiration_records": {"$ref": "#/$defs/count"},
+        "max_holding_interval_beyond_option_expiration_days": {"$ref": "#/$defs/count"},
+        "correction_overlay_required_records": {"$ref": "#/$defs/count"},
+        "overlap_replay_excluded_records": {"$ref": "#/$defs/count"},
+        "expiry_return_replay_excluded_option_records": {"$ref": "#/$defs/count"}
+      }
+    },
+    "thetaDataPlane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_state",
+        "r2_state",
+        "inventory_method",
+        "manifest_last_modified",
+        "required_root_year_pairs",
+        "candidate_issue_records",
+        "current_available_root_count",
+        "current_available_objects",
+        "current_available_bytes",
+        "current_prefix_only",
+        "legacy_old_prefix_probed",
+        "selective_restore_state",
+        "object_content_downloaded",
+        "issue_day_eod_policy"
+      ],
+      "properties": {
+        "local_state": {"enum": ["resolved", "unresolved"]},
+        "r2_state": {"enum": ["available_candidate", "not_audited", "unavailable"]},
+        "inventory_method": {
+          "enum": ["targeted_head_object_current_keys", "not_run"]
+        },
+        "manifest_last_modified": {
+          "oneOf": [
+            {"type": "string", "format": "date-time"},
+            {"type": "null"}
+          ]
+        },
+        "required_root_year_pairs": {"$ref": "#/$defs/count"},
+        "candidate_issue_records": {"$ref": "#/$defs/count"},
+        "current_available_root_count": {"$ref": "#/$defs/count"},
+        "current_available_objects": {"$ref": "#/$defs/count"},
+        "current_available_bytes": {"$ref": "#/$defs/count"},
+        "current_prefix_only": {"type": "boolean"},
+        "legacy_old_prefix_probed": {"const": false},
+        "selective_restore_state": {"const": "planned_not_executed"},
+        "object_content_downloaded": {"const": false},
+        "issue_day_eod_policy": {
+          "const": "prior_session_only_when_issue_time_unknown"
+        }
+      }
+    },
+    "dataAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "state", "record_count", "exact_issue_date_records", "within_day_ready", "available_at_ready", "supporting_counts", "blocker_codes"],
+      "properties": {
+        "family": {"enum": ["price_technical", "macro_regime", "options_flow_campaign", "gex_vol_oi", "news_alt_data"]},
+        "state": {"enum": ["unavailable", "partial_retro", "partial_pit", "candidate_only"]},
+        "record_count": {"$ref": "#/$defs/count"},
+        "exact_issue_date_records": {"$ref": "#/$defs/count"},
+        "within_day_ready": {"type": "boolean"},
+        "available_at_ready": {"type": "boolean"},
+        "supporting_counts": {
+          "type": "object",
+          "maxProperties": 20,
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]{2,100}$"},
+          "additionalProperties": {"$ref": "#/$defs/count"}
+        },
+        "blocker_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,100}$"}
+        }
+      }
+    },
+    "runtimeOutputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["replay_case_count", "feature_receipt_count", "private_output_required", "private_output_in_repo_allowed"],
+      "properties": {
+        "replay_case_count": {"$ref": "#/$defs/count"},
+        "feature_receipt_count": {"$ref": "#/$defs/count"},
+        "private_output_required": {"const": true},
+        "private_output_in_repo_allowed": {"const": false}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_records_included", "ticker_values_included", "authorization_payload_included", "authorization_image_included", "private_runtime_artifacts_committed"],
+      "properties": {
+        "raw_records_included": {"const": false},
+        "ticker_values_included": {"const": false},
+        "authorization_payload_included": {"const": false},
+        "authorization_image_included": {"const": false},
+        "private_runtime_artifacts_committed": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "prophet", "neural_web", "signal_origination", "automatic_training"],
+      "properties": {
+        "tier": {"const": "research_only"},
+        "prophet": {"const": "none"},
+        "neural_web": {"const": "none"},
+        "signal_origination": {"const": false},
+        "automatic_training": {"const": false}
+      }
+    }
+  }
+}

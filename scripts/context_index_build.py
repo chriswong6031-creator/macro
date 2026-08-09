@@ -23,6 +23,9 @@ import sys
 import time
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # Resolve repo root (walk up from this script looking for .git)
 _SCRIPT = Path(__file__).resolve()
 
@@ -170,8 +173,6 @@ def main() -> int:
 
     repo_root = _find_repo_root()
     # Add repo root to sys.path so `engine` package is importable
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
 
     db_dir = _db_dir(repo_root)
 

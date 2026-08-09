@@ -30,45 +30,49 @@ from pathlib import Path
 import re
 import secrets
 import stat
+import sys
 from typing import Any, Callable, Mapping, Sequence
 
-from collectors.edgar_forensics import RetrievalReceipt, SecForensicsCollector
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.edgar_forensics import RetrievalReceipt, SecForensicsCollector  # noqa: E402
 from collectors.fundamental_forensics_companyfacts import (
     acquire_companyfacts,
     read_companyfacts_manifest,
-)
+)  # noqa: E402
 from collectors.sec_document_spine import (
     ArchiveReceipt,
     SecFilingArchiveCollector,
     persist_filing_manifest,
     read_archive_document,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.attested_history_credentials import (
     R2TemporaryCredentialError,
     mint_r2_temporary_credentials,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.attested_history_pilot import (
     prepare_attested_history_base_candidate,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.companyfacts_ledger import (
     CompanyFactsConversionSourceBundle,
     CompanyFactsLedgerConversionConfig,
     DEFAULT_MAX_OLDER_SUBMISSIONS_FILES,
     PinnedSubmissionsSource,
     load_companyfacts_ledger_from_pinned_source,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_attestation import (
     CompanyFactsSourcePaths,
     PinnedSourceAuthority,
     build_filing_attestation,
-)
+)  # noqa: E402
 from engine.fundamental_forensics.filing_package import (
     PinnedFilingPackageDescriptor,
     materialize_filing_package_from_pinned_source,
-)
-from engine.fundamental_forensics.ixbrl_extraction import build_ixbrl_extraction
-from engine.fundamental_forensics.models import canonical_json, parse_utc, utc_text
-from engine.fundamental_forensics.query_snapshots import publish_query_snapshot
+)  # noqa: E402
+from engine.fundamental_forensics.ixbrl_extraction import build_ixbrl_extraction  # noqa: E402
+from engine.fundamental_forensics.models import canonical_json, parse_utc, utc_text  # noqa: E402
+from engine.fundamental_forensics.query_snapshots import publish_query_snapshot  # noqa: E402
 from engine.fundamental_forensics.sec_document_spine import (
     archive_index_document,
     build_filing_manifests,
@@ -77,21 +81,21 @@ from engine.fundamental_forensics.sec_document_spine import (
     select_periodic_comparables,
     with_archive_documents,
     with_document_retrievals,
-)
-from engine.fundamental_forensics.source_sync import sync_source_roots
+)  # noqa: E402
+from engine.fundamental_forensics.source_sync import sync_source_roots  # noqa: E402
 from engine.research_vault.r2_store import (
     LocalStore,
     R2Store,
     StrictBoundedReadStore,
     StrictConditionalWriteStore,
-)
+)  # noqa: E402
 from scripts.run_fundamental_forensics_attested_history import (
     MAX_SPEC_BYTES as MAX_OPERATOR_PACKET_BYTES,
     build_readonly_operator_store,
     operator_spec_from_bytes,
     run_readonly_preflight,
     write_private_receipt,
-)
+)  # noqa: E402
 
 
 AAPL_TICKER = "AAPL"
@@ -117,7 +121,7 @@ DEPENDENCY_LOCK_RELATIVE_PATH = Path(
     "requirements/attested-history-macos-arm64-py312.lock"
 )
 MAX_DEPENDENCY_LOCK_BYTES = 64 * 1024
-EXPECTED_GITHUB_REPOSITORY = "chriswong6031-creator/macro"
+EXPECTED_GITHUB_REPOSITORY = "mastermindx-market-intelligence/macro"
 EXPECTED_GITHUB_REF = "refs/heads/main"
 EXPECTED_GITHUB_ENVIRONMENT = "attested-history-seed"
 EXPECTED_GITHUB_WORKFLOW = "attested-history-aapl-seed"
@@ -129,7 +133,32 @@ _OLDER_SUBMISSIONS_RE = re.compile(r"^CIK([0-9]{10})-submissions-([0-9]{3})\.jso
 
 
 class AttestedHistorySeedError(RuntimeError):
-    """The bounded AAPL bootstrap cannot establish its explicit evidence graph."""
+    """The bounded AAPL bootstrap cannot establish its explicit evidence graph.
+
+    Every message raised as this type is authored to be value-free: a static
+    sentence, or one interpolating a ``{field}`` NAME.  That is what makes it
+    safe to print verbatim in the operator annotation, so a new raise site must
+    keep the invariant — name the field, never the value.  Any *other* exception
+    can carry an endpoint, bucket, object key, or local source path in its
+    message, and only its class name is ever surfaced.
+    """
+
+
+MAX_ANNOTATION_MESSAGE_CHARS = 200
+
+
+def _annotation_message(text: str) -> str:
+    """Flatten one value-free sentence onto the annotation's single line.
+
+    GitHub parses ``::error`` only while it owns its whole line, so an embedded
+    newline would both truncate the annotation and spill its remainder into the
+    raw log.  No current raise site contains one; this keeps that true for the
+    next one.
+    """
+    flattened = " ".join(str(text).split())
+    if len(flattened) > MAX_ANNOTATION_MESSAGE_CHARS:
+        flattened = flattened[:MAX_ANNOTATION_MESSAGE_CHARS] + "..."
+    return flattened or "no message"
 
 
 def validate_production_environment_boundary() -> None:
@@ -810,6 +839,7 @@ def run_aapl_seed(
     now: Callable[[], str] = _utc_now,
     run_provenance: Mapping[str, Any] | None = None,
     dependency_lock_digest: str | None = None,
+    on_stage: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Execute the full seed graph and return compact, non-raw private metadata.
 
@@ -819,7 +849,17 @@ def run_aapl_seed(
     aborts before a success receipt is emitted. The seed writes only named
     immutable source/base objects; it never advances a global latest pointer,
     including on any partial/failing path.
+
+    ``on_stage`` receives the static name of each phase as it is entered, so a
+    failure the CLI cannot describe can still be localised.  It is diagnostics
+    only: the names are code literals, it observes nothing about the evidence,
+    and it never changes what is acquired, written, or emitted.
     """
+
+    def _stage(name: str) -> None:
+        if on_stage is not None:
+            on_stage(name)
+
     if not isinstance(writer_store, StrictConditionalWriteStore):
         raise AttestedHistorySeedError("seed writer lacks strict conditional-write capability")
     if not isinstance(readonly_store, StrictBoundedReadStore):
@@ -860,6 +900,7 @@ def run_aapl_seed(
     output = _ensure_empty_directory(Path(output_dir), field="output_dir")
     if _paths_overlap(work, output):
         raise AttestedHistorySeedError("work_dir and review output_dir cannot overlap")
+    _stage("storage-control-probe")
     storage_control_probe = run_storage_control_probe(
         writer_store=writer_store,
         readonly_store=readonly_store,
@@ -869,6 +910,7 @@ def run_aapl_seed(
     raw_root.mkdir()
     archive_root.mkdir()
 
+    _stage("acquire-submissions")
     submissions_collector = SecForensicsCollector(
         raw_root, user_agent=user_agent, max_response_bytes=MAX_SUBMISSIONS_BYTES
     )
@@ -907,6 +949,7 @@ def run_aapl_seed(
         recorded_at=submissions_recorded_at,
         as_of=submissions_recorded_at,
     )
+    _stage("acquire-filing")
     final_manifest, _manifest_key, index_document, member_states, primary_name = retain_selected_filing(
         archive_root=archive_root,
         manifest=selected_manifest,
@@ -920,6 +963,7 @@ def run_aapl_seed(
         submissions_recorded_at,
         field="companyfacts_source_snapshot_at",
     )
+    _stage("acquire-companyfacts")
     companyfacts_result = acquire_companyfacts(
         targets=((AAPL_TICKER, AAPL_CIK),),
         raw_root=raw_root,
@@ -971,6 +1015,7 @@ def run_aapl_seed(
         companyfacts_recorded_at,
         field="source_snapshot_at",
     )
+    _stage("source-snapshot")
     source_snapshot = sync_source_roots(
         raw_root=raw_root,
         archive_root=archive_root,
@@ -981,6 +1026,7 @@ def run_aapl_seed(
         max_total_bytes=MAX_SOURCE_TOTAL_BYTES,
         publish_latest=False,
     )
+    _stage("base-candidate")
     authority = PinnedSourceAuthority(store=writer_store, snapshot_id=source_snapshot.snapshot_id)
     conversion_config = CompanyFactsLedgerConversionConfig()
     conversion = load_companyfacts_ledger_from_pinned_source(
@@ -1062,6 +1108,7 @@ def run_aapl_seed(
     operator_verification_observed_at = _clock_not_before(
         now(), source_snapshot_at, field="operator_verification_observed_at"
     )
+    _stage("preflight")
     preflight = run_seed_preflight(
         packet_bytes=packet_bytes,
         readonly_store=readonly_store,
@@ -1070,6 +1117,7 @@ def run_aapl_seed(
     preflight_completed_at = _clock_not_before(
         now(), operator_verification_observed_at, field="preflight_completed_at"
     )
+    _stage("review-artifacts")
     packet_path = output / SEED_PACKET_FILENAME
     preflight_path = output / "attested_history_preflight_receipt.json"
     seed_path = output / SEED_RECEIPT_FILENAME
@@ -1162,25 +1210,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.enable_aapl_seed:
         print("::error title=fundamental_forensics_attested_history_seed::explicit AAPL seed enablement is required", flush=True)
         return 2
+    # The runner's RUNNER_TEMP working directories are wiped between jobs and
+    # this command writes nothing before full success, so the annotation below
+    # is the ONLY operator-facing evidence a failing run ever produces. It used
+    # to discard the safe signal along with the unsafe detail and point at
+    # "protected runner diagnostics" that have never existed. Stage names are
+    # code literals, so they localise an opaque failure without leaking.
+    stage = "startup"
+
+    def _enter(name: str) -> None:
+        nonlocal stage
+        stage = name
+
     try:
+        _enter("environment-boundary")
         if args.local_store is None:
             # This production authority boundary must precede filesystem,
             # network, object-store, and credential-mint I/O.
             validate_production_environment_boundary()
+            _enter("run-provenance")
             run_provenance = production_run_provenance()
         else:
             run_provenance = None
+        _enter("dependency-lock")
         lock_digest = (
             production_dependency_lock_sha256()
             if args.local_store is None
             else dependency_lock_sha256()
         )
+        _enter("writer-store")
         writer = build_seed_store(local_dir=args.local_store)
+        _enter("readonly-store")
         readonly = (
             LocalStore(args.local_store)
             if args.local_store is not None
             else build_readonly_operator_store()
         )
+        _enter("seed-inputs")
         run_aapl_seed(
             work_dir=args.work_dir,
             output_dir=args.output_dir,
@@ -1189,11 +1255,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             readonly_store=readonly,
             run_provenance=run_provenance,
             dependency_lock_digest=lock_digest,
+            on_stage=_enter,
         )
-    except Exception:
-        # Details can include source paths or remote endpoint messages. The
-        # review artifact is intentionally emitted only after full success.
-        print("::error title=fundamental_forensics_attested_history_seed::seed failed; inspect the protected runner diagnostics", flush=True)
+    except AttestedHistorySeedError as exc:
+        # Value-free by construction — see AttestedHistorySeedError. Every raise
+        # site was audited (2026-08-09): static sentences, or a {field} NAME.
+        print(f"::error title=fundamental_forensics_attested_history_seed::seed failed at stage {stage}: {_annotation_message(str(exc))}", flush=True)
+        return 1
+    except Exception as exc:
+        # Anything else can carry source paths or remote endpoint detail in its
+        # message, so ONLY the class name crosses the boundary — never the
+        # message, never the traceback. The review artifact is still emitted
+        # only after full success.
+        print(f"::error title=fundamental_forensics_attested_history_seed::seed failed at stage {stage}: unexpected {type(exc).__name__} (detail suppressed)", flush=True)
         return 1
     print("::notice title=fundamental_forensics_attested_history_seed::AAPL seed and zero-write preflight completed; retrieve review artifacts", flush=True)
     return 0

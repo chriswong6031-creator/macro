@@ -304,6 +304,46 @@ class YahooAdapter(Adapter):
         raise last_exc  # type: ignore[misc]
 
 
+#: The store schema every data/yahoo/<T>.parquet carries, in column order.
+#: Pinned here rather than derived, because it is a CONTRACT with readers that
+#: never go through this module: engine/trajectory.py:66 and
+#: engine/desk_grader.py:124 open the parquet directly and read ``close``.
+#: A writer that produces a different frame poisons them silently.
+STORE_COLUMNS: tuple[str, ...] = ("close_price", "close", "volume")
+
+
+def extract_store_frame(sub: pd.DataFrame, ticker: str, *,
+                        with_ohlc: bool = False,
+                        no_adj_close: list[str] | None = None) -> pd.DataFrame | None:
+    """The ONE dual-basis rename seam — shared by the nightly collector and the
+    off-render universe backfill (``scripts/backfill_yahoo_universe.py``).
+
+    Exists so there is exactly one implementation of "yfinance response ->
+    data/yahoo store frame". A second writer that re-derives the rename is the
+    silent-poison shape: ``close`` is total-return (split+dividend) adjusted and
+    ``close_price`` is split-only, so a writer that swaps them, drops one, or
+    reorders the columns leaves every grader reading the wrong basis with no
+    error anywhere (engine/trajectory.py, engine/desk_grader.py and the hub
+    ledger all read the parquet directly — see STORE_COLUMNS).
+
+    ``sub`` may be either a full ``yf.download`` response (MultiIndex columns,
+    sliced by ``lib.ticker_aliases.fetch_symbol(ticker)`` exactly as ``fetch()``
+    does) or a FLAT single-symbol frame the caller already sliced out of a batch
+    response. The flat form is what lets the backfill request a vendor symbol the
+    alias table does not carry — a US class share is served as ``BRK-B`` while the
+    ledger's join key stays ``BRK.B`` — without teaching this module a second
+    symbol map.
+
+    ``with_ohlc`` mirrors the collector's vol-group behaviour (keep intraday
+    High/Low). ``no_adj_close`` collects the tickers yfinance served no Adj Close
+    for (close_price := close, no dividends → no basis difference); pass a list to
+    observe them, omit it when you do not care.
+    """
+    adapter = YahooAdapter()
+    return adapter._extract(sub, ticker, {ticker} if with_ohlc else set(),
+                            no_adj_close if no_adj_close is not None else [])
+
+
 def _report_missing_symbols(requested: list[str], frames_keys) -> list[str]:
     """Requested-vs-returned reconciliation for one fetch() run (R4, never-silent
     collectors, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md).

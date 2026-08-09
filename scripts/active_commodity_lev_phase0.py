@@ -18,6 +18,7 @@ Run: .venv/bin/python -m scripts.active_commodity_lev_phase0
 """
 from __future__ import annotations
 
+import sys
 import warnings
 from pathlib import Path
 
@@ -25,6 +26,9 @@ import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from engine import equity_alloc as ea  # noqa: E402

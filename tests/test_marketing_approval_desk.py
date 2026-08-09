@@ -70,16 +70,22 @@ class TestBehaviouralMatrix:
     def test_a_provable_signal_is_approved_with_every_check_named(self):
         """The happy path, and the note the operator will read afterwards.
 
-        PINS: `action == "approve"` AND all six check names in `passed` — an
-        approve whose note lists four checks would mean two of them silently
+        PINS: `action == "approve"` AND every check name in `passed` — an
+        approve whose note lists four checks would mean the others silently
         stopped running, which is how a gate rots into decoration.
+
+        WIDENED 2026-08-08 (W5) by the two day-word checks. They are listed here
+        rather than left to a `>=` because that is the point of this test: the
+        set is the battery's inventory, and a check that stops running has to
+        show up as a diff in exactly one place.
         """
         from engine.marketing.approval_desk import audit_item
 
         v = audit_item(_item(), now=_NOW)
         assert v.action == "approve", (v.check, v.evidence)
-        assert set(v.passed) == {"payload", "number_sanity", "liveness",
-                                 "chart_law", "banned_language", "dedup"}, v.passed
+        assert set(v.passed) == {"payload", "session_language", "expired_session",
+                                 "number_sanity", "liveness", "chart_law",
+                                 "banned_language", "dedup"}, v.passed
 
     def test_zero_payload_education_quarantines_naming_payload(self):
         """THE ZERO-PAYLOAD EDUCATION DEFECT, enforced at post time forever.
@@ -190,8 +196,8 @@ class TestBehaviouralMatrix:
                        now=_NOW)
         assert v.action == "approve", (v.check, v.evidence)
 
-    def test_a_packetless_item_is_held_not_approved_and_not_killed(self):
-        """THE CONSERVATIVE DEFAULT — the whole safety argument in one test.
+    def test_a_packetless_item_is_quarantined_with_a_reason_not_parked(self):
+        """THE DECISIVE POSTURE, and the half of the safety argument that stays.
 
         A macro post carries numbers and its `source` carries nothing (measured:
         macro / education / event / insider rows in
@@ -199,10 +205,16 @@ class TestBehaviouralMatrix:
         the value-gate stamp). The desk has nothing to check the numbers
         against.
 
-        PINS BOTH HALVES: not `approve` (autonomy must never bless what it
-        cannot verify) and not `quarantine` (an unprovable post is a post the
-        operator should see, not one the machine should destroy). Either half
-        failing alone is a different, worse desk.
+        THIS TEST INVERTED ON 2026-08-08 and the inversion is the operator
+        order: "i don't want to review so many posts per day ... need a system
+        that doesn't require my manual review all the time." The old contract
+        (leave it queued for a human) rested on a review that never came, and 36
+        such items were in the queue when the order was given.
+
+        PINS BOTH HALVES OF WHAT SURVIVED: still not `approve` — autonomy must
+        never bless what it cannot verify — and now `quarantine` carrying the
+        deciding check's NAME and its evidence, so the admin outbox keeps the
+        audit trail the human review was supposed to be.
         """
         from engine.marketing.approval_desk import audit_item
 
@@ -210,9 +222,28 @@ class TestBehaviouralMatrix:
                              text="Breadth is wide today: 231 of 231 names "
                                   "above the 200 day line."),
                        now=_NOW)
-        assert v.action == "hold", v
+        assert v.action == "quarantine", v
         assert v.check == "number_sanity"
         assert "no fact evidence" in v.evidence
+        assert "decisive" in v.evidence
+
+    def test_decisive_false_restores_the_leave_it_for_a_human_verdict(self):
+        """THE ROLLBACK LEVER, pinned so it cannot rot into a dead config key.
+
+        `approval_desk.decisive: false` is the operator's way back to the
+        original triage. A posture flag nothing tests is a posture flag that
+        stops working, and the discovery would be a queue nobody is draining.
+        """
+        from engine.marketing.approval_desk import audit_item, desk_config
+
+        cfg = desk_config({"approval_desk": {"decisive": False}})
+        assert cfg["decisive"] is False
+        v = audit_item(_item(kind="macro", source={},
+                             text="Breadth is wide today: 231 of 231 names "
+                                  "above the 200 day line."),
+                       now=_NOW, desk_cfg=cfg)
+        assert v.action == "hold", v
+        assert v.check == "number_sanity"
 
     def test_an_expired_slot_quarantines_naming_expired(self):
         """A post whose ladder slot is six days old describes a dead tape."""

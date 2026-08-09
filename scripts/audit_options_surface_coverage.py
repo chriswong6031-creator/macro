@@ -24,6 +24,9 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # ---------------------------------------------------------------------------
 # Candidate roster (masterplan §3 P2 Layer 2 / research/RATES_INFLATION…)
 # ---------------------------------------------------------------------------
@@ -61,7 +64,6 @@ def _resolve_store(override: str | None = None) -> Path:
         if p.is_dir():
             return p
     try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
         from lib import config  # noqa: PLC0415
         p = config.data_dir() / "thetadata_eod"
         if p.is_dir() and any((p / t).is_dir() for t in ("eod", "oi", "greeks")):
