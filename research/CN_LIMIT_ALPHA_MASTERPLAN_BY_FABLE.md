@@ -109,11 +109,40 @@ S2 onset portfolio on calibrated P (Wave 1 L3 builds the calibration) · S3 them
 concepts (Wave 2) · S4 regime gate over everything (Wave 1 L2 builds the dials) · S5 cross-market
 rerate oracle (Wave 2+, measure before believing).
 
-## §5 Blinded brainstorm (ore-law §1.4)
+## §5 Blinded brainstorm (ore-law §1.4) — RETURNED 2026-08-08, merged
 
-Spawned this session (Fable, orchestrator gate, blinded to §4 and to all `research/` docs; given
-charter + inventory + v0 summary only). Construction list lands here at adjudication, attributed
-and unioned — convergence is evidence, divergence is ore.
+Full verbatim list: `research/CN_LIMIT_ALPHA_BLINDED_BRAINSTORM_2026-08-08.md` (7 mechanisms ·
+10 second/third-order structures · 18 constructions C1-C18 · 9 collectors P1-P9 · 6 strategy
+shapes · 7 space-level falsifiers F1-F7). Union verdict vs the §4 commissioning map:
+
+**Convergences (independent derivation = evidence):** the day+1 open auction as THE tradable
+moment (its C2 "fillability frontier" ≡ §4(d)/S1 — both name the gap the price of admission and
+demand open-anchored, censored accounting); regime dial instrument list (C7 ≡ S4/L2, near
+field-for-field); leader-death contagion (C8 ≡ L2's cascade test); weekend fermentation (C14);
+seal-quality-from-daily-shape (C1 species ≡ §4(d) shadows); theme relay with degrading follower
+quality (C6 ≡ §4(b), sharpened to a two-sided prediction — onset UP and continuation DOWN for
+laggards, making it a mechanism test not just a signal).
+
+**Divergences (= ore the commissioning map lacked):** M2 promoter-campaign lifecycle with
+mechanism-dependent VOLUME SIGN FLIPS (M1 news-truncation starts volumeless, M2 campaigns start
+heavy; M4 lockup makes mid-run volume contraction bullish — pooled volume stats are therefore
+mechanism-blind); C12 near-miss attention discontinuity (the zt-pool visibility cliff as a
+natural experiment); C15 cross-band theme telemetry (ChiNext ±20% names as shadow-price oracles
+for main-board ±10% siblings — a WITHIN-CN, testable-today form of §4's S5); C10 龙回头 dip book
+(guaranteed fills, inverted adverse selection — a third book beside rider+onset); C11 一字
+queue-depth proxy (falling locked-volume = lengthening queue); §2.5 打开空间 height psychology
+(one name's new cycle-max re-rates the whole market's risk budget); §2.7 regulatory metagame
+(特停/inquiry/减持 as run-killers; LHB-absence as signal); the quant-T+0 era covariate; the
+F1-F7 falsifier frame (F1 "the auction prices everything" is the sharpest kill condition over
+W1-L1; F3 "the ladder is a data artifact" binds W2's zt_pool backfill).
+
+**Data discoveries (verified by this session before commit):** `limit_events.parquet` already
+carries failed_up_seal ×13,871 with `close_off_limit_pct` (炸板 cohort computable TODAY, strict
+basis, pending L0 heal); `limit_tape.parquet` is a daily aggregate regime series 2011→ (L2's
+independent build = its cross-check); `china_holder_counts` carries `total_a_shares` at
+disclosure cadence (v0's f2 turnover NULL is PARTIALLY repairable — W2 audit P4); raw bars carry
+NO `amount` column (VWAP proxies impossible until the P2 collector lands); volume units
+(shares vs 手) unverified — prerequisite check before any volume-normalized construction ships.
 
 ## §6 WAVE 1 (2026-08-08 session) — lanes and gates
 
