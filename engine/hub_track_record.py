@@ -36,6 +36,7 @@ import pandas as pd
 from engine.ai_desk import _level_asof              # price helpers — do NOT reinvent
 from engine.ai_desk_scorer import _close_at, _covers
 from engine import validation as V
+from engine import ticker_shape                  # dependency-free; keeps this module light
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -119,6 +120,14 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
                 row["regime"] = regime
             new.append(row)
             existing.add(f"{today_str}|{t}")
+        # Boundary tripwire. This ledger is APPEND-ONLY, so one bad emitter night is permanent —
+        # but the guard COUNTS and never drops: silently swallowing a non-symbol key here would
+        # hide the upstream regression (news/altdata own exclusion) behind a clean-looking file.
+        _odd = [r["t"] for r in new if not ticker_shape.plausible_symbol(r["t"])]
+        if _odd:
+            print(f"::warning title=hub-nonsymbol-tickers::{len(_odd)} non-symbol ticker key(s) "
+                  f"entered today's hub snapshot: {', '.join(_odd[:5])} — emitter regression "
+                  "upstream (news/altdata gates); this guard counts, never drops", flush=True)
         if not new:
             return 0
         p = _path(root)
