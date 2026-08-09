@@ -126,10 +126,9 @@ def test_the_sweep_never_queues_behind_the_workload_it_arbitrates():
 def test_the_sweep_needs_nothing_a_self_hosted_runner_lacks():
     """The runner move above is valid ONLY because this job needs `python3` and a
     network, nothing else: a sparse checkout, one `pip install pyyaml`, one `python3`
-    invocation. `actions/setup-python` is what would make a hosted image load-bearing
-    (it is why integration-baseline.yml was deliberately left on `ubuntu-latest`), so a
-    step that adds it must fail HERE rather than silently 'no runner matching labels'
-    every sweep."""
+    invocation. The integration-baseline job has its own explicit main-ref routing and
+    setup-python contract; adding setup-python to this lightweight sweep must fail HERE
+    rather than silently changing its runner requirements."""
     steps = _workflow()["jobs"]["sweep"]["steps"]
     used = [str(step.get("uses") or "") for step in steps]
     assert not [entry for entry in used if entry.startswith("actions/setup-python")], (
@@ -264,7 +263,9 @@ def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
     triggers = _triggers(parsed)
     assert "push" in triggers and triggers["push"]["branches"] == ["main"]
     job = parsed["jobs"]["baseline"]
-    assert job["runs-on"] == "ubuntu-latest"
+    runs_on = " ".join(str(job["runs-on"]).split())
+    assert "render-linux" in runs_on
+    assert "ubuntu-latest" in runs_on
     assert int(job["timeout-minutes"]) == 12
     source = BASELINE_WORKFLOW.read_text(encoding="utf-8")
     assert "tests/test_merge_on_green.py" in source
@@ -845,10 +846,13 @@ def test_integration_baseline_fail_closes_non_green_runs(
 
 def _baseline_runs(monkeypatch, runs, main_sha):
     """Serve `runs` newest-first from the workflow-runs endpoint."""
+    calls = []
 
     def fake_request(method, url, token, payload=None):
+        calls.append((method, url, payload))
         if "/actions/workflows/" in url:
-            return 200, {"workflow_runs": runs}
+            asked = int(url.rsplit("per_page=", 1)[1].split("&")[0])
+            return 200, {"workflow_runs": runs[:asked]}
         if "/git/ref/heads/main" in url:
             return 200, {"object": {"sha": main_sha}}
         if "/compare/" in url:
@@ -856,6 +860,7 @@ def _baseline_runs(monkeypatch, runs, main_sha):
         raise AssertionError(url)
 
     monkeypatch.setattr(MOG, "_request", fake_request)
+    return calls
 
 
 def _baseline_stamp(hours_old: float) -> str:
@@ -893,6 +898,45 @@ def test_a_superseded_cancelled_run_does_not_latch_the_breaker(monkeypatch):
     state, detail = MOG.integration_baseline_state("acme/widgets", "read")
     assert state == "green"
     assert green[:12] in detail
+
+
+def test_baseline_walk_reaches_a_fresh_green_below_twenty_five_noise_runs(
+    monkeypatch,
+):
+    """The 20-run window made queue churn indistinguishable from no proof.
+
+    The fixture honours ``per_page`` so this fails if either the named lookback or
+    the request regresses below the observed 25 cancelled/in-flight prefix. The
+    listing remains one bounded request; ancestry and freshness are still decided
+    from the first non-cancelled run that actually concluded.
+    """
+    green = "7" * 40
+    noise = [
+        _baseline_run(
+            "cancelled" if index % 2 == 0 else None,
+            f"{index % 16:x}" * 40,
+            status="completed" if index % 2 == 0 else "queued",
+        )
+        for index in range(25)
+    ]
+    calls = _baseline_runs(
+        monkeypatch,
+        [*noise, _baseline_run("success", green, hours_old=0.25)],
+        main_sha=green,
+    )
+
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+
+    assert state == "green"
+    assert green[:12] in detail
+    listings = [
+        url
+        for method, url, _payload in calls
+        if method == "GET" and "/actions/workflows/" in url and "/runs?" in url
+    ]
+    assert len(listings) == 1, "the 100-run lookback must stay one bounded API request"
+    assert f"per_page={MOG.INTEGRATION_BASELINE_RUN_LOOKBACK}" in listings[0]
+    assert MOG.INTEGRATION_BASELINE_RUN_LOOKBACK == 100
 
 
 def test_falling_through_cancelled_runs_still_stops_at_a_real_red(monkeypatch):
@@ -3316,6 +3360,70 @@ def test_the_baseline_proof_is_allowed_to_finish():
         "cancelled runs and zero successes in 3h while merge-on-green reported "
         "'11 baseline-blocked' against a green main. If a newer proof must win, supersede "
         "the PENDING one (which the group already does); do not kill the one on a runner."
+    )
+
+
+def test_the_baseline_main_push_escapes_the_hosted_queue_only_on_main():
+    """Route every main proof to render-linux without moving off-main runs.
+
+    The exact expression is a mutation pin: changing the ref guard, labels, or hosted
+    fallback fails before the truth-table below can disguise the altered workflow.
+    """
+    job = _yaml.safe_load(_BASELINE_WF.read_text(encoding="utf-8"))["jobs"]["baseline"]
+    runs_on = " ".join(str(job["runs-on"]).split())
+    assert runs_on == (
+        "${{ github.ref == 'refs/heads/main' && "
+        "fromJSON('[\"self-hosted\",\"render-linux\"]') || 'ubuntu-latest' }}"
+    )
+
+    def routed_runner(event_name: str, ref: str):
+        del event_name
+        if ref == "refs/heads/main":
+            return ["self-hosted", "render-linux"]
+        return "ubuntu-latest"
+
+    expected = {
+        ("push", "refs/heads/main"): ["self-hosted", "render-linux"],
+        ("workflow_dispatch", "refs/heads/main"): ["self-hosted", "render-linux"],
+        ("workflow_dispatch", "refs/heads/operator-check"): "ubuntu-latest",
+        ("push", "refs/heads/not-main"): "ubuntu-latest",
+    }
+    assert {
+        context: routed_runner(*context)
+        for context in expected
+    } == expected
+    assert "macstudio" not in runs_on
+    assert int(job["timeout-minutes"]) == 12
+
+
+def test_the_self_hosted_baseline_clears_sparse_checkout_before_checkout():
+    """A reused render-linux workspace must be made complete before checkout@v4."""
+    job = _yaml.safe_load(_BASELINE_WF.read_text(encoding="utf-8"))["jobs"]["baseline"]
+    steps = job["steps"]
+    checkout_index = next(
+        index
+        for index, step in enumerate(steps)
+        if str(step.get("uses") or "").startswith("actions/checkout@")
+    )
+    cleanup = [
+        (index, step)
+        for index, step in enumerate(steps)
+        if "sparse-checkout disable" in str(step.get("run") or "")
+    ]
+    assert len(cleanup) == 1, "expected exactly one sparse-checkout cleanup guard"
+    cleanup_index, cleanup_step = cleanup[0]
+    assert cleanup_index < checkout_index, "cleanup must run before actions/checkout"
+    assert cleanup_step["if"] == "runner.environment == 'self-hosted'"
+    assert cleanup_step["shell"] == "bash"
+    cleanup_script = str(cleanup_step["run"])
+    assert 'if [ -d "${{ github.workspace }}/.git" ]; then' in cleanup_script
+    assert (
+        'git -C "${{ github.workspace }}" sparse-checkout disable || true'
+        in cleanup_script
+    )
+    assert (
+        'git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true'
+        in cleanup_script
     )
 
 
