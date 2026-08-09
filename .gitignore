@@ -637,3 +637,8 @@ data/institutional_13f/*
 # `git status` and tripped the ship-loop guard on work belonging to another session.
 .claude/worktrees/
 .codex-worktrees/
+
+# Private paid-vendor A-share spine. The collector defaults outside the repo;
+# this containment wall prevents an explicitly configured legacy store from
+# being swept into broad data/ staging or public Git history.
+/data/china_tushare_spine/
