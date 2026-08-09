@@ -174,6 +174,16 @@ def test_auth_latch_clears_on_the_next_success(vendor):
     assert tc.last_auth_error() is None
 
 
+def test_successful_empty_response_can_be_distinguished_when_requested(vendor):
+    """Event collectors need to checkpoint a real zero-row day without treating errors as empty."""
+    vendor["body"] = {"code": 0, "data": {"fields": ["ts_code", "trade_date"], "items": []}}
+    assert tc.query("suspend_d", trade_date="20260807") is None  # legacy contract
+    empty = tc.query("suspend_d", trade_date="20260807", _return_empty=True,
+                     fields="ts_code,trade_date")
+    assert empty is not None and empty.empty
+    assert list(empty.columns) == ["ts_code", "trade_date"]
+
+
 def test_rate_limit_and_entitlement_are_not_auth_errors(vendor):
     """DELIBERATELY NARROW: 40203 (throttle / above-tier) must not read as a dead credential —
     report_rc is throttled by design every single night."""

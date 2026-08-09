@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/cn_tushare_a_share_spine_manifest.v1.schema.json",
+  "title": "CN TuShare full-A-share spine completeness manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "authority",
+    "source",
+    "collection_state",
+    "requested_range",
+    "complete",
+    "reference",
+    "endpoints",
+    "canonical_event_substrate",
+    "daily_security_coverage",
+    "contracts",
+    "data_gaps",
+    "ore_ledger",
+    "manifest_identity_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "cn_tushare_a_share_spine_manifest.v1"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority": {
+      "const": "context_only"
+    },
+    "source": {
+      "const": "tushare_pro"
+    },
+    "collection_state": {"$ref": "#/$defs/jsonFileReceiptOrNull"},
+    "requested_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": {"type": "string", "format": "date"},
+        "end": {"type": "string", "format": "date"}
+      }
+    },
+    "complete": {"type": "boolean"},
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ready",
+        "security_master",
+        "identity_aliases",
+        "market_sessions",
+        "security_count",
+        "identity_alias_count",
+        "requested_market_sessions",
+        "exchange_counts",
+        "board_counts",
+        "missing_effective_from_count",
+        "source_units",
+        "source_artifacts",
+        "name_history_partitions",
+        "name_history_row_count",
+        "name_history_semantic_sha256"
+      ],
+      "properties": {
+        "ready": {"type": "boolean"},
+        "security_master": {"$ref": "#/$defs/fileReceiptOrNull"},
+        "identity_aliases": {"$ref": "#/$defs/fileReceiptOrNull"},
+        "market_sessions": {"$ref": "#/$defs/fileReceiptOrNull"},
+        "security_count": {"type": "integer", "minimum": 0},
+        "identity_alias_count": {"type": "integer", "minimum": 0},
+        "requested_market_sessions": {"type": "integer", "minimum": 0},
+        "exchange_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "board_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "missing_effective_from_count": {"type": "integer", "minimum": 0}
+        ,
+        "source_units": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/sourceUnitSummary"},
+          "required": ["stock_basic", "bse_mapping", "trade_cal", "namechange"]
+        },
+        "source_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/fileReceipt"}
+        },
+        "name_history_partitions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/fileReceipt"}
+        },
+        "name_history_row_count": {"type": "integer", "minimum": 0},
+        "name_history_semantic_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "endpoints": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/endpointReceipt"}
+    },
+    "canonical_event_substrate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ready",
+        "row_count",
+        "positive_volume_rows",
+        "source_limit_rows",
+        "no_published_limit_rows",
+        "daily_source",
+        "limit_source",
+        "integer_price_unit",
+        "calculated_limit_role",
+        "partitions"
+      ],
+      "properties": {
+        "ready": {"type": "boolean"},
+        "row_count": {"type": "integer", "minimum": 0},
+        "positive_volume_rows": {"type": "integer", "minimum": 0},
+        "source_limit_rows": {"type": "integer", "minimum": 0},
+        "no_published_limit_rows": {"type": "integer", "minimum": 0},
+        "daily_source": {"const": "tushare.daily_unadjusted_nominal"},
+        "limit_source": {"const": "tushare.stk_limit_exact_daily"},
+        "integer_price_unit": {"const": "CNY_cents"},
+        "calculated_limit_role": {"const": "validator_only_never_event_authority"},
+        "partitions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/fileReceipt"}
+        }
+      }
+    },
+    "daily_security_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completed_session_rows",
+        "sessions_with_known_suspensions",
+        "eligible_security_observations",
+        "daily_security_observations",
+        "positive_volume_observations",
+        "unexplained_missing_observations",
+        "unexpected_daily_observations",
+        "complete",
+        "worst_session_sample"
+      ],
+      "properties": {
+        "completed_session_rows": {"type": "integer", "minimum": 0},
+        "sessions_with_known_suspensions": {"type": "integer", "minimum": 0},
+        "eligible_security_observations": {"type": "integer", "minimum": 0},
+        "daily_security_observations": {"type": "integer", "minimum": 0},
+        "positive_volume_observations": {"type": "integer", "minimum": 0},
+        "unexplained_missing_observations": {"type": "integer", "minimum": 0},
+        "unexpected_daily_observations": {"type": "integer", "minimum": 0},
+        "complete": {"type": "boolean"},
+        "worst_session_sample": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {"type": "object"}
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "exact_session",
+        "positive_volume",
+        "st",
+        "price_basis",
+        "price_limit"
+      ],
+      "properties": {
+        "identity": {"type": "object"},
+        "exact_session": {"type": "object"},
+        "positive_volume": {"type": "object"},
+        "st": {"type": "object"},
+        "price_basis": {"type": "object"},
+        "price_limit": {"type": "object"}
+      }
+    },
+    "data_gaps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "ore_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["constructed", "not_tested"],
+      "properties": {
+        "constructed": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "not_tested": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "manifest_identity_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "fileReceiptOrNull": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/fileReceipt"}
+      ]
+    },
+    "jsonFileReceiptOrNull": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/jsonFileReceipt"}
+      ]
+    },
+    "jsonFileReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "sourceUnitSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_units",
+        "complete_units",
+        "empty_units",
+        "failed_units",
+        "pending_units",
+        "complete",
+        "failed_or_pending_sample",
+        "unmatched_master_row_count"
+      ],
+      "properties": {
+        "expected_units": {"type": "integer", "minimum": 0},
+        "complete_units": {"type": "integer", "minimum": 0},
+        "empty_units": {"type": "integer", "minimum": 0},
+        "failed_units": {"type": "integer", "minimum": 0},
+        "pending_units": {"type": "integer", "minimum": 0},
+        "complete": {"type": "boolean"},
+        "failed_or_pending_sample": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"type": "string"}
+        },
+        "unmatched_master_row_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "fileReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "semantic_sha256",
+        "bytes",
+        "rows",
+        "duplicate_key_rows"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "rows": {"type": "integer", "minimum": 0},
+        "duplicate_key_rows": {"type": "integer", "minimum": 0}
+      }
+    },
+    "partitionReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "semantic_sha256",
+        "bytes",
+        "rows",
+        "duplicate_key_rows",
+        "min_date",
+        "max_date"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "rows": {"type": "integer", "minimum": 0},
+        "duplicate_key_rows": {"type": "integer", "minimum": 0},
+        "min_date": {"type": ["string", "null"], "format": "date"},
+        "max_date": {"type": ["string", "null"], "format": "date"}
+      }
+    },
+    "dailyKeyCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "daily_keys",
+        "covered_daily_keys",
+        "missing_daily_keys",
+        "extra_non_daily_keys",
+        "coverage_pct",
+        "missing_sample",
+        "complete"
+      ],
+      "properties": {
+        "daily_keys": {"type": "integer", "minimum": 0},
+        "covered_daily_keys": {"type": "integer", "minimum": 0},
+        "missing_daily_keys": {"type": "integer", "minimum": 0},
+        "extra_non_daily_keys": {"type": "integer", "minimum": 0},
+        "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "missing_sample": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"type": "string"}
+        },
+        "complete": {"type": "boolean"}
+      }
+    },
+    "endpointReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "not_applicable",
+        "expected_session_units",
+        "complete_units",
+        "empty_units",
+        "failed_units",
+        "pending_units",
+        "coverage_pct",
+        "complete",
+        "failed_or_pending_sample",
+        "daily_key_coverage",
+        "partitions",
+        "row_count",
+        "duplicate_key_rows",
+        "min_date",
+        "max_date",
+        "positive_volume_rows",
+        "semantic_sha256"
+      ],
+      "properties": {
+        "required": {"type": "boolean"},
+        "not_applicable": {"type": "boolean"},
+        "expected_session_units": {"type": "integer", "minimum": 0},
+        "complete_units": {"type": "integer", "minimum": 0},
+        "empty_units": {"type": "integer", "minimum": 0},
+        "failed_units": {"type": "integer", "minimum": 0},
+        "pending_units": {"type": "integer", "minimum": 0},
+        "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "complete": {"type": "boolean"},
+        "failed_or_pending_sample": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"type": "string", "pattern": "^\\d{8}$"}
+        },
+        "daily_key_coverage": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/dailyKeyCoverage"}
+          ]
+        },
+        "partitions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/partitionReceipt"}
+        },
+        "row_count": {"type": "integer", "minimum": 0},
+        "duplicate_key_rows": {"type": "integer", "minimum": 0},
+        "min_date": {"type": ["string", "null"], "format": "date"},
+        "max_date": {"type": ["string", "null"], "format": "date"},
+        "positive_volume_rows": {"type": ["integer", "null"], "minimum": 0},
+        "semantic_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

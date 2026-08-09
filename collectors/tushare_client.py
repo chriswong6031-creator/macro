@@ -111,12 +111,15 @@ def _throttle(api_name: str) -> None:
     _last_call[api_name] = time.monotonic()
 
 
-def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "pd.DataFrame | None":
+def query(api_name: str, fields: str = "", *, _retries: int = 2,
+          _return_empty: bool = False, **params) -> "pd.DataFrame | None":
     """Call one Tushare endpoint → DataFrame (ts_code normalised to .SS), or None.
 
     Returns None — never raises — when: no token (gate closed), the endpoint errors, access is
-    denied / credits are short, or the response is empty. A code-40203 rate-limit message is
-    retried once after a pause; other non-zero codes degrade to None.
+    denied / credits are short, or the response is empty. Callers that must distinguish a
+    successful zero-row response from an unavailable endpoint can opt into an empty DataFrame
+    with ``_return_empty=True``; the legacy default remains unchanged. A code-40203 rate-limit
+    message is retried once after a pause; other non-zero codes degrade to None.
 
     The return contract is unchanged, but an auth-class rejection (see ``_AUTH_CODES``) is now
     also LATCHED into module state readable via ``last_auth_error()`` — every caller that only
@@ -160,11 +163,13 @@ def query(api_name: str, fields: str = "", *, _retries: int = 2, **params) -> "p
             cols = data.get("fields") or []
             items = data.get("items") or []
             if not cols:
+                if _return_empty and fields:
+                    return pd.DataFrame(columns=[part for part in fields.split(",") if part])
                 return None
             df = pd.DataFrame(items, columns=cols)
             if "ts_code" in df.columns:
                 df["ts_code"] = df["ts_code"].map(norm_ticker)
-            return df if len(df) else None
+            return df if len(df) or _return_empty else None
         msg = str(d.get("msg") or "")
         # 频率超限 (rate-limited): pause and retry once; everything else is a hard miss. Regular
         # endpoints (500/min) clear in ~1s; only report_rc (in _THROTTLE) needs its long backoff.
