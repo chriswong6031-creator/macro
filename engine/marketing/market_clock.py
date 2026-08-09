@@ -1447,6 +1447,66 @@ def fact_cooldown_days(key: str, windows: dict | None = None) -> int:
         return 5
 
 
+#: How many DISTINCT items may LEAD on one fact key on one day, by key family.
+#: The companion to the window above: :func:`fact_cooldown_days` says how LONG a
+#: key stays claimed, this says how many claimants that one key admits at once.
+#:
+#: WHY THIS STOPPED BEING A BOOLEAN (W3, operator order 2026-08-08). The anchor
+#: gate shipped with a single owner per key, which is the right answer for the
+#: defect it was built for — the "4 of 11 sectors green" family, six dressings of
+#: one stale breadth read — and the wrong answer for a tickerless macro event,
+#: which the operator has ruled MAY be written up by several desks when each is
+#: genuinely a different format. Under one owner the second desk is refused
+#: before any gate can judge whether it is a different read or a reskin.
+#:
+#:   macro   4 — a CPI/NFP/FOMC print is a public number with several honest
+#:               reads. Headroom, not a target: the lane that actually produces
+#:               siblings is bounded from above by wire_routing.fanout.
+#:               max_accounts (3).
+#:   pct     2 — a ticker-anchored percentage; two desks may hold one name in a
+#:               day, which is also selection.max_accounts_per_ticker_day.
+#:   default 1 — UNCHANGED, deliberately: `ratio:` (the breadth family this gate
+#:               was built for) and every directional signal keep one owner.
+#:
+#: RAISING THIS WIDENS NO SIMILARITY GATE. The cross-account Jaccard, the
+#: same-account Jaccard, the 3-gram plan gate and frame_similarity all still run
+#: on every sibling. This only stops the FACT-level gate from deleting a second
+#: read before those gates get to judge it.
+FACT_FANOUT_MAX_ACCOUNTS_DEFAULT: dict[str, int] = {
+    "macro": 4, "pct": 2, "default": 1,
+}
+
+
+def fact_fanout_max_accounts(key: str, table: dict | None = None) -> int:
+    """How many items may LEAD on `key` at once. Config-driven, typo-safe.
+
+    Same shape and the same fail direction as :func:`fact_cooldown_days`: the
+    family is the key prefix, a missing family falls to ``default``, and a
+    malformed entry is skipped rather than raised — this figure decides whether
+    a post ships, and a YAML typo must not become an unbounded budget.
+
+    FLOORED AT 1, which :func:`fact_cooldown_days` has no equivalent of and
+    needs none. A budget is a bound on SIBLINGS, so the first claimant is the
+    owner and always survives; ``macro: 0`` in config is a typo that would
+    otherwise mute an entire key family, refusing the only post about a fact
+    rather than its second dressing. 1 is also exactly the pre-W3 behaviour, so
+    the floor fails toward the narrowest answer rather than the widest. Negative
+    is NOT read as "unbounded" here (``fact_ride_along_max`` does read it that
+    way); there is no unbounded form of this budget on purpose.
+    """
+    merged = dict(FACT_FANOUT_MAX_ACCOUNTS_DEFAULT)
+    for k, v in (table or {}).items():
+        try:
+            merged[str(k)] = int(v)
+        except (TypeError, ValueError):
+            continue
+    family = str(key or "").split(":", 1)[0] or "default"
+    try:
+        return max(1, int(merged.get(family, merged.get("default", 1))))
+    except (TypeError, ValueError):  # pragma: no cover - coerced above
+        return 1
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Breadth value gate
 # ─────────────────────────────────────────────────────────────────────────────

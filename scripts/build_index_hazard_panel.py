@@ -61,8 +61,7 @@ import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.cycle_ontology import TURN_DETECTOR_DEFAULTS, turn_epoch
 from scripts.build_hazard_panel import (

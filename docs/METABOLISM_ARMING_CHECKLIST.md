@@ -70,7 +70,7 @@ freezes the nightly. The ruleset below gets the same PR gate while letting the
 `github-actions` app (and ONLY that app) bypass for direct pushes:
 
 ```bash
-REPO="chriswong6031-creator/macro"
+REPO="mastermindx-market-intelligence/macro"
 
 gh api --method POST "repos/$REPO/rulesets" --input - <<'JSON'
 {

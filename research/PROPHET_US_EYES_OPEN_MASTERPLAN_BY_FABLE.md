@@ -76,3 +76,327 @@ Collision notes: #4729 (BOTTOM WATCH shelf) + #4735 (icon sweep) own `templates/
 ## §5 SESSION-CHAIN PROTOCOL
 
 One wave per session; this doc is the durable state. Each session: read §0 gates → check ACTIVE_BUILD_MAP + open PRs for the act-board surface → build → update the wave table with PR numbers and measured outcomes → handoff. Do not grind an orchestrator past ~250k context; checkpoint here instead.
+
+## §6 ANTICIPATION PROGRAM (operator command 2026-08-07; ruling recorded 2026-08-08)
+
+### §6.0 OPERATOR RULING (supersedes default promotion sequencing for this program)
+
+New detection/selection SHIPS LIVE DIRECTLY; the OLD selection continues accruing a **legacy
+shadow ledger** so the two can be compared later. Operator rationale, recorded: the product is
+not yet live to other users; the operator reviews live picks daily and feeds corrections —
+iteration speed IS the review mechanism. The gauntlet still governs any later *claim* of
+superiority (era-stamped track record, side-by-side, printed nulls) — it no longer sequences
+the shipping. Falsifier language stays off user surfaces; "validated" wording stays banned.
+
+### §6.1 Evidence base (all committed in `research/prophet_us_audit/`)
+
+- `ENTRY_LATENESS_FORENSIC_2026-08-07.md` — median pre-signal run-up +6.34% (p75 +11.72%);
+  entry placed +2.72% above signal close; publication lag median 5d (max 57d); provisional
+  repaint erased fired events on 4/5 dissected names; frozen-vintage service receipts; ASTS
+  seen pre-run at rank 7, classified `extended`, never a plan.
+- `CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md` — same engine, same veto, divergent SELECTION:
+  US hard-gates `act_level >= 2` (patience statuses map to 0) and keeps the chase-first entry
+  map; CN featured patience-first on measured evidence (2026-08-04) and the US re-measurement
+  was never run. CN-only: weekly ripening shelf, theme_timing 15pts, reversal_member 10pts.
+- `GATE_COUNTERFACTUAL_2026-08-07.md` — 713 names × 180 sessions, equality gate PASS.
+  Veto variants admit the exhibit cohort ~2 weeks earlier (GDX 11-25 @ 6.6% run-up vs live
+  12-17 @ 8.4%; NEM 12-04/11-28 vs 12-17; MRNA 04-16 @ 12.1% vs 06-16 @ 21.4%; RKLB first
+  admission @ 25.1% run-up vs 52.3%). Pooled cost: precision 14.3→13.3–13.4%, loser
+  32.6→33.7–33.9%; per-name-first precision IMPROVES 7.4→8.8–10.0%. Gate pressure: 60.4% of
+  tier-reachable name-days vetoed.
+
+**2026-08-09 evidence revalidation:** §6.1 is a historical evidence ledger, not a current
+system census. The plan corpus has expanded since the lateness receipt. A current-main replay
+still reproduces the gate algebra with zero equality mismatches, but the unpinned Yahoo universe
+expanded from 713 to 732 graded names and changed the aggregate/named-exhibit output. Preserve
+the recorded measurements as display-tier history; they cannot promote a gate/rank/Prophet
+change without a source-manifest-pinned rerun and the separate authority gauntlet.
+
+### §6.2 WAVE A — the selection inversion (ships now; two parallel builder PRs, disjoint files)
+
+**A1 `patience-admission` (`engine/prophet_bridge.py`, `scripts/build_prophet.py`):**
+admission becomes status-class — `entry_signal ∈ {bounce_wait, wait_pullback, hold, buy_now,
+partial}`, `band != low`, dir up; the `act_level >= 2` hard gate is REMOVED. Every plan stamps
+`admission_class: patience|confirmation` and `selection_era: anticipation-v1-2026-08-08`.
+Publication-lag guard: an entry basis older than 3 sessions vs the run's asof re-derives from
+the current close or skips with a printed reason (kills the 57d-lag class). Legacy shadow
+ledger: the OLD gate's would-be selections written nightly (nightly-lane-gated, idempotent,
+schema in §6.5). Cap 12→16 with sector cap 4. `index.json intake.basis` text updated.
+
+**A2 `patience-rank` (`engine/us_board_rank.py`):** entry-value map re-ordered patience-first
+(CN ordering as v1 constants — bounce_wait 1.0 … buy_soon 0.35; the §6.6 US re-measurement
+revises them); FEATURED_STATUSES widened to the CN set; `ext_z_unknown` blackout fixed (the
+featured lane must never silently read 0/N — printed null + fallback); stale provenance
+string at `us_board_rank.py:896` corrected; `selection_era` stamped in the ranking definition.
+
+### §6.3 WAVE B (next sessions, in order)
+
+B1 ripening shelf US port (HK template `hk_board_rank.py:1063-1233`) — the pre-cross bench.
+B2 wire `us_basket_turn` (W1-D, currently dark) + `subsector_confluence.funnel()` double_buy
+as intake chips and a US theme-timing rank channel (display first, then paid points).
+B3 deep-base veto conditioning (waive legs only in the replay's `deep_base_state`) — the
+tier-path earliness for the RKLB class; changes the shared gate, so it ships with its own
+regression fence and the CN/HK blast radius checked. B4 young-name shelf (30–158 bars,
+LIMITED-labeled; 7-stock cohort today incl. SPCX at 38 bars). B5 US PIT latch (fired
+eligibility can never be un-fired) — coordinate with unmerged sibling `a8d6fe034ad` on
+`claude/missing-300363-china-prophet-8702fa` before building. B6 signal-date family (§4.6).
+
+### §6.4 Standing constraints honored
+
+`DNR:KILL-PROPHET-POP-MERGE` (cohort linkage presentation-tier only); `DNR:KILL-FRESH-TICKS-WINDOW`
+(no general fresh_ticks widening — the FRESH4 replay variant was measurement-only and is weak
+anyway); nightly is the sole ledger advancer; GitHub annotations start-of-line; bilingual
+surfaces; era-stamp law on any published-number shift (#4942 pattern).
+
+### §6.5 Comparison contract (so "check later" is real)
+
+Legacy shadow ledger: one row per night per legacy-admitted candidate
+`{date, ticker, entry_signal, act_level, score, rank, would_have_planned}` under
+`data/prophet/legacy_shadow/` (day parts, per W7 storage law). Grading reuses
+`engine.grading.forward_metrics` — never a forked ruler. After 10 accrued sessions the
+miss-audit artifact publishes new-live vs legacy side-by-side (cohort → horizon → class, no
+pooled top-line), era-stamped.
+
+### §6.6 The US re-measurement (evidence loop for the map constants)
+
+Nightly job over the W7 stamped store: entry-status → forward outcome table (the CN §2.3
+methodology on US episodes), published in the scorecard. The v1 CN-ordered constants in A2
+are provisional by construction; this table is what revises them — visibly, in days.
+
+**FIRST RUN (2026-08-08, PR #4988; source deviation disclosed: the W7 grade store has NEVER
+advanced — grades/ empty since merge, `priority_score_scorecard` nightly-null; measured off
+`data/us_board_ledger/retro_grades.parquet` instead, the closer CN-§2.3 parity match):**
+the CN ordering did NOT reproduce. 2,816 statused episodes, 23 dates 06-15→07-30, loser :=
+excess_spy ≤ 0: bounce_wait H=5 loser 54.9% (n=153) / H=10 65.4% (n=52) vs buy_now H=5
+39.0% (n=95); watch lane independently repeats bounce_wait 55.3% (n=76). AND the binding
+null: bounce_wait carries ZERO marks at H≥21 in every lane — the patience thesis's own
+chartered horizon (basing→H=63) has no US data. Caveats logged: fading-tape window ending
+07-30 (pre-ignition), short-ruler-only, flat-counts-as-loss.
+
+**RULING (Fable, 2026-08-08): the A2 entry map goes STATUS-NEUTRAL** — one flat value
+(0.75) across the five admissible statuses; refused-class values unchanged. Neither
+chase-first nor patience-first is defensible as a ranking claim today, in either direction.
+Admission breadth (A1), entry zones (Wave B), and the washout/cohort discriminators carry
+the earliness; the map claims nothing the data does not. **Pre-registered revision rule:**
+an ordering may be re-introduced only at its chartered horizon, n ≥ 50 per cell, sign-stable
+across two half-splits, measured on era-stamped `anticipation-v1` episodes. Amendment
+dispatched to #4976 before merge; a NEUTRALITY pin test replaces the ordering pin.
+
+### §6.7 Wave A execution record (2026-08-08, single session)
+
+| Lane | PR | State at record | Outcome |
+|---|---|---|---|
+| Evidence + §6 | #4972 | armed | 3 receipts + this section; first proof run green pre-heal, re-proving post-#4984 |
+| A1 patience admission | #4977 | armed | act-gate removed; dir is a TONE — `{up, caution}` (literal "up" admits zero bounce_wait; **`down`/BOTTOM WATCH refused for plans by ruling** — routes to ripening/watch, 1 row affected); legacy shadow ledger; 3-session lag guard; cap 12→16 sector-cap 4; live proof 16 plans / 7 patience (BHP RIO UUUU ALB AEIS WBD FN) |
+| A2 patience rank | #4976 | armed, neutrality amendment pushed | ladder built CN-ordered in-PR, **NEUTRALIZED pre-merge by §6.6's first run — the CN ordering never reached main**; ENTRY_NEUTRAL_VALUE ruled 1.0 (range continuity + fixed-threshold safety); featured widened; ext_z blackout fixed (0→8 featured on the 08-06 board); found the NEXT lock: stage-bucket sort + `stage_not_live` featured veto (under the flat map the live prize is 2 rows, not 10 — A3 stands structurally, restated at that strength; gated on this PR's merge) |
+| ext_z data plane | #4979 | armed | coverage-floor anchor (6/3034-member sparse row blanked ext_z board-wide); LIVE_LOOKBACK=63 vs anchor lookback 10, mutation-verified; HK featured relights with ext_unknown disclosed (HK has NO ext input — Wave B decision) |
+| Fleet heal | #4984 | **CLOSED — superseded by sibling #4983** (identical floor mechanics, merged 09:27Z while this one queued; closed per the superseded-heal law rather than forcing a content conflict) | seasonality ledger count pin == 28 vs nightly-accrued 43 — scheduled failure red-blocking every post-append merge-ref fleet-wide; the grade-row-assertion next-scheduled-failure flag handed to the seasonality lane in the closing comment |
+| Signal dates | #4987 | armed | `signal_date`/`confirmed_date`/`recorded_at` split, additive, mutation-fenced; **outage audit: forward ledger CLEAN (0/27), no run-date stamping** — but marker `date` is the bucket OPEN label (panel "Buy Aug 7" for NVDA was honest; the chart x-anchor misleads), 7/7 pre-outage ledger rows carry the OPEN label as signal_date, QCOM/MS rows carry non-bucket dates (board-as_of leak) → board-coherence follow-up gated on #4976 |
+| §6.6 instrument | #4988 | armed | table above; also surfaced: W7 grade store never advanced (own lane needed) |
+
+### §6.8 ENTRY LANES BATTERY + ORACLE V3 + EARNINGS IGNITION (operator session 2026-08-08, second wave of orders)
+
+**(a) Structure-stop redesign (Tencent receipt — "sold at the lowest point of the mini cycle").**
+The swing-low-break confirm fired at the terminal flush while the 3D MACD-RSI was rising — the
+break WAS the capitulation, not distribution. HK-O2 design: condition the CONFIRM on context —
+momentum divergence (3D MACD-RSI above signal and rising since ARM ⇒ disarm or demote to
+"flush watch"), washout-maturity, and volume-climax signature; a contradicted break emits
+"stop hit — flush signature, re-entry watch armed" (the RE-ENTRY machinery already exists)
+instead of a clean SELL. MEASURE FIRST: replay all sell_confirms — P(low within ±2 sessions |
+confirm) split by momentum-context; if the contradicted-confirm cohort marks lows, the
+conditioning ships.
+
+**(b) Grey dot → EARLY TURN lane (operator: "redo grey dot into something else").** Promote
+`early_dots` from a 2.2px toggle-hidden glyph to a first-class starter-grade marker tier:
+visible, labeled as a window not a certainty (voice law), qualified by lane context —
+HTF-washout maturity OR leader-pullback structure (uptrend intact + shallow reset; the ADAM
+2026-07-27→08-05 receipt: dot at the 8.4-8.5 reset, 3D confluence +15% later with the zone
+printed 9.61-9.82 AT THE TOP) — carrying a structure-anchored zone (retest band / anchored
+VWAP, never price-at-signal-time), the STARTER entry; the full BUY becomes the ADD.
+MEASURE FIRST: historical replay of every early_dot — P(low within ±2 sessions), fwd excess,
+false-positive rate, CONDITIONAL on washout-mature / leader-pullback / naked — four
+anecdotes (9988, ADAM, NVDA-adjacent, 0700 Jul-2) do not carry the promotion; the
+conditional table does. Zone law for the entry-zone builder: ADAM is acceptance case #2 —
+a Continuation/Ready leader-pullback's zone is the RESET BAND (8.40-8.70), chase-above at
+the pullback high, never the post-pop range.
+
+**(c) Washout-state release (Alibaba 90→128 missed).** `bear_block`'s sole release (completed
+2W cross) gains a second release: monthly/2W washout-mature + turning + cohort confirmation
+(the discriminator stack) ⇒ starter-grade emission below the 200dMA. Plus the shallow-cross
+re-fire repair (a name grinding −20% inside one bull cross can never re-fire — Tencent Jul-3).
+
+**(d) US entry-lanes battery (operator: "is the 3D edge crowded? how do institutions buy?").**
+Working hypothesis, honestly held: single-name lagging-confluence entries on liquid US names
+are heavily arbitraged; edge migrates to composition and context. Institutions run BOOKS of
+entry types, not one signal. We mirror with stacked lanes, each measured side-by-side in the
+shadow/scorecard framework: (1) WASHOUT-IGNITION (built — deep-base + cohort + turn); (2)
+**LEADER-PULLBACK — the NVDA/AVGO-class catcher** (they were never washed out: high-RS leaders,
+shallow controlled retrace, daily stoch reset <20-30 while the 3D uptrend stays intact, entry
+at rising structure — anchored VWAP / prior breakout / 20-50d MA — on the resumption print);
+(3) FLOW-CONFIRMATION chips from in-house planes (polygon GEX dealer positioning, darkpool_eod,
+si_handoff short structure) as confluence context, display-tier first; (4) EVENT lane = (e).
+Each lane display-tier → forward-graded → promoted per §6.6 mechanics. NO claim that one lane
+is THE answer; the battery is the answer.
+
+**(e) EARNINGS IGNITION (AMZN Jul-31, MSFT Jul-29 re-entry, DLB Jul-23 receipts).** The
+observable phenomenon: fresh buy-confluence within days before earnings = anticipatory
+positioning flow, whatever its source — we detect the FOOTPRINT, mechanism-agnostic (no
+insider-knowledge claims in any user copy). Measurement lane FIRST (launched 2026-08-08):
+all fresh confluences within 5 sessions pre-earnings over the marker history — reaction
+stats vs SPY, vs non-earnings confluences, vs earnings-without-confluence base rate; the
+ADVERSE TAIL is the load-bearing unknown (does a confluence ever precede a miss? this
+quarter's broad beats confound — measure across quarters). LLM role bounded by A7: transcript/
+history analysis may de-escalate or contextualize (display-tier chips), never originate or
+escalate a signal. Coordinate with the active 'Earnings Intelligence' session (Struct/Jodie
+group-reaction build) — cite, never duplicate; group/peer-reaction inputs come from their
+artifacts when they land.
+
+**FIRST RUN VERDICT (2026-08-08, PR #4993 — 12 years, 726 pre-report confluences /
+9,497 base-rate reports): the confluence-footprint construction does NOT reproduce.**
+Cohort A reaction +0.03% vs base-rate C +0.35%; adverse tail POPULATED at 49.3% (n=358;
+VRT −36.7%, AMD −16.2%, SBUX −15.9% incl. take-quality); half-split sign unstable; no
+lead-time gradient. The one stable read is RISK, not edge: pre-report entries carry a
+fatter loser tail at an indistinguishable mean (take 10.2% vs 3.0%) — and a calendar-gated
+risk/sizing channel is a forbidden construction (`DNR:KILL-CALENDAR-GATED-RISK`); report-
+proximity DISCLOSURE (existing earnings_soon chips) remains the compliant surface. Decisive
+nuance: **neither operator receipt lands in the cohort** — AMZN's marker was knowable
+2026-08-04, three sessions AFTER its 07-30 report (the chart's bucket-OPEN label drew it
+pre-report — the §6.7 signal-date defect manufacturing the visual pattern), MSFT led by 8
+sessions; the builder refused post-hoc window-widening (`DNR:KILL-OUTCOME-AUDITION`).
+DLB/SPCX absent from the signals universe. Coverage: EDGAR history ends 07-02; recent dates
+ride a stale forecast store — named in the receipt. THE KILL IS CONSTRUCTION-SCOPED: the
+tested construction (marker-confluence within [T-5,T-1]) is closed; the FLOW-footprint
+variant (pre-report volume/darkpool/GEX anomaly — the SPCX shape) is a different
+construction and remains open for a chained session, as does the Earnings Intelligence
+group-reaction angle.
+
+**(f) CN WINNER CHAIN + LIMIT-MOVE FOOTPRINT (operator 2026-08-08, third wave; re-audited
+2026-08-09).** (1) The 300363 case is retained only as an outcome-selected pipeline forensic:
+contradictory same-date stores, missing common run identity, mutable ledger provenance, and no
+execution receipt. Its exact price, return, legal-band, fillability, score, and rank claims are
+quarantined and have zero candidate, rank, gate, Prophet, Neural Web, or trading authority.
+(2) The limit-move construction space remains open, but exact event measurement must start from
+the canonical full-A substrate: authorized TuShare unadjusted `daily`, same-key vendor
+`stk_limit`, point-in-time security/session state, and a promoted manifest. False-discovery,
+fillability, and collector-proposal constraints still bind after that substrate exists.
+
+**§6.8(f)(2) LEGACY FIRST RUN — `STOP_SHIP_UNVALIDATED` (2026-08-09 re-audit).** The former
+positive verdict and every exact-board count, continuation/base rate, feature lift, tolerant
+agreement rate, legal-band classification, return, and strategy license are withdrawn. The
+Wave-0 input was Yahoo-adjusted `data/china_stocks`, so a reconstructed percentage/tolerance
+band cannot establish nominal CNY ticks or an exchange limit event. The current authoritative
+receipt is `research/cn_limit_alpha_sol/W2_BAND_PROGRESS_SUBSTRATE_RECEIPT_2026-08-08.md`:
+`BLOCKED_SUBSTRATE_NO_STRATEGY_MEASUREMENT`.
+
+Reopening requires one-to-one TuShare `daily`/`stk_limit` joins with exact integer-cent
+previous-close parity, OHLC containment inside the vendor interval, and legal event predicates
+`high_cents == up_limit_cents` (touch) and `close_cents == up_limit_cents` (seal). Missing
+limits, unknown rule/lifecycle state, mixed generations, adjusted prices, tolerant returns, or
+`>=` comparisons fail closed. No CN context chip, probability, score, rank input, Prophet fact,
+Neural Web fact, or live surface is licensed by the legacy run.
+
+**(g) v2-vs-v3 RULING (operator question 2026-08-08: "does 300363 mean v2 > v3?").** NO
+reversion and no species/weight change may follow from an outcome-selected case. The stored
+plumbing discrepancies can motivate a pre-registered full-board comparison only after the
+canonical substrate and immutable run/entry receipts pass. Selection quality, outcome returns,
+and exact legal-band events must remain separate evidence families; none may promote another.
+
+### §6.9 THE RESIDUAL-LATENESS ATTACK + AUTONOMOUS RUN ORDER (operator 2026-08-08, overnight full-auto grant)
+
+**The operator's check is correct:** even the A1 patience picks (BHP RIO UUUU ALB) were up
+hard over the prior 2 sessions at admission. Decomposed, US lateness = (1) the state machine
+labels `bounce_wait` only AFTER the first impulse; (2) nothing admits on the EARLIEST
+mechanical evidence (the dot signature); (3) the 3D confluence confirms 10-20% late; (4) EOD
+cadence floor = signal at close T, actionable T+1; (5) entry = asof close, no zones. CN's
+"robustness" is (1)+(5) solved plus species machinery — not clairvoyance. The legacy 300363
+adjusted-price account cannot establish exact entry timing or legal-band continuation and is
+not evidence for this claim. **The systematic answer is not
+predicting before evidence exists — it is entering on the EARLIEST evidence tier at starter
+size with structure zones, and letting confirmation ADD.** Three compressions ship it:
+EARLY-TURN starter tier (dot signature engine-side, context-conditioned), structure-anchored
+entry zones on every plan (a late signal stops implying a late PRICE — the plan waits at the
+band), leader-pullback lane (catches the reset BEFORE the run in the NVDA/AVGO class).
+
+**AUTONOMOUS RUN ORDER (standing, execute without asking; each step gated only by its file):**
+R1 merge cascade lands Wave A (branches refreshed 11:35Z; watcher live).
+R2 on #4976 merge → spawn A3+COHORT builder (`engine/us_board_rank.py`): stage-gate relax
+(featured stage veto after status check; sort respects score within admissible stages) +
+US `reversal_member` channel port (binary membership, 10/100-class weight, scarcity-honest,
+sourced from `us_basket_turn` + subsector reversal cohorts; era-stamped, ship-live per §6.0).
+R3 on #4977 merge → spawn ENTRY-MECHANICS builder (`engine/prophet_bridge.py` +
+`engine/us_early_turn.py` new): structure-anchored zones on every plan (buy_zone_low/high +
+chase_above; NVDA acceptance: 3D signal + daily stoch both >80 ⇒ wait_reset zone, never
+market-chase; ADAM acceptance: Continuation/Ready zone = the reset band) + EARLY-TURN
+starter-class admission (daily/2D stoch-cross-from-washed + histogram curling via
+bars_to_cross machinery, conditioned on washout-mature OR leader-pullback context, starter
+size, window-not-certainty copy).
+R4 now (no gate) → LEADER-PULLBACK organ + replay (`engine/us_leader_pullback.py` new +
+receipt): RS-leader universe, controlled retrace, daily stoch reset, resumption print;
+2-year replay with precision/loser/entry-vs-low stats + NVDA/AVGO/ADAM receipts.
+  **R4 VERDICT (PR #5007, 933 fires/504 sessions): RESET_TURN standalone = NULL**
+  (+2.9pp pooled is a repeat-firer artifact; −0.6pp per-name-first vs the leader base) —
+  retained as a confluence input, not promoted. **THE ZONE REPRODUCES: median entry-vs-low
+  7.26% → 2.29% (−4.97pp of pure entry location, half-stable ±0.75pp)** — the §6.9
+  lateness target achieved by MECHANICS. All three case receipts MISS under v0 constants
+  (not tuned to capture them): NVDA — RS percentile measured AT the low is depressed by
+  the pullback itself (0.52 vs 0.75 gate; pre-pullback RS is the v1 candidate) + 200dMA
+  undercut at the low; AVGO — recovery-exit closes the episode the same bar the cross
+  lands (ordering, pinned as deliberate non-repair); ADAM — the two turn legs never
+  coincide on one bar (needs a within-N-bars window). Population scale: 50% of
+  never-turned episodes were lost to leg-TIMING mechanics, not failed turns — three v1
+  candidates pre-registered in the receipt §3.2. Close-basis + survivorship caveats
+  binding; read the LEADER-state control row.
+R5 on #4977 merge → small builder: why-not receipts LIVE on the Prophet surface (nightly,
+per-name blocking reason — ends the manual RKLB-class digs).
+R6 after tonight's nightly → verify anticipation-v1 board live (era stamps, patience picks,
+legacy shadow rows accruing, zones if R3 landed); check `data/us_prophet_rank/grades/`
+advanced (W7 store dark since merge) — if still empty, spawn its heal.
+R7 session-chain handoff: update §6.7/§6.9 execution records + memory with every PR/outcome.
+**RESUME STATE v2 — 2026-08-09 06:30Z (SUPERSEDED-BASE EVENT; the v1 block below is
+historical):** #5071 "lossless US origination and date-safe outage recovery" MERGED 03:37Z —
+a fleet lane REBUILT the US Prophet intake/date/durability path and removed the live cap.
+#4977 (A1) was CLOSED by its audit with the surviving debt named: **status-class/patience
+admission + selection-era stamps + zero-authority legacy shadow ledger** — port these onto
+the #5071 base as a FRESH PR (read #5071's diff first; do not resurrect the old branch).
+#4976 (A2) reds on packs 1/2/3 post-#5071 — re-audit it the same way before any refresh
+(its featured/ext_z/neutral-ladder content may partially survive; its stage-gate finding =
+R2 still stands). The other eight armed PRs (4972 4979 4987 4988 4993 4999 5000 5007 5026)
+need per-PR re-audit vs the new base — assume nothing merged; some may be partially
+superseded like A1. THEN the run order continues: R3 entry mechanics (zones + wait_reset +
+zone-with-expiry-to-starter + EARLY-TURN starter) built directly on the #5071 base in the
+same PR as the patience-admission port (one coherent intake change); R2 stage-gate+cohort
+on whatever us_board_rank looks like post-audit; R5, R6. The CN limit-alpha Fable session
+runs independently (Wave 1 PRs #5059/#5061) — do not collide with its lanes.
+
+**RESUME STATE 2026-08-08 13:05Z (session limit hit, resets 15:20Z):** R4 DONE (#5007 armed —
+RESET_TURN null standalone/confluence-input, ZONE proven 7.26%→2.29% entry-vs-low; NVDA/AVGO/
+ADAM missed under v0 with leg-timing causes + 3 pre-registered v1 candidates; NEW v1 candidate
+from operator chart review: zone-with-expiry-to-starter, class-conditioned washout-vs-V).
+R8 data plane PARTIAL: builder died at session limit with 55 tests passing in worktree
+`agent-acb91d77c23bc843c` (branch `worktree-agent-acb91d77c23bc843c`) — RESUME IT via its
+transcript, do not rebuild. Wave-A merges: none of ours landed by 13:00Z (nine siblings did);
+runs from the 11:35Z branch-refresh conclude ~13:10Z+ — on wake, check states, diagnose any
+NEW red honestly (nine merges moved main), then R2 (#4976→A3+cohort), R3 (#4977→entry
+mechanics incl. BABA/NVDA/ADAM acceptance + expiry-to-starter), R5, R6 nightly verify.
+Armed set: 4972 4976 4977 4979 4987 4988 4993 4999 5000 5007.
+
+R8 **TURN WATCH desk (operator reframe 2026-08-08: "if we get the signal early, I do the
+holistic review myself — but if we don't surface them, names reach my desk up 10-15% and I
+chase").** The operator IS the second-stage filter, so this surface optimizes RECALL + CONTEXT
+DENSITY, not precision: a nightly deck of every name whose EARLIEST-evidence trigger fired —
+union of (a) the dot signature on 1D (stoch cross up from washed + histogram rising), (b) 2D
+fresh cross while the 3D has NOT yet crossed (pre-confluence, btc printed), (c) basket/cohort
+turn membership (us_basket_turn TURNING members), (d) leader-pullback RESET_TURN — each row
+carrying the operator's own checklist PRE-COMPUTED: HTF washout state (monthly/2W pinned +
+duration), S1/S2, off-high %, base depth/age, 20d RS vs SPY, theme/basket heat + turn state,
+200d distance, and what the slow tier currently says (so "3D not crossed, ~2 bars to cross"
+is visible instead of hidden). Sorted by a display-only context score, capped, honest about
+noise ("windows, not certainties"). Data plane ships FIRST (engine + artifact + receipt with
+the day's actual deck); the page ships next session under the design lane (doctrine +
+frontend-design skill — never rushed). Acceptance: a mini-replay showing surfacing dates for
+RKLB / ASTS / miners / NVDA / ADAM vs their eventual admission dates and % off low at each.
+confluence implementation — parity forensic in flight; Tencent Jul-24 sell rule + Alibaba
+grey-dot identity pending). HK board receipts: 156-name universe, buy=2 (live=1 + ran=1),
+12 vetoed, 12 ripening, featured=0 (no ext input) — complete-fix lane gated on #4976 merge,
+acceptance gates: never 2 buys while ripening+vetoed hold 24 with undisclosed reasons; featured
+never silently 0; universe coverage audited.

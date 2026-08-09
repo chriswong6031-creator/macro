@@ -18,7 +18,9 @@ permissionDecision == "deny"; an ALLOW prints nothing.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -27,14 +29,72 @@ import pytest
 
 HOOK = Path(__file__).resolve().parents[1] / ".claude" / "hooks" / "gh_quota_guard.py"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# No test in this file may reach api.github.com
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Deny shape 4 (2026-08-09) PROBES: the guard shells out to `gh run list` before
+# it can judge a `gh workflow run ci.yml --ref main`. Left unstubbed that is a real
+# REST call from the test suite — against the very shared pool this hook protects —
+# and it would make the verdict depend on whether main happened to have a run in
+# flight while CI was running. So `gh` itself is replaced on PATH, at the process
+# boundary the hook actually uses. The default payload is "no runs at all", which is
+# the pre-2026-08-09 behaviour: every older test in this file keeps its old answer.
 
-def _run(cmd: str, tool: str = "Bash") -> dict | None:
-    proc = subprocess.run(
+_SHIM = """#!{python}
+import os, sys
+code = int(os.environ.get("GH_SHIM_EXIT", "0"))
+if code:
+    sys.stderr.write(os.environ.get("GH_SHIM_STDERR", "HTTP 403: rate limit exceeded"))
+    sys.exit(code)
+sys.stdout.write(os.environ.get("GH_SHIM_PAYLOAD", "[]"))
+"""
+
+
+@pytest.fixture(autouse=True)
+def _gh_shim(tmp_path_factory, monkeypatch):
+    shim_dir = tmp_path_factory.mktemp("ghshim")
+    gh = shim_dir / "gh"
+    gh.write_text(_SHIM.format(python=sys.executable), encoding="utf-8")
+    gh.chmod(0o755)
+    # Prepending to os.environ is what reaches the hook: the guard runs as a
+    # subprocess and inherits this PATH.
+    monkeypatch.setenv("PATH", f"{shim_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.delenv("GH_SHIM_EXIT", raising=False)
+    monkeypatch.setenv("GH_SHIM_PAYLOAD", "[]")
+
+
+def _stamp(minutes_ago: float) -> str:
+    """RELATIVE to the wall clock on purpose — a frozen literal would age past the
+    40-minute orphan bound and silently flip these tests at some future date."""
+    when = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=minutes_ago)
+    return when.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _runs(monkeypatch, *runs: dict) -> None:
+    monkeypatch.setenv("GH_SHIM_PAYLOAD", json.dumps(list(runs)))
+
+
+def _run_row(status: str, minutes_ago: float = 2, run_id: int = 31309720615) -> dict:
+    return {
+        "status": status,
+        "createdAt": _stamp(minutes_ago),
+        "databaseId": run_id,
+        "url": f"https://example.test/run/{run_id}",
+    }
+
+
+def _raw(cmd: str, tool: str = "Bash") -> subprocess.CompletedProcess:
+    return subprocess.run(
         [sys.executable, str(HOOK)],
         input=json.dumps({"tool_name": tool, "tool_input": {"command": cmd}}).encode(),
         capture_output=True,
-        timeout=10,
+        timeout=30,
     )
+
+
+def _run(cmd: str, tool: str = "Bash") -> dict | None:
+    proc = _raw(cmd, tool)
     assert proc.returncode == 0, "the guard must never brick the harness"
     out = proc.stdout.decode("utf-8", errors="replace").strip()
     if not out:
@@ -229,3 +289,141 @@ def test_a_shell_loop_whose_body_has_no_gh_is_ignored_even_beside_gh():
     cmd = ("for f in a b c; do echo $f; sleep 1; done; "
            "gh api rate_limit --jq '.resources.core.remaining'")
     assert not _denied(cmd)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shape 4: dispatching a main proof over one already in flight (2026-08-09)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE LIVELOCK THIS ENCODES. ci.yml has no `push` trigger, so main is proven only
+# by a workflow_dispatch, and every main-ref dispatch shares `ci-refs/heads/main`.
+# With the flat `cancel-in-progress: true` that group had until this change, each
+# pinned session re-firing the documented recovery lever KILLED the proof already
+# running: run 31309720615 was cancelled 44 minutes in by dispatch 31311537537,
+# itself cancelled 4 minutes later by 31311693575. No proof concluded, the
+# sweeper's base-inherited-red refresh stayed closed, and 12 merge-blocked + 56
+# cap-deferred pull requests could not drain (sweep run 31311549150).
+#
+# The workflows are fenced now, so a race is waste rather than destruction — but
+# the reflex is what opened the wound, and waste on a 4-job 30-34 minute run is
+# worth one REST call to prevent.
+
+@pytest.mark.parametrize("workflow", ["ci.yml", "fences.yml", "integration-baseline.yml"])
+def test_dispatching_a_proof_over_a_live_one_is_denied(monkeypatch, workflow):
+    _runs(monkeypatch, _run_row("in_progress"))
+    assert _denied(f"gh workflow run {workflow} --ref main")
+
+
+@pytest.mark.parametrize("status", ["queued", "in_progress", "waiting", "requested"])
+def test_every_non_completed_status_counts_as_in_flight(monkeypatch, status):
+    """`status != completed` is the test, not a list of the two statuses someone
+    remembered — `waiting` and `requested` are exactly what an earlier revision of
+    merge_on_green's anti-stampede query missed."""
+    _runs(monkeypatch, _run_row(status, minutes_ago=3))
+    assert _denied("gh workflow run ci.yml --ref main")
+
+
+def test_a_dispatch_with_no_live_run_is_the_documented_recovery_lever(monkeypatch):
+    """The guard must not stand between a stale main and its fix."""
+    _runs(monkeypatch,
+          _run_row("completed", minutes_ago=30),
+          _run_row("completed", minutes_ago=90, run_id=31148430602))
+    assert not _denied("gh workflow run ci.yml --ref main")
+    assert not _denied("gh workflow run ci.yml")          # no --ref: gh defaults to main
+
+
+def test_no_runs_at_all_is_allowed(monkeypatch):
+    _runs(monkeypatch)
+    assert not _denied("gh workflow run ci.yml --ref main")
+
+
+def test_an_orphaned_queued_run_may_be_dispatched_over(monkeypatch):
+    """A queued run that never starts would otherwise block the lever forever."""
+    _runs(monkeypatch, _run_row("queued", minutes_ago=95))
+    assert not _denied("gh workflow run ci.yml --ref main")
+
+
+def test_a_freshly_queued_run_is_not_an_orphan(monkeypatch):
+    """Control for the mercy kill: the escape valve must not swallow the rule."""
+    _runs(monkeypatch, _run_row("queued", minutes_ago=5))
+    assert _denied("gh workflow run ci.yml --ref main")
+
+
+def test_a_long_running_run_is_not_an_orphan(monkeypatch):
+    """Only `queued` ages out. A run holding a runner for 95 minutes is the
+    evidence being waited on — killing it is the livelock itself."""
+    _runs(monkeypatch, _run_row("in_progress", minutes_ago=95))
+    assert _denied("gh workflow run ci.yml --ref main")
+
+
+def test_the_newest_in_flight_run_decides(monkeypatch):
+    """An old completed run beside a live one must not read as 'free'."""
+    _runs(monkeypatch,
+          _run_row("in_progress", minutes_ago=4, run_id=31311537537),
+          _run_row("completed", minutes_ago=200))
+    d = _run("gh workflow run ci.yml --ref main")
+    assert d and d.get("permissionDecision") == "deny"
+    assert "31311537537" in d["permissionDecisionReason"], "must name the live run"
+
+
+def test_an_off_main_dispatch_is_not_the_livelock(monkeypatch):
+    """The group is per-ref; a branch dispatch cannot touch main's proof."""
+    _runs(monkeypatch, _run_row("in_progress"))
+    assert not _denied("gh workflow run ci.yml --ref claude/some-branch")
+    assert not _denied("gh workflow run ci.yml --ref refs/heads/feature")
+
+
+def test_a_workflow_that_is_not_a_main_proof_is_never_probed(monkeypatch):
+    """render/daily dispatches are ordinary work and must stay free."""
+    _runs(monkeypatch, _run_row("in_progress"))
+    assert not _denied("gh workflow run render.yml --ref main")
+    assert not _denied("gh workflow run daily.yml --ref main")
+
+
+def test_flags_before_the_workflow_name_still_resolve(monkeypatch):
+    """`--ref main ci.yml` must not read `main` as the workflow."""
+    _runs(monkeypatch, _run_row("in_progress"))
+    assert _denied("gh workflow run --ref main ci.yml")
+    assert _denied("gh workflow run -R owner/repo ci.yml --ref main")
+    assert _denied("gh workflow run .github/workflows/ci.yml --ref main")
+
+
+def test_the_probe_failing_fails_open_and_says_so(monkeypatch):
+    """ANTI-WASTE, NOT A SAFETY GATE. A fail-closed deny here would wedge the very
+    recovery lever the guard protects — the exact shape of the livelock, one layer
+    up. Rate limiting is the likeliest failure, and it is likeliest precisely when
+    main is in trouble."""
+    monkeypatch.setenv("GH_SHIM_EXIT", "1")
+    proc = _raw("gh workflow run ci.yml --ref main")
+    assert proc.returncode == 0
+    assert proc.stdout.decode().strip() == "", "fail-open must ALLOW (stdout stays empty)"
+    err = proc.stderr.decode()
+    assert "fail-open" in err.lower(), f"the warning must be loud, got: {err!r}"
+    assert "ci.yml" in err
+
+
+def test_unparseable_probe_output_fails_open(monkeypatch):
+    monkeypatch.setenv("GH_SHIM_PAYLOAD", "not json at all")
+    assert not _denied("gh workflow run ci.yml --ref main")
+
+
+def test_the_denial_teaches_the_livelock_and_gives_the_watch_command(monkeypatch):
+    """A guard that only says no teaches nothing — the next session repeats it."""
+    _runs(monkeypatch, _run_row("in_progress", run_id=31309720615))
+    d = _run("gh workflow run ci.yml --ref main")
+    reason = (d or {}).get("permissionDecisionReason", "")
+    assert "cancel" in reason.lower(), "must quote the livelock: a re-dispatch cancels"
+    assert "31309720615" in reason, "must name the run to wait on"
+    assert "gh run watch 31309720615 --interval 60" in reason, "must give the watch cmd"
+    assert "30-34" in reason, "must set the expectation for how long to wait"
+
+
+def test_the_watch_command_the_denial_recommends_is_itself_allowed(monkeypatch):
+    """The remedy must survive the guard's own shape-1 rule, or the deny is a dead end."""
+    assert not _denied("gh run watch 31309720615 --interval 60")
+
+
+def test_prose_about_the_dispatch_is_not_a_dispatch(monkeypatch):
+    _runs(monkeypatch, _run_row("in_progress"))
+    assert not _denied("echo 'never run gh workflow run ci.yml --ref main while one is live'")
+    assert not _denied('git commit -m "guard gh workflow run ci.yml re-dispatches"')

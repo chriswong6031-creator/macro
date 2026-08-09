@@ -693,6 +693,39 @@ def test_guard_ticker_ratio_allows_minor_drop():
         "Guard must allow overwrite when ticker drop is not material"
 
 
+# --------------------------------------------------------------------------- #
+# _assemble_by_ticker — the by_ticker KEY universe is gated, headlines are not
+# --------------------------------------------------------------------------- #
+def _tagged(*ticker_lists):
+    return [{"title": f"h{i}", "tickers": list(tl), "_id": f"id{i}"}
+            for i, tl in enumerate(ticker_lists)]
+
+
+def test_assemble_by_ticker_gates_the_key_universe():
+    """Provider metadata passthrough (Polygon tickers[], Quiver ticker) is unvalidated —
+    non-symbol strings must be excluded from the KEY universe, and counted."""
+    tagged = _tagged(["AAPL", "N/A", "ASX:PEX", "CONSECUTIVE"], ["AAPL", "N/A"])
+    by_ticker, excluded = fn._assemble_by_ticker(tagged)
+    assert set(by_ticker) == {"AAPL"}
+    assert len(by_ticker["AAPL"]) == 2
+    assert excluded == {"N/A": 2, "ASX:PEX": 1, "CONSECUTIVE": 1}
+    # The headline's own tickers list is display metadata and stays untouched.
+    assert tagged[0]["tickers"] == ["AAPL", "N/A", "ASX:PEX", "CONSECUTIVE"]
+
+
+def test_assemble_by_ticker_annotates_only_when_excluding(capsys):
+    fn._assemble_by_ticker(_tagged(["AAPL", "BRK.B"]))
+    assert "::" not in capsys.readouterr().out
+
+    fn._assemble_by_ticker(_tagged(["AAPL", "IT:ETH"]))
+    lines = [l for l in capsys.readouterr().out.splitlines() if "::" in l]
+    assert len(lines) == 1
+    # A logger would prefix the level and GitHub would silently drop the command.
+    assert lines[0].startswith("::")
+    assert lines[0].startswith("::notice title=news-ticker-hygiene")
+    assert "IT:ETH" in lines[0]
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_call in fns:

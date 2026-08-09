@@ -186,16 +186,27 @@ def _gather_releases(root: Path) -> dict:
         if not isinstance(data, dict):
             return _absent("release_forecast/latest.json not found or malformed")
 
-        # Read n_graded from scoreboard
+        # Scoreboard rows use ``n``.  Accept the historical ``n_graded`` alias
+        # so old fixtures/artifacts remain readable, but never silently report
+        # a zero track record because producer and reader used different names.
         n_graded = 0
+        n_graded_by_release: dict[str, int] = {}
         sb_path = root / "data" / "release_forecast" / "scoreboard.json"
         sb = _read_json(sb_path)
         if isinstance(sb, dict):
             by_rel = sb.get("by_release") or {}
-            n_graded = sum(
-                v.get("n_graded", 0) if isinstance(v, dict) else 0
-                for v in by_rel.values()
-            )
+            for release_type, value in by_rel.items():
+                if not isinstance(value, dict):
+                    continue
+                raw_count = value.get("n")
+                if raw_count is None:
+                    raw_count = value.get("n_graded", 0)
+                try:
+                    count = max(0, int(raw_count or 0))
+                except (TypeError, ValueError):
+                    count = 0
+                n_graded_by_release[str(release_type)] = count
+            n_graded = sum(n_graded_by_release.values())
 
         upcoming = data.get("upcoming") or []
         # Deduplicate: take one entry per release_date × release pair (first occurrence).
@@ -214,7 +225,13 @@ def _gather_releases(root: Path) -> dict:
             if _is_claims_killed(item):
                 entries.append(_release_entry_killed(item))
             else:
-                entries.append(_release_entry_normal(item, n_graded))
+                release_type = str(item.get("release_type") or "")
+                entries.append(
+                    _release_entry_normal(
+                        item,
+                        n_graded_by_release.get(release_type, 0),
+                    )
+                )
 
             if len(entries) >= 3:
                 break

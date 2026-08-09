@@ -151,14 +151,38 @@ def _candidate(
     return payload
 
 
-def _row(calendar: SessionCalendar, **kwargs) -> dict:
-    return grader.build_issuance_row(
-        _candidate(calendar, **kwargs),
+def _issue(payload: dict, calendar: SessionCalendar, **overrides) -> dict:
+    """``build_issuance_row``, passing ``calendar`` only if it takes one.
+
+    Signature-tolerant for the same reason ``_family_with`` and ``_gate`` are:
+    the red-before/green-after demonstrations have to RUN against the pre-fix
+    implementation, or their red is a ``TypeError`` about an API that moved
+    rather than an assertion about the defect they name.
+    """
+    kwargs = dict(
         family=GRV_FA1,
         prereg_document_sha256=_DIGEST,
         price_basis=_basis(),
         appended_at=_APPENDED_AT,
     )
+    kwargs.update(overrides)
+    if "calendar" in inspect.signature(grader.build_issuance_row).parameters:
+        kwargs.setdefault("calendar", calendar)
+    return grader.build_issuance_row(payload, **kwargs)
+
+
+def _row(calendar: SessionCalendar, **kwargs) -> dict:
+    return _issue(_candidate(calendar, **kwargs), calendar)
+
+
+def _placebo(row: dict, horizon: str, *, panel: PricePanel, calendar: SessionCalendar, **kwargs):
+    """``grade_placebo_row``, passing ``as_of`` only if it takes one."""
+    call = dict(panel=panel, calendar=calendar, family=kwargs.pop("family", GRV_FA1))
+    as_of = kwargs.pop("as_of", None)
+    if "as_of" in inspect.signature(grader.grade_placebo_row).parameters:
+        call["as_of"] = as_of if as_of is not None else _as_of(calendar)
+    call.update(kwargs)
+    return grader.grade_placebo_row(row, horizon, **call)
 
 
 def _log(rows) -> grader.IssuanceLog:
@@ -233,7 +257,7 @@ def test_preregistration_document_is_committed_and_binds_the_code():
     family, digest = grader.load_family_declaration(PREREG_PATH)
     assert family is GRV_FA1
     assert len(digest) == 64
-    assert family.version == "3.0.0"
+    assert family.version == "4.0.0"
 
 
 def test_preregistration_declares_kill_expiry_and_thresholds():
@@ -309,12 +333,9 @@ def test_deobligation_and_late_discovery_abstain(calendar):
 
 def test_abstentions_are_recorded_in_the_log_and_reported(calendar):
     admitted = _row(calendar)
-    refused = grader.build_issuance_row(
+    refused = _issue(
         _candidate(calendar, candidate_id="grc1-000000000000000000000002", candidate_family="award_ceiling_change"),
-        family=GRV_FA1,
-        prereg_document_sha256=_DIGEST,
-        price_basis=_basis(),
-        appended_at=_APPENDED_AT,
+        calendar,
     )
     assert refused["row_kind"] == "abstention"
     log = _log([admitted, refused])
@@ -593,9 +614,8 @@ def test_entry_is_strictly_after_known_at(calendar):
 
 def test_placebo_window_lies_entirely_before_issuance(calendar):
     row = _row(calendar)
-    placebo = grader.grade_placebo_row(
-        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
-        calendar=calendar, family=GRV_FA1,
+    placebo = _placebo(
+        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}), calendar=calendar,
     )
     assert placebo.state == "graded"
     assert placebo.exit_session < calendar.sessions[_ENTRY_INDEX]
@@ -1038,9 +1058,45 @@ def _reachable_family(**overrides) -> grader.PreregisteredFamily:
         min_distinct_entry_sessions=1,
         min_outcome_coverage=0.5,
         min_verdict_outcome_coverage=0.5,
+        # The registered N is a count of INDEPENDENT DRAWS and the verdict is
+        # gated on it. A fixture that reaches a verdict must therefore supply
+        # that many non-overlapping windows; these fixtures supply two, on two
+        # distinct tickers. Lowering the number here is the same act as lowering
+        # every other threshold in this fixture — the registration's own value is
+        # asserted, separately and unlowered, in
+        # ``test_the_registered_family_still_carries_its_real_thresholds``.
+        planning_n_required=2,
     )
     reachable.update(overrides)
     return _family_with(**reachable)
+
+
+def _reachable_cohort(calendar, *, event_move: float, placebo_move: float, tickers=("PLTR", "AVAV", "LHX")):
+    """A cohort of N distinct tickers moving identically.
+
+    Distinct tickers so the windows do not overlap (the independence floor
+    counts non-overlapping windows PER TICKER), and more than one row because a
+    single observation has no bootstrap interval — ``n < 2`` emits a null
+    interval, which routes to ``verdict_inputs_unavailable`` rather than to a
+    decided state. Both are properties of the fixed instrument, not of the
+    branch under test, so the fixture supplies enough evidence to exercise the
+    branch and nothing more.
+    """
+    rows, series = [], {}
+    for index, ticker in enumerate(tickers, start=1):
+        rows.append(
+            _row(
+                calendar,
+                ticker=ticker,
+                candidate_id=f"grc1-{index:026d}",
+                observation_id=f"gro1-{index:026d}",
+                event_id=f"evt-{index}",
+            )
+        )
+        series[ticker] = _placebo_aware_series(
+            calendar, event_move=event_move, placebo_move=placebo_move
+        )
+    return rows, _panel(calendar, series)
 
 
 def _placebo_aware_series(calendar, *, event_move: float, placebo_move: float) -> dict[date, float]:
@@ -1054,8 +1110,8 @@ def _placebo_aware_series(calendar, *, event_move: float, placebo_move: float) -
 
 def test_the_kill_condition_is_reachable(calendar):
     """A losing cohort must actually produce KILL, not a permanent 'accruing'."""
-    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=-0.10, placebo_move=0.0)})
-    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+    rows, panel = _reachable_cohort(calendar, event_move=-0.10, placebo_move=0.0)
+    report = _report(calendar, _log(rows), panel, family=_reachable_family())
 
     assert report["verdict_state"] == "kill"
     assert report["verdict"]["kill_condition_id"] == GRV_FA1.kill_condition_id
@@ -1066,8 +1122,8 @@ def test_the_kill_condition_is_reachable(calendar):
 
 
 def test_a_cohort_that_cannot_beat_its_own_placebo_is_a_null(calendar):
-    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=0.10, placebo_move=0.10)})
-    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+    rows, panel = _reachable_cohort(calendar, event_move=0.10, placebo_move=0.10)
+    report = _report(calendar, _log(rows), panel, family=_reachable_family())
 
     assert report["verdict_state"] == "tested_null"
     assert report["verdict"]["inputs"]["pooled_market_relative_mean"] > 0
@@ -1075,8 +1131,8 @@ def test_a_cohort_that_cannot_beat_its_own_placebo_is_a_null(calendar):
 
 
 def test_a_supported_verdict_buys_nothing(calendar):
-    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=0.10, placebo_move=0.0)})
-    report = _report(calendar, _log([_row(calendar)]), panel, family=_reachable_family())
+    rows, panel = _reachable_cohort(calendar, event_move=0.10, placebo_move=0.0)
+    report = _report(calendar, _log(rows), panel, family=_reachable_family())
 
     assert report["verdict_state"] == "supported"
     assert "not a promotion" in report["verdict"]["meaning"]
@@ -1280,6 +1336,7 @@ def _synthetic_primary_block(
     hit_rate_ci_lower,
     coverage_fraction,
     issued_n=1000,
+    independent_n=None,
 ):
     """A primary-horizon block carrying BOTH the pre-fix and post-fix key shapes.
 
@@ -1328,6 +1385,20 @@ def _synthetic_primary_block(
         "verdict_basis": {
             "n": graded_n,
             "coverage": {**coverage, "fraction": coverage_fraction},
+            "window_independence": {
+                "graded_n": graded_n,
+                "distinct_tickers": graded_n,
+                "distinct_entry_sessions": graded_n,
+                "overlapping_window_pairs": 0,
+                "max_window_overlap_sessions": 0,
+                "non_overlapping_window_estimate": (
+                    getattr(family, "planning_n_required", 0)
+                    if independent_n is None
+                    else independent_n
+                ),
+                "coverage": coverage,
+                "note": "synthetic",
+            },
             "market_relative_return_summary": summary(mean, mean_ci),
             "paired_placebo_delta_summary": summary(delta, delta_ci),
             "conditional_hit_rate": {
@@ -1530,12 +1601,10 @@ def test_calibration_asserts_a_direction_and_never_invents_a_probability(calenda
 def test_a_document_edit_mid_cohort_is_visible_in_the_report(calendar):
     """§9 forbids editing a live cohort's terms; the report must not hide it."""
     first = _row(calendar)
-    second = grader.build_issuance_row(
+    second = _issue(
         _candidate(calendar, candidate_id="grc1-000000000000000000000002", event_id="evt-2"),
-        family=GRV_FA1,
+        calendar,
         prereg_document_sha256="b" * 64,  # the document changed underneath
-        price_basis=_basis(),
-        appended_at=_APPENDED_AT,
     )
     report = _report(
         calendar,
@@ -1659,14 +1728,14 @@ def test_the_placebo_carries_the_same_refusals_as_the_grade(calendar):
     row = _row(calendar)
     other = SessionCalendar.from_dates(calendar.sessions, calendar_id="hk_equity_sessions")
     with pytest.raises(GraderError, match="calendar frozen at issuance"):
-        grader.grade_placebo_row(
+        _placebo(
             row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
-            calendar=other, family=GRV_FA1,
+            calendar=other, as_of=_as_of(calendar),
         )
     with pytest.raises(GraderError, match="basis pinned at issuance"):
-        grader.grade_placebo_row(
+        _placebo(
             row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}, adjustment="raw"),
-            calendar=calendar, family=GRV_FA1,
+            calendar=calendar,
         )
 
 
@@ -2149,7 +2218,858 @@ def test_the_registration_registers_the_disclosure_layer_before_observation():
     for reason in grader.DISCLOSURE_UNAVAILABLE_REASONS:
         assert f"`{reason}`" in text
     family, _digest = grader.load_family_declaration(PREREG_PATH)
-    assert family.version == "3.0.0"
+    assert family.version == "4.0.0"
     # Still pre-observation, which is what makes this amendment legal at all.
     live = ROOT / "data" / "government_revenue" / grader.ISSUANCE_LOG_FILENAME
     assert not live.exists() or live.stat().st_size == 0
+
+
+# ---------------------------------------------------------------------------
+# AMENDMENT-WINDOW WITNESS (version 4.0.0, 2026-08-08)
+#
+# DELETE THIS TEST IN THE PR THAT ISSUES THE FIRST ROW. It exists to make the
+# legality of the 4.0.0 amendment a CHECKED fact rather than a claim in a
+# document: §9 permits a change to a registered evaluation rule only before the
+# first observation exists, and "before the first observation" is a property of
+# the repository at a moment, which prose cannot assert and a test can.
+#
+# The moment it stops being true, this test goes red — which is the correct
+# alarm, because at that point no further amendment is legal without a new
+# family_id.
+# ---------------------------------------------------------------------------
+
+
+def test_amendment_window_the_issuance_record_is_still_empty_and_uncalled():
+    """No observation exists, so no threshold here was tuned against data.
+
+    Three independent witnesses, because any one of them alone is weak:
+
+    1. the committed candidate ledger is empty;
+    2. no issuance log exists anywhere under ``data/``; and
+    3. **nothing calls the grader** — no builder, script, or app module imports
+       it, so there is no path by which a number could have been produced,
+       looked at, and then legislated around.
+    """
+    ledger = ROOT / "data" / "government_revenue" / "candidate_ledger.jsonl"
+    assert not ledger.exists() or ledger.stat().st_size == 0, (
+        "the candidate ledger has content: the amendment window is CLOSED and §9 now "
+        "requires a new family_id rather than an amendment"
+    )
+
+    logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
+    assert logs == [], f"an issuance log exists: {logs}"
+
+    callers = []
+    for area in ("engine", "scripts", "app", "admin"):
+        root = ROOT / area
+        if not root.exists():
+            continue
+        for path in root.rglob("*.py"):
+            if path.name == "candidate_grader.py":
+                continue
+            if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
+                callers.append(str(path.relative_to(ROOT)))
+    assert callers == [], (
+        f"the grader has acquired callers {callers}: a produced number may exist, and an "
+        "evaluation rule amended after a number exists is a rule tuned on data"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4.0.0 — the adversarial-audit findings
+#
+# Each test below reproduces one probe from the 2026-08-08 audit and was RED
+# against the pre-amendment instrument. The fixture helpers above are
+# signature-tolerant on purpose so that red is a statement about behaviour and
+# not a TypeError about an API that moved.
+# ---------------------------------------------------------------------------
+
+
+def _h5_family(**overrides):
+    return _reachable_family(**overrides)
+
+
+def _nan_panel(calendar, position: int, value: float):
+    closes = _flat(calendar, 100.0)
+    closes[calendar.sessions[position]] = value
+    return _panel(calendar, {"PLTR": closes})
+
+
+def test_a_null_entry_bar_is_a_missing_bar_and_never_a_miss(calendar):
+    """F1. The ``endpoint-null-is-not-one-half`` trap, in its worst direction.
+
+    ``NaN <= 0`` is ``False``, so the panel accessor's price guard passed every
+    NaN straight through. On the ENTRY bar that produced ``exit/nan - 1 = nan``,
+    and ``nan > 0`` is ``False``, so the row graded ``hit=False``: a null endpoint
+    scored as a LOSS, which is worse than imputing 0.5 because it is invisible —
+    the row reads as a resolved, measured miss with full coverage.
+    """
+    row = _row(calendar)
+    grade = grader.grade_row(
+        row, "h5", panel=_nan_panel(calendar, _ENTRY_INDEX, float("nan")),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert grade.state == "ungraded", f"a null entry bar graded as {grade.hit!r}"
+    assert grade.ungraded_reason == "price_missing"
+    assert grade.hit is None and grade.absolute_return is None
+    assert grade.market_relative_return is None and grade.max_drawdown is None
+
+
+def test_a_null_bar_inside_the_window_does_not_vanish_through_min(calendar):
+    """F1. Mid-window a NaN was absorbed silently: ``min()`` never selects it."""
+    row = _row(calendar)
+    grade = grader.grade_row(
+        row, "h5", panel=_nan_panel(calendar, _ENTRY_INDEX + 2, float("nan")),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert grade.state == "ungraded"
+    assert grade.max_drawdown is None
+
+
+def test_an_infinite_close_is_refused(calendar):
+    """F1. The same hole, pointed the other way: ``inf`` graded as a HIT."""
+    row = _row(calendar)
+    grade = grader.grade_row(
+        row, "h5", panel=_nan_panel(calendar, _ENTRY_INDEX + 5, float("inf")),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert grade.state == "ungraded"
+    assert grade.hit is None
+
+
+def test_an_absent_bar_and_a_null_bar_are_the_same_refusal(calendar):
+    """F1, positive control: an ABSENT bar was always refused.
+
+    Without this the tests above could pass against an instrument that refuses
+    every panel; the discrimination is that a clean panel still grades.
+    """
+    row = _row(calendar)
+    absent = _flat(calendar, 100.0)
+    del absent[calendar.sessions[_ENTRY_INDEX + 2]]
+    refused = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": absent}), calendar=calendar,
+        as_of=_as_of(calendar),
+    )
+    clean = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert refused.state == "ungraded" and refused.ungraded_reason == "price_missing"
+    assert clean.state == "graded", "the refusal is selective, not universal"
+
+
+def test_the_canonical_bytes_of_a_report_are_strict_json(calendar):
+    """F1. A bare ``NaN`` literal is not JSON, and the log is bytes.
+
+    ``json.dumps`` emits ``NaN`` happily and ``json.loads`` accepts it back, so
+    the defect was invisible from inside Python: the record round-tripped here
+    and was rejected by every conforming parser elsewhere.
+    """
+    row = _row(calendar)
+    report = _report(
+        calendar, _log([row]), _nan_panel(calendar, _ENTRY_INDEX, float("nan")),
+        family=_h5_family(),
+    )
+    raw = grader.canonical_bytes(report)
+    # A BARE token, not the substring: the limitations prose names NaN in
+    # English, and a naive substring check would read that as the defect.
+    for bare in (b":NaN", b",NaN", b"[NaN", b":Infinity", b",Infinity", b"[Infinity", b":-Infinity"):
+        assert bare not in raw, f"the report carries a bare {bare!r} literal"
+
+    def _reject(constant):
+        raise ValueError(f"bare {constant}")
+
+    json.loads(raw.decode("utf-8"), parse_constant=_reject)
+
+    h5 = report["outcome_by_horizon"]["h5"]
+    assert h5["cohort"]["ungraded_reasons"] == {"price_missing": 1}
+    assert h5["hit_rate"]["value"] is None
+
+
+def test_the_serializer_refuses_to_emit_a_non_finite_number():
+    """F1, belt-and-braces at the address function itself."""
+    with pytest.raises(GraderError, match="non-finite"):
+        grader.canonical_bytes({"close": float("nan")})
+    with pytest.raises(GraderError, match="non-finite"):
+        grader.canonical_bytes({"close": float("inf")})
+    assert grader.canonical_bytes({"close": 1.5}) == b'{"close":1.5}'
+
+
+def test_a_calendar_that_begins_after_known_at_cannot_place_the_entry(calendar):
+    """F2. ``first_index_after`` returns 0 for a day the calendar never covered.
+
+    The grading calendar is built from whatever the price lane currently
+    carries. A trimmed panel plus a backfilled candidate with an old ``known_at``
+    made index 0 — the earliest bar the panel happens to hold — the ENTRY, so a
+    row was filled on a session that could be months after issuance, and it
+    graded cleanly with full coverage.
+    """
+    trimmed = SessionCalendar.from_dates(
+        [session for session in calendar.sessions if session >= date(2025, 1, 1)],
+        calendar_id=GRV_FA1.calendar_id,
+    )
+    old = _issue(_candidate(calendar, entry_index=10), trimmed)
+    assert grader._instant(old["known_at"]).date() < trimmed.sessions[0]
+
+    grade = grader.grade_row(
+        old, "h5", panel=_panel(trimmed, {"PLTR": _flat(trimmed, 100.0)}),
+        calendar=trimmed, as_of=_as_of(trimmed),
+    )
+    assert grade.state == "ungraded", (
+        f"entry was re-cut to {grade.entry_session}, "
+        f"{(grade.entry_session - grader._instant(old['known_at']).date()).days if grade.entry_session else '?'} "
+        "days after known_at"
+    )
+    assert grade.ungraded_reason == "entry_session_unavailable"
+
+
+def test_a_covering_calendar_still_places_the_entry_on_the_true_next_session(calendar):
+    """F2, positive control: the refusal is about coverage, not about old rows."""
+    old = _row(calendar, entry_index=10)
+    grade = grader.grade_row(
+        old, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    assert grade.state == "graded"
+    assert grade.entry_session == calendar.sessions[10]
+
+
+def test_an_exit_bar_that_has_not_closed_at_as_of_is_not_matured(calendar):
+    """F3. ``as_of`` is an INSTANT; the maturity gate compared DATES.
+
+    The nightly pipeline runs between 00:05 and 07:00 UTC, so a report whose
+    ``as_of`` falls on the exit session consumed that session's close roughly
+    twenty hours before the US market produced it. The bar is present in the
+    panel only because the price lane writes on a different clock.
+    """
+    row = _row(calendar)
+    exit_session = calendar.sessions[_ENTRY_INDEX + 5]
+    closes = _flat(calendar, 100.0)
+    closes[exit_session] = 130.0
+    panel = _panel(calendar, {"PLTR": closes})
+
+    nightly = datetime(exit_session.year, exit_session.month, exit_session.day, 0, 5, tzinfo=timezone.utc)
+    premature = grader.grade_row(row, "h5", panel=panel, calendar=calendar, as_of=nightly)
+    assert premature.state == "ungraded", (
+        f"consumed the {exit_session} close at {nightly.isoformat()}, before it existed"
+    )
+    assert premature.ungraded_reason == "horizon_not_matured"
+
+    # Positive control: one session later the same grade is available.
+    matured = grader.grade_row(
+        row, "h5", panel=panel, calendar=calendar,
+        as_of=nightly + timedelta(days=1),
+    )
+    assert matured.state == "graded" and matured.exit_session == exit_session
+    assert matured.absolute_return == pytest.approx(0.30)
+
+
+def test_the_placebo_obeys_as_of_exactly_as_the_real_side_does():
+    """F4. ``grade_placebo_row`` took no ``as_of`` and read bars after it.
+
+    "The window lies before issuance" bounds the placebo against the ROW's
+    clock, not the REPORT's. Replayed at a historical ``as_of``, the real side
+    refused a row issued later and the placebo side graded it — so the published
+    placebo block and ``unpaired_delta_market_relative_mean`` were computed from
+    the future. Only the PAIRED delta was safe, and only incidentally, through
+    its intersection with a real side that had already refused.
+    """
+    big = SessionCalendar.from_dates(_sessions(900), calendar_id=GRV_FA1.calendar_id)
+    row = _row(big, entry_index=560)
+    replay = datetime.combine(big.sessions[300], datetime.min.time(), tzinfo=timezone.utc)
+
+    closes = _flat(big, 100.0)
+    placebo_entry = 560 + GRV_FA1.placebo_offset_sessions
+    for offset in range(1, 6):
+        closes[big.sessions[placebo_entry + offset]] = 120.0  # bars AFTER as_of
+    panel = _panel(big, {"PLTR": closes})
+
+    real = grader.grade_row(row, "h5", panel=panel, calendar=big, as_of=replay)
+    placebo = _placebo(row, "h5", panel=panel, calendar=big, as_of=replay)
+    assert real.state == "ungraded"
+    assert placebo.state == "ungraded", (
+        f"placebo graded a window exiting {placebo.exit_session}, past as_of {replay.date()}, "
+        f"while the real side refused with {real.ungraded_reason!r}"
+    )
+
+    report = _report(big, _log([row]), panel, as_of=replay, family=_h5_family())
+    block = report["outcome_by_horizon"]["h5"]["placebo"]
+    assert block["market_relative_return_summary"]["mean"] is None
+    assert block["unpaired_delta_market_relative_mean"] is None
+    assert block["paired_n"] == 0
+
+
+def test_a_statistic_of_one_observation_has_no_interval():
+    """F5. A zero-width interval clears every test a point estimate clears.
+
+    §7 tests INTERVALS precisely so a point comparison cannot decide a verdict;
+    returning ``(v, v)`` at ``n == 1`` reintroduced the point comparison as its
+    own remedy, and one observation then cleared a threshold derived for N=545.
+    """
+    assert grader._bootstrap_mean_ci([0.42], family=GRV_FA1, label="probe") == (None, None)
+    assert grader._bootstrap_mean_ci([], family=GRV_FA1, label="probe") == (None, None)
+
+    coverage = Coverage(kind="outcome", scope="probe", observed=1, universe=1, status="complete")
+    single = grader._summary([0.42], coverage=coverage, family=GRV_FA1, label="probe.one")
+    assert single["mean"] == pytest.approx(0.42)
+    assert single["ci_lower"] is None and single["ci_upper"] is None
+
+    # Positive control: two observations DO get an interval.
+    pair = grader._summary(
+        [0.42, -0.10],
+        coverage=Coverage(kind="outcome", scope="probe", observed=2, universe=2, status="complete"),
+        family=GRV_FA1,
+        label="probe.two",
+    )
+    assert pair["ci_lower"] is not None and pair["ci_upper"] is not None
+
+
+def test_one_paired_observation_cannot_decide_a_verdict(calendar):
+    """F5. The paired placebo delta is HALF of both decision regions.
+
+    ``paired_coverage`` was computed, printed, and consulted by nothing, while
+    ``verdict_basis`` coverage — the check that exists — reads only the real
+    side. A cohort could satisfy every registered gate on the real side and rest
+    ``d_hi < δ*`` on a single paired observation.
+    """
+    rows, panel_rows = [], {}
+    for index, ticker in enumerate(("PLTR", "AVAV", "LHX"), start=1):
+        rows.append(
+            _row(
+                calendar, ticker=ticker,
+                candidate_id=f"grc1-{index:026d}", observation_id=f"gro1-{index:026d}",
+                event_id=f"evt-{index}",
+            )
+        )
+        series = _placebo_aware_series(calendar, event_move=-0.10, placebo_move=0.0)
+        if ticker != "PLTR":
+            # The event window resolves; the placebo window does not.
+            placebo_entry = _ENTRY_INDEX + GRV_FA1.placebo_offset_sessions
+            for offset in range(7):
+                series.pop(calendar.sessions[placebo_entry + offset], None)
+        panel_rows[ticker] = series
+
+    report = _report(calendar, _log(rows), _panel(calendar, panel_rows), family=_reachable_family())
+    h5 = report["outcome_by_horizon"]["h5"]
+    delta = h5["verdict_basis"]["paired_placebo_delta_summary"]
+
+    assert h5["verdict_basis"]["coverage"]["fraction"] == 1.0, "the real side is fully resolved"
+    assert delta["n"] == 1
+    assert delta["coverage"]["fraction"] == pytest.approx(1 / 3)
+    assert report["verdict_state"] == "accruing", (
+        f"a verdict fired on a paired delta of n={delta['n']} out of {h5['cohort']['issued_n']}"
+    )
+    assert (
+        report["verdict"]["verdict_blocked_reason"]
+        == "paired_placebo_coverage_below_registered_floor"
+    )
+    assert report["verdict"]["verdict_blocked_reason"] in grader.VERDICT_BLOCKED_REASONS
+
+
+def test_a_verdict_is_gated_on_independent_draws_not_on_row_count(calendar):
+    """F8. ``window_independence`` computed the honest N and nothing read it.
+
+    Four rows on ONE ticker sharing ONE entry session are four rows and ONE
+    draw: the same 63 sessions of tape, counted four times by every rate in the
+    report. The bootstrap interval narrows by roughly √(rows/draws) and clears a
+    threshold the same evidence fails at its honest N — which is the registered
+    N, because §7.2's power calculation is over independent draws.
+    """
+    overlapping = [
+        _row(
+            calendar, ticker="PLTR",
+            candidate_id=f"grc1-{index:026d}", observation_id=f"gro1-{index:026d}",
+            event_id=f"evt-{index}",
+        )
+        for index in range(1, 5)
+    ]
+    panel = _panel(calendar, {"PLTR": _placebo_aware_series(calendar, event_move=-0.10, placebo_move=0.0)})
+    report = _report(calendar, _log(overlapping), panel, family=_reachable_family())
+    h5 = report["outcome_by_horizon"]["h5"]
+
+    assert h5["verdict_basis"]["n"] == 4
+    assert _independence(h5)["non_overlapping_window_estimate"] == 1
+    assert report["verdict_state"] == "accruing", (
+        "a verdict fired at n=4 rows against a registered N of "
+        f"{_reachable_family().planning_n_required} independent draws"
+    )
+    assert report["verdict"]["verdict_blocked_reason"] == "independent_draws_below_registered_n"
+    assert report["verdict"]["inputs"]["non_overlapping_window_estimate"] == 1
+
+    # Positive control: the SAME evidence as independent draws does decide.
+    independent, panel_independent = _reachable_cohort(
+        calendar, event_move=-0.10, placebo_move=0.0
+    )
+    decided = _report(calendar, _log(independent), panel_independent, family=_reachable_family())
+    decided_h5 = decided["outcome_by_horizon"]["h5"]
+    assert _independence(decided_h5)["non_overlapping_window_estimate"] == 3
+    assert decided["verdict_state"] == "kill", "the gate keys on independence, not on refusing"
+
+
+def _independence(horizon_block: dict) -> dict:
+    """The draw-count block, from wherever this implementation keeps it.
+
+    Post-fix it hangs off ``verdict_basis`` (the set the verdict reads, which
+    the supersession ratchet can extend); pre-fix only the cohort-level block
+    existed. Tolerant so the red above is "a verdict fired" and not a ``KeyError``
+    about a key that moved.
+    """
+    return horizon_block["verdict_basis"].get("window_independence") or horizon_block[
+        "window_independence"
+    ]
+
+
+def _forge(prior: dict, **changes) -> dict:
+    """A superseding row built by hand — no constructor, no allowlist."""
+    forged = dict(prior)
+    forged["row_kind"] = "correction"
+    forged["supersedes_row_id"] = prior["row_id"]
+    forged["correction_reason"] = "source_record_corrected"
+    forged["appended_at"] = "2026-08-07T00:00:00+00:00"
+    forged.update(changes)
+    forged["row_id"] = grader.row_content_id(forged)
+    return forged
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["known_at", "ticker", "horizons", "entry_rule", "source_event", "effective_at"],
+)
+def test_the_log_enforces_the_correction_allowlist_itself(calendar, field, tmp_path):
+    """F6. The allowlist lived only in ``build_correction_row``.
+
+    ``build_correction_row`` refused a ``known_at`` rewrite; a hand-built row
+    carrying the identical rewrite passed ``validate_issuance_row``,
+    ``parse_issuance_log``, ``append_issuance_rows`` AND ``cohort_rows``, re-cut
+    the entry session onto a post-outcome bar, and changed the published number.
+    A guard in the convenience constructor guards only the callers who use the
+    convenience constructor; the log is the record of authority.
+    """
+    honest = _row(calendar)
+    replacement = {
+        "known_at": _known_at(calendar, _ENTRY_INDEX + 10),
+        "ticker": "SPY",
+        "horizons": [{"name": "h5", "sessions": 40, "role": "primary"}],
+        "entry_rule": {**honest["entry_rule"], "market_benchmark": "QQQ"},
+        "source_event": {**honest["source_event"], "event_id": "evt-swapped"},
+        "effective_at": "2024-01-01T00:00:00+00:00",
+    }[field]
+    forged = _forge(honest, **{field: replacement})
+
+    raw = grader.canonical_bytes(honest) + b"\n" + grader.canonical_bytes(forged) + b"\n"
+    with pytest.raises(GraderError, match=field):
+        grader.parse_issuance_log(raw)
+
+    with pytest.raises(GraderError, match=field):
+        grader.append_issuance_rows(tmp_path / grader.ISSUANCE_LOG_FILENAME, [honest, forged])
+
+    # ...and the denominator's own gate, for a log assembled in memory rather
+    # than parsed from bytes.
+    with pytest.raises(GraderError, match=field):
+        grader.cohort_rows(
+            grader.IssuanceLog(raw=raw, rows=(honest, forged)), family_id=GRV_FA1.family_id
+        )
+
+
+def test_a_genuine_correction_still_appends(calendar, tmp_path):
+    """F6, positive control: the allowlist admits what §8 registered."""
+    honest = _row(calendar)
+    correction = grader.build_correction_row(
+        honest,
+        reason="evidence_artifact_regenerated",
+        appended_at="2026-08-07T00:00:00+00:00",
+        changes={"observation_id": "gro1-000000000000000000000009"},
+    )
+    receipt = grader.append_issuance_rows(
+        tmp_path / grader.ISSUANCE_LOG_FILENAME, [honest, correction]
+    )
+    assert receipt["append_count"] == 2
+    effective = grader.cohort_rows(
+        grader.load_issuance_log(tmp_path / grader.ISSUANCE_LOG_FILENAME),
+        family_id=GRV_FA1.family_id,
+    )
+    assert [row["row_id"] for row in effective] == [correction["row_id"]]
+
+
+def test_a_calendar_revision_inside_a_frozen_window_is_refused(calendar):
+    """F7. A row froze ``calendar_id``, and a revision keeps the id.
+
+    A session added inside an already-frozen window re-cuts that window
+    bit-for-bit differently — the h5 exit lands on a different date, the return
+    changes — under a byte-identical price vintage, and ``grade_row``'s only
+    calendar check (``entry_rule['calendar_id'] != calendar.calendar_id``) passes
+    a revision of the SAME calendar. Freezing an id a revision preserves froze
+    nothing.
+    """
+    row = _row(calendar)
+    friday = next(
+        session for session in calendar.sessions[_ENTRY_INDEX + 1 : _ENTRY_INDEX + 5]
+        if session.weekday() == 4
+    )
+    inserted = friday + timedelta(days=1)  # a make-up session the exchange added later
+    revised = SessionCalendar.from_dates(
+        list(calendar.sessions) + [inserted], calendar_id=GRV_FA1.calendar_id
+    )
+    closes = _flat(calendar, 100.0)
+    for position, session in enumerate(calendar.sessions):
+        if position > _ENTRY_INDEX:
+            closes[session] = 100.0 + 5.0 * (position - _ENTRY_INDEX)
+    closes[inserted] = 100.0
+
+    before = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": closes}), calendar=calendar,
+        as_of=_as_of(calendar),
+    )
+    after = grader.grade_row(
+        row, "h5", panel=_panel(revised, {"PLTR": closes}), calendar=revised,
+        as_of=_as_of(revised),
+    )
+    assert before.state == "graded"
+    assert after.state == "ungraded", (
+        f"the frozen h5 window silently moved its exit to {after.exit_session} "
+        f"(was {before.exit_session}) and its return to {after.absolute_return!r} "
+        f"(was {before.absolute_return!r})"
+    )
+    assert after.ungraded_reason == "calendar_revised"
+
+    # ...and a REMOVED session is the same refusal.
+    shortened = SessionCalendar.from_dates(
+        [s for i, s in enumerate(calendar.sessions) if i != _ENTRY_INDEX + 2],
+        calendar_id=GRV_FA1.calendar_id,
+    )
+    removed = grader.grade_row(
+        row, "h5", panel=_panel(shortened, {"PLTR": closes}), calendar=shortened,
+        as_of=_as_of(shortened),
+    )
+    assert removed.state == "ungraded" and removed.ungraded_reason == "calendar_revised"
+
+
+def test_an_unrevised_calendar_reproduces_the_grade_bit_for_bit(calendar):
+    """F7, positive control: growth is not revision.
+
+    The calendar gains sessions every night; if that read as a revision the
+    check would refuse every row within a day and prove nothing.
+    """
+    row = _row(calendar)
+    panel = _panel(calendar, {"PLTR": _flat(calendar, 100.0)})
+    first = grader.grade_row(row, "h5", panel=panel, calendar=calendar, as_of=_as_of(calendar))
+
+    grown = SessionCalendar.from_dates(
+        list(calendar.sessions) + _sessions(10, start=date(2027, 1, 1)),
+        calendar_id=GRV_FA1.calendar_id,
+    )
+    again = grader.grade_row(
+        row, "h5", panel=_panel(grown, {"PLTR": _flat(grown, 100.0)}), calendar=grown,
+        as_of=_as_of(calendar),
+    )
+    assert first.state == "graded" and again.state == "graded"
+    assert again.read_window_sha256 == first.read_window_sha256
+    assert again.absolute_return == first.absolute_return
+
+
+def test_regrade_diff_names_the_calendar_axis_and_sees_a_deletion(calendar):
+    """F7 + F9. The drift detector's two blind spots.
+
+    Its only explanatory fields were prior/current ``price_basis``, so a value
+    that moved because the SESSION LIST changed read as an unexplained move
+    under an IDENTICAL vintage id. And it walked ``current`` only, so a grade
+    that simply DISAPPEARED between two runs — the shape an unpublished loss
+    takes — produced no drift row at all.
+    """
+    row = _row(calendar)
+    closes = _flat(calendar, 100.0)
+    graded = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": closes}), calendar=calendar,
+        as_of=_as_of(calendar),
+    )
+
+    vanished = grader.regrade_diff([graded.to_payload()], [])
+    assert len(vanished) == 1, "a grade that left the run is invisible to the drift detector"
+    assert vanished[0]["drift_kind"] == "grade_vanished"
+    assert vanished[0]["row_id"] == graded.row_id
+    assert vanished[0]["prior_market_relative_return"] == graded.market_relative_return
+
+    # A value that moved under an identical vintage, on a different session list.
+    moved = _flat(calendar, 100.0)
+    moved[calendar.sessions[_ENTRY_INDEX + 5]] = 130.0
+    regraded = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": moved}), calendar=calendar,
+        as_of=_as_of(calendar),
+    )
+    drift = grader.regrade_diff([graded.to_payload()], [regraded.to_payload()])
+    assert len(drift) == 1 and drift[0]["drift_kind"] == "value_moved"
+    assert drift[0]["prior_price_basis"] == drift[0]["current_price_basis"]
+    assert drift[0]["calendar_moved"] is False, "same sessions: this really is a price move"
+    assert drift[0]["current_window_sessions_sha256"] == regraded.window_sessions_sha256
+    assert drift[0]["prior_calendar_id"] == GRV_FA1.calendar_id
+
+
+def test_an_unmapped_issuer_abstains_and_the_batch_continues(calendar):
+    """F11. ``admit`` had no ticker check, so the batch died on the first one.
+
+    An issuer the recipient graph cannot map was ADMITTED and then raised inside
+    the row builder's own validation. One unmapped issuer in a nightly batch
+    meant no rows at all — no abstention, no printed null, no report — and the
+    reviewed graph in this repository carries unmapped issuers today.
+    ``mapping_missing`` was declared in the vocabulary and emitted by nothing.
+    """
+    unmapped = _candidate(calendar, candidate_id="grc1-000000000000000000000002")
+    unmapped["ticker"] = None
+
+    decision = grader.admit(unmapped, family=GRV_FA1)
+    assert decision.admitted is False
+    assert decision.reason == "mapping_missing"
+    assert "mapping_missing" in grader.ABSTENTION_REASONS
+
+    abstention = _issue(unmapped, calendar)
+    assert abstention["row_kind"] == "abstention"
+    assert abstention["abstention_reason"] == "mapping_missing"
+    assert abstention["ticker"] is None, "an empty string reads as a symbol downstream"
+
+    # The batch continues: the mapped issuer beside it still issues and reports.
+    report = _report(
+        calendar,
+        _log([_row(calendar), abstention]),
+        _panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+    )
+    assert report["admission"]["considered"] == 2
+    assert report["admission"]["issued"] == 1
+    assert report["admission"]["abstention_reasons"] == {"mapping_missing": 1}
+
+
+def test_an_empty_cohort_does_not_report_complete_coverage(calendar):
+    """F13. ``0 == 0`` read as COMPLETE, on the lobe's actual current state."""
+    report = _report(calendar, _log([]), _panel(calendar, {"PLTR": _flat(calendar, 100.0)}))
+    h63 = report["outcome_by_horizon"]["h63"]
+
+    assert h63["coverage"]["status"] == "empty", "an empty cohort is not a fully resolved one"
+    assert h63["coverage"]["fraction"] is None
+    assert h63["verdict_basis"]["coverage"]["status"] == "empty"
+    assert h63["placebo"]["placebo_coverage"]["status"] == "empty"
+    assert h63["disclosure_labels"]["earnings_window_rate"]["coverage"]["status"] == "empty"
+
+    # Positive control: a resolved cohort still reads complete.
+    resolved = _report(
+        calendar, _log([_row(calendar)]),
+        _panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+    )
+    assert resolved["outcome_by_horizon"]["h63"]["coverage"]["status"] == "complete"
+
+
+def test_a_monthly_bucket_cites_its_own_coverage_not_the_cohorts(calendar):
+    """F14. Every bucket repeated the cohort-wide coverage payload.
+
+    A month with one graded row printed the whole cohort's coverage beside its
+    rate — §5's "a rate over part of a cohort is not the cohort's rate" broken
+    inside the block whose whole job is to break the cohort into parts.
+    """
+    first = _row(calendar, candidate_id="grc1-000000000000000000000001", event_id="evt-1")
+    later = _row(
+        calendar,
+        candidate_id="grc1-000000000000000000000002",
+        observation_id="gro1-000000000000000000000002",
+        event_id="evt-2",
+        entry_index=_ENTRY_INDEX + 40,
+    )
+    report = _report(
+        calendar, _log([first, later]), _panel(calendar, {"PLTR": _flat(calendar, 100.0)})
+    )
+    monthly = report["outcome_by_horizon"]["h5"]["hit_rate_by_month"]["monthly"]
+
+    assert len(monthly) == 2, "the two rows land in different entry months"
+    for bucket in monthly:
+        assert bucket["coverage"]["observed"] == bucket["graded"], (
+            f"month {bucket['month']} cites a coverage of "
+            f"{bucket['coverage']['observed']}/{bucket['coverage']['universe']} beside "
+            f"{bucket['graded']} graded rows"
+        )
+        assert bucket["coverage"]["universe"] == 1
+        assert bucket["month"] in bucket["coverage"]["scope"]
+        assert bucket["coverage"]["kind"] == "outcome"
+
+
+def test_the_verdict_cites_the_coverage_its_own_numbers_came_from(calendar):
+    """F16. ``inputs.coverage`` was the cohort's; the numbers were the basis's.
+
+    The supersession ratchet makes the two differ by construction: a retracted
+    row is ungraded in the cohort and RETAINED in the verdict basis. A reader
+    checking the verdict against the coverage printed beside it was reading a
+    different denominator from the one the mean was computed over.
+    """
+    winner, loser, panel = _two_row_cohort(calendar)
+    retraction = grader.build_correction_row(
+        loser, reason="source_receipt_binding_failed",
+        appended_at="2026-08-07T00:00:00+00:00", retract=True,
+    )
+    report = _report(
+        calendar, _log([winner, loser, retraction]), panel, family=_reachable_family()
+    )
+    h5 = report["outcome_by_horizon"]["h5"]
+    inputs = report["verdict"]["inputs"]
+
+    assert h5["coverage"]["observed"] == 1, "the cohort resolved one of two rows"
+    assert h5["verdict_basis"]["coverage"]["observed"] == 2, "the ratchet retained the loser"
+    assert inputs["coverage"] == h5["verdict_basis"]["coverage"]
+    assert inputs["coverage"]["observed"] == 2
+    assert "verdict basis" in inputs["coverage"]["scope"]
+    assert inputs["cohort_outcome_coverage"] == h5["coverage"]
+
+
+def test_a_disclosure_learned_after_the_exit_still_labels_the_window(calendar):
+    """F12. The clamp is the REPORT's clock, and §11 registered it that way.
+
+    The prose oversold it as "the same leak ``grade_row`` prevents on the price
+    side". It is not the same: ``grade_row``'s clamp is the row's own window,
+    because a price outside the window changes the measured number, while a
+    label is a descriptive contamination marker computed after the verdict — so
+    learning about a disclosure later can only describe the past better and can
+    reach no decision. Pinned here so a future reading of the docstring does not
+    "fix" a clamp that is doing what the registration says.
+    """
+    row = _row(calendar)
+    graded = grader.grade_row(
+        row, "h5", panel=_panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+        calendar=calendar, as_of=_as_of(calendar),
+    )
+    late_index = grader.DisclosureEvent(
+        kind="filing",
+        ticker="PLTR",
+        event_date=calendar.sessions[_ENTRY_INDEX + 2],  # inside the graded window
+        known_at=datetime.combine(
+            calendar.sessions[_ENTRY_INDEX + 60], datetime.min.time(), tzinfo=timezone.utc
+        ).isoformat(),  # learned long after the exit, but before as_of
+        reference="edgar/0001",
+    )
+    label = grader.label_disclosures(
+        graded,
+        disclosure=grader.DisclosureCalendar.build(
+            [late_index], calendar_id="disc", covered_tickers=("PLTR",)
+        ),
+        as_of=_as_of(calendar),
+    )
+    assert label.state == "observed"
+    assert label.filings_in_window == 1
+
+    source = (ROOT / "engine" / "government_revenue" / "candidate_grader.py").read_text(
+        encoding="utf-8"
+    )
+    assert "the same leak ``grade_row`` prevents on the price side" not in source, (
+        "the docstring claims a clamp the code does not apply"
+    )
+
+
+def _snapshot_rail_candidate(calendar, **overrides):
+    """PR #5085's shape: a snapshot-rail obligation candidate.
+
+    #5085 admits ``reported_obligation_balance_changed`` events into the
+    ``award_obligation_change`` candidate family — correctly, at display tier.
+    ``engine/government_revenue/award_events.py`` stamps
+    ``source_rail = "usaspending_award_snapshot"`` on them, and
+    ``candidates.py`` admits both rails into the family.
+    """
+    payload = _candidate(
+        calendar,
+        candidate_id="grc1-000000000000000000000085",
+        observation_id="gro1-000000000000000000000085",
+        event_id="evt-snapshot-1",
+    )
+    payload["source_event"] = {
+        **payload["source_event"],
+        "event_type": "reported_obligation_balance_changed",
+        "source_rail": "usaspending_award_snapshot",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_the_family_is_fenced_to_the_action_rail(calendar):
+    """F17. A family NAME is not a measurement unit.
+
+    §1 gated GRV-FA1 on ``candidate_family == "award_obligation_change"`` with no
+    rail restriction, and the candidate contract admits BOTH rails into that
+    family. So a family registered as positive funded-**ACTION** acceleration
+    would have begun issuing on snapshot-rail deltas.
+
+    Those are not the same number. The action rail emits a
+    ``transaction_delta`` — money that moved in one recorded action. The
+    snapshot rail emits a delta obtained by differencing ``award_cumulative``
+    balances between two observations, in which a restatement, a late-posted
+    correction and a genuine new obligation are indistinguishable and the
+    magnitude is not the size of any event. Pooling them is the amount-class
+    conflation, arriving through the rail rather than through the family name.
+    """
+    snapshot = _snapshot_rail_candidate(calendar)
+    decision = grader.admit(snapshot, family=GRV_FA1)
+
+    assert decision.admitted is False, (
+        "a snapshot-rail cumulative-balance delta was admitted into a cohort registered "
+        "for transaction-delta funded actions"
+    )
+    assert decision.reason == "family_rail_mismatch"
+    assert "family_rail_mismatch" in grader.ABSTENTION_REASONS
+
+    # It is an ABSTENTION ROW, so the batch continues and the refusal is counted
+    # — the same shape as `mapping_missing`, never a raise.
+    row = _issue(snapshot, calendar)
+    assert row["row_kind"] == "abstention"
+    assert row["abstention_reason"] == "family_rail_mismatch"
+
+    report = _report(
+        calendar,
+        _log([_row(calendar), row]),
+        _panel(calendar, {"PLTR": _flat(calendar, 100.0)}),
+    )
+    assert report["admission"]["considered"] == 2
+    assert report["admission"]["issued"] == 1
+    assert report["admission"]["abstention_reasons"] == {"family_rail_mismatch": 1}
+    assert report["outcome_by_horizon"]["h63"]["cohort"]["issued_n"] == 1, (
+        "an abstention never enters the graded cohort's denominator"
+    )
+
+
+def test_the_action_rail_still_issues(calendar):
+    """F17, positive control: the fence is a fence, not a wall."""
+    decision = grader.admit(_candidate(calendar), family=GRV_FA1)
+    assert decision.admitted is True and decision.reason is None
+    assert _row(calendar)["row_kind"] == "issuance"
+
+
+@pytest.mark.parametrize(
+    "rail",
+    [None, "", "   ", 7, "usaspending_award_snapshot", "USASPENDING_AWARD_ACTION"],
+    ids=["absent", "empty", "blank", "not-a-string", "snapshot", "wrong-case"],
+)
+def test_an_unstated_source_rail_fails_closed(calendar, rail):
+    """F17. Absence of evidence of an action rail is not evidence of one.
+
+    Tested against the ONE registered rail rather than against a blocklist of
+    known snapshot rails: a blocklist admits every rail a later ingest adds,
+    which is exactly how the snapshot rail reached this family.
+    """
+    payload = _candidate(calendar)
+    source_event = dict(payload["source_event"])
+    if rail is None:
+        source_event.pop("source_rail")
+    else:
+        source_event["source_rail"] = rail
+    payload["source_event"] = source_event
+
+    decision = grader.admit(payload, family=GRV_FA1)
+    assert decision.admitted is False, f"source_rail={rail!r} was admitted"
+    assert decision.reason == "family_rail_mismatch"
+
+
+def test_the_registered_rail_is_stated_in_the_preregistration():
+    """F17. An admission rule that lives only in code is not registered.
+
+    §1's other admission rules are prose plus a literal in ``admit``; the rail
+    fence is held to the same standard rather than being a constant nobody can
+    be held to.
+    """
+    text = PREREG_PATH.read_text(encoding="utf-8")
+    assert grader.GRV_FA1_SOURCE_RAIL == "usaspending_award_action"
+    assert f"`{grader.GRV_FA1_SOURCE_RAIL}`" in text
+    assert "`usaspending_award_snapshot`" in text, (
+        "the rail that is fenced OUT must be named, or the fence is unreviewable"
+    )
+    assert "family_rail_mismatch" in text

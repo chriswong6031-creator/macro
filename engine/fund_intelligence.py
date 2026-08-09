@@ -42,9 +42,10 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from engine.manager_trades import ClosePanel
-from engine.smart_money import (_read_all, diff_snapshots, full_cusip_map,
-                                name_ticker_map, position_rank_and_tilt,
-                                resolve_tickers, window_dressing_flag)
+from engine.smart_money import (_read_all, _snapshot_available_date,
+                                diff_snapshots, full_cusip_map, name_ticker_map,
+                                position_rank_and_tilt, resolve_tickers,
+                                window_dressing_flag)
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -546,7 +547,8 @@ def _resolved_history(slug: str, name_map: dict[str, str],
                       cusip_map: dict[str, str]) -> list[tuple[str, str, pd.DataFrame]]:
     """Every retained snapshot for a fund as a slim RESOLVED frame, ascending:
     ``[(period_end, filing_date, df[cusip, issuer, shares, value_usd, ticker,
-    sh_type])]``. Equity (SH) lines only, grouped by cusip, ticker attached via
+    sh_type, available_date])]``. Equity (SH) lines only, grouped by cusip,
+    ticker attached via
     ``resolve_tickers`` (None where unresolved — kept, so book totals and the
     'Unclassified' bucket stay honest).
 
@@ -566,6 +568,7 @@ def _resolved_history(slug: str, name_map: dict[str, str],
                         value_usd=("value_usd", "sum")))
             g = resolve_tickers(g, name_map, cusip_map)
             g["sh_type"] = "SH"                      # keep diff_snapshots happy on slims
+            g["available_date"] = _snapshot_available_date(df) or filing_date
             out.append((period_end, filing_date, g))
         except Exception:  # noqa: BLE001 — one bad quarter must not drop the fund
             log.debug("_resolved_history: %s quarter %s skipped", slug, period_end,
@@ -618,7 +621,8 @@ def _ticker_moves(prev: pd.DataFrame | None, cur: pd.DataFrame,
 
 def fund_book(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
               cls: dict, panel: ClosePanel | None,
-              weights: dict | None = None) -> list[dict]:
+              weights: dict | None = None,
+              target_period: str | None = None) -> list[dict]:
     """FULL resolved latest book for one fund (every position, not top-8).
 
     Each row: ``{ticker, issuer, shares, value_usd, pct_book, position_rank,
@@ -641,9 +645,16 @@ def fund_book(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
     """
     try:
         hist = _resolved_history(slug, name_map, cusip_map)
+        if target_period is not None:
+            hist = [row for row in hist if row[0] <= str(target_period)]
         if not hist:
             return []
         period_end, filing_date, _latest = hist[-1]
+        available_date = (
+            str(_latest["available_date"].iloc[0])
+            if "available_date" in _latest.columns and len(_latest)
+            else filing_date
+        )
         cmap = _cusip_ticker_map(hist)
 
         # per-quarter ticker-level moves for consecutive snapshot pairs (ascending).
@@ -677,9 +688,9 @@ def fund_book(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
                 acts_by_ticker[t] = actions
 
                 since_val = None
-                if panel is not None and filing_date:
+                if panel is not None and available_date:
                     try:
-                        ex = panel.excess(t, filing_date)
+                        ex = panel.excess(t, available_date)
                         since_val = ex["excess"] if ex else None
                     except Exception:  # noqa: BLE001 — price gap never kills the book
                         log.debug("fund_book: since_excess failed for %s/%s", slug, t,
@@ -710,6 +721,7 @@ def fund_book(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
                     "since_excess": since_val,
                     "period_end": period_end,
                     "filing_date": filing_date,
+                    "available_date": available_date,
                 })
             except Exception:  # noqa: BLE001 — one bad row must not drop the book
                 log.debug("fund_book: %s row skipped", slug, exc_info=True)
@@ -731,7 +743,7 @@ def fund_book(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
 # --------------------------------------------------------------------------- #
 
 def sector_series(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
-                  cls: dict) -> list[dict]:
+                  cls: dict, target_period: str | None = None) -> list[dict]:
     """Value-weighted sector (and top theme-category) mix per retained quarter,
     ascending: ``[{period_end, filing_date, weights: {sector: pct},
     top_theme_weights: {category: pct}}]``.
@@ -749,6 +761,8 @@ def sector_series(slug: str, name_map: dict[str, str], cusip_map: dict[str, str]
         return []
     out: list[dict] = []
     for period_end, filing_date, sdf in hist:
+        if target_period is not None and period_end > str(target_period):
+            continue
         try:
             total = float(pd.to_numeric(sdf["value_usd"], errors="coerce").fillna(0.0).sum())
             if total <= 0:
@@ -887,28 +901,38 @@ def theme_read(book: list[dict], buys: list[dict], cls: dict) -> dict:
 # Orchestrator                                                                  #
 # --------------------------------------------------------------------------- #
 
-def _book_meta(slug: str, name_map: dict[str, str], cusip_map: dict[str, str]) -> dict:
+def _book_meta(slug: str, name_map: dict[str, str], cusip_map: dict[str, str],
+               target_period: str | None = None) -> dict:
     """Latest-book coverage meta for one fund: ``{n_positions, n_resolved,
     resolution_pct, book_value_usd, filing_date, period_end}`` (n_positions =
     distinct cusip lines in the latest equity snapshot). {} on failure."""
     try:
         hist = _resolved_history(slug, name_map, cusip_map)
+        if target_period is not None:
+            hist = [row for row in hist if row[0] <= str(target_period)]
         if not hist:
             return {}
         period_end, filing_date, sdf = hist[-1]
+        available_date = (
+            str(sdf["available_date"].iloc[0])
+            if "available_date" in sdf.columns and len(sdf) else filing_date)
         n_pos = int(len(sdf))
         n_res = int(sdf["ticker"].notna().sum()) if "ticker" in sdf.columns else 0
         total = float(pd.to_numeric(sdf["value_usd"], errors="coerce").fillna(0.0).sum())
         return {"n_positions": n_pos, "n_resolved": n_res,
                 "resolution_pct": (round(100.0 * n_res / n_pos, 1) if n_pos else None),
                 "book_value_usd": round(total, 0),
-                "filing_date": filing_date, "period_end": period_end}
+                "filing_date": filing_date, "available_date": available_date,
+                "period_end": period_end}
     except Exception:  # noqa: BLE001
         log.debug("_book_meta: %s failed", slug, exc_info=True)
         return {}
 
 
-def build_fund_intel(cfg: dict | None = None, tracker: dict | None = None) -> dict | None:
+def build_fund_intel(cfg: dict | None = None, tracker: dict | None = None,
+                     target_period: str | None = None,
+                     included_slugs: list[str] | set[str] | None = None
+                     ) -> dict | None:
     """Build the per-fund intelligence payload for every tracked fund.
 
     ``cfg`` is the ``smart_money`` config block (defaults to config.yml's);
@@ -956,11 +980,18 @@ def build_fund_intel(cfg: dict | None = None, tracker: dict | None = None) -> di
 
     funds_out: dict[str, dict] = {}
     failed: list[str] = []
+    selected = set(included_slugs) if included_slugs is not None else set(funds)
     for slug, spec in funds.items():
+        if slug not in selected:
+            continue
         try:
             spec = spec or {}
-            book = fund_book(slug, name_map, cusip_map, cls, panel, weights=weights)
-            series = sector_series(slug, name_map, cusip_map, cls)
+            book = fund_book(
+                slug, name_map, cusip_map, cls, panel,
+                weights=weights, target_period=target_period,
+            )
+            series = sector_series(
+                slug, name_map, cusip_map, cls, target_period=target_period)
             rotation = sector_rotation(series)
             buys = [p for p in book if p.get("action") in _BUY_ACTIONS]
             funds_out[slug] = {
@@ -969,7 +1000,8 @@ def build_fund_intel(cfg: dict | None = None, tracker: dict | None = None) -> di
                 "style": spec.get("style"),
                 "grade": grades.get(slug),
                 "book": book,
-                "book_meta": _book_meta(slug, name_map, cusip_map),
+                "book_meta": _book_meta(
+                    slug, name_map, cusip_map, target_period=target_period),
                 "sector_series": series,
                 "sector_rotation": rotation,
                 "theme_read": theme_read(book, buys, cls),
@@ -982,10 +1014,12 @@ def build_fund_intel(cfg: dict | None = None, tracker: dict | None = None) -> di
         "built": datetime.now(timezone.utc).isoformat(),
         "funds": funds_out,
         "_meta": {
-            "n_funds": len(funds),
+            "n_funds": len(selected),
             "n_ok": len(funds_out),
             "n_failed": len(failed),
             "failed": failed,
+            "cohort_period": target_period,
+            "cohort_basis": ("explicit" if target_period else "latest_per_fund"),
             "classification": (cls.get("_meta") if isinstance(cls, dict) else None),
             "price_thru": (panel.thru if panel is not None else None),
             "conviction_weights": weights,

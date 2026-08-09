@@ -13,15 +13,15 @@ state: draft_denominator_unarmed
 effective_at: '2026-08-06T00:00:00Z'
 owner: biocatalyst
 source_registry_ref: config/biocatalyst_sources.yml
-source_registry_sha256: 6accf3fde4fa721783916c4d58cfe88a4a540f2be338f5a11ade817e7ff53a82
+source_registry_sha256: e531491b9bb76ebe1164007d5ace47b8870a531746985fa2b3cbd27bb48331a9
 ownership_registry_ref: config/sector_intelligence_ownership.yml
 ownership_registry_sha256: a2036e75f6db6ee7d2df4fa908966fa39dd2bbf2aa7431678367ae2bd60c74c6
 reconciliation_receipt_ref: data/biocatalyst/fixtures/biocatalyst_f0_delta_reconciliation_receipt.v1.json
 reconciliation_receipt_id: biocatalyst_f0_delta_c421aafb2fd1c612417decc3
 reconciliation_receipt_sha256: 5aa5234ee2aa05a1cae1d1e96fcf426433928e0d1892c748d8594c627e9adcda
 launch_slo_manifest_ref: config/biocatalyst_launch_slo_manifest.yml
-launch_slo_manifest_id: biocatalyst_launch_slo_097bc893fbae64257cd7687e
-launch_slo_manifest_content_sha256: 097bc893fbae64257cd7687e019eacf4ea69c336e9e0d0dd133f71edaa140950
+launch_slo_manifest_id: biocatalyst_launch_slo_0457d75e64925f5a5a1eaf99
+launch_slo_manifest_content_sha256: 0457d75e64925f5a5a1eaf99176f2f1820d73c0d5192a00838990834fab5086b
 families:
 - family_id: clinicaltrials_current_record
   title: ClinicalTrials.gov current-record coverage
@@ -132,9 +132,9 @@ families:
     version: clinicaltrials_record_history_parser.v1
     registry_ref: config/biocatalyst_sources.yml
     launch_critical: false
-    production_ingest_allowed: false
+    production_ingest_allowed: true
     license_class: us_government_source_facts
-    rights_state: operator_review_required_before_enable
+    rights_state: official_terms_operator_reviewed_for_bounded_beta
   rights:
     retention: private_only
     redistribution: review_required
@@ -480,5 +480,5 @@ authority:
   constitutes_soak_evidence: false
   originates_signals_scores_or_ranking: false
 hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
-manifest_id: biocatalyst_closed_beta_3be20a6afa3ba1fb70eb84ea
-content_sha256: 3be20a6afa3ba1fb70eb84ea301171839b4e75cb89cbe1a554cb19e7c54f7c02
+manifest_id: biocatalyst_closed_beta_a5473bf1a17a662bb699208c
+content_sha256: a5473bf1a17a662bb699208c3f266bcb02b10e28eaa387fba10d07edc5aa192a

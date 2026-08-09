@@ -32,6 +32,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 
 def _repo_root(root_arg: str | None) -> Path:
     if root_arg is not None:
@@ -114,8 +117,6 @@ def main(argv: list[str] | None = None) -> int:
     # root is always the directory containing engine/ (where this script
     # lives), NOT the --root data directory.
     code_root = Path(__file__).resolve().parent.parent
-    if str(code_root) not in sys.path:
-        sys.path.insert(0, str(code_root))
 
     from engine.marketing import outbox as _outbox  # noqa: PLC0415
     try:
