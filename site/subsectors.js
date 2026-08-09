@@ -335,8 +335,8 @@
     else body = '<div class="sc-collapse sc-collapsed" data-n="' + buys.length + '" data-cap="' + PICKS_CAP + '">' + table
       + '<button class="sc-more" type="button"><span class="l-en">Show all ' + buys.length + ' picks ▾</span><span class="l-zh">展开全部 ' + buys.length + ' 个 ▾</span></button></div>';
     return '<div class="sec sc-stagger sc-s2"><div class="sec-head"><h2>' + ic('diamond','sc-h2-ic') + ' ' + L('Double-confluence picks', '双重汇聚精选') + ' <span class="n">' + buys.length + '</span></h2></div>'
-      + '<div class="desc">' + L('Stocks whose own T1–T4 cascade is buyable <b>and</b> whose subsector has a tailwind — the two gates agree. Ranked by conviction = stock weight × subsector buyability (T1×T1 = 1.0)' + (buys.length > PICKS_CAP ? '. Top ' + PICKS_CAP + ' shown.' : '.'),
-        '自身 T1–T4 级联可买<b>且</b>所在子行业顺风的个股——两道闸门一致。按把握度排序 = 个股权重 × 子行业可买系数（T1×T1 = 1.0）' + (buys.length > PICKS_CAP ? '，默认显示前 ' + PICKS_CAP + ' 个。' : '。')) + '</div>'
+      + '<div class="desc">' + L('Stocks that are a buy on their own <b>and</b> sit in a subsector that is working. The strongest agreement sits at the top' + (buys.length > PICKS_CAP ? '. Top ' + PICKS_CAP + ' shown.' : '.'),
+        '本身就是买点<b>且</b>所在子行业也在走强的个股。两边一致程度最高的排在最前面' + (buys.length > PICKS_CAP ? '，默认显示前 ' + PICKS_CAP + ' 个。' : '。')) + '</div>'
       + '<div class="sc-tablecard">' + body + '</div></div>';
   }
 
