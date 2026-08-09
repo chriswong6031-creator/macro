@@ -18,6 +18,7 @@ from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 PASS, FAIL = 0, 0
+FAILURES: list[str] = []
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -28,6 +29,24 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     else:
         FAIL += 1
         print(f"  FAIL  {name}  {detail}")
+        FAILURES.append(f"{name}  {detail}".rstrip())
+
+
+try:
+    import pytest
+except ImportError:  # script mode is promised to work without pytest installed
+    pytest = None
+
+if pytest is not None:
+    @pytest.fixture(autouse=True)
+    def _gate_checks():
+        # check() is a soft assert so one run reports EVERY miss; without this
+        # flush a bare check(False) cannot fail a test and the whole file is
+        # decorative under pytest (it was, for months — 4 stale pins invisible).
+        before = len(FAILURES)
+        yield
+        fresh = FAILURES[before:]
+        assert not fresh, "check() failures:\n  " + "\n  ".join(fresh)
 
 
 def _env() -> Environment:
@@ -91,21 +110,30 @@ def test_dashboard_compiles_and_splits():
         except Exception as e:                  # noqa: BLE001
             check(f"{tpl} compiles", False, str(e))
     src = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    # "Regime-approved sectors" was the pre-v2 sector-board heading; the v2
+    # row-ledger transition (#2249) renamed the copy but kept the sector panel
+    # in the stocks split as id="sector-heat" — pin the structural id, not copy.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', "Regime-approved sectors",
+              'id="index-health"', 'id="stocks-header"', 'id="sector-heat"',
               "Index risk model", "rm-bar", "chart_risk_model"):  # integrated risk model
         check(f"dashboard has split marker: {m}", m in src, "missing")
     # China + HK mirror the same macro/stocks mode split (rendered twice by their
     # builders -> <market>.html + <market>_stocks.html).
     cn = (ROOT / "templates" / "china.html.j2").read_text()
+    # China's index-health risk row became the mx5 glance + risk dialog in the
+    # #2589 redesign; id="cnx-dlg-risk" is its surviving macro-side successor.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', 'id="standouts"',
+              'id="cnx-dlg-risk"', 'id="stocks-header"', 'id="standouts"',
               "china_stocks.html"):
         check(f"china has split marker: {m}", m in cn, "missing")
     hk = (ROOT / "templates" / "hk.html.j2").read_text()
+    # HK's index-health panel + "no stock-selection edge" help copy were removed
+    # by the #1337 copy simplification; the health dialog survives as
+    # id="hkx-dlg-health" and the honest no-alpha framing as the screener's
+    # "research shortlist, not a buy list" line — pin those successors.
     for m in ("mode == 'stocks'", "mode != 'stocks'", "mode != 'macro'",
-              'id="index-health"', 'id="stocks-header"', 'id="hk-screener"',
-              "hk_stocks.html", "stock-selection edge"):
+              'id="hkx-dlg-health"', 'id="stocks-header"', 'id="hk-screener"',
+              "hk_stocks.html", "research shortlist, not a buy list"):
         check(f"hk has split marker: {m}", m in hk, "missing")
 
 
