@@ -38,6 +38,90 @@ log = logging.getLogger(__name__)
 _CHINA_BRIEFING_PATH = Path("site/china_intel/briefing.json")
 _STALE_SURFACE_DAYS = 3   # surface marked stale if older than this (aligns with bus news-staleness gate)
 
+# ---------------------------------------------------------------------------
+# SPECIAL-SITUATIONS FRESHNESS SENTINEL (D3)
+# ---------------------------------------------------------------------------
+# intel_hub reads site/allocationdata/special_situations.json for the catalyst index
+# (engine/intel_hub.py:934) through a degrade-safe reader: a stale artifact produces a
+# perfectly normal-looking catalyst panel built from days-old events, and a missing one
+# produces an empty panel. Neither says anything. 36h is the bar because the file is written
+# by the nightly — one skipped nightly puts it over, two make the panel fiction.
+_SPECIAL_SITS_PATH = Path("site/allocationdata/special_situations.json")
+_SPECIAL_STALE_HOURS = 36
+
+
+def _parse_stamp(raw: str | None) -> datetime | None:
+    """Parse the timestamp shapes our artifacts actually use, as an aware UTC datetime.
+    special_situations.json writes ``'2026-08-08 07:21 UTC'`` — NOT isoformat-parseable — so a
+    naive fromisoformat sentinel would read every file as undated and never fire."""
+    if not raw:
+        return None
+    s = str(raw).strip()
+    if s.endswith(" UTC"):
+        s = s[:-4].strip()
+    for cand in (s, s.replace(" ", "T", 1)):
+        try:
+            dt = datetime.fromisoformat(cand)
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        except Exception:  # noqa: BLE001
+            continue
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
+
+def stamp_special_freshness(hub: dict, root: Path | None = None,
+                            now: datetime | None = None,
+                            path: Path | None = None) -> dict | None:
+    """Age the special-situations artifact the catalyst panel is built from, annotate when it is
+    over _SPECIAL_STALE_HOURS old, and record the age in hub.json. DATA ONLY — no template or
+    copy change here; the visible chip is W5's. Never raises: the hub build must not die on a
+    freshness probe. Returns the freshness dict (or None when the file is absent)."""
+    p = Path(path) if path else (Path(root) if root else config.ROOT) / _SPECIAL_SITS_PATH
+    desk = (hub.setdefault("desks", {}).setdefault("special", {}))
+    try:
+        if not p.exists():
+            # an absent artifact is already surfaced as desks.special.live == False (the catalyst
+            # index is empty), so it is not a silent failure — no annotation, but say so in data.
+            desk["stale"], desk["age_days"], desk["age_hours"] = None, None, None
+            log.info("special-sits sentinel: %s absent — desks.special.live carries it", p)
+            return None
+        raw = json.loads(p.read_text())
+        stamp = _parse_stamp((raw or {}).get("generated_at") or (raw or {}).get("as_of"))
+        ref = now or datetime.now(timezone.utc)
+        if stamp is None:
+            # present but undated ⇒ freshness UNVERIFIABLE, which is the same silence this
+            # sentinel exists to end. Annotate rather than report a comforting None.
+            desk["stale"], desk["age_days"], desk["age_hours"] = None, None, None
+            print(f"::warning title=special-sits-stale::{_SPECIAL_SITS_PATH} carries no parseable "
+                  f"generated_at/as_of — the catalyst panel's freshness cannot be verified and a "
+                  f"stale artifact would look identical to a fresh one", flush=True)
+            log.warning("special-sits sentinel: no parseable timestamp in %s", p)
+            return {"stale": None, "age_hours": None, "age_days": None, "as_of": None}
+        age_h = (ref - stamp).total_seconds() / 3600.0
+        age_h = max(0.0, age_h)                      # a future stamp is not negative age
+        stale = age_h > _SPECIAL_STALE_HOURS
+        desk["stale"] = bool(stale)
+        desk["age_hours"] = round(age_h, 1)
+        desk["age_days"] = round(age_h / 24.0, 2)
+        desk["as_of"] = stamp.isoformat()
+        if stale:
+            print(f"::warning title=special-sits-stale::{_SPECIAL_SITS_PATH} is "
+                  f"{age_h / 24.0:.1f}d old (generated_at {stamp.isoformat()}, bar is "
+                  f"{_SPECIAL_STALE_HOURS}h) — the Hub catalyst panel is being built from stale "
+                  f"filings and its 'days_since' figures understate every event's real age",
+                  flush=True)
+            log.warning("special-sits sentinel: %s is %.1fh old (>%dh)", p, age_h,
+                        _SPECIAL_STALE_HOURS)
+        return {"stale": bool(stale), "age_hours": round(age_h, 1),
+                "age_days": round(age_h / 24.0, 2), "as_of": stamp.isoformat()}
+    except Exception as e:  # noqa: BLE001 — a freshness probe never breaks the build
+        log.warning("special-sits sentinel failed: %s", e)
+        return None
+
 
 def _days_old(iso_date: str | None, reference: date | None = None) -> int | None:
     """Return calendar days between iso_date and reference (today if None).
@@ -239,6 +323,7 @@ def _attach_live_prices(hub: dict, root, asof: str) -> None:
 
 def build(write: bool = True) -> dict:
     hub = intel_hub.load_and_build(top=30)
+    stamp_special_freshness(hub, config.ROOT)      # D3 — age the catalyst panel's input, loudly
     _attach_live_prices(hub, config.ROOT, hub.get("as_of") or date.today().isoformat())
     # FALSIFIABLE TRACK-RECORD: record today's claims, grade matured ones (degrade-safe)
     track = {}

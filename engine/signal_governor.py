@@ -44,16 +44,27 @@ SCHEMA = "signal_governor.v1"
 # US structure — its radar_ic accrues once china_radar_ledger matures; until then CN is dormant.
 _REGIONS = {
     "us": {"radar": ("data", "radar", "radar_ic.json"),
+           # the copy the PAGE actually ships. engine-render commits site/ but not data/, so the
+           # data/ copy can lag the published one by days; read BOTH, act on the freshest (D2).
+           "radar_site": ("site", "basketdata", "radar_ic.json"),
            "hub":   ("data", "hub", "track_record.json"),
            "out":   ("data", "hub", "signal_governor.json")},
     "cn": {"radar": ("data", "china_hub", "radar_ic.json"),
+           # no published CN radar_ic copy exists yet — one path, same freshness contract.
            "hub":   ("data", "china_hub", "track_record.json"),
            "out":   ("data", "china_hub", "signal_governor.json")},
 }
 # Back-compat module-level aliases (US) — some tests/consumers reference these directly.
 _OUT = _REGIONS["us"]["out"]
 _RADAR_IC = _REGIONS["us"]["radar"]
+_RADAR_IC_SITE = _REGIONS["us"]["radar_site"]
 _HUB_TRACK = _REGIONS["us"]["hub"]
+
+# Age (calendar days) at which the governor's radar input is called STALE and annotated. The
+# governor degrades-never-raises, so a stale or missing input silently leaves every trust at
+# 1.0 — indistinguishable from "measured healthy". That silence is the defect: the read must
+# fail LOUD (line-start ::warning) while still refusing to disarm anything.
+STALE_INPUT_DAYS = 2
 
 # ── PRE-REGISTERED GATE (committed constants = the pre-registration) ───────────────────────
 MIN_N = 150            # matured observations a signal needs before it can be demoted at all
@@ -148,12 +159,70 @@ def _coverage(by_horizon: dict, ic_block_key: str) -> dict | None:
     return best
 
 
-def _radar_reading(root: Path, region: str = "us") -> dict:
-    bh = (_read_json(root, _REGIONS[region]["radar"]) or {}).get("by_horizon") or {}
-    return {"reading": _pick_reading(bh, "ic_daily_hac"), "coverage": _coverage(bh, "ic_daily_hac")}
+def _as_of_date(payload: dict | None) -> date | None:
+    """The artifact's own as_of, as a date. None ⇒ unparseable/absent (age unknown)."""
+    raw = (payload or {}).get("as_of") or (payload or {}).get("asof")
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(str(raw)[:10]).date()
+    except Exception:  # noqa: BLE001
+        return None
 
 
-def _hub_reading(root: Path, region: str = "us") -> dict:
+def _freshest(root: Path, region: str, today: date) -> dict:
+    """Read EVERY published copy of a region's radar_ic and return the one with the newest
+    as_of — the artifact the page ships is often days fresher than the data/ copy, because
+    engine-render commits site/ only (D2). Emits a line-start ``::warning`` when the winner is
+    older than STALE_INPUT_DAYS or when no copy is readable at all: a governor that
+    degrades-never-raises would otherwise report identity trust for a dead input, which reads
+    exactly like 'measured healthy'. NEVER disarms anything — the trust semantics are
+    untouched, only the silence is."""
+    cfg = _REGIONS[region]
+    parts_list = [p for p in (cfg.get("radar"), cfg.get("radar_site")) if p]
+    found = []
+    for i, parts in enumerate(parts_list):
+        payload = _read_json(root, parts)
+        if isinstance(payload, dict):
+            found.append({"path": "/".join(parts), "payload": payload,
+                          "as_of": _as_of_date(payload), "pref": i})
+    if not found:
+        print(f"::warning title=signal-governor-stale::radar_ic input unreadable for region "
+              f"{region} — tried {', '.join('/'.join(p) for p in parts_list)}; the governor is "
+              f"running BLIND at identity trust 1.0 (nothing de-escalated, nothing measured)",
+              flush=True)
+        log.warning("signal_governor: no readable radar_ic for region %s (tried %s)",
+                    region, [("/".join(p)) for p in parts_list])
+        return {"payload": None, "source": None, "as_of": None, "age_days": None, "stale": True}
+    # newest as_of wins; an un-dated copy sorts last (age unverifiable, never preferred). Ties
+    # break toward the LAST candidate, i.e. the published site copy — the page's own truth.
+    best = max(found, key=lambda f: (f["as_of"] is not None, f["as_of"] or date.min, f["pref"]))
+    age = (today - best["as_of"]).days if best["as_of"] else None
+    stale = age is not None and age > STALE_INPUT_DAYS
+    if stale:
+        print(f"::warning title=signal-governor-stale::radar_ic as_of {best['as_of']} is {age}d "
+              f"old (>{STALE_INPUT_DAYS}d) at {best['path']} — the de-escalation gate is grading "
+              f"a stale track record; trust stays ≥ its measured value, nothing is disarmed",
+              flush=True)
+        log.warning("signal_governor: stale radar_ic (%sd) at %s", age, best["path"])
+    return {"payload": best["payload"], "source": best["path"], "as_of": best["as_of"],
+            "age_days": age, "stale": bool(stale)}
+
+
+def _radar_reading(root: Path, region: str = "us", today: date | None = None) -> dict:
+    fresh = _freshest(root, region, today or date.today())
+    bh = (fresh.get("payload") or {}).get("by_horizon") or {}
+    return {"reading": _pick_reading(bh, "ic_daily_hac"), "coverage": _coverage(bh, "ic_daily_hac"),
+            "input": {"source": fresh.get("source"),
+                      "as_of": fresh["as_of"].isoformat() if fresh.get("as_of") else None,
+                      "age_days": fresh.get("age_days"), "stale": fresh.get("stale")}}
+
+
+def _hub_reading(root: Path, region: str = "us", today: date | None = None) -> dict:
+    """No staleness sentinel here on purpose: build_intel_hub RE-PERSISTS data/hub/
+    track_record.json in-run (scripts/build_intel_hub.py:259) immediately before
+    signal_governor.compute reads it, so this input cannot lag the way radar_ic does.
+    ``today`` is accepted only so both readers share one call signature."""
     bh = (_read_json(root, _REGIONS[region]["hub"]) or {}).get("horizons") or {}
     return {"reading": _pick_reading(bh, "opportunity_ic_daily"),
             "coverage": _coverage(bh, "opportunity_ic_daily")}
@@ -202,10 +271,18 @@ def compute(root: Path | None = None, today: date | str | None = None,
         if region not in _REGIONS:
             region = "us"
         today_str = today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())
+        try:
+            today_dt = datetime.fromisoformat(today_str[:10]).date()
+        except Exception:  # noqa: BLE001
+            today_dt = date.today()
         signals = {}
+        inputs = {}
         for name in _SIGNALS:
-            rd = _READERS[name](root, region)
+            rd = _READERS[name](root, region, today_dt)
             signals[name] = _gate(name, rd.get("reading"), rd.get("coverage"))
+            if rd.get("input"):                       # which copy was read + how old it was
+                signals[name]["input"] = rd["input"]
+                inputs[name] = rd["input"]
         trust = {k: v["trust"] for k, v in signals.items()}
         n_demoted = sum(1 for v in signals.values() if v["demoted"])
         demoted_names = [k for k, v in signals.items() if v["demoted"]]
@@ -217,6 +294,8 @@ def compute(root: Path | None = None, today: date | str | None = None,
             "gate": {"min_n": MIN_N, "t_sig": T_SIG, "ic_dead": IC_DEAD, "trust_floor": TRUST_FLOOR,
                      "method": "rigorous daily-HAC signed IC (Newey-West lag=horizon), never pooled Spearman"},
             "trust": trust, "signals": signals, "n_demoted": n_demoted, "note": note,
+            "inputs": inputs,          # per-signal provenance: which copy, its as_of, its age
+            "stale_inputs": sorted(k for k, v in inputs.items() if v.get("stale")),
             "disclaimer": ("De-escalation-only signal governor. A signal is demoted ONLY once its "
                            "matured, overlap-robust track record proves it mis-firing; trust never "
                            "exceeds 1.0 and never sizes a position. Absent ⇒ hub is ungoverned."),

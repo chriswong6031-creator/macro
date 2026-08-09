@@ -101,7 +101,12 @@ def _level_check():
 
 def test_fade_fear_hit_when_vix_stays_below_entry():
     root = _new_root()
-    _mk_parquet(root, "_VIX", [(ASOF, 20.0), ("2026-01-20", 18.0), (LATER, 16.0)])
+    # the 01-30 bar carries the SAME close as 01-20, so max_close_between and the final level
+    # are unchanged — it exists only so the series is not >7 calendar days stale at CHECK_BY
+    # (desk_scorer.close_at's staleness bound, ai_desk.MAX_ASOF_STALE_DAYS). A real daily
+    # series always has a bar within days of check_by; do not "simplify" this away.
+    _mk_parquet(root, "_VIX", [(ASOF, 20.0), ("2026-01-20", 18.0), ("2026-01-30", 18.0),
+                               (LATER, 16.0)])
     _write_ledger(root, [_thesis("t1", "VIX", "fade-fear", "low", _level_check(), {"_VIX": 20.0})])
     sc.run(root=root, today=pd.Timestamp(LATER))
     row = sc._load_scored(root)["t1"]
@@ -110,7 +115,10 @@ def test_fade_fear_hit_when_vix_stays_below_entry():
 
 def test_fade_fear_miss_when_vix_makes_new_high():
     root = _new_root()
-    _mk_parquet(root, "_VIX", [(ASOF, 20.0), ("2026-01-20", 28.0), (LATER, 17.0)])  # spike above entry
+    # 01-30 repeats the 01-20 close (see the sibling test): the spike above entry is what the
+    # assertion turns on; the extra bar only keeps the series inside the staleness bound.
+    _mk_parquet(root, "_VIX", [(ASOF, 20.0), ("2026-01-20", 28.0), ("2026-01-30", 28.0),
+                               (LATER, 17.0)])  # spike above entry
     _write_ledger(root, [_thesis("t1", "VIX", "fade-fear", "high", _level_check(), {"_VIX": 20.0})])
     sc.run(root=root, today=pd.Timestamp(LATER))
     assert sc._load_scored(root)["t1"]["outcome"] == "miss"
