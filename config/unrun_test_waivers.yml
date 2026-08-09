@@ -1,0 +1,23 @@
+# Suites that are named by no `run:` step ON PURPOSE.
+#
+# SCHEMA: repo-relative suite path -> reason (one non-empty string). The gate in
+# scripts/audit_unrun_tests.py enforces exactly that shape: a non-mapping file, a
+# non-string reason, or an EMPTY reason is a hard red, because a waiver without an
+# argument is a baseline row wearing a disguise. Every waived-and-unrun row is
+# reprinted with its reason on every run — a waiver only stays honest while it is in
+# front of whoever reads the census output.
+#
+# THIS IS NOT A DUMPING GROUND, and it is not the backlog. The 2026-08-09 backlog of
+# 969 unrun suites lives in config/unrun_test_baseline.json, which is shrink-only.
+# A row here is an EXCEPTION: it needs a measured reason, a named owner, and the
+# condition under which it is deleted. The default answer for a new dark suite is to
+# wire it into the job that owns its subject (see the signal-contract
+# research-resident steps in .github/ci/legacy-jobs.yml for the pattern).
+
+research/prophet_us_audit/test_veto_leg_isolation.py: >-
+  test_the_232_bar_warmup_constant_is_the_engine_s_own_measurement fails
+  deterministically on main: engine LEG_WARMUP_BARS['m3_s3']=232 but measured minimal
+  known-at N=239 on the suite's own fixed fixture (start 2022-01-03, seed 5) — constant
+  went stale in the 2D/3D re-anchor window (#4732..#5071); Prophet US program to
+  re-pin, then delete this row and add the file to the signal-contract prophet step
+  (2026-08-09).

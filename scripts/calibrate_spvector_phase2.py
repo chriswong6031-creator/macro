@@ -17,9 +17,15 @@ Run: python -m scripts.calibrate_spvector_phase2
 """
 from __future__ import annotations
 
-from engine import equity_alloc as ea
-from lib import config, store
-from scripts.calibrate_spvector import evaluate, COST_BPS
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import equity_alloc as ea  # noqa: E402
+from lib import config, store  # noqa: E402
+from scripts.calibrate_spvector import evaluate, COST_BPS  # noqa: E402
 
 
 def main() -> int:

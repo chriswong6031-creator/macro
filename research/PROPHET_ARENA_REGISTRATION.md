@@ -1,6 +1,6 @@
 # Prophet Arena — policy registration
 
-**Status:** registered, accruing. **Tier:** display / shadow. **Authority:** none.
+**Status:** registered, accruing. **Tier:** display / shadow. **Authority:** none. C2 retired 2026-08-09 → C7 (§C2, §C7).
 **Engine:** `engine/prophet_arena.py` · **Tests:** `tests/test_prophet_arena*.py`
 **Active ledgers:** `data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl` · **Scoreboard:** `data/prophet_arena/scoreboard.json`, `site/stockdata/prophet_arena.json`
 **Registered:** 2026-08-06. **Temporal v2 boundary:** 2026-08-08; v2 starts empty and has no backfill. The top-level v1 ledgers are sealed audit evidence and are excluded from every active grade and summary.
@@ -100,11 +100,12 @@ new key.
 |---|---|---|
 | `C0_champion_mirror` | selection | nothing — it *is* the champion (control + validity pin) |
 | `C1_buy_soon_first` | selection | ordering: `act_level == 2` lifted above `act_level == 3` |
-| `C2_stage_ran_preferred` | selection | admission (one leg relaxed) + ordering |
+| `C2_stage_ran_preferred` | selection | **RETIRED 2026-08-09 → C7** (act-level widening; see §C2) |
 | `C3_door_w_union` | selection | the candidate pool (Door W union, 4 reserved slots) |
 | `C4_dispersion_cap` | selection | the nightly cap (12 or 6, by dispersion state) |
 | `C5_align2_gate` | selection | admission (restricted to fully-aligned names) |
 | `C6_time_stop_21` | **closure** | the exit rule only — the plan set equals C0's |
+| `C7_buy_soon_admitted` | selection | admission (one leg relaxed: the status class) |
 
 ### C0 `champion_mirror` — CONTROL and validity pin
 
@@ -170,6 +171,26 @@ those rows' `act_level` is lifted to the threshold. Band, direction, entry-signa
 and the gate_go mode remain the champion's own code. The rows carried forward are the
 original, unpatched dicts. On the 2026-07-31 artifact this admits 5 names (TJX, STRA, DLB,
 BCPC, VIRT — all band neutral/constructive) and displaces the champion's tail 5.
+
+> **RETIRED 2026-08-09 — superseded by the champion it was probing.** ANTICIPATION A1
+> (#5105) replaced the champion's act-level gate with status-class admission
+> (`{bounce_wait, wait_pullback, hold, buy_now, partial}`), which retires this
+> construction twice over. Mechanically: the frozen widening lifts `act_level`, an input
+> admission no longer reads, so it can no longer admit anything — the #5105 test suite
+> pinned that inertness on merge day, and a frozen key must not quietly go on accruing
+> as a different de-facto rule (re-ordering only) under an admission-widening charter.
+> On the evidence: the battery's per-status split
+> (`section_3_ran_lane.a_stage_ran_from_ledger.H10.per_status`) puts 47 of the shelf's
+> 55 rows on `hold` — which A1 now admits champion-side, absorbing the bulk of the
+> thesis this policy existed to test. The residue it cannot reach (`extended` n=8, a
+> thin directional read the artifact itself flags; `topping` n=0) is too thin to
+> re-register today. That residue stays OPEN as ore, not killed: if the extended/topping
+> cells fatten, an admission probe for them is a legitimate future registration under a
+> new key. The v2 ledger file is sealed in place exactly like the v1 era — kept on
+> disk and in the scoreboard's `retired_policies` disclosure with its accrued open
+> stamps (5 as of retirement day, none ever graded), never advanced again. Successor:
+> §C7, which carries the one-leg-relaxation idiom to the status leg and the
+> best-measured cell the new gate refuses.
 
 ### C3 `door_w_union` — REGISTERED CONSTRUCTION CHOICE
 
@@ -299,6 +320,49 @@ better/worse/same counts.
 **Validity pin:** C6's selection must equal C0's selection. It is a closure experiment; any
 selection difference is a harness bug.
 
+### C7 `buy_soon_admitted` — SUCCESSOR to C2 (registered 2026-08-09)
+
+The champion's admitted pool WITH `buy_soon` rows admitted — champion order, C7's
+registered 12-row cap. The probe relaxes exactly ONE admission leg, the way C2 did
+against the act-level gate: a copy of the artifact is built in which only the
+`buy_soon` rows' entry status is lifted to an admitted value, `select_candidates`
+judges the copy, and the rows carried forward are the original, unpatched dicts. Tone,
+band, tier-cascade, entry-signal presence and the champion's own sort stay the
+champion's code. Admission-only by design: no preference lift, so a `buy_soon` row
+must EARN its slot under the champion's own ranking, and the record measures admission
+rather than admission-plus-reordering.
+
+**The probe value is mechanically irrelevant, and that claim is pinned.** Selection
+never reads status beyond the admission class, and class feeds receipts only; the
+probe patches to `hold` and a test asserts the selection is identical under a
+`buy_now` probe — so a future class-dependent selection change re-opens this
+registration loudly instead of silently bending it.
+
+**Rationale (measured, both sides stated).** A1 refuses `buy_soon` deliberately,
+citing the CN loser ledger — CN entry statuses graded worst-first: `buy_soon` 46.7%
+loser rate, `partial` 41.4%, `buy_now` 30.0%
+(`research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §measured; quoted
+by the A1 constants block: "it graded WORST of the CN entry statuses; admitting it
+imports the chase without the evidence"). The US battery reads the same cell the other
+way: `buy_soon` is the BEST non-thin US cell — +3.19pp per-name median excess at H=10,
+n=31, 9.7% loser rate, #1 in `ranked_non_thin_by_per_name_median`
+(`label_grading_battery_results.json`, the same artifact C1 was registered on). Two
+retrospective reads, one cell, opposite verdicts, and the live rule now enforces the
+CN side on the US board. C7 accrues the prospective US record that can adjudicate it.
+Promotion stays §5: the Arena never flips anything.
+
+**Relation to C1.** C1 tests where `buy_soon`-urgency rows RANK inside the pool; C7
+tests whether `buy_soon`-status rows should be IN the pool at all. Under A1 the two
+questions decoupled: `buy_soon` status can no longer enter the pool, so C1's lift leg
+is expected near-empty (its nightly `act_level_2` receipt is the dial — see §7) while C7
+carries the admission question. Same cell, different grains; neither substitutes for
+the other.
+
+**Expected shape of the null.** On a night with no `buy_soon` row clearing the other
+champion legs, or none scoring into the cap, C7's book equals C0's and the receipts
+say so (`buy_soon_admitted_by_widening`, `buy_soon_selected`); like C4's lean_in
+nights, an equal-book night is a recorded null, not a silent one.
+
 ---
 
 ## §4 Ledgers
@@ -377,6 +441,11 @@ is constructed.
 
 - **C4 is dormant on `lean_in` nights** (§C4). Its record equals C0's until a non-`lean_in`
   night occurs.
+- **C1's lift leg is expected near-empty under A1.** act_level 2 maps to urgency
+  "imminent", whose status (`buy_soon`) the status class refuses — so the rows C1 exists to
+  lift can rarely (via transformed statuses) or never be in the pool. Its nightly
+  `act_level_2` receipt is the dormancy dial; its reckoning is a separate ruling once that
+  receipt has a record.
 - **C3 ⊃ C0 in part** — C3 keeps the champion's top 8, so its record partly overlaps C0's.
   The Door W increment is separately countable (`door_w_selected`) and is the arm's real
   signal.

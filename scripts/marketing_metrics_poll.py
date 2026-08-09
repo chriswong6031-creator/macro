@@ -48,6 +48,9 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger("marketing_metrics_poll")
 
 
@@ -363,7 +366,6 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     # Make engine.* importable when run as a module OR as a file.
-    sys.path.insert(0, str(_code_root()))
 
     root = _data_root(args.root)
     now = None

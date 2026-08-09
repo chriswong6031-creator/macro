@@ -1348,7 +1348,7 @@ class TestCopywriterExemplarHook:
                                               "model": "m", "env_var": "X",
                                               "cred": "x"}])
 
-        def _make_call(providers, fn, context=""):
+        def _make_call(providers, fn, context="", **_kw):
             try:
                 fn(providers[0]["client"], providers[0]["model"])
             except RuntimeError:

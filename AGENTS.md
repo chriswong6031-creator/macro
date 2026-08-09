@@ -160,7 +160,7 @@ with packs still pending).
 
 **DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
 the pull request, run `gh pr edit <n> --add-label merge-on-green` and stop.
-`.github/workflows/merge-on-green.yml` (GitHub-hosted, every 10 minutes,
+`.github/workflows/merge-on-green.yml` (self-hosted render-linux pool, every 10 minutes,
 deliberately off the mac pool so it never queues behind a render) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
 `Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
@@ -196,6 +196,23 @@ answer the reds it just saw. **Diagnose a fresh backlog from the sweep log first
 summary reading `0 main commit(s) classified`, or a proof set carrying no
 `ci-pack-*`, means the refresh path is closed no matter how green main is. Operator
 lever unchanged: `gh workflow run ci.yml --ref main`.
+
+**But NEVER dispatch over a live baseline (livelock, measured 2026-08-09).**
+Main-ref ci.yml dispatches share ONE concurrency group with
+`cancel-in-progress: true`, so every re-dispatch KILLS the in-flight proof: the
+11:00Z baseline died 44 min in — likely minutes from concluding — to a sibling
+session's re-dispatch, whose own run died 4 min later to the next session's. With
+several pinned sessions each firing the lever, no proof ever concludes, the
+sweeper keeps reading `0 main commit(s) classified`, and the entire fleet stays
+pinned — the escape hatch IS the lock. (fences.yml's main-push runs were dying
+the same way under main's ~1/min push cadence, closing the other proof source;
+structural fix = event-conditional cancel-in-progress, in flight 2026-08-09.)
+Preflight before the lever:
+`gh run list --workflow ci.yml --branch main --json databaseId,status,createdAt --jq '[.[]|select(.status!="completed")]'`
+— anything `queued`/`in_progress` → WATCH it (`gh run watch <id> --interval 60`)
+instead of dispatching. Dispatch only over a clear field, or over a run stuck
+`queued` >40 min with the pool otherwise moving (orphaned-run escape — your
+dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
 
@@ -307,7 +324,9 @@ on main (same check failing on ≥2 independent concurrent PR heads pre-merge, o
 green ci.yml run on a main descendant) is excluded by name rather than pinning the
 session forever; the operator lever for a healed base is
 `gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
-merge at once. Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
+merge at once, but preflight for an in-flight baseline first (see the livelock
+note above: a re-dispatch cancels the very proof every pinned session is waiting
+on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
 An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
 2026-07-27): a queued or running render whose head covers this merge satisfies the

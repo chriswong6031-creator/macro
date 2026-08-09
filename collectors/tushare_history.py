@@ -27,8 +27,20 @@ cross-section count.
 GATED: no-ops unless ``TUSHARE_TOKEN`` is set. Both queries are leakage-irrelevant (raw signal
 snapshots; the harness does the leak-guarded forward alignment).
 
-  data/tushare/flow_hist.parquet   {ticker, date, flow}    flow = moneyflow_dc 主力 net rate (超大+大单)
-  data/tushare/chips_hist.parquet  {ticker, date, winner}  winner = cyq_perf 获利比例 win-rate
+  data/tushare/flow_hist.parquet       {ticker, date, flow}    flow = moneyflow_dc 主力 net rate (超大+大单)
+  data/tushare/chips_hist.parquet      {ticker, date, winner}  winner = cyq_perf 获利比例 win-rate
+  data/tushare/chips_dist_hist.parquet {ticker, date, chip_*}  DERIVED aggregates of the cyq_chips
+                                                               筹码分布 histogram (see below)
+
+The chips-DISTRIBUTION leg does not share the other two legs' call shape and cannot. cyq_perf
+and moneyflow_dc both answer a whole-market ``trade_date=`` query, so one call fills one whole
+cross-section; ``cyq_chips`` REQUIRES ts_code, so it costs one call per NAME and returns a
+histogram (~100+ price-level rows) per name per day. Two consequences shaped ``_accrue_chips_
+distribution`` and neither is stylistic: calls are RANGED over a window of trading days so one
+call covers many dates for a name, and what accrues here is the DERIVED per-ticker-date feature
+row, never the raw histogram — 260 dates x N names of raw levels is a store two orders of
+magnitude larger than this validation grid, and the raw rows already live (immutably, with
+receipts) in the private ``data/china_chips_distribution/`` partitions.
 
 DISPLAY/CONTEXT-ONLY — this is the validation substrate, never itself a signal.
 """
@@ -40,11 +52,16 @@ import pandas as pd
 
 from lib import config
 from collectors import tushare_client as tc
+from collectors import tushare_chips_distribution as chips_dist
 
 log = logging.getLogger("tushare_history")
 
 FLOW_HIST = config.data_dir() / "tushare" / "flow_hist.parquet"
 CHIPS_HIST = config.data_dir() / "tushare" / "chips_hist.parquet"
+CHIPS_DIST_HIST = config.data_dir() / "tushare" / "chips_dist_hist.parquet"
+_CHIPS_DIST_WINDOW = 20        # trading days per RANGED cyq_chips call (row cap is 6000)
+_CHIPS_DIST_MAX_CALLS = 12     # ranged calls per build — the 300/min premium pool is SHARED
+_CHIPS_DIST_MAX_NAMES = 40     # names touched per build; accrual is resumable across builds
 _GRID_DAYS = 260          # ~1y of DAILY cross-sections. NOTE: china_validation gates on distinct
                           # weeks + non-overlapping forward windows, never on this row count.
 _MAX_BACKFILL = 60        # safety cap on fetches per build (first run backfills the grid, then ~1/build)
@@ -146,6 +163,120 @@ def _accrue(path, api: str, fields: str, value_attr, col: str, panel: set[str],
     return len(missing)
 
 
+def _existing_pairs(path) -> set[tuple[str, str]]:
+    if not path.exists():
+        return set()
+    try:
+        df = pd.read_parquet(path, columns=["ticker", "date"])
+        return set(zip(df["ticker"].astype(str), df["date"].astype(str)))
+    except Exception:  # noqa: BLE001
+        return set()
+
+
+def _close_panel():
+    """The china_search close panel, re-indexed to YYYYMMDD — the reference price for the
+    chip-distribution features. Missing closes yield NULL band features, never a fabricated
+    reference: "no chips near the close" and "we don't know the close" are opposite readings."""
+    try:
+        cp = config.data_dir() / "china_search" / "closes.parquet"
+        if not cp.exists():
+            return None
+        df = pd.read_parquet(cp).sort_index()
+        df.index = [pd.Timestamp(d).strftime("%Y%m%d") for d in df.index]
+        return df
+    except Exception as e:  # noqa: BLE001
+        log.debug("tushare_history close panel unavailable (%s)", e)
+        return None
+
+
+def _close_for(closes, ticker: str, d: str):
+    if closes is None or ticker not in closes.columns or d not in closes.index:
+        return None
+    try:
+        return _num(closes.at[d, ticker])
+    except Exception:  # noqa: BLE001 — duplicate index labels return a Series, not a scalar
+        return None
+
+
+def _accrue_chips_distribution(path, panel: set[str], dates: list[str], *,
+                               window: int = _CHIPS_DIST_WINDOW,
+                               max_calls: int = _CHIPS_DIST_MAX_CALLS,
+                               max_names: int = _CHIPS_DIST_MAX_NAMES) -> int:
+    """Backfill DERIVED cyq_chips distribution features into `path`, panel-filtered.
+
+    One RANGED call per (name, window) — cyq_chips requires ts_code, so unlike the other legs
+    a date cannot be filled in one call. Bounded three ways (calls, names, window) because the
+    300/min premium budget is shared with the running daily collectors; the loop is resumable,
+    taking the NEWEST missing dates first so freshness never queues behind old holes.
+    """
+    if not panel or not dates:
+        return 0
+    have = _existing_pairs(path)
+    closes = _close_panel()
+    index = {d: i for i, d in enumerate(dates)}
+    rows: list[dict] = []
+    calls = 0
+    for ticker in sorted(panel)[:max_names]:
+        if calls >= max_calls:
+            break
+        missing = [d for d in dates if (ticker, d) not in have]
+        if not missing:
+            continue
+        end = missing[-1]                                   # newest missing date first
+        start_i = max(0, index[end] - window + 1)
+        span = dates[start_i:index[end] + 1]
+        calls += 1
+        df = tc.query(chips_dist.ENDPOINT,
+                      ts_code=chips_dist.vendor_ticker(ticker),
+                      start_date=span[0], end_date=span[-1])
+        if df is None or df.empty or "trade_date" not in df.columns:
+            continue
+        if len(df) >= chips_dist.VENDOR_MAX_ROWS:
+            # At the vendor's row cap the response is TRUNCATED and there is no documented
+            # ordering to say which dates survived — a partial histogram would silently
+            # deflate every mass feature computed from it. Drop the window, don't guess.
+            log.warning("chips distribution window hit the vendor row cap for %s", ticker)
+            continue
+        for d, group in df.groupby(df["trade_date"].astype(str).str.replace("-", "")):
+            if (ticker, d) in have or d not in index:
+                continue
+            levels = [{"ticker": ticker, "trade_date": d,
+                       "price": r.get("price"), "percent": r.get("percent")}
+                      for r in group.to_dict(orient="records")]
+            mass = sum(_num(x["percent"]) or 0.0 for x in levels)
+            if chips_dist.percent_mass_observation(mass) == (
+                    "contradicts_documented_percentage_points_fraction_like"):
+                # A 100x unit flip would be invisible in every downstream feature. Never rescale.
+                log.warning("chips distribution percent unit contradiction for %s %s", ticker, d)
+                continue
+            f = chips_dist.summarize_distribution(
+                levels, ref_price=_close_for(closes, ticker, d))
+            rows.append({
+                "ticker": ticker, "date": d,
+                "chip_entropy_norm": f.get("entropy_normalized"),
+                "chip_level_count": f.get("level_count"),
+                "chip_peak_price": f.get("peak_price"),
+                "chip_avg_cost": f.get("mass_weighted_avg_price"),
+                "chip_winner_share": f.get("winner_share"),
+                "chip_conc_5pct": f.get("concentration_share_5pct"),
+                "chip_conc_10pct": f.get("concentration_share_10pct"),
+            })
+    if not rows:
+        return 0
+    new = pd.DataFrame(rows)
+    if path.exists():
+        try:
+            new = pd.concat([pd.read_parquet(path), new], ignore_index=True)
+        except Exception as e:  # noqa: BLE001 — an unreadable store must not lose this run
+            log.warning("chips distribution history unreadable, rewriting from new rows (%s)", e)
+    # keep="first": already-stored pairs are filtered out above, so a duplicate here can only
+    # be an in-run window overlap. Keeping first matches the raw plane's keep-first store.
+    new = new.drop_duplicates(subset=["ticker", "date"], keep="first")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    new.to_parquet(path, index=False)
+    return len(rows)
+
+
 def refresh() -> int:
     """Maintain the fund-flow + chips daily-grid history. Gated; returns #dates backfilled."""
     if not tc.enabled():
@@ -167,7 +298,11 @@ def refresh() -> int:
                      lambda r: _num(getattr(r, "winner_rate", None)), "winner", panel, dates)
     except Exception as e:  # noqa: BLE001
         log.warning("tushare chips history skipped (%s)", e)
-    log.info("tushare history: backfilled %d date-slots (flow+chips)", n)
+    try:
+        n += _accrue_chips_distribution(CHIPS_DIST_HIST, panel, dates)
+    except Exception as e:  # noqa: BLE001
+        log.warning("tushare chips distribution history skipped (%s)", e)
+    log.info("tushare history: backfilled %d date-slots (flow+chips+chip-distribution)", n)
     return n
 
 

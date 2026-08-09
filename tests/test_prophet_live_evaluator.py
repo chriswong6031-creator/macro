@@ -7,8 +7,9 @@ This file pins the four ways it could stop being honest:
   G0.3 DEGRADATION     a stale pack darks the WHOLE artifact; a stale or missing
                        quote darks THAT NAME and leaves the rest live. No path
                        invents a state, and every dark carries a reason.
-  G0.5 DEBOUNCE        one pass above a trigger is never a public state; two are;
-                       a drop through the buffer fades; a re-cross pays two again.
+  G0.5 DEBOUNCE        one pass above a trigger is never a public state; two are; a
+                       breach through the buffer on EITHER edge fades and a marginal
+                       one does not; a re-cross pays two again.
   G0.6 VOCABULARY      fired / confirmed / refuted / validated / 证伪 appear nowhere
                        in the payload or the module.
 
@@ -68,6 +69,20 @@ def buyable(fade: float | None = 90.0, hi: float | None = 110.0) -> dict:
             "band_lo_px": 85.0, "band_hi_px": 115.0}
 
 
+def no_lower_edge(hi: float | None = 110.0) -> dict:
+    """A cross-class name whose buyable region has NO bound inside the band.
+
+    What an append-semantics probe publishes when its own anchor at the as-of close is
+    buyable (``armed_pack.probe_name`` bisects a lower edge only when the buyable run
+    starts ABOVE grid[0]): ``buyable_in_band`` true, ``trigger_px`` absent. The evaluator
+    reads named keys only, so this is exactly the entry it will be handed.
+    """
+    return {"state": "near", "center_buyable": False, "as_of_close": 95.0,
+            "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": True,
+            "trigger_px": None, "fade_hi_px": hi,
+            "band_lo_px": 0.0, "band_hi_px": 115.0}
+
+
 def dormant() -> dict:
     return {"state": "dormant", "center_buyable": False, "as_of_close": 50.0,
             "bar_date": LAST_SESSION, "probed": True, "buyable_in_band": False,
@@ -82,8 +97,25 @@ def pack(names: dict, as_of: str | None = None) -> dict:
 
 
 def quotes(**px: float) -> dict:
-    return {t: {"price": v, "prev_close": v, "change_pct": 0.0, "ts_ms": None,
+    """A quote view with NO previous close.
+
+    ``prev_close: None`` is a real production shape (the heatmap-derived rows carry it,
+    by construction) and it is the right default here: it leaves the ONE PRICE BASIS
+    assertion UNCHECKED for these names, so the sixty tests below keep testing the
+    thing they are named after instead of also asserting a basis. The helper used to
+    set ``prev_close = price``, which claims the previous session closed at this pass's
+    live price — a 6% pack-vs-feed gap on the very first fixture, and every one of
+    those names would now dark ``basis_mismatch``. The basis gate has its own fixtures:
+    :func:`quotes_with_prev`.
+    """
+    return {t: {"price": v, "prev_close": None, "change_pct": 0.0, "ts_ms": None,
                 "source": "quotes"} for t, v in px.items()}
+
+
+def quotes_with_prev(px: dict, prev: dict) -> dict:
+    """A quote view that DOES carry previous closes — the basis assertion's fixture."""
+    return {t: {"price": v, "prev_close": prev.get(t), "change_pct": 0.0,
+                "ts_ms": None, "source": "quotes"} for t, v in px.items()}
 
 
 def _run(p, q, prev=None, *, now=NOW, age=1.0):
@@ -122,14 +154,55 @@ def test_a_drop_through_the_buffer_fades_and_resets_the_counter():
     a = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0))
     b = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), a)
     assert b["states"]["AAA"]["state"] == "forming"
-    # Inside the 0.5% hysteresis band: still forming, counter preserved.
+    # Inside the 0.5% hysteresis band: still forming, counter preserved. The pass is
+    # SUPPRESSED, not silent — it spools one internal marker so the suppression can be
+    # measured, exactly as the three other debounced transitions do.
     c = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.8), b)
     assert c["states"]["AAA"]["state"] == "forming" and c["states"]["AAA"]["passes"] == 2
-    assert c["events"] == []
+    assert [e["kind"] for e in c["events"]] == [LS.FADE_UNCONFIRMED]
     # Through the buffer: faded, counter cleared.
     d = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.0), c)
     assert d["states"]["AAA"]["state"] == "faded" and d["states"]["AAA"]["passes"] == 0
     assert [e["kind"] for e in d["events"]] == ["faded"]
+
+
+def test_a_suppressed_fade_is_measurable_and_never_a_public_state():
+    """The fourth internal marker (RULING, W-L0 gate 5).
+
+    Every other debounced transition already spooled the pass it suppressed —
+    crossing / at_risk / recovery — and the whole point of that set is measuring whether
+    the debounce earns its keep. The fade path suppressed passes silently, so the one
+    hysteresis nobody could audit was the one the reader sees most.
+    """
+    a = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0))
+    b = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), a)
+    assert b["states"]["AAA"]["state"] == "forming"
+    c = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.8), b)   # inside the 0.5% buffer
+    st = c["states"]["AAA"]
+    assert st["state"] == "forming", "a suppressed pass is not a public state change"
+    assert st["internal"] == LS.FADE_UNCONFIRMED
+    assert LS.FADE_UNCONFIRMED not in LS.PUBLIC_STATES
+    assert LS.FADE_UNCONFIRMED in LS.EVENT_KINDS
+    # `via` is a display field the P1 strip reads to choose "Fell back" vs "Ran past".
+    # Nothing has faded, so it stays OFF the payload and rides the spool row instead.
+    assert "via" not in st, st
+    ev = [e for e in c["events"] if e["kind"] == LS.FADE_UNCONFIRMED]
+    assert len(ev) == 1 and ev[0]["via"] == "drop" and ev[0]["from"] == "forming"
+    # One row per marker per name per session: an oscillating price must not drown the
+    # very measurement the marker exists for. Gate 2 DEBOUNCES the fade rather than
+    # holding inside the buffer forever, so a second CONSECUTIVE failing pass is a real
+    # fade now and cannot be the dedup probe. The honest probe is the oscillation the
+    # marker was written for: a holding pass (which clears the failing counter) and then
+    # a fresh suppressed one, which must NOT spool the marker a second time.
+    d = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), c)
+    assert d["states"]["AAA"]["state"] == "forming" and d["states"]["AAA"]["fails"] == 0
+    e = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.75), d)
+    assert e["states"]["AAA"]["state"] == "forming"
+    assert e["states"]["AAA"]["internal"] == LS.FADE_UNCONFIRMED
+    assert [ev["kind"] for ev in e["events"]] == []
+    # Two consecutive failing passes ARE persistent, and gate 2 fades on the second.
+    f = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.7), e)
+    assert f["states"]["AAA"]["state"] == "faded" and f["states"]["AAA"]["via"] == "drop"
 
 
 def test_a_re_cross_pays_two_fresh_passes():
@@ -167,28 +240,122 @@ def test_a_formed_name_that_runs_away_fades_via_overrun_not_drop():
     Same public state, but the reason axis matters: P1 display reads a drop as "it
     came back to you" and an overrun as "don't chase", and the ledger cannot separate
     the two populations without it.
+
+    Both breaches here are DECISIVE — over `fade_hi_px * 1.005`, under
+    `trigger * 0.995` — so the axis is read off the pass that actually publishes
+    `faded`. A marginal breach no longer publishes one at all (W-L0 gate 2); that is
+    the next test, and 105.5 against a 105.0 edge used to live in THIS one.
     """
     a = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0))
     b = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0), a)
     assert b["states"]["AAA"]["state"] == "forming"
-    up = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=105.5), b)
+    up = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=106.0), b)   # > 105.525
     assert up["states"]["AAA"]["state"] == "faded" and up["states"]["AAA"]["via"] == "overrun"
     assert up["events"][0]["via"] == "overrun"
-    down = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=98.0), b)
+    down = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=98.0), b)  # < 99.5
     assert down["states"]["AAA"]["state"] == "faded" and down["states"]["AAA"]["via"] == "drop"
     assert down["events"][0]["via"] == "drop"
+
+
+def test_a_marginal_overrun_holds_the_state_and_fades_only_on_a_second_failing_pass():
+    """W-L0 gate 2 (CSP-R2): the hysteresis buffer is TWO-SIDED, not lower-edge only.
+
+    105.5 against a 105.0 upper edge is +0.48% — INSIDE the 0.5% buffer — and it used
+    to publish `faded` on ONE pass, because only the band below the trigger preserved
+    the state. A name the same distance UNDER the trigger held. That asymmetry is the
+    killed 1-tick public flip, on the edge P1 reads as "don't chase", and this test is
+    the one that used to assert the defect.
+    """
+    entry = near(100.0, hi=105.0)
+    a = _run(pack({"AAA": entry}), quotes(AAA=101.0))
+    b = _run(pack({"AAA": entry}), quotes(AAA=101.0), a)
+    assert b["states"]["AAA"]["state"] == "forming" and b["states"]["AAA"]["passes"] == 2
+    # One marginal overrun: the PUBLIC state holds, and the suppression is COUNTABLE —
+    # gate 5's fourth marker, which until now only the drop edge could earn. A
+    # suppression nobody records is a suppression nobody can measure, and the upper edge
+    # was exactly the half of the buffer no spool row could see.
+    c = _run(pack({"AAA": entry}), quotes(AAA=105.5), b)          # +0.48% over the edge
+    st = c["states"]["AAA"]
+    assert st["state"] == "forming", "a sub-buffer overrun published a 1-tick fade"
+    assert st["passes"] == 2 and st["fails"] == 1
+    assert "via" not in st, "nothing faded, so there is no breach side to name"
+    assert st["internal"] == LS.FADE_UNCONFIRMED
+    ev = [e for e in c["events"] if e["kind"] == LS.FADE_UNCONFIRMED]
+    assert len(ev) == 1 and ev[0]["via"] == "overrun" and ev[0]["from"] == "forming"
+    # A SECOND consecutive failing pass is not marginal any more — it is persistent.
+    d = _run(pack({"AAA": entry}), quotes(AAA=105.4), c)
+    assert d["states"]["AAA"]["state"] == "faded" and d["states"]["AAA"]["via"] == "overrun"
+    assert d["states"]["AAA"]["passes"] == 0
+    assert [e["kind"] for e in d["events"]] == ["faded"]
+    # And the episode spools ONE faded row: a later failing pass re-publishes the same
+    # public state, so the ledger is not handed the same fade twice.
+    e = _run(pack({"AAA": entry}), quotes(AAA=105.45), d)
+    assert e["states"]["AAA"]["state"] == "faded"
+    assert e["events"] == []
+
+
+def test_a_cross_name_does_not_flap_on_a_sub_buffer_straddle_of_either_edge():
+    """The cross path's twin of the board path's four-cent straddle (CSP-R2).
+
+    A price oscillating across an edge inside the buffer must publish exactly ONE
+    public state, and that has to be true of the UPPER edge as well as the lower —
+    the upper one was the hole. Neither series may put a second state on the strip.
+    """
+    entry = near(100.0, hi=105.0)
+    for series in ((100.2, 99.8), (104.8, 105.2)):     # straddles lo, then hi
+        a = _run(pack({"AAA": entry}), quotes(AAA=101.0))
+        prev = _run(pack({"AAA": entry}), quotes(AAA=101.0), a)
+        assert prev["states"]["AAA"]["state"] == "forming", series
+        states: list[str] = []
+        kinds: list[str] = []
+        for n in range(6):
+            prev = _run(pack({"AAA": entry}), quotes(AAA=series[n % 2]), prev)
+            states.append(prev["states"]["AAA"]["state"])
+            kinds.extend(ev["kind"] for ev in prev["events"])
+        assert set(states) == {"forming"}, (series, states)
+        # Nothing PUBLIC moved, and the six passes spool exactly ONE row: the first
+        # suppressed pass earns gate 5's marker and the dedup swallows the rest, so an
+        # oscillating price can neither flap the strip nor drown its own measurement.
+        assert kinds == [LS.FADE_UNCONFIRMED], (series, kinds)
+
+
+def test_the_cross_counter_survives_a_marginal_breach_of_either_edge():
+    """The hold preserves `passes`, so a name that dips over an edge and comes back is
+    not made to re-earn a cross it already banked — and the SINCE clock does not
+    restart, because the reader was never told anything new."""
+    entry = near(100.0, hi=105.0)
+    a = _run(pack({"AAA": entry}), quotes(AAA=101.0), now=_at(10, 0))
+    b = _run(pack({"AAA": entry}), quotes(AAA=101.0), a, now=_at(10, 5))
+    assert b["states"]["AAA"]["state"] == "forming" and b["states"]["AAA"]["passes"] == 2
+    since = b["states"]["AAA"]["since_ts"]
+    over = _run(pack({"AAA": entry}), quotes(AAA=105.5), b, now=_at(10, 10))   # above hi
+    under = _run(pack({"AAA": entry}), quotes(AAA=99.8), b, now=_at(10, 10))   # below lo
+    for st in (over["states"]["AAA"], under["states"]["AAA"]):
+        assert st["state"] == "forming" and st["passes"] == 2 and st["fails"] == 1
+        assert st["since_ts"] == since
+    # Back inside the interval: the banked passes carry, so it is still forming.
+    back = _run(pack({"AAA": entry}), quotes(AAA=102.0), over, now=_at(10, 15))
+    st = back["states"]["AAA"]
+    assert st["state"] == "forming" and st["passes"] == 3 and st["fails"] == 0
+    assert st["since_ts"] == since
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # B2 — outside the probed band the pack knows nothing
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_a_board_name_gapping_below_its_band_goes_dark_not_forming():
-    """The reproduced fabrication: -30% satisfied "no breach recorded" and read forming."""
+def test_a_board_name_gapping_below_its_band_reports_no_verdict_not_forming():
+    """The reproduced fabrication: -30% satisfied "no breach recorded" and read forming.
+
+    UNKNOWN, not dark (W-L0 gate 5): the quote arrived and it is fresh, so counting this
+    under ``dark_counts`` would feed the strip's "N could not be read this pass" footer
+    and its half-the-names cliff with a name that read perfectly.
+    """
     art = _run(pack({"BBB": buyable()}), quotes(BBB=70.0))     # band_lo_px 85.0
-    assert art["states"]["BBB"] == {"state": "dark", "reason": "out_of_band",
+    assert art["states"]["BBB"] == {"state": "unknown", "reason": "out_of_band",
                                     "price": 70.0, "quote_age_min": 1.0}
-    assert art["meta"]["dark_counts"] == {"out_of_band": 1}
+    assert art["meta"]["dark_counts"] == {}
+    assert art["meta"]["unknown_counts"] == {"out_of_band": 1}
 
 
 def test_a_name_with_no_fade_edge_can_still_leave_its_band():
@@ -197,33 +364,148 @@ def test_a_name_with_no_fade_edge_can_still_leave_its_band():
     inside = _run(pack({"BBB": entry}), quotes(BBB=90.0))
     assert inside["states"]["BBB"]["state"] == "forming"
     outside = _run(pack({"BBB": entry}), quotes(BBB=84.0))     # below band_lo_px 85.0
-    assert outside["states"]["BBB"]["state"] == "dark"
+    assert outside["states"]["BBB"]["state"] == "unknown"
     assert outside["states"]["BBB"]["reason"] == "out_of_band"
 
 
-def test_a_runaway_past_the_band_top_goes_dark_rather_than_extrapolating():
+def test_a_runaway_past_the_band_top_reports_no_verdict_rather_than_extrapolating():
     """+25% with fade_hi None read forming, where the real gate says False at +25%."""
     entry = near(100.0, hi=None)                              # band_hi_px 109.25
     ok = _run(pack({"AAA": entry}), quotes(AAA=108.0))
     assert ok["states"]["AAA"]["state"] == "near"              # 1 pass, in band
     past = _run(pack({"AAA": entry}), quotes(AAA=118.75))      # +25% on a 95 close
-    assert past["states"]["AAA"]["state"] == "dark"
+    assert past["states"]["AAA"]["state"] == "unknown"
     assert past["states"]["AAA"]["reason"] == "out_of_band"
 
 
-def test_a_non_buyable_name_stays_evaluable_below_its_close():
-    """band_lo_px is 0 for those names: the centre verdict already answers downward."""
-    art = _run(pack({"AAA": near(100.0)}), quotes(AAA=40.0))
-    assert art["states"]["AAA"]["state"] == "near"
-    assert art["meta"]["dark_counts"] == {}
+def test_a_non_buyable_name_below_its_close_reports_no_verdict():
+    """W-L0 gate 5: `dormant`/`near` never assert over the never-probed down-region.
+
+    A cross-class span starts AT the as-of close and runs UP, so the pack measured
+    nothing below it. The 0 in ``band_lo_px`` is the published span's sentinel, not a
+    floor, and it used to be read as permission to keep answering down there — the
+    argument being that the centre verdict settles the whole region for "a gate whose
+    product structure is a cross UP". The gate's buyable set is an INTERVAL (this pack
+    publishes an upper edge and an ``irregular`` state), so it does not.
+    """
+    art = _run(pack({"AAA": near(100.0)}), quotes(AAA=40.0))   # as_of_close 95.0
+    st = art["states"]["AAA"]
+    assert st["state"] == "unknown" and st["reason"] == "below_probe_floor"
+    assert st["price"] == 40.0
+    assert art["meta"]["unknown_counts"] == {"below_probe_floor": 1}
+    assert art["meta"]["dark_counts"] == {}                    # the tape was fine
+    assert "cross_level_px" not in st, "a non-verdict hangs no level"
+    assert "since_ts" not in st, "a non-verdict has nothing to time"
+    # AT the close it is measured again, so the verdict comes back.
+    at_close = _run(pack({"AAA": near(100.0)}), quotes(AAA=95.0))
+    assert at_close["states"]["AAA"]["state"] == "near"
+
+
+def test_a_dormant_name_below_its_close_reports_no_verdict():
+    """The gate names `dormant` specifically: nothing in the band is buyable is a claim
+    about the BAND, and below the close there is no band."""
+    art = _run(pack({"CCC": dormant()}), quotes(CCC=45.0))     # as_of_close 50.0
+    assert art["states"]["CCC"]["state"] == "unknown"
+    assert art["states"]["CCC"]["reason"] == "below_probe_floor"
+    still = _run(pack({"CCC": dormant()}), quotes(CCC=52.0))   # inside the swept span
+    assert still["states"]["CCC"]["state"] == "dormant"
+
+
+def test_a_dip_out_of_the_swept_band_does_not_restart_the_since_clock():
+    """`unknown` is a non-verdict, so it chains ``prior_public`` exactly as dark does.
+
+    Without the read-through, a name that dips outside its band for one pass and returns
+    to the SAME public state would restart the SINCE column — the clock would time the
+    round trip instead of the state, which is what P1 prints.
+    """
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    assert a["states"]["BBB"]["state"] == "forming"
+    since = a["states"]["BBB"]["since_ts"]
+    gap = _run(pack({"BBB": buyable()}), quotes(BBB=70.0), a, now=_at(10, 5))
+    assert gap["states"]["BBB"]["state"] == "unknown"
+    assert "since_ts" not in gap["states"]["BBB"]
+    assert gap["states"]["BBB"]["prior_public"] == "forming"
+    back = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), gap, now=_at(10, 10))
+    assert back["states"]["BBB"]["state"] == "forming"
+    assert back["states"]["BBB"]["since_ts"] == since
+
+
+def test_a_name_that_crossed_today_still_fades_below_its_close():
+    """The floor rule must not delete a published cross's own fall-back.
+
+    `faded` is arithmetic over the level this lane published and a price it measured,
+    not a claim about the gate's verdict at today's price — and a trigger sitting
+    fractionally above the close is the common case, so darkening the region below the
+    close would take the "Fell back" row away from most names that ever fade.
+    """
+    a = _run(pack({"AAA": near(96.0)}), quotes(AAA=96.5))      # as_of_close 95.0
+    b = _run(pack({"AAA": near(96.0)}), quotes(AAA=96.5), a)
+    assert b["states"]["AAA"]["state"] == "forming"
+    c = _run(pack({"AAA": near(96.0)}), quotes(AAA=94.0), b)   # below the close
+    assert c["states"]["AAA"]["state"] == "faded" and c["states"]["AAA"]["via"] == "drop"
+
+
+def test_a_name_whose_interval_holds_is_never_dormant_for_want_of_a_lower_edge():
+    """W-L0 gate 5(b): the live lie. `dormant` used to fire on `lo is None`.
+
+    A cross-class name whose buyable region has no bound inside the band is buyable from
+    the probe floor up — its interval HOLDS at the live price — and the branch keyed on
+    `lo is None` ran BEFORE the one that asks whether it holds, so the strip said
+    "nothing forming" about a name that was forming. `dormant` means one thing only:
+    nothing in the armed band is buyable.
+    """
+    entry = no_lower_edge()
+    one = _run(pack({"AAA": entry}), quotes(AAA=100.0))       # close 95, fade_hi 110
+    assert one["states"]["AAA"]["state"] == "near"            # 1 pass — debounce, not dormant
+    assert one["states"]["AAA"]["internal"] == LS.CROSSING_UNCONFIRMED
+    two = _run(pack({"AAA": entry}), quotes(AAA=100.0), one)
+    assert two["states"]["AAA"]["state"] == "forming"
+    assert two["states"]["AAA"]["entered"] == "cross"
+    # No lower edge exists, so no cross level is published — a level only exists where
+    # the interval has a bound (module docstring: LEVELS).
+    assert "cross_level_px" not in two["states"]["AAA"]
+    assert two["states"]["AAA"]["fade_hi_px"] == 110.0
+
+
+def test_a_name_with_no_lower_edge_still_leaves_its_interval_upward():
+    """The other half of the same branch: with `lo` None the hysteresis test used to
+    evaluate `float(None)`, so a name that ran past its upper edge died in the handler
+    and shipped `dark` with an eval_error rather than the overrun it was."""
+    entry = no_lower_edge(hi=110.0)
+    a = _run(pack({"AAA": entry}), quotes(AAA=100.0))
+    b = _run(pack({"AAA": entry}), quotes(AAA=100.0), a)
+    assert b["states"]["AAA"]["state"] == "forming"
+    up = _run(pack({"AAA": entry}), quotes(AAA=111.0), b)     # over fade_hi, inside band
+    st = up["states"]["AAA"]
+    assert st["state"] == "faded" and st["via"] == "overrun"
+    assert "reason" not in st, st
+
+
+def test_an_unbounded_interval_does_not_extrapolate_below_the_probe_floor():
+    """Where (a) and (b) meet: with no lower edge the interval reads as buyable all the
+    way down, so the floor check has to be asked BEFORE membership or the lane would
+    publish `forming` off a region the probe never swept."""
+    entry = no_lower_edge()
+    a = _run(pack({"AAA": entry}), quotes(AAA=90.0))          # below the 95 close
+    b = _run(pack({"AAA": entry}), quotes(AAA=90.0), a)
+    assert b["states"]["AAA"]["state"] == "unknown"
+    assert b["states"]["AAA"]["reason"] == "below_probe_floor"
 
 
 def test_a_pack_without_band_fields_still_evaluates():
-    """Schema skew must not dark a whole universe."""
+    """Schema skew must not dark a whole universe — nor unknown one.
+
+    A pack built before the band fields published no span, so there is no floor to name
+    and `probe_floor` refuses to invent one: the old behaviour stands rather than
+    declaring every name below its close unmeasured on a schema skew.
+    """
     entry = {k: v for k, v in near(100.0).items()
              if k not in ("band_lo_px", "band_hi_px")}
     art = _run(pack({"AAA": entry}), quotes(AAA=101.0))
     assert art["states"]["AAA"]["state"] == "near"
+    low = _run(pack({"AAA": entry}), quotes(AAA=40.0))
+    assert low["states"]["AAA"]["state"] == "near"
+    assert low["meta"]["unknown_counts"] == {}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,6 +565,37 @@ def test_two_consecutive_marginal_failing_passes_do_publish_at_risk():
     c = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.97), b)
     assert c["states"]["BBB"]["state"] == "at_risk"          # 2 failing passes
     assert c["states"]["BBB"]["fails"] == 2
+
+
+def test_a_board_name_first_seen_breaching_is_not_handed_a_free_forming():
+    """W-L0: the optimistic first-pass default.
+
+    The debounce holds a state the reader ALREADY HAS; on the day's first pass there is
+    none, so defaulting to `forming` published the opposite of the one thing this pass
+    measured. The side rides along or the card chip would call an overrun a fall-back.
+    """
+    art = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.98))
+    st = art["states"]["BBB"]
+    assert st["state"] == "at_risk" and st["via"] == "drop"
+    assert st["fails"] == 1                                  # marginal, not decisive
+    assert "internal" not in st, "the marker names a SUPPRESSED pass; this one published"
+    assert [e["kind"] for e in art["events"]] == ["at_risk"]
+    over = _run(pack({"BBB": buyable(fade=90.0, hi=110.0)}), quotes(BBB=110.2))
+    assert over["states"]["BBB"]["state"] == "at_risk"
+    assert over["states"]["BBB"]["via"] == "overrun"
+
+
+def test_a_dark_gap_does_not_hand_a_breaching_board_name_a_free_forming():
+    """The same lie, one pass later: `prev_state` is "dark" after a quote hiccup, which
+    is not in (forming, at_risk), so the default fired there too. Read the last state
+    that reported a verdict instead."""
+    a = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.98))
+    assert a["states"]["BBB"]["state"] == "at_risk"
+    gap = _run(pack({"BBB": buyable(fade=90.0)}), {}, a)      # quote goes missing
+    assert gap["states"]["BBB"]["state"] == "dark"
+    back = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=89.98), gap)
+    assert back["states"]["BBB"]["state"] == "at_risk"
+    assert back["states"]["BBB"]["internal"] == LS.AT_RISK_UNCONFIRMED
 
 
 def test_recovery_from_at_risk_is_debounced_symmetrically():
@@ -395,8 +708,8 @@ def test_no_level_key_when_the_pack_armed_none():
         assert key not in stale_edge, key
 
 
-def test_a_dark_row_carries_no_level_whatever_the_reason():
-    """A dark row publishes no state to hang a level on (G0.3)."""
+def test_a_row_with_no_verdict_carries_no_level_whatever_the_reason():
+    """A row that reports no verdict has nothing to hang a level on (G0.3)."""
     p = pack({"AAA": near(100.0),                       # no quote at all
               "BBB": buyable(),                         # gapped below its band
               "IRR": {"state": "irregular", "center_buyable": True, "as_of_close": 10.0,
@@ -413,9 +726,14 @@ def test_a_dark_row_carries_no_level_whatever_the_reason():
     reasons = {r["reason"] for r in rows}
     assert reasons == {"no_quote", "out_of_band", "irregular_gate", "stale_quote"}, reasons
     for st in rows:
-        assert st["state"] == "dark"
+        assert st["state"] in LS.NO_VERDICT_STATES
         for key in ("cross_level_px", "fade_px", "fade_hi_px"):
             assert key not in st, (st, key)
+    # …and the two are kept apart: only a LANE failure is dark (module: UNKNOWN IS NOT
+    # DARK), so the strip's "could not be read" count never absorbs a coverage limit.
+    by_reason = {r["reason"]: r["state"] for r in rows}
+    assert by_reason == {"no_quote": "dark", "stale_quote": "dark",
+                         "irregular_gate": "dark", "out_of_band": "unknown"}, by_reason
 
 
 def test_the_level_is_republished_verbatim_never_re_rounded():
@@ -812,6 +1130,113 @@ def test_every_dark_state_carries_a_reason_and_no_price():
         assert "price" not in st, tkr     # a dark row never carries a number
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE PRICE BASIS (W-L0 gate 3) — the startup assertion
+#
+# The armed levels are prices on the store's ADJUSTED close series; `price` is a RAW
+# vendor print. They are comparable only while both describe the same scale, and the
+# pack's `as_of_close` against the feed's `prev_close` for that same session is the
+# measurement of exactly that. The cross-module vocabulary lives in
+# tests/test_prophet_live_basis.py; what is pinned here is what the LANE does with it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_pack_close_that_matches_the_feeds_previous_close_evaluates_normally():
+    """The matching case. `buyable()` arms at as_of_close=100.0, so a feed that also
+    calls the previous close 100.0 is on the same scale and nothing is withheld."""
+    art = _run(pack({"BBB": buyable()}),
+               quotes_with_prev({"BBB": 100.0}, {"BBB": 100.0}))
+    assert art["states"]["BBB"]["state"] == "forming"
+    ba = art["meta"]["price_adjustment"]
+    assert ba["checked_n"] == 1 and ba["unchecked_n"] == 0 and ba["mismatched"] == {}
+
+
+def test_a_dividend_sized_pack_vs_feed_gap_darks_that_name():
+    """The materially-mismatched case. A 1% gap between the pack's close and the feed's
+    previous close for the SAME session is a distribution, not tick noise — the levels
+    and the tape are on different scales and no honest state can be read off them."""
+    art = _run(pack({"BBB": buyable()}),
+               quotes_with_prev({"BBB": 100.0}, {"BBB": 101.0}))
+    st = art["states"]["BBB"]
+    assert st["state"] == "dark"
+    assert st["reason"] == "basis_mismatch"
+    # The measured gap rides on the row: a dark that cannot be sized is a dark nobody
+    # can triage.
+    assert st["basis_gap_pct"] == pytest.approx(-0.9901, abs=1e-3)
+    assert "price" not in st                      # a dark row never carries a number
+    assert art["meta"]["dark_counts"] == {"basis_mismatch": 1}
+    assert set(art["meta"]["price_adjustment"]["mismatched"]) == {"BBB"}
+
+
+def test_a_basis_mismatch_darks_only_that_name_and_leaves_the_pack_live():
+    """Per-name withholding, the same trade `interval.membership_mismatches` makes: a
+    distribution is a per-name event, and a whole-artifact dark would additionally cost
+    every healthy name the debounce it has already banked today."""
+    art = _run(pack({"AAA": buyable(), "BBB": buyable()}),
+               quotes_with_prev({"AAA": 100.0, "BBB": 100.0},
+                                {"AAA": 100.0, "BBB": 101.0}))
+    assert art["status"] == "live"
+    assert art["states"]["AAA"]["state"] == "forming"
+    assert art["states"]["BBB"]["state"] == "dark"
+
+
+@pytest.mark.parametrize("prev,darked", [
+    (100.20, False),   # -0.1996% — inside 0.25%: cross-source cent noise, not a basis
+    (100.30, True),    # -0.2992% — past it: the smallest thing we call a distribution
+])
+def test_the_tolerance_is_the_thing_that_decides(prev, darked):
+    """Both sides of the threshold, so widening or narrowing it cannot pass silently."""
+    art = _run(pack({"BBB": buyable()}), quotes_with_prev({"BBB": 100.0}, {"BBB": prev}))
+    assert (art["states"]["BBB"]["state"] == "dark") is darked
+
+
+def test_the_tolerance_is_operator_configurable_and_actually_read():
+    cfg = LS.live_cfg({"prophet_live": {"debounce_passes": 2, "quote_max_age_min": 12,
+                                        "basis_tolerance_pct": 5.0}})
+    art = LS.evaluate(pack({"BBB": buyable()}),
+                      quotes_with_prev({"BBB": 100.0}, {"BBB": 101.0}), None,
+                      now=NOW, cfg=cfg, quote_age_of=lambda _q: 1.0)
+    assert art["states"]["BBB"]["state"] == "forming"   # 0.99% is inside a 5% tolerance
+
+
+def test_a_missing_previous_close_is_counted_unchecked_and_does_not_dark():
+    """Degrade-safe, and NOT a silent pass: a name we could not check is evaluated (the
+    lane's job is to speak when it honestly can) but it is counted, so a feed that stops
+    publishing previous closes reads as unverified rather than as verified clean."""
+    art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
+    assert art["states"]["BBB"]["state"] == "forming"
+    ba = art["meta"]["price_adjustment"]
+    assert ba["checked_n"] == 0 and ba["unchecked_n"] == 1
+
+
+def test_every_live_payload_names_both_price_bases():
+    """A consumer must never have to infer which series a number came from."""
+    art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
+    ba = art["meta"]["price_adjustment"]
+    assert ba["levels"] == LS.DEFAULT_PACK_ADJUSTMENT
+    assert ba["quote"] == LS.LIVE_QUOTE_ADJUSTMENT
+    assert ba["levels"] != ba["quote"], "the two seams are NOT the same basis"
+    assert ba["tol_pct"] == 0.25
+
+
+def test_the_payload_repeats_the_packs_own_basis_rather_than_asserting_one():
+    p = pack({"BBB": buyable()})
+    p["price_adjustment"] = "some_other_basis"
+    art = _run(p, quotes(BBB=100.0))
+    assert art["meta"]["price_adjustment"]["levels"] == "some_other_basis"
+
+
+def test_a_name_whose_levels_are_on_another_basis_says_so_on_its_own_row():
+    """The breadth-cache names accrue raw closes between rebuilds, so their levels are
+    NOT on the artifact-level basis. Key present ⇒ this row's basis; key absent ⇒ the
+    header's — the rule is written down, so nothing is derived."""
+    entry = buyable()
+    entry["price_adjustment"] = LS.LIVE_QUOTE_ADJUSTMENT
+    art = _run(pack({"AAA": buyable(), "BBB": entry}),
+               quotes(AAA=100.0, BBB=100.0))
+    assert "levels_adjustment" not in art["states"]["AAA"]
+    assert art["states"]["BBB"]["levels_adjustment"] == LS.LIVE_QUOTE_ADJUSTMENT
+
+
 def test_the_freshness_stamp_and_delay_ride_on_every_payload():
     art = _run(pack({"BBB": buyable()}), quotes(BBB=100.0))
     m = art["meta"]
@@ -871,9 +1296,16 @@ FORBIDDEN_WORDS = ("fired", "confirmed", "refuted", "validated", "thesis")
 FORBIDDEN_SUBSTRINGS = ("falsif", "证伪")
 
 
-def test_public_states_are_the_agreed_six():
-    assert LS.PUBLIC_STATES == ("dormant", "near", "forming", "faded", "at_risk", "dark")
-    assert LS.CROSSING_UNCONFIRMED not in LS.PUBLIC_STATES
+def test_public_states_are_the_agreed_seven():
+    """`unknown` joined the contract in W-L0 gate 5 — the honest answer where the pack
+    measured nothing. It renders nowhere today; a surface that renders it owes EN+ZH
+    glance-tier copy, in plain words and never this token."""
+    assert LS.PUBLIC_STATES == ("dormant", "near", "forming", "faded", "at_risk",
+                                "unknown", "dark")
+    assert LS.NO_VERDICT_STATES == ("dark", "unknown")
+    for marker in LS.INTERNAL_MARKERS:
+        assert marker not in LS.PUBLIC_STATES, marker
+        assert marker in LS.EVENT_KINDS, marker
 
 
 def test_no_forbidden_vocabulary_in_a_payload():
@@ -1003,10 +1435,17 @@ def test_the_evaluator_module_imports_no_data_writer():
                     full = f"{mod}.{a.name}"
                     assert full not in banned_modules, f"{rel}: imports {full}"
     # live_states reads the interval contract from the stdlib-only sibling, NOT from
-    # armed_pack — the latter imports pandas, which this lane does not install.
+    # armed_pack — the latter imports pandas, which this lane does not install. Asserted
+    # over the PARSED imports, not over a source substring: the substring form pinned
+    # ONE formatting of ONE import list, so it redded on a line wrap and it redded again
+    # when a name was added to the list (the price-basis vocabulary) — twice reporting a
+    # lane violation while the actual rule, WHERE the contract comes from, went unchecked.
     src = (ROOT / "engine" / "prophet_live" / "live_states.py").read_text(encoding="utf-8")
-    assert ("from engine.prophet_live.interval import "
-            "in_probed_band, interval_contains, lower_edge") in src
+    imported: set[str] = set()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.ImportFrom) and node.module == "engine.prophet_live.interval":
+            imported |= {a.name for a in node.names}
+    assert {"in_probed_band", "interval_contains", "lower_edge", "probe_floor"} <= imported
 
 
 def test_the_evaluator_imports_with_pandas_blocked():

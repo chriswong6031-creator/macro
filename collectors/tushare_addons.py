@@ -5,7 +5,9 @@ This module intentionally exposes *pilot* collection only:
 * ``stk_mins`` accepts exactly one ticker, one exchange session, and one frequency;
 * ``stk_premarket`` accepts exactly one ticker and one exchange session;
 * ``stk_auction`` accepts exactly one ticker in the current Shanghai session during
-  TuShare's documented 09:26-09:29 capture window; and
+  TuShare's documented 09:26-09:29 capture window;
+* ``stk_auction_o``/``stk_auction_c`` accept exactly one ticker and one historical
+  exchange session each; and
 * no range/backfill API exists here.
 
 Every successful response is normalized and validated before the first filesystem
@@ -16,16 +18,22 @@ row payload, Parquet bytes, and the clock observed immediately before the add-on
 request.  A rerun with identical data is a no-op; a revised response for an existing
 partition is a loud keep-first contradiction.
 
-``stk_auction_o`` and ``stk_auction_c`` are deliberately absent from the runnable
-contract.  Their state is ``blocked_pending_written_entitlement_confirmation`` even
-though TuShare documents them: documentation is not proof that this account bought
-those separate permissions.
+``stk_auction_o`` and ``stk_auction_c`` are admitted against their official TuShare
+contracts (docs 353/354).  Admission is not an observation: only a collection receipt
+records ``access_observed_at_request_time``, and it means only that valid rows came
+back for that exact request at that exact clock.
 
-Execution is blocked unless a separately provisioned written-vendor-authorization or
-institutional-contract gate is present.  Personal-plan pricing is not treated as a
-commercial-use grant.  No token, token hash, request header, or raw vendor payload is
-persisted or logged.  All outputs remain ``context_display_only`` and grant no
-commercial, product, team-sharing, signal, or strategy authority.
+This wiring is operator-ordered; the provenance reference is
+``research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md``.  Execution requires a configured
+``TUSHARE_TOKEN`` and nothing else -- there is no separate authorization gate here.
+The fences that DO bind every ``--execute`` run are technical: the two-exchange
+``trade_cal`` session check, the per-endpoint collection clocks, the documented row
+cap, exact-session and exact-ticker containment, full schema and domain validation,
+and keep-first immutability.  None of them can be waived by an environment variable.
+
+No token, token hash, request header, or raw vendor payload is persisted or logged.
+All outputs remain ``context_display_only``; nothing here confers signal or strategy
+authority, which is settled at the gauntlet rather than at a collector.
 """
 
 from __future__ import annotations
@@ -60,21 +68,19 @@ RECEIPT_SCHEMA_VERSION = "tushare_addon_collection_receipt.v2"
 CONTRACT_CAPTURE_DATE = "2026-08-09"
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
-LICENSE_AUTHORITY_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY"
-LICENSE_AUTHORITY_REFERENCE_ENV = "TUSHARE_VENDOR_LICENSE_AUTHORITY_SHA256"
-LICENSE_AUTHORITY_GATE_VALUE = (
-    "written_vendor_authorization_or_institutional_contract_verified"
-)
-# Deliberately empty until a vendor-signed authorization or institutional contract is
-# reviewed out of band and its exact digest is added through a normal code-review PR.
-# Environment variables alone are operator-controlled and may never self-attest rights.
-TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S: frozenset[str] = frozenset()
+# Operator-ordered wiring (2026-08-09).  Recorded in every receipt as plain
+# provenance: it says WHO asked for this collector to exist and WHERE that order is
+# written down.  It asserts nothing about licensing in either direction.
+COLLECTION_PROVENANCE: Mapping[str, str] = {
+    "basis": "operator_ordered_wiring",
+    "reference": "research/TUSHARE_WIRING_TAKEOVER_2026-08-09.md",
+}
 
 ALLOWED_FREQUENCIES = ("1min", "5min", "15min", "30min", "60min")
-BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {
-    "stk_auction_o": "blocked_pending_written_entitlement_confirmation",
-    "stk_auction_c": "blocked_pending_written_entitlement_confirmation",
-}
+# Emptied 2026-08-09: stk_auction_o/stk_auction_c moved to the admitted contracts.
+# The key stays in every receipt so a reader can tell "nothing is currently held"
+# from "this receipt predates the field".
+BLOCKED_UNCONFIRMED_ENDPOINTS: Mapping[str, str] = {}
 JOIN_BASIS_CONTRACT: Mapping[str, object] = {
     "schema_version": "tushare_addon_join_basis.v2",
     "ticker_identity": "repo_canonical_SS_SZ_with_BJ_pilots_blocked",
@@ -90,8 +96,18 @@ JOIN_BASIS_CONTRACT: Mapping[str, object] = {
 }
 
 _TICKER_RE = re.compile(r"^[0-9]{6}\.(?:SS|SZ|BJ)$")
+# Partition label for every endpoint that does not take an explicit frequency.
+_DERIVED_FREQUENCIES: Mapping[str, str] = {
+    "stk_premarket": "daily_premarket",
+    "stk_auction": "opening_auction",
+    "stk_auction_o": "opening_call_auction",
+    "stk_auction_c": "closing_call_auction",
+}
 _MINUTE_CURRENT_DAY_NOT_BEFORE = time(21, 0)
 _PREMARKET_CURRENT_DAY_NOT_BEFORE = time(16, 30)
+# Docs 353/354 both say 每天盘后更新, so a same-day o/c row is not final until the
+# vendor's after-close publication.  Historical sessions carry no hold at all.
+_AUCTION_OC_CURRENT_DAY_NOT_BEFORE = time(16, 30)
 _AUCTION_WINDOW_START = time(9, 26)
 _AUCTION_WINDOW_END = time(9, 30)
 _HTTPS_API_URL = "https://api.tushare.pro"
@@ -135,10 +151,9 @@ class EndpointContract:
     vendor_fields: tuple[str, ...]
     output_schema: tuple[SchemaField, ...]
     max_rows: int = 8_000
-    declared_access_context: str = (
-        "operator_reported_purchase_not_vendor_attested_and_not_a_license_grant"
-    )
+    declared_access_context: str = "operator_reported_purchase"
     exchange_clock_context_urls: tuple[str, ...] = ()
+    contract_source: str = "official_doc_page"
 
     @property
     def document_url(self) -> str:
@@ -157,6 +172,7 @@ class EndpointContract:
             "max_rows": self.max_rows,
             "declared_access_context": self.declared_access_context,
             "exchange_clock_context_urls": list(self.exchange_clock_context_urls),
+            "contract_source": self.contract_source,
         }
 
     @property
@@ -170,6 +186,35 @@ _COMMON_FIELDS = (
     SchemaField("trade_date", "string", False, "Asia/Shanghai exchange date"),
     SchemaField("ticker", "string", False, "repo canonical .SS/.SZ; .BJ blocked"),
     SchemaField("frequency", "string", False),
+)
+
+# Docs 353/354 publish an identical field list for the opening and closing auction
+# bars, in this order.  Both pages give 成交量/成交额 without a unit, so the schema
+# discloses the gap rather than asserting shares/CNY the way the minute contract can:
+# a consuming lane must resolve the unit against a same-session reference before any
+# turnover or participation figure is derived from these columns.
+_AUCTION_OC_VENDOR_FIELDS = (
+    "ts_code",
+    "trade_date",
+    "close",
+    "open",
+    "high",
+    "low",
+    "vol",
+    "amount",
+    "vwap",
+)
+_AUCTION_OC_UNRESOLVED_UNIT = "vendor-reported; docs 353/354 state no unit"
+# An auction that draws no matched order legitimately reports no price, so the price
+# columns are nullable and coherence is asserted only across a complete OHLC quad.
+_AUCTION_OC_OUTPUT_FIELDS = (
+    SchemaField("open", "float64", True, "CNY/share"),
+    SchemaField("high", "float64", True, "CNY/share"),
+    SchemaField("low", "float64", True, "CNY/share"),
+    SchemaField("close", "float64", True, "CNY/share"),
+    SchemaField("vwap", "float64", True, "CNY/share"),
+    SchemaField("volume", "float64", False, _AUCTION_OC_UNRESOLVED_UNIT),
+    SchemaField("amount", "float64", False, _AUCTION_OC_UNRESOLVED_UNIT),
 )
 
 ENDPOINTS: Mapping[str, EndpointContract] = {
@@ -268,6 +313,32 @@ ENDPOINTS: Mapping[str, EndpointContract] = {
             SchemaField("float_share_10k", "float64", True, "10,000 shares"),
         ),
     ),
+    "stk_auction_o": EndpointContract(
+        api_name="stk_auction_o",
+        document_id=353,
+        title="股票开盘集合竞价数据",
+        description=(
+            "one historical A-share session's 09:30 opening call-auction bar; "
+            "doc 353 states 每天盘后更新 (published after that session's close)"
+        ),
+        vendor_fields=_AUCTION_OC_VENDOR_FIELDS,
+        output_schema=_COMMON_FIELDS + _AUCTION_OC_OUTPUT_FIELDS,
+        max_rows=10_000,
+        declared_access_context="operator_attested_2026-08-09_takeover_doc",
+    ),
+    "stk_auction_c": EndpointContract(
+        api_name="stk_auction_c",
+        document_id=354,
+        title="股票收盘集合竞价数据",
+        description=(
+            "one historical A-share session's 15:00 closing call-auction bar; "
+            "doc 354 states 每天盘后更新 (published after that session's close)"
+        ),
+        vendor_fields=_AUCTION_OC_VENDOR_FIELDS,
+        output_schema=_COMMON_FIELDS + _AUCTION_OC_OUTPUT_FIELDS,
+        max_rows=10_000,
+        declared_access_context="operator_attested_2026-08-09_takeover_doc",
+    ),
 }
 
 
@@ -334,31 +405,6 @@ class PilotResult:
 
 QueryFunction = Callable[..., pd.DataFrame | None]
 ClockFunction = Callable[[], datetime]
-
-
-def _license_authority_receipt() -> dict[str, object]:
-    """Fail closed unless a separately reviewed vendor-license gate is provisioned."""
-    authority = os.environ.get(LICENSE_AUTHORITY_ENV, "").strip()
-    reference = os.environ.get(LICENSE_AUTHORITY_REFERENCE_ENV, "").strip().lower()
-    if authority != LICENSE_AUTHORITY_GATE_VALUE or not _is_sha256(reference):
-        raise CollectionHeld(
-            "written_vendor_authorization_or_institutional_contract_required"
-        )
-    if reference not in TRUSTED_VENDOR_LICENSE_AUTHORITY_SHA256S:
-        raise CollectionHeld("vendor_license_authority_not_out_of_band_allowlisted")
-    return {
-        "gate_state": "satisfied_for_bounded_metadata_only_pilot",
-        "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
-        "authority_reference_sha256": reference,
-        "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-        "personal_pricing_nonclaim": "personal_pricing_is_not_a_commercial_use_grant",
-        "scope_nonclaims": [
-            "no_commercial_use_authority",
-            "no_product_publication_authority",
-            "no_team_sharing_or_redistribution_authority",
-            "no_signal_or_strategy_authority",
-        ],
-    }
 
 
 def _query_tushare_https(
@@ -481,10 +527,8 @@ def normalize_request(request: PilotRequest) -> NormalizedRequest:
             raise CollectionHeld("stk_mins_requires_one_supported_frequency")
     elif frequency:
         raise CollectionHeld("frequency_is_only_valid_for_stk_mins")
-    elif endpoint == "stk_premarket":
-        frequency = "daily_premarket"
     else:
-        frequency = "opening_auction"
+        frequency = _DERIVED_FREQUENCIES[endpoint]
     return NormalizedRequest(endpoint, trade_day, ticker, frequency)
 
 
@@ -519,6 +563,12 @@ def _validate_collection_clock(request: NormalizedRequest, now_cst: datetime) ->
         and clock < _PREMARKET_CURRENT_DAY_NOT_BEFORE
     ):
         raise CollectionHeld("current_premarket_snapshot_may_still_update")
+    if (
+        request.endpoint in {"stk_auction_o", "stk_auction_c"}
+        and request.trade_date == today
+        and clock < _AUCTION_OC_CURRENT_DAY_NOT_BEFORE
+    ):
+        raise CollectionHeld("current_session_call_auction_not_yet_published")
     if request.endpoint == "stk_mins":
         return "historical_or_current_after_21:00_Asia/Shanghai"
     return "historical_or_current_after_16:30_Asia/Shanghai"
@@ -849,6 +899,40 @@ def _normalize_auction_rows(
     return records
 
 
+def _normalize_auction_oc_rows(
+    frame: pd.DataFrame, request: NormalizedRequest, contract: EndpointContract
+) -> list[dict[str, object]]:
+    _require_columns(frame, contract)
+    records: list[dict[str, object]] = []
+    for raw in frame.to_dict(orient="records"):
+        common = _common_record(request, raw["ts_code"], raw["trade_date"])
+        prices = {
+            name: _number(raw[name], nullable=True)
+            for name in ("open", "high", "low", "close", "vwap")
+        }
+        if any(value is not None and value < 0 for value in prices.values()):
+            raise CollectorIntegrityError("call-auction price is negative")
+        volume = _number(raw["vol"], nullable=False)
+        amount = _number(raw["amount"], nullable=False)
+        assert volume is not None and amount is not None
+        if volume < 0 or amount < 0:
+            raise CollectorIntegrityError("call-auction volume/amount is negative")
+        quad = (prices["open"], prices["high"], prices["low"], prices["close"])
+        if all(value is not None and value > 0 for value in quad):
+            open_, high, low, close = quad
+            if low > min(open_, close) or high < max(open_, close) or low > high:
+                raise CollectorIntegrityError("call-auction OHLC values are incoherent")
+        common.update({**prices, "volume": volume, "amount": amount})
+        records.append(common)
+    records.sort(key=lambda row: str(row["ticker"]))
+    tickers = [str(row["ticker"]) for row in records]
+    if not records or len(tickers) != len(set(tickers)):
+        raise CollectorIntegrityError(
+            "call-auction response is empty or has duplicate tickers"
+        )
+    return records
+
+
 def _normalize_rows(
     frame: pd.DataFrame, request: NormalizedRequest, contract: EndpointContract
 ) -> list[dict[str, object]]:
@@ -856,6 +940,8 @@ def _normalize_rows(
         return _normalize_minute_rows(frame, request, contract)
     if request.endpoint == "stk_premarket":
         return _normalize_premarket_rows(frame, request, contract)
+    if request.endpoint in {"stk_auction_o", "stk_auction_c"}:
+        return _normalize_auction_oc_rows(frame, request, contract)
     return _normalize_auction_rows(frame, request, contract)
 
 
@@ -945,7 +1031,6 @@ def _receipt_without_hash(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
-    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -962,21 +1047,21 @@ def _receipt_without_hash(
             **contract.contract_payload(),
             "contract_sha256": contract.contract_hash,
         },
+        # Purely EPISTEMIC: what this observation can and cannot support.  It says
+        # rows came back for this exact request, at this clock, and nothing more --
+        # not that they will come back again, and not that the day is complete.
         "access_observation_receipt": {
             "declaration": contract.declared_access_context,
             "observation": "access_observed_at_request_time",
             "observation_basis": "valid_nonempty_rows_returned_for_this_request",
             "observed_at_asia_shanghai": now_cst.isoformat(),
             "nonclaims": [
-                "not_proof_of_purchase",
-                "not_proof_of_payment",
-                "not_proof_of_license_or_commercial_use_rights",
                 "not_proof_of_future_access",
-                "not_proof_of_trial_absence",
+                "not_a_completeness_claim_for_the_session",
             ],
             "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         },
-        "license_authority_gate": dict(license_authority),
+        "collection_provenance": dict(COLLECTION_PROVENANCE),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
         "request": {
             "identity": request_identity,
@@ -1027,10 +1112,10 @@ def _receipt_without_hash(
             "parquet_sha256": parquet_hash,
         },
         "partition_identity": request_identity,
+        # Every entry below is EPISTEMIC: each states something the data itself
+        # cannot support, regardless of who ordered the collection.
         "nonclaims": [
             "context_only_not_signal_authority",
-            "no_commercial_use_or_product_publication_authority",
-            "no_team_sharing_or_redistribution_authority",
             "no_fillability_or_execution_claim",
             "no_complete_historical_backfill_claim",
             "post_close_rows_are_unclassified_not_a_completeness_claim",
@@ -1065,7 +1150,6 @@ def _validate_existing_partition(
     incoming_data_hash: str,
     incoming_source_rows_hash: str,
     incoming_calendar_hash: str,
-    incoming_license_authority: Mapping[str, object],
 ) -> dict[str, object]:
     if destination.is_symlink() or not destination.is_dir():
         raise CollectorIntegrityError(
@@ -1091,7 +1175,6 @@ def _validate_existing_partition(
     session_receipt = receipt.get("exact_session_receipt")
     runtime_receipt = receipt.get("runtime_receipt")
     access_receipt = receipt.get("access_observation_receipt")
-    license_receipt = receipt.get("license_authority_gate")
     clock_receipt = receipt.get("request_clock")
     if not all(
         isinstance(value, dict)
@@ -1103,7 +1186,6 @@ def _validate_existing_partition(
             session_receipt,
             runtime_receipt,
             access_receipt,
-            license_receipt,
             clock_receipt,
         )
     ):
@@ -1132,24 +1214,19 @@ def _validate_existing_partition(
         != "valid_nonempty_rows_returned_for_this_request"
         or access_receipt.get("nonclaims")
         != [
-            "not_proof_of_purchase",
-            "not_proof_of_payment",
-            "not_proof_of_license_or_commercial_use_rights",
             "not_proof_of_future_access",
-            "not_proof_of_trial_absence",
+            "not_a_completeness_claim_for_the_session",
         ]
         or access_receipt.get("blocked_unconfirmed_endpoints")
         != dict(BLOCKED_UNCONFIRMED_ENDPOINTS)
     ):
         raise CollectorIntegrityError("immutable access observation receipt changed")
-    if license_receipt != dict(incoming_license_authority):
-        raise CollectorIntegrityError("immutable license authority gate changed")
+    if receipt.get("collection_provenance") != dict(COLLECTION_PROVENANCE):
+        raise CollectorIntegrityError("immutable collection provenance changed")
     if receipt.get("join_basis_contract") != dict(JOIN_BASIS_CONTRACT):
         raise CollectorIntegrityError("immutable join basis contract changed")
     if receipt.get("nonclaims") != [
         "context_only_not_signal_authority",
-        "no_commercial_use_or_product_publication_authority",
-        "no_team_sharing_or_redistribution_authority",
         "no_fillability_or_execution_claim",
         "no_complete_historical_backfill_claim",
         "post_close_rows_are_unclassified_not_a_completeness_claim",
@@ -1278,7 +1355,6 @@ def _install_partition(
     vendor_request: Mapping[str, object],
     calendar_observations: Sequence[Mapping[str, object]],
     calendar_hash: str,
-    license_authority: Mapping[str, object],
     clock_policy: str,
     now_cst: datetime,
     records: Sequence[Mapping[str, object]],
@@ -1294,7 +1370,6 @@ def _install_partition(
             data_hash,
             source_rows_hash,
             calendar_hash,
-            license_authority,
         )
         return PilotResult(
             status="unchanged",
@@ -1326,7 +1401,6 @@ def _install_partition(
             vendor_request=vendor_request,
             calendar_observations=calendar_observations,
             calendar_hash=calendar_hash,
-            license_authority=license_authority,
             clock_policy=clock_policy,
             now_cst=now_cst,
             records=records,
@@ -1356,7 +1430,6 @@ def _install_partition(
                 data_hash,
                 source_rows_hash,
                 calendar_hash,
-                license_authority,
             )
             return PilotResult(
                 status="unchanged",
@@ -1398,14 +1471,18 @@ def pilot_plan(
         "endpoint_contract_sha256": contract.contract_hash,
         "endpoint_document_url": contract.document_url,
         "declared_access_context": contract.declared_access_context,
-        "license_authority_gate": {
-            "required_for_execute": True,
-            "state": "not_evaluated_plan_only",
-            "accepted_basis": LICENSE_AUTHORITY_GATE_VALUE,
-            "trust_anchor": "code_reviewed_out_of_band_sha256_allowlist",
-            "personal_pricing_nonclaim": (
-                "personal_pricing_is_not_a_commercial_use_grant"
-            ),
+        "collection_provenance": dict(COLLECTION_PROVENANCE),
+        "execute_requirements": {
+            "tushare_token_configured": True,
+            "explicit_output_root": True,
+            "technical_fences": [
+                "two_exchange_trade_cal_session_agreement",
+                "per_endpoint_collection_clock",
+                "documented_row_cap",
+                "exact_session_and_ticker_containment",
+                "schema_and_domain_validation",
+                "keep_first_immutability",
+            ],
         },
         "blocked_unconfirmed_endpoints": dict(BLOCKED_UNCONFIRMED_ENDPOINTS),
         "join_basis_contract": dict(JOIN_BASIS_CONTRACT),
@@ -1424,7 +1501,6 @@ def collect_pilot(
 ) -> PilotResult:
     """Collect one bounded pilot partition or fail before installing any evidence."""
     normalized = normalize_request(request)
-    license_authority = _license_authority_receipt()
     if now is not None and clock_fn is not None:
         raise CollectionHeld("ambiguous_collection_clock_source")
     if clock_fn is not None:
@@ -1458,7 +1534,6 @@ def collect_pilot(
         vendor_request=vendor_request,
         calendar_observations=calendar_observations,
         calendar_hash=calendar_hash,
-        license_authority=license_authority,
         clock_policy=clock_policy,
         now_cst=request_now_cst,
         records=records,
@@ -1470,6 +1545,7 @@ __all__ = [
     "ALLOWED_FREQUENCIES",
     "AUTHORITY",
     "BLOCKED_UNCONFIRMED_ENDPOINTS",
+    "COLLECTION_PROVENANCE",
     "DEFAULT_OUTPUT_ROOT",
     "ENDPOINTS",
     "JOIN_BASIS_CONTRACT",

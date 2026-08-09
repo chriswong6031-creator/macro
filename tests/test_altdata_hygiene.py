@@ -490,3 +490,45 @@ class TestTombstonedAdapters:
 
     def test_flights_reports_blocked(self, tmp_path, monkeypatch):
         self._assert_blocked(quiver.FlightsAdapter, tmp_path, monkeypatch)
+
+
+# ===========================================================================
+# Ticker-key hygiene — exclusion is COUNTED, never silent
+# ===========================================================================
+class TestTickerKeyHygiene:
+    """The kernel already refused junk keys; it refused them SILENTLY, which is how the
+    hub snapshot ledger accrued 26 days of 'CONSECUTIVE'/'ASX:PEX' before anyone looked."""
+
+    def _run(self, rows, drop_stats=None):
+        return models.channel_records({"special_situations": rows}, drop_stats=drop_stats)
+
+    def test_invalid_keys_excluded_and_counted(self, capsys):
+        drops: dict = {}
+        recs = self._run([{"ticker": "AAPL", "detail": "spin-off"},
+                          {"ticker": "N/A", "detail": "placeholder"},
+                          {"ticker": "ASX:PEX", "detail": "foreign prefix"}], drop_stats=drops)
+        assert set(recs) == {"AAPL"}
+        assert drops["n_distinct"] == 2
+        assert drops["examples"] == ["ASX:PEX", "N/A"]
+        assert drops["n_rows"] == 2
+
+        lines = [l for l in capsys.readouterr().out.splitlines() if "::" in l]
+        assert len(lines) == 1, f"exactly one annotation per build, got {lines}"
+        # startswith("::") is the load-bearing assertion: a logger-carried annotation is
+        # prefixed with its level and GitHub silently drops it.
+        assert lines[0].startswith("::")
+        assert lines[0].startswith("::notice title=altdata-ticker-hygiene")
+
+    def test_clean_payload_emits_nothing(self, capsys):
+        drops: dict = {}
+        recs = self._run([{"ticker": "AAPL", "detail": "spin-off"},
+                          {"ticker": "BRK.B", "detail": "stake"}], drop_stats=drops)
+        assert set(recs) == {"AAPL", "BRK.B"}
+        assert drops == {}
+        assert "::" not in capsys.readouterr().out
+
+    def test_drop_stats_is_optional(self, capsys):
+        """Every existing call site passes no drop_stats — the annotation must still fire."""
+        recs = self._run([{"ticker": "CONSECUTIVE", "detail": "prose"}])
+        assert recs == {}
+        assert "::notice title=altdata-ticker-hygiene" in capsys.readouterr().out

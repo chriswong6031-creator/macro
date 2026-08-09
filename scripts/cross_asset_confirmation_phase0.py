@@ -28,12 +28,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import sys
+from pathlib import Path
 
-from engine.conditions import conditions_frame
-from engine.inputs import build_features
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.conditions import conditions_frame  # noqa: E402
+from engine.inputs import build_features  # noqa: E402
 from engine.validation import (backtest_core, benjamini_hochberg, deflated_sharpe,
-                               dsr_verdict, newey_west_tstat, ret_moments)
-from lib import config
+                               dsr_verdict, newey_west_tstat, ret_moments)  # noqa: E402
+from lib import config  # noqa: E402
 
 TY = 252
 LEG_KEYS = ["vix", "hy_oas", "skew", "vix_term", "nfci", "copper_gold", "dxy"]

@@ -477,11 +477,11 @@ def test_arena_checkpoint_uses_only_the_seven_active_v2_ledgers() -> None:
     policies = (
         "C0_champion_mirror",
         "C1_buy_soon_first",
-        "C2_stage_ran_preferred",
         "C3_door_w_union",
         "C4_dispersion_cap",
         "C5_align2_gate",
         "C6_time_stop_21",
+        "C7_buy_soon_admitted",
     )
     for policy in policies:
         path = f"data/prophet_arena/price_basis_trigger_v2/{policy}.jsonl"
@@ -489,9 +489,16 @@ def test_arena_checkpoint_uses_only_the_seven_active_v2_ledgers() -> None:
         assert path in checkpoint_run
     assert '"data/prophet_arena": "*.jsonl"' not in build_run
     assert "data/prophet_arena/*.jsonl" not in checkpoint_run
+    # A RETIRED key's ledger is sealed: never staged again, in either era. Re-adding it
+    # here would let the nightly advance a file whose policy stopped accruing.
+    retired = ("C2_stage_ran_preferred",)
     # Sealed v1 evidence cannot be selected by a broad top-level ledger pattern.
-    for policy in policies:
+    for policy in (*policies, *retired):
         assert f"data/prophet_arena/{policy}.jsonl" not in checkpoint_run
+    for policy in retired:
+        path = f"data/prophet_arena/price_basis_trigger_v2/{policy}.jsonl"
+        assert path not in build_run
+        assert path not in checkpoint_run
 
 
 def test_checkpoint_stages_each_manifest_path_and_never_a_whole_root() -> None:

@@ -214,6 +214,20 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
+/* W-L1 provisional plane (research/WL1_PROVISIONAL_BOARD_DESIGN_SPEC.md §4.1).
+   Same hue as the P1 .pv-live chip's local --plvc, and that is the point: the ◐ strip
+   and the ◐ board stamp name the SAME epistemic tier — settled by the tape, not yet by
+   the record — and a second vocabulary for one idea is a tax on the reader.
+   --prov is the FILL-grade hue (tints, rules, borders); --prov-ink is the TEXT-grade
+   one, following this file's own --ink-* convention. Dark keeps ink ≡ raw so dark
+   renders byte-identical to a single-token version; light deepens toward --text,
+   because the fill-grade blue measured 4.22:1 as type on its own 11% tint over white —
+   under AA, and invisible to anyone who only ever looked at the dark shot (doctrine
+   §5.8: light is a design target, not a translation).
+   Direction-neutral BY CONSTRUCTION so 红涨绿跌 holds: never derive it from --up/--down. */
+:root { --prov: #62a0e8; --prov-ink: var(--prov); }
+html[data-theme="light"] { --prov: #2f6fd0;
+  --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text)); }
 /* ---- language visibility toggle (dual-emit text) ---------------------------- */
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
@@ -328,6 +342,11 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   color:var(--ink-warn,var(--warn));
   background:color-mix(in srgb,var(--warn) 8%,var(--panel));
   border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
+
+.pv-mk-adj{font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--prov-ink) 42%,var(--muted));
+  background:color-mix(in srgb,var(--prov) 7%,transparent);
+  border-color:color-mix(in srgb,var(--prov) 30%,transparent)}
 
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}

@@ -129,7 +129,7 @@ Cloudflare + `workers.dev`). China users get live prices via the HK origin in Ph
    ```
 2. **Checkout + venv:**
    ```bash
-   git clone https://github.com/chriswong6031-creator/macro.git ~/macro && cd ~/macro
+   git clone https://github.com/mastermindx-market-intelligence/macro.git ~/macro && cd ~/macro
    python3.12 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
    ```
 3. **Nightly pull** (after the 22:40 UTC build lands) — `crontab -e`:
