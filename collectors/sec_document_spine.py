@@ -768,6 +768,95 @@ def read_filing_manifest(cache_root: Path, storage_key: str) -> dict[str, Any]:
     return manifest
 
 
+def find_reusable_primary_retrieval(
+    cache_root: Path, manifest: Mapping[str, Any]
+) -> dict[str, Any] | None:
+    """Return a prior verified primary receipt VERBATIM, or None to fetch it.
+
+    An accession's primary document is immutable, so a warm archive already
+    holds the exact bytes tonight's declared manifest would request.  SEC fair
+    access discourages re-downloading identical filings nightly; this is the
+    pure local lookup that lets a caller skip that request.  It opens no
+    socket and writes nothing.
+
+    The returned receipt is the ORIGINAL one, field for field: its
+    ``retrieved_at``, ``http_etag`` and ``receipt_id`` still describe the HTTP
+    observation that actually happened.  Re-stamping a cache hit with tonight's
+    clock would fabricate a retrieval no server ever served, and the receipt
+    shape is closed (see ``ArchiveReceipt``/``_decode_receipt``), so reuse can
+    never be disclosed inside the receipt — the acquisition receipt layer
+    carries that disclosure instead.
+
+    Every local-store anomaly returns None so the caller fetches over the
+    network and the fetch heals the store.  Candidate manifests that disagree
+    on ``content_sha256`` for this document identity are refused outright:
+    only SEC can say which body is authentic, and picking a side locally would
+    launder an ambiguous object into evidence.  A prior 404 is likewise never
+    reused — availability ``stored`` excludes it — so a missing document is
+    re-probed on every run.
+    """
+    validate_manifest(manifest)
+    primary = next(
+        (item for item in manifest["documents"] if item.get("role") == "primary"),
+        None,
+    )
+    if primary is None:
+        return None
+    document_id = primary["document_id"]
+    archive_url = primary["archive_url"]
+    cik = str(manifest["issuer"]["cik"])
+    accession = str(manifest["filing"]["accession"])
+    try:
+        names = sorted(entry.name for entry in (Path(cache_root) / "manifests" / cik / accession).iterdir())
+    except OSError:
+        return None
+    candidates: list[dict[str, Any]] = []
+    for name in names:
+        storage_key = f"manifests/{cik}/{accession}/{name}"
+        # The key regex is the filter: a dotfile, an interrupted temp sibling,
+        # or any non-manifest name never reaches the manifest reader.
+        if not _MANIFEST_STORAGE_KEY_RE.fullmatch(storage_key):
+            continue
+        try:
+            candidate = read_filing_manifest(cache_root, storage_key)
+        except (OSError, ArchiveStoreError, FilingManifestError):
+            continue
+        stored = next(
+            (item for item in candidate["documents"] if item.get("role") == "primary"),
+            None,
+        )
+        if stored is None or stored.get("availability") != "stored":
+            continue
+        retrieval = stored.get("retrieval")
+        if not isinstance(retrieval, Mapping) or retrieval.get("status") != "retrieved":
+            continue
+        # Bind both layers to tonight's declared identity.  The manifest
+        # validator already pins document to receipt, so a disagreement here
+        # means the candidate describes a different document entirely.
+        if stored.get("document_id") != document_id or stored.get("archive_url") != archive_url:
+            continue
+        if retrieval.get("document_id") != document_id or retrieval.get("archive_url") != archive_url:
+            continue
+        candidates.append(dict(retrieval))
+    if not candidates:
+        return None
+    if len({str(item.get("content_sha256")) for item in candidates}) != 1:
+        return None
+    # Oldest first: the earliest receipt is the retrieval that actually
+    # discovered these bytes, and the canonical microsecond clock sorts
+    # lexicographically.  The receipt id breaks a same-instant tie.
+    candidates.sort(key=lambda item: (str(item.get("retrieved_at")), str(item.get("receipt_id"))))
+    for retrieval in candidates:
+        try:
+            # Full local proof: strict receipt decode, sidecar equality, and a
+            # bounded decompression checked against sha256 and byte length.
+            read_archive_document(cache_root, retrieval)
+        except (OSError, ArchiveStoreError):
+            continue
+        return retrieval
+    return None
+
+
 def missing_document_receipt(
     document: Mapping[str, Any],
     *,
@@ -975,6 +1064,7 @@ __all__ = [
     "SecFilingArchiveCollector",
     "archive_receipt_from_json_bytes",
     "content_storage_key",
+    "find_reusable_primary_retrieval",
     "manifest_storage_key",
     "missing_document_receipt",
     "missing_receipt_from_json_bytes",

@@ -2268,6 +2268,36 @@ def run_press_tick(
             "_seen": sorted(seen),
         }
 
+    # ── FOMC STATEMENT-DIFF DESK (XG-W4b) ─────────────────────────────────────
+    # The one seam this lane gives the FOMC desk: on a decision day, when the
+    # Fed's own feed carries the statement release, engine/marketing/fomc_desk.py
+    # fetches the statement, diffs it against the last one, writes the house read
+    # and enqueues its own two items (a flagship analysis post carrying the diff
+    # card, and a stance-free relay).
+    #
+    # WHY HERE. After scoring and after the `prime` return, so a cold-start
+    # history snapshot cannot fire it; before the emission loop, so the desk's
+    # items are in the queue by the time this tick's own items are. The desk's
+    # items never pass through the loop below — it owns its own outbox path.
+    #
+    # WHY IT CANNOT HURT THIS LANE. `maybe_fire` never raises (and `fire` inside
+    # it is itself wrapped), this call is wrapped again, and the desk is
+    # idempotent through its own statements ledger, so the every-5-minutes tick
+    # that keeps seeing the same RSS item fires it exactly once per meeting. A
+    # dead FOMC desk costs the house one quarterly post; a raising one would cost
+    # it the wire.
+    try:
+        from engine.marketing import fomc_desk as _fomc  # noqa: PLC0415
+
+        _fomc_report = _fomc.maybe_fire(ingest, root=root, cfg=cfg, now=now,
+                                        dry_run=dry_run)
+        if _fomc_report and _fomc_report.get("fired"):
+            print(f"[press] fomc desk fired for {_fomc_report.get('date')} | "
+                  f"{len(_fomc_report.get('emitted') or [])} items", flush=True)
+    except Exception as exc:  # noqa: BLE001 — the wire tick outranks the desk
+        print(f"::warning title=fomc-desk-seam::{type(exc).__name__}: {exc}",
+              flush=True)
+
     # Per-tick summarizer census — see the fallback warning below for why a bare
     # counter is load-bearing rather than telemetry garnish.
     summary_modes: dict[str, int] = {}

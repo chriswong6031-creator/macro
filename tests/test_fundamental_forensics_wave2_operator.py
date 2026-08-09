@@ -238,6 +238,67 @@ def test_incremental_sync_requires_sync_in_the_same_invocation(tmp_path: Path):
         )
 
 
+def test_reuse_local_archive_requires_acquire_in_the_same_invocation(tmp_path: Path):
+    """Reuse only has meaning inside the acquire leg; arming it alone is a silent no-op."""
+    with pytest.raises(operator.OperatorFlowError, match="--reuse-local-archive requires --acquire"):
+        operator.run_operator_flow(
+            root=tmp_path,
+            targets=("FXT=1",),
+            as_of="2026-08-01T23:59:59Z",
+            recorded_at="2026-08-02T00:05:00Z",
+            computed_at="2026-08-02T00:10:00Z",
+            restore=True,
+            reuse_local_archive=True,
+            store=LocalStore(tmp_path / "private-store"),
+        )
+
+
+def test_reuse_local_archive_is_disclosed_and_reaches_the_acquisition_collector(monkeypatch, tmp_path: Path):
+    received: dict = {}
+    monkeypatch.setattr(operator, "_user_agent", lambda root: "MastermindX research@example.com")
+    monkeypatch.setattr(
+        operator,
+        "acquire_bounded_filings",
+        lambda **kwargs: received.update(kwargs) or {"status": "complete"},
+    )
+    clocks = {
+        "as_of": "2026-08-01T23:59:59Z",
+        "recorded_at": "2026-08-02T00:05:00Z",
+        "computed_at": "2026-08-02T00:10:00Z",
+    }
+
+    armed = operator.run_operator_flow(
+        root=tmp_path, targets=("FXT=1",), acquire=True, reuse_local_archive=True, **clocks
+    )
+    assert received["reuse_local_archive"] is True
+    assert armed["actions"]["reuse_local_archive"] is True
+
+    # Default OFF, so an operator recovery run keeps proving every byte.
+    default = operator.run_operator_flow(
+        root=tmp_path, targets=("FXT=1",), acquire=True, **clocks
+    )
+    assert received["reuse_local_archive"] is False
+    assert default["actions"]["reuse_local_archive"] is False
+
+
+def test_cli_arms_reuse_local_archive_only_when_requested(monkeypatch, tmp_path: Path):
+    received: dict = {}
+    monkeypatch.setattr(operator, "run_operator_flow", lambda **kwargs: received.update(kwargs) or {})
+    argv = [
+        "--root", str(tmp_path),
+        "--target", "FXT=1",
+        "--as-of", "2026-08-01T23:59:59Z",
+        "--recorded-at", "2026-08-02T00:05:00Z",
+        "--computed-at", "2026-08-02T00:10:00Z",
+        "--acquire",
+    ]
+
+    assert operator.main(argv) == 0
+    assert received["reuse_local_archive"] is False
+    assert operator.main(argv + ["--reuse-local-archive"]) == 0
+    assert received["reuse_local_archive"] is True
+
+
 def test_pinned_targets_file_parses_to_normalized_targets_in_file_order():
     targets = operator.load_targets_file(PINNED_TARGETS)
 

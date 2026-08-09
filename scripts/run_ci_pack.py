@@ -39,8 +39,70 @@ import yaml
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "runs-on", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "steps", "timeout-minutes"}
 ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
+
+# ---------------------------------------------------------------------------
+# Changed-path scoping (2026-08-09)
+#
+# Every pull request used to run all 173 legacy jobs regardless of its diff, so
+# a one-template PR paid for the entire engine/site/research suite: 4 packs x
+# ~30 min x every PR, against an account-wide hosted-runner pool. Measured
+# 2026-08-09: 122 runs queued, packs waiting 46-85 MINUTES for a runner.
+# Adding runners buys a constant factor; per-PR cost is what scales with fleet
+# size, so scoping the suite to the diff is the only lever that changes slope.
+#
+# The design is fail-SAFE in every direction, because a false green here is far
+# more expensive than a wasted runner-minute:
+#   * a job with NO `paths:` always runs (declaring a scope is opt-in);
+#   * no --changed-from (main's baseline, workflow_dispatch) runs everything;
+#   * a git failure runs everything;
+#   * touching a GLOBAL_INVALIDATOR runs everything;
+#   * a scope that does not cover the paths its own commands name is a hard
+#     manifest error, not a silent skip (see _scope_coverage_findings).
+#
+# The residual risk is an IMPLICIT dependency: a scoped job whose tests import a
+# module the commands never name. That cannot be caught statically here, so the
+# full 173 still gate main's baseline — a missed dependency surfaces as a red
+# main rather than as a green PR that shipped a break.
+# ---------------------------------------------------------------------------
+
+# A change to any of these invalidates scoping entirely: they can alter what any
+# job means, so no per-job scope can be trusted against them.
+GLOBAL_INVALIDATORS = (
+    ".github/ci/legacy-jobs.yml",
+    ".github/workflows/ci.yml",
+    "scripts/run_ci_pack.py",
+    "conftest.py",
+    "**/conftest.py",
+    "requirements*.txt",
+    "constraints*.txt",
+    "pyproject.toml",
+    "setup.cfg",
+    "setup.py",
+    "tox.ini",
+    "pytest.ini",
+    "package.json",
+    "package-lock.json",
+)
+
+# Repo paths named literally inside a job's own commands. Used to verify that a
+# declared scope covers at least the files that job demonstrably reads.
+TRACKED_ROOTS = (
+    "app",
+    "admin",
+    "config",
+    "docs",
+    "engine",
+    "research",
+    "scripts",
+    "site",
+    "templates",
+    "tests",
+)
+SCOPE_REFERENCE_RE = re.compile(
+    r"\b(?:" + "|".join(TRACKED_ROOTS) + r")/[A-Za-z0-9_./-]+"
+)
 PROVIDED_ACTION_PREFIXES = (
     "actions/checkout@",
     "actions/setup-python@",
@@ -78,6 +140,139 @@ class LegacyJob:
     definition: dict[str, Any]
     ordinal: int
     weight: int
+    # Empty means UNSCOPED — the job runs on every pull request. Declaring a
+    # scope is opt-in, so adding one can only ever remove work, never add it.
+    paths: tuple[str, ...] = ()
+
+
+def _glob_to_regex(pattern: str) -> re.Pattern[str]:
+    """Translate a repo-relative glob to a regex.
+
+    `fnmatch` is unusable here: its `*` crosses `/`, so `engine/*` would match
+    `engine/a/b/c.py` and a scope meant to name one directory would silently
+    cover the whole subtree. Separator semantics are the whole point of a scope,
+    so the translation is explicit — `**` crosses `/`, a single `*` does not.
+    A pattern ending in `/` is a directory prefix and covers everything under it.
+    """
+    if pattern.endswith("/"):
+        pattern += "**"
+    out: list[str] = []
+    index = 0
+    while index < len(pattern):
+        char = pattern[index]
+        if pattern.startswith("**/", index):
+            out.append("(?:.*/)?")
+            index += 3
+        elif pattern.startswith("**", index):
+            out.append(".*")
+            index += 2
+        elif char == "*":
+            out.append("[^/]*")
+            index += 1
+        elif char == "?":
+            out.append("[^/]")
+            index += 1
+        else:
+            out.append(re.escape(char))
+            index += 1
+    return re.compile("^" + "".join(out) + "$")
+
+
+def _matches_any(patterns: Iterable[str], path: str) -> bool:
+    return any(_glob_to_regex(pattern).match(path) for pattern in patterns)
+
+
+def _scope_coverage_findings(job_id: str, definition: dict[str, Any],
+                             scope: tuple[str, ...]) -> list[str]:
+    """A declared scope must cover every repo path its own commands name.
+
+    This is what makes scoping reviewable rather than trusted. A job that runs
+    `pytest tests/test_foo.py` but scopes itself to `engine/bar/**` would never
+    re-run when `test_foo.py` itself changed — a silent false green. Here that
+    is a hard manifest error instead, and the fix (widen the scope) is the safe
+    direction. Paths that no longer exist are ignored: stale references in a
+    comment must not be able to fail the build.
+    """
+    if not scope:
+        return []
+    commands = "\n".join(
+        str(step["run"])
+        for step in definition.get("steps", [])
+        if isinstance(step, dict) and "run" in step
+    )
+    findings: list[str] = []
+    for reference in sorted(set(SCOPE_REFERENCE_RE.findall(commands))):
+        referenced = reference.split("::", 1)[0].rstrip(".,;:'\")")
+        if not Path(referenced).exists():
+            continue
+        if _matches_any(GLOBAL_INVALIDATORS, referenced):
+            continue
+        if not _matches_any(scope, referenced):
+            findings.append(
+                f"job {job_id!r} declares paths that do not cover {referenced!r}, "
+                "which its own commands read — widen the scope or drop it"
+            )
+    return findings
+
+
+def _validate_scope(prefix: str, raw: Any) -> tuple[tuple[str, ...], list[str]]:
+    if raw is None:
+        return (), []
+    if not isinstance(raw, list) or not raw:
+        return (), [f"{prefix} paths must be a non-empty list of globs"]
+    findings: list[str] = []
+    scope: list[str] = []
+    for entry in raw:
+        if not isinstance(entry, str) or not entry.strip():
+            findings.append(f"{prefix} paths entries must be non-empty strings")
+            continue
+        if entry.startswith("/") or ".." in entry:
+            findings.append(
+                f"{prefix} path {entry!r} must be repo-relative and contain no '..'"
+            )
+            continue
+        scope.append(entry)
+    return tuple(scope), findings
+
+
+def changed_files(base_ref: str) -> list[str] | None:
+    """Return paths changed against ``base_ref``, or None if unknowable.
+
+    None means "scope nothing" — every caller treats it as a full-suite run.
+    """
+    for revision in (f"{base_ref}...HEAD", f"origin/{base_ref}...HEAD"):
+        try:
+            result = subprocess.run(
+                ["git", "diff", "--name-only", revision],
+                capture_output=True, text=True, check=True,
+            )
+        except (subprocess.CalledProcessError, OSError):
+            continue
+        return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return None
+
+
+def select_jobs(
+    jobs: Iterable[LegacyJob], changed: list[str] | None
+) -> tuple[list[LegacyJob], str]:
+    """Pick the jobs a diff can actually affect, erring toward running more."""
+    jobs = list(jobs)
+    if changed is None:
+        return jobs, "full suite: changed-file set unavailable"
+    invalidators = [path for path in changed if _matches_any(GLOBAL_INVALIDATORS, path)]
+    if invalidators:
+        return jobs, f"full suite: global invalidator changed ({invalidators[0]})"
+    selected = [
+        job
+        for job in jobs
+        if not job.paths or any(_matches_any(job.paths, path) for path in changed)
+    ]
+    unscoped = sum(1 for job in jobs if not job.paths)
+    return selected, (
+        f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
+        f"({unscoped} unscoped always-on, "
+        f"{len(selected) - unscoped} scoped matches)"
+    )
 
 
 def _workflow_jobs(path: Path) -> dict[str, dict[str, Any]]:
@@ -175,12 +370,20 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 f"{prefix} dependency install is not a standalone pip command"
             )
 
+        scope, scope_findings = _validate_scope(prefix, raw_definition.get("paths"))
+        findings.extend(scope_findings)
+        if scope and not scope_findings:
+            findings.extend(
+                _scope_coverage_findings(str(job_id), raw_definition, scope)
+            )
+
         legacy.append(
             LegacyJob(
                 job_id=str(job_id),
                 definition=raw_definition,
                 ordinal=ordinal,
                 weight=_job_weight(str(job_id), raw_definition),
+                paths=scope,
             )
         )
 
@@ -378,6 +581,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pack-count", type=int, default=2)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
+    # Absent = run the full suite. main's baseline and workflow_dispatch pass
+    # nothing here ON PURPOSE, so the complete 173 always gate main.
+    parser.add_argument("--changed-from", default=None)
     args = parser.parse_args(argv)
     if args.execute and args.validate_only:
         parser.error("--execute and --validate-only are mutually exclusive")
@@ -390,11 +596,27 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         legacy = load_legacy_jobs(args.workflow)
-        packs = partition_jobs(legacy, args.pack_count)
+        changed = changed_files(args.changed_from) if args.changed_from else None
+        eligible, reason = select_jobs(legacy, changed)
+        # Balance across the SELECTED set, not the full manifest — otherwise a
+        # scoped run would leave whole packs empty while one pack carried it all.
+        packs = partition_jobs(eligible, args.pack_count)
         selected = packs[args.pack_index]
         weights = [sum(job.weight for job in pack) for pack in packs]
+        # Bare print, never a logger: a prefixing formatter makes GitHub drop the
+        # annotation silently (CLAUDE.md — annotations must START the line).
+        print(f"::notice title=ci-pack-scope::{reason}", flush=True)
+        skipped = len(legacy) - len(eligible)
+        if skipped:
+            print(
+                f"::notice title=ci-pack-skipped::{skipped} legacy job(s) out of "
+                f"scope for this diff; main's baseline still runs all "
+                f"{len(legacy)}",
+                flush=True,
+            )
         print(
-            f"Validated {len(legacy)} legacy jobs; pack weights={weights}; "
+            f"Validated {len(legacy)} legacy jobs; {len(eligible)} in scope "
+            f"({reason}); pack weights={weights}; "
             f"selected pack {args.pack_index} ({len(selected)} jobs)."
         )
         print("Selected jobs: " + ", ".join(job.job_id for job in selected))

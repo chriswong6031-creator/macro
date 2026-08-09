@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_episode/v1",
+  "title": "Point-in-time options signal episode",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "episode_id", "source", "source_event_id", "event_time",
+    "observed_at", "decision_at", "available_at", "published_at", "anchor_strategy",
+    "session_date", "ticker", "contract",
+    "decision", "feature_snapshot", "provenance", "quality"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_episode/v1"},
+    "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+    "source": {"type": "string", "minLength": 1},
+    "source_event_id": {"type": "string", "minLength": 1},
+    "event_time": {"type": "string", "format": "date-time"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "decision_at": {"type": "string", "format": "date-time"},
+    "available_at": {"type": "string", "format": "date-time"},
+    "published_at": {"type": ["string", "null"], "format": "date-time"},
+    "anchor_strategy": {"const": "durable_available_at"},
+    "session_date": {"type": "string", "format": "date"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["right", "expiration", "strike"],
+      "properties": {
+        "right": {"enum": ["C", "P"]},
+        "expiration": {"type": "string", "format": "date"},
+        "strike": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason", "underlying_direction", "option_action", "authority"],
+      "properties": {
+        "disposition": {"enum": ["fire", "watch", "suppressed", "abstain"]},
+        "reason": {"type": "string", "minLength": 1},
+        "underlying_direction": {"enum": ["long", "short", "none"]},
+        "option_action": {"enum": ["buy", "sell", "none"]},
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "may_originate", "may_rank", "may_gate", "may_size", "may_escalate",
+            "may_trade", "may_publish_pick", "may_train_prophet"
+          ],
+          "properties": {
+            "may_originate": {"const": false},
+            "may_rank": {"const": false},
+            "may_gate": {"const": false},
+            "may_size": {"const": false},
+            "may_escalate": {"const": false},
+            "may_trade": {"const": false},
+            "may_publish_pick": {"const": false},
+            "may_train_prophet": {"const": false}
+          }
+        }
+      }
+    },
+    "feature_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "premium_usd", "selection_rule", "selection_floor_usd", "selection_root_class",
+        "contracts", "avg_option_trade_price", "flow_side",
+        "dte", "moneyness_bucket", "vol_gt_prior_oi", "repeated", "swept"
+      ],
+      "properties": {
+        "premium_usd": {"type": "number", "exclusiveMinimum": 0},
+        "selection_rule": {"const": "premium_floor/v1"},
+        "selection_floor_usd": {"type": "number", "minimum": 0},
+        "selection_root_class": {"enum": ["etf_anchor", "single_name"]},
+        "contracts": {"type": "integer", "minimum": 1},
+        "avg_option_trade_price": {"type": "number", "exclusiveMinimum": 0},
+        "flow_side": {"enum": ["~buy", "~sell", "mixed"]},
+        "dte": {"type": ["integer", "null"], "minimum": 0},
+        "moneyness_bucket": {"enum": ["itm", "atm", "near_otm", "far_otm", "unknown"]},
+        "vol_gt_prior_oi": {"type": ["boolean", "null"]},
+        "repeated": {"type": "boolean"},
+        "swept": {"type": "boolean"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_schema", "source_artifact", "source_snapshot_asof", "feature_cutoff",
+        "signing_source", "oi_vintage", "oi_vintage_rule"
+      ],
+      "properties": {
+        "source_schema": {"const": "live_flow.event_stage/v1"},
+        "source_artifact": {"type": "string", "minLength": 1},
+        "source_snapshot_asof": {"type": "string", "format": "date-time"},
+        "feature_cutoff": {"type": "string", "format": "date-time"},
+        "signing_source": {"const": "tape"},
+        "oi_vintage": {"type": ["string", "null"], "format": "date"},
+        "oi_vintage_rule": {"const": "latest_available_chain_before_session"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability_exact", "trade_direction_reliability",
+        "option_quote_outcome_eligible", "source_baseline"
+      ],
+      "properties": {
+        "availability_exact": {"const": true},
+        "trade_direction_reliability": {"const": "soft"},
+        "option_quote_outcome_eligible": {"const": false},
+        "source_baseline": {"const": "floor"}
+      }
+    }
+  }
+}

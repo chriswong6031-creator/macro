@@ -36,6 +36,38 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     on the public R2 base, the same anchor scripts/audit_r2.py + daily.yml
     already budget at 26h (the manifest is put unconditionally on every
     successful full publish, no-delta days included).
+  * the Prophet US store's source watermark — ``source_asof`` in the SERVED
+    ``prophet/index.json``. This is the third shape, and it exists because the
+    2026-08-08 audit found the same re-stamp trap one layer down:
+    data/us_prophet_rank/candidates/2026-08.parquet froze at stamp_date
+    2026-08-05 while us_stocks.html kept re-baking every day, so BOTH checks
+    above stayed green through it (0/7 nightlies green since 08-05; every
+    Prophet writer sits behind ``needs: engine``). The page's delayed-board
+    marker cannot see it either — that marker reports the PRICE lag, not
+    whether the Prophet ranker ran. Only the store's own asof does.
+
+    Read from the served tree on disk (SERVED_DIR, default the Caddyfile's
+    ``root * /opt/macro/site.served``) rather than over HTTP, because
+    ``/prophet/index.json`` sits BEHIND the registration wall: an anonymous GET
+    to https://www.mastermind-x.com/prophet/index.json answers ``HTTP 401`` +
+    ``x-regwall: deny`` (probed 2026-08-08), and app/regwall.py's PUBLIC_PATHS
+    grants only ``/prophet/showcase.json`` — a deliberately DELAYED artifact
+    (kind ``delayed_winners``, as_of weeks behind by design) that would be a
+    dishonest freshness anchor. Adding the index to the public allowlist is a
+    paywall decision, not a sentinel one. The served file IS the live estate:
+    it is the exact byte-for-byte payload Caddy hands an entitled reader, and
+    the sentinel already runs on that host. A missing or unreadable file is
+    INDETERMINATE (the sentinel is blind), never a breach — the same verdict
+    discipline the HTTP surfaces use for a network error.
+
+    Freshness is measured against the EXCHANGE CALENDAR, not the wall clock:
+    ``source_asof`` must be within ``asof_max_sessions_behind`` completed NYSE sessions
+    of lib/nyse_calendar.expected_last_session(). This is the cross-cutting
+    lesson of every stale-store incident here — when the pipeline dies, every
+    store freezes together and agrees with itself; only the calendar knows a
+    completed session is missing. A calendar-anchored budget also means a
+    weekend or a market holiday can never manufacture a breach, so the budget
+    can be far tighter than the page budgets above without flapping.
 
 Verdict discipline (borrowed from scripts/audit_r2.py): a definitive server answer
 (HTTP 200 with an over-budget stamp) is a BREACH and alerts immediately; a network
@@ -64,11 +96,20 @@ Outputs:
     must never render as "fresh".
   * private counters (consecutive failures, last-alert stamps) at
     <state-dir>/state.json so the 30-minute cadence can hold the re-alert window.
+  * the SLA record at <state-dir>/first_fresh.json — one append-only stamp per
+    (session, surface) recording when a surface FIRST read definitively fresh.
+    Both files above are overwritten wholesale every pass, so without this the
+    estate could answer "is it fresh now" and could not answer "was it live by
+    18:30 ET on Tuesday" — the only form the W-L1 provisional-board gate takes.
+    Its summary (streak + recent sessions) rides staleness.json as ``sla``; it
+    measures and never pages.
 
 Stdlib-only ON PURPOSE (urllib, json, re): the sentinel must not depend on the
 venv contents, the engine tree, or lib.config being healthy — it is the observer
-of last resort, so its import closure is as small as honesty allows (app.mailer,
-itself stdlib-only, is imported lazily and failure-guarded).
+of last resort, so its import closure is as small as honesty allows (app.mailer
+and lib.nyse_calendar, both themselves stdlib-only with zero data dependencies,
+are imported lazily and failure-guarded — an unimportable calendar degrades the
+Prophet surface to INDETERMINATE, it never crashes the pass or fakes a verdict).
 
 Falsifier law (masterplan B5): >2 false-positive pages in a month means the
 budgets are wrong — fix the budgets, never mute the sentinel.
@@ -95,6 +136,9 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # Cloudflare's WAF 403s python-default User-Agents on the public r2.dev host
 # (scripts/audit_r2.py, same constant class).
 UA = "macro-freshness-sentinel/1.0"
@@ -104,6 +148,10 @@ DEFAULT_BASE = "https://www.mastermind-x.com"
 DEFAULT_R2_BASE = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
 DEFAULT_PUBLIC_DIR = "/var/lib/macro-live/public"
 DEFAULT_STATE_DIR = "/var/lib/macro-sentinel"
+# The Caddyfile's static root (`root * /opt/macro/site.served`) — macro-update
+# rsyncs the git work-tree site/ into it by atomic per-file rename, so what is
+# here is exactly what the edge serves. Read-only to this process.
+DEFAULT_SERVED_DIR = "/opt/macro/site.served"
 
 #: Consecutive INDETERMINATE passes (per surface) before the sentinel reports its
 #: own blindness. 6 passes at the 30-minute cadence ≈ 3 hours without a
@@ -117,6 +165,30 @@ BAKE_BUDGET_HOURS = 26.0
 #: Page body cap. The biggest board page is ~1 MB; hitting the cap means the read
 #: was truncated and the verdict would be built on a partial body → INDETERMINATE.
 BODY_CAP = 2_000_000
+#: Sessions of first-fresh-at history kept in <state-dir>/first_fresh.json. The
+#: file is APPEND-ONLY within a session — once a (session, surface) pair is
+#: stamped it is never rewritten, because "when did it FIRST read fresh" has
+#: exactly one answer and a later pass re-stamping it would erase the only
+#: measurement the SLA has. 40 sessions ≈ two months, which is the smallest
+#: window that can still show a five-session gate failing and recovering.
+SLA_HISTORY_SESSIONS = 40
+#: Sessions reported in the public staleness.json SLA block (and walked when the
+#: consecutive-met streak is computed).
+SLA_REPORT_SESSIONS = 10
+FIRST_FRESH_SCHEMA = "sentinel.first_fresh/v1"
+
+#: Completed NYSE sessions the Prophet store may lag before it is a breach.
+#: 1 absorbs a single missed nightly (and its next-day retry); the SECOND missed
+#: session pages — "breach by day 2". The real freeze reads exactly there: a
+#: store stamped 2026-08-05, checked 2026-08-08, is 2 completed sessions behind
+#: (08-06, 08-07) and must alarm. This is far tighter than the 4-day us_stocks
+#: board budget and can afford to be, because the anchor is the exchange
+#: calendar rather than the wall clock: a weekend, a long weekend and a market
+#: holiday all add ZERO to this count, so the routine quiet stretches that force
+#: the calendar-blind budgets wide cannot flap this one. Prophet also earns the
+#: tighter budget — it is the surface a reader acts on, and the nightly that
+#: writes it is the same `needs: engine` chain whose death this catches.
+PROPHET_MAX_SESSIONS_BEHIND = 1
 
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
@@ -168,6 +240,59 @@ SURFACES: list[dict] = [
         "path": "/massive_stock_day/_manifest.json",
         "bake_budget_hours": BAKE_BUDGET_HOURS,
         "delay_budget_days": None,
+    },
+    # bake_budget_hours is None ON PURPOSE — this surface is judged on CONTENT,
+    # not on a stamp. The served file's mtime is set by the rsync of a git
+    # checkout, so an unchanged file legitimately keeps an old mtime while a
+    # touched-but-frozen one gets a fresh stamp: exactly the re-stamp trap this
+    # surface exists to defeat. ``asof`` measured against the session calendar
+    # is the honest read, and it is the only one budgeted here.
+    {
+        "id": "prophet_us",
+        "kind": "served_file",
+        "path": "/prophet/index.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        # Never monitor index.asof: it is the publication/run clock and a rerun over
+        # frozen inputs re-stamps it green. source_asof is
+        # us_standouts.staleness.price_through, the ranked-price watermark the plan
+        # builder actually consumed.
+        "asof_field": "source_asof",
+        "asof_max_sessions_behind": PROPHET_MAX_SESSIONS_BEHIND,
+        "required_false_fields": (
+            "source_delayed", "source_unknown", "source_mixed_vintage",
+        ),
+        "required_values": {"source_basis": "panel_majority"},
+    },
+    # W-L1a — the evening close-pass provisional board, on the VPS live plane
+    # (kind live_file: <public-dir>/live/…, the plane the daemons write, NOT the
+    # git-rsynced site.served tree the prophet surface reads).
+    #
+    # ``absent_ok`` is the load-bearing key. This artifact is LEGITIMATELY absent
+    # for most of every day: it is published once, after the close, and there is
+    # nothing to publish before then. Without the exemption a missing file would
+    # count toward the blindness escalation and page "the sentinel is blind"
+    # every single morning by construction — the false-positive factory the
+    # module's own falsifier law forbids. Absence is not blindness here; it is
+    # the ordinary pre-publication state, and the SLA record below is what
+    # measures whether an evening board ever arrived.
+    #
+    # The staleness budget is 1 session for the same reason prophet_us is: a
+    # single missed evening is absorbed, the SECOND is a definitive breach. It is
+    # a STALENESS budget, not the SLA — the SLA is a clock-time question ("live
+    # by 18:30 ET on the session it describes") that no sessions-behind budget
+    # can express, which is why ``sla`` exists at all.
+    {
+        "id": "us_board_provisional",
+        "kind": "live_file",
+        "path": "/live/us_board_provisional.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "as_of",
+        "asof_max_sessions_behind": 1,
+        "absent_ok": True,
+        # masterplan §0 W-L1: live by 18:30 ET, five consecutive green sessions.
+        "sla": {"by_et": "18:30", "sessions_required": 5},
     },
 ]
 
@@ -230,6 +355,48 @@ def fetch(url: str, *, want_body: bool, timeout: float = 20.0) -> FetchResult:
         return FetchResult(error=f"{type(exc).__name__}: {exc}")
 
 
+def read_served(served_dir: Path, path: str) -> FetchResult:
+    """Read one artifact out of the SERVED tree — the walled surfaces' transport.
+
+    Shaped as a FetchResult so it flows through the same evaluate/alert path as
+    the HTTP surfaces: ``status=200`` + mtime + body on success, ``error`` set on
+    anything else. A missing file, a permission error and an unreadable byte all
+    land in ``error`` → INDETERMINATE, so a sentinel pointed at the wrong root
+    (or run off the VPS entirely) reports its own blindness instead of paging a
+    fake outage.
+    """
+    target = served_dir / path.lstrip("/")
+    try:
+        stat = target.stat()
+        raw = target.read_bytes()
+    except OSError as exc:
+        return FetchResult(error=f"served read failed: {type(exc).__name__}: {exc}")
+    if len(raw) > BODY_CAP:
+        return FetchResult(status=200, error=f"served body exceeded {BODY_CAP} byte cap")
+    return FetchResult(
+        status=200,
+        last_modified=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+        body=raw.decode("utf-8", errors="replace"),
+    )
+
+
+def sessions_behind(asof: str, now: datetime) -> int:
+    """Completed NYSE sessions the store stamped ``asof`` is missing (0 = current).
+
+    Lazy, failure-guarded import for the same reason app.mailer is one: the
+    sentinel must survive a broken tree. lib/nyse_calendar is pure rule
+    arithmetic with zero data dependencies, so importing it costs the sentinel
+    none of its independence — but an ImportError still has to degrade to
+    "I can't tell" rather than to a verdict. Raises so the caller can map the
+    failure to INDETERMINATE.
+    """
+    from datetime import date as _date  # noqa: PLC0415 — stdlib, kept with its one caller
+
+    from lib import nyse_calendar  # noqa: PLC0415 — see docstring
+
+    return nyse_calendar.sessions_behind(_date.fromisoformat(asof), now)
+
+
 def board_delay_stamp(body: str) -> str | None:
     """The board's self-reported price-through date, or None when not delayed.
 
@@ -258,16 +425,28 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         "board_delayed": False,
         "board_price_through": None,
         "board_delay_days": None,
+        "asof": None,
+        "asof_sessions_behind": None,
+        "absent": False,
         "detail": "",
     }
     if fr.error or fr.status != 200:
         out["status"] = "indeterminate"
         out["detail"] = fr.error or f"HTTP {fr.status}"
+        # A surface that publishes once a day has a NORMAL absent state, and the
+        # difference between "not published yet" and "I cannot see" is the whole
+        # question the blindness counter exists to answer. Narrow on purpose:
+        # only a genuinely missing file qualifies — a permission error, a
+        # truncated read or an HTTP failure is still blindness.
+        if surface.get("absent_ok") and "FileNotFoundError" in (fr.error or ""):
+            out["absent"] = True
+            out["detail"] = "not published yet (absence is a normal state here)"
         return out
 
     problems: list[str] = []
+    bake_budget_h = surface["bake_budget_hours"]
 
-    if fr.last_modified is None:
+    if bake_budget_h is not None and fr.last_modified is None:
         # A 200 with no parseable Last-Modified is a serving-config regression —
         # the sentinel cannot do its job. Indeterminate (not a staleness
         # verdict), so it escalates through the blindness counter rather than
@@ -276,12 +455,16 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         out["detail"] = "no Last-Modified header on a 200 response"
         return out
 
-    bake_age_h = (now - fr.last_modified).total_seconds() / 3600.0
-    out["bake_stamp"] = fr.last_modified.isoformat()
-    out["bake_age_hours"] = round(bake_age_h, 1)
-    if bake_age_h > surface["bake_budget_hours"]:
+    bake_age_h = None
+    if fr.last_modified is not None:
+        bake_age_h = (now - fr.last_modified).total_seconds() / 3600.0
+        out["bake_stamp"] = fr.last_modified.isoformat()
+        out["bake_age_hours"] = round(bake_age_h, 1)
+    # A None budget records the stamp for the operator line and budgets nothing
+    # (see the prophet_us SURFACES comment) — it is never "budget satisfied".
+    if bake_budget_h is not None and bake_age_h > bake_budget_h:
         problems.append(
-            f"bake stamp {bake_age_h:.1f}h old (budget {surface['bake_budget_hours']:.0f}h)"
+            f"bake stamp {bake_age_h:.1f}h old (budget {bake_budget_h:.0f}h)"
         )
 
     if surface["delay_budget_days"] is not None and fr.body is not None:
@@ -306,6 +489,68 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     problems.append(msg)
             except ValueError:
                 problems.append(f"unparseable board price-through date {stamp!r}")
+
+    if surface.get("asof_field") and fr.body is not None:
+        try:
+            doc = json.loads(fr.body)
+        except ValueError as exc:
+            # A body that is not JSON is a transport-shaped failure, not a
+            # staleness one: an HTML error shell, a half-written file mid-rsync,
+            # or a login page served in place of the payload all land here. It
+            # escalates through the blindness counter — a wrong-shape body must
+            # never be read as an outage verdict, in either direction.
+            out["status"] = "indeterminate"
+            out["detail"] = f"served body is not JSON ({exc})"
+            return out
+        stamp = doc.get(surface["asof_field"]) if isinstance(doc, dict) else None
+        for field in surface.get("required_false_fields", ()):
+            value = doc.get(field) if isinstance(doc, dict) else None
+            if value is not False:
+                problems.append(
+                    f"served payload {field!r} must be explicitly false "
+                    f"({value!r}) — Prophet source freshness is not authoritative"
+                )
+        for field, expected in surface.get("required_values", {}).items():
+            value = doc.get(field) if isinstance(doc, dict) else None
+            if value != expected:
+                problems.append(
+                    f"served payload {field!r} must equal {expected!r} "
+                    f"({value!r}) — Prophet source authority is not proven"
+                )
+        if not isinstance(stamp, str) or not stamp:
+            # Well-formed JSON that cannot say when it is from IS a definitive
+            # regression in the artifact, so it breaches rather than going
+            # blind: the writer dropped the one field the store is judged on,
+            # and a surface that cannot vouch for its own date must not read
+            # as fresh.
+            problems.append(
+                f"served payload carries no usable {surface['asof_field']!r} field"
+                f" ({stamp!r}) — the store cannot vouch for its own date"
+            )
+        else:
+            out["asof"] = stamp
+            budget = surface["asof_max_sessions_behind"]
+            try:
+                behind = sessions_behind(stamp, now)
+            except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
+                out["status"] = "indeterminate"
+                out["detail"] = (
+                    f"cannot measure {stamp!r} against the NYSE calendar"
+                    f" ({type(exc).__name__}: {exc})"
+                )
+                return out
+            out["asof_sessions_behind"] = behind
+            if behind > budget:
+                msg = (
+                    f"store as of {stamp} is {behind} completed NYSE session(s)"
+                    f" behind the calendar (budget {budget})"
+                )
+                if bake_age_h is not None and bake_age_h <= BAKE_BUDGET_HOURS:
+                    # The one-layer-down re-stamp trap: the file is landing on
+                    # the VPS on schedule and its CONTENT is frozen (the
+                    # 2026-08-05 candidates freeze under a daily-fresh page).
+                    msg += "; the file is being re-published, the store is not"
+                problems.append(msg)
 
     if problems:
         out["status"] = "stale"
@@ -333,6 +578,156 @@ def evaluate(results: dict[str, FetchResult], now: datetime,
     }
 
 
+# --------------------------------------------------------------------------- #
+# The SLA record (W-L1a) — "on each of the last N sessions, when did surface X
+# FIRST read fresh?"
+#
+# staleness.json and state.json are both OVERWRITTEN every 30-minute pass, so
+# before this the estate could answer "is it fresh now" and could not answer
+# "was it live by 18:30 ET", which is the only form the W-L1 gate takes. The
+# record is deliberately the smallest thing that closes that gap: one stamp per
+# (session, surface), written once, never rewritten.
+#
+# It MEASURES; it does not alert. A missed SLA shows up as a broken streak in
+# the public summary, not as a page — arming an alarm on a brand-new lane is how
+# sentinels get muted.
+# --------------------------------------------------------------------------- #
+def _et(stamp: datetime) -> datetime | None:
+    """A UTC instant on the Eastern clock, or None when that is unknowable.
+
+    Lazy import for the same reason lib.nyse_calendar is one (see the module
+    docstring): a box with no tzdata must degrade this one measurement to
+    "unknown" rather than take the watchdog down or, worse, silently answer in
+    UTC — which would read 20:47Z as "20:47, missed the 18:30 deadline" on a
+    session the board actually made with 100 minutes to spare.
+    """
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415 — see docstring
+        return stamp.astimezone(ZoneInfo("America/New_York"))
+    except Exception:  # noqa: BLE001 — no tzdata must never fabricate a verdict
+        return None
+
+
+def record_first_fresh(record: dict, report: dict, now: datetime,
+                       surfaces: list[dict] | None = None) -> dict:
+    """Stamp the first definitively-fresh read of each SLA surface, per session.
+
+    Keyed on the artifact's OWN ``as_of`` session, never on the wall clock. The
+    two disagree for five hours every evening — a pass at 01:30Z is 20:30 ET the
+    PREVIOUS day — so a UTC-date key would file half the evening's measurements
+    under tomorrow and make the record unreadable exactly on the lane it exists
+    to measure.
+
+    Append-only: an existing (session, surface) stamp is returned untouched.
+    """
+    surfaces = SURFACES if surfaces is None else surfaces
+    out = dict(record or {})
+    sessions = dict(out.get("sessions") or {})
+    changed = False
+
+    for s in surfaces:
+        sla = s.get("sla")
+        if not sla:
+            continue
+        c = (report.get("surfaces") or {}).get(s["id"])
+        # Only a DEFINITIVE fresh read counts. An indeterminate pass says
+        # nothing about when the board landed, and stamping it would record a
+        # time the artifact may not have existed at.
+        if c is None or c["status"] != "ok" or not c.get("asof"):
+            continue
+        session = c["asof"]
+        per = dict(sessions.get(session) or {})
+        if s["id"] in per:
+            continue                       # first is first, forever
+        et = _et(now)
+        # Met means BOTH: on the session's own ET day, and by the deadline. The
+        # date half is not pedantry — a board published at 02:00 ET the next
+        # morning reads "02:00 ≤ 18:30" and would score as a pass on a session
+        # it missed entirely.
+        met = (
+            None if et is None
+            else (et.date().isoformat() == session
+                  and et.strftime("%H:%M") <= sla["by_et"])
+        )
+        per[s["id"]] = {
+            "first_fresh_at": now.isoformat(),
+            "first_fresh_et": et.strftime("%H:%M") if et else None,
+            "by_et": sla["by_et"],
+            "met": met,
+        }
+        sessions[session] = per
+        changed = True
+
+    if changed:
+        for stale_key in sorted(sessions)[:-SLA_HISTORY_SESSIONS]:
+            sessions.pop(stale_key, None)
+        out["schema"] = FIRST_FRESH_SCHEMA
+        out["sessions"] = sessions
+        out["updated_at"] = now.isoformat()
+    return out
+
+
+def sla_streak(record: dict, surface_id: str, now: datetime,
+               cap: int = SLA_REPORT_SESSIONS) -> tuple[int | None, list[dict]]:
+    """(consecutive met sessions, per-session rows newest-first) for one surface.
+
+    Walked over the EXCHANGE CALENDAR, never over the record's own keys. A
+    session on which the board never published leaves no key at all, so counting
+    recorded rows would step straight over the miss and report a five-session
+    streak that never happened — the gate would pass on the strength of its own
+    missing data. Anchored on ``expected_last_session`` so today's board is not
+    judged until today is over.
+
+    (None, []) when the calendar cannot be imported: unknown, never a verdict.
+    """
+    try:
+        from lib import nyse_calendar  # noqa: PLC0415 — see module docstring
+        last = nyse_calendar.expected_last_session(now)
+    except Exception:  # noqa: BLE001
+        return None, []
+
+    sessions = (record or {}).get("sessions") or {}
+    rows: list[dict] = []
+    streak, broken = 0, False
+    for n in range(cap):
+        day = last if n == 0 else nyse_calendar.session_n_back(last, n)
+        if day is None:
+            break
+        entry = (sessions.get(day.isoformat()) or {}).get(surface_id) or {}
+        met = entry.get("met") is True
+        rows.append({"session": day.isoformat(),
+                     "first_fresh_et": entry.get("first_fresh_et"),
+                     "met": met})
+        if met and not broken:
+            streak += 1
+        elif not met:
+            broken = True
+    return streak, rows
+
+
+def sla_summary(record: dict, now: datetime,
+                surfaces: list[dict] | None = None) -> dict:
+    """The compact public block: per SLA surface, the streak and recent sessions.
+
+    Timestamps and verdicts only — no signal rows — which is what keeps it
+    publishable in /live/staleness.json alongside everything else there.
+    """
+    surfaces = SURFACES if surfaces is None else surfaces
+    out: dict = {}
+    for s in surfaces:
+        sla = s.get("sla")
+        if not sla:
+            continue
+        streak, rows = sla_streak(record, s["id"], now)
+        out[s["id"]] = {
+            "by_et": sla["by_et"],
+            "sessions_required": sla.get("sessions_required"),
+            "consecutive_met": streak,
+            "recent": rows,
+        }
+    return out
+
+
 def decide_alerts(report: dict, state: dict, now: datetime) -> tuple[list[str], dict]:
     """Report + prior counters → (alert messages to send now, next counters).
 
@@ -354,7 +749,13 @@ def decide_alerts(report: dict, state: dict, now: datetime) -> tuple[list[str], 
 
     # -- blindness counters -------------------------------------------------
     for sid, c in report["surfaces"].items():
-        if c["status"] == "indeterminate":
+        if c.get("absent"):
+            # Not published yet ≠ the sentinel cannot see. Counting a
+            # once-a-day artifact's ordinary pre-publication hours as blindness
+            # would page every morning; the SLA record is what notices that an
+            # evening board never arrived at all.
+            blind_counts.pop(sid, None)
+        elif c["status"] == "indeterminate":
             blind_counts[sid] = int(blind_counts.get(sid, 0)) + 1
         else:
             blind_counts.pop(sid, None)
@@ -549,21 +950,43 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
         raise
 
 
-def load_state(state_dir: Path) -> dict:
-    p = state_dir / "state.json"
+def _load_json(path: Path) -> dict:
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+
+
+def load_state(state_dir: Path) -> dict:
+    return _load_json(state_dir / "state.json")
+
+
+def load_first_fresh(state_dir: Path) -> dict:
+    """The SLA record. An unreadable file degrades to empty — which costs at most
+    the streak, never a wrong verdict, because every stamp is re-derived from the
+    surfaces themselves on the next fresh read."""
+    return _load_json(state_dir / "first_fresh.json")
 
 
 # --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Path,
-        dry_run: bool = False, fetcher=fetch) -> int:
+        dry_run: bool = False, fetcher=fetch, served_dir: Path | None = None,
+        served_reader=read_served) -> int:
+    served_dir = Path(DEFAULT_SERVED_DIR) if served_dir is None else served_dir
     results: dict[str, FetchResult] = {}
     for s in SURFACES:
+        if s["kind"] == "served_file":
+            results[s["id"]] = served_reader(served_dir, s["path"])
+            continue
+        if s["kind"] == "live_file":
+            # The daemon-written live plane (<public-dir>/live/…), not the
+            # git-rsynced site tree. Same reader, different root — a walled
+            # artifact is never read over HTTP, so the sentinel's verdict cannot
+            # depend on the paywall answering correctly.
+            results[s["id"]] = served_reader(public_dir, s["path"])
+            continue
         root = r2_base if s["kind"] == "r2" else base
         results[s["id"]] = fetcher(
             root.rstrip("/") + s["path"], want_body=s["delay_budget_days"] is not None
@@ -571,14 +994,29 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
 
     report = evaluate(results, now)
     for sid, c in sorted(report["surfaces"].items()):
+        if c.get("asof"):
+            label, content = "store", (
+                f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
+            )
+        else:
+            label = "board"
+            content = "delayed@" + c["board_price_through"] if c["board_delayed"] else "current"
         print(
             f"{sid}: {c['status']}"
             f" | bake {c['bake_age_hours'] if c['bake_age_hours'] is not None else '?'}h"
-            f" | board {'delayed@' + c['board_price_through'] if c['board_delayed'] else 'current'}"
+            f" | {label} {content}"
             + (f" | {c['detail']}" if c["detail"] else "")
         )
 
     if dry_run:
+        # Read the SLA record without stamping it — this is the operator's lever
+        # for evaluating the W-L1 gate ("five consecutive green sessions")
+        # without perturbing the very measurement being read.
+        for sid, s in sorted(sla_summary(load_first_fresh(state_dir), now).items()):
+            print(f"{sid}: SLA by {s['by_et']} ET | {s['consecutive_met']} consecutive"
+                  f" of {s['sessions_required']} required"
+                  + "".join(f"\n    {r['session']} {r['first_fresh_et'] or '--:--'}"
+                            f" {'met' if r['met'] else 'MISSED'}" for r in s["recent"]))
         print("dry-run: no state written, no alert sent")
         return 0 if report["ok"] else 1
 
@@ -614,9 +1052,17 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         "breach_alerted_at": new_state.get("breach_alerted_at"),
         "blind_alerted_at": new_state.get("blind_alerted_at"),
     }
+
+    # The SLA record rides the same pass but is a SEPARATE file: state.json is
+    # rewritten wholesale every pass and this must not be, so mixing them would
+    # put an append-only record inside an overwrite-only one.
+    first_fresh = record_first_fresh(load_first_fresh(state_dir), report, now)
+    report["sla"] = sla_summary(first_fresh, now)
+
     for target, payload in (
         (public_dir / "live" / "staleness.json", report),
         (state_dir / "state.json", new_state),
+        (state_dir / "first_fresh.json", first_fresh),
     ):
         try:
             _atomic_write_json(target, payload)
@@ -638,6 +1084,9 @@ def main(argv: list[str] | None = None) -> int:
                     default=os.environ.get("SENTINEL_PUBLIC_DIR", DEFAULT_PUBLIC_DIR))
     ap.add_argument("--state-dir",
                     default=os.environ.get("SENTINEL_STATE_DIR", DEFAULT_STATE_DIR))
+    ap.add_argument("--served-dir",
+                    default=os.environ.get("SENTINEL_SERVED_DIR", DEFAULT_SERVED_DIR),
+                    help="static root the edge serves (walled artifacts are read here)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
@@ -657,6 +1106,7 @@ def main(argv: list[str] | None = None) -> int:
         r2_base=args.r2_base,
         public_dir=Path(args.public_dir),
         state_dir=Path(args.state_dir),
+        served_dir=Path(args.served_dir),
         dry_run=args.dry_run,
     )
 

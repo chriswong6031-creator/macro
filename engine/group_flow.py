@@ -100,6 +100,43 @@ def _mean_pairwise_corr(rw: pd.DataFrame) -> float | None:
     return float(off) if np.isfinite(off) else None
 
 
+def sign_agreement(member_rets: pd.Series) -> dict:
+    """Directional CONSENSUS of one cross-section of member returns — cohesion's
+    sibling leg, and deliberately housed here beside `_mean_pairwise_corr` rather
+    than in the caller: cohesion says the members MOVED TOGETHER, agreement says
+    they moved the SAME WAY, and the two are only interpretable as a pair.
+
+    ``member_rets`` is ONE day's cross-section (index = ticker), normally already
+    benchmark-adjusted by the caller.  NaNs are dropped; an exactly-flat member
+    contributes 0 to the net but still counts in the denominator (it is a member
+    that did not pick a side, not an absent member).
+
+    Returns::
+
+        {"agreement_pct": float,   # |net| / n  in [0, 1]; 0.0 when n == 0
+         "net": int,               # signed count: +up members − down members
+         "n": int,                 # members in the cross-section (the denominator)
+         "n_up": int, "n_down": int, "n_flat": int}
+
+    DESCRIPTIVE only, like every leg in this module: a high agreement_pct says the
+    group moved as one today, never that it will keep doing so.  Never raises.
+    """
+    try:
+        s = pd.Series(member_rets).dropna().astype("float64")
+    except Exception:  # noqa: BLE001 — a leg is never fatal
+        s = pd.Series(dtype="float64")
+    n = int(len(s))
+    if n == 0:
+        return {"agreement_pct": 0.0, "net": 0, "n": 0,
+                "n_up": 0, "n_down": 0, "n_flat": 0}
+    signs = np.sign(s.to_numpy())
+    n_up = int((signs > 0).sum())
+    n_down = int((signs < 0).sum())
+    net = n_up - n_down
+    return {"agreement_pct": float(abs(net) / n), "net": int(net), "n": n,
+            "n_up": n_up, "n_down": n_down, "n_flat": int(n - n_up - n_down)}
+
+
 def prep_group(members_closes: pd.DataFrame, lvl: pd.Series, bench: pd.Series,
                cfg: dict) -> dict | None:
     """Vectorise the cheap, full-history legs once per group (the cohesion leg is

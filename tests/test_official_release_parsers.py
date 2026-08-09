@@ -250,6 +250,18 @@ def test_nfp_parser_handles_parenthetical_and_directional_payrolls(
     assert actual["headline_zh"]
 
 
+def test_nfp_reference_period_never_captures_article_after_in() -> None:
+    actual = parse_nfp_actual(
+        b"""Total nonfarm payroll employment (+57,000) in the establishment
+        survey changed little. The unemployment rate was 4.2 percent.
+        Reference period: July 2026"""
+    )
+
+    assert actual is not None
+    assert actual["reference_period"] == "July 2026"
+    assert all(metric["period"] == "July 2026" for metric in actual["metrics"])
+
+
 GDP_PAGE = b"""
 <html>
   <head><title>GDP (Advance Estimate), Second Quarter 2026</title></head>

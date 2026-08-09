@@ -17,16 +17,21 @@ from __future__ import annotations
 
 import glob
 import math
+import sys
 import warnings
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 from engine.cycles import (  # noqa: E402
     _tf_state, cycle_state, early_signals, ladder_state, macd_parts, regime_state,
-)
+)  # noqa: E402
 
 
 # ---- small shape helpers ----------------------------------------------------
