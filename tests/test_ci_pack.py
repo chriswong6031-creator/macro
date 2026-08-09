@@ -477,6 +477,7 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     ):
         fallback = jobs[job_id]
         assert "head.repo.full_name != github.repository" in fallback["if"]
+        assert fallback["runs-on"] == "ubuntu-latest"
         assert context in fallback["name"]
         assert f"fork-{context}-unused" in fallback["name"]
 
