@@ -1,6 +1,6 @@
 {
   "schema": "prophet_arena.scoreboard/v1",
-  "as_of": "2026-08-08",
+  "as_of": "2026-08-09",
   "tier": "display",
   "authority": {
     "tier": "display",
@@ -10,44 +10,75 @@
     "may_escalate": false
   },
   "registration": "research/PROPHET_ARENA_REGISTRATION.md",
+  "ledger_era": "price_basis_trigger_v2",
+  "temporal_contract": "price_basis+trigger+tier_dates/v1",
+  "historical_boundary": {
+    "active_path": "data/prophet_arena/price_basis_trigger_v2/<policy>.jsonl",
+    "active_schema": "prophet_arena.ledger/v2",
+    "sealed_prior": {
+      "schema": "prophet_arena.ledger/v1",
+      "path": "data/prophet_arena/<policy>.jsonl",
+      "open_rows": 125,
+      "close_rows": 30,
+      "other_or_corrupt_rows": 0,
+      "by_policy": {
+        "C0_champion_mirror": {
+          "open": 14,
+          "close": 3,
+          "other": 0
+        },
+        "C1_buy_soon_first": {
+          "open": 15,
+          "close": 4,
+          "other": 0
+        },
+        "C2_stage_ran_preferred": {
+          "open": 17,
+          "close": 4,
+          "other": 0
+        },
+        "C3_door_w_union": {
+          "open": 38,
+          "close": 10,
+          "other": 0
+        },
+        "C4_dispersion_cap": {
+          "open": 14,
+          "close": 3,
+          "other": 0
+        },
+        "C5_align2_gate": {
+          "open": 13,
+          "close": 2,
+          "other": 0
+        },
+        "C6_time_stop_21": {
+          "open": 14,
+          "close": 4,
+          "other": 0
+        }
+      },
+      "status": "sealed_read_only_excluded"
+    },
+    "reason": "v1 open rows did not persist price_basis_date, trigger or tier-native date provenance; their formation-clock outcomes cannot be repaired by guessing and are excluded from every active grade and summary"
+  },
   "standing_line": "shadow record \u2014 the live policy changes only by operator ratification",
   "standing_line_zh": "\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539",
   "headline_min_closed": 20,
   "harness_validity": {
     "c0_plan_ids": [
-      "ADAM-BULL-20260626",
-      "GPCR-BULL-20260604",
-      "NGVT-BULL-20260731",
-      "NVDA-BULL-20260805",
-      "ROIV-BULL-20260805",
-      "SOUN-BULL-20260805",
-      "VSEC-BULL-20260805",
-      "WT-BULL-20260710",
-      "XPEL-BULL-20260805"
+      "FCX-BULL-20260731",
+      "MDB-BULL-20260731"
     ],
     "live_plan_ids": [
-      "ADAM-BULL-20260626",
-      "CTS-BULL-20260805",
-      "GPCR-BULL-20260604",
-      "NGVT-BULL-20260731",
-      "NVDA-BULL-20260805",
-      "ROIV-BULL-20260805",
-      "SOUN-BULL-20260805",
-      "UAL-BULL-20260805",
-      "UEC-BULL-20260731",
-      "VSEC-BULL-20260805",
-      "WT-BULL-20260710",
-      "XPEL-BULL-20260805"
+      "FCX-BULL-20260731",
+      "MDB-BULL-20260731"
     ],
-    "c0_mismatch_count": 3,
-    "missing_from_mirror": [
-      "CTS-BULL-20260805",
-      "UAL-BULL-20260805",
-      "UEC-BULL-20260731"
-    ],
+    "c0_mismatch_count": 0,
+    "missing_from_mirror": [],
     "extra_in_mirror": [],
-    "harness_ok": false,
-    "meaning": "the mirror of the live rule started a different set of plans than the live run \u2014 treat every number on this page as suspect until that is fixed"
+    "harness_ok": true,
+    "meaning": "the mirror of the live rule started exactly the same plans the live run did"
   },
   "policies": [
     {
@@ -55,20 +86,16 @@
       "label": "the live rule, mirrored",
       "label_zh": "\u5b9e\u76d8\u89c4\u5219\u955c\u50cf",
       "grain": "selection",
-      "n_open": 11,
-      "n_closed": 3,
-      "win_rate_pct": 66.7,
-      "avg_pct": 83.23,
-      "median_pct": 108.44,
-      "expired_share_pct": 33.3,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 1,
-        "T1_HIT": 1,
-        "T2_HIT": 1
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 3",
+      "n_open": 2,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false
     },
     {
@@ -76,28 +103,24 @@
       "label": "earlier entries first",
       "label_zh": "\u4f18\u5148\u8f83\u65e9\u5165\u573a",
       "grain": "selection",
-      "n_open": 11,
-      "n_closed": 4,
-      "win_rate_pct": 50.0,
-      "avg_pct": 61.79,
-      "median_pct": 52.95,
-      "expired_share_pct": 50.0,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 2,
-        "T1_HIT": 1,
-        "T2_HIT": 1
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "n_open": 0,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 0,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "shared_nights": 3,
-        "n_policy": 4,
-        "n_champion": 3,
-        "avg_pct": 61.79,
-        "champion_avg_pct": 83.23,
-        "diff_pp": -21.44
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -106,28 +129,24 @@
       "label": "already-moving names first",
       "label_zh": "\u4f18\u5148\u5df2\u542f\u52a8\u4e2a\u80a1",
       "grain": "selection",
-      "n_open": 13,
-      "n_closed": 4,
-      "win_rate_pct": 50.0,
-      "avg_pct": 61.06,
-      "median_pct": 51.49,
-      "expired_share_pct": 50.0,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 2,
-        "T1_HIT": 1,
-        "T2_HIT": 1
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "n_open": 5,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "shared_nights": 3,
-        "n_policy": 4,
-        "n_champion": 3,
-        "avg_pct": 61.06,
-        "champion_avg_pct": 83.23,
-        "diff_pp": -22.17
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -136,29 +155,24 @@
       "label": "washout turns added",
       "label_zh": "\u7eb3\u5165\u8d85\u8dcc\u8f6c\u6298",
       "grain": "selection",
-      "n_open": 28,
-      "n_closed": 10,
-      "win_rate_pct": 50.0,
-      "avg_pct": 24.3,
-      "median_pct": 2.1,
-      "expired_share_pct": 10.0,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 1,
-        "INVALIDATED": 4,
-        "T1_HIT": 4,
-        "T2_HIT": 1
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 10",
+      "n_open": 4,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "shared_nights": 3,
-        "n_policy": 10,
-        "n_champion": 3,
-        "avg_pct": 24.3,
-        "champion_avg_pct": 83.23,
-        "diff_pp": -58.94
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -167,28 +181,24 @@
       "label": "book size follows dispersion",
       "label_zh": "\u6301\u4ed3\u6570\u91cf\u968f\u79bb\u6563\u5ea6",
       "grain": "selection",
-      "n_open": 11,
-      "n_closed": 3,
-      "win_rate_pct": 66.7,
-      "avg_pct": 83.23,
-      "median_pct": 108.44,
-      "expired_share_pct": 33.3,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 1,
-        "T1_HIT": 1,
-        "T2_HIT": 1
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 3",
+      "n_open": 2,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "shared_nights": 3,
-        "n_policy": 3,
-        "n_champion": 3,
-        "avg_pct": 83.23,
-        "champion_avg_pct": 83.23,
-        "diff_pp": 0.0
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -197,26 +207,24 @@
       "label": "weekly-aligned only",
       "label_zh": "\u4ec5\u9650\u5468\u7ebf\u540c\u5411",
       "grain": "selection",
-      "n_open": 10,
-      "n_closed": 2,
-      "win_rate_pct": 0.0,
-      "avg_pct": -7.06,
-      "median_pct": -7.06,
-      "expired_share_pct": 100.0,
-      "time_stopped_share_pct": 0.0,
-      "outcomes": {
-        "EXPIRED": 2
-      },
-      "nights_recorded": 2,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 2",
+      "n_open": 0,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 0,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "shared_nights": 1,
-        "n_policy": 2,
-        "n_champion": 1,
-        "avg_pct": -7.06,
-        "champion_avg_pct": -11.59,
-        "diff_pp": 4.53
+        "shared_nights": 0,
+        "n_policy": 0,
+        "n_champion": 0,
+        "avg_pct": null,
+        "champion_avg_pct": null,
+        "diff_pp": null
       },
       "vs_champion_basis": "same-cohort \u2014 only the nights on which both this policy and the live rule started a plan that has since finished"
     },
@@ -225,41 +233,42 @@
       "label": "cut dead money at 21 sessions",
       "label_zh": "21\u4e2a\u4ea4\u6613\u65e5\u6b62\u635f\u79bb\u573a",
       "grain": "closure",
-      "n_open": 10,
-      "n_closed": 4,
-      "win_rate_pct": 50.0,
-      "avg_pct": 61.79,
-      "median_pct": 52.81,
-      "expired_share_pct": 0.0,
-      "time_stopped_share_pct": 50.0,
-      "outcomes": {
-        "T1_HIT": 1,
-        "T2_HIT": 1,
-        "time_stopped": 2
-      },
-      "nights_recorded": 3,
-      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 4",
+      "n_open": 2,
+      "n_closed": 0,
+      "win_rate_pct": null,
+      "avg_pct": null,
+      "median_pct": null,
+      "expired_share_pct": null,
+      "time_stopped_share_pct": null,
+      "outcomes": {},
+      "nights_recorded": 1,
+      "reading": "too early to read \u2014 needs 20 closed shadow plans, has 0",
       "readable": false,
       "vs_champion": {
-        "n_paired": 3,
-        "avg_diff_pp": 2.92,
-        "median_diff_pp": 0.0,
-        "better": 1,
+        "n_paired": 0,
+        "avg_diff_pp": null,
+        "median_diff_pp": null,
+        "better": 0,
         "worse": 0,
-        "same": 2,
-        "unpaired_plans": 1
+        "same": 0,
+        "unpaired_plans": 0
       },
       "vs_champion_basis": "per-plan paired \u2014 same plan ids and entries as the live rule, different exits"
     }
   ],
   "tonight": {
-    "asof": "2026-08-08",
+    "asof": "2026-08-09",
     "standouts_as_of": "2026-08-07",
+    "price_through": "2026-08-07",
+    "source_delayed": false,
+    "source_unknown": false,
+    "source_basis": "panel_majority",
+    "panel_mixed_vintage": false,
     "gate_go": false,
     "dispersion": {
       "mode": "lean_in",
       "state": "lean_in",
-      "artifact_as_of": "2026-08-08",
+      "artifact_as_of": "2026-08-09",
       "stale_sessions": 0,
       "cap": 12,
       "path": "data/dispersion/regime.json"
@@ -290,7 +299,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 16.4
+        "runtime_s": 15.4
       }
     },
     "policies": {
@@ -303,39 +312,59 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS",
+          "UEC",
+          "UAL",
+          "TTC",
+          "FUL",
+          "AVGO",
+          "HD",
+          "SOFI",
+          "CMC",
+          "WS",
+          "SMR",
+          "APO",
+          "ALG",
+          "AMZN",
+          "AYI",
+          "ENR",
+          "FSS",
+          "RH",
+          "GTES"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "FCX-BULL-20260731",
+          "MDB-BULL-20260731"
         ],
-        "n_plans": 9,
+        "n_plans": 2,
         "selection": {
-          "admitted": 31,
-          "cap": 12
+          "admitted": 30,
+          "cap": null,
+          "cap_applied": false,
+          "selection_basis": "lossless live champion mirror",
+          "truncated": 0
         },
         "origination": {
-          "offered": 12,
-          "skipped_duplicate_id": 1,
-          "skipped_open_plan": 2,
+          "offered": 30,
+          "skipped_duplicate_id": 27,
+          "skipped_open_plan": 1,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 2,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 2,
+        "ledger_closures_appended": 0
       },
       "C1_buy_soon_first": {
         "selected_tickers": [
@@ -350,38 +379,34 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT"
+          "NVDA"
         ],
-        "plan_ids": [
-          "ADAM-BULL-20260626",
-          "ALG-BULL-20260612",
-          "FSS-BULL-20260728",
-          "GPCR-BULL-20260604",
-          "GTES-BULL-20260731",
-          "NGVT-BULL-20260731",
-          "ROIV-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
-        ],
-        "n_plans": 10,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
+          "cap_applied": true,
           "act_level_2": 6,
           "lifted": 6
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 11,
           "skipped_open_plan": 1,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 10
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 0,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 10,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C2_stage_ran_preferred": {
         "selected_tickers": [
@@ -391,47 +416,56 @@
           "WFRD",
           "LECO",
           "DRI",
-          "DHR",
           "GPCR",
           "VSEC",
           "ROIV",
           "ADAM",
-          "XPEL"
+          "XPEL",
+          "WT"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
-          "DHR-BULL-20260521",
           "DRI-BULL-20260731",
-          "GPCR-BULL-20260604",
           "HAYW-BULL-20260731",
           "HRMY-BULL-20260731",
           "LECO-BULL-20260731",
-          "ROIV-BULL-20260805",
-          "SHEN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WFRD-BULL-20260731",
-          "XPEL-BULL-20260805"
+          "WFRD-BULL-20260731"
         ],
-        "n_plans": 12,
+        "n_plans": 5,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
+          "cap_applied": true,
           "stage_ran_in_champion_pool": 0,
-          "stage_ran_admitted_by_widening": 7,
-          "stage_ran_selected": 7,
+          "stage_ran_admitted_by_widening": 6,
+          "stage_ran_selected": 6,
           "widening": "the act_level gate is relaxed for stage-ran rows only; band, direction, entry-signal presence and the gate mode stay the champion's"
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 0,
+          "skipped_duplicate_id": 6,
           "skipped_open_plan": 0,
+          "skipped_clock_provenance": 1,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 12
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [
+            {
+              "ticker": "SHEN",
+              "id": "SHEN-BULL-20260805",
+              "stage": "clock_provenance",
+              "errors": [
+                "formation_date '2026-08-05' postdates tier_event_date '2026-08-03'"
+              ]
+            }
+          ],
+          "originated": 5,
+          "validation_failed": 1
         },
-        "ledger_rows_appended": 12,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 5,
+        "ledger_closures_appended": 0
       },
       "C3_door_w_union": {
         "selected_tickers": [
@@ -442,29 +476,23 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
+          "NVDA",
           "AEM",
           "KGC",
           "HII",
           "HL"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
           "AEM-BULL-20260807",
-          "GPCR-BULL-20260604",
           "HII-BULL-20260807",
           "HL-BULL-20260807",
-          "KGC-BULL-20260807",
-          "NGVT-BULL-20260731",
-          "ROIV-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "KGC-BULL-20260807"
         ],
-        "n_plans": 11,
+        "n_plans": 4,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
+          "cap_applied": true,
           "door_w_offered": 43,
           "door_w_already_in_champion_pool": 0,
           "door_w_reserved_slots": 4,
@@ -473,15 +501,21 @@
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
+          "skipped_duplicate_id": 8,
           "skipped_open_plan": 0,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 11
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 4,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 11,
-        "ledger_closures_appended": 5
+        "ledger_rows_appended": 4,
+        "ledger_closures_appended": 0
       },
       "C4_dispersion_cap": {
         "selected_tickers": [
@@ -492,39 +526,39 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "FCX-BULL-20260731",
+          "MDB-BULL-20260731"
         ],
-        "n_plans": 9,
+        "n_plans": 2,
         "selection": {
-          "admitted": 31,
-          "cap": 12
+          "admitted": 30,
+          "cap": 12,
+          "cap_applied": true
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 1,
-          "skipped_open_plan": 2,
+          "skipped_duplicate_id": 10,
+          "skipped_open_plan": 0,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 2,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 2,
+        "ledger_closures_appended": 0
       },
       "C5_align2_gate": {
         "selected_tickers": [
@@ -532,53 +566,48 @@
           "VSEC",
           "XPEL",
           "WT",
+          "NVDA",
           "UEC",
           "UAL",
           "HD",
           "SOFI",
           "CMC",
           "SMR",
-          "ALG",
-          "FSS"
+          "APO"
         ],
-        "plan_ids": [
-          "ALG-BULL-20260612",
-          "CMC-BULL-20260731",
-          "FSS-BULL-20260728",
-          "GPCR-BULL-20260604",
-          "HD-BULL-20260807",
-          "SMR-BULL-20260731",
-          "UAL-BULL-20260805",
-          "UEC-BULL-20260731",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
-        ],
-        "n_plans": 11,
+        "plan_ids": [],
+        "n_plans": 0,
         "selection": {
-          "admitted": 31,
+          "admitted": 30,
           "cap": 12,
+          "cap_applied": true,
           "align_gate": {
-            "admitted": 13,
+            "admitted": 16,
             "admitted_via_fallback": 7,
-            "excluded_misaligned": 14,
+            "excluded_misaligned": 10,
             "excluded_unreadable": 4,
             "basis": "event_atlas weekly align_class == 2 (its full value), falling back to align_now == 3 (its full value) when the name has no weekly event on record; a name the atlas cannot read is excluded, never admitted"
           },
-          "passed_gate": 13,
-          "excluded": 18
+          "passed_gate": 16,
+          "excluded": 14
         },
         "origination": {
           "offered": 12,
-          "skipped_duplicate_id": 0,
+          "skipped_duplicate_id": 11,
           "skipped_open_plan": 1,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 11
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 0,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 11,
-        "ledger_closures_appended": 2
+        "ledger_rows_appended": 0,
+        "ledger_closures_appended": 0
       },
       "C6_time_stop_21": {
         "selected_tickers": [
@@ -589,43 +618,62 @@
           "XPEL",
           "WT",
           "BIDU",
-          "NGVT",
           "NVDA",
+          "NGVT",
           "FCX",
           "MDB",
-          "SOUN"
+          "CTS",
+          "UEC",
+          "UAL",
+          "TTC",
+          "FUL",
+          "AVGO",
+          "HD",
+          "SOFI",
+          "CMC",
+          "WS",
+          "SMR",
+          "APO",
+          "ALG",
+          "AMZN",
+          "AYI",
+          "ENR",
+          "FSS",
+          "RH",
+          "GTES"
         ],
         "plan_ids": [
-          "ADAM-BULL-20260626",
-          "GPCR-BULL-20260604",
-          "NGVT-BULL-20260731",
-          "NVDA-BULL-20260805",
-          "ROIV-BULL-20260805",
-          "SOUN-BULL-20260805",
-          "VSEC-BULL-20260805",
-          "WT-BULL-20260710",
-          "XPEL-BULL-20260805"
+          "FCX-BULL-20260731",
+          "MDB-BULL-20260731"
         ],
-        "n_plans": 9,
+        "n_plans": 2,
         "selection": {
-          "admitted": 31,
-          "cap": 12,
-          "selection_basis": "identical to C0 by construction"
+          "admitted": 30,
+          "cap": null,
+          "cap_applied": false,
+          "selection_basis": "identical to lossless C0 by construction",
+          "truncated": 0
         },
         "origination": {
-          "offered": 12,
-          "skipped_duplicate_id": 1,
-          "skipped_open_plan": 2,
+          "offered": 30,
+          "skipped_duplicate_id": 27,
+          "skipped_open_plan": 1,
+          "skipped_clock_provenance": 0,
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "originated": 9
+          "recorded_at": "2026-08-09",
+          "price_basis_date": "2026-08-07",
+          "clock_errors": [],
+          "validation_failures": [],
+          "originated": 2,
+          "validation_failed": 0
         },
-        "ledger_rows_appended": 9,
-        "ledger_closures_appended": 3
+        "ledger_rows_appended": 2,
+        "ledger_closures_appended": 0
       }
     }
   },
-  "note": "Each policy is a frozen way of choosing which plans to start, or when to close them, run beside the live rule on the same nights and scored by the same closure rules. Nothing here has ever changed a live plan. Records start empty and fill one night at a time \u2014 there is no backfill, so a small count means young, not weak. shadow record \u2014 the live policy changes only by operator ratification.",
-  "note_zh": "\u6bcf\u6761\u7b56\u7565\u90fd\u662f\u4e00\u79cd\u5df2\u51bb\u7ed3\u7684\u9009\u80a1\u6216\u79bb\u573a\u89c4\u5219\uff0c\u4e0e\u5b9e\u76d8\u89c4\u5219\u5728\u540c\u4e00\u6279\u4ea4\u6613\u591c\u5e76\u884c\u8fd0\u884c\uff0c\u5e76\u4ee5\u76f8\u540c\u7684\u5e73\u4ed3\u89c4\u5219\u8bc4\u5206\u3002\u6b64\u5904\u7684\u4efb\u4f55\u7ed3\u679c\u90fd\u4ece\u672a\u6539\u53d8\u8fc7\u5b9e\u76d8\u8ba1\u5212\u3002\u8bb0\u5f55\u4ece\u96f6\u5f00\u59cb\u9010\u591c\u7d2f\u79ef\uff0c\u6ca1\u6709\u56de\u586b \u2014 \u6837\u672c\u5c11\u4ee3\u8868\u65f6\u95f4\u77ed\uff0c\u800c\u975e\u7ed3\u8bba\u5f31\u3002\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539\u3002"
+  "note": "Each policy is a frozen way of choosing which plans to start, or when to close them, run beside the live rule on the same nights and scored by the same closure rules. Nothing here has ever changed a live plan. The active price-basis/trigger era starts empty and fills one night at a time; the sealed formation-clock era remains audit-visible but is excluded, never rewritten. There is no backfill, so a small count means young, not weak. shadow record \u2014 the live policy changes only by operator ratification.",
+  "note_zh": "\u6bcf\u6761\u7b56\u7565\u90fd\u662f\u4e00\u79cd\u5df2\u51bb\u7ed3\u7684\u9009\u80a1\u6216\u79bb\u573a\u89c4\u5219\uff0c\u4e0e\u5b9e\u76d8\u89c4\u5219\u5728\u540c\u4e00\u6279\u4ea4\u6613\u591c\u5e76\u884c\u8fd0\u884c\uff0c\u5e76\u4ee5\u76f8\u540c\u7684\u5e73\u4ed3\u89c4\u5219\u8bc4\u5206\u3002\u6b64\u5904\u7684\u4efb\u4f55\u7ed3\u679c\u90fd\u4ece\u672a\u6539\u53d8\u8fc7\u5b9e\u76d8\u8ba1\u5212\u3002\u5f53\u524d\u4ef7\u57fa\u51c6/\u89e6\u53d1\u5668\u65f6\u4ee3\u4ece\u96f6\u5f00\u59cb\u9010\u591c\u7d2f\u79ef\uff1b\u65e7\u5f62\u6210\u65e5\u671f\u65f6\u949f\u8bb0\u5f55\u53ea\u4fdd\u7559\u4f5c\u5ba1\u8ba1\u5e76\u5b8c\u5168\u6392\u9664\uff0c\u7edd\u4e0d\u6539\u5199\u3002\u6ca1\u6709\u56de\u586b \u2014 \u6837\u672c\u5c11\u4ee3\u8868\u65f6\u95f4\u77ed\uff0c\u800c\u975e\u7ed3\u8bba\u5f31\u3002\u5f71\u5b50\u8bb0\u5f55 \u2014 \u5b9e\u76d8\u7b56\u7565\u4ec5\u5728\u64cd\u4f5c\u8005\u6279\u51c6\u540e\u624d\u4f1a\u66f4\u6539\u3002"
 }

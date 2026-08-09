@@ -39,13 +39,17 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine import regime_one as R
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import regime_one as R  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 

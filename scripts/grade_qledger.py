@@ -59,8 +59,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 # Allow running as a top-level script (`python scripts/grade_qledger.py`).
-if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from engine import qledger as q
 from lib import config

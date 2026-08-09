@@ -2,7 +2,7 @@
   "schema": "stage_context.v1",
   "asof": "2026-08-08",
   "data_session": "2026-08-07",
-  "built": "2026-08-08T07:09:49Z",
+  "built": "2026-08-08T21:26:39Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -3095,6 +3095,12 @@
       "sga_score": 15
     },
     {
+      "ticker": "EA",
+      "company": "Electronic Arts",
+      "weeks_in_stage": 13,
+      "sga_score": 15
+    },
+    {
       "ticker": "ESPR",
       "company": "ESPR",
       "weeks_in_stage": 3,
@@ -3129,12 +3135,6 @@
       "company": "Tootsie Roll Industries, Inc.",
       "weeks_in_stage": 10,
       "sga_score": 15
-    },
-    {
-      "ticker": "STRS",
-      "company": "Stratus Properties Inc",
-      "weeks_in_stage": 1,
-      "sga_score": 13
     }
   ],
   "sectors": [
@@ -6420,7 +6420,7 @@
     ],
     "EA": [
       3,
-      12
+      13
     ],
     "EAF": [
       4,

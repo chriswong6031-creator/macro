@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FOXF-BULL-20260526",
-  "asof": "2026-08-08",
+  "asof": "2026-08-09",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 67.8,
-  "raw_confidence": 72.3,
-  "delta_vs_base": 7.8,
+  "management_confidence": 71.4,
+  "raw_confidence": 72.0,
+  "delta_vs_base": 11.4,
   "recommended_action": "hold",
   "human_state": "Advancing Cleanly",
   "components": {
     "validity": 100.0,
     "progress": 51.8,
-    "pace": 70.8,
+    "pace": 69.8,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 2.044,
     "dist_to_t1_r": 0.456,
     "dist_to_t2_r": 1.956,
-    "horizon_pct_used": 53.3,
+    "horizon_pct_used": 55.6,
     "p1": 0.6957,
     "p2": 0.3479,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Phase: overtime \u2192 triggered_pre_t1",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 24,
-  "tau": 0.5333
+  "days_elapsed": 25,
+  "tau": 0.5556
 }

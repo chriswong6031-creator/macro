@@ -25,6 +25,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 
+from engine.government_revenue.amount_semantics import assert_combinable
 from engine.government_revenue.award_events import build_award_change_events
 from engine.government_revenue.entity_resolution import (
     attach_recipient_resolutions,
@@ -1170,6 +1171,20 @@ def _velocity(series: pd.Series, complete_month: pd.Timestamp) -> dict:
     }
 
 
+# Concentration weights.  Every rung is ``award_cumulative`` and the ladder is checked at
+# import time, because this metric publishes ``covered_obligations`` and feeds the
+# user-facing "customer concentration" read.  The third rung used to be
+# ``current_award_amount`` — a CEILING — so on any frame that arrived without an obligated
+# column the shares, the HHI, and the total were computed from money merely AUTHORISED and
+# published under the word "obligations".  The canonical awards frame always carries
+# ``total_obligated``, so the rung was latent rather than live; it is removed because a
+# ladder that changes what it measures on a column-presence accident is exactly the drift
+# this lobe keeps paying for.  Weightless now returns None (no concentration published)
+# rather than silently substituting a different measurement.
+_CONCENTRATION_WEIGHT_FIELDS: tuple[str, ...] = ("total_obligated", "award_amount")
+assert_combinable(_CONCENTRATION_WEIGHT_FIELDS, context="_concentration weight ladder")
+
+
 def _concentration(frame: pd.DataFrame, dimension_candidates: Iterable[str]) -> dict | None:
     if frame.empty:
         return None
@@ -1178,7 +1193,7 @@ def _concentration(frame: pd.DataFrame, dimension_candidates: Iterable[str]) -> 
         return None
     values = frame[dimension].fillna("Unknown").astype(str).str.strip().replace("", "Unknown")
     weights = pd.Series(index=frame.index, dtype=float)
-    for col in ("total_obligated", "award_amount", "current_award_amount"):
+    for col in _CONCENTRATION_WEIGHT_FIELDS:
         if col in frame.columns:
             weights = pd.to_numeric(frame[col], errors="coerce").fillna(0.0).clip(lower=0.0)
             break

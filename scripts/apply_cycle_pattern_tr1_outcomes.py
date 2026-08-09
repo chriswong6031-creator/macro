@@ -24,8 +24,7 @@ import sys
 from pathlib import Path
 
 _REPO = Path(__file__).parent.parent.resolve()
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.cycle_pattern import truths as T  # noqa: E402
 from engine.research_factory.adapter_cycle_pattern import truth_guard  # noqa: E402

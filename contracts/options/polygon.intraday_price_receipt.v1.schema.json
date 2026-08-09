@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "polygon.intraday_price_receipt/v1",
+  "title": "Immutable Polygon intraday price-cache receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "ticker", "source_file", "source_file_sha256",
+    "source_available_at", "bar_seconds", "vendor_delay_minutes",
+    "adjusted", "price_basis", "timestamp_basis", "row_count",
+    "first_time", "last_time"
+  ],
+  "properties": {
+    "schema": {"const": "polygon.intraday_price_receipt/v1"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.^=-]+$"},
+    "source_file": {"type": "string", "pattern": "^[A-Z0-9.^=-]+\\.parquet$"},
+    "source_file_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_available_at": {"type": "string", "format": "date-time"},
+    "bar_seconds": {"enum": [60, 300, 900, 1800, 3600]},
+    "vendor_delay_minutes": {"type": "integer", "minimum": 0},
+    "adjusted": {"const": true},
+    "price_basis": {"const": "split_adjusted_polygon_aggregate_ohlc"},
+    "timestamp_basis": {"const": "aggregate_window_start_utc"},
+    "row_count": {"type": "integer", "minimum": 1},
+    "first_time": {"type": "string", "format": "date-time"},
+    "last_time": {"type": "string", "format": "date-time"}
+  }
+}

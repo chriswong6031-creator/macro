@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-08-08",
-  "generated_utc": "2026-08-08T08:03:18Z",
+  "as_of": "2026-08-09",
+  "generated_utc": "2026-08-09T01:33:54Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 308,
@@ -133,8 +133,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2216,
-        "n_past_check_by": 1412
+        "n_open": 2260,
+        "n_past_check_by": 1422
       },
       "allowed_actions": [
         "inspect",
@@ -181,8 +181,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2216,
-        "n_past_check_by": 1412
+        "n_open": 2260,
+        "n_past_check_by": 1422
       },
       "allowed_actions": [
         "inspect",
@@ -229,8 +229,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 11376,
-        "n_past_check_by": 7057
+        "n_open": 11654,
+        "n_past_check_by": 7073
       },
       "allowed_actions": [
         "inspect",
@@ -277,8 +277,8 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 11376,
-        "n_past_check_by": 7057
+        "n_open": 11654,
+        "n_past_check_by": 7073
       },
       "allowed_actions": [
         "inspect",
@@ -465,7 +465,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 2118,
+        "n_open": 2140,
         "n_past_check_by": 867
       },
       "allowed_actions": [
@@ -513,7 +513,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 63,
+        "n_open": 65,
         "n_past_check_by": 21
       },
       "allowed_actions": [
@@ -636,7 +636,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-08",
+      "due_at": "2026-08-09",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -668,7 +668,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-08",
+      "due_at": "2026-08-09",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -700,7 +700,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-08",
+      "due_at": "2026-08-09",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -732,7 +732,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-08",
+      "due_at": "2026-08-09",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -884,8 +884,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 41165,
-        "n_with_falsifier": 492,
+        "n_claims": 42134,
+        "n_with_falsifier": 507,
         "falsifier_coverage": "1.2%",
         "blocking_reason": "falsifier coverage 1.2%; not a promotion-grade substrate"
       },
@@ -3273,6 +3273,38 @@
       ],
       "evidence_refs": [
         "data/thematic_desk/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cortex:cortex-2026-08-08-when-an-equity-q2-regime-is-simultaneous-197757",
+      "source_system": "cortex",
+      "subject_id": "cortex-2026-08-08-when-an-equity-q2-regime-is-simultaneous-197757",
+      "subject_type": "hypothesis",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-05",
+      "as_of": "2026-08-08",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "horizon_d": 21,
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/neuralweb/machine_registry.jsonl"
       ],
       "regenerate_cmd": null,
       "acknowledged": false,
@@ -9288,39 +9320,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 1003,
-        "n_past_check_by": 0
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "qledger:basket_turn.v1",
-      "source_system": "qledger",
-      "subject_id": "basket_turn.v1",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": null,
-      "as_of": null,
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "n_open": 1,
+        "n_open": 1042,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9352,7 +9352,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 328,
+        "n_open": 330,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9416,7 +9416,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 9209,
+        "n_open": 9470,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9636,11 +9636,11 @@
       "owner_program": null,
       "clock_type": "fdr_batch_due",
       "due_at": null,
-      "as_of": "2026-08-06",
+      "as_of": "2026-08-08",
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_trials": 447,
+        "n_trials": 448,
         "n_families": 129
       },
       "allowed_actions": [

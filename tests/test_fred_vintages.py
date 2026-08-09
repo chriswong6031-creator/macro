@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from collectors.fred import as_of_series, initial_release
+from collectors.fred import as_of_series, fetch_all_vintages, initial_release
 
 
 def _vintages() -> pd.DataFrame:
@@ -57,3 +57,53 @@ def test_initial_release_returns_first_published_values():
 
 def test_unknown_series_is_empty():
     assert as_of_series("NOPE", "2020-01-01", _vintages()).empty
+
+
+def test_output_type_2_json_wide_shape_is_normalized_to_full_vintages(monkeypatch):
+    """Pin the documented JSON shape: one date row with series_vintage keys."""
+    calls = []
+
+    class _Response:
+        def json(self):
+            return {
+                "output_type": 2,
+                "observations": [
+                    {
+                        "date": "2025-01-01",
+                        "CPIAUCSL_20250212": "100.0",
+                        "CPIAUCSL_20250312": "100.1",
+                    },
+                    {
+                        "date": "2025-02-01",
+                        "CPIAUCSL_20250212": ".",
+                        "CPIAUCSL_20250312": "100.5",
+                    },
+                ],
+            }
+
+    def _fake_http_get(self, url, **kwargs):
+        calls.append((url, kwargs))
+        return _Response()
+
+    monkeypatch.setattr(
+        "collectors.fred._VintageAdapter.http_get",
+        _fake_http_get,
+    )
+
+    frame = fetch_all_vintages(
+        "CPIAUCSL",
+        output_type=2,
+        realtime_start="2025-01-01",
+        api_key="test-key",
+    )
+
+    assert list(frame.columns) == ["period", "realtime_start", "realtime_end", "value"]
+    assert [tuple(row) for row in frame[["period", "realtime_start", "value"]].itertuples(index=False, name=None)] == [
+        (pd.Timestamp("2025-01-01"), pd.Timestamp("2025-02-12"), 100.0),
+        (pd.Timestamp("2025-01-01"), pd.Timestamp("2025-03-12"), 100.1),
+        (pd.Timestamp("2025-02-01"), pd.Timestamp("2025-03-12"), 100.5),
+    ]
+    assert frame.iloc[0]["realtime_end"] == pd.Timestamp("2025-03-11")
+    assert str(frame.iloc[-1]["realtime_end"].date()) == "9999-12-31"
+    assert calls[0][1]["params"]["output_type"] == 2
+    assert calls[0][1]["params"]["file_type"] == "json"

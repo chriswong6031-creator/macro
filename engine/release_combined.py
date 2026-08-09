@@ -287,6 +287,7 @@ def read_cleveland_for_combined(
 def extract_scored_errors(
     ledger: list[dict],
     release_type: str,
+    defect_notices: list[dict] | None = None,
 ) -> dict[str, list[float]]:
     """Extract per-input signed errors from scored forward-ledger rows.
 
@@ -297,15 +298,34 @@ def extract_scored_errors(
 
     Only rows with row_type='scored' and matching release_type are used.
     Rows with model='combined_v1' are excluded (no circularity).
+    When structured defect notices are supplied, evaluation-excluded rows are
+    retained in the ledger but omitted from weighting.
 
     Returns dict keyed by input_id → list of signed errors (may be empty lists).
     """
     errors: dict[str, list[float]] = {iid: [] for iid in _INPUT_IDS}
 
-    for row in ledger:
+    if defect_notices:
+        try:
+            from engine.release_defects import is_evaluation_eligible
+        except Exception:  # pragma: no cover - import failure keeps legacy behavior
+            is_evaluation_eligible = None  # type: ignore[assignment]
+    else:
+        is_evaluation_eligible = None  # type: ignore[assignment]
+
+    try:
+        from engine.release_defects import canonical_scored_rows
+
+        score_rows = canonical_scored_rows(ledger)
+    except Exception:  # pragma: no cover - legacy import fallback
+        score_rows = [row for row in ledger if row.get("row_type") == "scored"]
+
+    for row in score_rows:
         if row.get("row_type") != "scored":
             continue
         if row.get("release") != release_type:
+            continue
+        if is_evaluation_eligible is not None and not is_evaluation_eligible(row, defect_notices or []):
             continue
 
         model = row.get("model")

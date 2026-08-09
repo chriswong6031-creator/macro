@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-08T08:32:53Z",
-  "as_of": "2026-08-08",
+  "produced_at": "2026-08-09T10:03:28Z",
+  "as_of": "2026-08-09",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 17,
-    "passed": 17,
+    "items": 4,
+    "passed": 4,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,145 +19,41 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-011",
+      "id": "post-theme-003",
       "account": "flagship",
-      "slot": "D1-S11",
-      "type": "event",
-      "cashtag": "",
-      "headline": ""
+      "slot": "D1-S3",
+      "type": "theme_list",
+      "cashtag": "$WWR",
+      "headline": "Commodities Metals ripping, +7.2% avg on Friday"
     },
     {
-      "id": "post-flagship-012",
-      "account": "flagship",
-      "slot": "D1-S12",
-      "type": "chart",
-      "cashtag": "$CLF",
-      "headline": ""
+      "id": "post-theme-004",
+      "account": "meagan",
+      "slot": "D1-S2",
+      "type": "theme_list",
+      "cashtag": "$TEAM",
+      "headline": "Software ripping, +3.7% avg on Friday"
     },
     {
-      "id": "post-flagship-017",
-      "account": "flagship",
-      "slot": "D1-S17",
-      "type": "watchlist",
-      "cashtag": "$GE",
-      "headline": "$GE is back near its high"
-    },
-    {
-      "id": "post-conf-flagship-001",
-      "account": "flagship",
-      "slot": "CONF-01",
-      "type": "signal",
-      "cashtag": "$WFC",
-      "headline": "$WFC just lined up a pattern we track."
-    },
-    {
-      "id": "post-insider-001",
-      "account": "flagship",
-      "slot": "D1-S10",
-      "type": "insider",
-      "cashtag": "$APTV",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-017",
-      "account": "founder",
-      "slot": "D1-S17",
-      "type": "chart",
-      "cashtag": "$ROIV",
-      "headline": ""
-    },
-    {
-      "id": "post-mover-001",
-      "account": "founder",
+      "id": "post-mover-002",
+      "account": "sophia",
       "slot": "D1-S6",
       "type": "mover",
       "cashtag": "$TEAM",
       "headline": "$TEAM +35.3% on Friday"
     },
     {
-      "id": "post-insider-002",
-      "account": "founder",
-      "slot": "D1-S7",
-      "type": "insider",
-      "cashtag": "$BRVE",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-005",
-      "account": "meagan",
-      "slot": "D1-S5",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "The slowdown memo needs another draft"
-    },
-    {
-      "id": "post-sophia-001",
-      "account": "sophia",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-016",
-      "account": "sophia",
-      "slot": "D1-S16",
-      "type": "chart",
-      "cashtag": "$JBLU",
-      "headline": "$JBLU found buyers here before"
-    },
-    {
-      "id": "post-kelly-009",
+      "id": "post-kelly-026",
       "account": "kelly",
-      "slot": "D1-S9",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "The slowdown case has a claims problem"
-    },
-    {
-      "id": "post-kelly-021",
-      "account": "kelly",
-      "slot": "D1-S21",
-      "type": "chart",
-      "cashtag": "$NUE",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-001",
-      "account": "cici",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-006",
-      "account": "cici",
-      "slot": "D1-S6",
-      "type": "chart",
-      "cashtag": "$UAL",
-      "headline": ""
-    },
-    {
-      "id": "post-cici-013",
-      "account": "cici",
-      "slot": "D1-S13",
-      "type": "chart",
-      "cashtag": "$ROST",
-      "headline": ""
-    },
-    {
-      "id": "post-housepick-005",
-      "account": "mastermind_news",
-      "slot": "D1-S1",
+      "slot": "D1-S26",
       "type": "watchlist",
-      "cashtag": "$SDGR",
+      "cashtag": "$TTC",
       "headline": ""
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 118,
+      "pairs_checked": 6,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -176,15 +72,11 @@
     },
     "cherry_pick": {
       "status": "run",
-      "loss_tickers_in_window": [
-        "GME",
-        "GPI",
-        "QCOM"
-      ],
+      "loss_tickers_in_window": [],
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 3,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {
@@ -215,7 +107,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-08",
+      "as_of": "2026-08-09",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -231,7 +123,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 15,
+          "age_days": 16,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -344,7 +236,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 12,
+          "age_days": 13,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -362,7 +254,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -380,7 +272,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -398,7 +290,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -416,7 +308,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -434,7 +326,7 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 6,
+          "age_days": 7,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
