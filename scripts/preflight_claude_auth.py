@@ -37,6 +37,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 log = logging.getLogger(__name__)
 
 _CAPABILITY_ID = "claude_code_oauth"
@@ -89,7 +92,6 @@ def _notify_auth_failure(reason: str) -> None:
     """Best-effort Telegram notification on auth failure.  Never raises."""
     try:
         # Import notify dynamically to avoid hard dep at module load
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
         from scripts.notify import send_telegram  # type: ignore[import]
         send_telegram(
             f"METABOLISM ALERT: OAuth pool key health check FAILED.\n"
@@ -175,8 +177,6 @@ def check_auth(
     NEVER raises.
     """
     try:
-        if root is not None:
-            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
         # Step 1: pick the best pool key (never reads the legacy single token)
         ref_name, token_value = _pick_pool_key(root=root)

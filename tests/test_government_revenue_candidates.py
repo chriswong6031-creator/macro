@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -213,12 +214,37 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["total"] == 0
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
-    assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
-    assert queue["coverage"]["reviewed_issuer_company_count"] == 1
-    assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
-    assert next(
-        row for row in queue["mapping_backlog"] if row["ticker"] == "PLTR"
-    )["mapping_state"] == "partial_identifier_coverage"
+    # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
+    # after days of reporting unavailable, and Wave 9D published the reviewed
+    # defense19 graph the same day. Current truth, re-verified empirically at this
+    # merge (2026-08-09): the rail is read (award_events_status ok), ~500
+    # award-change events are visible, all 19 defense19 issuers are reviewed --
+    # and still no event meets exact candidate eligibility, which the engine
+    # emits as not_observed. Zero candidates now has its THIRD distinct reason in
+    # this probe's history: rail unreadable -> rail read with zero award-change
+    # events -> events visible but none exact-eligible. This pin is deliberately
+    # a snapshot tripwire (per the 2026-08-08 heal): it must fire again, and be
+    # re-read by a human, the next time this state moves.
+    assert queue["freshness"]["award_events_status"] == "ok"
+    assert queue["freshness"]["exact_candidate_availability"] == "not_observed"
+    assert queue["freshness"]["recipient_graph_status"] == "ready"
+    assert queue["coverage"]["reviewed_issuer_company_count"] == 19
+    assert queue["coverage"]["reviewed_issuer_tickers"] == [
+        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
+        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
+    ]
+    # The coverage frontier: every reviewed issuer is identifier-linked but its
+    # discovery scope is incomplete, and exactly two requested issuers carry no
+    # reviewed mapping at all -- GE (no_exact_match) and BWXT
+    # (no_collected_recipients), both finished answers rather than open tasks.
+    assert Counter(row["mapping_state"] for row in queue["mapping_backlog"]) == {
+        "partial_identifier_coverage": 19,
+        "mapping_needed": 2,
+    }
+    assert sorted(
+        row["ticker"] for row in queue["mapping_backlog"]
+        if row["mapping_state"] == "mapping_needed"
+    ) == ["BWXT", "GE"]
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
 
@@ -457,3 +483,372 @@ def test_queue_content_id_excludes_delivery_clock_but_detects_data_mutation() ->
     mutated = deepcopy(queue)
     mutated["candidates"][0]["ticker"] = "LMT"
     assert not is_valid_candidate_queue(mutated)
+
+
+# ---------------------------------------------------------------------------
+# The snapshot rail's admitted families.
+#
+# The action rail carries no recipient UEI today, so the snapshot rail is the
+# only rail whose events can reach an exact reviewed issuer at all.  These
+# fixtures are curator-faithful: the terminal ownership edge is
+# ``issuer_legal_entity`` (what the recipient-graph curator mints), and the
+# events carry a prior and a current receipt exactly as a snapshot before/after
+# event does.  They are deliberately scoped at the candidates layer, which does
+# not re-validate the procurement-event schema, because that schema's
+# ownership-path ``relationship`` enum is being widened for
+# ``issuer_legal_entity`` in a sibling lane.
+# ---------------------------------------------------------------------------
+
+SHA_PRIOR = "d" * 64
+SHA_CURRENT = "e" * 64
+SNAPSHOT_AWARD_KEY = "CONT_AWD_SNAP_001"
+SNAPSHOT_URL = f"https://api.usaspending.gov/api/v2/awards/{SNAPSHOT_AWARD_KEY}/"
+PRIOR_KNOWN_AT = "2026-08-01T12:00:00+00:00"
+
+
+def _issuer_legal_entity_graph() -> dict:
+    """The curator's terminal edge shape: issuer legal entity, whole economics."""
+    graph = _graph()
+    graph["ownership_edges"][0]["relationship"] = "issuer_legal_entity"
+    return graph
+
+
+def _issuer_legal_entity_path() -> list[dict]:
+    path = _ownership_path()
+    path[0]["relationship"] = "issuer_legal_entity"
+    return path
+
+
+def _snapshot_amount(
+    identifier: str, value: float, semantic: str
+) -> dict:
+    return {
+        "id": identifier,
+        "label_code": identifier,
+        "value": value,
+        "currency": "USD",
+        "semantic": semantic,
+        "as_of": EFFECTIVE_AT,
+        "is_lower_bound": False,
+        "source_ref": SNAPSHOT_URL,
+    }
+
+
+def _snapshot_event(
+    *,
+    event_type: str,
+    amounts: list[dict],
+    primary_amount_id: str,
+    event_id: str = "govws-snapshot-obligation-1",
+    late: bool = False,
+) -> dict:
+    """A receipt-bound snapshot-rail award-change event, before/after bound."""
+    return {
+        "kind": "award_change",
+        "event_id": event_id,
+        "record_id": f"award:{SNAPSHOT_AWARD_KEY}",
+        "change": {
+            "type": event_type,
+            "effective_at": EFFECTIVE_AT,
+            "known_at": KNOWN_AT,
+            "what_changed_en": "Reported obligated balance changed",
+        },
+        "award_change": {
+            "award_key": SNAPSHOT_AWARD_KEY,
+            "generated_award_id": SNAPSHOT_AWARD_KEY,
+            "piid": "PIID-SNAP-001",
+            "event_type": event_type,
+            "secondary_types": [],
+            "source_rail": "usaspending_award_snapshot",
+            "observation_kind": "snapshot",
+            "source_identity": {
+                "id": SNAPSHOT_AWARD_KEY,
+                "version": "state-v2",
+                "content_sha256": SHA_CURRENT,
+            },
+            "is_late_discovery": late,
+        },
+        "primary_amount_id": primary_amount_id,
+        "amounts": amounts,
+        "listed_company_impacts": [
+            {
+                "ticker": "NOC",
+                "company_name": "Northrop Grumman Corporation",
+                "issuer_company_id": "issuer:noc",
+                "relation_semantic": "reviewed",
+                "resolution_state": "reviewed",
+                "ownership_path": _issuer_legal_entity_path(),
+                "evidence_refs": ["evidence:noc"],
+            }
+        ],
+        "evidence": {
+            "source_class": "official_fact",
+            "mapping_class": "reviewed",
+            "conflicts": [],
+            "receipts": [
+                {
+                    "ref_id": "receipt:snapshot:current",
+                    "publisher": "USAspending.gov",
+                    "record_id": SNAPSHOT_AWARD_KEY,
+                    "url": SNAPSHOT_URL,
+                    "effective_at": EFFECTIVE_AT,
+                    "known_at": KNOWN_AT,
+                    "retrieved_at": KNOWN_AT,
+                    "content_sha256": SHA_CURRENT,
+                },
+                {
+                    "ref_id": "receipt:snapshot:prior",
+                    "publisher": "USAspending.gov",
+                    "record_id": SNAPSHOT_AWARD_KEY,
+                    "url": SNAPSHOT_URL,
+                    "effective_at": PRIOR_KNOWN_AT,
+                    "known_at": PRIOR_KNOWN_AT,
+                    "retrieved_at": PRIOR_KNOWN_AT,
+                    "content_sha256": SHA_PRIOR,
+                },
+            ],
+        },
+    }
+
+
+def _obligation_balance_event(delta: float = 75_000_000.0) -> dict:
+    """The snapshot analogue of an action-rail obligation/deobligation."""
+    return _snapshot_event(
+        event_type="reported_obligation_balance_changed",
+        primary_amount_id="delta_total_obligated_amount",
+        amounts=[
+            _snapshot_amount(
+                "delta_total_obligated_amount",
+                delta,
+                "award_cumulative_delta_derived_from_official_before_after",
+            ),
+            _snapshot_amount("current_award_amount", 400_000_000.0, "official"),
+            _snapshot_amount("potential_award_amount", 900_000_000.0, "official"),
+            _snapshot_amount("total_obligated_amount", 300_000_000.0, "official"),
+        ],
+    )
+
+
+def _compound_value_event(*, with_ceiling_component: bool = True) -> dict:
+    """A compound move: BOTH award values changed on one snapshot revision."""
+    amounts = [
+        _snapshot_amount(
+            "delta_current_award_amount",
+            40_000_000.0,
+            "award_current_value_delta_derived_from_official_before_after",
+        ),
+        _snapshot_amount("current_award_amount", 400_000_000.0, "official"),
+        _snapshot_amount("potential_award_amount", 900_000_000.0, "official"),
+    ]
+    if with_ceiling_component:
+        amounts.insert(
+            1,
+            _snapshot_amount(
+                "delta_potential_award_amount",
+                150_000_000.0,
+                "award_ceiling_delta_derived_from_official_before_after",
+            ),
+        )
+    return _snapshot_event(
+        event_type="award_value_changed",
+        primary_amount_id="delta_current_award_amount",
+        amounts=amounts,
+        event_id="govws-snapshot-value-1",
+    )
+
+
+def _multi_event_payload(events: list[dict]) -> dict:
+    payload = _payload()
+    payload["procurement_workspace"]["events"] = events
+    return payload
+
+
+def test_snapshot_rail_obligation_balance_change_is_an_obligation_candidate() -> None:
+    """The snapshot rail's obligation semantic was excluded by accident.
+
+    ``reported_obligation_balance_changed`` is the same economic fact the action
+    rail publishes as ``obligation``, read off the award's reported cumulative
+    balance.  Excluding it left the ONLY rail carrying exact recipient
+    identifiers unable to emit a single candidate.
+    """
+    candidates = build_candidate_observations(
+        _multi_event_payload([_obligation_balance_event()]),
+        _issuer_legal_entity_graph(),
+        generated_at=GENERATED_AT,
+    )
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    assert candidate["candidate_family"] == "award_obligation_change"
+    assert candidate["transmission_direction"] == "possible_positive"
+    assert candidate["source_event"]["event_type"] == "reported_obligation_balance_changed"
+    assert candidate["source_event"]["source_rail"] == "usaspending_award_snapshot"
+    assert candidate["source_event"]["amount"]["amount_id"] == "delta_total_obligated_amount"
+    assert candidate["source_event"]["amount"]["semantic"] == (
+        "award_cumulative_delta_derived_from_official_before_after"
+    )
+    assert candidate["materiality"]["observed_event_amount"] == 75_000_000.0
+    assert is_valid_candidate_payload(candidate)
+
+
+@pytest.mark.parametrize(
+    ("delta", "expected_direction"),
+    [
+        (75_000_000.0, "possible_positive"),
+        (-75_000_000.0, "possible_negative"),
+        (0.0, "unknown"),
+    ],
+)
+def test_snapshot_obligation_direction_is_read_from_the_delta_sign(
+    delta: float, expected_direction: str
+) -> None:
+    """One snapshot type carries both directions, so only the sign can say which.
+
+    The action rail splits the two into ``obligation``/``deobligation``; reading
+    the snapshot type alone would publish every balance CUT as a possible
+    positive.
+    """
+    candidate = build_candidate_observations(
+        _multi_event_payload([_obligation_balance_event(delta)]),
+        _issuer_legal_entity_graph(),
+        generated_at=GENERATED_AT,
+    )[0]
+
+    assert candidate["transmission_direction"] == expected_direction
+    assert candidate["earnings_transmission"]["direction"] == expected_direction
+    assert candidate["materiality"]["observed_event_amount"] == delta
+    assert is_valid_candidate_payload(candidate)
+
+
+def test_compound_value_change_is_admitted_as_its_contained_ceiling_change() -> None:
+    """A ceiling change may not vanish because a second field moved with it.
+
+    ``ceiling_changed`` (potential only) was admitted while ``award_value_
+    changed`` (potential AND current) was dropped -- so a compound change that
+    STRICTLY CONTAINS an admitted one produced nothing.  The candidate carries
+    only the ceiling component; the current-value component stays on the event.
+    """
+    candidate = build_candidate_observations(
+        _multi_event_payload([_compound_value_event()]),
+        _issuer_legal_entity_graph(),
+        generated_at=GENERATED_AT,
+    )[0]
+
+    assert candidate["candidate_family"] == "award_ceiling_change"
+    assert candidate["source_event"]["event_type"] == "award_value_changed"
+    assert candidate["source_event"]["source_rail"] == "usaspending_award_snapshot"
+    # The event's own primary amount is the current-value delta.  The candidate
+    # must NOT inherit it: that is a different economic claim.
+    assert candidate["source_event"]["amount"]["amount_id"] == "delta_potential_award_amount"
+    assert candidate["source_event"]["amount"]["semantic"] == (
+        "award_ceiling_delta_derived_from_official_before_after"
+    )
+    assert candidate["source_event"]["amount"]["value"] == 150_000_000.0
+    assert candidate["materiality"]["observed_event_amount"] == 150_000_000.0
+    assert candidate["materiality"]["attributable_amount"] == 150_000_000.0
+    assert 40_000_000.0 not in _numbers(candidate)
+    assert is_valid_candidate_payload(candidate)
+
+
+def test_compound_value_change_without_its_ceiling_component_emits_nothing() -> None:
+    """Fail closed rather than fall back to the current-value delta."""
+    graph = _issuer_legal_entity_graph()
+
+    assert build_candidate_observations(
+        _multi_event_payload([_compound_value_event(with_ceiling_component=False)]),
+        graph,
+        generated_at=GENERATED_AT,
+    ) == []
+    # Control: the SAME event with its ceiling component does emit, so the
+    # refusal above is the missing amount and not some other eligibility break.
+    assert len(build_candidate_observations(
+        _multi_event_payload([_compound_value_event()]), graph, generated_at=GENERATED_AT
+    )) == 1
+
+
+def test_late_discovery_is_a_disclosure_state_not_an_admitted_family() -> None:
+    """``award_discovered_late`` says WHEN we first saw an award, not what moved."""
+    graph = _issuer_legal_entity_graph()
+    amounts = [
+        _snapshot_amount(
+            "delta_total_obligated_amount",
+            75_000_000.0,
+            "award_cumulative_delta_derived_from_official_before_after",
+        ),
+        _snapshot_amount("current_award_amount", 400_000_000.0, "official"),
+    ]
+    late_event = _snapshot_event(
+        event_type="award_discovered_late",
+        primary_amount_id="delta_total_obligated_amount",
+        amounts=amounts,
+        event_id="govws-snapshot-late-1",
+        late=True,
+    )
+
+    assert build_candidate_observations(
+        _multi_event_payload([late_event]), graph, generated_at=GENERATED_AT
+    ) == []
+    # Control: the same event under an admitted type -- still late-discovered --
+    # DOES emit, and carries the lateness as a disclosed FIELD.  So the refusal
+    # above is the family decision, and lateness itself is not what refuses.
+    admitted = deepcopy(late_event)
+    admitted["award_change"]["event_type"] = "reported_obligation_balance_changed"
+    admitted["change"]["type"] = "reported_obligation_balance_changed"
+    disclosed = build_candidate_observations(
+        _multi_event_payload([admitted]), graph, generated_at=GENERATED_AT
+    )
+    assert len(disclosed) == 1
+    assert disclosed[0]["source_event"]["is_late_discovery"] is True
+
+
+def _numbers(node) -> list[float]:
+    """Every finite number anywhere in a payload, for aggregation tripwires."""
+    if isinstance(node, bool):
+        return []
+    if isinstance(node, (int, float)):
+        return [float(node)]
+    if isinstance(node, dict):
+        return [value for child in node.values() for value in _numbers(child)]
+    if isinstance(node, list):
+        return [value for child in node for value in _numbers(child)]
+    return []
+
+
+def test_queue_admits_both_snapshot_families_and_never_sums_across_rails() -> None:
+    """The queue counts candidates; it never adds their amounts together.
+
+    A snapshot ``total_obligated_amount`` move is a CUMULATIVE balance's delta
+    and an action rail's ``federal_action_obligation`` is a single TRANSACTION.
+    Adding them double-counts the same dollars, so the two must stay separately
+    labelled and no published figure may be their sum.
+    """
+    action_event = _award_event()
+    action_event["listed_company_impacts"][0]["ownership_path"] = _issuer_legal_entity_path()
+    queue = build_candidate_queue(
+        _multi_event_payload([action_event, _obligation_balance_event(), _compound_value_event()]),
+        _issuer_legal_entity_graph(),
+        generated_at=GENERATED_AT,
+    )
+
+    by_rail = {
+        row["source_event"]["source_rail"]: row for row in queue["candidates"]
+        if row["candidate_family"] == "award_obligation_change"
+    }
+    assert queue["counts"]["total"] == 3
+    assert queue["counts"]["by_family"] == {
+        "award_ceiling_change": 1,
+        "award_obligation_change": 2,
+    }
+    assert queue["freshness"]["exact_candidate_availability"] == "available"
+    assert set(by_rail) == {"usaspending_award_action", "usaspending_award_snapshot"}
+
+    action = by_rail["usaspending_award_action"]
+    snapshot = by_rail["usaspending_award_snapshot"]
+    assert action["source_event"]["amount"]["semantic"] != snapshot["source_event"]["amount"]["semantic"]
+    assert action["materiality"]["observed_event_amount"] == 125_000_000.0
+    assert snapshot["materiality"]["observed_event_amount"] == 75_000_000.0
+    # No published figure anywhere in the queue is the cross-rail sum, nor the
+    # all-candidate sum: the queue aggregates COUNTS, never money.
+    forbidden = {125_000_000.0 + 75_000_000.0, 125_000_000.0 + 75_000_000.0 + 150_000_000.0}
+    assert forbidden.isdisjoint(set(_numbers(queue)))
+    assert is_valid_candidate_queue(queue)

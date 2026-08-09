@@ -28,6 +28,22 @@ def _now_ts() -> pd.Timestamp:
     return pd.Timestamp(datetime.now(timezone.utc).replace(tzinfo=None))
 
 
+def _recent_quarter_end() -> str:
+    """ISO date of the most recently COMPLETED quarter end — never hardcode one.
+
+    ``engine/altdata.py:1016`` filters 13F rows on ``ReportPeriod >= _now() -
+    window_days`` (200 at the call site below), so a literal ReportPeriod is a
+    scheduled red: the pinned ``2026-03-31`` left the 200-day window on
+    2026-10-17 UTC, dropping the NVDA row and emptying adds/trims.  Stepping by
+    QUARTER rather than by a plain day offset is load-bearing — ReportPeriod is
+    a filing quarter-end, and a ``_days_ago(N)`` date would fake a period that
+    no 13F ever carries.  The prior quarter end is 1-92 days old at any clock,
+    so it stays inside the 200-day window with >100 days of margin.
+    """
+    return ((_now_ts().to_period("Q") - 1)
+            .to_timestamp(how="end").normalize().date().isoformat())
+
+
 # ===========================================================================
 # B7: add() guard — upgrade channels + base-fires-twice regression
 # ===========================================================================
@@ -256,9 +272,10 @@ class TestInst13FWindow:
     def _make_df(self):
         now = _now_ts()
         return pd.DataFrame([
-            # Recent report period — 2026-03-31 is within 200 days
+            # Recent report period — the last completed quarter end, always
+            # within the 200-day window (see _recent_quarter_end above)
             {"Ticker": "NVDA", "Fund": "Citadel",
-             "ReportPeriod": "2026-03-31",
+             "ReportPeriod": _recent_quarter_end(),
              "Date": now.strftime("%Y-%m-%d"),   # ingest date is today for all
              "Change": 1_000_000, "Change_Share": 5000},
             # Old report period — 2020-12-31 must be filtered out by ReportPeriod window
@@ -473,3 +490,45 @@ class TestTombstonedAdapters:
 
     def test_flights_reports_blocked(self, tmp_path, monkeypatch):
         self._assert_blocked(quiver.FlightsAdapter, tmp_path, monkeypatch)
+
+
+# ===========================================================================
+# Ticker-key hygiene — exclusion is COUNTED, never silent
+# ===========================================================================
+class TestTickerKeyHygiene:
+    """The kernel already refused junk keys; it refused them SILENTLY, which is how the
+    hub snapshot ledger accrued 26 days of 'CONSECUTIVE'/'ASX:PEX' before anyone looked."""
+
+    def _run(self, rows, drop_stats=None):
+        return models.channel_records({"special_situations": rows}, drop_stats=drop_stats)
+
+    def test_invalid_keys_excluded_and_counted(self, capsys):
+        drops: dict = {}
+        recs = self._run([{"ticker": "AAPL", "detail": "spin-off"},
+                          {"ticker": "N/A", "detail": "placeholder"},
+                          {"ticker": "ASX:PEX", "detail": "foreign prefix"}], drop_stats=drops)
+        assert set(recs) == {"AAPL"}
+        assert drops["n_distinct"] == 2
+        assert drops["examples"] == ["ASX:PEX", "N/A"]
+        assert drops["n_rows"] == 2
+
+        lines = [l for l in capsys.readouterr().out.splitlines() if "::" in l]
+        assert len(lines) == 1, f"exactly one annotation per build, got {lines}"
+        # startswith("::") is the load-bearing assertion: a logger-carried annotation is
+        # prefixed with its level and GitHub silently drops it.
+        assert lines[0].startswith("::")
+        assert lines[0].startswith("::notice title=altdata-ticker-hygiene")
+
+    def test_clean_payload_emits_nothing(self, capsys):
+        drops: dict = {}
+        recs = self._run([{"ticker": "AAPL", "detail": "spin-off"},
+                          {"ticker": "BRK.B", "detail": "stake"}], drop_stats=drops)
+        assert set(recs) == {"AAPL", "BRK.B"}
+        assert drops == {}
+        assert "::" not in capsys.readouterr().out
+
+    def test_drop_stats_is_optional(self, capsys):
+        """Every existing call site passes no drop_stats — the annotation must still fire."""
+        recs = self._run([{"ticker": "CONSECUTIVE", "detail": "prose"}])
+        assert recs == {}
+        assert "::notice title=altdata-ticker-hygiene" in capsys.readouterr().out

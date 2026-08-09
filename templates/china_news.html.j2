@@ -215,7 +215,7 @@
         <span class="l-en"><b>{{ heads|length }}</b> stor{{ 'y' if heads|length == 1 else 'ies' }} cleared the macro filter{% if tw %}; official policy tone {{ tw[0] }}{% endif %}. {% if nhi %}<b>{{ nhi }}</b> rated high-impact{% if domc %}, led by <b>{{ doml[0] }}</b>{% endif %}.{% else %}None rated high-impact right now.{% endif %}</span>
         <span class="l-zh"><b>{{ heads|length }}</b> 条通过宏观筛选{% if tw %}；官方政策基调{{ tw[1] }}{% endif %}。{% if nhi %}其中 <b>{{ nhi }}</b> 条高影响{% if domc %}，主导<b>{{ doml[1] }}</b>{% endif %}。{% else %}当前暂无高影响条目。{% endif %}</span>
       </p>
-      <p class="cn-asof">{{ t('As of', '截至') }} {{ asof or '' }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</p>
+      <p class="cn-asof">{{ t('As of', '截至') }} {{ asof or '' }} · {{ t('context, not trade calls', '仅供参考，非交易信号') }}</p>
       <div class="cn-glance">
         {% if CN.tone %}
         {% set tw2 = TONE_WORD.get(CN.tone.band, TONE_WORD['unknown']) %}
@@ -228,7 +228,7 @@
       </div>
     {% else %}
       <p class="cn-lead">{{ t('The China macro tape is quiet right now.', '当前中国宏观新闻流较安静。') }}</p>
-      <p class="cn-asof">{{ t('As of', '截至') }} {{ asof or '' }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</p>
+      <p class="cn-asof">{{ t('As of', '截至') }} {{ asof or '' }} · {{ t('context, not trade calls', '仅供参考，非交易信号') }}</p>
     {% endif %}
   </header>
 
@@ -251,7 +251,7 @@
         {% if pct >= 50 %}<span class="tg-fill" style="left:50%;width:{{ (pct-50)|round(1) }}%"></span>{% else %}<span class="tg-fill" style="right:50%;width:{{ (50-pct)|round(1) }}%"></span>{% endif %}
       </div>
       <div class="tg-scale"><span>{{ t('cautious', '谨慎') }}</span><span>{{ t('neutral', '中性') }}</span><span>{{ t('supportive', '积极') }}</span></div>
-      <p class="ov-foot">{{ t('CCTV 新闻联播 tone · z-score vs', '央视《新闻联播》基调 · z 分数对比') }} {{ CN.tone.n_days }}{{ t('d baseline', '天基线') }} · {{ CN.tone.asof }}</p>
+      <p class="ov-foot">{{ t('CCTV 新闻联播 tone · against the last', '央视《新闻联播》基调 · 对比过去') }} {{ CN.tone.n_days }}{{ t('d baseline', '天基线') }} · {{ CN.tone.asof }}</p>
       {% else %}
       <p class="ov-empty">{{ t('Tone baseline is still building — not enough broadcast history yet.', '基调基线仍在积累——广播历史不足。') }}</p>
       {% endif %}

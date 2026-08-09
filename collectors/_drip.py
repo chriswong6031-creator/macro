@@ -14,6 +14,17 @@ Two functions keep the change safe for existing consumers:
     per-ticker snapshot reads exactly what it read before the store grew a history dimension.
 
 Append-only, keep-last-per-day, never raises fatally on the collector path.
+
+``replace_dates`` — per-date REPLACE for stores whose date slice is a COMPLETE SET
+----------------------------------------------------------------------------------
+Keep-last on ``(date_col, ticker)`` corrects a row that reappears, but it cannot RETIRE one
+that does not: a ticker in an early/partial scrape of a session survives forever even when the
+final pool no longer contains it.  For a store whose per-date slice is a complete set (the
+限涨停板 pool is exactly "every name that limited up that session"), the honest re-collect
+semantics are WHOLESALE REPLACEMENT of the dates being written — freshest wins for the whole
+slice — while every other date is left untouched (still append-only ACROSS dates).  Opt in per
+collector; the default is unchanged so the per-name drips (margin_detail, LHB, …), whose rows
+arrive a few names at a time, keep accumulating.
 """
 from __future__ import annotations
 
@@ -36,8 +47,14 @@ def latest_snapshot(df: pd.DataFrame | None, date_col: str = "date") -> pd.DataF
     return df[df[date_col].astype(str) == dates.max()]
 
 
-def append_snapshot(path: Path, rows: list[dict] | pd.DataFrame, date_col: str = "date") -> int:
+def append_snapshot(path: Path, rows: list[dict] | pd.DataFrame, date_col: str = "date",
+                    *, replace_dates: bool = False) -> int:
     """Append ``rows`` to the append-only history at ``path``, de-duping (date_col, ticker) keep-LAST.
+
+    ``replace_dates=True`` first DROPS every stored row whose ``date_col`` appears in ``rows`` —
+    the re-collect replaces those dates wholesale instead of merging per ticker, so a name that
+    left the session's set is retired rather than stranded.  Dates absent from ``rows`` are never
+    touched, so the store stays append-only across dates either way.
 
     Returns the row count for the LATEST date after the merge (the number the snapshot collectors
     used to report). Best-effort — logs and returns 0 on any write failure, never raises."""
@@ -48,6 +65,9 @@ def append_snapshot(path: Path, rows: list[dict] | pd.DataFrame, date_col: str =
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists():
             prior = pd.read_parquet(path)
+            if replace_dates and date_col in new.columns and date_col in prior.columns:
+                written = set(new[date_col].astype(str))
+                prior = prior[~prior[date_col].astype(str).isin(written)]
             # a same-day re-collect must CORRECT, not duplicate → keep-last on (date, ticker).
             key = [c for c in (date_col, "ticker") if c in new.columns and c in prior.columns]
             combined = pd.concat([prior, new], ignore_index=True)

@@ -37,8 +37,7 @@ import numpy as np
 
 # ── repo path ─────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.thetadata_store import _load_parquets, _normalise_date, store_root, clear_parquet_cache
 from engine.options_hub import (
