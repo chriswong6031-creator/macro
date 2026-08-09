@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +14,7 @@ from threading import BoundedSemaphore
 from types import MappingProxyType
 
 import pytest
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
@@ -82,6 +85,40 @@ def test_normalize_ticker_accepts_canonical_market_symbols(
 def test_normalize_ticker_rejects_paths_and_unsafe_values(raw: str) -> None:
     with pytest.raises(mm.InvalidTicker):
         mm.normalize_ticker(raw)
+
+
+def test_api_module_import_does_not_require_the_optional_requests_client() -> None:
+    script = r"""
+import builtins
+
+real_import = builtins.__import__
+
+def import_without_requests(name, globals=None, locals=None, fromlist=(), level=0):
+    if level == 0 and (name == "requests" or name.startswith("requests.")):
+        raise ModuleNotFoundError("requests intentionally unavailable")
+    return real_import(name, globals, locals, fromlist, level)
+
+builtins.__import__ = import_without_requests
+from app import market_memory
+
+assert "requests" not in market_memory.__dict__
+assert market_memory.router.prefix == "/api/market-memory/v1"
+try:
+    market_memory._fetch_stock_record("https://public.example", "AAPL")
+except market_memory._SymbolDataError as exc:
+    assert str(exc) == "stockdata HTTP client is unavailable"
+else:
+    raise AssertionError("missing HTTP client did not fail closed")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_macro_composition_preserves_source_evidence_and_blocks_authority(
@@ -405,7 +442,7 @@ class _SymbolResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise api.requests.HTTPError("remote failure")
+            raise requests.HTTPError("remote failure")
 
     def iter_content(self, *, chunk_size: int):
         return (
@@ -423,7 +460,7 @@ def test_symbol_transport_is_fixed_origin_bounded_and_no_redirect(monkeypatch) -
         return _SymbolResponse(url, body)
 
     monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
-    monkeypatch.setattr(api.requests, "get", fake_get)
+    monkeypatch.setattr(requests, "get", fake_get)
 
     record = api._fetch_stock_record("https://public.example", "AAPL")
 
@@ -445,7 +482,7 @@ def test_symbol_transport_is_fixed_origin_bounded_and_no_redirect(monkeypatch) -
     ]
 
     monkeypatch.setattr(
-        api.requests,
+        requests,
         "get",
         lambda url, **_kwargs: _SymbolResponse(
             "https://169.254.169.254/latest",
@@ -460,7 +497,7 @@ def test_symbol_transport_is_fixed_origin_bounded_and_no_redirect(monkeypatch) -
 
 def test_symbol_transport_refuses_private_origins_before_request(monkeypatch) -> None:
     monkeypatch.setattr(
-        api.requests,
+        requests,
         "get",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("network")),
     )
@@ -479,7 +516,7 @@ def test_symbol_transport_refuses_private_origins_before_request(monkeypatch) ->
 def test_symbol_transport_rejects_ambiguous_or_nonfinite_json(monkeypatch, body) -> None:
     monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
     monkeypatch.setattr(
-        api.requests,
+        requests,
         "get",
         lambda url, **_kwargs: _SymbolResponse(url, body),
     )
@@ -501,7 +538,7 @@ def test_symbol_transport_rejects_oversized_remote_objects(monkeypatch, lie) -> 
         body = b" " * (mm._MAX_STOCKDATA_BYTES + 1)
         headers = {"Content-Type": "application/json"}
     monkeypatch.setattr(
-        api.requests,
+        requests,
         "get",
         lambda url, **_kwargs: _SymbolResponse(url, body, headers=headers),
     )
@@ -641,7 +678,7 @@ def test_symbol_transport_enforces_total_deadline_on_trickling_body(
     monkeypatch.setattr(api, "_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS", 0.01)
     monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
     monkeypatch.setattr(
-        api.requests,
+        requests,
         "get",
         lambda url, **_kwargs: DripResponse(url, body),
     )
