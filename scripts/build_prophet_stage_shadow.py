@@ -16,14 +16,17 @@ forward-accrual ledger, not a render artifact). Each run:
 This is the DEFINITIVE on-Prophet test the pre-registered backtest §6 left open. It
 NEVER gates, ranks, or alters any Prophet decision — display / shadow tier only.
 
-data/prophet_stage_shadow/ledger.jsonl is a FORWARD LEDGER (gitignored; nightly-only
-advancer). summary.json is a small display artifact (committed).
+data/prophet_stage_shadow/ledger.jsonl is an append-only FORWARD LEDGER and
+revisions.jsonl is its append-only effective-row overlay. Both are tracked and
+published with summary.json by the nightly's narrow guarded checkpoint; nightly is
+the sole grade advancer.
 
 Usage:
     python -m scripts.build_prophet_stage_shadow [--root DATA_ROOT] [--asof YYYY-MM-DD]
         [--site-root PATH] [--ec-path PATH]
 
-Exit 0 on partial failure (a forward-accrual job must never abort the nightly deploy).
+Exit non-zero on a partial phase failure so the workflow withholds the atomic accrual
+checkpoint; the workflow step remains non-fatal to the wider nightly deploy.
 """
 from __future__ import annotations
 
@@ -55,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(levelname)s %(name)s: %(message)s")
+    phase_failures: list[str] = []
 
     try:
         # 1. tag (any lane) — idempotent, PIT-fixed.
@@ -64,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("prophet_stage_shadow: tag_entries failed (non-fatal): %s", e)
         tag = {}
+        phase_failures.append("tag")
 
     try:
         # 2. grade (nightly-only advancer; no-op otherwise).
@@ -76,6 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("prophet_stage_shadow: grade_matured failed (non-fatal): %s", e)
         grade = {}
+        phase_failures.append("grade")
 
     try:
         # 3. summarize (display-only artifact; nulls printed).
@@ -85,10 +91,17 @@ def main(argv: list[str] | None = None) -> int:
                  summary.get("split", {}).get("stage2", {}).get("n"))
     except Exception as e:  # noqa: BLE001
         log.warning("prophet_stage_shadow: summarize failed (non-fatal): %s", e)
+        phase_failures.append("summary")
 
     print("prophet_stage_shadow: forward-accrual only — display/shadow tier; "
           "NEVER gates/ranks/alters Prophet. Nightly is the sole grade advancer "
           f"(gate_open={nightly_advance_enabled()}). " + pss.ACCRUAL_DISCLAIMER)
+    if phase_failures:
+        log.error(
+            "prophet_stage_shadow: incomplete phase set (%s); guarded checkpoint must withhold",
+            ", ".join(phase_failures),
+        )
+        return 1
     return 0
 
 

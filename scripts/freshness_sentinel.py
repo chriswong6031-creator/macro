@@ -36,6 +36,38 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     on the public R2 base, the same anchor scripts/audit_r2.py + daily.yml
     already budget at 26h (the manifest is put unconditionally on every
     successful full publish, no-delta days included).
+  * the Prophet US store's source watermark — ``source_asof`` in the SERVED
+    ``prophet/index.json``. This is the third shape, and it exists because the
+    2026-08-08 audit found the same re-stamp trap one layer down:
+    data/us_prophet_rank/candidates/2026-08.parquet froze at stamp_date
+    2026-08-05 while us_stocks.html kept re-baking every day, so BOTH checks
+    above stayed green through it (0/7 nightlies green since 08-05; every
+    Prophet writer sits behind ``needs: engine``). The page's delayed-board
+    marker cannot see it either — that marker reports the PRICE lag, not
+    whether the Prophet ranker ran. Only the store's own asof does.
+
+    Read from the served tree on disk (SERVED_DIR, default the Caddyfile's
+    ``root * /opt/macro/site.served``) rather than over HTTP, because
+    ``/prophet/index.json`` sits BEHIND the registration wall: an anonymous GET
+    to https://www.mastermind-x.com/prophet/index.json answers ``HTTP 401`` +
+    ``x-regwall: deny`` (probed 2026-08-08), and app/regwall.py's PUBLIC_PATHS
+    grants only ``/prophet/showcase.json`` — a deliberately DELAYED artifact
+    (kind ``delayed_winners``, as_of weeks behind by design) that would be a
+    dishonest freshness anchor. Adding the index to the public allowlist is a
+    paywall decision, not a sentinel one. The served file IS the live estate:
+    it is the exact byte-for-byte payload Caddy hands an entitled reader, and
+    the sentinel already runs on that host. A missing or unreadable file is
+    INDETERMINATE (the sentinel is blind), never a breach — the same verdict
+    discipline the HTTP surfaces use for a network error.
+
+    Freshness is measured against the EXCHANGE CALENDAR, not the wall clock:
+    ``source_asof`` must be within ``asof_max_sessions_behind`` completed NYSE sessions
+    of lib/nyse_calendar.expected_last_session(). This is the cross-cutting
+    lesson of every stale-store incident here — when the pipeline dies, every
+    store freezes together and agrees with itself; only the calendar knows a
+    completed session is missing. A calendar-anchored budget also means a
+    weekend or a market holiday can never manufacture a breach, so the budget
+    can be far tighter than the page budgets above without flapping.
 
 Verdict discipline (borrowed from scripts/audit_r2.py): a definitive server answer
 (HTTP 200 with an over-budget stamp) is a BREACH and alerts immediately; a network
@@ -67,8 +99,10 @@ Outputs:
 
 Stdlib-only ON PURPOSE (urllib, json, re): the sentinel must not depend on the
 venv contents, the engine tree, or lib.config being healthy — it is the observer
-of last resort, so its import closure is as small as honesty allows (app.mailer,
-itself stdlib-only, is imported lazily and failure-guarded).
+of last resort, so its import closure is as small as honesty allows (app.mailer
+and lib.nyse_calendar, both themselves stdlib-only with zero data dependencies,
+are imported lazily and failure-guarded — an unimportable calendar degrades the
+Prophet surface to INDETERMINATE, it never crashes the pass or fakes a verdict).
 
 Falsifier law (masterplan B5): >2 false-positive pages in a month means the
 budgets are wrong — fix the budgets, never mute the sentinel.
@@ -95,6 +129,9 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # Cloudflare's WAF 403s python-default User-Agents on the public r2.dev host
 # (scripts/audit_r2.py, same constant class).
 UA = "macro-freshness-sentinel/1.0"
@@ -104,6 +141,10 @@ DEFAULT_BASE = "https://www.mastermind-x.com"
 DEFAULT_R2_BASE = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
 DEFAULT_PUBLIC_DIR = "/var/lib/macro-live/public"
 DEFAULT_STATE_DIR = "/var/lib/macro-sentinel"
+# The Caddyfile's static root (`root * /opt/macro/site.served`) — macro-update
+# rsyncs the git work-tree site/ into it by atomic per-file rename, so what is
+# here is exactly what the edge serves. Read-only to this process.
+DEFAULT_SERVED_DIR = "/opt/macro/site.served"
 
 #: Consecutive INDETERMINATE passes (per surface) before the sentinel reports its
 #: own blindness. 6 passes at the 30-minute cadence ≈ 3 hours without a
@@ -117,6 +158,18 @@ BAKE_BUDGET_HOURS = 26.0
 #: Page body cap. The biggest board page is ~1 MB; hitting the cap means the read
 #: was truncated and the verdict would be built on a partial body → INDETERMINATE.
 BODY_CAP = 2_000_000
+#: Completed NYSE sessions the Prophet store may lag before it is a breach.
+#: 1 absorbs a single missed nightly (and its next-day retry); the SECOND missed
+#: session pages — "breach by day 2". The real freeze reads exactly there: a
+#: store stamped 2026-08-05, checked 2026-08-08, is 2 completed sessions behind
+#: (08-06, 08-07) and must alarm. This is far tighter than the 4-day us_stocks
+#: board budget and can afford to be, because the anchor is the exchange
+#: calendar rather than the wall clock: a weekend, a long weekend and a market
+#: holiday all add ZERO to this count, so the routine quiet stretches that force
+#: the calendar-blind budgets wide cannot flap this one. Prophet also earns the
+#: tighter budget — it is the surface a reader acts on, and the nightly that
+#: writes it is the same `needs: engine` chain whose death this catches.
+PROPHET_MAX_SESSIONS_BEHIND = 1
 
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
@@ -168,6 +221,29 @@ SURFACES: list[dict] = [
         "path": "/massive_stock_day/_manifest.json",
         "bake_budget_hours": BAKE_BUDGET_HOURS,
         "delay_budget_days": None,
+    },
+    # bake_budget_hours is None ON PURPOSE — this surface is judged on CONTENT,
+    # not on a stamp. The served file's mtime is set by the rsync of a git
+    # checkout, so an unchanged file legitimately keeps an old mtime while a
+    # touched-but-frozen one gets a fresh stamp: exactly the re-stamp trap this
+    # surface exists to defeat. ``asof`` measured against the session calendar
+    # is the honest read, and it is the only one budgeted here.
+    {
+        "id": "prophet_us",
+        "kind": "served_file",
+        "path": "/prophet/index.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        # Never monitor index.asof: it is the publication/run clock and a rerun over
+        # frozen inputs re-stamps it green. source_asof is
+        # us_standouts.staleness.price_through, the ranked-price watermark the plan
+        # builder actually consumed.
+        "asof_field": "source_asof",
+        "asof_max_sessions_behind": PROPHET_MAX_SESSIONS_BEHIND,
+        "required_false_fields": (
+            "source_delayed", "source_unknown", "source_mixed_vintage",
+        ),
+        "required_values": {"source_basis": "panel_majority"},
     },
 ]
 
@@ -230,6 +306,48 @@ def fetch(url: str, *, want_body: bool, timeout: float = 20.0) -> FetchResult:
         return FetchResult(error=f"{type(exc).__name__}: {exc}")
 
 
+def read_served(served_dir: Path, path: str) -> FetchResult:
+    """Read one artifact out of the SERVED tree — the walled surfaces' transport.
+
+    Shaped as a FetchResult so it flows through the same evaluate/alert path as
+    the HTTP surfaces: ``status=200`` + mtime + body on success, ``error`` set on
+    anything else. A missing file, a permission error and an unreadable byte all
+    land in ``error`` → INDETERMINATE, so a sentinel pointed at the wrong root
+    (or run off the VPS entirely) reports its own blindness instead of paging a
+    fake outage.
+    """
+    target = served_dir / path.lstrip("/")
+    try:
+        stat = target.stat()
+        raw = target.read_bytes()
+    except OSError as exc:
+        return FetchResult(error=f"served read failed: {type(exc).__name__}: {exc}")
+    if len(raw) > BODY_CAP:
+        return FetchResult(status=200, error=f"served body exceeded {BODY_CAP} byte cap")
+    return FetchResult(
+        status=200,
+        last_modified=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+        body=raw.decode("utf-8", errors="replace"),
+    )
+
+
+def sessions_behind(asof: str, now: datetime) -> int:
+    """Completed NYSE sessions the store stamped ``asof`` is missing (0 = current).
+
+    Lazy, failure-guarded import for the same reason app.mailer is one: the
+    sentinel must survive a broken tree. lib/nyse_calendar is pure rule
+    arithmetic with zero data dependencies, so importing it costs the sentinel
+    none of its independence — but an ImportError still has to degrade to
+    "I can't tell" rather than to a verdict. Raises so the caller can map the
+    failure to INDETERMINATE.
+    """
+    from datetime import date as _date  # noqa: PLC0415 — stdlib, kept with its one caller
+
+    from lib import nyse_calendar  # noqa: PLC0415 — see docstring
+
+    return nyse_calendar.sessions_behind(_date.fromisoformat(asof), now)
+
+
 def board_delay_stamp(body: str) -> str | None:
     """The board's self-reported price-through date, or None when not delayed.
 
@@ -258,6 +376,8 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         "board_delayed": False,
         "board_price_through": None,
         "board_delay_days": None,
+        "asof": None,
+        "asof_sessions_behind": None,
         "detail": "",
     }
     if fr.error or fr.status != 200:
@@ -266,8 +386,9 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         return out
 
     problems: list[str] = []
+    bake_budget_h = surface["bake_budget_hours"]
 
-    if fr.last_modified is None:
+    if bake_budget_h is not None and fr.last_modified is None:
         # A 200 with no parseable Last-Modified is a serving-config regression —
         # the sentinel cannot do its job. Indeterminate (not a staleness
         # verdict), so it escalates through the blindness counter rather than
@@ -276,12 +397,16 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
         out["detail"] = "no Last-Modified header on a 200 response"
         return out
 
-    bake_age_h = (now - fr.last_modified).total_seconds() / 3600.0
-    out["bake_stamp"] = fr.last_modified.isoformat()
-    out["bake_age_hours"] = round(bake_age_h, 1)
-    if bake_age_h > surface["bake_budget_hours"]:
+    bake_age_h = None
+    if fr.last_modified is not None:
+        bake_age_h = (now - fr.last_modified).total_seconds() / 3600.0
+        out["bake_stamp"] = fr.last_modified.isoformat()
+        out["bake_age_hours"] = round(bake_age_h, 1)
+    # A None budget records the stamp for the operator line and budgets nothing
+    # (see the prophet_us SURFACES comment) — it is never "budget satisfied".
+    if bake_budget_h is not None and bake_age_h > bake_budget_h:
         problems.append(
-            f"bake stamp {bake_age_h:.1f}h old (budget {surface['bake_budget_hours']:.0f}h)"
+            f"bake stamp {bake_age_h:.1f}h old (budget {bake_budget_h:.0f}h)"
         )
 
     if surface["delay_budget_days"] is not None and fr.body is not None:
@@ -306,6 +431,68 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     problems.append(msg)
             except ValueError:
                 problems.append(f"unparseable board price-through date {stamp!r}")
+
+    if surface.get("asof_field") and fr.body is not None:
+        try:
+            doc = json.loads(fr.body)
+        except ValueError as exc:
+            # A body that is not JSON is a transport-shaped failure, not a
+            # staleness one: an HTML error shell, a half-written file mid-rsync,
+            # or a login page served in place of the payload all land here. It
+            # escalates through the blindness counter — a wrong-shape body must
+            # never be read as an outage verdict, in either direction.
+            out["status"] = "indeterminate"
+            out["detail"] = f"served body is not JSON ({exc})"
+            return out
+        stamp = doc.get(surface["asof_field"]) if isinstance(doc, dict) else None
+        for field in surface.get("required_false_fields", ()):
+            value = doc.get(field) if isinstance(doc, dict) else None
+            if value is not False:
+                problems.append(
+                    f"served payload {field!r} must be explicitly false "
+                    f"({value!r}) — Prophet source freshness is not authoritative"
+                )
+        for field, expected in surface.get("required_values", {}).items():
+            value = doc.get(field) if isinstance(doc, dict) else None
+            if value != expected:
+                problems.append(
+                    f"served payload {field!r} must equal {expected!r} "
+                    f"({value!r}) — Prophet source authority is not proven"
+                )
+        if not isinstance(stamp, str) or not stamp:
+            # Well-formed JSON that cannot say when it is from IS a definitive
+            # regression in the artifact, so it breaches rather than going
+            # blind: the writer dropped the one field the store is judged on,
+            # and a surface that cannot vouch for its own date must not read
+            # as fresh.
+            problems.append(
+                f"served payload carries no usable {surface['asof_field']!r} field"
+                f" ({stamp!r}) — the store cannot vouch for its own date"
+            )
+        else:
+            out["asof"] = stamp
+            budget = surface["asof_max_sessions_behind"]
+            try:
+                behind = sessions_behind(stamp, now)
+            except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
+                out["status"] = "indeterminate"
+                out["detail"] = (
+                    f"cannot measure {stamp!r} against the NYSE calendar"
+                    f" ({type(exc).__name__}: {exc})"
+                )
+                return out
+            out["asof_sessions_behind"] = behind
+            if behind > budget:
+                msg = (
+                    f"store as of {stamp} is {behind} completed NYSE session(s)"
+                    f" behind the calendar (budget {budget})"
+                )
+                if bake_age_h is not None and bake_age_h <= BAKE_BUDGET_HOURS:
+                    # The one-layer-down re-stamp trap: the file is landing on
+                    # the VPS on schedule and its CONTENT is frozen (the
+                    # 2026-08-05 candidates freeze under a daily-fresh page).
+                    msg += "; the file is being re-published, the store is not"
+                problems.append(msg)
 
     if problems:
         out["status"] = "stale"
@@ -561,9 +748,14 @@ def load_state(state_dir: Path) -> dict:
 # Entry point
 # --------------------------------------------------------------------------- #
 def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Path,
-        dry_run: bool = False, fetcher=fetch) -> int:
+        dry_run: bool = False, fetcher=fetch, served_dir: Path | None = None,
+        served_reader=read_served) -> int:
+    served_dir = Path(DEFAULT_SERVED_DIR) if served_dir is None else served_dir
     results: dict[str, FetchResult] = {}
     for s in SURFACES:
+        if s["kind"] == "served_file":
+            results[s["id"]] = served_reader(served_dir, s["path"])
+            continue
         root = r2_base if s["kind"] == "r2" else base
         results[s["id"]] = fetcher(
             root.rstrip("/") + s["path"], want_body=s["delay_budget_days"] is not None
@@ -571,10 +763,17 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
 
     report = evaluate(results, now)
     for sid, c in sorted(report["surfaces"].items()):
+        if c.get("asof"):
+            label, content = "store", (
+                f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
+            )
+        else:
+            label = "board"
+            content = "delayed@" + c["board_price_through"] if c["board_delayed"] else "current"
         print(
             f"{sid}: {c['status']}"
             f" | bake {c['bake_age_hours'] if c['bake_age_hours'] is not None else '?'}h"
-            f" | board {'delayed@' + c['board_price_through'] if c['board_delayed'] else 'current'}"
+            f" | {label} {content}"
             + (f" | {c['detail']}" if c["detail"] else "")
         )
 
@@ -638,6 +837,9 @@ def main(argv: list[str] | None = None) -> int:
                     default=os.environ.get("SENTINEL_PUBLIC_DIR", DEFAULT_PUBLIC_DIR))
     ap.add_argument("--state-dir",
                     default=os.environ.get("SENTINEL_STATE_DIR", DEFAULT_STATE_DIR))
+    ap.add_argument("--served-dir",
+                    default=os.environ.get("SENTINEL_SERVED_DIR", DEFAULT_SERVED_DIR),
+                    help="static root the edge serves (walled artifacts are read here)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
@@ -657,6 +859,7 @@ def main(argv: list[str] | None = None) -> int:
         r2_base=args.r2_base,
         public_dir=Path(args.public_dir),
         state_dir=Path(args.state_dir),
+        served_dir=Path(args.served_dir),
         dry_run=args.dry_run,
     )
 

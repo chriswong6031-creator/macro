@@ -303,8 +303,8 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": 0.37,
-        "strength": 0.37,
+        "projection": 0.36,
+        "strength": 0.36,
         "direction": "stimulus-on \u2014 CSI300, brokers, property & copper/rebar lead up"
       },
       {
@@ -330,8 +330,8 @@
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": 0.1,
-        "strength": 0.1,
+        "projection": 0.11,
+        "strength": 0.11,
         "direction": "upstream inflation \u2014 PPI, coal, nonferrous & oil lead up"
       },
       {
@@ -357,10 +357,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.121,
-      "roro_raw": 0.122,
+      "roro": 0.138,
+      "roro_raw": 0.139,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.527,
+      "china_roro_copper_gold": 1.662,
       "china_roro_breadth": 1.141,
       "china_roro_southbound": -0.468,
       "china_roro_m1_m2": -0.73,
@@ -374,7 +374,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.527,
+          "value": 1.662,
           "lean": "risk-on"
         },
         {
@@ -2090,7 +2090,7 @@
           0.136,
           0.225,
           0.192,
-          0.121
+          0.138
         ]
       },
       "recession": {
@@ -6830,7 +6830,7 @@
           74.5,
           82.8,
           79.7,
-          72.9
+          74.5
         ]
       }
     },
@@ -6838,18 +6838,18 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 73,
+    "fe_score": 75,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.121,
+    "roro": 0.138,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.527,
-        "pct": 95,
+        "value": 1.662,
+        "pct": 97,
         "lean": "risk-on"
       },
       {

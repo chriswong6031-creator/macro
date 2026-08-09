@@ -683,6 +683,22 @@ def main() -> int:
     except Exception as _nte_exc:  # noqa: BLE001 — additive, never fatal
         print(f"::warning::notify_turn_events hook failed: {_nte_exc}", flush=True)
 
+    # GR3 — filing-linked outsiders per basket (outside confirmation).
+    # Placed AFTER the group_pulse hook on purpose: it reads pulse.json from the
+    # same run for each basket's direction sign.  A missing pulse.json degrades to
+    # "unavailable" states with a coverage warning rather than failing.
+    try:
+        from engine.group_linked_outsiders import run as _glo_run
+        _glo_summary = _glo_run()
+        log.info(
+            "group_linked_outsiders: wrote %s (%d baskets, %d with outsiders, %d ledger rows)",
+            _glo_summary["path"], _glo_summary["baskets"],
+            _glo_summary["baskets_with_outsiders"], _glo_summary["edges_appended"],
+        )
+    except Exception as _glo_exc:  # noqa: BLE001 — additive, never fatal
+        # Bare print, NOT a logger call — GitHub only parses "::" at LINE START.
+        print(f"::warning::group_linked_outsiders hook failed: {_glo_exc}", flush=True)
+
     # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
     # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.
     try:

@@ -32,8 +32,7 @@ from pathlib import Path
 # Make sure repo root is on sys.path when run as a script
 _HERE = Path(__file__).resolve().parent
 _REPO_ROOT = _HERE.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 import pandas as pd  # noqa: E402
 

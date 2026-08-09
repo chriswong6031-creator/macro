@@ -1,7 +1,7 @@
 {
   "schema_version": "government_revenue_entities.v1",
-  "as_of": "2026-08-01",
-  "updated_at": "2026-08-01",
+  "as_of": "2026-08-07",
+  "updated_at": "2026-08-07",
   "description": "Curated public-company to USAspending recipient queries. These mappings are entity-resolution inputs, not evidence that every fuzzy-name result belongs to the issuer.",
   "source": "data/usaspending/recipient_aliases.json",
   "entities": {
@@ -143,11 +143,29 @@
     },
     "BWXT": {
       "name": "BWX Technologies",
-      "recipient_search_text": "BWX TECHNOLOGIES",
-      "recipient_aliases": ["BWX TECHNOLOGIES"],
+      "recipient_search_text": "BWXT NUCLEAR OPERATIONS GROUP",
+      "recipient_aliases": [
+        "BWXT NUCLEAR OPERATIONS GROUP",
+        "BWXT ORDNANCE TENNESSEE",
+        "BWXT NOG TECHNOLOGIES",
+        "BWXT NUCLEAR ENERGY",
+        "BWXT ENRICHMENT OPERATIONS",
+        "BWXT ADVANCED TECHNOLOGIES",
+        "BWXT TECHNICAL SERVICES GROUP",
+        "NUCLEAR FUEL SERVICES"
+      ],
+      "excluded_recipient_names": [
+        "BWXT Y - 12, LLC",
+        "BWXT PANTEX, LLC",
+        "FLUOR-BWXT PORTSMOUTH LLC",
+        "CH2M HILL BWXT WEST VALLEY, LLC",
+        "NEWPORT NEWS NUCLEAR BWXT-LOS ALAMOS LLC",
+        "BECHTEL BWXT IDAHO, LLC"
+      ],
+      "exclusion_rationale": "The prior query string 'BWX TECHNOLOGIES' is the SEC issuer legal name and matches no USAspending award recipient (measured 2026-08-07: 0 rows, hasNext=false), because recipient_search_text is a contiguous-substring filter and every award row spells the issuer 'BWXT ...'. A bare 'BWXT' substring is not the fix: it returns 35 rows of which the five joint-venture and legacy site-management names listed above are $23.06B of the $23.56B total (~98%) against an issuer with single-digit-billion annual revenue. Those vehicles are not consolidated issuer revenue, so the aliases are an explicit wholly-owned-subsidiary allowlist; because the filter is substring-based, an exclusion list alone could not keep them out. 'NUCLEAR FUEL SERVICES' is the one alias without a BWXT prefix (wholly-owned since 2008, UEI SMJQJGD5JEJ3) and therefore the one alias carrying name-collision risk if a similarly named unrelated recipient ever appears.",
       "tags": ["defense", "nuclear", "shipbuilding"],
       "match_method": "curated_fuzzy_name",
-      "match_confidence": "high"
+      "match_confidence": "medium"
     },
     "IRDM": {
       "name": "Iridium Communications",

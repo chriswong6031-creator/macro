@@ -329,12 +329,14 @@ class ArchiveReader:
 def levels_vintage(asof: str | None) -> str | None:
     """The ET SESSION DATE a gex_state `asof` timestamp belongs to.
 
-    NOT `asof[:10]`.  `build_gex_board` stamps `datetime.now(UTC)`, and the nightly engine band
-    commits between roughly 03:11 and 03:54 UTC — which is 23:11–23:54 ET on the session day
-    BEFORE.  Slicing the UTC date therefore reported the vintage as D+1 for every real nightly
-    run, which made the same-session check fail every single night: `walls.close` was
-    permanently null, the EOD fallback was dead on arrival, and the bilingual note asserted the
-    level came "from the close of D+1" — a dated statement that was simply false.
+    NOT `asof[:10]`. Historical `build_gex_board` receipts used `datetime.now(UTC)`, and the
+    nightly engine band commits between roughly 03:11 and 03:54 UTC — which is 23:11–23:54 ET
+    on the session day BEFORE. Slicing the UTC date therefore reported the vintage as D+1 for
+    every such nightly run, which made the same-session check fail: `walls.close` was null, the
+    EOD fallback was dead on arrival, and the bilingual note asserted the level came "from the
+    close of D+1" — a dated statement that was simply false. Current board receipts are anchored
+    directly to the authoritative settled session; this conversion remains the defensive reader
+    for historical and independently produced timestamp receipts.
 
     `nyse_calendar.session_date` is the house function for exactly this mapping (it keys off the
     ET calendar date, so 2026-07-30T03:27Z → 2026-07-29) and also folds a weekend/holiday
