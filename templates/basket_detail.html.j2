@@ -641,14 +641,14 @@ function render(){
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
     // stage-name vocabulary v2 (W8-R4 #2099); wording mirrors _sig_badge.html.j2, popover via theme.js.
-    const tipEn={T1:'T1 CONFIRMED: the main entry signal has fired and passed our buy filter.',
-      T2:'T2 PRIME: 2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise).',
-      T3:'T3 APPROACHING: expected to fire within a day or two — an early call, not yet confirmed (provisional, may change).',
-      T4:'T4 FIRST SPARK: the earliest read we publish, and the least certain.'}[s.tier]||'';
-    const tipZh={T1:'T1 CONFIRMED（已确认）：主入场信号已经触发，并通过了买入过滤。',
-      T2:'T2 PRIME（最佳入场）：2日交叉叠加3日支撑——历史上于20日低点以上中位溢价低于CONFIRMED成交（实测数据，非前瞻承诺）。',
-      T3:'T3 APPROACHING（临近）：预计一两天内触发——属于提前判断，还没确认（暂定，可能会变）。',
-      T4:'T4 FIRST SPARK（初现）：我们会公布的最早读数，也是最不确定的一个。'}[s.tier]||'';
+    const tipEn={T1:'T1 CONFIRMED: the entry read is active. Check the wider setup and your risk plan before acting.',
+      T2:'T2 PRIME: an early, higher-conviction entry window. It is not a promise.',
+      T3:'T3 APPROACHING: an early entry read that is not confirmed yet. It may change.',
+      T4:'T4 FIRST SPARK: the earliest and least-certain entry read. Treat it as a watch.'}[s.tier]||'';
+    const tipZh={T1:'T1 CONFIRMED（已确认）：入场判断已生效。操作前请结合整体布局和自己的风险计划。',
+      T2:'T2 PRIME（最佳入场）：较早、信心较高的入场窗口。它不是承诺。',
+      T3:'T3 APPROACHING（临近）：较早的入场判断，尚未确认，仍可能变化。',
+      T4:'T4 FIRST SPARK（初现）：最早、也最不确定的入场判断。先放进观察列表。'}[s.tier]||'';
     return ` <span class="tier ${s.tier}" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
   const sortMembers=(items)=>{
     // default 'recommend' order: fresh-confluence names first (T1>T2>T3>T4), then the
@@ -942,8 +942,7 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     html+='<span style="display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;border:1px solid var(--line);color:var(--muted);margin-left:4px">'+mLabel+'</span>';
   }
   if(tw&&(tw.state==='WATCH'||tw.state==='IGNITION')){
-    // User-first copy (#2221 vocabulary): STRONG SIGN / EARLY SIGN; the state-enum
-    // receipt (Oracle P8, base rate) lives in the data-tip (Tier 2). States unchanged.
+    // User-first copy: STRONG SIGN / EARLY SIGN, with a plain-language caution.
     var isIgn=tw.state==='IGNITION';
     // FC-R5 / FL-D: append cohort_flow tilt context to hover receipt (display-only;
     // NOT a leg; NOT in K count; buy-vs-sell direction is approximate).
@@ -957,11 +956,10 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
       cfTip=' Options tape: '+cfWordEn+cfPc+' — size and call/put mix are solid reads; direction approx.';
       cfTipZh=' 期权带：'+cfWordZh+cfPc+' — 规模与看涨/看跌比例更可靠；方向仅供参考。';
     }
-    var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+(tw.k||0)+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.'+cfTip;
-    var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+(tw.k||0)+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。'+cfTipZh;
+    var twTipEn='Fast-turn context: '+(isIgn?'strong sign':'early sign')+'. In 26 past cases, about 6 in 10 sharp one-day flips faded within a day. Slow ratings are unchanged; context only, not a buy signal.'+cfTip;
+    var twTipZh='快速拐点参考：'+(isIgn?'较强迹象':'初步迹象')+'。历史26次剧烈单日反转中，约六成在一天内消退。慢速评级不变；仅供参考，不是买入信号。'+cfTipZh;
     html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
-      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>'
-      +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L(' of 6 signs',' / 6 项迹象')+'</span>';
+      +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>';
   }
   html+='<span style="font-size:10.5px;color:var(--muted);margin-left:auto">'+L('15-min delayed','15分钟延迟')+'</span>';
   html+='</div>';
