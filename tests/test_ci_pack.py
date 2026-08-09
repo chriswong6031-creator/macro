@@ -448,6 +448,12 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     workflow = _yaml(FENCES)
     assert workflow["permissions"]["checks"] == "write"
     jobs = workflow["jobs"]
+    assert set(jobs) == {
+        "fence-pack",
+        "fork-self-mod-fence",
+        "fork-capability-broker",
+        "fork-grader-manifest",
+    }
     pack = jobs["fence-pack"]
     assert pack["runs-on"] == "ubuntu-latest"
     checkout = next(
