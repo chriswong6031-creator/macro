@@ -1026,15 +1026,24 @@ def append_entry_latches(records: list[dict], *, lane: str | None = None,
     so the next nightly can retry it. Keep-first means a re-run, a second lane, or a healed bar
     can never move a latched value; that immutability IS the fix.
 
-    ``lane`` mirrors append_board's asia-lane gate: a lane that is not 'asia' refuses to write
-    (render lanes discard data/ writes anyway, so this is belt-and-braces). ``lane=None``
-    preserves the legacy/unthreaded call.
+    ``lane`` is FAIL-CLOSED: ``lane == 'asia'`` writes and EVERYTHING else — an unrecognised
+    lane, or no lane at all — refuses. It deliberately does NOT mirror append_board's
+    permissive ``lane is not None`` form. append_board can afford that default because a
+    board row is re-derivable and a second lane writing it changes nothing; a latch row is
+    keep-FIRST and immutable, so the first writer of a (date, ticker) owns the published
+    entry price FOREVER. Both .github/workflows/daily.yml and weekly.yml run
+    scripts.build_china_library and both commit ``data/``, so under the permissive form
+    whichever lane the scheduler started first would decide a published number — which is
+    the exact property this latch exists to remove. Only asia-close.yml sets
+    ``CN_LANE=asia``; see scripts/build_china_library._entry_latch_lane for the resolver.
     Returns the latch row count after the merge (0 when nothing was written).
     """
     if not records:
         return 0
-    if lane is not None and lane != "asia":
-        log.info("china_standout_track: entry-latch append gated (lane=%s, not asia)", lane)
+    if lane != "asia":
+        log.info("china_standout_track: entry-latch append REFUSED (lane=%r, not 'asia') — "
+                 "%d record(s) left unlatched; the asia nightly is the sole advancer",
+                 lane, len(records))
         return 0
     stamp = latched_asof or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     rows = []

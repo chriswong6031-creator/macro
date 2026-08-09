@@ -1047,7 +1047,26 @@ def _cn_unknown_era_label(stamp, date_from: str | None,
             f"其他选股口径 · {s} · {zh_span}")
 
 
-def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
+def _entry_latch_lane() -> str | None:
+    """The collection lane this process runs in, resolved FAIL-CLOSED from ``CN_LANE``.
+
+    Deliberately NOT `os.environ.get("CN_LANE", "asia")` — the permissive form the board
+    append uses further down. A board row is re-derivable, so a second lane rewriting it
+    changes nothing; the PIT entry latch is keep-FIRST and immutable, so the FIRST lane to
+    write a (date, ticker) owns that published entry price forever. Both
+    .github/workflows/daily.yml (`git add data/`) and weekly.yml (`git add data/ reports/
+    site/`) run scripts.build_china_library, so with an "asia" default whichever of them the
+    scheduler started first would decide a published entry price. Scheduling order deciding a
+    published number is precisely the property the latch exists to remove.
+
+    Only asia-close.yml sets `CN_LANE: asia` ("the ONLY lane that may persist the board
+    ledger" — its own comment), so every other lane resolves to None here and
+    china_standout_track.append_entry_latches refuses the write.
+    """
+    return (os.environ.get("CN_LANE") or "").strip() or None
+
+
+def _cn_grade_era(bdf, bench_ser, look, _cst, *, lane: str | None) -> dict:
     """Grade ONE era's slice of the board store into rows + summary + survivorship.
 
     Extracted so the live record and the prior record run the identical path: same
@@ -1059,7 +1078,7 @@ def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
     from engine import track_scoring as _ts
 
     rows_out, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price = \
-        _cn_ledger_rows(bdf, bench_ser, look, _cst)
+        _cn_ledger_rows(bdf, bench_ser, look, _cst, lane=lane)
     # W1.1: `n_skipped_no_price` now carries ONLY genuine store misses, so the
     # survivorship alarm means what its name says. The awaiting-T+1 count ships beside
     # it as an additive key, and the old total stays available as n_skipped_total.
@@ -1162,9 +1181,15 @@ def _cn_track_state(bt: dict | None) -> str:
     return "accruing"
 
 
-def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
-                    _cst) -> tuple[list[dict], int, list[dict], int, int, int]:
+def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict], _cst, *,
+                    lane: str | None) -> tuple[list[dict], int, list[dict], int, int, int]:
     """Row loop for emit_cn_track_ledger — EPISODE grain, forced-horizon verdict.
+
+    ``lane`` is REQUIRED (keyword-only, no default) — it is the collection lane the PIT
+    entry latch is gated on, and a default is what let the gate ship dead: the flush below
+    called append_entry_latches with no lane at all, so the asia-lane check never fired and
+    the first lane to run owned the entry price. A caller that cannot name its lane must
+    pass None and get no latch writes; it may not get them by omission.
 
     Returns (rows, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price).
 
@@ -1351,8 +1376,10 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
 
     # Flush entries derived for the first time on this run. Keep-FIRST: a re-run cannot move a
     # latched value, and a DEFERRED derivation was never appended, so the next nightly retries it.
+    # lane= is NOT optional here: append_entry_latches is fail-closed, and only the asia lane
+    # (CN_LANE=asia, asia-close.yml) may advance a keep-first store.
     if pending_latch:
-        _cst.append_entry_latches(pending_latch)
+        _cst.append_entry_latches(pending_latch, lane=lane)
     return rows_out, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price
 
 
@@ -1364,6 +1391,7 @@ def emit_cn_track_ledger(
     board_definition: str | None = None,
     asof: str | None = None,
     out_name: str = "cn_track_ledger.json",
+    lane: str | None = None,
 ) -> bool:
     """Emit site/factordata/cn_track_ledger.json (track_ledger/v1).
 
@@ -1411,8 +1439,16 @@ def emit_cn_track_ledger(
     lookup. Render budget: lib.store reads are UNCACHED, so we install a per-ticker
     memo over _cst._price_frame for the duration of the loop (try/finally restored),
     collapsing O(rows) parquet reads to O(unique tickers).
+
+    `lane` is the collection lane, and it gates ONE thing: whether this run may advance the
+    keep-first PIT entry latch. Omitted, it resolves from `CN_LANE` via _entry_latch_lane()
+    — fail-closed, so an unset variable latches nothing. The emitted JSON is identical
+    either way; only the data/ write differs, which is the house law (nightly is the sole
+    advancer of forward ledgers) applied to the entry price.
     Returns True on a successful atomic write.
     """
+    # Fail-closed: an omitted lane is resolved from the environment, never assumed to be asia.
+    lane = _entry_latch_lane() if lane is None else lane
     from engine import track_ledger as _tl
     from engine import track_scoring as _ts
     from engine import china_standout_track as _cst
@@ -1550,11 +1586,11 @@ def emit_cn_track_ledger(
             _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
             try:
                 if not bdf.empty:
-                    live = _cn_grade_era(bdf, bench_ser, look, _cst)
+                    live = _cn_grade_era(bdf, bench_ser, look, _cst, lane=lane)
                 if not bdf_prior.empty:
-                    prior = _cn_grade_era(bdf_prior, bench_ser, look, _cst)
+                    prior = _cn_grade_era(bdf_prior, bench_ser, look, _cst, lane=lane)
                 for _stamp, _slice in unknown_slices.items():
-                    unknown[_stamp] = _cn_grade_era(_slice, bench_ser, look, _cst)
+                    unknown[_stamp] = _cn_grade_era(_slice, bench_ser, look, _cst, lane=lane)
             finally:
                 _cst._price_frame = _pf_orig  # noqa: SLF001
                 _pf_memo.clear()
@@ -3843,6 +3879,11 @@ def main(alpha: dict | None = None) -> dict | None:
                     wide.get("buy"),
                     board_definition=wide["board_definition"],
                     asof=as_of,
+                    # NOT `_lane` (os.environ.get("CN_LANE", "asia")): that default is
+                    # safe for a re-derivable board row and fatal for a keep-FIRST latch.
+                    # _entry_latch_lane() has no default, so only asia-close.yml's
+                    # CN_LANE=asia may advance a published entry price.
+                    lane=_entry_latch_lane(),
                 )
                 # Hand the ledger's own summary to the template so the chip and the
                 # popup table it heads report the SAME numbers. Before 2026-07-26 the
@@ -3866,6 +3907,7 @@ def main(alpha: dict | None = None) -> dict | None:
                     board_definition=_crw_led.BOARD_DEFINITION,
                     asof=as_of,
                     out_name="cn_reversal_ledger.json",
+                    lane=_entry_latch_lane(),
                 )
                 setups["reversal_ledger"] = (
                     _CN_LAST_LEDGER.get("doc") if _rwok else None
@@ -4359,6 +4401,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 [],
                 board_definition=china_board_rank.BOARD_DEFINITION,
                 asof=as_of,
+                lane=_entry_latch_lane(),
             )
             wide["track_ledger"] = (
                 _CN_LAST_LEDGER.get("doc") if _zero_ledger_ok else None

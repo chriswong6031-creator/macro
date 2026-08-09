@@ -26,6 +26,14 @@ WHAT THIS FILE PINS
                   disclosed additively (``e_revised`` / ``er``), never substituted, and the
                   published return `p` derives from the latched entry.
 3. PROVENANCE   — ``basis_used`` / ``eb`` says what actually happened.
+4. LANE GATE    — only the asia nightly may ADVANCE the latch, proven on the path the
+                  workflows take rather than by hand-feeding ``lane=``. The latch is
+                  keep-first, so the first lane to write a (date, ticker) owns that entry
+                  price forever; daily.yml, weekly.yml and asia-close.yml all run
+                  scripts.build_china_library, so a permissive gate lets SCHEDULING ORDER
+                  pick a published number. §4 is the fail-closed pin (added 2026-08-09 —
+                  the gate itself shipped dead: the one production call site passed no
+                  lane at all, so it always took the permissive branch).
 
 Every test carries its own witness that the fixture can SEE the failure — the corrupt and
 healed bars are constructed so the old and new answers differ by 7.5%, and the latch tests
@@ -33,11 +41,16 @@ re-run the same resolution with an empty latch to prove the restatement is reach
 """
 from __future__ import annotations
 
+import ast
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from lib import config
+from engine import china_board_rank      # the LIVE board stamp, never re-spelled here
 from engine import china_standout_track as t
 from scripts import build_china_library as bcl
 
@@ -210,7 +223,8 @@ def test_a_healed_bar_cannot_restate_a_published_entry(capsys):
     pending: list[dict] = []
     n1 = _resolve(_frame(t1_open=CORRUPT_OPEN), latch={}, pending=pending)
     assert n1["entry"] == pytest.approx(T1_HL2) and n1["latched"] is False
-    assert t.append_entry_latches(pending, latched_asof="2026-08-06T12:00:00Z") == 1
+    assert t.append_entry_latches(pending, lane="asia",
+                                  latched_asof="2026-08-06T12:00:00Z") == 1
     capsys.readouterr()
 
     # ── night 2: the bar has healed to open 17.52 ──────────────────────────────────
@@ -237,7 +251,7 @@ def test_an_agreeing_rederivation_records_no_revision(capsys):
     """The disclosure fields stay null in the normal case — no noise on healthy rows."""
     pending: list[dict] = []
     _resolve(_frame(t1_open=HEALED_OPEN), latch={}, pending=pending)
-    t.append_entry_latches(pending)
+    t.append_entry_latches(pending, lane="asia")
     capsys.readouterr()
 
     again = _resolve(_frame(t1_open=HEALED_OPEN), latch=t.read_entry_latch())
@@ -250,10 +264,10 @@ def test_the_latch_is_keep_first_and_a_relatch_cannot_move_it():
     """Immutability lives in the STORE, not only in the resolver."""
     t.append_entry_latches([{"date": "2026-08-05", "ticker": TICKER, "entry": T1_HL2,
                              "basis_used": t.BASIS_T1_HL2, "t1_date": "2026-08-06",
-                             "corrupt_bar": True}])
+                             "corrupt_bar": True}], lane="asia")
     t.append_entry_latches([{"date": "2026-08-05", "ticker": TICKER, "entry": HEALED_OPEN,
                              "basis_used": t.BASIS_T1_OPEN, "t1_date": "2026-08-06",
-                             "corrupt_bar": False}])
+                             "corrupt_bar": False}], lane="asia")
     latch = t.read_entry_latch()
     assert len(latch) == 1
     assert latch[("2026-08-05", TICKER)]["entry"] == pytest.approx(T1_HL2)
@@ -267,8 +281,10 @@ def test_a_deferred_derivation_is_never_latched():
     pending: list[dict] = []
     out = _resolve(df, latch={}, pending=pending)
     assert out["entry"] is None and pending == []
+    # lane="asia" is load-bearing: without it this 0 would come from the lane gate and the
+    # null-entry rule would go untested (a pass for the wrong reason).
     assert t.append_entry_latches([{"date": "2026-08-05", "ticker": TICKER,
-                                    "entry": None}]) == 0
+                                    "entry": None}], lane="asia") == 0
     # the next nightly, on a healed bar, derives and latches normally
     p2: list[dict] = []
     assert _resolve(_frame(t1_open=HEALED_OPEN), latch=t.read_entry_latch(),
@@ -278,7 +294,7 @@ def test_a_deferred_derivation_is_never_latched():
 
 def test_a_missing_latch_store_is_forward_only_not_an_error():
     assert t.read_entry_latch() == {}
-    assert t.append_entry_latches([]) == 0
+    assert t.append_entry_latches([], lane="asia") == 0
 
 
 def test_the_latch_lives_beside_the_board_store(monkeypatch, tmp_path):
@@ -300,7 +316,7 @@ def test_the_latch_is_keyed_on_date_and_ticker_only():
     the same name on the same date must publish the SAME entry."""
     t.append_entry_latches([{"date": "2026-08-05", "ticker": TICKER, "entry": T1_HL2,
                              "basis_used": t.BASIS_T1_HL2, "t1_date": "2026-08-06",
-                             "corrupt_bar": False}])
+                             "corrupt_bar": False}], lane="asia")
     assert set(t.read_entry_latch().keys()) == {("2026-08-05", TICKER)}
 
 
@@ -316,13 +332,17 @@ def test_append_entry_latches_is_gated_to_the_asia_lane():
 # 3. THE PUBLISHED LEDGER — the full chain, two nightlies
 # ===========================================================================
 
-def _ledger_row(monkeypatch, df) -> tuple[dict, tuple]:
-    """Run one nightly's _cn_ledger_rows over a single-name board and return its row."""
+def _ledger_row(monkeypatch, df, lane: str | None = "asia") -> tuple[dict, tuple]:
+    """Run one nightly's _cn_ledger_rows over a single-name board and return its row.
+
+    ``lane`` defaults to the asia collection lane because that is the only lane whose run
+    may advance the latch; section 4 drives the same helper with the render lane's answer.
+    """
     monkeypatch.setattr(t, "_price_frame", lambda tk: df if tk == TICKER else None)
     board = pd.DataFrame([{"date": "2026-08-05", "ticker": TICKER,
                            "board_rank": 1, "tier": "T2"}])
     rows, n_locked, scored, n_inflight, n_awaiting, n_no_price = bcl._cn_ledger_rows(
-        board, _bench(df.index), {}, t)
+        board, _bench(df.index), {}, t, lane=lane)
     counters = (n_locked, len(scored), n_inflight, n_awaiting, n_no_price)
     return (rows[0] if rows else {}), counters
 
@@ -379,6 +399,149 @@ def test_the_published_return_derives_from_the_latched_entry(monkeypatch):
     e, latest, pct = night1["e"], night1["l"], night1["p"]
     assert pct == pytest.approx(round((latest / e - 1.0) * 100, 1), abs=0.15), (
         f"p={pct} does not derive from e={e} and l={latest}")
+
+
+# ===========================================================================
+# 4. THE LANE GATE, ON THE PATH PRODUCTION ACTUALLY TAKES
+# ===========================================================================
+# The latch is keep-FIRST and immutable, so the FIRST lane to write a (date, ticker) owns
+# that published entry price forever — and .github/workflows/daily.yml (`git add data/`) and
+# weekly.yml (`git add data/ reports/ site/`) BOTH run scripts.build_china_library, as does
+# asia-close.yml. Whichever ran first would decide the number, which is the very property
+# the latch exists to remove.
+#
+# The gate that was supposed to stop that shipped DEAD: `append_entry_latches` refused only
+# when a lane was passed AND was not asia, the one production call site passed no lane at
+# all, and the only test of the gate hand-fed `lane=` — green guard, no coverage of the path
+# the workflows take. These tests drive the production entry point and read the STORE.
+
+
+def test_an_unnamed_lane_refuses_to_latch():
+    """FAIL-CLOSED. No lane named → no write. This is the assertion the old gate inverted."""
+    recs = [{"date": "2026-08-05", "ticker": TICKER, "entry": T1_HL2,
+             "basis_used": t.BASIS_T1_HL2, "t1_date": "2026-08-06", "corrupt_bar": False}]
+    assert t.append_entry_latches(recs) == 0, "an unnamed lane must not advance the latch"
+    assert t.append_entry_latches(recs, lane="") == 0
+    assert t.read_entry_latch() == {}, "nothing may reach the store without an asia lane"
+    # WITNESS: the same records DO latch once the lane is named, so the refusals above are
+    # the gate and not an unwritable fixture.
+    assert t.append_entry_latches(recs, lane="asia") == 1
+
+
+def test_the_ledger_loop_latches_nothing_outside_the_asia_lane(monkeypatch):
+    """_cn_ledger_rows still GRADES in a render lane — it just may not publish the entry."""
+    row, _ = _ledger_row(monkeypatch, _frame(t1_open=HEALED_OPEN), lane=None)
+    assert row["e"] == pytest.approx(round(HEALED_OPEN, 2)), "the row is still graded"
+    assert t.read_entry_latch() == {}, "a render lane must leave the PIT store untouched"
+    # WITNESS: the identical run in the asia lane does write it.
+    assert _ledger_row(monkeypatch, _frame(t1_open=HEALED_OPEN), lane="asia")[0]["e"]
+    assert set(t.read_entry_latch()) == {("2026-08-05", TICKER)}
+
+
+def _emit_nightly(monkeypatch, tmp_path, df, *, cn_lane: str | None,
+                  thread_lane: bool) -> dict:
+    """Drive emit_cn_track_ledger exactly as scripts/build_china_library.main() does.
+
+    Nothing about the lane is hand-fed: `cn_lane` sets the ONE environment variable the
+    workflows set (asia-close.yml is the only one that sets `CN_LANE: asia`), and
+    ``thread_lane`` picks between main()'s explicit `lane=_entry_latch_lane()` and a bare
+    call. The two must agree — the parameter is documentation at the call site, not the gate.
+    """
+    store = tmp_path / "china_standout_track"
+    store.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{"date": "2026-08-05", "ticker": TICKER, "board_rank": 1, "tier": "T2",
+                   "board_definition": china_board_rank.BOARD_DEFINITION}]).to_parquet(
+        store / "board.parquet", index=False)
+    monkeypatch.setattr(t, "_price_frame", lambda tk: df if tk == TICKER else None)
+    monkeypatch.setattr(t, "_bench_close", lambda: _bench(df.index))
+    if cn_lane is None:
+        monkeypatch.delenv("CN_LANE", raising=False)
+    else:
+        monkeypatch.setenv("CN_LANE", cn_lane)
+    site = tmp_path / "site"
+    (site / "factordata").mkdir(parents=True, exist_ok=True)
+    kw = {"lane": bcl._entry_latch_lane()} if thread_lane else {}
+    assert bcl.emit_cn_track_ledger(site, None, [],
+                                    board_definition=china_board_rank.BOARD_DEFINITION,
+                                    asof="2026-08-20", **kw) is True
+    return json.loads((site / "factordata" / "cn_track_ledger.json").read_text())
+
+
+@pytest.mark.parametrize("thread_lane", [True, False], ids=["main-threads-lane", "bare-call"])
+def test_the_render_lanes_publish_the_ledger_but_never_latch(monkeypatch, tmp_path,
+                                                             thread_lane):
+    """daily.yml / weekly.yml: CN_LANE unset. The artifact still ships; data/ stays untouched.
+
+    This is the case the old gate could not see. `lane=None` took the permissive branch, so
+    whichever of the two lanes the scheduler started first latched the entry permanently.
+    """
+    doc = _emit_nightly(monkeypatch, tmp_path, _frame(t1_open=HEALED_OPEN),
+                        cn_lane=None, thread_lane=thread_lane)
+    assert doc["rows"], "the ledger artifact is still emitted outside the asia lane"
+    assert t.read_entry_latch() == {}
+    assert not (tmp_path / "china_standout_track" / "entry_latch.parquet").exists()
+
+
+@pytest.mark.parametrize("thread_lane", [True, False], ids=["main-threads-lane", "bare-call"])
+def test_the_asia_nightly_is_the_lane_that_latches(monkeypatch, tmp_path, thread_lane):
+    """asia-close.yml sets CN_LANE=asia — the ONE lane that may persist the entry price."""
+    doc = _emit_nightly(monkeypatch, tmp_path, _frame(t1_open=HEALED_OPEN),
+                        cn_lane="asia", thread_lane=thread_lane)
+    assert doc["rows"]
+    latch = t.read_entry_latch()
+    assert set(latch) == {("2026-08-05", TICKER)}
+    assert latch[("2026-08-05", TICKER)]["entry"] == pytest.approx(HEALED_OPEN)
+
+
+def test_a_render_lane_cannot_pre_empt_the_asia_nightlys_entry(monkeypatch, tmp_path):
+    """THE ORDERING DEFECT. A render lane running first on the CORRUPT bar must not own it.
+
+    Under the dead gate the first writer won, so a daily.yml run over the impossible
+    08-06 bar would have latched the HL2 fallback before the asia nightly ever saw the
+    healed bar. Scheduling order may not decide a published number.
+    """
+    _emit_nightly(monkeypatch, tmp_path, _frame(t1_open=CORRUPT_OPEN),
+                  cn_lane=None, thread_lane=True)
+    assert t.read_entry_latch() == {}, "the render lane claimed the entry — this is the defect"
+
+    _emit_nightly(monkeypatch, tmp_path, _frame(t1_open=HEALED_OPEN),
+                  cn_lane="asia", thread_lane=True)
+    latch = t.read_entry_latch()
+    assert latch[("2026-08-05", TICKER)]["entry"] == pytest.approx(HEALED_OPEN), (
+        "the asia nightly's own derivation must be the published entry")
+    assert latch[("2026-08-05", TICKER)]["basis_used"] == t.BASIS_T1_OPEN
+
+
+def test_every_production_latch_write_names_its_lane():
+    """The defect was a CALL SITE, not a policy — so pin the call sites.
+
+    `append_entry_latches` carried an asia-lane gate from the day the latch shipped, and it
+    was dead in production: the one caller invoked it as
+    ``_cst.append_entry_latches(pending_latch)`` with no lane, so the permissive branch ran
+    every time. A gate no production call passes an argument to is not a gate. The write is
+    fail-closed now, which means a forgotten `lane=` silently stops latching instead —
+    equally wrong, and invisible without this test.
+    """
+    root = Path(__file__).resolve().parents[1]
+    offenders: list[str] = []
+    for path in sorted([*(root / "engine").rglob("*.py"), *(root / "scripts").rglob("*.py")]):
+        src = path.read_text(encoding="utf-8")
+        if "append_entry_latches" not in src:
+            continue
+        for node in ast.walk(ast.parse(src, filename=str(path))):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", None)
+            if name == "append_entry_latches" and not any(
+                    kw.arg == "lane" for kw in node.keywords):
+                offenders.append(f"{path.relative_to(root)}:{node.lineno}")
+    assert offenders == [], (
+        "append_entry_latches called without lane=; the gate is fail-closed, so these "
+        f"writes no-op silently and the entry price stops being latched: {offenders}")
+    # WITNESS: the scan can SEE a call — it found the real one and judged it compliant.
+    assert (root / "scripts" / "build_china_library.py").read_text(
+        encoding="utf-8").count("append_entry_latches(") == 1
 
 
 # ===========================================================================

@@ -496,7 +496,7 @@ def ledger_cst(monkeypatch, tmp_path):
 class TestW11SkipSplit:
     def test_the_two_skip_paths_are_counted_separately(self, ledger_cst):
         rows, n_locked, scored, n_inflight, n_awaiting, n_no_price = bcl._cn_ledger_rows(
-            _LedgerFixture.board(), _LedgerFixture.bench(), {}, ledger_cst)
+            _LedgerFixture.board(), _LedgerFixture.bench(), {}, ledger_cst, lane="asia")
         assert n_no_price == 2, "BBB (no frame) and CCC (empty closes) are store misses"
         assert n_awaiting == 1, "DDD has prices — its T+1 fill simply has not printed"
         assert {r["t"] for r in rows} == {"AAA"}
@@ -510,12 +510,12 @@ class TestW11SkipSplit:
         board = _LedgerFixture.board()
         only_ccc = board[board["ticker"] == "CCC"]
         _r, _l, _s, _i, n_awaiting, n_no_price = bcl._cn_ledger_rows(
-            only_ccc, _LedgerFixture.bench(), {}, ledger_cst)
+            only_ccc, _LedgerFixture.bench(), {}, ledger_cst, lane="asia")
         assert (n_no_price, n_awaiting) == (1, 0)
 
     def test_the_summary_alarm_now_counts_store_misses_only(self, ledger_cst):
         graded = bcl._cn_grade_era(_LedgerFixture.board(), _LedgerFixture.bench(),
-                                   {}, ledger_cst)
+                                   {}, ledger_cst, lane="asia")
         s = graded["summary"]
         assert s["n_skipped_no_price"] == 2, "the alarm must not include in-flight rows"
         assert s["n_skipped_awaiting_t1"] == 1
@@ -590,7 +590,8 @@ class TestW12AdmissionRow:
         # see ledger_cst: _cn_ledger_rows flushes the PIT entry latch under data_dir()
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
         monkeypatch.setattr(cst, "_price_frame", self._price)
-        out, *_ = bcl._cn_ledger_rows(self._board(), _LedgerFixture.bench(), {}, cst)
+        out, *_ = bcl._cn_ledger_rows(self._board(), _LedgerFixture.bench(), {}, cst,
+                                      lane="asia")
         return {(r["t"], r["d"]): r for r in out}
 
     def test_the_fixture_actually_distinguishes_the_two_readings(self):
