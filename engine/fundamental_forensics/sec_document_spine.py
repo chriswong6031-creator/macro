@@ -30,6 +30,11 @@ from .models import canonical_json, parse_utc, stable_id, utc_text
 FILING_MANIFEST_SCHEMA = "fundamental_forensics.sec_filing_manifest/v1"
 ARCHIVE_RECEIPT_SCHEMA = "fundamental_forensics.sec_archive_receipt/v1"
 MANIFEST_ID_PREFIX = "ffsec_manifest_"
+# Deliberately distinct from ``MANIFEST_ID_PREFIX``: a content key is never a
+# manifest id, is never persisted inside a manifest body, and never addresses
+# an object.  It only answers "is this the same filing content we already
+# retained for this accession?".
+MANIFEST_CONTENT_KEY_PREFIX = "ffsec_content_"
 ARCHIVE_ORIGIN = "https://www.sec.gov/Archives/edgar/data"
 HARD_MAX_FILING_MANIFEST_BYTES = 8 * 1024 * 1024
 HARD_MAX_ARCHIVE_DOCUMENT_BYTES = 32 * 1024 * 1024
@@ -255,6 +260,48 @@ def _manifest_id(record: Mapping[str, Any]) -> str:
 def manifest_id_for(record: Mapping[str, Any]) -> str:
     """Return an ID committing to every persisted field except the ID itself."""
     return _manifest_id(record)
+
+
+def manifest_content_key(record: Mapping[str, Any]) -> str:
+    """Return a digest of one manifest's *content*, excluding its run clocks.
+
+    ``manifest_id`` commits to every persisted field including
+    ``clocks.recorded_at``, so an unchanged filing re-derived tomorrow gets a
+    new identity and therefore a new object.  This key answers the different
+    question the mint needs: is this the same filing content we already
+    retained for this accession?  Exactly three fetch-event clocks are removed:
+
+    * top-level ``manifest_id`` (derived, and it commits to the clocks below);
+    * ``clocks.recorded_at`` — when *we* recorded it, not what was filed; and
+    * each document's ``retrieval.retrieved_at`` / ``retrieval.receipt_id``
+      (``receipt_id`` hashes ``retrieved_at``, so it moves with it).
+
+    ``content_sha256``, ``byte_length`` and ``storage_key`` deliberately stay
+    in the key: those are byte identity, and a change in any of them is real
+    new content.  The key is derived *outside* the persisted body and is never
+    written into a manifest — adding a field would re-mint every manifest once
+    for a schema reason.  The input is never mutated.
+
+    See ``DNR:LAW-RUN-CLOCK-IN-CONTENT-IDENTITY`` (adjudication 2026-08-08, R1).
+    """
+    body = json.loads(canonical_json(dict(record)))
+    if not isinstance(body, dict):  # pragma: no cover - manifests are objects
+        raise FilingManifestError("filing manifest must be an object")
+    body.pop("manifest_id", None)
+    clocks = body.get("clocks")
+    if isinstance(clocks, dict):
+        clocks.pop("recorded_at", None)
+    documents = body.get("documents")
+    if isinstance(documents, list):
+        for document in documents:
+            if not isinstance(document, dict):
+                continue
+            retrieval = document.get("retrieval")
+            if isinstance(retrieval, dict):
+                retrieval.pop("retrieved_at", None)
+                retrieval.pop("receipt_id", None)
+    digest = hashlib.sha256(canonical_json(body).encode("utf-8")).hexdigest()
+    return MANIFEST_CONTENT_KEY_PREFIX + digest
 
 
 def validate_manifest_identity(record: Mapping[str, Any]) -> None:
@@ -863,6 +910,7 @@ __all__ = [
     "HARD_MAX_ARCHIVE_INDEX_MEMBERS",
     "HARD_MAX_FILING_MANIFEST_BYTES",
     "HARD_MAX_HTTP_METADATA_BYTES",
+    "MANIFEST_CONTENT_KEY_PREFIX",
     "MANIFEST_ID_PREFIX",
     "FilingManifestError",
     "archive_directory_url",
@@ -874,6 +922,7 @@ __all__ = [
     "canonical_cik",
     "document_with_retrieval",
     "documents_from_archive_index",
+    "manifest_content_key",
     "manifest_from_json_bytes",
     "manifest_id_for",
     "manifest_json_bytes",

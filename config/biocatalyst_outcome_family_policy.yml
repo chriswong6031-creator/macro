@@ -10,17 +10,17 @@
 # entry gate is `satisfied: false`.  No forecast is created, no clock is opened,
 # and nothing accrues from this file.
 #
-# m0a.2 (2026-08-07) records ONE change in the world: BC-O1b shipped, so
-# `biocatalyst_outcome_record.v1` now exists and the `o1b_outcome_writer`
-# precondition is discharged for all nine families.  Discharging it exposed what
-# the m0a.1 gate lists had left implicit -- eight of the nine families require a
-# source that is NOT production-ingest-allowed, and the ninth requires an
-# identity contract that does not exist.  Every clock therefore stays closed,
-# and each family now names the blocker that actually stands.  The clock state
-# of record is the activation receipt in the O1b store, not this file:
-# `engine/biocatalyst/family_clock.py` re-derives source eligibility from
-# config/biocatalyst_sources.yml on every evaluation, so editing a gate here
-# cannot open a family whose sources cannot be read.
+# m0a.3 (2026-08-07) integrates the Record History rights ruling with BC-O1b.
+# `biocatalyst_outcome_record.v1` exists, so the `o1b_outcome_writer`
+# precondition is discharged for all nine families.  Record History is now
+# rights-reviewed for bounded beta, but its committed runtime switch remains off
+# and its committed allowlist remains empty.  Rights permission is not a live
+# collection path, so every clock stays closed and the affected families keep
+# `eligible_source_registration` unsatisfied until those separately controlled
+# gates are armed.  The clock state of record is the activation receipt in the
+# O1b store, not this file: `engine/biocatalyst/family_clock.py` re-derives both
+# rights and committed activation eligibility from config/biocatalyst_sources.yml
+# on every evaluation, so editing a gate here cannot fabricate accrual.
 #
 # `contract_id` registers the document with ContractRegistry; `schema` mirrors
 # the first-line idiom of the sibling BioCatalyst config files.
@@ -28,8 +28,8 @@
 contract_id: biocatalyst_outcome_family_policy.v1
 schema: biocatalyst_outcome_family_policy.v1
 schema_version: "1.0.0"
-policy_version: m0a.2
-effective_at: "2026-08-06T00:00:00Z"
+policy_version: m0a.3
+effective_at: "2026-08-07T00:00:00Z"
 owner: biocatalyst
 state: contract_only_no_clock_opened
 
@@ -132,7 +132,7 @@ clock_activation:
   activation_record_contract: biocatalyst_family_clock_activation.v1
   activation_record_kind: family_clock_activation
   clock_state_authority: activation_receipt_not_this_file
-  source_eligibility_rule: required_source_ids_must_all_be_production_ingest_allowed
+  source_eligibility_rule: required_source_ids_must_be_rights_allowed_and_any_runtime_universe_controls_armed
   source_registry_file: config/biocatalyst_sources.yml
   backfill: forbidden_no_history_recorded
   accrual_start_rule: known_at_of_the_activation_never_earlier
@@ -164,7 +164,7 @@ families:
       unsatisfied_preconditions:
         - eligible_source_registration
       blockers:
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
 
   endpoint_readout:
     description: Result status for one named endpoint, population, and time frame, from a results record or primary document.
@@ -192,7 +192,7 @@ families:
         - eligible_source_registration
       blockers:
         - endpoint_alignment_review_queue_not_drained
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
 
   timing_slip:
     description: A movement of a registered study date such as primary completion or study completion, measured between two source snapshots.
@@ -218,7 +218,7 @@ families:
       unsatisfied_preconditions:
         - eligible_source_registration
       blockers:
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
 
   enrollment_site_change:
     description: A change in enrollment count, enrollment type, or registered site roster for one study.
@@ -244,7 +244,7 @@ families:
       unsatisfied_preconditions:
         - eligible_source_registration
       blockers:
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
 
   regulatory_outcome:
     description: Jurisdiction-specific disposition of one named application or product, as published by the regulator.
@@ -272,7 +272,7 @@ families:
         - eligible_source_registration
       blockers:
         - regulatory_sources_not_production_ingest_allowed
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
 
   financing_dilution_event:
     description: An issuance, offering, or other capital-structure change attributed to the party that owns a program.
@@ -302,7 +302,7 @@ families:
         - eligible_identity_contract
         - eligible_source_registration
       blockers:
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
         - reviewed_point_in_time_company_identity_contract
         - versioned_internal_pit_adapter_with_unavailable_state_semantics
 
@@ -334,7 +334,7 @@ families:
         - eligible_identity_contract
         - eligible_source_registration
       blockers:
-        - required_source_not_production_ingest_allowed
+        - required_source_not_activation_eligible
         - reviewed_point_in_time_company_identity_contract
         - versioned_document_and_exact_span_read_contract
 

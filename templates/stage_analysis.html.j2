@@ -840,7 +840,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
      SURFACE F — RESEARCH (per-company thesis index + reader)
      ============================================================ #}
   <section class="surface" id="s-research" role="tabpanel" hidden>
-    <p class="subcap"><b>{{ t('A one-paragraph primer on each company.', '每家公司的一段简介。') }}</b> {{ t('What the business does and where its revenue comes from — background, never a recommendation or a signal. Filter by ticker above.', '公司在做什么、收入来自哪里 —— 仅为背景资料，绝非推荐或信号。可用上方搜索按代码筛选。') }}</p>
+    <p class="subcap"><b>{{ t('A one-paragraph primer on each company.', '每家公司的一段简介。') }}</b> {{ t('What the business does and where its revenue comes from — background, never a recommendation or a signal. Filter by ticker above.', '公司在做什么、收入来自哪里 —— 仅供参考资料，绝非推荐或信号。可用上方搜索按代码筛选。') }}</p>
     <p class="rescount" id="res-count"></p>
     <div id="res-body" aria-live="polite">
       <div style="padding:44px 0;text-align:center"><div class="spinner"></div><span class="mut">{{ t('Loading research…', '正在加载研究…') }}</span></div>
@@ -1934,7 +1934,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     if(!pos.length&&!neg.length&&!r.key_quote){
       html+='<div class="reader-empty">'+LT('The scored tone is in the header, but this call’s written summary wasn’t imported. The tone and result numbers above still apply.','已在上方给出语气评分，但这场电话会的文字纪要暂未导入。上方的语气与结果分数依然有效。')+'</div>';
     }
-    html+='<p class="provfoot" style="margin-top:6px">'+LT('Summarised from the earnings call by a language model, for background only — never a recommendation or a signal.','由语言模型对财报电话会所作的摘要，仅供背景参考 —— 绝非推荐或信号。')+'</p>';
+    html+='<p class="provfoot" style="margin-top:6px">'+LT('Summarised from the earnings call by a language model, for background only — never a recommendation or a signal.','由语言模型对财报电话会所作的摘要，仅供参考 —— 绝非推荐或信号。')+'</p>';
     qs('#reader-body').innerHTML=html;
     drawer.hidden=false;
     /* force a reflow so the transition runs from the off-screen state, then

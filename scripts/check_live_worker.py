@@ -14,6 +14,10 @@ requests; safe to run locally.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
 _PROBE = ["AAPL", "SPY", "0700.HK", "GC=F"]      # US (Polygon) + HK + future (Yahoo) routing
 _BASES = {"trade", "minute", "day", "prev", "regular"}
@@ -23,7 +27,6 @@ def _resolve(argv) -> str | None:
     if len(argv) > 1 and argv[1].strip():
         return argv[1].strip().rstrip("/")
     try:
-        sys.path.insert(0, ".")
         from scripts.build_live_overlay import resolve_worker_url
         return resolve_worker_url() or None
     except Exception:  # noqa: BLE001

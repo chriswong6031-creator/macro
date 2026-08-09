@@ -1,11 +1,11 @@
 """Tests for BC-M0a family clock activation.
 
-These pin the honest answer as of m0a.2 and, more importantly, pin WHY it is
+These pin the honest answer as of m0a.3 and, more importantly, pin WHY it is
 that answer.  BC-O1b now exists, so the ``o1b_outcome_writer`` precondition is
-discharged for all nine outcome families.  Every clock nevertheless stays
-closed, because eight families require a ClinicalTrials.gov Record History,
-Drugs@FDA, openFDA or SEC source that is NOT production-ingest-allowed, and the
-ninth is gated on an identity contract that does not exist.
+discharged for all nine outcome families.  Record History is rights-reviewed,
+but its committed runtime switch is off and its committed allowlist is empty;
+the other source and identity blockers remain.  Every clock therefore stays
+closed.
 
 The tests below prove three separate things:
 
@@ -86,7 +86,7 @@ def policy_sha256() -> str:
 @pytest.fixture(scope="module")
 def sources() -> dict[str, Any]:
     document, _ = load_yaml_document(SOURCE_REGISTRY)
-    return document["sources"]
+    return document
 
 
 @pytest.fixture()
@@ -128,21 +128,25 @@ def test_without_the_writer_every_family_is_blocked_on_it(
 # ---- the honest answer today ----------------------------------------------
 
 
-def test_exactly_one_biocatalyst_source_is_production_ingest_allowed(
+def test_record_history_is_rights_allowed_but_not_activation_eligible(
     sources: dict,
 ) -> None:
-    # This is the evidence the whole evaluation turns on; if it changes, the
-    # clock answer changes with it.
-    eligible = sorted(
+    registrations = sources["sources"]
+    rights_allowed = sorted(
         source_id
-        for source_id, registration in sources.items()
+        for source_id, registration in registrations.items()
         if registration.get("production_ingest_allowed") is True
     )
-    assert eligible == ["clinicaltrials_gov_v2"]
-    assert sources[RECORD_HISTORY]["production_ingest_allowed"] is False
-    assert sources[RECORD_HISTORY]["rights_state"] == (
-        "operator_review_required_before_enable"
+    assert rights_allowed == [
+        "clinicaltrials_gov_record_history",
+        "clinicaltrials_gov_v2",
+    ]
+    assert registrations[RECORD_HISTORY]["rights_state"] == (
+        "official_terms_operator_reviewed_for_bounded_beta"
     )
+    control = sources["b2_history_canary"]
+    assert control["default_enabled"] is False
+    assert control["default_allowlist"] == []
 
 
 def test_no_family_clock_opens_today_and_each_names_its_blocker(
@@ -194,7 +198,9 @@ def test_the_frozen_policy_gate_states_match_the_evaluated_evidence(
 
 def _sources_with_eligible_record_history(sources: dict) -> dict:
     widened = copy.deepcopy(sources)
-    widened[RECORD_HISTORY]["production_ingest_allowed"] = True
+    widened["sources"][RECORD_HISTORY]["production_ingest_allowed"] = True
+    widened["b2_history_canary"]["default_enabled"] = True
+    widened["b2_history_canary"]["default_allowlist"] = ["NCT00000001"]
     return widened
 
 
@@ -202,7 +208,11 @@ def test_the_trial_families_would_open_once_their_source_is_eligible(
     policy: dict, sources: dict
 ) -> None:
     decisions = _decisions(policy, _sources_with_eligible_record_history(sources))
-    for family_id in ("trial_progression_termination", "timing_slip", "enrollment_site_change"):
+    for family_id in (
+        "trial_progression_termination",
+        "timing_slip",
+        "enrollment_site_change",
+    ):
         decision = decisions[family_id]
         assert decision.clock_state == CLOCK_OPENED, family_id
         assert decision.blockers == (), family_id
@@ -364,7 +374,7 @@ def _opened_payload(policy_sha256: str, **overrides: Any) -> dict[str, Any]:
         "contract_id": FAMILY_CLOCK_ACTIVATION_CONTRACT_ID,
         "schema_version": "1.0.0",
         "family_id": "trial_progression_termination",
-        "policy_version": "m0a.2",
+        "policy_version": "m0a.3",
         "policy_sha256": policy_sha256,
         "clock_state": CLOCK_OPENED,
         "evaluated_at": EVALUATED_AT,

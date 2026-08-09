@@ -44,8 +44,7 @@ from pathlib import Path
 
 # ── repo path ─────────────────────────────────────────────────────────────────
 _REPO = Path(__file__).resolve().parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+sys.path.insert(0, str(_REPO))
 
 from engine.options_matrix import build_matrix
 from engine.thetadata_store import clear_parquet_cache

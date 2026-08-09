@@ -65,8 +65,11 @@ from typing import Iterator
 
 import pandas as pd
 
-from engine import tape_flow as tf
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine import tape_flow as tf  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 
