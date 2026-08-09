@@ -35,6 +35,7 @@ import hashlib
 import json
 import logging
 import os
+import sys
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
@@ -42,13 +43,16 @@ from pathlib import Path
 
 import pandas as pd
 
-from collectors.polygon_options import PolygonOptions
-from engine.options_signal_episode import (
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.polygon_options import PolygonOptions  # noqa: E402
+from engine.options_signal_episode import (  # noqa: E402
     PRICE_BASIS,
     PRICE_RECEIPT_SCHEMA,
     TIMESTAMP_BASIS,
 )
-from lib import config
+from lib import config  # noqa: E402
 
 log = logging.getLogger("polygon_intraday")
 GROUP = "intraday"

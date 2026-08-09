@@ -58,8 +58,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # sys.path[0] is scripts/, NOT the repo root — and this module was stdlib-only until
 # the session stamp below. Put ROOT on the path before the first ``lib`` import or
 # the nightly dies on ImportError at collection time.
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 from lib import nyse_calendar  # noqa: E402 — must follow the sys.path bootstrap above
 

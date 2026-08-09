@@ -50,7 +50,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine.marketing import theme_proxy
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.marketing import theme_proxy  # noqa: E402
 
 log = logging.getLogger("build_theme_proxy_map")
 

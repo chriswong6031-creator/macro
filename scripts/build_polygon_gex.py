@@ -31,13 +31,18 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
-from collectors.polygon_options import PolygonOptions
-from engine.gex_engine import compute_gex
-from lib import config, store, nyse_calendar
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from collectors.polygon_options import PolygonOptions  # noqa: E402
+from engine.gex_engine import compute_gex  # noqa: E402
+from lib import config, store, nyse_calendar  # noqa: E402
 
 log = logging.getLogger(__name__)
 
