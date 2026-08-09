@@ -41,6 +41,8 @@ THREE CHECKS
       scripts/build_site.py
       engine/neuralweb/cortex.py
       engine/neuralweb/ask_brain.py
+      engine/inflation_intelligence.py                 (all-false state producer)
+      engine/neuralweb/world_state.py                  (all-false lobe builder)
       engine/sector_intelligence/contracts.py      (enforcement-only validator)
       engine/biocatalyst/sector_packet.py          (facts-only packet state builder)
       docs/research/                                 (research docs; prefix match)
@@ -130,6 +132,13 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "scripts/build_site.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/ask_brain.py",
+    # Release Radar inflation state builders (#5153): the producer emits a fixed
+    # all-false descriptive authority mirror, and World State writes the same
+    # constant mirror onto both its null and bounded context lobes. Neither reads
+    # source `allowed_actions` nor branches on the field, so it cannot become a
+    # behavior wire (same RUL-NW9 state-builder warrant as the factor producer).
+    "engine/inflation_intelligence.py",
+    "engine/neuralweb/world_state.py",
     # Sector-intelligence contract enforcement may inspect allowed_actions only
     # to reject grants above the declared authority cap. It never uses the field
     # as a runtime behavior switch.
