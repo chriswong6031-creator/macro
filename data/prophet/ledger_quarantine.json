@@ -75,7 +75,12 @@
       "reason": "graded_on_pre_origination_clock",
       "quarantined": "2026-08-06",
       "close_date": "2026-08-04",
-      "origination_date": "2026-08-05"
+      "origination_date": "2026-08-05",
+      "sources": [
+        "derived_chronology",
+        "ledger_correction"
+      ],
+      "correction_reason": "outage-era plan was published after its entry-price session; the hypothetical timely plan geometry cannot be reconstructed; proven date facts are projected but this terminal outcome remains excluded from record claims"
     },
     {
       "id": "REZI-BULL-20260703",

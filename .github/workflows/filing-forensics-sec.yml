@@ -85,6 +85,14 @@ jobs:
           # gitignored source trees on every run (measured current_files: 0 nightly), which
           # forced a full cold restore of the whole growing store; a warm root reduces the
           # restore to local hash verification (--verify-local-restore).
+          #
+          # --reuse-local-archive extends that warm root to the ACQUIRE leg. The ~128MB of
+          # 10-K/10-Q primary documents re-downloaded nightly is already retained here
+          # (127.96MB -> 127.93MB across 08-05..08-08, zero new filings), so a sha256-verified
+          # local hit reuses the ORIGINAL retrieval receipt instead of re-fetching identical
+          # bytes — SEC fair-access courtesy, and no cache hit ever mints a fresh clock. A cold,
+          # ambiguous, or unverifiable archive silently falls back to fetching; Submissions are
+          # always fetched fresh, which is how a new filing is discovered.
           RAW="$HOME/.cache/mm-ffsec/raw"
           ARCHIVE="$HOME/.cache/mm-ffsec/archive"
           mkdir -p "$RAW" "$ARCHIVE"
@@ -92,7 +100,7 @@ jobs:
           python -m scripts.run_fundamental_forensics_wave2 \
             --targets-file config/fundamental_forensics/wave2_targets.v1.json \
             --raw-root "$RAW" --archive-root "$ARCHIVE" \
-            --restore --verify-local-restore --acquire --require-complete-acquisition \
+            --restore --verify-local-restore --acquire --reuse-local-archive --require-complete-acquisition \
             --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
 
           computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.

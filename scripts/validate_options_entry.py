@@ -60,13 +60,17 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from engine.options_stamp import STAMP_COLS
-from lib import config
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from engine.options_stamp import STAMP_COLS  # noqa: E402
+from lib import config  # noqa: E402
 
 GATE_DIR = config.data_dir() / "options_entry"
 GATE_PATH = GATE_DIR / "gate.json"

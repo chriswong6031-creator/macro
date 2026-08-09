@@ -25,16 +25,21 @@ HONESTY:
 """
 from __future__ import annotations
 import os
+import sys
 import tempfile
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
-import lib.store as store
-from engine.trial_ledger import TrialLedger
+_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_ROOT))
+
+import lib.store as store  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 from engine.validation import (
     backtest_core, deflated_sharpe, dsr_verdict, newey_west_tstat,
     block_bootstrap_ci,
-)
+)  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA = os.path.join(ROOT, "data")
