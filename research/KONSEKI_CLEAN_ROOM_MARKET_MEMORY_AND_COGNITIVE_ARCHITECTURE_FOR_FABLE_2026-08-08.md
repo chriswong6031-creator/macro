@@ -328,7 +328,13 @@ Each source includes:
 - `pit_basis`;
 - `availability_class`;
 - `market_session`;
-- quality status, flags, staleness, and imputation.
+- quality status, flags, observation-time staleness, and imputation;
+- deterministic `age_at_cutoff_seconds` in the context projection.
+
+`receipt_id` hashes the immutable source evidence, including its clocks,
+artifact, vintage, revision, and observation-time quality. It deliberately does
+not hash `age_at_cutoff_seconds`: replaying the same receipt at a later valid
+cutoff changes the context ID and age projection, not the durable receipt ID.
 
 Allowed availability classes explicitly include `intraday`, `session_close`, `eod_vendor_snapshot`, `open_interest_eod`, scheduled releases, filings, news, revisions, and reconstructed snapshots.
 
@@ -835,7 +841,7 @@ Wave 1 owned additions, kept in the current Neural Web read namespace:
 - `app/market_memory.py` v2 routes — authenticated requested-as-of read; no label co-mingling.
 - `tests/test_market_memory_pit.py` — vintage, identity, cutoff, missingness, one-writer, and immutability fixtures.
 
-Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. `scripts/stamp_options_state.py` may append nullable `market_memory_context_id`, packet hash, cutoff/basis, source refs, and missingness receipt to the existing event/stamp row. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
+Options integration extends the existing one-writer paths. The options program's `options.signal_episode/v1` owns append-only per-print/per-campaign episodes, its durable date-keyed raw stage, H+60 proxy labels, executable contract outcomes, sparse selection, and lifecycle; none of those records is a Market Memory artifact. The current v1 episode contract does not admit Market Memory fields. Until the options owner versions that schema, the join remains an external reference envelope containing only `context_id`, packet hash, cutoff/basis, source refs, and missingness with `context_only=true` and weight `0`; Market Memory does not mutate the episode or outcome ledgers. `scripts/grade_us_board.py` remains the later-outcome writer. An option-native experiment may use the existing Prophet Doors pattern—immutable event ledger plus separately matured grade ledger—only after preregistration. It imports `AsKnownAtReader`; it must not create `options_world_state`, `options_history_context`, another macro/news snapshot store, another options episode ledger, or another board ledger.
 
 ### 11.2 Wave 1 acceptance tests
 

@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
+from threading import BoundedSemaphore
 from types import MappingProxyType
 
 import pytest
@@ -108,40 +112,574 @@ def test_macro_composition_preserves_source_evidence_and_blocks_authority(
     assert payload["authority"]["may_train_prophet"] is False
 
 
-def test_symbol_composition_reads_the_bounded_materialized_atlas(tmp_path) -> None:
-    source = {
-        "ticker": "AAPL",
-        "as_of": "2026-08-07",
-        "taxonomy_version": "sea.test",
-        "align_now": 2,
-        "bull_now": {"W": True},
-        "grids": {"W": {"date": "2026-08-01", "receipt": {"horizons": {}}}},
+def _atlas_cell(n: int = 10) -> dict:
+    return {
+        "n": n,
+        "n_events": n,
+        "n_names": min(n, 3),
+        "n_distinct_years": min(n, 4),
+        "med": 4.0,
+        "mean": 5.0,
+        "win": 60.0,
+        "n_exc": n,
+        "med_exc": 1.0,
+        "mean_exc": 2.0,
+        "win_exc": 55.0,
     }
-    stockdata = tmp_path / "site" / "stockdata"
-    stockdata.mkdir(parents=True)
-    (stockdata / "AAPL.json").write_text(
-        json.dumps({"event_atlas": source}), encoding="utf-8"
-    )
 
-    payload = mm.symbol_context(tmp_path, "aapl")
 
-    assert payload["source_schema"] == "event_atlas.v1"
-    assert payload["grids"] == source["grids"]
+def _atlas_posterior(n: int = 3, *, k: int = 12) -> dict:
+    weight = round(n / (n + k), 3) if n > 0 else 0.0
+    return {
+        "med": 4.0,
+        "mean": 5.0,
+        "win": 60.0,
+        "med_exc": 1.0,
+        "mean_exc": 2.0,
+        "win_exc": 55.0,
+        "w": weight,
+        "w_exc": weight,
+        "n_child": n,
+        "k": k,
+    }
+
+
+def _atlas_horizon_core() -> dict:
+    global_cell = _atlas_cell(10)
+    archetype = _atlas_cell(7)
+    sector = _atlas_cell(5)
+    name = _atlas_cell(3)
+    return {
+        "global": global_cell,
+        "archetype": archetype,
+        "sector": sector,
+        "name": name,
+        "arch_post": _atlas_posterior(7, k=50),
+        "name_post": _atlas_posterior(3),
+        "n_global": global_cell["n"],
+        "n_archetype": archetype["n"],
+        "n_sector": sector["n"],
+        "n_name": name["n"],
+    }
+
+
+def _atlas_horizon() -> dict:
+    return {
+        **_atlas_horizon_core(),
+        "post2010": _atlas_horizon_core(),
+        "era_note": None,
+    }
+
+
+def _stock_record(ticker: str = "AAPL") -> dict:
+    receipt = {
+        "ticker": ticker,
+        "grid": "W",
+        "direction": "bear",
+        "class_key": {
+            "depth_class": "mid",
+            "level": "above_zero",
+            "washout_len_class": "na",
+            "align_class": 1,
+        },
+        "taxonomy_version": "sea.v1",
+        "tier": "display",
+        "authority": {
+            "tier": "display",
+            "horizon_role": "context",
+            "may_rank": False,
+            "may_gate": False,
+            "may_size": False,
+            "may_escalate": False,
+        },
+        "k_name": 12,
+        "k_arch": 50,
+        "horizons": {"13w": _atlas_horizon(), "26w": _atlas_horizon()},
+        "caveats": {
+            "survivorship": "Current-membership backfill.",
+            "clustering": "Episodes overlap.",
+            "era": "Post-2010 is shown separately.",
+            "authority": "Display context only.",
+        },
+        "archetype": "mixed",
+        "sector": "technology",
+    }
+    return {
+        "ticker": ticker,
+        "asof": "2026-08-07",
+        "event_atlas": {
+            "schema": "event_atlas.live_state.v1",
+            "ticker": ticker,
+            "as_of": "2026-08-07",
+            "taxonomy_version": "sea.v1",
+            "tier": "display",
+            "align_now": 1,
+            "bull_now": {"2B": False, "3B": False, "W": True},
+            "grids": {
+                "W": {
+                    "date": "2026-08-01",
+                    "direction": "bear",
+                    "depth_pctile": 63.97,
+                    "depth_class": "mid",
+                    "level": "above_zero",
+                    "washout_len": 0,
+                    "washout_len_class": "na",
+                    "align_class": 1,
+                    "era": "post2010",
+                    "regime_bucket": "lo_vix_above200",
+                    "archetype_at_event": "mixed",
+                    "bars_since": 2,
+                    "live_fresh": True,
+                    "bull_now": True,
+                    "receipt": receipt,
+                }
+            },
+        },
+    }
+
+
+def test_symbol_composition_strictly_projects_the_materialized_atlas(tmp_path) -> None:
+    source = _stock_record()
+
+    payload = mm.symbol_context(tmp_path, "aapl", stock_record=source)
+
+    assert payload["source_schema"] == "event_atlas.live_state.v1"
+    assert payload["available"] is True
+    assert payload["grids"]["W"]["receipt"]["horizons"]["13w"]["name_post"] == {
+        "med": 4.0,
+        "win": 60.0,
+        "med_exc": 1.0,
+        "w": 0.2,
+    }
+    assert "archetype_at_event" not in payload["grids"]["W"]
     assert payload["universe_basis"] == "current_membership_survivor_biased_backfill"
     assert payload["authority"]["may_gate"] is False
 
 
-def test_symbol_composition_fails_closed_on_missing_or_oversized_artifact(
-    tmp_path,
-) -> None:
-    missing = mm.symbol_context(tmp_path, "AAPL")
-    assert missing["available"] is False
+def test_symbol_composition_preserves_typed_unavailable_grid_state(tmp_path) -> None:
+    source = _stock_record()
+    source["event_atlas"]["align_now"] = 0
+    source["event_atlas"]["bull_now"]["W"] = None
+    source["event_atlas"]["grids"]["W"].update(
+        {"bars_since": None, "live_fresh": False, "bull_now": None}
+    )
 
+    payload = mm.symbol_context(tmp_path, "AAPL", stock_record=source)
+
+    assert payload["available"] is True
+    assert payload["bull_now"]["W"] is None
+    assert payload["grids"]["W"]["bars_since"] is None
+    assert payload["grids"]["W"]["live_fresh"] is False
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "future_date",
+        "wrong_schema",
+        "wrong_taxonomy",
+        "outcome_align",
+        "unknown_field",
+        "future_horizon_field",
+    ],
+)
+def test_symbol_composition_fails_closed_on_schema_or_outcome_drift(
+    tmp_path, mutation: str
+) -> None:
+    source = _stock_record()
+    atlas = source["event_atlas"]
+    if mutation == "future_date":
+        source["asof"] = atlas["as_of"] = "2099-01-01"
+    elif mutation == "wrong_schema":
+        atlas["schema"] = "event_atlas.v1"
+    elif mutation == "wrong_taxonomy":
+        atlas["taxonomy_version"] = {"future": "winner"}
+    elif mutation == "outcome_align":
+        atlas["align_now"] = "outcome:winner"
+    elif mutation == "unknown_field":
+        atlas["future_return"] = 999
+    else:
+        atlas["grids"]["W"]["receipt"]["horizons"]["13w"][
+            "future_return"
+        ] = 999
+
+    payload = mm.symbol_context(tmp_path, "AAPL", stock_record=source)
+
+    assert payload["available"] is False
+    assert payload["reason"] == "symbol_memory_unavailable"
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "posterior_support",
+        "receipt_archetype",
+        "post2010_support",
+        "excluded_support",
+        "era_note",
+        "cross_cell_support",
+        "depth_class",
+        "washout_class",
+    ],
+)
+def test_symbol_composition_rejects_incoherent_atlas_evidence(
+    tmp_path, mutation: str
+) -> None:
+    source = _stock_record()
+    grid = source["event_atlas"]["grids"]["W"]
+    horizon = grid["receipt"]["horizons"]["13w"]
+    if mutation == "posterior_support":
+        horizon["name_post"].update(
+            {"n_child": 9_999_999, "k": 9_999, "w": 1.0, "med": 999_999.0}
+        )
+    elif mutation == "receipt_archetype":
+        grid["receipt"]["archetype"] = "unrelated cohort"
+    elif mutation == "post2010_support":
+        horizon["post2010"]["name"]["n"] = horizon["name"]["n"] + 1
+        horizon["post2010"]["n_name"] = horizon["post2010"]["name"]["n"]
+    elif mutation == "excluded_support":
+        horizon["name"]["n_exc"] = horizon["name"]["n"] + 1
+    elif mutation == "era_note":
+        horizon["era_note"] = "post-2010 reads positive on n=999999"
+    elif mutation == "cross_cell_support":
+        horizon["name"].update({"n": 11, "n_events": 11, "n_exc": 11})
+        horizon["n_name"] = 11
+        horizon["name_post"].update(
+            {
+                "n_child": 11,
+                "w": round(11 / 23, 3),
+                "w_exc": round(11 / 23, 3),
+            }
+        )
+    elif mutation == "depth_class":
+        grid["depth_class"] = "high"
+        grid["receipt"]["class_key"]["depth_class"] = "high"
+    else:
+        grid.update(
+            {"level": "below_zero", "washout_len": 3, "washout_len_class": "medium"}
+        )
+        grid["receipt"]["class_key"].update(
+            {"level": "below_zero", "washout_len_class": "medium"}
+        )
+
+    payload = mm.symbol_context(tmp_path, "AAPL", stock_record=source)
+
+    assert payload["available"] is False
+    assert payload["reason"] == "symbol_memory_unavailable"
+
+
+def test_symbol_composition_never_reads_a_local_ignored_artifact(tmp_path) -> None:
     stockdata = tmp_path / "site" / "stockdata"
     stockdata.mkdir(parents=True)
-    (stockdata / "AAPL.json").write_bytes(b" " * (mm._MAX_STOCKDATA_BYTES + 1))
-    oversized = mm.symbol_context(tmp_path, "AAPL")
-    assert oversized["available"] is False
+    (stockdata / "AAPL.json").write_text(json.dumps(_stock_record()), encoding="utf-8")
+
+    payload = mm.symbol_context(tmp_path, "AAPL")
+
+    assert payload["available"] is False
+
+
+class _SymbolResponse:
+    def __init__(
+        self,
+        url: str,
+        body: bytes,
+        *,
+        status: int = 200,
+        headers: dict | None = None,
+        redirect: bool = False,
+    ) -> None:
+        self.url = url
+        self.body = body
+        self.status_code = status
+        self.is_redirect = redirect
+        self.headers = headers or {
+            "Content-Type": "application/json",
+            "Content-Length": str(len(body)),
+        }
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise api.requests.HTTPError("remote failure")
+
+    def iter_content(self, *, chunk_size: int):
+        return (
+            self.body[index : index + chunk_size]
+            for index in range(0, len(self.body), chunk_size)
+        )
+
+
+def test_symbol_transport_is_fixed_origin_bounded_and_no_redirect(monkeypatch) -> None:
+    body = json.dumps(_stock_record()).encode("utf-8")
+    calls = []
+
+    def fake_get(url, **kwargs):
+        calls.append((url, kwargs))
+        return _SymbolResponse(url, body)
+
+    monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
+    monkeypatch.setattr(api.requests, "get", fake_get)
+
+    record = api._fetch_stock_record("https://public.example", "AAPL")
+
+    assert record["ticker"] == "AAPL"
+    assert calls == [
+        (
+            "https://public.example/stockdata/AAPL.json",
+            {
+                "headers": {
+                    "Accept": "application/json",
+                    "Accept-Encoding": "identity",
+                    "User-Agent": api._SYMBOL_FETCH_USER_AGENT,
+                },
+                "timeout": api._SYMBOL_FETCH_TIMEOUT_SECONDS,
+                "stream": True,
+                "allow_redirects": False,
+            },
+        )
+    ]
+
+    monkeypatch.setattr(
+        api.requests,
+        "get",
+        lambda url, **_kwargs: _SymbolResponse(
+            "https://169.254.169.254/latest",
+            body,
+            status=302,
+            redirect=True,
+        ),
+    )
+    with pytest.raises(api._SymbolDataError, match="redirected"):
+        api._fetch_stock_record("https://public.example", "AAPL")
+
+
+def test_symbol_transport_refuses_private_origins_before_request(monkeypatch) -> None:
+    monkeypatch.setattr(
+        api.requests,
+        "get",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("network")),
+    )
+
+    with pytest.raises(api._SymbolDataError, match="private"):
+        api._fetch_stock_record("https://127.0.0.1", "AAPL")
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b'{"ticker":"AAPL","ticker":"winner"}',
+        b'{"ticker":"AAPL","score":NaN}',
+    ],
+)
+def test_symbol_transport_rejects_ambiguous_or_nonfinite_json(monkeypatch, body) -> None:
+    monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
+    monkeypatch.setattr(
+        api.requests,
+        "get",
+        lambda url, **_kwargs: _SymbolResponse(url, body),
+    )
+
+    with pytest.raises(api._SymbolDataError, match="strict JSON"):
+        api._fetch_stock_record("https://public.example", "AAPL")
+
+
+@pytest.mark.parametrize("lie", ["header", "body"])
+def test_symbol_transport_rejects_oversized_remote_objects(monkeypatch, lie) -> None:
+    monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
+    if lie == "header":
+        body = b"{}"
+        headers = {
+            "Content-Type": "application/json",
+            "Content-Length": str(mm._MAX_STOCKDATA_BYTES + 1),
+        }
+    else:
+        body = b" " * (mm._MAX_STOCKDATA_BYTES + 1)
+        headers = {"Content-Type": "application/json"}
+    monkeypatch.setattr(
+        api.requests,
+        "get",
+        lambda url, **_kwargs: _SymbolResponse(url, body, headers=headers),
+    )
+
+    with pytest.raises(api._SymbolDataError, match="size bound"):
+        api._fetch_stock_record("https://public.example", "AAPL")
+
+
+def test_symbol_cache_keeps_only_validated_detached_projection(monkeypatch, tmp_path) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    calls = []
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def fake_fetch(_base, _symbol):
+        calls.append(_symbol)
+        return _stock_record(_symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", fake_fetch)
+
+    first = api._load_symbol_context(tmp_path, "AAPL")
+    first["grids"]["W"]["direction"] = "mutated"
+    second = api._load_symbol_context(tmp_path, "AAPL")
+
+    assert calls == ["AAPL"]
+    assert second["grids"]["W"]["direction"] == "bear"
+    api._reset_symbol_rate_limit_for_tests()
+
+
+def _wait_for_symbol_fetches_to_finish(timeout: float = 2.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with api._symbol_data_lock:
+            if not api._symbol_fetch_inflight:
+                return
+        time.sleep(0.01)
+    raise AssertionError("symbol fetch lane did not drain")
+
+
+def test_symbol_fetch_singleflight_rejects_duplicate_cold_waiters(
+    monkeypatch, tmp_path
+) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    started = threading.Event()
+    release = threading.Event()
+    calls = 0
+    calls_lock = threading.Lock()
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def blocked_fetch(_base, symbol):
+        nonlocal calls
+        with calls_lock:
+            calls += 1
+        started.set()
+        assert release.wait(2.0)
+        return _stock_record(symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
+    with ThreadPoolExecutor(max_workers=8) as callers:
+        first = callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+        assert started.wait(1.0)
+        duplicates = [
+            callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+            for _ in range(7)
+        ]
+        for duplicate in duplicates:
+            with pytest.raises(api._SymbolDataBusy, match="already in progress"):
+                duplicate.result(timeout=1.0)
+        release.set()
+        assert first.result(timeout=1.0)["available"] is True
+
+    _wait_for_symbol_fetches_to_finish()
+    assert calls == 1
+    api._reset_symbol_rate_limit_for_tests()
+
+
+def test_symbol_fetch_lane_saturation_fails_fast(monkeypatch, tmp_path) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    started = threading.Event()
+    release = threading.Event()
+    monkeypatch.setattr(api, "_symbol_fetch_slots", BoundedSemaphore(1))
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def blocked_fetch(_base, symbol):
+        started.set()
+        assert release.wait(2.0)
+        return _stock_record(symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
+    with ThreadPoolExecutor(max_workers=1) as caller:
+        first = caller.submit(api._load_symbol_context, tmp_path, "AAPL")
+        assert started.wait(1.0)
+        before = time.monotonic()
+        with pytest.raises(api._SymbolDataBusy, match="saturated"):
+            api._load_symbol_context(tmp_path, "MSFT")
+        assert time.monotonic() - before < 0.25
+        release.set()
+        assert first.result(timeout=1.0)["available"] is True
+
+    _wait_for_symbol_fetches_to_finish()
+    api._reset_symbol_rate_limit_for_tests()
+
+
+def test_symbol_fetch_caller_has_a_real_wall_clock_deadline(
+    monkeypatch, tmp_path
+) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    release = threading.Event()
+    monkeypatch.setattr(api, "_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS", 0.04)
+    monkeypatch.setattr(api, "_SYMBOL_FETCH_CALLER_GRACE_SECONDS", 0.01)
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def blocked_fetch(_base, symbol):
+        assert release.wait(2.0)
+        return _stock_record(symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
+    before = time.monotonic()
+    with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
+        api._load_symbol_context(tmp_path, "AAPL")
+    assert time.monotonic() - before < 0.25
+    release.set()
+    _wait_for_symbol_fetches_to_finish()
+    api._reset_symbol_rate_limit_for_tests()
+
+
+def test_symbol_transport_enforces_total_deadline_on_trickling_body(
+    monkeypatch,
+) -> None:
+    body = json.dumps(_stock_record()).encode("utf-8")
+
+    class DripResponse(_SymbolResponse):
+        def iter_content(self, *, chunk_size: int):
+            del chunk_size
+            time.sleep(0.03)
+            yield body
+
+    monkeypatch.setattr(api, "_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS", 0.01)
+    monkeypatch.setattr(api, "_require_public_hostname", lambda _host: None)
+    monkeypatch.setattr(
+        api.requests,
+        "get",
+        lambda url, **_kwargs: DripResponse(url, body),
+    )
+
+    with pytest.raises(api._SymbolDataError, match="total deadline"):
+        api._fetch_stock_record("https://public.example", "AAPL")
+
+
+def test_stockdata_base_caches_validated_config_until_file_changes(
+    monkeypatch, tmp_path
+) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    monkeypatch.delenv("R2_PUBLIC_BASE", raising=False)
+    config = tmp_path / "config.yml"
+    config.write_text(
+        "r2_data_plane:\n  public_base: https://public.example\n",
+        encoding="utf-8",
+    )
+    calls = 0
+    safe_load = api.yaml.safe_load
+
+    def counted_load(handle):
+        nonlocal calls
+        calls += 1
+        return safe_load(handle)
+
+    monkeypatch.setattr(api.yaml, "safe_load", counted_load)
+
+    assert api._stockdata_base(tmp_path) == "https://public.example"
+    assert api._stockdata_base(tmp_path) == "https://public.example"
+    assert calls == 1
+    config.write_text(
+        "r2_data_plane:\n  public_base: https://second-public.example\n",
+        encoding="utf-8",
+    )
+    assert api._stockdata_base(tmp_path) == "https://second-public.example"
+    assert calls == 2
+    api._reset_symbol_rate_limit_for_tests()
 
 
 def test_macro_api_is_entitled_private_and_bounded(monkeypatch) -> None:
@@ -186,8 +724,8 @@ def test_auth_and_entitlement_errors_are_private_and_never_shared_cached(
 
 def test_symbol_api_statuses_and_invalid_input(monkeypatch) -> None:
     monkeypatch.setattr(
-        mm,
-        "symbol_context",
+        api,
+        "_load_symbol_context",
         lambda root, ticker: {
             "schema": mm.SYMBOL_SCHEMA,
             "available": ticker.upper() == "AAPL",
@@ -197,14 +735,9 @@ def test_symbol_api_statuses_and_invalid_input(monkeypatch) -> None:
     client = _client()
     assert client.get("/api/market-memory/v1/symbol/aapl").status_code == 200
     assert client.get("/api/market-memory/v1/symbol/ZZZZ").status_code == 404
-
-    def invalid(root, ticker):
-        raise mm.InvalidTicker("bad ticker")
-
-    monkeypatch.setattr(mm, "symbol_context", invalid)
-    response = client.get("/api/market-memory/v1/symbol/AAPL")
+    response = client.get("/api/market-memory/v1/symbol/AAPL%20X")
     assert response.status_code == 400
-    assert response.json()["detail"] == "bad ticker"
+    assert "canonical symbol" in response.json()["detail"]
 
 
 def test_symbol_api_has_bounded_user_and_peer_rate_limits(monkeypatch) -> None:
@@ -212,8 +745,8 @@ def test_symbol_api_has_bounded_user_and_peer_rate_limits(monkeypatch) -> None:
     monkeypatch.setattr(api, "_SYMBOL_USER_LIMIT", 2)
     monkeypatch.setattr(api, "_SYMBOL_PEER_LIMIT", 10)
     monkeypatch.setattr(
-        mm,
-        "symbol_context",
+        api,
+        "_load_symbol_context",
         lambda root, ticker: {
             "schema": mm.SYMBOL_SCHEMA,
             "available": True,
@@ -230,6 +763,63 @@ def test_symbol_api_has_bounded_user_and_peer_rate_limits(monkeypatch) -> None:
     assert blocked.headers["retry-after"] == "60"
     assert blocked.headers["cache-control"] == "private, no-store"
     assert blocked.headers["vary"] == "Authorization"
+    api._reset_symbol_rate_limit_for_tests()
+
+
+def test_user_rate_rejections_do_not_exhaust_the_shared_peer_bucket(
+    monkeypatch,
+) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+    monkeypatch.setattr(api, "_SYMBOL_USER_LIMIT", 1)
+    monkeypatch.setattr(api, "_SYMBOL_PEER_LIMIT", 10)
+    monkeypatch.setattr(
+        api,
+        "_load_symbol_context",
+        lambda root, ticker: {
+            "schema": mm.SYMBOL_SCHEMA,
+            "available": True,
+            "ticker": ticker,
+        },
+    )
+    client = _client()
+    headers = {api._SYMBOL_TRUSTED_PEER_HEADER: "shared-edge"}
+
+    assert client.get(
+        "/api/market-memory/v1/symbol/AAPL", headers=headers
+    ).status_code == 200
+    for ticker in ("MSFT", "NVDA", "TSLA", "AMZN"):
+        assert client.get(
+            f"/api/market-memory/v1/symbol/{ticker}", headers=headers
+        ).status_code == 429
+
+    with api._symbol_rate_lock:
+        assert len(api._symbol_rate_buckets["peer:shared-edge"]) == 1
+    api._reset_symbol_rate_limit_for_tests()
+
+
+@pytest.mark.parametrize(
+    ("error", "detail"),
+    [
+        (api._SymbolDataBusy("busy"), "busy"),
+        (api._SymbolDataError("failed"), "temporarily unavailable"),
+    ],
+)
+def test_symbol_api_transport_failures_are_private_retryable_503(
+    monkeypatch, error, detail
+) -> None:
+    api._reset_symbol_rate_limit_for_tests()
+
+    def fail(_root, _ticker):
+        raise error
+
+    monkeypatch.setattr(api, "_load_symbol_context", fail)
+    response = _client().get("/api/market-memory/v1/symbol/AAPL")
+
+    assert response.status_code == 503
+    assert detail in response.json()["detail"]
+    assert response.headers["retry-after"] == str(api._SYMBOL_FETCH_BUSY_RETRY_SECONDS)
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["vary"] == "Authorization"
     api._reset_symbol_rate_limit_for_tests()
 
 
@@ -290,9 +880,10 @@ def _as_known_at(**overrides):
                 "quality": {
                     "status": "ok",
                     "flags": [],
-                    "staleness_seconds": 300,
+                    "staleness_seconds": 3,
                     "imputed": False,
                 },
+                "age_at_cutoff_seconds": 300,
             },
             {
                 "receipt_id": MEMBERSHIP_SOURCE_RECEIPT,
@@ -324,9 +915,10 @@ def _as_known_at(**overrides):
                 "quality": {
                     "status": "ok",
                     "flags": [],
-                    "staleness_seconds": 72_300,
+                    "staleness_seconds": 3,
                     "imputed": False,
                 },
+                "age_at_cutoff_seconds": 72_300,
             },
             {
                 "receipt_id": CALENDAR_SOURCE_RECEIPT,
@@ -355,9 +947,10 @@ def _as_known_at(**overrides):
                 "quality": {
                     "status": "ok",
                     "flags": [],
-                    "staleness_seconds": 18_907_500,
+                    "staleness_seconds": 3,
                     "imputed": False,
                 },
+                "age_at_cutoff_seconds": 18_907_500,
             },
         ],
         "identity_receipt": {
@@ -497,9 +1090,10 @@ def _source_for_feature(feature_id):
         "quality": {
             "status": "ok",
             "flags": [],
-            "staleness_seconds": 300,
+            "staleness_seconds": 3,
             "imputed": False,
         },
+        "age_at_cutoff_seconds": 300,
     }
 
 
@@ -568,6 +1162,28 @@ def test_as_known_at_contract_is_content_addressed_label_free_and_read_only() ->
     )
     assert first["state_snapshot_ref"] is None
     assert mm.validate_as_known_at_context(first) == first
+
+
+def test_source_and_identity_receipt_ids_are_stable_across_later_cutoffs() -> None:
+    first = _as_known_at()
+    sources = deepcopy(first["source_receipts"])
+    for source in sources:
+        source["age_at_cutoff_seconds"] += 300
+
+    second = _as_known_at(
+        as_known_at="2026-08-07T20:10:00Z",
+        source_receipts=sources,
+        identity_receipt=deepcopy(first["identity_receipt"]),
+        feature_receipts=deepcopy(first["feature_receipts"]),
+    )
+
+    assert [row["receipt_id"] for row in second["source_receipts"]] == [
+        row["receipt_id"] for row in first["source_receipts"]
+    ]
+    assert second["identity_receipt"]["receipt_id"] == (
+        first["identity_receipt"]["receipt_id"]
+    )
+    assert second["context_id"] != first["context_id"]
 
 
 def test_as_known_at_operational_mode_rejects_future_observation() -> None:
@@ -663,12 +1279,18 @@ def test_as_known_at_public_reconstruction_preserves_later_observed_clock() -> N
             "pit_basis": "public_reconstructed",
         }
     )
+    _source(sources, PRICE_SOURCE_RECEIPT)["quality"]["staleness_seconds"] = (
+        2_088_000
+    )
     features = _as_known_at()["feature_receipts"]
     _feature(features, "price.ret_20d").update(
         {
             "observed_at": "2026-09-01T00:00:01Z",
             "pit_basis": "public_reconstructed",
         }
+    )
+    _feature(features, "price.ret_20d")["quality"]["staleness_seconds"] = (
+        2_088_001
     )
     _feature(features, "options.chain_surface_state")["observed_at"] = (
         "2026-09-01T00:00:01Z"
@@ -709,10 +1331,10 @@ def test_as_known_at_rejects_non_finite_staleness(staleness: float) -> None:
         _as_known_at(source_receipts=sources)
 
 
-def test_as_known_at_rejects_understated_source_age_at_cutoff() -> None:
+def test_as_known_at_rejects_understated_source_age_at_observation() -> None:
     sources = _as_known_at()["source_receipts"]
     _source(sources, PRICE_SOURCE_RECEIPT)["quality"]["staleness_seconds"] = 0
-    with pytest.raises(mm.TemporalContractError, match="understates age"):
+    with pytest.raises(mm.TemporalContractError, match="understates age at observation"):
         _as_known_at(source_receipts=sources)
 
 
@@ -793,6 +1415,9 @@ def test_as_known_at_receipt_ids_bind_complete_source_and_identity_content() -> 
     _source(packet["source_receipts"], PRICE_SOURCE_RECEIPT)["observed_at"] = (
         "2026-08-07T20:00:04Z"
     )
+    _source(packet["source_receipts"], PRICE_SOURCE_RECEIPT)["quality"][
+        "staleness_seconds"
+    ] = 4
     packet["context_id"] = mm._canonical_context_id(packet)
     with pytest.raises(mm.TemporalContractError, match="canonical receipt content"):
         mm.validate_as_known_at_context(packet)
@@ -925,7 +1550,8 @@ def test_as_known_at_identity_is_source_bound_and_allows_advance_announcement() 
             "observed_at": "2026-08-01T00:00:03Z",
         }
     )
-    membership["quality"]["staleness_seconds"] = 590_700
+    membership["quality"]["staleness_seconds"] = 3
+    membership["age_at_cutoff_seconds"] = 590_700
     identity = _as_known_at()["identity_receipt"]
     identity.update(
         {
@@ -1049,9 +1675,10 @@ def test_as_known_at_options_oi_requires_eod_oi_source_and_availability() -> Non
             "quality": {
                 "status": "ok",
                 "flags": [],
-                "staleness_seconds": 300,
+                "staleness_seconds": 3,
                 "imputed": False,
             },
+            "age_at_cutoff_seconds": 300,
         }
     )
     features = _as_known_at()["feature_receipts"]
@@ -1281,7 +1908,7 @@ def test_as_known_at_quality_cannot_upgrade_dependencies() -> None:
     price_source["quality"] = {
         "status": "degraded",
         "flags": ["vendor_gap"],
-        "staleness_seconds": 300,
+        "staleness_seconds": 3,
         "imputed": True,
     }
     with pytest.raises(mm.TemporalContractError, match="upgrades degraded"):
@@ -1307,7 +1934,7 @@ def test_as_known_at_quality_cannot_upgrade_dependencies() -> None:
     membership_source["quality"] = {
         "status": "degraded",
         "flags": ["identity_gap"],
-        "staleness_seconds": 72_300,
+        "staleness_seconds": 3,
         "imputed": True,
     }
     with pytest.raises(mm.TemporalContractError, match="upgrades degraded"):

@@ -6203,7 +6203,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml
+        run: pip install pytest fastapi httpx numpy pandas jinja2 pyyaml requests
       - name: canonical Market Memory temporal and shell contracts
         run: >-
           python -m pytest

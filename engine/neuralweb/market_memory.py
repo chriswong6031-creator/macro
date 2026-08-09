@@ -19,7 +19,7 @@ import json
 import math
 import re
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, NamedTuple, Protocol, TypedDict, runtime_checkable
@@ -27,8 +27,15 @@ from typing import Any, NamedTuple, Protocol, TypedDict, runtime_checkable
 MACRO_SCHEMA = "market_memory.macro.v1"
 SYMBOL_SCHEMA = "market_memory.symbol.v1"
 AS_KNOWN_AT_SCHEMA = "market_memory.as_known_at.v1"
-_EVENT_ATLAS_SCHEMA = "event_atlas.v1"
+_EVENT_ATLAS_SCHEMA = "event_atlas.live_state.v1"
+_EVENT_ATLAS_TAXONOMY = "sea.v1"
 _MAX_STOCKDATA_BYTES = 2 * 1024 * 1024
+_EVENT_ATLAS_GRIDS = frozenset({"W", "2B", "3B"})
+_EVENT_ATLAS_HORIZONS = {
+    "W": frozenset({"13w", "26w"}),
+    "2B": frozenset({"21s", "63s"}),
+    "3B": frozenset({"21s", "63s"}),
+}
 
 AUTHORITY: Mapping[str, Any] = MappingProxyType(
     {
@@ -582,6 +589,7 @@ _SOURCE_RECEIPT_FIELDS = frozenset(
         "valid_through",
         "identity_binding",
         "quality",
+        "age_at_cutoff_seconds",
     }
 )
 _FEATURE_RECEIPT_FIELDS = frozenset(
@@ -673,9 +681,18 @@ def _opaque_id(value: Any, prefix: str, field: str) -> str:
 
 
 def _source_receipt_id(source: Mapping[str, Any]) -> str:
-    """Content-address a complete canonical source receipt, excluding its ID."""
+    """Content-address immutable source evidence, excluding context projection.
 
-    preimage = {key: value for key, value in source.items() if key != "receipt_id"}
+    ``age_at_cutoff_seconds`` is deterministically projected for each requested
+    context.  It must not fork the durable receipt identity when the same
+    artifact is viewed at a later admissible cutoff.
+    """
+
+    preimage = {
+        key: value
+        for key, value in source.items()
+        if key not in {"receipt_id", "age_at_cutoff_seconds"}
+    }
     try:
         raw = json.dumps(
             preimage,
@@ -1278,10 +1295,28 @@ def build_as_known_at_context(
             clean_identity_binding = None
         source_quality = _quality(raw.get("quality"), f"{prefix}.quality")
         source_staleness = source_quality["staleness_seconds"]
-        minimum_staleness = max(0.0, (cutoff_dt - measurement_end_dt).total_seconds())
+        minimum_staleness = max(
+            0.0, (observed_dt - measurement_end_dt).total_seconds()
+        )
         if source_staleness is not None and source_staleness < minimum_staleness:
             raise TemporalContractError(
-                f"{prefix}.quality.staleness_seconds understates age at as_known_at"
+                f"{prefix}.quality.staleness_seconds understates age at observation"
+            )
+        age_at_cutoff = raw.get("age_at_cutoff_seconds")
+        expected_age_at_cutoff = max(
+            0.0, (cutoff_dt - measurement_end_dt).total_seconds()
+        )
+        if (
+            isinstance(age_at_cutoff, bool)
+            or not isinstance(age_at_cutoff, (int, float))
+            or not math.isfinite(age_at_cutoff)
+            or age_at_cutoff < 0
+            or not math.isclose(
+                float(age_at_cutoff), expected_age_at_cutoff, abs_tol=1e-6
+            )
+        ):
+            raise TemporalContractError(
+                f"{prefix}.age_at_cutoff_seconds must equal as_known_at minus measurement_end"
             )
         clean_source = {
             "receipt_id": receipt_id,
@@ -1311,6 +1346,7 @@ def build_as_known_at_context(
             ),
             "identity_binding": clean_identity_binding,
             "quality": source_quality,
+            "age_at_cutoff_seconds": expected_age_at_cutoff,
         }
         if receipt_id != _source_receipt_id(clean_source):
             raise TemporalContractError(
@@ -1900,11 +1936,11 @@ def build_as_known_at_context(
             "future_eod_values_forbidden": True,
             "feature_basis_rule": "feature pit_basis cannot outrank weakest source",
             "feature_dependency_rule": "source role, availability class, transform, missing reason, and quality flags match versioned registries",
-            "opaque_provenance_rule": "source vintage and revision IDs are SHA-256 handles; receipt_id hashes the complete canonical receipt",
+            "opaque_provenance_rule": "source vintage and revision IDs are SHA-256 handles; receipt_id hashes immutable source evidence while age_at_cutoff_seconds is a deterministic context projection",
             "snapshot_clock_rule": "snapshot as_of covers every cited source measurement_end",
             "scalar_clock_rule": "scalar observed_at follows every cited source observed_at",
             "missingness_clock_rule": "missingness is checked at or after event_time; operational observations also stop at as_known_at",
-            "staleness_clock_rule": "known source staleness cannot be younger than as_known_at minus measurement_end",
+            "staleness_clock_rule": "source quality staleness is fixed at observation; age_at_cutoff_seconds equals as_known_at minus measurement_end",
             "identity_rule": "frozen identity, membership validity, and market calendar receipts required",
         },
         "label_policy": {
@@ -2069,34 +2105,612 @@ def macro_context(root: Path, *, limit: int = 6) -> dict[str, Any]:
     }
 
 
-def symbol_context(root: Path, ticker: str) -> dict[str, Any]:
-    """Read a symbol's nightly-materialized Signal Episode Atlas receipt.
+def _atlas_exact(
+    value: Any, fields: frozenset[str], field: str
+) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping) or set(value) != fields:
+        raise ValueError(f"{field} fields do not match the frozen atlas schema")
+    return value
 
-    The stock-library render already computes the exact ``event_atlas`` block
-    shown on stock pages. Reading that bounded artifact avoids importing the
-    full event library into the shared API process and keeps one source of truth.
+
+def _atlas_text(value: Any, field: str, *, limit: int = 240) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or len(value) > limit
+        or any(ord(char) < 32 for char in value)
+    ):
+        raise ValueError(f"{field} must be bounded text")
+    return value
+
+
+def _atlas_slug(value: Any, field: str) -> str:
+    text = _atlas_text(value, field, limit=80)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}", text):
+        raise ValueError(f"{field} is outside the frozen vocabulary shape")
+    return text
+
+
+def _atlas_number(
+    value: Any,
+    field: str,
+    *,
+    minimum: float,
+    maximum: float,
+    allow_none: bool = True,
+) -> float | None:
+    if value is None and allow_none:
+        return None
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+    ):
+        raise ValueError(f"{field} must be a finite number")
+    number = float(value)
+    if number < minimum or number > maximum:
+        raise ValueError(f"{field} is outside the frozen bound")
+    return number
+
+
+def _atlas_int(
+    value: Any, field: str, *, minimum: int = 0, maximum: int = 10_000_000
+) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{field} must be an integer")
+    if value < minimum or value > maximum:
+        raise ValueError(f"{field} is outside the frozen bound")
+    return value
+
+
+def _atlas_date(value: Any, field: str, *, latest: date | None = None) -> date:
+    text = _atlas_text(value, field, limit=10)
+    try:
+        parsed = date.fromisoformat(text)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be an ISO date") from exc
+    if parsed.isoformat() != text or parsed.year < 1900:
+        raise ValueError(f"{field} is outside the supported date range")
+    ceiling = latest or datetime.now(timezone.utc).date()
+    if parsed > ceiling:
+        raise ValueError(f"{field} cannot be in the future")
+    return parsed
+
+
+_ATLAS_CELL_FIELDS = frozenset(
+    {
+        "n",
+        "n_events",
+        "n_names",
+        "n_distinct_years",
+        "med",
+        "mean",
+        "win",
+        "n_exc",
+        "med_exc",
+        "mean_exc",
+        "win_exc",
+    }
+)
+_ATLAS_POSTERIOR_FIELDS = frozenset(
+    {
+        "med",
+        "mean",
+        "win",
+        "med_exc",
+        "mean_exc",
+        "win_exc",
+        "w",
+        "w_exc",
+        "n_child",
+        "k",
+    }
+)
+_ATLAS_HORIZON_CORE_FIELDS = frozenset(
+    {
+        "global",
+        "archetype",
+        "sector",
+        "name",
+        "arch_post",
+        "name_post",
+        "n_global",
+        "n_archetype",
+        "n_sector",
+        "n_name",
+    }
+)
+
+
+def _atlas_cell(value: Any, field: str) -> dict[str, Any]:
+    row = _atlas_exact(value, _ATLAS_CELL_FIELDS, field)
+    counts = {
+        key: _atlas_int(row.get(key), f"{field}.{key}")
+        for key in ("n", "n_events", "n_names", "n_distinct_years", "n_exc")
+    }
+    if (
+        counts["n"] > counts["n_events"]
+        or counts["n_exc"] > counts["n"]
+        or counts["n_names"] > counts["n"]
+        or counts["n_distinct_years"] > counts["n"]
+    ):
+        raise ValueError(f"{field} support counts are inconsistent")
+    metrics = {
+        key: _atlas_number(
+            row.get(key),
+            f"{field}.{key}",
+            minimum=0.0 if key in {"win", "win_exc"} else -100.0,
+            maximum=100.0 if key in {"win", "win_exc"} else 1_000_000.0,
+        )
+        for key in ("med", "mean", "win", "med_exc", "mean_exc", "win_exc")
+    }
+    return {**counts, **metrics}
+
+
+def _atlas_posterior(value: Any, field: str) -> dict[str, Any]:
+    row = _atlas_exact(value, _ATLAS_POSTERIOR_FIELDS, field)
+    metrics = {
+        key: _atlas_number(
+            row.get(key),
+            f"{field}.{key}",
+            minimum=0.0 if key in {"win", "win_exc"} else -100.0,
+            maximum=100.0 if key in {"win", "win_exc"} else 1_000_000.0,
+        )
+        for key in ("med", "mean", "win", "med_exc", "mean_exc", "win_exc")
+    }
+    return {
+        **metrics,
+        "w": _atlas_number(
+            row.get("w"), f"{field}.w", minimum=0.0, maximum=1.0, allow_none=False
+        ),
+        "w_exc": _atlas_number(
+            row.get("w_exc"),
+            f"{field}.w_exc",
+            minimum=0.0,
+            maximum=1.0,
+            allow_none=False,
+        ),
+        "n_child": _atlas_int(row.get("n_child"), f"{field}.n_child"),
+        "k": _atlas_int(row.get("k"), f"{field}.k", maximum=10_000),
+    }
+
+
+def _atlas_horizon_core(value: Any, field: str) -> dict[str, Any]:
+    block = _atlas_exact(value, _ATLAS_HORIZON_CORE_FIELDS, field)
+    cells = {
+        key: _atlas_cell(block.get(key), f"{field}.{key}")
+        for key in ("global", "archetype", "sector", "name")
+    }
+    posteriors = {
+        key: _atlas_posterior(block.get(key), f"{field}.{key}")
+        for key in ("arch_post", "name_post")
+    }
+    support = {
+        key: _atlas_int(block.get(key), f"{field}.{key}")
+        for key in ("n_global", "n_archetype", "n_sector", "n_name")
+    }
+    for support_key, cell_key in (
+        ("n_global", "global"),
+        ("n_archetype", "archetype"),
+        ("n_sector", "sector"),
+        ("n_name", "name"),
+    ):
+        if support[support_key] != cells[cell_key]["n"]:
+            raise ValueError(f"{field}.{support_key} does not match its cell")
+    for cell_key in ("archetype", "sector", "name"):
+        for count_key in ("n", "n_events", "n_names", "n_distinct_years", "n_exc"):
+            if cells[cell_key][count_key] > cells["global"][count_key]:
+                raise ValueError(
+                    f"{field}.{cell_key}.{count_key} exceeds global support"
+                )
+    _validate_atlas_posterior(
+        posteriors["arch_post"],
+        child=cells["archetype"],
+        parent=cells["global"],
+        k=50,
+        field=f"{field}.arch_post",
+    )
+    _validate_atlas_posterior(
+        posteriors["name_post"],
+        child=cells["name"],
+        parent=posteriors["arch_post"],
+        k=12,
+        field=f"{field}.name_post",
+    )
+    return {**cells, **posteriors, **support}
+
+
+def _atlas_blend(
+    child: float | None, n_child: int, parent: float | None, k: int
+) -> float | None:
+    if child is None:
+        return parent
+    if parent is None:
+        return child
+    weight = n_child / (n_child + k) if n_child > 0 else 0.0
+    return round(weight * child + (1.0 - weight) * parent, 1)
+
+
+def _validate_atlas_posterior(
+    posterior: Mapping[str, Any],
+    *,
+    child: Mapping[str, Any],
+    parent: Mapping[str, Any],
+    k: int,
+    field: str,
+) -> None:
+    n_child = int(child["n"])
+    n_exc = int(child["n_exc"])
+    expected_w = round(n_child / (n_child + k), 3) if n_child > 0 else 0.0
+    expected_w_exc = round(n_exc / (n_exc + k), 3) if n_exc > 0 else 0.0
+    if posterior["n_child"] != n_child or posterior["k"] != k:
+        raise ValueError(f"{field} support or shrinkage constant mismatch")
+    if not math.isclose(float(posterior["w"]), expected_w, abs_tol=1e-9) or not math.isclose(
+        float(posterior["w_exc"]), expected_w_exc, abs_tol=1e-9
+    ):
+        raise ValueError(f"{field} shrinkage weight mismatch")
+    for metric in ("med", "mean", "win", "med_exc", "mean_exc", "win_exc"):
+        support = n_exc if metric.endswith("_exc") else n_child
+        expected = _atlas_blend(child[metric], support, parent[metric], k)
+        actual = posterior[metric]
+        if (actual is None) != (expected is None) or (
+            actual is not None
+            and expected is not None
+            and not math.isclose(float(actual), expected, abs_tol=1e-9)
+        ):
+            raise ValueError(f"{field}.{metric} does not match the frozen blend")
+
+
+def _atlas_horizon(value: Any, field: str) -> dict[str, Any]:
+    fields = _ATLAS_HORIZON_CORE_FIELDS | {"post2010", "era_note"}
+    block = _atlas_exact(value, frozenset(fields), field)
+    core = _atlas_horizon_core(
+        {key: block[key] for key in _ATLAS_HORIZON_CORE_FIELDS}, field
+    )
+    post2010 = _atlas_horizon_core(block.get("post2010"), f"{field}.post2010")
+    for cell_key in ("global", "archetype", "sector", "name"):
+        for count_key in ("n", "n_events", "n_names", "n_distinct_years", "n_exc"):
+            if post2010[cell_key][count_key] > core[cell_key][count_key]:
+                raise ValueError(
+                    f"{field}.post2010.{cell_key}.{count_key} exceeds pooled support"
+                )
+    pooled_med = core["name_post"]["med"]
+    post_med = post2010["name_post"]["med"]
+    expected_era_note = None
+    if (
+        pooled_med is not None
+        and post_med is not None
+        and (float(pooled_med) > 0) != (float(post_med) > 0)
+    ):
+        n_post = (
+            post2010["n_name"]
+            or post2010["n_archetype"]
+            or post2010["n_global"]
+        )
+        sign = "negative" if float(post_med) < 0 else "positive"
+        expected_era_note = f"post-2010 reads {sign} on n={n_post}"
+    era_note = block.get("era_note")
+    if era_note != expected_era_note:
+        raise ValueError(f"{field}.era_note does not match the frozen era split")
+    return {
+        "global": {"n_distinct_years": core["global"]["n_distinct_years"]},
+        "name_post": {
+            key: core["name_post"][key] for key in ("med", "win", "med_exc", "w")
+        },
+        "post2010": {
+            "name_post": {
+                key: post2010["name_post"][key]
+                for key in ("med", "win", "med_exc", "w")
+            }
+        },
+        "n_global": core["n_global"],
+        "n_archetype": core["n_archetype"],
+        "n_name": core["n_name"],
+        "era_note": era_note,
+    }
+
+
+def _atlas_receipt(
+    value: Any,
+    *,
+    ticker: str,
+    grid: str,
+    direction: str,
+    grid_row: Mapping[str, Any],
+) -> dict[str, Any]:
+    fields = frozenset(
+        {
+            "ticker",
+            "grid",
+            "direction",
+            "class_key",
+            "taxonomy_version",
+            "tier",
+            "authority",
+            "k_name",
+            "k_arch",
+            "horizons",
+            "caveats",
+            "archetype",
+            "sector",
+        }
+    )
+    receipt = _atlas_exact(value, fields, f"grids.{grid}.receipt")
+    if (
+        receipt.get("ticker") != ticker
+        or receipt.get("grid") != grid
+        or receipt.get("direction") != direction
+        or receipt.get("taxonomy_version") != _EVENT_ATLAS_TAXONOMY
+        or receipt.get("tier") != "display"
+        or receipt.get("k_name") != 12
+        or receipt.get("k_arch") != 50
+    ):
+        raise ValueError(f"grids.{grid}.receipt identity does not match the grid")
+    expected_authority = {
+        "tier": "display",
+        "horizon_role": "context",
+        "may_rank": False,
+        "may_gate": False,
+        "may_size": False,
+        "may_escalate": False,
+    }
+    if receipt.get("authority") != expected_authority:
+        raise ValueError(f"grids.{grid}.receipt authority drift")
+    class_key = _atlas_exact(
+        receipt.get("class_key"),
+        frozenset({"depth_class", "level", "washout_len_class", "align_class"}),
+        f"grids.{grid}.receipt.class_key",
+    )
+    if any(
+        class_key.get(key) != grid_row.get(key)
+        for key in ("depth_class", "level", "washout_len_class", "align_class")
+    ):
+        raise ValueError(f"grids.{grid}.receipt class key mismatch")
+    receipt_archetype = _atlas_slug(
+        receipt.get("archetype"), f"grids.{grid}.receipt.archetype"
+    )
+    if receipt_archetype != grid_row.get("archetype_at_event"):
+        raise ValueError(f"grids.{grid}.receipt archetype mismatch")
+    _atlas_slug(receipt.get("sector"), f"grids.{grid}.receipt.sector")
+    caveats = _atlas_exact(
+        receipt.get("caveats"),
+        frozenset({"survivorship", "clustering", "era", "authority"}),
+        f"grids.{grid}.receipt.caveats",
+    )
+    for key, text in caveats.items():
+        _atlas_text(text, f"grids.{grid}.receipt.caveats.{key}", limit=2_000)
+    horizons = receipt.get("horizons")
+    expected_horizons = _EVENT_ATLAS_HORIZONS[grid]
+    if not isinstance(horizons, Mapping) or set(horizons) != expected_horizons:
+        raise ValueError(f"grids.{grid}.receipt horizons do not match the grid")
+    return {
+        "horizons": {
+            horizon: _atlas_horizon(
+                horizons[horizon], f"grids.{grid}.receipt.horizons.{horizon}"
+            )
+            for horizon in sorted(expected_horizons)
+        }
+    }
+
+
+def _project_event_atlas(record: Mapping[str, Any], ticker: str) -> dict[str, Any]:
+    """Validate the frozen atlas block and return only the UI's typed fields."""
+
+    if record.get("ticker") != ticker:
+        raise ValueError("stock artifact ticker mismatch")
+    artifact_as_of = _atlas_date(record.get("asof"), "stockdata.asof")
+    candidate = record.get("event_atlas")
+    base_fields = frozenset(
+        {
+            "schema",
+            "ticker",
+            "as_of",
+            "taxonomy_version",
+            "tier",
+            "grids",
+            "align_now",
+            "bull_now",
+        }
+    )
+    if not isinstance(candidate, Mapping):
+        raise TypeError("stock artifact has no event_atlas object")
+    candidate_fields = base_fields | ({"reason"} if "reason" in candidate else set())
+    state = _atlas_exact(candidate, frozenset(candidate_fields), "event_atlas")
+    if (
+        state.get("schema") != _EVENT_ATLAS_SCHEMA
+        or state.get("ticker") != ticker
+        or state.get("taxonomy_version") != _EVENT_ATLAS_TAXONOMY
+        or state.get("tier") != "display"
+    ):
+        raise ValueError("event_atlas identity or taxonomy mismatch")
+    state_as_of = _atlas_date(state.get("as_of"), "event_atlas.as_of")
+    if state_as_of != artifact_as_of:
+        raise ValueError("event_atlas.as_of does not match stock artifact asof")
+    align_now = _atlas_int(state.get("align_now"), "event_atlas.align_now", maximum=3)
+    bull_raw = _atlas_exact(
+        state.get("bull_now"), _EVENT_ATLAS_GRIDS, "event_atlas.bull_now"
+    )
+    bull_now: dict[str, bool | None] = {}
+    for grid in sorted(_EVENT_ATLAS_GRIDS):
+        value = bull_raw.get(grid)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"event_atlas.bull_now.{grid} must be boolean or null")
+        bull_now[grid] = value
+    if sum(value is True for value in bull_now.values()) != align_now:
+        raise ValueError("event_atlas.align_now does not match bull_now")
+    grids_raw = state.get("grids")
+    if not isinstance(grids_raw, Mapping) or not set(grids_raw) <= _EVENT_ATLAS_GRIDS:
+        raise ValueError("event_atlas.grids is outside the frozen grid set")
+    reason = state.get("reason")
+    if reason is not None and reason != "no_events_for_name":
+        raise ValueError("event_atlas.reason is not recognized")
+    if reason is not None and grids_raw:
+        raise ValueError("event_atlas reason contradicts returned grids")
+
+    grid_fields = frozenset(
+        {
+            "date",
+            "direction",
+            "depth_pctile",
+            "depth_class",
+            "level",
+            "washout_len",
+            "washout_len_class",
+            "align_class",
+            "era",
+            "regime_bucket",
+            "archetype_at_event",
+            "bars_since",
+            "live_fresh",
+            "bull_now",
+            "receipt",
+        }
+    )
+    regime_buckets = frozenset(
+        {
+            "regime_unknown",
+            "hi_vix_above200",
+            "hi_vix_below200",
+            "lo_vix_above200",
+            "lo_vix_below200",
+            "any_vix_above200",
+            "any_vix_below200",
+            "hi_vix_any_spy",
+            "lo_vix_any_spy",
+        }
+    )
+    clean_grids: dict[str, Any] = {}
+    for grid in sorted(grids_raw):
+        raw_grid = _atlas_exact(grids_raw[grid], grid_fields, f"grids.{grid}")
+        event_date = _atlas_date(
+            raw_grid.get("date"), f"grids.{grid}.date", latest=state_as_of
+        )
+        direction = raw_grid.get("direction")
+        depth_class = raw_grid.get("depth_class")
+        level = raw_grid.get("level")
+        washout_class = raw_grid.get("washout_len_class")
+        era = raw_grid.get("era")
+        regime = raw_grid.get("regime_bucket")
+        if direction not in {"bull", "bear"}:
+            raise ValueError(f"grids.{grid}.direction is not recognized")
+        if depth_class not in {"washout", "deep", "mid", "high", "unknown"}:
+            raise ValueError(f"grids.{grid}.depth_class is not recognized")
+        if level not in {"above_zero", "below_zero"}:
+            raise ValueError(f"grids.{grid}.level is not recognized")
+        if washout_class not in {"na", "short", "medium", "long"}:
+            raise ValueError(f"grids.{grid}.washout_len_class is not recognized")
+        if (level == "above_zero") != (washout_class == "na"):
+            raise ValueError(f"grids.{grid} level/washout class mismatch")
+        expected_era = "pre2010" if event_date < date(2010, 1, 1) else "post2010"
+        if era != expected_era:
+            raise ValueError(f"grids.{grid}.era does not match its event date")
+        if regime not in regime_buckets:
+            raise ValueError(f"grids.{grid}.regime_bucket is not recognized")
+        depth_pctile = _atlas_number(
+            raw_grid.get("depth_pctile"),
+            f"grids.{grid}.depth_pctile",
+            minimum=0.0,
+            maximum=100.0,
+        )
+        if depth_pctile is None:
+            expected_depth_class = "unknown"
+        elif depth_pctile <= 15.0:
+            expected_depth_class = "washout"
+        elif depth_pctile <= 30.0:
+            expected_depth_class = "deep"
+        elif depth_pctile <= 70.0:
+            expected_depth_class = "mid"
+        else:
+            expected_depth_class = "high"
+        if depth_class != expected_depth_class:
+            raise ValueError(f"grids.{grid}.depth_class contradicts depth_pctile")
+        washout_len = _atlas_int(
+            raw_grid.get("washout_len"), f"grids.{grid}.washout_len"
+        )
+        if level == "above_zero":
+            expected_washout_class = "na"
+            if washout_len != 0:
+                raise ValueError(f"grids.{grid} above-zero state has a washout run")
+        elif washout_len < 8:
+            expected_washout_class = "short"
+        elif washout_len <= 26:
+            expected_washout_class = "medium"
+        else:
+            expected_washout_class = "long"
+        if washout_class != expected_washout_class:
+            raise ValueError(
+                f"grids.{grid}.washout_len_class contradicts washout_len"
+            )
+        align_class = _atlas_int(
+            raw_grid.get("align_class"), f"grids.{grid}.align_class", maximum=2
+        )
+        raw_bars_since = raw_grid.get("bars_since")
+        bars_since = (
+            None
+            if raw_bars_since is None
+            else _atlas_int(raw_bars_since, f"grids.{grid}.bars_since")
+        )
+        live_fresh = raw_grid.get("live_fresh")
+        grid_bull = raw_grid.get("bull_now")
+        if not isinstance(live_fresh, bool) or (
+            grid_bull is not None and not isinstance(grid_bull, bool)
+        ):
+            raise TypeError(f"grids.{grid} boolean/null state is malformed")
+        expected_fresh = bars_since is not None and bars_since <= 3
+        if live_fresh != expected_fresh or grid_bull != bull_now[grid]:
+            raise ValueError(f"grids.{grid} freshness/alignment mismatch")
+        if bars_since is None and grid_bull is not None:
+            raise ValueError(f"grids.{grid} null bar age requires null bull state")
+        _atlas_slug(
+            raw_grid.get("archetype_at_event"), f"grids.{grid}.archetype_at_event"
+        )
+        receipt = _atlas_receipt(
+            raw_grid.get("receipt"),
+            ticker=ticker,
+            grid=grid,
+            direction=direction,
+            grid_row=raw_grid,
+        )
+        clean_grids[grid] = {
+            "date": event_date.isoformat(),
+            "direction": direction,
+            "depth_class": depth_class,
+            "level": level,
+            "washout_len_class": washout_class,
+            "align_class": align_class,
+            "bars_since": bars_since,
+            "live_fresh": live_fresh,
+            "bull_now": grid_bull,
+            "receipt": receipt,
+        }
+    return {
+        "as_of": state_as_of.isoformat(),
+        "taxonomy_version": _EVENT_ATLAS_TAXONOMY,
+        "align_now": align_now,
+        "bull_now": bull_now,
+        "grids": clean_grids,
+        "reason": reason,
+    }
+
+
+def symbol_context(
+    root: Path, ticker: str, *, stock_record: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
+    """Project one bounded, externally retrieved stockdata artifact.
+
+    Transport belongs to the authenticated API adapter because production
+    stockdata lives in R2, not the ignored checkout tree.  This Neural Web
+    layer remains transport-free: it validates the frozen ``sea.v1`` block and
+    emits only fields the product renders, never arbitrary provider JSON.
     """
 
+    del root  # retained for a stable call signature; local stockdata is not authoritative
     symbol = normalize_ticker(ticker)
-    safe_symbol = symbol.replace("=", "_").replace("^", "_")
-    path = Path(root) / "site" / "stockdata" / f"{safe_symbol}.json"
-    state: Mapping[str, Any] | None = None
+    state: dict[str, Any] | None = None
     try:
-        if path.stat().st_size > _MAX_STOCKDATA_BYTES:
-            raise ValueError("stock artifact exceeds bounded read")
-        with path.open("rb") as handle:
-            raw = handle.read(_MAX_STOCKDATA_BYTES + 1)
-        if len(raw) > _MAX_STOCKDATA_BYTES:
-            raise ValueError("stock artifact exceeds bounded read")
-
-        def reject_constant(value: str) -> None:
-            raise ValueError(f"non-finite JSON constant {value}")
-
-        record = json.loads(raw, parse_constant=reject_constant)
-        candidate = record.get("event_atlas") if isinstance(record, Mapping) else None
-        if isinstance(candidate, Mapping) and candidate.get("ticker") == symbol:
-            state = candidate
-    except (OSError, UnicodeError, ValueError, TypeError, RecursionError):
+        if isinstance(stock_record, Mapping):
+            state = _project_event_atlas(stock_record, symbol)
+    except (UnicodeError, ValueError, TypeError, RecursionError):
         state = None
     if not state:
         return {
@@ -2114,14 +2728,7 @@ def symbol_context(root: Path, ticker: str) -> dict[str, Any]:
         "available": True,
         "ticker": symbol,
         "source_schema": _EVENT_ATLAS_SCHEMA,
-        "as_of": state.get("as_of"),
-        "taxonomy_version": state.get("taxonomy_version"),
-        "align_now": state.get("align_now"),
-        "bull_now": state.get("bull_now")
-        if isinstance(state.get("bull_now"), dict)
-        else {},
-        "grids": state.get("grids") if isinstance(state.get("grids"), dict) else {},
-        "reason": state.get("reason"),
+        **state,
         "historical_basis": "recomputed_history",
         "universe_basis": "current_membership_survivor_biased_backfill",
         "authority": dict(AUTHORITY),

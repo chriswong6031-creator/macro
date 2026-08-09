@@ -95,16 +95,20 @@ def test_market_memory_public_shell_is_discoverable_but_payload_stays_api_owned(
         assert "/market_memory.html" in block
 
 
-def test_market_memory_symbol_reader_uses_bounded_materialized_receipts() -> None:
-    source = (ROOT / "engine" / "neuralweb" / "market_memory.py").read_text(
+def test_market_memory_symbol_reader_uses_bounded_r2_projection() -> None:
+    engine_source = (ROOT / "engine" / "neuralweb" / "market_memory.py").read_text(
         encoding="utf-8"
     )
+    api_source = (ROOT / "app" / "market_memory.py").read_text(encoding="utf-8")
 
-    assert '"site" / "stockdata"' in source
-    assert "_MAX_STOCKDATA_BYTES" in source
-    assert "handle.read(_MAX_STOCKDATA_BYTES + 1)" in source
-    assert "event_atlas.live_state" not in source
-    assert "from engine import event_atlas" not in source
+    assert '"site" / "stockdata"' not in engine_source
+    assert "stock_record" in engine_source
+    assert "_project_event_atlas" in engine_source
+    assert "event_atlas.live_state(" not in engine_source
+    assert "from engine import event_atlas" not in engine_source
+    assert "R2_PUBLIC_BASE" in api_source
+    assert "allow_redirects=False" in api_source
+    assert "_MAX_STOCKDATA_BYTES" in api_source
 
 
 def test_direct_builder_cli_bootstraps_repository_imports() -> None:
