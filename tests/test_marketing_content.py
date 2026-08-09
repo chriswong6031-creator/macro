@@ -50,6 +50,7 @@ _SAMPLE_PLANS = [
         "id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL",
         "entry": 120.0, "invalidation": 100.0, "targets": [150.0, 180.0],
         "trigger": 125.0, "_conviction_score": 90, "_signal_date": _FRESH,
+        "signal_date_basis": "tier_event_date", "signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
         "management_confidence": 66.0, "what_to_do_now": [],
     },
@@ -57,6 +58,7 @@ _SAMPLE_PLANS = [
         "id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL",
         "entry": 82.0, "invalidation": 75.0, "targets": [95.0, 110.0],
         "trigger": 84.0, "_conviction_score": 85, "_signal_date": _FRESH,
+        "signal_date_basis": "tier_event_date", "signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
         "management_confidence": 61.0, "what_to_do_now": [],
     },
@@ -64,6 +66,7 @@ _SAMPLE_PLANS = [
         "id": "BA-BEAR", "asset": "BA", "direction": "BEAR",
         "entry": 180.0, "invalidation": 200.0, "targets": [155.0, 130.0],
         "trigger": 178.0, "_conviction_score": 75, "_signal_date": _FRESH,
+        "signal_date_basis": "tier_event_date", "signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
         "management_confidence": 58.0, "what_to_do_now": [],
     },
@@ -75,6 +78,7 @@ _INVALIDATED_PLAN = {
     "id": "QCOM-BULL", "asset": "QCOM", "direction": "BULL",
     "entry": 189.2, "invalidation": 177.09, "targets": [207.36, 230.0],
     "trigger": 190.0, "_conviction_score": 75, "_signal_date": _FRESH,
+    "signal_date_basis": "tier_event_date", "signal_date": _FRESH,
     "phase": "invalidated", "recommended_action": "invalidated",
     "management_confidence": 13.5,
     "what_to_do_now": ["Invalidation breached. Exit the full position."],
@@ -135,7 +139,7 @@ def test_gate_accepts_healthy_fresh_plan():
 
 def test_gate_rejects_stale_signal():
     from engine.marketing.content_studio import is_postable_signal
-    stale = dict(_SAMPLE_PLANS[0], _signal_date="2026-01-01")
+    stale = dict(_SAMPLE_PLANS[0], _signal_date="2026-01-01", signal_date="2026-01-01")
     assert is_postable_signal(stale) is False
 
 

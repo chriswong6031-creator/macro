@@ -1200,7 +1200,8 @@ def test_the_filing_lanes_receive_the_tickers_the_plan_already_claimed(
               "entry": 120.0, "invalidation": 100.0, "targets": [150.0],
               "trigger": 125.0, "phase": "triggered_pre_t1",
               "recommended_action": "hold", "management_confidence": 66.0,
-              "_signal_date": "2026-07-28"}]
+              "_signal_date": "2026-07-28",
+              "signal_date_basis": "tier_event_date", "signal_date": "2026-07-28"}]
     plan = content_plan(_lane_cfg(), plans, closes_loader=None, root=tmp_path)
 
     assert "congress" in seen and "insider" in seen, (

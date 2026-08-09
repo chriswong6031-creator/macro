@@ -49,7 +49,8 @@ _YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
 _YESTERDAY_PLANS = [
     {"id": f"{t}-BULL", "asset": t, "direction": "BULL", "entry": 60.0,
      "targets": [70.0], "phase": "triggered_pre_t1", "recommended_action": "hold",
-     "management_confidence": 70.0, "_signal_date": _YESTERDAY}
+     "management_confidence": 70.0, "_signal_date": _YESTERDAY,
+     "signal_date_basis": "tier_event_date", "signal_date": _YESTERDAY}
     for t in ("AAA", "BBB", "CCC", "DDD")
 ]
 

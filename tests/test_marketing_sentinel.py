@@ -1649,7 +1649,13 @@ class TestReceiptsContext:
         assert age is None and window is None
 
     def test_receipts_context_age_from_newest_signal(self, tmp_path):
-        """Age = days since the NEWEST _signal_date across plans."""
+        """Age = days since the newest family-native public plan date.
+
+        Post-#5071 the reader resolves dates through
+        effective_public_plan_date: a plan must declare its
+        signal_date_basis or it is withheld (the basis-less third row) —
+        never guessed from a bare _signal_date.
+        """
         from datetime import datetime, timedelta, timezone
         from engine.marketing.sentinel import receipts_context
         idx_dir = tmp_path / "site" / "prophet"
@@ -1661,7 +1667,11 @@ class TestReceiptsContext:
         newest = (today - timedelta(days=2)).isoformat()
         older = (today - timedelta(days=30)).isoformat()
         idx_dir.joinpath("index.json").write_text(json.dumps({"plans": [
-            {"_signal_date": older}, {"_signal_date": newest}, {"_signal_date": ""},
+            {"signal_date_basis": "tier_event_date", "signal_date": older,
+             "_signal_date": older},
+            {"signal_date_basis": "tier_event_date", "signal_date": newest,
+             "_signal_date": newest},
+            {"_signal_date": ""},   # basis-less -> date withheld, row skipped
         ]}), encoding="utf-8")
         age, _window = receipts_context(tmp_path)
         assert age == 2

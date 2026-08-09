@@ -4914,6 +4914,7 @@ jobs:
           # wholesale — 1,704 pages shipped markers)
           bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
           git add data/ site/ reports/
+          git add templates/ 2>/dev/null || true
           # Prophet has an earlier, provenance-checked SOLE git publisher. Never
           # let this broad commit re-stage its local tree: if the checkpoint
           # withheld on an off-main/provenance/same-path race, a later `-X theirs`
