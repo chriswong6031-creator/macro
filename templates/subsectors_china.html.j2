@@ -118,9 +118,12 @@
     <h1>💫 {{ t('Subsector Confluence · China', '子行业汇聚 · 中国') }} <span style="color:var(--muted);font-size:14px;font-weight:600">同花顺概念</span></h1>
     <div class="asof" id="sc-asof"></div>
   </div>
+  {# Copy rule (operator 2026-08-06): tiers may be NAMED, never explained. No indicator
+     names, no cross mechanics, no thresholds, no ranking formula — the reader wants to
+     know what the list is and what it means for them, not how it was computed. #}
   <div class="sc-sub">{{ t(
-    "Each 同花顺 (Tonghuashun) CONCEPT board as an equal-weight synthetic A-share index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated regime state machine (the rotation CONTEXT), benchmarked to CSI 300 (沪深300). <b>ENTRY-NOW</b> = a concept that just fired, or is about to. The <b>double-gate</b> funnels A-shares whose own cascade fires AND whose concept has a tailwind — and flags strong names whose concept is distributing. THS concepts overlap (a stock sits in many), so this is a thematic read, not a sector partition. A risk / rotation-timing map — one door, confirm before acting; not alpha.",
-    "将每个同花顺概念板块视作等权合成A股指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的状态机（轮动背景）解读，基准为沪深300。<b>现可入场</b>=刚触发或即将触发的概念。<b>双重闸门</b>筛出自身级联触发且所在概念顺风的A股，并标记所在概念正在派发的强势股。同花顺概念相互重叠（一只股属于多个概念），故为主题式解读而非行业划分。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。") }}</div>
+    "Every 同花顺 concept read as one basket, measured against the CSI 300. <b>Entry-now</b> means a buy signal just fired, or is about to. Below that: A-shares that are a buy on their own <i>and</i> sit in a concept that is working. One stock can sit in several concepts, so read this as themes rather than sectors — and confirm before you act.",
+    "把每个同花顺概念当成一个篮子来看，对标沪深300。<b>现可入场</b>指买入信号刚出现、或者马上就要出现。下面是本身就是买点、所在概念也在走强的A股。一只股票可以同时属于好几个概念，所以这里看的是题材，不是行业划分——动手前请自己再确认一遍。") }}</div>
 
   <div id="sc-app"><div class="empty">{{ t('Loading…', '加载中…') }}</div></div>
 
