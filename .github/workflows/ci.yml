@@ -3495,7 +3495,9 @@ jobs:
     # evidence needed to widen this to pull requests for real added capacity.
     #
     # NOT the macstudio pool: that is the render/nightly lane and is routinely saturated
-    # (CLAUDE.md — render budget is law). `render-linux` is a separate, idle pool.
+    # (CLAUDE.md — render budget is law). `render-linux` is a separate pool — it was
+    # idle when this job moved here, but it is NOT idle in general: `render.yml`,
+    # `engine-render.yml` and `merge-on-green.yml` all target the same four runners.
     runs-on: >-
       ${{ github.event_name == 'pull_request'
           && 'ubuntu-latest'
@@ -3503,6 +3505,26 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
+      # The main proof may take at most HALF the `render-linux` pool.
+      #
+      # `render-linux` is exactly four runners and this matrix is exactly four packs,
+      # so an unthrottled main baseline takes 100% of the pool for its whole ~26-minute
+      # run. `merge-on-green.yml` lives on that same pool, and the sweeper is what
+      # merges every armed pull request — so main's proof was starving the lane that
+      # consumes it. Measured 2026-08-09: 60 sweeps queued (50 of them between 04:00
+      # and 08:00 UTC) behind render work, oldest 2026-08-07, while the operator merged
+      # by hand to drain the backlog. The sweep job itself takes 37 SECONDS; it does not
+      # need a free runner for long, it needs one to exist.
+      #
+      # Two, not three: the packs are weight-balanced (run_ci_pack.py --validate-only),
+      # so 4 packs over 3 runners still costs two waves — the same wall-clock as two
+      # runners while freeing one fewer. The main proof therefore goes ~26 -> ~50 min
+      # and the pool keeps two runners for the short lanes.
+      #
+      # Pull requests are UNTHROTTLED (4): they run on `ubuntu-latest`, where the cap
+      # is the account's ~40 concurrent hosted jobs and nothing here is shared with the
+      # render pool. Throttling them would double PR wall-clock for no benefit.
+      max-parallel: ${{ github.event_name == 'pull_request' && 4 || 2 }}
       matrix:
         pack: [0, 1, 2, 3]
     steps:
