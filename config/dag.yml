@@ -652,6 +652,20 @@ lanes:
       - id: build_flip_confirmation
         module: scripts.build_flip_confirmation
         note: "Policy-Shock W1-C — T+1 sector-flip confirmation lens; detects violent defensive/offense spread flips, appends keep-first ledger, registers qledger claims, emits site/flip_confirmation_data.json (display-only, non-fatal)"
+      - id: build_leader_pullback_coverage
+        module: scripts.build_leader_pullback_coverage
+        note: >
+          LEADER-PULLBACK coverage publisher (ANTICIPATION §6.9 R4) — runs the
+          engine.us_leader_pullback organ over the graded US universe on a run-wide PIT
+          cross-sectional RS percentile and writes site/anticipationdata/us_leader_pullback.json.
+          MUST PRECEDE build_prophet: engine.us_early_turn resolves the EARLY-TURN starter
+          tier's LEADER licence from that file at origination time. #5007 shipped the organ and
+          #5105 the intake, but nothing published the artifact, so the leader half resolved {}
+          on every production run while the washout half (us_basket_turn) admitted normally.
+          Reads data/yahoo/*.parquet only. Advances NO ledger and writes no data/ path.
+          DISPLAY TIER, ZERO AUTHORITY. A run-wide data failure publishes nothing and keeps the
+          previous artifact rather than overwriting real coverage with a board of nulls.
+          Measured 2026-08-09: ~39s over 680 graded names (budget 600s).
       - id: build_prophet
         module: scripts.build_prophet
         note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)

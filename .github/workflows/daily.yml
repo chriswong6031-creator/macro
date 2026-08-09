@@ -2219,6 +2219,34 @@ jobs:
           cat "$RUNNER_TEMP/flip_confirmation.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_flip_confirmation::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Leader-pullback coverage (§6.9 R4 publisher — MUST precede build_prophet)
+        # Publishes site/anticipationdata/us_leader_pullback.json: the engine.us_leader_pullback
+        # organ's per-name state over the graded universe, evaluated on a run-wide PIT
+        # cross-sectional RS percentile (the organ refuses to reach for one itself, so a
+        # single-name call can never leak a cross-section).
+        #
+        # ORDER IS LOAD-BEARING. engine.us_early_turn resolves the EARLY-TURN starter tier's
+        # LEADER licence from this file at ORIGINATION time. #5007 shipped the organ and #5105
+        # shipped the intake, but nothing published the artifact — so the leader half read {}
+        # on every production run and was structurally incapable of admitting anything, while
+        # the washout half (us_basket_turn) worked. Scheduled after build_site (the price
+        # store is settled) and immediately before the Prophet band.
+        #
+        # DISPLAY TIER. Advances NO ledger and writes no data/ path. A degraded input
+        # publishes fewer names with their reasons printed; a RUN-WIDE data failure publishes
+        # nothing and leaves the previous artifact in place, because a board of nulls and a
+        # broken price store look identical from downstream. Measured 2026-08-09: ~39s over
+        # 680 graded names (budget 600s, self-reported and ::warning past it).
+        timeout-minutes: 12
+        continue-on-error: true
+        run: |
+          set +e
+          echo "::group::build_leader_pullback_coverage (EARLY-TURN leader licence)"
+          python -m scripts.build_leader_pullback_coverage > "$RUNNER_TEMP/leader_pullback_coverage.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/leader_pullback_coverage.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_leader_pullback_coverage::rc=$rc (non-fatal — the intake keeps yesterday's coverage until tomorrow's run)"; fi
+          exit 0
       - name: timings band — prophet (W2)
         run: python3 scripts/nightly_timings.py mark --band prophet || echo "::warning::timings band mark failed (non-fatal)"
       - name: Prophet nightly (plan refresh + ledger advancement; R2 after checkpoint)
