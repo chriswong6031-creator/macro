@@ -1,5 +1,5 @@
 """tests/test_prophet_plan_clock.py — the Prophet US plan pipeline's clock, trigger,
-price reach, intake cap, closed-state copy and shipped order (P1-P6, 2026-08-06).
+price reach, lossless intake, closed-state copy and shipped order (P1-P6, 2026-08-06).
 
 WHY THIS FILE EXISTS
 --------------------
@@ -472,7 +472,7 @@ class TestPlanLanePriceReach:
 
 
 # ===========================================================================
-# P4 — the cap counts SURVIVORS of the skips
+# P4 — every survivor is attempted; helper slicing is not an opportunity gate
 # ===========================================================================
 
 def _buy_row(ticker: str, *, priority: float, spot: float = 100.0,
@@ -492,12 +492,23 @@ def _buy_row(ticker: str, *, priority: float, spot: float = 100.0,
 
 def _write_standouts(tmp_path: Path, buys: list[dict], *, as_of="2026-07-02") -> Path:
     path = tmp_path / "us_standouts.json"
-    path.write_text(json.dumps({"as_of": as_of, "gate_go": True, "buy": buys}),
+    path.write_text(json.dumps({
+        "as_of": as_of,
+        "staleness": {
+            "price_through": as_of,
+            "delayed": False,
+            "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
+        "gate_go": True,
+        "buy": buys,
+    }),
                     encoding="utf-8")
     return path
 
 
-class TestFiltersThenCap:
+class TestFiltersThenLosslessOrigination:
 
     def test_a_board_of_already_live_names_still_originates_from_below_the_line(
             self, tmp_path):
@@ -538,15 +549,18 @@ class TestFiltersThenCap:
             "reproduce the defect"
         )
 
-    def test_the_cap_still_binds(self, tmp_path):
+    def test_the_old_cap_no_longer_truncates_live_origination(self, tmp_path):
         buys = [_buy_row(f"T{i:02d}", priority=99.0 - i) for i in range(30)]
         path = _write_standouts(tmp_path, buys)
         stats: dict = {}
         plans = originate_plans(path, "2026-07-02", set(), None,
                                 active_keys=set(), intake_stats=stats)
-        assert len(plans) == N_CANDIDATES
+        assert len(plans) == 30
         assert stats["eligible_after_skips"] == 30
-        assert stats["cap"] == N_CANDIDATES
+        assert stats["cap"] is None
+        assert stats["cap_applied"] is False
+        assert stats["truncated"] == 0
+        assert stats["lossless"] is True
 
     def test_admission_and_order_are_untouched(self, tmp_path):
         """The fence: this change may only ever ADD names from further down the same
@@ -556,7 +570,7 @@ class TestFiltersThenCap:
         plans = originate_plans(path, "2026-07-02", set(), None, active_keys=set())
         with path.open(encoding="utf-8") as fh:
             expected = [r["ticker"] for r in
-                        select_candidates(json.load(fh), n=N_CANDIDATES)]
+                        select_candidates(json.load(fh), n=None)]
         assert [p["asset"] for p in plans] == expected
 
     def test_uncapped_select_returns_the_whole_admitted_pool(self, tmp_path):
@@ -567,7 +581,7 @@ class TestFiltersThenCap:
         assert len(select_candidates(standouts, n=None)) == 30
         assert len(select_candidates(standouts, n=N_CANDIDATES)) == N_CANDIDATES
 
-    def test_duplicate_ids_are_still_suppressed_before_the_cap(self, tmp_path):
+    def test_duplicate_ids_are_still_suppressed_before_origination(self, tmp_path):
         buys = [_buy_row(f"T{i:02d}", priority=99.0 - i) for i in range(4)]
         path = _write_standouts(tmp_path, buys)
         existing = {"T00-BULL-20260702", "T01-BULL-20260702"}
@@ -584,21 +598,27 @@ class TestFiltersThenCap:
 
 class TestOriginationStampsTheClock:
 
-    def test_every_new_plan_carries_entry_date_equal_to_the_run_date(self, tmp_path):
-        path = _write_standouts(tmp_path, [_buy_row("AAA", priority=90.0,
-                                                    anchor=FORMATION)])
-        plans = originate_plans(path, ORIGINATION, set(), None, active_keys=set())
+    def test_every_new_plan_separates_entry_price_session_from_run_date(self, tmp_path):
+        price_session = "2026-07-02"
+        run_date = "2026-07-03"
+        path = _write_standouts(
+            tmp_path,
+            [_buy_row("AAA", priority=90.0, anchor=FORMATION)],
+            as_of=price_session,
+        )
+        plans = originate_plans(path, run_date, set(), None, active_keys=set())
         assert len(plans) == 1
         plan = plans[0]
-        assert plan["entry_date"] == ORIGINATION
+        assert plan["entry_date"] == plan["price_basis_date"] == price_session
+        assert plan["asof"] == plan["recorded_at"] == run_date
         assert plan["signal_date"] == FORMATION, "the id anchor is unchanged"
         assert plan["id"].endswith("20260301"), "no key migration"
-        assert plan_clock_date(plan) == ORIGINATION
+        assert plan_clock_date(plan) == price_session
 
     def test_the_priority_score_the_pick_was_ordered_by_is_frozen_on_the_plan(
             self, tmp_path):
         path = _write_standouts(tmp_path, [_buy_row("AAA", priority=88.5)])
-        plans = originate_plans(path, ORIGINATION, set(), None, active_keys=set())
+        plans = originate_plans(path, "2026-07-02", set(), None, active_keys=set())
         assert plans[0]["_priority_score"] == 88.5
 
 

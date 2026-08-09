@@ -23,12 +23,12 @@ THE POPULATION FENCE, STATED EXACTLY
 ------------------------------------
 "Ordering only" means the ADMITTED population — the rows that clear the band /
 act_level / score / dir / entry_signal gates — is byte-identical to the pre-W1
-rule.  It does NOT mean the top-12 membership cannot move: when the admitted
-pool overflows `N_CANDIDATES`, re-ordering necessarily re-slices `[:n]`, and on
-the committed 2026-07-31 artifact exactly that happens (20 admitted, 12 taken;
-JBLU/LKFN out, FHI/NUE in).  That IS the change the operator signed off.  The
-fence is on the FILTERS, and `TestAdmittedPopulationIsUnchanged` pins it against
-the pre-W1 implementation copied here verbatim.
+rule.  The historical W1 helper comparison still uses a 12-row sample so it can
+pin the ordering change at a cutoff. Live `originate_plans`, however, requests the
+uncapped population and originates every surviving row; the helper sample is no
+longer an opportunity gate. The fence is on the FILTERS, and
+`TestAdmittedPopulationIsUnchanged` pins it against the pre-W1 implementation
+copied here verbatim.
 """
 from __future__ import annotations
 
@@ -176,7 +176,16 @@ def _buy(
 
 
 def _standouts(buys: list[dict], *, gate_go: bool = True, as_of: str = "2026-07-02") -> dict:
-    return {"as_of": as_of, "gate_go": gate_go, "buy": buys}
+    return {
+        "as_of": as_of,
+        "staleness": {
+            "price_through": as_of, "delayed": False, "unknown": False,
+            "basis": "panel_majority",
+            "inputs": {"panel": {"mixed_vintage": False}},
+        },
+        "gate_go": gate_go,
+        "buy": buys,
+    }
 
 
 def _tickers(rows: list[dict]) -> list[str]:
@@ -248,8 +257,8 @@ class TestAdmittedPopulationIsUnchanged:
             "the fixture no longer re-orders anything — it cannot show that a set "
             "equality survives a genuine ordering change")
 
-    def test_n_candidates_is_still_twelve(self):
-        """The brief fences the cap: ordering repair must not widen intake."""
+    def test_direct_selection_helper_retains_its_legacy_sample_size(self):
+        """Research comparisons keep their old slice; live origination passes n=None."""
         assert N_CANDIDATES == 12
         buys = [_buy(f"T{i:02d}", priority=float(90 - i), score=90 - i) for i in range(30)]
         assert len(select_candidates(_standouts(buys))) == N_CANDIDATES
@@ -419,6 +428,7 @@ class TestReoriginationBlock:
             tmp_path,
             [_buy("CLF", priority=90.0, anchor="2026-07-15"),
              _buy("NEWNAME", priority=80.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
         )
         stats: dict = {}
         plans = originate_plans(
@@ -436,6 +446,7 @@ class TestReoriginationBlock:
             tmp_path,
             [_buy("CLF", priority=90.0, anchor="2026-07-15"),
              _buy("NEWNAME", priority=80.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
         )
         plans = originate_plans(path, "2026-07-15", set(), None)
         assert sorted(p["asset"] for p in plans) == ["CLF", "NEWNAME"]
@@ -444,7 +455,10 @@ class TestReoriginationBlock:
         """`open_plan_keys` drops a ledger-closed plan, so the name is originatable
         again — the block is a while-active hold, not a permanent ban."""
         existing = {"CLF-BULL-20260601": {"asset": "CLF", "direction": "BULL"}}
-        path = _write_standouts(tmp_path, [_buy("CLF", priority=90.0, anchor="2026-07-15")])
+        path = _write_standouts(
+            tmp_path, [_buy("CLF", priority=90.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
+        )
         blocked = originate_plans(
             path, "2026-07-15", set(),
             active_keys=bp.open_plan_keys(existing, set()),
@@ -471,7 +485,10 @@ class TestReoriginationBlock:
 
     def test_the_block_is_off_by_default(self, tmp_path):
         """`active_keys=None` keeps every pre-W1 caller (and every prior test) intact."""
-        path = _write_standouts(tmp_path, [_buy("CLF", priority=90.0, anchor="2026-07-15")])
+        path = _write_standouts(
+            tmp_path, [_buy("CLF", priority=90.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
+        )
         stats: dict = {}
         plans = originate_plans(path, "2026-07-15", set(), None, intake_stats=stats)
         assert [p["asset"] for p in plans] == ["CLF"]
@@ -479,19 +496,57 @@ class TestReoriginationBlock:
 
     def test_stats_are_reported_even_when_nothing_was_blocked(self, tmp_path):
         """A missing key would read as "no disclosure" rather than "zero skips"."""
-        path = _write_standouts(tmp_path, [_buy("AAA", priority=90.0, anchor="2026-07-15")])
+        path = _write_standouts(
+            tmp_path, [_buy("AAA", priority=90.0, anchor="2026-07-15")],
+            as_of="2026-07-15",
+        )
         stats: dict = {}
         originate_plans(path, "2026-07-15", set(), None,
                         active_keys={"ZZZ-BULL"}, intake_stats=stats)
         assert stats["reorigination_blocked"] == 0
         assert stats["reorigination_blocked_keys"] == []
-        # P4 2026-08-06: the cap now bites SURVIVORS of the skips, so the intake
-        # disclosure must also carry the two counts that make the cap readable —
-        # how many were admitted, and how many survived to be counted against it.
+        # Every disposition is explicit even though live origination has no cap.
         assert stats["admitted"] == 1
         assert stats["duplicate_id_blocked"] == 0
         assert stats["eligible_after_skips"] == 1
-        assert stats["cap"] == N_CANDIDATES
+        assert stats["cap"] is None
+        assert stats["cap_applied"] is False
+        assert stats["truncated"] == 0
+        assert stats["validation_failed"] == 0
+        assert stats["originated"] == 1
+        assert stats["unaccounted"] == 0
+        assert stats["lossless"] is True
+
+    def test_every_survivor_below_the_old_cutoff_originates(self, tmp_path):
+        """Duplicates and open plans are dispositions, not reasons to stop at row 12."""
+        buys = [
+            _buy(
+                f"T{i:02d}",
+                priority=float(100 - i),
+                anchor="2026-07-15",
+                spot=100.0 + i,
+            )
+            for i in range(N_CANDIDATES + 6)
+        ]
+        path = _write_standouts(tmp_path, buys, as_of="2026-07-15")
+        stats: dict = {}
+        plans = originate_plans(
+            path,
+            "2026-07-15",
+            {"T00-BULL-20260715"},
+            None,
+            active_keys={"T01-BULL"},
+            intake_stats=stats,
+        )
+
+        assert len(plans) == len(buys) - 2 > N_CANDIDATES
+        assert [plan["asset"] for plan in plans][-1] == f"T{len(buys) - 1:02d}"
+        assert stats["duplicate_id_blocked"] == 1
+        assert stats["reorigination_blocked"] == 1
+        assert stats["eligible_after_skips"] == len(plans)
+        assert stats["originated"] == len(plans)
+        assert stats["truncated"] == 0
+        assert stats["lossless"] is True
 
 
 # ===========================================================================
@@ -790,8 +845,21 @@ class TestIndexHygieneEndToEnd:
         assert intake["reorigination_blocked"] == 1
         assert intake["reorigination_blocked_keys"] == ["CLF-BULL"]
         assert intake["open_plan_keys"] == 1
+        assert intake["mode"] == "lossless"
+        assert intake["cap"] is None
+        assert intake["cap_applied"] is False
+        assert intake["truncated"] == 0
+        assert intake["validation_failures"] == []
+        assert intake["originated"] == 1
+        assert intake["unaccounted"] == 0
+        assert intake["lossless"] is True
         assert "CLF-BULL-20260731" not in {p["id"] for p in index["plans"]}
         assert "NEWNAME-BULL-20260731" in {p["id"] for p in index["plans"]}
+
+        new = next(p for p in index["plans"] if p["id"] == "NEWNAME-BULL-20260731")
+        assert new["formation_date"] == new["signal_date"] == "2026-07-31"
+        assert new["price_basis_date"] == new["entry_date"] == "2026-08-03"
+        assert new["recorded_at"] == new["plan_asof"] == "2026-08-03"
 
     def test_a_closed_plan_lets_the_name_back_in(self, tmp_path):
         index = _run_main(
