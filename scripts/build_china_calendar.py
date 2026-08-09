@@ -36,6 +36,7 @@ logging.basicConfig(
 log = logging.getLogger("build_china_calendar")
 
 _ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 OUT_PATH = _ROOT / "site" / "chinastatedata" / "calendar.json"
 
 
