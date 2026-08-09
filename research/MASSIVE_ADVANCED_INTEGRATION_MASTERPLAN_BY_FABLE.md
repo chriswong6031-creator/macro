@@ -114,15 +114,22 @@ language law).
 → live verification); new guards registered in `config/house_law_checks.yml`; new
 producers in the freshness breaker; GH annotations only as line-start `print(..., flush=True)`.
 
-**Global licensing gate (B3, blocking for every user-facing wave):** no TP artifact
-reaches a public page or a Terminal surface until the Massive plan terms — and whatever
-exchange/SIP display attestations the vendor's real-time redistribution requires — are
-filed under `research/licenses/` (the roadmap P0.6 discipline, applied to THIS vendor;
-§7½'s "business licensing included" is the purchase claim, not the filed evidence).
-Until filed: TP-2…TP-6 surfaces ship internal-first; TP-1/TP-B (data plane, no
-display) proceed. The Terminal hub README's own note ("live cluster requires an
-RT-entitled plan + signed exchange agreements") is treated as binding until the filing
-proves otherwise.
+**Global licensing gate (B3) — CLOSED 2026-08-09. Every user-facing wave is
+unblocked.** An Enterprise Market Data License and Redistribution Addendum
+(effective 2026-08-09) grants full display, non-display, redistribution, AI/ML,
+white-label and export rights across the enterprise stock-data scope, and the
+operator has confirmed full licensing and distribution rights. The record is
+`research/licenses/MASSIVE_ENTITLEMENT_RECORD.md`; **the executed instrument is
+held privately and is deliberately not committed — this repo is PUBLIC and the
+agreement is mutually confidential.**
+
+TP-2…TP-6 surfaces no longer ship internal-first on licensing grounds. The Terminal
+hub README's note ("live cluster requires an RT-entitled plan + signed exchange
+agreements") is satisfied at the plan level; per-dataset provider conditions (e.g.
+an exchange entitlement for raw NBBO redistribution) are identified by the vendor in
+writing and remain the authority for that specific feed. The debrand law is
+unchanged — the vendor is never named on a public product surface, and licensing
+grants no signal authority: promotion to rank/size/gate still runs the gauntlet.
 
 ---
 
@@ -136,9 +143,13 @@ Two independent verifications, same day:
    trades tape current through prior session's 20:00 ET close. Plan sold as: real-time,
    unlimited calls, trades+quotes, second+minute aggs, 20y+ flat files, websockets,
    snapshot, reference, corporate actions, financials, business licensing included.
-   **The licensing clause is a purchase-record claim, not verified evidence — no probe
-   can establish display/redistribution rights, and no terms are filed in-repo. The §0
-   global licensing gate holds every user-facing wave until they are.**
+   **RESOLVED 2026-08-09:** the licensing clause was a purchase-record claim when this
+   was written — no probe can establish display/redistribution rights. It is now
+   backed by an executed Enterprise Market Data License and Redistribution Addendum
+   and an operator confirmation of full licensing and distribution rights; the §0 gate
+   is CLOSED and the record is `research/licenses/MASSIVE_ENTITLEMENT_RECORD.md`.
+   The distinction the original wording drew still stands as doctrine: an entitlement
+   PROBE answers "does the key return data", never "may we show or redistribute it".
 2. **TP-0 probe manifest (`data/massive/capability_manifest.json`, committed with this
    PR):** re-runnable (`scripts/massive_entitlement_probe.py`), 36 test functions (59
    parametrized cases), key-scrubbed (leak self-check runs before every write). Run
@@ -866,8 +877,11 @@ entitled. Therefore:
 16. No "accumulation clusters" / "institutional prints" vocabulary anywhere — both
     assert actor intent/identity the tape cannot measure (the PSS-AF1 inference in
     fresh words). House terms: "repeat-print levels", "large prints".
-17. No user-facing or Terminal-facing TP surface before the vendor terms are filed
-    under `research/licenses/` (§0 global licensing gate).
+17. ~~No user-facing or Terminal-facing TP surface before the vendor terms are filed
+    under `research/licenses/`~~ — **SATISFIED 2026-08-09.** The §0 global licensing
+    gate is CLOSED; record at `research/licenses/MASSIVE_ENTITLEMENT_RECORD.md`.
+    The debrand rule (items 15–16 above) is untouched: the vendor is still never
+    named on a public product surface, even though attribution is not required.
 
 ---
 
