@@ -1666,11 +1666,15 @@ def entry_status_scorecard(root: Path = ROOT, degraded: list[dict] | None = None
     """The read-only ``entry_status`` block (PROPHET US ANTICIPATION §6.6).
 
     The STANDING evidence loop for the patience-first entry-value ladder.  The A2 entry leg
-    ships STATUS-NEUTRAL per the §6.6 ruling — on the first US run of this measurement
-    (2026-08-08) the CHINA board's measured ordering did not reproduce — and this table is
-    what keeps accruing behind that ruling, so an ordering can only ever be re-introduced
-    against a record rather than against a memory.  It confers nothing on its own: the map
-    is edited by hand by an operator reading these cells.
+    is intended to ship STATUS-NEUTRAL after the first US run did not reproduce the
+    historical CN adjusted-return ordering.  The current US read is short-horizon,
+    legacy-selection, price-basis-mixed and vintage-confounded, with no ``bounce_wait``
+    marks at the patience horizon.  The CN rates remain non-authoritative cross-market
+    context: per rewritten #4972 they are not nominal-tick or exact legal-limit evidence,
+    and they grant no direct status/ranking/Prophet authority.  This table keeps accruing so
+    an ordering can only ever be re-introduced against a clean US record rather than a
+    memory.  It confers nothing on its own: the map is edited only in a separately reviewed
+    change.
 
     All of it lives in :mod:`engine.us_entry_status_remeasure`; this wrapper
     only supplies the miss-audit's root and degraded list, exactly as the ``priority_score``
@@ -1822,9 +1826,10 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     priority_score = (priority_score_scorecard(root, degraded) if with_priority_score else
                       {"tier": "ops_telemetry", "available": False,
                        "null_reason": "not computed (with_priority_score=False)"})
-    # §6.6 ANTICIPATION: entry-status -> forward outcome, the evidence loop that revises the
-    # patience-first entry-value constants. A pure read of an already-graded ledger — it
-    # regrades nothing and writes nothing.
+    # §6.6 ANTICIPATION: entry-status -> forward outcome, the evidence loop behind the
+    # neutral no-claim default. A pure read of an already-graded US ledger — it regrades
+    # nothing and writes nothing. The historical CN adjusted-return rates are labelled
+    # context only and cannot become exact legal-limit or automatic ranking authority.
     entry_status = (entry_status_scorecard(root, degraded) if with_entry_status else
                     {"tier": "ops_telemetry", "available": False,
                      "null_reason": "not computed (with_entry_status=False)"})

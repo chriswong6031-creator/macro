@@ -1,8 +1,10 @@
 """Suite for the US entry-status re-measurement (PROPHET US ANTICIPATION §6.6).
 
-The block revises the entry-value ladder's constants, so the things that must not drift are
-its DEFINITIONS, not just its plumbing: what counts as a loser, when a cell is thin, that a
-lane is never pooled, and that a null is printed rather than rendered as a zero.
+The block supplies evidence behind a separately reviewed entry-value map change, so the
+things that must not drift are its DEFINITIONS and authority fences, not just its plumbing:
+what counts as a loser, when a cell is thin, that a lane is never pooled, that a null is
+printed rather than rendered as zero, and that the CN adjusted-return context cannot be
+misrepresented as exact legal-limit evidence or autonomous ranking authority.
 
 Every test runs against a synthetic ledger written into a tmp root, so nothing here depends
 on tonight's real record — a suite that only passes while the live ledger has a particular
@@ -54,7 +56,7 @@ def store(tmp_path: Path) -> Path:
     """
     rows: list[dict] = []
     # 20 buy-lane bounce_wait marks: 15 winners at +2%, 5 losers (one of them EXACTLY flat,
-    # which the CN convention counts as a loss).
+    # which the frozen US definition counts as a loss).
     for i in range(15):
         rows.append(_row(ticker=f"W{i}", excess_spy=0.02))
     for i in range(4):
@@ -100,7 +102,7 @@ class TestGrouping:
         assert leg["median_excess"] == pytest.approx(0.02, abs=1e-6)
 
     def test_a_flat_mark_counts_as_a_loss(self, tmp_path):
-        """The CN §2.3 convention: ``excess <= 0``. A flat episode is not a half-win."""
+        """The frozen local definition is ``excess <= 0``; flat is not a half-win."""
         _write_ledger(tmp_path, [_row(ticker=f"F{i}", excess_spy=0.0) for i in range(4)])
         leg = _cell(uesr.scorecard(tmp_path), "buy", 10, "bounce_wait")
         assert leg["loser_rate"] == 1.0
@@ -430,30 +432,45 @@ class TestPriceBasisEra:
 
 
 # --------------------------------------------------------------------------- #
-# the §6.6 ruling — the block must not claim a shipped CN ordering
+# the §6.6 ruling — neutral is a no-claim US default; CN remains fenced context only
 # --------------------------------------------------------------------------- #
 
 class TestRulingIsStatedAccurately:
-    def test_the_block_says_the_ladder_ships_status_neutral(self, store):
+    def test_the_block_says_the_separate_a2_map_is_intended_status_neutral(self, store):
         purpose = uesr.scorecard(store)["purpose"]
         assert "STATUS-NEUTRAL" in purpose
+        assert "separately reviewed A2 map (#4976)" in purpose
         assert "did not reproduce" in purpose
+        assert "context only" in purpose
+        assert "licenses no differential ordering" in purpose
 
     def test_the_reintroduction_bar_names_all_four_conditions(self, store):
         bar = uesr.scorecard(store)["reintroduction_bar"]
         for condition in ("chartered horizon", "n>=50", "half-splits", "anticipation-v1"):
             assert condition in bar, condition
 
-    def test_the_cn_ordering_is_never_described_as_currently_shipped(self, store):
-        """The mutual-staleness trap: this block and the map must not contradict."""
-        note = uesr.scorecard(store)["cn_reference"]["note"]
-        assert "NOT a US measurement" in note
-        assert "no longer a shipped US ordering" in note
+    def test_the_cn_comparator_is_context_only_with_no_automatic_authority(self, store):
+        block = uesr.scorecard(store)
+        ref = block["cn_reference"]
+        assert ref["status"] == "context_only_adjusted_return_comparator"
+        for denied in ("status value", "ordering", "rank", "Prophet", "legal-band"):
+            assert denied in ref["authority"], denied
+        assert ref["cn_loser_rate_by_status"]["bounce_wait"] == 0.069
+
+    def test_the_cn_reference_obeys_the_4972_legal_limit_boundary(self, store):
+        ref = uesr.scorecard(store)["cn_reference"]
+        assert "split-adjusted" in ref["price_basis_caveat"]
+        assert "not nominal CNY tick evidence" in ref["price_basis_caveat"]
+        for requirement in ("rewritten #4972", "TuShare", "stk_limit", "integer-cent"):
+            assert requirement in ref["legal_limit_boundary"], requirement
+        assert "as rewritten by #4972" in ref["depends_on"]
 
     def test_the_module_docstring_does_not_claim_a_cn_ordered_shipped_ladder(self):
         doc = uesr.__doc__ or ""
         assert "STATUS-NEUTRAL" in doc
         assert "ships with **CN-ordered v1" not in doc
+        assert "non-authoritative CROSS-MARKET CONTEXT" in doc
+        assert "not an exact exchange-limit study" in doc
         # the bar lives in the docstring too, so a reader of the source sees it
         assert "n >= 50 per cell" in doc
 
@@ -485,8 +502,8 @@ class TestNoPooledFigure:
             for path, key, _ in self._walk(block)
             if key in self.OUTCOME_KEYS and "by_cohort" not in path
         ]
-        # NO EXEMPTION LIST on purpose. Every other key in the block — the definitions, the
-        # CN restatement — is named so that it cannot collide with an outcome statistic, so
+        # NO EXEMPTION LIST on purpose. Every other key in the block — including the CN
+        # context restatement — is named so it cannot collide with an outcome statistic, so
         # any hit here is a genuine pooled figure rather than a false positive to whitelist.
         assert not offenders, f"pooled outcome figure(s) leaked to the top level: {offenders}"
 
@@ -501,9 +518,10 @@ class TestNoPooledFigure:
     def test_the_block_says_why_there_is_no_pooled_figure(self, store):
         assert "lane mix" in uesr.scorecard(store)["no_pooled_figure"]
 
-    def test_the_cn_reference_is_labelled_as_not_a_us_measurement(self, store):
+    def test_the_cn_context_is_labelled_as_not_a_us_or_limit_band_measurement(self, store):
         ref = uesr.scorecard(store)["cn_reference"]
-        assert "NOT a US measurement" in ref["note"]
+        assert "not a US measurement" in ref["note"]
+        assert "not an exchange-limit study" in ref["note"]
         assert ref["cn_loser_rate_by_status"]["bounce_wait"] == 0.069
 
 

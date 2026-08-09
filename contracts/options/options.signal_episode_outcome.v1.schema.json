@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.signal_episode_outcome/v1",
+  "title": "Point-in-time options signal episode H+60 outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "outcome_id", "episode_id", "horizon_minutes", "status", "reason",
+    "horizon_anchor", "target_time", "computed_at", "matured_at", "measurement",
+    "underlying", "option", "provenance", "label_authority"
+  ],
+  "properties": {
+    "schema": {"const": "options.signal_episode_outcome/v1"},
+    "outcome_id": {"type": "string", "pattern": "^oout_[a-f0-9]{24}$"},
+    "episode_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+    "horizon_minutes": {"type": "integer", "const": 60},
+    "status": {"enum": ["complete", "incomplete"]},
+    "reason": {"type": ["string", "null"]},
+    "horizon_anchor": {"type": "string", "format": "date-time"},
+    "target_time": {"type": "string", "format": "date-time"},
+    "computed_at": {"type": "string", "format": "date-time"},
+    "matured_at": {"type": "string", "format": "date-time"},
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version", "kind", "target_aligned", "training_eligible",
+        "training_ineligibility_reasons", "window"
+      ],
+      "properties": {
+        "version": {"const": "h60-aligned-bars/v1"},
+        "kind": {"enum": ["aligned_bar_proxy", "unavailable"]},
+        "target_aligned": {"type": "boolean"},
+        "training_eligible": {"type": "boolean"},
+        "training_ineligibility_reasons": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": {"type": ["string", "null"], "format": "date-time"},
+            "end": {"type": ["string", "null"], "format": "date-time"}
+          }
+        }
+      }
+    },
+    "underlying": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "entry_time", "exit_time", "entry_price", "exit_price", "ret",
+        "mfe", "mae", "entry_delay_minutes", "exit_delay_minutes", "bar_seconds", "path_basis"
+        , "evidence"
+      ],
+      "properties": {
+        "status": {"enum": ["complete", "unavailable"]},
+        "entry_time": {"type": ["string", "null"], "format": "date-time"},
+        "exit_time": {"type": ["string", "null"], "format": "date-time"},
+        "entry_price": {"type": ["number", "null"]},
+        "exit_price": {"type": ["number", "null"]},
+        "ret": {"type": ["number", "null"]},
+        "mfe": {"type": ["number", "null"]},
+        "mae": {"type": ["number", "null"], "minimum": -1},
+        "entry_delay_minutes": {"type": ["number", "null"]},
+        "exit_delay_minutes": {"type": ["number", "null"]},
+        "bar_seconds": {"type": ["integer", "null"], "minimum": 1},
+        "path_basis": {"type": ["string", "null"]},
+        "evidence": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["schema", "path", "exit", "observation_count", "sha256"],
+              "properties": {
+                "schema": {"const": "options.signal_episode_price_evidence/v1"},
+                "path": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["time", "open", "high", "low", "close"],
+                    "properties": {
+                      "time": {"type": "string", "format": "date-time"},
+                      "open": {"type": "number", "exclusiveMinimum": 0},
+                      "high": {"type": "number", "exclusiveMinimum": 0},
+                      "low": {"type": "number", "exclusiveMinimum": 0},
+                      "close": {"type": "number", "exclusiveMinimum": 0}
+                    }
+                  }
+                },
+                "exit": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["time", "open"],
+                  "properties": {
+                    "time": {"type": "string", "format": "date-time"},
+                    "open": {"type": "number", "exclusiveMinimum": 0}
+                  }
+                },
+                "observation_count": {"type": "integer", "minimum": 2},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "quote_basis", "ret", "mfe", "mae"],
+      "properties": {
+        "status": {"const": "unavailable"},
+        "reason": {"const": "no_executable_nbbo_quote_path"},
+        "quote_basis": {"type": "null"},
+        "ret": {"type": "null"},
+        "mfe": {"type": "null"},
+        "mae": {"type": "null"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "price_source", "price_vintage", "price_delay_minutes",
+        "source_receipt_schema", "source_available_at", "source_file_sha256",
+        "source_file_row_count", "source_file_first_time", "source_file_last_time",
+        "adjusted", "price_basis", "timestamp_basis"
+      ],
+      "properties": {
+        "price_source": {"type": ["string", "null"]},
+        "price_vintage": {"type": ["string", "null"], "format": "date-time"},
+        "price_delay_minutes": {"type": ["integer", "null"], "minimum": 0},
+        "source_receipt_schema": {"type": ["string", "null"]},
+        "source_available_at": {"type": ["string", "null"], "format": "date-time"},
+        "source_file_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source_file_row_count": {"type": ["integer", "null"], "minimum": 1},
+        "source_file_first_time": {"type": ["string", "null"], "format": "date-time"},
+        "source_file_last_time": {"type": ["string", "null"], "format": "date-time"},
+        "adjusted": {"type": ["boolean", "null"]},
+        "price_basis": {"type": ["string", "null"]},
+        "timestamp_basis": {"type": ["string", "null"]}
+      }
+    },
+    "label_authority": {"const": "research_only"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "reason": {"type": "null"},
+          "measurement": {
+            "properties": {
+              "kind": {"const": "aligned_bar_proxy"},
+              "window": {
+                "properties": {
+                  "start": {"type": "string", "format": "date-time"},
+                  "end": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          },
+          "underlying": {
+            "properties": {
+              "status": {"const": "complete"},
+              "entry_time": {"type": "string", "format": "date-time"},
+              "exit_time": {"type": "string", "format": "date-time"},
+              "entry_price": {"type": "number"}, "exit_price": {"type": "number"},
+              "ret": {"type": "number"}, "mfe": {"type": "number"}, "mae": {"type": "number"},
+              "entry_delay_minutes": {"type": "number"},
+              "exit_delay_minutes": {"type": "number"},
+              "bar_seconds": {"type": "integer", "minimum": 1},
+              "path_basis": {"type": "string", "minLength": 1},
+              "evidence": {"type": "object"}
+            }
+          },
+          "provenance": {
+            "properties": {
+              "price_source": {"type": "string", "minLength": 1},
+              "price_vintage": {"type": "string", "format": "date-time"},
+              "price_delay_minutes": {"type": "integer", "minimum": 0},
+              "source_receipt_schema": {"const": "polygon.intraday_price_receipt/v1"},
+              "source_available_at": {"type": "string", "format": "date-time"},
+              "source_file_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              "source_file_row_count": {"type": "integer", "minimum": 1},
+              "source_file_first_time": {"type": "string", "format": "date-time"},
+              "source_file_last_time": {"type": "string", "format": "date-time"},
+              "adjusted": {"const": true},
+              "price_basis": {"const": "split_adjusted_polygon_aggregate_ohlc"},
+              "timestamp_basis": {"const": "aggregate_window_start_utc"}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "decision_after_session_close",
+              "horizon_crosses_session_close"
+            ]
+          },
+          "measurement": {
+            "properties": {
+              "kind": {"const": "unavailable"},
+              "target_aligned": {"const": false},
+              "training_eligible": {"const": false},
+              "training_ineligibility_reasons": {"const": ["outcome_incomplete"]},
+              "window": {
+                "properties": {"start": {"type": "null"}, "end": {"type": "null"}}
+              }
+            }
+          },
+          "underlying": {
+            "properties": {
+              "status": {"const": "unavailable"},
+              "entry_time": {"type": "null"}, "exit_time": {"type": "null"},
+              "entry_price": {"type": "null"}, "exit_price": {"type": "null"},
+              "ret": {"type": "null"}, "mfe": {"type": "null"}, "mae": {"type": "null"},
+              "entry_delay_minutes": {"type": "null"}, "exit_delay_minutes": {"type": "null"},
+              "bar_seconds": {"type": "null"}, "path_basis": {"type": "null"},
+              "evidence": {"type": "null"}
+            }
+          },
+          "provenance": {
+            "properties": {
+              "price_source": {"type": "null"},
+              "price_vintage": {"type": "null"},
+              "price_delay_minutes": {"type": "null"},
+              "source_receipt_schema": {"type": "null"},
+              "source_available_at": {"type": "null"},
+              "source_file_sha256": {"type": "null"},
+              "source_file_row_count": {"type": "null"},
+              "source_file_first_time": {"type": "null"},
+              "source_file_last_time": {"type": "null"},
+              "adjusted": {"type": "null"},
+              "price_basis": {"type": "null"},
+              "timestamp_basis": {"type": "null"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

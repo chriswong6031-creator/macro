@@ -554,6 +554,7 @@ def _candidate_ledger_rows(raw: bytes) -> list[dict]:
         )
     rows: list[dict] = []
     observation_ids: set[str] = set()
+    observation_keys: set[tuple] = set()
     for line in lines:
         try:
             row = json.loads(line.decode("utf-8"))
@@ -590,6 +591,16 @@ def _candidate_ledger_rows(raw: bytes) -> list[dict]:
                 detail="government revenue candidate ledger contains duplicate observations",
             )
         observation_ids.add(observation_id)
+        # One row per hypothesis per moment it was knowable.  `observation_id`
+        # additionally folds in the reviewed-graph digest, so it moves on every
+        # curation edit; this pair is what the writer treats as already recorded.
+        observation_key = (row.get("candidate_id"), row.get("known_at"))
+        if observation_key in observation_keys:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger contains duplicate observations",
+            )
+        observation_keys.add(observation_key)
         rows.append(row)
     return rows
 
@@ -670,6 +681,9 @@ def _load_candidate_projection() -> dict:
             or ledger_binding.get("sha256") != ledger_sha256
             or ledger_binding.get("byte_count") != len(ledger_raw)
             or ledger_binding.get("line_count") != len(rows)
+            or not isinstance(ledger_binding.get("prior_line_count"), int)
+            or isinstance(ledger_binding.get("prior_line_count"), bool)
+            or not 0 <= ledger_binding["prior_line_count"] <= len(rows)
             or projection_state.get("queue_content_id") != queue.get("content_id")
         ):
             raise HTTPException(
@@ -740,7 +754,19 @@ def _load_candidate_projection() -> dict:
                 detail="government revenue candidate source generation mismatch",
             )
 
-        ledger_observations = {row["observation_id"]: row for row in rows}
+        # The ledger is keyed on graph-independent observation identity.  A
+        # reviewed-graph edit mints a new `observation_id` for a candidate that is
+        # already recorded, so keying the served rows on it would unbind the whole
+        # queue after any curation increment.  Rows the last generation did not
+        # append keep the graph generation they were recorded under; everything
+        # newer is bound to today's.
+        ledger_observations = {
+            (row.get("candidate_id"), row.get("known_at")): row for row in rows
+        }
+        issued_earlier = {
+            row.get("observation_id")
+            for row in rows[: ledger_binding["prior_line_count"]]
+        }
         projected = list(queue.get("candidates") or []) + list(queue.get("recently_matured") or [])
         required_source_content_ids = {
             f"latest-sha256:{latest_sha256}",
@@ -748,18 +774,24 @@ def _load_candidate_projection() -> dict:
             workspace.get("bundle_id"),
         }
         if any(
-            row.get("observation_id") not in ledger_observations
+            (row.get("candidate_id"), row.get("known_at")) not in ledger_observations
             or json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
             != json.dumps(
-                ledger_observations[row.get("observation_id")],
+                ledger_observations[(row.get("candidate_id"), row.get("known_at"))],
                 sort_keys=True,
                 separators=(",", ":"),
                 ensure_ascii=False,
             )
             or not isinstance(row.get("issuer_resolution_ref"), dict)
-            or row["issuer_resolution_ref"].get("graph_id") != loaded_graph.get("graph_id")
-            or row["issuer_resolution_ref"].get("graph_digest") != loaded_graph.get("graph_digest")
-            or f"graph-sha256:{loaded_graph.get('graph_digest')}" not in (row.get("artifact_content_ids") or [])
+            or f"graph-sha256:{row['issuer_resolution_ref'].get('graph_digest')}"
+            not in (row.get("artifact_content_ids") or [])
+            or (
+                row.get("observation_id") not in issued_earlier
+                and (
+                    row["issuer_resolution_ref"].get("graph_id") != loaded_graph.get("graph_id")
+                    or row["issuer_resolution_ref"].get("graph_digest") != loaded_graph.get("graph_digest")
+                )
+            )
             for row in projected
         ):
             raise HTTPException(

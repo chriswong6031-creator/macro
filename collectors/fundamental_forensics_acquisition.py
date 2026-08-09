@@ -30,6 +30,7 @@ from collectors.edgar_forensics import SecForensicsCollector
 from collectors.sec_document_spine import (
     ArchiveResponseTooLarge,
     SecFilingArchiveCollector,
+    find_reusable_primary_retrieval,
     persist_filing_manifest,
 )
 from engine.fundamental_forensics.models import canonical_json, parse_utc, utc_text
@@ -38,6 +39,7 @@ from engine.fundamental_forensics.sec_document_spine import (
     build_filing_manifests,
     canonical_cik,
     select_periodic_comparables,
+    with_document_retrievals,
 )
 
 
@@ -411,6 +413,9 @@ def _form_receipt(form: str) -> dict[str, Any]:
         "manifest_keys": [],
         "stored_documents": 0,
         "missing_documents": 0,
+        # Always present, zero when the reuse flag is off, so one receipt shape
+        # spans both flag states and a nightly diff stays readable.
+        "reused_documents": 0,
         "status": "not_started",
         "failures": [],
     }
@@ -431,6 +436,7 @@ def acquire_bounded_filings(
     max_ticker_bytes: int = DEFAULT_MAX_TICKER_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
     min_interval_seconds: float = 0.12,
+    reuse_local_archive: bool = False,
     submissions_collector_factory: Callable[..., Any] = SecForensicsCollector,
     archive_collector_factory: Callable[..., Any] = SecFilingArchiveCollector,
 ) -> dict[str, Any]:
@@ -439,6 +445,22 @@ def acquire_bounded_filings(
     The function owns no scheduling and has no default targets/clocks.  Each
     target produces a durable result or failure receipt; a single failed SEC
     issuer therefore never erases evidence for the other explicit targets.
+
+    ``reuse_local_archive`` (default off, so the fetch path is unchanged) lets a
+    warm-archive lane satisfy an already-retrieved primary document from local
+    sha256-verified bytes instead of re-downloading identical bytes from SEC.
+    Submissions are ALWAYS fetched fresh — that is how a new filing is
+    discovered — and a reuse miss falls through to the network fetch unchanged,
+    so the ``--require-complete-acquisition`` gate keeps its meaning: a verified
+    local hit IS the stored evidence, and anything uncovered still lands as
+    partial.
+
+    Byte-budget semantics: ``max_ticker_bytes``/``max_total_bytes`` and the
+    per-document ``available`` cap bound NETWORK ingest.  Reused bytes traverse
+    no network, consume no budget, and are accounted separately as
+    ``bytes_reused``.  ``bytes_retained`` keeps meaning bytes retrieved over the
+    network during this run — it is the number whose nightly drop proves the
+    reuse path is live.
     """
     limits = _validate_limits(
         max_tickers=max_tickers,
@@ -488,9 +510,11 @@ def acquire_bounded_filings(
         limits=limits,
     )
     total_bytes = 0
+    total_reused_bytes = 0
     results: list[dict[str, Any]] = []
     for target in normalized_targets:
         ticker_bytes = 0
+        ticker_reused_bytes = 0
         ticker_failures: list[dict[str, str]] = []
         forms = {form: _form_receipt(form) for form in FORM_FAMILIES}
         receipt: dict[str, Any] = {
@@ -504,6 +528,7 @@ def acquire_bounded_filings(
             "submissions": None,
             "forms": [forms[form] for form in FORM_FAMILIES],
             "bytes_retained": 0,
+            "bytes_reused": 0,
             "status": "failed",
             "failures": ticker_failures,
         }
@@ -537,6 +562,7 @@ def acquire_bounded_filings(
         except Exception as exc:  # per-ticker continuation is intentional
             ticker_failures.append(_failure("submissions", exc))
             receipt["bytes_retained"] = ticker_bytes
+            receipt["bytes_reused"] = ticker_reused_bytes
             receipt["status"] = "failed"
             _write_ticker_receipt(archive_path, receipt)
             results.append(receipt)
@@ -552,6 +578,7 @@ def acquire_bounded_filings(
         except Exception as exc:
             ticker_failures.append(_failure("filing_manifest", exc))
             receipt["bytes_retained"] = ticker_bytes
+            receipt["bytes_reused"] = ticker_reused_bytes
             receipt["status"] = "partial"
             _write_ticker_receipt(archive_path, receipt)
             results.append(receipt)
@@ -600,6 +627,41 @@ def acquire_bounded_filings(
                     ticker_failures.append(failure)
                     form_result["status"] = "partial"
                     continue
+                # Decided BEFORE the ingest budget, because a local hit spends
+                # none of it.  The manifest was just validated by the declared
+                # persist above, so the lookup can only report a local-store
+                # anomaly (as None), never raise on this input.
+                reused = (
+                    find_reusable_primary_retrieval(archive_path, manifest)
+                    if reuse_local_archive
+                    else None
+                )
+                if reused is not None:
+                    try:
+                        # The prior receipt is attached verbatim: its clock,
+                        # ETag and receipt id still describe the retrieval that
+                        # actually happened over the wire.
+                        materialized = with_document_retrievals(
+                            manifest, {str(reused["document_id"]): reused}
+                        )
+                        primary_bytes = _primary_byte_length(materialized)
+                        manifest_key = persist_filing_manifest(archive_path, materialized)
+                    except Exception as exc:
+                        # No fetch fallback after a verified hit: a persist-side
+                        # failure would kill the fetch leg identically, and the
+                        # hard gate should see it rather than a silent re-download.
+                        failure = _failure(f"reuse_{form}", exc)
+                        form_result["failures"].append(failure)
+                        ticker_failures.append(failure)
+                        form_result["status"] = "partial"
+                        form_result["manifest_keys"].append(declared_manifest_key)
+                        continue
+                    form_result["manifest_keys"].append(manifest_key)
+                    form_result["stored_documents"] += 1
+                    form_result["reused_documents"] += 1
+                    ticker_reused_bytes += primary_bytes
+                    total_reused_bytes += primary_bytes
+                    continue
                 available = min(
                     limits["max_document_bytes"],
                     limits["max_ticker_bytes"] - ticker_bytes,
@@ -646,6 +708,7 @@ def acquire_bounded_filings(
                     if isinstance(exc, ArchiveResponseTooLarge):
                         continue
         receipt["bytes_retained"] = ticker_bytes
+        receipt["bytes_reused"] = ticker_reused_bytes
         if ticker_failures or any(item["status"] != "complete" for item in receipt["forms"]):
             receipt["status"] = "partial"
         else:
@@ -661,6 +724,8 @@ def acquire_bounded_filings(
         "targets": [target.to_dict() for target in normalized_targets],
         "limits": dict(limits),
         "bytes_retained": total_bytes,
+        "bytes_reused": total_reused_bytes,
+        "reuse_local_archive": bool(reuse_local_archive),
         "status": "complete" if all(item["status"] == "complete" for item in results) else "partial",
         "ticker_receipts": results,
     }

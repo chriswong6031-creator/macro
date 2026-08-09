@@ -58,7 +58,7 @@ def test_ga4_status_degrades_without_creds():
 
 def test_github_repo_detected():
     owner, name = github_api.repo()
-    # this checkout's origin is chriswong6031-creator/macro
+    # this checkout's origin is mastermindx-market-intelligence/macro
     assert owner and name
 
 

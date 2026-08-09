@@ -63,20 +63,23 @@ from typing import Any
 
 import pandas as pd
 
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
 # Engine imports — must NOT import from the nightly runner or render layers.
 from engine.qledger import (
     TIMESTAMP_QUALITY,
     make_claim,
     register,
     register_batch,
-)
-from engine.ai_desk import _close_series
+)  # noqa: E402
+from engine.ai_desk import _close_series  # noqa: E402
 from engine.altdata_ledger import (
     FAMILY_DIRECTION_OVERRIDE,
     FAMILY_HORIZON_D,
     assign_claim_family,
-)
-from lib import config
+)  # noqa: E402
+from lib import config  # noqa: E402
 
 log = logging.getLogger(__name__)
 

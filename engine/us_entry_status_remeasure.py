@@ -1,19 +1,24 @@
 """Nightly US entry-STATUS re-measurement — the standing evidence loop for the entry ladder.
 
-PROPHET US ANTICIPATION §6.6.  The A2 patience-first entry map ships **STATUS-NEUTRAL** —
-one flat entry value across the five admissible statuses — because that is what the §6.6
-ruling left standing: on the first US run of this measurement (2026-08-08) the CN ordering
-DID NOT REPRODUCE.  The v1 constants that neutrality replaced were China's own measured
-ordering (``bounce_wait`` highest … ``buy_soon`` lowest; CN §2.3, 2026-08-04:
-``bounce_wait`` 6.9% loser rate vs ``buy_now`` 30.0%, n=257 CN episodes) — a Chinese
-measurement wearing an American map — and the US board's H=5 cells, the only horizon where
-both of those two cleared the disclosure floor, ran the other way.  A neutral ladder is
-what an unreproduced ordering earns.
+PROPHET US ANTICIPATION §6.6.  The A2 entry map is intended to ship **STATUS-NEUTRAL** —
+one flat entry value across the five admissible statuses — after the first US read
+(2026-08-08) did not reproduce the historical CN adjusted-return ordering.  That US read is
+short-horizon, legacy-selection, price-basis-mixed and vintage-confounded, and its patience
+horizon has no ``bounce_wait`` marks.  Neutrality is therefore a no-claim default, not a
+claim that one status beat another.
 
-This module is the STANDING EVIDENCE LOOP behind that ruling, not the one-off verdict that
-produced it: it groups the US board's own graded episodes by the entry status they carried
-AT STAMP TIME and reports, per status, what the tape then did — every night, so the record
-keeps accruing after the ruling rather than being asserted once and left.
+The CN rates remain non-authoritative CROSS-MARKET CONTEXT.  Their legacy instrument groups
+Prophet standout-board admissions and measures split-adjusted forward returns;
+it is not an exact exchange-limit study.  The rewritten #4972 boundary must land first and
+forbids using that adjusted plane for nominal CNY ticks or exact legal-limit events, including
+the quarantined 300363 account.  This module preserves the ordinary adjusted-return comparator
+with that caveat; it grants no direct status, ranking, candidate, or gate authority and no
+Prophet, Neural Web, or trading authority.  Any map change is a separate reviewed code change.
+
+This module is the STANDING US EVIDENCE LOOP behind the neutral default: it groups the US
+board's own graded episodes by the entry status they carried AT STAMP TIME and reports, per
+status, what the tape then did — every night, so the record keeps accruing rather than being
+asserted once and left.
 
 RE-INTRODUCING AN ORDERING — the bar, stated so it cannot be lowered quietly
 ----------------------------------------------------------------------------
@@ -29,7 +34,7 @@ An ordering may be put back into the map ONLY when all four hold together:
   regime instead of across two.
 
 Until all four hold the leg stays neutral.  Nothing here re-introduces anything: an operator
-reads these cells and edits the map by hand.
+reads these cells and edits the map by hand in a separately reviewed change.
 
 It publishes into the nightly miss-audit artifact as ``entry_status_scorecard``, beside the
 ``priority_score`` block, so the ladder's evidence base is visible in days rather than
@@ -55,12 +60,11 @@ store cannot answer the question:
   ``avoid`` all 0.0), so the status is not recoverable from it, and (b) stamped on the buy
   lane only (~2% of rows).
 
-Reading a mapped value to re-derive the map is circular anyway.  The board ledger is also
-the CLOSER parity match: CN §2.3 measured China's **board admissions**
-(``data/china_standout_track/board.parquet``), not a full-population context store, so
-measuring the US board ledger is the same instrument on the same kind of population.  When
-a sibling lane stamps ``entry_signal.status`` into the W7 candidates store, that store
-becomes a second, wider read of the same question — it does not replace this one.
+Reading a mapped value to re-derive the map is circular anyway.  The board ledger is the
+available US source that carries both the admission-time status and the already-graded
+forward mark.  When a sibling lane stamps ``entry_signal.status`` into the W7 candidates
+store, that store becomes a second, wider US read of the same question — it does not replace
+this board-admission cohort.
 
 RULER — REUSED, NEVER FORKED
 ----------------------------
@@ -73,11 +77,11 @@ of marks someone else made.
 
 DEFINITIONS — STATED, because a loser rate is a definition before it is a number
 --------------------------------------------------------------------------------
-* **loser** — ``excess_spy <= 0``.  A flat mark counts as a LOSS.  That is the CN §2.3
-  convention (``research/cn_prophet_audit/v1_loser_audit.py``), kept verbatim so the US and
-  CN tables are comparable numbers rather than two similarly-named ones.
+* **loser** — ``excess_spy <= 0``.  A flat mark counts as a LOSS.  This is the frozen local
+  definition for the US series and matches the historical CN adjusted-return table so the
+  context columns use the same label; matching a definition does not transfer authority.
 * **win** — ``excess_spy > 0``.  Loser and win are EXACT COMPLEMENTS by construction; both
-  are printed because the CN table prints both, not because they are two observations.
+  are printed as two views of one binary outcome, not as two observations.
 * **median excess / mean excess** — over the same non-null marks, in the ledger's own unit
   (a fraction: 0.01 = +1%), never rescaled here.
 * **thin** — a cell with fewer than :data:`THIN_MIN_N` marks is LABELLED thin and read as
@@ -137,8 +141,10 @@ STATUS_COLUMN = "entry_status"
 #: docstring).  A row with no lane is reported under ``unlaned`` rather than folded into
 #: ``buy`` — calling it buy would assert an admission that was not measured.
 COHORT_COLUMN = "lane"
-#: The forward mark.  Benchmark-relative by choice: the CN table it must be comparable to is
-#: CSI300-relative, and an absolute US return in a rising tape flatters every status equally.
+#: The forward mark.  Benchmark-relative by choice: an absolute US return in a rising tape
+#: flatters every status equally.  The historical CN context is CSI300-relative, so the two
+#: columns at least share a benchmark-relative definition; that does not make their cohorts
+#: interchangeable or validate an exact exchange-limit event.
 EXCESS_COLUMN = "excess_spy"
 #: The PRICE-BASIS ERA STAMP.  ``data/us_board_ledger/README.md`` documents two eras living
 #: in this one parquet, split at the 2026-08-06 boundary: era-1 rows priced the name leg
@@ -180,8 +186,8 @@ THIN_MIN_N = 20
 
 #: The statuses whose cells get a stable column in the flat forward log.  Fixed here so the
 #: log is a plottable series rather than a table whose columns depend on tonight's data.
-#: These are exactly the CN §2.3 table's rows — the ladder debate's own vocabulary.  The
-#: BLOCK reports every status present in the ledger, including ones absent from this tuple.
+#: Stable entry-map vocabulary for the flat forward log.  Tuple order is schema stability,
+#: not a status ranking.  The BLOCK reports every status in the ledger, including extras.
 LOG_STATUSES = ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial", "buy_soon",
                 "extended")
 
@@ -193,8 +199,9 @@ LOG_COHORTS = ("buy",)
 
 LOSER_DEFINITION = (f"loser = {EXCESS_COLUMN} <= 0 (a FLAT mark counts as a loss); "
                     f"win = {EXCESS_COLUMN} > 0. The two are exact complements by "
-                    f"construction — both are printed because the CN §2.3 table prints "
-                    f"both, not because they are two independent observations")
+                    f"construction — two views of one binary outcome, not two independent "
+                    f"observations. The <=0 boundary matches the historical CN adjusted-"
+                    f"return context so the labels are comparable; authority is not")
 
 
 # --------------------------------------------------------------------------- #
@@ -489,19 +496,23 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
         "tier": "ops_telemetry",
         "authority": "none — read-only aggregation of an existing graded ledger; no rank, "
                      "gate, size, board, plan or user-facing consumer. The entry-value map "
-                     "constants are revised BY HAND by an operator reading this table",
+                     "can change only in a separate reviewed code change after the stated "
+                     "evidence bar; this block cannot mutate it",
         "purpose": ("ANTICIPATION §6.6 — the STANDING evidence loop for the patience-first "
-                    "entry ladder. The A2 entry leg ships STATUS-NEUTRAL (one flat value "
-                    "across the five admissible statuses) per the §6.6 ruling: on the first "
-                    "US run of this measurement, 2026-08-08, the CN ordering did not "
-                    "reproduce. This table is what keeps accruing after that ruling"),
+                    "entry ladder. The separately reviewed A2 map (#4976) is intended to "
+                    "ship STATUS-NEUTRAL (one flat value across the five admissible "
+                    "statuses) after the first US run did not "
+                    "reproduce the historical CN adjusted-return ordering. That comparator "
+                    "is context only; the US read is short-horizon, legacy-selection, "
+                    "price-basis-mixed and vintage-confounded, and the patience horizon is "
+                    "empty. The record therefore licenses no differential ordering. This "
+                    "table keeps accruing behind the neutral no-claim default"),
         "reintroduction_bar": (
             "an ordering may be put back into the map ONLY when all four hold together: at "
             "the ladder's chartered horizon; n>=50 per cell (the thin floor LABELS a cell, "
             "it does not qualify one); sign-stable across two half-splits of the window; on "
             "era-stamped anticipation-v1 episodes. Until then the leg stays neutral. This "
-            "block re-introduces nothing — an operator reads these cells and edits the map "
-            "by hand"),
+            "block re-introduces nothing — any map edit is a separate reviewed change"),
         "source": LEDGER_REL,
         "graded_by": ("scripts.grade_us_board — engine.grading.forward_metrics (next-bar "
                       "fill, positional session horizons), excess vs SPY. Nothing is "
@@ -545,17 +556,36 @@ def scorecard(root: Any, degraded: list[dict] | None = None) -> dict:
             "and its candidates/ store carries no entry-status column — only the already-"
             "mapped, non-injective prophet_entry leg, on the buy lane only. Reading a "
             "mapped value to re-derive the map is circular, so this block reads the board "
-            "ledger, which is also the closer CN parity match (CN §2.3 measured board "
-            "admissions). When a sibling lane stamps entry_signal.status into the W7 "
-            "candidates store it becomes a second, wider read — not a replacement"),
+            "ledger. It is also the closer population-shape match to the historical CN "
+            "context because both are Prophet standout-board admissions — not because "
+            "either is an exact legal-limit board. When a sibling lane stamps "
+            "entry_signal.status into the W7 candidates store it becomes a second, wider "
+            "US read — not a replacement"),
         "cn_reference": {
-            "note": ("the CN §2.3 ordering the v1 constants encoded BEFORE the §6.6 ruling "
-                     "neutralized the entry leg, restated so the US numbers below are read "
-                     "against what they replaced. CN episodes, CSI300-relative, H=10, "
-                     "n=257 — NOT a US measurement, and no longer a shipped US ordering"),
+            "status": "context_only_adjusted_return_comparator",
+            "authority": ("none — cross-market context only; no status value, ordering, "
+                          "candidate, rank, gate, size, Prophet/Neural Web fact, legal-band "
+                          "verdict or trade may be derived automatically from it"),
+            "note": (
+                "the historical CN adjusted-return ordering that the draft v1 constants "
+                "encoded, restated so the US numbers are read against the context that "
+                "prompted the test. CN Prophet standout-board admissions, CSI300-relative, "
+                "H=10, n=257 — not a US measurement and not an exchange-limit study"),
             "source": "research/cn_prophet_audit/v1_loser_audit_results.json (2026-08-04)",
-            # Same naming rule as ``definitions`` above: these are CHINA's numbers, so the
-            # key must not read as one of this table's own outcome statistics.
+            "price_basis_caveat": (
+                "the legacy instrument reads split-adjusted CN forward prices. That is an "
+                "ordinary total-return cohort measurement, not nominal CNY tick evidence; "
+                "market, benchmark, upstream selection and horizon all differ from the US "
+                "cells, so the columns are context rather than interchangeable estimates"),
+            "legal_limit_boundary": (
+                "per rewritten #4972, adjusted prices cannot establish exact legal-limit "
+                "touches/seals, nominal CNY bands, or the quarantined 300363 account. Any "
+                "such verdict requires authorized unadjusted TuShare daily plus same-key "
+                "stk_limit with exact integer-cent equality. None is claimed here"),
+            "depends_on": (
+                "research/prophet_us_audit/CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md "
+                "as rewritten by #4972, plus "
+                "research/CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md"),
             "cn_loser_rate_by_status": {
                 "bounce_wait": 0.069, "wait_pullback": 0.0769, "hold": 0.1935,
                 "extended": 0.2979, "buy_now": 0.30, "partial": 0.4138, "buy_soon": 0.4667},

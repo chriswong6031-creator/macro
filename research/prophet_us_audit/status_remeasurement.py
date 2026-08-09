@@ -1,10 +1,10 @@
 """US entry-status re-measurement — the one-shot receipt instrument (ANTICIPATION §6.6).
 
-Frozen instrument, in the shape of its CN sibling
-(``research/cn_prophet_audit/v1_loser_audit.py``): it RECOMPUTES NOTHING.  Every number it
-prints comes out of :mod:`engine.us_entry_status_remeasure`, which is the same code the
-nightly miss-audit publishes as its ``entry_status_scorecard`` block — so the committed
-receipt and the nightly table can never disagree about what a loser rate is.
+Frozen US instrument.  It RECOMPUTES NOTHING: every number it prints comes out of
+:mod:`engine.us_entry_status_remeasure`, the same code the nightly miss-audit publishes as
+its ``entry_status_scorecard`` block.  The historical CN adjusted-return table is printed
+only as non-authoritative cross-market context.  Per rewritten #4972 it is not nominal CNY
+tick or exact legal-limit evidence, and it confers no map/rank/Prophet authority.
 
 The marks themselves are read from ``data/us_board_ledger/retro_grades.parquet`` exactly as
 ``scripts/grade_us_board.py`` wrote them (``engine.grading.forward_metrics``: next-bar fill,
@@ -31,8 +31,8 @@ from engine import us_entry_status_remeasure as uesr  # noqa: E402
 
 OUT = Path(__file__).parent / "status_remeasurement_results.json"
 
-#: Print order — the ladder debate's own vocabulary first (CN's measured ordering, best to
-#: worst), then everything else alphabetically. Fixed BEFORE the numbers were read.
+#: Stable print order for the entry-map vocabulary, then everything else alphabetically.
+#: This is display/schema stability, not a ranking of statuses.
 STATUS_ORDER = ("bounce_wait", "wait_pullback", "hold", "extended", "buy_now", "partial",
                 "buy_soon")
 
@@ -97,8 +97,11 @@ def main() -> None:
     for cohort in sorted(block.get("by_cohort") or {}):
         print(f"\n### {cohort} lane\n")
         print("\n".join(render_cohort(block, cohort)))
-    print("\n### CN reference (NOT a US measurement)\n")
-    ref = block["cn_reference"]["cn_loser_rate_by_status"]
+    print("\n### CN adjusted-return context (not legal-band evidence; zero authority)\n")
+    ref_block = block["cn_reference"]
+    ref = ref_block["cn_loser_rate_by_status"]
+    print(f"caveat: {ref_block['price_basis_caveat']}")
+    print(f"boundary: {ref_block['legal_limit_boundary']}")
     print("| entry status | CN loser rate | US buy-lane loser rate (H=5) |")
     print("|---|---|---|")
     buy5 = ((block["by_cohort"].get("buy") or {}).get("5d") or {}).get("by_entry_status") or {}

@@ -1,37 +1,49 @@
 # Prophet US — entry-status re-measurement (the ladder's evidence loop) — 2026-08-08
 
-**Charter:** `PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.6 — the US answer to CN §2.3,
-run over the US board's own graded episodes. Sibling receipts:
+**Charter:** `PROPHET_US_EYES_OPEN_MASTERPLAN_BY_FABLE.md` §6.6 — a US-only
+entry-status-to-forward-outcome table over the US board's own graded episodes. Sibling receipts:
 `CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md`, `ENTRY_LATENESS_FORENSIC_2026-08-07.md`.
 
+**Dependency / 2026-08-09 re-audit:** the rewritten #4972 evidence boundary lands first.
+The CN column below is an ordinary split-adjusted forward-return cohort over Prophet
+standout-board admissions, not an exact exchange-limit study. It remains non-authoritative
+cross-market context. #4972's boundary forbids repurposing those adjusted prices for nominal
+CNY ticks, exact legal-limit touches/seals or the quarantined 300363 account; those require
+authorized unadjusted TuShare `daily` plus same-key `stk_limit` under integer-cent equality.
+No CN rate below has autonomous status, ranking, candidate, gate, Prophet, Neural Web or
+trading authority.
+
 **Tier: ops telemetry. ZERO AUTHORITY.** Nothing in this file changes a rank, a gate, a size
-or a board. The A2 entry-value constants are revised by an operator reading a table, and this
-is the table. Instrument: `research/prophet_us_audit/status_remeasurement.py` →
+or a board. Any map revision is a separate reviewed change after the pre-stated evidence bar;
+this receipt never revises one by itself. Instrument:
+`research/prophet_us_audit/status_remeasurement.py` →
 `status_remeasurement_results.json`; the same code ships as the nightly
 `entry_status_scorecard` block, so the receipt and the nightly cannot disagree about what a
 loser rate is.
 
 ## Headline
 
-**The CN ordering is not reproduced by the US record — and the horizon where the patience
-thesis makes its claim has no US data at all.**
+**The historical CN adjusted-return ordering is not reproduced by the frozen US record —
+and the horizon where the patience thesis makes its claim has no `bounce_wait` data at all.**
 
-On the admitted (buy) lane at H=5, with every cell above the 20-mark floor:
+Two descriptive cells on the admitted (buy) lane at H=5, both above the 20-mark disclosure
+floor:
 
 - `bounce_wait` — **54.9% loser rate** (95% Wilson 47.0–62.6%), median excess **−0.96%**
-  (n=153). CN measured 6.9%.
-- `buy_now` — **39.0% loser rate** (95% Wilson 29.8–49.0%), median excess **+1.05%** (n=95).
-  CN measured 30.0%.
+  (n=153). Historical CN adjusted-return context: 6.9%.
+- `buy_now` — **39.0% loser rate** (95% Wilson 29.8–49.0%), median excess **+1.05%**
+  (n=95). Historical CN adjusted-return context: 30.0%.
 
-That is the v1 constants' ordering read backwards: the status those constants scored **1.0**
-is the worst non-thin cell in the window, and the status they scored **0.7** is the best. The
-spread is not subtle (15.9 points of loser rate, 2.0 points of median excess), neither cell
-is thin, and the two intervals do not overlap.
+The descriptive gap is 15.9 points of loser rate and 2.0 points of median excess; neither
+cell is thin and the Wilson intervals do not overlap. That still is not a ranking verdict:
+the cells cover different tape windows, predate the anticipation selection era, and mix price
+bases. The gap motivates continued measurement but cannot choose an order.
 
-**Ruling (§6.6):** the A2 entry leg ships **status-neutral** — one flat value across the five
-admissible statuses. An unreproduced ordering does not get to keep its ranks. An ordering may
-be re-introduced only at the ladder's chartered horizon, with n≥50 per cell, sign-stable
-across two half-splits, on era-stamped `anticipation-v1` episodes.
+**Ruling (§6.6):** the A2 entry leg is intended to ship **status-neutral** — one flat value
+across the five admissible statuses — as the no-claim default. An ordering may be introduced
+only at the ladder's chartered horizon, with n≥50 per cell, sign-stable across two
+half-splits, on era-stamped `anticipation-v1` episodes. This PR supplies evidence plumbing;
+the separately reviewed map change remains #4976.
 
 **Read the two cells' windows before reading their gap.** `bounce_wait` is a **late-window
 cohort**: it has zero buy-lane episodes before **2026-07-17** and 205 after it, over 8 board
@@ -44,8 +56,8 @@ every cell so this is visible at a glance rather than reconstructed.
 at H=21**, in every lane, out of 345 episodes. The patience case is "these names take time" —
 so the horizon that would test it is exactly the one carrying no observations. H=63 has never
 matured for any status. This table cannot yet speak to the claim the constants encode; what
-it can say is that at 5 and 10 sessions the US board's `bounce_wait` rows have not behaved
-like CN's.
+it can say is that at 5 and 10 sessions this frozen US legacy cohort did not resemble the
+historical CN adjusted-return context. That is an evidence input, not ranking authority.
 
 ## What was measured
 
@@ -58,7 +70,7 @@ like CN's.
 | Window | 23 board dates, **2026-06-15 → 2026-07-30** |
 | Horizons present | 5, 10, 21 sessions. **H=63: zero matured marks** |
 | Lanes | buy 1,939 · watch 883 · laggards 446 · leaders 45 — **never pooled** |
-| loser | `excess_spy <= 0` — a flat mark counts as a loss (CN §2.3 convention, kept verbatim so the two tables are comparable) |
+| loser | `excess_spy <= 0` — a flat mark counts as a loss; matches the historical CN adjusted-return context so the labels are comparable, not authoritative |
 | thin | fewer than 20 graded marks; marked `*` and read as **directional only** |
 
 Status population: hold 465 · extended 413 · await_confluence 398 · buy_soon 355 ·
@@ -86,9 +98,9 @@ topping 61 · exit 13.
 Read at H=10 the picture changes shape but not direction: `bounce_wait` goes to **65.4%**
 (n=52, still above the floor) while `buy_now`'s 61.1% sits on **n=18** and is thin. The one
 cell that holds up across both horizons at real n is `await_confluence` (46.5% / 37.0% on
-n=99 / n=92) — a status the v1 constants scored 0.45 and neither the US nor the CN ordering
-paid much attention to. It is also the widest-window cell in the table (2026-06-30 → 07-30
-at H=5), which is part of why it holds up.
+n=99 / n=92). It is also the widest-window cell in the table (2026-06-30 → 07-30 at H=5),
+which is part of why it looks steadier; that is a vintage disclosure, not a reason to promote
+the status.
 
 ## Watch lane — the pre-admission population
 
@@ -115,9 +127,9 @@ receipt has: it is the same status behaving the same way twice, not one cohort's
 non-`extended` cell in them is thin; the leaders lane has 45 episodes at H=5 only and reads
 85–100% loser across every status, which is a statement about the lane, not the statuses.
 
-## Side by side with the CN measurement that shipped the v1 constants
+## CN adjusted-return context — dependency on rewritten #4972
 
-| entry status | CN loser rate (H=10, n=257, CSI300-rel) | US buy lane (H=5) | US buy lane (H=10) |
+| entry status | CN context (H=10, n=257, CSI300-rel) | US buy lane (H=5) | US buy lane (H=10) |
 |---|---|---|---|
 | `bounce_wait` | 6.9% | 54.9% (n=153) | 65.4% (n=52) |
 | `wait_pullback` | 7.7% | 52.8% (n=72) | 42.4% (n=33) |
@@ -127,10 +139,16 @@ non-`extended` cell in them is thin; the leaders lane has 45 episodes at H=5 onl
 | `partial` | 41.4% | 52.0% (n=148) | 42.1% (n=38) |
 | `buy_soon` | 46.7% | 47.8% (n=113) | 33.3% (n=33) |
 
-These are **not the same measurement**: different market, different benchmark, different
-selection upstream, and CN's column is H=10 against a US column that is strongest at H=5.
-The comparison is here because those CN numbers were the stated basis for the v1 US
-constants that this measurement retired — not because the two columns are interchangeable.
+These are **not interchangeable estimates**: different market, benchmark, upstream
+selection and horizon. The CN source measures split-adjusted forward returns over Prophet
+standout-board admissions. It does **not** establish nominal CNY ticks or exact legal-limit
+events, and rewritten #4972 must land first so that boundary is part of the controlling
+record. Any exact legal-limit verdict requires authorized unadjusted TuShare `daily` joined
+to same-key `stk_limit` under integer-cent equality.
+
+The CN rates are retained only because they were the historical context that prompted the US
+test. They confer no autonomous status value, ordering, candidate, rank, gate, size, Prophet
+fact, Neural Web fact or trade; any map change is a separate reviewed code change.
 
 ## What this does NOT establish
 
@@ -138,7 +156,8 @@ constants that this measurement retired — not because the two columns are inte
    COUNTERTREND BOUNCE demotion (`engine/entry_signal.py:185`) to names inside a downtrend.
    CN's `bounce_wait` cohort is fed by a weekly ripening shelf and a theme-timing channel the
    US board does not have (parity anatomy, 2026-08-07). Two boards can hand the same label to
-   two different populations, and this table cannot tell them apart.
+   two different populations. This qualitative plumbing difference is why the CN rates are
+   context, not a transferable estimate.
 2. **The window is one regime.** Six weeks, 23 board dates, one market. A loser rate near 50%
    across nearly every status at H=5 is the tell: at five sessions this ledger is mostly
    measuring the tape, not the status.
@@ -147,17 +166,17 @@ constants that this measurement retired — not because the two columns are inte
 4. **The anticipation era contributes nothing yet.** Every episode predates the §6.2 selection
    change, and the ledger's last date is 2026-07-30 (the nightly freeze; heal in flight). The
    rows that would test the new selection do not exist.
-5. **It is not a mandate to revert the map.** Operator ruling §6.0 is that the new selection
-   ships live while the legacy shadow ledger accrues; this block is display-tier with zero
-   authority and is an input to that comparison, not a substitute for it.
+5. **It is not a map mutation.** The status-neutral implementation is a separate reviewed
+   change (#4976). This block is display-tier with zero authority and cannot revise, revert,
+   rank or promote anything by itself.
 6. **The status cohorts do not share a window.** Statuses entered the buy lane on different
    dates, so a rate compared across two of them can be a comparison of two stretches of
    tape. Buy-lane episode spans: `bounce_wait` **2026-07-17 → 07-30 (8 dates, 0 episodes
    before 07-17)**, `await_confluence` 2026-06-30 → 07-30 (14), and `hold` / `buy_now` /
    `buy_soon` / `partial` / `wait_pullback` / `extended` 2026-06-18 → 07-30 (14–18). The
-   headline gap is between the narrowest cohort in the table and one of the widest. This
-   does not restore the CN ordering — it means the US record has not cleanly tested it
-   either way, which is the same reason the leg ships neutral. Per-cell `as_of_first` /
+   headline gap is between the narrowest cohort in the table and one of the widest. The US
+   record therefore has not cleanly established an ordering in either direction, which is
+   why neutrality is the no-claim default. Per-cell `as_of_first` /
    `as_of_last` in the nightly block is the standing disclosure; the re-introduction bar's
    two-half-split condition is what would close it.
 
@@ -175,9 +194,8 @@ constants that this measurement retired — not because the two columns are inte
 
 Until then the leg stays neutral and the nightly `entry_status_scorecard` block prints these
 cells every night with their n, their Wilson bounds, their marked date ranges, their thin
-labels and their nulls — so the ladder stops being a Chinese measurement wearing an American
-map and becomes a series someone can watch move, against a re-introduction bar that was
-written down before the numbers arrived.
+labels and their nulls — so the ladder rests on a US series someone can watch move, against
+a re-introduction bar that was written down before the record matured.
 
 ## Provenance
 
@@ -185,15 +203,19 @@ written down before the numbers arrived.
   nothing) → `research/prophet_us_audit/status_remeasurement_results.json`.
 - Shared implementation: `engine/us_entry_status_remeasure.py`, published nightly as
   `entry_status_scorecard` in the miss-audit artifact by `engine/prophet_miss_audit.py`.
-- CN comparison column: `research/cn_prophet_audit/v1_loser_audit_results.json` (2026-08-04),
-  `v2_featured_gate_retro.by_entry_status`, n=257 matured CN episodes.
+- CN dependency/context: `research/cn_prophet_audit/v1_loser_audit_results.json` (2026-08-04),
+  `v2_featured_gate_retro.by_entry_status`, n=257 matured Prophet standout-board episodes.
+  The rates are split-adjusted-return context only, never exact legal-limit evidence or an
+  autonomous ranking input. The controlling boundary is
+  `CN_US_PROPHET_PARITY_ANATOMY_2026-08-07.md` as rewritten by #4972 plus
+  `CN_TUSHARE_FULL_A_SPINE_CONTRACT_2026-08-08.md`.
 - **Charter deviation, stated:** §6.6 named the W7 full-population store
   (`data/us_prophet_rank`) as the source. Measured 2026-08-08, it cannot answer the question —
   its `grades/` subtree has never been written (zero forward marks; the miss-audit forward log
   records `priority_score_available: false` on every row to date) and its `candidates/` store
   carries no entry-status column, only the already-mapped, non-injective `prophet_entry` leg,
   on the buy lane only (~2% of rows). Reading a mapped value to re-derive the map is circular.
-  The board ledger is also the closer CN parity match: CN §2.3 measured board **admissions**,
-  not a full-population context store. When a sibling lane stamps `entry_signal.status` into
-  the W7 candidates store, that store becomes a second and wider read of the same question —
-  not a replacement for this one.
+  The board ledger is the available US source carrying both the admission-time status and
+  the existing forward mark. When a sibling lane stamps `entry_signal.status` into the W7
+  candidates store, that store becomes a second and wider US read of the same question — not
+  a replacement for this board-admission cohort.
